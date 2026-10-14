@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.96.0"
+        "version": "0.97.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.96.0",
+                "version": "0.97.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -85,7 +85,21 @@
                     "portalFinder",
                     "sharedBlock",
                     "accessibilityMeasurement"
-                ]
+                ],
+                "authorization": {
+                    "read": [
+                        "portaliq-medewerkers"
+                    ],
+                    "create": [
+                        "portaliq-medewerkers"
+                    ],
+                    "update": [
+                        "portaliq-medewerkers"
+                    ],
+                    "delete": [
+                        "portaliq-medewerkers"
+                    ]
+                }
             }
         },
         "objects": [
@@ -745,7 +759,10 @@
                 "slug": "portalAccount",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
+                    ],
+                    "export": [
+                        "portaliq-medewerkers"
                     ]
                 },
                 "icon": "AccountKey",
@@ -1107,6 +1124,9 @@
                 "authorization": {
                     "read": [
                         "admin"
+                    ],
+                    "export": [
+                        "admin"
                     ]
                 },
                 "icon": "Ticket",
@@ -1189,7 +1209,10 @@
                 "slug": "exampleDocument",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
+                    ],
+                    "export": [
+                        "portaliq-medewerkers"
                     ]
                 },
                 "icon": "FileDocumentOutline",
@@ -1233,7 +1256,10 @@
                 "slug": "portalMessage",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
+                    ],
+                    "export": [
+                        "portaliq-medewerkers"
                     ]
                 },
                 "icon": "EmailOutline",
@@ -1391,7 +1417,10 @@
                 "slug": "portalSubmission",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
+                    ],
+                    "export": [
+                        "portaliq-medewerkers"
                     ]
                 },
                 "icon": "FileCheckOutline",
@@ -1474,7 +1503,10 @@
                 "slug": "portalNotification",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
+                    ],
+                    "export": [
+                        "portaliq-medewerkers"
                     ]
                 },
                 "icon": "BellOutline",
@@ -1601,7 +1633,10 @@
                 "slug": "portalOidcState",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
+                    ],
+                    "export": [
+                        "portaliq-medewerkers"
                     ]
                 },
                 "icon": "ShieldLock",
@@ -1693,7 +1728,10 @@
                 "slug": "portalPage",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
+                    ],
+                    "export": [
+                        "portaliq-medewerkers"
                     ]
                 },
                 "icon": "WebBox",
@@ -2589,7 +2627,10 @@
                 "title": "Portal",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
+                    ],
+                    "export": [
+                        "portaliq-medewerkers"
                     ]
                 },
                 "description": "One portal Portaliq serves (ADR-086 §2). Owns its domains, theme, authentication configuration, locales and publication status. Every menu, page and glossary term belongs to exactly one portal; an Organisation may run several portals (a public site, a supplier portal, a docs site), each branded and authenticated differently. Supersedes the never-implemented white-label-on-Organisation requirement in supplier-portal T08.",
@@ -3402,6 +3443,20 @@
                                         "example": [
                                             "gemeente-x.nl"
                                         ]
+                                    },
+                                    "residentGroup": {
+                                        "title": "Resident group",
+                                        "type": "string",
+                                        "description": "The Nextcloud group whose members are this portal's residents. A member signing in with their Nextcloud account gets a portal account on the first sign-in, and the Create an account link shows when the registration app puts new users in this group. Only means something when the portal offers the Nextcloud way in.",
+                                        "maxLength": 64,
+                                        "example": "inwoners"
+                                    },
+                                    "residentAudience": {
+                                        "title": "Resident audience",
+                                        "type": "string",
+                                        "description": "The audience a resident's first portal account gets. Empty means citizen.",
+                                        "maxLength": 64,
+                                        "example": "citizen"
                                     }
                                 }
                             },
@@ -4708,6 +4763,9 @@
                 "authorization": {
                     "read": [
                         "public"
+                    ],
+                    "export": [
+                        "public"
                     ]
                 },
                 "description": "A navigation menu for one portal (ADR-086 §3). The shape is preserved EXACTLY as OpenCatalogi deploys it today — two levels, `order`/`name`/`link`/`icon`/`groups`/`hideBeforeLogin`/`hideAfterLogin` — so the handover needs no data migration across the ten live municipal deployments.",
@@ -4874,11 +4932,20 @@
                                 "status": "published"
                             }
                         },
-                        "authenticated"
+                        "portaliq-medewerkers"
                     ],
                     "create": [],
                     "update": [],
-                    "delete": []
+                    "delete": [],
+                    "export": [
+                        {
+                            "group": "public",
+                            "match": {
+                                "status": "published"
+                            }
+                        },
+                        "portaliq-medewerkers"
+                    ]
                 },
                 "description": "One page of a portal (ADR-086 §4). Its body is EITHER a widget grid — the same manifest-v2 widget placement OpenBuild authors, on a 12-column grid — OR markdown, stored and served as source so a Docusaurus build consumes it with no HTML round-trip. The two are not a hierarchy: a landing page is grid-first, a documentation page is markdown-first, and both are pages.",
                 "type": "object",
@@ -5203,6 +5270,9 @@
                 "authorization": {
                     "read": [
                         "public"
+                    ],
+                    "export": [
+                        "public"
                     ]
                 },
                 "description": "One begrippenlijst entry, scoped to a portal (ADR-086 §5). Moves out of OpenCatalogi with the rest of the CMS. A renderer MAY auto-link occurrences of a term in page prose to its definition; that linking happens at render time and never alters the stored markdown.",
@@ -5267,11 +5337,14 @@
                 "title": "Media item",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
                     ],
                     "create": [],
                     "update": [],
-                    "delete": []
+                    "delete": [],
+                    "export": [
+                        "portaliq-medewerkers"
+                    ]
                 },
                 "description": "One image or file in a portal's media library (site-page-seo-history-and-media). The uploaded file is attached to this object through OpenRegister's object files; the newest attached file is the one served. A page refers to an item as media:<id> in its hero image, its share image or its markdown, so replacing the file updates every page that uses it. An image needs alternative text; portaliq refuses the write without it (OpenRegister keeps no conditional rule). The public reach a published item only through the content API (/api/content/media/{id}), never through OpenRegister.",
                 "type": "object",
@@ -5327,6 +5400,9 @@
                 "slug": "portalTrafficEvent",
                 "authorization": {
                     "read": [
+                        "admin"
+                    ],
+                    "export": [
                         "admin"
                     ]
                 },
@@ -5594,7 +5670,10 @@
                 "slug": "portalTrafficDaily",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
+                    ],
+                    "export": [
+                        "portaliq-medewerkers"
                     ]
                 },
                 "icon": "ChartLine",
@@ -6559,6 +6638,9 @@
                 "authorization": {
                     "read": [
                         "admin"
+                    ],
+                    "export": [
+                        "admin"
                     ]
                 },
                 "icon": "MotionPlayOutline",
@@ -6679,11 +6761,14 @@
                 "title": "Form",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
                     ],
                     "create": [],
                     "update": [],
-                    "delete": []
+                    "delete": [],
+                    "export": [
+                        "portaliq-medewerkers"
+                    ]
                 },
                 "description": "A lead-capture form bound to a landing page, provisioned by the contribution-landing-page-action cross-app command (landing-page-provisioning). Never publicly (anonymously) readable through the OpenRegister API — the field/config shape a visitor sees is embedded into the page's own body at creation time (LandingPageProvisioningService::buildBody()), not fetched live. Portaliq's own built-in PortalContributionProvider reads it server-side, bypassing RBAC (ADR-022), to fold each ACTIVE form into the anonymous contribution aggregate as a synthesised type:create action; an authenticated (staff) user may also read it via the generic objects API, matching portalSubmission's convention. Mirrors the portalPage object’s “configuration, not subject data” convention (portal-page-provisioning).",
                 "type": "object",
@@ -6904,11 +6989,14 @@
                 "title": "Landing Page Submission",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
                     ],
                     "create": [],
                     "update": [],
-                    "delete": []
+                    "delete": [],
+                    "export": [
+                        "portaliq-medewerkers"
+                    ]
                 },
                 "description": "One anonymous visitor submission of a landing-page form (landing-page-provisioning). Never publicly (anonymously) readable — matching portalSubmission's own convention, an authenticated (staff) user may read it via the generic objects API. Unlike portalSubmission, this schema carries no subjectRef/organisation, because a landing-page visitor is not an authenticated portal account; reusing portalSubmission would either weaken its required fields for every other WMEBV consumer or stamp a fake subject onto an anonymous row. submittedAt and nonce are server-stamped; utmFirstTouch/utmLastTouch/referrer are client-observed advisory attribution data, not authorization-relevant (ADR-005).",
                 "type": "object",
@@ -7076,7 +7164,10 @@
                 "slug": "portalCaseType",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
+                    ],
+                    "export": [
+                        "portaliq-medewerkers"
                     ]
                 },
                 "icon": "FileTreeOutline",
@@ -7366,7 +7457,10 @@
                 "slug": "portalCase",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
+                    ],
+                    "export": [
+                        "portaliq-medewerkers"
                     ]
                 },
                 "icon": "FolderOutline",
@@ -7461,7 +7555,10 @@
                 "slug": "portalContact",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
+                    ],
+                    "export": [
+                        "portaliq-medewerkers"
                     ]
                 },
                 "icon": "AccountMultiple",
@@ -7567,7 +7664,10 @@
                 "slug": "portalPlan",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
+                    ],
+                    "export": [
+                        "portaliq-medewerkers"
                     ]
                 },
                 "icon": "ClipboardCheckOutline",
@@ -7666,6 +7766,9 @@
                 "authorization": {
                     "read": [
                         "admin"
+                    ],
+                    "export": [
+                        "admin"
                     ]
                 },
                 "icon": "ClipboardListOutline",
@@ -7753,7 +7856,10 @@
                 "slug": "portalMandate",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
+                    ],
+                    "export": [
+                        "portaliq-medewerkers"
                     ]
                 },
                 "icon": "AccountKey",
@@ -7872,7 +7978,10 @@
                 "slug": "portalInvitation",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
+                    ],
+                    "export": [
+                        "portaliq-medewerkers"
                     ]
                 },
                 "icon": "AccountKey",
@@ -7987,7 +8096,10 @@
                 "slug": "portalReferenceLink",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
+                    ],
+                    "export": [
+                        "portaliq-medewerkers"
                     ]
                 },
                 "icon": "AccountKey",
@@ -8076,6 +8188,9 @@
                 "authorization": {
                     "read": [
                         "admin"
+                    ],
+                    "export": [
+                        "admin"
                     ]
                 },
                 "icon": "AccountKey",
@@ -8163,7 +8278,10 @@
                 "slug": "portalAccessRequest",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
+                    ],
+                    "export": [
+                        "portaliq-medewerkers"
                     ]
                 },
                 "icon": "AccountKey",
@@ -8249,7 +8367,10 @@
                 "slug": "portalFormBinding",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
+                    ],
+                    "export": [
+                        "portaliq-medewerkers"
                     ]
                 },
                 "icon": "FormSelect",
@@ -8634,7 +8755,10 @@
                 "slug": "portalIntakeSubmission",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
+                    ],
+                    "export": [
+                        "portaliq-medewerkers"
                     ]
                 },
                 "icon": "FormSelect",
@@ -8828,7 +8952,10 @@
                     ],
                     "create": [],
                     "update": [],
-                    "delete": []
+                    "delete": [],
+                    "export": [
+                        "admin"
+                    ]
                 },
                 "description": "The text of one kind of mail a portal sends, replacing the default text for that portal only. One row per portal and template key. The mail names the kind of change and links to the case: no variable carries a field value of a record. Removing the row brings the default text back.",
                 "type": "object",
@@ -8889,7 +9016,10 @@
                     ],
                     "create": [],
                     "update": [],
-                    "delete": []
+                    "delete": [],
+                    "export": [
+                        "admin"
+                    ]
                 },
                 "description": "One mail the portal sent: when, to whom (masked), which kind of mail, for which case and what became of it. Kept 90 days, then removed by a daily job. The full address and the text of the mail are never stored here.",
                 "type": "object",
@@ -8982,6 +9112,9 @@
                 "authorization": {
                     "read": [
                         "admin"
+                    ],
+                    "export": [
+                        "admin"
                     ]
                 },
                 "description": "One frequently asked question with its answer, written once and shown on every page it belongs to. Only a published entry is served on the public site.",
@@ -9054,6 +9187,9 @@
                 "title": "Product finder",
                 "authorization": {
                     "read": [
+                        "admin"
+                    ],
+                    "export": [
                         "admin"
                     ]
                 },
@@ -9157,7 +9293,10 @@
                 "title": "Shared block",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
+                    ],
+                    "export": [
+                        "portaliq-medewerkers"
                     ]
                 },
                 "description": "A named block of widgets that belongs to one organisation and to no portal. A page places it by its id and the content API expands the placement when the page is read, so one edit shows on every portal of the organisation that places it. A block never renders on a portal of another organisation.",
@@ -9304,7 +9443,10 @@
                 "slug": "changeProposal",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
+                    ],
+                    "export": [
+                        "portaliq-medewerkers"
                     ]
                 },
                 "icon": "FileDocumentEdit",
@@ -9427,7 +9569,10 @@
                 "slug": "portalPoll",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
+                    ],
+                    "export": [
+                        "portaliq-medewerkers"
                     ]
                 },
                 "icon": "FormSelect",
@@ -9516,7 +9661,10 @@
                 "slug": "portalPollResponse",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
+                    ],
+                    "export": [
+                        "portaliq-medewerkers"
                     ]
                 },
                 "icon": "FormSelect",
@@ -9561,7 +9709,10 @@
                 "slug": "portalReport",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
+                    ],
+                    "export": [
+                        "portaliq-medewerkers"
                     ]
                 },
                 "icon": "ShieldAccount",
@@ -9668,6 +9819,9 @@
                 "authorization": {
                     "read": [
                         "admin"
+                    ],
+                    "export": [
+                        "admin"
                     ]
                 },
                 "icon": "AccountLock",
@@ -9709,7 +9863,10 @@
                 "slug": "portalReportMessage",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
+                    ],
+                    "export": [
+                        "portaliq-medewerkers"
                     ]
                 },
                 "icon": "MessageText",
@@ -9770,7 +9927,10 @@
                 "slug": "portalRevealRequest",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
+                    ],
+                    "export": [
+                        "portaliq-medewerkers"
                     ]
                 },
                 "icon": "EyeLock",
@@ -9860,11 +10020,14 @@
                 "title": "News item",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
                     ],
                     "create": [],
                     "update": [],
-                    "delete": []
+                    "delete": [],
+                    "export": [
+                        "portaliq-medewerkers"
+                    ]
                 },
                 "description": "A news item authored by staff and targeted at a school, one or more groups, or specific children (news-and-newsletter-authoring, findings 9.1). Read by a guardian ONLY when `target` intersects their own resolved audience (NewsAudienceMatcher) — never a broadcast-to-everyone fallback, the gap RosarioSIS's Portal Notes shows (rosariosis/round1/journeys.md J6).",
                 "type": "object",
@@ -10020,11 +10183,14 @@
                 "title": "Newsletter",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
                     ],
                     "create": [],
                     "update": [],
-                    "delete": []
+                    "delete": [],
+                    "export": [
+                        "portaliq-medewerkers"
+                    ]
                 },
                 "description": "A newsletter composed from existing newsItem objects, sent per school or group with a recipient-count preflight (findings 9.2; the Gibbon Messenger preflight pattern, gibbon/round1/pages/Messenger.md).",
                 "type": "object",
@@ -10107,7 +10273,10 @@
                 "title": "Guardian audience fixture (interim)",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
+                    ],
+                    "export": [
+                        "portaliq-medewerkers"
                     ]
                 },
                 "description": "INTERIM stand-in for learniq's portal-contribution-guardian-audiences change (another lane, in flight, see design.md 'Audience source seam' in openspec/changes/news-and-newsletter-authoring/). Never publicly readable — read only server-side by GuardianAudienceFixtureReader. Delete this schema and repoint the reader at learniq's real collection once that change ships.",
@@ -10169,11 +10338,14 @@
                 "title": "Event",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
                     ],
                     "create": [],
                     "update": [],
-                    "delete": []
+                    "delete": [],
+                    "export": [
+                        "portaliq-medewerkers"
+                    ]
                 },
                 "description": "A school/group/child-targeted event with optional guardian RSVP and sign-up roles for volunteers/materials (events-and-signups, findings 9.6, 9.8).",
                 "type": "object",
@@ -10346,11 +10518,14 @@
                 "title": "Event RSVP",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
                     ],
                     "create": [],
                     "update": [],
-                    "delete": []
+                    "delete": [],
+                    "export": [
+                        "portaliq-medewerkers"
+                    ]
                 },
                 "description": "One guardian's RSVP for one child on one event. Upserted by EventRsvpService — a second RSVP for the same guardian+child+event updates rather than duplicates.",
                 "type": "object",
@@ -10408,11 +10583,14 @@
                 "title": "Event sign-up",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
                     ],
                     "create": [],
                     "update": [],
-                    "delete": []
+                    "delete": [],
+                    "export": [
+                        "portaliq-medewerkers"
+                    ]
                 },
                 "description": "One guardian's sign-up for one role on one event (activiteitenplanner/ouderhulp). Capacity is enforced server-side by EventSignupService BEFORE this object is written.",
                 "type": "object",
@@ -10463,11 +10641,14 @@
                 "title": "Message thread",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
                     ],
                     "create": [],
                     "update": [],
-                    "delete": []
+                    "delete": [],
+                    "export": [
+                        "portaliq-medewerkers"
+                    ]
                 },
                 "description": "A guardian-participant message thread (guardian-direct-messages, finding 9.3). `direct` names two explicit participants; `group` scopes participation to a group via GroupStaffFixtureReader (staff) / GuardianAudienceFixtureReader (guardians). Read/write is never enforced by this schema's own authorization block alone — InAppMessagingLeaf re-verifies participation server-side on every call.",
                 "type": "object",
@@ -10545,11 +10726,14 @@
                 "title": "Message",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
                     ],
                     "create": [],
                     "update": [],
-                    "delete": []
+                    "delete": [],
+                    "export": [
+                        "portaliq-medewerkers"
+                    ]
                 },
                 "description": "One message in a messageThread. `readBy` is server-managed (idempotent append by InAppMessagingLeaf::markThreadRead); never client-writable.",
                 "type": "object",
@@ -10607,11 +10791,14 @@
                 "title": "Group staff fixture (interim)",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
                     ],
                     "create": [],
                     "update": [],
-                    "delete": []
+                    "delete": [],
+                    "export": [
+                        "portaliq-medewerkers"
+                    ]
                 },
                 "description": "INTERIM stand-in for 'which staff teach which group', analogous to guardianAudienceFixture, pending learniq's real staff-assignment data. Never publicly readable; read only server-side by GroupStaffFixtureReader.",
                 "type": "object",
@@ -10646,11 +10833,14 @@
                 "title": "Push subscription",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
                     ],
                     "create": [],
                     "update": [],
-                    "delete": []
+                    "delete": [],
+                    "export": [
+                        "portaliq-medewerkers"
+                    ]
                 },
                 "description": "A guardian's Web Push subscription endpoint (push-notifications-quiet-hours, finding 9.14). The real Web Push transport is out of scope for this change (LoggingPushSender is the interim implementation); this schema exists so subscriptions are captured now.",
                 "type": "object",
@@ -10713,11 +10903,14 @@
                 "title": "Notification quiet hours",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
                     ],
                     "create": [],
                     "update": [],
-                    "delete": []
+                    "delete": [],
+                    "export": [
+                        "portaliq-medewerkers"
+                    ]
                 },
                 "description": "One subject's (guardian or staff) configured quiet-hours window, HH:MM 24h strings. Read/written EXCLUSIVELY through QuietHoursPolicy — the single source of truth for the quiet-hours rule (push-notifications-quiet-hours).",
                 "type": "object",
@@ -10753,11 +10946,14 @@
                 "title": "Pending push",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
                     ],
                     "create": [],
                     "update": [],
-                    "delete": []
+                    "delete": [],
+                    "export": [
+                        "portaliq-medewerkers"
+                    ]
                 },
                 "description": "A non-emergency push deferred because the subject was in quiet hours when PushDeliveryService::deliver() was called. PendingPushDeliveryJob delivers it once `deliverAfter` is reached; never dropped.",
                 "type": "object",
@@ -10804,11 +11000,14 @@
                 "title": "Activity",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
                     ],
                     "create": [],
                     "update": [],
-                    "delete": []
+                    "delete": [],
+                    "export": [
+                        "portaliq-medewerkers"
+                    ]
                 },
                 "description": "A club, course or series of trips that runs for a term, with places, sessions, supervisors and a waiting list (extracurricular-activity-offer). It holds no amount: a place that costs money is paid through a shillinq payment request.",
                 "type": "object",
@@ -11025,7 +11224,10 @@
                     ],
                     "create": [],
                     "update": [],
-                    "delete": []
+                    "delete": [],
+                    "export": [
+                        "admin"
+                    ]
                 },
                 "description": "One child's place, or spot on the waiting list, for one activity, signed up by one of their guardians. Written by ActivitySignupService after it has counted the places.",
                 "type": "object",
@@ -11129,7 +11331,10 @@
                     ],
                     "create": [],
                     "update": [],
-                    "delete": []
+                    "delete": [],
+                    "export": [
+                        "admin"
+                    ]
                 },
                 "description": "Whether a child with a place was there for one session of an activity. One row per activity, session and child; a second mark updates it.",
                 "type": "object",
@@ -11186,6 +11391,9 @@
                 "slug": "portalAvailabilityDaily",
                 "authorization": {
                     "read": [
+                        "admin"
+                    ],
+                    "export": [
                         "admin"
                     ]
                 },
@@ -11260,6 +11468,9 @@
                 "authorization": {
                     "read": [
                         "admin"
+                    ],
+                    "export": [
+                        "admin"
                     ]
                 },
                 "icon": "ChartLine",
@@ -11318,11 +11529,14 @@
                 "title": "Portal notice",
                 "authorization": {
                     "read": [
-                        "authenticated"
+                        "portaliq-medewerkers"
                     ],
                     "create": [],
                     "update": [],
-                    "delete": []
+                    "delete": [],
+                    "export": [
+                        "portaliq-medewerkers"
+                    ]
                 },
                 "description": "A maintenance or warning notice shown above every page of a portal for a set period (operate-maintenance-notice). Written by the page editor groups (PageEditorService). The public never read this schema through OpenRegister: the site and the signed-in portal receive only the notices that are published and running now, from portaliq's own endpoints. portaliq refuses a notice whose end is not after its start (NoticeWriteGuardListener).",
                 "type": "object",
@@ -11428,7 +11642,10 @@
                     ],
                     "create": [],
                     "update": [],
-                    "delete": []
+                    "delete": [],
+                    "export": [
+                        "admin"
+                    ]
                 },
                 "description": "One step a resident keeps on their own list, optionally given to an approved contact (personal-action-list). Read and written only through portaliq's own contribution, scoped on the owner and the assignee; the history is OpenRegister's audit trail of the object. An assignee who is not the owner may change status, file and description, never the assignee, and never delete.",
                 "type": "object",
@@ -11537,7 +11754,10 @@
                     ],
                     "create": [],
                     "update": [],
-                    "delete": []
+                    "delete": [],
+                    "export": [
+                        "admin"
+                    ]
                 },
                 "description": "The half-filled answers of a create or endpoint action, kept for the signed-in resident who typed them (site-multi-step-forms). Read and written only through portaliq's own draft routes, scoped to the subject, never sent to the contributing app. Removed when the action is sent and by the purge job after the retention the action declared. File answers are not kept.",
                 "type": "object",
@@ -11600,7 +11820,10 @@
                     ],
                     "create": [],
                     "update": [],
-                    "delete": []
+                    "delete": [],
+                    "export": [
+                        "admin"
+                    ]
                 },
                 "description": "One run of the accessibility measurement on a portal's own pages (site-accessibility-statement). An administrator runs axe-core in their own browser over the home page, the search page, a publication page, the not-found page and the pages they added; portaliq stores what it found. The public accessibility statement is generated from the latest run. A page that could not be measured is kept with its reason and never counts as passing.",
                 "type": "object",

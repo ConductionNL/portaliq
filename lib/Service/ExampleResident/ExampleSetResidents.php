@@ -6,8 +6,8 @@
  * The example residents of portaliq's example-set fragments, as installed by
  * OpenRegister's example-set loader. A fragment in
  * `lib/Settings/example-sets/<set>.json` names its resident in
- * `exampleResident`: the portal, the key of the portal account object and the
- * key of the change that added the sign-in mode. Who the resident is comes
+ * `exampleResident`: per resident the portal, its cast key, the key of its
+ * portal account object and the demo card. Who the resident is comes
  * from OpenRegister's install record of the set, which only `occ` writes: the
  * portal account must be an object the set recorded, and its account id must
  * be an account the set created or adopted. A portal account somebody else
@@ -80,44 +80,57 @@ class ExampleSetResidents {
 	}//end available()
 
 	/**
-	 * The installed example resident of a portal, or null.
+	 * The installed example residents of a portal, in the order the fragment
+	 * declares them. A fragment may declare one resident (an object) or
+	 * several (a list); each must pass the same test: its portal account is an
+	 * object the set recorded, and that account's id is one the set created or
+	 * adopted. One that fails is left out, the others stand.
 	 *
 	 * @param string $portal The portal's slug.
 	 *
-	 * @return array{set: string, uid: string, mode: string, modeAdded: bool}|null The set id, the Nextcloud account id,
-	 *         the sign-in mode, and whether the set added that mode to the portal.
+	 * @return list<array{set: string, key: string, uid: string, name: string, card: array<string, string>}>
+	 *         The set id, the resident's key (its cast key), the Nextcloud account id, the name on the
+	 *         portal account, and the demo card the fragment wrote.
 	 *
-	 * @spec openspec/changes/resident-on-example-set/specs/example-resident/spec.md#requirement-the-example-resident-comes-from-the-example-set
+	 * @spec openspec/changes/demo-sign-in-beside-the-account/specs/example-resident/spec.md#requirement-a-demo-may-sign-in-each-example-resident-with-one-click
 	 */
-	public function forPortal(string $portal): ?array {
+	public function residentsOf(string $portal): array {
 		$records = $this->recordService();
 		if ($records === null || $portal === '') {
-			return null;
+			return [];
 		}
 
-		foreach ($this->declared() as $set => $resident) {
-			if ($resident['portal'] !== $portal) {
-				continue;
-			}
+		$found = [];
+		foreach ($this->declared() as $set => $residents) {
+			$record = null;
+			foreach ($residents as $resident) {
+				if ($resident['portal'] !== $portal) {
+					continue;
+				}
 
-			$uid = $this->installedUid(record: $this->read(records: $records, set: $set), resident: $resident);
-			if ($uid !== '') {
-				return [
-					'set'       => $set,
-					'uid'       => $uid,
-					'mode'      => $resident['mode'],
-					'modeAdded' => isset($this->read(records: $records, set: $set)['changes'][self::APP.'/'.$resident['signIn']]),
+				$record ??= $this->read(records: $records, set: $set);
+				$account  = $this->installedAccount(record: $record, resident: $resident);
+				if ($account === null) {
+					continue;
+				}
+
+				$found[] = [
+					'set'  => $set,
+					'key'  => $resident['key'],
+					'uid'  => $account['uid'],
+					'name' => $account['name'],
+					'card' => $resident['card'],
 				];
 			}
 		}
 
-		return null;
-	}//end forPortal()
+		return $found;
+	}//end residentsOf()
 
 	/**
-	 * The `exampleResident` of every shipped fragment, by set id.
+	 * The `exampleResident` entries of every shipped fragment, by set id.
 	 *
-	 * @return array<string, array{portal: string, account: string, signIn: string, mode: string}>
+	 * @return array<string, list<array{portal: string, key: string, account: string, card: array<string, string>}>>
 	 */
 	private function declared(): array {
 		$folder = $this->folder;
@@ -133,44 +146,85 @@ class ExampleSetResidents {
 
 		foreach ($files as $file) {
 			$fragment = json_decode((string)file_get_contents($file), true);
-			$resident = (array)($fragment['exampleResident'] ?? []);
-			if (is_string($resident['portal'] ?? null) === false || is_string($resident['account'] ?? null) === false) {
+			$entries  = ($fragment['exampleResident'] ?? []);
+			if (is_array($entries) === false) {
 				continue;
 			}
 
-			$declared[basename($file, '.json')] = [
-				'portal'  => $resident['portal'],
-				'account' => $resident['account'],
-				'signIn'  => (string)($resident['signIn'] ?? ''),
-				'mode'    => (string)($resident['mode'] ?? ''),
-			];
+			// One resident may be written as an object, several as a list.
+			if (array_is_list($entries) === false) {
+				$entries = [$entries];
+			}
+
+			$residents = [];
+			foreach ($entries as $entry) {
+				$resident = $this->entry(entry: $entry);
+				if ($resident !== null) {
+					$residents[] = $resident;
+				}
+			}
+
+			$declared[basename($file, '.json')] = $residents;
 		}
 
 		return $declared;
 	}//end declared()
 
 	/**
-	 * The account id of the recorded portal account, when the set made or adopted that account; '' otherwise.
+	 * One declared resident, or null when it names no portal or no portal account.
 	 *
-	 * @param array<string, mixed>  $record   The set's install record.
-	 * @param array<string, string> $resident The fragment's `exampleResident`.
+	 * @param mixed $entry One entry of `exampleResident`.
 	 *
-	 * @return string
+	 * @return array{portal: string, key: string, account: string, card: array<string, string>}|null
 	 */
-	private function installedUid(array $record, array $resident): string {
+	private function entry(mixed $entry): ?array {
+		if (is_array($entry) === false || is_string($entry['portal'] ?? null) === false || is_string($entry['account'] ?? null) === false) {
+			return null;
+		}
+
+		$card = [];
+		foreach (['title', 'text', 'button'] as $field) {
+			if (is_string($entry['card'][$field] ?? null) === true && trim($entry['card'][$field]) !== '') {
+				$card[$field] = trim($entry['card'][$field]);
+			}
+		}
+
+		$key = $entry['account'];
+		if (is_string($entry['cast'] ?? null) === true && $entry['cast'] !== '') {
+			$key = $entry['cast'];
+		}
+
+		return ['portal' => $entry['portal'], 'key' => $key, 'account' => $entry['account'], 'card' => $card];
+	}//end entry()
+
+	/**
+	 * The account id and name of the recorded portal account, when the set
+	 * made or adopted that account id; null otherwise.
+	 *
+	 * @param array<string, mixed>                 $record   The set's install record.
+	 * @param array{account: string, key: string} $resident One declared resident.
+	 *
+	 * @return array{uid: string, name: string}|null
+	 */
+	private function installedAccount(array $record, array $resident): ?array {
 		$held = ($record['objects'][self::APP.'/'.$resident['account']] ?? null);
 		if (is_array($held) === false || ($held['schema'] ?? '') !== 'portalAccount') {
-			return '';
+			return null;
 		}
 
 		$account = $this->store->get(register: (string)$held['register'], schema: 'portalAccount', id: (string)$held['id']);
 		$uid     = (string)($account['subjectRef'] ?? '');
 		if ($uid === '' || isset($record['users'][$uid]) === false) {
-			return '';
+			return null;
 		}
 
-		return $uid;
-	}//end installedUid()
+		$name = trim((string)($account['displayName'] ?? ''));
+		if ($name === '') {
+			$name = $uid;
+		}
+
+		return ['uid' => $uid, 'name' => $name];
+	}//end installedAccount()
 
 	/**
 	 * One set's install record, or an empty one.

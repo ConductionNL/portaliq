@@ -6,6 +6,7 @@
     "portal": {
         "slug": "zuiddrecht",
         "title": "Gemeente Zuiddrecht",
+        "organisation": "zuiddrecht",
         "status": "published",
         "kind": "site",
         "theme": "zuiddrecht",
@@ -37,7 +38,7 @@
                 "title": "Inloggen op Mijn Zuiddrecht",
                 "intro": "Kies hoe u inlogt. Als inwoner gebruikt u DigiD. Namens een bedrijf gebruikt u eHerkenning.",
                 "notice": {
-                    "text": "Geen DigiD? Bel [telefoonnummer]. Wij helpen u op een andere manier."
+                    "text": "Geen DigiD? Bel 14 0999. Wij helpen u op een andere manier."
                 }
             }
         },
@@ -103,13 +104,13 @@
                 "title": "Contact",
                 "lines": [
                     {
-                        "text": "Telefoon: [telefoonnummer]"
+                        "text": "Telefoon: 14 0999 (voorbeeldnummer)"
                     },
                     {
-                        "text": "E-mail: [e-mailadres]"
+                        "text": "E-mail: info@zuiddrecht.example"
                     },
                     {
-                        "text": "Stadskantoor: [adres]"
+                        "text": "Stadskantoor: Lindelaan 1, Zuiddrecht"
                     }
                 ]
             }
@@ -974,7 +975,7 @@
                         "gridWidth": 8,
                         "gridHeight": 1,
                         "props": {
-                            "text": "Is er direct gevaar? Bel dan [telefoonnummer]."
+                            "text": "Is er direct gevaar? Bel dan 112."
                         }
                     },
                     {
@@ -1021,7 +1022,7 @@
                         "gridWidth": 8,
                         "gridHeight": 1,
                         "props": {
-                            "text": "U maakt een afspraak per telefoon, op werkdagen van 8.30 tot 17.00 uur. Bel [telefoonnummer]."
+                            "text": "U maakt een afspraak per telefoon, op werkdagen van 8.30 tot 17.00 uur. Bel 14 0999."
                         }
                     },
                     {
@@ -1267,6 +1268,11 @@
                                     "href": "/bestuur/vergaderingen"
                                 },
                                 {
+                                    "label": "Besluiten",
+                                    "href": "/bestuur/besluiten",
+                                    "requiresApp": "decidiq"
+                                },
+                                {
                                     "label": "Raadsleden",
                                     "href": "/bestuur/raadsleden"
                                 },
@@ -1358,19 +1364,44 @@
                         "gridWidth": 8,
                         "gridHeight": 1,
                         "props": {
-                            "text": "De agenda en de stukken staan een week van tevoren bij de openbare informatie."
+                            "text": "Kies een vergadering om de agenda te lezen. De agenda staat er een week van tevoren."
                         }
+                    },
+                    {
+                        "id": "zd-vergaderingen-04-publicrecords",
+                        "widgetKey": "publicRecords",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 12,
+                        "gridHeight": 6,
+                        "props": {
+                            "app": "decidiq",
+                            "list": "publicMeetings",
+                            "searchLabel": "Zoek een vergadering",
+                            "backText": "Alle vergaderingen"
+                        },
+                        "requiresApp": "decidiq"
                     },
                     {
                         "id": "zd-vergaderingen-03-nllinklist",
                         "widgetKey": "nlLinkList",
                         "gridX": 0,
-                        "gridY": 2,
+                        "gridY": 8,
                         "gridWidth": 8,
                         "gridHeight": 3,
                         "props": {
                             "heading": "Lees ook",
                             "links": [
+                                {
+                                    "label": "Besluiten van raad en college",
+                                    "href": "/bestuur/besluiten",
+                                    "requiresApp": "decidiq"
+                                },
+                                {
+                                    "label": "Hoe stemden de raadsleden",
+                                    "href": "/bestuur/hoe-stemden-de-raadsleden",
+                                    "requiresApp": "decidiq"
+                                },
                                 {
                                     "label": "Zoeken in Woo-publicaties",
                                     "href": "/zoeken"
@@ -1416,6 +1447,7 @@
                         "props": {
                             "app": "decidiq",
                             "list": "memberVotingRecords",
+                            "searchLabel": "Zoek een raadslid",
                             "backText": "Alle raadsleden"
                         }
                     }
@@ -1614,6 +1646,74 @@
                         "props": {
                             "heading": "Lees ook",
                             "links": [
+                                {
+                                    "label": "Alle besluiten van raad en college",
+                                    "href": "/bestuur/besluiten",
+                                    "requiresApp": "decidiq"
+                                },
+                                {
+                                    "label": "Zoeken in Woo-publicaties",
+                                    "href": "/zoeken"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/bestuur/besluiten",
+            "title": "Besluiten van raad en college",
+            "summary": "Wat de gemeenteraad en het college hebben besloten.",
+            "status": "published",
+            "locale": "nl",
+            "requiresApp": "decidiq",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-besluiten-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Kies een besluit en lees wat er is besloten. Bij een besluit van de raad staat ook hoe er is gestemd."
+                        }
+                    },
+                    {
+                        "id": "zd-besluiten-02-publicrecords",
+                        "widgetKey": "publicRecords",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 12,
+                        "gridHeight": 6,
+                        "props": {
+                            "app": "decidiq",
+                            "list": "publicDecisions",
+                            "searchLabel": "Zoek een besluit",
+                            "backText": "Alle besluiten"
+                        }
+                    },
+                    {
+                        "id": "zd-besluiten-03-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 0,
+                        "gridY": 7,
+                        "gridWidth": 8,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Lees ook",
+                            "links": [
+                                {
+                                    "label": "Vergaderingen en stukken",
+                                    "href": "/bestuur/vergaderingen"
+                                },
+                                {
+                                    "label": "Hoe stemden de raadsleden",
+                                    "href": "/bestuur/hoe-stemden-de-raadsleden"
+                                },
                                 {
                                     "label": "Zoeken in Woo-publicaties",
                                     "href": "/zoeken"
@@ -2242,7 +2342,7 @@
                         "gridWidth": 8,
                         "gridHeight": 1,
                         "props": {
-                            "text": "Mail uw melding naar [e-mailadres]. U krijgt binnen drie werkdagen antwoord."
+                            "text": "Mail uw melding naar info@zuiddrecht.example. U krijgt binnen drie werkdagen antwoord."
                         }
                     }
                 ]
@@ -2391,6 +2491,7 @@
                             "display": "card",
                             "tone": "outline",
                             "intro": "Log in om deze publicatie in uw eigen dossier te bewaren.",
+                            "signedInIntro": "U bent ingelogd. Uw dossiers vindt u in Mijn Zuiddrecht.",
                             "buttonLabel": "Inloggen en bewaren"
                         }
                     },

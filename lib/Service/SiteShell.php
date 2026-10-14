@@ -300,10 +300,11 @@ class SiteShell {
 	 * `/portal` uses, so the two surfaces offer the same ways in.
 	 *
 	 * @return array{devLogin: bool, silentSignIn: string, signinOrganisation: string, audience: string,
-	 *               waysIn: array<string, mixed>, exampleResident: string, exampleResidentWayIn: string}
+	 *               waysIn: array<string, mixed>, exampleResident: string, exampleResidents: list<array<string, mixed>>}
 	 *
 	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T07
+	 * @spec openspec/changes/demo-sign-in-beside-the-account/specs/example-resident/spec.md#requirement-a-demo-may-sign-in-each-example-resident-with-one-click
 	 */
 	private function siteSignin(): array {
 		$portal = $this->configResolver->resolvePortal(
@@ -320,10 +321,9 @@ class SiteShell {
 			'audience'             => (string)($config['audience'] ?? ''),
 			// The doors besides the sign-in buttons (identity-ways-in-screens T07).
 			'waysIn'               => (array)($config['waysIn'] ?? []),
-			// One click on a demo for the example resident (example-resident-demo-login).
+			// One click on a demo per example resident (demo-sign-in-beside-the-account).
 			'exampleResident'      => (string)($config['exampleResident'] ?? ''),
-			// The way in its install added, left out while the demo switch is off.
-			'exampleResidentWayIn' => (string)($config['exampleResidentWayIn'] ?? ''),
+			'exampleResidents'     => array_values((array)($config['exampleResidents'] ?? [])),
 		];
 	}//end siteSignin()
 
