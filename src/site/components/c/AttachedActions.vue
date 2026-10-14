@@ -111,6 +111,7 @@ import {
 	fieldConfig,
 	fieldErrors,
 	formFields,
+	forwardResult,
 	serverFieldErrors,
 	translatorOr,
 } from './forms.js'
@@ -223,9 +224,10 @@ export default {
 		 * result shape the action form reads.
 		 *
 		 * @param {object} body What the resident answered.
-		 * @return {Promise<{ok: boolean, object: object, errors: object}>} The result.
+		 * @return {Promise<{ok: boolean, status: number, object: object, errors: object, invalid: object}>} The result.
 		 *
 		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
+		 * @spec openspec/changes/endpoint-action-forms-keep-their-field-shape/specs/site-forms/spec.md#requirement-a-refusal-of-a-form-attached-to-a-record-lands-on-its-field-req-eaf-003
 		 */
 		async sendOpen(body) {
 			const result = await runAttachedAction(
@@ -235,11 +237,15 @@ export default {
 				this.open,
 				body,
 			)
-			return {
+			// The status and the app's per-field refusal (`errors`,
+			// `invalid`) go to the form as an endpoint form gets them
+			// (forwardResult), so a refused answer lands on its field instead
+			// of reading "Opslaan is niet gelukt".
+			return forwardResult({
 				ok: result.ok,
-				object: result.body,
-				errors: (result.body && result.body.errors) || {},
-			}
+				status: result.status,
+				body: result.body,
+			})
 		},
 
 		/**

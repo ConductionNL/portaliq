@@ -60,18 +60,27 @@ export function attachedActionsOf(collection, row) {
 }
 
 /**
- * The forwarded body: the declared fields only, trimmed.
+ * The forwarded body: the declared fields only, trimmed. A field answered with
+ * several choices stays a list, so the app reads each choice rather than one
+ * comma-joined string it does not know.
  *
  * @param {object} action The attached action.
  * @param {object} values What the resident typed.
  * @return {object} The body.
+ * @spec openspec/changes/endpoint-action-forms-keep-their-field-shape/specs/site-forms/spec.md#requirement-a-form-attached-to-a-record-asks-and-sends-what-its-action-declares-req-eaf-002
  */
 export function attachedBody(action, values) {
 	const body = {}
 	for (const field of Array.isArray(action.fields) ? action.fields : []) {
-		if (typeof field === 'string') {
-			body[field] = String((values || {})[field] ?? '').trim()
+		if (typeof field !== 'string') {
+			continue
 		}
+		const value = (values || {})[field]
+		body[field] = Array.isArray(value)
+			? value
+					.map((item) => String(item ?? '').trim())
+					.filter((item) => item !== '')
+			: String(value ?? '').trim()
 	}
 	return body
 }
@@ -118,6 +127,9 @@ export async function runAttachedAction(api, collection, row, action, values) {
 	)
 	return {
 		ok: result.ok === true,
+		// The status travels with the answer, so a form tells a refused
+		// answer (400) from a failure on the way (site-action-forms).
+		status: result.status || 0,
 		body: result.body || {},
 		messageKey: outcomeKey(result),
 	}

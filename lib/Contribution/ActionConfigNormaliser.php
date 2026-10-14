@@ -54,6 +54,14 @@ class ActionConfigNormaliser {
 	private const FIELD_SIZES = ['small', 'medium', 'large', 'full'];
 
 	/**
+	 * The input hints an action may declare on a field itself. A create
+	 * action gets its hint from the schema's format (SchemaInputHintNormaliser),
+	 * which wins; an endpoint action writes no schema here, so its own
+	 * declaration is the only place a date field can say it is a date.
+	 */
+	private const FIELD_INPUTS = ['date', 'datetime', 'number', 'email'];
+
+	/**
 	 * The form-shape pass: required fields, field widgets, steps. One
 	 * collaborator rather than three, so this class's dependencies stay
 	 * countable (phpmd CouplingBetweenObjects).
@@ -329,6 +337,7 @@ class ActionConfigNormaliser {
 	 * @spec openspec/changes/contribution-value-labels/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
 	 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
 	 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-word-its-own-error-req-smf-006
+	 * @spec openspec/changes/endpoint-action-forms-keep-their-field-shape/specs/site-forms/spec.md#requirement-an-endpoint-action-may-declare-a-fields-input-req-eaf-001
 	 */
 	private function fieldConfigEntry(string $field, array $config, array $mandatory, string $actionType = ''): array {
 		$entry = [];
@@ -342,6 +351,9 @@ class ActionConfigNormaliser {
 
 		$entry = $this->applyFieldFlags(entry: $entry, field: $field, config: $config, mandatory: $mandatory);
 		$entry['size'] = $this->values->oneOf(value: ($config['size'] ?? null), allowed: self::FIELD_SIZES, default: 'medium');
+		if (in_array(($config['input'] ?? null), self::FIELD_INPUTS, true) === true) {
+			$entry['input'] = $config['input'];
+		}
 		$entry = (new ValueLabelsNormaliser())->apply(entry: $entry, source: $config);
 		$entry = $this->form->fieldWidget(entry: $entry, config: $config);
 

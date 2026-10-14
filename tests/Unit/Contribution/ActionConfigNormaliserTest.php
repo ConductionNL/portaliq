@@ -451,6 +451,45 @@ class ActionConfigNormaliserTest extends TestCase {
 	}//end testOnlyCreateAndEndpointActionsRunInSteps()
 
 	/**
+	 * An endpoint action writes no schema, so its own `input` is the only way
+	 * a field says it is a date; a known hint is kept, anything else dropped
+	 * (endpoint-action-forms-keep-their-field-shape REQ-EAF-001).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/endpoint-action-forms-keep-their-field-shape/specs/site-forms/spec.md#requirement-an-endpoint-action-may-declare-a-fields-input-req-eaf-001
+	 */
+	public function testAnEndpointActionKeepsTheInputItDeclares(): void {
+		$action = $this->wooAction(
+			[
+				'fieldConfigs' => [
+					'periodeVan'   => ['label' => 'Vanaf welke datum?', 'input' => 'date'],
+					'omschrijving' => ['input' => 'colour'],
+					'onderwerp'    => ['input' => ['date']],
+				],
+			]
+		);
+
+		$this->assertSame('date', $action['fieldConfigs']['periodeVan']['input']);
+		$this->assertSame('Vanaf welke datum?', $action['fieldConfigs']['periodeVan']['label']);
+		$this->assertArrayNotHasKey('input', $action['fieldConfigs']['omschrijving'], 'an unknown hint is dropped');
+		$this->assertArrayNotHasKey('input', $action['fieldConfigs']['onderwerp'], 'a malformed hint is dropped');
+	}//end testAnEndpointActionKeepsTheInputItDeclares()
+
+	/**
+	 * On a create action the schema's format still decides the input.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/endpoint-action-forms-keep-their-field-shape/specs/site-forms/spec.md#requirement-an-endpoint-action-may-declare-a-fields-input-req-eaf-001
+	 */
+	public function testOnACreateActionTheSchemaDecidesTheInput(): void {
+		$configs = $this->absenceConfigs(['reason' => ['input' => 'date'], 'dateFrom' => ['input' => 'number']]);
+
+		$this->assertSame('date', $configs['dateFrom']['input'], 'the schema says date');
+	}//end testOnACreateActionTheSchemaDecidesTheInput()
+
+	/**
 	 * dossiq's Woo endpoint action, normalised.
 	 *
 	 * @param array<string, mixed> $overrides Keys to declare.
