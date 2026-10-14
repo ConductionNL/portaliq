@@ -27,6 +27,7 @@ use OCA\Portaliq\Service\PortalRegisterContext;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\SiteAddressing;
 use OCP\AppFramework\Bootstrap\IBootContext;
+use OCP\AppFramework\IAppContainer;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
@@ -301,7 +302,10 @@ class HostRootRedirectBootTest extends TestCase {
 		);
 
 		$redirect     = new HostRootRedirect(new SiteAddressing($resolver, $urlGenerator), $send);
-		$appContainer = $this->createMock(ContainerInterface::class);
+		// IAppContainer, not the bare ContainerInterface: Nextcloud 32 to 34
+		// declare getAppContainer() as returning IAppContainer, and 35 as
+		// ContainerInterface, which IAppContainer extends. One stand-in fits all.
+		$appContainer = $this->createMock(IAppContainer::class);
 		$appContainer->method('get')->willReturnMap(
 			[
 				[HostRootRedirect::class, $redirect],

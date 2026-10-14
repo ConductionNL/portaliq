@@ -3116,7 +3116,9 @@ OC.L10N.register(
         "The list to choose from could not be loaded.": "De lijst om uit te kiezen kon niet worden geladen.",
         "Or a web address": "Of een webadres",
         "A logo address starts with /, http:// or https://.": "Een logo-adres begint met /, http:// of https://.",
-        "A published image from Media of this portal, or the address of an image.": "Een gepubliceerde afbeelding uit Media van deze portal, of het adres van een afbeelding."
+        "A published image from Media of this portal, or the address of an image.": "Een gepubliceerde afbeelding uit Media van deze portal, of het adres van een afbeelding.",
+        "nl": "nl",
+        "https://www.example.nl": "https://www.voorbeeld.nl"
     },
     "nplurals=2; plural=(n != 1);"
 )
