@@ -10,6 +10,7 @@ use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
 use OCA\Portaliq\Service\PortalThemeResolver;
 use OCA\Portaliq\Service\PortalTokenCss;
+use OCA\Portaliq\Service\SiteAddressing;
 use OCA\Portaliq\Service\SiteShell;
 use OCA\Portaliq\Service\SiteShellTheme;
 use OCA\Portaliq\Service\Theme\PortalThemeParents;
@@ -24,6 +25,7 @@ use PHPUnit\Framework\TestCase;
  */
 #[CoversClass(SiteShell::class)]
 #[CoversClass(SiteShellTheme::class)]
+#[UsesClass(SiteAddressing::class)]
 #[UsesClass(PortalThemeParents::class)]
 #[UsesClass(PortalTokenCss::class)]
 class SiteShellTest extends TestCase {

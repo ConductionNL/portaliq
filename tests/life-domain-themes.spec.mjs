@@ -14,7 +14,14 @@
 
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { buildNav, shellSections } from '../src/shared/portalNav.js'
+import {
+	buildNav,
+	isThemeProductsRoute,
+	navEntryForRoute,
+	shellSections,
+	themeProductsRoute,
+} from '../src/shared/portalNav.js'
+import { accountRedirect } from '../src/site/lib/accountArea.js'
 import { residentMenuGroups } from '../src/site/lib/residentMenu.js'
 import {
 	countLine,
@@ -28,6 +35,7 @@ import {
 	whenHolds,
 } from '../src/site/pages/e/themes.js'
 import { sitePageLoader } from '../src/site/pages/registry.js'
+import { mountSfc } from './support/mount-sfc.mjs'
 import { loadSfc, renderSfc } from './support/render-sfc.mjs'
 
 const t = (key, vars = {}) => key.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? ''))
@@ -188,11 +196,16 @@ test('the page lists its blocks and says so when a theme has nothing for the res
 
 	vm.t = t
 	vm.day = TODAY
-	vm.showAll = false
+	vm.allProducts = false
 	const shown = page.methods.shownProducts.call(vm, vm.products[0])
 	assert.deepEqual(shown.map((s) => s.view.id), ['p1', 'p3', 'p2'])
 	assert.deepEqual(shown[0].actions.map((a) => a.id), ['plate'])
-	vm.showAll = true
+	vm.allProducts = true
+	assert.deepEqual(
+		page.methods.shownProducts.call(vm, vm.products[0]).map((s) => s.view.id),
+		['p1', 'p3', 'p2'],
+		'the full list holds every product, the expired one last',
+	)
 	assert.equal(page.methods.hasMore.call(vm, vm.products[0]), true, 'an expired product makes the full list worth a link')
 	assert.equal(page.methods.countLine.call(vm, vm.products[0]), '3 vergunningen')
 
@@ -230,4 +243,95 @@ test('an update writes through the contribution and the products are read again'
 	assert.equal(pageVm.editing, null)
 	assert.equal(pageVm.rows['dossiq:permits'][0].plate, 'GZ-519-T', 'the row shows the new value')
 	assert.equal(pageVm.notice, 'Your change is saved.')
+})
+
+// T05b: the full list of a theme's products is its own route.
+const THEME = { slug: 'parkeren', title: 'Parkeren', intro: 'Uw vergunningen.', productsLabel: 'parkeervergunningen' }
+
+/**
+ * The navigation of a resident for whom the server announced Parkeren.
+ *
+ * @return {Array<object>} The navigation.
+ */
+function navWithTheme() {
+	const sections = shellSections({ session: { subjectRef: 'a' }, contributions: { contributions: [], themes: [THEME] }, threads: [], news: [] })
+	return buildNav([], t, sections)
+}
+
+test('the full product list of a theme has its own route, which opens the theme page', () => {
+	const nav = navWithTheme()
+	const entry = nav.find((e) => e.theme)
+
+	assert.equal(themeProductsRoute(entry), '/mijn/thema/parkeren/producten')
+	assert.equal(themeProductsRoute(nav.find((e) => !e.theme)), '', 'only a theme has one')
+	assert.equal(themeProductsRoute(null), '')
+	assert.ok(navEntryForRoute(nav, '/mijn/thema/parkeren/producten') === entry)
+	assert.ok(navEntryForRoute(nav, '/mijn/thema/parkeren') === entry)
+	assert.equal(navEntryForRoute(nav, '/mijn/thema/wonen/producten'), null, 'a theme the server did not announce has no list')
+	assert.equal(navEntryForRoute(nav, '/mijn/thema/parkeren/anders'), null)
+	assert.equal(isThemeProductsRoute(entry, '/mijn/thema/parkeren'), false)
+	assert.equal(accountRedirect(nav, '/mijn/thema/parkeren/producten'), '', 'the route stays, it is not sent to the home')
+})
+
+/**
+ * Mount the theme page on a route, with four permits of which one has expired.
+ *
+ * @param {string} currentRoute The route on screen.
+ * @param {Array<object>} rows The permits the resident holds.
+ * @return {Promise<{page: object, went: Array<string>}>} The page and where it navigated.
+ */
+async function mountTheme(currentRoute, rows) {
+	const went = []
+	const entry = navWithTheme().find((e) => e.theme)
+	const page = await mountSfc('src/site/pages/e/ThemePage.vue', {
+		entry,
+		contributions: { contributions: CONTRIBUTIONS },
+		api: { fetchCollection: async (collection) => (collection.id === 'permits' ? rows : collection.id === 'parkingTasks' ? [{ id: 't1', title: 'Kenteken doorgeven', due: '2026-10-18' }] : []) },
+		t,
+		locale: 'nl',
+		today: TODAY,
+		currentRoute,
+		navigate: (target) => went.push(target),
+	})
+	for (let i = 0; i < 5; i++) {
+		await new Promise((resolve) => setTimeout(resolve, 10))
+		await page.flush()
+	}
+	return { page, went }
+}
+
+const FOUR = [...ROWS, { id: 'p4', name: 'Bezoekersvergunning', plate: '', start: '2026-01-01', end: '2026-12-31', type: 'bezoekers' }]
+
+test('the theme page shows three products and links to the full list', async () => {
+	const { page, went } = await mountTheme('/mijn/thema/parkeren', FOUR)
+
+	assert.equal(page.findAll((n) => n.props?.['data-testid'] === 'theme-product').length, 3)
+	assert.notEqual(page.find('theme-tasks'), null)
+	assert.equal(page.find('theme-back'), null)
+	assert.match(page.textOf(page.find('theme-all-products')), /View all parkeervergunningen/)
+
+	await page.fire(page.find('theme-all-products'), 'click')
+	assert.deepEqual(went, ['/mijn/thema/parkeren/producten'])
+})
+
+test('the full list shows every product, the expired one last, and nothing else of the theme', async () => {
+	const { page, went } = await mountTheme('/mijn/thema/parkeren/producten', FOUR)
+
+	const rows = page.findAll((n) => n.props?.['data-testid'] === 'theme-product')
+	assert.equal(rows.length, 4)
+	assert.match(page.textOf(rows[3]), /Oude vergunning/, 'the expired permit comes last')
+	assert.match(page.textOf(rows[3]), /Expired/)
+	assert.equal(page.find('theme-tasks'), null, 'tasks stay on the theme page')
+	assert.equal(page.find('theme-actions'), null)
+	assert.equal(page.find('theme-all-products'), null)
+
+	await page.fire(page.find('theme-back'), 'click')
+	assert.deepEqual(went, ['/mijn/thema/parkeren'])
+})
+
+test('the full list of a resident without products says so with the same empty text', async () => {
+	const { page } = await mountTheme('/mijn/thema/parkeren/producten', [])
+
+	assert.match(page.textOf(page.find('theme-empty')), /Nothing for you at Parkeren right now\./)
+	assert.equal(page.find('theme-tasks'), null)
 })

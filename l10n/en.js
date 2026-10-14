@@ -2949,7 +2949,14 @@ OC.L10N.register(
         "Wacht op bevestiging": "Waiting for confirmation",
         "Bevestiging mislukt": "Confirmation failed",
         "Alles": "All",
-        "Bevestigd": "Confirmed"
+        "Bevestigd": "Confirmed",
+        "{displayName}, namens {onBehalfOf}": "{displayName}, on behalf of {onBehalfOf}",
+        "{actionId}": "{actionId}",
+        "Nog niet ingelogd": "Not signed in yet",
+        "Served at the root": "Served at the root",
+        "Landing page": "Landing page",
+        "Whether a proxy in front of Nextcloud rewrites the short addresses of this host (/, /afval) to the site route. When true, the site writes its links and its canonical address as short addresses on this host. Leave false without such a proxy rule: the short addresses would not resolve. Read only from a verified domain.": "Whether a proxy in front of Nextcloud rewrites the short addresses of this host (/, /afval) to the site route. When true, the site writes its links and its canonical address as short addresses on this host. Leave false without such a proxy rule: the short addresses would not resolve. Read only from a verified domain.",
+        "The site page the bare address of this host opens, as a route with a leading slash. Empty means the home page. A host for the signed-in area names that area here. Read only from a verified domain.": "The site page the bare address of this host opens, as a route with a leading slash. Empty means the home page. A host for the signed-in area names that area here. Read only from a verified domain."
     },
     "nplurals=2; plural=(n != 1);"
 )

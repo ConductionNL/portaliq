@@ -3099,7 +3099,14 @@ OC.L10N.register(
         "Refuse with a reason": "Afwijzen met een reden",
         "Record a request": "Verzoek vastleggen",
         "Wacht op bevestiging": "Wacht op bevestiging",
-        "Bevestiging mislukt": "Bevestiging mislukt"
+        "Bevestiging mislukt": "Bevestiging mislukt",
+        "{displayName}, namens {onBehalfOf}": "{displayName}, namens {onBehalfOf}",
+        "{actionId}": "{actionId}",
+        "Nog niet ingelogd": "Nog niet ingelogd",
+        "Served at the root": "Op het hoofdadres",
+        "Landing page": "Landingspagina",
+        "Whether a proxy in front of Nextcloud rewrites the short addresses of this host (/, /afval) to the site route. When true, the site writes its links and its canonical address as short addresses on this host. Leave false without such a proxy rule: the short addresses would not resolve. Read only from a verified domain.": "Of een proxy voor Nextcloud de korte adressen van deze host (/, /afval) omschrijft naar de route van de site. Staat dit aan, dan schrijft de site haar links en haar vaste adres als korte adressen op deze host. Laat het uit zonder zo'n proxyregel: de korte adressen werken dan niet. Wordt alleen gelezen van een geverifieerd domein.",
+        "The site page the bare address of this host opens, as a route with a leading slash. Empty means the home page. A host for the signed-in area names that area here. Read only from a verified domain.": "De pagina van de site die het kale adres van deze host opent, als route die met een schuine streep begint. Leeg betekent de startpagina. Een host voor het ingelogde deel noemt dat deel hier. Wordt alleen gelezen van een geverifieerd domein."
     },
     "nplurals=2; plural=(n != 1);"
 )

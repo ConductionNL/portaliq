@@ -34,8 +34,16 @@
 		</p>
 
 		<template v-if="!loading">
+			<button
+				v-if="allProducts"
+				type="button"
+				class="utrecht-link utrecht-link--button pq-theme__link"
+				data-testid="theme-back"
+				@click="navigate(themeRoute)">
+				{{ t('Back to {theme}', { theme: theme.title }) }}
+			</button>
 			<section
-				v-if="tasks.length > 0"
+				v-if="tasks.length > 0 && !allProducts"
 				aria-labelledby="pq-theme-tasks"
 				data-testid="theme-tasks">
 				<h2 id="pq-theme-tasks" class="utrecht-heading-2">
@@ -63,7 +71,7 @@
 			</section>
 
 			<section
-				v-if="offered.length > 0"
+				v-if="offered.length > 0 && !allProducts"
 				aria-labelledby="pq-theme-actions"
 				data-testid="theme-actions">
 				<h2 id="pq-theme-actions" class="utrecht-heading-2">
@@ -145,17 +153,15 @@
 					</li>
 				</ul>
 				<button
-					v-if="hasMore(product)"
+					v-if="!allProducts && hasMore(product)"
 					type="button"
 					class="utrecht-link utrecht-link--button pq-theme__link"
 					data-testid="theme-all-products"
-					@click="showAll = !showAll">
+					@click="navigate(productsRoute)">
 					{{
-						showAll
-							? t('Show fewer')
-							: t('View all {products}', {
-									products: theme.productsLabel || t('products'),
-								})
+						t('View all {products}', {
+							products: theme.productsLabel || t('products'),
+						})
 					}}
 				</button>
 			</section>
@@ -165,6 +171,11 @@
 
 <script>
 import ProductUpdateForm from './ProductUpdateForm.vue'
+import {
+	isThemeProductsRoute,
+	routeForNav,
+	themeProductsRoute,
+} from '../../../shared/portalNav.js'
 import { longDate, readerLocale } from './format.js'
 import {
 	countLine,
@@ -193,8 +204,10 @@ export default {
 		api: { type: Object, required: true },
 		/** The translator `t(key, vars)`. */
 		t: { type: Function, required: true },
-		/** The shell's `navigate(key, params)`. */
+		/** The shell's `navigate(target)`: a navigation key or an in-site route. */
 		navigate: { type: Function, default: () => {} },
+		/** The route on screen; the theme's own route with `/producten` lists every product. */
+		currentRoute: { type: String, default: '' },
 		/** The reader's locale; the page's `<html lang>` when empty. */
 		locale: { type: String, default: '' },
 		/** Today as `YYYY-MM-DD` (test seam). */
@@ -206,12 +219,35 @@ export default {
 			loading: true,
 			rows: {},
 			editing: null,
-			showAll: false,
 			notice: '',
 		}
 	},
 
 	computed: {
+		/**
+		 * @return {string} The theme's own route.
+		 * @spec openspec/changes/life-domain-theme-pages/tasks.md#t05b
+		 */
+		themeRoute() {
+			return this.entry?.special ? routeForNav(this.entry) : ''
+		},
+
+		/**
+		 * @return {string} The route of the full product list of this theme.
+		 * @spec openspec/changes/life-domain-theme-pages/tasks.md#t05b
+		 */
+		productsRoute() {
+			return themeProductsRoute(this.entry)
+		},
+
+		/**
+		 * @return {boolean} Whether this is the full product list: every product, expired ones last, and nothing else.
+		 * @spec openspec/changes/life-domain-theme-pages/tasks.md#t05b
+		 */
+		allProducts() {
+			return isThemeProductsRoute(this.entry, this.currentRoute)
+		},
+
 		/**
 		 * @return {object} The theme: slug, title, intro, productsLabel.
 		 * @spec openspec/changes/life-domain-theme-pages/tasks.md#t03
@@ -280,6 +316,10 @@ export default {
 		 * @spec openspec/changes/life-domain-theme-pages/tasks.md#t03
 		 */
 		isEmpty() {
+			// The full product list is empty when the resident holds none.
+			if (this.allProducts) {
+				return this.products.length === 0
+			}
 			return (
 				this.tasks.length === 0
 				&& this.offered.length === 0
@@ -376,7 +416,7 @@ export default {
 		},
 
 		/**
-		 * The products to list: valid first, at most three unless the whole list is asked for.
+		 * The products to list: valid first, at most three; on the full list every one, expired last.
 		 *
 		 * @param {{app: string, collection: object, rows: Array<object>}} product A product collection with its rows.
 		 * @return {Array<{row: object, view: object, actions: Array<object>}>} The rows to show.
@@ -384,7 +424,7 @@ export default {
 		 */
 		shownProducts(product) {
 			const sorted = sortedProducts(product.rows, product.collection, this.day)
-			const list = this.showAll ? sorted : sorted.slice(0, PRODUCT_LIMIT)
+			const list = this.allProducts ? sorted : sorted.slice(0, PRODUCT_LIMIT)
 			return list.map((row) => ({
 				row,
 				view: productView(

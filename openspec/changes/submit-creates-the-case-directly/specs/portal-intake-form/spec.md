@@ -7,7 +7,7 @@
 
 ### Requirement: A form binding names its destination and is valid against it (REQ-PIFO-007)
 
-A `portalFormBinding` SHALL store `destination { register, schema }`, and MAY name `subjectField` (the property that holds the signed-in resident's subject reference), `paymentField` (the property the payment state is read from), `fields` (a form field written into a differently named property) and `fixed` (values every submit writes). Saving or publishing a binding SHALL run OpenRegister's form destination validator over the bound form. A binding with findings SHALL NOT be published, from the first release (decision 181); a binding in `draft` MAY be saved with its findings, which the preview shows (decision 189).
+A `portalFormBinding` SHALL store `destination { register, schema }`, and MAY name `subjectField` (the property that holds the signed-in resident's subject reference), `paymentField` (the property the payment state is read from), `fields` (a form field written into a differently named property) and `fixed` (values every submit writes). Saving or publishing a binding SHALL run OpenRegister's form destination validator over the bound form. A binding with findings SHALL NOT be published, from the first release (decision 181); a binding in `draft` MAY be saved with its findings, which the preview shows (decision 189). When OpenRegister asks which published forms write into a schema that is about to change (`FormDestinationDependentsEvent`), portaliq SHALL announce every published binding, of every portal, whose destination is that schema and that renders a form here, and SHALL set a binding back to `draft` when OpenRegister has it unpublished (decision 181).
 
 #### Scenario: A draft binding saves with its findings
 - **GIVEN** a binding in status `draft` whose form misses a required property of its destination
@@ -18,6 +18,12 @@ A `portalFormBinding` SHALL store `destination { register, schema }`, and MAY na
 - **GIVEN** a form that does not ask for `communicationChannel`, bound to a case type requiring it before creation
 - **WHEN** an administrator publishes the binding
 - **THEN** the publish is refused and the preview names `communicationChannel` as `required-unmapped`
+
+#### Scenario: The destination schema changes under a published binding
+- **GIVEN** a published binding whose form writes `toelichting` into its destination schema
+- **WHEN** OpenRegister is about to save that schema without `toelichting` and asks which published forms write into it
+- **THEN** portaliq announces the binding as a form of app `portaliq`, with the mapping a submit of it sends and audience `public`
+- **AND** when OpenRegister has the form unpublished, the binding goes back to `draft` and keeps everything else
 
 ### Requirement: A saved form is a draft of its destination object (REQ-PIFO-008)
 

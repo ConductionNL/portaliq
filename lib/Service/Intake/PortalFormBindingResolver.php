@@ -223,6 +223,35 @@ class PortalFormBindingResolver {
 	}//end publishedBindings()
 
 	/**
+	 * Every published binding, of every portal.
+	 *
+	 * For the one caller that asks about the whole instance: a destination
+	 * schema is about to change and its forms must be found, whichever
+	 * portal shows them. Never reached from a visitor's request.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-form-binding-names-its-destination-and-is-valid-against-it-req-pifo-007
+	 */
+	public function allPublishedBindings(): array {
+		$rows = $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'status',
+			subjectRef: 'published',
+			organisation: '',
+			limit: 500
+		);
+
+		return array_values(
+			array_filter(
+				$rows,
+				static fn ($row): bool => is_array($row) === true && (string)($row['status'] ?? 'draft') === 'published'
+			)
+		);
+	}//end allPublishedBindings()
+
+	/**
 	 * Whether a case type is inside the scope a portal declared.
 	 *
 	 * The reference-link route takes its register, schema and case type from

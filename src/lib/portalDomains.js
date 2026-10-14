@@ -4,7 +4,7 @@
  * Beheerders sections of the Instellingen tab are `field-list` widgets in the
  * manifest (PortalDetail, portal-domains and portal-editors).
  *
- * @spec openspec/changes/portal-domains-and-editors/specs/portal-settings/spec.md
+ * @spec openspec/specs/portal-settings/spec.md
  */
 
 /**
@@ -13,7 +13,7 @@
  * @param {object} domain The domain entry, with `certificateValidUntil` when probed.
  * @param {(date: Date) => string} format Formats a date, in the viewer's language.
  * @return {string|null} The end date formatted, or null when there is none.
- * @spec openspec/changes/portal-domains-and-editors/specs/portal-settings/spec.md
+ * @spec openspec/specs/portal-settings/spec.md
  */
 export function certificateEnd(domain, format) {
 	const until = domain?.certificateValidUntil
@@ -28,7 +28,7 @@ export function certificateEnd(domain, format) {
  *
  * @param {string} name The display name.
  * @return {string} Up to two capital letters.
- * @spec openspec/changes/portal-domains-and-editors/specs/portal-settings/spec.md
+ * @spec openspec/specs/portal-settings/spec.md
  */
 export function initials(name) {
 	return String(name || '')

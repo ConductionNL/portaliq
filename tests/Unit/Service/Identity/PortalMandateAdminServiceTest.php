@@ -22,6 +22,7 @@ use OCA\Portaliq\Service\Identity\PortalMandateService;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
+use Opis\JsonSchema\Validator;
 use PHPUnit\Framework\TestCase;
 
 class PortalMandateAdminServiceTest extends TestCase {
@@ -96,6 +97,88 @@ class PortalMandateAdminServiceTest extends TestCase {
 		$list = $service->given(self::COMPANY, 'gemeente-x', $this->now());
 		$this->assertSame(['mandate'], array_column($list, 'kind'), 'the accepted invitation is no longer pending');
 		$this->assertSame('active', $list[0]['state']);
+	}
+
+	/**
+	 * What invite, accept and revoke store is what the real register schemas
+	 * accept: a payload the schema refuses would pass every test above and
+	 * never be saved on a live portal.
+	 *
+	 * @return void
+	 */
+	public function testTheStoredInvitationAndMandateFitTheRealSchemas(): void {
+		$service = $this->service();
+		$tom     = ['subjectRef' => 'tom', 'provider' => 'digid', 'organisation' => 'gemeente-x'];
+
+		// With an end date and a scope, and without either.
+		$full = $service->invite(self::COMPANY, 'gemeente-x', 'jan-willem', ['email' => 'tom@example.nl', 'caseTypes' => ['bezwaar'], 'label' => 'Mag alleen bezwaren indienen en volgen', 'expiresAt' => '2027-06-30'], $this->now());
+		$bare = $service->invite(self::COMPANY, 'gemeente-x', 'jan-willem', ['email' => 'anna@example.nl'], $this->now());
+		foreach ($this->storedRows('portalInvitation') as $row) {
+			$this->assertSame([], $this->schemaProblems('portalInvitation', $row), 'a sent invitation');
+		}
+
+		$first = $service->accept($full['token'], $tom, $this->now());
+		$service->accept($bare['token'], ['subjectRef' => 'anna', 'provider' => 'digid', 'organisation' => 'gemeente-x'], $this->now());
+		$this->assertSame('', $service->revoke(self::COMPANY, 'gemeente-x', $first['id'], 'jan-willem', $this->now()));
+
+		$mandates = $this->storedRows('portalMandate');
+		$this->assertCount(2, $mandates);
+		$this->assertSame('revoked', $mandates[0]['status']);
+		$this->assertNotSame('', (string)$mandates[0]['invitationId']);
+		foreach ($mandates as $row) {
+			$this->assertSame([], $this->schemaProblems('portalMandate', $row), 'a mandate');
+		}
+
+		// The control: the check does refuse a state, a moment and a key the schema does not know.
+		$base = ['subjectRef' => 'tom', 'organisation' => 'gemeente-x'];
+		$this->assertSame(['enum at /status'], $this->schemaProblems('portalMandate', ($base + ['status' => 'paused'])));
+		$this->assertSame(['format at /revokedAt'], $this->schemaProblems('portalMandate', ($base + ['revokedAt' => 'gisteren'])));
+		$this->assertNotSame([], $this->schemaProblems('portalMandate', ($base + ['endedBy' => 'tom'])));
+
+		foreach ($this->storedRows('portalInvitation') as $row) {
+			$this->assertSame('accepted', $row['state']);
+			$this->assertSame([], $this->schemaProblems('portalInvitation', $row), 'an accepted invitation');
+		}
+	}
+
+	/**
+	 * What the real schema in the register says against a stored row.
+	 *
+	 * An empty string on a property that is not required is left out first,
+	 * as OpenRegister does before it validates (ValidateObject removes them).
+	 *
+	 * @param string               $schema The schema slug.
+	 * @param array<string, mixed> $row    The stored row.
+	 *
+	 * @return array<int, string> The keywords that failed; empty when the row fits.
+	 */
+	private function schemaProblems(string $schema, array $row): array {
+		$register = json_decode((string)file_get_contents(__DIR__ . '/../../../../lib/Settings/portaliq_register.json'), true);
+		$declared = $register['components']['schemas'][$schema];
+		$required = ($declared['required'] ?? []);
+		foreach ($row as $key => $value) {
+			$internal = (str_starts_with((string)$key, '_') === true || in_array($key, ['@self', 'id', 'uuid'], true) === true);
+			if ($internal === true || ($value === '' && in_array($key, $required, true) === false)) {
+				unset($row[$key]);
+			}
+		}
+
+		$jsonSchema = json_decode(
+			(string)json_encode(['type' => 'object', 'required' => $required, 'properties' => $declared['properties'], 'additionalProperties' => false]),
+			false
+		);
+		$result     = (new Validator())->validate(json_decode((string)json_encode($row), false), $jsonSchema);
+		if ($result->isValid() === true) {
+			return [];
+		}
+
+		// The innermost error names the property and the keyword that refused it.
+		$error = $result->error();
+		while ($error->subErrors() !== []) {
+			$error = $error->subErrors()[0];
+		}
+
+		return [$error->keyword() . ' at /' . implode('/', $error->data()->fullPath())];
 	}
 
 	public function testTheInviterCannotAcceptAndAnInvitationIsSpentOnce(): void {

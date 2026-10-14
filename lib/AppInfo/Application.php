@@ -64,6 +64,7 @@ use OCA\Portaliq\Listener\RegisterProposalLeavesListener;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCA\Portaliq\Middleware\PublicApiCorsMiddleware;
 use OCA\Portaliq\Notification\Notifier;
+use OCA\Portaliq\Service\HostRootRedirect;
 use OCA\Portaliq\Service\Messaging\GuardianMessagingLeafInterface;
 use OCA\Portaliq\Service\Messaging\InAppMessagingLeaf;
 use OCA\Portaliq\Service\Notifications\LoggingPushSender;
@@ -74,6 +75,7 @@ use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
+use OCP\IRequest;
 
 /**
  * Main application class for the Portaliq Nextcloud app.
@@ -202,6 +204,11 @@ class Application extends App implements IBootstrap {
 		// it wires everything else by hand (WOO-559). Without it the SPA
 		// catch-all answered the store page's JSON call with HTML 200.
 		(new StorePlaneRegistrar())->register($context);
+
+		// OpenRegister asks which published forms write into a schema that
+		// is about to change (decision 179). Portaliq answers for its form
+		// bindings.
+		(new FormDependentsRegistrar())->register($context);
 	}//end register()
 
 	/**
@@ -279,14 +286,20 @@ class Application extends App implements IBootstrap {
 	/**
 	 * Boot the application.
 	 *
+	 * Core boots every app before it matches the route, and answers the bare
+	 * address of the instance (`/`) itself when no route matches. So the bare
+	 * address of a portal's verified domain is sent to the site here, and
+	 * every other request is left to core (portal-host-root-redirect).
+	 *
 	 * @param IBootContext $context The boot context
 	 *
 	 * @return void
 	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-	 *
 	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
+	 * @spec openspec/changes/portal-host-root-redirect/specs/portal-settings/spec.md#requirement-the-bare-address-of-a-portal-host-must-lead-to-its-site-req-hrr-001
 	 */
 	public function boot(IBootContext $context): void {
+		$container = $context->getAppContainer();
+		$container->get(HostRootRedirect::class)->handle(request: $container->get(IRequest::class));
 	}//end boot()
 }//end class

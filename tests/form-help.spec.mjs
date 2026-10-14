@@ -97,3 +97,69 @@ test('neither portal nor form has details: no "Hulp nodig?"', async () => {
 	assert.equal(form.find('form-help-open'), null)
 	assert.equal(form.find('form-help'), null)
 })
+
+// The form in steps (the intake block) offers the same help in its header.
+const INTAKE = 'src/site/components/IntakeFormBlock.vue'
+
+/**
+ * Mount a published form in two steps, answered by a fake portal.
+ *
+ * @param {object} props The block's props beside its route and portal.
+ * @return {Promise<object>} The mounted block.
+ */
+async function mountIntake(props) {
+	const render = {
+		formName: 'Woo-verzoek indienen',
+		fields: [
+			{ name: 'verzoek', label: 'Welke informatie wilt u ontvangen?', required: true },
+			{ name: 'periode', label: 'Uit welke periode?' },
+		],
+		steps: [
+			{ id: 'verzoek', title: 'Uw verzoek', fields: ['verzoek'] },
+			{ id: 'periode', title: 'Periode', fields: ['periode'] },
+		],
+	}
+	globalThis.window.fetch = async () => ({ ok: true, status: 200, json: async () => render })
+	globalThis.document = {
+		title: '',
+		referrer: '',
+		querySelector: () => null,
+		getElementById: () => null,
+		createElement: () => ({}),
+	}
+	const form = await mountSfc(INTAKE, { route: 'woo-verzoek', portal: 'zuiddrecht', ...props })
+	await settle(form)
+	return form
+}
+
+test('a form in steps offers "Hulp nodig?" beside its title, and the answer stays after Sluiten', async () => {
+	const form = await mountIntake({ portalHelp: PORTAL, formHelp: { phone: '14 021' } })
+
+	await form.fire(form.find('intake-field-verzoek'), 'input', { value: 'Alle stukken over de brug' })
+	await form.fire(form.find('form-help-open'), 'click')
+
+	assert.match(form.textOf(form.find('form-help-phone')), /14 021/, 'the form\'s own number')
+	assert.match(form.textOf(form.find('form-help-phone')), /hulp nodig heeft bij Woo-verzoek indienen\./, 'the note names the form')
+	assert.match(form.textOf(form.find('form-help-desk')), /Lindelaan 1/, 'the portal\'s other details')
+
+	await form.fire(form.find('form-help-close'), 'click')
+
+	assert.equal(form.find('form-help-dialog'), null)
+	assert.equal(form.vm.values.verzoek, 'Alle stukken over de brug', 'the answer stayed')
+	assert.match(form.textOf(form.find('intake-form-step-heading')), /Stap 1 van 3/, 'still on the same step')
+})
+
+test('a form in steps without help details shows no "Hulp nodig?"', async () => {
+	const form = await mountIntake({})
+
+	assert.equal(form.find('form-help-open'), null)
+	assert.match(form.textOf(form.find('intake-form-step-heading')), /Stap 1 van 3/)
+})
+
+test('the page grid hands the portal\'s help to the form in steps', async () => {
+	const { readFileSync } = await import('node:fs')
+	const grid = readFileSync(new URL('../src/site/components/WidgetGrid.vue', import.meta.url), 'utf8')
+	const branch = grid.slice(grid.indexOf("widget.widgetKey === 'intakeForm'"))
+
+	assert.match(branch.slice(0, branch.indexOf('}\n\t\t\t}')), /portalHelp: this\.portalHelp/)
+})

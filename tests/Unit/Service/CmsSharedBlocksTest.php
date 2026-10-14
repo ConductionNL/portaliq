@@ -4,15 +4,20 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\Cms\FormPlacementHelp;
+use OCA\Portaliq\Service\Cms\PortalHelp;
 use OCA\Portaliq\Service\CmsRows;
 use OCA\Portaliq\Service\CmsSharedBlocks;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Expanding shared-block widgets into the published block's own widgets.
  */
 #[CoversClass(CmsSharedBlocks::class)]
+#[UsesClass(FormPlacementHelp::class)]
+#[UsesClass(PortalHelp::class)]
 class CmsSharedBlocksTest extends TestCase {
 	/**
 	 * Raw widgets are normalised and ordered by row then column.
@@ -83,4 +88,21 @@ class CmsSharedBlocksTest extends TestCase {
 
 		$this->assertTrue($out[0]['props']['unavailable']);
 	}//end testExpandWithoutOrganisation()
+
+	/**
+	 * A form placement leaves with its stored form's help, read for the serving portal.
+	 *
+	 * @return void
+	 */
+	public function testExpandHandsAFormPlacementItsHelp(): void {
+		$rows = $this->createMock(CmsRows::class);
+		$rows->expects($this->once())
+			->method('query')
+			->with('form', ['portal' => 'zuiddrecht'])
+			->willReturn([['id' => 'f-1', 'portal' => 'zuiddrecht', 'help' => ['phone' => '14 021']]]);
+
+		$out = (new CmsSharedBlocks($rows))->expand([['widgetKey' => 'form', 'props' => ['formId' => 'f-1']]], 'gemeente', 'zuiddrecht');
+
+		$this->assertSame(['phone' => '14 021'], $out[0]['props']['formHelp']);
+	}//end testExpandHandsAFormPlacementItsHelp()
 }//end class

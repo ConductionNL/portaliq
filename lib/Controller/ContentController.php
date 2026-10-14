@@ -32,6 +32,7 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\Assistant\PublicAssistantChannel;
 use OCA\Portaliq\Service\Assistant\PublicSourceScope;
 use OCA\Portaliq\Service\CmsReader;
+use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
 use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -99,6 +100,7 @@ class ContentController extends Controller {
 	 * @param IUserSession               $userSession  Tells a signed-in Nextcloud user (an editor) from a visitor.
 	 * @param PublicAssistantChannel|null $assistant   The public assistant's channel, when wired.
 	 * @param PublicSourceScope|null     $assistantScope What the public assistant may read.
+	 * @param NextcloudRegistrationDoor|null $registrationDoor Where "Create an account" leads (REQ-NCL-005).
 	 *
 	 * @return void
 	 */
@@ -117,6 +119,7 @@ class ContentController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly ?PublicAssistantChannel $assistant = null,
 		private readonly ?PublicSourceScope $assistantScope = null,
+		private readonly ?NextcloudRegistrationDoor $registrationDoor = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -223,6 +226,7 @@ class ContentController extends Controller {
 	 * @return JSONResponse The site, or 404.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-request-must-resolve-to-exactly-one-portal-or-to-none
+	 * @spec openspec/changes/nextcloud-account-registration/specs/portal-nextcloud-account-login/spec.md#requirement-the-sign-in-page-leads-to-nextclouds-own-registration-req-ncl-005
 	 * @spec openspec/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
 	 */
 	#[PublicPage]
@@ -268,6 +272,12 @@ class ContentController extends Controller {
 				// way back to the account route. '' unless the portal offers that route
 				// (password-reset-from-the-sign-in-page REQ-PWR-001).
 				'lostPasswordUrl' => $this->lostPasswordUrl(portal: $portal),
+				// Where "Create an account" leads: Nextcloud's own registration
+				// form, '' unless the portal offers the account route, names a
+				// resident group and the registration app fills that group
+				// (nextcloud-account-registration REQ-NCL-005). Built here from a
+				// route name, never from the request.
+				'registerUrl' => ($this->registrationDoor?->registerUrl(portal: $portal) ?? ''),
 				// Whether a visitor's search also reads the text inside public
 				// documents. On unless the portal switched it off
 				// (portal-federated-search REQ-PFS-CONTENT-001).
