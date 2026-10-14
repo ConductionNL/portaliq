@@ -10,8 +10,8 @@
 // the response shapes are normalised to plain arrays/objects the renderers use.
 //
 // Written for the retired React portal and used by the Vue site renderer
-// (src/site) and the embed frame: it imports nothing, so node tests cover the
-// one implementation the bundles run.
+// (src/site) and the embed frame: it imports only pure modules that import
+// nothing themselves, so node tests cover the one implementation the bundles run.
 //
 // Auth: the portal session is a bearer minted at the auth edge (`/portal/api/
 // session`). The default store below is the React portal's localStorage key;
@@ -21,6 +21,8 @@
 // organisation from the bearer — the client never sends them. Every method fails
 // closed: a non-2xx or a network error yields an empty/`null` result, never a
 // throw the UI has to guard.
+
+import { submissionHeaders } from './submissionKey.js'
 
 const TOKEN_KEY = 'portaliq_token'
 
@@ -1355,10 +1357,11 @@ export function createPortalApi(config, store = {}) {
 		 * @param {string} app The contributing app.
 		 * @param {string} actionId The endpoint action id.
 		 * @param {object} body The request body (only the action's `fields` are forwarded).
+		 * @param {{submissionKey?: string}} [options] The form's submission key (REQ-AFS-001).
 		 * @return {Promise<{ok: boolean, status: number, body: object}>} The relayed answer.
 		 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-the-portal-must-let-a-subject-take-a-timed-task
 		 */
-		async forwardAction(app, actionId, body) {
+		async forwardAction(app, actionId, body, options = {}) {
 			try {
 				const res = await fetch(
 					`${base}/actions/${encodeURIComponent(app)}/${encodeURIComponent(actionId)}`,
@@ -1368,6 +1371,7 @@ export function createPortalApi(config, store = {}) {
 							'Content-Type': 'application/json',
 							Accept: 'application/json',
 							...authHeaders(),
+							...submissionHeaders(options),
 						},
 						body: JSON.stringify(body || {}),
 					},
@@ -1393,6 +1397,7 @@ export function createPortalApi(config, store = {}) {
 		 * @param {object} [answers] The answers to send, `{}` by default.
 		 * @param {string} [actionApp] Another app whose action is attached to this collection.
 		 * @param {{field: string, files: Array<File>}|null} [upload] Files for an action that declares `files` (REQ-RAF-001).
+		 * @param {{submissionKey?: string}} [options] The form's submission key (REQ-AFS-001).
 		 * @return {Promise<object>} `{ ok, status, body }`; `status` 0 on a network error.
 		 */
 		async forwardRowAction(
@@ -1402,6 +1407,7 @@ export function createPortalApi(config, store = {}) {
 			answers = {},
 			actionApp = '',
 			upload = null,
+			options = {},
 		) {
 			// `actionApp` names another app's action attached to this
 			// collection (woo-journey-entry-points D3).
@@ -1417,11 +1423,16 @@ export function createPortalApi(config, store = {}) {
 					{
 						method: 'POST',
 						headers: multipart
-							? { Accept: 'application/json', ...authHeaders() }
+							? {
+									Accept: 'application/json',
+									...authHeaders(),
+									...submissionHeaders(options),
+								}
 							: {
 									'Content-Type': 'application/json',
 									Accept: 'application/json',
 									...authHeaders(),
+									...submissionHeaders(options),
 								},
 						body: multipart || JSON.stringify(answers || {}),
 					},
