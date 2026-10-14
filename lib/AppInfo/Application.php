@@ -61,6 +61,7 @@ use OCA\Portaliq\Listener\PortalAccountProvisionListener;
 use OCA\Portaliq\Listener\PortalDigitalPostDeliveredListener;
 use OCA\Portaliq\Listener\PortalRecordChangeListener;
 use OCA\Portaliq\Listener\RegisterProposalLeavesListener;
+use OCA\Portaliq\Listener\ResidentLandingListener;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCA\Portaliq\Middleware\PublicApiCorsMiddleware;
 use OCA\Portaliq\Notification\Notifier;
@@ -75,6 +76,8 @@ use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
+use OCP\Group\Events\UserAddedEvent;
+use OCP\Group\Events\UserRemovedEvent;
 use OCP\IRequest;
 
 /**
@@ -167,6 +170,12 @@ class Application extends App implements IBootstrap {
 		$context->registerEventListener(PortalAccountProvisionRequestedEvent::class, PortalAccountProvisionListener::class);
 		$context->registerEventListener(PortalAccountClaimRequestedEvent::class, PortalAccountClaimListener::class);
 		$context->registerEventListener(PortalAccountInvitationRequestedEvent::class, PortalAccountInvitationListener::class);
+
+		// A member of a portal's resident group starts on portaliq, so the
+		// registration app's last step lands on the portal, not on the
+		// workplace (resident-lands-on-the-portal, REQ-NCL-007).
+		$context->registerEventListener(UserAddedEvent::class, ResidentLandingListener::class);
+		$context->registerEventListener(UserRemovedEvent::class, ResidentLandingListener::class);
 
 		// Traffic analytics (portal-traffic-visitors-and-geo): where a
 		// visitor's address turns into a region. The offline MMDB lookup is
