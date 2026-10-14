@@ -1268,6 +1268,11 @@
                                     "href": "/bestuur/vergaderingen"
                                 },
                                 {
+                                    "label": "Besluiten",
+                                    "href": "/bestuur/besluiten",
+                                    "requiresApp": "decidiq"
+                                },
+                                {
                                     "label": "Raadsleden",
                                     "href": "/bestuur/raadsleden"
                                 },
@@ -1359,19 +1364,44 @@
                         "gridWidth": 8,
                         "gridHeight": 1,
                         "props": {
-                            "text": "De agenda en de stukken staan een week van tevoren bij de openbare informatie."
+                            "text": "Kies een vergadering om de agenda te lezen. De agenda staat er een week van tevoren."
                         }
+                    },
+                    {
+                        "id": "zd-vergaderingen-04-publicrecords",
+                        "widgetKey": "publicRecords",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 12,
+                        "gridHeight": 6,
+                        "props": {
+                            "app": "decidiq",
+                            "list": "publicMeetings",
+                            "searchLabel": "Zoek een vergadering",
+                            "backText": "Alle vergaderingen"
+                        },
+                        "requiresApp": "decidiq"
                     },
                     {
                         "id": "zd-vergaderingen-03-nllinklist",
                         "widgetKey": "nlLinkList",
                         "gridX": 0,
-                        "gridY": 2,
+                        "gridY": 8,
                         "gridWidth": 8,
                         "gridHeight": 3,
                         "props": {
                             "heading": "Lees ook",
                             "links": [
+                                {
+                                    "label": "Besluiten van raad en college",
+                                    "href": "/bestuur/besluiten",
+                                    "requiresApp": "decidiq"
+                                },
+                                {
+                                    "label": "Hoe stemden de raadsleden",
+                                    "href": "/bestuur/hoe-stemden-de-raadsleden",
+                                    "requiresApp": "decidiq"
+                                },
                                 {
                                     "label": "Zoeken in Woo-publicaties",
                                     "href": "/zoeken"
@@ -1417,6 +1447,7 @@
                         "props": {
                             "app": "decidiq",
                             "list": "memberVotingRecords",
+                            "searchLabel": "Zoek een raadslid",
                             "backText": "Alle raadsleden"
                         }
                     }
@@ -1615,6 +1646,74 @@
                         "props": {
                             "heading": "Lees ook",
                             "links": [
+                                {
+                                    "label": "Alle besluiten van raad en college",
+                                    "href": "/bestuur/besluiten",
+                                    "requiresApp": "decidiq"
+                                },
+                                {
+                                    "label": "Zoeken in Woo-publicaties",
+                                    "href": "/zoeken"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/bestuur/besluiten",
+            "title": "Besluiten van raad en college",
+            "summary": "Wat de gemeenteraad en het college hebben besloten.",
+            "status": "published",
+            "locale": "nl",
+            "requiresApp": "decidiq",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-besluiten-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Kies een besluit en lees wat er is besloten. Bij een besluit van de raad staat ook hoe er is gestemd."
+                        }
+                    },
+                    {
+                        "id": "zd-besluiten-02-publicrecords",
+                        "widgetKey": "publicRecords",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 12,
+                        "gridHeight": 6,
+                        "props": {
+                            "app": "decidiq",
+                            "list": "publicDecisions",
+                            "searchLabel": "Zoek een besluit",
+                            "backText": "Alle besluiten"
+                        }
+                    },
+                    {
+                        "id": "zd-besluiten-03-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 0,
+                        "gridY": 7,
+                        "gridWidth": 8,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Lees ook",
+                            "links": [
+                                {
+                                    "label": "Vergaderingen en stukken",
+                                    "href": "/bestuur/vergaderingen"
+                                },
+                                {
+                                    "label": "Hoe stemden de raadsleden",
+                                    "href": "/bestuur/hoe-stemden-de-raadsleden"
+                                },
                                 {
                                     "label": "Zoeken in Woo-publicaties",
                                     "href": "/zoeken"
