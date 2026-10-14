@@ -25,7 +25,11 @@ import { eventRows } from '../src/site/widgets/nlEventList/events.js'
 import { listLines } from '../src/site/widgets/nlList/lines.js'
 import { splitLead } from '../src/site/widgets/nlNewsArticle/article.js'
 import icons from '../src/site/widgets/nlQuickTasks/icons.js'
-import { cardButton, safeWays } from '../src/site/widgets/nlSignIn/signIn.js'
+import {
+	cardButton,
+	cardIntro,
+	safeWays,
+} from '../src/site/widgets/nlSignIn/signIn.js'
 
 const MONDAY = new Date(2026, 9, 5, 9, 30)
 
@@ -244,4 +248,14 @@ test('T7: the app hands its sign-in routes to the grid, and the grid to nlSignIn
 	)
 	const grid = readFileSync('src/site/components/WidgetGrid.vue', 'utf8')
 	assert.match(grid, /ways: this\.signInRoutes\.map/)
+})
+
+test('the sign-in card does not invite a signed-in visitor to sign in', () => {
+	const intro = 'Log in om deze publicatie in uw eigen dossier te bewaren.'
+	assert.equal(cardIntro({ intro, signedInIntro: '', signedIn: false }), intro)
+	assert.equal(cardIntro({ intro, signedInIntro: '', signedIn: true }), '')
+	assert.equal(
+		cardIntro({ intro, signedInIntro: ' U bent ingelogd. ', signedIn: true }),
+		'U bent ingelogd.',
+	)
 })

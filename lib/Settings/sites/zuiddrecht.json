@@ -6,6 +6,7 @@
     "portal": {
         "slug": "zuiddrecht",
         "title": "Gemeente Zuiddrecht",
+        "organisation": "zuiddrecht",
         "status": "published",
         "kind": "site",
         "theme": "zuiddrecht",
@@ -37,7 +38,7 @@
                 "title": "Inloggen op Mijn Zuiddrecht",
                 "intro": "Kies hoe u inlogt. Als inwoner gebruikt u DigiD. Namens een bedrijf gebruikt u eHerkenning.",
                 "notice": {
-                    "text": "Geen DigiD? Bel [telefoonnummer]. Wij helpen u op een andere manier."
+                    "text": "Geen DigiD? Bel 14 0999. Wij helpen u op een andere manier."
                 }
             }
         },
@@ -103,13 +104,13 @@
                 "title": "Contact",
                 "lines": [
                     {
-                        "text": "Telefoon: [telefoonnummer]"
+                        "text": "Telefoon: 14 0999 (voorbeeldnummer)"
                     },
                     {
-                        "text": "E-mail: [e-mailadres]"
+                        "text": "E-mail: info@zuiddrecht.example"
                     },
                     {
-                        "text": "Stadskantoor: [adres]"
+                        "text": "Stadskantoor: Lindelaan 1, Zuiddrecht"
                     }
                 ]
             }
@@ -974,7 +975,7 @@
                         "gridWidth": 8,
                         "gridHeight": 1,
                         "props": {
-                            "text": "Is er direct gevaar? Bel dan [telefoonnummer]."
+                            "text": "Is er direct gevaar? Bel dan 112."
                         }
                     },
                     {
@@ -1021,7 +1022,7 @@
                         "gridWidth": 8,
                         "gridHeight": 1,
                         "props": {
-                            "text": "U maakt een afspraak per telefoon, op werkdagen van 8.30 tot 17.00 uur. Bel [telefoonnummer]."
+                            "text": "U maakt een afspraak per telefoon, op werkdagen van 8.30 tot 17.00 uur. Bel 14 0999."
                         }
                     },
                     {
@@ -2242,7 +2243,7 @@
                         "gridWidth": 8,
                         "gridHeight": 1,
                         "props": {
-                            "text": "Mail uw melding naar [e-mailadres]. U krijgt binnen drie werkdagen antwoord."
+                            "text": "Mail uw melding naar info@zuiddrecht.example. U krijgt binnen drie werkdagen antwoord."
                         }
                     }
                 ]
@@ -2391,6 +2392,7 @@
                             "display": "card",
                             "tone": "outline",
                             "intro": "Log in om deze publicatie in uw eigen dossier te bewaren.",
+                            "signedInIntro": "U bent ingelogd. Uw dossiers vindt u in Mijn Zuiddrecht.",
                             "buttonLabel": "Inloggen en bewaren"
                         }
                     },
