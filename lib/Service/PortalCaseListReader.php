@@ -34,6 +34,7 @@ namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Contribution\CaseStatusLabelField;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
+use OCA\Portaliq\Service\Identity\MandateParties;
 
 /**
  * Merges every `kind: cases` collection into the subject's own case list.
@@ -441,19 +442,66 @@ class PortalCaseListReader {
 		string $organisation,
 		string $audience,
 	): array {
-		return $this->reader->readCollection(
-			register: (string)($collection['register'] ?? ''),
-			schema: (string)($collection['schema'] ?? ''),
-			scopeField: $mandateField,
-			subjectRef: $party,
-			organisation: $organisation,
-			limit: self::ROW_LIMIT,
-			contributingApp: $contributingApp,
-			audience: $audience,
-			fields: ($collection['fields'] ?? null),
-			filter: (array)($collection['filter'] ?? [])
-		);
+		// A case app stores the party in the typed form a mandate names it in
+		// (`subject:<ref>`, `kvk:<8 digits>`); one written before the typed
+		// form stores it bare. Both are read, and a case found both ways is
+		// listed once (site-mandates-the-represented-manage REQ-SMR-001).
+		$forms = array_values(array_unique([(new MandateParties())->typed(value: $party), $party]));
+
+		$rows = [];
+		$seen = [];
+		foreach ($forms as $form) {
+			$read = $this->reader->readCollection(
+				register: (string)($collection['register'] ?? ''),
+				schema: (string)($collection['schema'] ?? ''),
+				scopeField: $mandateField,
+				subjectRef: $form,
+				organisation: $organisation,
+				limit: self::ROW_LIMIT,
+				contributingApp: $contributingApp,
+				audience: $audience,
+				fields: ($collection['fields'] ?? null),
+				filter: (array)($collection['filter'] ?? [])
+			);
+			foreach ($read as $row) {
+				$key = $this->partyRowKey(row: $row);
+				if (isset($seen[$key]) === true) {
+					continue;
+				}
+
+				$seen[$key] = true;
+				$rows[] = $row;
+			}
+		}
+
+		return $rows;
 	}//end readParty()
+
+	/**
+	 * What tells one party row from another: its own id, or the row itself
+	 * when it carries none.
+	 *
+	 * @param mixed $row The row as read.
+	 *
+	 * @return string
+	 */
+	private function partyRowKey(mixed $row): string {
+		if (is_array($row) === false) {
+			return (string)json_encode($row);
+		}
+
+		$self = ($row['@self'] ?? []);
+		$id = ($row['id'] ?? $row['uuid'] ?? null);
+		if ($id === null && is_array($self) === true) {
+			$id = ($self['id'] ?? $self['uuid'] ?? null);
+		}
+
+		if (is_scalar($id) === true && (string)$id !== '') {
+			return 'id:' . (string)$id;
+		}
+
+		return 'row:' . (string)json_encode($row);
+	}//end partyRowKey()
 
 	/**
 	 * Read one case collection, subject-scoped, or nothing when it cannot be
