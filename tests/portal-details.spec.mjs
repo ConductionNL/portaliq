@@ -44,24 +44,56 @@ test('the address accepts lowercase words joined by dashes and nothing else', ()
 	assert.ok(field('slug').patternMessage)
 })
 
-test('languages and embedding origins are chips over the schema arrays', () => {
-	const locales = widget('portal-settings-locales')
-	assert.equal(locales.type, 'chips-field')
-	assert.equal(PORTAL[locales.content.field].type, 'array')
-	assert.deepEqual(locales.content.options.map((o) => o.value), ['nl', 'en', 'de', 'fr', 'fy'])
-	const frame = widget('portal-settings-frame')
-	assert.equal(frame.type, 'chips-field')
-	assert.equal(PORTAL[frame.content.field].type, 'array')
-	const origin = new RegExp(frame.content.pattern)
+test('languages and embedding origins are chips in the same form, saved with it', () => {
+	const locales = field('locales')
+	assert.equal(locales.type, 'chips')
+	assert.equal(PORTAL.locales.type, 'array')
+	assert.equal(locales.minItems, 1)
+	assert.ok(locales.minItemsMessage)
+	assert.deepEqual(locales.default, ['nl'])
+	// A free code, as the old taggable select allowed, not a fixed list.
+	assert.equal(locales.options, undefined)
+	const code = new RegExp(locales.pattern)
+	for (const ok of ['nl', 'en', 'fy', 'pap', 'nl-be']) assert.ok(code.test(ok), ok)
+	for (const bad of ['', 'Nederlands', 'n', 'nl_BE']) assert.equal(code.test(bad), false, bad)
+	const frame = field('frameAncestors')
+	assert.equal(frame.type, 'chips')
+	assert.equal(PORTAL.frameAncestors.type, 'array')
+	const origin = new RegExp(frame.pattern)
 	for (const ok of ['https://www.example.nl', 'http://localhost:8080']) assert.ok(origin.test(ok), ok)
 	for (const bad of ['www.example.nl', 'https://', 'ftp://x.nl', 'https://x.nl/path']) assert.equal(origin.test(bad), false, bad)
-	assert.ok(frame.content.patternMessage)
+	assert.ok(frame.patternMessage)
 })
 
-test('every card is a section of the Instellingen widget, and the old component is gone', () => {
-	const sections = widget('portal-settings').content.sections
-	for (const id of ['portal-settings-details', 'portal-settings-locales', 'portal-settings-frame']) {
-		assert.ok(sections.some((s) => s.widgetId === id), `${id} is not a section`)
+test('an absent kind or header shows the value the site already assumes', () => {
+	assert.equal(field('kind').default, 'site')
+	assert.ok(PORTAL.kind.enum.includes(field('kind').default))
+	assert.equal(field('headerVariant').default, 'double')
+	assert.ok(PORTAL.headerVariant.enum.includes(field('headerVariant').default))
+})
+
+test('the logo is picked from the portal media library and stored as an address the site serves', () => {
+	const logo = field('logo')
+	assert.equal(logo.type, 'reference')
+	assert.equal(logo.register, 'portaliq')
+	assert.ok(REGISTER.components.schemas[logo.schema], `the register has no "${logo.schema}" schema`)
+	const media = REGISTER.components.schemas[logo.schema].properties
+	for (const [key, value] of Object.entries(logo.filter)) {
+		assert.ok(media[key].enum.includes(value), `${key}=${value} is not a media value`)
 	}
+	assert.ok(media[logo.labelField], logo.labelField)
+	// Root-relative, so PortalRuntimeConfigResolver::logoUrl() lets it through,
+	// and the route the public media items are served on.
+	assert.match(logo.valueTemplate, /^\/apps\/portaliq\/api\/content\/media\/\{id\}\?portal=\{portal\}$/)
+	assert.match(read('appinfo/routes.php'), /'url' => '\/api\/content\/media\/\{id\}'/)
+})
+
+test('the details are one card, and the old component is gone', () => {
+	const sections = widget('portal-settings').content.sections
+	assert.ok(sections.some((s) => s.widgetId === 'portal-settings-details'))
+	for (const id of ['portal-settings-locales', 'portal-settings-frame']) {
+		assert.equal(widget(id), undefined, `${id} is a card of its own again`)
+	}
+	assert.deepEqual(form.content.fields.map((f) => f.key), ['title', 'tagline', 'slug', 'organisation', 'kind', 'headerVariant', 'locales', 'accountLabel', 'logo', 'frameAncestors'])
 	assert.equal(read('src/registry.js').includes('PortalDetailsForm'), false)
 })

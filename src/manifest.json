@@ -2488,16 +2488,6 @@
                   "widgetId": "portal-settings-details"
                 },
                 {
-                  "key": "locales",
-                  "title": "Languages",
-                  "widgetId": "portal-settings-locales"
-                },
-                {
-                  "key": "frame",
-                  "title": "May be embedded on",
-                  "widgetId": "portal-settings-frame"
-                },
-                {
                   "key": "theme",
                   "title": "House style",
                   "widgetId": "portal-settings-theme"
@@ -2577,7 +2567,8 @@
                       "value": "external",
                       "label": "Points to another website"
                     }
-                  ]
+                  ],
+                  "default": "site"
                 },
                 {
                   "key": "headerVariant",
@@ -2592,7 +2583,25 @@
                       "value": "single",
                       "label": "One line"
                     }
-                  ]
+                  ],
+                  "default": "double"
+                },
+                {
+                  "key": "locales",
+                  "label": "Languages",
+                  "type": "chips",
+                  "addLabel": "Add",
+                  "confirmLabel": "Add",
+                  "default": [
+                    "nl"
+                  ],
+                  "minItems": 1,
+                  "minItemsMessage": "Choose at least one language.",
+                  "hint": "With more than one language the header shows a language choice.",
+                  "lowercase": true,
+                  "placeholder": "nl",
+                  "pattern": "^[a-z]{2,3}(-[a-z0-9]{2,8})*$",
+                  "patternMessage": "A language is a code such as nl, en, de, fr or fy."
                 },
                 {
                   "key": "accountLabel",
@@ -2601,55 +2610,30 @@
                 {
                   "key": "logo",
                   "label": "Logo",
-                  "hint": "The address of the logo, or a reference to a file in Media."
+                  "type": "reference",
+                  "register": "portaliq",
+                  "schema": "media",
+                  "labelField": "title",
+                  "filter": {
+                    "kind": "image",
+                    "status": "published"
+                  },
+                  "valueTemplate": "/apps/portaliq/api/content/media/{id}?portal={portal}",
+                  "emptyLabel": "No logo",
+                  "hint": "A published image from Media. An address entered earlier stays selectable."
+                },
+                {
+                  "key": "frameAncestors",
+                  "label": "May be embedded on",
+                  "type": "chips",
+                  "addLabel": "Add",
+                  "confirmLabel": "Add",
+                  "placeholder": "https://www.example.nl",
+                  "pattern": "^https?://[A-Za-z0-9.-]+(:[0-9]+)?$",
+                  "patternMessage": "An address looks like https://www.example.nl.",
+                  "wide": true
                 }
               ]
-            }
-          },
-          {
-            "id": "portal-settings-locales",
-            "type": "chips-field",
-            "title": "Languages",
-            "content": {
-              "field": "locales",
-              "label": "Languages",
-              "addLabel": "Add",
-              "hint": "With more than one language the header shows a language choice.",
-              "options": [
-                {
-                  "value": "nl",
-                  "label": "Nederlands"
-                },
-                {
-                  "value": "en",
-                  "label": "English"
-                },
-                {
-                  "value": "de",
-                  "label": "Deutsch"
-                },
-                {
-                  "value": "fr",
-                  "label": "Français"
-                },
-                {
-                  "value": "fy",
-                  "label": "Frysk"
-                }
-              ]
-            }
-          },
-          {
-            "id": "portal-settings-frame",
-            "type": "chips-field",
-            "title": "May be embedded on",
-            "content": {
-              "field": "frameAncestors",
-              "label": "May be embedded on",
-              "addLabel": "Add",
-              "placeholder": "https://www.example.nl",
-              "pattern": "^https?://[A-Za-z0-9.-]+(:[0-9]+)?$",
-              "patternMessage": "An address looks like https://www.example.nl."
             }
           },
           {

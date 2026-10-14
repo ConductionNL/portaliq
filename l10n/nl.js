@@ -3106,7 +3106,11 @@ OC.L10N.register(
         "Served at the root": "Op het hoofdadres",
         "Landing page": "Landingspagina",
         "Whether a proxy in front of Nextcloud rewrites the short addresses of this host (/, /afval) to the site route. When true, the site writes its links and its canonical address as short addresses on this host. Leave false without such a proxy rule: the short addresses would not resolve. Read only from a verified domain.": "Of een proxy voor Nextcloud de korte adressen van deze host (/, /afval) omschrijft naar de route van de site. Staat dit aan, dan schrijft de site haar links en haar vaste adres als korte adressen op deze host. Laat het uit zonder zo'n proxyregel: de korte adressen werken dan niet. Wordt alleen gelezen van een geverifieerd domein.",
-        "The site page the bare address of this host opens, as a route with a leading slash. Empty means the home page. A host for the signed-in area names that area here. Read only from a verified domain.": "De pagina van de site die het kale adres van deze host opent, als route die met een schuine streep begint. Leeg betekent de startpagina. Een host voor het ingelogde deel noemt dat deel hier. Wordt alleen gelezen van een geverifieerd domein."
+        "The site page the bare address of this host opens, as a route with a leading slash. Empty means the home page. A host for the signed-in area names that area here. Read only from a verified domain.": "De pagina van de site die het kale adres van deze host opent, als route die met een schuine streep begint. Leeg betekent de startpagina. Een host voor het ingelogde deel noemt dat deel hier. Wordt alleen gelezen van een geverifieerd domein.",
+        "No logo": "Geen logo",
+        "A published image from Media. An address entered earlier stays selectable.": "Een gepubliceerde afbeelding uit Media. Een eerder ingevuld adres blijft te kiezen.",
+        "A language is a code such as nl, en, de, fr or fy.": "Een taal is een code zoals nl, en, de, fr of fy.",
+        "The list to choose from could not be loaded.": "De lijst om uit te kiezen kon niet worden geladen."
     },
     "nplurals=2; plural=(n != 1);"
 )
