@@ -13,6 +13,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
+import { recordListChoice, recordListsFrom } from '../src/editor/recordLists.js'
 import {
 	fetchRecord,
 	fetchRecordList,
@@ -167,4 +168,29 @@ test('a record renders through KpiCards and CollectionTable, links only safe add
 	const plain = await renderComponent(shown(unsafe), { app: 'decidiq', list: 'l', recordParam: 'p1', locale: 'nl', apiOverride: {} })
 	assert.doesNotMatch(plain, /javascript:/, 'a script address is never a link')
 	assert.match(plain, /Groen dak op het stadhuis/, 'the subject still reads as text')
+})
+
+test('the page editor picks a list from the anonymous contributions (T3)', () => {
+	const answer = {
+		contributions: [
+			{ app: 'decidiq', publicRecords: [{ id: 'memberVotingRecords', label: 'Hoe stemden de raadsleden', app: 'decidiq' }, { id: '', label: 'kapot' }] },
+			{ app: 'dossiq', collections: [] },
+			{ publicRecords: [{ id: 'orphan', label: 'Zonder app' }] },
+		],
+	}
+	const lists = recordListsFrom(answer)
+	assert.deepEqual(lists, [{ app: 'decidiq', id: 'memberVotingRecords', label: 'Hoe stemden de raadsleden' }], 'an entry without an id or an app is not offered')
+	assert.deepEqual(recordListsFrom(null), [])
+
+	assert.deepEqual(recordListChoice(lists, 'decidiq/memberVotingRecords'), { app: 'decidiq', list: 'memberVotingRecords' })
+	assert.deepEqual(recordListChoice(lists, 'decidiq/gone'), { app: undefined, list: undefined }, 'an unknown choice clears both')
+
+	const catalogue = readFileSync('src/lib/pageWidgetCatalogue.js', 'utf8')
+	assert.match(catalogue, /publicRecords: \{ list: 'recordList' \}/, 'the list field is a picker')
+	const editor = readFileSync('src/editor/PageGridEditor.vue', 'utf8')
+	assert.match(editor, /field\.kind === 'recordList'\s*&& recordLists\.length > 0/, 'a picker when lists are known, the text input otherwise')
+	assert.match(editor, /recordListChoice\(this\.recordLists, value\)/)
+	const designer = readFileSync('src/views/PageLayoutDesigner.vue', 'utf8')
+	assert.match(designer, /:loadRecordLists="loadRecordLists"/)
+	assert.match(designer, /\/apps\/portaliq\/api\/content\/contributions/)
 })
