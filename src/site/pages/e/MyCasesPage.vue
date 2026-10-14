@@ -31,6 +31,39 @@
 			{{ t('My cases') }}
 		</h1>
 
+		<!-- "Zaken van" (board MijnZakenTabel): whose cases the list shows,
+		     for a resident who acts for someone else (mijn-zaken-chooses-whose-cases). -->
+		<div
+			v-if="choosesParty"
+			class="pq-cases__parties"
+			data-testid="my-cases-parties">
+			<label for="pq-cases-parties" class="utrecht-form-label">{{
+				mt('Cases of')
+			}}</label>
+			<select
+				id="pq-cases-parties"
+				class="utrecht-select pq-cases__parties-select"
+				:value="choice"
+				data-testid="my-cases-parties-select"
+				@change="chooseParty($event.target.value)">
+				<option
+					v-for="option in parties"
+					:key="option.id"
+					:value="option.id"
+					:selected="option.id === choice"
+					:translate="option.own ? null : 'no'">
+					{{ option.label }}
+				</option>
+			</select>
+			<a
+				v-if="mandatesHref"
+				class="utrecht-link"
+				:href="mandatesHref"
+				data-testid="my-cases-parties-manage">
+				{{ mt('Arrange access to cases') }}
+			</a>
+		</div>
+
 		<p
 			v-if="data === null"
 			class="utrecht-paragraph"
@@ -159,9 +192,15 @@ import {
 	caseTitle,
 	splitCases,
 } from '../../../shared/myCases.js'
-import { actingFor, learnMandates } from '../../components/e/actingFor.js'
+import { personOf } from '../../components/chrome/person.js'
+import {
+	actingFor,
+	chooseActingFor,
+	learnMandates,
+} from '../../components/e/actingFor.js'
 import { caseCard } from '../../components/mijn/cases.js'
 import { mijnTranslator } from '../../components/mijn/rows.js'
+import { EVERYONE, mergedAnswer, partyOptions, readsFor } from './caseParties.js'
 import { longDate, readerLocale } from './format.js'
 
 export default {
@@ -203,7 +242,12 @@ export default {
 	emits: ['loaded'],
 
 	data() {
-		return { data: this.initialData, tab: this.initialTab, request: 0 }
+		return {
+			data: this.initialData,
+			tab: this.initialTab,
+			request: 0,
+			everyone: false,
+		}
 	},
 
 	computed: {
@@ -215,6 +259,51 @@ export default {
 		 */
 		actingUnder() {
 			return this.mandateId || actingFor.id
+		},
+
+		/**
+		 * Whether the page offers "Zaken van": the resident holds a mandate
+		 * and the page is not fixed to one.
+		 *
+		 * @return {boolean}
+		 * @spec openspec/changes/mijn-zaken-chooses-whose-cases/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+		 */
+		choosesParty() {
+			return this.mandateId === '' && actingFor.mandates.length > 0
+		},
+
+		/**
+		 * The "Zaken van" choices.
+		 *
+		 * @return {Array<{id: string, label: string, own: boolean}>}
+		 * @spec openspec/changes/mijn-zaken-chooses-whose-cases/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+		 */
+		parties() {
+			return partyOptions(
+				actingFor.mandates,
+				this.mt,
+				personOf(this.session)?.name || '',
+			)
+		},
+
+		/**
+		 * The choice on screen: everyone, else the mandate acted under.
+		 *
+		 * @return {string}
+		 * @spec openspec/changes/mijn-zaken-chooses-whose-cases/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+		 */
+		choice() {
+			return this.everyone ? EVERYONE : this.actingUnder
+		},
+
+		/**
+		 * Where a resident arranges who may act for them, when the portal names it.
+		 *
+		 * @return {string}
+		 * @spec openspec/changes/mijn-zaken-chooses-whose-cases/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+		 */
+		mandatesHref() {
+			return String(this.portal?.myCases?.mandatesHref || '')
 		},
 
 		/**
@@ -367,13 +456,45 @@ export default {
 		async load() {
 			const ticket = ++this.request
 			this.data = null
-			const answer = await this.api.fetchMyCases(this.actingUnder)
+			// Everyone: the resident's own list and each mandate's, as one.
+			const answer = this.everyone
+				? mergedAnswer(
+						await Promise.all(
+							readsFor(EVERYONE, actingFor.mandates).map((id) =>
+								this.api.fetchMyCases(id).catch(() => null),
+							),
+						),
+					)
+				: await this.api.fetchMyCases(this.actingUnder)
 			if (ticket !== this.request) {
 				return
 			}
 			this.data = answer
 			learnMandates(answer)
 			this.$emit('loaded', answer)
+		},
+
+		/**
+		 * Show the cases of everyone, of the resident, or of one party. A
+		 * party is acted for for the rest of the session, as the header
+		 * choice does; everyone is this page's view only.
+		 *
+		 * @param {string} id The choice.
+		 * @return {void}
+		 * @spec openspec/changes/mijn-zaken-chooses-whose-cases/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+		 */
+		chooseParty(id) {
+			const wasEveryone = this.everyone
+			const wasUnder = this.actingUnder
+			this.everyone = id === EVERYONE
+			if (!this.everyone) {
+				chooseActingFor(id)
+			}
+			// Another mandate reloads through the actingUnder watcher; to or
+			// from everyone under the same mandate, nothing would.
+			if (this.everyone !== wasEveryone && this.actingUnder === wasUnder) {
+				this.load()
+			}
 		},
 
 		/**
@@ -398,6 +519,21 @@ export default {
 
 /* The tab list reads the set's tab roles when it names them
    (thematiq zuiddrecht-website-type-and-controls); else as it was. */
+.pq-cases__parties {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--utrecht-space-block-sm, 0.5rem) var(--utrecht-space-inline-md, 1rem);
+	padding: var(--utrecht-space-block-sm, 0.75rem)
+		var(--utrecht-space-inline-md, 1rem);
+	border-radius: var(--utrecht-border-radius-md, 6px);
+	background-color: var(--utrecht-color-grey-90, #f4f6f9);
+}
+
+.pq-cases__parties-select {
+	min-inline-size: min(100%, 16rem);
+}
+
 .pq-cases__tabs {
 	display: flex;
 	gap: var(--utrecht-space-inline-sm, 0.5rem);

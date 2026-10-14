@@ -102,6 +102,12 @@ export default {
 		'On whose behalf you act': 'Namens wie u werkt',
 		'You are now acting for {party}': 'U regelt nu zaken voor {party}',
 		'Switch to yourself': 'Wissel naar uzelf',
+		// mijn-zaken-chooses-whose-cases
+		'Cases of': 'Zaken van',
+		'Everyone I act for': 'Iedereen voor wie ik werk',
+		'Myself, {name}': 'Mijzelf, {name}',
+		Myself: 'Mijzelf',
+		'Arrange access to cases': 'Toegang tot zaken regelen',
 		'{value} of {total} {label}': '{value} van {total} {label}',
 	},
 	en: {
@@ -189,6 +195,12 @@ export default {
 		'On whose behalf you act': 'On whose behalf you act',
 		'You are now acting for {party}': 'You are now acting for {party}',
 		'Switch to yourself': 'Switch to yourself',
+		// mijn-zaken-chooses-whose-cases
+		'Cases of': 'Cases of',
+		'Everyone I act for': 'Everyone I act for',
+		'Myself, {name}': 'Myself, {name}',
+		Myself: 'Myself',
+		'Arrange access to cases': 'Arrange access to cases',
 		'{value} of {total} {label}': '{value} of {total} {label}',
 	},
 }
