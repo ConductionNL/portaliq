@@ -458,17 +458,34 @@ export function validDate(value) {
 }
 
 /**
+ * The parameter that carries the search term: `q` when only `q` is on the
+ * address, `_search` otherwise (`_search` wins when both are there).
+ *
+ * @param {URLSearchParams} params The address's parameters.
+ * @return {string} `q` or `_search`.
+ *
+ * @spec openspec/changes/search-reads-q-from-the-address/specs/portal-federated-search/spec.md#requirement-a-link-with-q-opens-the-search-for-that-term-req-srq-001
+ */
+export function termParameter(params) {
+	return params.has('q') && !params.has('_search') ? 'q' : '_search'
+}
+
+/**
  * Read the search state from a page address query string.
  *
  * Each facet field has its own `f.<field>` parameter. The older `_facets`
  * parameter is still read, as values of the FIRST field, so a link shared
  * before the filters split keeps opening the same search.
  *
+ * The term is `_search`. A link that names it `q`, the name most sites and
+ * search engines use (`/zoeken?q=Lindelaan`), opens the same search.
+ *
  * @param {string}        search      `window.location.search`.
  * @param {Array<string>} facetFields The block's facet fields.
  * @return {object} `{query, page, sort, facets, periodFrom, periodTo}`.
  *
  * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-every-filter-must-survive-a-shared-link-req-wsd-003
+ * @spec openspec/changes/search-reads-q-from-the-address/specs/portal-federated-search/spec.md#requirement-a-link-with-q-opens-the-search-for-that-term-req-srq-001
  */
 export function readSearchState(search, facetFields) {
 	const params = new URLSearchParams(search || '')
@@ -489,7 +506,7 @@ export function readSearchState(search, facetFields) {
 	}
 
 	return {
-		query: params.get('_search') || '',
+		query: params.get(termParameter(params)) || '',
 		page: Math.max(1, parseInt(params.get('_page'), 10) || 1),
 		sort: params.get('_sort') || '',
 		facets,
@@ -501,7 +518,9 @@ export function readSearchState(search, facetFields) {
 /**
  * Write the search state into a page address.
  *
- * `route` and every parameter this block does not own are left alone.
+ * `route` and every parameter this block does not own are left alone. The
+ * term goes back into the parameter it came in: `q` for a visitor who
+ * arrived with `?q=`, `_search` otherwise.
  *
  * @param {URL}           url         The address to change in place.
  * @param {object}        state       The search state.
@@ -509,6 +528,7 @@ export function readSearchState(search, facetFields) {
  * @return {URL} The same address.
  *
  * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-every-filter-must-survive-a-shared-link-req-wsd-003
+ * @spec openspec/changes/search-reads-q-from-the-address/specs/portal-federated-search/spec.md#requirement-a-link-with-q-opens-the-search-for-that-term-req-srq-001
  */
 export function writeSearchState(url, state, facetFields) {
 	const assign = (key, value) => {
@@ -519,7 +539,7 @@ export function writeSearchState(url, state, facetFields) {
 		}
 	}
 
-	assign('_search', state.query)
+	assign(termParameter(url.searchParams), state.query)
 	assign('_page', state.page > 1 ? String(state.page) : '')
 	assign('_sort', state.sort)
 	url.searchParams.delete('_facets')
