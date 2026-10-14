@@ -117,18 +117,29 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 20, period: 60)]
-	public function createThread(string $staffRef = '', string $recordRef = '', string $title = '', string $body = '', string $contactId = ''): JSONResponse {
+	public function createThread(
+		string $staffRef = '',
+		string $recordRef = '',
+		string $title = '',
+		string $body = '',
+		string $contactId = '',
+	): JSONResponse {
 		$subject = $this->subject();
 		if ($subject === null) {
 			return new JSONResponse(['error' => 'unauthorized'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		if ($contactId !== '') {
-			return $this->startConversation(subject: $subject, contact: $this->ownContact(subject: $subject, contactId: $contactId), title: $title, body: $body);
-		}
+		if ($contactId !== '' || $recordRef !== '') {
+			// The message is checked before any contact is looked up.
+			if ($this->fitsAMessage(title: $title, body: $body) === false) {
+				return new JSONResponse(['error' => 'invalid'], Http::STATUS_BAD_REQUEST);
+			}
 
-		if ($recordRef !== '') {
-			$contact = $this->contacts?->contactFor(subject: $subject, staffRef: $staffRef, recordRef: $recordRef);
+			$contact = $this->ownContact(subject: $subject, contactId: $contactId);
+			if ($contactId === '') {
+				$contact = $this->contacts?->contactFor(subject: $subject, staffRef: $staffRef, recordRef: $recordRef);
+			}
+
 			return $this->startConversation(subject: $subject, contact: $contact, title: $title, body: $body);
 		}
 
@@ -161,7 +172,8 @@ class MessageGuardianController extends Controller implements PortalProtected {
 		$names      = ($this->portalContacts?->contactNames(owner: $subjectRef, organisation: (string)($subject['organisation'] ?? '')) ?? []);
 		$threads    = [];
 		foreach ($this->messaging->listThreads(subjectRef: $subjectRef, isStaff: false) as $thread) {
-			$threads[] = $this->namedForReader(thread: $thread, subjectRef: $subjectRef, names: $names) + ['summary' => $this->summaryOf(thread: $thread, subjectRef: $subjectRef)];
+			$named     = $this->namedForReader(thread: $thread, subjectRef: $subjectRef, names: $names);
+			$threads[] = $named + ['summary' => $this->summaryOf(thread: $thread, subjectRef: $subjectRef)];
 		}
 
 		return new JSONResponse($threads);
@@ -200,7 +212,7 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 * @param string                    $title   The subject line; the start of the message when empty.
 	 * @param string                    $body    The first message.
 	 *
-	 * @return JSONResponse `{id}`, or 400 / 403.
+	 * @return JSONResponse `{id}`, or 403.
 	 *
 	 * @spec openspec/changes/site-messages-per-record/specs/portal-contribution-contract/spec.md#requirement-a-resident-may-start-a-conversation-only-with-a-contact-of-their-own-record
 	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
@@ -208,10 +220,6 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	private function startConversation(array $subject, ?array $contact, string $title, string $body): JSONResponse {
 		$body  = trim($body);
 		$title = trim($title);
-		if ($body === '' || mb_strlen($body) > self::MAX_BODY || mb_strlen($title) > self::MAX_TITLE) {
-			return new JSONResponse(['error' => 'invalid'], Http::STATUS_BAD_REQUEST);
-		}
-
 		if ($contact === null) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
@@ -227,6 +235,21 @@ class MessageGuardianController extends Controller implements PortalProtected {
 
 		return new JSONResponse(['id' => $id]);
 	}//end startConversation()
+
+	/**
+	 * Whether a first message may be sent: not empty, and neither it nor
+	 * its subject line too long.
+	 *
+	 * @param string $title The subject line.
+	 * @param string $body  The message.
+	 *
+	 * @return bool
+	 */
+	private function fitsAMessage(string $title, string $body): bool {
+		$body = trim($body);
+
+		return $body !== '' && mb_strlen($body) <= self::MAX_BODY && mb_strlen(trim($title)) <= self::MAX_TITLE;
+	}//end fitsAMessage()
 
 	/**
 	 * One of the resident's own approved contacts as a conversation

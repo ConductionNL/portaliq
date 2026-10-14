@@ -146,40 +146,6 @@ class ContactRows {
 	}//end byToken()
 
 	/**
-	 * The open invitations a new account registered through: rows that
-	 * name it as `contactRef` while still `invited`. Read by the field
-	 * that names the new account, never by the inviter's owner scope.
-	 *
-	 * @param string $contactRef The new account.
-	 * @param string $organisation The tenant.
-	 *
-	 * @return array<int, array<string, mixed>> The rows.
-	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
-	 */
-	public function heldFor(string $contactRef, string $organisation): array {
-		if ($contactRef === '') {
-			return [];
-		}
-
-		$rows = $this->reader->readCollection(
-			register: PortalContactService::REGISTER,
-			schema: PortalContactService::SCHEMA,
-			scopeField: 'contactRef',
-			subjectRef: $contactRef,
-			organisation: $organisation,
-			limit: 20
-		);
-
-		return array_values(
-			array_filter(
-				$rows,
-				fn (array $row): bool => (string)($row['state'] ?? '') === 'invited' && (string)($row['contactRef'] ?? '') === $contactRef
-			)
-		);
-	}//end heldFor()
-
-	/**
 	 * How many invitations the rows hold from today.
 	 *
 	 * @param array<int, array<string, mixed>> $rows The resident's rows.

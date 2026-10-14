@@ -371,7 +371,11 @@ class PortalIdentityController extends Controller {
 		// An invitation from a resident is held for the new account, so its
 		// activation joins both sides, in whichever tab the link opens.
 		if ($contactInvitation !== '') {
-			$this->contacts?->holdForRegistration(token: $contactInvitation, newRef: (string)$account['subjectRef'], organisation: (string)($site['organisation'] ?? ''));
+			$this->contacts?->holdForRegistration(
+				token: $contactInvitation,
+				newRef: (string)$account['subjectRef'],
+				organisation: (string)($site['organisation'] ?? '')
+			);
 		}
 
 		if ($decision['reason'] === PortalRegistrationPolicyService::POLICY_ACTIVATION) {
