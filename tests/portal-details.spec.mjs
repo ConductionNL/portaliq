@@ -78,9 +78,17 @@ test('the logo is picked from the portal media library and stored as an address 
 	assert.equal(logo.register, 'portaliq')
 	assert.ok(REGISTER.components.schemas[logo.schema], `the register has no "${logo.schema}" schema`)
 	const media = REGISTER.components.schemas[logo.schema].properties
-	for (const [key, value] of Object.entries(logo.filter)) {
-		assert.ok(media[key].enum.includes(value), `${key}=${value} is not a media value`)
-	}
+	assert.ok(media.kind.enum.includes(logo.filter.kind))
+	assert.ok(media.status.enum.includes(logo.filter.status))
+	// Only this portal's images: media.portal holds the portal slug.
+	assert.equal(logo.filter.portal, '@object.slug')
+	assert.ok(media.portal)
+	// A typed address, accepted where PortalRuntimeConfigResolver::logoUrl() accepts it.
+	assert.equal(logo.free, true)
+	const typed = new RegExp(logo.freePattern)
+	for (const ok of ['/apps/portaliq/logo/open-tilburg.svg', 'https://www.example.nl/logo.svg', 'http://localhost/logo.png']) assert.ok(typed.test(ok), ok)
+	for (const bad of ['//evil.example/logo.svg', 'javascript:alert(1)', 'logo.svg', 'ftp://x.nl/l.svg', '']) assert.equal(typed.test(bad), false, bad)
+	assert.ok(logo.freePatternMessage)
 	assert.ok(media[logo.labelField], logo.labelField)
 	// Root-relative, so PortalRuntimeConfigResolver::logoUrl() lets it through,
 	// and the route the public media items are served on.

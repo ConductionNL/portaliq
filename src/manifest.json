@@ -2616,11 +2616,17 @@
                   "labelField": "title",
                   "filter": {
                     "kind": "image",
-                    "status": "published"
+                    "status": "published",
+                    "portal": "@object.slug"
                   },
                   "valueTemplate": "/apps/portaliq/api/content/media/{id}?portal={portal}",
                   "emptyLabel": "No logo",
-                  "hint": "A published image from Media. An address entered earlier stays selectable."
+                  "hint": "A published image from Media of this portal, or the address of an image.",
+                  "free": true,
+                  "freeLabel": "Or a web address",
+                  "freePlaceholder": "https://www.example.nl/logo.svg",
+                  "freePattern": "^(/(?!/)\\S*|https?://\\S+)$",
+                  "freePatternMessage": "A logo address starts with /, http:// or https://."
                 },
                 {
                   "key": "frameAncestors",
