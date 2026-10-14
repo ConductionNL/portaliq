@@ -23,27 +23,35 @@ test('the account route carries the registration address, another route does not
 		registerUrl: REGISTER,
 		authentication: { modes: ['nextcloud', 'digid', 'email-link'] },
 	}
-	const routes = signInRoutes(site, '/api', undefined, '', '', true)
+	const routes = signInRoutes(site, '/api', undefined, '', [], true)
 	assert.equal(routes.find((r) => r.mode === 'nextcloud').registerUrl, REGISTER)
 	assert.equal(routes.find((r) => r.mode === 'digid').registerUrl, undefined)
 	assert.equal(routes.find((r) => r.mode === 'email-link').registerUrl, undefined)
 })
 
-test('a portal without the address, or on the demo, gets no link', () => {
+test('a portal without the address gets no link', () => {
 	assert.equal(
 		signInRoutes({ authentication: { modes: ['nextcloud'] } }, '/api')[0]
 			.registerUrl,
 		undefined,
 	)
-	assert.equal(
-		signInRoutes(
-			{ registerUrl: REGISTER, authentication: { modes: ['nextcloud'] } },
-			'/api',
-			undefined,
-			'sanne',
-		)[0].registerUrl,
+})
+
+// demo-sign-in-beside-the-account: the demo cards sit beside the account
+// route; they never take its registration link away.
+test('on the demo the account route keeps the link and its own sign-in', () => {
+	const routes = signInRoutes(
+		{ registerUrl: REGISTER, authentication: { modes: ['nextcloud'] } },
+		'/api',
 		undefined,
+		'zuiddrecht',
+		[{ key: 'sanne', name: 'Sanne de Vries' }],
 	)
+	assert.equal(routes[0].registerUrl, REGISTER)
+	assert.equal(routes[0].href, '/api/session/nextcloud')
+	assert.equal(routes[0].demo, undefined)
+	assert.equal(routes[1].demo, true)
+	assert.equal(routes[1].registerUrl, undefined)
 })
 
 test('an e-mail link portal never draws the link, whatever the config says', () => {
@@ -52,7 +60,7 @@ test('an e-mail link portal never draws the link, whatever the config says', () 
 		'/api',
 		undefined,
 		'',
-		'',
+		[],
 		true,
 	)
 	assert.equal(routes.length, 1)

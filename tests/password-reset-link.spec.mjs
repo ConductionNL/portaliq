@@ -27,21 +27,27 @@ test('the account route carries the reset address, another route does not', () =
 	assert.equal(routes.find((r) => r.mode === 'digid').lostPasswordUrl, undefined)
 })
 
-test('a portal without the address, or on the demo, gets no link', () => {
+test('a portal without the address gets no link', () => {
 	assert.equal(
 		signInRoutes({ authentication: { modes: ['nextcloud'] } }, '/api')[0]
 			.lostPasswordUrl,
 		undefined,
 	)
-	assert.equal(
-		signInRoutes(
-			{ lostPasswordUrl: LOST, authentication: { modes: ['nextcloud'] } },
-			'/api',
-			undefined,
-			'sanne',
-		)[0].lostPasswordUrl,
+})
+
+// demo-sign-in-beside-the-account: the demo cards sit beside the account
+// route, so a resident with an account can still reset its password there.
+test('on the demo the account route keeps the link, the demo cards get none', () => {
+	const routes = signInRoutes(
+		{ lostPasswordUrl: LOST, authentication: { modes: ['nextcloud'] } },
+		'/api',
 		undefined,
+		'zuiddrecht',
+		[{ key: 'sanne', name: 'Sanne de Vries' }],
 	)
+	assert.equal(routes[0].lostPasswordUrl, LOST)
+	assert.equal(routes[1].demo, true)
+	assert.equal(routes[1].lostPasswordUrl, undefined)
 })
 
 test('the sign-in page shows the link under the account button only', async () => {

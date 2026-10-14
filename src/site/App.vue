@@ -1491,10 +1491,10 @@ export default {
 				this.site,
 				authBaseFrom(resolveApiBase()),
 				this.t,
-				// One click on a demo for the example resident (example-resident-demo-login).
+				// One click on a demo per example resident, beside the portal's
+				// own ways in (demo-sign-in-beside-the-account).
 				this.signinConfig.exampleResident || '',
-				// Its way in stays out while the demo switch is off.
-				this.signinConfig.exampleResidentWayIn || '',
+				this.signinConfig.exampleResidents || [],
 				// The e-mail link, behind the instance switch (sign-in-with-an-email-link).
 				this.waysIn.emailLink === true,
 			)

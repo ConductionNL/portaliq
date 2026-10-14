@@ -1,16 +1,59 @@
 {
 	"set": "zuiddrecht",
-	"$comment": "portaliq's part of the Zuiddrecht example set: the example resident Sanne de Vries (cast key sanne), her portal account, portal accounts for Henk, Linda, Fatima, Jan-Willem and Mark with the mandates that let Linda act for her father Henk and Jan-Willem and Mark for their companies, her five cases, one question and four messages, and the sign-in card on the portal. Installed by `occ openregister:example-set:install zuiddrecht` after `occ portaliq:example-site:install zuiddrecht`; dossiq goes first because the cases are dossiq's. `exampleResident` tells portaliq's one-click demo sign-in which of the recorded objects is the resident's portal account and which change added the sign-in mode. Every date is a number of days from the install day. `waitingOnApplicant` is written beside the open question on purpose: dossiq sets that flag in the act that sends a question, and a seed is not that act.",
+	"$comment": "portaliq's part of the Zuiddrecht example set: portal accounts for the residents Sanne de Vries, Henk Bakker, Linda Bakker and Fatima El-Amrani and the business contacts Jan-Willem and Mark, the mandates that let Linda act for her father Henk and Jan-Willem and Mark for their companies, Sanne's five cases, one question and four messages, the residents' group `inwoners`, and on the portal the `nextcloud` way in with the account card of the Inloggen board and the resident group the Nextcloud registration app fills. Installed by `occ openregister:example-set:install zuiddrecht` after `occ portaliq:example-site:install zuiddrecht`; dossiq goes first because the cases are dossiq's. `exampleResident` lists the residents portaliq's one-click demo sign-in offers, each with its portal account object and its card; the cards show beside the account card only while `example_resident_demo_login` is `yes`. Business contacts get no one-click card and stay out of `inwoners`: they act for a company, which is eHerkenning, and the group is the portal's statement of who its residents are. Every date is a number of days from the install day. `waitingOnApplicant` is written beside the open question on purpose: dossiq sets that flag in the act that sends a question, and a seed is not that act.",
 	"after": [
 		"dossiq"
 	],
-	"exampleResident": {
-		"portal": "zuiddrecht",
-		"cast": "sanne",
-		"account": "portaalaccount-sanne",
-		"signIn": "inloggen-voorbeeldinwoner",
-		"mode": "nextcloud"
-	},
+	"exampleResident": [
+		{
+			"portal": "zuiddrecht",
+			"cast": "sanne",
+			"account": "portaalaccount-sanne",
+			"card": {
+				"title": "Sanne de Vries",
+				"text": "Voorbeeldinwoner met vijf zaken, een open vraag en berichten."
+			}
+		},
+		{
+			"portal": "zuiddrecht",
+			"cast": "henk",
+			"account": "portaalaccount-henk",
+			"card": {
+				"title": "Henk Bakker",
+				"text": "Voorbeeldinwoner. Zijn dochter Linda regelt zaken voor hem."
+			}
+		},
+		{
+			"portal": "zuiddrecht",
+			"cast": "linda",
+			"account": "portaalaccount-linda",
+			"card": {
+				"title": "Linda Bakker",
+				"text": "Voorbeeldinwoner. Zij regelt met een machtiging zaken voor haar vader Henk."
+			}
+		},
+		{
+			"portal": "zuiddrecht",
+			"cast": "fatima",
+			"account": "portaalaccount-fatima",
+			"card": {
+				"title": "Fatima El-Amrani",
+				"text": "Voorbeeldinwoner van Zuiddrecht."
+			}
+		}
+	],
+	"groups": [
+		{
+			"group": "inwoners",
+			"displayName": "Inwoners",
+			"members": [
+				"sanne",
+				"henk",
+				"linda",
+				"fatima"
+			]
+		}
+	],
 	"objects": [
 		{
 			"key": "portaalaccount-sanne",
@@ -37,7 +80,7 @@
 				"organisation": "zuiddrecht",
 				"displayName": "{{cast:henk.displayName}}",
 				"identityType": "dev",
-				"identityRef": "example-set",
+				"identityRef": "example-resident",
 				"status": "active",
 				"contactChannel": "portal"
 			}
@@ -52,7 +95,7 @@
 				"organisation": "zuiddrecht",
 				"displayName": "{{cast:linda.displayName}}",
 				"identityType": "dev",
-				"identityRef": "example-set",
+				"identityRef": "example-resident",
 				"status": "active",
 				"contactChannel": "portal"
 			}
@@ -67,7 +110,7 @@
 				"organisation": "zuiddrecht",
 				"displayName": "{{cast:fatima.displayName}}",
 				"identityType": "dev",
-				"identityRef": "example-set",
+				"identityRef": "example-resident",
 				"status": "active",
 				"contactChannel": "portal"
 			}
@@ -516,7 +559,7 @@
 	],
 	"changes": [
 		{
-			"key": "inloggen-voorbeeldinwoner",
+			"key": "inloggen-met-account",
 			"register": "portaliq",
 			"schema": "portal",
 			"where": {
@@ -527,10 +570,11 @@
 			},
 			"set": {
 				"authentication.modeLabels.nextcloud": {
-					"title": "Voorbeeldinwoner",
-					"text": "Alleen op deze demo. U logt in als Sanne de Vries.",
-					"button": "Inloggen als voorbeeldinwoner"
-				}
+					"title": "Met een account",
+					"text": "Voor wie publicaties volgt, dossiers bewaart of een vraag stelt. Geen DigiD nodig.",
+					"button": "Inloggen met uw account"
+				},
+				"authentication.registration.residentGroup": "inwoners"
 			}
 		}
 	]
