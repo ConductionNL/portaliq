@@ -170,12 +170,7 @@ class Application extends App implements IBootstrap {
 		$context->registerEventListener(PortalAccountProvisionRequestedEvent::class, PortalAccountProvisionListener::class);
 		$context->registerEventListener(PortalAccountClaimRequestedEvent::class, PortalAccountClaimListener::class);
 		$context->registerEventListener(PortalAccountInvitationRequestedEvent::class, PortalAccountInvitationListener::class);
-
-		// A member of a portal's resident group starts on portaliq, so the
-		// registration app's last step lands on the portal, not on the
-		// workplace (resident-lands-on-the-portal, REQ-NCL-007).
-		$context->registerEventListener(UserAddedEvent::class, ResidentLandingListener::class);
-		$context->registerEventListener(UserRemovedEvent::class, ResidentLandingListener::class);
+		$this->registerResidentLanding(context: $context);
 
 		// Traffic analytics (portal-traffic-visitors-and-geo): where a
 		// visitor's address turns into a region. The offline MMDB lookup is
@@ -219,6 +214,22 @@ class Application extends App implements IBootstrap {
 		// bindings.
 		(new FormDependentsRegistrar())->register($context);
 	}//end register()
+
+	/**
+	 * A member of a portal's resident group starts on portaliq, so the
+	 * registration app's last step lands on the portal, not on the workplace
+	 * (resident-lands-on-the-portal, REQ-NCL-007).
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/resident-lands-on-the-portal/specs/portal-nextcloud-account-login/spec.md#requirement-a-residents-nextcloud-start-page-is-the-portal-req-ncl-007
+	 */
+	private function registerResidentLanding(IRegistrationContext $context): void {
+		$context->registerEventListener(UserAddedEvent::class, ResidentLandingListener::class);
+		$context->registerEventListener(UserRemovedEvent::class, ResidentLandingListener::class);
+	}//end registerResidentLanding()
 
 	/**
 	 * The CMS content listeners.
