@@ -563,6 +563,18 @@ class PortalRuntimeConfigResolverTest extends TestCase {
 		$closed = $this->resolver()->runtimeConfigFor(portal: null, orgValue: '', locale: 'nl');
 		$this->assertFalse($closed['devLogin']);
 
+		// Debug mode alone does not offer it (dev-login-only-when-switched-on).
+		$debug = $this->createMock(IConfig::class);
+		$debug->method('getSystemValueBool')->willReturn(true);
+		$debug->method('getAppValue')->willReturnCallback(static fn (string $app, string $key, mixed $default = ''): string => (string)$default);
+		$debugOnly = new PortalRuntimeConfigResolver(
+			$this->createMock(PortalResolver::class),
+			$this->orgResolverDouble(),
+			$this->createMock(PortalThemeResolver::class),
+			$debug
+		);
+		$this->assertFalse($debugOnly->runtimeConfigFor(portal: null, orgValue: '', locale: 'nl')['devLogin']);
+
 		$config = $this->createMock(IConfig::class);
 		$config->method('getSystemValueBool')->willReturn(false);
 		$config->method('getAppValue')->willReturn('yes');

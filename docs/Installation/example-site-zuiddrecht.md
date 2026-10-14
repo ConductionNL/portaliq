@@ -105,7 +105,7 @@ The sign-in page then shows one more card per resident, after the other ways in:
 
 ### Why not the test sign-in
 
-Portaliq also has a test sign-in, `POST /portal/api/session/dev-login`, which the site offers as the button "Dev-login (test)". It is closed unless the instance runs in `debug` mode or an administrator sets `occ config:app:set portaliq dev_login_enabled --value=yes`. While it is open, anyone who can reach the instance can mint a session for any subject reference without a password, so never switch it on for a site real residents use, and know that `debug` mode opens it too. The button in the site always signs in as `dev-supplier`, not as a named resident. The example resident does not need it.
+Portaliq also has a test sign-in, `POST /portal/api/session/dev-login`, which the site offers as the button "Dev-login (test)". It is closed unless an administrator sets `occ config:app:set portaliq dev_login_enabled --value=yes`; `debug` mode does not open it. While it is open, anyone who can reach the instance can mint a session for any subject reference without a password, so never switch it on for a site real residents use. Check with `occ config:app:get portaliq dev_login_enabled`, and close it with `occ config:app:delete portaliq dev_login_enabled`. The button in the site always signs in as `dev-supplier`, not as a named resident. The example resident does not need it.
 
 ### Remove the resident
 

@@ -121,12 +121,21 @@ class SessionControllerTest extends TestCase {
 
 	}//end testDevLoginReturns404WhenGateIsClosed()
 
-	public function testDevLoginMintsATokenWhenDebugModeIsOn(): void {
+	/**
+	 * Debug mode does not open the test sign-in: only its own switch does
+	 * (dev-login-only-when-switched-on).
+	 *
+	 * @spec openspec/changes/dev-login-only-when-switched-on/specs/supplier-portal/spec.md#requirement-the-test-sign-in-opens-only-on-its-own-switch
+	 */
+	public function testDevLoginStaysClosedInDebugModeWithoutItsSwitch(): void {
 		$config = $this->createMock(IConfig::class);
 		$config->method('getSystemValueBool')->willReturn(true);
+		$config->method('getAppValue')->willReturnCallback(
+			static fn (string $app, string $key, mixed $default = ''): string => (string)$default
+		);
 
 		$session = $this->createMock(PortalSessionService::class);
-		$session->method('issueSession')->willReturn(['token' => 'signed.jwt.token', 'jti' => 'jti-1']);
+		$session->expects($this->never())->method('issueSession');
 
 		$response = $this->controller(session: $session, config: $config)->devLogin(
 			subjectRef: 'dev-supplier',
@@ -134,12 +143,10 @@ class SessionControllerTest extends TestCase {
 			organisation: 'dev-org'
 		);
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$data = $response->getData();
-		$this->assertSame('signed.jwt.token', $data['token']);
-		$this->assertSame('Bearer', $data['tokenType']);
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+		$this->assertTrue($response->isThrottled());
 
-	}//end testDevLoginMintsATokenWhenDebugModeIsOn()
+	}//end testDevLoginStaysClosedInDebugModeWithoutItsSwitch()
 
 	public function testDevLoginMintsATokenWhenTheAppFlagIsExplicitlyEnabled(): void {
 		$config = $this->createMock(IConfig::class);
@@ -159,7 +166,7 @@ class SessionControllerTest extends TestCase {
 		// portal-auth-edge-session-hardening: the edge fails closed rather
 		// than falling back to a system/shared secret.
 		$config = $this->createMock(IConfig::class);
-		$config->method('getSystemValueBool')->willReturn(true);
+		$config->method('getAppValue')->willReturn('yes');
 
 		$session = $this->createMock(PortalSessionService::class);
 		$session->method('issueSession')->willReturn(null);
