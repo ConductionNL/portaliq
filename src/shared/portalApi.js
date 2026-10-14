@@ -10,8 +10,8 @@
 // the response shapes are normalised to plain arrays/objects the renderers use.
 //
 // Written for the retired React portal and used by the Vue site renderer
-// (src/site) and the embed frame: it imports only pure modules that import
-// nothing themselves, so node tests cover the one implementation the bundles run.
+// (src/site) and the embed frame: it imports nothing, so node tests cover the
+// one implementation the bundles run.
 //
 // Auth: the portal session is a bearer minted at the auth edge (`/portal/api/
 // session`). The default store below is the React portal's localStorage key;
@@ -22,9 +22,23 @@
 // closed: a non-2xx or a network error yields an empty/`null` result, never a
 // throw the UI has to guard.
 
-import { submissionHeaders } from './submissionKey.js'
-
 const TOKEN_KEY = 'portaliq_token'
+
+/**
+ * The header that carries a send's submission key, or none. The same rule as
+ * `submissionKey.js`, kept here because this module imports nothing
+ * (action-forward-survives-a-slow-answer REQ-AFS-001).
+ *
+ * @param {{submissionKey?: string}|undefined} options The send's options.
+ * @return {Record<string, string>} The header to add.
+ * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
+ */
+function submissionHeaders(options) {
+	const key = options && options.submissionKey
+	return typeof key === 'string' && /^[A-Za-z0-9_-]{16,128}$/.test(key)
+		? { 'Idempotency-Key': key }
+		: {}
+}
 
 /**
  *
