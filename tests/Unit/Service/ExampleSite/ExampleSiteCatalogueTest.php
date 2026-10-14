@@ -70,4 +70,78 @@ class ExampleSiteCatalogueTest extends TestCase {
 		$this->assertStringContainsString(self::ROUTE, $this->linksOf(apps: $with), 'the Raadsleden page links it with decidiq');
 
 	}//end testWithoutDecidiqThePageIsNotInstalled()
+
+	/**
+	 * The page with this route as installed, or null when it is not.
+	 *
+	 * @param IAppManager $apps  The app manager.
+	 * @param string      $route The route.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function pageAt(IAppManager $apps, string $route): ?array {
+		$site = (new ExampleSiteCatalogue(directory: null, apps: $apps))->find(id: 'zuiddrecht');
+		foreach ($site['pages'] as $page) {
+			if ($page['route'] === $route) {
+				return $page;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * The `{app, list}` of every public records block on a page.
+	 *
+	 * @param array<string, mixed> $page The page.
+	 *
+	 * @return array<int, string>
+	 */
+	private static function recordLists(array $page): array {
+		$lists = [];
+		foreach ($page['body']['widgets'] as $widget) {
+			if ($widget['widgetKey'] === 'publicRecords') {
+				$lists[] = $widget['props']['app'].':'.$widget['props']['list'];
+			}
+		}
+
+		return $lists;
+	}
+
+	/**
+	 * With decidiq the meetings page lists decidiq's published meetings and the
+	 * decisions page its published decisions, one block per page (site-council-pages-read-decidiq).
+	 *
+	 * @spec openspec/changes/site-council-pages-read-decidiq/specs/site-council-records/spec.md#requirement-the-council-pages-show-decidiqs-published-meetings-and-decisions-req-scp-001
+	 */
+	public function testTheCouncilPagesReadDecidiqsPublishedRecords(): void {
+		$apps = $this->createMock(IAppManager::class);
+		$apps->method('isInstalled')->willReturnCallback(static fn (string $id): bool => $id === 'decidiq');
+
+		$this->assertSame(['decidiq:publicMeetings'], self::recordLists($this->pageAt(apps: $apps, route: '/bestuur/vergaderingen')));
+		$this->assertSame(['decidiq:publicDecisions'], self::recordLists($this->pageAt(apps: $apps, route: '/bestuur/besluiten')));
+		$this->assertSame(['decidiq:memberVotingRecords'], self::recordLists($this->pageAt(apps: $apps, route: self::ROUTE)));
+		$this->assertStringNotContainsString('requiresApp', (string)json_encode($this->pageAt(apps: $apps, route: '/bestuur/vergaderingen')), 'the key never reaches the store');
+
+	}//end testTheCouncilPagesReadDecidiqsPublishedRecords()
+
+	/**
+	 * Without decidiq the meetings page keeps its text but loses the block, and
+	 * the decisions page and every link to it are not installed.
+	 *
+	 * @spec openspec/changes/site-council-pages-read-decidiq/specs/site-council-records/spec.md#requirement-the-council-pages-show-decidiqs-published-meetings-and-decisions-req-scp-001
+	 */
+	public function testWithoutDecidiqTheCouncilPagesKeepTheirText(): void {
+		$apps = $this->createMock(IAppManager::class);
+		$apps->method('isInstalled')->willReturn(false);
+
+		$meetings = $this->pageAt(apps: $apps, route: '/bestuur/vergaderingen');
+		$this->assertNotNull($meetings);
+		$this->assertSame([], self::recordLists($meetings));
+		$this->assertSame('nlParagraph', $meetings['body']['widgets'][0]['widgetKey']);
+		$this->assertNull($this->pageAt(apps: $apps, route: '/bestuur/besluiten'));
+		$site = (string)json_encode((new ExampleSiteCatalogue(directory: null, apps: $apps))->find(id: 'zuiddrecht'), JSON_UNESCAPED_SLASHES);
+		$this->assertStringNotContainsString('/bestuur/besluiten', $site, 'no link to a page that is not installed');
+
+	}//end testWithoutDecidiqTheCouncilPagesKeepTheirText()
 }//end class

@@ -96,7 +96,7 @@
 				{{ title }}
 			</h2>
 			<label class="utrecht-form-label" for="pq-records-search">{{
-				words.search
+				searchText
 			}}</label>
 			<input
 				id="pq-records-search"
@@ -159,6 +159,8 @@ export default {
 		linkKey: { type: String, default: 'subject' },
 		/** The text of the link back to the list; "Alle ..." style, from the page. */
 		backText: { type: String, default: '' },
+		/** The label of the search field ("Zoek een vergadering"); the block's own words when empty. */
+		searchLabel: { type: String, default: '' },
 		/** The reader's locale; the page language when empty. */
 		locale: { type: String, default: '' },
 		/** The record id (test seam); read from `?record=` otherwise. */
@@ -197,6 +199,16 @@ export default {
 		 */
 		shown() {
 			return matchingEntries(this.entries, this.typed)
+		},
+
+		/**
+		 * The search field's label: the page's, or the block's own words.
+		 *
+		 * @return {string} The label.
+		 * @spec openspec/changes/site-council-pages-read-decidiq/specs/site-council-records/spec.md#requirement-the-council-pages-show-decidiqs-published-meetings-and-decisions-req-scp-001
+		 */
+		searchText() {
+			return this.searchLabel || this.words.search
 		},
 
 		/**

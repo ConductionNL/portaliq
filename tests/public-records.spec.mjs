@@ -119,3 +119,11 @@ test('the block is a registered widget and not host-fed', () => {
 	assert.match(catalogue, /publicRecords: PublicRecordsBlock/)
 	assert.match(readFileSync('src/lib/widgetLabels.js', 'utf8'), /publicRecords: 'Openbare overzichten'/)
 })
+
+test('a page names what its search field searches for (site-council-pages-read-decidiq)', async () => {
+	const screen = await loadSfc(BLOCK)
+	const words = { search: 'Zoek een naam' }
+	assert.equal(screen.computed.searchText.call({ searchLabel: 'Zoek een vergadering', words }), 'Zoek een vergadering')
+	assert.equal(screen.computed.searchText.call({ searchLabel: '', words }), 'Zoek een naam', 'without a label the block keeps its own words')
+	assert.match(readFileSync(BLOCK, 'utf8'), /\{\{\s*searchText\s*\}\}/, 'the field label shows it')
+})
