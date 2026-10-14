@@ -403,6 +403,8 @@ return [
         // short reference session it started (identity-ways-in-screens D2).
         ['name' => 'portalIdentity#referenceCase', 'url' => '/portal/api/identity/reference-case', 'verb' => 'GET'],
         ['name' => 'portalIdentity#register', 'url' => '/portal/api/identity/register', 'verb' => 'POST'],
+        // The address a resident's contact invitation went to (own-contacts-and-invitations T05).
+        ['name' => 'portalIdentity#contactInvitation', 'url' => '/portal/api/identity/contact-invitation', 'verb' => 'POST'],
         // The activation link of a self-registration (identity-ways-in-screens T03).
         ['name' => 'portalIdentity#activate', 'url' => '/portal/api/identity/activate', 'verb' => 'POST'],
         ['name' => 'portalIdentity#acceptInvitation', 'url' => '/portal/api/identity/invitation/accept', 'verb' => 'POST'],

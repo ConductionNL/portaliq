@@ -259,14 +259,140 @@ class PortalContactService {
 			return self::NOT_FOUND;
 		}
 
-		$row = $this->rows->byToken(token: $token, organisation: $organisation);
-		$now = ($now ?? new DateTimeImmutable());
-		if ($row === null || (string)($row['state'] ?? '') !== 'invited' || (string)($row['owner'] ?? '') === $newRef
-			|| $this->rows->expired(row: $row, now: $now) === true
-		) {
+		$row = $this->openInvitation(token: $token, newRef: $newRef, organisation: $organisation, now: ($now ?? new DateTimeImmutable()));
+		if ($row === null) {
 			return self::NOT_FOUND;
 		}
 
+		return $this->join(row: $row, newRef: $newRef, displayName: $displayName, organisation: $organisation);
+	}//end acceptInvitation()
+
+	/**
+	 * A visitor who registers through an invitation link: the open
+	 * invitation is held for the new account (its `contactRef`), so the
+	 * activation can join both sides even when the activation link opens in
+	 * another browser tab, which has no kept secret.
+	 *
+	 * The row stays `invited` and keeps its secret: a link followed while
+	 * signed in still joins the same way.
+	 *
+	 * @param string $token The secret from the invitation mail.
+	 * @param string $newRef The new, not yet active account.
+	 * @param string $organisation The tenant.
+	 * @param DateTimeImmutable|null $now The moment to judge expiry against.
+	 *
+	 * @return bool Whether an open invitation was held.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 */
+	public function holdForRegistration(string $token, string $newRef, string $organisation, ?DateTimeImmutable $now=null): bool {
+		if ($token === '' || $newRef === '' || $organisation === '') {
+			return false;
+		}
+
+		$row = $this->openInvitation(token: $token, newRef: $newRef, organisation: $organisation, now: ($now ?? new DateTimeImmutable()));
+		if ($row === null) {
+			return false;
+		}
+
+		return $this->writer->updateObject(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'owner',
+			subjectRef: (string)$row['owner'],
+			organisation: $organisation,
+			id: $this->rows->idOf(row: $row),
+			data: ['contactRef' => $newRef]
+		) !== null;
+	}//end holdForRegistration()
+
+	/**
+	 * An account was activated: every invitation held for it joins both
+	 * sides, without a second approval (REQ-ROC-003).
+	 *
+	 * @param array<string, mixed> $account The activated account: `subjectRef`, `organisation`, `displayName`.
+	 * @param DateTimeImmutable|null $now The moment to judge expiry against.
+	 *
+	 * @return int How many invitations joined.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 */
+	public function joinOnActivation(array $account, ?DateTimeImmutable $now=null): int {
+		$newRef       = (string)($account['subjectRef'] ?? '');
+		$organisation = (string)($account['organisation'] ?? '');
+		$now          = ($now ?? new DateTimeImmutable());
+		$joined       = 0;
+		foreach ($this->rows->heldFor(contactRef: $newRef, organisation: $organisation) as $row) {
+			if ((string)($row['owner'] ?? '') === $newRef || $this->rows->expired(row: $row, now: $now) === true) {
+				continue;
+			}
+
+			if ($this->join(row: $row, newRef: $newRef, displayName: (string)($account['displayName'] ?? ''), organisation: $organisation) === self::SENT) {
+				$joined++;
+			}
+		}
+
+		return $joined;
+	}//end joinOnActivation()
+
+	/**
+	 * The address an open invitation went to, so registration can show it
+	 * filled in. Only the holder of the secret asks, and they got the mail.
+	 *
+	 * @param string $token The secret from the invitation mail.
+	 * @param string $organisation The tenant of the portal being visited.
+	 * @param DateTimeImmutable|null $now The moment to judge expiry against.
+	 *
+	 * @return string The address, or '' for a link that is unknown, expired or used.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 */
+	public function invitationEmail(string $token, string $organisation, ?DateTimeImmutable $now=null): string {
+		if ($token === '' || $organisation === '') {
+			return '';
+		}
+
+		$row = $this->openInvitation(token: $token, newRef: '', organisation: $organisation, now: ($now ?? new DateTimeImmutable()));
+
+		return (string)($row['email'] ?? '');
+	}//end invitationEmail()
+
+	/**
+	 * The open invitation a secret belongs to, or null when it is unknown,
+	 * no longer `invited`, expired, or the inviter's own.
+	 *
+	 * @param string $token The secret.
+	 * @param string $newRef The account following it ('' when none yet).
+	 * @param string $organisation The tenant.
+	 * @param DateTimeImmutable $now The moment.
+	 *
+	 * @return array<string, mixed>|null The row.
+	 */
+	private function openInvitation(string $token, string $newRef, string $organisation, DateTimeImmutable $now): ?array {
+		$row = $this->rows->byToken(token: $token, organisation: $organisation);
+		if ($row === null || (string)($row['state'] ?? '') !== 'invited' || $this->rows->expired(row: $row, now: $now) === true) {
+			return null;
+		}
+
+		if ($newRef !== '' && (string)($row['owner'] ?? '') === $newRef) {
+			return null;
+		}
+
+		return $row;
+	}//end openInvitation()
+
+	/**
+	 * Join both sides of an invitation: the inviter's row becomes approved
+	 * with the new account, and the new account gets its own row.
+	 *
+	 * @param array<string, mixed> $row The inviter's `invited` row.
+	 * @param string $newRef The new account.
+	 * @param string $displayName The new account's name, as the inviter sees it.
+	 * @param string $organisation The tenant.
+	 *
+	 * @return string SENT, or FAILED when the inviter's row could not be written.
+	 */
+	private function join(array $row, string $newRef, string $displayName, string $organisation): string {
 		$inviter = (string)$row['owner'];
 		$written = $this->writer->updateObject(
 			register: self::REGISTER,
@@ -292,7 +418,7 @@ class PortalContactService {
 		);
 
 		return self::SENT;
-	}//end acceptInvitation()
+	}//end join()
 
 	/**
 	 * The resident's contacts, and what waits for an answer.

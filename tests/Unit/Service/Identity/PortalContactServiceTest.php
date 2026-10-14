@@ -262,6 +262,77 @@ class PortalContactServiceTest extends TestCase {
 	}//end testFollowingTheLinkApprovesBothSidesOnce()
 
 	/**
+	 * Registering through the link holds the invitation for the new account,
+	 * and its activation joins both sides, with no secret in the browser.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 */
+	public function testRegisteringThroughTheLinkJoinsBothSidesOnActivation(): void {
+		$service = $this->service();
+		$now     = new DateTimeImmutable('2026-10-08T10:00:00+00:00');
+		$service->invite(subject: $this->subject(), email: 'new@example.nl', message: '', now: $now);
+
+		$this->assertFalse($service->holdForRegistration(token: 'wrong', newRef: 'n', organisation: 'org-1', now: $now));
+		$this->assertFalse($service->holdForRegistration(token: 'secret-token', newRef: 'n', organisation: 'org-2', now: $now), 'another tenant');
+		$this->assertFalse($service->holdForRegistration(token: 'secret-token', newRef: 'a', organisation: 'org-1', now: $now), 'the inviter');
+		$this->assertFalse($service->holdForRegistration(token: 'secret-token', newRef: 'n', organisation: 'org-1', now: $now->modify('+15 days')), 'expired');
+		$this->assertSame(0, $service->joinOnActivation(account: ['subjectRef' => 'n', 'organisation' => 'org-1', 'displayName' => 'Nina'], now: $now), 'nothing held yet');
+
+		$this->assertTrue($service->holdForRegistration(token: 'secret-token', newRef: 'n', organisation: 'org-1', now: $now));
+		$this->assertSame([], $service->approvedRefs(owner: 'a', organisation: 'org-1'), 'held is not joined');
+		$this->assertSame('invited', array_values($this->rows)[0]['state']);
+
+		$joined = $service->joinOnActivation(account: ['subjectRef' => 'n', 'organisation' => 'org-1', 'displayName' => 'Nina'], now: $now->modify('+1 day'));
+		$this->assertSame(1, $joined);
+		$this->assertSame(['n'], $service->approvedRefs(owner: 'a', organisation: 'org-1'));
+		$this->assertSame(['a'], $service->approvedRefs(owner: 'n', organisation: 'org-1'));
+		$this->assertSame('Nina', $service->approvedContacts(owner: 'a', organisation: 'org-1')[0]['displayName']);
+		$this->assertSame('', array_values($this->rows)[0]['tokenHash'], 'the link works once');
+		$this->assertSame(0, $service->joinOnActivation(account: ['subjectRef' => 'n', 'organisation' => 'org-1', 'displayName' => 'Nina'], now: $now), 'a second activation joins nothing');
+	}//end testRegisteringThroughTheLinkJoinsBothSidesOnActivation()
+
+	/**
+	 * A held invitation that expired before the activation joins nobody.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 */
+	public function testAHeldInvitationThatExpiredJoinsNobody(): void {
+		$service = $this->service();
+		$now     = new DateTimeImmutable('2026-10-08T10:00:00+00:00');
+		$service->invite(subject: $this->subject(), email: 'new@example.nl', message: '', now: $now);
+		$this->assertTrue($service->holdForRegistration(token: 'secret-token', newRef: 'n', organisation: 'org-1', now: $now));
+
+		$this->assertSame(0, $service->joinOnActivation(account: ['subjectRef' => 'n', 'organisation' => 'org-1'], now: $now->modify('+15 days')));
+		$this->assertSame([], $service->approvedRefs(owner: 'a', organisation: 'org-1'));
+	}//end testAHeldInvitationThatExpiredJoinsNobody()
+
+	/**
+	 * The holder of an open link learns the address it went to, nothing else.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 */
+	public function testTheLinkNamesItsAddressWhileItIsOpen(): void {
+		$service = $this->service();
+		$now     = new DateTimeImmutable('2026-10-08T10:00:00+00:00');
+		$service->invite(subject: $this->subject(), email: 'new@example.nl', message: '', now: $now);
+
+		$this->assertSame('new@example.nl', $service->invitationEmail(token: 'secret-token', organisation: 'org-1', now: $now));
+		$this->assertSame('', $service->invitationEmail(token: 'wrong', organisation: 'org-1', now: $now));
+		$this->assertSame('', $service->invitationEmail(token: 'secret-token', organisation: 'org-2', now: $now), 'another tenant');
+		$this->assertSame('', $service->invitationEmail(token: 'secret-token', organisation: 'org-1', now: $now->modify('+15 days')), 'expired');
+		$this->assertSame('', $service->invitationEmail(token: '', organisation: 'org-1', now: $now));
+
+		$service->acceptInvitation(subject: $this->subject('n'), token: 'secret-token', displayName: 'Nina', now: $now);
+		$this->assertSame('', $service->invitationEmail(token: 'secret-token', organisation: 'org-1', now: $now), 'used');
+	}//end testTheLinkNamesItsAddressWhileItIsOpen()
+
+	/**
 	 * A resident reads only their own rows, and the browser never gets the token hash.
 	 *
 	 * @return void
