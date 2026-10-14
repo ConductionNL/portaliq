@@ -54,14 +54,6 @@ class ActionConfigNormaliser {
 	private const FIELD_SIZES = ['small', 'medium', 'large', 'full'];
 
 	/**
-	 * The input hints an action may declare on a field itself. A create
-	 * action gets its hint from the schema's format (SchemaInputHintNormaliser),
-	 * which wins; an endpoint action writes no schema here, so its own
-	 * declaration is the only place a date field can say it is a date.
-	 */
-	private const FIELD_INPUTS = ['date', 'datetime', 'number', 'email'];
-
-	/**
 	 * The form-shape pass: required fields, field widgets, steps. One
 	 * collaborator rather than three, so this class's dependencies stay
 	 * countable (phpmd CouplingBetweenObjects).
@@ -351,9 +343,7 @@ class ActionConfigNormaliser {
 
 		$entry = $this->applyFieldFlags(entry: $entry, field: $field, config: $config, mandatory: $mandatory);
 		$entry['size'] = $this->values->oneOf(value: ($config['size'] ?? null), allowed: self::FIELD_SIZES, default: 'medium');
-		if (in_array(($config['input'] ?? null), self::FIELD_INPUTS, true) === true) {
-			$entry['input'] = $config['input'];
-		}
+		$entry = $this->form->declaredInput(entry: $entry, config: $config);
 		$entry = (new ValueLabelsNormaliser())->apply(entry: $entry, source: $config);
 		$entry = $this->form->fieldWidget(entry: $entry, config: $config);
 
