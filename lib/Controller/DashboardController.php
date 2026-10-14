@@ -77,6 +77,7 @@ class DashboardController extends Controller {
 	 * @spec openspec/specs/dashboard-page/spec.md#REQ-DASH-001
 	 * @spec openspec/changes/admin-menu-follows-roles/specs/admin-ui/spec.md#requirement-the-app-menu-must-show-a-user-only-the-pages-their-role-may-use
 	 * @spec openspec/changes/nextcloud-account-registration/specs/portal-nextcloud-account-login/spec.md#requirement-a-resident-who-opens-the-workplace-is-sent-back-to-their-portal-req-ncl-006
+	 * @spec openspec/changes/close-portaliq-register-to-staff/specs/admin-ui/spec.md#requirement-only-staff-may-open-portaliqs-nextcloud-app-and-read-its-register
 	 */
 	public function page(): Response {
 		// A resident is not a workplace user. Nextcloud's registration app
@@ -89,10 +90,19 @@ class DashboardController extends Controller {
 			return $back;
 		}
 
+		// The app is staff's workplace. A signed-in account that is neither a
+		// resident nor staff (a self-registered account outside the resident
+		// group, an account in no group) is refused rather than shown the
+		// staff dashboard. Without the access service nobody can be shown to
+		// be staff, so the page fails closed (close-portaliq-register-to-staff).
+		if ($this->access === null || $this->access->isStaff() === false) {
+			return $this->refusal();
+		}
+
 		// The app menu shows only the pages this user's role may use
 		// (admin-menu-follows-roles). Without the flags the app shows the
 		// pages every signed-in user may use, never more.
-		if ($this->access !== null && $this->initialState !== null) {
+		if ($this->initialState !== null) {
 			$this->initialState->provideInitialState('access', $this->access->forCurrentUser());
 		}
 
@@ -112,6 +122,20 @@ class DashboardController extends Controller {
 	public function catchAll(): Response {
 		return $this->page();
 	}//end catchAll()
+
+	/**
+	 * The page a signed-in account that is not staff gets: Nextcloud's 403.
+	 *
+	 * @return TemplateResponse The refusal, with status 403.
+	 *
+	 * @spec openspec/changes/close-portaliq-register-to-staff/specs/admin-ui/spec.md#requirement-only-staff-may-open-portaliqs-nextcloud-app-and-read-its-register
+	 */
+	private function refusal(): TemplateResponse {
+		$response = new TemplateResponse('core', '403', [], TemplateResponse::RENDER_AS_GUEST);
+		$response->setStatus(Http::STATUS_FORBIDDEN);
+
+		return $response;
+	}//end refusal()
 
 	/**
 	 * The redirect to a resident's portal, or null for anybody else.
