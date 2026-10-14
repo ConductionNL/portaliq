@@ -54,7 +54,11 @@ export function runtimeConfig() {
 
 	// 1. The standalone shell's block. Present only when `templates/site.php`
 	//    rendered the whole document, so its presence IS the host signal.
-	const el = document.getElementById('portaliq-site-config')
+	// Outside a browser document (server rendering, a test) there is none.
+	const el =
+		typeof document === 'undefined'
+			? null
+			: document.getElementById('portaliq-site-config')
 	if (el && el.textContent) {
 		try {
 			const parsed = JSON.parse(el.textContent)
