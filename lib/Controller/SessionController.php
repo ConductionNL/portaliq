@@ -1070,10 +1070,7 @@ class SessionController extends Controller {
 	}//end refresh()
 
 	/**
-	 * Whether the dev-login gate is open: only the explicit app flag
-	 * `dev_login_enabled` = `yes`. System `debug` does NOT open it: a debug
-	 * instance that is reachable from outside would otherwise sign any visitor
-	 * in without a password (dev-login-only-when-switched-on).
+	 * Whether the dev-login gate is open: only app flag `dev_login_enabled` = `yes`, never system `debug`.
 	 *
 	 * @return bool
 	 *
