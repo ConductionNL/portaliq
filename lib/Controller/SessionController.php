@@ -1070,15 +1070,16 @@ class SessionController extends Controller {
 	}//end refresh()
 
 	/**
-	 * Whether the dev-login gate is open: NC debug mode, or an explicit app flag.
+	 * Whether the dev-login gate is open: only the explicit app flag
+	 * `dev_login_enabled` = `yes`. System `debug` does NOT open it: a debug
+	 * instance that is reachable from outside would otherwise sign any visitor
+	 * in without a password (dev-login-only-when-switched-on).
 	 *
 	 * @return bool
+	 *
+	 * @spec openspec/changes/dev-login-only-when-switched-on/specs/supplier-portal/spec.md#requirement-the-test-sign-in-opens-only-on-its-own-switch
 	 */
 	private function isDevLoginEnabled(): bool {
-		if ($this->config->getSystemValueBool('debug', false) === true) {
-			return true;
-		}
-
 		return $this->config->getAppValue(Application::APP_ID, 'dev_login_enabled', 'no') === 'yes';
 	}//end isDevLoginEnabled()
 }//end class
