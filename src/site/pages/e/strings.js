@@ -9,6 +9,51 @@
 
 export default {
 	nl: {
+		'Send the invitation': 'Uitnodiging sturen',
+		'Who may arrange matters for you, and for whom you arrange matters.':
+			'Wie zaken voor u mag regelen, en voor wie u zaken regelt.',
+		'Who may arrange matters for you?': 'Wie mag zaken regelen voor u?',
+		'Authorise someone': 'Iemand machtigen',
+		'Nobody may arrange matters for you yet.':
+			'Nog niemand mag zaken voor u regelen.',
+		Who: 'Wie',
+		'What may this person arrange': 'Wat mag deze persoon',
+		'Until when': 'Tot wanneer',
+		Status: 'Status',
+		Action: 'Actie',
+		'A mandate counts only once the other person signs in and accepts the invitation.':
+			'Een machtiging geldt pas als de ander inlogt en de uitnodiging accepteert.',
+		Active: 'Actief',
+		Revoke: 'Intrekken',
+		'Withdraw invitation': 'Uitnodiging intrekken',
+		'All cases': 'Alle zaken',
+		'No end date': 'Geen einddatum',
+		'On whose behalf you work': 'Namens wie u werkt',
+		'Do you choose a company or person? Then My cases shows their cases.':
+			'Kiest u een bedrijf of persoon? Dan ziet u bij Mijn zaken hun zaken.',
+		'Your mandate for {party}': 'Uw machtiging voor {party}',
+		'given on {date}': 'gegeven op {date}',
+		'Stop mandate': 'Machtiging stoppen',
+		'Stop this mandate? You can no longer act for them.':
+			'Deze machtiging stoppen? U kunt dan niet meer namens hen handelen.',
+		'We send an invitation by e-mail. The mandate counts only once this person signs in and accepts the invitation.':
+			'Wij sturen een uitnodiging per e-mail. De machtiging geldt pas als deze persoon inlogt en de uitnodiging accepteert.',
+		'What may this person arrange?': 'Wat mag deze persoon regelen?',
+		'Only these kinds of case': 'Alleen deze soorten zaken',
+		'Until when?': 'Tot wanneer?',
+		'(optional)': '(niet verplicht)',
+		'For example 31 12 2026': 'Bijvoorbeeld 31 12 2026',
+		Day: 'Dag',
+		Month: 'Maand',
+		Year: 'Jaar',
+		'Fill in an end date after today, or leave it empty.':
+			'Vul een einddatum na vandaag in, of laat het leeg.',
+		'Choose at least one kind of case.': 'Kies minstens één soort zaak.',
+		'The invitation could not be sent. Try again later.':
+			'De uitnodiging kon niet worden verstuurd. Probeer het later opnieuw.',
+		'Mandates through DigiD Machtigen': 'Machtigen via DigiD Machtigen',
+		'Did you authorise someone through DigiD Machtigen? You do not see that mandate here. You arrange and view it on digid.nl.':
+			'Heeft u iemand gemachtigd via DigiD Machtigen? Die machtiging ziet u hier niet. U regelt en bekijkt haar op digid.nl.',
 		'What do I need to arrange': 'Wat moet ik regelen',
 		'View all tasks ({count})': 'Bekijk alle taken ({count})',
 		'What can I arrange': 'Wat kan ik regelen',
@@ -232,6 +277,51 @@ export default {
 		'{name} has been added to your case.': '{name} is aan uw zaak toegevoegd.',
 	},
 	en: {
+		'Send the invitation': 'Send the invitation',
+		'Who may arrange matters for you, and for whom you arrange matters.':
+			'Who may arrange matters for you, and for whom you arrange matters.',
+		'Who may arrange matters for you?': 'Who may arrange matters for you?',
+		'Authorise someone': 'Authorise someone',
+		'Nobody may arrange matters for you yet.':
+			'Nobody may arrange matters for you yet.',
+		Who: 'Who',
+		'What may this person arrange': 'What may this person arrange',
+		'Until when': 'Until when',
+		Status: 'Status',
+		Action: 'Action',
+		'A mandate counts only once the other person signs in and accepts the invitation.':
+			'A mandate counts only once the other person signs in and accepts the invitation.',
+		Active: 'Active',
+		Revoke: 'Revoke',
+		'Withdraw invitation': 'Withdraw invitation',
+		'All cases': 'All cases',
+		'No end date': 'No end date',
+		'On whose behalf you work': 'On whose behalf you work',
+		'Do you choose a company or person? Then My cases shows their cases.':
+			'Do you choose a company or person? Then My cases shows their cases.',
+		'Your mandate for {party}': 'Your mandate for {party}',
+		'given on {date}': 'given on {date}',
+		'Stop mandate': 'Stop mandate',
+		'Stop this mandate? You can no longer act for them.':
+			'Stop this mandate? You can no longer act for them.',
+		'We send an invitation by e-mail. The mandate counts only once this person signs in and accepts the invitation.':
+			'We send an invitation by e-mail. The mandate counts only once this person signs in and accepts the invitation.',
+		'What may this person arrange?': 'What may this person arrange?',
+		'Only these kinds of case': 'Only these kinds of case',
+		'Until when?': 'Until when?',
+		'(optional)': '(optional)',
+		'For example 31 12 2026': 'For example 31 12 2026',
+		Day: 'Day',
+		Month: 'Month',
+		Year: 'Year',
+		'Fill in an end date after today, or leave it empty.':
+			'Fill in an end date after today, or leave it empty.',
+		'Choose at least one kind of case.': 'Choose at least one kind of case.',
+		'The invitation could not be sent. Try again later.':
+			'The invitation could not be sent. Try again later.',
+		'Mandates through DigiD Machtigen': 'Mandates through DigiD Machtigen',
+		'Did you authorise someone through DigiD Machtigen? You do not see that mandate here. You arrange and view it on digid.nl.':
+			'Did you authorise someone through DigiD Machtigen? You do not see that mandate here. You arrange and view it on digid.nl.',
 		'What do I need to arrange': 'What do I need to arrange',
 		'View all tasks ({count})': 'View all tasks ({count})',
 		'What can I arrange': 'What can I arrange',
