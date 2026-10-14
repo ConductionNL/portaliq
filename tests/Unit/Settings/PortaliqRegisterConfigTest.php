@@ -388,8 +388,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.95.0 (portalFormBinding 0.5.0): `destination { register, schema, subjectField, paymentField, fields, fixed }` replaces `caseRegister`, `caseSchema` and `deliverTo`, which MoveBindingDestination moves (submit-creates-the-case-directly, decision 179). Additive; the old fields stay, deprecated, until the drain reports zero.
 		$this->assertSame('object', self::$register['components']['schemas']['portalFormBinding']['properties']['destination']['type']);
 		// 0.96.0 (form 0.3.0): a landing-page form's `destination { register, schema, fields, fixed }`; a submit creates that object directly (submit-creates-the-case-directly 3.2). Additive.
-		$this->assertSame('0.96.0', self::$register['info']['version']);
-		$this->assertSame('0.96.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.97.0 (register only): the register's authorization names only the staff group, and every schema's `authenticated` read is the staff group (close-portaliq-register-to-staff). OpenRegister writes a register's own fields only when its version is newer.
+		$this->assertSame('0.97.0', self::$register['info']['version']);
+		$this->assertSame('0.97.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['form']['version']);
 		$this->assertSame('object', self::$register['components']['schemas']['form']['properties']['destination']['type']);
 		$this->assertSame('0.8.0', self::$register['components']['schemas']['portalPage']['version']);
@@ -447,7 +448,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertArrayNotHasKey('fee', self::$register['components']['schemas']['activityOffer']['properties'], 'D19: an activity holds no amount');
 		$this->assertArrayNotHasKey('amount', self::$register['components']['schemas']['activityOffer']['properties'], 'D19: an activity holds no amount');
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalCase']['version']);
-		$this->assertSame(['authenticated'], self::$register['components']['schemas']['portalCase']['authorization']['read']);
+		$this->assertSame(['portaliq-medewerkers'], self::$register['components']['schemas']['portalCase']['authorization']['read']);
 		$this->assertSame('0.7.0', self::$register['components']['schemas']['portalTrafficDaily']['version']);
 		$this->assertSame('0.4.0', self::$register['components']['schemas']['portalTrafficEvent']['version']);
 		$this->assertSame('0.1.0', self::$register['components']['schemas']['portalTrafficRecording']['version']);
@@ -1085,7 +1086,8 @@ class PortaliqRegisterConfigTest extends TestCase {
 		);
 
 		$this->assertNotContains('public', $groups);
-		$this->assertContains('authenticated', $groups);
+		$this->assertNotContains('authenticated', $groups);
+		$this->assertContains('portaliq-medewerkers', $groups);
 
 		// The fields that make this decision non-negotiable. If either is ever
 		// removed from the schema, revisit the rule rather than the test.
@@ -1117,7 +1119,8 @@ class PortaliqRegisterConfigTest extends TestCase {
 
 		$this->assertNotNull($publicRule, 'page must carry a public read rule');
 		$this->assertSame(['status' => 'published'], $publicRule['match'] ?? null);
-		$this->assertContains('authenticated', $read, 'an editor must still read drafts');
+		$this->assertNotContains('authenticated', $read, 'a signed-in account outside the staff must not read drafts');
+		$this->assertContains('portaliq-medewerkers', $read, 'staff still read drafts; the editor groups are added by PageEditorService');
 	}//end testPageIsPublicOnlyWhilePublished()
 
 		// The x-openregister-mcp dialect that used to be asserted here is GONE from
@@ -1158,14 +1161,14 @@ class PortaliqRegisterConfigTest extends TestCase {
 	/**
 	 * Security review M4: the invitation fields are readable only by
 	 * administrators, through OpenRegister's property authorization. An
-	 * ordinary signed-in Nextcloud user (the schema's `authenticated` read)
-	 * gets the account without them.
+	 * ordinary staff member (the schema's staff-group read) gets the account
+	 * without them.
 	 *
 	 * @return void
 	 */
 	public function testTheInvitationFieldsAreReadableByAdministratorsOnly(): void {
 		$account = self::$register['components']['schemas']['portalAccount'];
-		$this->assertSame(['authenticated'], $account['authorization']['read'], 'The object read the property rule narrows.');
+		$this->assertSame(['portaliq-medewerkers'], $account['authorization']['read'], 'The object read the property rule narrows.');
 		foreach (['claimTokenHash', 'claimCodeHash', 'claimExpiresAt', 'claimAttempts', 'claimAttemptsSince'] as $field) {
 			$this->assertSame(['read' => ['admin'], 'update' => ['admin']], $account['properties'][$field]['authorization'] ?? null, $field);
 		}

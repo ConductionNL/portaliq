@@ -26,22 +26,24 @@ class ExampleResidentSignInTest extends TestCase {
 	 *
 	 * @param string $switch      The app config `example_resident_demo_login`.
 	 * @param bool   $withRecords Whether the install records can be read.
-	 * @param bool   $modeAdded   Whether the set added the sign-in mode.
 	 *
 	 * @return ExampleResidentSignIn
 	 */
-	private function signIn(string $switch, bool $withRecords = true, bool $modeAdded = true): ExampleResidentSignIn {
+	private function signIn(string $switch, bool $withRecords = true): ExampleResidentSignIn {
 		$config = $this->createMock(originalClassName: IConfig::class);
 		$config->method('getAppValue')->willReturnCallback(
 			static fn (string $app, string $key, mixed $default = ''): string => ($key === 'example_resident_demo_login' ? $switch : (string)$default)
 		);
 		$residents = $this->createMock(originalClassName: ExampleSetResidents::class);
 		$residents->method('available')->willReturn($withRecords);
-		$residents->method('forPortal')->willReturnCallback(
-			static fn (string $portal): ?array => (
+		$residents->method('residentsOf')->willReturnCallback(
+			static fn (string $portal): array => (
 				($withRecords === true && $portal === 'zuiddrecht')
-					? ['set' => 'zuiddrecht', 'uid' => 'sanne.devries', 'mode' => 'nextcloud', 'modeAdded' => $modeAdded]
-					: null
+					? [
+					['set' => 'zuiddrecht', 'key' => 'sanne', 'uid' => 'sanne.devries', 'name' => 'Sanne de Vries', 'card' => []],
+					['set' => 'zuiddrecht', 'key' => 'linda', 'uid' => 'linda.bakker', 'name' => 'Linda Bakker', 'card' => ['text' => 'Regelt zaken voor Henk.']],
+				]
+					: []
 			)
 		);
 
@@ -60,6 +62,15 @@ class ExampleResidentSignInTest extends TestCase {
 		$this->assertTrue($signIn->open());
 		$this->assertSame('zuiddrecht', $signIn->offered(portal: ['slug' => 'zuiddrecht']));
 		$this->assertSame('sanne.devries', $signIn->userFor(id: 'zuiddrecht', portal: ['slug' => 'zuiddrecht']));
+		$this->assertSame('linda.bakker', $signIn->userFor(id: 'zuiddrecht', portal: ['slug' => 'zuiddrecht'], resident: 'linda'));
+		$this->assertSame('', $signIn->userFor(id: 'zuiddrecht', portal: ['slug' => 'zuiddrecht'], resident: 'henk'));
+		$this->assertSame(
+			[
+				['set' => 'zuiddrecht', 'key' => 'sanne', 'name' => 'Sanne de Vries', 'card' => []],
+				['set' => 'zuiddrecht', 'key' => 'linda', 'name' => 'Linda Bakker', 'card' => ['text' => 'Regelt zaken voor Henk.']],
+			],
+			$signIn->offeredResidents(portal: ['slug' => 'zuiddrecht'])
+		);
 		$this->assertSame('', $signIn->userFor(id: 'someone', portal: ['slug' => 'zuiddrecht']));
 		$this->assertSame('', $signIn->userFor(id: 'zuiddrecht', portal: ['slug' => 'other']));
 		$this->assertSame('', $signIn->userFor(id: 'zuiddrecht', portal: []));
@@ -76,20 +87,10 @@ class ExampleResidentSignInTest extends TestCase {
 			$this->assertFalse($signIn->open(), $case);
 			$this->assertSame('', $signIn->userFor(id: 'zuiddrecht', portal: ['slug' => 'zuiddrecht']), $case);
 			$this->assertSame('', $signIn->offered(portal: ['slug' => 'zuiddrecht']), $case);
+			$this->assertSame([], $signIn->offeredResidents(portal: ['slug' => 'zuiddrecht']), $case);
 		}
 
 		$this->assertSame('', $this->signIn(switch: 'yes')->offered(portal: []));
 	}//end testClosedOrWithoutRecordsNamesNoOne()
 
-	/**
-	 * With the switch off the site hides the way in the set added, and only that one.
-	 *
-	 * @return void
-	 */
-	public function testTheHiddenWayInIsTheModeTheSetAdded(): void {
-		$this->assertSame('nextcloud', $this->signIn(switch: 'no')->hiddenWayIn(portal: ['slug' => 'zuiddrecht']));
-		$this->assertSame('', $this->signIn(switch: 'no', modeAdded: false)->hiddenWayIn(portal: ['slug' => 'zuiddrecht']));
-		$this->assertSame('', $this->signIn(switch: 'yes')->hiddenWayIn(portal: ['slug' => 'zuiddrecht']));
-		$this->assertSame('', $this->signIn(switch: 'no')->hiddenWayIn(portal: ['slug' => 'other']));
-	}//end testTheHiddenWayInIsTheModeTheSetAdded()
 }//end class

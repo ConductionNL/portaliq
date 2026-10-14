@@ -83,46 +83,61 @@ test('there is at least one shipped example-set fragment', () => {
 })
 
 for (const { file, fragment } of fragments) {
-	const resident = fragment.exampleResident
-	const account = fragment.objects.find((object) => object.key === resident?.account)
-	const signIn = (fragment.changes || []).find((change) => change.key === resident?.signIn)
+	// One resident may be written as an object, several as a list
+	// (demo-sign-in-beside-the-account).
+	const residents = [].concat(fragment.exampleResident || [])
+	const accountOf = (resident) => fragment.objects.find((object) => object.key === resident.account)
+	const portals = [...new Set(residents.map((resident) => resident.portal))]
+	const signIn = (fragment.changes || []).find(
+		(change) => change.schema === 'portal' && portals.includes(change.where?.slug),
+	)
 
-	test(`${file}: names its example resident, its site and its way in`, () => {
-		assert.ok(resident, 'exampleResident is declared')
+	test(`${file}: names its example residents, their site and the way in`, () => {
+		assert.ok(residents.length > 0, 'exampleResident is declared')
 		assert.equal(fragment.set ?? file.replace(/\.json$/, ''), file.replace(/\.json$/, ''))
-		assert.ok(siteIds.includes(resident.portal), `${resident.portal} is a shipped example site`)
-		assert.match(resident.cast, /^[a-z0-9-]+$/)
-		assert.ok(account, `${resident.account} is an object of this fragment`)
-		assert.equal(account.schema, 'portalAccount')
-		assert.ok(signIn, `${resident.signIn} is a change of this fragment`)
-		assert.equal(signIn.schema, 'portal')
-		assert.equal(signIn.where.slug, resident.portal)
+		for (const resident of residents) {
+			assert.ok(siteIds.includes(resident.portal), `${resident.portal} is a shipped example site`)
+			assert.match(resident.cast, /^[a-z0-9-]+$/)
+			const account = accountOf(resident)
+			assert.ok(account, `${resident.account} is an object of this fragment`)
+			assert.equal(account.schema, 'portalAccount')
+			for (const [key, value] of Object.entries(resident.card || {})) {
+				assert.ok(['title', 'text', 'button'].includes(key), `${resident.cast}: card.${key} is a card field`)
+				assert.equal(typeof value, 'string')
+			}
+		}
+		assert.equal(new Set(residents.map((resident) => resident.cast)).size, residents.length, 'each resident once')
+		// The demo route signs in through the `nextcloud` way, so the set adds it
+		// with the account card of the board.
+		assert.ok(signIn, 'a change adds the way in to the portal')
 		const modes = schemas.portal.properties.authentication.properties.modes.items.enum
-		assert.ok(modes.includes(resident.mode), `${resident.mode} is a sign-in mode`)
-		assert.notEqual(resident.mode, 'public', 'a resident signs in')
-		assert.equal(signIn.append['authentication.modes'], resident.mode)
-		const label = signIn.set[`authentication.modeLabels.${resident.mode}`]
+		assert.ok(modes.includes('nextcloud'))
+		assert.equal(signIn.append['authentication.modes'], 'nextcloud')
+		const label = signIn.set['authentication.modeLabels.nextcloud']
 		for (const key of ['title', 'text', 'button']) {
 			assert.equal(typeof label[key], 'string')
 		}
 	})
 
-	test(`${file}: the portal account fits the portalAccount schema`, () => {
+	test(`${file}: the residents' portal accounts fit the portalAccount schema`, () => {
 		const schema = schemas.portalAccount
-		for (const key of schema.required || []) {
-			assert.ok(key in account.data, `${key} is required`)
-		}
-		for (const [key, value] of Object.entries(account.data)) {
-			const property = schema.properties[key]
-			assert.ok(property, `${key} is a property of portalAccount`)
-			assert.equal(typeof value, property.type)
-			if (property.enum) {
-				assert.ok(property.enum.includes(value), `${key}: ${value} is allowed`)
+		for (const resident of residents) {
+			const account = accountOf(resident)
+			for (const key of schema.required || []) {
+				assert.ok(key in account.data, `${key} is required`)
 			}
+			for (const [key, value] of Object.entries(account.data)) {
+				const property = schema.properties[key]
+				assert.ok(property, `${key} is a property of portalAccount`)
+				assert.equal(typeof value, property.type)
+				if (property.enum) {
+					assert.ok(property.enum.includes(value), `${key}: ${value} is allowed`)
+				}
+			}
+			assert.equal(account.data.subjectRef, `{{cast:${resident.cast}.uid}}`)
+			assert.equal(account.data.identityRef, 'example-resident')
+			assert.ok(!('email' in account.data), 'no e-mail address, so the resident meets the prompt for one')
 		}
-		assert.equal(account.data.subjectRef, `{{cast:${resident.cast}.uid}}`)
-		assert.equal(account.data.identityRef, 'example-resident')
-		assert.ok(!('email' in account.data), 'no e-mail address, so the resident meets the prompt for one')
 	})
 
 	test(`${file}: every object is well formed and every placeholder can be filled`, () => {
@@ -169,7 +184,11 @@ for (const { file, fragment } of fragments) {
 			assert.ok(!text.includes('—'), `${path}: no em-dash`)
 			assert.ok(!text.includes('--'), `${path}: no double dash`)
 		}
-		for (const [key, text] of Object.entries(signIn.set[`authentication.modeLabels.${resident.mode}`])) {
+		const cards = [
+			signIn.set['authentication.modeLabels.nextcloud'],
+			...residents.map((resident) => resident.card || {}),
+		]
+		for (const [key, text] of cards.flatMap((card) => Object.entries(card))) {
 			const words = text.split(' ')
 			const capitals = words.slice(1).filter((word) => /^[A-Z][a-z]/.test(word))
 			assert.ok(
@@ -180,7 +199,7 @@ for (const { file, fragment } of fragments) {
 	})
 }
 
-test('zuiddrecht.json: every portal account and mandate fits its schema, and only Sanne is the one-click resident', () => {
+test('zuiddrecht.json: every portal account and mandate fits its schema, and the four residents are the one-click residents', () => {
 	const zuiddrecht = fragments.find(({ file }) => file === 'zuiddrecht.json').fragment
 	const fits = (object) => {
 		const schema = schemas[object.schema]
@@ -209,9 +228,27 @@ test('zuiddrecht.json: every portal account and mandate fits its schema, and onl
 	}
 	assert.deepEqual(
 		accounts.filter((object) => object.data.identityRef === 'example-resident').map((object) => object.key),
-		[zuiddrecht.exampleResident.account],
-		'the one-click demo sign-in stays Sanne-only',
+		zuiddrecht.exampleResident.map((resident) => resident.account),
+		'exactly the residents are one click away',
 	)
+	assert.deepEqual(
+		zuiddrecht.exampleResident.map((resident) => resident.cast),
+		['sanne', 'henk', 'linda', 'fatima'],
+		'the business contacts get no one-click card',
+	)
+})
+
+test('zuiddrecht.json puts the residents in the group the portal names', () => {
+	const zuiddrecht = fragments.find(({ file }) => file === 'zuiddrecht.json').fragment
+	assert.deepEqual(zuiddrecht.groups, [
+		{ group: 'inwoners', displayName: 'Inwoners', members: ['sanne', 'henk', 'linda', 'fatima'] },
+	])
+	const change = zuiddrecht.changes.find((entry) => entry.schema === 'portal')
+	assert.equal(change.set['authentication.registration.residentGroup'], 'inwoners')
+	assert.equal(change.set['authentication.modeLabels.nextcloud'].title, 'Met een account')
+	const registration = schemas.portal.properties.authentication.properties.registration.properties
+	assert.equal(registration.residentGroup.type, 'string', 'the schema declares the resident group')
+	assert.equal(registration.residentAudience.type, 'string', 'the schema declares the resident audience')
 })
 
 test('zuiddrecht.json keeps the five cases of the Woo journey and the resident boards', () => {
@@ -225,5 +262,5 @@ test('zuiddrecht.json keeps the five cases of the Woo journey and the resident b
 		'Subsidie buurtfeest Lindelaan',
 	])
 	assert.deepEqual(zuiddrecht.after, ['dossiq'])
-	assert.equal(zuiddrecht.exampleResident.cast, 'sanne')
+	assert.equal(zuiddrecht.exampleResident[0].cast, 'sanne')
 })

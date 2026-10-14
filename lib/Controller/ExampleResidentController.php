@@ -85,20 +85,22 @@ class ExampleResidentController extends Controller {
 	 * the install record's, never the caller's, and every refusal is a
 	 * throttled 404, so the route is no oracle for which residents exist.
 	 *
-	 * @param string $id       The example resident's id (`zuiddrecht`).
+	 * @param string $id       The example set's id (`zuiddrecht`).
 	 * @param string $portal   The portal slug to sign in to.
 	 * @param string $returnTo Where to send the browser afterwards.
+	 * @param string $resident The resident's key in the set (`linda`); '' for the first one.
 	 *
 	 * @return Response A redirect carrying the bearer in the URL fragment, or 404.
 	 *
 	 * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+	 * @spec openspec/changes/demo-sign-in-beside-the-account/specs/example-resident/spec.md#requirement-a-demo-may-sign-in-each-example-resident-with-one-click
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 10, period: 60)]
 	#[BruteForceProtection(action: 'portaliq_example_resident_login')]
-	public function signIn(string $id = '', string $portal = '', string $returnTo = ''): Response {
-		$userId  = $this->residentUser(id: $id, portal: $portal);
+	public function signIn(string $id = '', string $portal = '', string $returnTo = '', string $resident = ''): Response {
+		$userId  = $this->residentUser(id: $id, portal: $portal, resident: $resident);
 		$account = null;
 		if ($userId !== '') {
 			$account = $this->accounts->findBySubjectRef(subjectRef: $userId);
@@ -141,14 +143,15 @@ class ExampleResidentController extends Controller {
 	 * record, the declaration's portal against the named portal, and that
 	 * portal offering the `nextcloud` mode.
 	 *
-	 * @param string $id     The example resident's id.
-	 * @param string $portal The portal slug named by the caller.
+	 * @param string $id       The example set's id.
+	 * @param string $portal   The portal slug named by the caller.
+	 * @param string $resident The resident's key, or '' for the first one.
 	 *
 	 * @return string The user id, or ''.
 	 *
 	 * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
 	 */
-	private function residentUser(string $id, string $portal): string {
+	private function residentUser(string $id, string $portal, string $resident): string {
 		if ($this->signIns->open() === false || $portal === '') {
 			return '';
 		}
@@ -159,7 +162,7 @@ class ExampleResidentController extends Controller {
 				return '';
 			}
 
-			return $this->signIns->userFor(id: $id, portal: $site);
+			return $this->signIns->userFor(id: $id, portal: $site, resident: $resident);
 		} catch (\Throwable) {
 			// A record, declaration or portal that cannot be read is no door.
 			return '';

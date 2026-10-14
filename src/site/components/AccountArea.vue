@@ -65,7 +65,7 @@
 						{{ t('Log in to view your information.') }}
 					</p>
 					<ul v-if="signInRoutes.length" class="pq-account__ways-in">
-						<li v-for="way in signInRoutes" :key="way.mode">
+						<li v-for="way in signInRoutes" :key="way.key || way.mode">
 							<EmailLinkForm
 								v-if="way.form === 'email-link'"
 								:authBase="way.authBase"

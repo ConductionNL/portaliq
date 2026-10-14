@@ -33,7 +33,7 @@
 			<ul v-if="routes.length" class="pq-signin__cards">
 				<li
 					v-for="(way, index) in routes"
-					:key="way.mode"
+					:key="way.key || way.mode"
 					class="pq-signin__card"
 					data-testid="site-signin-card">
 					<div class="pq-signin__card-head">

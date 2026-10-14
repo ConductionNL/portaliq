@@ -27,6 +27,7 @@ namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 
 use OCA\Portaliq\Controller\DashboardController;
 use OCA\Portaliq\Controller\SessionController;
+use OCA\Portaliq\Service\AdminMenuAccess;
 use OCA\Portaliq\Service\Identity\NextcloudAccountProvisioner;
 use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
 use OCA\Portaliq\Service\OidcClaimMapperService;
@@ -403,7 +404,12 @@ class NextcloudAccountRegistrationTest extends TestCase {
 			static fn (string $route, array $parameters = []): string => '/' . $route . '?' . http_build_query($parameters)
 		);
 
-		return new DashboardController($this->createMock(IRequest::class), null, null, $this->door(), $userSession, $urls);
+		// Staff here: the clerk and the administrator are staff, so the staff
+		// check (close-portaliq-register-to-staff) lets them keep the app.
+		$access = $this->createMock(AdminMenuAccess::class);
+		$access->method('isStaff')->willReturn(true);
+
+		return new DashboardController($this->createMock(IRequest::class), $access, null, $this->door(), $userSession, $urls);
 	}//end dashboard()
 
 	/**

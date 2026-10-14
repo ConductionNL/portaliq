@@ -107,6 +107,7 @@
         <post-migration>
             <step>OCA\Portaliq\Repair\InitializeSettings</step>
             <step>OCA\Portaliq\Repair\InitializeActions</step>
+            <step>OCA\Portaliq\Repair\SeedStaffGroup</step>
             <step>OCA\Portaliq\Repair\RenameDutchColumns</step>
             <step>OCA\Portaliq\Repair\MovePortalAuditEntries</step>
             <step>OCA\Portaliq\Repair\BackfillNewsPublishedAt</step>
@@ -117,6 +118,7 @@
         <install>
             <step>OCA\Portaliq\Repair\InitializeSettings</step>
             <step>OCA\Portaliq\Repair\InitializeActions</step>
+            <step>OCA\Portaliq\Repair\SeedStaffGroup</step>
             <!--
                 LAST, and INSTALL-ONLY.
 

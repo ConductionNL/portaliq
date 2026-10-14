@@ -764,5 +764,20 @@ test('the Zuiddrecht site lays out its own area as the MijnMenu and MijnZaken bo
 		'rows',
 	])
 	assert.equal(portal.version, '0.25.0')
-	assert.equal(register.info.version, '0.96.0')
+	assert.equal(register.info.version, '0.97.0')
+})
+
+// zuiddrecht-site-details: the portal names the organisation of the example
+// set's portal accounts, and no text is a bracketed placeholder.
+test('the Zuiddrecht site names its organisation and no placeholder text', () => {
+	const text = read('lib/Settings/sites/zuiddrecht.json')
+	const site = JSON.parse(text)
+	assert.equal(site.portal.organisation, 'zuiddrecht')
+	for (const placeholder of ['[telefoonnummer]', '[e-mailadres]', '[adres]']) {
+		assert.ok(!text.includes(placeholder), `${placeholder} is filled in`)
+	}
+	assert.ok(
+		text.includes('Is er direct gevaar? Bel dan 112.'),
+		'direct danger names 112',
+	)
 })
