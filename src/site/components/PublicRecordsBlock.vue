@@ -117,13 +117,14 @@
 </template>
 
 <script>
-import { resolveApiBase } from '../lib/contentApi.js'
+import { resolveApiBase, runtimeConfig } from '../lib/contentApi.js'
 import {
 	fetchRecord,
 	fetchRecordList,
 	matchingEntries,
 	recordIdFrom,
 } from '../lib/publicRecordsApi.js'
+import { addressOfRecord } from '../lib/siteAddress.js'
 import { pageLocale } from '../pages/inbox/translate.js'
 
 import '@utrecht/paragraph-css/dist/index.css'
@@ -279,9 +280,21 @@ export default {
 		 * @param {object} entry A list entry.
 		 * @return {string} The href.
 		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+		 * @spec openspec/changes/record-and-search-links-keep-their-portal/specs/site-navigation/spec.md#requirement-a-link-to-a-record-or-a-search-result-keeps-the-portal-and-the-route-req-rsl-001
 		 */
 		hrefFor(entry) {
-			return `?record=${encodeURIComponent(entry.id)}`
+			// The page's route and the portal stay on the link: a bare
+			// `?record=` dropped both and opened another portal on a shared
+			// host (siteAddress.js).
+			try {
+				return addressOfRecord(
+					String(entry.id),
+					window.location.href,
+					runtimeConfig(),
+				).toString()
+			} catch {
+				return `?record=${encodeURIComponent(entry.id)}`
+			}
 		},
 	},
 }

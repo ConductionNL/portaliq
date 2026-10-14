@@ -476,6 +476,7 @@ import { CnSiteSearch } from '@conduction/nextcloud-vue/public'
  */
 import { defineAsyncComponent } from 'vue'
 import SearchSuggestions from './SearchSuggestions.vue'
+import { runtimeConfig } from '../lib/contentApi.js'
 import { labelBuckets, pageLocale } from '../lib/facetLabels.js'
 import {
 	buildRequestUrl,
@@ -491,6 +492,7 @@ import {
 	writeSearchState,
 } from '../lib/federatedSearch.js'
 import { suggestionRoute } from '../lib/searchSuggestions.js'
+import { addressOfRoute } from '../lib/siteAddress.js'
 
 export default {
 	name: 'FederatedSearchBlock',
@@ -1377,6 +1379,7 @@ export default {
 		 * @return {string} The href.
 		 *
 		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-every-result-must-name-the-catalogue-it-came-from
+		 * @spec openspec/changes/record-and-search-links-keep-their-portal/specs/site-navigation/spec.md#requirement-a-link-to-a-record-or-a-search-result-keeps-the-portal-and-the-route-req-rsl-001
 		 */
 		detailHref(result) {
 			if (!result.id && !(result.kind === 'subject' && result.slug)) {
@@ -1385,11 +1388,13 @@ export default {
 				return result.href || '#'
 			}
 
-			const url = new URL(window.location.href)
-			url.search = ''
-			url.searchParams.set('route', this.detailPath(result))
-
-			return url.toString()
+			// The portal and the language stay, in the addressing of this host
+			// (siteAddress.js): a cleared query opened another portal.
+			return addressOfRoute(
+				this.detailPath(result),
+				window.location.href,
+				runtimeConfig(),
+			).toString()
 		},
 
 		/**

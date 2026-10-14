@@ -174,6 +174,24 @@ export function addressOfRoute(route, href, config) {
 }
 
 /**
+ * A shareable address for one record shown on the page it is listed on
+ * (`?record=<id>`): the page's route, the portal and the language stay, so
+ * the link opens the same portal on a host that serves several.
+ *
+ * @param {string} id The record id.
+ * @param {string} href The address in the address bar.
+ * @param {object} config The runtime config.
+ * @return {URL} The address.
+ * @spec openspec/changes/record-and-search-links-keep-their-portal/specs/site-navigation/spec.md#requirement-a-link-to-a-record-or-a-search-result-keeps-the-portal-and-the-route-req-rsl-001
+ */
+export function addressOfRecord(id, href, config) {
+	const url = addressOfRoute(routeOfLocation(new URL(href), config), href, config)
+	url.searchParams.set('record', id)
+
+	return url
+}
+
+/**
  * The address the address bar takes when the shell moves to a route in place:
  * everything on the current address stays, only the route changes.
  *
