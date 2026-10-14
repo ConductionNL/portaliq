@@ -40,6 +40,16 @@ export default {
 		'Send again': 'Opnieuw versturen',
 		Withdraw: 'Intrekken',
 		'Your contacts': 'Uw contacten',
+		'Send message': 'Bericht sturen',
+		'Message to {name}': 'Bericht aan {name}',
+		'Your message': 'Uw bericht',
+		'You find the conversation under Messages.':
+			'U vindt het gesprek terug onder Berichten.',
+		'Your message has been sent. You find the conversation under Messages.':
+			'Uw bericht is verstuurd. U vindt het gesprek terug onder Berichten.',
+		'Your message could not be sent. Try again.':
+			'Uw bericht kon niet worden verstuurd. Probeer het opnieuw.',
+		'Write a message first.': 'Schrijf eerst een bericht.',
 		All: 'Alles',
 		Guide: 'Begeleider',
 		Contact: 'Contact',
@@ -263,6 +273,16 @@ export default {
 		'Send again': 'Send again',
 		Withdraw: 'Withdraw',
 		'Your contacts': 'Your contacts',
+		'Send message': 'Send message',
+		'Message to {name}': 'Message to {name}',
+		'Your message': 'Your message',
+		'You find the conversation under Messages.':
+			'You find the conversation under Messages.',
+		'Your message has been sent. You find the conversation under Messages.':
+			'Your message has been sent. You find the conversation under Messages.',
+		'Your message could not be sent. Try again.':
+			'Your message could not be sent. Try again.',
+		'Write a message first.': 'Write a message first.',
 		All: 'All',
 		Guide: 'Guide',
 		Contact: 'Contact',

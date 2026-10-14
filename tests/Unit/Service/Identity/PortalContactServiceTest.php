@@ -333,6 +333,34 @@ class PortalContactServiceTest extends TestCase {
 	}//end testTheLinkNamesItsAddressWhileItIsOpen()
 
 	/**
+	 * Only an approved row of the resident's own is a conversation partner,
+	 * and a removed contact keeps its name for the old conversation.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 */
+	public function testOnlyAnOwnApprovedContactIsAConversationPartner(): void {
+		$service = $this->service();
+		$now     = new DateTimeImmutable('2026-10-08T10:00:00+00:00');
+		$service->invite(subject: $this->subject(), email: 'new@example.nl', message: '', now: $now);
+		$pending = array_key_first($this->rows);
+		$this->assertNull($service->approvedContact(owner: 'a', organisation: 'org-1', id: $pending), 'still invited');
+
+		$service->acceptInvitation(subject: $this->subject('n'), token: 'secret-token', displayName: 'Nina', now: $now);
+		$this->assertSame(['id' => $pending, 'ref' => 'n', 'displayName' => 'Nina'], $service->approvedContact(owner: 'a', organisation: 'org-1', id: $pending));
+		$this->assertNull($service->approvedContact(owner: 'z', organisation: 'org-1', id: $pending), 'someone else');
+		$this->assertNull($service->approvedContact(owner: 'a', organisation: 'org-2', id: $pending), 'another tenant');
+		$this->assertNull($service->approvedContact(owner: 'a', organisation: 'org-1', id: ''));
+		$this->assertSame(['n' => 'Nina'], $service->contactNames(owner: 'a', organisation: 'org-1'));
+		$this->assertSame(['a' => 'Name of a'], $service->contactNames(owner: 'n', organisation: 'org-1'));
+
+		$service->remove(subject: $this->subject(), id: $pending);
+		$this->assertNull($service->approvedContact(owner: 'a', organisation: 'org-1', id: $pending), 'removed');
+		$this->assertSame(['n' => 'Nina'], $service->contactNames(owner: 'a', organisation: 'org-1'), 'the old conversation keeps the name');
+	}//end testOnlyAnOwnApprovedContactIsAConversationPartner()
+
+	/**
 	 * A resident reads only their own rows, and the browser never gets the token hash.
 	 *
 	 * @return void

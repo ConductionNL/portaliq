@@ -464,6 +464,47 @@ class PortalContactService {
 	}//end approvedRefs()
 
 	/**
+	 * One approved contact of a resident by its row id, or null: the only
+	 * people "Bericht sturen" may start a conversation with (REQ-ROC-001).
+	 *
+	 * @param string $owner The resident.
+	 * @param string $organisation The tenant.
+	 * @param string $id The resident's own contact row.
+	 *
+	 * @return array{id: string, ref: string, displayName: string}|null The contact.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 */
+	public function approvedContact(string $owner, string $organisation, string $id): ?array {
+		if ($id === '') {
+			return null;
+		}
+
+		foreach ($this->approvedContacts(owner: $owner, organisation: $organisation) as $contact) {
+			if ($contact['id'] === $id) {
+				return $contact;
+			}
+		}
+
+		return null;
+	}//end approvedContact()
+
+	/**
+	 * The names a resident knows their contacts by, per reference, so a
+	 * conversation shows the other person's name on each side.
+	 *
+	 * @param string $owner The resident.
+	 * @param string $organisation The tenant.
+	 *
+	 * @return array<string, string> Name by subject reference.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 */
+	public function contactNames(string $owner, string $organisation): array {
+		return $this->overview->namesByRef(owner: $owner, organisation: $organisation);
+	}//end contactNames()
+
+	/**
 	 * Ask an existing account to become a contact: two rows, one per side.
 	 *
 	 * @param array<string, mixed> $subject The inviter.

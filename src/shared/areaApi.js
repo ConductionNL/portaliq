@@ -67,6 +67,23 @@ export function contactsApi(api) {
 				error: String(answer.json?.error || ''),
 			}
 		},
+
+		/**
+		 * Start a conversation with one approved contact: the first message
+		 * goes with it. The server proves the contact from the resident's own
+		 * row (own-contacts-and-invitations T07).
+		 *
+		 * @param {string} contactId The resident's own contact row.
+		 * @param {string} body The first message.
+		 * @return {Promise<string|null>} The new conversation's id, or null when refused.
+		 */
+		async sendMessage(contactId, body) {
+			if (typeof api.messaging !== 'function') {
+				return null
+			}
+			const res = await api.messaging('POST', '/threads', { contactId, body })
+			return res?.ok && res.data?.id ? String(res.data.id) : null
+		},
 	}
 }
 
