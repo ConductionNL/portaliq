@@ -33,52 +33,19 @@
 			<p v-if="record.subtitle" class="utrecht-paragraph">
 				{{ record.subtitle }}
 			</p>
-			<ul v-if="record.summary.length" class="pq-records__cards">
-				<li
-					v-for="card in record.summary"
-					:key="card.label"
-					class="pq-records__card"
-					data-testid="public-record-card">
-					<p class="pq-records__label">
-						{{ card.label }}
-					</p>
-					<p class="pq-records__value">
-						{{ card.value }}
-					</p>
-					<p v-if="card.detail" class="pq-records__detail">
-						{{ card.detail }}
-					</p>
-				</li>
-			</ul>
-			<table
+			<KpiCards
+				v-if="record.summary.length"
+				:cards="figures.cards"
+				:row="figures.row"
+				:level="3"
+				:t="t"
+				:locale="language" />
+			<CollectionTable
 				v-if="record.rows.length"
-				class="utrecht-table"
-				data-testid="public-record-table">
-				<thead>
-					<tr>
-						<th
-							v-for="column in record.columns"
-							:key="column.key"
-							scope="col">
-							{{ column.label }}
-						</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr v-for="(row, index) in record.rows" :key="index">
-						<td v-for="column in record.columns" :key="column.key">
-							<a
-								v-if="column.key === linkKey && row.subjectUrl"
-								:href="row.subjectUrl"
-								>{{ row[column.key] }}</a
-							>
-							<template v-else>
-								{{ row[column.key] }}
-							</template>
-						</td>
-					</tr>
-				</tbody>
-			</table>
+				:collection="tableCollection"
+				:objects="record.rows"
+				:t="t"
+				:locale="language" />
 			<p
 				v-if="record.note"
 				class="utrecht-paragraph"
@@ -117,12 +84,16 @@
 </template>
 
 <script>
+import CollectionTable from './collections/CollectionTable.vue'
+import KpiCards from './collections/KpiCards.vue'
 import { resolveApiBase, runtimeConfig } from '../lib/contentApi.js'
 import {
 	fetchRecord,
 	fetchRecordList,
 	matchingEntries,
+	recordFigures,
 	recordIdFrom,
+	recordTableCollection,
 } from '../lib/publicRecordsApi.js'
 import { addressOfRecord } from '../lib/siteAddress.js'
 import { pageLocale } from '../pages/inbox/translate.js'
@@ -135,12 +106,20 @@ const STRINGS = {
 		gone: 'Dit overzicht bestaat niet (meer).',
 		search: 'Zoek een naam',
 		back: 'Terug naar het overzicht',
+		// The words the shared figure cards and table may show.
+		shared: {
+			'Loading…': 'Laden…',
+			'No items.': 'Geen items.',
+			'No figures yet.': 'Nog geen cijfers.',
+			'Needs attention': 'Vraagt aandacht',
+		},
 	},
 	en: {
 		loading: 'Loading…',
 		gone: 'This overview no longer exists.',
 		search: 'Search for a name',
 		back: 'Back to the overview',
+		shared: {},
 	},
 }
 
@@ -149,6 +128,7 @@ const STRINGS = {
  */
 export default {
 	name: 'PublicRecordsBlock',
+	components: { CollectionTable, KpiCards },
 	props: {
 		/** The contributing app that declares the list. */
 		app: { type: String, default: '' },
@@ -178,8 +158,46 @@ export default {
 		/**
 		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
 		 */
+		language() {
+			return pageLocale(this.locale)
+		},
+
+		/**
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+		 */
 		words() {
-			return STRINGS[pageLocale(this.locale)] || STRINGS.nl
+			return STRINGS[this.language] || STRINGS.nl
+		},
+
+		/**
+		 * The translator the shared figure cards and table use.
+		 *
+		 * @return {Function} The translator.
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+		 */
+		t() {
+			const shared = this.words.shared || {}
+			return (key) => shared[key] || key
+		},
+
+		/**
+		 * The record's summary as the shared figure cards read it.
+		 *
+		 * @return {{cards: Array<object>, row: object}} The cards and their row.
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+		 */
+		figures() {
+			return recordFigures(this.record?.summary)
+		},
+
+		/**
+		 * The record's columns as the shared table reads them.
+		 *
+		 * @return {{columns: Array<object>}} The table's collection.
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+		 */
+		tableCollection() {
+			return recordTableCollection(this.record?.columns, this.linkKey)
 		},
 
 		/**

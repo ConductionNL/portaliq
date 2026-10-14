@@ -17,10 +17,12 @@ import {
 	fetchRecord,
 	fetchRecordList,
 	matchingEntries,
+	recordFigures,
 	recordIdFrom,
 	recordsBase,
+	recordTableCollection,
 } from '../src/site/lib/publicRecordsApi.js'
-import { loadSfc, renderSfc } from './support/render-sfc.mjs'
+import { loadSfc, renderComponent, renderSfc } from './support/render-sfc.mjs'
 
 const BLOCK = 'src/site/components/PublicRecordsBlock.vue'
 const ENTRIES = [
@@ -126,4 +128,43 @@ test('a page names what its search field searches for (site-council-pages-read-d
 	assert.equal(screen.computed.searchText.call({ searchLabel: 'Zoek een vergadering', words }), 'Zoek een vergadering')
 	assert.equal(screen.computed.searchText.call({ searchLabel: '', words }), 'Zoek een naam', 'without a label the block keeps its own words')
 	assert.match(readFileSync(BLOCK, 'utf8'), /\{\{\s*searchText\s*\}\}/, 'the field label shows it')
+})
+
+test('the summary becomes the shared figure cards, the columns the shared table (T3)', () => {
+	const { cards, row } = recordFigures([
+		{ label: 'Deelname', value: '96%', detail: 'aan 86 stemmingen' },
+		{ label: 'Voor', value: '61', detail: '' },
+	])
+	assert.deepEqual(cards, [
+		{ field: 'figure0', label: 'Deelname', details: [{ field: 'figure0Detail', label: '' }] },
+		{ field: 'figure1', label: 'Voor' },
+	])
+	assert.deepEqual(row, { figure0: '96%', figure0Detail: 'aan 86 stemmingen', figure1: '61' })
+	assert.deepEqual(recordFigures(null), { cards: [], row: {} })
+
+	const { columns } = recordTableCollection(RECORD.columns, 'subject')
+	assert.deepEqual(columns[1], { field: 'subject', label: 'Onderwerp', render: 'link', hrefField: 'subjectUrl' })
+	assert.deepEqual(columns[0], { field: 'date', label: 'Datum' })
+	assert.equal(recordTableCollection(RECORD.columns, 'none').columns.some((c) => c.render === 'link'), false)
+})
+
+test('a record renders through KpiCards and CollectionTable, links only safe addresses (T3)', async () => {
+	const screen = await loadSfc(BLOCK)
+	const shown = (record) => ({
+		...screen,
+		data: () => ({ state: 'ready', entries: ENTRIES, record, typed: '' }),
+	})
+	const html = await renderComponent(shown(RECORD), { app: 'decidiq', list: 'l', recordParam: 'p1', locale: 'nl', apiOverride: { list: async () => ENTRIES, record: async () => RECORD } })
+	assert.match(html, /data-testid="kpi-block"/, 'the shared figure cards')
+	assert.match(html, /data-testid="collection-table"/, 'the shared table')
+	assert.match(html, /<span class="pq-kpi__number">96%<\/span>/)
+	assert.match(html, /aan 86 stemmingen/)
+	assert.match(html, /<a class="utrecht-link" href="\/besluit\/1">\s*Groen dak op het stadhuis\s*<\/a>/)
+	assert.match(html, /Alleen openbare rondes\./)
+	assert.doesNotMatch(html, /pq-records__card/, 'no hand-drawn cards left')
+
+	const unsafe = { ...RECORD, rows: [{ ...RECORD.rows[0], subjectUrl: 'javascript:alert(1)' }] }
+	const plain = await renderComponent(shown(unsafe), { app: 'decidiq', list: 'l', recordParam: 'p1', locale: 'nl', apiOverride: {} })
+	assert.doesNotMatch(plain, /javascript:/, 'a script address is never a link')
+	assert.match(plain, /Groen dak op het stadhuis/, 'the subject still reads as text')
 })
