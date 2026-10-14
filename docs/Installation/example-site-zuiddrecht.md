@@ -125,7 +125,8 @@ Remove the set before you remove the site.
 - The site is served in the portal's language. A browser that asks for English on a portal that declares only Dutch gets Dutch, dates included.
 - Two optional theme tokens set the size of a content page's title (`--nldesign-website-page-title-size`) and the hero watermark's opacity (`--nldesign-website-hero-decoration-opacity`); the site renders without them.
 - "Woo-publicaties" and the search box open `/zoeken`, with the search block every portal can place. It finds publications when OpenCatalogi is installed.
-- Phone numbers and addresses read `[telefoonnummer]`, `[e-mailadres]` and `[adres]`. Zuiddrecht has none.
+- Phone numbers and addresses are made up: `14 0999` (marked as an example number in the footer), `info@zuiddrecht.example` on a domain reserved for examples, and Stadskantoor, Lindelaan 1. Only "Is er direct gevaar?" names a real number, 112, because a visitor in danger must never read a fake one.
+- The portal belongs to the OpenRegister organisation `zuiddrecht` (`organisation`), the one the Zuiddrecht example set creates. Portaliq matches it by slug against the portal accounts the set writes.
 
 ## Remove
 
