@@ -464,7 +464,10 @@ export default {
 			// "Beheerinstellingen / Portaliq", the first back to the server's
 			// administration settings.
 			breadcrumbs: [
-				{ label: this.t('portaliq', 'Administration settings'), href: generateUrl('/settings/admin') },
+				{
+					label: this.t('portaliq', 'Administration settings'),
+					href: generateUrl('/settings/admin'),
+				},
 				{ label: 'Portaliq' },
 			],
 
