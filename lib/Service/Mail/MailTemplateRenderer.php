@@ -117,6 +117,16 @@ class MailTemplateRenderer {
 				'formName' => 'Woo-verzoek',
 			],
 		],
+		'plan-ending' => [
+			'label' => 'A plan is nearly ending',
+			'variables' => ['portal', 'plan', 'date', 'open'],
+			'sample' => [
+				'portal' => 'Gemeente Voorbeeld',
+				'plan' => 'Schuldhulp op orde',
+				'date' => '2026-10-20',
+				'open' => '3',
+			],
+		],
 	];
 
 	/**
