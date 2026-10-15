@@ -85,9 +85,32 @@ test('registration sends the portal, the challenge, the solution and the honeypo
 	const challenge = await api.challenge('registration')
 	assert.match(calls[0].url, /\/identity\/challenge\?surface=registration&portal=wilgenboom$/)
 	const answer = await api.registerAccount({ email: 'a@example.org', displayName: 'A', challenge, solution: '7', honeypot: { field: 'website', value: '' } })
-	assert.deepEqual(calls[1].body, { portal: 'wilgenboom', email: 'a@example.org', displayName: 'A', nonce: 'n', expiresAt: 9, signature: 's', solution: '7', website: '' })
+	assert.deepEqual(calls[1].body, { portal: 'wilgenboom', email: 'a@example.org', displayName: 'A', nonce: 'n', expiresAt: 9, signature: 's', solution: '7', contactInvitation: '', website: '' })
 	assert.equal(answer.ok, true)
 	assert.equal(lib.registrationOutcomeText(answer.data.awaiting), 'We sent you an e-mail. Follow the link in it to activate your account.')
+})
+
+test('a contact invitation fills the address and rides along with the registration (own-contacts T05)', async () => {
+	const { fetchImpl, calls } = fakeFetch({
+		'/identity/contact-invitation': { body: { email: 'new@example.nl' } },
+		'/identity/register': { body: { status: 'pending', awaiting: 'activation' } },
+	})
+	const api = lib.waysInApi('/b', 'p', fetchImpl)
+	assert.equal(await api.contactInvitationEmail('secret'), 'new@example.nl')
+	assert.deepEqual(calls[0].body, { portal: 'p', token: 'secret' })
+	await api.registerAccount({ email: 'new@example.nl', contactInvitation: 'secret' })
+	assert.equal(calls[1].body.contactInvitation, 'secret')
+
+	const refused = fakeFetch({ '/identity/contact-invitation': { status: 404, body: { error: 'invitation_not_valid' } } })
+	assert.equal(await lib.waysInApi('/b', 'p', refused.fetchImpl).contactInvitationEmail('spent'), '')
+
+	const kept = new Map([['portaliq.contactInvitation', 'secret']])
+	const storage = { getItem: (key) => kept.get(key) ?? null }
+	assert.equal(lib.keptContactInvitation(storage), 'secret')
+	assert.equal(lib.keptContactInvitation(null), '')
+	assert.equal(lib.keptContactInvitation({ getItem: () => { throw new Error('blocked') } }), '')
+	const { CONTACT_INVITATION_KEY } = await import('../src/shared/contactInvitation.js')
+	assert.equal(CONTACT_INVITATION_KEY, 'portaliq.contactInvitation', 'the sign-in screen reads the key the link keeps')
 })
 
 test('the other ways in call their own routes and keep the refusal', async () => {

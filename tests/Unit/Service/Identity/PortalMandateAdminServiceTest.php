@@ -275,7 +275,23 @@ class PortalMandateAdminServiceTest extends TestCase {
 		});
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer x');
-		$controller = new MandateController($request, $session, $this->service());
+		$mails  = [];
+		$mailer = $this->createMock(\OCA\Portaliq\Service\Identity\PortalIdentityMailer::class);
+		$mailer->method('send')->willReturnCallback(
+			static function (string $template, string $email, string $secret) use (&$mails): bool {
+				$mails[] = [$template, $email, $secret];
+				return true;
+			}
+		);
+		$controller = new MandateController(
+			$request,
+			$session,
+			$this->service(),
+			$mailer,
+			$this->createMock(\OCA\Portaliq\Service\Identity\PortalAccountLookup::class),
+			$this->createMock(\OCA\Portaliq\Service\Intake\PortalCaseTypeChoices::class),
+			$this->createMock(\OCA\Portaliq\Service\PortalResolver::class)
+		);
 
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->given()->getStatus());
 
@@ -293,6 +309,10 @@ class PortalMandateAdminServiceTest extends TestCase {
 		$bad = $controller->invite('tom@example.nl', [], 'x', '2020-01-01');
 		$this->assertSame(Http::STATUS_BAD_REQUEST, $bad->getStatus());
 		$this->assertSame(['error' => 'bad_end_date'], $bad->getData());
-		$this->assertArrayHasKey('token', $controller->invite('tom@example.nl', ['bezwaar'], 'x', '')->getData());
+		$this->assertSame(['sent' => true], $controller->invite('tom@example.nl', ['bezwaar'], 'x', '')->getData());
+		$this->assertSame('mandate-invitation', $mails[0][0]);
+		$this->assertSame('tom@example.nl', $mails[0][1]);
+		$stored = $this->storedRows('portalInvitation');
+		$this->assertSame(hash('sha256', $mails[0][2]), end($stored)['tokenHash'], 'the mailed secret is the one the invitation stores, by hash');
 	}
 }

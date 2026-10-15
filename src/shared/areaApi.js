@@ -67,6 +67,23 @@ export function contactsApi(api) {
 				error: String(answer.json?.error || ''),
 			}
 		},
+
+		/**
+		 * Start a conversation with one approved contact: the first message
+		 * goes with it. The server proves the contact from the resident's own
+		 * row (own-contacts-and-invitations T07).
+		 *
+		 * @param {string} contactId The resident's own contact row.
+		 * @param {string} body The first message.
+		 * @return {Promise<string|null>} The new conversation's id, or null when refused.
+		 */
+		async sendMessage(contactId, body) {
+			if (typeof api.messaging !== 'function') {
+				return null
+			}
+			const res = await api.messaging('POST', '/threads', { contactId, body })
+			return res?.ok && res.data?.id ? String(res.data.id) : null
+		},
 	}
 }
 
@@ -187,6 +204,113 @@ export function plansApi(api) {
 				window.URL.revokeObjectURL(objectUrl)
 			}, 10000)
 			return { ok: true, status: answer.status }
+		},
+	}
+}
+
+/**
+ * The mandate calls over a portal api (site-mandates-the-represented-manage
+ * T4): who may act for the session's party, and the mandates it holds. The
+ * party always comes from the session on the server, never from here.
+ *
+ * @param {{request: Function}} api The portal api.
+ * @return {object} The calls.
+ *
+ * @spec openspec/changes/site-mandates-the-represented-manage/tasks.md#t4
+ */
+export function mandatesApi(api) {
+	const answerOf = (answer) => ({
+		ok: answer.ok,
+		status: answer.status,
+		error: String(answer.json?.error || ''),
+	})
+	return {
+		/**
+		 * Mandates and open invitations given on the party's behalf.
+		 *
+		 * @return {Promise<Array<object>|null>} The items, or null when the session may not manage (403) or the read failed.
+		 */
+		async given() {
+			const answer = await api.request('GET', '/mandates/given')
+			return answer.ok && Array.isArray(answer.json?.items)
+				? answer.json.items
+				: null
+		},
+
+		/**
+		 * The mandates the session holds.
+		 *
+		 * @return {Promise<Array<object>>} The items; none when refused.
+		 */
+		async held() {
+			const answer = await api.request('GET', '/mandates/held')
+			return answer.ok && Array.isArray(answer.json?.items)
+				? answer.json.items
+				: []
+		},
+
+		/**
+		 * The case types a mandate may be narrowed to, of the visited portal.
+		 *
+		 * @param {string} portal The portal slug.
+		 * @return {Promise<Array<{id: string, title: string}>>} The choices.
+		 */
+		async caseTypes(portal) {
+			const answer = await api.request(
+				'GET',
+				`/mandates/case-types?portal=${encodeURIComponent(portal || '')}`,
+			)
+			return answer.ok && Array.isArray(answer.json?.items)
+				? answer.json.items
+				: []
+		},
+
+		/**
+		 * Invite an address. The link goes to that mailbox only.
+		 *
+		 * @param {{email: string, caseTypes: Array<string>, expiresAt: string}} terms The terms.
+		 * @return {Promise<{ok: boolean, status: number, error: string}>} The outcome.
+		 */
+		async invite(terms) {
+			return answerOf(
+				await api.request('POST', '/mandates/invitations', {
+					email: terms.email,
+					caseTypes: terms.caseTypes,
+					label: '',
+					expiresAt: terms.expiresAt,
+				}),
+			)
+		},
+
+		/**
+		 * End one item of the given list: revoke a mandate, or take back an invitation.
+		 *
+		 * @param {{kind: string, id: string}} item The item.
+		 * @return {Promise<{ok: boolean, status: number, error: string}>} The outcome.
+		 */
+		async end(item) {
+			const id = encodeURIComponent(item.id || '')
+			const call =
+				item.kind === 'invitation'
+					? ['DELETE', `/mandates/invitations/${id}`, null]
+					: ['POST', `/mandates/${id}/revoke`, {}]
+			return answerOf(await api.request(call[0], call[1], call[2]))
+		},
+
+		/**
+		 * Stop a mandate the session holds.
+		 *
+		 * @param {string} id The mandate.
+		 * @return {Promise<{ok: boolean, status: number, error: string}>} The outcome.
+		 */
+		async stop(id) {
+			return answerOf(
+				await api.request(
+					'POST',
+					`/mandates/held/${encodeURIComponent(id || '')}/stop`,
+					{},
+				),
+			)
 		},
 	}
 }

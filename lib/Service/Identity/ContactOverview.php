@@ -102,6 +102,31 @@ class ContactOverview {
 	}//end approvedContacts()
 
 	/**
+	 * One approved contact of a resident by its own row id, or null.
+	 *
+	 * @param string $owner The resident.
+	 * @param string $organisation The tenant.
+	 * @param string $id The resident's own contact row.
+	 *
+	 * @return array{id: string, ref: string, displayName: string}|null The contact.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 */
+	public function approvedContact(string $owner, string $organisation, string $id): ?array {
+		if ($id === '') {
+			return null;
+		}
+
+		foreach ($this->approvedContacts(owner: $owner, organisation: $organisation) as $contact) {
+			if ($contact['id'] === $id) {
+				return $contact;
+			}
+		}
+
+		return null;
+	}//end approvedContact()
+
+	/**
 	 * The approved contacts' references of a resident, for a message thread.
 	 *
 	 * @param string $owner The resident.
@@ -121,4 +146,28 @@ class ContactOverview {
 
 		return $refs;
 	}//end approvedRefs()
+
+	/**
+	 * The names a resident knows their contacts by, per the other account's
+	 * reference, from every row that names one (also a removed contact, so
+	 * an old conversation keeps its name).
+	 *
+	 * @param string $owner The resident.
+	 * @param string $organisation The tenant.
+	 *
+	 * @return array<string, string> Name by subject reference.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 */
+	public function namesByRef(string $owner, string $organisation): array {
+		$names = [];
+		foreach ($this->rows->rowsOf(owner: $owner, organisation: $organisation) as $row) {
+			$ref = (string)($row['contactRef'] ?? '');
+			if ($ref !== '' && (string)($row['displayName'] ?? '') !== '') {
+				$names[$ref] = (string)$row['displayName'];
+			}
+		}
+
+		return $names;
+	}//end namesByRef()
 }//end class

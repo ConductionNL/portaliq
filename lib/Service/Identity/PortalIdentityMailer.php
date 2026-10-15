@@ -87,6 +87,11 @@ class PortalIdentityMailer {
 	public const TEMPLATE_CONTACT_INVITATION = 'contact-invitation';
 
 	/**
+	 * The invitation to act on someone's behalf (site-mandates-the-represented-manage).
+	 */
+	public const TEMPLATE_MANDATE_INVITATION = 'mandate-invitation';
+
+	/**
 	 * The one-time sign-in link of an `email` account (sign-in-with-an-email-link).
 	 */
 	public const TEMPLATE_EMAIL_LINK = 'email-link';
@@ -138,6 +143,14 @@ class PortalIdentityMailer {
 			'subject' => 'You are invited to work together at %1$s',
 			'heading' => 'You are invited',
 			'intro' => 'Someone you know wants to work with you in the portal of %1$s. Open the link to create your account or sign in.',
+			'button' => 'Open the invitation',
+		],
+		self::TEMPLATE_MANDATE_INVITATION => [
+			'fragment' => 'mandate-invitation',
+			'site' => true,
+			'subject' => 'You may arrange matters for someone at %1$s',
+			'heading' => 'You are invited',
+			'intro' => 'Someone wants you to arrange matters for them in the portal of %1$s. Sign in and accept the invitation. Only then does it count.',
 			'button' => 'Open the invitation',
 		],
 		self::TEMPLATE_EMAIL_LINK => [
