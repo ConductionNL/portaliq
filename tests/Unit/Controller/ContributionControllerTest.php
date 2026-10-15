@@ -1361,6 +1361,34 @@ class ContributionControllerTest extends TestCase {
 
 	}//end testActionTransportFailureIs502ForwardFailed()
 
+	/**
+	 * A domain app that does not answer in time is 504 `forward_timeout`, not
+	 * 502: the app may still finish, and the page says so.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
+	 */
+	public function testActionThatTimesOutIs504ForwardTimeout(): void {
+		$aggregate = $this->aggregate(
+			actions: [
+				['id' => 'slow', 'endpoint' => '/apps/demo/api/x', 'method' => 'GET'],
+			]
+		);
+
+		$client = $this->createMock(IClient::class);
+		$client->method('get')->willThrowException(new RuntimeException('cURL error 28: Operation timed out after 30001 milliseconds with 0 bytes received'));
+
+		$clientService = $this->createMock(IClientService::class);
+		$clientService->method('newClient')->willReturn($client);
+
+		$controller = $this->controller(aggregate: $aggregate, clientService: $clientService);
+		$result = $controller->action('portaliq', 'slow');
+
+		$this->assertSame(Http::STATUS_GATEWAY_TIMEOUT, $result->getStatus());
+		$this->assertSame(['error' => 'forward_timeout'], $result->getData());
+	}//end testActionThatTimesOutIs504ForwardTimeout()
+
 	public function testUnauthenticatedActionIs401(): void {
 		$controller = $this->controller(aggregate: $this->aggregate(), subject: null);
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->action('portaliq', 'x')->getStatus());
@@ -2247,7 +2275,7 @@ class ContributionControllerTest extends TestCase {
 		file_put_contents($tmp, 'evidence-bytes');
 
 		$request = $this->createMock(IRequest::class);
-		$request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token']]);
+		$request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token'], ['Idempotency-Key', '']]);
 		$request->method('getParam')->willReturn('');
 		$request->method('getUploadedFile')->willReturn(['name' => 'bewijs.pdf', 'tmp_name' => $tmp, 'error' => 0, 'size' => 14]);
 
@@ -2535,7 +2563,7 @@ class ContributionControllerTest extends TestCase {
 	 */
 	private function controllerWithCollectionParam(array $aggregate, string $collectionId, PortalObjectReader $reader): ContributionController {
 		$request = $this->createMock(IRequest::class);
-		$request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token']]);
+		$request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token'], ['Idempotency-Key', '']]);
 		$request->method('getParam')->willReturnCallback(
 			fn (string $key, $default = null) => ($key === 'collection' ? $collectionId : $default)
 		);
@@ -2630,7 +2658,7 @@ class ContributionControllerTest extends TestCase {
 		?\OCA\Portaliq\Service\Identity\ContactConfirmationMailer $confirmation = null,
 	): ContributionController {
 		$request = $this->createMock(IRequest::class);
-		$request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token'], ['X-Portaliq-Portal', '']]);
+		$request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token'], ['X-Portaliq-Portal', ''], ['Idempotency-Key', '']]);
 		$request->method('getParam')->willReturnCallback(
 			function (string $key, $default = null) use ($params) {
 				$params = $params + [

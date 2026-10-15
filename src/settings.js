@@ -23,6 +23,11 @@ import { createApp } from 'vue'
 import AdminRoot from './views/AdminRoot.vue'
 import pinia from './pinia.js'
 
+// Library CSS, as in main.js: webpack tree-shakes the library's own style
+// side effect from the aliased package, so without this import the admin
+// page drew the board shell with none of its grid, cards or tokens.
+import '@conduction/nextcloud-vue/css/index.css'
+
 loadTranslations('portaliq', () => {
 	const app = createApp(AdminRoot)
 	// Vue 3: global API is per-app. PiniaVuePlugin was the Vue-2-only shim;
