@@ -175,7 +175,7 @@
 <script>
 import { CnSiteIcon } from '@conduction/nextcloud-vue/public'
 import { contactLineParts } from '../lib/footerLine.js'
-import { footerContentOf, isSiteRoute } from '../lib/shellData.js'
+import { footerContentOf, linkAddress } from '../lib/shellData.js'
 
 // The button links' classes need their stylesheet, or the browser draws its own blue link.
 import '@utrecht/button-link-css/dist/index.css'
@@ -276,11 +276,7 @@ export default {
 		 * @spec openspec/changes/site-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-menu-link-to-a-site-page-carries-the-sites-own-address
 		 */
 		addressFor(link) {
-			if (this.addressOf && isSiteRoute(link)) {
-				return this.addressOf(link)
-			}
-
-			return link
+			return linkAddress(link, this.addressOf)
 		},
 
 		/**

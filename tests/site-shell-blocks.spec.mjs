@@ -24,10 +24,12 @@ import {
 	headerVariantOf,
 	isSiteRoute,
 	legalLinksOf,
+	linkAddress,
 	menusWithAddresses,
 	registerRouteOf,
 	subFooterMenuOf,
 } from '../src/site/lib/shellData.js'
+import { authoredLink } from '../src/site/components/mijn/links.js'
 import { addressOfRoute } from '../src/site/lib/siteAddress.js'
 import { renderSfc } from './support/render-sfc.mjs'
 
@@ -518,4 +520,73 @@ test('the site menu and the footer write a site route in the site address', asyn
 	assert.match(footer, /href="[^"]*route=%2Fcontact"/)
 	assert.match(footer, /href="https:\/\/social.example"/)
 	assert.doesNotMatch(footer, /href="\/(afval|privacy|contact)"/)
+})
+
+// hero-links-follow-the-site-address: the home page's "Veel gezocht" links
+// read `/afval` under the app path, a page Nextcloud does not serve.
+test('a block link to a site route takes the site address; another link stays as authored', () => {
+	assert.equal(
+		linkAddress('/afval', addressUnderApp),
+		'http://localhost:8196/index.php/apps/portaliq/site?portal=zuiddrecht&route=%2Fafval',
+	)
+	assert.equal(linkAddress('https://example.nl/', addressUnderApp), 'https://example.nl/')
+	assert.equal(linkAddress('tel:140999', addressUnderApp), 'tel:140999')
+	assert.equal(linkAddress('/afval', null), '/afval', 'without an address the route as it is')
+})
+
+test('the hero writes its popular links and actions in the site address', async () => {
+	const savedWindow = globalThis.window
+	globalThis.window = { location: { href: UNDER_APP } }
+	try {
+		const html = await renderSfc(
+			'src/site/components/HeroBlock.vue',
+			{
+				title: 'Wat wilt u regelen?',
+				variant: 'plain',
+				popularLabel: 'Veel gezocht:',
+				popularLinks: [
+					{ label: 'Grof afval', href: '/afval' },
+					{ label: 'Elders', href: 'https://example.nl/' },
+				],
+				actions: [{ label: 'Contact', href: '/contact' }],
+			},
+			{
+				'@conduction/nextcloud-vue/public': [
+					"import { h } from 'vue'",
+					"export const CnSiteIcon = { render() { return h('svg') } }",
+					"export const CnSiteSearch = { render() { return h('form') } }",
+					"export const CnSiteSection = { render() { return h('section', this.$slots.default ? this.$slots.default() : []) } }",
+				].join('\n'),
+				'../widgets/loaders.js': 'export const loaders = {}',
+				'../lib/contentApi.js':
+					'export function runtimeConfig() { return { addressing: { root: false } } }',
+			},
+		)
+		assert.match(html, /href="[^"]*site\?portal=zuiddrecht&amp;route=%2Fafval"[^>]*>Grof afval</)
+		assert.match(html, /href="https:\/\/example.nl\/"[^>]*>Elders</)
+		assert.match(html, /href="[^"]*route=%2Fcontact"/)
+		assert.doesNotMatch(html, /href="\/(afval|contact)"/)
+	} finally {
+		globalThis.window = savedWindow
+	}
+})
+
+test('a block link with a query keeps the query beside the route in the site address', () => {
+	const savedWindow = globalThis.window
+	globalThis.window = { location: { href: UNDER_APP } }
+	try {
+		const link = authoredLink('/zoeken?f.wooCategory=c1')
+		assert.equal(link.route, '/zoeken?f.wooCategory=c1')
+		const url = new URL(link.href)
+		assert.equal(url.searchParams.get('route'), '/zoeken')
+		assert.equal(url.searchParams.get('f.wooCategory'), 'c1')
+		assert.equal(url.searchParams.get('portal'), 'zuiddrecht')
+	} finally {
+		globalThis.window = savedWindow
+	}
+	assert.equal(
+		authoredLink('/zoeken?q=a').href,
+		'/zoeken?q=a',
+		'outside a browser the route and its query',
+	)
 })
