@@ -24,6 +24,8 @@ namespace OCA\Portaliq\Tests\Unit\Service\Plans;
 
 use OCA\Portaliq\BackgroundJob\ActionReminderJob;
 use OCA\Portaliq\Service\Plans\PlanEndReminderService;
+use OCA\Portaliq\Service\Plans\PlanEndingMailer;
+use OCA\Portaliq\Service\Plans\PlanRules;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -46,7 +48,7 @@ class PlanEndReminderServiceTest extends TestCase {
 	 *
 	 * @return array{0: PlanEndReminderService, 1: object}
 	 */
-	private function service(array $plans, array $actions): array {
+	private function service(array $plans, array $actions, ?PlanEndingMailer $mail = null): array {
 		$store = new class ($plans, $actions) {
 			/**
 			 * @var array<int, array{schema: string, uuid: ?string, object: array<string, mixed>}>
@@ -92,7 +94,7 @@ class PlanEndReminderServiceTest extends TestCase {
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturnCallback(static fn (string $id) => ($id === self::OS) ? $store : throw new RuntimeException('no service'));
 
-		return [new PlanEndReminderService($container, $this->createMock(LoggerInterface::class)), $store];
+		return [new PlanEndReminderService($container, $this->createMock(LoggerInterface::class), new PlanRules(), $mail), $store];
 	}//end service()
 
 	/**
@@ -141,6 +143,34 @@ class PlanEndReminderServiceTest extends TestCase {
 		$this->assertSame(0, $service->remindDue('2026-10-09'), 'one per end date');
 		$this->assertCount(2, array_filter($store->saved, static fn (array $s): bool => $s['schema'] === 'portalMessage'));
 	}//end testEveryParticipantGetsOneReminder()
+
+	/**
+	 * REQ-SPL-004: beside the portal message, every participant gets one mail
+	 * per end date, with the plan, its end date and the open actions.
+	 *
+	 * @return void
+	 */
+	public function testEveryParticipantGetsOneMail(): void {
+		$mails = [];
+		$mail  = $this->createMock(PlanEndingMailer::class);
+		$mail->method('send')->willReturnCallback(
+			static function (string $subjectRef, string $organisation, string $plan, string $endDate, int $open) use (&$mails): bool {
+				$mails[] = [$subjectRef, $organisation, $plan, $endDate, $open];
+				return true;
+			}
+		);
+		[$service] = $this->service([self::plan()], self::actions(), $mail);
+
+		$this->assertSame(1, $service->remindDue('2026-10-08'));
+		$this->assertSame(0, $service->remindDue('2026-10-09'), 'one per end date');
+		$this->assertSame(
+			[
+				['sanne', 'org-1', 'Schuldhulp op orde', '2026-10-20', 3],
+				['mark', 'org-1', 'Schuldhulp op orde', '2026-10-20', 3],
+			],
+			$mails
+		);
+	}//end testEveryParticipantGetsOneMail()
 
 	/**
 	 * A changed end date earns a new reminder once the mark is cleared.
