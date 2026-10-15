@@ -1231,7 +1231,7 @@
         "subjectRef": "persoon-1002",
         "organisation": "Installatiebedrijf Veldhuis Holding",
         "onBehalfOf": "Installatiebedrijf Veldhuis Noord",
-        "label": "Alle zaken van de holding en haar dochters",
+        "label": "Installatiebedrijf Veldhuis Holding en haar dochters",
         "caseTypes": [
           "omgevingsvergunning"
         ],
