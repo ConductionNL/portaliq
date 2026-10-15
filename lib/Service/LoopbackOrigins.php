@@ -33,6 +33,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCP\IConfig;
+use OCP\IRequest;
 
 /**
  * Lists the origins this server may answer on from inside itself.
@@ -49,12 +50,12 @@ class LoopbackOrigins {
 	/**
 	 * Constructor.
 	 *
+	 * @param IRequest $request The current request, read for its server variables.
 	 * @param IConfig $config Holds `overwrite.cli.url`.
-	 * @param array<array-key, mixed>|null $serverVariables The server variables; null reads PHP's own.
 	 */
 	public function __construct(
+		private readonly IRequest $request,
 		private readonly IConfig $config,
-		private readonly ?array $serverVariables = null,
 	) {
 	}//end __construct()
 
@@ -147,14 +148,26 @@ class LoopbackOrigins {
 	}//end localScheme()
 
 	/**
-	 * One scalar server variable of the current request, or null.
+	 * One scalar server variable of the current request, or null. IRequest
+	 * documents them as the magic `server` property, which the static
+	 * analysers do not read on an interface, so the magic getter is called
+	 * by name.
 	 *
 	 * @param string $key The variable name.
 	 *
 	 * @return string|int|null
 	 */
 	private function serverValue(string $key): string|int|null {
-		$value = (($this->serverVariables ?? $_SERVER)[$key] ?? null);
+		$server = [];
+		if (method_exists($this->request, '__get') === true) {
+			$server = $this->request->__get('server');
+		}
+
+		$value = null;
+		if (is_array($server) === true) {
+			$value = ($server[$key] ?? null);
+		}
+
 		if (is_string($value) === true || is_int($value) === true) {
 			return $value;
 		}

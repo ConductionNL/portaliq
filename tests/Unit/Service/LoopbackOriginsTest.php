@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\LoopbackOrigins;
+use OCA\Portaliq\Tests\Doubles\ServerVariablesRequest;
 use OCP\IConfig;
 use PHPUnit\Framework\TestCase;
 
@@ -33,7 +34,7 @@ class LoopbackOriginsTest extends TestCase {
 			static fn (string $key, string $default = ''): string => $key === 'overwrite.cli.url' ? $cliUrl : $default
 		);
 
-		return new LoopbackOrigins($config, $server);
+		return new LoopbackOrigins(new ServerVariablesRequest($server), $config);
 	}//end origins()
 
 	/**
