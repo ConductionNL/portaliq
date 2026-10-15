@@ -464,5 +464,7 @@
 	"That is not the address this link was sent to. Check it and try again.": "That is not the address this link was sent to. Check it and try again.",
 	"This portal does not offer sign-in with an e-mail link.": "This portal does not offer sign-in with an e-mail link.",
 	"Provisional": "Provisional",
-	"Not sent yet. It counts once you send it.": "Not sent yet. It counts once you send it."
+	"Not sent yet. It counts once you send it.": "Not sent yet. It counts once you send it.",
+	"Your request may still be processing. Check My cases in a few minutes before you send it again.": "Your request may still be processing. Check My cases in a few minutes before you send it again.",
+	"Go to My cases": "Go to My cases"
 }

@@ -265,10 +265,12 @@ export default {
 		 * and follow a checked redirect the app answers with.
 		 *
 		 * @param {object} body The typed answers.
+		 * @param {{submissionKey?: string}} [options] The form's submission key (REQ-AFS-001).
 		 * @return {Promise<object>} The result in the form's send shape.
 		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
+		 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
 		 */
-		async sendForward(body) {
+		async sendForward(body, options = {}) {
 			const api =
 				this.api && typeof this.api.forwardAction === 'function'
 					? this.api
@@ -277,7 +279,12 @@ export default {
 				this.resolved.app
 				|| (this.contribution && this.contribution.app)
 				|| ''
-			const result = await api.forwardAction(app, this.resolved.id, body)
+			const result = await api.forwardAction(
+				app,
+				this.resolved.id,
+				body,
+				options,
+			)
 			const redirect = redirectTarget(result)
 			if (redirect) {
 				this.navigate(redirect)
