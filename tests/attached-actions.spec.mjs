@@ -104,6 +104,9 @@ test('the forward names the action app', async () => {
 		'askAboutDossier',
 		{ question: 'Wanneer?', title: '' },
 		'pipelinq',
+		// No files; the plain form sends no submission key (REQ-AFS-001 is the stepped form's).
+		null,
+		{},
 	])
 	assert.equal(result.ok, true)
 	assert.equal(result.messageKey, 'Done.')
@@ -182,6 +185,9 @@ test('the site shows one button per attached action and forwards with actionApp'
 		'askAboutDossier',
 		{ question: 'Wanneer?', title: '' },
 		'pipelinq',
+		// No files; the plain form sends no submission key (REQ-AFS-001 is the stepped form's).
+		null,
+		{},
 	])
 	assert.equal(block.textOf(block.find('attached-actions-status')), 'Done.')
 	assert.ok(

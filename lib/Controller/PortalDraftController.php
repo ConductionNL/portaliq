@@ -75,9 +75,11 @@ class PortalDraftController extends Controller {
 	 * @param string $appId    The contributing app.
 	 * @param string $actionId The action.
 	 *
-	 * @return JSONResponse 401 without a session; 404 for an unknown action, no draft, or one past its retention.
+	 * @return JSONResponse 401 without a session; 404 for an unknown action; 200 `{found: false}` for no
+	 *                      draft or one past its retention.
 	 *
 	 * @spec openspec/changes/site-multi-step-forms/tasks.md#T8
+	 * @spec openspec/changes/resident-pages-live-round-3/specs/site-forms/spec.md#requirement-a-form-asks-for-a-draft-only-when-its-action-can-keep-one-req-rr3-005
  * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
 	 */
 	#[PublicPage]
@@ -96,8 +98,14 @@ class PortalDraftController extends Controller {
 				$draft = $this->actions->find(action: $match['action'], subjectRef: (string)$subject['subjectRef']);
 			}
 
-			if ($match === null || $draft === null) {
+			if ($match === null) {
 				return new JSONResponse(['found' => false], Http::STATUS_NOT_FOUND);
+			}
+
+			// No draft yet is the common answer on every form open, not an
+			// error: a quiet 200, so the browser logs no 404 (REQ-RR3-005).
+			if ($draft === null) {
+				return new JSONResponse(['found' => false]);
 			}
 
 			return new JSONResponse(

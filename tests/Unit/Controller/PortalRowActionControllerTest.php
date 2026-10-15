@@ -588,7 +588,11 @@ class PortalRowActionControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testATransportFailureIs502(): void {
-		$forwarder = $this->createMock(PortalActionForwarder::class);
+		// A partial mock: the real failureResponse() words the answer.
+		$forwarder = $this->getMockBuilder(PortalActionForwarder::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['isForwardable', 'forward'])
+			->getMock();
 		$forwarder->method('isForwardable')->willReturn(true);
 		$forwarder->expects($this->once())->method('forward')->willReturn(null);
 

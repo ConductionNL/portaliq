@@ -105,6 +105,8 @@ test('choosing everyone reads every party; choosing back reads once more', async
 	const asked = []
 	actingFor.mandates = MANDATES
 	actingFor.id = 'self'
+	// A party chosen earlier this session: the page opens on it.
+	actingFor.chosen = true
 	const page = instance(MyCasesPage, {
 		t,
 		api: {
@@ -128,5 +130,33 @@ test('choosing everyone reads every party; choosing back reads once more', async
 	await new Promise((resolve) => setTimeout(resolve, 0))
 	assert.deepEqual(asked, ['self', 'mandate-henk', 'self'])
 	assert.equal(page.choice, 'self')
+	actingFor.mandates = []
+	actingFor.chosen = false
+})
+
+test('without a choice Mijn zaken opens on everyone and reads every mandate the first answer names', async () => {
+	const MyCasesPage = await loadSfc('src/site/pages/e/MyCasesPage.vue')
+	const asked = []
+	// A first visit: nothing knows the mandates yet.
+	actingFor.mandates = []
+	actingFor.id = 'self'
+	actingFor.chosen = false
+	const page = instance(MyCasesPage, {
+		t,
+		api: {
+			fetchMyCases: async (id) => {
+				asked.push(id)
+				return { ok: true, cases: [row(id)], mandates: MANDATES }
+			},
+		},
+	})
+
+	assert.equal(page.choice, EVERYONE)
+	await page.load()
+	assert.deepEqual(asked, ['self', 'mandate-henk'])
+	assert.deepEqual(
+		page.data.cases.map((c) => c.id),
+		['self', 'mandate-henk'],
+	)
 	actingFor.mandates = []
 })
