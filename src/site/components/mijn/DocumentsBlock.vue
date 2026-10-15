@@ -256,7 +256,11 @@ export default {
 				// any other collection that declares `documents` through its own
 				// (site-member-voting-record-and-confidential-papers, T4).
 				answer = this.isCase
-					? await this.api?.fetchCitizenCase?.(this.collection, id)
+					? await this.api?.fetchCitizenCase?.(
+						this.collection,
+						id,
+						this.record?._mandate?.id || '',
+					)
 					: await this.api?.fetchCollectionDocuments?.(this.collection, id)
 			} catch {
 				answer = null

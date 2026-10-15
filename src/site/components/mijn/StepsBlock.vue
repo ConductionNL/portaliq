@@ -244,7 +244,11 @@ export default {
 			this.failed = false
 			let answer
 			try {
-				answer = await this.api?.fetchSteps?.(this.collection, id)
+				answer = await this.api?.fetchSteps?.(
+					this.collection,
+					id,
+					this.record?._mandate?.id || '',
+				)
 			} catch {
 				answer = null
 			}

@@ -6,6 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\PortalTimelineController;
+use OCA\Portaliq\Service\MandatedCaseReader;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PortalTimelineReader;
@@ -188,18 +189,59 @@ class PortalTimelineControllerTest extends TestCase {
 	}//end testStepsThatCouldNotBeReadAreA502AndNoProviderIsA404()
 
 	/**
+	 * mandated-case-opens-on-its-record-page: Linda reads where her father's
+	 * case stands under her mandate; the same reader that lists it on "My
+	 * cases" proves it, and without a mandate it stays one 404.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/mandated-case-opens-on-its-record-page/specs/portal-my-cases/spec.md#requirement-a-case-read-under-a-mandate-opens-on-its-record-page
+	 */
+	public function testACaseSeenUnderAMandateIsProvenByTheMandatedReader(): void {
+		$collection = self::COLLECTION + ['steps' => ['label' => '', 'provider' => 'caseSteps']];
+
+		$mandated = $this->getMockBuilder(MandatedCaseReader::class)->disableOriginalConstructor()->onlyMethods(['read'])->getMock();
+		$mandated->expects($this->once())->method('read')
+			->with(self::SUBJECT, 'm-henk', 'dossiq', 'case', 'case-9')
+			->willReturn(['id' => 'case-9']);
+		$controller = $this->controller(collection: $collection, owned: null, mandate: 'm-henk', mandatedCases: $mandated);
+		$this->doubles['timelines']->method('entries')->willReturn([['label' => 'Ontvangen', 'state' => 'done']]);
+		$this->assertSame(Http::STATUS_OK, $controller->steps(register: 'dossiq', schema: 'case', id: 'case-9')->getStatus());
+
+		$refused = $this->getMockBuilder(MandatedCaseReader::class)->disableOriginalConstructor()->onlyMethods(['read'])->getMock();
+		$refused->method('read')->willReturn(null);
+		$foreign = $this->controller(collection: $collection, owned: null, mandate: 'm-other', mandatedCases: $refused);
+		$this->doubles['timelines']->expects($this->never())->method('entries');
+		$this->assertSame(Http::STATUS_NOT_FOUND, $foreign->steps(register: 'dossiq', schema: 'case', id: 'case-9')->getStatus());
+	}//end testACaseSeenUnderAMandateIsProvenByTheMandatedReader()
+
+	/**
 	 * The controller over doubles.
 	 *
 	 * @param array<string, mixed>|null $subject The subject behind the bearer.
 	 * @param array<string, mixed> $collection The collection the subject may read.
 	 * @param array<string, mixed>|null $owned What the scoped read finds.
+	 * @param string $mandate The `mandate` the request names.
+	 * @param MandatedCaseReader|null $mandatedCases Reads a case under a mandate.
 	 *
 	 * @return PortalTimelineController
 	 */
-	private function controller(?array $subject = self::SUBJECT, array $collection = self::COLLECTION, ?array $owned = ['id' => 'case-1']): PortalTimelineController {
+	private function controller(
+		?array $subject = self::SUBJECT,
+		array $collection = self::COLLECTION,
+		?array $owned = ['id' => 'case-1'],
+		string $mandate = '',
+		?MandatedCaseReader $mandatedCases = null
+	): PortalTimelineController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer token');
-		$request->method('getParam')->willReturnCallback(static fn (string $key, mixed $default = null): mixed => ($key === 'collection' ? 'mijnZaken' : $default));
+		$request->method('getParam')->willReturnCallback(
+			static fn (string $key, mixed $default = null): mixed => match ($key) {
+				'collection' => 'mijnZaken',
+				'mandate' => $mandate,
+				default => $default,
+			}
+		);
 
 		$registry = $this->getMockBuilder(PortalContributionRegistry::class)->disableOriginalConstructor()->onlyMethods(['aggregateFor'])->getMock();
 		$registry->method('aggregateFor')->willReturn(['contributions' => [['app' => 'dossiq', 'collections' => [$collection]]]]);
@@ -214,7 +256,7 @@ class PortalTimelineControllerTest extends TestCase {
 
 		$this->doubles = ['reader' => $reader, 'timelines' => $timelines];
 
-		return new PortalTimelineController($request, $registry, $session, $reader, $timelines);
+		return new PortalTimelineController($request, $registry, $session, $reader, $timelines, null, $mandatedCases);
 
 	}//end controller()
 

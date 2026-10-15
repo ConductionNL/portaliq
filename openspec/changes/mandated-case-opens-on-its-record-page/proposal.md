@@ -8,6 +8,7 @@ Seen in the Zuiddrecht go-live rehearsal R2: Linda Bakker acts for her father He
 
 - A record page opens the picked row when it is in the resident's own list, or when it was read under a mandate (it carries `_mandate.id`). The blocks on the page read it under that mandate, as the case block already does.
 - A record page whose route names the record keeps the row a record link carried for the same id.
+- The steps, the history and the documents of such a case are read under the mandate its row carries: the steps and timeline routes take `mandate` and prove the case through the same reader that lists it on "My cases"; the documents come from the read-only case screen, which lists none under a mandate.
 
 ## Not changed
 

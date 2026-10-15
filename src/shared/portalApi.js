@@ -242,6 +242,11 @@ export function createPortalApi(config, store = {}) {
 	const col = (register, schema) =>
 		`/collections/${encodeURIComponent(register)}/${encodeURIComponent(schema)}`
 
+	// A case listed under a mandate is read under that mandate
+	// (cases-my-cases-page REQ-CMC-004); '' without one.
+	const mandateQuery = (mandateId) =>
+		mandateId ? `&mandate=${encodeURIComponent(mandateId)}` : ''
+
 	// The citizen write surface has its own prefix, because the three acts are
 	// governed by the case type rather than by the collection's own opt-ins.
 	const citizenCase = (register, schema) =>
@@ -975,11 +980,12 @@ export function createPortalApi(config, store = {}) {
 		 *
 		 * @param {object} collection Manifest collection: `{ id, register, schema }`.
 		 * @param {string} id The case id.
+		 * @param {string} [mandateId] The mandate a case listed under one is read under.
 		 * @return {Promise<object|null>} The steps, or null.
 		 */
-		async fetchSteps(collection, id) {
+		async fetchSteps(collection, id, mandateId = '') {
 			const body = await get(
-				`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/steps?collection=${encodeURIComponent(collection.id)}`,
+				`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/steps?collection=${encodeURIComponent(collection.id)}${mandateQuery(mandateId)}`,
 			).catch(() => null)
 			return body && Array.isArray(body.steps) ? body : null
 		},
@@ -992,11 +998,12 @@ export function createPortalApi(config, store = {}) {
 		 *
 		 * @param {object} collection Manifest collection: `{ id, register, schema }`.
 		 * @param {string} id The object id.
+		 * @param {string} [mandateId] The mandate a case listed under one is read under.
 		 * @return {Promise<object|null>} The timeline, or null.
 		 */
-		async fetchTimeline(collection, id) {
+		async fetchTimeline(collection, id, mandateId = '') {
 			const body = await get(
-				`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/timeline?collection=${encodeURIComponent(collection.id)}`,
+				`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/timeline?collection=${encodeURIComponent(collection.id)}${mandateQuery(mandateId)}`,
 			)
 			return body && Array.isArray(body.entries) ? body : null
 		},
