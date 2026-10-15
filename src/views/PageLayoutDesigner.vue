@@ -164,7 +164,8 @@
 			v-else
 			v-model:paletteOpen="paletteOpen"
 			:editor="editor"
-			:loadBlocks="loadBlocks" />
+			:loadBlocks="loadBlocks"
+			:loadRecordLists="loadRecordLists" />
 
 		<MediaPickerDialog
 			v-model:open="mediaOpen"
@@ -191,6 +192,7 @@ import {
 	createPageEditor,
 	createPageSaver,
 	pageToBlock,
+	recordListsFrom,
 } from '../editor/index.js'
 import { withMedia } from '../lib/mediaLibrary.js'
 import { pageSiteUrl } from '../lib/pageSiteUrl.js'
@@ -323,6 +325,21 @@ export default {
 					title: String(row.title || ''),
 				}))
 				.filter((block) => block.id !== '')
+		},
+
+		/**
+		 * The public record lists the installed apps contribute to this page's
+		 * portal, read from the same anonymous answer the site reads.
+		 *
+		 * @return {Promise<Array<{app: string, id: string, label: string}>>} The lists.
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+		 */
+		async loadRecordLists() {
+			const { data } = await axios.get(
+				generateUrl('/apps/portaliq/api/content/contributions'),
+				{ params: this.page.portal ? { portal: this.page.portal } : {} },
+			)
+			return recordListsFrom(data)
 		},
 
 		/**

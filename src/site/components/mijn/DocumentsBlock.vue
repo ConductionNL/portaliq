@@ -19,7 +19,9 @@
 		<!-- With `upload` an outlined button beside the heading adds a
 		     document through the case screen's route
 		     (zuiddrecht-resident-pages-match-the-boards). -->
-		<div v-if="block.upload === true && api" class="pq-documents-block__head">
+		<div
+			v-if="block.upload === true && api && isCase"
+			class="pq-documents-block__head">
 			<component :is="`h${level}`" :id="headingId" class="utrecht-heading-3">
 				{{ heading }}
 			</component>
@@ -150,6 +152,17 @@ export default {
 
 	computed: {
 		/**
+		 * Whether the collection is a case collection, read through the case
+		 * screen's route; any other collection with `documents` reads its own.
+		 *
+		 * @return {boolean}
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t4
+		 */
+		isCase() {
+			return this.collection?.kind === 'cases'
+		},
+
+		/**
 		 * @return {(key: string, vars?: object) => string} The translator.
 		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
@@ -239,7 +252,12 @@ export default {
 			this.failed = false
 			let answer
 			try {
-				answer = await this.api?.fetchCitizenCase?.(this.collection, id)
+				// A case reads its documents through the case screen's route;
+				// any other collection that declares `documents` through its own
+				// (site-member-voting-record-and-confidential-papers, T4).
+				answer = this.isCase
+					? await this.api?.fetchCitizenCase?.(this.collection, id)
+					: await this.api?.fetchCollectionDocuments?.(this.collection, id)
 			} catch {
 				answer = null
 			}
@@ -283,11 +301,10 @@ export default {
 			this.openFailed = false
 			let result
 			try {
-				result = await this.api?.downloadCitizenDocument?.(
-					this.collection,
-					this.recordId,
-					entry,
-				)
+				const download = this.isCase
+					? this.api?.downloadCitizenDocument
+					: this.api?.downloadCollectionDocument
+				result = await download?.(this.collection, this.recordId, entry)
 			} catch {
 				result = null
 			}

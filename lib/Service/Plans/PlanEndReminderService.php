@@ -55,11 +55,13 @@ class PlanEndReminderService {
 	 * @param ContainerInterface $container For resolving OpenRegister's ObjectService.
 	 * @param LoggerInterface $logger The logger.
 	 * @param PlanRules $rules The rules that say when a plan is near its end.
+	 * @param PlanEndingMailer|null $mail Mails each participant beside the portal message.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 		private readonly PlanRules $rules = new PlanRules(),
+		private readonly ?PlanEndingMailer $mail = null,
 	) {
 	}//end __construct()
 
@@ -212,6 +214,13 @@ class PlanEndReminderService {
 					schema: 'portalMessage',
 					_rbac: false,
 					_multitenancy: false
+				);
+				$this->mail?->send(
+					subjectRef: $ref,
+					organisation: (string)($plan['organisation'] ?? ''),
+					plan: (string)($plan['title'] ?? ''),
+					endDate: $end,
+					open: $open
 				);
 			}
 

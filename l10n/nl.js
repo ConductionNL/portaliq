@@ -3119,9 +3119,14 @@ OC.L10N.register(
         "Or a web address": "Of een webadres",
         "A logo address starts with /, http:// or https://.": "Een logo-adres begint met /, http:// of https://.",
         "A published image from Media of this portal, or the address of an image.": "Een gepubliceerde afbeelding uit Media van deze portal, of het adres van een afbeelding.",
+        "Choose a list": "Kies een overzicht",
         "nl": "nl",
         "https://www.example.nl": "https://www.voorbeeld.nl",
-        "Administration settings": "Beheerinstellingen"
+        "Administration settings": "Beheerinstellingen",
+        "Your plan is nearly ending": "Uw plan loopt bijna af",
+        "The plan %1$s ends on %2$s": "Het plan %1$s eindigt op %2$s",
+        "The plan \"%1$s\" ends on %2$s. %3$s actions are still open. Extend the plan with your caseworker, or complete the actions.": "Het plan \"%1$s\" eindigt op %2$s. Er staan nog %3$s acties open. Verleng het plan met uw begeleider, of rond de acties af.",
+        "Go to %1$s": "Ga naar %1$s"
     },
     "nplurals=2; plural=(n != 1);"
 )

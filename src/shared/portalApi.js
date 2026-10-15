@@ -247,6 +247,38 @@ export function createPortalApi(config, store = {}) {
 	const citizenCase = (register, schema) =>
 		`/citizen/cases/${encodeURIComponent(register)}/${encodeURIComponent(schema)}`
 
+	/**
+	 * Fetch one listed document and save it client-side through a Blob URL,
+	 * as downloadFile().
+	 *
+	 * @param {string} url The document route.
+	 * @param {object} entry The listed entry: `{ id, title }`.
+	 * @return {Promise<object>} `{ ok }`, or `{ ok: false, status }`.
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
+	 */
+	async function saveDocument(url, entry) {
+		try {
+			const res = await fetch(url, { headers: { ...authHeaders() } })
+			if (!res.ok) {
+				return { ok: false, status: res.status }
+			}
+			const blob = await res.blob()
+			const objectUrl = window.URL.createObjectURL(blob)
+			const link = document.createElement('a')
+			link.href = objectUrl
+			link.download = entry.title || 'download'
+			document.body.appendChild(link)
+			link.click()
+			setTimeout(() => {
+				link.remove()
+				window.URL.revokeObjectURL(objectUrl)
+			}, 10000)
+			return { ok: true }
+		} catch {
+			return { ok: false, status: 0 }
+		}
+	}
+
 	return {
 		/**
 		 * Resolve the current session (fail-closed). Returns the session object
@@ -1271,27 +1303,49 @@ export function createPortalApi(config, store = {}) {
 		 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
 		 */
 		async downloadCitizenDocument(collection, caseId, entry) {
-			const url = `${base}${citizenCase(collection.register, collection.schema)}/${encodeURIComponent(caseId)}/documents/${encodeURIComponent(entry.id)}`
-			try {
-				const res = await fetch(url, { headers: { ...authHeaders() } })
-				if (!res.ok) {
-					return { ok: false, status: res.status }
-				}
-				const blob = await res.blob()
-				const objectUrl = window.URL.createObjectURL(blob)
-				const link = document.createElement('a')
-				link.href = objectUrl
-				link.download = entry.title || 'download'
-				document.body.appendChild(link)
-				link.click()
-				setTimeout(() => {
-					link.remove()
-					window.URL.revokeObjectURL(objectUrl)
-				}, 10000)
-				return { ok: true }
-			} catch {
-				return { ok: false, status: 0 }
-			}
+			return saveDocument(
+				`${base}${citizenCase(collection.register, collection.schema)}/${encodeURIComponent(caseId)}/documents/${encodeURIComponent(entry.id)}`,
+				entry,
+			)
+		},
+
+		/**
+		 * The documents one object of any collection lists, for a collection
+		 * that declares `documents` and is not a case collection. The server
+		 * finds the collection in the resident's own aggregate and reads the
+		 * object within its scope, so a collection above the session's trust,
+		 * an object outside the scope and an unknown id are all null here.
+		 *
+		 * @param {object} collection Manifest collection: `{ register, schema }`.
+		 * @param {string} id The object id.
+		 * @return {Promise<object|null>} `{ documents, documentsLabel }` or null.
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t4
+		 */
+		async fetchCollectionDocuments(collection, id) {
+			const answer = await get(
+				`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/documents`,
+			)
+			return answer && Array.isArray(answer.documents)
+				? { documents: answer.documents, documentsLabel: answer.label || '' }
+				: null
+		},
+
+		/**
+		 * Open one document `fetchCollectionDocuments` listed. Only the entry
+		 * id travels; the server looks it up again, runs the collection's
+		 * `opened` hook when it has one, and answers 503 when that says no.
+		 *
+		 * @param {object} collection Manifest collection: `{ register, schema }`.
+		 * @param {string} id The object id.
+		 * @param {object} entry The listed entry: `{ id, title }`.
+		 * @return {Promise<object>} `{ ok }`, or `{ ok: false, status }`.
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t4
+		 */
+		async downloadCollectionDocument(collection, id, entry) {
+			return saveDocument(
+				`${base}${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/documents/${encodeURIComponent(entry.id)}`,
+				entry,
+			)
 		},
 
 		/**

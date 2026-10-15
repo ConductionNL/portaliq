@@ -260,8 +260,18 @@ export default {
 			return badgeModifier(row?.[column.field])
 		},
 
+		/**
+		 * The link of a `link` cell: the column's own value, or the value of
+		 * `hrefField` when the column names one, so the text and the address
+		 * may come from two fields ("Groen dak", `/besluit/1`).
+		 *
+		 * @param {object} row A row.
+		 * @param {object} column A `link` column.
+		 * @return {string} A site path or an http(s) address, or ''.
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+		 */
 		href(row, column) {
-			return safeHref(row?.[column.field])
+			return safeHref(row?.[column.hrefField || column.field])
 		},
 
 		actionsFor(row) {

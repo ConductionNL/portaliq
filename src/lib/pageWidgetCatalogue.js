@@ -134,6 +134,18 @@ const FIELD_OVERRIDES = {
 }
 
 /**
+ * Fields that keep their place among a widget's own props but get a picker
+ * instead of a text input. `recordList` lists the public record lists the
+ * installed apps contribute; choosing one sets both `list` and `app`
+ * (site-member-voting-record-and-confidential-papers, design.md D2).
+ *
+ * @type {Record<string, Record<string, string>>}
+ */
+const KIND_OVERRIDES = {
+	publicRecords: { list: 'recordList' },
+}
+
+/**
  * Components the SITE loads lazily and this designer does not.
  *
  * A `defineAsyncComponent` wrapper carries no `props` until it resolves, so
@@ -306,7 +318,8 @@ export function fieldsFor(key) {
 		.filter((name) => !hidden.includes(name) && !NEVER_EDITABLE.includes(name))
 		.map((name) => ({
 			name,
-			kind: kindFor(name, component.props[name]),
+			kind:
+				KIND_OVERRIDES[key]?.[name] || kindFor(name, component.props[name]),
 			label: humanise(name),
 		}))
 }
