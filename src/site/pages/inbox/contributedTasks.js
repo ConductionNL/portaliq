@@ -19,20 +19,23 @@ const ALL_ROWS = 200
 
 /**
  * Every collection a contribution shows in a `tasks` block, once per app and
- * collection, with the first block that shows it.
+ * collection, with the first block that shows it. A task block on a record
+ * page that names its `recordField` says which record a row belongs to
+ * (dossiq's request names its case), so a row can open that record.
  *
  * @param {object|Array|null} aggregate The contributions aggregate, or its list.
- * @return {Array<{app: string, block: object, collection: object}>} The sources.
+ * @return {Array<{app: string, block: object, collection: object, record: {field: string, collection: string}|null}>} The sources.
  * @spec openspec/changes/mijn-taken-lists-contributed-tasks/specs/site-mijn-omgeving/spec.md#requirement-my-tasks-lists-what-the-apps-ask-of-the-resident
  */
 export function contributedTaskSources(aggregate) {
 	const list = Array.isArray(aggregate)
 		? aggregate
 		: aggregate?.contributions || []
-	const seen = new Set()
-	const sources = []
+	const byKey = new Map()
 	for (const contribution of list) {
 		for (const page of contribution?.pages || []) {
+			const recordCollection =
+				page?.record?.collection || page?.records?.collection || ''
 			for (const block of page?.blocks || []) {
 				if (block?.type !== 'tasks' || typeof block.collection !== 'string') {
 					continue
@@ -40,16 +43,29 @@ export function contributedTaskSources(aggregate) {
 				const collection = (contribution.collections || []).find(
 					(candidate) => candidate?.id === block.collection,
 				)
-				const key = `${contribution.app}:${block.collection}`
-				if (!collection || seen.has(key)) {
+				if (!collection) {
 					continue
 				}
-				seen.add(key)
-				sources.push({ app: String(contribution.app || ''), block, collection })
+				const key = `${contribution.app}:${block.collection}`
+				if (!byKey.has(key)) {
+					byKey.set(key, {
+						app: String(contribution.app || ''),
+						block,
+						collection,
+						record: null,
+					})
+				}
+				const source = byKey.get(key)
+				if (!source.record && recordCollection && block.recordField) {
+					source.record = {
+						field: String(block.recordField),
+						collection: recordCollection,
+					}
+				}
 			}
 		}
 	}
-	return sources
+	return [...byKey.values()]
 }
 
 /**
@@ -90,17 +106,29 @@ export function contributedTaskEntries(source, rows, nav) {
 		{ ...source.block, limit: ALL_ROWS },
 		source.collection,
 	).map((entry) => {
-		const link = {
+		const own = {
 			app: source.app,
 			collection: source.collection.id,
 			id: entry.id,
 		}
+		const ownRoute = entry.id ? recordRoute(nav, own) || '' : ''
+		// Without a page of its own, a row opens the record it belongs to.
+		const recordId = source.record ? entry.row?.[source.record.field] : ''
+		const record =
+			!ownRoute && typeof recordId === 'string' && recordId !== ''
+				? {
+						app: source.app,
+						collection: source.record.collection,
+						id: recordId,
+					}
+				: null
+		const link = record || own
 		return {
 			key: `${source.app}:${source.collection.id}:${entry.id || entry.title}`,
 			title: entry.title,
 			due: entry.due,
 			link,
-			route: entry.id ? recordRoute(nav, link) || '' : '',
+			route: record ? recordRoute(nav, record) || '' : ownRoute,
 		}
 	})
 }

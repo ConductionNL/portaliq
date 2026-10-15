@@ -538,9 +538,10 @@ const DOSSIQ = {
 		},
 		{
 			id: 'mijnZaken',
+			record: { collection: 'mijnZaken' },
 			blocks: [
 				{ type: 'tasks', collection: 'vragenAanU', recordField: 'case' },
-				{ type: 'detail', collection: 'mijnZaken' },
+				{ type: 'steps', collection: 'mijnZaken' },
 			],
 		},
 	],
@@ -552,6 +553,7 @@ const ASKED = [
 		summary: 'Stuur de bouwtekening van uw dakkapel',
 		hersteltermijn: '2026-10-29',
 		state: 'open',
+		case: 'zaak-9',
 	},
 	{ id: 'av-1', summary: 'Al beantwoord', state: 'answered' },
 ]
@@ -569,17 +571,31 @@ test('my tasks reads every collection an app shows in a tasks block, once', asyn
 	assert.equal(matchesDefaultFilters(ASKED[1], sources[0].collection), false)
 	assert.equal(matchesDefaultFilters({ state: 'x' }, {}), true)
 
+	assert.deepEqual(sources[0].record, { field: 'case', collection: 'mijnZaken' })
+
 	const entries = contributedTaskEntries(sources[0], ASKED, [])
 	assert.deepEqual(
 		entries.map((entry) => [entry.title, entry.due]),
 		[['Stuur de bouwtekening van uw dakkapel', '2026-10-29']],
 		'only the open request, titled by the block',
 	)
-	assert.deepEqual(entries[0].link, {
+
+	// No page lists the requests, so the row opens the case it belongs to.
+	const nav = [
+		{
+			key: 'dossiq:mijnZaken',
+			label: 'Uw zaak',
+			contribution: { app: 'dossiq' },
+			page: DOSSIQ.pages[1],
+		},
+	]
+	const [opened] = contributedTaskEntries(sources[0], ASKED, nav)
+	assert.deepEqual(opened.link, {
 		app: 'dossiq',
-		collection: 'vragenAanU',
-		id: 'av-2',
+		collection: 'mijnZaken',
+		id: 'zaak-9',
 	})
+	assert.match(opened.route, /mijnZaken\/zaak-9$/)
 })
 
 test('my tasks lists what an app asks beside the portal tasks, and is empty only when both are', async () => {
