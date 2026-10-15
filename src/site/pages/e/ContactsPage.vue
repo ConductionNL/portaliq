@@ -149,6 +149,13 @@
 						<span v-if="row.line !== ''">{{ row.line }}</span>
 						<button
 							type="button"
+							class="utrecht-button utrecht-button--primary-action"
+							data-testid="contact-message-open"
+							@click="openMessage(row)">
+							{{ t('Send message') }}
+						</button>
+						<button
+							type="button"
 							class="utrecht-button utrecht-button--secondary-action"
 							data-testid="contact-remove"
 							@click="act('remove', row)">
@@ -178,10 +185,18 @@
 			:t="t"
 			@cancel="inviting = false"
 			@sent="invited" />
+		<ContactMessageModal
+			v-if="writingTo"
+			:api="api"
+			:t="t"
+			:contact="writingTo"
+			@cancel="writingTo = null"
+			@sent="messageSent" />
 	</section>
 </template>
 
 <script>
+import ContactMessageModal from '../../modals/e/ContactMessageModal.vue'
 import InviteContactModal from '../../modals/e/InviteContactModal.vue'
 import { contactsApi } from '../../../shared/areaApi.js'
 import { contactsOfRole, initialsOf, ROLE_FILTERS, roleLabel } from './contacts.js'
@@ -190,7 +205,7 @@ import { longDate, readerLocale } from './format.js'
 export default {
 	name: 'ContactsPage',
 
-	components: { InviteContactModal },
+	components: { ContactMessageModal, InviteContactModal },
 
 	props: {
 		/** The portal API adapter (`createPortalApi` shape). */
@@ -206,6 +221,8 @@ export default {
 			overview: { incoming: [], outgoing: [], contacts: [], counts: {} },
 			loading: true,
 			inviting: false,
+			// The contact the message dialog writes to, or null.
+			writingTo: null,
 			role: 'all',
 			notice: '',
 			problem: '',
@@ -306,6 +323,33 @@ export default {
 			this.inviting = false
 			this.notice = 'The invitation is sent.'
 			await this.load()
+		},
+
+		/**
+		 * Open the message dialog for one approved contact.
+		 *
+		 * @param {object} row The contact.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+		 */
+		openMessage(row) {
+			this.notice = ''
+			this.problem = ''
+			this.writingTo = row
+		},
+
+		/**
+		 * The message went: close the dialog and say where the conversation is.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+		 */
+		messageSent() {
+			this.writingTo = null
+			this.notice =
+				'Your message has been sent. You find the conversation under Messages.'
 		},
 
 		/**

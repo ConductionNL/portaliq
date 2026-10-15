@@ -403,6 +403,8 @@ return [
         // short reference session it started (identity-ways-in-screens D2).
         ['name' => 'portalIdentity#referenceCase', 'url' => '/portal/api/identity/reference-case', 'verb' => 'GET'],
         ['name' => 'portalIdentity#register', 'url' => '/portal/api/identity/register', 'verb' => 'POST'],
+        // The address a resident's contact invitation went to (own-contacts-and-invitations T05).
+        ['name' => 'portalIdentity#contactInvitation', 'url' => '/portal/api/identity/contact-invitation', 'verb' => 'POST'],
         // The activation link of a self-registration (identity-ways-in-screens T03).
         ['name' => 'portalIdentity#activate', 'url' => '/portal/api/identity/activate', 'verb' => 'POST'],
         ['name' => 'portalIdentity#acceptInvitation', 'url' => '/portal/api/identity/invitation/accept', 'verb' => 'POST'],
@@ -499,6 +501,7 @@ return [
         ['name' => 'portalRowAction#forward', 'url' => '/portal/api/collections/{register}/{schema}/{id}/actions/{actionId}', 'verb' => 'POST'],
         // Who may act for the represented party, and the mandates a holder keeps (site-mandates-the-represented-manage).
         ['name' => 'mandate#given', 'url' => '/portal/api/mandates/given', 'verb' => 'GET'],
+        ['name' => 'mandate#caseTypes', 'url' => '/portal/api/mandates/case-types', 'verb' => 'GET'],
         ['name' => 'mandate#invite', 'url' => '/portal/api/mandates/invitations', 'verb' => 'POST'],
         ['name' => 'mandate#accept', 'url' => '/portal/api/mandates/invitations/accept', 'verb' => 'POST'],
         ['name' => 'mandate#revokeInvitation', 'url' => '/portal/api/mandates/invitations/{id}', 'verb' => 'DELETE'],

@@ -2621,6 +2621,8 @@ OC.L10N.register(
         "You are invited to work together at %1$s": "U bent uitgenodigd om samen te werken bij %1$s",
         "Someone you know wants to work with you in the portal of %1$s. Open the link to create your account or sign in.": "Iemand die u kent wil met u samenwerken in het portaal van %1$s. Open de link om uw account aan te maken of in te loggen.",
         "Open the invitation": "Open de uitnodiging",
+        "You may arrange matters for someone at %1$s": "U mag zaken regelen voor iemand bij %1$s",
+        "Someone wants you to arrange matters for them in the portal of %1$s. Sign in and accept the invitation. Only then does it count.": "Iemand wil dat u zaken voor hem of haar regelt in het portaal van %1$s. Log in en accepteer de uitnodiging. Pas dan geldt de machtiging.",
         "%1$s invited you.": "%1$s heeft u uitgenodigd.",
         "Their message: %1$s": "Hun bericht: %1$s",
         "Contacts enabled": "Contacten aan",
@@ -3117,7 +3119,9 @@ OC.L10N.register(
         "Or a web address": "Of een webadres",
         "A logo address starts with /, http:// or https://.": "Een logo-adres begint met /, http:// of https://.",
         "A published image from Media of this portal, or the address of an image.": "Een gepubliceerde afbeelding uit Media van deze portal, of het adres van een afbeelding.",
-        "Choose a list": "Kies een overzicht"
+        "Choose a list": "Kies een overzicht",
+        "nl": "nl",
+        "https://www.example.nl": "https://www.voorbeeld.nl"
     },
     "nplurals=2; plural=(n != 1);"
 )

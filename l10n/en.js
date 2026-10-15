@@ -2558,6 +2558,8 @@ OC.L10N.register(
         "You are invited to work together at %1$s": "You are invited to work together at %1$s",
         "Someone you know wants to work with you in the portal of %1$s. Open the link to create your account or sign in.": "Someone you know wants to work with you in the portal of %1$s. Open the link to create your account or sign in.",
         "Open the invitation": "Open the invitation",
+        "You may arrange matters for someone at %1$s": "You may arrange matters for someone at %1$s",
+        "Someone wants you to arrange matters for them in the portal of %1$s. Sign in and accept the invitation. Only then does it count.": "Someone wants you to arrange matters for them in the portal of %1$s. Sign in and accept the invitation. Only then does it count.",
         "%1$s invited you.": "%1$s invited you.",
         "Their message: %1$s": "Their message: %1$s",
         "Contacts enabled": "Contacts enabled",
@@ -2961,7 +2963,9 @@ OC.L10N.register(
         "Landing page": "Landing page",
         "Whether a proxy in front of Nextcloud rewrites the short addresses of this host (/, /afval) to the site route. When true, the site writes its links and its canonical address as short addresses on this host. Leave false without such a proxy rule: the short addresses would not resolve. Read only from a verified domain.": "Whether a proxy in front of Nextcloud rewrites the short addresses of this host (/, /afval) to the site route. When true, the site writes its links and its canonical address as short addresses on this host. Leave false without such a proxy rule: the short addresses would not resolve. Read only from a verified domain.",
         "The site page the bare address of this host opens, as a route with a leading slash. Empty means the home page. A host for the signed-in area names that area here. Read only from a verified domain.": "The site page the bare address of this host opens, as a route with a leading slash. Empty means the home page. A host for the signed-in area names that area here. Read only from a verified domain.",
-        "Choose a list": "Choose a list"
+        "Choose a list": "Choose a list",
+        "nl": "nl",
+        "https://www.example.nl": "https://www.example.nl"
     },
     "nplurals=2; plural=(n != 1);"
 )

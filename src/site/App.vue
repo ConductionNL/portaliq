@@ -1545,6 +1545,15 @@ export default {
 		// An invitation's secret (`#claim=<secret>`) is kept the same way,
 		// and handed back once the visitor is signed in.
 		keepClaimSecret(window.location, window.history, this.claimStorage())
+		if (window.location.hash.includes('#mandate-invitation=')) {
+			const { keepMandateInvitation } =
+				await import('../shared/mandateInvitation.js')
+			keepMandateInvitation(
+				window.location,
+				window.history,
+				this.claimStorage(),
+			)
+		}
 		if (window.location.hash.includes('#contact-invitation=')) {
 			const { keepContactInvitation } =
 				await import('../shared/contactInvitation.js')
@@ -1672,6 +1681,21 @@ export default {
 				this.claimMessage =
 					this.claimMessage
 					|| (await redeemKeptContactInvitation({
+						api: this.api,
+						session: this.session,
+						t: this.t,
+						storage: this.claimStorage(),
+					}))
+			}
+
+			// So is an invitation to act on someone's behalf
+			// (site-mandates-the-represented-manage T4).
+			if (this.claimStorage()?.getItem('portaliq.mandateInvitation')) {
+				const { redeemKeptMandateInvitation } =
+					await import('../shared/mandateInvitation.js')
+				this.claimMessage =
+					this.claimMessage
+					|| (await redeemKeptMandateInvitation({
 						api: this.api,
 						session: this.session,
 						t: this.t,

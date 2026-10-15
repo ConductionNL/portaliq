@@ -11,6 +11,7 @@
 //   node --test tests/resident-contacts.spec.mjs
 
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import { contactsApi } from '../src/shared/areaApi.js'
 import {
@@ -25,6 +26,7 @@ import { loadSfc, renderSfc } from './support/render-sfc.mjs'
 
 const PAGE = 'src/site/pages/e/ContactsPage.vue'
 const MODAL = 'src/site/modals/e/InviteContactModal.vue'
+const CONTACT_MODAL = 'src/site/modals/e/ContactMessageModal.vue'
 const t = (key, vars = {}) => key.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? ''))
 
 const OVERVIEW = {
@@ -112,6 +114,52 @@ test('the dialog sends the trimmed address and message, and keeps the dialog ope
 	assert.deepEqual(emitted, ['sent'])
 	const html = await renderSfc(MODAL, { api: {}, t })
 	assert.match(html, /You become contacts once they accept/)
+})
+
+test('"Send message" opens a dialog that starts the conversation with that contact, or keeps the text on a refusal (T07)', async () => {
+	const source = readFileSync(new URL(`../${PAGE}`, import.meta.url), 'utf8')
+	const row = source.slice(source.indexOf('v-for="row in shown"'), source.indexOf('data-testid="contact-remove"'))
+	assert.match(row, /data-testid="contact-message-open"[\s\S]*@click="openMessage\(row\)"/, 'each approved contact has the button')
+	assert.doesNotMatch(source.slice(0, source.indexOf('v-for="row in shown"')), /contact-message-open/, 'a pending row has none')
+
+	const page = await loadSfc(PAGE)
+	const state = { notice: 'x', problem: 'y', writingTo: null }
+	page.methods.openMessage.call(state, OVERVIEW.contacts[1])
+	assert.deepEqual([state.writingTo, state.notice, state.problem], [OVERVIEW.contacts[1], '', ''])
+	page.methods.messageSent.call(state)
+	assert.equal(state.writingTo, null)
+	assert.match(state.notice, /under Messages/)
+
+	const modal = await loadSfc(CONTACT_MODAL)
+	const calls = []
+	const emitted = []
+	const make = (answer, body = ' Kijk je mee? ') => ({
+		body,
+		problem: '',
+		busy: false,
+		contact: { id: 'r5', displayName: 'Dirk' },
+		api: { messaging: async (method, path, payload) => { calls.push([method, path, payload]); return answer } },
+		$emit: (...args) => emitted.push(args),
+	})
+	const empty = make({ ok: true, data: { id: 't1' } }, '   ')
+	await modal.methods.submit.call(empty)
+	assert.equal(empty.problem, 'Write a message first.')
+	assert.deepEqual(calls, [], 'nothing is sent without a message')
+
+	const refused = make({ ok: false, status: 403, data: { error: 'forbidden' } })
+	await modal.methods.submit.call(refused)
+	assert.deepEqual(calls[0], ['POST', '/threads', { contactId: 'r5', body: 'Kijk je mee?' }])
+	assert.equal(refused.problem, 'Your message could not be sent. Try again.')
+	assert.equal(refused.body, ' Kijk je mee? ', 'the text stays')
+	assert.deepEqual(emitted, [])
+
+	await modal.methods.submit.call(make({ ok: true, status: 200, data: { id: 't9' } }))
+	assert.deepEqual(emitted, [['sent', 't9']])
+	assert.equal(await contactsApi({}).sendMessage('r5', 'x'), null, 'no messaging door, no message')
+
+	const html = await renderSfc(CONTACT_MODAL, { api: {}, t, contact: { id: 'r5', displayName: 'Dirk' } })
+	assert.match(html, /Message to Dirk/)
+	assert.match(html, /<label for="pq-contact-message-body"/)
 })
 
 test('the api reaches the contact routes with the bearer and the right verbs', async () => {
