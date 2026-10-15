@@ -221,8 +221,12 @@ class PortalMandateAdminServiceTest extends TestCase {
 	 * REQ-SMR-007: the holder reads who gave each mandate and when, from the
 	 * rows the two real writers store, never the account that recorded it.
 	 *
-	 * @covers \OCA\Portaliq\Service\Identity\MandateListing::held
-	 * @uses   \OCA\Portaliq\Service\Identity\PortalAccessRequestService::grant
+	 * @covers \OCA\Portaliq\Service\Identity\MandateListing
+	 * @uses   \OCA\Portaliq\Service\Identity\MandateDays
+	 * @uses   \OCA\Portaliq\Service\Identity\MandateParties
+	 * @uses   \OCA\Portaliq\Service\Identity\MandateStore
+	 * @uses   \OCA\Portaliq\Service\Identity\PortalAccessRequestService
+	 * @uses   \OCA\Portaliq\Service\Identity\PortalMandateAdminService
 	 *
 	 * @return void
 	 */
