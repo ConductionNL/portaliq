@@ -793,7 +793,7 @@
         "The visitor's consent state as the client knew it when the event was sent.": "De toestemmingsstatus van de bezoeker zoals de client die kende toen de gebeurtenis werd verzonden.",
         "The visitor's first accepted language, as a two-letter code.": "De eerste geaccepteerde taal van de bezoeker, als tweelettercode.",
         "The whitelisted visible-field values the visitor submitted — only ids declared on the bound form’s fields[] ever appear here.": "De toegestane waarden van zichtbare velden die de bezoeker heeft ingevuld. Alleen id's die zijn opgegeven in fields[] van het gekoppelde formulier komen hier voor.",
-        "The words shown beside a case this mandate grants, so the citizen can see why they may read it.": "De tekst die naast een zaak staat die deze machtiging opent, zodat de burger ziet waarom die de zaak mag lezen.",
+        "The party this mandate acts for, as the holder reads it: the site says \"U regelt nu zaken voor <label>\", offers it in the choice of whom you act for, and shows it beside the cases it opens. A name, not a sentence.": "De partij voor wie deze machtiging geldt, zoals de houder die leest: de site zegt \"U regelt nu zaken voor <label>\", biedt haar aan bij de keuze voor wie u werkt en toont haar naast de zaken die zij opent. Een naam, geen zin.",
         "Theme": "Thema",
         "Theme catalogue": "Themacatalogus",
         "Themed portals": "Portalen met thema",

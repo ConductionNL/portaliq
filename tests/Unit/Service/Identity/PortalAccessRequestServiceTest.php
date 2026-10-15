@@ -97,7 +97,7 @@ class PortalAccessRequestServiceTest extends TestCase {
 		$this->assertSame('active', $mandates[0]['status']);
 		$this->assertSame('organisation', $mandates[0]['reach']);
 		$this->assertSame('clerk-anna', $mandates[0]['grantedBy']);
-		$this->assertSame('Granted on request', $mandates[0]['label']);
+		$this->assertSame('87654321', $mandates[0]['label'], 'the party as the asker named it, read after "U regelt nu zaken voor"');
 
 	}//end testAGrantRecordsTheMandateThatOpensTheCases()
 
