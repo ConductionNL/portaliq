@@ -492,6 +492,7 @@
 				:menus="footerMenus"
 				:legalLinks="legalLinks"
 				:footer="site.footer || {}"
+				:addressOf="hrefForRoute"
 				@navigate="go" />
 			<WidgetGrid
 				v-else
@@ -592,6 +593,7 @@ import {
 	headerVariantOf,
 	legalLinksOf,
 	menuLabelFor,
+	menusWithAddresses,
 	registerRouteOf,
 } from './lib/shellData.js'
 import {
@@ -1089,7 +1091,10 @@ export default {
 									this.site?.residentMenu?.leaveOut,
 								)
 							: [],
-					menus: headerMenusOf(this.menus),
+					menus: menusWithAddresses(
+						headerMenusOf(this.menus),
+						this.hrefForRoute,
+					),
 				}),
 
 				currentRoute: this.route,
@@ -1157,7 +1162,9 @@ export default {
 		 * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-blue-bar-must-carry-the-websites-pages-only-req-srm-001
 		 */
 		headerMenus() {
-			return headerMenusOf(this.menus)
+			// A menu link opens its page where the site is served under the
+			// app path as well as on a portal domain (siteAddress.js).
+			return menusWithAddresses(headerMenusOf(this.menus), this.hrefForRoute)
 		},
 
 		/**
