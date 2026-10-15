@@ -32,10 +32,13 @@
 		docUrl="https://portaliq.conduction.nl"
 		:showVersionCard="false"
 		:showSupport="false">
+		<!-- Board PtBeheerinstellingen draws every section as a full-width card:
+		     the wide class spans the row of the board grid. -->
 		<div class="portaliq-admin-settings">
 			<!-- `section-portal-auth-edge` is the anchor lib/Settings/connections.json
 			links the Login brokers row to (adopt-connection-registry). Keep it stable. -->
 			<NcSettingsSection
+				class="cn-settings-section--wide"
 				id="section-portal-auth-edge"
 				:name="t('portaliq', 'Portal auth edge')"
 				:description="
@@ -63,6 +66,7 @@
 			</NcSettingsSection>
 
 			<NcSettingsSection
+				class="cn-settings-section--wide"
 				:name="t('portaliq', 'Organisation')"
 				:description="
 					t(
@@ -123,6 +127,7 @@
 			</NcSettingsSection>
 
 			<NcSettingsSection
+				class="cn-settings-section--wide"
 				:name="t('portaliq', 'Page editors')"
 				:description="
 					t(
@@ -176,6 +181,7 @@
 			database row to (adopt-connection-registry). Keep it stable.
 		-->
 			<NcSettingsSection
+				class="cn-settings-section--wide"
 				id="section-visitor-geography"
 				:name="t('portaliq', 'Visitor geography')"
 				:description="
@@ -290,6 +296,7 @@
 			from inside the server. The server validates the address.
 		-->
 			<NcSettingsSection
+				class="cn-settings-section--wide"
 				id="section-internal-address"
 				:name="t('portaliq', 'Calls to this server')"
 				:description="
@@ -334,6 +341,7 @@
 			OFF by default; the help text says the security review comes first.
 		-->
 			<NcSettingsSection
+				class="cn-settings-section--wide"
 				id="section-email-link"
 				:name="t('portaliq', 'Sign-in with an e-mail link')"
 				:description="
@@ -372,6 +380,7 @@
 			means only administrators. Administrators always keep every action.
 		-->
 			<NcSettingsSection
+				class="cn-settings-section--wide"
 				:name="t('portaliq', 'Actions')"
 				:description="
 					t(
