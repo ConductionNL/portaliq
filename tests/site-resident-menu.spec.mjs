@@ -91,7 +91,7 @@ const names = (groups) => groups.map((group) => [group.title, group.items.map((i
 test('the blue bar holds the website menus only, never the resident items', () => {
 	const app = read('src', 'site', 'App.vue')
 	const headerMenus = app.slice(app.indexOf('\t\theaderMenus() {'), app.indexOf('\t\tresidentMenu() {'))
-	assert.match(headerMenus, /return headerMenusOf\(this\.menus\)/)
+	assert.match(headerMenus, /menusWithAddresses\(headerMenusOf\(this\.menus\), this\.hrefForRoute\)/)
 	assert.doesNotMatch(headerMenus, /this\.nav|accountMenu|residentMenu/)
 	assert.doesNotMatch(read('src', 'site', 'lib', 'accountArea.js'), /export function accountMenu/)
 
