@@ -58,8 +58,10 @@ export const THEME_PRODUCTS_SEGMENT = 'producten'
  * @param {boolean} [enabled.cases] `cases.enabled` on the aggregate.
  * @param {Array<object>} [enabled.pages] The own-area pages the portal switched on: `{special, label, icon}`.
  * @param {Array<object>} [enabled.themes] The life domains with something for this resident.
- * @return {Array<object>} `{key, label, icon, page?, contribution?, special?}` entries.
+ * @param {Array<object>} [enabled.stepUp] The aggregate's `stepUp`: collections the login is too low for.
+ * @return {Array<object>} `{key, label, icon, page?, contribution?, special?, stepUp?}` entries.
  * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t6
  */
 export function buildNav(contributions, t, enabled = {}) {
 	const nav = []
@@ -153,7 +155,52 @@ export function buildNav(contributions, t, enabled = {}) {
 			special: 'account',
 		})
 	}
+	// A page the login is too low for says which login reaches it, last, and
+	// never as the page the resident opens on (REQ-SCR-004).
+	nav.push(...stepUpEntries(enabled.stepUp, nav))
 	return nav
+}
+
+/**
+ * The navigation entries for the aggregate's `stepUp`, one per collection, at
+ * the route the dropped page would have had (`/mijn/<app>/<collection>`),
+ * skipping any route a real page already holds. The server drops a page whose
+ * blocks all read such a collection, so without this entry the resident would
+ * never learn the page exists (site-member-voting-record-and-confidential-papers
+ * design D5).
+ *
+ * @param {Array<object>|null} stepUp The aggregate's `stepUp`: `{app, collection, label, minTrust}`.
+ * @param {Array<object>} nav The navigation built so far.
+ * @return {Array<object>} `{key, label, icon, stepUp}` entries.
+ * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t6
+ */
+export function stepUpEntries(stepUp, nav = []) {
+	const taken = new Set((nav || []).map((entry) => entry.key))
+	const entries = []
+	for (const item of Array.isArray(stepUp) ? stepUp : []) {
+		const app = typeof item?.app === 'string' ? item.app : ''
+		const collection =
+			typeof item?.collection === 'string' ? item.collection : ''
+		const key = `${app}:${collection}`
+		if (app === '' || collection === '' || taken.has(key)) {
+			continue
+		}
+		taken.add(key)
+		entries.push({
+			key,
+			label:
+				typeof item.label === 'string' && item.label !== ''
+					? item.label
+					: collection,
+			icon: 'Lock',
+			stepUp: {
+				app,
+				collection,
+				minTrust: typeof item.minTrust === 'string' ? item.minTrust : '',
+			},
+		})
+	}
+	return entries
 }
 
 /**
@@ -182,6 +229,10 @@ export function shellSections({ session, contributions, threads, news }) {
 				? contributions.areaPages
 				: [],
 		themes: Array.isArray(contributions?.themes) ? contributions.themes : [],
+		stepUp:
+			session && Array.isArray(contributions?.stepUp)
+				? contributions.stepUp
+				: [],
 	}
 }
 
@@ -199,7 +250,8 @@ export function defaultNavKey(nav) {
 		return null
 	}
 	const first =
-		nav.find((entry) => !NEVER_DEFAULT.includes(entry.special)) || nav[0]
+		nav.find((entry) => !NEVER_DEFAULT.includes(entry.special) && !entry.stepUp)
+		|| nav[0]
 	return first.key
 }
 
@@ -215,8 +267,10 @@ export function routeForNav(entry) {
 	if (entry.special) {
 		return `${ACCOUNT_ROUTE}/${entry.special}`
 	}
-	const app = encodeURIComponent(entry.contribution?.app || '')
-	const page = encodeURIComponent(entry.page?.id || '')
+	const app = encodeURIComponent(
+		entry.contribution?.app || entry.stepUp?.app || '',
+	)
+	const page = encodeURIComponent(entry.page?.id || entry.stepUp?.collection || '')
 	return `${ACCOUNT_ROUTE}/${app}/${page}`
 }
 

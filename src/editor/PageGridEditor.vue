@@ -230,6 +230,26 @@
 									{{ block.title }}
 								</option>
 							</select>
+							<select
+								v-else-if="
+									field.kind === 'recordList'
+									&& recordLists.length > 0
+								"
+								:id="`field-${field.name}`"
+								class="page-grid-editor__input"
+								:data-testid="`designer-field-${field.name}`"
+								:value="recordListValue()"
+								@change="onRecordListInput($event.target.value)">
+								<option value="">
+									{{ t('portaliq', 'Choose a list') }}
+								</option>
+								<option
+									v-for="recordList in recordLists"
+									:key="`${recordList.app}/${recordList.id}`"
+									:value="`${recordList.app}/${recordList.id}`">
+									{{ recordList.label }} ({{ recordList.app }})
+								</option>
+							</select>
 							<input
 								v-else-if="field.kind === 'boolean'"
 								:id="`field-${field.name}`"
@@ -287,6 +307,7 @@ import { widgetLabel } from '../lib/widgetLabels.js'
 import { historyIntent } from './editHistory.js'
 import { cellFromDrop } from './geometry.js'
 import { PALETTE_DRAG_TYPE } from './paletteDrag.js'
+import { recordListChoice } from './recordLists.js'
 import {
 	formWidgetFor,
 	inspectorModeFor,
@@ -339,9 +360,21 @@ export default {
 		 * `() => Promise<Array<{id, title}>>`. Without it the shared block
 		 * field is a text input for the block's id.
 		 *
-		 * @type {Function|null}
+		 * @type {(() => Promise<Array<{id: string, title: string}>>)|null}
 		 */
 		loadBlocks: {
+			type: Function,
+			default: null,
+		},
+
+		/**
+		 * Lists the public record lists the installed apps contribute:
+		 * `() => Promise<Array<{app, id, label}>>`. Without it the list field
+		 * is a text input for the list's id.
+		 *
+		 * @type {(() => Promise<Array<{app: string, id: string, label: string}>>)|null}
+		 */
+		loadRecordLists: {
 			type: Function,
 			default: null,
 		},
@@ -370,6 +403,14 @@ export default {
 			 * @type {Array<{id: string, title: string}>}
 			 */
 			blocks: [],
+
+			/**
+			 * The public record lists an author can place, as `{app, id, label}`;
+			 * empty until read, and when the host cannot list them.
+			 *
+			 * @type {Array<{app: string, id: string, label: string}>}
+			 */
+			recordLists: [],
 		}
 	},
 
@@ -469,6 +510,13 @@ export default {
 				this.blocks = await this.loadBlocks()
 			} catch {
 				this.blocks = []
+			}
+		}
+		if (this.loadRecordLists) {
+			try {
+				this.recordLists = await this.loadRecordLists()
+			} catch {
+				this.recordLists = []
 			}
 		}
 	},
@@ -672,6 +720,31 @@ export default {
 				return value === undefined ? '' : JSON.stringify(value, null, 2)
 			}
 			return value === undefined ? '' : String(value)
+		},
+
+		/**
+		 * The chosen record list as `app/list`, '' when none is chosen.
+		 *
+		 * @return {string} The select's value.
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+		 */
+		recordListValue() {
+			const props = this.selected?.props || {}
+			return props.app && props.list ? `${props.app}/${props.list}` : ''
+		},
+
+		/**
+		 * Choose a record list: it sets both the app and the list, so the two
+		 * can never point at different contributions.
+		 *
+		 * @param {string} value The option's `app/list`, or ''.
+		 * @return {void}
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+		 */
+		onRecordListInput(value) {
+			const { app, list } = recordListChoice(this.recordLists, value)
+			this.editor.setProp('app', app)
+			this.editor.setProp('list', list)
 		},
 
 		/**
