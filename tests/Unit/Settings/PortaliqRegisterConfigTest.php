@@ -1018,6 +1018,32 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['Repair/MovePortalAuditEntries.php'], $naming);
 	}//end testNothingInLibNamesTheOldProofRecordButTheMove()
 
+	/**
+	 * own-contacts T02: a contact row is written by the contact routes only.
+	 * No portal page declares a create or update action on `portalContact`,
+	 * because a generic action would let a resident set `approved` on their
+	 * own row and skip the other side's approval (REQ-ROC-002).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t02
+	 */
+	public function testNoPortalPageDeclaresAContactWrite(): void {
+		$pages = array_filter(
+			(array)self::$register['components']['objects'],
+			static fn (array $object): bool => (($object['@self']['schema'] ?? '') === 'portalPage')
+		);
+		$this->assertNotSame([], $pages, 'control: the seed pages are read');
+
+		foreach ($pages as $page) {
+			foreach ((array)($page['actions'] ?? []) as $action) {
+				$this->assertNotSame('portalContact', $action['schema'] ?? '', 'a contact row is written by the contact routes only');
+			}
+		}
+
+		$this->assertSame(['portaliq-medewerkers'], self::$register['components']['schemas']['portalContact']['authorization']['read']);
+	}//end testNoPortalPageDeclaresAContactWrite()
+
 	public function testExactlyThreeSchemasAreReadableByAnonymousVisitors(): void {
 		$schemas = self::$register['components']['schemas'];
 

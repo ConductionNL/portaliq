@@ -31,6 +31,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Service\Identity\PortalContactService;
 use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
 use OCA\Portaliq\Service\Messaging\GuardianMessageTranslator;
 use OCA\Portaliq\Service\Messaging\GuardianMessagingLeafInterface;
@@ -79,6 +80,8 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 * @param PortalSelfServiceService|null $selfService Reads the reader's own `messageLanguage`.
 	 * @param MessageContactReader|null $contacts Who the resident may write to, per record
 	 *                                            (site-messages-per-record).
+	 * @param PortalContactService|null $portalContacts The resident's own approved contacts
+	 *                                                  (own-contacts-and-invitations T07).
 	 */
 	public function __construct(
 		IRequest $request,
@@ -87,6 +90,7 @@ class MessageGuardianController extends Controller implements PortalProtected {
 		private readonly ?GuardianMessageTranslator $translator = null,
 		private readonly ?PortalSelfServiceService $selfService = null,
 		private readonly ?MessageContactReader $contacts = null,
+		private readonly ?PortalContactService $portalContacts = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -102,23 +106,41 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 * @param string $recordRef The record the conversation is about ('' for the older rule).
 	 * @param string $title     The subject line.
 	 * @param string $body      The first message.
+	 * @param string $contactId One of the resident's own approved contact rows ('' for the rules above).
 	 *
 	 * @return JSONResponse `{id}` on success, 400 or 403 on refusal.
 	 *
 	 * @spec openspec/changes/guardian-direct-messages/specs/guardian-direct-messaging/spec.md#requirement-a-guardian-may-start-a-direct-thread-with-a-teacher-who-teaches-their-childs-group
 	 * @spec openspec/changes/site-messages-per-record/specs/portal-contribution-contract/spec.md#requirement-a-resident-may-start-a-conversation-only-with-a-contact-of-their-own-record
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 20, period: 60)]
-	public function createThread(string $staffRef, string $recordRef = '', string $title = '', string $body = ''): JSONResponse {
+	public function createThread(
+		string $staffRef = '',
+		string $recordRef = '',
+		string $title = '',
+		string $body = '',
+		string $contactId = '',
+	): JSONResponse {
 		$subject = $this->subject();
 		if ($subject === null) {
 			return new JSONResponse(['error' => 'unauthorized'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		if ($recordRef !== '') {
-			return $this->createContactThread(subject: $subject, staffRef: $staffRef, recordRef: $recordRef, title: $title, body: $body);
+		if ($contactId !== '' || $recordRef !== '') {
+			// The message is checked before any contact is looked up.
+			if ($this->fitsAMessage(title: $title, body: $body) === false) {
+				return new JSONResponse(['error' => 'invalid'], Http::STATUS_BAD_REQUEST);
+			}
+
+			$contact = $this->ownContact(subject: $subject, contactId: $contactId);
+			if ($contactId === '') {
+				$contact = $this->contacts?->contactFor(subject: $subject, staffRef: $staffRef, recordRef: $recordRef);
+			}
+
+			return $this->startConversation(subject: $subject, contact: $contact, title: $title, body: $body);
 		}
 
 		$subjectRef = (string)($subject['subjectRef'] ?? '');
@@ -147,9 +169,11 @@ class MessageGuardianController extends Controller implements PortalProtected {
 		}
 
 		$subjectRef = (string)($subject['subjectRef'] ?? '');
+		$names      = ($this->portalContacts?->contactNames(owner: $subjectRef, organisation: (string)($subject['organisation'] ?? '')) ?? []);
 		$threads    = [];
 		foreach ($this->messaging->listThreads(subjectRef: $subjectRef, isStaff: false) as $thread) {
-			$threads[] = $thread + ['summary' => $this->summaryOf(thread: $thread, subjectRef: $subjectRef)];
+			$named     = $this->namedForReader(thread: $thread, subjectRef: $subjectRef, names: $names);
+			$threads[] = $named + ['summary' => $this->summaryOf(thread: $thread, subjectRef: $subjectRef)];
 		}
 
 		return new JSONResponse($threads);
@@ -180,28 +204,22 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	}//end contacts()
 
 	/**
-	 * A new conversation about one record: the contact is proven again on the
-	 * server, never taken from the browser, then the thread and its first
-	 * message are stored together.
+	 * A new conversation with a contact the server proved, never one taken
+	 * from the browser; the thread and its first message are stored together.
 	 *
-	 * @param array<string, mixed> $subject   The resolved subject.
-	 * @param string               $staffRef  The person written to.
-	 * @param string               $recordRef The record it is about.
-	 * @param string               $title     The subject line; the start of the message when empty.
-	 * @param string               $body      The first message.
+	 * @param array<string, mixed>      $subject The resolved subject.
+	 * @param array<string, mixed>|null $contact The proven contact, or null when refused.
+	 * @param string                    $title   The subject line; the start of the message when empty.
+	 * @param string                    $body    The first message.
 	 *
-	 * @return JSONResponse `{id}`, or 400 / 403.
+	 * @return JSONResponse `{id}`, or 403.
 	 *
 	 * @spec openspec/changes/site-messages-per-record/specs/portal-contribution-contract/spec.md#requirement-a-resident-may-start-a-conversation-only-with-a-contact-of-their-own-record
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
 	 */
-	private function createContactThread(array $subject, string $staffRef, string $recordRef, string $title, string $body): JSONResponse {
+	private function startConversation(array $subject, ?array $contact, string $title, string $body): JSONResponse {
 		$body  = trim($body);
 		$title = trim($title);
-		if ($body === '' || mb_strlen($body) > self::MAX_BODY || mb_strlen($title) > self::MAX_TITLE) {
-			return new JSONResponse(['error' => 'invalid'], Http::STATUS_BAD_REQUEST);
-		}
-
-		$contact = $this->contacts?->contactFor(subject: $subject, staffRef: $staffRef, recordRef: $recordRef);
 		if ($contact === null) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
@@ -216,7 +234,75 @@ class MessageGuardianController extends Controller implements PortalProtected {
 		}
 
 		return new JSONResponse(['id' => $id]);
-	}//end createContactThread()
+	}//end startConversation()
+
+	/**
+	 * Whether a first message may be sent: not empty, and neither it nor
+	 * its subject line too long.
+	 *
+	 * @param string $title The subject line.
+	 * @param string $body  The message.
+	 *
+	 * @return bool
+	 */
+	private function fitsAMessage(string $title, string $body): bool {
+		$body = trim($body);
+
+		return $body !== '' && mb_strlen($body) <= self::MAX_BODY && mb_strlen(trim($title)) <= self::MAX_TITLE;
+	}//end fitsAMessage()
+
+	/**
+	 * One of the resident's own approved contacts as a conversation
+	 * partner, or null: a contact that is pending, removed or someone
+	 * else's never is (own-contacts-and-invitations REQ-ROC-001).
+	 *
+	 * @param array<string, mixed> $subject   The resolved subject.
+	 * @param string               $contactId The resident's own contact row.
+	 *
+	 * @return array<string, string>|null The contact in the shape a conversation takes.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 */
+	private function ownContact(array $subject, string $contactId): ?array {
+		$contact = $this->portalContacts?->approvedContact(
+			owner: (string)($subject['subjectRef'] ?? ''),
+			organisation: (string)($subject['organisation'] ?? ''),
+			id: $contactId
+		);
+		if ($contact === null) {
+			return null;
+		}
+
+		return ['staffRef' => $contact['ref'], 'name' => $contact['displayName'], 'role' => '', 'recordRef' => '', 'recordLabel' => ''];
+	}//end ownContact()
+
+	/**
+	 * A conversation between two residents carries the name the starter
+	 * gave it; the other side reads it under the name they know the
+	 * starter by, from their own contact row (own-contacts-and-invitations).
+	 *
+	 * @param array<string, mixed>  $thread     The thread.
+	 * @param string                $subjectRef The reader.
+	 * @param array<string, string> $names      The reader's contact names by reference.
+	 *
+	 * @return array<string, mixed> The thread.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 */
+	private function namedForReader(array $thread, string $subjectRef, array $names): array {
+		if ((string)($thread['recordRef'] ?? '') !== '' || is_array($thread['participantRefs'] ?? null) === false) {
+			return $thread;
+		}
+
+		foreach ($thread['participantRefs'] as $ref) {
+			if ($ref !== $subjectRef && isset($names[$ref]) === true) {
+				$thread['staffName'] = $names[$ref];
+				$thread['staffRole'] = '';
+			}
+		}
+
+		return $thread;
+	}//end namedForReader()
 
 	/**
 	 * A thread's newest message and how many the reader has not read yet,

@@ -130,6 +130,25 @@ export function captureEmailLink(location, history) {
 }
 
 /**
+ * The secret of a contact invitation the visitor followed, kept in
+ * sessionStorage under the key src/shared/contactInvitation.js names
+ * (CONTACT_INVITATION_KEY), or ''. Read here so the sign-in screen does not
+ * load that module.
+ *
+ * @param {Storage|null} storage sessionStorage, or null.
+ * @return {string}
+ *
+ * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+ */
+export function keptContactInvitation(storage) {
+	try {
+		return storage?.getItem('portaliq.contactInvitation') || ''
+	} catch {
+		return ''
+	}
+}
+
+/**
  * Whether the address carries a mailed link, without consuming it.
  *
  * @param {Location|object} location The window location.
@@ -369,11 +388,13 @@ export function waysInApi(
 			challenge = {},
 			solution = '',
 			honeypot = null,
+			contactInvitation = '',
 		}) {
 			const body = {
 				portal: portal || '',
 				email,
 				displayName,
+				contactInvitation,
 				nonce: challenge.nonce || '',
 				expiresAt: challenge.expiresAt || 0,
 				signature: challenge.signature || '',
@@ -383,6 +404,14 @@ export function waysInApi(
 				body[honeypot.field] = honeypot.value || ''
 			}
 			return post(`${authBase}/identity/register`, body, fetchImpl)
+		},
+		async contactInvitationEmail(token) {
+			const answer = await post(
+				`${authBase}/identity/contact-invitation`,
+				{ portal: portal || '', token },
+				fetchImpl,
+			)
+			return answer.ok ? String(answer.data.email || '') : ''
 		},
 		activateAccount(token) {
 			return post(`${authBase}/identity/activate`, { token }, fetchImpl)

@@ -96,6 +96,13 @@ class PortalContactService {
 	private readonly ContactOverview $overview;
 
 	/**
+	 * Following an invitation link: accept, hold for a registration, join.
+	 *
+	 * @var ContactInvitationLink
+	 */
+	private readonly ContactInvitationLink $link;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param PortalObjectReader $reader Reads contact rows and accounts.
@@ -109,10 +116,11 @@ class PortalContactService {
 		private readonly PortalObjectWriter $writer,
 		private readonly ISecureRandom $random,
 		private readonly PortalIdentityMailer $mailer,
-		private readonly PortalAccountLookup $accounts,
+		PortalAccountLookup $accounts,
 	) {
 		$this->rows     = new ContactRows(reader: $reader);
 		$this->overview = new ContactOverview(rows: $this->rows);
+		$this->link     = new ContactInvitationLink(reader: $reader, rows: $this->rows, writer: $writer, accounts: $accounts);
 	}//end __construct()
 
 	/**
@@ -253,46 +261,59 @@ class PortalContactService {
 	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
 	 */
 	public function acceptInvitation(array $subject, string $token, string $displayName, ?DateTimeImmutable $now=null): string {
-		$newRef       = (string)($subject['subjectRef'] ?? '');
-		$organisation = (string)($subject['organisation'] ?? '');
-		if ($token === '' || $newRef === '' || $organisation === '') {
-			return self::NOT_FOUND;
-		}
-
-		$row = $this->rows->byToken(token: $token, organisation: $organisation);
-		$now = ($now ?? new DateTimeImmutable());
-		if ($row === null || (string)($row['state'] ?? '') !== 'invited' || (string)($row['owner'] ?? '') === $newRef
-			|| $this->rows->expired(row: $row, now: $now) === true
-		) {
-			return self::NOT_FOUND;
-		}
-
-		$inviter = (string)$row['owner'];
-		$written = $this->writer->updateObject(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: 'owner',
-			subjectRef: $inviter,
-			organisation: $organisation,
-			id: $this->rows->idOf(row: $row),
-			data: ['contactRef' => $newRef, 'displayName' => $displayName, 'state' => 'approved', 'tokenHash' => '', 'email' => '']
-		);
-		if ($written === null) {
-			return self::FAILED;
-		}
-
-		$inviterAccount = $this->accounts->bySubjectRef(subjectRef: $inviter);
-		$this->writer->createObject(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: 'owner',
-			subjectRef: $newRef,
-			organisation: $organisation,
-			data: ['contactRef' => $inviter, 'role' => 'contact', 'displayName' => (string)($inviterAccount['displayName'] ?? ''), 'state' => 'approved']
-		);
-
-		return self::SENT;
+		return $this->link->accept(subject: $subject, token: $token, displayName: $displayName, now: $now);
 	}//end acceptInvitation()
+
+	/**
+	 * A visitor who registers through an invitation link: the open
+	 * invitation is held for the new account.
+	 *
+	 * @param string $token The secret from the invitation mail.
+	 * @param string $newRef The new, not yet active account.
+	 * @param string $organisation The tenant.
+	 * @param DateTimeImmutable|null $now The moment to judge expiry against.
+	 *
+	 * @return bool Whether an open invitation was held.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 */
+	public function holdForRegistration(string $token, string $newRef, string $organisation, ?DateTimeImmutable $now=null): bool {
+		return $this->link->holdForRegistration(token: $token, newRef: $newRef, organisation: $organisation, now: $now);
+	}//end holdForRegistration()
+
+	/**
+	 * An account was activated: every invitation held for it joins both sides.
+	 *
+	 * @param array<string, mixed> $account The activated account: `subjectRef`, `organisation`, `displayName`.
+	 * @param DateTimeImmutable|null $now The moment to judge expiry against.
+	 *
+	 * @return int How many invitations joined.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 */
+	public function joinOnActivation(array $account, ?DateTimeImmutable $now=null): int {
+		return $this->link->joinOnActivation(account: $account, now: $now);
+	}//end joinOnActivation()
+
+	/**
+	 * The address an open invitation went to, or ''.
+	 *
+	 * @param string $token The secret from the invitation mail.
+	 * @param string $organisation The tenant of the portal being visited.
+	 * @param DateTimeImmutable|null $now The moment to judge expiry against.
+	 *
+	 * @return string The address, or ''.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 */
+	public function invitationEmail(string $token, string $organisation, ?DateTimeImmutable $now=null): string {
+		return $this->link->invitationEmail(token: $token, organisation: $organisation, now: $now);
+	}//end invitationEmail()
+
+
+
+
+
 
 	/**
 	 * The resident's contacts, and what waits for an answer.
@@ -336,6 +357,37 @@ class PortalContactService {
 	public function approvedRefs(string $owner, string $organisation): array {
 		return $this->overview->approvedRefs(owner: $owner, organisation: $organisation);
 	}//end approvedRefs()
+
+	/**
+	 * One approved contact of a resident by its row id, or null: the only
+	 * people "Bericht sturen" may start a conversation with (REQ-ROC-001).
+	 *
+	 * @param string $owner The resident.
+	 * @param string $organisation The tenant.
+	 * @param string $id The resident's own contact row.
+	 *
+	 * @return array{id: string, ref: string, displayName: string}|null The contact.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 */
+	public function approvedContact(string $owner, string $organisation, string $id): ?array {
+		return $this->overview->approvedContact(owner: $owner, organisation: $organisation, id: $id);
+	}//end approvedContact()
+
+	/**
+	 * The names a resident knows their contacts by, per reference, so a
+	 * conversation shows the other person's name on each side.
+	 *
+	 * @param string $owner The resident.
+	 * @param string $organisation The tenant.
+	 *
+	 * @return array<string, string> Name by subject reference.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 */
+	public function contactNames(string $owner, string $organisation): array {
+		return $this->overview->namesByRef(owner: $owner, organisation: $organisation);
+	}//end contactNames()
 
 	/**
 	 * Ask an existing account to become a contact: two rows, one per side.
