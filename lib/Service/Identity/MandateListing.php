@@ -109,7 +109,9 @@ class MandateListing {
 	 * @param string                 $organisation The tenant.
 	 * @param DateTimeImmutable|null $now          The moment.
 	 *
-	 * @return array<int, array<string, mixed>>
+	 * @return array<int, array<string, mixed>> `{id, label, onBehalfOf, caseTypes, expiresAt, givenBy, grantedAt}`;
+	 *         `givenBy` is `party` when the represented party gave it through an
+	 *         invitation, else `organisation` (recorded by the portal's organisation).
 	 *
 	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md#requirement-either-side-must-be-able-to-end-a-mandate-req-smr-004
 	 */
@@ -131,11 +133,32 @@ class MandateListing {
 				'onBehalfOf' => $this->parties->typed(value: (string)($row['onBehalfOf'] ?? '')),
 				'caseTypes' => array_values((array)($row['caseTypes'] ?? [])),
 				'expiresAt' => (string)($row['expiresAt'] ?? ''),
-				'grantedBy' => (string)($row['grantedBy'] ?? ''),
+				'givenBy' => $this->givenBy(row: $row),
 				'grantedAt' => (string)($row['grantedAt'] ?? ''),
 			];
 		}
 
 		return $out;
 	}//end held()
+
+	/**
+	 * Who gave a mandate, without naming the account that recorded it.
+	 *
+	 * An accepted invitation was given by the represented party; any other
+	 * mandate (an answered access request, one recorded by staff) by the
+	 * portal's organisation.
+	 *
+	 * @param array<string, mixed> $row The mandate.
+	 *
+	 * @return string `party` or `organisation`.
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md#requirement-the-holder-must-see-who-gave-a-mandate-and-when-req-smr-007
+	 */
+	private function givenBy(array $row): string {
+		if ((string)($row['invitationId'] ?? '') !== '') {
+			return 'party';
+		}
+
+		return 'organisation';
+	}//end givenBy()
 }//end class
