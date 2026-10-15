@@ -464,5 +464,8 @@
 	"That is not the address this link was sent to. Check it and try again.": "Dit is niet het adres waar deze link naartoe is gestuurd. Controleer het en probeer het opnieuw.",
 	"This portal does not offer sign-in with an e-mail link.": "Dit portaal biedt geen inloggen met een e-maillink.",
 	"Provisional": "Voorlopig",
-	"Not sent yet. It counts once you send it.": "Nog niet verstuurd. Het telt pas als u het verstuurt."
+	"Not sent yet. It counts once you send it.": "Nog niet verstuurd. Het telt pas als u het verstuurt.",
+	"For these papers you must log in with {providers}.": "Voor deze stukken moet u inloggen met {providers}.",
+	"Logging in with DigiD is not available here yet.": "Inloggen met DigiD is hier nog niet beschikbaar.",
+	"{first} or {last}": "{first} of {last}"
 }

@@ -464,5 +464,8 @@
 	"That is not the address this link was sent to. Check it and try again.": "That is not the address this link was sent to. Check it and try again.",
 	"This portal does not offer sign-in with an e-mail link.": "This portal does not offer sign-in with an e-mail link.",
 	"Provisional": "Provisional",
-	"Not sent yet. It counts once you send it.": "Not sent yet. It counts once you send it."
+	"Not sent yet. It counts once you send it.": "Not sent yet. It counts once you send it.",
+	"For these papers you must log in with {providers}.": "For these papers you must log in with {providers}.",
+	"Logging in with DigiD is not available here yet.": "Logging in with DigiD is not available here yet.",
+	"{first} or {last}": "{first} or {last}"
 }
