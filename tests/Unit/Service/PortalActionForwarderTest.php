@@ -214,6 +214,66 @@ class PortalActionForwarderTest extends TestCase {
 	}//end testAForwardThatReachesNoAddressDegradesToNull()
 
 	/**
+	 * The submission key the browser made rides along to the domain app; a
+	 * value that is not a plain token is left out (REQ-AFS-001).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
+	 */
+	public function testTheSubmissionKeyIsRelayedAndAMalformedOneIsDropped(): void {
+		foreach (['0f8fad5b-d9cb-469f-a165-70867728950e' => true, 'not a key; drop table' => false] as $key => $relayed) {
+			$request = $this->createMock(IRequest::class);
+			$request->method('getHeader')->willReturnCallback(
+				static fn (string $name): string => $name === PortalActionForwarder::SUBMISSION_HEADER ? $key : ''
+			);
+			$seen = [];
+			$loopback = $this->getMockBuilder(InstanceLoopback::class)
+				->disableOriginalConstructor()
+				->onlyMethods(['request'])
+				->getMock();
+			$loopback->method('request')->willReturnCallback(
+				function (string $method, string $path, array $options) use (&$seen): IResponse {
+					$seen = $options['headers'];
+					return $this->createMock(IResponse::class);
+				}
+			);
+
+			$forwarder = new PortalActionForwarder($request, $loopback, $this->createMock(PortalSessionService::class));
+			$forwarder->forward(action: ['endpoint' => '/apps/x/api/y'], subject: [], whitelisted: []);
+
+			if ($relayed === true) {
+				$this->assertSame($key, $seen[PortalActionForwarder::SUBMISSION_HEADER] ?? null);
+			} else {
+				$this->assertArrayNotHasKey(PortalActionForwarder::SUBMISSION_HEADER, $seen);
+			}
+		}
+	}//end testTheSubmissionKeyIsRelayedAndAMalformedOneIsDropped()
+
+	/**
+	 * A timeout answers 504 `forward_timeout`; any other transport failure 502.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
+	 */
+	public function testATimeoutIsToldApartFromAFailure(): void {
+		foreach (['cURL error 28: Operation timed out' => 504, 'cURL error 7: refused' => 502] as $message => $status) {
+			$loopback = $this->getMockBuilder(InstanceLoopback::class)
+				->disableOriginalConstructor()
+				->onlyMethods(['request'])
+				->getMock();
+			$loopback->method('request')->willThrowException(new RuntimeException($message));
+
+			$forwarder = new PortalActionForwarder($this->createMock(IRequest::class), $loopback, $this->createMock(PortalSessionService::class));
+
+			$this->assertNull($forwarder->forward(action: ['endpoint' => '/apps/x/api/y'], subject: [], whitelisted: []));
+			$this->assertSame($status === 504, $forwarder->lastForwardTimedOut());
+			$this->assertSame($status, $forwarder->failureResponse()->getStatus());
+		}
+	}//end testATimeoutIsToldApartFromAFailure()
+
+	/**
 	 * The body a resident sends must reach the domain endpoint. Nextcloud's
 	 * real request declares getContent() protected, so calling it threw
 	 * "Call to protected method" and every forwarded action answered 500 (found
