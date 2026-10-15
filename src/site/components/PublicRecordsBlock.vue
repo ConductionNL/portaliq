@@ -26,37 +26,144 @@
 			data-testid="public-records-gone">
 			{{ words.gone }}
 		</p>
-		<article v-else-if="recordId && record" data-testid="public-record">
-			<h2 class="utrecht-heading-2">
-				{{ record.title }}
-			</h2>
-			<p v-if="record.subtitle" class="utrecht-paragraph">
-				{{ record.subtitle }}
-			</p>
-			<KpiCards
-				v-if="record.summary.length"
-				:cards="figures.cards"
-				:row="figures.row"
-				:level="3"
-				:t="t"
-				:locale="language" />
-			<CollectionTable
-				v-if="record.rows.length"
-				:collection="tableCollection"
-				:objects="record.rows"
-				:t="t"
-				:locale="language" />
-			<p
-				v-if="record.note"
-				class="utrecht-paragraph"
-				data-testid="public-record-note">
-				{{ record.note }}
-			</p>
-			<p class="utrecht-paragraph">
-				<a :href="backHref" data-testid="public-record-back">{{
-					backLabel
-				}}</a>
-			</p>
+		<article
+			v-else-if="recordId && record"
+			class="pq-records__record"
+			data-testid="public-record">
+			<div class="pq-records__main">
+				<h2 class="utrecht-heading-2">
+					{{ recordTitle }}
+				</h2>
+				<form
+					v-if="filters.length"
+					class="pq-records__filters"
+					data-testid="public-record-filters"
+					@submit.prevent="applyFilters">
+					<div
+						v-for="filter in filters"
+						:key="filter.key"
+						class="pq-records__filter">
+						<label
+							class="utrecht-form-label"
+							:for="`pq-records-filter-${filter.key}`"
+							>{{ filter.label }}</label
+						>
+						<select
+							:id="`pq-records-filter-${filter.key}`"
+							:value="chosen[filter.key] || ''"
+							class="utrecht-select utrecht-select--html-select"
+							:data-testid="`public-record-filter-${filter.key}`"
+							@change="choose(filter.key, $event.target.value)">
+							<option value="">
+								{{ filter.all || words.all }}
+							</option>
+							<option
+								v-for="option in filter.options"
+								:key="option"
+								:value="option">
+								{{ option }}
+							</option>
+						</select>
+					</div>
+					<button
+						type="submit"
+						class="utrecht-button utrecht-button--secondary-action"
+						data-testid="public-record-filter-apply">
+						{{ filterButton || words.apply }}
+					</button>
+				</form>
+				<p
+					v-if="countLine"
+					class="utrecht-paragraph pq-records__count"
+					role="status"
+					data-testid="public-record-count">
+					{{ countLine }}
+				</p>
+				<CollectionTable
+					v-if="shownPage.rows.length"
+					:collection="tableCollection"
+					:objects="shownPage.rows"
+					:t="t"
+					:locale="language" />
+				<nav
+					v-if="shownPage.pages > 1"
+					class="pq-records__pager"
+					:aria-label="words.paging"
+					data-testid="public-record-pager">
+					<span>{{ rangeLine }}</span>
+					<span class="pq-records__pages">
+						<button
+							v-if="shownPage.page > 1"
+							type="button"
+							class="utrecht-button utrecht-button--subtle"
+							data-testid="public-record-page-previous"
+							@click="page = shownPage.page - 1">
+							{{ words.previous }}
+						</button>
+						<button
+							v-for="number in shownPage.pages"
+							:key="number"
+							type="button"
+							class="utrecht-button utrecht-button--subtle"
+							:aria-current="
+								number === shownPage.page ? 'page' : undefined
+							"
+							:aria-label="fill(words.pageNumber, { number })"
+							:data-testid="`public-record-page-${number}`"
+							@click="page = number">
+							{{ number }}
+						</button>
+						<button
+							v-if="shownPage.page < shownPage.pages"
+							type="button"
+							class="utrecht-button utrecht-button--subtle"
+							data-testid="public-record-page-next"
+							@click="page = shownPage.page + 1">
+							{{ words.next }}
+						</button>
+					</span>
+				</nav>
+				<p
+					v-if="record.note"
+					class="utrecht-paragraph"
+					data-testid="public-record-note">
+					{{ record.note }}
+				</p>
+			</div>
+			<aside class="pq-records__side" data-testid="public-record-side">
+				<div class="pq-records__who">
+					<span class="pq-records__initials" aria-hidden="true">{{
+						initials
+					}}</span>
+					<div>
+						<p class="utrecht-paragraph pq-records__name">
+							{{ record.title }}
+						</p>
+						<p v-if="record.subtitle" class="utrecht-paragraph">
+							{{ record.subtitle }}
+						</p>
+					</div>
+				</div>
+				<KpiCards
+					v-if="record.summary.length"
+					:cards="figures.cards"
+					:row="figures.row"
+					:level="3"
+					:t="t"
+					:locale="language" />
+				<ul class="pq-records__links">
+					<li>
+						<a :href="backHref" data-testid="public-record-back">{{
+							backLabel
+						}}</a>
+					</li>
+					<li v-for="link in sideLinks" :key="link.href">
+						<a :href="link.address" data-testid="public-record-link">{{
+							link.label
+						}}</a>
+					</li>
+				</ul>
+			</aside>
 		</article>
 		<div v-else data-testid="public-records-list">
 			<h2 v-if="title" class="utrecht-heading-2">
@@ -90,10 +197,15 @@ import { resolveApiBase, runtimeConfig } from '../lib/contentApi.js'
 import {
 	fetchRecord,
 	fetchRecordList,
+	fillText,
+	filteredRows,
+	initialsOf,
 	matchingEntries,
 	recordFigures,
+	recordFilters,
 	recordIdFrom,
 	recordTableCollection,
+	rowsPage,
 } from '../lib/publicRecordsApi.js'
 import {
 	addressOfRecord,
@@ -102,7 +214,9 @@ import {
 } from '../lib/siteAddress.js'
 import { pageLocale } from '../pages/inbox/translate.js'
 
+import '@utrecht/button-css/dist/index.css'
 import '@utrecht/paragraph-css/dist/index.css'
+import '@utrecht/select-css/dist/index.css'
 
 const STRINGS = {
 	nl: {
@@ -110,6 +224,13 @@ const STRINGS = {
 		gone: 'Dit overzicht bestaat niet (meer).',
 		search: 'Zoek een naam',
 		back: 'Terug naar het overzicht',
+		all: 'Alle',
+		apply: 'Toon',
+		paging: 'Paginering',
+		range: '{from} tot {to} van {total}',
+		previous: 'Vorige',
+		next: 'Volgende',
+		pageNumber: 'Pagina {number}',
 		// The words the shared figure cards and table may show.
 		shared: {
 			'Loading…': 'Laden…',
@@ -123,6 +244,13 @@ const STRINGS = {
 		gone: 'This overview no longer exists.',
 		search: 'Search for a name',
 		back: 'Back to the overview',
+		all: 'All',
+		apply: 'Show',
+		paging: 'Pages',
+		range: '{from} to {to} of {total}',
+		previous: 'Previous',
+		next: 'Next',
+		pageNumber: 'Page {number}',
 		shared: {},
 	},
 }
@@ -148,6 +276,18 @@ export default {
 		searchLabel: { type: String, default: '' },
 		/** The reader's locale; the page language when empty. */
 		locale: { type: String, default: '' },
+		/** The record's heading, with `{title}` for its title ("Stemgedrag van {title}"); the title when empty. */
+		recordHeading: { type: String, default: '' },
+		/** Filters on the record's rows: `[{key, label, all?}]`, `key` a column, `all` the no-choice option. */
+		filterBy: { type: Array, default: () => [] },
+		/** The filter button's text ("Toon stemmingen"); the block's own words when empty. */
+		filterButton: { type: String, default: '' },
+		/** The line above the rows, with `{count}`, `{from}` and `{to}` ("{count} stemmingen"); none when empty. */
+		countText: { type: String, default: '' },
+		/** Rows per page; 0 shows every row. */
+		pageSize: { type: Number, default: 0 },
+		/** Links under the side card: `[{label, href}]`, `href` a site route or an http(s) address. */
+		links: { type: Array, default: () => [] },
 		/** The record id (test seam); read from `?record=` otherwise. */
 		recordParam: { type: String, default: '' },
 		/** `{list(app, list), record(app, list, id)}` (test seam); the public routes otherwise. */
@@ -155,7 +295,15 @@ export default {
 	},
 
 	data() {
-		return { state: 'loading', entries: [], record: null, typed: '' }
+		return {
+			state: 'loading',
+			entries: [],
+			record: null,
+			typed: '',
+			chosen: {},
+			applied: {},
+			page: 1,
+		}
 	},
 
 	computed: {
@@ -202,6 +350,99 @@ export default {
 		 */
 		tableCollection() {
 			return recordTableCollection(this.record?.columns, this.linkKey)
+		},
+
+		/**
+		 * The record's heading: the page's sentence around the title, or the title.
+		 *
+		 * @return {string} The heading.
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+		 */
+		recordTitle() {
+			const title = this.record?.title || ''
+			return this.recordHeading
+				? fillText(this.recordHeading, { title })
+				: title
+		},
+
+		/**
+		 * The page's filters with the values the rows hold.
+		 *
+		 * @return {Array<object>} The filters.
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+		 */
+		filters() {
+			return recordFilters(
+				this.record?.rows,
+				this.filterBy,
+				this.record?.columns,
+			)
+		},
+
+		/**
+		 * The page of rows on screen, after the applied filters.
+		 *
+		 * @return {object} The page (publicRecordsApi rowsPage).
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+		 */
+		shownPage() {
+			return rowsPage(
+				filteredRows(this.record?.rows, this.applied),
+				this.page,
+				this.pageSize,
+			)
+		},
+
+		/**
+		 * @return {string} The line above the rows, or ''.
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+		 */
+		countLine() {
+			const { total, from, to } = this.shownPage
+			return this.countText
+				? fillText(this.countText, { count: total, from, to })
+				: ''
+		},
+
+		/**
+		 * @return {string} "1 tot 5 van 48".
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+		 */
+		rangeLine() {
+			const { total, from, to } = this.shownPage
+			return fillText(this.words.range, { from, to, total })
+		},
+
+		/**
+		 * @return {string} The initials on the side card.
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+		 */
+		initials() {
+			return initialsOf(this.record?.title)
+		},
+
+		/**
+		 * The side card's links that have a label and a site route or an
+		 * http(s) address, each with the address it opens.
+		 *
+		 * @return {Array<{label: string, href: string, address: string}>} The links.
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+		 */
+		sideLinks() {
+			return (Array.isArray(this.links) ? this.links : [])
+				.filter(
+					(link) =>
+						link
+						&& typeof link.label === 'string'
+						&& link.label !== ''
+						&& typeof link.href === 'string'
+						&& /^(\/(?!\/)|https?:\/\/)/.test(link.href),
+				)
+				.map((link) => ({
+					label: link.label,
+					href: link.href,
+					address: this.addressOf(link.href),
+				}))
 		},
 
 		/**
@@ -317,6 +558,62 @@ export default {
 		},
 
 		/**
+		 * Keep a filter's choice until the button applies it.
+		 *
+		 * @param {string} key The column.
+		 * @param {string} value The chosen value; '' for every value.
+		 * @return {void}
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+		 */
+		choose(key, value) {
+			this.chosen = { ...this.chosen, [key]: String(value || '') }
+		},
+
+		/**
+		 * Show the rows that hold the chosen values, from the first page.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+		 */
+		applyFilters() {
+			this.applied = { ...this.chosen }
+			this.page = 1
+		},
+
+		/**
+		 * @param {string} text A sentence with placeholders.
+		 * @param {object} vars The values.
+		 * @return {string} The sentence.
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+		 */
+		fill(text, vars) {
+			return fillText(text, vars)
+		},
+
+		/**
+		 * The address of a side card link: a site route keeps the portal and
+		 * the language, like every other link on the site.
+		 *
+		 * @param {string} href A site route or an http(s) address.
+		 * @return {string} The address.
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+		 */
+		addressOf(href) {
+			if (!href.startsWith('/') || typeof window === 'undefined') {
+				return href
+			}
+			try {
+				return addressOfRoute(
+					href,
+					window.location.href,
+					runtimeConfig(),
+				).toString()
+			} catch {
+				return href
+			}
+		},
+
+		/**
 		 * A real link to one record, so a new tab and a failed script still work.
 		 *
 		 * @param {object} entry A list entry.
@@ -341,3 +638,80 @@ export default {
 	},
 }
 </script>
+
+<style scoped>
+.pq-records__record {
+	display: grid;
+	gap: var(--utrecht-space-block-lg, 2rem);
+	grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr);
+	align-items: start;
+}
+
+@media (max-width: 48rem) {
+	.pq-records__record {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+.pq-records__filters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--utrecht-space-block-md, 1rem);
+	align-items: end;
+}
+
+.pq-records__filter {
+	display: flex;
+	flex-direction: column;
+	gap: var(--utrecht-space-block-xs, 0.375rem);
+}
+
+.pq-records__pager,
+.pq-records__pages {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--utrecht-space-inline-sm, 0.5rem);
+	align-items: center;
+	justify-content: space-between;
+}
+
+.pq-records__pages button[aria-current='page'] {
+	font-weight: bold;
+	text-decoration: underline;
+}
+
+.pq-records__side {
+	border: 1px solid var(--utrecht-color-grey-80, var(--color-border));
+	border-radius: var(--utrecht-border-radius-md, 4px);
+	padding: var(--utrecht-space-block-md, 1rem);
+}
+
+.pq-records__who {
+	display: flex;
+	gap: var(--utrecht-space-inline-md, 0.75rem);
+	align-items: center;
+}
+
+.pq-records__initials {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	block-size: 3rem;
+	inline-size: 3rem;
+	border-radius: 50%;
+	background: var(--utrecht-color-blue-90, var(--color-primary-element-light));
+	color: var(--utrecht-color-blue-20, var(--color-primary-element-light-text));
+	font-weight: bold;
+}
+
+.pq-records__name {
+	font-weight: bold;
+	margin: 0;
+}
+
+.pq-records__links {
+	margin-block-start: var(--utrecht-space-block-md, 1rem);
+	padding-inline-start: 1.25rem;
+}
+</style>
