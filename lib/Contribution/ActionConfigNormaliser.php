@@ -346,7 +346,6 @@ class ActionConfigNormaliser {
 		$entry['size'] = $this->values->oneOf(value: ($config['size'] ?? null), allowed: self::FIELD_SIZES, default: 'medium');
 		$entry = $this->form->declaredInput(entry: $entry, config: $config);
 		$entry = (new ValueLabelsNormaliser())->apply(entry: $entry, source: $config);
-		$entry = (new ProfilePrefillKey())->apply(entry: $entry, source: $config);
 		$entry = $this->form->fieldWidget(entry: $entry, config: $config);
 
 		return (new FileFieldConfigNormaliser())->apply(entry: $entry, config: $config, actionType: $actionType);
