@@ -23,6 +23,22 @@
 		<p class="utrecht-paragraph">
 			{{
 				t(
+					'Who may arrange matters for you, and for whom you arrange matters.',
+				)
+			}}
+		</p>
+
+		<!-- Board Machtigingen (site-mandates-the-represented-manage T4): who
+		     may act for you, and on whose behalf you work. -->
+		<MandatesGiven :api="api" :t="t" :portal="portal" :locale="locale" />
+		<MandatesHeld :api="api" :t="t" :portal="portal" :locale="locale" />
+
+		<h2 class="utrecht-heading-3">
+			{{ t('Ask for access') }}
+		</h2>
+		<p class="utrecht-paragraph">
+			{{
+				t(
 					'Ask for access to the cases of a company or person you act for. The organisation answers your request.',
 				)
 			}}
@@ -76,7 +92,7 @@
 			</button>
 		</form>
 
-		<h3 class="utrecht-heading-3">
+		<h3 class="utrecht-heading-4">
 			{{ t('Your requests') }}
 		</h3>
 		<p v-if="loading" class="utrecht-paragraph" role="status">
@@ -112,10 +128,28 @@
 				</p>
 			</li>
 		</ul>
+
+		<section
+			class="pq-access__digid"
+			aria-labelledby="pq-access-digid"
+			data-testid="access-digid-machtigen">
+			<h2 id="pq-access-digid" class="utrecht-heading-3">
+				{{ t('Mandates through DigiD Machtigen') }}
+			</h2>
+			<p class="utrecht-paragraph">
+				{{
+					t(
+						'Did you authorise someone through DigiD Machtigen? You do not see that mandate here. You arrange and view it on digid.nl.',
+					)
+				}}
+			</p>
+		</section>
 	</section>
 </template>
 
 <script>
+import MandatesGiven from '../../components/e/MandatesGiven.vue'
+import MandatesHeld from '../../components/e/MandatesHeld.vue'
 import {
 	newestFirst,
 	requestProblem,
@@ -126,6 +160,8 @@ import { longDate, readerLocale } from './format.js'
 
 export default {
 	name: 'AccessRequestsPage',
+
+	components: { MandatesGiven, MandatesHeld },
 
 	props: {
 		/** The session as `/portal/api/session` returns it. */

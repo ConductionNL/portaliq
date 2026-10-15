@@ -29,7 +29,11 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Service\Identity\MandateParties;
+use OCA\Portaliq\Service\Identity\PortalAccountLookup;
+use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\Identity\PortalMandateAdminService;
+use OCA\Portaliq\Service\Intake\PortalCaseTypeChoices;
+use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -51,11 +55,21 @@ class MandateController extends Controller implements PortalProtected {
 	 * @param IRequest                    $request  The request.
 	 * @param PortalSessionService        $session  Resolves the bearer.
 	 * @param PortalMandateAdminService   $mandates The mandate service.
+	 * @param PortalIdentityMailer        $mailer   Mails the invitation link to the invitee, never to the inviter.
+	 * @param PortalAccountLookup         $accounts The name and address of who holds a mandate, and of the inviter.
+	 * @param PortalCaseTypeChoices       $choices  The case types a mandate may be narrowed to.
+	 * @param PortalResolver              $portals  The portal being visited.
+	 *
+	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- each collaborator is one screen element of the Machtigingen board.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalSessionService $session,
 		private readonly PortalMandateAdminService $mandates,
+		private readonly PortalIdentityMailer $mailer,
+		private readonly PortalAccountLookup $accounts,
+		private readonly PortalCaseTypeChoices $choices,
+		private readonly PortalResolver $portals,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -76,8 +90,37 @@ class MandateController extends Controller implements PortalProtected {
 			return $refusal;
 		}
 
-		return new JSONResponse(['party' => $party, 'items' => $this->mandates->given(party: $party, organisation: (string)$subject['organisation'])]);
+		$items = $this->mandates->given(party: $party, organisation: (string)$subject['organisation']);
+
+		return new JSONResponse(['party' => $party, 'items' => array_map(fn (array $item): array => $this->named(item: $item), $items)]);
 	}//end given()
+
+	/**
+	 * The case types the visited portal serves, for "Alleen deze soorten
+	 * zaken". Only a portal of the session's own tenant answers.
+	 *
+	 * @param string $portal The portal slug the site is served as.
+	 *
+	 * @return JSONResponse `{items: [{id, title}]}`, 401 or 403.
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/tasks.md#t4
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 30, period: 60)]
+	public function caseTypes(string $portal = ''): JSONResponse {
+		[$subject, , $refusal] = $this->identify();
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$site = $this->portals->resolve(request: $this->request, portalSlug: trim($portal));
+		if ($site === null || (string)($site['organisation'] ?? '') !== (string)$subject['organisation']) {
+			return new JSONResponse(['items' => []]);
+		}
+
+		return new JSONResponse(['items' => $this->choices->forPortal(portal: (string)($site['slug'] ?? ''))]);
+	}//end caseTypes()
 
 	/**
 	 * Invite an address to act for the party.
@@ -87,7 +130,8 @@ class MandateController extends Controller implements PortalProtected {
 	 * @param string        $label     A short text about what they may do.
 	 * @param string        $expiresAt A future day, or ''.
 	 *
-	 * @return JSONResponse `{token}` for the mail, or 400 naming the field.
+	 * @return JSONResponse `{sent: true}` once the link is mailed to the address, 400 naming the field, or 502 when the mail did not leave.
+	 *                      The secret goes to the invitee's mailbox only, never back to the inviter's browser.
 	 *
 	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md#requirement-a-party-must-invite-never-look-up-the-person-it-authorises-req-smr-003
 	 */
@@ -110,7 +154,20 @@ class MandateController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => $result], Http::STATUS_BAD_REQUEST);
 		}
 
-		return new JSONResponse($result);
+		$inviter = $this->accounts->bySubjectRef(subjectRef: (string)$subject['subjectRef']);
+		$sent    = $this->mailer->send(
+			template: PortalIdentityMailer::TEMPLATE_MANDATE_INVITATION,
+			email: trim($email),
+			secret: $result['token'],
+			organisation: (string)$subject['organisation'],
+			portal: null,
+			details: ['inviter' => (string)($inviter['displayName'] ?? '')]
+		);
+		if ($sent === false) {
+			return new JSONResponse(['error' => 'not_sent'], Http::STATUS_BAD_GATEWAY);
+		}
+
+		return new JSONResponse(['sent' => true]);
 	}//end invite()
 
 	/**
@@ -268,6 +325,25 @@ class MandateController extends Controller implements PortalProtected {
 			)
 		);
 	}//end stop()
+
+	/**
+	 * A mandate in the given list carries the name and address of the
+	 * account that holds it; an invitation keeps the address it went to.
+	 *
+	 * @param array<string, mixed> $item The listed mandate or invitation.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function named(array $item): array {
+		$holder = (string)($item['holder'] ?? '');
+		if (($item['kind'] ?? '') !== 'mandate' || str_starts_with($holder, 'subject:') === false) {
+			return $item;
+		}
+
+		$account = $this->accounts->bySubjectRef(subjectRef: substr($holder, strlen('subject:')));
+
+		return $item + ['name' => (string)($account['displayName'] ?? ''), 'email' => (string)($account['email'] ?? '')];
+	}//end named()
 
 	/**
 	 * The session, its party, and the refusal when there is none.

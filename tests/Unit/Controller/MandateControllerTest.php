@@ -6,7 +6,11 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\MandateController;
 use OCA\Portaliq\Service\Identity\MandateParties;
+use OCA\Portaliq\Service\Identity\PortalAccountLookup;
+use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\Identity\PortalMandateAdminService;
+use OCA\Portaliq\Service\Intake\PortalCaseTypeChoices;
+use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\IRequest;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -24,6 +28,27 @@ class MandateControllerTest extends TestCase {
 	private const SUBJECT = ['provider' => 'digid', 'subjectRef' => 'abc', 'organisation' => 'zuid'];
 
 	/**
+	 * Mails the mailer double was asked to send.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private array $mails = [];
+
+	/**
+	 * Whether the mailer double fails.
+	 *
+	 * @var bool
+	 */
+	private bool $mailFails = false;
+
+	/**
+	 * The portal the resolver double answers, or null.
+	 *
+	 * @var array<string, mixed>|null
+	 */
+	private ?array $site = ['slug' => 'zuiddrecht', 'organisation' => 'zuid'];
+
+	/**
 	 * Build the controller over doubles.
 	 *
 	 * @param array<string, mixed>|null $subject The session subject.
@@ -36,7 +61,25 @@ class MandateControllerTest extends TestCase {
 		$session = $this->createMock(PortalSessionService::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 
-		return new MandateController($request, $session, $mandates);
+		$mailer = $this->createMock(PortalIdentityMailer::class);
+		$mailer->method('send')->willReturnCallback(
+			function (string $template, string $email, string $secret, string $organisation, ?array $portal = null, array $details = []): bool {
+				$this->mails[] = ['template' => $template, 'email' => $email, 'secret' => $secret, 'organisation' => $organisation, 'details' => $details];
+				return $this->mailFails === false;
+			}
+		);
+		$accounts = $this->createMock(PortalAccountLookup::class);
+		$accounts->method('bySubjectRef')->willReturnCallback(
+			static fn (string $ref): ?array => ['ref-tom' => ['displayName' => 'Tom Visser', 'email' => 't.visser@example.nl'], 'abc' => ['displayName' => 'Sanne de Vries']][$ref] ?? null
+		);
+		$choices = $this->createMock(PortalCaseTypeChoices::class);
+		$choices->method('forPortal')->willReturnCallback(
+			static fn (string $portal): array => $portal === 'zuiddrecht' ? [['id' => 'ct-parkeren', 'title' => 'Parkeervergunning']] : []
+		);
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('resolve')->willReturnCallback(fn (): ?array => $this->site);
+
+		return new MandateController($request, $session, $mandates, $mailer, $accounts, $choices, $portals);
 	}//end controller()
 
 	/**
@@ -77,6 +120,62 @@ class MandateControllerTest extends TestCase {
 	}//end testNonManagerIs403()
 
 	/**
+	 * T4: a mandate in the given list names the account that holds it;
+	 * an invitation and a company holder stay as they are.
+	 *
+	 * @return void
+	 */
+	public function testTheGivenListNamesWhoHoldsAMandate(): void {
+		$mandates = $this->createMock(PortalMandateAdminService::class);
+		$mandates->method('given')->willReturn([
+			['kind' => 'mandate', 'id' => 'm1', 'holder' => 'subject:ref-tom', 'state' => 'active'],
+			['kind' => 'mandate', 'id' => 'm2', 'holder' => 'kvk:12345678', 'state' => 'active'],
+			['kind' => 'invitation', 'id' => 'i1', 'email' => 'mark@example.nl', 'state' => 'pending'],
+		]);
+
+		$items = $this->controller(self::SUBJECT, $mandates)->given()->getData()['items'];
+
+		$this->assertSame(['Tom Visser', 't.visser@example.nl'], [$items[0]['name'], $items[0]['email']]);
+		$this->assertArrayNotHasKey('name', $items[1]);
+		$this->assertSame(['kind' => 'invitation', 'id' => 'i1', 'email' => 'mark@example.nl', 'state' => 'pending'], $items[2]);
+	}//end testTheGivenListNamesWhoHoldsAMandate()
+
+	/**
+	 * T4: a mail that did not leave is said, and nothing is answered as sent.
+	 *
+	 * @return void
+	 */
+	public function testAnInvitationWhoseMailDidNotLeaveIs502(): void {
+		$mandates = $this->createMock(PortalMandateAdminService::class);
+		$mandates->method('invite')->willReturn(['token' => 'x']);
+		$this->mailFails = true;
+
+		$answer = $this->controller(self::SUBJECT, $mandates)->invite('a@b.nl');
+
+		$this->assertSame(502, $answer->getStatus());
+		$this->assertSame(['error' => 'not_sent'], $answer->getData());
+	}//end testAnInvitationWhoseMailDidNotLeaveIs502()
+
+	/**
+	 * T4: the case types for the scope choice come from the visited portal,
+	 * and only when it is the session's own tenant.
+	 *
+	 * @return void
+	 */
+	public function testTheCaseTypesComeFromTheSessionsOwnPortal(): void {
+		$mandates = $this->createMock(PortalMandateAdminService::class);
+
+		$this->assertSame(['items' => [['id' => 'ct-parkeren', 'title' => 'Parkeervergunning']]], $this->controller(self::SUBJECT, $mandates)->caseTypes('zuiddrecht')->getData());
+		$this->site = ['slug' => 'elders', 'organisation' => 'andere-gemeente'];
+		$this->assertSame(['items' => []], $this->controller(self::SUBJECT, $mandates)->caseTypes('elders')->getData(), 'another tenant');
+		$this->site = null;
+		$this->assertSame(['items' => []], $this->controller(self::SUBJECT, $mandates)->caseTypes('weg')->getData());
+		$this->assertSame(401, $this->controller(null, $mandates)->caseTypes('zuiddrecht')->getStatus());
+		$acting = self::SUBJECT + ['actingUnderMandate' => true];
+		$this->assertSame(403, $this->controller($acting, $mandates)->caseTypes('zuiddrecht')->getStatus());
+	}//end testTheCaseTypesComeFromTheSessionsOwnPortal()
+
+	/**
 	 * given() and invite() pass the party and organisation through.
 	 *
 	 * @return void
@@ -91,7 +190,10 @@ class MandateControllerTest extends TestCase {
 		$this->assertSame(200, $given->getStatus());
 		$this->assertSame(['party' => 'subject:abc', 'items' => [['id' => '1']]], $given->getData());
 
-		$this->assertSame(['token' => 'x'], $c->invite('a@b.nl')->getData());
+		$this->assertSame(['sent' => true], $c->invite('a@b.nl')->getData(), 'the secret never goes back to the inviter');
+		$this->assertSame('mandate-invitation', $this->mails[0]['template']);
+		$this->assertSame(['a@b.nl', 'x', 'zuid'], [$this->mails[0]['email'], $this->mails[0]['secret'], $this->mails[0]['organisation']]);
+		$this->assertSame(['inviter' => 'Sanne de Vries'], $this->mails[0]['details']);
 		$bad = $c->invite('nope');
 		$this->assertSame(400, $bad->getStatus());
 		$this->assertSame(['error' => 'bad_email'], $bad->getData());

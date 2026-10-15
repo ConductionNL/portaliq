@@ -2558,6 +2558,8 @@ OC.L10N.register(
         "You are invited to work together at %1$s": "You are invited to work together at %1$s",
         "Someone you know wants to work with you in the portal of %1$s. Open the link to create your account or sign in.": "Someone you know wants to work with you in the portal of %1$s. Open the link to create your account or sign in.",
         "Open the invitation": "Open the invitation",
+        "You may arrange matters for someone at %1$s": "You may arrange matters for someone at %1$s",
+        "Someone wants you to arrange matters for them in the portal of %1$s. Sign in and accept the invitation. Only then does it count.": "Someone wants you to arrange matters for them in the portal of %1$s. Sign in and accept the invitation. Only then does it count.",
         "%1$s invited you.": "%1$s invited you.",
         "Their message: %1$s": "Their message: %1$s",
         "Contacts enabled": "Contacts enabled",

@@ -8,6 +8,7 @@ use OCA\Portaliq\Controller\PortalIdentityController;
 use OCA\Portaliq\Service\CaseTypeReader;
 use OCA\Portaliq\Service\Identity\PortalAccountActivationService;
 use OCA\Portaliq\Service\Identity\PortalChallengeService;
+use OCA\Portaliq\Service\Identity\PortalContactService;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\Identity\PortalReferenceCaseService;
 use OCA\Portaliq\Service\Identity\PortalInvitationService;
@@ -139,6 +140,51 @@ class PortalIdentityControllerTest extends TestCase {
 		$this->assertArrayNotHasKey('subjectRef', $data);
 
 	}//end testAnAcceptedRegistrationWaitsAndSaysSo()
+
+	/**
+	 * own-contacts T05: a registration through a contact invitation holds it
+	 * for the new account, in the visited portal's tenant; one without
+	 * holds nothing.
+	 *
+	 * @return void
+	 */
+	public function testARegistrationThroughAContactInvitationHoldsIt(): void {
+		$controller = $this->controller(site: ['organisation' => 'gemeente-x']);
+		$this->doubles['policy']->method('isOffered')->willReturn(true);
+		$this->doubles['challenge']->method('accepts')->willReturn(true);
+		$this->doubles['policy']->method('decide')->willReturn(['accepted' => true, 'reason' => 'approval', 'status' => 'pending']);
+		$this->doubles['accounts']->method('provision')->willReturn(['subjectRef' => 'subject-1', 'isNew' => true, 'status' => 'pending']);
+		$this->doubles['contacts']->expects($this->once())
+			->method('holdForRegistration')
+			->with('invite-secret', 'subject-1', 'gemeente-x')
+			->willReturn(true);
+
+		$data = $controller->register(email: 'ans@example.org', contactInvitation: 'invite-secret')->getData();
+		$controller->register(email: 'bob@example.org');
+
+		$this->assertSame('pending', $data['status']);
+
+	}//end testARegistrationThroughAContactInvitationHoldsIt()
+
+	/**
+	 * own-contacts T05: the link names the address it went to in the
+	 * visited portal's tenant; any other link is one 404.
+	 *
+	 * @return void
+	 */
+	public function testAContactInvitationNamesItsAddressOrIsOneRefusal(): void {
+		$controller = $this->controller(site: ['organisation' => 'gemeente-x']);
+		$this->doubles['contacts']->method('invitationEmail')->willReturnCallback(
+			static fn (string $token, string $organisation): string => ($token === 'open' && $organisation === 'gemeente-x') ? 'new@example.nl' : ''
+		);
+
+		$this->assertSame(['email' => 'new@example.nl'], $controller->contactInvitation(token: 'open')->getData());
+		$refused = $controller->contactInvitation(token: 'spent');
+		$this->assertSame(Http::STATUS_NOT_FOUND, $refused->getStatus());
+		$this->assertSame(['error' => 'invitation_not_valid'], $refused->getData());
+		$this->assertSame(Http::STATUS_NOT_FOUND, $this->controller(site: null)->contactInvitation(token: 'open')->getStatus(), 'no portal');
+
+	}//end testAContactInvitationNamesItsAddressOrIsOneRefusal()
 
 	public function testACaseTypeThatDeclaresAccountOnlyOffersNoReferenceLink(): void {
 		$controller = $this->controller(site: ['organisation' => 'gemeente-x']);
@@ -570,7 +616,11 @@ class PortalIdentityControllerTest extends TestCase {
 		$this->doubles['activation']->expects($this->once())
 			->method('activate')
 			->with($this->equalTo('activation-secret'))
-			->willReturn(['organisation' => 'gemeente-x']);
+			->willReturn(['organisation' => 'gemeente-x', 'subjectRef' => 'subject-1', 'displayName' => 'Ans']);
+		// own-contacts T05: the activated account joins what it was invited to.
+		$this->doubles['contacts']->expects($this->once())
+			->method('joinOnActivation')
+			->with(['organisation' => 'gemeente-x', 'subjectRef' => 'subject-1', 'displayName' => 'Ans']);
 
 		$response = $controller->activate(token: 'activation-secret');
 
@@ -587,6 +637,7 @@ class PortalIdentityControllerTest extends TestCase {
 	public function testASpentActivationLinkIsRefusedWithoutSayingWhy(): void {
 		$controller = $this->controller(site: null);
 		$this->doubles['activation']->method('activate')->willReturn(null);
+		$this->doubles['contacts']->expects($this->never())->method('joinOnActivation');
 
 		$response = $controller->activate(token: 'spent');
 
@@ -667,6 +718,7 @@ class PortalIdentityControllerTest extends TestCase {
 			'referenceCases' => $this->double(PortalReferenceCaseService::class, ['linkableCase', 'read']),
 			'sessions' => $this->double(PortalSessionService::class, ['issueReferenceSession', 'resolveReferenceFromBearer']),
 			'activation' => $this->double(PortalAccountActivationService::class, ['issue', 'activate']),
+			'contacts' => $this->double(PortalContactService::class, ['holdForRegistration', 'joinOnActivation', 'invitationEmail']),
 		];
 
 		// The case behind a reference link is found and its address matches,
@@ -690,7 +742,8 @@ class PortalIdentityControllerTest extends TestCase {
 			$this->doubles['mailer'],
 			$this->doubles['referenceCases'],
 			$this->doubles['sessions'],
-			$this->doubles['activation']
+			$this->doubles['activation'],
+			$this->doubles['contacts']
 		);
 	}//end controller()
 

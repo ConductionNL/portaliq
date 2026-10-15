@@ -20,7 +20,7 @@ Two PRs to `development`. Each UI scenario gets a Playwright test citing it with
 
 ## PR 2: the screens
 
-- [ ] **T4**: (not run: the screens need the routes on a live instance, and Playwright): "Machtigingen" page, "Iemand machtigen" dialog, "Uw machtiging" with "Machtiging stoppen"; the acting-for choice falls back after a revoke.
-  - e2e: invite, accept as a second account, revoke
+- [x] **T4**: "Machtigingen" page, "Iemand machtigen" dialog, "Uw machtiging" with "Machtiging stoppen"; the acting-for choice falls back after a revoke. Built to the boards Machtigingen and Machtigen (design D6 amended): `MandatesGiven.vue`, `MandatesHeld.vue` and `MandateInviteModal.vue` on `AccessRequestsPage.vue`, `mandatesApi` in `src/shared/areaApi.js`, the mailed link in `src/shared/mandateInvitation.js`. Backend: `MandateController::invite` mails the link (template `mandate-invitation`) instead of answering the secret, `::given` names the holder, `::caseTypes` with `PortalCaseTypeChoices`. Node `tests/mandates-page.spec.mjs`; PHPUnit `MandateControllerTest::testTheGivenListNamesWhoHoldsAMandate`, `::testAnInvitationWhoseMailDidNotLeaveIs502`, `::testTheCaseTypesComeFromTheSessionsOwnPortal`, `PortalCaseTypeChoicesTest`. Not built: "gegeven door" and the "Reikt tot" tree (design D6)
+  - [ ] e2e: invite, accept as a second account, revoke (live pass, decision 139)
 
 - [ ] **T5**: (not run: the openspec CLI): `openspec validate site-mandates-the-represented-manage --strict`

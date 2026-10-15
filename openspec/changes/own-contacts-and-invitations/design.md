@@ -24,14 +24,14 @@ New schema `portalContact` (schema.org `ContactPoint` between two `Person`s) in 
 
 A link is two rows, one per side, so each side reads only its own rows through the portal's scoped read (`scopeField: owner`). Approval sets both rows to `approved`.
 
-Begeleider rows are written by the case or plan app (staff side), never by the resident: the resident's write whitelist allows only `contact` rows.
+Begeleider rows are written by the case or plan app (staff side), never by the resident. A resident writes contact rows only through the contact routes (`/portal/api/contacts/...`, `PortalContactService`), which write `role: contact` and only the state changes the rules allow. There is no generic contribution create or update action on `portalContact`: it would let a resident set `approved` on their own row and skip the other side's approval.
 
 ## Invitation
 
-The invitation reuses `PortalIdentityMailer` and the ways-in link pattern (portal-ways-in REQ-IWI-001): a hashed token, valid 14 days, mailed with the template `contact-invitation`. Following the link opens self-registration with the e-mail filled in; on activation the invited row becomes `approved` on both sides, without a second approval. When the address belongs to an existing account, no mail with a link is sent: that account gets a `requested` row and a portal notification.
+The invitation reuses `PortalIdentityMailer` and the ways-in link pattern (portal-ways-in REQ-IWI-001): a hashed token, valid 14 days, mailed with the template `contact-invitation`. Following the link opens self-registration with the e-mail filled in (the address comes from `POST /portal/api/identity/contact-invitation`, answered only for an open invitation of the visited portal's tenant). The registration carries the secret; the invitation is then held for the new account (`contactRef`), and its activation makes the invited row `approved` on both sides, without a second approval, in whichever browser tab the activation link opens. A visitor who signs in instead of registering joins through the same secret after sign-in. When the address belongs to an existing account, no mail with a link is sent: that account gets a `requested` row and a portal notification.
 
 Rate limit: at most 10 invitations per resident per day, and never more than one open invitation per address.
 
 ## Messages
 
-"Bericht sturen" opens a thread with that contact in the existing message thread model (`messageThread`), restricted to approved contacts. Removing a contact closes new messages but keeps the history.
+"Bericht sturen" opens a dialog to write the first message; the thread with that contact is stored in the existing message thread model (`messageThread`), restricted to approved contacts, and continues under Berichten. Each side reads the thread under the name of their own contact row. Removing a contact stops new conversations and keeps the history.
