@@ -547,6 +547,30 @@ class ActionConfigNormaliserTest extends TestCase {
 	}//end absenceAction()
 
 	/**
+	 * `prefill` survives only as `name` or `email`; any other source, or a
+	 * value that is not a string, is dropped.
+	 *
+	 * @spec openspec/changes/action-fields-prefill-from-the-residents-profile/specs/portal-contribution-contract/spec.md#requirement-an-action-field-may-start-from-the-signed-in-residents-name-or-e-mail-address
+	 *
+	 * @return void
+	 */
+	public function testAPrefillSourceIsKeptOnlyWhenKnown(): void {
+		$configs = $this->absenceConfigs(
+			[
+				'reason'     => ['prefill' => 'name'],
+				'reasonKind' => ['prefill' => 'email'],
+				'dateFrom'   => ['prefill' => 'bsn'],
+				'dateTo'     => ['prefill' => ['name']],
+			]
+		);
+
+		$this->assertSame('name', $configs['reason']['prefill']);
+		$this->assertSame('email', $configs['reasonKind']['prefill']);
+		$this->assertArrayNotHasKey('prefill', $configs['dateFrom']);
+		$this->assertArrayNotHasKey('prefill', $configs['dateTo']);
+	}//end testAPrefillSourceIsKeptOnlyWhenKnown()
+
+	/**
 	 * The normalised field configs of learniq's absence action.
 	 *
 	 * @param array<string, array<string, mixed>> $fieldConfigs The declared field configs.

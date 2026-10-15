@@ -330,6 +330,7 @@ class ActionConfigNormaliser {
 	 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
 	 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-word-its-own-error-req-smf-006
 	 * @spec openspec/changes/endpoint-action-forms-keep-their-field-shape/specs/site-forms/spec.md#requirement-an-endpoint-action-may-declare-a-fields-input-req-eaf-001
+	 * @spec openspec/changes/action-fields-prefill-from-the-residents-profile/specs/portal-contribution-contract/spec.md#requirement-an-action-field-may-start-from-the-signed-in-residents-name-or-e-mail-address
 	 */
 	private function fieldConfigEntry(string $field, array $config, array $mandatory, string $actionType = ''): array {
 		$entry = [];
@@ -345,6 +346,7 @@ class ActionConfigNormaliser {
 		$entry['size'] = $this->values->oneOf(value: ($config['size'] ?? null), allowed: self::FIELD_SIZES, default: 'medium');
 		$entry = $this->form->declaredInput(entry: $entry, config: $config);
 		$entry = (new ValueLabelsNormaliser())->apply(entry: $entry, source: $config);
+		$entry = (new ProfilePrefillKey())->apply(entry: $entry, source: $config);
 		$entry = $this->form->fieldWidget(entry: $entry, config: $config);
 
 		return (new FileFieldConfigNormaliser())->apply(entry: $entry, config: $config, actionType: $actionType);

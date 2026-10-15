@@ -241,6 +241,7 @@ import {
 import { runtimeConfig } from '../../lib/contentApi.js'
 import { addressOfRoute } from '../../lib/siteAddress.js'
 import { explainsOptional, summaryEntries } from '../forms/fields.js'
+import { prefillFields, withProfile } from '../forms/profilePrefill.js'
 import stepFlow from '../forms/stepFlow.js'
 import {
 	confirmationText,
@@ -578,6 +579,7 @@ export default {
 			this.options = staticOptions(this.action)
 			this.values = this.startValues()
 			this.loadOptions()
+			this.prefillFromProfile()
 		},
 	},
 
@@ -588,7 +590,8 @@ export default {
 	 */
 	mounted() {
 		this.loadOptions()
-		this.resumeDraft()
+		// After the draft, so a saved answer is never replaced.
+		this.resumeDraft().then(() => this.prefillFromProfile())
 	},
 
 	methods: {
@@ -838,6 +841,29 @@ export default {
 		 *
 		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-save-and-resume-must-sit-in-the-step-navigation-req-smf-012
 		 */
+		/**
+		 * Start the fields that declare `prefill` from the signed-in
+		 * resident's own name or e-mail address; a field that has a value
+		 * keeps it. Without a session, or without the call, nothing changes.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/action-fields-prefill-from-the-residents-profile/specs/portal-contribution-contract/spec.md#requirement-an-action-field-may-start-from-the-signed-in-residents-name-or-e-mail-address
+		 */
+		async prefillFromProfile() {
+			if (
+				prefillFields(this.action).length === 0
+				|| typeof this.api.getDetails !== 'function'
+			) {
+				return
+			}
+			const actionId = this.action.id
+			const profile = await this.api.getDetails().catch(() => null)
+			if (this.action.id === actionId) {
+				this.values = withProfile(this.values, this.action, profile)
+			}
+		},
+
 		async resumeDraft() {
 			if (!this.canSaveDraft || typeof this.api.getDraft !== 'function') {
 				return
