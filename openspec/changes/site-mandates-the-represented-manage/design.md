@@ -48,8 +48,9 @@ Every route reads the party from the session and compares it with the row. A row
 
 ## D6. Screens
 
-- "Machtigingen" in the resident menu's account group, for a business session and for a person who has given at least one mandate or invitation. Each row: initials, name or email, label, "Geldig tot en met …", state badge ("Actief", "Wacht op antwoord"), and the end action.
-- "Uw machtiging" on the grantee's account page and under the acting-for bar: label, end date, given by, given on, "Machtiging stoppen".
+- As the board Machtigingen draws it: the sections live on the page "Toegang tot zaken" (intro "Wie zaken voor u mag regelen, en voor wie u zaken regelt."), in this order: "Wie mag zaken regelen voor u?" with "Iemand machtigen" and a table (Wie: name and e-mail address; Wat mag deze persoon; Tot wanneer, or "Geen einddatum"; Status "Actief" or "Wacht op antwoord"; Actie "Intrekken" or "Uitnodiging intrekken"), then "Namens wie u werkt" (the acting-for choice and one "Uw machtiging voor ..." per mandate held, with "Machtiging stoppen"), then "Toegang aanvragen" and "Uw aanvragen", then the notice "Machtigen via DigiD Machtigen". A session acting under a mandate does not see the first section; a person who holds no mandate does not see the second.
+- The invitation link is mailed (`#mandate-invitation=`), kept across the sign-in like the other mailed links, and handed back once after it; the mandate is then written for the account that accepted.
+- "Uw machtiging voor ...": what it covers, given on, end date, "Machtiging stoppen", which asks once more. "Gegeven door" and the board's "Reikt tot" tree of organisations under the party are not shown yet: portaliq has no name for the granting party, and the party tree is portal-visibility-follows-the-party-tree.
 - The grantee's display name comes from the accepted account. An invitation shows its email address until it is accepted.
 
 ## D7. Who holds a mandate (decided)

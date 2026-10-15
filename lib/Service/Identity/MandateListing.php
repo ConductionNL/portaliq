@@ -129,6 +129,7 @@ class MandateListing {
 				'id' => $this->store->idOf(row: $row),
 				'label' => (string)($row['label'] ?? ''),
 				'onBehalfOf' => $this->parties->typed(value: (string)($row['onBehalfOf'] ?? '')),
+				'caseTypes' => array_values((array)($row['caseTypes'] ?? [])),
 				'expiresAt' => (string)($row['expiresAt'] ?? ''),
 				'grantedBy' => (string)($row['grantedBy'] ?? ''),
 				'grantedAt' => (string)($row['grantedAt'] ?? ''),

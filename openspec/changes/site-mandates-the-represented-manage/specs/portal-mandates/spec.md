@@ -30,7 +30,7 @@ A business session MUST see every mandate and open invitation whose `onBehalfOf`
 
 ### Requirement: A party MUST invite, never look up, the person it authorises (REQ-SMR-003)
 
-Portaliq holds no BSN, so a person who never signed in cannot be named. "Iemand machtigen" MUST ask for an email address, a scope (all cases or chosen case types), a label and an optional end date in the future, and MUST send an invitation. It MUST NOT ask for a BSN or look a person up by name. The mandate MUST be written only when the invitee signs in and accepts, for the account that accepted, with the invitation's terms. The inviter MUST NOT be able to accept their own invitation.
+Portaliq holds no BSN, so a person who never signed in cannot be named. "Iemand machtigen" MUST ask for an email address, a scope (all cases or chosen case types of the portal) and an optional end date in the future, typed as day, month and year, and MUST mail the invitation link to that address only; the secret MUST NOT be answered to the inviter. The scope's words ("Alle zaken", or the titles of the chosen case types) stand in for a label (board Machtigen). It MUST NOT ask for a BSN or look a person up by name. The mandate MUST be written only when the invitee signs in and accepts, for the account that accepted, with the invitation's terms. The inviter MUST NOT be able to accept their own invitation.
 
 #### Scenario: Tom accepts
 - GIVEN an invitation from KVK 12345678 to tom@example.nl for "Mag alleen bezwaren indienen en volgen", valid until 30 June 2027
