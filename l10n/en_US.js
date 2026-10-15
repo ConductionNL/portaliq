@@ -478,7 +478,11 @@ OC.L10N.register(
         "The property that holds the signed-in resident.": "The property that holds the signed-in resident.",
         "The property the payment state is read from.": "The property the payment state is read from.",
         "A form field that writes into a property with another name.": "A form field that writes into a property with another name.",
-        "Values every submit writes.": "Values every submit writes."
+        "Values every submit writes.": "Values every submit writes.",
+        "Your plan is nearly ending": "Your plan is nearly ending",
+        "The plan %1$s ends on %2$s": "The plan %1$s ends on %2$s",
+        "The plan \"%1$s\" ends on %2$s. %3$s actions are still open. Extend the plan with your caseworker, or complete the actions.": "The plan \"%1$s\" ends on %2$s. %3$s actions are still open. Extend the plan with your caseworker, or complete the actions.",
+        "Go to %1$s": "Go to %1$s"
     },
     "nplurals=2; plural=(n != 1);"
 )

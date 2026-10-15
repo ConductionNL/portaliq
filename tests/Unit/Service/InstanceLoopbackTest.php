@@ -6,12 +6,15 @@ namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\InstanceLoopback;
 use OCA\Portaliq\Service\InternalBaseUrl;
+use OCA\Portaliq\Service\LoopbackOrigins;
+use OCA\Portaliq\Tests\Doubles\ServerVariablesRequest;
 use OCA\Portaliq\Tests\Unit\Service\Fixtures\FakeConnectException;
 use OCA\Portaliq\Tests\Unit\Service\Fixtures\FakeResponseException;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
 use OCP\IAppConfig;
+use OCP\IConfig;
 use OCP\IURLGenerator;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -64,10 +67,11 @@ class InstanceLoopbackTest extends TestCase {
 	 *
 	 * @param string $configured The internal_base_url app config value.
 	 * @param string $base The instance's absolute base URL, web root included.
+	 * @param LoopbackOrigins|null $origins The loopback origins, or null for 127.0.0.1 only.
 	 *
 	 * @return InstanceLoopback
 	 */
-	private function loopback(string $configured = '', string $base = 'http://localhost:8090'): InstanceLoopback {
+	private function loopback(string $configured = '', string $base = 'http://localhost:8090', ?LoopbackOrigins $origins = null): InstanceLoopback {
 		$clients = $this->getMockBuilder(IClientService::class)->onlyMethods(['newClient'])->getMock();
 		$clients->method('newClient')->willReturn($this->client);
 
@@ -88,7 +92,7 @@ class InstanceLoopbackTest extends TestCase {
 			static fn (string $app, string $key, string $default = ''): string => ($app === 'portaliq' && $key === 'internal_base_url') ? $configured : $default
 		);
 
-		return new InstanceLoopback($clients, $urls, new InternalBaseUrl($config, $this->logger), $this->logger);
+		return new InstanceLoopback($clients, $urls, new InternalBaseUrl($config, $this->logger), $this->logger, $origins);
 	}//end loopback()
 
 	/**
@@ -330,7 +334,7 @@ class InstanceLoopbackTest extends TestCase {
 		$this->logger->expects($this->never())->method('info');
 		$this->logger->expects($this->once())->method('warning')->with(
 			$this->stringContains('nor on the loopback'),
-			$this->callback(static fn (array $context): bool => $context['absolute'] === 'cURL error 7: absolute' && $context['loopback'] === 'cURL error 7: loopback')
+			$this->callback(static fn (array $context): bool => $context['absolute'] === 'cURL error 7: absolute' && $context['loopback'] === ['http://127.0.0.1' => 'cURL error 7: loopback'])
 		);
 
 		try {
@@ -458,4 +462,119 @@ class InstanceLoopbackTest extends TestCase {
 		$this->assertSame([0, 0], $positions);
 		fclose($file);
 	}//end testAnUploadStreamIsRewoundForTheRetry()
+
+	/**
+	 * Loopback origins over a request with these server variables and this
+	 * overwrite.cli.url.
+	 *
+	 * @param array<string, mixed> $server The server variables.
+	 * @param string $cliUrl The overwrite.cli.url value.
+	 *
+	 * @return LoopbackOrigins
+	 */
+	private function origins(array $server, string $cliUrl = ''): LoopbackOrigins {
+		$config = $this->createMock(IConfig::class);
+		$config->method('getSystemValueString')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => $key === 'overwrite.cli.url' ? $cliUrl : $default
+		);
+
+		return new LoopbackOrigins(new ServerVariablesRequest($server), $config);
+	}//end origins()
+
+	/**
+	 * Behind a web server that listens on 8080 (a sidecar or another
+	 * container), the address and port PHP was reached on answer when the
+	 * absolute URL and port 80 do not. The origin that answered is kept for
+	 * the rest of the request.
+	 *
+	 * @spec openspec/changes/loopback-tries-the-address-php-was-reached-on/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
+	 *
+	 * @return void
+	 */
+	public function testTheAddressPhpWasReachedOnIsTriedFirstAndKept(): void {
+		$this->answer(
+			function (string $method, string $url): IResponse {
+				if (str_starts_with($url, 'http://10.1.2.3:8080/') === true) {
+					return $this->response(200);
+				}
+
+				throw new FakeConnectException('cURL error 7: Failed to connect', ['errno' => 7, 'connect_time' => 0.0]);
+			}
+		);
+		$this->logger->expects($this->once())->method('info');
+		$this->logger->expects($this->never())->method('warning');
+
+		$loopback = $this->loopback(origins: $this->origins(['SERVER_ADDR' => '10.1.2.3', 'SERVER_PORT' => '8080']));
+		$loopback->request('GET', '/index.php/apps/openregister/api/portal-tasks');
+		$loopback->request('GET', '/index.php/apps/openregister/api/portal-tasks/1');
+
+		$this->assertSame(
+			[
+				'http://localhost:8090/index.php/apps/openregister/api/portal-tasks',
+				'http://10.1.2.3:8080/index.php/apps/openregister/api/portal-tasks',
+				'http://10.1.2.3:8080/index.php/apps/openregister/api/portal-tasks/1',
+			],
+			array_column($this->calls, 1)
+		);
+		$this->assertSame('localhost:8090', $this->calls[1][2]['headers']['Host']);
+	}//end testTheAddressPhpWasReachedOnIsTriedFirstAndKept()
+
+	/**
+	 * Each origin is tried in turn after a connect-phase failure, and the
+	 * warning names every one that failed.
+	 *
+	 * @spec openspec/changes/loopback-tries-the-address-php-was-reached-on/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
+	 *
+	 * @return void
+	 */
+	public function testEveryOriginIsTriedAndNamedWhenNoneAnswers(): void {
+		$this->answer(
+			static function (string $method, string $url): IResponse {
+				throw new FakeConnectException('cURL error 7: ' . $url, ['errno' => 7]);
+			}
+		);
+		$this->logger->expects($this->once())->method('warning')->with(
+			$this->anything(),
+			$this->callback(
+				static fn (array $context): bool => array_keys($context['loopback']) === [
+					'http://10.1.2.3:8080',
+					'http://127.0.0.1:8080',
+					'https://cloud.example',
+					'http://127.0.0.1',
+				]
+			)
+		);
+
+		$this->expectException(FakeConnectException::class);
+		$this->loopback(origins: $this->origins(['SERVER_ADDR' => '10.1.2.3', 'SERVER_PORT' => 8080], 'https://cloud.example/'))->request('GET', '/index.php/apps/x');
+	}//end testEveryOriginIsTriedAndNamedWhenNoneAnswers()
+
+	/**
+	 * A loopback origin that connected and then failed is not followed by
+	 * another one: the request may already have been applied.
+	 *
+	 * @spec openspec/changes/loopback-tries-the-address-php-was-reached-on/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
+	 *
+	 * @return void
+	 */
+	public function testAnOriginThatTimedOutAfterConnectingEndsTheRetries(): void {
+		$this->answer(
+			static function (string $method, string $url): IResponse {
+				if (str_starts_with($url, 'http://10.1.2.3:8080/') === true) {
+					throw new FakeConnectException('cURL error 28: Operation timed out', ['errno' => 28, 'connect_time' => 0.01]);
+				}
+
+				throw new FakeConnectException('cURL error 7: refused', ['errno' => 7]);
+			}
+		);
+
+		try {
+			$this->loopback(origins: $this->origins(['SERVER_ADDR' => '10.1.2.3', 'SERVER_PORT' => '8080']))->request('POST', '/index.php/apps/x');
+			$this->fail('The failure must surface.');
+		} catch (FakeConnectException $surfaced) {
+			$this->assertStringContainsString('refused', $surfaced->getMessage());
+		}
+
+		$this->assertCount(2, $this->calls);
+	}//end testAnOriginThatTimedOutAfterConnectingEndsTheRetries()
 }//end class

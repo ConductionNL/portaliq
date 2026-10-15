@@ -275,11 +275,35 @@ test('stopping a held mandate asks first, and acting under it falls back to your
 	assert.equal(actingFor.id, 'self')
 	assert.deepEqual(vm.held, [])
 	assert.deepEqual(emitted, [['stopped', 'm1']])
-	const line = held.methods.line.call(
-		{ t, locale: 'nl', caseTypes: [] },
-		{ grantedAt: '2026-09-12T10:00:00Z', expiresAt: '' },
+	const reader = {
+		t,
+		locale: 'nl',
+		caseTypes: [],
+		partyOf: held.methods.partyOf,
+	}
+	const line = held.methods.line.call(reader, {
+		givenBy: 'organisation',
+		grantedAt: '2026-09-12T10:00:00Z',
+		expiresAt: '',
+	})
+	assert.match(line, /^All cases · given by the municipality on .+ · No end date$/)
+	const byParty = held.methods.line.call(reader, {
+		id: 'm9',
+		onBehalfOf: 'kvk:12345678',
+		givenBy: 'party',
+		grantedAt: '2026-10-02T10:00:00Z',
+		expiresAt: '',
+	})
+	assert.match(byParty, /^All cases · given by 12345678 on .+ · No end date$/)
+	assert.equal(
+		held.methods.line.call(reader, {
+			givenBy: 'party',
+			onBehalfOf: 'kvk:1',
+			expiresAt: '',
+		}),
+		'All cases · given by 1 · No end date',
+		'a mandate without its day still says who gave it',
 	)
-	assert.match(line, /^All cases · given on .+ · No end date$/)
 })
 
 test('a mailed link is kept across sign-in, handed back once, and forgotten when answered', async () => {
