@@ -13,14 +13,17 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
+import { recordListChoice, recordListsFrom } from '../src/editor/recordLists.js'
 import {
 	fetchRecord,
 	fetchRecordList,
 	matchingEntries,
+	recordFigures,
 	recordIdFrom,
 	recordsBase,
+	recordTableCollection,
 } from '../src/site/lib/publicRecordsApi.js'
-import { loadSfc, renderSfc } from './support/render-sfc.mjs'
+import { loadSfc, renderComponent, renderSfc } from './support/render-sfc.mjs'
 
 const BLOCK = 'src/site/components/PublicRecordsBlock.vue'
 const ENTRIES = [
@@ -219,4 +222,68 @@ test('the back link keeps the portal, the route and the language, and drops the 
 	} finally {
 		globalThis.window = saved
 	}
+})
+
+test('the summary becomes the shared figure cards, the columns the shared table (T3)', () => {
+	const { cards, row } = recordFigures([
+		{ label: 'Deelname', value: '96%', detail: 'aan 86 stemmingen' },
+		{ label: 'Voor', value: '61', detail: '' },
+	])
+	assert.deepEqual(cards, [
+		{ field: 'figure0', label: 'Deelname', details: [{ field: 'figure0Detail', label: '' }] },
+		{ field: 'figure1', label: 'Voor' },
+	])
+	assert.deepEqual(row, { figure0: '96%', figure0Detail: 'aan 86 stemmingen', figure1: '61' })
+	assert.deepEqual(recordFigures(null), { cards: [], row: {} })
+
+	const { columns } = recordTableCollection(RECORD.columns, 'subject')
+	assert.deepEqual(columns[1], { field: 'subject', label: 'Onderwerp', render: 'link', hrefField: 'subjectUrl' })
+	assert.deepEqual(columns[0], { field: 'date', label: 'Datum' })
+	assert.equal(recordTableCollection(RECORD.columns, 'none').columns.some((c) => c.render === 'link'), false)
+})
+
+test('a record renders through KpiCards and CollectionTable, links only safe addresses (T3)', async () => {
+	const screen = await loadSfc(BLOCK)
+	const shown = (record) => ({
+		...screen,
+		data: () => ({ state: 'ready', entries: ENTRIES, record, typed: '' }),
+	})
+	const html = await renderComponent(shown(RECORD), { app: 'decidiq', list: 'l', recordParam: 'p1', locale: 'nl', apiOverride: { list: async () => ENTRIES, record: async () => RECORD } })
+	assert.match(html, /data-testid="kpi-block"/, 'the shared figure cards')
+	assert.match(html, /data-testid="collection-table"/, 'the shared table')
+	assert.match(html, /<span class="pq-kpi__number">96%<\/span>/)
+	assert.match(html, /aan 86 stemmingen/)
+	assert.match(html, /<a class="utrecht-link" href="\/besluit\/1">\s*Groen dak op het stadhuis\s*<\/a>/)
+	assert.match(html, /Alleen openbare rondes\./)
+	assert.doesNotMatch(html, /pq-records__card/, 'no hand-drawn cards left')
+
+	const unsafe = { ...RECORD, rows: [{ ...RECORD.rows[0], subjectUrl: 'javascript:alert(1)' }] }
+	const plain = await renderComponent(shown(unsafe), { app: 'decidiq', list: 'l', recordParam: 'p1', locale: 'nl', apiOverride: {} })
+	assert.doesNotMatch(plain, /javascript:/, 'a script address is never a link')
+	assert.match(plain, /Groen dak op het stadhuis/, 'the subject still reads as text')
+})
+
+test('the page editor picks a list from the anonymous contributions (T3)', () => {
+	const answer = {
+		contributions: [
+			{ app: 'decidiq', publicRecords: [{ id: 'memberVotingRecords', label: 'Hoe stemden de raadsleden', app: 'decidiq' }, { id: '', label: 'kapot' }] },
+			{ app: 'dossiq', collections: [] },
+			{ publicRecords: [{ id: 'orphan', label: 'Zonder app' }] },
+		],
+	}
+	const lists = recordListsFrom(answer)
+	assert.deepEqual(lists, [{ app: 'decidiq', id: 'memberVotingRecords', label: 'Hoe stemden de raadsleden' }], 'an entry without an id or an app is not offered')
+	assert.deepEqual(recordListsFrom(null), [])
+
+	assert.deepEqual(recordListChoice(lists, 'decidiq/memberVotingRecords'), { app: 'decidiq', list: 'memberVotingRecords' })
+	assert.deepEqual(recordListChoice(lists, 'decidiq/gone'), { app: undefined, list: undefined }, 'an unknown choice clears both')
+
+	const catalogue = readFileSync('src/lib/pageWidgetCatalogue.js', 'utf8')
+	assert.match(catalogue, /publicRecords: \{ list: 'recordList' \}/, 'the list field is a picker')
+	const editor = readFileSync('src/editor/PageGridEditor.vue', 'utf8')
+	assert.match(editor, /field\.kind === 'recordList'\s*&& recordLists\.length > 0/, 'a picker when lists are known, the text input otherwise')
+	assert.match(editor, /recordListChoice\(this\.recordLists, value\)/)
+	const designer = readFileSync('src/views/PageLayoutDesigner.vue', 'utf8')
+	assert.match(designer, /:loadRecordLists="loadRecordLists"/)
+	assert.match(designer, /\/apps\/portaliq\/api\/content\/contributions/)
 })

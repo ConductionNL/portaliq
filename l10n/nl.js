@@ -3119,6 +3119,7 @@ OC.L10N.register(
         "Or a web address": "Of een webadres",
         "A logo address starts with /, http:// or https://.": "Een logo-adres begint met /, http:// of https://.",
         "A published image from Media of this portal, or the address of an image.": "Een gepubliceerde afbeelding uit Media van deze portal, of het adres van een afbeelding.",
+        "Choose a list": "Kies een overzicht",
         "nl": "nl",
         "https://www.example.nl": "https://www.voorbeeld.nl",
         "Administration settings": "Beheerinstellingen"
