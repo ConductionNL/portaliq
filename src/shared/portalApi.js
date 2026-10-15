@@ -25,6 +25,22 @@
 const TOKEN_KEY = 'portaliq_token'
 
 /**
+ * The header that carries a send's submission key, or none. The same rule as
+ * `submissionKey.js`, kept here because this module imports nothing
+ * (action-forward-survives-a-slow-answer REQ-AFS-001).
+ *
+ * @param {{submissionKey?: string}|undefined} options The send's options.
+ * @return {Record<string, string>} The header to add.
+ * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
+ */
+function submissionHeaders(options) {
+	const key = options && options.submissionKey
+	return typeof key === 'string' && /^[A-Za-z0-9_-]{16,128}$/.test(key)
+		? { 'Idempotency-Key': key }
+		: {}
+}
+
+/**
  *
  */
 export function getToken() {
@@ -1361,10 +1377,11 @@ export function createPortalApi(config, store = {}) {
 		 * @param {string} app The contributing app.
 		 * @param {string} actionId The endpoint action id.
 		 * @param {object} body The request body (only the action's `fields` are forwarded).
+		 * @param {{submissionKey?: string}} [options] The form's submission key (REQ-AFS-001).
 		 * @return {Promise<{ok: boolean, status: number, body: object}>} The relayed answer.
 		 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-the-portal-must-let-a-subject-take-a-timed-task
 		 */
-		async forwardAction(app, actionId, body) {
+		async forwardAction(app, actionId, body, options = {}) {
 			try {
 				const res = await fetch(
 					`${base}/actions/${encodeURIComponent(app)}/${encodeURIComponent(actionId)}`,
@@ -1374,6 +1391,7 @@ export function createPortalApi(config, store = {}) {
 							'Content-Type': 'application/json',
 							Accept: 'application/json',
 							...authHeaders(),
+							...submissionHeaders(options),
 						},
 						body: JSON.stringify(body || {}),
 					},
@@ -1399,6 +1417,7 @@ export function createPortalApi(config, store = {}) {
 		 * @param {object} [answers] The answers to send, `{}` by default.
 		 * @param {string} [actionApp] Another app whose action is attached to this collection.
 		 * @param {{field: string, files: Array<File>}|null} [upload] Files for an action that declares `files` (REQ-RAF-001).
+		 * @param {{submissionKey?: string}} [options] The form's submission key (REQ-AFS-001).
 		 * @return {Promise<object>} `{ ok, status, body }`; `status` 0 on a network error.
 		 */
 		async forwardRowAction(
@@ -1408,6 +1427,7 @@ export function createPortalApi(config, store = {}) {
 			answers = {},
 			actionApp = '',
 			upload = null,
+			options = {},
 		) {
 			// `actionApp` names another app's action attached to this
 			// collection (woo-journey-entry-points D3).
@@ -1423,11 +1443,16 @@ export function createPortalApi(config, store = {}) {
 					{
 						method: 'POST',
 						headers: multipart
-							? { Accept: 'application/json', ...authHeaders() }
+							? {
+									Accept: 'application/json',
+									...authHeaders(),
+									...submissionHeaders(options),
+								}
 							: {
 									'Content-Type': 'application/json',
 									Accept: 'application/json',
 									...authHeaders(),
+									...submissionHeaders(options),
 								},
 						body: multipart || JSON.stringify(answers || {}),
 					},

@@ -197,7 +197,9 @@ class PortalRowActionController extends Controller implements PortalProtected {
 			files: ($body['files'] ?? [])
 		);
 		if ($response === null) {
-			return new JSONResponse(['error' => 'forward_failed'], Http::STATUS_BAD_GATEWAY);
+			// Transport failure: 502, or 504 when the app did not answer in
+			// time (action-forward-survives-a-slow-answer).
+			return $this->forwarder->failureResponse();
 		}
 
 		return new JSONResponse($this->forwarder->decodeBody(response: $response), $response->getStatusCode());

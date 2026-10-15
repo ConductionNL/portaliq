@@ -107,9 +107,17 @@ export function fieldLabel(action, field) {
  * @param {object} row        The row on screen.
  * @param {object} action     The attached action.
  * @param {object} values     What the resident typed.
+ * @param {{submissionKey?: string}} [options] The form's submission key (REQ-AFS-001).
  * @return {Promise<object>} `{ok, body, messageKey}`.
  */
-export async function runAttachedAction(api, collection, row, action, values) {
+export async function runAttachedAction(
+	api,
+	collection,
+	row,
+	action,
+	values,
+	options = {},
+) {
 	const rowId = row && (row.id || row['@self']?.id)
 	if (!rowId || !api) {
 		return {
@@ -124,6 +132,8 @@ export async function runAttachedAction(api, collection, row, action, values) {
 		action.id,
 		attachedBody(action, values),
 		action.app,
+		null,
+		options,
 	)
 	return {
 		ok: result.ok === true,
