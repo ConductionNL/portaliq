@@ -1448,7 +1448,33 @@
                             "app": "decidiq",
                             "list": "memberVotingRecords",
                             "searchLabel": "Zoek een raadslid",
-                            "backText": "Alle raadsleden"
+                            "backText": "Alle raadsleden",
+                            "recordHeading": "Stemgedrag van {title}",
+                            "filterBy": [
+                                {
+                                    "key": "date",
+                                    "label": "Vergadering",
+                                    "all": "Alle vergaderingen"
+                                },
+                                {
+                                    "key": "choice",
+                                    "label": "Stem",
+                                    "all": "Voor en tegen"
+                                }
+                            ],
+                            "filterButton": "Toon stemmingen",
+                            "countText": "{count} stemmingen, u ziet {from} tot {to}.",
+                            "pageSize": 5,
+                            "links": [
+                                {
+                                    "label": "Vergaderingen van de raad",
+                                    "href": "/bestuur/vergaderingen"
+                                },
+                                {
+                                    "label": "Besluiten zoeken",
+                                    "href": "/bestuur/besluiten"
+                                }
+                            ]
                         }
                     }
                 ]
