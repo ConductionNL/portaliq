@@ -111,3 +111,55 @@ export function matchingEntries(entries, text) {
 export function recordIdFrom(search) {
 	return new URLSearchParams(String(search || '')).get('record') || ''
 }
+
+/**
+ * A record's summary as the shared figure cards read it: one row holding
+ * every card's value and detail, and per card the fields it reads. The
+ * provider's detail is already a sentence ("aan 86 stemmingen"), so it is a
+ * detail without a counted word.
+ *
+ * @param {Array<{label: string, value: string, detail?: string}>} summary The record's summary.
+ * @return {{cards: Array<object>, row: object}} The KpiCards props.
+ * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+ */
+export function recordFigures(summary) {
+	const cards = []
+	const row = {}
+	;(Array.isArray(summary) ? summary : []).forEach((card, index) => {
+		const field = `figure${index}`
+		row[field] = card?.value ?? ''
+		const entry = { field, label: String(card?.label ?? '') }
+		if (card?.detail) {
+			row[`${field}Detail`] = String(card.detail)
+			entry.details = [{ field: `${field}Detail`, label: '' }]
+		}
+		cards.push(entry)
+	})
+
+	return { cards, row }
+}
+
+/**
+ * A record's columns as the shared table reads them. The column named by
+ * `linkKey` links to the row's `subjectUrl` when the row has one; the table
+ * keeps only a site path or an http(s) address as a link.
+ *
+ * @param {Array<{key: string, label: string}>} columns The record's columns.
+ * @param {string} linkKey The column that links to its subject.
+ * @return {{columns: Array<object>}} The CollectionTable collection.
+ * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+ */
+export function recordTableCollection(columns, linkKey) {
+	return {
+		columns: (Array.isArray(columns) ? columns : []).map((column) =>
+			column.key === linkKey
+				? {
+						field: column.key,
+						label: column.label,
+						render: 'link',
+						hrefField: 'subjectUrl',
+					}
+				: { field: column.key, label: column.label },
+		),
+	}
+}

@@ -6159,10 +6159,10 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "lib/Controller/ContributionController.php:1409 action() forwards to a declared endpoint action; openspec/specs/portal-contribution-contract/spec.md:214-224 X-Portal-Subject HS256 assertion (sub/audience/organisation/trust/jti, TTL ~60s, iss='portaliq'); src/portal/App.jsx:225-239 onAction() posts to /portal/api/actions/{appId}/{actionId}",
-				"reachedOn": "PageView.jsx action button -> App.jsx onAction() -> POST /portal/api/actions/{appId}/{actionId}",
+				"evidence": "lib/Controller/ContributionController.php:2138 action() forwards to a declared endpoint action (fields whitelist, 403 outside the subject's contributions, 502 forward_failed); openspec/specs/portal-contribution-contract/spec.md:214-224 X-Portal-Subject HS256 assertion (sub/audience/organisation/trust/jti, TTL ~60s, iss='portaliq'); src/site/lib/residentActions.js postAction() posts to /portal/api/actions/{appId}/{actionId}",
+				"reachedOn": "site ActionButton.vue -> runAction() (src/shared/rowAction.js) -> forwardApi().forwardAction -> POST /portal/api/actions/{appId}/{actionId}",
 				"owner": "ConductionNL/portaliq",
-				"note": "The browser never holds the target app's credentials; portaliq signs the assertion server-to-server. App.jsx's own comment calls this 'a thin trigger; result UI is a follow-up', the response is not surfaced back to the visitor beyond a best-effort fire.",
+				"note": "The browser never holds the target app's credentials; portaliq signs the assertion server-to-server. The site shows the leaf app's answer in a status region or follows its redirect (REQ-SRP-027).",
 				"origin": "code",
 				"change": "portal-contribution-endpoint-actions"
 			},
