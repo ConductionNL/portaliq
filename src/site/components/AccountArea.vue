@@ -163,7 +163,14 @@
 					{{ entry.label }}
 				</h1>
 				<PageHelp v-if="sectionHelpText" :text="sectionHelpText" />
-				<p v-if="pageLoading" class="utrecht-paragraph" role="status">
+				<!-- A page the login is too low for: which login reaches it
+				     (site-member-voting-record-and-confidential-papers REQ-SCR-004). -->
+				<StepUpPrompt
+					v-if="entry.stepUp"
+					:stepUp="entry.stepUp"
+					:routes="signInRoutes"
+					:t="t" />
+				<p v-else-if="pageLoading" class="utrecht-paragraph" role="status">
 					{{ t('Loading…') }}
 				</p>
 				<component
@@ -237,6 +244,8 @@ export default {
 		WaysIn,
 		// On demand: the form only shows when the instance switch is on.
 		EmailLinkForm: defineAsyncComponent(() => import('./EmailLinkForm.vue')),
+		// Only on a page the login is too low for.
+		StepUpPrompt: defineAsyncComponent(() => import('./mijn/StepUpPrompt.vue')),
 	},
 
 	props: {
@@ -487,6 +496,12 @@ export default {
 		 */
 		async loadPage() {
 			const entry = this.entry
+			if (entry && entry.stepUp) {
+				// The step-up prompt is the page; nothing to load.
+				this.pageComponent = null
+				this.pageLoading = false
+				return
+			}
 			const loader = sitePageLoader(entry)
 			if (!loader) {
 				this.pageComponent = markRaw(PlaceholderPage)

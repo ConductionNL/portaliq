@@ -466,5 +466,8 @@
 	"Provisional": "Provisional",
 	"Not sent yet. It counts once you send it.": "Not sent yet. It counts once you send it.",
 	"Your request may still be processing. Check My cases in a few minutes before you send it again.": "Your request may still be processing. Check My cases in a few minutes before you send it again.",
-	"Go to My cases": "Go to My cases"
+	"Go to My cases": "Go to My cases",
+	"For these papers you must log in with {providers}.": "For these papers you must log in with {providers}.",
+	"Logging in with DigiD is not available here yet.": "Logging in with DigiD is not available here yet.",
+	"{first} or {last}": "{first} or {last}"
 }
