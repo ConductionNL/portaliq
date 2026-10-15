@@ -33,11 +33,14 @@
 				:t="t"
 				:send="sendOpen"
 				@submitted="afterSteps" />
+			<!-- Once sent, nothing is left to cancel: the form shows its
+			     confirmation and this closes it. -->
 			<button
 				type="button"
 				class="utrecht-button utrecht-button--subtle"
-				@click="open = null">
-				{{ translate('Cancel') }}
+				:data-testid="sent ? 'attached-action-close' : 'attached-action-cancel'"
+				@click="close">
+				{{ sent ? translate('Close') : translate('Cancel') }}
 			</button>
 		</div>
 
@@ -151,6 +154,7 @@ export default {
 			errors: {},
 			busy: false,
 			message: '',
+			sent: false,
 		}
 	},
 
@@ -261,6 +265,7 @@ export default {
 		 */
 		afterSteps() {
 			if (this.open && this.open.confirmation) {
+				this.sent = true
 				return
 			}
 			const success = this.open ? this.open.successMessage : ''
@@ -269,6 +274,19 @@ export default {
 					? success
 					: this.translate('Done.')
 			this.open = null
+		},
+
+		/**
+		 * Close the stepped form: before the send it is cancelled, after it the
+		 * confirmation is put away.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/attached-form-confirmation-drops-cancel/specs/site-forms/spec.md#requirement-a-sent-stepped-form-offers-no-cancel
+		 */
+		close() {
+			this.open = null
+			this.sent = false
 		},
 
 		/**
@@ -291,6 +309,7 @@ export default {
 		 */
 		choose(entry) {
 			this.open = entry
+			this.sent = false
 			this.values = Object.fromEntries(
 				formFields(entry).map((field) => [field, '']),
 			)
