@@ -124,7 +124,11 @@ import {
 	matchingEntries,
 	recordIdFrom,
 } from '../lib/publicRecordsApi.js'
-import { addressOfRecord } from '../lib/siteAddress.js'
+import {
+	addressOfRecord,
+	addressOfRoute,
+	routeOfLocation,
+} from '../lib/siteAddress.js'
 import { pageLocale } from '../pages/inbox/translate.js'
 
 import '@utrecht/paragraph-css/dist/index.css'
@@ -220,10 +224,30 @@ export default {
 		},
 
 		/**
+		 * The list this record came from: the page's route, the portal and
+		 * the language stay, only `?record=` goes. The bare path dropped
+		 * `?portal=` and `?route=`, so "Alle vergaderingen" opened the site's
+		 * home on a long address (live round 3, 14 Oct).
+		 *
+		 * @return {string} The href.
 		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+		 * @spec openspec/changes/resident-pages-live-round-3/specs/site-navigation/spec.md#requirement-a-record-pages-back-link-keeps-the-portal-and-the-route-req-rr3-003
 		 */
 		backHref() {
-			return typeof window === 'undefined' ? '?' : window.location.pathname
+			if (typeof window === 'undefined') {
+				return '?'
+			}
+			try {
+				const href = window.location.href
+				const config = runtimeConfig()
+				return addressOfRoute(
+					routeOfLocation(new URL(href), config),
+					href,
+					config,
+				).toString()
+			} catch {
+				return window.location.pathname
+			}
 		},
 	},
 
