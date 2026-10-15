@@ -22,10 +22,13 @@ import {
 	footerMenusOf,
 	headerMenusOf,
 	headerVariantOf,
+	isSiteRoute,
 	legalLinksOf,
+	menusWithAddresses,
 	registerRouteOf,
 	subFooterMenuOf,
 } from '../src/site/lib/shellData.js'
+import { addressOfRoute } from '../src/site/lib/siteAddress.js'
 import { renderSfc } from './support/render-sfc.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -417,4 +420,102 @@ test('App.vue imports every shell and block-prop helper it calls', () => {
 			}
 		}
 	}
+})
+
+// site-links-follow-the-site-address: a menu or footer link to a site page
+// opens that page where the site is served under the app path, not only on a
+// portal domain.
+const UNDER_APP =
+	'http://localhost:8196/index.php/apps/portaliq/site?portal=zuiddrecht'
+const LONG_ADDRESSING = { addressing: { root: false } }
+const ON_DOMAIN = { addressing: { root: true } }
+function addressUnderApp(route) {
+	return addressOfRoute(route, UNDER_APP, LONG_ADDRESSING).toString()
+}
+
+test('a site route is a path on this site; another site, mail or phone is not', () => {
+	assert.equal(isSiteRoute('/zoeken'), true)
+	assert.equal(isSiteRoute('/'), true)
+	assert.equal(isSiteRoute('//cdn.example/x'), false)
+	assert.equal(isSiteRoute('https://example.nl/zoeken'), false)
+	assert.equal(isSiteRoute('mailto:info@example.nl'), false)
+	assert.equal(isSiteRoute(''), false)
+})
+
+test('under the app path a menu link carries the site address; its route stays the click target', () => {
+	const menus = menusWithAddresses(
+		[
+			{
+				title: 'Hoofdmenu',
+				items: [
+					{ name: 'Woo-publicaties', link: '/zoeken' },
+					{
+						name: 'Bestuur',
+						link: '/bestuur',
+						items: [{ name: 'Raad', link: '/bestuur/raad' }],
+					},
+					{ name: 'Elders', link: 'https://example.nl/' },
+					{ name: 'Mijn', link: '/mijn', href: '/kept' },
+				],
+			},
+		],
+		addressUnderApp,
+	)
+	const [woo, bestuur, elders, mijn] = menus[0].items
+	assert.equal(
+		woo.href,
+		'http://localhost:8196/index.php/apps/portaliq/site?portal=zuiddrecht&route=%2Fzoeken',
+	)
+	assert.equal(woo.link, '/zoeken')
+	assert.equal(
+		bestuur.items[0].href,
+		'http://localhost:8196/index.php/apps/portaliq/site?portal=zuiddrecht&route=%2Fbestuur%2Fraad',
+	)
+	assert.equal(elders.href, undefined)
+	assert.equal(mijn.href, '/kept')
+})
+
+test('on a portal domain the menu link stays the short address', () => {
+	const [item] = menusWithAddresses(
+		[{ items: [{ name: 'Zoeken', link: '/zoeken' }] }],
+		(route) =>
+			addressOfRoute(route, 'https://zuiddrecht.nl/', ON_DOMAIN).toString(),
+	)[0].items
+	assert.equal(item.href, 'https://zuiddrecht.nl/zoeken')
+})
+
+test('the site menu and the footer write a site route in the site address', async () => {
+	const header = await renderSfc('src/site/components/SiteMenu.vue', {
+		menu: menusWithAddresses(
+			[{ title: 'Hoofdmenu', items: [{ name: 'Zoeken', link: '/zoeken' }] }],
+			addressUnderApp,
+		)[0],
+	})
+	assert.match(header, /href="[^"]*site\?portal=zuiddrecht&amp;route=%2Fzoeken"/)
+
+	const footer = await renderSfc(
+		'src/site/components/FooterColumns.vue',
+		{
+			title: 'Gemeente Zuiddrecht',
+			menus: [
+				{
+					title: 'Snel naar',
+					position: 1,
+					items: [{ name: 'Afval', link: '/afval' }],
+				},
+			],
+			legalLinks: [{ label: 'Privacy', href: '/privacy' }],
+			footer: {
+				cta: { label: 'Contact', href: '/contact' },
+				socials: [{ label: 'Mastodon', href: 'https://social.example' }],
+			},
+			addressOf: addressUnderApp,
+		},
+		LIBRARY,
+	)
+	assert.match(footer, /href="[^"]*route=%2Fafval"/)
+	assert.match(footer, /href="[^"]*route=%2Fprivacy"[^>]*>Privacy</)
+	assert.match(footer, /href="[^"]*route=%2Fcontact"/)
+	assert.match(footer, /href="https:\/\/social.example"/)
+	assert.doesNotMatch(footer, /href="\/(afval|privacy|contact)"/)
 })

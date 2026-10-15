@@ -748,7 +748,7 @@ OC.L10N.register(
         "The visitor's consent state as the client knew it when the event was sent.": "The visitor's consent state as the client knew it when the event was sent.",
         "The visitor's first accepted language, as a two-letter code.": "The visitor's first accepted language, as a two-letter code.",
         "The whitelisted visible-field values the visitor submitted — only ids declared on the bound form’s fields[] ever appear here.": "The whitelisted visible-field values the visitor submitted — only ids declared on the bound form’s fields[] ever appear here.",
-        "The words shown beside a case this mandate grants, so the citizen can see why they may read it.": "The words shown beside a case this mandate grants, so the citizen can see why they may read it.",
+        "The party this mandate acts for, as the holder reads it: the site says \"U regelt nu zaken voor <label>\", offers it in the choice of whom you act for, and shows it beside the cases it opens. A name, not a sentence.": "The party this mandate acts for, as the holder reads it: the site says \"U regelt nu zaken voor <label>\", offers it in the choice of whom you act for, and shows it beside the cases it opens. A name, not a sentence.",
         "Theme": "Theme",
         "Theme catalogue": "Theme catalogue",
         "Themed portals": "Themed portals",

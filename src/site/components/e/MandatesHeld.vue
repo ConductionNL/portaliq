@@ -139,7 +139,7 @@ export default {
 		},
 
 		/**
-		 * "All cases · given on 12 September 2026 · no end date".
+		 * "All cases · given by the municipality on 12 September 2026 · no end date".
 		 *
 		 * @param {object} mandate The mandate.
 		 * @return {string}
@@ -147,15 +147,23 @@ export default {
 		 */
 		line(mandate) {
 			const format = (value) => longDate(value, readerLocale(this.locale))
+			const vars = {
+				party: this.partyOf(mandate),
+				date: mandate.grantedAt ? format(mandate.grantedAt) : '',
+			}
+			let given = this.t('given by the municipality', vars)
+			if (mandate.givenBy === 'party') {
+				given = vars.date
+					? this.t('given by {party} on {date}', vars)
+					: this.t('given by {party}', vars)
+			} else if (vars.date) {
+				given = this.t('given by the municipality on {date}', vars)
+			}
 			const parts = [
 				mandate.label
 					|| scopeText(mandate.caseTypes, this.caseTypes, this.t),
+				given,
 			]
-			if (mandate.grantedAt) {
-				parts.push(
-					this.t('given on {date}', { date: format(mandate.grantedAt) }),
-				)
-			}
 			parts.push(endText(mandate.expiresAt, format, this.t))
 			return parts.join(' · ')
 		},
