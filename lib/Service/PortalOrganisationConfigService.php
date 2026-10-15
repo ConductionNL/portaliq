@@ -206,6 +206,30 @@ class PortalOrganisationConfigService {
 	}//end resolve()
 
 	/**
+	 * The id and the name of the organisation a slug names, as a visitor may
+	 * read them: a public search names the organisation that published a
+	 * record by this id (woo-search-names-the-organisation).
+	 *
+	 * @param string $orgSlug The organisation slug.
+	 *
+	 * @return array{id: string, name: string}|null Null for an unknown slug or a nameless organisation.
+	 *
+	 * @spec openspec/changes/woo-search-names-the-organisation/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
+	 */
+	public function publicIdentity(string $orgSlug): ?array {
+		if ($orgSlug === '') {
+			return null;
+		}
+
+		$organisation = $this->findOrganisationBySlug(slug: $orgSlug);
+		if ($organisation === null || $organisation['uuid'] === '' || $organisation['name'] === '') {
+			return null;
+		}
+
+		return ['id' => $organisation['uuid'], 'name' => $organisation['name']];
+	}//end publicIdentity()
+
+	/**
 	 * The organisation's government message box channel: the integriq digital
 	 * post source to send over and the label residents read, or null when the
 	 * organisation does not offer the channel.

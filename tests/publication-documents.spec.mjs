@@ -188,6 +188,34 @@ test('the category filter shows names, other filters keep their labels', () => {
 	)
 })
 
+// woo-search-names-the-organisation: the organisation filter read
+// "bacda7a4-b1ae-4a51-9c3e-c1b00c0bc596 (13)" on the Zuiddrecht rehearsal.
+test('the organisation filter reads the name the host knows, and keeps any other label', () => {
+	const buckets = [
+		{ value: 'bacda7a4', label: 'bacda7a4', count: 13 },
+		{ value: 'other-org', label: 'other-org', count: 1 },
+	]
+	assert.deepEqual(
+		labelBuckets(buckets, 'organization', 'nl', {
+			bacda7a4: 'Gemeente Zuiddrecht',
+		}).map((bucket) => [bucket.value, bucket.label, bucket.count]),
+		[
+			['bacda7a4', 'Gemeente Zuiddrecht', 13],
+			['other-org', 'other-org', 1],
+		],
+	)
+	assert.deepEqual(
+		labelBuckets(
+			[{ value: 'infocat014', label: 'infocat014', count: 1 }],
+			'wooCategory',
+			'nl',
+			{},
+		).map((bucket) => bucket.label),
+		['Woo-verzoeken en -besluiten'],
+		'a configured list still names its codes',
+	)
+})
+
 test('the page shows date, category and named themes only, never internal fields', () => {
 	const t = createTranslator('nl')
 	const rows = visitorRows(PUBLICATION, {
@@ -304,4 +332,23 @@ test('the publication tells the page its title for the breadcrumb, and nothing w
 		globalThis.fetch = savedFetch
 		globalThis.window = savedWindow
 	}
+})
+
+test('the host hands the search block its organisation by name, after the authored props', () => {
+	const read = (file) =>
+		readFileSync(new URL(`../${file}`, import.meta.url), 'utf8')
+	const grid = read('src/site/components/WidgetGrid.vue')
+	const branch = grid.slice(grid.indexOf("widget.widgetKey === 'federatedSearch'"))
+	const body = branch.slice(0, branch.indexOf('}\n\t\t\t}'))
+	assert.match(body, /\.\.\.props,[\s\S]*facetNames: this\.organisation\?\.id/)
+	assert.match(body, /organization: \{ \[this\.organisation\.id\]: this\.organisation\.name \}/)
+	assert.match(
+		read('src/site/App.vue'),
+		/organisation: this\.site\.organisation \|\| null,/,
+		'the site record reaches every grid',
+	)
+	assert.match(
+		read('src/site/components/FederatedSearchBlock.vue'),
+		/pageLocale\(\),\s*this\.facetNames\[field\],/,
+	)
 })

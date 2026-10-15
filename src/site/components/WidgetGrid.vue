@@ -381,6 +381,15 @@ export default {
 		},
 
 		/**
+		 * The portal's organisation, `{id, name}`, from the site record.
+		 * Handed to the search block AFTER its authored props.
+		 */
+		organisation: {
+			type: Object,
+			default: null,
+		},
+
+		/**
 		 * The menu block's data: `{groups, currentRoute, label, toggleLabel}`,
 		 * derived by the host from the menus and the signed-in navigation
 		 * (src/site/lib/siteNavigation.js). Supplied by the host for the same
@@ -583,6 +592,11 @@ export default {
 					...props,
 					signedIn: this.signedIn === true,
 					searchInsideDocuments: this.searchInsideDocuments !== false,
+					// The organisation filter reads the portal's organisation
+					// by name, not by id (woo-search-names-the-organisation).
+					facetNames: this.organisation?.id
+						? { organization: { [this.organisation.id]: this.organisation.name } }
+						: {},
 				}
 			}
 
