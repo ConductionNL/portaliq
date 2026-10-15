@@ -109,16 +109,25 @@ class PortalDraftControllerTest extends TestCase {
 		$old      = ['id' => 'd-old', 'status' => 'draft', 'data' => ['title' => 'Old'], 'updatedAt' => '2026-01-01T00:00:00+00:00'];
 		$response = $this->controller(subjectRef: 'sanne', found: $old)->show('dossiq', 'request');
 
-		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+		// No draft to resume is a quiet answer, not a 404 (REQ-RR3-005).
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['found' => false], $response->getData());
 		$this->assertSame(['d-old'], $this->discarded);
 	}//end testADraftPastItsRetentionIsNotShownAndIsDiscarded()
 
-	public function testNoDraftAndAnUnknownActionAreNotFound(): void {
-		$this->assertSame(Http::STATUS_NOT_FOUND, $this->controller(subjectRef: 'sanne')->show('dossiq', 'request')->getStatus());
+	/**
+	 * No draft yet is a quiet 200 `{found: false}`; an unknown action stays 404.
+	 *
+	 * @spec openspec/changes/resident-pages-live-round-3/specs/site-forms/spec.md#requirement-a-form-asks-for-a-draft-only-when-its-action-can-keep-one-req-rr3-005
+	 */
+	public function testNoDraftIsAQuietAnswerAndAnUnknownActionIsNotFound(): void {
+		$none = $this->controller(subjectRef: 'sanne')->show('dossiq', 'request');
+		$this->assertSame(Http::STATUS_OK, $none->getStatus());
+		$this->assertSame(['found' => false], $none->getData());
 		$this->assertSame(Http::STATUS_NOT_FOUND, $this->controller(subjectRef: 'sanne')->show('dossiq', 'unknown')->getStatus());
 		$this->assertSame(Http::STATUS_NOT_FOUND, $this->controller(subjectRef: 'sanne')->save('other', 'request', [])->getStatus());
 		$this->assertSame([], $this->fake->calls);
-	}//end testNoDraftAndAnUnknownActionAreNotFound()
+	}//end testNoDraftIsAQuietAnswerAndAnUnknownActionIsNotFound()
 
 	public function testAnUnresolvedScopeClaimIsForbidden(): void {
 		$controller = $this->controller(subjectRef: 'sanne', action: self::ACTION + ['scopeClaim' => 'missing']);
