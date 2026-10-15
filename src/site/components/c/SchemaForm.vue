@@ -106,6 +106,25 @@
 			{{ error }}
 		</p>
 
+		<!-- The answer did not come in time, but the request may still be
+		     made: say so and point to Mijn zaken instead of "Opslaan is niet
+		     gelukt", so the resident looks before sending again
+		     (action-forward-survives-a-slow-answer). -->
+		<p
+			v-if="stillProcessing"
+			class="utrecht-paragraph pq-schema-form__error"
+			role="status"
+			data-testid="schema-form-still-processing">
+			{{
+				translate(
+					'Your request may still be processing. Check My cases in a few minutes before you send it again.',
+				)
+			}}
+			<a :href="myCasesHref" class="utrecht-link">{{
+				translate('Go to My cases')
+			}}</a>
+		</p>
+
 		<ReviewList
 			v-if="onReview"
 			:sections="reviewSections"
@@ -214,6 +233,13 @@ import {
 	submitWithFiles,
 	uploadFiles,
 } from '../../../shared/fileFieldSubmit.js'
+import { ACCOUNT_ROUTE } from '../../../shared/portalNav.js'
+import {
+	mayStillBeProcessing,
+	newSubmissionKey,
+} from '../../../shared/submissionKey.js'
+import { runtimeConfig } from '../../lib/contentApi.js'
+import { addressOfRoute } from '../../lib/siteAddress.js'
 import { explainsOptional, summaryEntries } from '../forms/fields.js'
 import stepFlow from '../forms/stepFlow.js'
 import {
@@ -303,6 +329,10 @@ export default {
 			pending: null,
 			confirmed: null,
 			draftId: '',
+			// One key per opened form; every send of these answers carries it,
+			// so a repeated send gets the first one's case (REQ-AFS-001).
+			submissionKey: newSubmissionKey(),
+			stillProcessing: false,
 		}
 	},
 
@@ -360,10 +390,19 @@ export default {
 		 * @return {boolean} True to show the button.
 		 *
 		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-action-must-be-the-record-itself-in-status-draft-and-only-its-residents-req-smf-021
+		 * @spec openspec/changes/resident-pages-live-round-3/specs/site-forms/spec.md#requirement-a-form-asks-for-a-draft-only-when-its-action-can-keep-one-req-rr3-005
 		 */
 		canSaveDraft() {
+			// The server keeps a draft only of a create action that names its
+			// register and schema; an endpoint action that declares `draft`
+			// asked for one on every open and got a 404 (live round 3).
+			const draftable =
+				this.action.type === 'create'
+				&& Boolean(this.action.register)
+				&& Boolean(this.action.schema)
 			return (
-				this.draftDays > 0
+				draftable
+				&& this.draftDays > 0
 				&& this.hasSteps
 				&& !this.confirmed
 				&& typeof this.api.saveDraft === 'function'
@@ -383,6 +422,25 @@ export default {
 
 		translate() {
 			return translatorOr(this.t)
+		},
+
+		/**
+		 * The address of Mijn zaken, in this page's portal and addressing.
+		 *
+		 * @return {string} The href.
+		 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
+		 */
+		myCasesHref() {
+			const route = `${ACCOUNT_ROUTE}/cases`
+			try {
+				return addressOfRoute(
+					route,
+					window.location.href,
+					runtimeConfig(),
+				).toString()
+			} catch {
+				return `?route=${encodeURIComponent(route)}`
+			}
 		},
 
 		fields() {
@@ -875,10 +933,12 @@ export default {
 		 *
 		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-file-field-must-upload-after-the-record-exists-req-srp-023
 		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+		 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
 		 */
 		async submit() {
 			this.error = ''
 			this.done = ''
+			this.stillProcessing = false
 			const wrong = this.checkFields(
 				this.fields.filter((field) => this.isShownField(field)),
 			)
@@ -914,9 +974,17 @@ export default {
 					this.showErrors(refused)
 					return
 				}
+				// Too slow is not failed: the request may still be made.
+				if (mayStillBeProcessing(result)) {
+					this.stillProcessing = true
+					return
+				}
 				this.error = this.translate(refusalKey(result.status || 0))
 				return
 			}
+
+			// Sent: the next answers on this form are a new submission.
+			this.submissionKey = newSubmissionKey()
 
 			// A saved draft was the record itself: the server sent it, so there is nothing left to delete.
 			this.draftId = ''
@@ -944,9 +1012,11 @@ export default {
 		 *
 		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
 		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+		 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
 		 */
 		async sendBody(body) {
-			const answer = (await this.send(body)) || {}
+			const answer =
+				(await this.send(body, { submissionKey: this.submissionKey })) || {}
 			return {
 				ok: answer.ok === true,
 				status: answer.status || 0,

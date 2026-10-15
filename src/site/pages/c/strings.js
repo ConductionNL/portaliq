@@ -51,6 +51,9 @@ export default {
 			'Dit is nu niet beschikbaar. Probeer het later opnieuw.',
 		'Saved.': 'Opgeslagen.',
 		'Saving did not work.': 'Opslaan is niet gelukt.',
+		'Your request may still be processing. Check My cases in a few minutes before you send it again.':
+			'Uw verzoek wordt misschien nog verwerkt. Kijk over een paar minuten in Mijn zaken voordat u het opnieuw verstuurt.',
+		'Go to My cases': 'Naar Mijn zaken',
 		'{field} is required.': '{field} is verplicht.',
 		'Choose an option': 'Kies een optie',
 		'Not everything is filled in yet. Check the fields below.':
@@ -155,6 +158,9 @@ export default {
 			'This is not available right now. Try again later.',
 		'Saved.': 'Saved.',
 		'Saving did not work.': 'Saving did not work.',
+		'Your request may still be processing. Check My cases in a few minutes before you send it again.':
+			'Your request may still be processing. Check My cases in a few minutes before you send it again.',
+		'Go to My cases': 'Go to My cases',
 		'{field} is required.': '{field} is required.',
 		'Choose an option': 'Choose an option',
 		'Not everything is filled in yet. Check the fields below.':

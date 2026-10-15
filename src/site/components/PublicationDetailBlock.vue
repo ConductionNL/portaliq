@@ -278,6 +278,8 @@ export default {
 		},
 	},
 
+	emits: ['subject'],
+
 	data() {
 		return {
 			publication: null,
@@ -450,6 +452,25 @@ export default {
 			} finally {
 				this.loading = false
 			}
+			this.tellSubject()
+		},
+
+		/**
+		 * Tell the page what it shows: the publication's title ends the
+		 * breadcrumb instead of the page's own title, which read
+		 * "Publicatie › Publicatie" (live round 3, 14 Oct). Nothing found
+		 * tells nothing, so the trail keeps the page's words.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/resident-pages-live-round-3/specs/site-navigation/spec.md#requirement-a-publication-ends-the-breadcrumb-with-its-own-title-req-rr3-004
+		 */
+		tellSubject() {
+			this.$emit(
+				'subject',
+				this.error === false && this.publication
+					? { title: String(this.title) }
+					: null,
+			)
 		},
 
 		/**

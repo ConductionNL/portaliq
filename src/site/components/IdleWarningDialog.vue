@@ -62,11 +62,12 @@
 </template>
 
 <script>
-import en from '../../shared/i18n/en.json'
 import nl from '../../shared/i18n/nl.json'
 import { canExtend, remainingText } from '../../shared/idleSession.js'
 
-const STRINGS = { en, nl }
+// English is the key itself (en.json maps every key to itself), so its bundle
+// is empty and `t()` falls back to the key; see src/shared/i18n/index.js.
+const STRINGS = { en: {}, nl }
 
 /**
  * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T06

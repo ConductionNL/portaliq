@@ -2187,9 +2187,9 @@ class ContributionController extends Controller implements PortalProtected {
 
 		$response = $this->forwarder->forward(action: $action, subject: $subject, whitelisted: $scoped['body'], scopeValue: $scoped['scopeValue']);
 		if ($response === null) {
-			// Transport failure — mirrors the writer's 502 posture. Never leak
-			// transport internals to the portal client.
-			return new JSONResponse(['error' => 'forward_failed'], Http::STATUS_BAD_GATEWAY);
+			// Transport failure: 502, or 504 when the app did not answer in
+			// time (action-forward-survives-a-slow-answer).
+			return $this->forwarder->failureResponse();
 		}
 
 		$decoded = $this->forwarder->decodeBody(response: $response);
