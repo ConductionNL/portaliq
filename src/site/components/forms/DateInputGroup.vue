@@ -224,6 +224,8 @@ export default {
 		 * Send the date the three boxes make.
 		 *
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/resident-pages-live-round-3/specs/site-forms/spec.md#requirement-a-date-typed-or-pasted-whole-fills-day-month-and-year-req-rr3-001
 		 */
 		send() {
 			this.sent = dateValue(this.parts.day, this.parts.month, this.parts.year)
@@ -236,6 +238,8 @@ export default {
 		 * @param {string} key day, month or year.
 		 * @param {HTMLInputElement|null} el The element, null once it is gone.
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/resident-pages-live-round-3/specs/site-forms/spec.md#requirement-a-date-typed-or-pasted-whole-fills-day-month-and-year-req-rr3-001
 		 */
 		keepBox(key, el) {
 			const boxes = this.$options.boxes
@@ -247,6 +251,8 @@ export default {
 		 *
 		 * @param {string} key day, month or year.
 		 * @return {void}
+		 *
+		 * @spec openspec/changes/resident-pages-live-round-3/specs/site-forms/spec.md#requirement-a-date-typed-or-pasted-whole-fills-day-month-and-year-req-rr3-001
 		 */
 		focusBox(key) {
 			const box = this.$options.boxes?.get(this)?.[key]
