@@ -38,8 +38,8 @@
 			<!-- `section-portal-auth-edge` is the anchor lib/Settings/connections.json
 			links the Login brokers row to (adopt-connection-registry). Keep it stable. -->
 			<NcSettingsSection
-				class="cn-settings-section--wide"
 				id="section-portal-auth-edge"
+				class="cn-settings-section--wide"
 				:name="t('portaliq', 'Portal auth edge')"
 				:description="
 					t(
@@ -181,8 +181,8 @@
 			database row to (adopt-connection-registry). Keep it stable.
 		-->
 			<NcSettingsSection
-				class="cn-settings-section--wide"
 				id="section-visitor-geography"
+				class="cn-settings-section--wide"
 				:name="t('portaliq', 'Visitor geography')"
 				:description="
 					t(
@@ -296,8 +296,8 @@
 			from inside the server. The server validates the address.
 		-->
 			<NcSettingsSection
-				class="cn-settings-section--wide"
 				id="section-internal-address"
+				class="cn-settings-section--wide"
 				:name="t('portaliq', 'Calls to this server')"
 				:description="
 					t(
@@ -341,8 +341,8 @@
 			OFF by default; the help text says the security review comes first.
 		-->
 			<NcSettingsSection
-				class="cn-settings-section--wide"
 				id="section-email-link"
+				class="cn-settings-section--wide"
 				:name="t('portaliq', 'Sign-in with an e-mail link')"
 				:description="
 					t(
