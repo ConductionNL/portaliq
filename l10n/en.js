@@ -2965,7 +2965,8 @@ OC.L10N.register(
         "The site page the bare address of this host opens, as a route with a leading slash. Empty means the home page. A host for the signed-in area names that area here. Read only from a verified domain.": "The site page the bare address of this host opens, as a route with a leading slash. Empty means the home page. A host for the signed-in area names that area here. Read only from a verified domain.",
         "Choose a list": "Choose a list",
         "nl": "nl",
-        "https://www.example.nl": "https://www.example.nl"
+        "https://www.example.nl": "https://www.example.nl",
+        "Administration settings": "Administration settings"
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -236,7 +236,9 @@ class GuestActionController extends Controller {
 
 		$response = $this->forwarder->forward(action: $action, subject: $subject, whitelisted: $body);
 		if ($response === null) {
-			return new JSONResponse(['error' => 'forward_failed'], Http::STATUS_BAD_GATEWAY);
+			// Transport failure: 502, or 504 when the app did not answer in
+			// time (action-forward-survives-a-slow-answer).
+			return $this->forwarder->failureResponse();
 		}
 
 		$decoded = $this->forwarder->decodeBody(response: $response);

@@ -23,7 +23,8 @@
 		appName="Portaliq"
 		look="board"
 		title="Portaliq"
-		:description="
+		:breadcrumbs="breadcrumbs"
+		:breadcrumbNote="
 			t(
 				'portaliq',
 				'What the app needs before it starts; the other settings live in the app itself, per portal',
@@ -32,11 +33,14 @@
 		docUrl="https://portaliq.conduction.nl"
 		:showVersionCard="false"
 		:showSupport="false">
+		<!-- Board PtBeheerinstellingen draws every section as a full-width card:
+		     the wide class spans the row of the board grid. -->
 		<div class="portaliq-admin-settings">
 			<!-- `section-portal-auth-edge` is the anchor lib/Settings/connections.json
 			links the Login brokers row to (adopt-connection-registry). Keep it stable. -->
 			<NcSettingsSection
 				id="section-portal-auth-edge"
+				class="cn-settings-section--wide"
 				:name="t('portaliq', 'Portal auth edge')"
 				:description="
 					t(
@@ -63,6 +67,7 @@
 			</NcSettingsSection>
 
 			<NcSettingsSection
+				class="cn-settings-section--wide"
 				:name="t('portaliq', 'Organisation')"
 				:description="
 					t(
@@ -123,6 +128,7 @@
 			</NcSettingsSection>
 
 			<NcSettingsSection
+				class="cn-settings-section--wide"
 				:name="t('portaliq', 'Page editors')"
 				:description="
 					t(
@@ -177,6 +183,7 @@
 		-->
 			<NcSettingsSection
 				id="section-visitor-geography"
+				class="cn-settings-section--wide"
 				:name="t('portaliq', 'Visitor geography')"
 				:description="
 					t(
@@ -291,6 +298,7 @@
 		-->
 			<NcSettingsSection
 				id="section-internal-address"
+				class="cn-settings-section--wide"
 				:name="t('portaliq', 'Calls to this server')"
 				:description="
 					t(
@@ -335,6 +343,7 @@
 		-->
 			<NcSettingsSection
 				id="section-email-link"
+				class="cn-settings-section--wide"
 				:name="t('portaliq', 'Sign-in with an e-mail link')"
 				:description="
 					t(
@@ -372,6 +381,7 @@
 			means only administrators. Administrators always keep every action.
 		-->
 			<NcSettingsSection
+				class="cn-settings-section--wide"
 				:name="t('portaliq', 'Actions')"
 				:description="
 					t(
@@ -450,6 +460,14 @@ export default {
 
 	data() {
 		return {
+			// Board PtBeheerinstellingen: the path under the title,
+			// "Beheerinstellingen / Portaliq", the first back to the server's
+			// administration settings.
+			breadcrumbs: [
+				{ label: this.t('portaliq', 'Administration settings'), href: generateUrl('/settings/admin') },
+				{ label: 'Portaliq' },
+			],
+
 			// Server-derived via IInitialStateService (AdminSettings::getForm());
 			// never re-derived client-side (ADR-004 — no DOM data attributes).
 			jwtSigningSecretConfigured: loadState(

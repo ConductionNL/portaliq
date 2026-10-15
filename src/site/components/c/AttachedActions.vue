@@ -224,18 +224,21 @@ export default {
 		 * result shape the action form reads.
 		 *
 		 * @param {object} body What the resident answered.
+		 * @param {{submissionKey?: string}} [options] The form's submission key (REQ-AFS-001).
 		 * @return {Promise<{ok: boolean, status: number, object: object, errors: object, invalid: object}>} The result.
 		 *
 		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
 		 * @spec openspec/changes/endpoint-action-forms-keep-their-field-shape/specs/site-forms/spec.md#requirement-a-refusal-of-a-form-attached-to-a-record-lands-on-its-field-req-eaf-003
+		 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
 		 */
-		async sendOpen(body) {
+		async sendOpen(body, options = {}) {
 			const result = await runAttachedAction(
 				this.api,
 				this.collection,
 				this.row,
 				this.open,
 				body,
+				options,
 			)
 			// The status and the app's per-field refusal (`errors`,
 			// `invalid`) go to the form as an endpoint form gets them
