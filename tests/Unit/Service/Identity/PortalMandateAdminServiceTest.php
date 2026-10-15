@@ -246,6 +246,7 @@ class PortalMandateAdminServiceTest extends TestCase {
 		$held = $service->held(['subject:tom'], 'gemeente-x', $this->now());
 		$this->assertSame(['kvk:12345678' => 'party', 'kvk:87654321' => 'organisation'], array_column($held, 'givenBy', 'onBehalfOf'));
 		$this->assertSame('2026-10-02T10:00:00+02:00', $held[0]['grantedAt']);
+		$this->assertSame(['organisation', 'organisation'], array_column($held, 'reach'));
 		$this->assertNotSame('', $held[1]['grantedAt']);
 		foreach ($held as $mandate) {
 			$this->assertArrayNotHasKey('grantedBy', $mandate, 'the recording account stays out of the answer');
@@ -325,7 +326,8 @@ class PortalMandateAdminServiceTest extends TestCase {
 			$mailer,
 			$this->createMock(\OCA\Portaliq\Service\Identity\PortalAccountLookup::class),
 			$this->createMock(\OCA\Portaliq\Service\Intake\PortalCaseTypeChoices::class),
-			$this->createMock(\OCA\Portaliq\Service\PortalResolver::class)
+			$this->createMock(\OCA\Portaliq\Service\PortalResolver::class),
+			$this->createMock(\OCA\Portaliq\Service\Identity\PortalPartyTreeResolver::class)
 		);
 
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->given()->getStatus());

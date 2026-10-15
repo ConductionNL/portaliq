@@ -109,7 +109,7 @@ class MandateListing {
 	 * @param string                 $organisation The tenant.
 	 * @param DateTimeImmutable|null $now          The moment.
 	 *
-	 * @return array<int, array<string, mixed>> `{id, label, onBehalfOf, caseTypes, expiresAt, givenBy, grantedAt}`;
+	 * @return array<int, array<string, mixed>> `{id, label, onBehalfOf, caseTypes, expiresAt, givenBy, grantedAt, reach}`;
 	 *         `givenBy` is `party` when the represented party gave it through an
 	 *         invitation, else `organisation` (recorded by the portal's organisation).
 	 *
@@ -135,11 +135,29 @@ class MandateListing {
 				'expiresAt' => (string)($row['expiresAt'] ?? ''),
 				'givenBy' => $this->givenBy(row: $row),
 				'grantedAt' => (string)($row['grantedAt'] ?? ''),
+				'reach' => $this->reachOf(row: $row),
 			];
 		}
 
 		return $out;
 	}//end held()
+
+	/**
+	 * How far down the party tree a mandate reaches: `tree` or `organisation`.
+	 *
+	 * @param array<string, mixed> $row The mandate.
+	 *
+	 * @return string The reach.
+	 *
+	 * @spec openspec/specs/portal-visibility-and-the-party-tree/spec.md
+	 */
+	private function reachOf(array $row): string {
+		if ((string)($row['reach'] ?? '') === PortalMandateService::REACH_TREE) {
+			return PortalMandateService::REACH_TREE;
+		}
+
+		return PortalMandateService::REACH_ORGANISATION;
+	}//end reachOf()
 
 	/**
 	 * Who gave a mandate, without naming the account that recorded it.

@@ -45,6 +45,44 @@
 			<p class="utrecht-paragraph">
 				{{ line(mandate) }}
 			</p>
+			<template v-if="mandate.reach === 'tree'">
+				<p
+					v-if="mandate.reachRefused"
+					class="utrecht-paragraph"
+					data-testid="mandates-held-reach-refused">
+					{{
+						t(
+							'The organisations below it could not be read. Try again later.',
+						)
+					}}
+				</p>
+				<template v-else>
+					<p class="utrecht-paragraph" data-testid="mandates-held-reach">
+						{{ reachText(mandate) }}
+					</p>
+					<ul class="utrecht-unordered-list pq-mandates-held__reach">
+						<li
+							v-for="organisation in reachesTo(mandate)"
+							:key="organisation.identifier"
+							class="utrecht-unordered-list__item"
+							data-testid="mandates-held-reach-item">
+							{{ organisation.name || partyOf(mandate) }}
+							<span class="pq-mandates-held__level">{{
+								levelText(organisation)
+							}}</span>
+						</li>
+					</ul>
+					<p
+						v-if="reachesTo(mandate).length > 1"
+						class="utrecht-paragraph">
+						{{
+							t(
+								'Whether you see a case of an organisation below it is decided by the case app for each kind of case. Such a case always says which organisation it belongs to.',
+							)
+						}}
+					</p>
+				</template>
+			</template>
 			<p v-if="confirming === mandate.id" class="pq-mandates-held__buttons">
 				<span>{{
 					t('Stop this mandate? You can no longer act for them.')
@@ -169,6 +207,59 @@ export default {
 		},
 
 		/**
+		 * The organisations a mandate reaching down covers, the named one first.
+		 *
+		 * @param {object} mandate The mandate.
+		 * @return {Array<{identifier: string, name: ?string, level: number}>}
+		 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md#requirement-the-holder-must-see-how-far-a-mandate-reaches-req-smr-008
+		 */
+		reachesTo(mandate) {
+			const listed = Array.isArray(mandate.reachesTo) ? mandate.reachesTo : []
+			if (listed.length > 0) {
+				return listed
+			}
+			return [{ identifier: String(mandate.id), name: null, level: 1 }]
+		},
+
+		/**
+		 * "Reikt tot: het bedrijf en de 2 organisaties eronder".
+		 *
+		 * @param {object} mandate The mandate.
+		 * @return {string}
+		 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md#requirement-the-holder-must-see-how-far-a-mandate-reaches-req-smr-008
+		 */
+		reachText(mandate) {
+			const below = this.reachesTo(mandate).length - 1
+			if (below <= 0) {
+				return this.t('Reaches: the company only')
+			}
+			if (below === 1) {
+				return this.t('Reaches: the company and the organisation below it')
+			}
+			return this.t(
+				'Reaches: the company and the {count} organisations below it',
+				{ count: below },
+			)
+		},
+
+		/**
+		 * "niveau 1, de organisatie van de machtiging" or "niveau 2, eronder".
+		 *
+		 * @param {{level: number}} organisation One organisation of the tree.
+		 * @return {string}
+		 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md#requirement-the-holder-must-see-how-far-a-mandate-reaches-req-smr-008
+		 */
+		levelText(organisation) {
+			const level = Number(organisation.level) || 1
+			if (level === 1) {
+				return this.t('level {level}, the organisation of the mandate', {
+					level,
+				})
+			}
+			return this.t('level {level}, below it', { level })
+		},
+
+		/**
 		 * Stop a mandate; acting under it falls back to acting for oneself.
 		 *
 		 * @param {object} mandate The mandate.
@@ -208,6 +299,11 @@ export default {
 	flex-wrap: wrap;
 	align-items: center;
 	gap: var(--utrecht-space-inline-sm, 0.5rem);
+}
+
+.pq-mandates-held__level {
+	display: block;
+	color: var(--utrecht-document-secondary-color, inherit);
 }
 
 .pq-mandates-held__error {

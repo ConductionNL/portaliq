@@ -8,10 +8,13 @@ use OCA\Portaliq\Controller\MandateController;
 use OCA\Portaliq\Service\Identity\MandateParties;
 use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
+use OCA\Portaliq\Service\Identity\PartyTreeSource;
 use OCA\Portaliq\Service\Identity\PortalMandateAdminService;
+use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
 use OCA\Portaliq\Service\Intake\PortalCaseTypeChoices;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCP\IAppConfig;
 use OCP\IRequest;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -24,6 +27,7 @@ use PHPUnit\Framework\TestCase;
  */
 #[CoversClass(MandateController::class)]
 #[UsesClass(MandateParties::class)]
+#[UsesClass(PortalPartyTreeResolver::class)]
 class MandateControllerTest extends TestCase {
 	private const SUBJECT = ['provider' => 'digid', 'subjectRef' => 'abc', 'organisation' => 'zuid'];
 
@@ -47,6 +51,41 @@ class MandateControllerTest extends TestCase {
 	 * @var array<string, mixed>|null
 	 */
 	private ?array $site = ['slug' => 'zuiddrecht', 'organisation' => 'zuid'];
+
+	/**
+	 * What OpenRegister's tree read answers below a party, or null for none recorded.
+	 *
+	 * @var array<string, mixed>|null
+	 */
+	private ?array $group = null;
+
+	/**
+	 * The identities the tree was read for.
+	 *
+	 * @var array<int, string>
+	 */
+	private array $treeReads = [];
+
+	/**
+	 * The tree resolver, over a source double answering `$this->group`.
+	 *
+	 * @var PortalPartyTreeResolver
+	 */
+	private PortalPartyTreeResolver $tree;
+
+	protected function setUp(): void {
+		parent::setUp();
+		$source = $this->createMock(PartyTreeSource::class);
+		$source->method('below')->willReturnCallback(
+			function (string $register, string $schema, string $identityField, string $identity, int $maxDepth): ?array {
+				$this->treeReads[] = $identity;
+				return $this->group;
+			}
+		);
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->method('getValueString')->willReturn('');
+		$this->tree = new PortalPartyTreeResolver($source, $appConfig);
+	}//end setUp()
 
 	/**
 	 * Build the controller over doubles.
@@ -79,7 +118,7 @@ class MandateControllerTest extends TestCase {
 		$portals = $this->createMock(PortalResolver::class);
 		$portals->method('resolve')->willReturnCallback(fn (): ?array => $this->site);
 
-		return new MandateController($request, $session, $mandates, $mailer, $accounts, $choices, $portals);
+		return new MandateController($request, $session, $mandates, $mailer, $accounts, $choices, $portals, $this->tree);
 	}//end controller()
 
 	/**
@@ -266,6 +305,51 @@ class MandateControllerTest extends TestCase {
 		$mandates->method('held')->with(['subject:abc', 'kvk:12345678'], 'zuid')->willReturn([['id' => 'h']]);
 		$c = $this->controller(array_merge(self::SUBJECT, ['provider' => 'eherkenning', 'kvk' => '12345678']), $mandates);
 
-		$this->assertSame(['items' => [['id' => 'h']]], $c->held()->getData());
+		$this->assertSame(['items' => [['id' => 'h', 'reachesTo' => [], 'reachRefused' => false]]], $c->held()->getData());
+		$this->assertSame([], $this->treeReads, 'a mandate that does not reach down reads no tree');
 	}//end testHeld()
+
+	/**
+	 * A mandate reaching down lists the organisations it covers by level (REQ-SMR-008).
+	 *
+	 * @return void
+	 */
+	public function testAGroupMandateListsWhatItReaches(): void {
+		$this->group = [
+			'nodes' => [
+				['uuid' => 'u1', 'name' => 'Holding BV', 'level' => 0, 'properties' => ['kvkNumber' => '12345678']],
+				['uuid' => 'u2', 'name' => 'Werkmaatschappij BV', 'level' => 1, 'properties' => ['kvkNumber' => '23456789']],
+			],
+			'truncated' => false,
+			'truncatedBy' => null,
+		];
+		$mandates = $this->createMock(PortalMandateAdminService::class);
+		$mandates->method('held')->willReturn([['id' => 'h', 'onBehalfOf' => 'kvk:12345678', 'reach' => 'tree']]);
+		$c = $this->controller(self::SUBJECT, $mandates);
+
+		$item = $c->held()->getData()['items'][0];
+
+		$this->assertSame(['12345678'], $this->treeReads, 'the tree is read for the untyped KvK number');
+		$this->assertSame(
+			[
+				['identifier' => '12345678', 'name' => 'Holding BV', 'level' => 1],
+				['identifier' => '23456789', 'name' => 'Werkmaatschappij BV', 'level' => 2],
+			],
+			$item['reachesTo']
+		);
+		$this->assertFalse($item['reachRefused']);
+	}//end testAGroupMandateListsWhatItReaches()
+
+	/**
+	 * With no tree recorded a group mandate reaches the company alone.
+	 *
+	 * @return void
+	 */
+	public function testAGroupMandateWithoutARecordedTreeReachesTheCompany(): void {
+		$mandates = $this->createMock(PortalMandateAdminService::class);
+		$mandates->method('held')->willReturn([['id' => 'h', 'onBehalfOf' => 'kvk:12345678', 'reach' => 'tree']]);
+		$c = $this->controller(self::SUBJECT, $mandates);
+
+		$this->assertSame([['identifier' => '12345678', 'name' => null, 'level' => 1]], $c->held()->getData()['items'][0]['reachesTo']);
+	}//end testAGroupMandateWithoutARecordedTreeReachesTheCompany()
 }//end class
