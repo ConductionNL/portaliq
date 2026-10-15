@@ -214,7 +214,8 @@
     "check:example-site": "node --test tests/example-site.spec.mjs",
     "check:example-resident": "node --test tests/example-resident.spec.mjs",
     "check:resident-boards": "node --test tests/zuiddrecht-resident-boards.spec.mjs",
-    "check:nextcloud-registration-link": "node --test tests/nextcloud-registration-link.spec.mjs"
+    "check:nextcloud-registration-link": "node --test tests/nextcloud-registration-link.spec.mjs",
+    "check:site-i18n-bundles": "node --test tests/site-i18n-bundles.spec.mjs"
   },
   "browserslist": [
     "extends @nextcloud/browserslist-config"
