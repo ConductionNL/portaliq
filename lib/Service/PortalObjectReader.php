@@ -260,6 +260,64 @@ class PortalObjectReader {
 	}//end readCollection()
 
 	/**
+	 * The rows of a collection its app declares `anonymous`: what the public
+	 * may read of the schema, not what the subject owns. OpenRegister's own
+	 * read rules decide, with RBAC ON for the caller as it is (a resident has
+	 * no Nextcloud account, so the schema's `public` rule applies), so this
+	 * read can never show more than OpenRegister would show that caller.
+	 * The declared `filter` narrows, a row of another tenant is dropped, and
+	 * the field whitelist shapes every row.
+	 *
+	 * @param string $register The register slug.
+	 * @param string $schema The schema slug.
+	 * @param string $organisation The tenant of the session (may be empty).
+	 * @param int $limit The most rows to read.
+	 * @param mixed $fields Optional projection whitelist; null = full row.
+	 * @param array<string, mixed> $filter The collection's declared narrowing filter.
+	 *
+	 * @return array<int, array<string, mixed>> The rows, or [] when OpenRegister is absent or the read failed.
+	 *
+	 * @spec openspec/changes/anonymous-collection-reads-what-the-public-may/specs/portal-contribution-contract/spec.md#requirement-an-anonymous-collection-shows-what-the-public-may-read
+	 */
+	public function readPublicCollection(
+		string $register,
+		string $schema,
+		string $organisation = '',
+		int $limit = 200,
+		mixed $fields = null,
+		array $filter = [],
+	): array {
+		$objectService = $this->objectService();
+		if ($objectService === null) {
+			return [];
+		}
+
+		try {
+			$objectService->setRegister(register: $register);
+			$objectService->setSchema(schema: $schema);
+			$filters = $this->scopedFilters(filter: $filter, scopeField: '', scopeValue: '');
+			$rows    = $objectService->findAll(config: ['filters' => $filters, 'limit' => $limit, 'offset' => 0], _rbac: true, _multitenancy: true);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: OR public read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+			return [];
+		}
+
+		if (is_array($rows) === false) {
+			return [];
+		}
+
+		$verified = [];
+		foreach ($rows as $row) {
+			$normalised = $this->normalise(row: $row);
+			if ($normalised !== null && $this->organisationMatches(row: $normalised, organisation: $organisation, schema: $schema) === true) {
+				$verified[] = $normalised;
+			}
+		}
+
+		return $this->projector->projectRows(rows: $verified, fields: $fields);
+	}//end readPublicCollection()
+
+	/**
 	 * One page of a scoped read, or null when OpenRegister is absent or the
 	 * read failed, so a caller that must finish a job (the admin's revoke-all)
 	 * can tell "nothing there" from "could not look". The declared filter

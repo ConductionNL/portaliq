@@ -564,6 +564,34 @@ class ContributionControllerTest extends TestCase {
 	}//end testCollectionPassesV2ScopeParametersToReader()
 
 	/**
+	 * anonymous-collection-reads-what-the-public-may: decidiq's council
+	 * calendar is declared `anonymous`; it read "Geen items" because it was
+	 * scoped to the resident like their own records.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/anonymous-collection-reads-what-the-public-may/specs/portal-contribution-contract/spec.md#requirement-an-anonymous-collection-shows-what-the-public-may-read
+	 */
+	public function testAnAnonymousCollectionIsReadAsThePublicMayReadIt(): void {
+		$aggregate = $this->aggregate(
+			collections: [
+				['id' => 'publicCalendar', 'register' => 'decidiq', 'schema' => 'publication-payload', 'anonymous' => true, 'fields' => ['title'], 'filter' => ['oriType' => 'Vergadering']],
+			]
+		);
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->expects($this->never())->method('readCollection');
+		$reader->expects($this->once())->method('readPublicCollection')
+			->with('decidiq', 'publication-payload', 'org-1', 200, ['title'], ['oriType' => 'Vergadering'])
+			->willReturn([['title' => 'Raadsvergadering']]);
+
+		$response = $this->controller(aggregate: $aggregate, reader: $reader)->collection('decidiq', 'publication-payload');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame([['title' => 'Raadsvergadering']], $response->getData()['objects']);
+
+	}//end testAnAnonymousCollectionIsReadAsThePublicMayReadIt()
+
+	/**
 	 * A row whose `visibleFromField` lies ahead is not in the list and its
 	 * read by id is the shared 404 (site-school-blocks).
 	 *
