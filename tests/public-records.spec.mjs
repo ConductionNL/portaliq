@@ -36,7 +36,14 @@ const RECORD = {
 		{ key: 'subject', label: 'Onderwerp' },
 		{ key: 'vote', label: 'Stem' },
 	],
-	rows: [{ date: '2026-09-01', subject: 'Groen dak op het stadhuis', vote: 'Voor', subjectUrl: '/besluit/1' }],
+	rows: [
+		{
+			date: '2026-09-01',
+			subject: 'Groen dak op het stadhuis',
+			vote: 'Voor',
+			subjectUrl: '/besluit/1',
+		},
+	],
 	note: 'Alleen openbare rondes.',
 }
 
@@ -51,23 +58,51 @@ function fetcher(status, body) {
 }
 
 test('the routes are anonymous and found from the content API base', async () => {
-	assert.equal(recordsBase('/apps/portaliq/api/content'), '/apps/portaliq/api/public-records')
+	assert.equal(
+		recordsBase('/apps/portaliq/api/content'),
+		'/apps/portaliq/api/public-records',
+	)
 	const send = fetcher(200, { entries: ENTRIES })
-	assert.deepEqual(await fetchRecordList('/api/content', 'decidiq', 'memberVotingRecords', send), ENTRIES)
-	assert.equal(send.calls[0].url, '/api/public-records/decidiq/memberVotingRecords')
+	assert.deepEqual(
+		await fetchRecordList(
+			'/api/content',
+			'decidiq',
+			'memberVotingRecords',
+			send,
+		),
+		ENTRIES,
+	)
+	assert.equal(
+		send.calls[0].url,
+		'/api/public-records/decidiq/memberVotingRecords',
+	)
 	assert.equal(send.calls[0].init.credentials, 'omit')
 	assert.equal(send.calls[0].init.headers.Authorization, undefined)
 })
 
 test('a record that is gone is null, not an error; a server error throws', async () => {
-	assert.equal(await fetchRecord('/api/content', 'decidiq', 'l', 'x', fetcher(404, {})), null)
-	assert.equal(await fetchRecordList('/api/content', 'decidiq', 'l', fetcher(404, {})), null)
-	await assert.rejects(fetchRecord('/api/content', 'decidiq', 'l', 'x', fetcher(500, {})))
+	assert.equal(
+		await fetchRecord('/api/content', 'decidiq', 'l', 'x', fetcher(404, {})),
+		null,
+	)
+	assert.equal(
+		await fetchRecordList('/api/content', 'decidiq', 'l', fetcher(404, {})),
+		null,
+	)
+	await assert.rejects(
+		fetchRecord('/api/content', 'decidiq', 'l', 'x', fetcher(500, {})),
+	)
 })
 
 test('search narrows by name and role, and ?record names the record', () => {
-	assert.deepEqual(matchingEntries(ENTRIES, 'mulder').map((e) => e.id), ['p1'])
-	assert.deepEqual(matchingEntries(ENTRIES, 'vvd').map((e) => e.id), ['p2'])
+	assert.deepEqual(
+		matchingEntries(ENTRIES, 'mulder').map((e) => e.id),
+		['p1'],
+	)
+	assert.deepEqual(
+		matchingEntries(ENTRIES, 'vvd').map((e) => e.id),
+		['p2'],
+	)
 	assert.equal(matchingEntries(ENTRIES, '  ').length, 2)
 	assert.equal(recordIdFrom('?record=p1&x=1'), 'p1')
 	assert.equal(recordIdFrom(''), '')
@@ -77,10 +112,24 @@ test('the block loads the list, then the record the page names', async () => {
 	const screen = await loadSfc(BLOCK)
 	const calls = []
 	const api = {
-		list: async () => { calls.push('list'); return ENTRIES },
-		record: async (app, list, id) => { calls.push(`record:${id}`); return id === 'p1' ? RECORD : null },
+		list: async () => {
+			calls.push('list')
+			return ENTRIES
+		},
+		record: async (app, list, id) => {
+			calls.push(`record:${id}`)
+			return id === 'p1' ? RECORD : null
+		},
 	}
-	const vm = (recordId) => ({ app: 'decidiq', list: 'memberVotingRecords', recordId, apiOverride: api, state: '', entries: [], record: null })
+	const vm = (recordId) => ({
+		app: 'decidiq',
+		list: 'memberVotingRecords',
+		recordId,
+		apiOverride: api,
+		state: '',
+		entries: [],
+		record: null,
+	})
 
 	const list = vm('')
 	await screen.methods.load.call(list)
@@ -102,7 +151,13 @@ test('the block loads the list, then the record the page names', async () => {
 })
 
 test('a stale link says so, a record shows its figures, rows and note', async () => {
-	const gone = await renderSfc(BLOCK, { app: 'decidiq', list: 'l', recordParam: 'p9', locale: 'nl', apiOverride: { list: async () => ENTRIES, record: async () => null } })
+	const gone = await renderSfc(BLOCK, {
+		app: 'decidiq',
+		list: 'l',
+		recordParam: 'p9',
+		locale: 'nl',
+		apiOverride: { list: async () => ENTRIES, record: async () => null },
+	})
 	// Server rendering shows the loading state; the sentences are the block's own words.
 	assert.match(gone, /public-records/)
 	const source = readFileSync(BLOCK, 'utf8')
@@ -117,13 +172,51 @@ test('the block is a registered widget and not host-fed', () => {
 	assert.match(grid, /publicRecords: PublicRecordsBlock/)
 	const catalogue = readFileSync('src/lib/pageWidgetCatalogue.js', 'utf8')
 	assert.match(catalogue, /publicRecords: PublicRecordsBlock/)
-	assert.match(readFileSync('src/lib/widgetLabels.js', 'utf8'), /publicRecords: 'Openbare overzichten'/)
+	assert.match(
+		readFileSync('src/lib/widgetLabels.js', 'utf8'),
+		/publicRecords: 'Openbare overzichten'/,
+	)
 })
 
 test('a page names what its search field searches for (site-council-pages-read-decidiq)', async () => {
 	const screen = await loadSfc(BLOCK)
 	const words = { search: 'Zoek een naam' }
-	assert.equal(screen.computed.searchText.call({ searchLabel: 'Zoek een vergadering', words }), 'Zoek een vergadering')
-	assert.equal(screen.computed.searchText.call({ searchLabel: '', words }), 'Zoek een naam', 'without a label the block keeps its own words')
-	assert.match(readFileSync(BLOCK, 'utf8'), /\{\{\s*searchText\s*\}\}/, 'the field label shows it')
+	assert.equal(
+		screen.computed.searchText.call({
+			searchLabel: 'Zoek een vergadering',
+			words,
+		}),
+		'Zoek een vergadering',
+	)
+	assert.equal(
+		screen.computed.searchText.call({ searchLabel: '', words }),
+		'Zoek een naam',
+		'without a label the block keeps its own words',
+	)
+	assert.match(
+		readFileSync(BLOCK, 'utf8'),
+		/\{\{\s*searchText\s*\}\}/,
+		'the field label shows it',
+	)
+})
+
+test('the back link keeps the portal, the route and the language, and drops the record (REQ-RR3-003)', async () => {
+	const screen = await loadSfc(BLOCK)
+	const saved = globalThis.window
+	globalThis.window = {
+		location: {
+			href: 'https://zuiddrecht.test/index.php/apps/portaliq/site?portal=zuiddrecht&route=%2Fbestuur%2Fvergaderingen&lang=nl&record=p1',
+			pathname: '/index.php/apps/portaliq/site',
+		},
+	}
+	try {
+		const back = new URL(screen.computed.backHref.call({}))
+		assert.equal(back.pathname, '/index.php/apps/portaliq/site')
+		assert.equal(back.searchParams.get('portal'), 'zuiddrecht')
+		assert.equal(back.searchParams.get('route'), '/bestuur/vergaderingen')
+		assert.equal(back.searchParams.get('lang'), 'nl')
+		assert.equal(back.searchParams.get('record'), null)
+	} finally {
+		globalThis.window = saved
+	}
 })

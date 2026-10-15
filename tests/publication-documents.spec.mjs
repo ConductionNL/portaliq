@@ -266,3 +266,42 @@ test('the publication page renders the summary and the visitor rows, no internal
 	assert.match(html, /Verkeer en parkeren/)
 	assert.doesNotMatch(html, /Plooi|Retention|infocat014|f75bc1d0/)
 })
+
+test('the publication tells the page its title for the breadcrumb, and nothing when it is not found (REQ-RR3-004)', async () => {
+	const { instance } = await import('./support/page-instance.mjs')
+	const component = await loadSfc(
+		'src/site/components/PublicationDetailBlock.vue',
+		{
+			'../../shared/i18n/index.js':
+				'export function createTranslator() { return (key) => key }\n',
+		},
+	)
+	assert.ok(component.emits.includes('subject'))
+	const savedFetch = globalThis.fetch
+	const savedWindow = globalThis.window
+	globalThis.window = { location: { origin: 'https://zuiddrecht.test' } }
+	try {
+		for (const [answer, told] of [
+			[PUBLICATION, { title: PUBLICATION.title }],
+			[null, null],
+		]) {
+			globalThis.fetch = async () => ({
+				ok: answer !== null,
+				status: answer ? 200 : 404,
+				json: async () => answer,
+			})
+			const block = instance(component, {
+				subjectId: PUBLICATION.id,
+				endpoint: '/index.php/apps/opencatalogi/api/federation/publications',
+				t: (key) => key,
+			})
+			block.loadDocuments = () => {}
+			block.loadThemeNames = () => {}
+			await block.load()
+			assert.deepEqual(block.emitted.at(-1), ['subject', told])
+		}
+	} finally {
+		globalThis.fetch = savedFetch
+		globalThis.window = savedWindow
+	}
+})

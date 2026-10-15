@@ -465,6 +465,8 @@
 	"This portal does not offer sign-in with an e-mail link.": "Dit portaal biedt geen inloggen met een e-maillink.",
 	"Provisional": "Voorlopig",
 	"Not sent yet. It counts once you send it.": "Nog niet verstuurd. Het telt pas als u het verstuurt.",
+	"Your request may still be processing. Check My cases in a few minutes before you send it again.": "Uw verzoek wordt misschien nog verwerkt. Kijk over een paar minuten in Mijn zaken voordat u het opnieuw verstuurt.",
+	"Go to My cases": "Naar Mijn zaken",
 	"For these papers you must log in with {providers}.": "Voor deze stukken moet u inloggen met {providers}.",
 	"Logging in with DigiD is not available here yet.": "Inloggen met DigiD is hier nog niet beschikbaar.",
 	"{first} or {last}": "{first} of {last}"
