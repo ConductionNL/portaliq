@@ -67,7 +67,7 @@ class RegisteredDetailsShape {
 				'postcode' => (string)($address['postcode'] ?? ''),
 				'city'     => (string)($address['woonplaats'] ?? ''),
 			],
-			// The count waits for openregister (design D5): never guessed.
+			// The service fills the count from the BRP; the shape never guesses it.
 			'residentsAtAddress' => null,
 		];
 	}//end person()
