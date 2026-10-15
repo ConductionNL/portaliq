@@ -23,7 +23,8 @@
 		appName="Portaliq"
 		look="board"
 		title="Portaliq"
-		:description="
+		:breadcrumbs="breadcrumbs"
+		:breadcrumbNote="
 			t(
 				'portaliq',
 				'What the app needs before it starts; the other settings live in the app itself, per portal',
@@ -459,6 +460,14 @@ export default {
 
 	data() {
 		return {
+			// Board PtBeheerinstellingen: the path under the title,
+			// "Beheerinstellingen / Portaliq", the first back to the server's
+			// administration settings.
+			breadcrumbs: [
+				{ label: this.t('portaliq', 'Administration settings'), href: generateUrl('/settings/admin') },
+				{ label: 'Portaliq' },
+			],
+
 			// Server-derived via IInitialStateService (AdminSettings::getForm());
 			// never re-derived client-side (ADR-004 — no DOM data attributes).
 			jwtSigningSecretConfigured: loadState(
