@@ -410,7 +410,7 @@ class SiteShell {
 	 *
 	 * @return string The raw first `Accept-Language` tag, or `''` when absent.
 	 *
-	 * @spec openspec/changes/portal-spa-i18n-locale-support/tasks.md#2.2
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-the-public-site-must-render-its-own-words-through-a-locale-aware-translation-layer
 	 */
 	private function resolveLocale(): string {
 		$header = $this->request->getHeader('Accept-Language');
