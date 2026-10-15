@@ -544,7 +544,11 @@ import { blocks as mijnBlocks } from '../../components/mijn/index.js'
 import { mijnTranslator, siteHref } from '../../components/mijn/rows.js'
 import { ctaLabel, fillTemplate } from '../../components/mijn/template.js'
 import { keepRecordToOpen, sessionStore as tabStore } from '../inbox/inbox.js'
-import { createCollectionLoader, openRecordState } from './collectionLoader.js'
+import {
+	createCollectionLoader,
+	openRecordState,
+	pickedRecord,
+} from './collectionLoader.js'
 import { resolveBlocks } from './pageBlocks.js'
 import { collectionsTranslator, pageLocale } from './translate.js'
 
@@ -780,8 +784,8 @@ export default {
 		},
 
 		/**
-		 * The open record: the row picked from the subject's own list, or the
-		 * only row there is. A row outside that list never opens.
+		 * The open record: the row picked from the subject's own list, a row
+		 * picked under a mandate (pickedRecord), or the only row there is.
 		 *
 		 * @return {object|null}
 		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-page-may-be-the-record-page-of-a-collection
@@ -792,9 +796,8 @@ export default {
 			}
 			const rows = this.recordRows
 			const picked = this.selected[this.recordPage.collection]
-			const id = rowIdOf(picked)
-			if (id) {
-				return rows.find((row) => rowIdOf(row) === id) || null
+			if (rowIdOf(picked)) {
+				return pickedRecord(rows, picked)
 			}
 			const loading = this.store[this.recordPage.collection]?.loading
 			if (this.switching && !loading && !this.target) {
@@ -964,11 +967,19 @@ export default {
 	mounted() {
 		this.loader = createCollectionLoader({ api: this.api, store: this.store })
 		if (!this.target && this.routeRecordId && this.recordPage) {
-			// The route chooses the record (`/mijn/<app>/<page>/<id>`).
+			// The route chooses the record (`/mijn/<app>/<page>/<id>`). A link
+			// kept for the same record still brings its row, so a case opened
+			// under a mandate opens on its route too.
+			const kept = consumeOpenTarget(
+				window.location,
+				window.history,
+				sessionStore(),
+			)
 			this.target = {
 				app: this.currentContribution?.app || '',
 				collection: this.recordPage.collection,
 				id: this.routeRecordId,
+				row: kept?.id === this.routeRecordId ? kept.row || null : null,
 			}
 		}
 		if (!this.target) {
