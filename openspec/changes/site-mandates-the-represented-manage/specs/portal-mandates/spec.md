@@ -111,3 +111,35 @@ An invitation MUST be pending until it is accepted, revoked or expired. Acceptin
 - GIVEN an expired mandate
 - WHEN the represented party sets a new end date in the future
 - THEN the change is refused and the mandate stays expired
+
+### Requirement: The holder MUST see who gave a mandate and when (REQ-SMR-007)
+
+Each mandate the session holds MUST say who gave it and on which day, as the board Machtigingen draws it: "gegeven door {party} op {date}" when the represented party gave it by accepting its invitation, and "gegeven door de gemeente op {date}" when the portal's organisation recorded it (an answered access request, or a mandate recorded by staff). The answer MUST NOT name the account that recorded it.
+
+#### Scenario: A mandate from an invitation names the party that gave it
+- GIVEN KVK 12345678 invited Tom and Tom accepted on 2 October 2026
+- WHEN Tom opens "Toegang tot zaken"
+- THEN his mandate reads "… · gegeven door {the company} op 2 oktober 2026 · …"
+- AND the held answer carries `givenBy: party` and no `grantedBy`
+
+#### Scenario: A mandate from an answered access request names the organisation
+- GIVEN a clerk granted Linda's access request for H. Bakker on 12 September 2026
+- WHEN Linda opens "Toegang tot zaken"
+- THEN her mandate reads "… · gegeven door de gemeente op 12 september 2026 · …"
+
+### Requirement: The holder MUST see how far a mandate reaches (REQ-SMR-008)
+
+A mandate that reaches down the party tree MUST show, under "Reikt tot", one line per organisation it covers with its name and level, as the board Machtigingen draws it: level 1 is the organisation the mandate names, level 2 the ones directly below it, and so on. The organisations come from OpenRegister's tree read over the party schema named in the app config (`party_tree_register`, `party_tree_schema`, `party_tree_identity`; default `dossiq`, `kvkCompany`, `kvkNumber`). With no tree recorded the list holds only the organisation the mandate names. A group past the bound MUST NOT be listed in part.
+
+#### Scenario: A group mandate lists the organisations below the company
+- GIVEN KVK 10000000 has two organisations recorded below it in the party schema
+- AND Tom holds a mandate for KVK 10000000 with reach `tree`
+- WHEN Tom opens "Toegang tot zaken"
+- THEN "Reikt tot" lists the company at "niveau 1, de organisatie van de machtiging" and the two others at "niveau 2, eronder"
+- @e2e exclude {the tree needs a party schema with a parent recorded; covered by MandateControllerTest and tests/mandates-page.spec.mjs}
+
+#### Scenario: Without a recorded tree only the company is listed
+- GIVEN no organisation is recorded below KVK 10000000
+- WHEN Tom opens "Toegang tot zaken"
+- THEN "Reikt tot" lists only the company
+- @e2e exclude {covered by PortalPartyTreeResolverTest and tests/mandates-page.spec.mjs}

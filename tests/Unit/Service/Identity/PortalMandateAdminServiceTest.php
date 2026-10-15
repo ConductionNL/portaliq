@@ -217,6 +217,42 @@ class PortalMandateAdminServiceTest extends TestCase {
 		$this->assertSame([], $service->held(['kvk:12345678'], 'gemeente-x', $this->now()), 'another company does not carry it');
 	}
 
+	/**
+	 * REQ-SMR-007: the holder reads who gave each mandate and when, from the
+	 * rows the two real writers store, never the account that recorded it.
+	 *
+	 * @covers \OCA\Portaliq\Service\Identity\MandateListing
+	 * @uses   \OCA\Portaliq\Service\Identity\MandateDays
+	 * @uses   \OCA\Portaliq\Service\Identity\MandateParties
+	 * @uses   \OCA\Portaliq\Service\Identity\MandateStore
+	 * @uses   \OCA\Portaliq\Service\Identity\PortalAccessRequestService
+	 * @uses   \OCA\Portaliq\Service\Identity\PortalMandateAdminService
+	 *
+	 * @return void
+	 */
+	public function testTheHolderSeesWhoGaveTheMandateAndWhen(): void {
+		$service = $this->service();
+		$invited = $service->invite(self::COMPANY, 'gemeente-x', 'jan-willem', ['email' => 'tom@example.nl'], $this->now());
+		$service->accept($invited['token'], ['subjectRef' => 'tom', 'provider' => 'digid', 'organisation' => 'gemeente-x'], $this->now());
+
+		$requests = new \OCA\Portaliq\Service\Identity\PortalAccessRequestService($this->fakeReader(), $this->fakeWriter());
+		$request  = $requests->request(subjectRef: 'tom', organisation: 'gemeente-x', onBehalfOf: '87654321', reason: 'Ik doe de boekhouding');
+		$requests->grant(id: $request['uuid'], organisation: 'gemeente-x', decidedBy: 'clerk-anna');
+
+		foreach ($this->storedRows('portalMandate') as $row) {
+			$this->assertSame([], $this->schemaProblems('portalMandate', $row), 'a stored mandate');
+		}
+
+		$held = $service->held(['subject:tom'], 'gemeente-x', $this->now());
+		$this->assertSame(['kvk:12345678' => 'party', 'kvk:87654321' => 'organisation'], array_column($held, 'givenBy', 'onBehalfOf'));
+		$this->assertSame('2026-10-02T10:00:00+02:00', $held[0]['grantedAt']);
+		$this->assertSame(['organisation', 'organisation'], array_column($held, 'reach'));
+		$this->assertNotSame('', $held[1]['grantedAt']);
+		foreach ($held as $mandate) {
+			$this->assertArrayNotHasKey('grantedBy', $mandate, 'the recording account stays out of the answer');
+		}
+	}
+
 	public function testAMandateWithoutHolderIsHeldByItsSubject(): void {
 		$this->seedRow('portalMandate', ['subjectRef' => 'linda', 'organisation' => 'gemeente-x', 'onBehalfOf' => '87654321', 'status' => 'active']);
 		$service = $this->service();
@@ -290,7 +326,8 @@ class PortalMandateAdminServiceTest extends TestCase {
 			$mailer,
 			$this->createMock(\OCA\Portaliq\Service\Identity\PortalAccountLookup::class),
 			$this->createMock(\OCA\Portaliq\Service\Intake\PortalCaseTypeChoices::class),
-			$this->createMock(\OCA\Portaliq\Service\PortalResolver::class)
+			$this->createMock(\OCA\Portaliq\Service\PortalResolver::class),
+			$this->createMock(\OCA\Portaliq\Service\Identity\PortalPartyTreeResolver::class)
 		);
 
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->given()->getStatus());

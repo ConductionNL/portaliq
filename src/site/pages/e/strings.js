@@ -32,7 +32,22 @@ export default {
 		'Do you choose a company or person? Then My cases shows their cases.':
 			'Kiest u een bedrijf of persoon? Dan ziet u bij Mijn zaken hun zaken.',
 		'Your mandate for {party}': 'Uw machtiging voor {party}',
-		'given on {date}': 'gegeven op {date}',
+		'given by {party} on {date}': 'gegeven door {party} op {date}',
+		'given by the municipality on {date}': 'gegeven door de gemeente op {date}',
+		'given by {party}': 'gegeven door {party}',
+		'given by the municipality': 'gegeven door de gemeente',
+		'Reaches: the company only': 'Reikt tot: alleen het bedrijf',
+		'Reaches: the company and the organisation below it':
+			'Reikt tot: het bedrijf en de organisatie eronder',
+		'Reaches: the company and the {count} organisations below it':
+			'Reikt tot: het bedrijf en de {count} organisaties eronder',
+		'level {level}, the organisation of the mandate':
+			'niveau {level}, de organisatie van de machtiging',
+		'level {level}, below it': 'niveau {level}, eronder',
+		'Whether you see a case of an organisation below it is decided by the case app for each kind of case. Such a case always says which organisation it belongs to.':
+			"Of u een zaak van een organisatie eronder ziet, bepaalt de zaakapp per soort zaak. Bij zo'n zaak staat altijd van welke organisatie hij is.",
+		'The organisations below it could not be read. Try again later.':
+			'De organisaties eronder konden niet worden gelezen. Probeer het later opnieuw.',
 		'Stop mandate': 'Machtiging stoppen',
 		'Stop this mandate? You can no longer act for them.':
 			'Deze machtiging stoppen? U kunt dan niet meer namens hen handelen.',
@@ -310,7 +325,22 @@ export default {
 		'Do you choose a company or person? Then My cases shows their cases.':
 			'Do you choose a company or person? Then My cases shows their cases.',
 		'Your mandate for {party}': 'Your mandate for {party}',
-		'given on {date}': 'given on {date}',
+		'given by {party} on {date}': 'given by {party} on {date}',
+		'given by the municipality on {date}': 'given by the municipality on {date}',
+		'given by {party}': 'given by {party}',
+		'given by the municipality': 'given by the municipality',
+		'Reaches: the company only': 'Reaches: the company only',
+		'Reaches: the company and the organisation below it':
+			'Reaches: the company and the organisation below it',
+		'Reaches: the company and the {count} organisations below it':
+			'Reaches: the company and the {count} organisations below it',
+		'level {level}, the organisation of the mandate':
+			'level {level}, the organisation of the mandate',
+		'level {level}, below it': 'level {level}, below it',
+		'Whether you see a case of an organisation below it is decided by the case app for each kind of case. Such a case always says which organisation it belongs to.':
+			'Whether you see a case of an organisation below it is decided by the case app for each kind of case. Such a case always says which organisation it belongs to.',
+		'The organisations below it could not be read. Try again later.':
+			'The organisations below it could not be read. Try again later.',
 		'Stop mandate': 'Stop mandate',
 		'Stop this mandate? You can no longer act for them.':
 			'Stop this mandate? You can no longer act for them.',

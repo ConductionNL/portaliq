@@ -275,11 +275,35 @@ test('stopping a held mandate asks first, and acting under it falls back to your
 	assert.equal(actingFor.id, 'self')
 	assert.deepEqual(vm.held, [])
 	assert.deepEqual(emitted, [['stopped', 'm1']])
-	const line = held.methods.line.call(
-		{ t, locale: 'nl', caseTypes: [] },
-		{ grantedAt: '2026-09-12T10:00:00Z', expiresAt: '' },
+	const reader = {
+		t,
+		locale: 'nl',
+		caseTypes: [],
+		partyOf: held.methods.partyOf,
+	}
+	const line = held.methods.line.call(reader, {
+		givenBy: 'organisation',
+		grantedAt: '2026-09-12T10:00:00Z',
+		expiresAt: '',
+	})
+	assert.match(line, /^All cases · given by the municipality on .+ · No end date$/)
+	const byParty = held.methods.line.call(reader, {
+		id: 'm9',
+		onBehalfOf: 'kvk:12345678',
+		givenBy: 'party',
+		grantedAt: '2026-10-02T10:00:00Z',
+		expiresAt: '',
+	})
+	assert.match(byParty, /^All cases · given by 12345678 on .+ · No end date$/)
+	assert.equal(
+		held.methods.line.call(reader, {
+			givenBy: 'party',
+			onBehalfOf: 'kvk:1',
+			expiresAt: '',
+		}),
+		'All cases · given by 1 · No end date',
+		'a mandate without its day still says who gave it',
 	)
-	assert.match(line, /^All cases · given on .+ · No end date$/)
 })
 
 test('a mailed link is kept across sign-in, handed back once, and forgotten when answered', async () => {
@@ -396,4 +420,61 @@ test('the page shows the board order, and every string is Dutch and English with
 		'Uitnodiging sturen',
 		'the board Machtigen',
 	)
+})
+
+test('a mandate reaching down lists the organisations by level, and with no tree only the company', async () => {
+	const held = await loadSfc(HELD)
+	const reader = {
+		t,
+		reachesTo: held.methods.reachesTo,
+	}
+	const group = {
+		id: 'm1',
+		reach: 'tree',
+		reachesTo: [
+			{ identifier: '10000000', name: 'Holding BV', level: 1 },
+			{ identifier: '20000000', name: 'Werk BV', level: 2 },
+			{ identifier: '30000000', name: 'Dienst BV', level: 2 },
+		],
+	}
+	assert.equal(
+		held.methods.reachText.call(reader, group),
+		'Reaches: the company and the 2 organisations below it',
+	)
+	assert.equal(
+		held.methods.levelText.call(reader, group.reachesTo[0]),
+		'level 1, the organisation of the mandate',
+	)
+	assert.equal(
+		held.methods.levelText.call(reader, group.reachesTo[1]),
+		'level 2, below it',
+	)
+	const alone = { id: 'm2', reach: 'tree', reachesTo: [] }
+	assert.deepEqual(held.methods.reachesTo.call(reader, alone), [
+		{ identifier: 'm2', name: null, level: 1 },
+	])
+	assert.equal(
+		held.methods.reachText.call(reader, alone),
+		'Reaches: the company only',
+	)
+	assert.equal(
+		held.methods.reachText.call(reader, {
+			reachesTo: group.reachesTo.slice(0, 2),
+		}),
+		'Reaches: the company and the organisation below it',
+	)
+	assert.equal(
+		strings.nl['Reaches: the company and the {count} organisations below it'],
+		'Reikt tot: het bedrijf en de {count} organisaties eronder',
+		'the board Machtigingen',
+	)
+	for (const key of [
+		'Reaches: the company only',
+		'Reaches: the company and the organisation below it',
+		'level {level}, the organisation of the mandate',
+		'level {level}, below it',
+		'The organisations below it could not be read. Try again later.',
+	]) {
+		assert.ok(strings.nl[key] && strings.en[key], key)
+	}
 })

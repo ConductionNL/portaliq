@@ -32,6 +32,7 @@ use OCA\Portaliq\Service\Identity\MandateParties;
 use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\Identity\PortalMandateAdminService;
+use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
 use OCA\Portaliq\Service\Intake\PortalCaseTypeChoices;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -59,6 +60,7 @@ class MandateController extends Controller implements PortalProtected {
 	 * @param PortalAccountLookup         $accounts The name and address of who holds a mandate, and of the inviter.
 	 * @param PortalCaseTypeChoices       $choices  The case types a mandate may be narrowed to.
 	 * @param PortalResolver              $portals  The portal being visited.
+	 * @param PortalPartyTreeResolver     $tree     The organisations a mandate reaching down covers.
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- each collaborator is one screen element of the Machtigingen board.
 	 */
@@ -70,6 +72,7 @@ class MandateController extends Controller implements PortalProtected {
 		private readonly PortalAccountLookup $accounts,
 		private readonly PortalCaseTypeChoices $choices,
 		private readonly PortalResolver $portals,
+		private readonly PortalPartyTreeResolver $tree,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -294,8 +297,9 @@ class MandateController extends Controller implements PortalProtected {
 		}
 
 		$holders = (new MandateParties())->holdersOf(subject: $subject);
+		$items = $this->mandates->held(holders: $holders, organisation: (string)($subject['organisation'] ?? ''));
 
-		return new JSONResponse(['items' => $this->mandates->held(holders: $holders, organisation: (string)($subject['organisation'] ?? ''))]);
+		return new JSONResponse(['items' => array_map(fn (array $item): array => $this->tree->withReach(mandate: $item), $items)]);
 	}//end held()
 
 	/**
