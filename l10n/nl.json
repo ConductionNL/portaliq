@@ -3079,6 +3079,8 @@
         "This list cannot be saved here.": "Deze lijst kan hier niet worden opgeslagen.",
         "valid until": "geldig tot",
         "Publish this TXT record: {name} = {value}": "Publiceer dit TXT-record: {name} = {value}",
+        "Copy the name": "Kopieer de naam",
+        "Copy the value": "Kopieer de waarde",
         "%s is verified.": "%s is geverifieerd.",
         "The record of %s is not there yet.": "Het record van %s staat er nog niet.",
         "Certificate checked at": "Certificaat gecontroleerd op",

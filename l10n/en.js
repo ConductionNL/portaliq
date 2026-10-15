@@ -2913,6 +2913,8 @@ OC.L10N.register(
         "This list cannot be saved here.": "This list cannot be saved here.",
         "valid until": "valid until",
         "Publish this TXT record: {name} = {value}": "Publish this TXT record: {name} = {value}",
+        "Copy the name": "Copy the name",
+        "Copy the value": "Copy the value",
         "%s is verified.": "%s is verified.",
         "The record of %s is not there yet.": "The record of %s is not there yet.",
         "Certificate checked at": "Certificate checked at",

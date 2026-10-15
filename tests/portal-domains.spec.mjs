@@ -18,7 +18,9 @@ import { test } from 'node:test'
 import { certificateEnd, initials } from '../src/lib/portalDomains.js'
 import { pageDraws } from './lib/placement.mjs'
 
-const manifest = JSON.parse(readFileSync(new URL('../src/manifest.json', import.meta.url), 'utf8'))
+const manifest = JSON.parse(
+	readFileSync(new URL('../src/manifest.json', import.meta.url), 'utf8'),
+)
 const detail = manifest.pages.find((page) => page.id === 'PortalDetail')
 const widget = (id) => detail.config.widgets.find((w) => w.id === id)
 
@@ -32,14 +34,44 @@ test('the Instellingen tab is a sections widget that places both lists', () => {
 })
 
 test('a plain host name is accepted and a scheme, port or path is refused', () => {
-	const field = widget('portal-domains').content.add.fields.find((f) => f.key === 'hostname')
+	const field = widget('portal-domains').content.add.fields.find(
+		(f) => f.key === 'hostname',
+	)
 	assert.equal(field.required, true)
 	const host = new RegExp(field.pattern)
 	assert.ok(host.test('nieuw.zuiddrecht.nl'))
-	for (const bad of ['https://nieuw.zuiddrecht.nl/', 'nieuw.zuiddrecht.nl:8080', 'nieuw.zuiddrecht.nl/pad', 'zuiddrecht', '', ' ']) {
+	for (const bad of [
+		'https://nieuw.zuiddrecht.nl/',
+		'nieuw.zuiddrecht.nl:8080',
+		'nieuw.zuiddrecht.nl/pad',
+		'zuiddrecht',
+		'',
+		' ',
+	]) {
 		assert.equal(host.test(bad), false, bad)
 	}
 	assert.match(field.patternMessage, /without https:\/\//)
+})
+
+test('the TXT record name and value each have their own copy button (nc-vue 2.84 detail.copy)', () => {
+	const { content } = widget('portal-domains')
+	assert.deepEqual(content.row.detail.copy, [
+		{ path: 'name', label: 'Copy the name' },
+		{ path: 'value', label: 'Copy the value' },
+	])
+	const lock = JSON.parse(readFileSync('package-lock.json', 'utf8'))
+	const [major, minor] = lock.packages[
+		'node_modules/@conduction/nextcloud-vue'
+	].version
+		.split('.')
+		.map(Number)
+	assert.ok(
+		major === 2 && minor >= 84,
+		'the field list reads detail.copy from 2.84 on',
+	)
+	const nl = JSON.parse(readFileSync('l10n/nl.json', 'utf8')).translations
+	assert.equal(nl['Copy the name'], 'Kopieer de naam')
+	assert.equal(nl['Copy the value'], 'Kopieer de waarde')
 })
 
 test('a new domain waits for verification and is not listed twice', () => {
@@ -57,8 +89,14 @@ test('a pending domain shows its TXT record and can be checked again', () => {
 	// The parameters ride in the payload (nc-vue 2.81 accepts an `@row.` token there).
 	assert.equal(verify.request.method, 'POST')
 	assert.equal(verify.request.url, '/apps/portaliq/api/cms/domains/verify')
-	assert.deepEqual(verify.request.payload, { portal: '@object.slug', hostname: '@row.hostname' })
-	assert.equal(content.rowSource.url, '/apps/portaliq/api/cms/domains?portal=@object.slug')
+	assert.deepEqual(verify.request.payload, {
+		portal: '@object.slug',
+		hostname: '@row.hostname',
+	})
+	assert.equal(
+		content.rowSource.url,
+		'/apps/portaliq/api/cms/domains?portal=@object.slug',
+	)
 	assert.equal(content.row.aside.path, 'certificateValidUntil')
 	assert.equal(content.row.aside.fallback, 'not checked yet')
 })
@@ -70,12 +108,21 @@ test('an editor needs a user, is not listed twice and shows the user id without 
 	assert.equal(content.add.fields.find((f) => f.key === 'userId').required, true)
 	assert.equal(content.row.titleFallback, 'userId')
 	const role = content.add.fields.find((f) => f.key === 'role')
-	assert.deepEqual(role.options.map((o) => o.value), ['editor', 'chief-editor'])
+	assert.deepEqual(
+		role.options.map((o) => o.value),
+		['editor', 'chief-editor'],
+	)
 })
 
 test('the certificate reads its end date, or nothing when there is none', () => {
 	const format = (d) => d.toISOString().slice(0, 10)
-	assert.equal(certificateEnd({ certificateValidUntil: '2027-01-14T12:00:00+00:00' }, format), '2027-01-14')
+	assert.equal(
+		certificateEnd(
+			{ certificateValidUntil: '2027-01-14T12:00:00+00:00' },
+			format,
+		),
+		'2027-01-14',
+	)
 	assert.equal(certificateEnd({ hostname: 'a.nl' }, format), null)
 	assert.equal(certificateEnd({ certificateValidUntil: 'rubbish' }, format), null)
 })

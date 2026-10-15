@@ -2702,7 +2702,17 @@
                   "template": "Publish this TXT record: {name} = {value}",
                   "when": {
                     "verified": false
-                  }
+                  },
+                  "copy": [
+                    {
+                      "path": "name",
+                      "label": "Copy the name"
+                    },
+                    {
+                      "path": "value",
+                      "label": "Copy the value"
+                    }
+                  ]
                 }
               },
               "add": {
