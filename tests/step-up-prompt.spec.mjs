@@ -13,8 +13,8 @@
 //   node --test tests/step-up-prompt.spec.mjs
 
 import assert from 'node:assert/strict'
-import { test } from 'node:test'
 import { readFileSync } from 'node:fs'
+import { test } from 'node:test'
 import {
 	buildNav,
 	defaultNavKey,
@@ -23,11 +23,7 @@ import {
 	shellSections,
 	stepUpEntries,
 } from '../src/shared/portalNav.js'
-import {
-	providerPhrase,
-	stepUpWays,
-	withReturnTo,
-} from '../src/site/lib/stepUp.js'
+import { providerPhrase, stepUpWays, withReturnTo } from '../src/site/lib/stepUp.js'
 import { mountSfc } from './support/mount-sfc.mjs'
 import { renderSfc } from './support/render-sfc.mjs'
 
@@ -57,7 +53,10 @@ const routes = [
 		key: 'digid',
 		mode: 'digid',
 		label: 'Inloggen met DigiD',
-		card: { title: 'Als inwoner', text: 'Voor uw eigen zaken, berichten en dossiers.' },
+		card: {
+			title: 'Als inwoner',
+			text: 'Voor uw eigen zaken, berichten en dossiers.',
+		},
 		href: `${edge}/login?provider=digid&portal=zuiddrecht&returnTo=%2Fmijn`,
 	},
 	{
@@ -87,21 +86,35 @@ test('each step-up collection becomes one entry at the route its page would have
 		collection: 'confidentialPapers',
 		minTrust: 'substantial',
 	})
-	assert.equal(entries[0].page, undefined, 'no page to load, so nothing of it leaks')
+	assert.equal(
+		entries[0].page,
+		undefined,
+		'no page to load, so nothing of it leaks',
+	)
 	assert.equal(routeForNav(entries[0]), '/mijn/decidiq/confidentialPapers')
 })
 
 test('a step-up entry never takes a route a real page holds, and a malformed item is skipped', () => {
-	const nav = [{ key: 'decidiq:confidentialPapers', page: { id: 'confidentialPapers' } }]
+	const nav = [
+		{ key: 'decidiq:confidentialPapers', page: { id: 'confidentialPapers' } },
+	]
 	assert.deepEqual(stepUpEntries([papers], nav), [])
 	assert.deepEqual(
-		stepUpEntries([{ app: 'decidiq' }, { collection: 'x' }, null, 'x', papers, papers]).map(
-			(entry) => entry.key,
-		),
+		stepUpEntries([
+			{ app: 'decidiq' },
+			{ collection: 'x' },
+			null,
+			'x',
+			papers,
+			papers,
+		]).map((entry) => entry.key),
 		['decidiq:confidentialPapers'],
 		'one entry per collection, none without app and collection',
 	)
-	assert.equal(stepUpEntries([{ ...papers, label: '' }])[0].label, 'confidentialPapers')
+	assert.equal(
+		stepUpEntries([{ ...papers, label: '' }])[0].label,
+		'confidentialPapers',
+	)
 	assert.deepEqual(stepUpEntries(null), [])
 })
 
@@ -110,7 +123,10 @@ test('the navigation lists the step-up page last, finds it by route and never op
 		contributions: [{ app: 'decidiq', pages: [] }],
 		stepUp: [papers],
 	}
-	const sections = shellSections({ session: { subjectRef: 'p' }, contributions: aggregate })
+	const sections = shellSections({
+		session: { subjectRef: 'p' },
+		contributions: aggregate,
+	})
 	assert.deepEqual(sections.stepUp, [papers])
 	const nav = buildNav(aggregate.contributions, t, sections)
 	assert.equal(nav[nav.length - 1].key, 'decidiq:confidentialPapers')
@@ -144,7 +160,11 @@ test('a sign-in link comes back to the page the resident asked from', () => {
 		'/login?returnTo=%2Fmijn%2Fa#x',
 		'a link without a query gets one, before its hash',
 	)
-	assert.equal(withReturnTo(routes[1].href, ''), routes[1].href, 'no path, no change')
+	assert.equal(
+		withReturnTo(routes[1].href, ''),
+		routes[1].href,
+		'no path, no change',
+	)
 	assert.equal(
 		withReturnTo(routes[1].href, 'https://evil.example/x'),
 		routes[1].href,
@@ -191,13 +211,19 @@ test('the Dutch sentence is the one the spec names', () => {
 
 test('the prompt shows the cards that reach the level and no item or count', async () => {
 	const html = await renderSfc(PROMPT, { stepUp: papers, routes, back, t })
-	assert.match(html, /For these papers you must log in with DigiD or eHerkenning\./)
+	assert.match(
+		html,
+		/For these papers you must log in with DigiD or eHerkenning\./,
+	)
 	assert.equal((html.match(/data-testid="site-step-up-card"/g) || []).length, 2)
 	assert.match(html, /Als inwoner/)
 	assert.match(html, /Voor uw eigen zaken, berichten en dossiers\./)
 	assert.match(html, /Namens een bedrijf/)
 	assert.doesNotMatch(html, /Inloggen met uw account|Inloggen als Pieter/)
-	assert.match(html, /data-mode="digid"[^>]*>|class="[^"]*primary-action[^"]*"[^>]*data-mode="digid"/)
+	assert.match(
+		html,
+		/data-mode="digid"[^>]*>|class="[^"]*primary-action[^"]*"[^>]*data-mode="digid"/,
+	)
 	assert.ok(
 		html.includes(`returnTo=${encodeURIComponent(back)}`),
 		'each card comes back to this page',
@@ -229,11 +255,17 @@ test('the signed-in area shows the prompt under the page title on a step-up entr
 		currentRoute: '/mijn/decidiq/confidentialPapers',
 	})
 	await area.flush()
-	assert.equal(area.textOf(area.find('site-account-title')), 'Vertrouwelijke stukken')
+	assert.equal(
+		area.textOf(area.find('site-account-title')),
+		'Vertrouwelijke stukken',
+	)
 	assert.ok(area.find('site-step-up'), 'the prompt is the page')
 	assert.equal(
 		area.textOf(area.find('site-step-up-text')),
 		'For these papers you must log in with DigiD or eHerkenning.',
 	)
-	assert.equal(area.findAll((n) => n.props?.['data-testid'] === 'site-step-up-card').length, 2)
+	assert.equal(
+		area.findAll((n) => n.props?.['data-testid'] === 'site-step-up-card').length,
+		2,
+	)
 })

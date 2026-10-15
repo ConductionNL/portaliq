@@ -17,6 +17,7 @@
  * @spec openspec/changes/site-member-voting-record-and-confidential-papers/specs/portal-contribution-contract/spec.md#requirement-a-page-whose-collection-needs-a-higher-login-must-say-so-and-offer-it-req-scr-004
  */
 import type { Page } from '@playwright/test'
+
 import { expect, test } from '@playwright/test'
 import { siteAddress } from './portal-nav.ts'
 

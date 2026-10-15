@@ -78,7 +78,11 @@ export function stepUpWays(routes, back) {
  * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t6
  */
 export function providerPhrase(ways, t) {
-	const names = [...new Set((ways || []).map((way) => PROVIDER_NAMES[way.mode]).filter(Boolean))]
+	const names = [
+		...new Set(
+			(ways || []).map((way) => PROVIDER_NAMES[way.mode]).filter(Boolean),
+		),
+	]
 	if (names.length < 2) {
 		return names[0] || ''
 	}

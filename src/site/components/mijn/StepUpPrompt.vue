@@ -59,6 +59,9 @@
 <script>
 import { providerPhrase, stepUpWays } from '../../lib/stepUp.js'
 
+// The button links' classes need their stylesheet, or the browser draws its own blue link.
+import '@utrecht/button-link-css/dist/index.css'
+
 /**
  * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t6
  */

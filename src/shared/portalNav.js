@@ -250,9 +250,8 @@ export function defaultNavKey(nav) {
 		return null
 	}
 	const first =
-		nav.find(
-			(entry) => !NEVER_DEFAULT.includes(entry.special) && !entry.stepUp,
-		) || nav[0]
+		nav.find((entry) => !NEVER_DEFAULT.includes(entry.special) && !entry.stepUp)
+		|| nav[0]
 	return first.key
 }
 
@@ -271,9 +270,7 @@ export function routeForNav(entry) {
 	const app = encodeURIComponent(
 		entry.contribution?.app || entry.stepUp?.app || '',
 	)
-	const page = encodeURIComponent(
-		entry.page?.id || entry.stepUp?.collection || '',
-	)
+	const page = encodeURIComponent(entry.page?.id || entry.stepUp?.collection || '')
 	return `${ACCOUNT_ROUTE}/${app}/${page}`
 }
 
