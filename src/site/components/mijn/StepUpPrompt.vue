@@ -12,7 +12,11 @@
 		Inloggen board draws it, and nothing of what the page holds: no item,
 		no count. After signing in the resident comes back to this page.
 	-->
-	<section class="pq-step-up" data-testid="site-step-up">
+	<section
+		class="pq-step-up"
+		:data-collection="stepUp.collection"
+		:data-min-trust="stepUp.minTrust"
+		data-testid="site-step-up">
 		<template v-if="ways.length > 0">
 			<p class="utrecht-paragraph" data-testid="site-step-up-text">
 				{{
@@ -83,6 +87,8 @@ export default {
 		 * The routes that reach the level, each coming back here.
 		 *
 		 * @return {Array<object>} The routes.
+		 *
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t6
 		 */
 		ways() {
 			return stepUpWays(this.routes, this.back || currentPath())
@@ -90,6 +96,8 @@ export default {
 
 		/**
 		 * @return {string} "DigiD or eHerkenning", in the site's language.
+		 *
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t6
 		 */
 		providers() {
 			return providerPhrase(this.ways, this.t)
