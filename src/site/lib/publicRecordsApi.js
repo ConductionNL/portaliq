@@ -163,3 +163,120 @@ export function recordTableCollection(columns, linkKey) {
 		),
 	}
 }
+
+/**
+ * The filters a page declares for a record's rows, each with the values the
+ * rows hold in that column, in the order they first appear (board
+ * PtStemgedrag: "Vergadering", "Stem"). A filter on a column the record does
+ * not have, or without a label, is left out.
+ *
+ * @param {Array<object>} rows The record's rows.
+ * @param {Array<{key: string, label: string, all?: string}>} filters The page's filters.
+ * @param {Array<{key: string}>} columns The record's columns.
+ * @return {Array<{key: string, label: string, all: string, options: Array<string>}>} The filters.
+ * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+ */
+export function recordFilters(rows, filters, columns) {
+	const keys = new Set(
+		(Array.isArray(columns) ? columns : []).map((column) => column?.key),
+	)
+	return (Array.isArray(filters) ? filters : [])
+		.filter(
+			(filter) =>
+				filter
+				&& typeof filter.key === 'string'
+				&& keys.has(filter.key)
+				&& typeof filter.label === 'string'
+				&& filter.label !== '',
+		)
+		.map((filter) => ({
+			key: filter.key,
+			label: filter.label,
+			all: typeof filter.all === 'string' ? filter.all : '',
+			options: [
+				...new Set(
+					(Array.isArray(rows) ? rows : [])
+						.map((row) => String(row?.[filter.key] ?? ''))
+						.filter((value) => value !== ''),
+				),
+			],
+		}))
+}
+
+/**
+ * The rows that hold every chosen value; an empty choice keeps every row.
+ *
+ * @param {Array<object>} rows The record's rows.
+ * @param {object} chosen The chosen value per column key.
+ * @return {Array<object>} The rows.
+ * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+ */
+export function filteredRows(rows, chosen) {
+	const wanted = Object.entries(chosen || {}).filter(([, value]) => value)
+	return (Array.isArray(rows) ? rows : []).filter((row) =>
+		wanted.every(([key, value]) => String(row?.[key] ?? '') === value),
+	)
+}
+
+/**
+ * One page of rows, and where it sits: `from` and `to` count from 1, `pages`
+ * is at least 1, and a page past the end shows the last one.
+ *
+ * @param {Array<object>} rows The rows.
+ * @param {number} page The page asked for, from 1.
+ * @param {number} size The rows per page; 0 or less shows every row.
+ * @return {{rows: Array<object>, page: number, pages: number, from: number, to: number, total: number}} The page.
+ * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+ */
+export function rowsPage(rows, page, size) {
+	const all = Array.isArray(rows) ? rows : []
+	const total = all.length
+	const per = Number(size) > 0 ? Math.floor(Number(size)) : Math.max(total, 1)
+	const pages = Math.max(1, Math.ceil(total / per))
+	const current = Math.min(Math.max(1, Math.floor(Number(page) || 1)), pages)
+	const start = (current - 1) * per
+	const shown = all.slice(start, start + per)
+	return {
+		rows: shown,
+		page: current,
+		pages,
+		from: shown.length ? start + 1 : 0,
+		to: start + shown.length,
+		total,
+	}
+}
+
+/**
+ * The initials a record's side card shows for its title: the first letter of
+ * the first and the last word ("Joost van Dalen" is "JD").
+ *
+ * @param {string} title The record's title.
+ * @return {string} One or two capitals, or ''.
+ * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+ */
+export function initialsOf(title) {
+	const words = String(title || '')
+		.trim()
+		.split(/\s+/)
+		.filter(Boolean)
+	if (words.length === 0) {
+		return ''
+	}
+	const first = words[0].charAt(0)
+	const last = words.length > 1 ? words[words.length - 1].charAt(0) : ''
+	return (first + last).toUpperCase()
+}
+
+/**
+ * A page's sentence with its `{name}` placeholders filled in.
+ *
+ * @param {string} text The sentence ("{count} stemmingen").
+ * @param {object} vars The values.
+ * @return {string} The sentence.
+ * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+ */
+export function fillText(text, vars) {
+	return String(text || '').replace(/\{(\w+)\}/g, (match, name) =>
+		Object.hasOwn(vars || {}, name) ? String(vars[name]) : match,
+	)
+}
