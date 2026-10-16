@@ -16,7 +16,12 @@ import {
 	createCollectionLoader,
 	openRecordState,
 	pickedRecord,
+	readUnderMandate,
 } from '../src/site/pages/collections/collectionLoader.js'
+import {
+	resolveBlocks,
+	withoutRecordWrites,
+} from '../src/site/pages/collections/pageBlocks.js'
 
 /**
  * A portal api stand-in that answers each collection read from `rows`.
@@ -233,5 +238,52 @@ test('a record page opens a row picked under a mandate, and nothing else outside
 		pickedRecord([{ id: 'c9', title: 'Fresh' }], mandated).title,
 		'Fresh',
 		'the loaded row wins over the carried one',
+	)
+})
+
+// mandated-case-offers-no-writes: a case read under a mandate offers no write.
+test('a record read under a mandate is read-only', () => {
+	assert.equal(readUnderMandate({ id: 'c9', _mandate: { id: 'm1' } }), true)
+	assert.equal(readUnderMandate({ id: 'c9', _mandate: { id: '' } }), false)
+	assert.equal(readUnderMandate({ id: 'c1' }), false)
+	assert.equal(readUnderMandate(null), false)
+})
+
+test('the case page under a mandate drops its writes and keeps what it reads', () => {
+	const contribution = {
+		collections: [{ id: 'mijnZaken', register: 'r', schema: 'zaak', rowActions: ['propose'] }],
+		actions: [
+			{ id: 'replyToMessage', type: 'create' },
+			{ id: 'createKlacht', type: 'create' },
+			{ id: 'propose', type: 'propose-change' },
+		],
+	}
+	const page = {
+		blocks: [
+			{ type: 'steps', collection: 'mijnZaken' },
+			{ type: 'detail', collection: 'mijnZaken', label: 'Gegevens' },
+			{ type: 'documents', collection: 'mijnZaken', label: 'Stukken', upload: true },
+			{ type: 'timeline', collection: 'mijnZaken' },
+			{ type: 'cta', action: 'replyToMessage', label: 'Bericht sturen', withRecord: true },
+			{ type: 'cta', action: 'createKlacht', label: 'Klacht indienen', withRecord: true },
+			{ type: 'action', action: 'createKlacht' },
+			{ type: 'citizenCase', collection: 'mijnZaken', display: 'actions' },
+		],
+	}
+	const items = resolveBlocks(page, contribution)
+	const read = withoutRecordWrites(items)
+
+	assert.deepEqual(
+		read.map((item) => item.kind),
+		['steps', 'detail', 'documents', 'timeline', 'action', 'citizenCase'],
+		'the record-bound forms go; a form not bound to the record stays',
+	)
+	assert.equal(read.find((item) => item.kind === 'documents').block.upload, false)
+	assert.equal(items.find((item) => item.kind === 'detail').proposeAction.id, 'propose')
+	assert.equal(read.find((item) => item.kind === 'detail').proposeAction, null)
+	assert.equal(
+		items.find((item) => item.kind === 'documents').block.upload,
+		true,
+		'the resolved blocks themselves are not changed',
 	)
 })
