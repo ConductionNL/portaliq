@@ -394,7 +394,11 @@ export default {
 				return href
 			}
 			return linkAddress(href, (route) =>
-				addressOfRoute(route, window.location.href, runtimeConfig()).toString(),
+				addressOfRoute(
+					route,
+					window.location.href,
+					runtimeConfig(),
+				).toString(),
 			)
 		},
 

@@ -115,7 +115,10 @@ export default {
 		 * @spec openspec/changes/hero-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-block-link-to-a-site-page-carries-the-sites-own-address
 		 */
 		hrefOf(subject) {
-			const route = subjectHref(subject.slug, this.subjectRoute || '/onderwerp')
+			const route = subjectHref(
+				subject.slug,
+				this.subjectRoute || '/onderwerp',
+			)
 			return authoredLink(route)?.href || route
 		},
 

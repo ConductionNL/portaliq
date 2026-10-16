@@ -16,6 +16,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { authoredLink } from '../src/site/components/mijn/links.js'
 import { withoutStyling } from '../src/site/lib/blockProps.js'
 import {
 	footerContentOf,
@@ -29,7 +30,6 @@ import {
 	registerRouteOf,
 	subFooterMenuOf,
 } from '../src/site/lib/shellData.js'
-import { authoredLink } from '../src/site/components/mijn/links.js'
 import { addressOfRoute } from '../src/site/lib/siteAddress.js'
 import { renderSfc } from './support/render-sfc.mjs'
 

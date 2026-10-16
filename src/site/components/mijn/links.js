@@ -24,7 +24,10 @@ export function authoredLink(value) {
 		const at = raw.indexOf('?')
 		return at === -1
 			? { href: siteHref(raw), route: raw }
-			: { href: withQuery(siteHref(raw.slice(0, at)), raw.slice(at + 1)), route: raw }
+			: {
+					href: withQuery(siteHref(raw.slice(0, at)), raw.slice(at + 1)),
+					route: raw,
+				}
 	}
 	if (/^(https?:\/\/|mailto:|tel:)/i.test(raw)) {
 		return { href: raw, route: '' }
