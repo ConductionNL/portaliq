@@ -9,7 +9,10 @@ use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\SubmissionReceiptService;
+use DateTimeInterface;
+use DateTimeZone;
 use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\IDateTimeZone;
 use OCP\IL10N;
 use OCP\L10N\IFactory;
 use PHPUnit\Framework\TestCase;
@@ -130,6 +133,76 @@ class SubmissionReceiptServiceTest extends TestCase {
 	 * rule key, the contributing appId, and a subject carrying subjectRef +
 	 * organisation + the passed-through audience.
 	 */
+	/**
+	 * The receipt names the moment in words of the portal's language, in the
+	 * instance's time zone and to the minute; the stored moment stays ISO.
+	 *
+	 * @spec openspec/changes/receipt-date-reads-in-the-portals-language/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-names-the-moment-in-words-of-the-portals-language
+	 */
+	public function testTheReceiptNamesTheMomentInTheReadersWords(): void {
+		$widths = [];
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnCallback(static fn (string $text, $parameters = []) => vsprintf($text, $parameters));
+		$l10n->method('l')->willReturnCallback(
+			static function (string $type, $data, array $options = []) use (&$widths) {
+				$widths[] = $type . ':' . ($options['width'] ?? '');
+				return $data instanceof DateTimeInterface ? $data->format('j-n-Y H:i e') : false;
+			}
+		);
+		$factory = $this->createMock(IFactory::class);
+		$factory->method('get')->willReturn($l10n);
+		$portals = $this->createMock(PortalResolver::class);
+		$zone = $this->createMock(IDateTimeZone::class);
+		$zone->method('getTimeZone')->willReturn(new DateTimeZone('Europe/Amsterdam'));
+
+		$writes = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use (&$writes) {
+				$writes[] = $data;
+				return (['@self' => ['id' => $schema . '-id']] + $data);
+			}
+		);
+
+		$service = new SubmissionReceiptService($writer, new PortalNoticeLanguage($factory, $portals), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class), $zone);
+		$service->record('s1', 'org-1', 'pipelinq', 'askQuestion', ['title' => 'Afval']);
+
+		$receipt = $writes[0];
+		$this->assertStringContainsString('We received your submission on 14-11-2023 23:13 Europe/Amsterdam (reference', $receipt['body']);
+		$this->assertStringNotContainsString('2023-11-14T', $receipt['body']);
+		$this->assertSame(['datetime:long|short'], $widths);
+		$this->assertSame('2023-11-14T22:13:20+00:00', $receipt['receivedAt']);
+	}//end testTheReceiptNamesTheMomentInTheReadersWords()
+
+	/**
+	 * A moment the language cannot write, or one it fails on, is named as stored.
+	 *
+	 * @spec openspec/changes/receipt-date-reads-in-the-portals-language/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-names-the-moment-in-words-of-the-portals-language
+	 */
+	public function testAMomentTheLanguageCannotWriteIsNamedAsStored(): void {
+		foreach ([static fn () => false, static fn () => throw new RuntimeException('no calendar data')] as $answer) {
+			$l10n = $this->createMock(IL10N::class);
+			$l10n->method('t')->willReturnCallback(static fn (string $text, $parameters = []) => vsprintf($text, $parameters));
+			$l10n->method('l')->willReturnCallback($answer);
+			$factory = $this->createMock(IFactory::class);
+			$factory->method('get')->willReturn($l10n);
+
+			$writes = [];
+			$writer = $this->createMock(PortalObjectWriter::class);
+			$writer->method('createObject')->willReturnCallback(
+				function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use (&$writes) {
+					$writes[] = $data;
+					return (['@self' => ['id' => $schema . '-id']] + $data);
+				}
+			);
+
+			$service = new SubmissionReceiptService($writer, new PortalNoticeLanguage($factory, $this->createMock(PortalResolver::class)), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+			$service->record('s1', 'org-1', 'pipelinq', 'askQuestion', ['title' => 'Afval']);
+
+			$this->assertStringContainsString('We received your submission on 2023-11-14T22:13:20+00:00 (reference', $writes[0]['body']);
+		}
+	}//end testAMomentTheLanguageCannotWriteIsNamedAsStored()
+
 	/**
 	 * The receipt is written once, in the language of the resident's portal.
 	 *
