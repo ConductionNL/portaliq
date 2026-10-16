@@ -89,7 +89,7 @@
 				<h2 class="utrecht-heading-2">{{ say('documents') }}</h2>
 				<ul>
 					<li v-for="document in detail.documents" :key="document.href">
-						<a class="utrecht-link" :href="document.href">{{
+						<a class="utrecht-link" :href="linkOf(document.href)">{{
 							document.label
 						}}</a>
 					</li>
@@ -125,7 +125,7 @@
 			<p v-if="detail.secondaryLink" class="utrecht-paragraph">
 				<a
 					class="utrecht-button utrecht-button--secondary-action"
-					:href="detail.secondaryLink.href"
+					:href="linkOf(detail.secondaryLink.href)"
 					data-testid="nl-public-detail-secondary"
 					>{{ detail.secondaryLink.label }}</a
 				>
@@ -303,6 +303,15 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * @param {string} href A document's or the secondary link's address.
+		 * @return {string} A site path in the site's own addressing, else as it is.
+		 * @spec openspec/changes/hero-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-block-link-to-a-site-page-carries-the-sites-own-address
+		 */
+		linkOf(href) {
+			return authoredLink(href)?.href || href
+		},
+
 		/**
 		 * Read the item the route names, then take back what the visitor
 		 * had chosen before signing in.

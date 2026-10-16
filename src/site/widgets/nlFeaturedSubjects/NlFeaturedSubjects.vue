@@ -56,6 +56,7 @@
 </template>
 
 <script>
+import { authoredLink } from '../../components/mijn/links.js'
 import { fetchFeatured, subjectHref } from '../../lib/subjects.js'
 import { pageLocale } from '../../pages/inbox/translate.js'
 import strings from './strings.js'
@@ -109,11 +110,16 @@ export default {
 
 		/**
 		 * @param {{slug: string}} subject The subject.
-		 * @return {string} Its page.
+		 * @return {string} Its page, in the site's own addressing.
 		 * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+		 * @spec openspec/changes/hero-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-block-link-to-a-site-page-carries-the-sites-own-address
 		 */
 		hrefOf(subject) {
-			return subjectHref(subject.slug, this.subjectRoute || '/onderwerp')
+			const route = subjectHref(
+				subject.slug,
+				this.subjectRoute || '/onderwerp',
+			)
+			return authoredLink(route)?.href || route
 		},
 
 		/**

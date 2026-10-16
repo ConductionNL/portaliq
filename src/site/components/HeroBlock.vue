@@ -68,7 +68,7 @@
 					v-for="link in popular"
 					:key="link.href"
 					class="utrecht-link pq-hero__popular-link"
-					:href="link.href"
+					:href="addressFor(link.href)"
 					@click="onAction($event, link.href)"
 					>{{ link.label }}</a
 				>
@@ -82,7 +82,7 @@
 					:key="action.href + action.label"
 					class="pq-hero__action"
 					:class="{ 'pq-hero__action--link': action.style === 'link' }"
-					:href="action.href"
+					:href="addressFor(action.href)"
 					data-testid="hero-action"
 					@click="onAction($event, action.href)">
 					{{ action.label
@@ -134,6 +134,9 @@ import {
 } from '@conduction/nextcloud-vue/public'
 import { defineAsyncComponent } from 'vue'
 import { heroActions, heroPopularLinks } from '../lib/blockProps.js'
+import { runtimeConfig } from '../lib/contentApi.js'
+import { linkAddress } from '../lib/shellData.js'
+import { addressOfRoute } from '../lib/siteAddress.js'
 import { loaders } from '../widgets/loaders.js'
 
 /**
@@ -377,6 +380,28 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * The href of a popular link or an action: a site route in the site's
+		 * own addressing, so it opens in a new tab as well.
+		 *
+		 * @param {string} href The authored destination.
+		 * @return {string} The href.
+		 *
+		 * @spec openspec/changes/hero-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-block-link-to-a-site-page-carries-the-sites-own-address
+		 */
+		addressFor(href) {
+			if (typeof window === 'undefined') {
+				return href
+			}
+			return linkAddress(href, (route) =>
+				addressOfRoute(
+					route,
+					window.location.href,
+					runtimeConfig(),
+				).toString(),
+			)
+		},
+
 		/**
 		 * Follow an in-site route without leaving the document.
 		 *

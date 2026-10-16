@@ -59,6 +59,24 @@ export function isSiteRoute(link) {
 }
 
 /**
+ * The href of an authored link: a site route in the site's own addressing,
+ * so it opens where the site is served under the app path as well as on a
+ * portal domain; anything else as it is.
+ *
+ * @param {string} link The authored link.
+ * @param {function(string): string|null} addressOf A route to the address that opens it.
+ * @return {string} The href.
+ *
+ * @spec openspec/changes/site-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-menu-link-to-a-site-page-carries-the-sites-own-address
+ * @spec openspec/changes/hero-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-block-link-to-a-site-page-carries-the-sites-own-address
+ */
+export function linkAddress(link, addressOf) {
+	return typeof addressOf === 'function' && isSiteRoute(link)
+		? addressOf(link)
+		: link
+}
+
+/**
  * The menus with each item's `href` written in the site's own addressing, so
  * a menu works where the site is served under the app path as well as on a
  * portal domain. The item's `link` stays the route a click moves to; an item
