@@ -44,8 +44,12 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use DateTimeImmutable;
+use DateTimeZone;
 use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
 use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\IDateTimeZone;
+use OCP\IL10N;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -99,6 +103,9 @@ class SubmissionReceiptService {
 	 *                                                          (portal-notifications-dispatch)
 	 *                                                          on a successful receipt write; itself
 	 *                                                          fail-safe, never affects this call.
+	 * @param IDateTimeZone|null $timeZone The instance's time zone, in which the receipt names the moment.
+	 *
+	 * @spec openspec/changes/receipt-date-reads-in-the-portals-language/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-names-the-moment-in-words-of-the-portals-language
 	 */
 	public function __construct(
 		private readonly PortalObjectWriter $writer,
@@ -106,6 +113,7 @@ class SubmissionReceiptService {
 		private readonly ITimeFactory $timeFactory,
 		private readonly LoggerInterface $logger,
 		private readonly NotificationDispatchService $notificationDispatch,
+		private readonly ?IDateTimeZone $timeZone = null,
 	) {
 	}//end __construct()
 
@@ -201,7 +209,7 @@ class SubmissionReceiptService {
 			organisation: $organisation,
 			data: [
 				'subject' => $l10n->t(self::SUBJECT_KEY, [$referenceId]),
-				'body' => $l10n->t(self::BODY_KEY, [$referenceId, $submittedAt]),
+				'body' => $l10n->t(self::BODY_KEY, [$referenceId, $this->readable(l10n: $l10n, moment: $submittedAt)]),
 				'referenceId' => $referenceId,
 				'dataCopy' => $whitelistedData,
 				'read' => false,
@@ -349,6 +357,33 @@ class SubmissionReceiptService {
 
 		return 'WMEBV-' . strtoupper($random);
 	}//end generateReferenceId()
+
+	/**
+	 * A moment as the reader reads it: the day in words and the time to the
+	 * minute, in the portal's language and the instance's time zone
+	 * ("16 oktober 2026 09:41"). The stored value stays ISO.
+	 *
+	 * @param IL10N  $l10n   The portal's language.
+	 * @param string $moment An ISO 8601 moment.
+	 *
+	 * @return string The readable moment, or the moment as given when it cannot be read.
+	 *
+	 * @spec openspec/changes/receipt-date-reads-in-the-portals-language/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-names-the-moment-in-words-of-the-portals-language
+	 */
+	private function readable(IL10N $l10n, string $moment): string {
+		try {
+			$zone = ($this->timeZone?->getTimeZone() ?? new DateTimeZone('UTC'));
+			$text = $l10n->l('datetime', (new DateTimeImmutable($moment))->setTimezone($zone), ['width' => 'long|short']);
+		} catch (Throwable) {
+			return $moment;
+		}
+
+		if (is_string($text) === false || $text === '') {
+			return $moment;
+		}
+
+		return $text;
+	}//end readable()
 
 	/**
 	 * The current time as an ISO-8601 string (testable via ITimeFactory).
