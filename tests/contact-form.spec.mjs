@@ -77,6 +77,27 @@ test('the block says what happened after a question was sent', async () => {
 	assert.doesNotMatch(html, /contact-form-sent/, 'nothing is claimed before a send')
 })
 
+test('the form reads in the page language, and its optional mark is spaced', async () => {
+	const screen = await loadSfc(FORM)
+	const dutch = screen.computed.translate.call({ locale: 'nl' })
+	assert.equal(
+		dutch('A field without "optional" must be filled in.'),
+		'Een veld zonder "niet verplicht" moet u invullen.',
+	)
+	assert.equal(dutch('(optional)'), '(niet verplicht)')
+	const english = screen.computed.translate.call({ locale: 'en' })
+	assert.equal(english('(optional)'), '(optional)')
+	assert.match(readFileSync(FORM, 'utf8'), /:t="translate"/, 'the schema form gets the translator')
+
+	const label = await renderSfc('src/site/components/forms/FieldShell.vue', {
+		id: 'q',
+		label: 'Uw vraag',
+		required: false,
+		optionalLabel: dutch('(optional)'),
+	})
+	assert.match(label, /Uw vraag<span[^>]*> \(niet verplicht\)<\/span>/)
+})
+
 test('contactForm is a registered block the host feeds portal, session and ways', () => {
 	const grid = readFileSync('src/site/components/WidgetGrid.vue', 'utf8')
 	assert.match(grid, /contactForm: ContactForm/)
