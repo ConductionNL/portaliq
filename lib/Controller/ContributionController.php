@@ -946,23 +946,7 @@ class ContributionController extends Controller implements PortalProtected {
 			return [];
 		}
 
-		$objects = $this->reader->readCollection(
-			register: $register,
-			schema: $schema,
-			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			organisation: (string)($subject['organisation'] ?? ''),
-			limit: 200,
-			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
-			contributingApp: $match['app'],
-			via: ($collection['via'] ?? null),
-			audience: (string)($subject['audience'] ?? ''),
-			fields: ($collection['fields'] ?? null),
-			// Declared narrowing filter (e.g. a supertype discriminator such as
-			// pipelinq's `ticketType`). The reader applies it BEFORE the scope
-			// filter, so it can only ever subset the subject's own rows.
-			filter: (array)($collection['filter'] ?? [])
-		);
+		$objects = $this->readRows(subject: $subject, match: $match, register: $register, schema: $schema);
 
 		// Change signin-eherkenning-branch D2: a branch session sees its branch only.
 		$objects = $this->branches->rows(subject: $subject, collection: $collection, rows: $objects);
@@ -993,6 +977,53 @@ class ContributionController extends Controller implements PortalProtected {
 
 		return $objects;
 	}//end screenRows()
+
+
+	/**
+	 * The collection's rows before the screen's passes: what the public may
+	 * read for a collection its app declares `anonymous`, else the rows the
+	 * subject owns.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array{collection: array<string, mixed>, app: string} $match The subject's own collection.
+	 * @param string $register The register of the collection.
+	 * @param string $schema The schema of the collection.
+	 *
+	 * @return array<int, mixed> The rows.
+	 *
+	 * @spec openspec/changes/anonymous-collection-reads-what-the-public-may/specs/portal-contribution-contract/spec.md#requirement-an-anonymous-collection-shows-what-the-public-may-read
+	 */
+	private function readRows(array $subject, array $match, string $register, string $schema): array {
+		$collection = $match['collection'];
+		if (($collection['anonymous'] ?? false) === true) {
+			return $this->reader->readPublicCollection(
+				register: $register,
+				schema: $schema,
+				organisation: (string)($subject['organisation'] ?? ''),
+				limit: 200,
+				fields: ($collection['fields'] ?? null),
+				filter: (array)($collection['filter'] ?? [])
+			);
+		}
+
+		return $this->reader->readCollection(
+			register: $register,
+			schema: $schema,
+			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
+			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			organisation: (string)($subject['organisation'] ?? ''),
+			limit: 200,
+			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
+			contributingApp: $match['app'],
+			via: ($collection['via'] ?? null),
+			audience: (string)($subject['audience'] ?? ''),
+			fields: ($collection['fields'] ?? null),
+			// Declared narrowing filter (e.g. a supertype discriminator such as
+			// pipelinq's `ticketType`). The reader applies it BEFORE the scope
+			// filter, so it can only ever subset the subject's own rows.
+			filter: (array)($collection['filter'] ?? [])
+		);
+	}//end readRows()
 
 
 	/**

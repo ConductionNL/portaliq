@@ -110,6 +110,77 @@ class PortalObjectReaderTest extends TestCase {
 
 	}//end testFiltersOnScopeAndDropsForeignRows()
 
+	/**
+	 * anonymous-collection-reads-what-the-public-may: an anonymous collection
+	 * is read with OpenRegister's own rules ON, unscoped to the subject,
+	 * narrowed by its filter, without another tenant's rows, and projected.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/anonymous-collection-reads-what-the-public-may/specs/portal-contribution-contract/spec.md#requirement-an-anonymous-collection-shows-what-the-public-may-read
+	 */
+	public function testAPublicReadLetsOpenRegisterDecideAndNarrowsAndProjects(): void {
+		$objectService = new class {
+
+			/**
+			 * @var array<string,mixed>
+			 */
+			public array $received = [];
+
+			public string $register = '';
+
+			public string $schema = '';
+
+			public ?bool $rbac = null;
+
+			public ?bool $multitenancy = null;
+
+			public function setRegister(string $register): self {
+				$this->register = $register;
+				return $this;
+			}//end setRegister()
+
+			public function setSchema(string $schema): self {
+				$this->schema = $schema;
+				return $this;
+			}//end setSchema()
+
+			/**
+			 * @param array<string,mixed> $config
+			 *
+			 * @return array<int,array<string,mixed>>
+			 */
+			public function findAll(array $config, bool $_rbac = true, bool $_multitenancy = true): array {
+				$this->received = $config;
+				$this->rbac = $_rbac;
+				$this->multitenancy = $_multitenancy;
+				return [
+					['title' => 'Raadsvergadering', 'oriType' => 'Vergadering', 'secret' => 'x'],
+					['title' => 'Elders', 'oriType' => 'Vergadering', 'organisation' => 'org-2'],
+					['title' => 'Hier', 'oriType' => 'Vergadering', 'organisation' => 'org-1'],
+				];
+			}//end findAll()
+		};
+
+		$reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
+		$rows = $reader->readPublicCollection(
+			register: 'decidiq',
+			schema: 'publication-payload',
+			organisation: 'org-1',
+			limit: 200,
+			fields: ['title'],
+			filter: ['oriType' => 'Vergadering']
+		);
+
+		$this->assertTrue($objectService->rbac, 'OpenRegister decides what the caller may read');
+		$this->assertTrue($objectService->multitenancy);
+		$this->assertSame(['oriType' => 'Vergadering'], $objectService->received['filters'], 'no subject scope, only the narrowing filter');
+		$this->assertSame('publication-payload', $objectService->schema);
+		$this->assertSame(['Raadsvergadering', 'Hier'], array_column($rows, 'title'), "another tenant's row is dropped");
+		$this->assertArrayNotHasKey('secret', $rows[0], 'the whitelist shapes every row');
+
+	}//end testAPublicReadLetsOpenRegisterDecideAndNarrowsAndProjects()
+
 	public function testDeclaredFilterNarrowsTheReadAndScopeStillWins(): void {
 		$objectService = new class {
 
