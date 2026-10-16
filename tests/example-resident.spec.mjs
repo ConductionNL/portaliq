@@ -242,13 +242,30 @@ test('zuiddrecht.json puts the residents in the group the portal names', () => {
 	const zuiddrecht = fragments.find(({ file }) => file === 'zuiddrecht.json').fragment
 	assert.deepEqual(zuiddrecht.groups, [
 		{ group: 'inwoners', displayName: 'Inwoners', members: ['sanne', 'henk', 'linda', 'fatima'] },
+		{ group: 'ondernemers', displayName: 'Ondernemers', members: ['janwillem', 'mark', 'karin'] },
 	])
-	const change = zuiddrecht.changes.find((entry) => entry.schema === 'portal')
+	const change = zuiddrecht.changes.find((entry) => entry.key === 'inloggen-met-account')
 	assert.equal(change.set['authentication.registration.residentGroup'], 'inwoners')
 	assert.equal(change.set['authentication.modeLabels.nextcloud'].title, 'Met een account')
 	const registration = schemas.portal.properties.authentication.properties.registration.properties
 	assert.equal(registration.residentGroup.type, 'string', 'the schema declares the resident group')
 	assert.equal(registration.residentAudience.type, 'string', 'the schema declares the resident audience')
+})
+
+test('zuiddrecht.json puts the business contacts in the business group the portal names, never in inwoners', () => {
+	const zuiddrecht = fragments.find(({ file }) => file === 'zuiddrecht.json').fragment
+	const members = Object.fromEntries(zuiddrecht.groups.map((group) => [group.group, group.members]))
+	const businessContacts = ['janwillem', 'mark', 'karin']
+	assert.deepEqual(members.ondernemers, businessContacts)
+	for (const contact of businessContacts) {
+		assert.ok(!members.inwoners.includes(contact), `${contact} is not a resident`)
+	}
+	const change = zuiddrecht.changes.find((entry) => entry.key === 'ondernemers-op-het-portaal')
+	assert.deepEqual(change.where, { slug: 'zuiddrecht' })
+	assert.deepEqual(change.set, { 'authentication.registration.businessGroup': 'ondernemers' })
+	const registration = schemas.portal.properties.authentication.properties.registration.properties
+	assert.equal(registration.businessGroup.type, 'string', 'the schema declares the business group')
+	assert.equal(registration.businessAudience.type, 'string', 'the schema declares the business audience')
 })
 
 test('zuiddrecht.json keeps the five cases of the Woo journey and the resident boards', () => {

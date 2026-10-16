@@ -63,7 +63,7 @@ class ResidentLandingListenerTest extends TestCase {
 		$this->portals = [
 			[
 				'slug'           => 'zuiddrecht',
-				'authentication' => ['modes' => ['digid', 'nextcloud'], 'registration' => ['residentGroup' => 'inwoners']],
+				'authentication' => ['modes' => ['digid', 'nextcloud'], 'registration' => ['residentGroup' => 'inwoners', 'businessGroup' => 'ondernemers']],
 			],
 			[
 				'slug'           => 'elders',
@@ -218,6 +218,33 @@ class ResidentLandingListenerTest extends TestCase {
 		$this->leave(gid: 'inwoners', uid: 'linda');
 
 		$this->assertSame(['linda' => 'files'], $this->startPages);
+	}
+
+	/**
+	 * @return void
+	 *
+	 * @spec openspec/changes/business-audience-group/specs/portal-nextcloud-account-login/spec.md#requirement-a-portal-may-name-a-business-group-with-its-own-audience-req-ncl-008
+	 */
+	public function testABusinessContactStartsOnPortaliqAndLeavesItWithTheGroup(): void {
+		$this->join(gid: 'ondernemers', uid: 'karin');
+		$this->assertSame('portaliq', $this->startPages['karin']);
+
+		$this->leave(gid: 'ondernemers', uid: 'karin');
+		$this->assertSame([], $this->startPages);
+	}
+
+	/**
+	 * @return void
+	 *
+	 * @spec openspec/changes/business-audience-group/specs/portal-nextcloud-account-login/spec.md#requirement-a-portal-may-name-a-business-group-with-its-own-audience-req-ncl-008
+	 */
+	public function testABusinessContactInBothGroupsKeepsPortaliqAfterLeavingOne(): void {
+		$this->join(gid: 'ondernemers', uid: 'karin');
+		$this->join(gid: 'inwoners', uid: 'karin');
+
+		$this->leave(gid: 'ondernemers', uid: 'karin');
+
+		$this->assertSame(['karin' => 'portaliq'], $this->startPages);
 	}
 
 	/**
