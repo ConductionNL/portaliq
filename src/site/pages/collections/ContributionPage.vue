@@ -548,8 +548,9 @@ import {
 	createCollectionLoader,
 	openRecordState,
 	pickedRecord,
+	readUnderMandate,
 } from './collectionLoader.js'
-import { resolveBlocks } from './pageBlocks.js'
+import { resolveBlocks, withoutRecordWrites } from './pageBlocks.js'
 import { collectionsTranslator, pageLocale } from './translate.js'
 
 /**
@@ -856,10 +857,12 @@ export default {
 
 		/**
 		 * The blocks on screen: on a record page the list until a record is
-		 * open, then every other block.
+		 * open, then every other block, without its writes when the record
+		 * was read under a mandate.
 		 *
 		 * @return {Array<object>}
 		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-page-may-be-the-record-page-of-a-collection
+		 * @spec openspec/changes/mandated-case-offers-no-writes/specs/portal-my-cases/spec.md#requirement-a-case-read-under-a-mandate-offers-no-writes
 		 */
 		visibleBlocks() {
 			const record = this.recordPage
@@ -873,7 +876,10 @@ export default {
 					(item) => isList(item) || item.kind === 'richText',
 				)
 			}
-			return this.blocks.filter((item) => !isList(item))
+			const open = this.blocks.filter((item) => !isList(item))
+			return readUnderMandate(this.activeRecord)
+				? withoutRecordWrites(open)
+				: open
 		},
 
 		openRecordGroups() {

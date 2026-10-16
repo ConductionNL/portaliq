@@ -219,6 +219,20 @@ export function openRecordState(loaded, target) {
 }
 
 /**
+ * Whether the open record was read under a mandate (`_mandate.id`). A case
+ * read under a mandate is read-only (REQ-CMC-004): the server refuses every
+ * write under it, so the page offers none.
+ *
+ * @param {object|null} record The open record.
+ * @return {boolean}
+ * @spec openspec/changes/mandated-case-offers-no-writes/specs/portal-my-cases/spec.md#requirement-a-case-read-under-a-mandate-offers-no-writes
+ */
+export function readUnderMandate(record) {
+	const id = record?._mandate?.id
+	return typeof id === 'string' && id !== ''
+}
+
+/**
  * The record a record page opens: the picked row when it is in the resident's
  * own list, or the picked row a mandate opened. A case opened from "My cases"
  * under a mandate is the represented party's, so it is never in the person's
