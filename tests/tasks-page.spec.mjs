@@ -507,3 +507,142 @@ test('a task that names its app action shows that form, never the upload form', 
 		/<p class="utrecht-paragraph pq-task-refusal" role="status">The form for this task is not available to you right now\.<\/p>/,
 	)
 })
+
+// mijn-taken-lists-contributed-tasks: Sanne's "Stuur de bouwtekening" is a
+// dossiq request for more information, shown on the overview as "Wat u nog
+// moet doen", while "Mijn taken" read the portal tasks only and said there
+// were none.
+const DOSSIQ = {
+	app: 'dossiq',
+	collections: [
+		{
+			id: 'vragenAanU',
+			register: 'dossiq',
+			schema: 'aanvullingsverzoek',
+			label: 'Wat wij nog van u nodig hebben',
+			defaultFilters: { state: 'open' },
+		},
+		{ id: 'mijnZaken', register: 'dossiq', schema: 'case' },
+	],
+	pages: [
+		{
+			id: 'overzicht',
+			blocks: [
+				{
+					type: 'tasks',
+					collection: 'vragenAanU',
+					dueField: 'hersteltermijn',
+					titleFields: ['summary'],
+				},
+			],
+		},
+		{
+			id: 'mijnZaken',
+			record: { collection: 'mijnZaken' },
+			blocks: [
+				{ type: 'tasks', collection: 'vragenAanU', recordField: 'case' },
+				{ type: 'steps', collection: 'mijnZaken' },
+			],
+		},
+	],
+}
+
+const ASKED = [
+	{
+		id: 'av-2',
+		summary: 'Stuur de bouwtekening van uw dakkapel',
+		hersteltermijn: '2026-10-29',
+		state: 'open',
+		case: 'zaak-9',
+	},
+	{ id: 'av-1', summary: 'Al beantwoord', state: 'answered' },
+]
+
+test('my tasks reads every collection an app shows in a tasks block, once', async () => {
+	const { contributedTaskSources, contributedTaskEntries, matchesDefaultFilters } =
+		await import('../src/site/pages/inbox/contributedTasks.js')
+
+	const sources = contributedTaskSources({ contributions: [DOSSIQ] })
+	assert.equal(sources.length, 1, 'one collection, two blocks')
+	assert.equal(sources[0].app, 'dossiq')
+	assert.equal(sources[0].block.dueField, 'hersteltermijn', 'the first block wins')
+
+	assert.equal(matchesDefaultFilters(ASKED[0], sources[0].collection), true)
+	assert.equal(matchesDefaultFilters(ASKED[1], sources[0].collection), false)
+	assert.equal(matchesDefaultFilters({ state: 'x' }, {}), true)
+
+	assert.deepEqual(sources[0].record, { field: 'case', collection: 'mijnZaken' })
+
+	const entries = contributedTaskEntries(sources[0], ASKED, [])
+	assert.deepEqual(
+		entries.map((entry) => [entry.title, entry.due]),
+		[['Stuur de bouwtekening van uw dakkapel', '2026-10-29']],
+		'only the open request, titled by the block',
+	)
+
+	// No page lists the requests, so the row opens the case it belongs to.
+	const nav = [
+		{
+			key: 'dossiq:mijnZaken',
+			label: 'Uw zaak',
+			contribution: { app: 'dossiq' },
+			page: DOSSIQ.pages[1],
+		},
+	]
+	const [opened] = contributedTaskEntries(sources[0], ASKED, nav)
+	assert.deepEqual(opened.link, {
+		app: 'dossiq',
+		collection: 'mijnZaken',
+		id: 'zaak-9',
+	})
+	assert.match(opened.route, /mijnZaken\/zaak-9$/)
+})
+
+test('my tasks lists what an app asks beside the portal tasks, and is empty only when both are', async () => {
+	const calls = []
+	const api = {
+		...fakeApi(),
+		async fetchTasks() {
+			return { results: [], total: 0 }
+		},
+		async fetchCollection(collection) {
+			calls.push(collection.id)
+			return ASKED
+		},
+	}
+	const page = instance(TasksPage, {
+		api,
+		t,
+		locale: 'nl',
+		contributions: { contributions: [DOSSIQ] },
+	})
+	await page.loadList()
+	assert.deepEqual(calls, ['vragenAanU'])
+	assert.equal(page.contributed.length, 1)
+	assert.equal(page.loading, false)
+
+	const html = await renderComponent(
+		inState(TasksPage, {
+			loading: false,
+			tasks: [],
+			contributed: page.contributed,
+		}),
+		{ api, t, locale: 'nl' },
+	)
+	assert.match(html, /Stuur de bouwtekening van uw dakkapel/)
+	assert.doesNotMatch(html, /U heeft geen open taken/)
+
+	const failedRead = instance(TasksPage, {
+		api: {
+			...api,
+			async fetchCollection() {
+				throw new Error('down')
+			},
+		},
+		t,
+		locale: 'nl',
+		contributions: { contributions: [DOSSIQ] },
+	})
+	await failedRead.loadList()
+	assert.deepEqual(failedRead.contributed, [], 'a collection that fails adds nothing')
+})
