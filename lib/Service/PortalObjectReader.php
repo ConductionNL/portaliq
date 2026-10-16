@@ -88,6 +88,9 @@ use Throwable;
  * per-path scoping helpers (claim, forward/reverse via, projection) plus the
  * single-object read reusing them; each carries its own security rationale, so
  * splitting the file would scatter one security boundary across classes.
+ * @SuppressWarnings(PHPMD.TooManyMethods)          -- the same boundary: the
+ * public read of an `anonymous` collection shares the tenant check, the row
+ * normalising and the projection with the scoped reads, so it lives beside them.
  */
 class PortalObjectReader {
 	use PortalScopeMatch;
