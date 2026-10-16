@@ -595,7 +595,11 @@ export default {
 					// The organisation filter reads the portal's organisation
 					// by name, not by id (woo-search-names-the-organisation).
 					facetNames: this.organisation?.id
-						? { organization: { [this.organisation.id]: this.organisation.name } }
+						? {
+								organization: {
+									[this.organisation.id]: this.organisation.name,
+								},
+							}
 						: {},
 				}
 			}
