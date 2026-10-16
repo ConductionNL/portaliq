@@ -38,7 +38,9 @@
 			<button
 				type="button"
 				class="utrecht-button utrecht-button--subtle"
-				:data-testid="sent ? 'attached-action-close' : 'attached-action-cancel'"
+				:data-testid="
+					sent ? 'attached-action-close' : 'attached-action-cancel'
+				"
 				@click="close">
 				{{ sent ? translate('Close') : translate('Cancel') }}
 			</button>
