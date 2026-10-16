@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.97.0"
+        "version": "0.98.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.97.0",
+                "version": "0.98.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -2623,7 +2623,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.25.0",
+                "version": "0.26.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -3457,6 +3457,20 @@
                                         "description": "The audience a resident's first portal account gets. Empty means citizen.",
                                         "maxLength": 64,
                                         "example": "citizen"
+                                    },
+                                    "businessGroup": {
+                                        "title": "Business group",
+                                        "type": "string",
+                                        "description": "The Nextcloud group whose members act for a company on this portal. A member signing in with their Nextcloud account starts on the portal and gets a portal account with the business audience on the first sign-in. The registration app never fills it, so it opens no Create an account link. Only means something when the portal offers the Nextcloud way in.",
+                                        "maxLength": 64,
+                                        "example": "ondernemers"
+                                    },
+                                    "businessAudience": {
+                                        "title": "Business audience",
+                                        "type": "string",
+                                        "description": "The audience a business contact's first portal account gets. Empty means supplier.",
+                                        "maxLength": 64,
+                                        "example": "supplier"
                                     }
                                 }
                             },

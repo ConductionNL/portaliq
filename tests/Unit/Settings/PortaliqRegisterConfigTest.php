@@ -389,8 +389,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame('object', self::$register['components']['schemas']['portalFormBinding']['properties']['destination']['type']);
 		// 0.96.0 (form 0.3.0): a landing-page form's `destination { register, schema, fields, fixed }`; a submit creates that object directly (submit-creates-the-case-directly 3.2). Additive.
 		// 0.97.0 (register only): the register's authorization names only the staff group, and every schema's `authenticated` read is the staff group (close-portaliq-register-to-staff). OpenRegister writes a register's own fields only when its version is newer.
-		$this->assertSame('0.97.0', self::$register['info']['version']);
-		$this->assertSame('0.97.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.98.0: the portal schema declares `authentication.registration.businessGroup` and `businessAudience` (business-audience-group).
+		$this->assertSame('0.98.0', self::$register['info']['version']);
+		$this->assertSame('0.98.0', self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['form']['version']);
 		$this->assertSame('object', self::$register['components']['schemas']['form']['properties']['destination']['type']);
 		$this->assertSame('0.8.0', self::$register['components']['schemas']['portalPage']['version']);
@@ -455,7 +456,8 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.7.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.25.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.26.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('string', self::$register['components']['schemas']['portal']['properties']['authentication']['properties']['registration']['properties']['businessGroup']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portal']['properties']['tokens']['additionalProperties']['type']);
 		$this->assertTrue(self::$register['components']['schemas']['portal']['properties']['searchInsideDocuments']['default']);
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalDraft']['authorization']['read']);

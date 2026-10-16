@@ -7,11 +7,11 @@
  * signed in by that app and sent to Nextcloud's default page, which is the
  * workplace (`linkToDefaultPageUrl()`). Nextcloud reads the user's own
  * `core`/`defaultapp` preference before the system `defaultapp`, so when a
- * user joins a group a published portal names as its resident group, this
- * listener makes portaliq that user's start page. Portaliq's app page then
+ * user joins a group a published portal names as its resident group or its
+ * business group, this listener makes portaliq that user's start page. Portaliq's app page then
  * sends a resident on to their portal (REQ-NCL-006). A preference the user
  * already has is left alone, an administrator is never touched, and the
- * preference is taken back when the user leaves the last resident group, if
+ * preference is taken back when the user leaves the last such group, if
  * it is still portaliq's.
  *
  * @category Listener
@@ -159,7 +159,7 @@ class ResidentLandingListener implements IEventListener {
 	}//end left()
 
 	/**
-	 * Whether a published portal names this group as its resident group.
+	 * Whether a published portal names this group as its resident or business group.
 	 *
 	 * @param string $gid The group id.
 	 *
@@ -171,7 +171,7 @@ class ResidentLandingListener implements IEventListener {
 		}
 
 		foreach ($this->portals->allPublishedPortals() as $portal) {
-			if (is_array($portal) === true && $this->residents->residentGroup(portal: $portal) === $gid) {
+			if (is_array($portal) === true && array_key_exists($gid, $this->residents->portalGroups(portal: $portal)) === true) {
 				return true;
 			}
 		}

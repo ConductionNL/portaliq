@@ -15,10 +15,12 @@
  *   group, and the registration app is enabled and puts new users in exactly
  *   that group. Otherwise nowhere, and the link is not drawn: a door that
  *   leads nowhere is not shown (REQ-IWI-005).
- * - Is this Nextcloud user a resident of this portal? Only when they are a
- *   member of the group the portal names. Membership is the whole test, so a
- *   staff account outside the group never becomes a resident by signing in.
- * - Which portal does a resident belong to, for sending them back to it?
+ * - Is this Nextcloud user one of this portal's people? Only when they are a
+ *   member of a group the portal names: its resident group, or its business
+ *   group for people who act for a company. Membership is the whole test, so
+ *   a staff account outside both groups never becomes a portal user by
+ *   signing in. Each group carries its own audience.
+ * - Which portal does such a user belong to, for sending them back to it?
  *
  * Every address it hands out is built here from a route name. None is ever
  * taken from the request.
@@ -78,6 +80,11 @@ class NextcloudRegistrationDoor {
 	public const DEFAULT_AUDIENCE = 'citizen';
 
 	/**
+	 * The audience of a business contact's account when the portal names none.
+	 */
+	public const DEFAULT_BUSINESS_AUDIENCE = 'supplier';
+
+	/**
 	 * The sign-in mode this door belongs to.
 	 */
 	private const MODE = 'nextcloud';
@@ -117,24 +124,26 @@ class NextcloudRegistrationDoor {
 	 * @spec openspec/changes/nextcloud-account-registration/specs/portal-nextcloud-account-login/spec.md#requirement-the-sign-in-page-leads-to-nextclouds-own-registration-req-ncl-005
 	 */
 	public function residentGroup(array $portal): string {
-		$authentication = (array)($portal['authentication'] ?? []);
-		$modes = ($authentication['modes'] ?? []);
-		if (is_array($modes) === false || in_array(self::MODE, $modes, true) === false) {
-			return '';
-		}
-
-		$registration = ($authentication['registration'] ?? []);
-		if (is_array($registration) === false) {
-			return '';
-		}
-
-		$group = ($registration['residentGroup'] ?? '');
-		if (is_string($group) === false) {
-			return '';
-		}
-
-		return trim($group);
+		return $this->namedGroup(portal: $portal, key: 'residentGroup');
 	}//end residentGroup()
+
+	/**
+	 * The group whose members act for a company on this portal, or ''.
+	 *
+	 * Read from `authentication.registration.businessGroup`, under the same
+	 * condition as the resident group: only a portal that offers the
+	 * `nextcloud` mode has one. The registration app never fills it, so it
+	 * opens no "Create an account" link.
+	 *
+	 * @param array<string, mixed> $portal The portal's own configuration row.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/business-audience-group/specs/portal-nextcloud-account-login/spec.md#requirement-a-portal-may-name-a-business-group-with-its-own-audience-req-ncl-008
+	 */
+	public function businessGroup(array $portal): string {
+		return $this->namedGroup(portal: $portal, key: 'businessGroup');
+	}//end businessGroup()
 
 	/**
 	 * The audience a resident's account gets: the portal's
@@ -147,18 +156,75 @@ class NextcloudRegistrationDoor {
 	 * @spec openspec/changes/nextcloud-account-registration/specs/portal-nextcloud-account-login/spec.md#requirement-only-an-existing-active-portal-account-gets-a-session-req-ncl-003
 	 */
 	public function residentAudience(array $portal): string {
-		$registration = (((array)($portal['authentication'] ?? []))['registration'] ?? []);
-		$audience = '';
-		if (is_array($registration) === true && is_string($registration['residentAudience'] ?? null) === true) {
-			$audience = trim($registration['residentAudience']);
-		}
-
-		if ($audience === '') {
-			return self::DEFAULT_AUDIENCE;
-		}
-
-		return $audience;
+		return $this->namedAudience(portal: $portal, key: 'residentAudience', default: self::DEFAULT_AUDIENCE);
 	}//end residentAudience()
+
+	/**
+	 * The audience a business contact's account gets: the portal's
+	 * `authentication.registration.businessAudience`, or `supplier`.
+	 *
+	 * @param array<string, mixed> $portal The portal's own configuration row.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/business-audience-group/specs/portal-nextcloud-account-login/spec.md#requirement-a-portal-may-name-a-business-group-with-its-own-audience-req-ncl-008
+	 */
+	public function businessAudience(array $portal): string {
+		return $this->namedAudience(portal: $portal, key: 'businessAudience', default: self::DEFAULT_BUSINESS_AUDIENCE);
+	}//end businessAudience()
+
+	/**
+	 * The groups whose members are this portal's people, each with the
+	 * audience its members' accounts get: group id to audience.
+	 *
+	 * The resident group comes first. A business group that names the same
+	 * group as the resident group adds nothing: its members are residents.
+	 *
+	 * @param array<string, mixed> $portal The portal's own configuration row.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/changes/business-audience-group/specs/portal-nextcloud-account-login/spec.md#requirement-a-portal-may-name-a-business-group-with-its-own-audience-req-ncl-008
+	 */
+	public function portalGroups(array $portal): array {
+		$groups = [];
+		$resident = $this->residentGroup(portal: $portal);
+		if ($resident !== '') {
+			$groups[$resident] = $this->residentAudience(portal: $portal);
+		}
+
+		$business = $this->businessGroup(portal: $portal);
+		if ($business !== '' && isset($groups[$business]) === false) {
+			$groups[$business] = $this->businessAudience(portal: $portal);
+		}
+
+		return $groups;
+	}//end portalGroups()
+
+	/**
+	 * The audience this Nextcloud user has on this portal, or '' when they
+	 * are in none of the groups it names.
+	 *
+	 * @param array<string, mixed> $portal The portal's own configuration row.
+	 * @param string               $uid    The Nextcloud user id.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/business-audience-group/specs/portal-nextcloud-account-login/spec.md#requirement-a-portal-may-name-a-business-group-with-its-own-audience-req-ncl-008
+	 */
+	public function audienceOf(array $portal, string $uid): string {
+		if ($uid === '') {
+			return '';
+		}
+
+		foreach ($this->portalGroups(portal: $portal) as $gid => $audience) {
+			if ($this->groups->isInGroup($uid, (string)$gid) === true) {
+				return $audience;
+			}
+		}
+
+		return '';
+	}//end audienceOf()
 
 	/**
 	 * Where "Create an account" leads, or '' when it leads nowhere.
@@ -193,33 +259,14 @@ class NextcloudRegistrationDoor {
 	}//end registerUrl()
 
 	/**
-	 * Whether a Nextcloud user is a resident of this portal: a member of the
-	 * group it names.
+	 * Write the first portal account of a resident or business contact;
+	 * whether one now exists.
 	 *
-	 * @param array<string, mixed> $portal The portal's own configuration row.
-	 * @param string               $uid    The Nextcloud user id.
-	 *
-	 * @return bool
-	 *
-	 * @spec openspec/changes/nextcloud-account-registration/specs/portal-nextcloud-account-login/spec.md#requirement-only-an-existing-active-portal-account-gets-a-session-req-ncl-003
-	 */
-	public function isResident(array $portal, string $uid): bool {
-		$group = $this->residentGroup(portal: $portal);
-		if ($group === '' || $uid === '') {
-			return false;
-		}
-
-		return $this->groups->isInGroup($uid, $group);
-	}//end isResident()
-
-	/**
-	 * Write the first portal account of a resident; whether one now exists.
-	 *
-	 * False for anybody outside the portal's resident group. The account is
+	 * False for anybody outside the groups the portal names. The account is
 	 * written by the same provisioner an app uses
 	 * (an-app-provisions-a-nextcloud-account): active, its subjectRef the
-	 * user id, in the portal's organisation, with the resident audience, the
-	 * address unverified. Its refusals (an account in the organisation that
+	 * user id, in the portal's organisation, with the audience of the user's
+	 * group, the address unverified. Its refusals (an account in the organisation that
 	 * holds the same address, a portal without an organisation) stand.
 	 *
 	 * @param array<string, mixed> $portal The portal, which offers `nextcloud`.
@@ -230,7 +277,12 @@ class NextcloudRegistrationDoor {
 	 * @spec openspec/changes/nextcloud-account-registration/specs/portal-nextcloud-account-login/spec.md#requirement-only-an-existing-active-portal-account-gets-a-session-req-ncl-003
 	 */
 	public function admitResident(array $portal, IUser $user): bool {
-		if ($this->provisioner === null || $this->isResident(portal: $portal, uid: $user->getUID()) === false) {
+		if ($this->provisioner === null) {
+			return false;
+		}
+
+		$audience = $this->audienceOf(portal: $portal, uid: $user->getUID());
+		if ($audience === '') {
 			return false;
 		}
 
@@ -238,7 +290,7 @@ class NextcloudRegistrationDoor {
 			appId: Application::APP_ID,
 			uid: $user->getUID(),
 			portal: (string)($portal['slug'] ?? ''),
-			audience: $this->residentAudience(portal: $portal),
+			audience: $audience,
 			organisation: trim((string)($portal['organisation'] ?? '')),
 			email: (string)($user->getEMailAddress() ?? ''),
 			displayName: $user->getDisplayName()
@@ -248,7 +300,7 @@ class NextcloudRegistrationDoor {
 	}//end admitResident()
 
 	/**
-	 * The published portal this user is a resident of, or null.
+	 * The published portal whose resident or business group this user is in, or null.
 	 *
 	 * An administrator is never sent anywhere: they keep the app they opened.
 	 * When the user belongs to more than one portal's group, the first
@@ -267,13 +319,66 @@ class NextcloudRegistrationDoor {
 		}
 
 		foreach ($this->portals->allPublishedPortals() as $portal) {
-			if (is_array($portal) === true && (string)($portal['slug'] ?? '') !== '' && $this->isResident(portal: $portal, uid: $uid) === true) {
+			if (is_array($portal) === true && (string)($portal['slug'] ?? '') !== '' && $this->audienceOf(portal: $portal, uid: $uid) !== '') {
 				return $portal;
 			}
 		}
 
 		return null;
 	}//end residentPortalOf()
+
+	/**
+	 * The group a portal names under `authentication.registration.<key>`, or
+	 * '' unless the portal offers the `nextcloud` mode.
+	 *
+	 * @param array<string, mixed> $portal The portal's own configuration row.
+	 * @param string               $key    `residentGroup` or `businessGroup`.
+	 *
+	 * @return string
+	 */
+	private function namedGroup(array $portal, string $key): string {
+		$authentication = (array)($portal['authentication'] ?? []);
+		$modes = ($authentication['modes'] ?? []);
+		if (is_array($modes) === false || in_array(self::MODE, $modes, true) === false) {
+			return '';
+		}
+
+		$registration = ($authentication['registration'] ?? []);
+		if (is_array($registration) === false) {
+			return '';
+		}
+
+		$group = ($registration[$key] ?? '');
+		if (is_string($group) === false) {
+			return '';
+		}
+
+		return trim($group);
+	}//end namedGroup()
+
+	/**
+	 * The audience a portal names under `authentication.registration.<key>`,
+	 * or the default when it names none.
+	 *
+	 * @param array<string, mixed> $portal  The portal's own configuration row.
+	 * @param string               $key     `residentAudience` or `businessAudience`.
+	 * @param string               $default The audience when none is named.
+	 *
+	 * @return string
+	 */
+	private function namedAudience(array $portal, string $key, string $default): string {
+		$registration = (((array)($portal['authentication'] ?? []))['registration'] ?? []);
+		$audience = '';
+		if (is_array($registration) === true && is_string($registration[$key] ?? null) === true) {
+			$audience = trim($registration[$key]);
+		}
+
+		if ($audience === '') {
+			return $default;
+		}
+
+		return $audience;
+	}//end namedAudience()
 
 	/**
 	 * The group the registration app puts new users in, or ''.
