@@ -16,6 +16,7 @@ import {
 	parseOpenFragment,
 } from '../../../shared/openRecord.js'
 import { routeForNav } from '../../../shared/portalNav.js'
+import { DAY_AND_MINUTE } from '../../lib/dayAndMinute.js'
 
 /** The site route of "My tasks" in the signed-in area, as the shell builds it. */
 export const TASKS_ROUTE = routeForNav({ special: 'tasks' })
@@ -51,7 +52,7 @@ export function formatDateTime(value, locale) {
 	if (Number.isNaN(date.getTime())) {
 		return String(value)
 	}
-	return date.toLocaleString(locale === 'en' ? 'en-GB' : 'nl-NL')
+	return date.toLocaleString(locale === 'en' ? 'en-GB' : 'nl-NL', DAY_AND_MINUTE)
 }
 
 /**

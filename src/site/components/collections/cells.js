@@ -13,9 +13,11 @@
 // column's `valueLabels` reads as that label ("approved" as "Goedgekeurd");
 // any other value reads as before (contribution-value-labels).
 //
-// Imports nothing, so tests/site-collections.spec.mjs runs it as node.
+// Imports plain modules only, so tests/site-collections.spec.mjs runs it as node.
 //
 // @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-collection-table-must-follow-the-declared-columns-req-srp-015
+
+import { DAY_AND_MINUTE } from '../../lib/dayAndMinute.js'
 
 /** Keys a row carries for the machine, never shown as a column. */
 const ENVELOPE = new Set(['@self', '_files', 'id', 'uuid'])
@@ -247,7 +249,7 @@ function formatMoment(value, withTime, locale) {
 	}
 	try {
 		return withTime
-			? date.toLocaleString(locale)
+			? date.toLocaleString(locale, DAY_AND_MINUTE)
 			: date.toLocaleDateString(locale)
 	} catch {
 		return String(value)
