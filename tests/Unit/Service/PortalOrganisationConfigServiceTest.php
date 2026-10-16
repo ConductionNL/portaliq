@@ -124,47 +124,14 @@ class PortalOrganisationConfigServiceTest extends TestCase {
 
 		$this->assertSame('Gemeente X', $config['organisationName']);
 		$this->assertSame('gemeente-x', $config['organisationSlug']);
+		// woo-search-names-the-organisation: the id a public search names it by.
+		$this->assertSame('org-uuid-1', $config['organisationId']);
 		$this->assertSame('utrecht', $config['theme']);
 		$this->assertSame('/apps/portaliq/img/gemeente-x.svg', $config['logo']);
 		$this->assertSame(['https://gemeente-x.example'], $config['allowedEmbedOrigins']);
 		$this->assertSame(['aiCompanion' => true], $config['featureFlags']);
 
 	}//end testResolvedOrganisationCarriesItsNameAndOverrides()
-
-	/**
-	 * woo-search-names-the-organisation: a slug names its organisation's id
-	 * and name; an unknown or empty slug names nothing.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/woo-search-names-the-organisation/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
-	 */
-	public function testPublicIdentityNamesTheOrganisationOfASlug(): void {
-		$mapper = new class {
-			public function findBySlug(string $slug) {
-				if ($slug !== 'zuiddrecht') {
-					throw new \RuntimeException('unknown');
-				}
-
-				return new class {
-					public function getUuid() {
-						return 'bacda7a4';
-					}
-
-					public function getName() {
-						return 'Gemeente Zuiddrecht';
-					}
-				};
-			}
-		};
-
-		$service = $this->service(mapper: $mapper);
-
-		$this->assertSame(['id' => 'bacda7a4', 'name' => 'Gemeente Zuiddrecht'], $service->publicIdentity('zuiddrecht'));
-		$this->assertNull($service->publicIdentity('elders'));
-		$this->assertNull($service->publicIdentity(''));
-
-	}//end testPublicIdentityNamesTheOrganisationOfASlug()
 
 	public function testMalformedAllowedEmbedOriginsDegradesToEmptyDenyList(): void {
 		$mapper = new class {

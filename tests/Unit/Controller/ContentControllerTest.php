@@ -29,6 +29,7 @@ use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
 use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
+use OCA\Portaliq\Service\SiteOrganisation;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\TrafficConfigResolver;
@@ -174,7 +175,7 @@ class ContentControllerTest extends TestCase {
 			userSession: ($this->userSession ?? $this->createMock(IUserSession::class)),
 			assistant: $assistant,
 			registrationDoor: $this->registrationDoor,
-			organisations: $this->organisations
+			siteOrganisation: ($this->organisations === null) ? null : new SiteOrganisation(organisations: $this->organisations)
 		);
 	}//end controller()
 
@@ -286,8 +287,8 @@ class ContentControllerTest extends TestCase {
 	public function testSiteNamesItsOrganisation(): void {
 		$this->resolver->method('resolve')->willReturn([...$this->portal(), 'organisation' => 'zuiddrecht']);
 		$this->organisations = $this->createMock(PortalOrganisationConfigService::class);
-		$this->organisations->expects($this->once())->method('publicIdentity')->with('zuiddrecht')
-			->willReturn(['id' => 'bacda7a4', 'name' => 'Gemeente Zuiddrecht']);
+		$this->organisations->expects($this->once())->method('resolve')->with('zuiddrecht')
+			->willReturn(['organisationId' => 'bacda7a4', 'organisationName' => 'Gemeente Zuiddrecht']);
 
 		$data = $this->controller()->site()->getData();
 
@@ -303,12 +304,32 @@ class ContentControllerTest extends TestCase {
 	 * @spec openspec/changes/woo-search-names-the-organisation/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
 	 */
 	public function testSiteWithoutAnOrganisationNamesNone(): void {
-		$this->resolver->method('resolve')->willReturn($this->portal());
+		$this->resolver->method('resolve')->willReturn([...$this->portal(), 'organisation' => 'onbekend']);
+		$this->organisations = $this->createMock(PortalOrganisationConfigService::class);
+		// An unknown slug resolves to the neutral default, which has no id.
+		$this->organisations->method('resolve')->willReturn(['organisationId' => '', 'organisationName' => 'Portaliq']);
 
-		$data = $this->controller()->site()->getData();
+		$this->assertNull($this->controller()->site()->getData()['organisation']);
 
-		$this->assertNull($data['organisation']);
+		$this->organisations = null;
+		$this->assertNull($this->controller()->site()->getData()['organisation']);
 	}//end testSiteWithoutAnOrganisationNamesNone()
+
+
+	/**
+	 * A portal that names no organisation asks for none.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-search-names-the-organisation/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
+	 */
+	public function testAPortalWithoutAnOrganisationSlugAsksForNone(): void {
+		$this->resolver->method('resolve')->willReturn($this->portal());
+		$this->organisations = $this->createMock(PortalOrganisationConfigService::class);
+		$this->organisations->expects($this->never())->method('resolve');
+
+		$this->assertNull($this->controller()->site()->getData()['organisation']);
+	}//end testAPortalWithoutAnOrganisationSlugAsksForNone()
 
 
 	/**
