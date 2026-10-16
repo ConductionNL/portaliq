@@ -341,7 +341,10 @@ test('the host hands the search block its organisation by name, after the author
 	const branch = grid.slice(grid.indexOf("widget.widgetKey === 'federatedSearch'"))
 	const body = branch.slice(0, branch.indexOf('}\n\t\t\t}'))
 	assert.match(body, /\.\.\.props,[\s\S]*facetNames: this\.organisation\?\.id/)
-	assert.match(body, /organization: \{ \[this\.organisation\.id\]: this\.organisation\.name \}/)
+	assert.match(
+		body,
+		/organization:\s*\{\s*\[this\.organisation\.id\]: this\.organisation\.name,?\s*\}/,
+	)
 	assert.match(
 		read('src/site/App.vue'),
 		/organisation: this\.site\.organisation \|\| null,/,
