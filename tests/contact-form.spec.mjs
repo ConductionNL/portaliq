@@ -18,18 +18,18 @@ import { loadSfc, renderSfc } from './support/render-sfc.mjs'
 
 const FORM = 'src/site/components/ContactForm.vue'
 const ACTION = {
-	id: 'ask-question',
+	id: 'askQuestion',
 	type: 'create',
 	register: 'pipelinq',
 	schema: 'ticket',
-	fields: ['onderwerp', 'vraag'],
+	fields: ['title', 'description'],
 }
 
 test('signed out: no form, the sign-in routes, and nothing is read', async () => {
 	let calls = 0
 	const html = await renderSfc(FORM, {
 		app: 'pipelinq',
-		action: 'ask-question',
+		action: 'askQuestion',
 		signedIn: false,
 		ways: [{ id: 'digid', label: 'Inloggen met DigiD', href: '/inloggen' }],
 		locale: 'nl',
@@ -46,7 +46,7 @@ test('load finds the create action of the named app and shows the form', async (
 	const screen = await loadSfc(FORM)
 	const vm = (contributions) => ({
 		app: 'pipelinq',
-		action: 'ask-question',
+		action: 'askQuestion',
 		state: 'idle',
 		resolved: null,
 		api: { getContributions: async () => ({ contributions }) },
@@ -54,7 +54,7 @@ test('load finds the create action of the named app and shows the form', async (
 	const ready = vm([{ app: 'other', actions: [ACTION] }, { app: 'pipelinq', actions: [ACTION] }])
 	await screen.methods.load.call(ready)
 	assert.equal(ready.state, 'ready')
-	assert.equal(ready.resolved.id, 'ask-question')
+	assert.equal(ready.resolved.id, 'askQuestion')
 
 	for (const contributions of [
 		[{ app: 'pipelinq', actions: [{ ...ACTION, type: 'update' }] }],
@@ -83,4 +83,12 @@ test('contactForm is a registered block the host feeds portal, session and ways'
 	assert.match(grid, /widgetKey === 'contactForm'\) \{\s*return \{\s*\.\.\.props,\s*portal: this\.portal,\s*signedIn: this\.signedIn === true/)
 	const catalogue = readFileSync('src/lib/pageWidgetCatalogue.js', 'utf8')
 	assert.match(catalogue, /contactForm: \['portal', 'signedIn', 'ways', 'apiOverride'\]/)
+})
+
+test('the example contact page binds to the question action pipelinq contributes', () => {
+	const site = JSON.parse(readFileSync('lib/Settings/sites/zuiddrecht.json', 'utf8'))
+	const page = site.pages.find((entry) => entry.route === '/contact/vraag')
+	const block = page.body.widgets.find((widget) => widget.widgetKey === 'contactForm')
+	assert.equal(block.props.app, 'pipelinq')
+	assert.equal(block.props.action, 'askQuestion')
 })

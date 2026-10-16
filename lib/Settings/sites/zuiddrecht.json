@@ -2134,9 +2134,8 @@
                         "gridHeight": 6,
                         "props": {
                             "app": "pipelinq",
-                            "action": "ask-question",
-                            "topicField": "onderwerp",
-                            "intro": "Kies een onderwerp en stel uw vraag. U vindt hem terug bij Mijn vragen.",
+                            "action": "askQuestion",
+                            "intro": "Noem het onderwerp en stel uw vraag. U vindt hem terug bij Mijn vragen.",
                             "questionsRoute": "/mijn"
                         }
                     }
