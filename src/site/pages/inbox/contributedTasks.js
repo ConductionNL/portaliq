@@ -37,7 +37,10 @@ export function contributedTaskSources(aggregate) {
 			const recordCollection =
 				page?.record?.collection || page?.records?.collection || ''
 			for (const block of page?.blocks || []) {
-				if (block?.type !== 'tasks' || typeof block.collection !== 'string') {
+				if (
+					block?.type !== 'tasks'
+					|| typeof block.collection !== 'string'
+				) {
 					continue
 				}
 				const collection = (contribution.collections || []).find(
