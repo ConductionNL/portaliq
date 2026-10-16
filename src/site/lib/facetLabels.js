@@ -47,25 +47,32 @@ export function valueLabel(field, code, locale) {
 
 /**
  * The search facet's buckets with a name on every code of a field that has a
- * configured list. Buckets of any other field keep the label the API gave
- * them.
+ * configured list, or that the host names (`names`). Buckets of any other
+ * value keep the label the API gave them.
  *
  * @param {Array<{value: string, label: string, count: number}>} buckets The buckets.
  * @param {string} field The facet field.
  * @param {string} locale The site's language.
+ * @param {Record<string, string>} [names] Names the host knows for this field's values (an organisation by its id).
  * @return {Array<{value: string, label: string, count: number}>} The buckets.
  * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+ * @spec openspec/changes/woo-search-names-the-organisation/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
  */
-export function labelBuckets(buckets, field, locale) {
+export function labelBuckets(buckets, field, locale, names = {}) {
 	if (field === 'resultType') {
 		return kindBuckets(buckets, locale)
 	}
-	if (!hasValueList(field)) {
+	const known = names && typeof names === 'object' ? names : {}
+	if (!hasValueList(field) && Object.keys(known).length === 0) {
 		return buckets
 	}
 	return buckets.map((bucket) => ({
 		...bucket,
-		label: valueLabel(field, bucket.value, locale),
+		label: Object.hasOwn(known, String(bucket.value))
+			? String(known[bucket.value])
+			: hasValueList(field)
+				? valueLabel(field, bucket.value, locale)
+				: bucket.label,
 	}))
 }
 

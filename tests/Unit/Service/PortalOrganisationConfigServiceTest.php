@@ -124,6 +124,8 @@ class PortalOrganisationConfigServiceTest extends TestCase {
 
 		$this->assertSame('Gemeente X', $config['organisationName']);
 		$this->assertSame('gemeente-x', $config['organisationSlug']);
+		// woo-search-names-the-organisation: the id a public search names it by.
+		$this->assertSame('org-uuid-1', $config['organisationId']);
 		$this->assertSame('utrecht', $config['theme']);
 		$this->assertSame('/apps/portaliq/img/gemeente-x.svg', $config['logo']);
 		$this->assertSame(['https://gemeente-x.example'], $config['allowedEmbedOrigins']);

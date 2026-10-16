@@ -28,6 +28,8 @@ use OCA\Portaliq\Service\Cms\PortalShell;
 use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
 use OCA\Portaliq\Service\PortalNoticeReader;
+use OCA\Portaliq\Service\PortalOrganisationConfigService;
+use OCA\Portaliq\Service\SiteOrganisation;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\TrafficConfigResolver;
@@ -103,6 +105,13 @@ class ContentControllerTest extends TestCase {
 	private ?NextcloudRegistrationDoor $registrationDoor = null;
 
 	/**
+	 * Names the portal's organisation, or none.
+	 *
+	 * @var PortalOrganisationConfigService|null
+	 */
+	private ?PortalOrganisationConfigService $organisations = null;
+
+	/**
 	 * The incoming request.
 	 *
 	 * @var IRequest&MockObject
@@ -165,7 +174,8 @@ class ContentControllerTest extends TestCase {
 			notices: ($this->notices ?? $this->createMock(PortalNoticeReader::class)),
 			userSession: ($this->userSession ?? $this->createMock(IUserSession::class)),
 			assistant: $assistant,
-			registrationDoor: $this->registrationDoor
+			registrationDoor: $this->registrationDoor,
+			siteOrganisation: ($this->organisations === null) ? null : new SiteOrganisation(organisations: $this->organisations)
 		);
 	}//end controller()
 
@@ -264,6 +274,62 @@ class ContentControllerTest extends TestCase {
 
 		$this->assertSame([$notice], $data['notices']);
 	}//end testSiteCarriesActiveNotices()
+
+
+	/**
+	 * woo-search-names-the-organisation: the site names its organisation by
+	 * id and name, so the search's organisation filter reads a name.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-search-names-the-organisation/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
+	 */
+	public function testSiteNamesItsOrganisation(): void {
+		$this->resolver->method('resolve')->willReturn([...$this->portal(), 'organisation' => 'zuiddrecht']);
+		$this->organisations = $this->createMock(PortalOrganisationConfigService::class);
+		$this->organisations->expects($this->once())->method('resolve')->with('zuiddrecht')
+			->willReturn(['organisationId' => 'bacda7a4', 'organisationName' => 'Gemeente Zuiddrecht']);
+
+		$data = $this->controller()->site()->getData();
+
+		$this->assertSame(['id' => 'bacda7a4', 'name' => 'Gemeente Zuiddrecht'], $data['organisation']);
+	}//end testSiteNamesItsOrganisation()
+
+
+	/**
+	 * Without a way to name it, the site names no organisation.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-search-names-the-organisation/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
+	 */
+	public function testSiteWithoutAnOrganisationNamesNone(): void {
+		$this->resolver->method('resolve')->willReturn([...$this->portal(), 'organisation' => 'onbekend']);
+		$this->organisations = $this->createMock(PortalOrganisationConfigService::class);
+		// An unknown slug resolves to the neutral default, which has no id.
+		$this->organisations->method('resolve')->willReturn(['organisationId' => '', 'organisationName' => 'Portaliq']);
+
+		$this->assertNull($this->controller()->site()->getData()['organisation']);
+
+		$this->organisations = null;
+		$this->assertNull($this->controller()->site()->getData()['organisation']);
+	}//end testSiteWithoutAnOrganisationNamesNone()
+
+
+	/**
+	 * A portal that names no organisation asks for none.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-search-names-the-organisation/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
+	 */
+	public function testAPortalWithoutAnOrganisationSlugAsksForNone(): void {
+		$this->resolver->method('resolve')->willReturn($this->portal());
+		$this->organisations = $this->createMock(PortalOrganisationConfigService::class);
+		$this->organisations->expects($this->never())->method('resolve');
+
+		$this->assertNull($this->controller()->site()->getData()['organisation']);
+	}//end testAPortalWithoutAnOrganisationSlugAsksForNone()
 
 
 	/**

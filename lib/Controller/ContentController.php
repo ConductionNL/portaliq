@@ -36,6 +36,7 @@ use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
 use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\SiteOrganisation;
 use OCA\Portaliq\Service\TrafficConfigResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -101,6 +102,7 @@ class ContentController extends Controller {
 	 * @param PublicAssistantChannel|null $assistant   The public assistant's channel, when wired.
 	 * @param PublicSourceScope|null     $assistantScope What the public assistant may read.
 	 * @param NextcloudRegistrationDoor|null $registrationDoor Where "Create an account" leads (REQ-NCL-005).
+	 * @param SiteOrganisation|null      $siteOrganisation Names the portal's organisation.
 	 *
 	 * @return void
 	 */
@@ -120,6 +122,7 @@ class ContentController extends Controller {
 		private readonly ?PublicAssistantChannel $assistant = null,
 		private readonly ?PublicSourceScope $assistantScope = null,
 		private readonly ?NextcloudRegistrationDoor $registrationDoor = null,
+		private readonly ?SiteOrganisation $siteOrganisation = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -291,6 +294,10 @@ class ContentController extends Controller {
 				// to five minutes, so each carries its end and the client
 				// drops it once that has passed.
 				'notices' => $this->notices->active(portal: (string)($portal['slug'] ?? ''), surface: 'site'),
+				// The id and the name of the portal's organisation, so the
+				// search's organisation filter reads a name, not an id
+				// (woo-search-names-the-organisation). Null when unknown.
+				'organisation' => $this->siteOrganisation?->forPortal(portal: $portal),
 			]
 		);
 	}//end site()

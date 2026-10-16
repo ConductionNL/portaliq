@@ -77,6 +77,7 @@ class PortalOrganisationConfigService {
 	private const NEUTRAL_DEFAULT = [
 		'organisationName' => 'Portaliq',
 		'organisationSlug' => '',
+		'organisationId' => '',
 		'theme' => 'default',
 		'logo' => null,
 		'featureFlags' => [],
@@ -147,7 +148,7 @@ class PortalOrganisationConfigService {
 	 *                       e.g. from `Accept-Language`; an unsupported value
 	 *                       falls back to `nl`.
 	 *
-	 * @return array<string, mixed> `{organisationName, organisationSlug, theme,
+	 * @return array<string, mixed> `{organisationName, organisationSlug, organisationId, theme,
 	 *                              logo, featureFlags, allowedEmbedOrigins,
 	 *                              apiBase, audience, locale, oidcProviders,
 	 *                              silentSignIn}`.
@@ -157,6 +158,7 @@ class PortalOrganisationConfigService {
 	 * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.3
 	 * @spec openspec/specs/supplier-portal/spec.md#requirement-the-public-site-must-render-its-own-words-through-a-locale-aware-translation-layer
 	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T01
+	 * @spec openspec/changes/woo-search-names-the-organisation/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
 	 */
 	public function resolve(string $orgSlug, string $locale = 'nl'): array {
 		$locale = $this->normaliseLocale(locale: $locale);
@@ -192,6 +194,9 @@ class PortalOrganisationConfigService {
 		return [
 			'organisationName' => $name,
 			'organisationSlug' => $orgSlug,
+			// The id a public search names the organisation by
+			// (woo-search-names-the-organisation).
+			'organisationId' => $uuid,
 			'theme' => (string)($overrides['theme'] ?? self::NEUTRAL_DEFAULT['theme']),
 			'logo' => ($overrides['logo'] ?? self::NEUTRAL_DEFAULT['logo']),
 			'featureFlags' => $featureFlags,

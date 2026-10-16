@@ -592,6 +592,16 @@ export default {
 		 * host sets it from the portal's `searchInsideDocuments`, after the
 		 * authored props.
 		 */
+		/**
+		 * Names the host knows for facet values, by field: the portal's own
+		 * organisation by its id (woo-search-names-the-organisation). Set by
+		 * the host after the authored props.
+		 */
+		facetNames: {
+			type: Object,
+			default: () => ({}),
+		},
+
 		searchInsideDocuments: {
 			type: Boolean,
 			default: true,
@@ -1120,6 +1130,7 @@ export default {
 							toBuckets(body.facets, field),
 							field,
 							pageLocale(),
+							this.facetNames[field],
 						),
 					}))
 					.filter((group) => group.buckets.length > 0)
