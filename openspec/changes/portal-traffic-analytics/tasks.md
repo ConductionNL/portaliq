@@ -13,7 +13,7 @@
 - [x] 1.1 Define the event envelope: `clientId`, `sessionId`, `sequence`, `name`, `timestamp` (client clock), `pageLocation`, `pageReferrer`, `pageTitle`, plus a bounded `params` map.
 - [x] 1.2 Define the shipped event vocabulary — `page_view`, `session_start`, `scroll`, `outbound_click`, `file_download`, `search`, `form_submit` — with the GA4 name for each, so a number here and a number in GA4 mean the same thing.
 - [x] 1.3 Define the `portalTrafficEvent` schema in the register (and `portalTrafficDaily` for the rollups; `portal.kind` and `portal.traffic` on the portal).
-- [ ] 1.4 (deferred to phase 1) Test: an event whose `sequence` repeats within a session is rejected — a client that resets its counter must not silently corrupt a journey.
+- [x] 1.4 Test: an event whose `sequence` repeats within a client-kept session is rejected — a client that resets its counter must not silently corrupt a journey. `TrafficSessioniser` sets the repeat aside and the session reports `repeats`; a cookieless client, which restarts at 0 on every page load, is left alone (`TrafficSessioniserTest::testARepeatedSequenceWithinAnExplicitSessionIsSetAside`, `::testACookielessRepeatedSequenceIsNotSetAside`).
 
 ## 2. Per-portal configuration
 
@@ -42,7 +42,7 @@
 ## 5. The client, shipped with the Docusaurus plugin
 
 - [x] 5.1 A small first-party script: generates and stores the client id, maintains the session and sequence, sends batched beacons, and sends only the configured events.
-- [ ] 5.2 (the plugin repo emits the tag; tracked there) Ship it from `docusaurus-plugin-portaliq` so a statically built portal reports the same events as a server-rendered one, posting cross-origin to its portal's collector.
+- [ ] 5.2 (the plugin repo emits the tag; tracked there) Ship it from `docusaurus-plugin-portaliq` so a statically built portal reports the same events as a server-rendered one, posting cross-origin to its portal's collector. — not run: needs docusaurus-plugin-portaliq
 - [x] 5.3 Wire the same client into the built-in site renderer, from the same source, so the two cannot drift.
 - [x] 5.4 Honour Do Not Track and the portal's consent posture before writing anything to browser storage.
 - [x] 5.5 Test: with measurement disabled the script sends NOTHING and stores NOTHING — assert both, because a script that stores an id and sends nothing still sets a cookie.
@@ -57,4 +57,4 @@
 ## 7. Documentation
 
 - [x] 7.1 Document the privacy posture in the portal admin: what is collected, what is never collected, how long it is kept.
-- [ ] 7.2 (openregister repo) Record in `openregister` that its read log is deliberately NOT the traffic source, so the two are not conflated later.
+- [ ] 7.2 (openregister repo) Record in `openregister` that its read log is deliberately NOT the traffic source, so the two are not conflated later. — not run: needs openregister

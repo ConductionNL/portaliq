@@ -6,6 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\PortalAccountAdminController;
 use OCA\Portaliq\Service\ActionAuthService;
+use OCA\Portaliq\Service\Identity\EmailLink\SignInAddressChange;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\Identity\PortalInvitationService;
 use OCA\Portaliq\Service\PortalAccountService;
@@ -159,7 +160,7 @@ class PortalAccountAdminControllerTest extends TestCase {
 	 *
 	 * @return PortalAccountAdminController
 	 */
-	private function controller(PortalAccountService $accounts, bool $allowed, ?IUser $user, ?PortalIdentityMailer $mailer = null): PortalAccountAdminController {
+	private function controller(PortalAccountService $accounts, bool $allowed, ?IUser $user, ?PortalIdentityMailer $mailer = null, ?SignInAddressChange $signInAddresses = null): PortalAccountAdminController {
 		$actionAuth = $this->getMockBuilder(ActionAuthService::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['requireAction'])
@@ -184,7 +185,7 @@ class PortalAccountAdminControllerTest extends TestCase {
 			$mailer->method('send')->willReturn(true);
 		}
 
-		return new PortalAccountAdminController($this->createMock(IRequest::class), $accounts, $actionAuth, $session, $invitations, $mailer);
+		return new PortalAccountAdminController($this->createMock(IRequest::class), $accounts, $actionAuth, $session, $invitations, $mailer, $signInAddresses);
 	}//end controller()
 
 	public function testAnInvitationIsOnlySentByAClerkWithTheAction(): void {
@@ -277,6 +278,48 @@ class PortalAccountAdminControllerTest extends TestCase {
 	}//end user()
 
 	/**
+	 * sign-in-with-an-email-link H2: staff change an e-mail account's sign-in
+	 * address. Every refusal is told apart, and the address is only echoed
+	 * back lower case and trimmed when the change was made.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-an-e-mail-link-session-is-a-fresh-low-session-that-cannot-raise-itself-req-iwi-011
+	 */
+	public function testStaffChangeASignInAddressAndEveryRefusalIsToldApart(): void {
+		$account = ['subjectRef' => 's-1'];
+		$cases = [
+			['allowed' => true, 'user' => null, 'account' => $account, 'outcome' => SignInAddressChange::CHANGED, 'status' => Http::STATUS_UNAUTHORIZED],
+			['allowed' => false, 'user' => 'ordinary-user', 'account' => $account, 'outcome' => SignInAddressChange::CHANGED, 'status' => Http::STATUS_FORBIDDEN],
+			['allowed' => true, 'user' => 'clerk-anna', 'account' => null, 'outcome' => SignInAddressChange::CHANGED, 'status' => Http::STATUS_NOT_FOUND],
+			['allowed' => true, 'user' => 'clerk-anna', 'account' => $account, 'outcome' => SignInAddressChange::FAILED, 'status' => Http::STATUS_SERVICE_UNAVAILABLE],
+			['allowed' => true, 'user' => 'clerk-anna', 'account' => $account, 'outcome' => SignInAddressChange::REFUSED, 'status' => Http::STATUS_BAD_REQUEST],
+			['allowed' => true, 'user' => 'clerk-anna', 'account' => $account, 'outcome' => SignInAddressChange::CHANGED, 'status' => Http::STATUS_OK],
+		];
+
+		foreach ($cases as $case) {
+			$accounts = $this->accounts();
+			$accounts->method('findBySubjectRef')->willReturn($case['account']);
+			$changer = $this->createMock(SignInAddressChange::class);
+			$changer->method('change')->willReturn($case['outcome']);
+			$controller = $this->controller(
+				accounts: $accounts,
+				allowed: $case['allowed'],
+				user: ($case['user'] === null) ? null : $this->user($case['user']),
+				signInAddresses: $changer
+			);
+
+			$response = $controller->signInAddress(subjectRef: 's-1', address: '  New@Example.ORG ');
+
+			$this->assertSame($case['status'], $response->getStatus());
+			if ($case['status'] === Http::STATUS_OK) {
+				$this->assertSame(['signInAddress' => 'new@example.org'], $response->getData());
+			}
+		}
+
+	}//end testStaffChangeASignInAddressAndEveryRefusalIsToldApart()
+
+	/**
 	 * A double that can only answer methods the real service has.
 	 *
 	 * @return PortalAccountService&\PHPUnit\Framework\MockObject\MockObject
@@ -284,7 +327,7 @@ class PortalAccountAdminControllerTest extends TestCase {
 	private function accounts(): PortalAccountService {
 		return $this->getMockBuilder(PortalAccountService::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['provision', 'voidPending', 'approvePending'])
+			->onlyMethods(['provision', 'voidPending', 'approvePending', 'findBySubjectRef'])
 			->getMock();
 	}//end accounts()
 

@@ -183,4 +183,23 @@ class BoardKeysTest extends TestCase {
 		$this->assertFalse(condition: $case['blocks'][1]['timeline']);
 		$this->assertSame(expected: 'actions', actual: $case['blocks'][2]['display']);
 	}//end testTheKeysSurviveTheManifestNormaliser()
+
+	/**
+	 * A documents block keeps a plain `groupBy` and a short `note`, and drops the rest.
+	 *
+	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-1
+	 *
+	 * @return void
+	 */
+	public function testADocumentsBlockKeepsGroupByAndNote(): void {
+		$keys = new BoardKeys();
+
+		$this->assertSame(
+			['upload' => true, 'groupBy' => 'group', 'note' => 'Het eerste rapport komt op vrijdag 12 februari 2027.'],
+			$keys->documentsKeys(block: ['upload' => true, 'groupBy' => 'group', 'note' => '  Het eerste rapport komt op vrijdag 12 februari 2027.  '])
+		);
+		$this->assertSame([], $keys->documentsKeys(block: ['groupBy' => 'a b', 'note' => '   ']));
+		$this->assertSame([], $keys->documentsKeys(block: ['groupBy' => ['x'], 'note' => str_repeat('x', 401)]));
+		$this->assertSame(['upload' => true], $keys->documentsKeys(block: ['upload' => true]));
+	}//end testADocumentsBlockKeepsGroupByAndNote()
 }//end class

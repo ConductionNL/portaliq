@@ -23,6 +23,7 @@ import {
 	keptClaimSecret,
 	redeemKeptClaim,
 } from '../src/shared/claimInvitation.js'
+import { createPortalApi } from '../src/shared/portalApi.js'
 
 /**
  * A sessionStorage stand-in.
@@ -285,12 +286,66 @@ test('the shell keeps the secret at boot, redeems it before the account loads an
 	assert.match(shell, /data-testid="site-claim-invitation"/)
 })
 
-test('the API adapter posts the secret to the redeem route', () => {
-	const adapter = readFileSync('src/shared/portalApi.js', 'utf8')
-	assert.match(
-		adapter,
-		/claimInvitation\(secret\) \{\s+return answer\('POST', '\/identity\/invitation\/redeem', \{ secret \}\)/,
+/**
+ * An API adapter over a fake fetch that answers one body, with a store that
+ * records every bearer written.
+ *
+ * @param {number} status The HTTP status to answer.
+ * @param {object} body The JSON body to answer.
+ * @return {{api: object, calls: Array<object>, written: Array<string|null>}}
+ */
+function adapterAnswering(status, body) {
+	const calls = []
+	const written = []
+	globalThis.fetch = async (url, init) => {
+		calls.push({ url, method: init.method, body: JSON.parse(init.body) })
+		return { ok: status >= 200 && status < 300, status, json: async () => body }
+	}
+	const api = createPortalApi(
+		{ apiBase: '/portal/api' },
+		{ getToken: () => 'old-bearer', setToken: (token) => written.push(token) },
 	)
+	return { api, calls, written }
+}
+
+test('the API adapter posts the secret to the redeem route', async () => {
+	const { api, calls, written } = adapterAnswering(200, { claimed: true })
+
+	const answer = await api.claimInvitation('secret-abc')
+
+	assert.equal(answer.ok, true)
+	assert.deepEqual(calls, [{ url: '/portal/api/identity/invitation/redeem', method: 'POST', body: { secret: 'secret-abc' } }])
+	assert.deepEqual(written, [], 'No new bearer, nothing stored.')
+})
+
+// invitation-joins-an-unbound-account: a claim that moved the account into
+// the invitation's audience hands back a bearer for it.
+
+test('a reissued bearer from a claim is stored, and a refusal stores nothing', async () => {
+	const claimed = adapterAnswering(200, { claimed: true, audience: 'parent', token: 'new-bearer', expiresAt: 1 })
+	await claimed.api.claimInvitation('secret-abc')
+	assert.deepEqual(claimed.written, ['new-bearer'])
+
+	const refused = adapterAnswering(403, { error: 'invitation_not_valid', token: 'never' })
+	await refused.api.claimInvitation('secret-abc')
+	assert.deepEqual(refused.written, [], 'Only a successful claim may hand over a bearer.')
+})
+
+test('the shell reads the session again after a claim, before the account loads', () => {
+	const shell = readFileSync('src/site/App.vue', 'utf8')
+	const redeem = shell.indexOf('this.claimMessage = await redeemKeptClaim(')
+	const reread = shell.indexOf('await this.reloadSession()', redeem)
+	const load = shell.indexOf('await this.loadAccount()', redeem)
+	assert.ok(redeem > 0 && reread > redeem && load > reread)
+	assert.match(shell.slice(redeem, reread), /if \(this\.claimMessage\?\.claimed\) \{/)
+
+	const handler = shell.slice(shell.indexOf('async onCodeClaimed() {'))
+	const codeReread = handler.indexOf('await this.reloadSession()')
+	assert.ok(codeReread > 0 && handler.indexOf('await this.loadAccount()') > codeReread)
+
+	const reload = shell.slice(shell.indexOf('async reloadSession() {'))
+	assert.match(reload, /fetchSession\(authBaseFrom\(resolveApiBase\(\)\)\)/)
+	assert.match(reload, /this\.watchIdle\(\)/)
 })
 
 // invitation-code-from-a-letter: the code a person types on "My account".

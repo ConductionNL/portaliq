@@ -102,6 +102,13 @@ class PageEditorService {
 	private const NOTICE_SLUG = 'portalNotice';
 
 	/**
+	 * The shared page blocks follow the pages as well (site-shared-page-blocks).
+	 *
+	 * @var string
+	 */
+	private const SHARED_BLOCK_SLUG = 'sharedBlock';
+
+	/**
 	 * The actions the editor groups are granted on that schema.
 	 *
 	 * `read` is deliberately absent: it carries the public rule that serves
@@ -178,13 +185,14 @@ class PageEditorService {
 	 */
 	public function setEditorGroups(array $groups): array {
 		$normalised = $this->normalise(groups: $groups);
+		$previous   = $this->getEditorGroups();
 		$this->appConfig->setValueString(
 			Application::APP_ID,
 			self::CONFIG_KEY,
 			json_encode(array_values($normalised))
 		);
 
-		$this->applyToSchema(groups: $normalised);
+		$this->applyToSchema(groups: $normalised, previous: $previous);
 
 		return $normalised;
 	}//end setEditorGroups()
@@ -261,14 +269,16 @@ class PageEditorService {
 	 * falls back to admin-only rather than to the default-open behaviour a
 	 * schema with no write rules at all still has.
 	 *
-	 * @param array<string> $groups The normalised group ids.
+	 * @param array<string> $groups   The normalised group ids.
+	 * @param array<string> $previous The groups configured before, which leave the read rule.
 	 *
 	 * @return bool True when the schema was updated.
 	 *
 	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-writes-to-the-menu-must-be-governed-by-the-editor-groups-req-pie-012
+	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t07
 	 */
-	public function applyToSchema(array $groups): bool {
+	public function applyToSchema(array $groups, array $previous=[]): bool {
 		$mapper = $this->schemaMapper();
 		if ($mapper === null) {
 			$this->logger->warning('Portaliq: editor groups saved but OpenRegister is unavailable, page schema not updated');
@@ -282,15 +292,15 @@ class PageEditorService {
 				return false;
 			}
 
-			$this->grantWrites(mapper: $mapper, schema: $schema, groups: $groups);
+			$this->grantWrites(mapper: $mapper, schema: $schema, groups: $groups, previous: $previous);
 
 			// The media library, the menus and the notices follow the pages. Any
 			// of them is absent on an instance whose register predates it, which
 			// leaves the pages governed.
-			foreach ([self::MEDIA_SLUG, self::MENU_SLUG, self::NOTICE_SLUG] as $slug) {
+			foreach ([self::MEDIA_SLUG, self::MENU_SLUG, self::NOTICE_SLUG, self::SHARED_BLOCK_SLUG] as $slug) {
 				$follower = $mapper->findByApplicationAndSlug(slug: $slug, application: Application::APP_ID);
 				if ($follower !== null) {
-					$this->grantWrites(mapper: $mapper, schema: $follower, groups: $groups);
+					$this->grantWrites(mapper: $mapper, schema: $follower, groups: $groups, previous: $previous);
 				}
 			}
 		} catch (Throwable $e) {
@@ -306,15 +316,18 @@ class PageEditorService {
 
 
 	/**
-	 * Write the editor groups into one schema's write rules, keeping `read`.
+	 * Write the editor groups into one schema's write rules, and add them to `read`.
 	 *
-	 * @param object        $mapper The schema mapper.
-	 * @param object        $schema The schema entity.
-	 * @param array<string> $groups The normalised group ids.
+	 * @param object        $mapper   The schema mapper.
+	 * @param object        $schema   The schema entity.
+	 * @param array<string> $groups   The normalised group ids.
+	 * @param array<string> $previous The groups configured before, which leave the read rule.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/close-portaliq-register-to-staff/specs/admin-ui/spec.md#requirement-only-staff-may-open-portaliqs-nextcloud-app-and-read-its-register
 	 */
-	private function grantWrites(object $mapper, object $schema, array $groups): void {
+	private function grantWrites(object $mapper, object $schema, array $groups, array $previous=[]): void {
 		$authorization = ($schema->getAuthorization() ?? []);
 		if (is_array($authorization) === false) {
 			$authorization = [];
@@ -323,6 +336,28 @@ class PageEditorService {
 		foreach (self::WRITE_ACTIONS as $action) {
 			$authorization[$action] = array_values($groups);
 		}
+
+		// The editor groups also read the schema. The register names only the
+		// staff group, so an editor outside it would otherwise be granted the
+		// write and refused the draft it edits. Groups the setting no longer
+		// names leave the read rule; every other rule (the public rule on
+		// published pages, the staff group) stays as it is.
+		$read = [];
+		foreach ((array)($authorization['read'] ?? []) as $rule) {
+			if (is_string($rule) === true && in_array($rule, $previous, true) === true && in_array($rule, $groups, true) === false) {
+				continue;
+			}
+
+			$read[] = $rule;
+		}
+
+		foreach ($groups as $gid) {
+			if (in_array($gid, $read, true) === false) {
+				$read[] = $gid;
+			}
+		}
+
+		$authorization['read'] = $read;
 
 		$schema->setAuthorization($authorization);
 		$mapper->update($schema);

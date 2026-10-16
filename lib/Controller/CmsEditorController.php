@@ -27,12 +27,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
+use OCA\Portaliq\Service\Cms\CmsPublishValidator;
 use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\PageEditorService;
 use OCA\Portaliq\Service\PortalResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
+use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IURLGenerator;
@@ -67,6 +69,7 @@ class CmsEditorController extends Controller {
 	 * @param CmsReader         $reader     Resolves a route to the page behind it.
 	 * @param PageEditorService $pageEditor Decides whether this caller may edit.
 	 * @param IURLGenerator     $urls       Builds the links into the app.
+	 * @param CmsPublishValidator $publishValidator Finds what would render broken before publishing.
 	 *
 	 * @return void
 	 */
@@ -77,6 +80,7 @@ class CmsEditorController extends Controller {
 		private readonly CmsReader $reader,
 		private readonly PageEditorService $pageEditor,
 		private readonly IURLGenerator $urls,
+		private readonly CmsPublishValidator $publishValidator = new CmsPublishValidator(),
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -114,6 +118,39 @@ class CmsEditorController extends Controller {
 		return $this->uncacheable(payload: $this->context(pageId: $pageId));
 	}//end editingContext()
 
+
+	/**
+	 * What would render broken if this portal's content went out as it is:
+	 * a menu item pointing at no page, a portal with no front page, two pages
+	 * on one route (blocking), and a menu item pointing at a draft page (a
+	 * warning). Drafts are included, so an editor can check before publishing.
+	 *
+	 * @param string $portal The portal slug.
+	 *
+	 * @return JSONResponse `{ok, blocking[], warnings[]}`, 400 for a bad slug, 403 for a person who may not edit.
+	 *
+	 * @contract exclude the read-only check is covered by CmsPublishValidatorTest; the controller only adds the editor check and the header
+	 *
+	 * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-2
+	 */
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	public function publishCheck(string $portal = ''): JSONResponse {
+		if ($this->pageEditor->mayEdit() === false) {
+			return $this->uncacheable(payload: ['error' => 'forbidden'], status: Http::STATUS_FORBIDDEN);
+		}
+
+		if (preg_match('/^[a-z0-9][a-z0-9-]{0,62}$/', $portal) !== 1) {
+			return $this->uncacheable(payload: ['error' => 'invalid_portal'], status: Http::STATUS_BAD_REQUEST);
+		}
+
+		$found = $this->publishValidator->check(
+			pages: $this->reader->rowsForCheck(portal: $portal, schema: 'page'),
+			menus: $this->reader->rowsForCheck(portal: $portal, schema: 'menu')
+		);
+
+		return $this->uncacheable(payload: ['ok' => ($found['blocking'] === [])] + $found);
+	}//end publishCheck()
 
 	/**
 	 * The editor's context payload.
@@ -157,11 +194,12 @@ class CmsEditorController extends Controller {
 	 * an editing control, and the control's own links with it.
 	 *
 	 * @param array<string, mixed> $payload The response body.
+	 * @param int                  $status  The HTTP status.
 	 *
 	 * @return JSONResponse The response.
 	 */
-	private function uncacheable(array $payload): JSONResponse {
-		$response = new JSONResponse($payload);
+	private function uncacheable(array $payload, int $status = Http::STATUS_OK): JSONResponse {
+		$response = new JSONResponse($payload, $status);
 		$response->addHeader('Cache-Control', 'private, no-store');
 
 		return $response;

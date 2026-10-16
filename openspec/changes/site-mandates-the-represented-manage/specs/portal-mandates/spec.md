@@ -30,7 +30,7 @@ A business session MUST see every mandate and open invitation whose `onBehalfOf`
 
 ### Requirement: A party MUST invite, never look up, the person it authorises (REQ-SMR-003)
 
-Portaliq holds no BSN, so a person who never signed in cannot be named. "Iemand machtigen" MUST ask for an email address, a scope (all cases or chosen case types), a label and an optional end date in the future, and MUST send an invitation. It MUST NOT ask for a BSN or look a person up by name. The mandate MUST be written only when the invitee signs in and accepts, for the account that accepted, with the invitation's terms. The inviter MUST NOT be able to accept their own invitation.
+Portaliq holds no BSN, so a person who never signed in cannot be named. "Iemand machtigen" MUST ask for an email address, a scope (all cases or chosen case types of the portal) and an optional end date in the future, typed as day, month and year, and MUST mail the invitation link to that address only; the secret MUST NOT be answered to the inviter. The scope's words ("Alle zaken", or the titles of the chosen case types) stand in for a label (board Machtigen). It MUST NOT ask for a BSN or look a person up by name. The mandate MUST be written only when the invitee signs in and accepts, for the account that accepted, with the invitation's terms. The inviter MUST NOT be able to accept their own invitation.
 
 #### Scenario: Tom accepts
 - GIVEN an invitation from KVK 12345678 to tom@example.nl for "Mag alleen bezwaren indienen en volgen", valid until 30 June 2027
@@ -111,3 +111,18 @@ An invitation MUST be pending until it is accepted, revoked or expired. Acceptin
 - GIVEN an expired mandate
 - WHEN the represented party sets a new end date in the future
 - THEN the change is refused and the mandate stays expired
+
+### Requirement: The holder MUST see who gave a mandate and when (REQ-SMR-007)
+
+Each mandate the session holds MUST say who gave it and on which day, as the board Machtigingen draws it: "gegeven door {party} op {date}" when the represented party gave it by accepting its invitation, and "gegeven door de gemeente op {date}" when the portal's organisation recorded it (an answered access request, or a mandate recorded by staff). The answer MUST NOT name the account that recorded it.
+
+#### Scenario: A mandate from an invitation names the party that gave it
+- GIVEN KVK 12345678 invited Tom and Tom accepted on 2 October 2026
+- WHEN Tom opens "Toegang tot zaken"
+- THEN his mandate reads "… · gegeven door {the company} op 2 oktober 2026 · …"
+- AND the held answer carries `givenBy: party` and no `grantedBy`
+
+#### Scenario: A mandate from an answered access request names the organisation
+- GIVEN a clerk granted Linda's access request for H. Bakker on 12 September 2026
+- WHEN Linda opens "Toegang tot zaken"
+- THEN her mandate reads "… · gegeven door de gemeente op 12 september 2026 · …"

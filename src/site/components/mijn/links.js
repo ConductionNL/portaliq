@@ -19,7 +19,15 @@ import { siteHref } from './rows.js'
 export function authoredLink(value) {
 	const raw = String(value ?? '').trim()
 	if (/^\/(?!\/)/.test(raw)) {
-		return { href: siteHref(raw), route: raw }
+		// A query (`/zoeken?f.wooCategory=c1`) rides beside the route, so the
+		// page it opens reads it from the address.
+		const at = raw.indexOf('?')
+		return at === -1
+			? { href: siteHref(raw), route: raw }
+			: {
+					href: withQuery(siteHref(raw.slice(0, at)), raw.slice(at + 1)),
+					route: raw,
+				}
 	}
 	if (/^(https?:\/\/|mailto:|tel:)/i.test(raw)) {
 		return { href: raw, route: '' }
@@ -42,4 +50,27 @@ export function staysInSite(event, link) {
 		&& !(event?.ctrlKey || event?.metaKey || event?.shiftKey || event?.altKey)
 		&& (event?.button ?? 0) === 0,
 	)
+}
+
+/**
+ * An address with a link's own query added to it.
+ *
+ * @param {string} href The address of the route.
+ * @param {string} query The query, without `?`.
+ * @return {string} The address.
+ * @spec openspec/changes/hero-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-block-link-to-a-site-page-carries-the-sites-own-address
+ */
+function withQuery(href, query) {
+	if (!query) {
+		return href
+	}
+	try {
+		const url = new URL(href)
+		for (const [key, value] of new URLSearchParams(query)) {
+			url.searchParams.append(key, value)
+		}
+		return url.toString()
+	} catch {
+		return `${href}?${query}`
+	}
 }

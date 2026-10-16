@@ -7,6 +7,7 @@
 //
 // @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
 
+import { dueValueOf } from '../../../shared/casePage.js'
 import { caseStatus, caseTitle } from '../../../shared/myCases.js'
 
 /** How many cases a `cases` block shows when it declares no limit (design D4). */
@@ -149,8 +150,8 @@ export function caseCard(
 			(value) =>
 				typeof value === 'string' && value.trim() !== '' && value !== title,
 		)
-	const dueField = collection?.dueField
-	const dueDay = dueField ? dayInWords(row?.[dueField], today, locale) : ''
+	// The legal decision date is the due day when the case has one (case-page-tasks-decision-dates-and-next-step).
+	const dueDay = dayInWords(dueValueOf(row, collection), today, locale)
 	const position = stepPosition(steps)
 	const turnValue = collection?.turnField ? row?.[collection.turnField] : undefined
 	return {

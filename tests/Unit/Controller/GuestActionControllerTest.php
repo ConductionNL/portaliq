@@ -19,6 +19,7 @@ use OCP\App\IAppManager;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
 use OCP\Http\Client\IResponse;
+use OCP\IAppConfig;
 use OCP\IConfig;
 use OCP\IRequest;
 use OCP\IURLGenerator;
@@ -258,13 +259,18 @@ class GuestActionControllerTest extends TestCase {
 		);
 		$writer = $this->createMock(PortalObjectWriter::class);
 		$writer->expects($this->never())->method($this->anything());
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->method('getValueString')->willReturnCallback(
+			fn (string $app, string $key, string $default = '') => ($key === 'jwt_signing_secret' ? str_repeat('s', 48) : $default)
+		);
 		$session = new PortalSessionService(
 			$config,
 			$this->createMock(ISecureRandom::class),
 			$this->createMock(LoggerInterface::class),
 			$writer,
 			$this->createMock(PortalObjectReader::class),
-			$this->createMock(AuditTrailService::class)
+			$this->createMock(AuditTrailService::class),
+			$appConfig
 		);
 
 		$response = $this->createMock(IResponse::class);

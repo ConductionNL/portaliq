@@ -17,6 +17,75 @@
 			role="status">
 			{{ notice }}
 		</p>
+		<!-- The contribution's own confirmation words, never reworded. -->
+		<p
+			v-if="action.confirmText && message === ''"
+			class="utrecht-paragraph pq-rowaction__confirm-text"
+			data-testid="rowaction-confirm-text">
+			{{ action.confirmText }}
+		</p>
+		<div
+			v-for="input in shownInputs"
+			:key="input.name"
+			class="pq-rowaction__input">
+			<label
+				class="utrecht-form-label"
+				:for="`rowaction-input-${input.name}`"
+				>{{ input.label }}</label
+			>
+			<input
+				:id="`rowaction-input-${input.name}`"
+				v-model="values[input.name]"
+				:type="input.type"
+				class="utrecht-textbox utrecht-textbox--html-input"
+				:required="input.required"
+				:aria-required="input.required ? 'true' : undefined"
+				:aria-invalid="errors[input.name] ? 'true' : undefined"
+				:aria-describedby="
+					errors[input.name] ? `rowaction-error-${input.name}` : undefined
+				"
+				:data-testid="`rowaction-input-${input.name}`" />
+			<p
+				v-if="errors[input.name]"
+				:id="`rowaction-error-${input.name}`"
+				class="utrecht-form-field-error-message"
+				role="alert"
+				:data-testid="`rowaction-error-${input.name}`">
+				{{ errors[input.name] }}
+			</p>
+		</div>
+		<div
+			v-if="fileSlot"
+			class="pq-rowaction__input"
+			data-testid="rowaction-files-field">
+			<label
+				class="utrecht-form-label"
+				:for="`rowaction-files-${action.id}`"
+				>{{ translate('Add files') }}</label
+			>
+			<p
+				:id="`rowaction-files-hint-${action.id}`"
+				class="utrecht-form-field-description">
+				{{ translate('Add up to {max} files.', { max: fileSlot.max }) }}
+			</p>
+			<input
+				:id="`rowaction-files-${action.id}`"
+				type="file"
+				multiple
+				class="pq-rowaction__files"
+				:aria-describedby="fileHintIds"
+				:aria-invalid="fileError ? 'true' : undefined"
+				data-testid="rowaction-files"
+				@change="pickFiles" />
+			<p
+				v-if="fileError"
+				:id="`rowaction-files-error-${action.id}`"
+				class="utrecht-form-field-error-message"
+				role="alert"
+				data-testid="rowaction-files-error">
+				{{ fileError }}
+			</p>
+		</div>
 		<div class="pq-rowaction__buttons">
 			<button
 				v-if="message === ''"
@@ -64,7 +133,7 @@
 </template>
 
 <script>
-import { rowNotice, runRowAction } from '../../../shared/rowAction.js'
+import { rowInputsOf, rowNotice, runRowAction } from '../../../shared/rowAction.js'
 import { translatorOr } from '../../components/c/forms.js'
 
 /**
@@ -110,6 +179,10 @@ export default {
 			busy: false,
 			message: '',
 			link: '',
+			values: {},
+			errors: {},
+			files: [],
+			fileError: '',
 		}
 	},
 
@@ -124,6 +197,42 @@ export default {
 
 		notice() {
 			return rowNotice(this.collection, this.row)
+		},
+
+		/**
+		 * @return {Array<object>} The inputs the row declares for this action.
+		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-inputs-its-row-declares-req-rai-002
+		 */
+		inputs() {
+			return rowInputsOf(this.action, this.row)
+		},
+
+		/**
+		 * @return {Array<object>} The inputs on screen: none once the action has run.
+		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-inputs-its-row-declares-req-rai-002
+		 */
+		shownInputs() {
+			return this.message === '' ? this.inputs : []
+		},
+
+		/**
+		 * @return {object|null} The action's `files` declaration while the dialog asks, else null.
+		 * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+		 */
+		fileSlot() {
+			const files = this.action.files
+			return this.message === '' && files && files.field ? files : null
+		},
+
+		/**
+		 * @return {string} The hint id, and the error id when there is an error.
+		 * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+		 */
+		fileHintIds() {
+			const hint = `rowaction-files-hint-${this.action.id}`
+			return this.fileError
+				? `${hint} rowaction-files-error-${this.action.id}`
+				: hint
 		},
 	},
 
@@ -142,21 +251,114 @@ export default {
 		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-an-endpoint-row-action-must-confirm-before-it-runs-req-srp-026
 		 */
 		async confirm() {
+			if (this.fileSlot && this.checkFiles() === false) {
+				return
+			}
 			this.busy = true
-			const { redirect, messageKey, link } = await runRowAction(
-				this.api,
-				this.collection,
-				this.row,
-				this.action,
-			)
+			this.errors = {}
+			const answers = this.answers()
+			const { redirect, messageKey, link, message, errors } =
+				await runRowAction(
+					this.api,
+					this.collection,
+					this.row,
+					this.action,
+					answers,
+					this.fileSlot ? this.files : [],
+				)
 			if (redirect) {
 				this.navigate(redirect)
 				return
 			}
 			this.busy = false
-			this.message = this.translate(messageKey)
+			// A refusal that names inputs shows under each and keeps the dialog
+			// open (REQ-RAI-003).
+			if (errors) {
+				this.errors = this.said(errors)
+				return
+			}
+			// The target's own sentence, else the contribution's, else ours.
+			this.message =
+				message
+				|| (messageKey === 'Done.' ? this.action.successText : '')
+				|| this.translate(messageKey)
 			this.link = link || ''
 			this.$emit('done')
+		},
+
+		/**
+		 * Keep the files the resident chose.
+		 *
+		 * @param {Event} event The change event of the file input.
+		 * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+		 */
+		pickFiles(event) {
+			this.files = Array.from(event?.target?.files || [])
+			this.fileError = ''
+		},
+
+		/**
+		 * Check the number and size of the chosen files before anything is sent.
+		 *
+		 * @return {boolean} True when the files may go.
+		 * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+		 */
+		checkFiles() {
+			const { max, maxBytes } = this.fileSlot
+			if (this.files.length > max) {
+				this.fileError = this.translate('Add no more than {max} files.', {
+					max,
+				})
+				return false
+			}
+			if (this.files.some((file) => file.size > maxBytes)) {
+				this.fileError = this.translate('A file is larger than {size} MB.', {
+					size: Math.floor(maxBytes / 1048576),
+				})
+				return false
+			}
+			this.fileError = ''
+			return true
+		},
+
+		/**
+		 * What the resident typed, under the body key the action declares.
+		 *
+		 * @return {object} `{}` for an action without row inputs.
+		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-inputs-its-row-declares-req-rai-002
+		 */
+		answers() {
+			const into = this.action.rowInputs?.into
+			if (!into || this.inputs.length === 0) {
+				return {}
+			}
+			const typed = {}
+			for (const input of this.inputs) {
+				const value = String(this.values[input.name] ?? '').trim()
+				if (value !== '') {
+					typed[input.name] = value
+				}
+			}
+			return { [into]: typed }
+		},
+
+		/**
+		 * The target's messages by input; the server's own `required` reads as
+		 * a sentence.
+		 *
+		 * @param {object} errors Input name to message.
+		 * @return {object} Input name to sentence.
+		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-the-resident-sees-what-happened-req-rai-003
+		 */
+		said(errors) {
+			const out = {}
+			for (const [name, text] of Object.entries(errors)) {
+				out[name] =
+					text === 'required'
+						? this.translate('This field is required.')
+						: text
+			}
+			return out
 		},
 
 		copyLink() {

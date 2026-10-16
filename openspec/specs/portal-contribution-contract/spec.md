@@ -422,9 +422,13 @@ and the claim set `sub`, `audience`, `organisation`, `trust`, `jti`, `use`
 `exp - iat` equal to the 60-second assertion TTL. When the forwarded action
 declares a `scopeClaim`, the assertion MUST carry exactly one additional
 claim, named after that claim and holding the value resolved server-side
-from the subject's portal account; it MUST NOT carry any other claim. A unit
-test MUST pin every element of that shape so any drift fails loudly before it
-can break domain-app verifiers templated against it.
+from the subject's portal account. When the originating session acts for a
+company branch, the assertion MUST carry one optional `branch` claim holding
+that branch number, after the nine frozen claims and before a scope claim; a
+session without a branch MUST NOT carry it, and no action may declare
+`branch` as its `scopeClaim`. The assertion MUST NOT carry any other claim. A
+unit test MUST pin every element of that shape so any drift fails loudly
+before it can break domain-app verifiers templated against it.
 
 #### Scenario: The assertion shape is pinned
 
@@ -439,6 +443,21 @@ can break domain-app verifiers templated against it.
 - WHEN the assertion for that forward is decoded
 - THEN the claim keys are the nine frozen keys plus `signerEmail`, and nothing else
 - @e2e exclude wire-format pin; PHPUnit
+
+#### Scenario: A branch session adds the optional branch claim
+
+- GIVEN a session acting for branch `000012345678`
+- WHEN an assertion for one of its forwards is decoded
+- THEN the claim keys are the nine frozen keys plus `branch` holding `000012345678`, and a declared scope claim follows after it
+- AND an assertion for a session without a branch carries the nine frozen keys only
+- @e2e exclude wire-format pin; PHPUnit `PortalJwtServiceTest::testABranchSessionAddsExactlyTheOptionalBranchClaim` and `PortalSessionServiceTest::testAssertionCarriesTheSessionBranchOnlyWhenThereIsOne`
+
+#### Scenario: An action cannot declare branch as its scope claim
+
+- GIVEN an action declaring `scopeClaim: "branch"`
+- WHEN the manifest is normalised or an assertion is minted for it
+- THEN the scope claim is refused as reserved and no forged `branch` value reaches the assertion
+- @e2e exclude wire-format pin; PHPUnit `PortalJwtServiceTest::testAnEmptyBranchAddsNothingAndBranchIsNoScopeClaim`
 
 ### Requirement: Manifest UI configuration is presentation-only
 
@@ -1782,6 +1801,66 @@ and from pipelinq alike" (the portal half of each).
 - **WHEN** a resident opens their dossier
 - **THEN** "Start een Woo-verzoek" does not show
 - test: PHPUnit `tests/Unit/Contribution/AttachedActionResolverTest.php` ("no declaring app, no attachment")
+
+### Requirement: A news block on an account page shows rows, not bodies
+
+A contributed page's `news` block MUST show each item as a row: who it is for (when the item names
+an audience), its date in the page language, and its title, which opens the news screen. It MUST
+NOT show the item's body.
+
+#### Scenario: The guardian overview
+@e2e exclude Rendered in node: tests/site-look/account-news-rows.spec.mjs
+- GIVEN an item "De Kinderboekenweek is begonnen" for "hele school" of 2 October 2026 whose body holds markdown
+- WHEN the overview renders its news block
+- THEN the row reads "hele school", "2 oktober 2026" and the title, and no part of the body shows
+
+### Requirement: A collection block keeps its own heading
+
+A collection block MAY declare `label`. Portaliq MUST keep it when it is a non-blank string of at
+most 120 characters, and the site MUST head the block's rows with it, before the collection's own
+label. A heading equal to the page's title MUST still be left out.
+
+#### Scenario: The grades on the pupil's overview
+@e2e exclude Source and method checks in node: tests/site-look/collection-label.spec.mjs; PHPUnit tests/Unit/Contribution/CollectionBlockLabelTest.php
+- GIVEN the overview's grades block with `label` "Laatste cijfers" over the collection "Mijn cijfers"
+- WHEN the page renders
+- THEN the table is headed "Laatste cijfers"
+
+#### Scenario: No label of its own
+@e2e exclude Method check in node: tests/site-look/collection-label.spec.mjs
+- GIVEN a collection block without `label`
+- WHEN the page renders
+- THEN the table is headed with the collection's label, as before
+
+### Requirement: A signed-in portal session must be rate limited per subject
+
+A collection read with a portal session MUST count against a limit per subject, with room for
+the blocks of several pages a minute, and never against a limit shared by everyone behind the
+same IP address. A read without a session MUST count against a tight limit per IP address. Over
+either limit the portal MUST answer 429.
+
+#### Scenario: A guardian opens four pages in a minute
+@e2e exclude PHPUnit PortalRateLimitTest; checked live on the proof instance
+- GIVEN a guardian signed in to the portal
+- WHEN she opens four pages of twenty blocks within one minute
+- THEN every collection read is answered, none with 429
+
+#### Scenario: Calls without a session
+@e2e exclude PHPUnit PortalRateLimitTest
+- GIVEN calls without a portal session from one IP address
+- WHEN more than 60 arrive within a minute
+- THEN the portal answers 429
+
+### Requirement: A collection that could not be read must say so
+
+A table or figure block whose collection read failed MUST say "De inhoud kon niet worden
+geladen." with a button "Opnieuw proberen" that reads it again, and MUST NOT draw an empty list.
+
+#### Scenario: A read answered 429
+@e2e exclude Node: tests/portal-subject-rate-limit.spec.mjs
+- GIVEN the homework collection read failed
+- WHEN the page renders
+- THEN the block shows the sentence and the retry button, and no empty table
 
 ## Non-Functional Requirements
 

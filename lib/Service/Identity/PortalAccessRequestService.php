@@ -73,11 +73,6 @@ class PortalAccessRequestService {
 	private const MANDATE_SCHEMA = 'portalMandate';
 
 	/**
-	 * The label beside a case a granted request opens.
-	 */
-	private const MANDATE_LABEL = 'Granted on request';
-
-	/**
 	 * Constructor.
 	 *
 	 * @param PortalObjectReader $reader Lists the requests.
@@ -282,8 +277,10 @@ class PortalAccessRequestService {
 			data: [
 				'subjectRef' => (string)($request['subjectRef'] ?? ''),
 				'organisation' => $organisation,
-				'onBehalfOf' => (string)($request['onBehalfOf'] ?? ''),
-				'label' => self::MANDATE_LABEL,
+				'onBehalfOf' => (new MandateParties())->typed(value: (string)($request['onBehalfOf'] ?? '')),
+				// The party as the asker named it: the site reads the label as
+				// the name of whom the holder acts for.
+				'label' => mb_substr(trim((string)($request['onBehalfOf'] ?? '')), 0, 200),
 				'reach' => 'organisation',
 				'status' => 'active',
 				'grantedBy' => $decidedBy,

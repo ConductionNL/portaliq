@@ -83,7 +83,7 @@ class TrafficReportControllerTest extends TestCase {
 		$this->assertSame('attachment; filename="traffic-open-tilburg-2026-09-01-2026-09-04-desktop.csv"', $headers['Content-Disposition']);
 		$lines = explode("\r\n", trim($response->render()));
 		$this->assertStringStartsWith('portal,date,segment,pageViews', $lines[0]);
-		$this->assertSame('open-tilburg,2026-09-01,desktop,7,,,,,,,,,', $lines[1]);
+		$this->assertSame('open-tilburg,2026-09-01,desktop,7,,,,,,,,,,,', $lines[1]);
 
 		$json = $this->controller()->export(portal: 'open-tilburg', from: '2026-09-01', to: '2026-09-04', format: 'json');
 		$this->assertSame('application/json; charset=utf-8', $this->headers($json)['Content-Type']);

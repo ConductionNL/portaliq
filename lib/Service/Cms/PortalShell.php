@@ -39,16 +39,25 @@ class PortalShell {
 	 */
 	public const HEADER_VARIANTS = ['double', 'single'];
 
+	/**
+	 * The words a breadcrumb may name the page on screen by. The first is the default.
+	 */
+	public const BREADCRUMB_WORDS = ['menu', 'page'];
+
 
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalRegionResolver $regions    The closed list of regions.
-	 * @param PortalSignInText     $signInText The sign-in page's text.
+	 * @param PortalRegionResolver $regions      The closed list of regions.
+	 * @param PortalSignInText     $signInText   The sign-in page's text.
+	 * @param PortalResidentMenu   $residentMenu The resident menu's card label, groups and left-out items.
+	 * @param PortalHelp           $help         The help details and section help texts.
 	 */
 	public function __construct(
 		private readonly PortalRegionResolver $regions=new PortalRegionResolver(),
 		private readonly PortalSignInText $signInText=new PortalSignInText(),
+		private readonly PortalResidentMenu $residentMenu=new PortalResidentMenu(),
+		private readonly PortalHelp $help=new PortalHelp(),
 	) {
 	}//end __construct()
 
@@ -57,12 +66,14 @@ class PortalShell {
 	 *
 	 * @param array<string, mixed> $portal The portal record.
 	 *
-	 * @return array<string, mixed> `authentication`, `headerVariant`, `headerSearch`, `accountLabel`, `residentMenu`, `footer` and `regions`.
+	 * @return array<string, mixed> `authentication`, `headerVariant`, `headerSearch`, `accountLabel`, `breadcrumb`,
+	 *                              `residentMenu`, `footer` and `regions`.
 	 *
 	 * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-the-menu-may-open-with-whom-the-resident-acts-for
 	 *
 	 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-header-must-be-a-block-whose-shape-the-portal-chooses-req-ptb-004
 	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
+	 * @spec openspec/changes/site-breadcrumb-follows-the-school-boards/specs/site-look/spec.md#requirement-a-portal-chooses-the-words-of-the-last-crumb
 	 */
 	public function project(array $portal): array {
 		return [
@@ -70,63 +81,18 @@ class PortalShell {
 			'headerVariant'  => $this->headerVariant(portal: $portal),
 			'headerSearch'   => $this->headerSearch(portal: $portal),
 			'accountLabel'   => $this->text(value: ($portal['accountLabel'] ?? '')),
-			'residentMenu'   => $this->residentMenu(portal: $portal),
+			'breadcrumb'     => $this->breadcrumb(portal: $portal),
+			'residentMenu'   => $this->residentMenu->project(portal: $portal),
 			// How Mijn zaken draws its list (zuiddrecht-resident-pages-match-the-boards).
 			'myCases'        => $this->myCases(portal: $portal),
 			'footer'         => $this->footer(portal: $portal),
 			'regions'        => $this->publicRegions(portal: $portal),
+			// The portal's help for its forms and for each part of Mijn omgeving
+			// (help-texts-and-form-help).
+			'help'           => $this->help->details(help: ($portal['help'] ?? null)),
+			'sectionHelp'    => $this->help->sections(sections: ($portal['sectionHelp'] ?? null)),
 		];
 	}//end project()
-
-	/**
-	 * The resident menu's card label, when the portal names one.
-	 *
-	 * @param array<string, mixed> $portal The portal record.
-	 *
-	 * @return array<string, mixed> `{cardLabel?, groups?}`.
-	 *
-	 * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-the-menu-may-open-with-whom-the-resident-acts-for
-	 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
-	 */
-	private function residentMenu(array $portal): array {
-		$menu = $portal['residentMenu'] ?? [];
-		if (is_array($menu) === false) {
-			return [];
-		}
-
-		$out   = [];
-		$label = $this->text(value: ($menu['cardLabel'] ?? ''));
-		if ($label !== '') {
-			$out['cardLabel'] = $label;
-		}
-
-		// The portal's own groups (zuiddrecht-resident-pages-match-the-boards):
-		// each a title and its items by name, at most 12 groups of 20.
-		$groups = [];
-		foreach (array_slice((array)($menu['groups'] ?? []), 0, 12) as $group) {
-			if (is_array($group) === false) {
-				continue;
-			}
-
-			$items = [];
-			foreach (array_slice((array)($group['items'] ?? []), 0, 20) as $item) {
-				if (is_string($item) === true && preg_match('/^[a-z0-9][a-z0-9:_-]{0,79}$/i', $item) === 1) {
-					$items[] = $item;
-				}
-			}
-
-			$title = $this->text(value: ($group['title'] ?? ''));
-			if ($items !== [] && $title !== '') {
-				$groups[] = ['title' => $title, 'items' => $items];
-			}
-		}
-
-		if ($groups !== []) {
-			$out['groups'] = $groups;
-		}
-
-		return $out;
-	}//end residentMenu()
 
 	/**
 	 * How Mijn zaken draws its list: `{display: rows}` when the portal says
@@ -181,6 +147,25 @@ class PortalShell {
 			'route'       => $route,
 		];
 	}//end headerSearch()
+
+	/**
+	 * The words of the breadcrumb's last crumb: the portal's choice when it
+	 * is known, else `menu` (site-breadcrumb-follows-the-school-boards).
+	 *
+	 * @param array<string, mixed> $portal The portal record.
+	 *
+	 * @return string `menu` or `page`.
+	 *
+	 * @spec openspec/changes/site-breadcrumb-follows-the-school-boards/specs/site-look/spec.md#requirement-a-portal-chooses-the-words-of-the-last-crumb
+	 */
+	public function breadcrumb(array $portal): string {
+		$chosen = $portal['breadcrumb'] ?? null;
+		if (is_string($chosen) === true && in_array($chosen, self::BREADCRUMB_WORDS, true) === true) {
+			return $chosen;
+		}
+
+		return self::BREADCRUMB_WORDS[0];
+	}//end breadcrumb()
 
 	/**
 	 * The header variant: the portal's choice when it is known, else `double`.

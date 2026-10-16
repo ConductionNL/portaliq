@@ -90,6 +90,22 @@ class PortalShellTest extends TestCase {
 		$this->assertSame(expected: [], actual: (new PortalShell())->project(portal: [])['myCases']);
 	}//end testTheProjectionServesTheMenuGroupsAndTheCasesDisplay()
 
+	/**
+	 * The items a portal leaves out of the menu reach the site by name, well
+	 * formed only and never `overview` (resident-menu-leave-out).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/resident-menu-leave-out/specs/site-resident-menu/spec.md#requirement-a-portal-may-leave-items-out-of-the-resident-menu
+	 */
+	public function testTheProjectionServesTheItemsLeftOut(): void {
+		$projected = (new PortalShell())->project(portal: [
+			'residentMenu' => ['leaveOut' => ['cases', 'tasks', 'access', 'tasks', 'overview', 'bad name', 7]],
+		]);
+		$this->assertSame(expected: ['leaveOut' => ['cases', 'tasks', 'access']], actual: $projected['residentMenu']);
+		$this->assertSame(expected: [], actual: (new PortalShell())->project(portal: ['residentMenu' => ['leaveOut' => 'cases']])['residentMenu']);
+	}//end testTheProjectionServesTheItemsLeftOut()
+
 	public function testTheFooterServesItsButtonAndContactColumnOnNamedKeys(): void {
 		$footer = (new PortalShell())->footer(portal: ['footer' => [
 			'cta'     => ['label' => 'Contact en schooltijden', 'href' => '/contact', 'style' => 'x'],
@@ -172,6 +188,20 @@ class PortalShellTest extends TestCase {
 		$this->assertSame('double', $shell->headerVariant(portal: ['headerVariant' => ['single']]));
 		$this->assertSame('single', $shell->headerVariant(portal: ['headerVariant' => 'single']));
 	}//end testAnUnknownOrMissingHeaderVariantIsDouble()
+
+	/**
+	 * @spec openspec/changes/site-breadcrumb-follows-the-school-boards/specs/site-look/spec.md#requirement-a-portal-chooses-the-words-of-the-last-crumb
+	 */
+	public function testTheBreadcrumbWordsAreThePortalsChoiceElseTheMenus(): void {
+		$shell = new PortalShell();
+
+		$this->assertSame('menu', $shell->breadcrumb(portal: []));
+		$this->assertSame('menu', $shell->breadcrumb(portal: ['breadcrumb' => 'title']));
+		$this->assertSame('menu', $shell->breadcrumb(portal: ['breadcrumb' => ['page']]));
+		$this->assertSame('page', $shell->breadcrumb(portal: ['breadcrumb' => 'page']));
+		$this->assertSame('page', $shell->project(portal: ['breadcrumb' => 'page'])['breadcrumb']);
+		$this->assertSame('menu', $shell->project(portal: [])['breadcrumb']);
+	}//end testTheBreadcrumbWordsAreThePortalsChoiceElseTheMenus()
 
 	public function testTheRegisterDestinationIsServedOnlyWhenDeclared(): void {
 		$shell = new PortalShell();

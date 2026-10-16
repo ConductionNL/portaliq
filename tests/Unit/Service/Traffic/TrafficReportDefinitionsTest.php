@@ -121,8 +121,8 @@ class TrafficReportDefinitionsTest extends TestCase {
 		$csv = $export->csv(records: $records);
 		$lines = explode("\r\n", trim($csv));
 		$this->assertSame(implode(',', TrafficExport::COLUMNS), $lines[0]);
-		$this->assertSame('open-tilburg,2026-09-04,,12,5,4,,,,3,12.5,0.4,0.2', $lines[1]);
-		$this->assertSame('open-tilburg,2026-09-05,"desk,top",1,,,,,,,,,', $lines[2]);
+		$this->assertSame('open-tilburg,2026-09-04,,12,5,4,,,,3,12.5,0.4,0.2,,', $lines[1]);
+		$this->assertSame('open-tilburg,2026-09-05,"desk,top",1,,,,,,,,,,,', $lines[2]);
 		$this->assertCount(3, $lines);
 
 		$json = json_decode($export->json(records: $records), true);
@@ -131,4 +131,25 @@ class TrafficReportDefinitionsTest extends TestCase {
 		$this->assertSame([], $json[0]['pages']);
 		$this->assertSame('traffic-open-tilburg-2026-09-04-2026-09-05-desk-top.csv', $export->fileName(portal: 'open-tilburg', from: '2026-09-04', to: '2026-09-05', segment: 'desk,top', format: 'csv'));
 	}//end testTheExportFormats()
+
+	/**
+	 * Both zero-result keys leave in the CSV (terms as one cell) and in the JSON.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-traffic-page-shows-what-the-public-did-not-find-req-pzr-002
+	 */
+	public function testTheExportCarriesZeroResultSearches(): void {
+		$export = new TrafficExport();
+		$records = [['portal' => 'p', 'date' => '2026-09-04', 'searchesWithoutCount' => 3, 'zeroResultSearches' => [['term' => 'parkeren', 'count' => 2], ['term' => 'a,b', 'count' => 1]]]];
+
+		$lines = explode("\r\n", trim($export->csv(records: $records)));
+		$header = explode(',', $lines[0]);
+		$this->assertSame(['searchesWithoutCount', 'zeroResultSearches'], array_slice($header, -2));
+		$this->assertStringEndsWith(',3,"parkeren (2); a,b (1)"', $lines[1]);
+
+		$json = json_decode($export->json(records: $records), true);
+		$this->assertSame(3, $json[0]['searchesWithoutCount']);
+		$this->assertSame('parkeren', $json[0]['zeroResultSearches'][0]['term']);
+	}//end testTheExportCarriesZeroResultSearches()
 }//end class

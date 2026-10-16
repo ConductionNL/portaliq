@@ -152,7 +152,11 @@ test('every string says what the React portal says, in Dutch and English', () =>
 	for (const locale of ['nl', 'en']) {
 		const bundle = portalBundle(locale)
 		for (const [key, value] of Object.entries(strings[locale])) {
-			assert.equal(value, bundle[key], `${locale}: ${key}`)
+			// A string added after the React portal retired lives only in the
+			// folder's strings, and keeps the shared catalogue out of the entry.
+			if (key in bundle) {
+				assert.equal(value, bundle[key], `${locale}: ${key}`)
+			}
 		}
 	}
 	assert.deepEqual(Object.keys(strings.nl).sort(), Object.keys(strings.en).sort())

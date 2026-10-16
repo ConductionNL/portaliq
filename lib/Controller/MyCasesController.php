@@ -30,6 +30,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Service\Identity\MandateParties;
 use OCA\Portaliq\Service\Identity\PortalMandateService;
 use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
 use OCA\Portaliq\Service\CaseTypeVisibility;
@@ -114,7 +115,11 @@ class MyCasesController extends Controller implements PortalProtected {
 		// identity holds, the one it is acting under, and that one's cases.
 		// Naming a mandate that is not theirs selects nothing, rather than
 		// falling back to one that is.
-		$held = $this->mandates->mandatesFor(subjectRef: (string)($subject['subjectRef'] ?? ''), organisation: (string)($subject['organisation'] ?? ''));
+		$held = $this->mandates->mandatesFor(
+			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			organisation: (string)($subject['organisation'] ?? ''),
+			holders: (new MandateParties())->holdersOf(subject: $subject)
+		);
 		$requested = (string)$this->request->getParam('mandate', '');
 		$active = null;
 		if ($requested !== self::ACTING_FOR_SELF) {

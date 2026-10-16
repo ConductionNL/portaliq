@@ -1,7 +1,13 @@
 // SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
 // SPDX-License-Identifier: EUPL-1.2
 
-import { firstStepWithError, flowSteps, stepErrors, stepTo } from './steps.js'
+import {
+	firstStepWithError,
+	flowSteps,
+	stepErrors,
+	stepIndexById,
+	stepTo,
+} from './steps.js'
 
 /**
  * The step flow both form renderers share (site-multi-step-forms T6, T7b):
@@ -15,7 +21,9 @@ import { firstStepWithError, flowSteps, stepErrors, stepTo } from './steps.js'
  * - `stepTitles` (computed): `{other, review}`, the fallback titles;
  * - `isShownField(field)`: whether a field shows;
  * - `checkFields(fields)`: the errors of those fields, `{field: message}`;
- * - `errors` (data) and `focusSummary()`, the error summary's.
+ * - `errors` (data) and `focusSummary()`, the error summary's;
+ * - `decideStep(step)` (optional): asks the server to decide a step that
+ *   `decides`, answering `{nextStep}`; a throw means the rule engine is down.
  * It puts `ref="stepHeading"` on the step heading.
  *
  * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
@@ -25,6 +33,8 @@ export default {
 		return {
 			stepIndex: 0,
 			backToReview: false,
+			deciding: false,
+			decisionDown: false,
 		}
 	},
 
@@ -75,7 +85,7 @@ export default {
 		 *
 		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
 		 */
-		nextStep() {
+		async nextStep() {
 			const fields = this.currentStep.fields.filter((field) =>
 				this.isShownField(field),
 			)
@@ -84,9 +94,35 @@ export default {
 				this.$nextTick(() => this.focusSummary())
 				return
 			}
-			const target = this.backToReview
+			let target = this.backToReview
 				? this.flow.length - 1
 				: stepTo(this.flow, this.stepIndex, 1, this.isShownField)
+			// A step that decides asks the rule engine on the server; the step
+			// its outcome names opens next. The engine being down keeps the
+			// answers and offers a retry (form-flow-repeating-groups-
+			// calculations-and-decisions REQ-FFL-003).
+			if (
+				this.currentStep.decides === true
+				&& typeof this.decideStep === 'function'
+			) {
+				this.decisionDown = false
+				this.deciding = true
+				try {
+					const decided = await this.decideStep(this.currentStep)
+					const named = stepIndexById(
+						this.flow,
+						decided && decided.nextStep,
+					)
+					if (named >= 0 && !this.backToReview) {
+						target = named
+					}
+				} catch {
+					this.decisionDown = true
+					return
+				} finally {
+					this.deciding = false
+				}
+			}
 			this.backToReview = false
 			this.openStep(target)
 		},

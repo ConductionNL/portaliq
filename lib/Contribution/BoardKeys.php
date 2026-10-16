@@ -61,6 +61,11 @@ class BoardKeys {
 	private const MAX_LABEL_LENGTH = 120;
 
 	/**
+	 * The longest note a documents block may carry.
+	 */
+	private const MAX_NOTE_LENGTH = 400;
+
+	/**
 	 * How many turn values a cases block may name.
 	 */
 	private const MAX_TURN_VALUES = 10;
@@ -157,20 +162,38 @@ class BoardKeys {
 
 
 	/**
-	 * A documents block's board key: `upload: true`.
+	 * A documents block's board keys: `upload: true`, `groupBy` and `note`.
 	 *
 	 * @param array<string, mixed> $block The declared block.
 	 *
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
+	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-1
 	 */
 	public function documentsKeys(array $block): array {
+		$out = [];
 		if (($block['upload'] ?? null) === true) {
-			return ['upload' => true];
+			$out['upload'] = true;
 		}
 
-		return [];
+		// A heading per value of this row field, in the provider's order
+		// (documents-grouped-per-record). Only a plain field name travels on.
+		$groupBy = ($block['groupBy'] ?? null);
+		if (is_string($groupBy) === true && preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $groupBy) === 1) {
+			$out['groupBy'] = $groupBy;
+		}
+
+		// One authored sentence under the list.
+		$note = ($block['note'] ?? null);
+		if (is_string($note) === true) {
+			$note = trim($note);
+			if ($note !== '' && mb_strlen($note) <= self::MAX_NOTE_LENGTH) {
+				$out['note'] = $note;
+			}
+		}
+
+		return $out;
 	}//end documentsKeys()
 
 

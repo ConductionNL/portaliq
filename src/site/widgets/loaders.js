@@ -60,4 +60,12 @@ export const loaders = {
 	nlLinkColumns: () => import('./nlLinkColumns/NlLinkColumns.vue'),
 	nlLookupForm: () => import('./nlLookupForm/NlLookupForm.vue'),
 	nlCatalogue: () => import('./nlCatalogue/NlCatalogue.vue'),
+	nlPublicTable: () => import('./nlPublicTable/NlPublicTable.vue'),
+	nlPublicDetail: () => import('./nlPublicDetail/NlPublicDetail.vue'),
+	nlFaqList: () => import('./nlFaqList/NlFaqList.vue'),
+	nlProductFinder: () => import('./nlProductFinder/NlProductFinder.vue'),
+	nlFeaturedSubjects: () => import('./nlFeaturedSubjects/NlFeaturedSubjects.vue'),
+	nlPortalCounts: () => import('./nlPortalCounts/NlPortalCounts.vue'),
+	nlSubjectLanding: () => import('./nlSubjectLanding/NlSubjectLanding.vue'),
+	nlStartTiles: () => import('./nlStartTiles/NlStartTiles.vue'),
 }

@@ -7,18 +7,25 @@
 	A list of links, with a heading above it (design D1 row 54).
 
 	A `nav`, because that is what a list of links to other pages is, and a
-	screen-reader user navigates by landmark.
+	screen-reader user navigates by landmark. The heading names the landmark,
+	so three link lists on one page are three different landmarks. A list
+	without a heading has no name to give, so it is no landmark: an unnamed
+	`nav` beside a named one is the axe `landmark-unique` finding.
 -->
 <template>
-	<nav
+	<component
+		:is="heading ? 'nav' : 'div'"
 		class="utrecht-link-list-nav"
 		:class="
 			safeDisplay === 'plain'
 				? null
 				: `nl-link-list nl-link-list--${safeDisplay}`
 		"
+		:aria-labelledby="heading ? headingId : undefined"
 		data-testid="nl-link-list">
-		<h2 v-if="heading" class="utrecht-heading-3">{{ heading }}</h2>
+		<h2 v-if="heading" :id="headingId" class="utrecht-heading-3">
+			{{ heading }}
+		</h2>
 		<p v-if="intro" class="utrecht-paragraph nl-link-list__intro">
 			{{ intro }}
 		</p>
@@ -38,7 +45,7 @@
 				</span>
 			</li>
 		</ul>
-	</nav>
+	</component>
 </template>
 
 <script>
@@ -48,6 +55,9 @@ import '@utrecht/link-list-css/dist/index.css'
 import '@utrecht/link-css/dist/index.css'
 import '@utrecht/heading-3-css/dist/index.css'
 import '@utrecht/paragraph-css/dist/index.css'
+
+/** A number per mounted list, so every heading id on the page is unique. */
+let instances = 0
 
 export default {
 	name: 'NlLinkList',
@@ -64,6 +74,21 @@ export default {
 	},
 
 	emits: ['navigate'],
+
+	/**
+	 * The id of the heading that names this list's landmark, unique on the
+	 * page.
+	 *
+	 * @return {{headingId: string}} The state.
+	 * @spec openspec/changes/site-content-blocks-styled/specs/site-look/spec.md#requirement-a-link-list-must-be-a-named-landmark-with-targets-of-at-least-24px
+	 */
+	data() {
+		instances += 1
+		return {
+			/** The id of the heading that names this list's landmark. */
+			headingId: `nl-link-list-${instances}`,
+		}
+	},
 
 	computed: {
 		/**

@@ -60,7 +60,7 @@ Labels on the public record: h1 the name, subtitle role and party, section headi
 ### D5. Asking for a higher login
 
 - `ContributionController::index()` adds `stepUp: [{app, collection, label, minTrust}]` to the aggregate for collections dropped only for trust. It holds labels, never rows or counts.
-- On `/mijn/{app}/{page}` where the page's collection is in `stepUp`, the page shows the sign-in cards of the Inloggen board for the providers that reach that trust (DigiD for a resident, eHerkenning for a company, from `LoginProviders`). The text reads "Voor deze stukken moet u inloggen met DigiD of eHerkenning." After login the resident returns to the same route.
+- A page whose blocks all read a trust-dropped collection is dropped by the manifest normaliser, so it never reaches the site. The site therefore makes each `stepUp` entry a signed-in page of its own at `/mijn/{app}/{collection}` (the route a default page of that collection has), listed last in the menu and never the page the resident opens on. That page shows the sign-in cards of the Inloggen board for the portal's routes that reach the trust: DigiD, eHerkenning and eIDAS (an account, an e-mail link or a demo resident never does). The text reads "Voor deze stukken moet u inloggen met DigiD of eHerkenning.", naming the routes offered. Each card's `returnTo` is the page on screen, so after login the resident returns to the same route. (Amended at build, 15 Oct: the earlier text placed the prompt on the contributed page itself, which the server no longer sends.)
 
 ### D6. Trust levels
 

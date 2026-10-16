@@ -1,0 +1,1 @@
+- No screen: the contract between portaliq and the apps that contribute to it (manifests, forwards, the assertion wire format); the screens it feeds are listed under each portal spec.

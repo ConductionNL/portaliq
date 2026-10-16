@@ -91,7 +91,7 @@ export async function uploadFiles(api, action, id, filesByField) {
  * @param {object} action The normalised manifest action.
  * @param {Record<string, string>} values The form values.
  * @param {Record<string, File[]>} filesByField The picked files per field.
- * @return {Promise<{ok: boolean, object: object|null, id: string, failed: Array<{field: string, file: File}>, errors?: Record<string, string>}>}
+ * @return {Promise<{ok: boolean, status?: number, object: object|null, id: string, failed: Array<{field: string, file: File}>, errors?: Record<string, string>, invalid?: Record<string, string>}>}
  */
 export async function submitWithFiles(api, action, values, filesByField) {
 	const skip = new Set(fileFields(action))
@@ -106,10 +106,12 @@ export async function submitWithFiles(api, action, values, filesByField) {
 	if (!created || !created.ok) {
 		return {
 			ok: false,
+			status: (created && created.status) || 0,
 			object: null,
 			id: '',
 			failed: [],
 			errors: (created && created.errors) || {},
+			invalid: (created && created.invalid) || {},
 		}
 	}
 

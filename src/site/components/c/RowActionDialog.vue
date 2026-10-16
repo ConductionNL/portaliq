@@ -23,6 +23,14 @@
 		:t="t"
 		@done="$emit('done')"
 		@close="$emit('close')" />
+	<RowActionForm
+		v-else-if="kind === 'form'"
+		:action="action"
+		:row="row"
+		:api="api"
+		:t="t"
+		@done="$emit('done')"
+		@close="$emit('close')" />
 	<RowActionConfirm
 		v-else
 		:action="action"
@@ -52,9 +60,11 @@ function goTo(url) {
 /**
  * The step an endpoint row action opens below its table (PageView.jsx): sign
  * and decline get their own dialogs, every other endpoint row action the plain
- * confirm step. Each dialog loads on first use.
+ * confirm step. An update row action with fields to fill in gets its form
+ * (`dialog: 'form'`, site-action-forms). Each dialog loads on first use.
  *
  * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-an-endpoint-row-action-must-confirm-before-it-runs-req-srp-026
+ * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-update-row-action-that-needs-input-must-open-its-form-on-the-row
  */
 export default {
 	name: 'RowActionDialog',
@@ -70,6 +80,10 @@ export default {
 
 		RowActionConfirm: defineAsyncComponent(
 			() => import('../../modals/c/RowActionConfirm.vue'),
+		),
+
+		RowActionForm: defineAsyncComponent(
+			() => import('../../modals/c/RowActionForm.vue'),
 		),
 	},
 
@@ -100,7 +114,7 @@ export default {
 
 	computed: {
 		kind() {
-			return ['sign', 'decline', 'confirm'].includes(this.dialog)
+			return ['sign', 'decline', 'confirm', 'form'].includes(this.dialog)
 				? this.dialog
 				: dialogFor(this.action)
 		},

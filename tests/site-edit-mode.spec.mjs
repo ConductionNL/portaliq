@@ -106,9 +106,18 @@ test('the palette limited to public widgets offers only what the renderer mounts
 	assert.match(palette, /entry\.publicSafe/)
 })
 
-test('the site entry stays under its budget and the editor is its own bundle', { skip: !existsSync(join(ROOT, 'js', 'portaliq-site-editor.js')) && 'no site build in js/' }, () => {
+// The budget is read from webpack.site.js, the one place it is set, so a raise
+// there cannot leave this test asserting a stale number.
+test('the site entry stays under its budget and the editor is its own bundle', { skip: !existsSync(join(ROOT, 'js', 'portaliq-site-editor.js')) && 'no site build in js/' }, async () => {
+	const { createRequire } = await import('node:module')
+	const require = createRequire(import.meta.url)
+	const configs = require(join(ROOT, 'webpack.site.js'))
+	const site = configs.find((c) => Object.keys(c.entry).includes('portaliq-site'))
+	assert.ok(site, 'webpack.site.js exports a site config')
+	const budget = site.performance.maxEntrypointSize
+	assert.ok(Number.isInteger(budget) && budget > 0, 'the site config sets maxEntrypointSize')
 	const entry = statSync(join(ROOT, 'js', 'portaliq-site.js')).size
-	assert.ok(entry < 410 * 1024, `portaliq-site.js is ${entry} bytes`)
+	assert.ok(entry <= budget, `portaliq-site.js is ${entry} bytes, budget ${budget}`)
 	assert.doesNotMatch(readFileSync(join(ROOT, 'js', 'portaliq-site.js'), 'utf8'), /PageGridEditor|createPageEditor/)
 })
 
@@ -178,7 +187,8 @@ test('the editor tells the site it published, and the site re-reads the page fre
 	const app = read('src/site/App.vue')
 	assert.match(app, /onSaved: \(\) => this\.refreshShownPage\(\)/)
 	assert.match(app, /await this\.loadRoute\(this\.route, \{ fresh: true \}\)/)
-	assert.match(app, /fetchPage\(route, this\.portalSlug, \{ fresh \}\)/)
+	// The read must still pass `fresh`; other options (the chosen locale) may sit beside it.
+	assert.match(app, /fetchPage\(route, this\.portalSlug, \{\s*fresh\s*[,}]/)
 })
 
 // THE EDITOR'S NOTICES READ AT AA (resident-sees-words-not-codes). The editor

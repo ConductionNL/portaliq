@@ -45,11 +45,6 @@ use OCA\Portaliq\Service\Branch\PortalBranchScope;
  */
 class CollectionConfigNormaliser {
 	/**
-	 * Allowed column render kinds; anything else normalises to `text`.
-	 */
-	private const RENDER_KINDS = ['text', 'date', 'datetime', 'badge', 'currency', 'boolean', 'link', 'user'];
-
-	/**
 	 * Allowed detail layouts; anything else normalises to `card`.
 	 */
 	private const DETAIL_LAYOUTS = ['card', 'timeline'];
@@ -86,7 +81,7 @@ class CollectionConfigNormaliser {
 				continue;
 			}
 
-			$collection = $this->normaliseColumns(collection: $collection);
+			$collection = (new CollectionColumnsNormaliser(values: $this->values))->normaliseColumns(collection: $collection);
 			$collection = $this->normaliseDetail(collection: $collection);
 			$collection = (new CollectionFieldConfigNormaliser())->normalise(collection: $collection);
 			$collection = (new TimelineProviderMethod())->normaliseTimeline(collection: $collection);
@@ -94,12 +89,16 @@ class CollectionConfigNormaliser {
 			$collection = $this->normaliseDefaults(collection: $collection);
 			$collection = $this->normaliseFileFlags(collection: $collection);
 			$collection = $this->normaliseKind(collection: $collection);
+			// The life domain a collection belongs to, and a product's validity (life-domain-theme-pages).
+			$collection = (new ThemeTagKeys())->collection(collection: $collection);
 			// Steps, answer date and whose turn, on a cases collection only
 			// (site-mijn-omgeving-components REQ-SMO-022).
 			$collection = (new StepsProviderMethod())->normalise(collection: $collection);
 			// Who a resident may write to about each row (site-messages-per-record).
 			$collection = (new MessageContactsKeys())->normalise(collection: $collection);
 			$collection = $this->normaliseClosedField(collection: $collection);
+			// The field holding the case a task belongs to (case-page-tasks-decision-dates-and-next-step).
+			$collection = (new CaseFieldKey())->normalise(collection: $collection);
 			$collection = (new CaseStatusLabelField())->normalise(collection: $collection);
 			$collection = $this->normaliseGroupByField(collection: $collection);
 			$collection = (new PortalBranchScope())->normalise(collection: $collection);
@@ -226,7 +225,8 @@ class CollectionConfigNormaliser {
 	 *
 	 * `filesUpload` opts the collection into the scoped file-upload block and
 	 * `filesDownload` into the scoped file-download block
-	 * (portal-document-download); `deletable` lets a resident delete their
+	 * (portal-document-download); `exportPdf` offers the collection's list and records
+	 * as a PDF (cases-export-own-data-pdf); `deletable` lets a resident delete their
 	 * own messages from a `kind: inbox` collection (inbox-delete-own-messages).
 	 * Only an explicit true enables any of them; a malformed or absent value
 	 * means false (fail-closed).
@@ -238,7 +238,7 @@ class CollectionConfigNormaliser {
 	 * @spec openspec/specs/supplier-portal/spec.md#download-is-opt-in-per-collection-fail-closed
 	 */
 	private function normaliseFileFlags(array $collection): array {
-		foreach (['filesUpload', 'filesDownload', 'deletable'] as $flag) {
+		foreach (['filesUpload', 'filesDownload', 'deletable', 'exportPdf'] as $flag) {
 			if (array_key_exists($flag, $collection) === true) {
 				$collection[$flag] = ($collection[$flag] === true || $collection[$flag] === 'true');
 			}
@@ -246,68 +246,6 @@ class CollectionConfigNormaliser {
 
 		return $collection;
 	}//end normaliseFileFlags()
-
-	/**
-	 * Keep only well-formed `columns`; drop the key otherwise.
-	 *
-	 * @param array<string, mixed> $collection The collection.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function normaliseColumns(array $collection): array {
-		if (array_key_exists('columns', $collection) === false) {
-			return $collection;
-		}
-
-		if (is_array($collection['columns']) === false) {
-			unset($collection['columns']);
-			return $collection;
-		}
-
-		$columns = [];
-		foreach ($collection['columns'] as $column) {
-			$entry = $this->normaliseColumn(column: $column);
-			if ($entry !== null) {
-				$columns[] = $entry;
-			}
-		}
-
-		$collection['columns'] = $columns;
-		return $collection;
-	}//end normaliseColumns()
-
-	/**
-	 * Sanitise ONE column entry, or null when it carries no usable `field`.
-	 *
-	 * Keeps `field`, a string `label`, the `render` kind and a well-formed
-	 * `valueLabels` map; every other key is dropped.
-	 *
-	 * @param mixed $column The declared column.
-	 *
-	 * @return array<string, mixed>|null
-	 *
-	 * @spec openspec/changes/contribution-value-labels/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
-	 */
-	private function normaliseColumn(mixed $column): ?array {
-		if (is_array($column) === false) {
-			return null;
-		}
-
-		$field = ($column['field'] ?? '');
-		if (is_string($field) === false || $field === '') {
-			return null;
-		}
-
-		$entry = ['field' => $field];
-		if (isset($column['label']) === true && is_string($column['label']) === true) {
-			$entry['label'] = $column['label'];
-		}
-
-		$entry['render'] = $this->values->oneOf(value: ($column['render'] ?? null), allowed: self::RENDER_KINDS, default: 'text');
-		// How each value reads ("approved" as "Goedgekeurd"); the cell falls
-		// back to the raw value for one the app did not label.
-		return (new ValueLabelsNormaliser())->apply(entry: $entry, source: $column);
-	}//end normaliseColumn()
 
 	/**
 	 * Keep a well-formed `detail` (layout + string `fields`); drop otherwise.

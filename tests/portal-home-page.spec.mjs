@@ -105,7 +105,7 @@ test('a draft at the root is opened, an absent one sends the admin to the pages'
 	assert.ok(ids.has('Pages'))
 })
 
-test('the report is PLACED on the portal page, above the portal fields', () => {
+test('the report is PLACED on the portal page, first on the tab that opens', () => {
 	const widget = PORTAL_DETAIL.config.widgets.find(
 		(entry) => entry.type === 'PortalHomePage',
 	)
@@ -113,24 +113,29 @@ test('the report is PLACED on the portal page, above the portal fields', () => {
 	assert.equal(widget.id, 'portal-home-page')
 	assert.equal(widget.title, 'Home page')
 
-	const placed = PORTAL_DETAIL.config.layout.filter(
-		(entry) => entry.widgetId === widget.id,
+	// The strip is the only grid cell; the report is drawn by the strip's first
+	// tab (Overzicht, the tab the page opens on), above the portal's own fields.
+	const strip = PORTAL_DETAIL.config.layout.find(
+		(entry) => entry.widgetId === 'portal-tabs',
 	)
-	assert.equal(
-		placed.length,
-		1,
-		'a declared widget with no layout entry never renders: this is the defect this assertion exists for',
-	)
-
-	const fields = PORTAL_DETAIL.config.layout.find(
-		(entry) => entry.widgetId === 'portal-data',
+	assert.ok(strip, 'the portal fields sit in the tab strip')
+	const tabsWidget = PORTAL_DETAIL.config.widgets.find((entry) => entry.id === 'portal-tabs')
+	const overview = tabsWidget.content.tabs[0]
+	assert.equal(overview.label, 'Overzicht')
+	assert.deepEqual(
+		overview.widgetIds.slice(0, 1),
+		[widget.id],
+		'a declared widget that no tab names never renders; on the opening tab a configuration error is the first thing read',
 	)
 	assert.ok(
-		placed[0].gridY < fields.gridY,
-		'a configuration error nobody scrolls to is not reported',
+		overview.widgetIds.indexOf('portal-data') > 0,
+		'the report comes above the portal fields',
 	)
-	assert.equal(placed[0].gridX, 0)
-	assert.equal(placed[0].gridWidth, 12)
+	assert.equal(
+		PORTAL_DETAIL.config.layout.filter((entry) => entry.widgetId === widget.id).length,
+		0,
+		'a layout cell as well as a tab would draw it twice',
+	)
 })
 
 test('no two widgets on the portal page claim the same row', () => {

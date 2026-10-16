@@ -421,4 +421,45 @@ class NewsControllerTest extends TestCase {
 
 		$this->assertSame(count($calls), $refused);
 	}//end testEveryStaffMethodRefusesAUserWithoutTheAction()
+
+	/**
+	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/tasks.md#task-4
+	 */
+	public function testAnEventRefIsStoredWhenPlainAndKeptWhenNotSent(): void {
+		$objectService = new class {
+			/**
+			 * @var array<string,mixed>
+			 */
+			public array $saved = [];
+
+			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				return ['id' => $id, 'title' => 'Old', 'body' => 'B', 'target' => ['schoolRef' => 's'], 'status' => 'published', 'eventRef' => 'ev1'];
+			}//end find()
+
+			/**
+			 * @param array<string,mixed> $object
+			 */
+			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$this->saved = $object;
+				return array_merge($object, ['id' => 'n1']);
+			}//end saveObject()
+		};
+
+		$controller = new NewsController($this->createMock(IRequest::class), $this->authenticatedUserSession(), $this->container($objectService), $this->createMock(LoggerInterface::class), $this->staffActionAuth(NewsController::ACTION));
+
+		$controller->create('T', 'B', ['schoolRef' => 's'], [], false, '', '', 'ev-1');
+		$this->assertSame('ev-1', $objectService->saved['eventRef']);
+
+		$controller->create('T', 'B', ['schoolRef' => 's'], [], false, '', '', '../etc/passwd');
+		$this->assertSame('', $objectService->saved['eventRef'], 'an id that is not plain is not stored');
+
+		$controller->update('n1', 'T', 'B', ['schoolRef' => 's']);
+		$this->assertSame('ev1', $objectService->saved['eventRef'], 'an update that sends no event keeps it');
+
+		$controller->update('n1', 'T', 'B', ['schoolRef' => 's'], null, '', '', 'ev-2');
+		$this->assertSame('ev-2', $objectService->saved['eventRef']);
+
+		$controller->update('n1', 'T', 'B', ['schoolRef' => 's'], null, '', '', '');
+		$this->assertSame('', $objectService->saved['eventRef'], 'an empty event clears it');
+	}//end testAnEventRefIsStoredWhenPlainAndKeptWhenNotSent()
 }//end class

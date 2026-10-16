@@ -52,6 +52,8 @@
 					:welcomeLabel="t('Welcome')"
 					:demoLabel="t('Only on this demo. No password is asked.')"
 					:introLabel="t('Log in to view your information.')"
+					:lostPasswordLabel="t('Forgot your password?')"
+					:registerLabel="t('Create an account')"
 					:noWayLabel="
 						t('No login method is configured for this organisation yet.')
 					" />
@@ -63,13 +65,33 @@
 						{{ t('Log in to view your information.') }}
 					</p>
 					<ul v-if="signInRoutes.length" class="pq-account__ways-in">
-						<li v-for="way in signInRoutes" :key="way.mode">
+						<li v-for="way in signInRoutes" :key="way.key || way.mode">
+							<EmailLinkForm
+								v-if="way.form === 'email-link'"
+								:authBase="way.authBase"
+								:portal="way.portal"
+								:label="way.label" />
 							<a
+								v-else
 								class="utrecht-button-link utrecht-button-link--html-a utrecht-button-link--primary-action"
 								:href="way.href"
 								:data-mode="way.mode"
 								data-testid="site-account-signin-route">
 								{{ way.label }}
+							</a>
+							<a
+								v-if="way.lostPasswordUrl"
+								class="utrecht-link pq-account__lost-password"
+								:href="way.lostPasswordUrl"
+								data-testid="site-signin-lost-password">
+								{{ t('Forgot your password?') }}
+							</a>
+							<a
+								v-if="way.registerUrl"
+								class="utrecht-link pq-account__lost-password"
+								:href="way.registerUrl"
+								data-testid="site-signin-register">
+								{{ t('Create an account') }}
 							</a>
 						</li>
 					</ul>
@@ -116,6 +138,7 @@
 			<!-- `/mijn` itself: the resident's home, loaded on demand
 			     (site-mijn-omgeving-components REQ-SMO-007, design D4). -->
 			<template v-else-if="isHome">
+				<PageHelp v-if="sectionHelpText" :text="sectionHelpText" />
 				<component
 					:is="homeComponent"
 					v-if="homeComponent"
@@ -139,7 +162,15 @@
 					data-testid="site-account-title">
 					{{ entry.label }}
 				</h1>
-				<p v-if="pageLoading" class="utrecht-paragraph" role="status">
+				<PageHelp v-if="sectionHelpText" :text="sectionHelpText" />
+				<!-- A page the login is too low for: which login reaches it
+				     (site-member-voting-record-and-confidential-papers REQ-SCR-004). -->
+				<StepUpPrompt
+					v-if="entry.stepUp"
+					:stepUp="entry.stepUp"
+					:routes="signInRoutes"
+					:t="t" />
+				<p v-else-if="pageLoading" class="utrecht-paragraph" role="status">
 					{{ t('Loading…') }}
 				</p>
 				<component
@@ -173,6 +204,7 @@ import {
 	recordIdOfRoute,
 	routeForNav,
 } from '../../shared/portalNav.js'
+import { sectionOf } from '../lib/help.js'
 import { pageOwnsHeading, sitePageLoader } from '../pages/registry.js'
 import { actingFor } from './e/actingFor.js'
 
@@ -203,12 +235,17 @@ export default {
 	name: 'AccountArea',
 
 	components: {
+		PageHelp: defineAsyncComponent(() => import('./PageHelp.vue')),
 		// Loaded only while the resident acts for someone else.
 		ActingForBar: defineAsyncComponent(() => import('./mijn/ActingForBar.vue')),
 		// Loaded only on a portal that writes its sign-in cards.
 		SignInPage: defineAsyncComponent(() => import('./chrome/SignInPage.vue')),
 		ResidentMenu,
 		WaysIn,
+		// On demand: the form only shows when the instance switch is on.
+		EmailLinkForm: defineAsyncComponent(() => import('./EmailLinkForm.vue')),
+		// Only on a page the login is too low for.
+		StepUpPrompt: defineAsyncComponent(() => import('./mijn/StepUpPrompt.vue')),
 	},
 
 	props: {
@@ -277,6 +314,20 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The help text of the part of Mijn omgeving on screen, or ''.
+		 *
+		 * @return {string} The text.
+		 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-page-and-each-part-of-mijn-omgeving-can-carry-a-help-text-req-htf-002
+		 */
+		sectionHelpText() {
+			const section = sectionOf(this.entry, this.isHome)
+			const texts = (this.portal && this.portal.sectionHelp) || {}
+			return section && typeof texts[section] === 'string'
+				? texts[section]
+				: ''
+		},
+
 		/**
 		 * The card at the top of the resident menu: whom the resident acts for,
 		 * when the session acts for an organisation and the portal names the
@@ -392,6 +443,9 @@ export default {
 				// The record a route chooses on a record page
 				// (site-mijn-omgeving-components REQ-SMO-008).
 				routeRecordId: recordIdOfRoute(this.currentRoute),
+				// The route on screen, for a page with a list one segment
+				// deeper (life-domain-theme-pages T05b).
+				currentRoute: this.currentRoute,
 			}
 			const wanted = declaredProps(this.pageComponent)
 			return Object.fromEntries(
@@ -442,6 +496,12 @@ export default {
 		 */
 		async loadPage() {
 			const entry = this.entry
+			if (entry && entry.stepUp) {
+				// The step-up prompt is the page; nothing to load.
+				this.pageComponent = null
+				this.pageLoading = false
+				return
+			}
 			const loader = sitePageLoader(entry)
 			if (!loader) {
 				this.pageComponent = markRaw(PlaceholderPage)

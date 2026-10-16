@@ -47,6 +47,13 @@ class PageEditorServiceTest extends TestCase {
 	private string $stored = '';
 
 	/**
+	 * A read rule the schema doubles start with instead of the shipped one.
+	 *
+	 * @var array|null
+	 */
+	public ?array $seedRead = null;
+
+	/**
 	 * The authorization block the schema double was last given.
 	 *
 	 * @var array|null
@@ -157,11 +164,11 @@ class PageEditorServiceTest extends TestCase {
 			 * @return object|null The schema double.
 			 */
 			public function findByApplicationAndSlug(string $slug, string $application): ?object {
-				if (in_array($slug, ['page', 'media', 'menu', 'portalNotice'], true) === false || $application !== 'portaliq') {
+				if (in_array($slug, ['page', 'media', 'menu', 'portalNotice', 'sharedBlock'], true) === false || $application !== 'portaliq') {
 					return null;
 				}
 
-				return new class($slug) {
+				$double = new class($slug) {
 
 					/**
 					 * Constructor.
@@ -180,7 +187,7 @@ class PageEditorServiceTest extends TestCase {
 					public array $authorization = [
 						'read' => [
 							['group' => 'public', 'match' => ['status' => 'published']],
-							'authenticated',
+							'portaliq-medewerkers',
 						],
 					];
 
@@ -206,6 +213,12 @@ class PageEditorServiceTest extends TestCase {
 						$this->authorization = ($authorization ?? []);
 					}
 				};
+
+				if ($this->test->seedRead !== null) {
+					$double->authorization['read'] = $this->test->seedRead;
+				}
+
+				return $double;
 			}
 
 
@@ -247,6 +260,7 @@ class PageEditorServiceTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		$this->stored = '';
+		$this->seedRead = null;
 		$this->written = null;
 		$this->writtenBySlug = [];
 	}//end setUp()
@@ -358,8 +372,8 @@ class PageEditorServiceTest extends TestCase {
 
 	/**
 	 * The editor groups also govern the portal's menus, so an editor may
-	 * edit the menu from the portal and nobody else may, and the menu's read
-	 * rules are left as they were.
+	 * edit the menu from the portal and nobody else may. The menu's read
+	 * rules keep what they had and gain the editor groups.
 	 *
 	 * @return void
 	 *
@@ -374,7 +388,8 @@ class PageEditorServiceTest extends TestCase {
 		$this->assertSame(
 			[
 				['group' => 'public', 'match' => ['status' => 'published']],
-				'authenticated',
+				'portaliq-medewerkers',
+				'redactie',
 			],
 			$this->writtenBySlug['menu']['read'] ?? null
 		);
@@ -398,6 +413,22 @@ class PageEditorServiceTest extends TestCase {
 
 
 	/**
+	 * The groups that may edit pages may edit shared blocks, and nobody else.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t07
+	 */
+	public function testEditorGroupsGovernSharedBlocks(): void {
+		$this->service(isAdmin: true)->setEditorGroups(['communicatie']);
+
+		foreach (['create', 'update', 'delete'] as $action) {
+			$this->assertSame(['communicatie'], $this->writtenBySlug['sharedBlock'][$action] ?? null);
+		}
+	}//end testEditorGroupsGovernSharedBlocks()
+
+
+	/**
 	 * The public read rule survives a write of the editor groups.
 	 *
 	 * Rewriting `read` here would take every published page off the air for
@@ -414,11 +445,47 @@ class PageEditorServiceTest extends TestCase {
 		$this->assertSame(
 			[
 				['group' => 'public', 'match' => ['status' => 'published']],
-				'authenticated',
+				'portaliq-medewerkers',
+				'redacteuren',
 			],
 			$this->written['read']
 		);
 	}//end testThePublicReadRuleSurvives()
+
+
+	/**
+	 * A group the setting no longer names leaves the read rule; the others stay.
+	 *
+	 * The register reads only the staff group since close-portaliq-register-to-staff,
+	 * so the editor groups are added to `read` as well as to the writes. A
+	 * group taken out of the setting must lose that read, while the public
+	 * rule and the staff group stay.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/close-portaliq-register-to-staff/specs/admin-ui/spec.md#requirement-only-staff-may-open-portaliqs-nextcloud-app-and-read-its-register
+	 */
+	public function testARemovedEditorGroupLosesTheRead(): void {
+		$this->stored   = json_encode(['oude-redactie']);
+		$this->seedRead = [
+			['group' => 'public', 'match' => ['status' => 'published']],
+			'portaliq-medewerkers',
+			'oude-redactie',
+		];
+
+		$this->service(isAdmin: true)->setEditorGroups(['nieuwe-redactie']);
+
+		$this->assertSame(
+			[
+				['group' => 'public', 'match' => ['status' => 'published']],
+				'portaliq-medewerkers',
+				'nieuwe-redactie',
+			],
+			$this->written['read']
+		);
+		$this->assertNotContains('oude-redactie', $this->writtenBySlug['menu']['read']);
+		$this->assertNotContains('authenticated', $this->writtenBySlug['media']['read']);
+	}//end testARemovedEditorGroupLosesTheRead()
 
 
 	/**

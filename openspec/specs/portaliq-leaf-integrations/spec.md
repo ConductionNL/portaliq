@@ -26,7 +26,7 @@ Every integration leaf consumed by portaliq SHALL render exclusively on internal
 served to authenticated Nextcloud users (the `DashboardController` surface). No visitor-reachable
 surface — the `#[PublicPage]` portal-edge controllers (`ContributionController`,
 `ContentController`, `PortalPageController`, `SessionController`, `TrafficController`,
-`WooController`), any route under `/portal/`, or any payload they serve — SHALL render, reference,
+`BundledSiteController`), any route under `/portal/`, or any payload they serve — SHALL render, reference,
 or link an integration leaf or a leaf-created Nextcloud artifact. Anything visitor-facing SHALL be
 mediated by the portal edge reading OpenRegister objects; a portal bearer session
 (`PortalSessionService`) SHALL never grant access to a Nextcloud app surface.

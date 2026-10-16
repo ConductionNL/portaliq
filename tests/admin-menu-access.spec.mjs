@@ -36,11 +36,13 @@ const MANIFEST = JSON.parse(readFileSync(join(ROOT, 'src', 'manifest.json'), 'ut
  */
 function visibleMenu(raw) {
 	const manifest = withAccess(MANIFEST, normaliseAccess(raw))
+	// A caption is a section divider, not a page: only entries that lead somewhere count.
 	return manifest.menu
 		.filter(
 			(item) =>
-				!item.visibleIf
-				|| passesContextPredicates(item.visibleIf, manifest.runtime),
+				item.type !== 'caption'
+				&& (!item.visibleIf
+				|| passesContextPredicates(item.visibleIf, manifest.runtime)),
 		)
 		.map((item) => item.id)
 }
@@ -82,7 +84,10 @@ test('each flag opens its own pages', () => {
 
 test('an administrator sees every entry', () => {
 	const all = { admin: true, pages: true, accounts: true, accessRequests: true }
-	assert.equal(visibleMenu(all).length, MANIFEST.menu.length)
+	assert.equal(
+		visibleMenu(all).length,
+		MANIFEST.menu.filter((item) => item.type !== 'caption').length,
+	)
 })
 
 test('a page hidden from the menu does not open by its address', () => {

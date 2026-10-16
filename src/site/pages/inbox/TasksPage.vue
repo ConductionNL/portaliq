@@ -5,10 +5,13 @@
 
 <!--
 	"My tasks" (portal-task-delivery): the resident's open portal tasks, read
-	and completed through portaliq's bearer-guarded proxy. The completion form
+	and completed through portaliq's bearer-guarded proxy, and what the apps
+	ask of the resident in their `tasks` blocks, each opening its own page. The completion form
 	checks the task's frozen upload rules before sending and names each
 	refusal in plain language; the server checks everything again. "View task"
-	in the inbox opens one task here directly.
+	in the inbox opens one task here directly. A task that names the app action
+	completing it (`metadata.completeVia`) opens that action's form instead,
+	with the task uuid preset, because OpenRegister refuses a direct completion.
 -->
 <template>
 	<div class="pq-tasks-page">
@@ -51,6 +54,27 @@
 					role="status">
 					{{ tr('Your task has been submitted. Thank you.') }}
 				</p>
+
+				<template v-else-if="via.named">
+					<SchemaForm
+						v-if="via.action"
+						:action="via.action"
+						:api="api"
+						:t="tr"
+						:preset="{ [via.taskField]: detail.task.uuid }"
+						:send="sendVia"
+						@submitted="viaDone" />
+					<p
+						v-else
+						class="utrecht-paragraph pq-task-refusal"
+						role="status">
+						{{
+							tr(
+								'The form for this task is not available to you right now.',
+							)
+						}}
+					</p>
+				</template>
 
 				<form v-else class="pq-task-form" @submit.prevent="submit">
 					<div class="utrecht-form-field pq-task-upload">
@@ -130,36 +154,68 @@
 		     reads as "no open tasks" (site-mijn-omgeving-components
 		     REQ-SMO-009). -->
 		<LoadError
-			v-else-if="failed"
+			v-else-if="failed && contributed.length === 0"
 			:text="mt('Your tasks could not be loaded.')"
 			:retryLabel="mt('Try again')"
 			@retry="loadList" />
 
-		<EmptyState v-else-if="tasks.length === 0" :text="tr('No open tasks.')" />
+		<EmptyState
+			v-else-if="tasks.length === 0 && contributed.length === 0"
+			:text="tr('No open tasks.')" />
 
-		<ul v-else class="pq-tasks">
-			<ActionRow
-				v-for="task in tasks"
-				:key="task.uuid"
-				:title="task.displayTitle || task.title || tr('Task')"
-				:button="true"
-				:badges="badgesOf(task)"
-				@open="openTask(task.uuid)" />
-		</ul>
+		<template v-else>
+			<LoadError
+				v-if="failed"
+				:text="mt('Your tasks could not be loaded.')"
+				:retryLabel="mt('Try again')"
+				@retry="loadList" />
+			<!-- The portal tasks, then what the apps ask of the resident
+			     (mijn-taken-lists-contributed-tasks): each opens the page that
+			     shows it. -->
+			<ul class="pq-tasks">
+				<ActionRow
+					v-for="task in tasks"
+					:key="task.uuid"
+					:title="task.displayTitle || task.title || tr('Task')"
+					:button="true"
+					:badges="badgesOf(task)"
+					@open="openTask(task.uuid)" />
+				<ActionRow
+					v-for="entry in contributed"
+					:key="entry.key"
+					:title="entry.title || tr('Task')"
+					:route="entry.route"
+					:badges="badgesOf({ dueAt: entry.due })"
+					data-testid="tasks-contributed-row"
+					@open="openContributed(entry)" />
+			</ul>
+		</template>
 	</div>
 </template>
 
 <script>
+import SchemaForm from '../../components/c/SchemaForm.vue'
 import BusyStatus from '../../components/inbox/BusyStatus.vue'
 import ActionRow from '../../components/mijn/ActionRow.vue'
 import EmptyState from '../../components/mijn/EmptyState.vue'
 import LoadError from '../../components/mijn/LoadError.vue'
 import Skeleton from '../../components/mijn/Skeleton.vue'
+import { forwardResult } from '../../components/c/forms.js'
 import { deadlineBadge, mijnTranslator } from '../../components/mijn/rows.js'
-import { formatDate, sessionStore, takeTaskToOpen } from './inbox.js'
+import {
+	contributedTaskEntries,
+	contributedTaskSources,
+} from './contributedTasks.js'
+import {
+	formatDate,
+	keepRecordToOpen,
+	sessionStore,
+	takeTaskToOpen,
+} from './inbox.js'
 import { PAGE_EMITS, PAGE_PROPS } from './pageProps.js'
 import {
 	acceptAttribute,
+	completeViaAction,
 	refusalKey,
 	sizeInMb,
 	uploadRules,
@@ -173,7 +229,14 @@ import { pageLocale, withStrings } from './translate.js'
 export default {
 	name: 'TasksPage',
 
-	components: { ActionRow, BusyStatus, EmptyState, LoadError, Skeleton },
+	components: {
+		ActionRow,
+		BusyStatus,
+		EmptyState,
+		LoadError,
+		SchemaForm,
+		Skeleton,
+	},
 
 	props: {
 		...PAGE_PROPS,
@@ -188,6 +251,7 @@ export default {
 			loading: true,
 			failed: false,
 			tasks: [],
+			contributed: [],
 			detail: null,
 			comment: '',
 			files: [],
@@ -220,6 +284,16 @@ export default {
 		 */
 		mt() {
 			return mijnTranslator(this.t, this.lang)
+		},
+
+		/**
+		 * The app action the open task names as the one that completes it.
+		 *
+		 * @return {{named: boolean, app: string, action: object|null, taskField: string}} The action, or why none.
+		 * @spec openspec/changes/a-task-opens-the-app-action-that-completes-it/specs/site-portal-parity/spec.md#requirement-a-task-that-names-its-app-action-must-open-that-action
+		 */
+		via() {
+			return completeViaAction(this.detail?.task, this.contributions)
 		},
 
 		/**
@@ -290,15 +364,68 @@ export default {
 		async loadList() {
 			this.loading = true
 			this.failed = false
-			let page
-			try {
-				page = await this.api.fetchTasks()
-			} catch {
-				page = null
-			}
+			const portalTasks = (async () => {
+				try {
+					return await this.api.fetchTasks()
+				} catch {
+					return null
+				}
+			})()
+			const [page, contributed] = await Promise.all([
+				portalTasks,
+				this.loadContributed(),
+			])
 			this.failed = !Array.isArray(page?.results) || page.failed === true
 			this.tasks = this.failed ? [] : page.results
+			this.contributed = contributed
 			this.loading = false
+		},
+
+		/**
+		 * What the apps ask of the resident: the rows of every collection a
+		 * contribution shows in a `tasks` block. A collection that could not
+		 * be read adds nothing.
+		 *
+		 * @return {Promise<Array<object>>} The entries.
+		 * @spec openspec/changes/mijn-taken-lists-contributed-tasks/specs/site-mijn-omgeving/spec.md#requirement-my-tasks-lists-what-the-apps-ask-of-the-resident
+		 */
+		async loadContributed() {
+			if (typeof this.api.fetchCollection !== 'function') {
+				return []
+			}
+			const lists = await Promise.all(
+				contributedTaskSources(this.contributions).map(async (source) => {
+					let rows
+					try {
+						rows = await this.api.fetchCollection(source.collection, {
+							orNull: true,
+						})
+					} catch {
+						rows = null
+					}
+					return contributedTaskEntries(source, rows, this.nav)
+				}),
+			)
+			return lists.flat()
+		},
+
+		/**
+		 * Open what an app asks on the page that shows it, with its row picked.
+		 *
+		 * @param {{link: object, route: string}} entry The entry.
+		 * @return {void}
+		 * @spec openspec/changes/mijn-taken-lists-contributed-tasks/specs/site-mijn-omgeving/spec.md#requirement-my-tasks-lists-what-the-apps-ask-of-the-resident
+		 */
+		openContributed(entry) {
+			if (!entry.route) {
+				return
+			}
+			keepRecordToOpen(sessionStore(), entry.link)
+			if (typeof this.navigate === 'function') {
+				this.navigate(entry.route)
+				return
+			}
+			this.$emit('navigate', entry.route)
 		},
 
 		/**
@@ -362,6 +489,35 @@ export default {
 			}
 			const badge = deadlineBadge(task?.dueAt, new Date(), this.mt, this.lang)
 			return badge ? [badge] : []
+		},
+
+		/**
+		 * Send the named action's answers through the portal's own forward,
+		 * in the form's send shape.
+		 *
+		 * @param {object} body The answers, with the task uuid preset.
+		 * @return {Promise<object>} `{ok, status, object, errors, invalid}`.
+		 * @spec openspec/changes/a-task-opens-the-app-action-that-completes-it/specs/site-portal-parity/spec.md#requirement-a-task-that-names-its-app-action-must-open-that-action
+		 */
+		async sendVia(body) {
+			const result = await this.api.forwardAction(
+				this.via.app,
+				this.via.action.id,
+				body,
+			)
+			return forwardResult(result)
+		},
+
+		/**
+		 * The app completed the task: thank the resident and read the list again.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/a-task-opens-the-app-action-that-completes-it/specs/site-portal-parity/spec.md#requirement-a-task-that-names-its-app-action-must-open-that-action
+		 */
+		viaDone() {
+			this.completed = true
+			this.loadList()
+			this.$emit('refresh')
 		},
 
 		/**

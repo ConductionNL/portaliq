@@ -91,7 +91,7 @@ const names = (groups) => groups.map((group) => [group.title, group.items.map((i
 test('the blue bar holds the website menus only, never the resident items', () => {
 	const app = read('src', 'site', 'App.vue')
 	const headerMenus = app.slice(app.indexOf('\t\theaderMenus() {'), app.indexOf('\t\tresidentMenu() {'))
-	assert.match(headerMenus, /return headerMenusOf\(this\.menus\)/)
+	assert.match(headerMenus, /menusWithAddresses\(headerMenusOf\(this\.menus\), this\.hrefForRoute\)/)
 	assert.doesNotMatch(headerMenus, /this\.nav|accountMenu|residentMenu/)
 	assert.doesNotMatch(read('src', 'site', 'lib', 'accountArea.js'), /export function accountMenu/)
 
@@ -225,7 +225,7 @@ test('the header links to the own area when signed in, and keeps the sign-in lin
 		accountLink: link,
 		signOutLabel: 'Uitloggen',
 	})
-	assert.match(signedIn, /data-testid="site-auth-subject"[^>]*>Ingelogd als Suzanne Moulin</)
+	assert.match(signedIn, /data-testid="site-auth-subject"[^>]*>(<!--\[-->)?Ingelogd als <span translate="no"[^>]*>(<!--\[-->)?Suzanne Moulin</)
 	assert.match(signedIn, /data-testid="site-own-area"[^>]*>\s*Mijn omgeving\s*</)
 	assert.match(signedIn, /href="\/apps\/portaliq\/site\?route=%2Fmijn"/)
 	assert.match(signedIn, /data-testid="site-signout"[^>]*>\s*Uitloggen\s*</)
