@@ -15,6 +15,7 @@ import {
 	collectionIdsFor,
 	createCollectionLoader,
 	openRecordState,
+	pickedRecord,
 } from '../src/site/pages/collections/collectionLoader.js'
 
 /**
@@ -205,5 +206,32 @@ test("a record link selects the row from the resident's own list, or says it is 
 			state: 'found',
 			row: { id: 'a2', mandate: true },
 		},
+	)
+})
+
+// mandated-case-opens-on-its-record-page: Linda opens Henk's case from "My
+// cases"; it is not in her own rows, and the record page showed an empty
+// "Uw zaak" because only her own rows could open.
+test('a record page opens a row picked under a mandate, and nothing else outside the list', () => {
+	const own = [{ id: 'c1', title: 'Mine' }]
+	const mandated = {
+		id: 'c9',
+		title: 'Henk',
+		_mandate: { id: 'm1', label: 'Henk Bakker' },
+	}
+
+	assert.deepEqual(pickedRecord(own, { id: 'c1' }), own[0], 'an own row opens from the list')
+	assert.equal(pickedRecord(own, mandated), mandated, 'a mandated row opens as read')
+	assert.equal(pickedRecord(own, { id: 'c9' }), null, 'a foreign row without a mandate opens nothing')
+	assert.equal(
+		pickedRecord(own, { id: 'c9', _mandate: { id: '' } }),
+		null,
+		'an empty mandate id is no mandate',
+	)
+	assert.equal(pickedRecord(own, null), null)
+	assert.equal(
+		pickedRecord([{ id: 'c9', title: 'Fresh' }], mandated).title,
+		'Fresh',
+		'the loaded row wins over the carried one',
 	)
 })
