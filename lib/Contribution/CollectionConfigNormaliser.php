@@ -73,6 +73,7 @@ class CollectionConfigNormaliser {
 	 *
 	 * @spec openspec/specs/supplier-portal/spec.md#download-is-opt-in-per-collection-fail-closed
 	 * @spec openspec/changes/inbox-reads-each-apps-message-fields/specs/supplier-portal/spec.md#requirement-an-inbox-collection-names-its-own-message-fields-req-imf-001
+	 * @spec openspec/changes/collection-intro/tasks.md#t1
 	 */
 	public function normaliseCollections(array $collections): array {
 		$out = [];
@@ -100,6 +101,7 @@ class CollectionConfigNormaliser {
 			// The field holding the case a task belongs to (case-page-tasks-decision-dates-and-next-step).
 			$collection = (new CaseFieldKey())->normalise(collection: $collection);
 			$collection = (new CaseStatusLabelField())->normalise(collection: $collection);
+			$collection = (new CollectionIntroKey())->normalise(collection: $collection);
 			$collection = $this->normaliseGroupByField(collection: $collection);
 			$collection = (new PortalBranchScope())->normalise(collection: $collection);
 			$collection = (new MessageBoxConfigNormaliser())->normalise(collection: $collection);
