@@ -31,6 +31,15 @@
 			{{ t('My cases') }}
 		</h1>
 
+		<!-- What the case apps say above the list, as plain text (collection-intro). -->
+		<p
+			v-for="(intro, i) in intros"
+			:key="i"
+			class="utrecht-paragraph"
+			data-testid="my-cases-intro">
+			{{ intro }}
+		</p>
+
 		<!-- "Zaken van" (board MijnZakenTabel): whose cases the list shows,
 		     for a resident who acts for someone else (mijn-zaken-chooses-whose-cases). -->
 		<div
@@ -186,6 +195,7 @@
 <script>
 import CaseCard from '../../components/mijn/CaseCard.vue'
 import LoadError from '../../components/mijn/LoadError.vue'
+import { casesIntros } from '../../../shared/collectionIntro.js'
 import {
 	ACTING_FOR_SELF,
 	caseStatus,
@@ -255,6 +265,16 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The intros of the contributed cases collections, once each.
+		 *
+		 * @return {Array<string>}
+		 * @spec openspec/changes/collection-intro/tasks.md#t2
+		 */
+		intros() {
+			return casesIntros(this.contributions)
+		},
+
 		/**
 		 * The mandate the list is read under: the page's own, else the session's choice.
 		 *

@@ -2039,6 +2039,11 @@
                                     "title": "Visible from field",
                                     "type": "string",
                                     "description": "The field with the date or moment before which a row is not shown, in a list, an inbox or a read by id, on the server clock (site-school-blocks)."
+                                },
+                                "intro": {
+                                    "title": "Introduction",
+                                    "type": "string",
+                                    "description": "Plain text shown above the collection's list, for example an admin-set sentence above Mijn zaken. Kept only when it holds text; never rendered as HTML."
                                 }
                             }
                         }

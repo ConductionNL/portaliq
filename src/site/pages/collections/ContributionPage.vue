@@ -198,6 +198,13 @@
 					class="utrecht-heading-3">
 					{{ headingOf(item) }}
 				</component>
+				<!-- The collection's own intro, as plain text (collection-intro). -->
+				<p
+					v-if="introOf(item.collection)"
+					class="utrecht-paragraph pq-contribution-page__intro"
+					data-testid="contribution-page-collection-intro">
+					{{ introOf(item.collection) }}
+				</p>
 				<!-- The list as a PDF, when its collection opted in (cases-export-own-data-pdf). -->
 				<PdfDownloadButton
 					v-if="item.collection.exportPdf === true"
@@ -515,6 +522,7 @@ import {
 	groupLabelCollection,
 	groupRows,
 } from '../../../shared/collectionGroups.js'
+import { introOf } from '../../../shared/collectionIntro.js'
 import {
 	itemsInRange,
 	listOrder,
@@ -1389,6 +1397,18 @@ export default {
 					[this.recordPage.collection]: null,
 				}
 			}
+		},
+
+		/**
+		 * A collection's intro, or '' when it has none.
+		 *
+		 * @param {object} collection The contributed collection.
+		 * @return {string}
+		 *
+		 * @spec openspec/changes/collection-intro/tasks.md#t2
+		 */
+		introOf(collection) {
+			return introOf(collection)
 		},
 
 		/**
