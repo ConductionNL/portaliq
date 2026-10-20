@@ -1962,7 +1962,22 @@
             "title": "Submission",
             "icon": "FileCheckOutline",
             "content": {
-              "columns": 2
+              "columns": 2,
+              "exclude": [
+                "payloadCopy"
+              ]
+            }
+          },
+          {
+            "id": "submission-payload",
+            "type": "data",
+            "title": "What the resident sent",
+            "icon": "ClipboardText",
+            "content": {
+              "columns": 1,
+              "include": [
+                "payloadCopy"
+              ]
             }
           },
           {
@@ -1989,8 +2004,8 @@
             "gridHeight": 5
           },
           {
-            "id": "submission-forms",
-            "widgetId": "submission-forms",
+            "id": "submission-payload",
+            "widgetId": "submission-payload",
             "gridX": 0,
             "gridY": 5,
             "gridWidth": 12,
@@ -2035,6 +2050,7 @@
         },
         "headerMeta": "via {appId}",
         "sideColumn": [
+          "submission-forms",
           "submission-history"
         ]
       }

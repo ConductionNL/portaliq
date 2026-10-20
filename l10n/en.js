@@ -360,6 +360,7 @@ OC.L10N.register(
         "Path prefix": "Path prefix",
         "Paths the renderer answered with not found, and how often.": "Paths the renderer answered with not found, and how often.",
         "Payload copy": "Payload copy",
+        "What the resident sent": "What the resident sent",
         "Pending email": "Pending email",
         "Pending email expiry": "Pending email expiry",
         "Pending email token hash": "Pending email token hash",

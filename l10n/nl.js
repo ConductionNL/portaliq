@@ -394,6 +394,7 @@ OC.L10N.register(
         "Path prefix": "Padbegin",
         "Paths the renderer answered with not found, and how often.": "Paden waarop de site \"niet gevonden\" antwoordde, en hoe vaak.",
         "Payload copy": "Payloadkopie",
+        "What the resident sent": "Wat de inwoner instuurde",
         "Pending email": "Nieuw e-mailadres in behandeling",
         "Pending email expiry": "Vervaldatum van het nieuwe e-mailadres",
         "Pending email token hash": "Tokenhash van het nieuwe e-mailadres",
