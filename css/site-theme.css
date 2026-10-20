@@ -1712,14 +1712,16 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	white-space: nowrap;
 }
 
-.pq-site .pq-search--plain .ac-search-box__search {
+.pq-site .pq-search--plain .ac-search-box__search,
+.pq-site .pq-not-found .ac-search-box__search {
 	display: flex;
 	flex-direction: row;
 	flex-wrap: wrap;
 	gap: 0;
 }
 
-.pq-site .pq-search--plain .ac-search-box__input.utrecht-textbox {
+.pq-site .pq-search--plain .ac-search-box__input.utrecht-textbox,
+.pq-site .pq-not-found .ac-search-box__input.utrecht-textbox {
 	flex: 1 1 20rem;
 	min-inline-size: 0;
 	block-size: 3.25rem;
@@ -1732,7 +1734,8 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	font-size: 1.125rem;
 }
 
-.pq-site .pq-search--plain .ac-search-box__button.utrecht-button {
+.pq-site .pq-search--plain .ac-search-box__button.utrecht-button,
+.pq-site .pq-not-found .ac-search-box__button.utrecht-button {
 	block-size: 3.25rem;
 	padding-inline: 1.625rem;
 	border: 0;
