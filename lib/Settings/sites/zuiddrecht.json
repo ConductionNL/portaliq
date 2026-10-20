@@ -2318,7 +2318,7 @@
         },
         {
             "route": "/cookies",
-            "title": "Cookies",
+            "title": "Cookieverklaring",
             "summary": "Deze website gebruikt alleen cookies die nodig zijn om in te loggen.",
             "status": "published",
             "locale": "nl",
@@ -2334,6 +2334,182 @@
                         "gridHeight": 1,
                         "props": {
                             "text": "Deze website gebruikt alleen cookies die nodig zijn om in te loggen. Wij volgen u niet."
+                        }
+                    },
+                    {
+                        "id": "zd-cookies-02-nlalert",
+                        "widgetKey": "nlAlert",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "kind": "ok",
+                            "heading": "U hoeft niets te kiezen",
+                            "text": "Geen cookies voor reclame of om u te volgen. Daarom vragen wij ook geen toestemming."
+                        }
+                    },
+                    {
+                        "id": "zd-cookies-03-nlheading",
+                        "widgetKey": "nlHeading",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Wat wij bewaren",
+                            "level": 2
+                        }
+                    },
+                    {
+                        "id": "zd-cookies-04-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 3,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Om u veilig te laten inloggen, bewaren wij een paar kleine dingen in uw browser. Zonder deze gegevens werkt Mijn Zuiddrecht niet."
+                        }
+                    },
+                    {
+                        "id": "zd-cookies-05-nltable",
+                        "widgetKey": "nlTable",
+                        "gridX": 0,
+                        "gridY": 4,
+                        "gridWidth": 8,
+                        "gridHeight": 3,
+                        "props": {
+                            "caption": "Wat deze website in uw browser bewaart",
+                            "columns": [
+                                "Naam",
+                                "Soort",
+                                "Waarvoor",
+                                "Hoe lang"
+                            ],
+                            "rows": [
+                                [
+                                    "Inlogsessie",
+                                    "Cookie",
+                                    "Houdt u ingelogd als u van pagina naar pagina gaat in Mijn Zuiddrecht.",
+                                    "Tot u uitlogt of uw browser sluit"
+                                ],
+                                [
+                                    "Inlogbewijs",
+                                    "Opslag in uw browser (sessie)",
+                                    "Bewijst bij elke vraag aan de server dat u het bent. Alleen in dit tabblad.",
+                                    "Tot u het tabblad sluit"
+                                ],
+                                [
+                                    "Herkomst van uw bezoek",
+                                    "Opslag in uw browser (sessie)",
+                                    "Als u via een campagne binnenkwam, onthouden wij welke. Alleen als u een formulier verstuurt, sturen wij dat mee.",
+                                    "Tot u het tabblad sluit"
+                                ]
+                            ],
+                            "display": "boxed",
+                            "captionVisible": true,
+                            "rowHeaders": true
+                        }
+                    },
+                    {
+                        "id": "zd-cookies-06-nlheading",
+                        "widgetKey": "nlHeading",
+                        "gridX": 0,
+                        "gridY": 7,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Wat wij niet doen",
+                            "level": 2
+                        }
+                    },
+                    {
+                        "id": "zd-cookies-07-nllist",
+                        "widgetKey": "nlList",
+                        "gridX": 0,
+                        "gridY": 8,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "items": [
+                                "Wij tellen bezoeken zonder cookies. Wij kunnen u daarmee niet herkennen bij een volgend bezoek.",
+                                "Video's van YouTube laden wij zonder hun reclamecookies, via youtube-nocookie.com.",
+                                "Wij delen niets met advertentiebedrijven."
+                            ]
+                        }
+                    },
+                    {
+                        "id": "zd-cookies-08-nlheading",
+                        "widgetKey": "nlHeading",
+                        "gridX": 0,
+                        "gridY": 9,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Cookies weghalen",
+                            "level": 2
+                        }
+                    },
+                    {
+                        "id": "zd-cookies-09-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 10,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "U kunt cookies altijd zelf weghalen in de instellingen van uw browser. Daarna logt u gewoon opnieuw in."
+                        }
+                    },
+                    {
+                        "id": "zd-cookies-10-nldescriptionlist",
+                        "widgetKey": "nlDescriptionList",
+                        "gridX": 0,
+                        "gridY": 11,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "items": [
+                                {
+                                    "term": "Laatst gewijzigd",
+                                    "description": "15 september 2026"
+                                },
+                                {
+                                    "term": "Vragen over privacy",
+                                    "description": "Lees de privacyverklaring of neem contact op."
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "id": "zd-cookies-11-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 8,
+                        "gridY": 0,
+                        "gridWidth": 4,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Over deze website",
+                            "display": "accent",
+                            "links": [
+                                {
+                                    "label": "Toegankelijkheid",
+                                    "href": "/toegankelijkheid"
+                                },
+                                {
+                                    "label": "Cookies",
+                                    "href": "/cookies"
+                                },
+                                {
+                                    "label": "Privacy",
+                                    "href": "/privacy"
+                                },
+                                {
+                                    "label": "Kwetsbaarheid melden",
+                                    "href": "/kwetsbaarheid-melden"
+                                }
+                            ]
                         }
                     }
                 ]
