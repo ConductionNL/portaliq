@@ -43,7 +43,7 @@ class ExampleSiteInstaller {
 	/**
 	 * The schema behind each list of a declaration.
 	 */
-	private const SCHEMAS = ['menus' => 'menu', 'pages' => 'page', 'news' => 'newsItem'];
+	private const SCHEMAS = ['menus' => 'menu', 'pages' => 'page', 'news' => 'newsItem', 'glossary' => 'glossaryTerm'];
 
 	/**
 	 * Constructor.
@@ -94,7 +94,7 @@ class ExampleSiteInstaller {
 		}
 
 		$record  = $this->record->read(site: $report['site']);
-		$created = ['portal' => [], 'menu' => [], 'page' => [], 'newsItem' => []];
+		$created = ['portal' => [], 'menu' => [], 'page' => [], 'newsItem' => [], 'glossaryTerm' => []];
 
 		$report['types']['portal'] = ['declared' => 1, 'created' => 0, 'kept' => 1, 'arrived' => 0];
 		if ($this->rows->portal(slug: $slug) === null) {
