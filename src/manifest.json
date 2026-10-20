@@ -670,6 +670,38 @@
             "textColor": "#ffffff",
             "linkType": "app",
             "linkValue": "portaliq/portals"
+          },
+          {
+            "id": "themes-portal-table",
+            "title": "Portals and their themes",
+            "type": "table",
+            "icon": "Palette",
+            "content": {
+              "register": "portaliq",
+              "schema": "portal",
+              "sort": {
+                "field": "title",
+                "dir": "asc"
+              },
+              "columns": [
+                {
+                  "key": "title",
+                  "label": "Portal"
+                },
+                {
+                  "key": "theme",
+                  "label": "Theme"
+                },
+                {
+                  "key": "status",
+                  "label": "Status"
+                }
+              ],
+              "limit": 25,
+              "rowRoute": "PortalDetail",
+              "viewAllRoute": "Portals",
+              "emptyText": "There are no portals yet"
+            }
           }
         ],
         "layout": [
@@ -696,6 +728,14 @@
             "gridY": 0,
             "gridWidth": 4,
             "gridHeight": 1
+          },
+          {
+            "id": 4,
+            "widgetId": "themes-portal-table",
+            "gridX": 0,
+            "gridY": 1,
+            "gridWidth": 12,
+            "gridHeight": 4
           }
         ]
       }
@@ -1143,7 +1183,9 @@
         "filterMenu": true,
         "viewSwitch": [
           "table",
-          "cards"
+          "cards",
+          "board",
+          "map"
         ],
         "quickFilterMaxVisible": 5,
         "bulkHint": "Copy, export or delete the selected accounts.",
@@ -1267,9 +1309,12 @@
             "default": true
           },
           {
-            "label": "Verstuurd",
+            "label": "Open",
             "filter": {
-              "state": "sent"
+              "state": [
+                "sent",
+                "opened"
+              ]
             },
             "showCount": true
           },
@@ -1286,7 +1331,21 @@
               "state": "expired"
             },
             "showCount": true
+          },
+          {
+            "label": "Ingetrokken",
+            "filter": {
+              "state": "revoked"
+            },
+            "showCount": true
           }
+        ],
+        "filterMenu": true,
+        "viewSwitch": [
+          "table",
+          "cards",
+          "board",
+          "map"
         ]
       }
     },
@@ -1600,7 +1659,20 @@
           {
             "label": "Actief",
             "filter": {
-              "revoked": false
+              "revoked": false,
+              "expiresAt": {
+                "gt": "@now"
+              }
+            },
+            "showCount": true
+          },
+          {
+            "label": "Verlopen",
+            "filter": {
+              "revoked": false,
+              "expiresAt": {
+                "lte": "@now"
+              }
             },
             "showCount": true
           },
@@ -1611,6 +1683,13 @@
             },
             "showCount": true
           }
+        ],
+        "filterMenu": true,
+        "viewSwitch": [
+          "table",
+          "cards",
+          "board",
+          "map"
         ],
         "showAdd": false
       }
@@ -1883,6 +1962,15 @@
             "default": true
           },
           {
+            "label": "Vandaag",
+            "filter": {
+              "submittedAt": {
+                "gte": "@today"
+              }
+            },
+            "showCount": true
+          },
+          {
             "label": "Bevestigd",
             "filter": {
               "deliveryStatus": "delivered"
@@ -1908,7 +1996,9 @@
         "filterMenu": true,
         "viewSwitch": [
           "table",
-          "cards"
+          "cards",
+          "board",
+          "map"
         ],
         "footerNote": "what the resident filled in is only on the submission itself, not in this list"
       }
@@ -1930,7 +2020,22 @@
             "title": "Submission",
             "icon": "FileCheckOutline",
             "content": {
-              "columns": 2
+              "columns": 2,
+              "exclude": [
+                "payloadCopy"
+              ]
+            }
+          },
+          {
+            "id": "submission-payload",
+            "type": "data",
+            "title": "What the resident sent",
+            "icon": "ClipboardText",
+            "content": {
+              "columns": 1,
+              "include": [
+                "payloadCopy"
+              ]
             }
           },
           {
@@ -1957,8 +2062,8 @@
             "gridHeight": 5
           },
           {
-            "id": "submission-forms",
-            "widgetId": "submission-forms",
+            "id": "submission-payload",
+            "widgetId": "submission-payload",
             "gridX": 0,
             "gridY": 5,
             "gridWidth": 12,
@@ -2003,6 +2108,7 @@
         },
         "headerMeta": "via {appId}",
         "sideColumn": [
+          "submission-forms",
           "submission-history"
         ]
       }
@@ -2124,7 +2230,9 @@
         "filterMenu": true,
         "viewSwitch": [
           "table",
-          "cards"
+          "cards",
+          "board",
+          "map"
         ],
         "bulkHint": "Copy or delete the selected portals.",
         "footerNote": "an umbrella portal has no pages of its own, it adds up the traffic of its members"
@@ -2376,6 +2484,114 @@
             }
           },
           {
+            "id": "portal-media",
+            "type": "object-list",
+            "title": "Media",
+            "icon": "PackageVariantClosed",
+            "content": {
+              "register": "portaliq",
+              "schema": "media",
+              "filter": {
+                "portal": "@object.slug"
+              },
+              "sort": {
+                "field": "title",
+                "dir": "asc"
+              },
+              "columns": [
+                {
+                  "key": "title",
+                  "label": "Title"
+                },
+                {
+                  "key": "kind",
+                  "label": "Kind"
+                },
+                {
+                  "key": "status",
+                  "label": "Status"
+                }
+              ],
+              "limit": 25,
+              "rowRoute": "MediaDetail",
+              "viewAllRoute": "Media",
+              "emptyText": "This portal has no media yet"
+            }
+          },
+          {
+            "id": "portal-news",
+            "type": "object-list",
+            "title": "News",
+            "icon": "NewspaperVariantOutline",
+            "content": {
+              "register": "portaliq",
+              "schema": "newsItem",
+              "filter": {
+                "portal": "@object.slug"
+              },
+              "sort": {
+                "field": "publishedAt",
+                "dir": "desc"
+              },
+              "columns": [
+                {
+                  "key": "title",
+                  "label": "Title"
+                },
+                {
+                  "key": "status",
+                  "label": "Status"
+                },
+                {
+                  "key": "publishedAt",
+                  "label": "Published on"
+                }
+              ],
+              "limit": 25,
+              "viewAllRoute": "News",
+              "emptyText": "This portal has no news yet"
+            }
+          },
+          {
+            "id": "portal-notices",
+            "type": "object-list",
+            "title": "Notices",
+            "icon": "BullhornOutline",
+            "content": {
+              "register": "portaliq",
+              "schema": "portalNotice",
+              "filter": {
+                "portal": "@object.slug"
+              },
+              "sort": {
+                "field": "startsAt",
+                "dir": "desc"
+              },
+              "columns": [
+                {
+                  "key": "message",
+                  "label": "Notice"
+                },
+                {
+                  "key": "startsAt",
+                  "label": "Visible from"
+                },
+                {
+                  "key": "endsAt",
+                  "label": "Until"
+                },
+                {
+                  "key": "status",
+                  "label": "Status"
+                }
+              ],
+              "limit": 25,
+              "rowRoute": "NoticeDetail",
+              "viewAllRoute": "Notices",
+              "emptyText": "This portal has no notices yet"
+            }
+          },
+          {
             "id": "portal-history",
             "type": "audit-trail",
             "title": "Historie",
@@ -2447,6 +2663,39 @@
                   "countFrom": {
                     "register": "portaliq",
                     "schema": "menu",
+                    "filter": {
+                      "portal": "@object.slug"
+                    }
+                  }
+                },
+                {
+                  "widgetId": "portal-media",
+                  "label": "Media",
+                  "countFrom": {
+                    "register": "portaliq",
+                    "schema": "media",
+                    "filter": {
+                      "portal": "@object.slug"
+                    }
+                  }
+                },
+                {
+                  "widgetId": "portal-news",
+                  "label": "Nieuws",
+                  "countFrom": {
+                    "register": "portaliq",
+                    "schema": "newsItem",
+                    "filter": {
+                      "portal": "@object.slug"
+                    }
+                  }
+                },
+                {
+                  "widgetId": "portal-notices",
+                  "label": "Mededelingen",
+                  "countFrom": {
+                    "register": "portaliq",
+                    "schema": "portalNotice",
                     "filter": {
                       "portal": "@object.slug"
                     }
@@ -3215,6 +3464,61 @@
             }
           },
           {
+            "id": "page-search",
+            "type": "settings-form",
+            "title": "Search engines",
+            "icon": "FileFindOutline",
+            "content": {
+              "columns": 1,
+              "saveLabel": "Save",
+              "savedText": "The page is saved.",
+              "fields": [
+                {
+                  "key": "seoTitle",
+                  "label": "Search title",
+                  "hint": "Shown as the link in search results. Keep it under 60 characters; empty uses the page title.",
+                  "pattern": "^[\\s\\S]{0,70}$",
+                  "patternMessage": "Use at most 70 characters."
+                },
+                {
+                  "key": "seoDescription",
+                  "label": "Search description",
+                  "type": "textarea",
+                  "rows": 3,
+                  "hint": "Shown under the title in search results. Keep it under 155 characters; empty uses the summary.",
+                  "pattern": "^[\\s\\S]{0,160}$",
+                  "patternMessage": "Use at most 160 characters."
+                },
+                {
+                  "key": "seoImage",
+                  "label": "Share image",
+                  "type": "reference",
+                  "register": "portaliq",
+                  "schema": "media",
+                  "labelField": "title",
+                  "filter": {
+                    "kind": "image",
+                    "status": "published",
+                    "portal": "@object.portal"
+                  },
+                  "valueTemplate": "media:{id}",
+                  "emptyLabel": "No share image",
+                  "hint": "Shown when the page is shared. A published image from this portal's media, or the address of an image.",
+                  "free": true,
+                  "freeLabel": "Or a web address",
+                  "freePlaceholder": "https://www.example.nl/share.jpg",
+                  "freePattern": "^https?://\\S+$",
+                  "freePatternMessage": "An image address starts with http:// or https://."
+                },
+                {
+                  "key": "seoNoindex",
+                  "label": "Keep this page out of search engines",
+                  "type": "switch"
+                }
+              ]
+            }
+          },
+          {
             "id": "page-traffic-incoming",
             "type": "PageTrafficFlow",
             "title": "Incoming traffic",
@@ -3252,12 +3556,26 @@
                   "label": "Overzicht"
                 },
                 {
-                  "widgetId": "page-traffic-incoming",
-                  "label": "Binnenkomend verkeer"
+                  "widgetId": "page-search",
+                  "label": "Zoekmachines"
                 },
                 {
-                  "widgetId": "page-traffic-outgoing",
-                  "label": "Uitgaand verkeer"
+                  "widgetIds": [
+                    "page-traffic-incoming",
+                    "page-traffic-outgoing"
+                  ],
+                  "label": "Verkeer",
+                  "columns": 2,
+                  "layout": [
+                    {
+                      "widgetId": "page-traffic-incoming",
+                      "gridWidth": 6
+                    },
+                    {
+                      "widgetId": "page-traffic-outgoing",
+                      "gridWidth": 6
+                    }
+                  ]
                 },
                 {
                   "widgetId": "page-history",
@@ -3380,7 +3698,9 @@
         "filterMenu": true,
         "viewSwitch": [
           "table",
-          "cards"
+          "cards",
+          "board",
+          "map"
         ],
         "footerNote": "on approval the requester sees the cases at once, on refusal they read your reason"
       }
@@ -3477,6 +3797,13 @@
             },
             "showCount": true
           }
+        ],
+        "filterMenu": true,
+        "viewSwitch": [
+          "table",
+          "cards",
+          "board",
+          "map"
         ]
       }
     },
@@ -3527,6 +3854,13 @@
             "showCount": true,
             "default": true
           }
+        ],
+        "filterMenu": true,
+        "viewSwitch": [
+          "table",
+          "cards",
+          "board",
+          "map"
         ]
       }
     },
@@ -3647,6 +3981,20 @@
             "default": true
           },
           {
+            "label": "Afbeeldingen",
+            "filter": {
+              "kind": "image"
+            },
+            "showCount": true
+          },
+          {
+            "label": "Documenten",
+            "filter": {
+              "kind": "file"
+            },
+            "showCount": true
+          },
+          {
             "label": "Gepubliceerd",
             "filter": {
               "status": "published"
@@ -3660,6 +4008,13 @@
             },
             "showCount": true
           }
+        ],
+        "filterMenu": true,
+        "viewSwitch": [
+          "table",
+          "cards",
+          "board",
+          "map"
         ]
       }
     },
@@ -3975,6 +4330,13 @@
             },
             "showCount": true
           }
+        ],
+        "filterMenu": true,
+        "viewSwitch": [
+          "table",
+          "cards",
+          "board",
+          "map"
         ]
       }
     },
