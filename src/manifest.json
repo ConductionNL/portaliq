@@ -3215,6 +3215,61 @@
             }
           },
           {
+            "id": "page-search",
+            "type": "settings-form",
+            "title": "Search engines",
+            "icon": "FileFindOutline",
+            "content": {
+              "columns": 1,
+              "saveLabel": "Save",
+              "savedText": "The page is saved.",
+              "fields": [
+                {
+                  "key": "seoTitle",
+                  "label": "Search title",
+                  "hint": "Shown as the link in search results. Keep it under 60 characters; empty uses the page title.",
+                  "pattern": "^[\\s\\S]{0,70}$",
+                  "patternMessage": "Use at most 70 characters."
+                },
+                {
+                  "key": "seoDescription",
+                  "label": "Search description",
+                  "type": "textarea",
+                  "rows": 3,
+                  "hint": "Shown under the title in search results. Keep it under 155 characters; empty uses the summary.",
+                  "pattern": "^[\\s\\S]{0,160}$",
+                  "patternMessage": "Use at most 160 characters."
+                },
+                {
+                  "key": "seoImage",
+                  "label": "Share image",
+                  "type": "reference",
+                  "register": "portaliq",
+                  "schema": "media",
+                  "labelField": "title",
+                  "filter": {
+                    "kind": "image",
+                    "status": "published",
+                    "portal": "@object.portal"
+                  },
+                  "valueTemplate": "media:{id}",
+                  "emptyLabel": "No share image",
+                  "hint": "Shown when the page is shared. A published image from this portal's media, or the address of an image.",
+                  "free": true,
+                  "freeLabel": "Or a web address",
+                  "freePlaceholder": "https://www.example.nl/share.jpg",
+                  "freePattern": "^https?://\\S+$",
+                  "freePatternMessage": "An image address starts with http:// or https://."
+                },
+                {
+                  "key": "seoNoindex",
+                  "label": "Keep this page out of search engines",
+                  "type": "switch"
+                }
+              ]
+            }
+          },
+          {
             "id": "page-traffic-incoming",
             "type": "PageTrafficFlow",
             "title": "Incoming traffic",
@@ -3252,12 +3307,26 @@
                   "label": "Overzicht"
                 },
                 {
-                  "widgetId": "page-traffic-incoming",
-                  "label": "Binnenkomend verkeer"
+                  "widgetId": "page-search",
+                  "label": "Zoekmachines"
                 },
                 {
-                  "widgetId": "page-traffic-outgoing",
-                  "label": "Uitgaand verkeer"
+                  "widgetIds": [
+                    "page-traffic-incoming",
+                    "page-traffic-outgoing"
+                  ],
+                  "label": "Verkeer",
+                  "columns": 2,
+                  "layout": [
+                    {
+                      "widgetId": "page-traffic-incoming",
+                      "gridWidth": 6
+                    },
+                    {
+                      "widgetId": "page-traffic-outgoing",
+                      "gridWidth": 6
+                    }
+                  ]
                 },
                 {
                   "widgetId": "page-history",
