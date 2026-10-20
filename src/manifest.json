@@ -2376,6 +2376,114 @@
             }
           },
           {
+            "id": "portal-media",
+            "type": "object-list",
+            "title": "Media",
+            "icon": "PackageVariantClosed",
+            "content": {
+              "register": "portaliq",
+              "schema": "media",
+              "filter": {
+                "portal": "@object.slug"
+              },
+              "sort": {
+                "field": "title",
+                "dir": "asc"
+              },
+              "columns": [
+                {
+                  "key": "title",
+                  "label": "Title"
+                },
+                {
+                  "key": "kind",
+                  "label": "Kind"
+                },
+                {
+                  "key": "status",
+                  "label": "Status"
+                }
+              ],
+              "limit": 25,
+              "rowRoute": "MediaDetail",
+              "viewAllRoute": "Media",
+              "emptyText": "This portal has no media yet"
+            }
+          },
+          {
+            "id": "portal-news",
+            "type": "object-list",
+            "title": "News",
+            "icon": "NewspaperVariantOutline",
+            "content": {
+              "register": "portaliq",
+              "schema": "newsItem",
+              "filter": {
+                "portal": "@object.slug"
+              },
+              "sort": {
+                "field": "publishedAt",
+                "dir": "desc"
+              },
+              "columns": [
+                {
+                  "key": "title",
+                  "label": "Title"
+                },
+                {
+                  "key": "status",
+                  "label": "Status"
+                },
+                {
+                  "key": "publishedAt",
+                  "label": "Published on"
+                }
+              ],
+              "limit": 25,
+              "viewAllRoute": "News",
+              "emptyText": "This portal has no news yet"
+            }
+          },
+          {
+            "id": "portal-notices",
+            "type": "object-list",
+            "title": "Notices",
+            "icon": "BullhornOutline",
+            "content": {
+              "register": "portaliq",
+              "schema": "portalNotice",
+              "filter": {
+                "portal": "@object.slug"
+              },
+              "sort": {
+                "field": "startsAt",
+                "dir": "desc"
+              },
+              "columns": [
+                {
+                  "key": "message",
+                  "label": "Notice"
+                },
+                {
+                  "key": "startsAt",
+                  "label": "Visible from"
+                },
+                {
+                  "key": "endsAt",
+                  "label": "Until"
+                },
+                {
+                  "key": "status",
+                  "label": "Status"
+                }
+              ],
+              "limit": 25,
+              "rowRoute": "NoticeDetail",
+              "viewAllRoute": "Notices",
+              "emptyText": "This portal has no notices yet"
+            }
+          },
+          {
             "id": "portal-history",
             "type": "audit-trail",
             "title": "Historie",
@@ -2447,6 +2555,39 @@
                   "countFrom": {
                     "register": "portaliq",
                     "schema": "menu",
+                    "filter": {
+                      "portal": "@object.slug"
+                    }
+                  }
+                },
+                {
+                  "widgetId": "portal-media",
+                  "label": "Media",
+                  "countFrom": {
+                    "register": "portaliq",
+                    "schema": "media",
+                    "filter": {
+                      "portal": "@object.slug"
+                    }
+                  }
+                },
+                {
+                  "widgetId": "portal-news",
+                  "label": "Nieuws",
+                  "countFrom": {
+                    "register": "portaliq",
+                    "schema": "newsItem",
+                    "filter": {
+                      "portal": "@object.slug"
+                    }
+                  }
+                },
+                {
+                  "widgetId": "portal-notices",
+                  "label": "Mededelingen",
+                  "countFrom": {
+                    "register": "portaliq",
+                    "schema": "portalNotice",
                     "filter": {
                       "portal": "@object.slug"
                     }
