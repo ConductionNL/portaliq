@@ -14,8 +14,9 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 
-const read = (path) =>
-	readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8')
+function read (path) {
+  return readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8')
+}
 const css = read('css/site-theme.css')
 	.replace(/\/\*[\s\S]*?\*\//g, '')
 	.replace(/\s+/g, ' ')
