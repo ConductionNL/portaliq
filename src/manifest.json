@@ -161,14 +161,20 @@
       "label": "Reports without an account",
       "icon": "ShieldAccount",
       "route": "AccountlessReports",
-      "order": 35
+      "order": 35,
+      "visibleIf": {
+        "access.admin": true
+      }
     },
     {
       "id": "RevealRequestsMenu",
       "label": "Reveal requests",
       "icon": "EyeLock",
       "route": "RevealRequests",
-      "order": 35
+      "order": 35,
+      "visibleIf": {
+        "access.admin": true
+      }
     },
     {
       "id": "FormBindingsMenu",
