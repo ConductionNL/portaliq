@@ -670,6 +670,38 @@
             "textColor": "#ffffff",
             "linkType": "app",
             "linkValue": "portaliq/portals"
+          },
+          {
+            "id": "themes-portal-table",
+            "title": "Portals and their themes",
+            "type": "table",
+            "icon": "Palette",
+            "content": {
+              "register": "portaliq",
+              "schema": "portal",
+              "sort": {
+                "field": "title",
+                "dir": "asc"
+              },
+              "columns": [
+                {
+                  "key": "title",
+                  "label": "Portal"
+                },
+                {
+                  "key": "theme",
+                  "label": "Theme"
+                },
+                {
+                  "key": "status",
+                  "label": "Status"
+                }
+              ],
+              "limit": 25,
+              "rowRoute": "PortalDetail",
+              "viewAllRoute": "Portals",
+              "emptyText": "There are no portals yet"
+            }
           }
         ],
         "layout": [
@@ -696,6 +728,14 @@
             "gridY": 0,
             "gridWidth": 4,
             "gridHeight": 1
+          },
+          {
+            "id": 4,
+            "widgetId": "themes-portal-table",
+            "gridX": 0,
+            "gridY": 1,
+            "gridWidth": 12,
+            "gridHeight": 4
           }
         ]
       }

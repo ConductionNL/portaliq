@@ -436,6 +436,7 @@ OC.L10N.register(
         "This portal has no slug yet, so it has no public address.": "This portal has no slug yet, so it has no public address.",
         "Portals": "Portals",
         "Portals and their themes": "Portals and their themes",
+        "There are no portals yet": "There are no portals yet",
         "Position": "Position",
         "Pre-boot configuration": "Pre-boot configuration",
         "Pre-consent events": "Pre-consent events",

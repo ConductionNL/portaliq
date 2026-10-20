@@ -470,6 +470,7 @@ OC.L10N.register(
         "This portal has no slug yet, so it has no public address.": "Dit portaal heeft nog geen slug en dus geen publiek adres.",
         "Portals": "Portalen",
         "Portals and their themes": "Portalen en hun thema's",
+        "There are no portals yet": "Er zijn nog geen portalen",
         "Position": "Positie",
         "Pre-boot configuration": "Configuratie vóór opstarten",
         "Pre-consent events": "Gebeurtenissen vóór toestemming",
