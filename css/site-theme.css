@@ -2125,11 +2125,43 @@ body:has(.pq-site__header--designed) .pq-site__skip {
  * column 380px wide and 72px from three link columns 32px apart, the
  * sentence in 17px, the button 46px in 600; the bottom line in 14px on the
  * page column.
+ *
+ * The 56px start under the motif: the stripe is drawn over the band's top
+ * edge, so the band adds the stripe's height to its own room.
  */
 .pq-site:has(.pq-site__header--designed)
 	.ac-footer
 	section.pq-footer__band--designed.pq-footer__band--content {
-	padding-block: 56px 44px;
+	padding-block: calc(56px + var(--cn-brand-stripe-height, 0px)) 44px;
+}
+
+/* A column title 14px above its list, the lines 10px apart. */
+.pq-site:has(.pq-site__header--designed)
+	.ac-footer
+	section.pq-footer__band--designed.pq-footer__band--content
+	h3.ac-footer__menu-title {
+	margin-block-end: 14px;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.ac-footer
+	section.pq-footer__band--designed.pq-footer__band--content
+	ul
+	li:not(:last-child),
+.pq-site:has(.pq-site__header--designed)
+	.ac-footer
+	.pq-footer__band--designed
+	.pq-footer__contact
+	p:not(:last-child) {
+	margin-block-end: 10px;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.ac-footer
+	.pq-footer__band--designed
+	.pq-footer__contact
+	p:last-child {
+	margin-block-end: 0;
 }
 
 @media screen and (min-width: 1025px) {
