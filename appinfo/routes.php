@@ -111,6 +111,9 @@ return [
         // operate-availability-report: a portal's last twelve months, admin-only.
         ['name' => 'availability#index', 'url' => '/api/availability/{portal}', 'verb' => 'GET'],
         ['name' => 'availability#export', 'url' => '/api/availability/{portal}/export', 'verb' => 'GET'],
+        // Dashboard-figures-across-portals: the dashboard's figures of all portals together, admin-only.
+        ['name' => 'portalOverview#traffic', 'url' => '/api/overview/traffic', 'verb' => 'GET'],
+        ['name' => 'portalOverview#availability', 'url' => '/api/overview/availability', 'verb' => 'GET'],
 
         // Headless content API (ADR-086 §1) — the CMS contract. Public and
         // read-only: a Docusaurus build or any third-party front-end reads
