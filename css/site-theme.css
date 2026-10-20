@@ -2217,7 +2217,8 @@ body:has(.pq-site__header--designed) .pq-site__skip {
  */
 .pq-site:has(.pq-site__header--designed)
 	[data-widget-key='nlHeading']
-	:is(h2, .utrecht-heading-2) {
+	:is(h2, .utrecht-heading-2),
+.pq-site:has(.pq-site__header--designed) .pq-accessibility-statement > h2 {
 	margin-block-start: 12px;
 	font-size: 1.875rem;
 	line-height: 1.2;
@@ -2225,7 +2226,10 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 
 .pq-site:has(.pq-site__header--designed)
 	[data-widget-key='nlParagraph']
-	.utrecht-paragraph:not(.utrecht-paragraph--lead) {
+	.utrecht-paragraph:not(.utrecht-paragraph--lead),
+.pq-site:has(.pq-site__header--designed)
+	.pq-accessibility-statement
+	> .utrecht-paragraph:not(.pq-accessibility-statement__intro) {
 	font-size: 1.125rem;
 	/* The vendored sheet sets a paragraph's line height with !important. */
 	line-height: 1.6 !important;
