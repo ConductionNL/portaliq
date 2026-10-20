@@ -1136,7 +1136,11 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	flex-direction: column;
 	gap: 16px;
 	padding: 28px;
-	border: 1px solid var(--nldesign-color-border, var(--tilburg-line-border-color));
+	border: 1px solid
+		var(
+			--nldesign-website-card-border-color,
+			var(--nldesign-color-border, var(--tilburg-line-border-color))
+		);
 	border-radius: var(--nldesign-website-border-radius-large, 8px);
 	background-color: var(--nldesign-color-background, var(--tilburg-color-white));
 }

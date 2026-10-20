@@ -244,7 +244,10 @@ export default {
 .nl-signin-card--outline {
 	padding: 1.5rem;
 	border: 1px solid
-		var(--nldesign-color-border-dark, var(--utrecht-color-grey-80, currentcolor));
+		var(
+			--nldesign-website-card-border-color,
+			var(--nldesign-color-border-dark, var(--utrecht-color-grey-80, currentcolor))
+		);
 	background: transparent;
 }
 
