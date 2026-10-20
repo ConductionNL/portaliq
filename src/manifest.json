@@ -1233,6 +1233,22 @@
         ],
         "actions": [
           {
+            "id": "resend-invitation",
+            "label": "Send again",
+            "icon": "EmailOutline",
+            "type": "handler",
+            "handler": "resendInvitation",
+            "visibleWhen": {
+              "field": "state",
+              "op": "in",
+              "value": [
+                "sent",
+                "opened",
+                "expired"
+              ]
+            }
+          },
+          {
             "id": "withdraw-invitation",
             "label": "Withdraw invitation",
             "icon": "Close",
