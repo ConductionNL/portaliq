@@ -36,6 +36,20 @@
 
 			<div class="nl-product-finder__layout">
 				<div class="nl-product-finder__ask">
+					<!-- Where the resident stands: the words carry it, the bar
+					     only draws it. -->
+					<div v-if="asking" class="nl-product-finder__progress">
+						<p
+							class="utrecht-paragraph nl-product-finder__position"
+							data-testid="nl-finder-position">
+							<strong>{{ position }}</strong>
+							<span v-if="!editing">{{ timeLeft }}</span>
+						</p>
+						<div class="nl-product-finder__bar" aria-hidden="true">
+							<span :style="{ inlineSize: progressShare }" />
+						</div>
+					</div>
+
 					<div v-if="answered.length > 0" data-testid="nl-finder-chips">
 						<p class="utrecht-paragraph nl-product-finder__label">
 							{{ say('answersSoFar') }}
@@ -45,71 +59,112 @@
 								<button
 									type="button"
 									class="nl-product-finder__chip"
+									:aria-label="`${say('change')}: ${step.question.text} ${answerLabel(step.answer)}`"
 									data-testid="nl-finder-chip"
 									@click="edit(step.question.id)">
-									{{ step.question.text }}:
-									{{ answerLabel(step.answer) }}
+									{{ step.question.text }}
+									<strong>{{ answerLabel(step.answer) }}</strong>
+									<svg
+										class="nl-product-finder__glyph"
+										viewBox="0 0 24 24"
+										aria-hidden="true"
+										focusable="false">
+										<path d="M6 6l12 12M18 6L6 18" />
+									</svg>
 								</button>
 							</li>
 						</ul>
 					</div>
 
-					<div v-if="asking" data-testid="nl-finder-question">
-						<p
-							class="utrecht-paragraph nl-product-finder__label"
-							data-testid="nl-finder-position">
-							{{ position
-							}}<span v-if="!editing"> · {{ timeLeft }}</span>
-						</p>
-						<h3 class="utrecht-heading-3">{{ asking.question.text }}</h3>
-						<p v-if="asking.question.help" class="utrecht-paragraph">
-							{{ asking.question.help }}
+					<form
+						v-if="asking"
+						class="nl-product-finder__question"
+						data-testid="nl-finder-question"
+						@submit.prevent="next">
+						<fieldset class="nl-product-finder__fieldset">
+							<legend class="nl-product-finder__legend">
+								{{ asking.question.text }}
+							</legend>
+							<p v-if="asking.question.help" class="utrecht-paragraph">
+								{{ asking.question.help }}
+							</p>
+							<div class="nl-product-finder__options">
+								<label
+									v-for="option in ['yes', 'no']"
+									:key="option"
+									class="nl-product-finder__option"
+									:class="{ 'nl-product-finder__option--chosen': choice === option }">
+									<input
+										v-model="choice"
+										type="radio"
+										:name="`nl-finder-${asking.question.id}`"
+										:value="option"
+										:data-testid="`nl-finder-${option}`" />
+									{{ answerLabel(option) }}
+								</label>
+							</div>
+						</fieldset>
+						<div class="nl-product-finder__buttons">
+							<button
+								v-if="answered.length > 0"
+								type="button"
+								class="utrecht-button utrecht-button--secondary-action"
+								data-testid="nl-finder-previous"
+								@click="previous">
+								<svg
+									class="nl-product-finder__glyph"
+									viewBox="0 0 24 24"
+									aria-hidden="true"
+									focusable="false">
+									<path d="M15 5l-7 7 7 7" />
+								</svg>
+								{{ say('previous') }}
+							</button>
+							<button
+								type="submit"
+								class="utrecht-button utrecht-button--primary-action"
+								:disabled="choice === ''"
+								data-testid="nl-finder-next">
+								{{ say('next') }}
+								<svg
+									class="nl-product-finder__glyph"
+									viewBox="0 0 24 24"
+									aria-hidden="true"
+									focusable="false">
+									<path d="M9 5l7 7-7 7" />
+								</svg>
+							</button>
+							<button
+								v-if="answered.length > 0"
+								type="button"
+								class="utrecht-button utrecht-button--subtle nl-product-finder__restart"
+								data-testid="nl-finder-restart"
+								@click="restart">
+								{{ say('restart') }}
+							</button>
+						</div>
+					</form>
+					<template v-else>
+						<p class="utrecht-paragraph" data-testid="nl-finder-done">
+							{{ say('doneNote') }}
 						</p>
 						<div class="nl-product-finder__buttons">
 							<button
 								type="button"
-								class="utrecht-button utrecht-button--primary-action"
-								:aria-pressed="
-									asking.answer === 'yes' ? 'true' : 'false'
-								"
-								data-testid="nl-finder-yes"
-								@click="answer('yes')">
-								{{ say('yes') }}
+								class="utrecht-button utrecht-button--secondary-action"
+								data-testid="nl-finder-previous"
+								@click="previous">
+								{{ say('previous') }}
 							</button>
 							<button
 								type="button"
-								class="utrecht-button utrecht-button--primary-action"
-								:aria-pressed="
-									asking.answer === 'no' ? 'true' : 'false'
-								"
-								data-testid="nl-finder-no"
-								@click="answer('no')">
-								{{ say('no') }}
+								class="utrecht-button utrecht-button--subtle nl-product-finder__restart"
+								data-testid="nl-finder-restart"
+								@click="restart">
+								{{ say('restart') }}
 							</button>
 						</div>
-					</div>
-					<p v-else class="utrecht-paragraph" data-testid="nl-finder-done">
-						{{ say('doneNote') }}
-					</p>
-
-					<div class="nl-product-finder__buttons">
-						<button
-							v-if="answered.length > 0"
-							type="button"
-							class="utrecht-button utrecht-button--secondary-action"
-							data-testid="nl-finder-previous"
-							@click="previous">
-							{{ say('previous') }}
-						</button>
-						<button
-							v-if="answered.length > 0"
-							type="button"
-							class="utrecht-button utrecht-button--secondary-action"
-							data-testid="nl-finder-restart"
-							@click="restart">
-							{{ say('restart') }}
-						</button>
-					</div>
+					</template>
 					<p
 						class="utrecht-paragraph nl-product-finder__note"
 						data-testid="nl-finder-not-kept">
@@ -118,10 +173,16 @@
 				</div>
 
 				<aside class="nl-product-finder__result" aria-live="polite">
-					<h3 class="utrecht-heading-3">{{ say('products') }}</h3>
+					<h2 class="utrecht-heading-3">{{ say('products') }}</h2>
 					<p class="utrecht-paragraph" data-testid="nl-finder-count">
 						{{ countText }}
 					</p>
+					<div class="nl-product-finder__segments" aria-hidden="true">
+						<span
+							v-for="(product, index) in allProducts"
+							:key="product.route"
+							:class="{ 'nl-product-finder__segment--left': index < plan.remaining.length }" />
+					</div>
 					<p
 						v-if="plan.remaining.length === 0"
 						class="utrecht-paragraph"
@@ -134,25 +195,40 @@
 							:key="product.route"
 							data-testid="nl-finder-product">
 							<a
-								class="utrecht-link"
+								class="nl-product-finder__product"
 								:href="linkOf(product).href"
 								@click="open($event, linkOf(product))">
-								{{ product.title }}
+								<span class="nl-product-finder__product-text">
+									<span class="utrecht-link nl-product-finder__product-title">{{
+										product.title
+									}}</span>
+									<span v-if="product.summary">{{ product.summary }}</span>
+								</span>
+								<svg
+									class="nl-product-finder__glyph"
+									viewBox="0 0 24 24"
+									aria-hidden="true"
+									focusable="false">
+									<path d="M9 5l7 7-7 7" />
+								</svg>
 							</a>
 						</li>
 					</ul>
-					<details
+					<div
 						v-if="plan.excluded.length > 0"
+						class="nl-product-finder__fallen"
 						data-testid="nl-finder-excluded">
-						<summary>{{ fallenText }}</summary>
-						<ul class="nl-product-finder__products">
+						<h3 class="nl-product-finder__fallen-title">
+							{{ fallenText }}
+						</h3>
+						<ul class="nl-product-finder__fallen-list">
 							<li
 								v-for="product in plan.excluded"
 								:key="product.route">
-								{{ product.title }}
+								<s>{{ product.title }}</s>
 							</li>
 						</ul>
-					</details>
+					</div>
 				</aside>
 			</div>
 		</template>
@@ -195,6 +271,7 @@ export default {
 			state: this.initialFinder ? 'ready' : 'loading',
 			answers: {},
 			editingId: '',
+			choice: '',
 		}
 	},
 
@@ -270,6 +347,25 @@ export default {
 		},
 
 		/**
+		 * @return {string} How far along the questions the resident is, as a width.
+		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
+		 */
+		progressShare() {
+			const total = this.plan.steps.length
+			return total === 0
+				? '0%'
+				: `${Math.round((this.answered.length / total) * 100)}%`
+		},
+
+		/**
+		 * @return {Array<object>} Every product, remaining and ruled out.
+		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
+		 */
+		allProducts() {
+			return [...this.plan.remaining, ...this.plan.excluded]
+		},
+
+		/**
 		 * @return {string} "Nog 4 van de 12 producten passen bij uw antwoorden".
 		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
 		 */
@@ -289,6 +385,21 @@ export default {
 				'{n}',
 				String(this.plan.excluded.length),
 			)
+		},
+	},
+
+	watch: {
+		/**
+		 * A question on screen starts from its own answer, if it has one.
+		 *
+		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
+		 */
+		asking: {
+			handler(step) {
+				this.choice = step?.answer || ''
+			},
+
+			immediate: true,
 		},
 	},
 
@@ -344,6 +455,18 @@ export default {
 			const next = { ...this.answers, [this.asking.question.id]: value }
 			this.answers = pruneAnswers(this.definition, next)
 			this.editingId = ''
+		},
+
+		/**
+		 * Record the chosen answer and move on.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
+		 */
+		next() {
+			if (this.choice === 'yes' || this.choice === 'no') {
+				this.answer(this.choice)
+			}
 		},
 
 		/**
@@ -411,6 +534,7 @@ export default {
 </script>
 
 <style scoped>
+/* Board Productzoeker. Tokens only. */
 .nl-product-finder {
 	display: flex;
 	flex-direction: column;
@@ -420,20 +544,16 @@ export default {
 .nl-product-finder__layout {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 2rem;
+	align-items: flex-start;
+	gap: 2.5rem;
 }
 
 .nl-product-finder__ask {
-	flex: 1 1 20rem;
+	flex: 999 1 30rem;
 	display: flex;
 	flex-direction: column;
-	gap: 1rem;
-}
-
-.nl-product-finder__result {
-	flex: 1 1 18rem;
-	padding: 1rem;
-	border: 1px solid var(--utrecht-color-border, currentColor);
+	gap: 1.5rem;
+	min-inline-size: 0;
 }
 
 .nl-product-finder__label,
@@ -441,8 +561,35 @@ export default {
 	margin: 0;
 }
 
+.nl-product-finder__label {
+	margin-block-end: 0.75rem;
+	font-weight: 700;
+}
+
+.nl-product-finder__position {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	gap: 0.5rem;
+	margin: 0 0 0.5rem;
+}
+
+.nl-product-finder__bar {
+	block-size: 0.5rem;
+	border-radius: 0.25rem;
+	background: var(--nldesign-color-border, var(--utrecht-color-grey-90, Canvas));
+	overflow: hidden;
+}
+
+.nl-product-finder__bar span {
+	display: block;
+	block-size: 100%;
+	background: var(--nldesign-color-primary, currentcolor);
+}
+
 .nl-product-finder__chips,
-.nl-product-finder__products {
+.nl-product-finder__products,
+.nl-product-finder__fallen-list {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 0.5rem;
@@ -451,23 +598,206 @@ export default {
 	list-style: none;
 }
 
-.nl-product-finder__products {
-	flex-direction: column;
-}
-
 .nl-product-finder__chip {
-	padding: 0.25rem 0.75rem;
-	border: 1px solid var(--utrecht-color-border, currentColor);
-	border-radius: 999px;
-	background: transparent;
-	color: inherit;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	min-block-size: 2.5rem;
+	padding: 0 1rem;
+	border: 0;
+	border-radius: 1.25rem;
+	background: var(--nldesign-color-primary-light, transparent);
+	color: var(--nldesign-color-primary, inherit);
 	font: inherit;
 	cursor: pointer;
+}
+
+.nl-product-finder__glyph {
+	flex: none;
+	inline-size: 1rem;
+	block-size: 1rem;
+	fill: none;
+	stroke: currentcolor;
+	stroke-width: 2.4;
+	stroke-linecap: round;
+}
+
+.nl-product-finder__question {
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+	padding: 2rem;
+	border: 1px solid
+		var(
+			--nldesign-website-card-border-color,
+			var(--nldesign-color-border, currentcolor)
+		);
+	border-radius: var(--nldesign-website-border-radius-large, 0.375rem);
+}
+
+.nl-product-finder__fieldset {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+.nl-product-finder__legend {
+	margin-block-end: 0.5rem;
+	padding: 0;
+	font-size: 1.875rem;
+	font-weight: 700;
+	line-height: 1.2;
+}
+
+.nl-product-finder__fieldset .utrecht-paragraph {
+	margin: 0;
+}
+
+.nl-product-finder__options {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+	gap: 0.75rem;
+	margin-block-start: 0.75rem;
+}
+
+.nl-product-finder__option {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	min-block-size: 4rem;
+	padding: 0 1.5rem;
+	border: 2px solid var(--nldesign-color-text, currentcolor);
+	border-radius: var(--nldesign-website-border-radius, 0.25rem);
+	font-size: 1.25rem;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.nl-product-finder__option input {
+	inline-size: 1.5rem;
+	block-size: 1.5rem;
+	margin: 0;
+	accent-color: var(--nldesign-color-primary, currentcolor);
+}
+
+.nl-product-finder__option--chosen {
+	border-color: var(--nldesign-color-primary, currentcolor);
+	background: var(--nldesign-color-primary-light, transparent);
+}
+
+.nl-product-finder__option:focus-within {
+	outline: 3px solid var(--nldesign-color-focus, currentcolor);
+	outline-offset: 2px;
 }
 
 .nl-product-finder__buttons {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 0.75rem;
+	align-items: center;
+	gap: 1.25rem;
+}
+
+.nl-product-finder__buttons .utrecht-button {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.nl-product-finder__restart {
+	margin-inline-start: auto;
+	text-decoration: underline;
+}
+
+.nl-product-finder__result {
+	flex: 1 1 20rem;
+	max-inline-size: 24.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	padding: 1.5rem;
+	border-radius: var(--nldesign-website-border-radius-large, 0.375rem);
+	background: var(
+		--nldesign-component-content-surface-background-color,
+		var(--nldesign-color-background-hover, transparent)
+	);
+}
+
+.nl-product-finder__result > * {
+	margin: 0;
+}
+
+.nl-product-finder__segments {
+	display: flex;
+	gap: 0.25rem;
+}
+
+.nl-product-finder__segments span {
+	flex: 1;
+	block-size: 0.5rem;
+	border-radius: 0.125rem;
+	background: var(--nldesign-color-border, var(--utrecht-color-grey-90, Canvas));
+}
+
+.nl-product-finder__segments .nl-product-finder__segment--left {
+	background: var(--nldesign-color-primary, currentcolor);
+}
+
+.nl-product-finder__products {
+	flex-direction: column;
+}
+
+.nl-product-finder__product {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	padding: 1rem;
+	border: 1px solid
+		var(
+			--nldesign-website-card-border-color,
+			var(--nldesign-color-border, currentcolor)
+		);
+	border-radius: var(--nldesign-website-border-radius, 0.25rem);
+	background: var(--nldesign-color-background, Canvas);
+	color: var(--nldesign-color-text, inherit);
+	text-decoration: none;
+}
+
+.nl-product-finder__product-text {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	font-size: 0.9375rem;
+}
+
+.nl-product-finder__product-title {
+	font-size: 1.125rem;
+	font-weight: 600;
+	text-decoration: underline;
+}
+
+.nl-product-finder__fallen {
+	padding-block-start: 1rem;
+	border-block-start: 1px solid
+		var(
+			--nldesign-website-card-border-color,
+			var(--nldesign-color-border, currentcolor)
+		);
+}
+
+.nl-product-finder__fallen-title {
+	margin: 0 0 0.5rem;
+	font-size: 1.0625rem;
+	font-weight: 600;
+}
+
+.nl-product-finder__fallen-list {
+	column-gap: 1rem;
+	row-gap: 0.25rem;
+	color: var(--nldesign-color-text-muted, inherit);
+	font-size: 0.9375rem;
 }
 </style>

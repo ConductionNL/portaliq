@@ -145,9 +145,9 @@ class CmsFaq {
 	 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t02
 	 */
 	public function finder(string $portal, string $id, string $locale, string $audience): ?array {
-		$titles = [];
+		$pages = [];
 		foreach ($this->reader->pages(portal: $portal, locale: $locale, audience: $audience) as $summary) {
-			$titles[$summary['route']] = $summary['title'];
+			$pages[$summary['route']] = $summary;
 		}
 
 		foreach ($this->rows->query(schema: 'portalFinder', filters: ['portal' => $portal, 'status' => 'published']) as $row) {
@@ -158,8 +158,12 @@ class CmsFaq {
 
 			$products = [];
 			foreach ((array)($row['products'] ?? []) as $route) {
-				if (is_string($route) === true && isset($titles[$route]) === true) {
-					$products[] = ['route' => $route, 'title' => $titles[$route]];
+				if (is_string($route) === true && isset($pages[$route]) === true) {
+					$products[] = [
+						'route'   => $route,
+						'title'   => $pages[$route]['title'],
+						'summary' => $pages[$route]['summary'],
+					];
 				}
 			}
 
