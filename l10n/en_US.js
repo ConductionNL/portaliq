@@ -1,6 +1,7 @@
 OC.L10N.register(
     "portaliq",
     {
+        "change proposals": "change proposals",
         "Per day": "Per day",
         "Sources": "Sources",
         "The change could not be saved. Please try again.": "The change could not be saved. Please try again.",

@@ -1,6 +1,7 @@
 OC.L10N.register(
     "portaliq",
     {
+        "change proposals": "wijzigingsvoorstellen",
         "A bounded map of extra values the client attached: at most 20 keys, scalar values, 256 characters each.": "Een begrensde tabel van extra waarden die de client meestuurde: hoogstens 20 sleutels, enkelvoudige waarden, elk 256 tekens.",
         "A bounded map of extra values the client attached: at most 20 keys, scalar values, 256 characters each. On a form event only `formId`, `fieldId`, `lastFieldId` and `ms` survive, so what was typed can never be stored; a `cd_<id>` custom dimension survives only when the portal declared the id.": "Een begrensde tabel van extra waarden die de client meestuurde: hoogstens 20 sleutels, enkelvoudige waarden, elk 256 tekens. Op een formuliergebeurtenis blijven alleen `formId`, `fieldId`, `lastFieldId` en `ms` over, zodat wat is getypt nooit kan worden opgeslagen; een eigen dimensie `cd_<id>` blijft alleen over als het portaal het id heeft aangegeven.",
         "A copy of the WHITELISTED submitted field data — the same map the domain create persisted, never the raw client body.": "Een kopie van de WHITELISTED ingezonden veldgegevens: dezelfde tabel die de domeincreatie heeft opgeslagen, nooit de ruwe clientinhoud.",
