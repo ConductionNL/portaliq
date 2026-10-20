@@ -914,6 +914,38 @@ class PortalSessionService {
 	}//end revoke()
 
 	/**
+	 * Revoke one session on an administrator's word, found by its `jti`.
+	 * Recorded as `admin-revoke` naming the admin, so the history tells a
+	 * staff revocation from the resident's own logout.
+	 *
+	 * @param string $jti   The session's token id.
+	 * @param string $admin The Nextcloud user id of the acting admin.
+	 *
+	 * @return bool True when a live session was found and marked revoked.
+	 *
+	 * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
+	 */
+	public function revokeByAdmin(string $jti, string $admin): bool {
+		$row = $this->revokeQuietly(jti: $jti);
+		if ($row === null) {
+			return false;
+		}
+
+		$this->auditor->record(
+			verb: 'admin-revoke',
+			subjectRef: (string)($row['subjectRef'] ?? ''),
+			organisation: (string)($row['organisation'] ?? ''),
+			register: self::SESSION_REGISTER,
+			schema: self::SESSION_SCHEMA,
+			id: $jti,
+			jti: $jti,
+			detail: ['admin' => $admin]
+		);
+
+		return true;
+	}//end revokeByAdmin()
+
+	/**
 	 * Mark a session revoked WITHOUT recording any audit event — the shared
 	 * primitive behind `revoke()` (records `logout`) and `refreshSession()`'s
 	 * old-jti rotation (recorded once, as `refresh`, not also as a `logout`).
