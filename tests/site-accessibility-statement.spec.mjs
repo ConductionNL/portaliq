@@ -53,6 +53,25 @@ test('the statement is linked from the footer, once', () => {
 	])
 })
 
+test('a footer column that links the statement keeps it out of the legal strip', () => {
+	const columns = [
+		{
+			title: 'Over deze website',
+			items: [
+				{ name: 'Toegankelijkheid', link: '/toegankelijkheid' },
+				{ name: 'Privacy', link: '/privacy' },
+			],
+		},
+	]
+	assert.deepEqual(withStatementLink([], 'Toegankelijkheid', columns), [])
+	assert.deepEqual(
+		withStatementLink([], 'Toegankelijkheid', [
+			{ title: 'Snel naar', items: [{ name: 'Afval', link: '/afval' }] },
+		]),
+		[{ label: 'Toegankelijkheid', href: '/toegankelijkheid' }],
+	)
+})
+
 test('the statement follows the measurement and lists the measurement date', () => {
 	const lines = statementLines(
 		{
@@ -128,7 +147,7 @@ test('the shell renders the statement page on its route and puts the link in the
 	assert.match(app, /<AccessibilityStatementPage\s+v-else-if="statementRoute"/)
 	assert.match(
 		app,
-		/withStatementLink\(\s*legalLinksOf\(this\.site, this\.menus\)/,
+		/withStatementLink\(\s*legalLinksOf\(this\.site, this\.menus\),\s*this\.t\('Accessibility'\),\s*this\.footerMenus,/,
 	)
 	assert.match(app, /if \(isStatementRoute\(route\)\) \{/)
 	assert.match(read('src/site/lib/contentApi.js'), /get\('\/accessibility'/)
