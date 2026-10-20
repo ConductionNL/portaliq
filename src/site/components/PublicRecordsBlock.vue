@@ -178,9 +178,11 @@
 				class="utrecht-textbox utrecht-textbox--html-input"
 				type="search"
 				autocomplete="off" />
-			<ul>
+			<ul class="pq-records__list">
 				<li v-for="entry in shown" :key="entry.id">
-					<a :href="hrefFor(entry)">{{ entry.title }}</a>
+					<a class="utrecht-link pq-records__link" :href="hrefFor(entry)">{{
+						entry.title
+					}}</a>
 					<span v-if="entry.subtitle" class="pq-records__subtitle">
 						{{ entry.subtitle }}
 					</span>
@@ -640,6 +642,33 @@ export default {
 </script>
 
 <style scoped>
+/* The list of records: one per line, the name as a link and what it is
+   under it in the muted ink. */
+.pq-records__list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	margin: 1rem 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.pq-records__list li {
+	display: flex;
+	flex-direction: column;
+	gap: 0.125rem;
+}
+
+.pq-records__link {
+	font-size: 1.125rem;
+	font-weight: 600;
+}
+
+.pq-records__subtitle {
+	color: var(--nldesign-color-text-muted, currentcolor);
+	font-size: 0.9375rem;
+}
+
 .pq-records__record {
 	display: grid;
 	gap: var(--utrecht-space-block-lg, 2rem);
