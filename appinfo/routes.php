@@ -558,6 +558,8 @@ return [
         ['name' => 'report#file', 'url' => '/portal/api/reports', 'verb' => 'POST'],
         ['name' => 'report#thread', 'url' => '/portal/api/reports/thread', 'verb' => 'POST'],
         ['name' => 'report#answer', 'url' => '/portal/api/reports/thread/answer', 'verb' => 'POST'],
+        ['name' => 'report#index', 'url' => '/api/reports', 'verb' => 'GET'],
+        ['name' => 'report#revealRequests', 'url' => '/api/reveal-requests', 'verb' => 'GET'],
         ['name' => 'report#show', 'url' => '/api/reports/{id}', 'verb' => 'GET'],
         ['name' => 'report#reply', 'url' => '/api/reports/{id}/messages', 'verb' => 'POST'],
         ['name' => 'report#requestReveal', 'url' => '/api/reports/{id}/reveal-requests', 'verb' => 'POST'],
