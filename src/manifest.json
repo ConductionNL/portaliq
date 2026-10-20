@@ -1267,9 +1267,12 @@
             "default": true
           },
           {
-            "label": "Verstuurd",
+            "label": "Open",
             "filter": {
-              "state": "sent"
+              "state": [
+                "sent",
+                "opened"
+              ]
             },
             "showCount": true
           },
@@ -1284,6 +1287,13 @@
             "label": "Verlopen",
             "filter": {
               "state": "expired"
+            },
+            "showCount": true
+          },
+          {
+            "label": "Ingetrokken",
+            "filter": {
+              "state": "revoked"
             },
             "showCount": true
           }
@@ -1600,7 +1610,20 @@
           {
             "label": "Actief",
             "filter": {
-              "revoked": false
+              "revoked": false,
+              "expiresAt": {
+                "gt": "@now"
+              }
+            },
+            "showCount": true
+          },
+          {
+            "label": "Verlopen",
+            "filter": {
+              "revoked": false,
+              "expiresAt": {
+                "lte": "@now"
+              }
             },
             "showCount": true
           },
@@ -1881,6 +1904,15 @@
             "filter": {},
             "showCount": true,
             "default": true
+          },
+          {
+            "label": "Vandaag",
+            "filter": {
+              "submittedAt": {
+                "gte": "@today"
+              }
+            },
+            "showCount": true
           },
           {
             "label": "Bevestigd",
@@ -3855,6 +3887,20 @@
             "filter": {},
             "showCount": true,
             "default": true
+          },
+          {
+            "label": "Afbeeldingen",
+            "filter": {
+              "kind": "image"
+            },
+            "showCount": true
+          },
+          {
+            "label": "Documenten",
+            "filter": {
+              "kind": "file"
+            },
+            "showCount": true
           },
           {
             "label": "Gepubliceerd",
