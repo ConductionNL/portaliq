@@ -1,7 +1,6 @@
 OC.L10N.register(
     "portaliq",
     {
-        "Afbeeldingen": "Afbeeldingen",
         "change proposals": "change proposals",
         "A bounded map of extra values the client attached: at most 20 keys, scalar values, 256 characters each.": "A bounded map of extra values the client attached: at most 20 keys, scalar values, 256 characters each.",
         "A bounded map of extra values the client attached: at most 20 keys, scalar values, 256 characters each. On a form event only `formId`, `fieldId`, `lastFieldId` and `ms` survive, so what was typed can never be stored; a `cd_<id>` custom dimension survives only when the portal declared the id.": "A bounded map of extra values the client attached: at most 20 keys, scalar values, 256 characters each. On a form event only `formId`, `fieldId`, `lastFieldId` and `ms` survive, so what was typed can never be stored; a `cd_<id>` custom dimension survives only when the portal declared the id.",
@@ -132,7 +131,6 @@ OC.L10N.register(
         "Document": "Document",
         "Document details": "Document details",
         "Documentation": "Documentation",
-        "Documenten": "Documenten",
         "Documents": "Documents",
         "Domains": "Domains",
         "Downloaded files and their counts.": "Downloaded files and their counts.",
@@ -427,7 +425,6 @@ OC.L10N.register(
         "This answer cannot be changed from the portal.": "This answer cannot be changed from the portal.",
         "This case cannot be changed from the portal.": "This case cannot be changed from the portal.",
         "This case is not open for changes from the portal.": "This case is not open for changes from the portal.",
-        "Vandaag": "Vandaag",
         "You are viewing this case on behalf of %s. It cannot be changed here.": "You are viewing this case on behalf of %s. It cannot be changed here.",
         "This case is not yours.": "This case is not yours.",
         "This portal has no slug yet, so it has no public address.": "This portal has no slug yet, so it has no public address.",
@@ -2957,6 +2954,9 @@ OC.L10N.register(
         "Refuse with a reason": "Refuse with a reason",
         "Record a request": "Record a request",
         "Wacht op bevestiging": "Waiting for confirmation",
+        "Afbeeldingen": "Afbeeldingen",
+        "Documenten": "Documenten",
+        "Vandaag": "Vandaag",
         "Bevestiging mislukt": "Confirmation failed",
         "Alles": "All",
         "Bevestigd": "Confirmed",

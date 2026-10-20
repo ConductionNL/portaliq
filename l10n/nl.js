@@ -1,7 +1,6 @@
 OC.L10N.register(
     "portaliq",
     {
-        "Afbeeldingen": "Afbeeldingen",
         "change proposals": "wijzigingsvoorstellen",
         "A bounded map of extra values the client attached: at most 20 keys, scalar values, 256 characters each.": "Een begrensde tabel van extra waarden die de client meestuurde: hoogstens 20 sleutels, enkelvoudige waarden, elk 256 tekens.",
         "A bounded map of extra values the client attached: at most 20 keys, scalar values, 256 characters each. On a form event only `formId`, `fieldId`, `lastFieldId` and `ms` survive, so what was typed can never be stored; a `cd_<id>` custom dimension survives only when the portal declared the id.": "Een begrensde tabel van extra waarden die de client meestuurde: hoogstens 20 sleutels, enkelvoudige waarden, elk 256 tekens. Op een formuliergebeurtenis blijven alleen `formId`, `fieldId`, `lastFieldId` en `ms` over, zodat wat is getypt nooit kan worden opgeslagen; een eigen dimensie `cd_<id>` blijft alleen over als het portaal het id heeft aangegeven.",
@@ -145,7 +144,6 @@ OC.L10N.register(
         "Document": "Document",
         "Document details": "Documentgegevens",
         "Documentation": "Documentatie",
-        "Documenten": "Documenten",
         "Documents": "Documenten",
         "Domains": "Domeinen",
         "Downloaded files and their counts.": "Gedownloade bestanden en hun aantallen.",
@@ -461,7 +459,6 @@ OC.L10N.register(
         "This answer cannot be changed from the portal.": "Dit antwoord kunt u niet vanuit het portaal wijzigen.",
         "This case cannot be changed from the portal.": "Deze zaak kunt u niet vanuit het portaal wijzigen.",
         "This case is not open for changes from the portal.": "Deze zaak staat niet open voor wijzigingen vanuit het portaal.",
-        "Vandaag": "Vandaag",
         "You are viewing this case on behalf of %s. It cannot be changed here.": "U bekijkt deze zaak namens %s. Wijzigen kan hier niet.",
         "This case is not yours.": "Deze zaak is niet van u.",
         "This portal has no slug yet, so it has no public address.": "Dit portaal heeft nog geen slug en dus geen publiek adres.",
@@ -3109,6 +3106,9 @@ OC.L10N.register(
         "Refuse with a reason": "Afwijzen met een reden",
         "Record a request": "Verzoek vastleggen",
         "Wacht op bevestiging": "Wacht op bevestiging",
+        "Afbeeldingen": "Afbeeldingen",
+        "Documenten": "Documenten",
+        "Vandaag": "Vandaag",
         "Bevestiging mislukt": "Bevestiging mislukt",
         "{displayName}, namens {onBehalfOf}": "{displayName}, namens {onBehalfOf}",
         "{actionId}": "{actionId}",
