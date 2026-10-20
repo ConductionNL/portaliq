@@ -453,6 +453,7 @@ OC.L10N.register(
         "The audience a resident's first portal account gets. Empty means citizen.": "De doelgroep die het eerste portalaccount van een inwoner krijgt. Leeg betekent citizen.",
         "The change could not be saved. Please try again.": "De wijziging kon niet worden opgeslagen. Probeer het opnieuw.",
         "The document could not be added. Please try again.": "Het document kon niet worden toegevoegd. Probeer het opnieuw.",
+        "There are no portals yet": "Er zijn nog geen portalen",
         "There is no file to add.": "Er is geen bestand om toe te voegen.",
         "There is nothing to change.": "Er is niets om te wijzigen.",
         "This answer can no longer be changed.": "Dit antwoord kan niet meer worden gewijzigd.",
