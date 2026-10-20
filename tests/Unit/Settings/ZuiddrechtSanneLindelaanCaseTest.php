@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-sanne-cases/specs/example-set-sanne-cases/spec.md#requirement-the-example-woo-case-is-in-progress-with-its-contact-moments
+ * @spec openspec/changes/example-set-sanne-cases/specs/example-set-sanne-cases/spec.md#requirement-sannes-lindelaan-case-is-the-case-the-boards-draw-and-her-cases-name-her
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The seeded Lindelaan case: in-progress status, contact moments.
  *
- * @spec openspec/changes/example-set-sanne-cases/specs/example-set-sanne-cases/spec.md#requirement-the-example-woo-case-is-in-progress-with-its-contact-moments
+ * @spec openspec/changes/example-set-sanne-cases/specs/example-set-sanne-cases/spec.md#requirement-sannes-lindelaan-case-is-the-case-the-boards-draw-and-her-cases-name-her
  */
 class ZuiddrechtSanneLindelaanCaseTest extends TestCase {
 
