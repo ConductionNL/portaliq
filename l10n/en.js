@@ -1695,6 +1695,8 @@ OC.L10N.register(
         "Close": "Close",
         "Alternative text": "Alternative text",
         "Media item": "Media item",
+        "Nergens gebruikt": "Nergens gebruikt",
+        "Used on": "Used on",
         "Media": "Media",
         "Only a published item is served to the public.": "Only a published item is served to the public.",
         "The address of an image shown by a hero widget, or media:<id> for an item of this portal's media library. Optional: a page without one renders as before.": "The address of an image shown by a hero widget, or media:<id> for an item of this portal's media library. Optional: a page without one renders as before.",

@@ -3614,6 +3614,10 @@
             "label": "Portal"
           },
           {
+            "key": "usedOn",
+            "label": "Used on"
+          },
+          {
             "key": "status",
             "label": "Status",
             "widget": "badge",
@@ -3657,6 +3661,13 @@
             "label": "Concept",
             "filter": {
               "status": "draft"
+            },
+            "showCount": true
+          },
+          {
+            "label": "Nergens gebruikt",
+            "filter": {
+              "usedOn": 0
             },
             "showCount": true
           }

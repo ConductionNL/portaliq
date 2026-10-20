@@ -99,6 +99,8 @@
         <job>OCA\Portaliq\BackgroundJob\AvailabilityProbeJob</job>
         <!-- site-multi-step-forms: hourly, deletes drafts past their retention. -->
         <job>OCA\Portaliq\BackgroundJob\PortalDraftPurgeJob</job>
+        <!-- media-usage-count: hourly, how many records of its portal use each media item. -->
+        <job>OCA\Portaliq\BackgroundJob\MediaUsageJob</job>
         <job>OCA\Portaliq\BackgroundJob\MailLogRetentionJob</job>
     </background-jobs>
 

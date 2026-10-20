@@ -390,8 +390,11 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.96.0 (form 0.3.0): a landing-page form's `destination { register, schema, fields, fixed }`; a submit creates that object directly (submit-creates-the-case-directly 3.2). Additive.
 		// 0.97.0 (register only): the register's authorization names only the staff group, and every schema's `authenticated` read is the staff group (close-portaliq-register-to-staff). OpenRegister writes a register's own fields only when its version is newer.
 		// 0.98.0: the portal schema declares `authentication.registration.businessGroup` and `businessAudience` (business-audience-group).
-		$this->assertSame('0.98.0', self::$register['info']['version']);
-		$this->assertSame('0.98.0', self::$register['components']['registers']['portaliq']['version']);
+		// 0.99.0 (media 0.2.0): `usedOn`, how many records of its portal use the item (media-usage-count). Additive.
+		$this->assertSame('0.99.0', self::$register['info']['version']);
+		$this->assertSame('0.99.0', self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame('0.2.0', self::$register['components']['schemas']['media']['version']);
+		$this->assertSame('integer', self::$register['components']['schemas']['media']['properties']['usedOn']['type']);
 		$this->assertSame('0.3.0', self::$register['components']['schemas']['form']['version']);
 		$this->assertSame('object', self::$register['components']['schemas']['form']['properties']['destination']['type']);
 		$this->assertSame('0.8.0', self::$register['components']['schemas']['portalPage']['version']);
@@ -776,7 +779,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 	 */
 	public function testAMediaItemNamesItsPortalKindAndStatus(): void {
 		$schema = self::$register['components']['schemas']['media'];
-		$this->assertSame('0.1.0', $schema['version']);
+		$this->assertSame('0.2.0', $schema['version']);
 		$this->assertContains('media', self::$register['components']['registers']['portaliq']['schemas']);
 		$jsonSchema = json_decode((string)json_encode(['type' => 'object', 'required' => $schema['required'], 'properties' => $schema['properties']]), false);
 
