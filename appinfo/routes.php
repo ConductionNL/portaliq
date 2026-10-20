@@ -22,6 +22,7 @@ return [
         // Which groups may do which action (operate-roles-for-content-and-actions). Admin-only.
         ['name' => 'actionSettings#index', 'url' => '/api/settings/actions', 'verb' => 'GET'],
         ['name' => 'actionSettings#update', 'url' => '/api/settings/actions', 'verb' => 'PUT'],
+        ['name' => 'actionSettings#byGroup', 'url' => '/api/settings/action-groups', 'verb' => 'GET'],
 
         // Generic per-user preferences (used by shared nextcloud-vue widgets, e.g. CnSupportDialog).
         ['name' => 'preferences#getPreference', 'url' => '/api/preferences/{key}', 'verb' => 'GET'],

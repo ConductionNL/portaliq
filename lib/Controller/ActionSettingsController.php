@@ -33,6 +33,7 @@ use OCA\Portaliq\Service\PageEditorService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\IGroupManager;
 use OCP\IL10N;
 use OCP\IRequest;
 
@@ -52,6 +53,7 @@ class ActionSettingsController extends Controller {
 	 * @param PageEditorService $groups Lists the groups that exist.
 	 * @param IL10N $l The translator for the catalogue's labels.
 	 * @param string $seedPath The catalogue file, for tests.
+	 * @param IGroupManager|null $groupManager Counts a group's members.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -59,6 +61,7 @@ class ActionSettingsController extends Controller {
 		private readonly PageEditorService $groups,
 		private readonly IL10N $l,
 		private readonly string $seedPath = self::SEED_PATH,
+		private readonly ?IGroupManager $groupManager = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -87,6 +90,45 @@ class ActionSettingsController extends Controller {
 
 		return new JSONResponse(['actions' => $rows, 'availableGroups' => $this->groups->availableGroups()]);
 	}//end index()
+
+	/**
+	 * The same grants per group: every group that holds a right, with its
+	 * name, how many members it has and the rights it holds. Administrators
+	 * hold every right and are not listed.
+	 *
+	 * @return JSONResponse `{results, total}`.
+	 *
+	 * @auth admin-only Shows who may act on residents' behalf, so only an
+	 *       instance administrator may see it; Nextcloud checks it before this
+	 *       method runs.
+	 *
+	 * @spec openspec/changes/admin-rights-page/specs/portal-admin-roles/spec.md#requirement-an-administrator-reads-the-rights-per-group-req-arp-001
+	 */
+	public function byGroup(): JSONResponse {
+		$names = array_column($this->groups->availableGroups(), 'label', 'id');
+		$matrix = $this->actions->getMatrix();
+		$held = [];
+		foreach ($this->catalogue() as $action => $entry) {
+			foreach (array_diff(($matrix[$action] ?? $entry['groups']), ['admin']) as $group) {
+				$held[$group][] = $this->l->t($entry['label']);
+			}
+		}
+
+		$rows = [];
+		foreach ($held as $group => $rights) {
+			$rows[] = [
+				'group' => (string)$group,
+				'name' => (string)($names[$group] ?? $group),
+				'members' => (int)$this->groupManager?->get((string)$group)?->count(),
+				'rights' => implode(', ', $rights),
+				'count' => count($rights),
+			];
+		}
+
+		usort($rows, static fn (array $one, array $two): int => strcasecmp($one['name'], $two['name']));
+
+		return new JSONResponse(['results' => $rows, 'total' => count($rows)]);
+	}//end byGroup()
 
 	/**
 	 * Store the grants: known actions and existing groups only.
