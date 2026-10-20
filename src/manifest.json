@@ -1183,7 +1183,9 @@
         "filterMenu": true,
         "viewSwitch": [
           "table",
-          "cards"
+          "cards",
+          "board",
+          "map"
         ],
         "quickFilterMaxVisible": 5,
         "bulkHint": "Copy, export or delete the selected accounts.",
@@ -1337,6 +1339,13 @@
             },
             "showCount": true
           }
+        ],
+        "filterMenu": true,
+        "viewSwitch": [
+          "table",
+          "cards",
+          "board",
+          "map"
         ]
       }
     },
@@ -1675,6 +1684,13 @@
             "showCount": true
           }
         ],
+        "filterMenu": true,
+        "viewSwitch": [
+          "table",
+          "cards",
+          "board",
+          "map"
+        ],
         "showAdd": false
       }
     },
@@ -1980,7 +1996,9 @@
         "filterMenu": true,
         "viewSwitch": [
           "table",
-          "cards"
+          "cards",
+          "board",
+          "map"
         ],
         "footerNote": "what the resident filled in is only on the submission itself, not in this list"
       }
@@ -2212,7 +2230,9 @@
         "filterMenu": true,
         "viewSwitch": [
           "table",
-          "cards"
+          "cards",
+          "board",
+          "map"
         ],
         "bulkHint": "Copy or delete the selected portals.",
         "footerNote": "an umbrella portal has no pages of its own, it adds up the traffic of its members"
@@ -3678,7 +3698,9 @@
         "filterMenu": true,
         "viewSwitch": [
           "table",
-          "cards"
+          "cards",
+          "board",
+          "map"
         ],
         "footerNote": "on approval the requester sees the cases at once, on refusal they read your reason"
       }
@@ -3775,6 +3797,13 @@
             },
             "showCount": true
           }
+        ],
+        "filterMenu": true,
+        "viewSwitch": [
+          "table",
+          "cards",
+          "board",
+          "map"
         ]
       }
     },
@@ -3825,6 +3854,13 @@
             "showCount": true,
             "default": true
           }
+        ],
+        "filterMenu": true,
+        "viewSwitch": [
+          "table",
+          "cards",
+          "board",
+          "map"
         ]
       }
     },
@@ -3972,6 +4008,13 @@
             },
             "showCount": true
           }
+        ],
+        "filterMenu": true,
+        "viewSwitch": [
+          "table",
+          "cards",
+          "board",
+          "map"
         ]
       }
     },
@@ -4287,6 +4330,13 @@
             },
             "showCount": true
           }
+        ],
+        "filterMenu": true,
+        "viewSwitch": [
+          "table",
+          "cards",
+          "board",
+          "map"
         ]
       }
     },
