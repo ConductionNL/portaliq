@@ -70,6 +70,30 @@ class PortalDraftController extends Controller {
 	}//end __construct()
 
 	/**
+	 * The bearer's live drafts, every form they can still finish (REQ-FSR-003).
+	 *
+	 * @return JSONResponse 401 without a session; 200 `{drafts: [...]}` otherwise.
+	 *
+	 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
+	public function index(): JSONResponse {
+		$subject = $this->subject();
+		if ($subject === null) {
+			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		}
+
+		try {
+			return new JSONResponse(['drafts' => $this->actions->liveDrafts(subject: $subject)]);
+		} catch (Throwable) {
+			// A destination could not be reached: the page lists nothing and says nothing went wrong.
+			return new JSONResponse(['error' => 'try_again_later'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+	}//end index()
+
+	/**
 	 * The bearer's live draft of an action.
 	 *
 	 * @param string $appId    The contributing app.
@@ -113,6 +137,7 @@ class PortalDraftController extends Controller {
 					'id' => (string)$draft['id'],
 					'status' => 'draft',
 					'step' => '',
+					'updatedAt' => (string)($draft['updatedAt'] ?? ''),
 					'expiresAt' => (string)$draft['expiresAt'],
 					'answers' => $this->actions->answersOf(action: $match['action'], draft: $draft),
 				]
