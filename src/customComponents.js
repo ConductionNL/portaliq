@@ -47,6 +47,8 @@ import InviteDialog from './dialogs/InviteDialog.vue'
 import IssueAccountDialog from './dialogs/IssueAccountDialog.vue'
 import NewsItemDialog from './dialogs/NewsItemDialog.vue'
 import RefuseAccessRequestDialog from './dialogs/RefuseAccessRequestDialog.vue'
+import RevealDecisionDialog from './dialogs/RevealDecisionDialog.vue'
+import RevealedContactDialog from './dialogs/RevealedContactDialog.vue'
 import { createAccessRequestHandlers } from './lib/accessRequestActions.js'
 import { createConnectionHandlers } from './lib/connectionRegistry.js'
 import { createFormBindingEmbed } from './lib/formBindingEmbed.js'
@@ -54,6 +56,8 @@ import { createFormBindingPreview } from './lib/formBindingPreview.js'
 import { refreshList } from './lib/listRefresh.js'
 import { createNewsApi, createNewsHandlers, NEWS_LIST } from './lib/newsAuthoring.js'
 import { createOpenPortalSite } from './lib/openPortalSite.js'
+import { createRevealHandlers } from './lib/revealActions.js'
+import { createSessionHandlers } from './lib/sessionActions.js'
 import {
 	createStaffAccountActions,
 	createStaffAccountHandlers,
@@ -158,6 +162,42 @@ const staffAccountHandlers = createStaffAccountHandlers({
 	reload: () => window.location.reload(),
 })
 /**
+ * `Naar het account` and `Sessie intrekken` on a Sessions row
+ * (staff-revoke-one-session). Revoking goes through SessionAdminController,
+ * admin only; see src/lib/sessionActions.js.
+ */
+const sessionHandlers = createSessionHandlers({
+	post: (url, body) => axios.post(url, body),
+	generateUrl,
+	confirmRevoke: () =>
+		showConfirmation({
+			name: t('portaliq', 'Revoke this session?'),
+			text: t('portaliq', 'The device signed in with it is signed out at once.'),
+			labelConfirm: t('portaliq', 'Revoke session'),
+			labelReject: t('portaliq', 'Cancel'),
+		}),
+	notify: showSuccess,
+	notifyError: showError,
+	translate: (text) => t('portaliq', text),
+	reload: () => window.location.reload(),
+	open: (url) => window.location.assign(url),
+})
+/**
+ * `Toestaan` and `Weigeren` on the Reveal requests page
+ * (intake-report-pages T09). Each asks the reason and posts the custodian's
+ * decision; an allowed reveal shows the contact once, in its own dialog.
+ */
+const revealHandlers = createRevealHandlers({
+	post: (url, body) => axios.post(url, body),
+	generateUrl,
+	askReason: (allow) => spawnDialog(RevealDecisionDialog, { allow }),
+	showContact: (contact) => spawnDialog(RevealedContactDialog, { contact }),
+	notify: showSuccess,
+	notifyError: showError,
+	translate: (text) => t('portaliq', text),
+	reload: () => window.location.reload(),
+})
+/**
  * `New news item`, `Change`, `Publish` and `Take back` on the News page
  * (staff-news-screen). Each goes through NewsController's staff routes, never
  * the object form; see src/lib/newsAuthoring.js.
@@ -222,4 +262,12 @@ export default {
 	 * form, because news is written through NewsController's staff routes.
 	 */
 	...newsHandlers,
+	/**
+	 * The Sessions list's row actions (staff-revoke-one-session).
+	 */
+	...sessionHandlers,
+	/**
+	 * The Reveal requests page's row actions (intake-report-pages T09).
+	 */
+	...revealHandlers,
 }

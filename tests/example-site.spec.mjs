@@ -170,6 +170,17 @@ for (const [key, path] of Object.entries(blockComponents)) {
 	)
 	widgetProps[key] = propsOfVue(path)
 }
+// The blocks the shared library's public registry brings, which WidgetGrid
+// spreads into its own map.
+const libraryIndex = read('node_modules/@conduction/nextcloud-vue/src/public/index.js')
+const libraryBlocks = {
+	glossary: 'node_modules/@conduction/nextcloud-vue/src/public/components/CnSiteGlossary.vue',
+}
+assert.match(publicMap, /\.\.\.siteBlockRegistry/, 'the library blocks are public')
+for (const [key, path] of Object.entries(libraryBlocks)) {
+	assert.match(libraryIndex, new RegExp(`\\n\\t${key}: `), `${key} is a library block`)
+	widgetProps[key] = propsOfVue(path)
+}
 assert.match(
 	publicMap,
 	/\.\.\.nldsWidgets/,
@@ -349,7 +360,7 @@ test('the Zuiddrecht site holds what the design shows', () => {
 	)
 	// Counts the installer's own test and the documentation name.
 	assert.equal(site.menus.length, 3)
-	assert.equal(site.pages.length, 39)
+	assert.equal(site.pages.length, 53)
 	assert.equal(site.news.length, 4)
 })
 
@@ -381,6 +392,14 @@ for (const { file, site } of sites) {
 				problems,
 			),
 		)
+		for (const term of site.glossary || []) {
+			hold(
+				{ ...term, portal: site.portal.slug },
+				schemas.glossaryTerm,
+				`glossary "${term.term}"`,
+				problems,
+			)
+		}
 		assert.deepEqual(problems, [])
 	})
 
@@ -764,7 +783,7 @@ test('the Zuiddrecht site lays out its own area as the MijnMenu and MijnZaken bo
 		'rows',
 	])
 	assert.equal(portal.version, '0.26.0')
-	assert.equal(register.info.version, '0.98.0')
+	assert.equal(register.info.version, '0.99.0')
 })
 
 // zuiddrecht-site-details: the portal names the organisation of the example

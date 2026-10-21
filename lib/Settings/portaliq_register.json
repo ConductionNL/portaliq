@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.98.0"
+        "version": "0.99.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.98.0",
+                "version": "0.99.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -5352,7 +5352,7 @@
             "media": {
                 "slug": "media",
                 "icon": "FolderOutline",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Media item",
                 "authorization": {
                     "read": [
@@ -5374,6 +5374,13 @@
                     "status"
                 ],
                 "properties": {
+                    "usedOn": {
+                        "title": "Used on",
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "How many records of this portal refer to the item (pages, news, the portal itself), counted hourly by portaliq. 0 means nothing uses it.",
+                        "example": 3
+                    },
                     "title": {
                         "title": "Title",
                         "type": "string",

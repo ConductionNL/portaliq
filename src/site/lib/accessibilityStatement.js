@@ -31,18 +31,25 @@ export function isStatementRoute(route) {
 }
 
 /**
- * The legal strip's links with the statement's link last, unless the portal
- * already links to it.
+ * The legal strip's links with the statement's link last, unless the footer
+ * already links to it: in the strip, or in one of its link columns.
  *
  * @param {Array<{label: string, href: string}>} links The portal's legal links.
  * @param {string} label The link's text in the visitor's language.
+ * @param {Array<{items?: Array<{link?: string}>}>} [columns] The footer's link columns.
  * @return {Array<{label: string, href: string}>}
  * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
  */
-export function withStatementLink(links, label) {
+export function withStatementLink(links, label, columns = []) {
 	const list = Array.isArray(links) ? links : []
-	const present = list.some((item) =>
-		String(item?.href || '')
+	const hrefs = [
+		...list.map((item) => item?.href),
+		...(Array.isArray(columns) ? columns : []).flatMap((menu) =>
+			(Array.isArray(menu?.items) ? menu.items : []).map((item) => item?.link),
+		),
+	]
+	const present = hrefs.some((href) =>
+		String(href || '')
 			.replace(/\/+$/, '')
 			.endsWith(STATEMENT_ROUTE),
 	)

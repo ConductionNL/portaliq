@@ -69,6 +69,10 @@ use Throwable;
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)   -- one dependency per
  * distinct responsibility (signing secret, id generation, OR read/write,
  * audit recording) — see ContributionController's identical rationale.
+ * @SuppressWarnings(PHPMD.ExcessiveClassLength)     -- see the complexity
+ * rationale: the length is the lifecycle's guard chains.
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods)     -- one method per step of
+ * a session's life, including revoking one session as an admin.
  */
 class PortalSessionService {
 	/**
@@ -912,6 +916,38 @@ class PortalSessionService {
 
 		return true;
 	}//end revoke()
+
+	/**
+	 * Revoke one session on an administrator's word, found by its `jti`.
+	 * Recorded as `admin-revoke` naming the admin, so the history tells a
+	 * staff revocation from the resident's own logout.
+	 *
+	 * @param string $jti   The session's token id.
+	 * @param string $admin The Nextcloud user id of the acting admin.
+	 *
+	 * @return bool True when a live session was found and marked revoked.
+	 *
+	 * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
+	 */
+	public function revokeByAdmin(string $jti, string $admin): bool {
+		$row = $this->revokeQuietly(jti: $jti);
+		if ($row === null) {
+			return false;
+		}
+
+		$this->auditor->record(
+			verb: 'admin-revoke',
+			subjectRef: (string)($row['subjectRef'] ?? ''),
+			organisation: (string)($row['organisation'] ?? ''),
+			register: self::SESSION_REGISTER,
+			schema: self::SESSION_SCHEMA,
+			id: $jti,
+			jti: $jti,
+			detail: ['admin' => $admin]
+		);
+
+		return true;
+	}//end revokeByAdmin()
 
 	/**
 	 * Mark a session revoked WITHOUT recording any audit event — the shared

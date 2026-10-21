@@ -57,6 +57,7 @@ import { metaOf as linkMeta } from './nlLink/meta.js'
 import { metaOf as linkColumnsMeta } from './nlLinkColumns/meta.js'
 import { metaOf as linkListMeta } from './nlLinkList/meta.js'
 import { metaOf as listMeta } from './nlList/meta.js'
+import { metaOf as locationMapMeta } from './nlLocationMap/meta.js'
 import { metaOf as lookupFormMeta } from './nlLookupForm/meta.js'
 import { metaOf as newsArticleMeta } from './nlNewsArticle/meta.js'
 import { metaOf as newsListMeta } from './nlNewsList/meta.js'
@@ -107,6 +108,7 @@ export const metas = {
 	nlParagraph: paragraphMeta,
 	nlLink: linkMeta,
 	nlLinkList: linkListMeta,
+	nlLocationMap: locationMapMeta,
 	nlLinkColumns: linkColumnsMeta,
 	nlLookupForm: lookupFormMeta,
 	nlList: listMeta,

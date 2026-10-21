@@ -157,6 +157,26 @@
       }
     },
     {
+      "id": "AccountlessReportsMenu",
+      "label": "Reports without an account",
+      "icon": "ShieldAccount",
+      "route": "AccountlessReports",
+      "order": 35,
+      "visibleIf": {
+        "access.admin": true
+      }
+    },
+    {
+      "id": "RevealRequestsMenu",
+      "label": "Reveal requests",
+      "icon": "EyeLock",
+      "route": "RevealRequests",
+      "order": 35,
+      "visibleIf": {
+        "access.admin": true
+      }
+    },
+    {
       "id": "FormBindingsMenu",
       "label": "Request forms",
       "icon": "ChartLine",
@@ -288,6 +308,17 @@
       "visibleIf": {
         "access.admin": true
       }
+    },
+    {
+      "id": "AdminRightsMenu",
+      "label": "Admin rights",
+      "icon": "ShieldAccount",
+      "route": "AdminRights",
+      "section": "settings",
+      "order": 93,
+      "visibleIf": {
+        "access.admin": true
+      }
     }
   ],
   "pages": [
@@ -310,6 +341,50 @@
       "title": "Dashboard",
       "config": {
         "widgets": [
+          {
+            "id": "kpi-visitors",
+            "type": "stat",
+            "title": "Visitors, last 7 days",
+            "content": {
+              "label": "Visitors, last 7 days",
+              "layout": "stacked",
+              "caption": "website and Mijn Zuiddrecht together",
+              "source": {
+                "kind": "endpoint",
+                "url": "/apps/portaliq/api/overview/traffic",
+                "params": {
+                  "days": "7"
+                },
+                "path": "visitors"
+              },
+              "route": {
+                "name": "Traffic"
+              }
+            }
+          },
+          {
+            "id": "kpi-availability",
+            "type": "stat",
+            "title": "Availability, last month",
+            "content": {
+              "label": "Availability, last month",
+              "layout": "stacked",
+              "caption": "website and Mijn Zuiddrecht together",
+              "format": {
+                "style": "decimal",
+                "decimals": 2,
+                "suffix": "%"
+              },
+              "source": {
+                "kind": "endpoint",
+                "url": "/apps/portaliq/api/overview/availability",
+                "path": "percentage"
+              },
+              "route": {
+                "name": "Availability"
+              }
+            }
+          },
           {
             "id": "kpi-portals",
             "type": "stat",
@@ -493,6 +568,108 @@
             }
           },
           {
+            "id": "overview-availability",
+            "type": "record-list",
+            "title": "Availability, last month",
+            "content": {
+              "endpointSource": {
+                "url": "/apps/portaliq/api/overview/availability",
+                "responsePath": "portals"
+              },
+              "presentation": "rows",
+              "title": "{title}",
+              "trailing": "{percentage}%",
+              "emptyText": "No availability measured yet"
+            },
+            "headerLink": {
+              "label": "Rapport over 12 maanden",
+              "route": "Availability"
+            }
+          },
+          {
+            "id": "overview-traffic",
+            "type": "stats-block",
+            "title": "Traffic, last 7 days",
+            "content": {
+              "layout": "grid",
+              "columns": 2,
+              "stats": [
+                {
+                  "label": "Page views",
+                  "source": {
+                    "kind": "endpoint",
+                    "url": "/apps/portaliq/api/overview/traffic",
+                    "params": {
+                      "days": "7"
+                    },
+                    "path": "pageViews"
+                  }
+                },
+                {
+                  "label": "Sessions",
+                  "source": {
+                    "kind": "endpoint",
+                    "url": "/apps/portaliq/api/overview/traffic",
+                    "params": {
+                      "days": "7"
+                    },
+                    "path": "sessions"
+                  }
+                },
+                {
+                  "label": "Visitors",
+                  "source": {
+                    "kind": "endpoint",
+                    "url": "/apps/portaliq/api/overview/traffic",
+                    "params": {
+                      "days": "7"
+                    },
+                    "path": "visitors"
+                  }
+                },
+                {
+                  "label": "Engaged sessions",
+                  "format": {
+                    "style": "decimal",
+                    "decimals": 0,
+                    "suffix": "%"
+                  },
+                  "source": {
+                    "kind": "endpoint",
+                    "url": "/apps/portaliq/api/overview/traffic",
+                    "params": {
+                      "days": "7"
+                    },
+                    "path": "engagedShare"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "overview-top-pages",
+            "type": "record-list",
+            "title": "Most viewed pages",
+            "content": {
+              "endpointSource": {
+                "url": "/apps/portaliq/api/overview/traffic",
+                "params": {
+                  "days": "7"
+                },
+                "responsePath": "pages"
+              },
+              "presentation": "rows",
+              "title": "{path}",
+              "meta": "{title}",
+              "trailing": "{views}",
+              "emptyText": "No traffic recorded yet"
+            },
+            "headerLink": {
+              "label": "Naar verkeer",
+              "route": "Traffic"
+            }
+          },
+          {
             "id": "now-mijn",
             "type": "stats-block",
             "title": "Mijn Zuiddrecht nu",
@@ -531,35 +708,51 @@
         ],
         "layout": [
           {
-            "id": 1,
-            "widgetId": "kpi-portals",
+            "id": "kpi-visitors",
+            "widgetId": "kpi-visitors",
             "gridX": 0,
             "gridY": 0,
-            "gridWidth": 3,
+            "gridWidth": 2,
             "gridHeight": 1
           },
           {
-            "id": 2,
-            "widgetId": "kpi-accounts",
-            "gridX": 3,
+            "id": "kpi-availability",
+            "widgetId": "kpi-availability",
+            "gridX": 2,
             "gridY": 0,
-            "gridWidth": 3,
+            "gridWidth": 2,
             "gridHeight": 1
           },
           {
-            "id": 3,
+            "id": "kpi-requests",
             "widgetId": "kpi-requests",
+            "gridX": 4,
+            "gridY": 0,
+            "gridWidth": 2,
+            "gridHeight": 1
+          },
+          {
+            "id": "kpi-submissions",
+            "widgetId": "kpi-submissions",
             "gridX": 6,
             "gridY": 0,
-            "gridWidth": 3,
+            "gridWidth": 2,
             "gridHeight": 1
           },
           {
-            "id": 4,
-            "widgetId": "kpi-submissions",
-            "gridX": 9,
+            "id": "kpi-portals",
+            "widgetId": "kpi-portals",
+            "gridX": 8,
             "gridY": 0,
-            "gridWidth": 3,
+            "gridWidth": 2,
+            "gridHeight": 1
+          },
+          {
+            "id": "kpi-accounts",
+            "widgetId": "kpi-accounts",
+            "gridX": 10,
+            "gridY": 0,
+            "gridWidth": 2,
             "gridHeight": 1
           },
           {
@@ -587,19 +780,45 @@
             "gridHeight": 5
           },
           {
+            "id": "overview-availability",
+            "widgetId": "overview-availability",
+            "gridX": 8,
+            "gridY": 3,
+            "gridWidth": 4,
+            "gridHeight": 4
+          },
+          {
+            "id": "overview-traffic",
+            "widgetId": "overview-traffic",
+            "gridX": 8,
+            "gridY": 7,
+            "gridWidth": 4,
+            "gridHeight": 4
+          },
+          {
+            "id": "overview-top-pages",
+            "widgetId": "overview-top-pages",
+            "gridX": 8,
+            "gridY": 11,
+            "gridWidth": 4,
+            "gridHeight": 4
+          },
+          {
             "id": "now-mijn",
             "widgetId": "now-mijn",
             "gridX": 8,
-            "gridY": 3,
+            "gridY": 15,
             "gridWidth": 4,
             "gridHeight": 4
           }
         ],
         "kpiRow": [
-          "kpi-portals",
-          "kpi-accounts",
+          "kpi-visitors",
+          "kpi-availability",
           "kpi-requests",
-          "kpi-submissions"
+          "kpi-submissions",
+          "kpi-portals",
+          "kpi-accounts"
         ],
         "showWidgetActions": false,
         "showRefresh": false,
@@ -1275,6 +1494,22 @@
         ],
         "actions": [
           {
+            "id": "resend-invitation",
+            "label": "Send again",
+            "icon": "EmailOutline",
+            "type": "handler",
+            "handler": "resendInvitation",
+            "visibleWhen": {
+              "field": "state",
+              "op": "in",
+              "value": [
+                "sent",
+                "opened",
+                "expired"
+              ]
+            }
+          },
+          {
             "id": "withdraw-invitation",
             "label": "Withdraw invitation",
             "icon": "Close",
@@ -1647,6 +1882,27 @@
           {
             "action": "export",
             "label": "Download"
+          }
+        ],
+        "actions": [
+          {
+            "id": "open-session-account",
+            "label": "Go to the account",
+            "icon": "Account",
+            "type": "handler",
+            "handler": "openSessionAccount"
+          },
+          {
+            "id": "revoke-session",
+            "label": "Revoke session",
+            "icon": "Close",
+            "type": "handler",
+            "handler": "revokeSession",
+            "visibleWhen": {
+              "field": "revoked",
+              "op": "neq",
+              "value": true
+            }
           }
         ],
         "quickFilters": [
@@ -2111,6 +2367,100 @@
           "submission-forms",
           "submission-history"
         ]
+      }
+    },
+    {
+      "id": "AccountlessReports",
+      "route": "/accountless-reports",
+      "type": "index",
+      "title": "Reports without an account",
+      "config": {
+        "entitySource": "endpoint",
+        "sourceConfig": {
+          "url": "/apps/portaliq/api/reports",
+          "rowsPath": "results",
+          "totalPath": "total"
+        },
+        "columns": [
+          {
+            "key": "subject",
+            "label": "Subject"
+          },
+          {
+            "key": "state",
+            "label": "Status",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "open": "warning",
+                "acknowledged": "info",
+                "closed": "success"
+              }
+            }
+          },
+          {
+            "key": "receivedAt",
+            "label": "Received on",
+            "format": "datetime"
+          }
+        ],
+        "showAdd": false,
+        "showTitle": true,
+        "showTitleIcon": false,
+        "_note": "intake-report-pages T08 / REQ-IRP-004: the reports the caller handles, read from GET /api/reports through the projection, never from a generic OpenRegister index on portalReport."
+      }
+    },
+    {
+      "id": "RevealRequests",
+      "route": "/reveal-requests",
+      "type": "index",
+      "title": "Reveal requests",
+      "config": {
+        "entitySource": "endpoint",
+        "sourceConfig": {
+          "url": "/apps/portaliq/api/reveal-requests",
+          "rowsPath": "results",
+          "totalPath": "total"
+        },
+        "columns": [
+          {
+            "key": "subject",
+            "label": "Report"
+          },
+          {
+            "key": "motivation",
+            "label": "Motivation"
+          },
+          {
+            "key": "requestedBy",
+            "label": "Asked by"
+          },
+          {
+            "key": "requestedAt",
+            "label": "Asked on",
+            "format": "datetime"
+          }
+        ],
+        "actions": [
+          {
+            "id": "allow-reveal",
+            "label": "Allow",
+            "icon": "Check",
+            "type": "handler",
+            "handler": "allowReveal"
+          },
+          {
+            "id": "refuse-reveal",
+            "label": "Refuse",
+            "icon": "Close",
+            "type": "handler",
+            "handler": "refuseReveal"
+          }
+        ],
+        "showAdd": false,
+        "showTitle": true,
+        "showTitleIcon": false,
+        "_note": "intake-report-pages T09 / REQ-IRP-006: the pending requests on reports whose custodian group the caller is in, from GET /api/reveal-requests."
       }
     },
     {
@@ -3808,6 +4158,319 @@
       }
     },
     {
+      "id": "FormBindingDetail",
+      "route": "/form-bindings/:id",
+      "type": "detail",
+      "title": "Request form",
+      "config": {
+        "register": "portaliq",
+        "schema": "portalFormBinding",
+        "breadcrumb": {
+          "label": "Request forms",
+          "route": "FormBindings",
+          "currentField": "route"
+        },
+        "statusPill": {
+          "field": "status",
+          "colorMap": {
+            "published": "success",
+            "draft": "warning"
+          },
+          "labels": {
+            "published": "Published",
+            "draft": "Draft"
+          }
+        },
+        "follow": false,
+        "favourite": false,
+        "tabsLabel": "Instellingen van het formulier",
+        "widgets": [
+          {
+            "id": "binding-form",
+            "type": "settings-form",
+            "title": "Form",
+            "content": {
+              "columns": 2,
+              "saveLabel": "Save",
+              "savedText": "The form settings are saved.",
+              "fields": [
+                {
+                  "key": "route",
+                  "label": "Route",
+                  "required": true,
+                  "hint": "The address of the form page on the portal."
+                },
+                {
+                  "key": "audience",
+                  "label": "Audience"
+                },
+                {
+                  "key": "formName",
+                  "label": "Form name",
+                  "hint": "Only when the case type and audience carry more than one published form."
+                },
+                {
+                  "key": "intakeKind",
+                  "label": "Kind of intake",
+                  "type": "select",
+                  "options": [
+                    {
+                      "value": "hosted",
+                      "label": "Filled in on the portal"
+                    },
+                    {
+                      "value": "external",
+                      "label": "Opens a form on another site"
+                    }
+                  ],
+                  "default": "hosted"
+                },
+                {
+                  "key": "externalUrl",
+                  "label": "Address of the external form",
+                  "pattern": "^https://\\S+$",
+                  "patternMessage": "An address starts with https://."
+                },
+                {
+                  "key": "addressLookup",
+                  "label": "Look up the address by postcode",
+                  "type": "switch"
+                },
+                {
+                  "key": "prefillFromEarlierCases",
+                  "label": "Offer answers given before",
+                  "type": "switch"
+                },
+                {
+                  "key": "staffMayFill",
+                  "label": "An employee may fill it in for a resident",
+                  "type": "switch"
+                },
+                {
+                  "key": "challenge",
+                  "label": "Run the portal's check against automated sending",
+                  "type": "switch"
+                }
+              ]
+            }
+          },
+          {
+            "id": "binding-signin",
+            "type": "settings-form",
+            "title": "Sign in",
+            "content": {
+              "columns": 2,
+              "saveLabel": "Save",
+              "savedText": "The form settings are saved.",
+              "fields": [
+                {
+                  "key": "minTrust",
+                  "label": "Sign-in needed",
+                  "type": "select",
+                  "options": [
+                    {
+                      "value": "low",
+                      "label": "Anyone may fill it in"
+                    },
+                    {
+                      "value": "substantial",
+                      "label": "DigiD or eHerkenning, substantial"
+                    },
+                    {
+                      "value": "high",
+                      "label": "DigiD or eHerkenning, high"
+                    }
+                  ],
+                  "default": "low"
+                }
+              ]
+            }
+          },
+          {
+            "id": "binding-status",
+            "type": "settings-form",
+            "title": "Status",
+            "content": {
+              "columns": 2,
+              "saveLabel": "Save",
+              "savedText": "The form settings are saved.",
+              "fields": [
+                {
+                  "key": "status",
+                  "label": "Status",
+                  "type": "select",
+                  "options": [
+                    {
+                      "value": "draft",
+                      "label": "Draft"
+                    },
+                    {
+                      "value": "published",
+                      "label": "Published"
+                    }
+                  ],
+                  "default": "draft",
+                  "hint": "Only a published form is shown on the portal."
+                }
+              ]
+            }
+          },
+          {
+            "id": "binding-general",
+            "type": "sections",
+            "title": "Algemeen",
+            "content": {
+              "cards": true,
+              "sections": [
+                {
+                  "key": "form",
+                  "title": "Form",
+                  "widgetId": "binding-form"
+                },
+                {
+                  "key": "signin",
+                  "title": "Sign in",
+                  "widgetId": "binding-signin"
+                },
+                {
+                  "key": "status",
+                  "title": "Status",
+                  "widgetId": "binding-status"
+                }
+              ]
+            }
+          },
+          {
+            "id": "binding-confirmation",
+            "type": "settings-form",
+            "title": "Confirmation",
+            "content": {
+              "columns": 2,
+              "saveLabel": "Save",
+              "savedText": "The form settings are saved.",
+              "fields": [
+                {
+                  "key": "confirmation.title",
+                  "label": "Confirmation title"
+                },
+                {
+                  "key": "confirmation.body",
+                  "label": "Confirmation text",
+                  "type": "textarea",
+                  "rows": 4,
+                  "hint": "Write {reference} and {deadline} where they belong."
+                },
+                {
+                  "key": "confirmationText",
+                  "label": "Short confirmation",
+                  "type": "textarea",
+                  "rows": 2
+                },
+                {
+                  "key": "confirmationMail.enabled",
+                  "label": "Send a confirmation mail with the answers",
+                  "type": "switch"
+                }
+              ]
+            }
+          },
+          {
+            "id": "binding-statements",
+            "type": "settings-form",
+            "title": "Statements",
+            "content": {
+              "columns": 2,
+              "saveLabel": "Save",
+              "savedText": "The form settings are saved.",
+              "fields": [
+                {
+                  "key": "statements.truth.required",
+                  "label": "The statement of truth is required",
+                  "type": "switch"
+                },
+                {
+                  "key": "statements.privacy.required",
+                  "label": "The privacy consent is required",
+                  "type": "switch"
+                }
+              ]
+            }
+          },
+          {
+            "id": "binding-cosign",
+            "type": "settings-form",
+            "title": "Co-signing",
+            "content": {
+              "columns": 2,
+              "saveLabel": "Save",
+              "savedText": "The form settings are saved.",
+              "fields": [
+                {
+                  "key": "cosign.required",
+                  "label": "A second person must co-sign",
+                  "type": "switch"
+                },
+                {
+                  "key": "cosign.deadlineDays",
+                  "label": "Days to co-sign",
+                  "type": "number",
+                  "min": 1,
+                  "max": 90,
+                  "default": 14
+                }
+              ]
+            }
+          },
+          {
+            "id": "binding-history",
+            "type": "audit-trail",
+            "title": "Historie",
+            "icon": "History"
+          },
+          {
+            "id": "binding-tabs",
+            "type": "tabs",
+            "title": "Instellingen van het formulier",
+            "content": {
+              "ariaLabel": "Instellingen van het formulier",
+              "tabs": [
+                {
+                  "widgetId": "binding-general",
+                  "label": "Algemeen"
+                },
+                {
+                  "widgetId": "binding-confirmation",
+                  "label": "Bevestiging"
+                },
+                {
+                  "widgetId": "binding-statements",
+                  "label": "Verklaringen"
+                },
+                {
+                  "widgetId": "binding-cosign",
+                  "label": "Mede-ondertekenen"
+                },
+                {
+                  "widgetId": "binding-history",
+                  "label": "Historie"
+                }
+              ]
+            }
+          }
+        ],
+        "layout": [
+          {
+            "id": "binding-tabs",
+            "widgetId": "binding-tabs",
+            "gridX": 0,
+            "gridY": 0,
+            "gridWidth": 12,
+            "gridHeight": 10
+          }
+        ]
+      }
+    },
+    {
       "id": "Glossary",
       "route": "/glossary",
       "type": "index",
@@ -3847,14 +4510,14 @@
             "label": "New term"
           }
         ],
-        "quickFilters": [
-          {
-            "label": "Alles",
-            "filter": {},
-            "showCount": true,
-            "default": true
-          }
-        ],
+        "quickFiltersFrom": {
+          "field": "portal",
+          "register": "portaliq",
+          "schema": "portal",
+          "valueField": "slug",
+          "labelField": "title",
+          "allLabel": "Alles"
+        },
         "filterMenu": true,
         "viewSwitch": [
           "table",
@@ -3948,6 +4611,10 @@
             "label": "Portal"
           },
           {
+            "key": "usedOn",
+            "label": "Used on"
+          },
+          {
             "key": "status",
             "label": "Status",
             "widget": "badge",
@@ -4005,6 +4672,13 @@
             "label": "Concept",
             "filter": {
               "status": "draft"
+            },
+            "showCount": true
+          },
+          {
+            "label": "Nergens gebruikt",
+            "filter": {
+              "usedOn": 0
             },
             "showCount": true
           }
@@ -4627,6 +5301,48 @@
       "title": "Shared block layout",
       "component": "PageLayoutDesigner",
       "_note": "The page designer on a shared block: it saves `draftWidgets` and publishes into `widgets` (src/editor/blockSaver.js)."
+    },
+    {
+      "id": "AdminRights",
+      "route": "/admin-rights",
+      "type": "dashboard",
+      "title": "Admin rights",
+      "config": {
+        "description": "Which groups may do what in portaliq. Change the rights under Administration settings, Portaliq.",
+        "showWidgetActions": false,
+        "showRefresh": false,
+        "showRequestFeature": false,
+        "showReportBug": false,
+        "showDocumentation": false,
+        "widgets": [
+          {
+            "id": "admin-rights-groups",
+            "type": "record-list",
+            "title": "Admin groups",
+            "content": {
+              "endpointSource": {
+                "url": "/apps/portaliq/api/settings/action-groups",
+                "responsePath": "results"
+              },
+              "presentation": "rows",
+              "title": "{name}",
+              "meta": "{rights}",
+              "trailing": "{members} leden",
+              "emptyText": "Only administrators have rights so far"
+            }
+          }
+        ],
+        "layout": [
+          {
+            "id": "admin-rights-groups",
+            "widgetId": "admin-rights-groups",
+            "gridX": 0,
+            "gridY": 0,
+            "gridWidth": 12,
+            "gridHeight": 6
+          }
+        ]
+      }
     }
   ],
   "walkthrough": {

@@ -22,6 +22,7 @@ return [
         // Which groups may do which action (operate-roles-for-content-and-actions). Admin-only.
         ['name' => 'actionSettings#index', 'url' => '/api/settings/actions', 'verb' => 'GET'],
         ['name' => 'actionSettings#update', 'url' => '/api/settings/actions', 'verb' => 'PUT'],
+        ['name' => 'actionSettings#byGroup', 'url' => '/api/settings/action-groups', 'verb' => 'GET'],
 
         // Generic per-user preferences (used by shared nextcloud-vue widgets, e.g. CnSupportDialog).
         ['name' => 'preferences#getPreference', 'url' => '/api/preferences/{key}', 'verb' => 'GET'],
@@ -55,6 +56,7 @@ return [
         ['name' => 'portalAccountAdmin#invite', 'url' => '/api/invitations', 'verb' => 'POST'],
         ['name' => 'portalAccountAdmin#invitations', 'url' => '/api/invitations', 'verb' => 'GET'],
         ['name' => 'portalAccountAdmin#revokeInvitation', 'url' => '/api/invitations/{id}/revoke', 'verb' => 'POST'],
+        ['name' => 'portalAccountAdmin#resendInvitation', 'url' => '/api/invitations/{id}/resend', 'verb' => 'POST'],
 
         // The owner's side of an access request (identity-access-requests):
         // staff holding `portal.answer-access-request` list, grant and refuse.
@@ -111,6 +113,9 @@ return [
         // operate-availability-report: a portal's last twelve months, admin-only.
         ['name' => 'availability#index', 'url' => '/api/availability/{portal}', 'verb' => 'GET'],
         ['name' => 'availability#export', 'url' => '/api/availability/{portal}/export', 'verb' => 'GET'],
+        // Dashboard-figures-across-portals: the dashboard's figures of all portals together, admin-only.
+        ['name' => 'portalOverview#traffic', 'url' => '/api/overview/traffic', 'verb' => 'GET'],
+        ['name' => 'portalOverview#availability', 'url' => '/api/overview/availability', 'verb' => 'GET'],
 
         // Headless content API (ADR-086 §1) — the CMS contract. Public and
         // read-only: a Docusaurus build or any third-party front-end reads
@@ -341,6 +346,7 @@ return [
         // revoke every active portal session for an Organisation.
         ['name' => 'sessionAdmin#revokeOrganisation', 'url' => '/api/session-admin/revoke-organisation', 'verb' => 'POST'],
         ['name' => 'sessionAdmin#revokeAccount', 'url' => '/api/session-admin/revoke-account', 'verb' => 'POST'],
+        ['name' => 'sessionAdmin#revokeSession', 'url' => '/api/session-admin/revoke-session', 'verb' => 'POST'],
 
         // Aggregated portal contributions for the authenticated subject
         // (supplier-portal T04). Guarded by PortalAuthMiddleware (fail-closed).
@@ -558,6 +564,8 @@ return [
         ['name' => 'report#file', 'url' => '/portal/api/reports', 'verb' => 'POST'],
         ['name' => 'report#thread', 'url' => '/portal/api/reports/thread', 'verb' => 'POST'],
         ['name' => 'report#answer', 'url' => '/portal/api/reports/thread/answer', 'verb' => 'POST'],
+        ['name' => 'report#index', 'url' => '/api/reports', 'verb' => 'GET'],
+        ['name' => 'report#revealRequests', 'url' => '/api/reveal-requests', 'verb' => 'GET'],
         ['name' => 'report#show', 'url' => '/api/reports/{id}', 'verb' => 'GET'],
         ['name' => 'report#reply', 'url' => '/api/reports/{id}/messages', 'verb' => 'POST'],
         ['name' => 'report#requestReveal', 'url' => '/api/reports/{id}/reveal-requests', 'verb' => 'POST'],

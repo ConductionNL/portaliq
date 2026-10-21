@@ -5,7 +5,7 @@
  *
  * Reads the example sites this app ships, one declaration per file under
  * `lib/Settings/sites/`. A declaration holds a portal record, its menus, its
- * pages and its news items, as an administrator installs them with
+ * pages, its news items and its glossary terms, as an administrator installs them with
  * `occ portaliq:example-site:install`.
  *
  * @category Service
@@ -38,7 +38,7 @@ class ExampleSiteCatalogue {
 	/**
 	 * The object lists a declaration holds besides its portal, by key.
 	 */
-	public const LISTS = ['menus', 'pages', 'news'];
+	public const LISTS = ['menus', 'pages', 'news', 'glossary'];
 
 	/**
 	 * Constructor.

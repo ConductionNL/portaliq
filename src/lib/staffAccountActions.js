@@ -33,6 +33,16 @@ const REFUSALS = {
 	reason_required: 'Give a reason.',
 	mail_not_sent:
 		'The invitation mail could not be sent, so nobody was invited. Try again.',
+	withdrawn:
+		'This invitation was withdrawn. Invite the address again instead.',
+}
+
+/**
+ * Refusals that read differently when an invitation is sent again.
+ */
+const RESEND_REFUSALS = {
+	already_accepted:
+		'This invitation was already accepted, so it is not sent again.',
 }
 
 /**
@@ -107,12 +117,13 @@ export function createStaffAccountActions({
 	 * @param {object} body The JSON body.
 	 * @return {Promise<{ok: boolean, data?: object, message?: string}>}
 	 */
-	async function send(path, params, body) {
+	async function send(path, params, body, refusals = {}) {
 		try {
 			const response = await post(generateUrl(path, params), body)
 			return { ok: true, data: response?.data || {} }
 		} catch (error) {
-			return { ok: false, message: translate(failureKey(error)) }
+			const own = refusals[String(error?.response?.data?.error || '')]
+			return { ok: false, message: translate(own || failureKey(error)) }
 		}
 	}
 
@@ -239,6 +250,39 @@ export function createStaffAccountActions({
 		},
 
 		/**
+		 * Send an invitation that was not accepted again, with a new link.
+		 *
+		 * @param {object} row The invitation row.
+		 * @return {Promise<{ok: boolean, message: string}>}
+		 * @spec openspec/changes/staff-resend-an-invitation/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
+		 */
+		async resendInvitation(row) {
+			const id = idOf(row)
+			if (id === '') {
+				return { ok: false, message: translate(failureKey(null)) }
+			}
+			const sent = await send(
+				'/apps/portaliq/api/invitations/{id}/resend',
+				{ id },
+				{ organisation: text(row?.organisation) },
+				RESEND_REFUSALS,
+			)
+			if (sent.ok === false) {
+				return sent
+			}
+			return {
+				ok: true,
+				message: translate(
+					'Invitation sent again to {email}. It is valid until {date}.',
+					{
+						email: text(row?.email),
+						date: formatDate(String(sent.data.expiresAt || '')),
+					},
+				),
+			}
+		},
+
+		/**
 		 * Withdraw a pending account, with the reason on the row.
 		 *
 		 * @param {object} account The account row.
@@ -280,7 +324,7 @@ export function createStaffAccountActions({
  * @param {(text: string) => void} deps.notify Success toast.
  * @param {(text: string) => void} deps.notifyError Error toast.
  * @param {() => void} deps.reload Reloads the list.
- * @return {{issueAccount: Function, inviteSomeone: Function, withdrawInvitation: Function}}
+ * @return {{issueAccount: Function, inviteSomeone: Function, resendInvitation: Function, withdrawInvitation: Function}}
  * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-see-and-withdraw-invitations-req-isa-002
  */
 export function createStaffAccountHandlers({
@@ -326,6 +370,24 @@ export function createStaffAccountHandlers({
 		 */
 		async inviteSomeone() {
 			return closed(await openInvite((fields) => actions.invite(fields)))
+		},
+
+		/**
+		 * `Opnieuw versturen` on an Invitations row.
+		 *
+		 * @param {{item: object}} payload The row action payload.
+		 * @return {Promise<boolean>}
+		 * @spec openspec/changes/staff-resend-an-invitation/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
+		 */
+		async resendInvitation({ item }) {
+			const outcome = await actions.resendInvitation(item)
+			if (outcome.ok === false) {
+				notifyError(outcome.message)
+				return false
+			}
+			notify(outcome.message)
+			reload()
+			return true
 		},
 
 		/**

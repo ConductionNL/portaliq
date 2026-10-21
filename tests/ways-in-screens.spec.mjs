@@ -191,6 +191,7 @@ test('a button link ships its stylesheet, so a sign-in link never falls back to 
 	)
 	const users = [
 		'src/site/components/AccountArea.vue',
+		'src/site/components/FederatedSearchBlock.vue',
 		'src/site/components/FooterColumns.vue',
 		'src/site/components/IntakeFormBlock.vue',
 		'src/site/components/chrome/HeaderTools.vue',
