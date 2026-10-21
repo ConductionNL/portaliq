@@ -1,6 +1,6 @@
 {
 	"set": "zuiddrecht",
-	"$comment": "portaliq's part of the Zuiddrecht example set: portal accounts for the residents Sanne de Vries, Henk Bakker, Linda Bakker and Fatima El-Amrani and the business contacts Jan-Willem and Mark, the mandates that let Linda act for her father Henk and Jan-Willem and Mark for their companies, Sanne's five cases, one question and four messages, the residents' group `inwoners`, the business contacts' group `ondernemers`, and on the portal the `nextcloud` way in with the account card of the Inloggen board, the resident group the Nextcloud registration app fills and the business group. Installed by `occ openregister:example-set:install zuiddrecht` after `occ portaliq:example-site:install zuiddrecht`; dossiq goes first because the cases are dossiq's. `exampleResident` lists the residents portaliq's one-click demo sign-in offers, each with its portal account object and its card; the cards show beside the account card only while `example_resident_demo_login` is `yes`. Business contacts get no one-click card and stay out of `inwoners`: they act for a company, which is eHerkenning, and the group is the portal's statement of who its residents are. They are in `ondernemers`, the portal's business group, so a direct Nextcloud sign-in lands them on the portal with the business audience. Every date is a number of days from the install day. `waitingOnApplicant` is written beside the open question on purpose: dossiq sets that flag in the act that sends a question, and a seed is not that act.",
+	"$comment": "portaliq's part of the Zuiddrecht example set: portal accounts for the residents Sanne de Vries, Henk Bakker, Linda Bakker and Fatima El-Amrani and the business contacts Jan-Willem and Mark, the mandates that let Linda act for her father Henk and Jan-Willem and Mark for their companies, Sanne's five cases, one question and four messages, the parking product finder over the twelve parking product pages of the site, the residents' group `inwoners`, the business contacts' group `ondernemers`, and on the portal the `nextcloud` way in with the account card of the Inloggen board, the resident group the Nextcloud registration app fills and the business group. Installed by `occ openregister:example-set:install zuiddrecht` after `occ portaliq:example-site:install zuiddrecht`; dossiq goes first because the cases are dossiq's. `exampleResident` lists the residents portaliq's one-click demo sign-in offers, each with its portal account object and its card; the cards show beside the account card only while `example_resident_demo_login` is `yes`. Business contacts get no one-click card and stay out of `inwoners`: they act for a company, which is eHerkenning, and the group is the portal's statement of who its residents are. They are in `ondernemers`, the portal's business group, so a direct Nextcloud sign-in lands them on the portal with the business audience. Every date is a number of days from the install day. `waitingOnApplicant` is written beside the open question on purpose: dossiq sets that flag in the act that sends a question, and a seed is not that act.",
 	"after": [
 		"dossiq"
 	],
@@ -1109,6 +1109,89 @@
 				"endDateCalculated": "{{date:14}}",
 				"endDateCurrent": "{{date:14}}",
 				"status": "lopend"
+			}
+		},
+		{
+			"key": "productzoeker-parkeren",
+			"register": "portaliq",
+			"schema": "portalFinder",
+			"data": {
+				"portal": "zuiddrecht",
+				"status": "published",
+				"title": "Welke vergunning past bij u?",
+				"intro": "Beantwoord de vragen met ja of nee. Bij elk antwoord ziet u rechts welke producten nog voor u gelden.",
+				"products": [
+					"/parkeren/parkeervergunning-bewoners",
+					"/parkeren/bezoekersvergunning",
+					"/parkeren/kenteken-wijzigen",
+					"/parkeren/laadpaal-aanvragen",
+					"/parkeren/bedrijfsvergunning",
+					"/parkeren/ontheffing-laden-en-lossen",
+					"/parkeren/fietsenkluis-huren",
+					"/parkeren/parkeerabonnement-garage",
+					"/parkeren/mantelzorgvergunning",
+					"/parkeren/ontheffing-milieuzone",
+					"/parkeren/standplaatsvergunning",
+					"/parkeren/gehandicaptenparkeerplaats"
+				],
+				"questions": [
+					{
+						"id": "woont-in-zuiddrecht",
+						"text": "Woont u in Zuiddrecht?",
+						"excludesOnYes": [
+							"/parkeren/bedrijfsvergunning",
+							"/parkeren/ontheffing-laden-en-lossen",
+							"/parkeren/standplaatsvergunning"
+						],
+						"excludesOnNo": [
+							"/parkeren/parkeervergunning-bewoners",
+							"/parkeren/bezoekersvergunning",
+							"/parkeren/mantelzorgvergunning",
+							"/parkeren/fietsenkluis-huren",
+							"/parkeren/laadpaal-aanvragen"
+						]
+					},
+					{
+						"id": "heeft-auto",
+						"text": "Heeft u een auto?",
+						"excludesOnYes": [
+							"/parkeren/fietsenkluis-huren"
+						],
+						"excludesOnNo": [
+							"/parkeren/parkeervergunning-bewoners",
+							"/parkeren/kenteken-wijzigen",
+							"/parkeren/laadpaal-aanvragen",
+							"/parkeren/parkeerabonnement-garage",
+							"/parkeren/ontheffing-milieuzone",
+							"/parkeren/gehandicaptenparkeerplaats"
+						]
+					},
+					{
+						"id": "woont-in-binnenstad",
+						"text": "Woont u in de binnenstad?",
+						"help": "De binnenstad is het gebied binnen de singels, met de straten rond het Marktplein.",
+						"excludesOnYes": [
+							"/parkeren/parkeerabonnement-garage"
+						],
+						"excludesOnNo": [
+							"/parkeren/parkeervergunning-bewoners"
+						]
+					},
+					{
+						"id": "zorgt-voor-iemand",
+						"text": "Zorgt u voor iemand die in een parkeerzone woont?",
+						"excludesOnNo": [
+							"/parkeren/mantelzorgvergunning"
+						]
+					},
+					{
+						"id": "gehandicaptenparkeerkaart",
+						"text": "Heeft u een gehandicaptenparkeerkaart?",
+						"excludesOnNo": [
+							"/parkeren/gehandicaptenparkeerplaats"
+						]
+					}
+				]
 			}
 		}
 	],
