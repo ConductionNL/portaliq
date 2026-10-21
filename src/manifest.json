@@ -400,45 +400,6 @@
             }
           },
           {
-            "id": "kpi-portals",
-            "type": "stat",
-            "title": "Portals",
-            "content": {
-              "label": "Portals",
-              "layout": "stacked",
-              "caption": "websites and Mijn Zuiddrecht",
-              "source": {
-                "register": "portaliq",
-                "schema": "portal",
-                "metric": "count"
-              },
-              "route": {
-                "name": "Portals"
-              }
-            }
-          },
-          {
-            "id": "kpi-accounts",
-            "type": "stat",
-            "title": "Active accounts",
-            "content": {
-              "label": "Active accounts",
-              "layout": "stacked",
-              "caption": "signed in to Mijn Zuiddrecht",
-              "source": {
-                "register": "portaliq",
-                "schema": "portalAccount",
-                "metric": "count",
-                "filter": {
-                  "status": "active"
-                }
-              },
-              "route": {
-                "name": "PortalAccounts"
-              }
-            }
-          },
-          {
             "id": "kpi-requests",
             "type": "stat",
             "title": "Open access requests",
@@ -481,10 +442,9 @@
           {
             "id": "attention-first",
             "type": "banner",
-            "title": "Vandaag eerst",
             "content": {
               "layout": "attention",
-              "variant": "warning",
+              "variant": "error",
               "kicker": "Vandaag eerst",
               "title": "Een toegangsverzoek wacht op antwoord",
               "reason": "Zolang u niet beslist, ziet de aanvrager niets.",
@@ -726,47 +686,31 @@
             "widgetId": "kpi-visitors",
             "gridX": 0,
             "gridY": 0,
-            "gridWidth": 2,
+            "gridWidth": 3,
             "gridHeight": 1
           },
           {
             "id": "kpi-availability",
             "widgetId": "kpi-availability",
-            "gridX": 2,
+            "gridX": 3,
             "gridY": 0,
-            "gridWidth": 2,
+            "gridWidth": 3,
             "gridHeight": 1
           },
           {
             "id": "kpi-requests",
             "widgetId": "kpi-requests",
-            "gridX": 4,
+            "gridX": 6,
             "gridY": 0,
-            "gridWidth": 2,
+            "gridWidth": 3,
             "gridHeight": 1
           },
           {
             "id": "kpi-submissions",
             "widgetId": "kpi-submissions",
-            "gridX": 6,
+            "gridX": 9,
             "gridY": 0,
-            "gridWidth": 2,
-            "gridHeight": 1
-          },
-          {
-            "id": "kpi-portals",
-            "widgetId": "kpi-portals",
-            "gridX": 8,
-            "gridY": 0,
-            "gridWidth": 2,
-            "gridHeight": 1
-          },
-          {
-            "id": "kpi-accounts",
-            "widgetId": "kpi-accounts",
-            "gridX": 10,
-            "gridY": 0,
-            "gridWidth": 2,
+            "gridWidth": 3,
             "gridHeight": 1
           },
           {
@@ -775,7 +719,8 @@
             "gridX": 0,
             "gridY": 0,
             "gridWidth": 12,
-            "gridHeight": 3
+            "gridHeight": 3,
+            "borderless": true
           },
           {
             "id": "list-requests",
@@ -830,9 +775,7 @@
           "kpi-visitors",
           "kpi-availability",
           "kpi-requests",
-          "kpi-submissions",
-          "kpi-portals",
-          "kpi-accounts"
+          "kpi-submissions"
         ],
         "showWidgetActions": false,
         "showRefresh": false,
