@@ -545,6 +545,9 @@ import {
 import { suggestionRoute } from '../lib/searchSuggestions.js'
 import { addressOfRoute } from '../lib/siteAddress.js'
 
+// The button links' classes need their stylesheet, or the browser draws its own blue link.
+import '@utrecht/button-link-css/dist/index.css'
+
 export default {
 	name: 'FederatedSearchBlock',
 
