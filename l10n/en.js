@@ -2997,7 +2997,17 @@ OC.L10N.register(
         "No missing page requested in this period.": "No missing page requested in this period.",
         "Addresses where visitors looked for a page that does not exist. Make the page or a redirect.": "Addresses where visitors looked for a page that does not exist. Make the page or a redirect.",
         "No search recorded in this period.": "No search recorded in this period.",
-        "What visitors typed into the search box of the portal. Counted per term, not per person.": "What visitors typed into the search box of the portal. Counted per term, not per person."
+        "What visitors typed into the search box of the portal. Counted per term, not per person.": "What visitors typed into the search box of the portal. Counted per term, not per person.",
+        "Twelve months": "Twelve months",
+        "averaged over all months": "averaged over all months",
+        "together {summary.outageMinutes} minutes": "together {summary.outageMinutes} minutes",
+        "Longest outage": "Longest outage",
+        "in the last twelve full months": "in the last twelve full months",
+        "Availability per month": "Availability per month",
+        "Download": "Download",
+        "How we measure": "How we measure",
+        "Outage began": "Outage began",
+        "Outage ended": "Outage ended"
     },
     "nplurals=2; plural=(n != 1);"
 )

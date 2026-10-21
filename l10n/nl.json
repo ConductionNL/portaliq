@@ -3167,7 +3167,16 @@
         "No missing page requested in this period.": "Geen ontbrekende pagina gevraagd in deze periode.",
         "Addresses where visitors looked for a page that does not exist. Make the page or a redirect.": "Adressen waar bezoekers een pagina zochten die niet bestaat. Maak de pagina of een doorverwijzing.",
         "No search recorded in this period.": "Geen zoekopdracht vastgelegd in deze periode.",
-        "What visitors typed into the search box of the portal. Counted per term, not per person.": "Wat bezoekers in het zoekvak van de portal typten. Geteld per term, niet per persoon."
+        "What visitors typed into the search box of the portal. Counted per term, not per person.": "Wat bezoekers in het zoekvak van de portal typten. Geteld per term, niet per persoon.",
+        "Twelve months": "Twaalf maanden",
+        "averaged over all months": "gemiddeld over alle maanden",
+        "together {summary.outageMinutes} minutes": "samen {summary.outageMinutes} minuten",
+        "Longest outage": "Langste storing",
+        "in the last twelve full months": "in de laatste twaalf volle maanden",
+        "Availability per month": "Beschikbaarheid per maand",
+        "How we measure": "Zo meten wij",
+        "Outage began": "Begon",
+        "Outage ended": "Eindigde"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

@@ -111,6 +111,8 @@ return [
         // operate-availability-report: a portal's last twelve months, admin-only.
         ['name' => 'availability#index', 'url' => '/api/availability/{portal}', 'verb' => 'GET'],
         ['name' => 'availability#export', 'url' => '/api/availability/{portal}/export', 'verb' => 'GET'],
+        // The same download as a POST, for the page's header action (an api-call download).
+        ['name' => 'availability#export', 'url' => '/api/availability/{portal}/export', 'verb' => 'POST', 'postfix' => 'download'],
 
         // Headless content API (ADR-086 §1) — the CMS contract. Public and
         // read-only: a Docusaurus build or any third-party front-end reads
