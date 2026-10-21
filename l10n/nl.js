@@ -3148,7 +3148,16 @@ OC.L10N.register(
         "Your plan is nearly ending": "Uw plan loopt bijna af",
         "The plan %1$s ends on %2$s": "Het plan %1$s eindigt op %2$s",
         "The plan \"%1$s\" ends on %2$s. %3$s actions are still open. Extend the plan with your caseworker, or complete the actions.": "Het plan \"%1$s\" eindigt op %2$s. Er staan nog %3$s acties open. Verleng het plan met uw begeleider, of rond de acties af.",
-        "Go to %1$s": "Ga naar %1$s"
+        "Go to %1$s": "Ga naar %1$s",
+        "Twelve months": "Twaalf maanden",
+        "averaged over all months": "gemiddeld over alle maanden",
+        "together {summary.outageMinutes} minutes": "samen {summary.outageMinutes} minuten",
+        "Longest outage": "Langste storing",
+        "in the last twelve full months": "in de laatste twaalf volle maanden",
+        "Availability per month": "Beschikbaarheid per maand",
+        "How we measure": "Zo meten wij",
+        "Outage began": "Begon",
+        "Outage ended": "Eindigde"
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -2992,7 +2992,17 @@ OC.L10N.register(
         "Your plan is nearly ending": "Your plan is nearly ending",
         "The plan %1$s ends on %2$s": "The plan %1$s ends on %2$s",
         "The plan \"%1$s\" ends on %2$s. %3$s actions are still open. Extend the plan with your caseworker, or complete the actions.": "The plan \"%1$s\" ends on %2$s. %3$s actions are still open. Extend the plan with your caseworker, or complete the actions.",
-        "Go to %1$s": "Go to %1$s"
+        "Go to %1$s": "Go to %1$s",
+        "Twelve months": "Twelve months",
+        "averaged over all months": "averaged over all months",
+        "together {summary.outageMinutes} minutes": "together {summary.outageMinutes} minutes",
+        "Longest outage": "Longest outage",
+        "in the last twelve full months": "in the last twelve full months",
+        "Availability per month": "Availability per month",
+        "Download": "Download",
+        "How we measure": "How we measure",
+        "Outage began": "Outage began",
+        "Outage ended": "Outage ended"
     },
     "nplurals=2; plural=(n != 1);"
 )

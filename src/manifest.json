@@ -1047,26 +1047,242 @@
       "title": "Availability",
       "config": {
         "description": "How available each portal was over the last twelve full months, measured by the portal itself every five minutes, with every outage. For a service level review.",
+        "pageFilters": [
+          {
+            "key": "portal",
+            "label": "Portal",
+            "optionsFrom": {
+              "register": "portaliq",
+              "schema": "portal",
+              "filter": {
+                "status": "published"
+              },
+              "valueField": "slug",
+              "labelField": "title"
+            }
+          }
+        ],
+        "headerActions": [
+          {
+            "id": "availability-download",
+            "label": "Download",
+            "icon": "Download",
+            "href": "/apps/portaliq/api/availability/@page.portal/export?months=12"
+          }
+        ],
         "widgets": [
           {
-            "id": "availability-report",
-            "type": "AvailabilityReport",
-            "title": "Availability"
+            "id": "availability-twelve-months",
+            "type": "stat",
+            "title": "Twelve months",
+            "content": {
+              "label": "Twelve months",
+              "layout": "stacked",
+              "caption": "averaged over all months",
+              "format": {
+                "style": "decimal",
+                "decimals": 2,
+                "suffix": "%"
+              },
+              "endpointSource": {
+                "url": "/apps/portaliq/api/availability/@page.portal",
+                "params": {
+                  "months": "12"
+                }
+              },
+              "valueField": "summary.percentage"
+            }
+          },
+          {
+            "id": "availability-outage-count",
+            "type": "stat",
+            "title": "Outages",
+            "content": {
+              "label": "Outages",
+              "layout": "stacked",
+              "caption": "together {summary.outageMinutes} minutes",
+              "format": {
+                "style": "decimal",
+                "decimals": 0
+              },
+              "endpointSource": {
+                "url": "/apps/portaliq/api/availability/@page.portal",
+                "params": {
+                  "months": "12"
+                }
+              },
+              "valueField": "summary.outageCount"
+            }
+          },
+          {
+            "id": "availability-longest",
+            "type": "stat",
+            "title": "Longest outage",
+            "content": {
+              "label": "Longest outage",
+              "layout": "stacked",
+              "caption": "in the last twelve full months",
+              "format": {
+                "style": "decimal",
+                "decimals": 0,
+                "suffix": " min"
+              },
+              "endpointSource": {
+                "url": "/apps/portaliq/api/availability/@page.portal",
+                "params": {
+                  "months": "12"
+                }
+              },
+              "valueField": "summary.longestMinutes"
+            }
+          },
+          {
+            "id": "availability-months",
+            "type": "table",
+            "title": "Availability per month",
+            "content": {
+              "endpointSource": {
+                "url": "/apps/portaliq/api/availability/@page.portal",
+                "params": {
+                  "months": "12"
+                },
+                "responsePath": "months"
+              },
+              "columns": [
+                {
+                  "key": "month",
+                  "label": "Month"
+                },
+                {
+                  "key": "percentage",
+                  "label": "Available",
+                  "format": {
+                    "style": "decimal",
+                    "decimals": 2,
+                    "suffix": "%"
+                  }
+                }
+              ],
+              "emptyText": "Not measured"
+            }
+          },
+          {
+            "id": "availability-outages",
+            "type": "table",
+            "title": "Outages",
+            "content": {
+              "endpointSource": {
+                "url": "/apps/portaliq/api/availability/@page.portal",
+                "params": {
+                  "months": "12"
+                },
+                "responsePath": "outages"
+              },
+              "columns": [
+                {
+                  "key": "startedAt",
+                  "label": "Outage began",
+                  "format": "date-time"
+                },
+                {
+                  "key": "endedAt",
+                  "label": "Outage ended",
+                  "format": "date-time"
+                },
+                {
+                  "key": "durationMinutes",
+                  "label": "Duration",
+                  "format": {
+                    "style": "decimal",
+                    "decimals": 0,
+                    "suffix": " min"
+                  }
+                },
+                {
+                  "key": "cause",
+                  "label": "Cause",
+                  "enum": [
+                    "site-error",
+                    "timeout",
+                    "health-degraded",
+                    "no-check"
+                  ],
+                  "enumLabels": {
+                    "site-error": "The portal answered with an error",
+                    "timeout": "The portal did not answer within five seconds",
+                    "health-degraded": "The portal answered, but its health check did not say ok",
+                    "no-check": "No check ran"
+                  }
+                }
+              ],
+              "emptyText": "No outages in this period."
+            }
+          },
+          {
+            "id": "availability-how",
+            "type": "banner",
+            "title": "How we measure",
+            "content": {
+              "variant": "info",
+              "text": "Every five minutes the portal opens its own public site, through this installation's web address, the way a visitor would. It counts as available when the site answers within five seconds and its health check says ok. An interval in which no check ran counts as down. The check runs inside the installation, so it does not see an outage of the network in front of it. The hosting party's own monitor stays the reference for that."
+            }
           }
         ],
         "layout": [
           {
             "id": 1,
-            "widgetId": "availability-report",
+            "widgetId": "availability-twelve-months",
             "gridX": 0,
             "gridY": 0,
-            "gridWidth": 12,
-            "gridHeight": 10,
+            "gridWidth": 4,
+            "gridHeight": 2,
             "showTitle": false
+          },
+          {
+            "id": 2,
+            "widgetId": "availability-outage-count",
+            "gridX": 4,
+            "gridY": 0,
+            "gridWidth": 4,
+            "gridHeight": 2,
+            "showTitle": false
+          },
+          {
+            "id": 3,
+            "widgetId": "availability-longest",
+            "gridX": 8,
+            "gridY": 0,
+            "gridWidth": 4,
+            "gridHeight": 2,
+            "showTitle": false
+          },
+          {
+            "id": 4,
+            "widgetId": "availability-months",
+            "gridX": 0,
+            "gridY": 2,
+            "gridWidth": 6,
+            "gridHeight": 8
+          },
+          {
+            "id": 5,
+            "widgetId": "availability-outages",
+            "gridX": 6,
+            "gridY": 2,
+            "gridWidth": 6,
+            "gridHeight": 5
+          },
+          {
+            "id": 6,
+            "widgetId": "availability-how",
+            "gridX": 6,
+            "gridY": 7,
+            "gridWidth": 6,
+            "gridHeight": 3
           }
         ]
       },
-      "_note": "operate-availability-report. One widget: a portal picker, the twelve monthly percentages, the outages, 'How this is measured' and 'Download as CSV', read from AvailabilityController (admin-only). Reached from the Reports hub's Availability card; not in the main navigation (ADR-114 Decision 3)."
+      "_note": "operate-availability-report, as the portaliq/PtBeschikbaarheid board: the portal is a page filter (published portals, by slug) that every card reads through @page.portal; three KPI cards from the report's summary, the months and the outages as tables over the same AvailabilityController answer (admin-only), 'How we measure' as an info note, and Download in the header. Reached from the Reports hub's Availability card; not in the main navigation (ADR-114 Decision 3)."
     },
     {
       "id": "PortalAccounts",
@@ -4928,7 +5144,21 @@
         "Refuse with a reason": "Afwijzen met een reden",
         "Record a request": "Verzoek vastleggen",
         "on approval the requester sees the cases at once, on refusal they read your reason": "bij goedkeuren ziet de aanvrager de zaken direct, bij afwijzen leest hij uw reden",
-        "not checked yet": "nog niet gecontroleerd"
+        "not checked yet": "nog niet gecontroleerd",
+        "Twelve months": "Twaalf maanden",
+        "averaged over all months": "gemiddeld over alle maanden",
+        "Outages": "Storingen",
+        "together {summary.outageMinutes} minutes": "samen {summary.outageMinutes} minuten",
+        "Longest outage": "Langste storing",
+        "in the last twelve full months": "in de laatste twaalf volle maanden",
+        "Availability per month": "Beschikbaarheid per maand",
+        "Month": "Maand",
+        "Available": "Beschikbaar",
+        "Duration": "Duur",
+        "Cause": "Oorzaak",
+        "How we measure": "Zo meten wij",
+        "Outage began": "Begon",
+        "Outage ended": "Eindigde"
       }
     }
   }
