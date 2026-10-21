@@ -1,6 +1,6 @@
 {
 	"set": "zuiddrecht",
-	"$comment": "portaliq's part of the Zuiddrecht example set: portal accounts for the residents Sanne de Vries (a phone number and an e-mail address still waiting for confirmation, as the MijnAccount board lists them; no confirmed `email`, so she still meets the prompt for one on the MijnOverzicht board), Henk Bakker, Linda Bakker and Fatima El-Amrani and the business contacts Jan-Willem and Mark, the mandates that let Linda act for her father Henk, Sanne for the butcher's shop and Jan-Willem and Mark for their companies, Sanne's two access requests (one granted, one waiting) of the Machtigingen board, Sanne's five cases, one question and four messages, the parking product finder over the twelve parking product pages of the site, the residents' group `inwoners`, the business contacts' group `ondernemers`, and on the portal the `nextcloud` way in with the account card of the Inloggen board, the resident group the Nextcloud registration app fills and the business group. Installed by `occ openregister:example-set:install zuiddrecht` after `occ portaliq:example-site:install zuiddrecht`; dossiq goes first because the cases are dossiq's. `exampleResident` lists the residents portaliq's one-click demo sign-in offers, each with its portal account object and its card; the cards show beside the account card only while `example_resident_demo_login` is `yes`. Business contacts get no one-click card and stay out of `inwoners`: they act for a company, which is eHerkenning, and the group is the portal's statement of who its residents are. They are in `ondernemers`, the portal's business group, so a direct Nextcloud sign-in lands them on the portal with the business audience. Every date is a number of days from the install day. `waitingOnApplicant` is written beside the open question on purpose: dossiq sets that flag in the act that sends a question, and a seed is not that act.",
+	"$comment": "portaliq's part of the Zuiddrecht example set: portal accounts for the residents Sanne de Vries (a phone number and an e-mail address still waiting for confirmation, as the MijnAccount board lists them; no confirmed `email`, so she still meets the prompt for one on the MijnOverzicht board), Henk Bakker, Linda Bakker and Fatima El-Amrani and the business contacts Jan-Willem and Mark, the mandates that let Linda act for her father Henk, Sanne for the butcher's shop and Jan-Willem and Mark for their companies, Sanne's two access requests (one granted, one waiting) of the Machtigingen board, Sanne's six cases, one question and four messages, the portal task on her parking permit that asks for a copy of her ID (an external task for `party:<her uid>`, at most two files: board TaakAfronden), the parking product finder over the twelve parking product pages of the site, the residents' group `inwoners`, the business contacts' group `ondernemers`, and on the portal the `nextcloud` way in with the account card of the Inloggen board, the resident group the Nextcloud registration app fills and the business group. Installed by `occ openregister:example-set:install zuiddrecht` after `occ portaliq:example-site:install zuiddrecht`; dossiq goes first because the cases are dossiq's. `exampleResident` lists the residents portaliq's one-click demo sign-in offers, each with its portal account object and its card; the cards show beside the account card only while `example_resident_demo_login` is `yes`. Business contacts get no one-click card and stay out of `inwoners`: they act for a company, which is eHerkenning, and the group is the portal's statement of who its residents are. They are in `ondernemers`, the portal's business group, so a direct Nextcloud sign-in lands them on the portal with the business audience. Every date is a number of days from the install day. `waitingOnApplicant` is written beside the open question on purpose: dossiq sets that flag in the act that sends a question, and a seed is not that act.",
 	"after": [
 		"dossiq"
 	],
@@ -11,7 +11,7 @@
 			"account": "portaalaccount-sanne",
 			"card": {
 				"title": "Sanne de Vries",
-				"text": "Voorbeeldinwoner met vijf zaken, een open vraag en berichten."
+				"text": "Voorbeeldinwoner met zes zaken, een taak, een open vraag en berichten."
 			}
 		},
 		{
@@ -1387,6 +1387,68 @@
 				"endDate": "{{date:23}}",
 				"plan": "{{object:plan-sanne-schuldhulp.id}}"
 			}
+		},
+		{
+			"key": "parkeervergunning-sanne",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "parkeervergunning-bewoners"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				},
+				"sanne": {
+					"schema": "brpPerson",
+					"where": {
+						"citizenServiceNumber": "{{cast:sanne.bsn}}"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Parkeervergunning Lindelaan",
+				"description": "Ik vraag een bewonersvergunning aan voor mijn auto bij mijn huis aan de Lindelaan.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{lookup:sanne}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:sanne.displayName}}",
+				"portalSubject": "{{cast:sanne.uid}}",
+				"intakeChannel": "website",
+				"startDate": "{{date:-6}}",
+				"receivedAt": "{{datetime:-6 09:15}}",
+				"currentStatusEnteredAt": "{{datetime:-5 10:00}}",
+				"waitingOnApplicant": true,
+				"waitingOnApplicantSince": "{{datetime:-5 10:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-6 09:15}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-5 10:00}}"
+					}
+				]
+			}
 		}
 	],
 	"tasks": [
@@ -1439,6 +1501,22 @@
 				"dueAt": "{{date:-13}}",
 				"completedAt": "{{datetime:-14 09:30}}",
 				"completedBy": "{{cast:thomas.uid}}"
+			}
+		},
+		{
+			"key": "parkeervergunning-sanne-id-kopie",
+			"data": {
+				"title": "Stuur een kopie van uw ID-bewijs",
+				"description": "Om u een parkeervergunning te verlenen, moeten wij zeker weten dat u op de Lindelaan 14 woont. Stuur ons daarom een kopie van uw ID-bewijs.",
+				"objectUuid": "{{object:parkeervergunning-sanne.id}}",
+				"state": "active",
+				"performerType": "external",
+				"assignee": "party:{{cast:sanne.uid}}",
+				"dueAt": "{{date:7}}",
+				"uploadRules": {
+					"required": true,
+					"maxFiles": 2
+				}
 			}
 		}
 	],
