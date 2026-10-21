@@ -41,6 +41,9 @@ use OCP\Security\ISecureRandom;
  * Issues, tracks and redeems portal invitations.
  *
  * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- issue, resend, withdraw
+ * and redeem each check the invitation's state before they act.
  */
 class PortalInvitationService {
 	/**

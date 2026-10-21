@@ -69,6 +69,10 @@ use Throwable;
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)   -- one dependency per
  * distinct responsibility (signing secret, id generation, OR read/write,
  * audit recording) — see ContributionController's identical rationale.
+ * @SuppressWarnings(PHPMD.ExcessiveClassLength)     -- see the complexity
+ * rationale: the length is the lifecycle's guard chains.
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods)     -- one method per step of
+ * a session's life, including revoking one session as an admin.
  */
 class PortalSessionService {
 	/**

@@ -60,6 +60,9 @@ class MediaUsageJob extends TimedJob {
 	 *
 	 * @param mixed $argument Unused.
 	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the base class dictates
+	 * the signature; this job takes no argument.
+	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/media-usage-count/specs/site-page-seo-history-and-media/spec.md#requirement-a-media-item-knows-how-many-records-use-it-req-mu-001

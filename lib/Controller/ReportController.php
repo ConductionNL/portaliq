@@ -64,6 +64,8 @@ use OCP\IUserSession;
  * the portal, the challenge, intake, the thread, the terms, the reveal, the
  * projection, the record, the case type and the staff user.
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)  -- see above.
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- one guarded route per
+ * step of a report's life, for the reporter and for the staff lists.
  */
 class ReportController extends Controller {
 	/**

@@ -80,6 +80,7 @@ class MediaUsage {
 		$counts = [];
 		foreach ($records as $record) {
 			$text = (string)json_encode(value: $record, flags: (JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+			$found = [];
 			preg_match_all(pattern: self::PATTERN, subject: $text, matches: $found);
 			foreach (array_unique(array: $found[1]) as $id) {
 				$counts[$id] = (($counts[$id] ?? 0) + 1);
