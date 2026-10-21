@@ -54,6 +54,7 @@ export default {
 		'Move up': 'Omhoog',
 		'My tasks': 'Mijn taken',
 		Nature: 'Aard',
+		New: 'Nieuw',
 		'New messages': 'Nieuwe berichten',
 		News: 'Nieuws',
 		'News from school is translated by AI into your language. You can always see the original text.':
@@ -203,6 +204,7 @@ export default {
 		'Move up': 'Move up',
 		'My tasks': 'My tasks',
 		Nature: 'Nature',
+		New: 'New',
 		'New messages': 'New messages',
 		News: 'News',
 		'News from school is translated by AI into your language. You can always see the original text.':
