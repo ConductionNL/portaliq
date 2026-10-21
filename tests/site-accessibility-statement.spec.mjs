@@ -21,6 +21,7 @@ import {
 	withStatementLink,
 } from '../src/site/lib/accessibilityStatement.js'
 import { statementLines } from '../src/site/lib/statementLines.js'
+import { loadSfc, renderComponent } from './support/render-sfc.mjs'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const read = (path) => readFileSync(join(root, path), 'utf8')
@@ -165,3 +166,32 @@ test('every string of the statement page is in the Dutch bundle', () => {
 		assert.ok(nl[key], `nl.json translates "${key}"`)
 	}
 })
+
+/**
+ * The statement page as a visitor sees it once the statement arrived.
+ *
+ * @param {object} statement The server's statement.
+ * @return {Promise<string>} The page's markup.
+ */
+async function statementPage(statement) {
+	const page = await loadSfc('src/site/components/AccessibilityStatementPage.vue')
+	return renderComponent(
+		{ ...page, data: () => ({ loaded: true, failed: false, statement }) },
+		{ portalSlug: 'zuiddrecht', portalName: 'Gemeente Zuiddrecht', locale: 'nl', t },
+	)
+}
+
+test('the statement names the organisation, never its tenant key, and says "this website"', async () => {
+	const html = await statementPage({ organisation: 'zuiddrecht', website: 'Gemeente Zuiddrecht', status: 'C' })
+	assert.match(html, /Gemeente Zuiddrecht wil dat iedereen deze website kan gebruiken\./)
+	assert.doesNotMatch(html, />\s*zuiddrecht wil/)
+})
+
+test('the status stands in a box of its own, coloured by how far the site is', async () => {
+	const partly = await statementPage({ website: 'Gemeente Zuiddrecht', status: 'C' })
+	assert.match(partly, /<section class="utrecht-alert--warning utrecht-alert pq-accessibility-statement__status" aria-labelledby="pq-accessibility-status">/)
+	assert.match(partly, /<h2 id="pq-accessibility-status" class="utrecht-heading-3">\s*Status\s*<\/h2>/)
+	assert.match(await statementPage({ status: 'A' }), /utrecht-alert--ok/)
+	assert.match(await statementPage({ status: null }), /utrecht-alert--info/)
+})
+
