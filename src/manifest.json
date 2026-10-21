@@ -1404,7 +1404,19 @@
             "title": "Account details",
             "icon": "Account",
             "content": {
-              "columns": 2
+              "columns": 3,
+              "include": [
+                "displayName",
+                "email",
+                "audience",
+                "identityType",
+                "identityRef",
+                "organisation",
+                "contactChannel",
+                "messageLanguage",
+                "provisionedBy",
+                "lastLoginAt"
+              ]
             }
           },
           {
@@ -1469,16 +1481,12 @@
               },
               "columns": [
                 {
-                  "key": "jti",
-                  "label": "Token ID"
+                  "key": "issuedAt",
+                  "label": "Issued"
                 },
                 {
                   "key": "trustLevel",
                   "label": "Trust level"
-                },
-                {
-                  "key": "issuedAt",
-                  "label": "Issued"
                 },
                 {
                   "key": "expiresAt",
@@ -1511,8 +1519,8 @@
                 "subjectRef": "@object.subjectRef"
               },
               "sort": {
-                "field": "subject",
-                "dir": "asc"
+                "field": "receivedAt",
+                "dir": "desc"
               },
               "columns": [
                 {
@@ -1522,6 +1530,10 @@
                 {
                   "key": "read",
                   "label": "Read"
+                },
+                {
+                  "key": "receivedAt",
+                  "label": "Received at"
                 }
               ],
               "limit": 25,
@@ -1864,6 +1876,7 @@
       "config": {
         "register": "portaliq",
         "schema": "portalMessage",
+        "titleField": "subject",
         "documentationUrl": "https://portaliq.conduction.nl",
         "_note": "Detail in the v2 shape: the body is the grid below and the facts beside it are the sideColumn, History last (the board has no tab strip on this record).",
         "widgets": [
@@ -1873,7 +1886,17 @@
             "title": "Message",
             "icon": "Email",
             "content": {
-              "columns": 2
+              "columns": 3,
+              "include": [
+                "body",
+                "subjectRef",
+                "receivedAt",
+                "read",
+                "nature",
+                "rechtsgevolg",
+                "term",
+                "referenceId"
+              ]
             }
           },
           {
