@@ -389,12 +389,13 @@ export default {
 	},
 
 	watch: {
-		/**
-		 * A question on screen starts from its own answer, if it has one.
-		 *
-		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
-		 */
 		asking: {
+			/**
+			 * A question on screen starts from its own answer, if it has one.
+			 *
+			 * @param {object|null} step The question on screen.
+			 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
+			 */
 			handler(step) {
 				this.choice = step?.answer || ''
 			},
