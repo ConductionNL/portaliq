@@ -169,7 +169,9 @@
 			</p>
 		</div>
 
-		<div class="pq-schema-form__buttons">
+		<div
+			class="pq-schema-form__buttons"
+			:class="{ 'pq-schema-form__buttons--steps': hasSteps }">
 			<button
 				v-if="hasSteps && stepIndex > 0"
 				type="button"
@@ -177,19 +179,50 @@
 				:disabled="submitting"
 				data-testid="schema-form-previous"
 				@click="previousStep">
+				<svg
+					class="pq-schema-form__chevron"
+					viewBox="0 0 16 16"
+					aria-hidden="true"
+					focusable="false">
+					<path
+						d="M10 3L5 8l5 5"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2" />
+				</svg>
 				{{ translate('Previous step') }}
+			</button>
+			<button
+				v-else-if="cancellable"
+				type="button"
+				class="utrecht-button utrecht-button--secondary-action"
+				:disabled="submitting"
+				data-testid="schema-form-cancel"
+				@click="$emit('cancel')">
+				{{ translate('Cancel') }}
 			</button>
 			<button
 				v-if="hasSteps && !onReview"
 				type="submit"
-				class="utrecht-button utrecht-button--primary-action"
+				class="utrecht-button utrecht-button--primary-action pq-schema-form__forward"
 				data-testid="schema-form-next">
 				{{ translate('Next step') }}
+				<svg
+					class="pq-schema-form__chevron"
+					viewBox="0 0 16 16"
+					aria-hidden="true"
+					focusable="false">
+					<path
+						d="M6 3l5 5-5 5"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2" />
+				</svg>
 			</button>
 			<button
 				v-else
 				type="submit"
-				class="utrecht-button utrecht-button--primary-action"
+				class="utrecht-button utrecht-button--primary-action pq-schema-form__forward"
 				:disabled="submitting"
 				data-testid="schema-form-submit">
 				{{ submitting ? translate('Please wait…') : submitLabel }}
@@ -312,9 +345,14 @@ export default {
 		 * the row's own values on an update (site-action-forms).
 		 */
 		initial: { type: Object, default: () => ({}) },
+		/**
+		 * Offer "Annuleren" where there is no step to go back to; the form
+		 * emits `cancel` and its host decides where that leads.
+		 */
+		cancellable: { type: Boolean, default: false },
 	},
 
-	emits: ['submitted'],
+	emits: ['submitted', 'cancel'],
 
 	data() {
 		const options = staticOptions(this.action)
@@ -1091,6 +1129,25 @@ export default {
 	flex-wrap: wrap;
 	gap: var(--utrecht-space-inline-sm, 0.5rem);
 	margin-block-start: var(--utrecht-space-block-md, 1rem);
+}
+
+/* A form in steps ends on a rule: the way back (or out) at the start, the
+   way forward at the end. */
+.pq-schema-form__buttons--steps {
+	border-block-start: 1px solid
+		var(--nldesign-color-border, var(--utrecht-color-grey-80, currentcolor));
+	margin-block-start: var(--utrecht-space-block-xl, 2rem);
+	padding-block-start: var(--utrecht-space-block-lg, 1.5rem);
+}
+
+.pq-schema-form__buttons--steps .pq-schema-form__forward {
+	margin-inline-start: auto;
+}
+
+.pq-schema-form__chevron {
+	block-size: 1em;
+	flex: none;
+	inline-size: 1em;
 }
 
 .pq-schema-form__intro {
