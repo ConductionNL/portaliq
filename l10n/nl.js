@@ -3202,7 +3202,8 @@ OC.L10N.register(
         "Granted": "Toegekend",
         "Refused": "Afgewezen",
         "Waiting": "Wacht",
-        "Failed": "Mislukt"
+        "Failed": "Mislukt",
+        "Set up again": "Opnieuw instellen"
     },
     "nplurals=2; plural=(n != 1);"
 )

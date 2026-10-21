@@ -3047,7 +3047,8 @@ OC.L10N.register(
         "Granted": "Granted",
         "Refused": "Refused",
         "Waiting": "Waiting",
-        "Failed": "Failed"
+        "Failed": "Failed",
+        "Set up again": "Set up again"
     },
     "nplurals=2; plural=(n != 1);"
 )

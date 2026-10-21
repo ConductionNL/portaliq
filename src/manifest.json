@@ -235,6 +235,20 @@
       }
     },
     {
+      "id": "SetupAgainMenu",
+      "label": "Set up again",
+      "icon": "Cog",
+      "route": "Dashboard",
+      "query": {
+        "setup": "open"
+      },
+      "section": "settings",
+      "order": 99,
+      "visibleIf": {
+        "access.admin": true
+      }
+    },
+    {
       "id": "MailTemplatesMenu",
       "label": "Mail templates",
       "icon": "EmailEditOutline",

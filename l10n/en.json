@@ -3061,7 +3061,8 @@
         "Granted": "Granted",
         "Refused": "Refused",
         "Waiting": "Waiting",
-        "Failed": "Failed"
+        "Failed": "Failed",
+        "Set up again": "Set up again"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"
