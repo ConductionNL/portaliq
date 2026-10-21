@@ -3182,7 +3182,18 @@
         "Without cookies, on our own server.": "Zonder cookies, op de eigen server.",
         "Location of visitors": "Locatie van bezoekers",
         "No location": "Geen locatie",
-        "Country": "Land"
+        "Country": "Land",
+        "{total} connections that Portaliq registers, shown by integriq": "{total} koppelingen die Portaliq aanmeldt, getoond door integriq",
+        "Works": "Werkt",
+        "Needs attention": "Vraagt aandacht",
+        "Switched off": "Uitgeschakeld",
+        "Nothing needs attention": "Niets vraagt aandacht",
+        "Checked by integriq": "Gecontroleerd door integriq",
+        "Portaliq reports how its connections stand; integriq puts them in one overview beside those of other apps.": "Portaliq meldt zelf hoe zijn koppelingen ervoor staan; integriq zet ze op één overzicht naast die van andere apps.",
+        "Adding a connection": "Een koppeling toevoegen",
+        "A connection the app does not register cannot be checked. Add new connections in integriq.": "Een koppeling die de app niet aanmeldt, kan niet worden gecontroleerd. Nieuwe koppelingen voegt u daarom toe in integriq.",
+        "All": "Alle",
+        "Add a connection": "Koppeling toevoegen"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

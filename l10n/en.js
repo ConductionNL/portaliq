@@ -3013,7 +3013,18 @@ OC.L10N.register(
         "Without cookies, on our own server.": "Without cookies, on our own server.",
         "Location of visitors": "Location of visitors",
         "No location": "No location",
-        "Country": "Country"
+        "Country": "Country",
+        "{total} connections that Portaliq registers, shown by integriq": "{total} connections that Portaliq registers, shown by integriq",
+        "Works": "Works",
+        "Needs attention": "Needs attention",
+        "Switched off": "Switched off",
+        "Nothing needs attention": "Nothing needs attention",
+        "Checked by integriq": "Checked by integriq",
+        "Portaliq reports how its connections stand; integriq puts them in one overview beside those of other apps.": "Portaliq reports how its connections stand; integriq puts them in one overview beside those of other apps.",
+        "Adding a connection": "Adding a connection",
+        "A connection the app does not register cannot be checked. Add new connections in integriq.": "A connection the app does not register cannot be checked. Add new connections in integriq.",
+        "All": "All",
+        "Add a connection": "Add a connection"
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -4757,6 +4757,50 @@
             "handler": "openIntegriqConnections"
           }
         ],
+        "showTitle": true,
+        "showTitleIcon": false,
+        "countText": "{total} connections that Portaliq registers, shown by integriq",
+        "headerButtons": [
+          {
+            "action": "add-integration",
+            "variant": "primary",
+            "label": "Add a connection"
+          }
+        ],
+        "quickFilters": [
+          {
+            "label": "All",
+            "filter": {
+              "app": "portaliq"
+            },
+            "showCount": true,
+            "default": true
+          },
+          {
+            "label": "Works",
+            "filter": {
+              "app": "portaliq",
+              "status": "configured"
+            },
+            "showCount": true
+          },
+          {
+            "label": "Needs attention",
+            "filter": {
+              "app": "portaliq",
+              "status": "error"
+            },
+            "showCount": true
+          },
+          {
+            "label": "Switched off",
+            "filter": {
+              "app": "portaliq",
+              "status": "disabled"
+            },
+            "showCount": true
+          }
+        ],
         "defaultSort": {
           "field": "order",
           "direction": "asc"
@@ -4795,9 +4839,56 @@
           "source": "field",
           "field": "status",
           "allLabel": "All connections"
-        }
+        },
+        "sidePanel": [
+          {
+            "id": "integrations-attention",
+            "type": "record-list",
+            "title": "Needs attention",
+            "content": {
+              "register": "integriq",
+              "schema": "app_connection",
+              "filter": {
+                "app": "portaliq",
+                "status": "error"
+              },
+              "limit": 5,
+              "presentation": "rows",
+              "title": "{title}",
+              "meta": "{statusMessage}",
+              "pill": {
+                "field": "status",
+                "labels": {
+                  "error": "Needs attention"
+                },
+                "colorMap": {
+                  "error": "warning"
+                }
+              },
+              "emptyText": "Nothing needs attention"
+            }
+          },
+          {
+            "id": "integrations-checked-by",
+            "type": "banner",
+            "title": "Checked by integriq",
+            "content": {
+              "variant": "info",
+              "text": "Portaliq reports how its connections stand; integriq puts them in one overview beside those of other apps."
+            }
+          },
+          {
+            "id": "integrations-add",
+            "type": "banner",
+            "title": "Adding a connection",
+            "content": {
+              "variant": "info",
+              "text": "A connection the app does not register cannot be checked. Add new connections in integriq."
+            }
+          }
+        ]
       },
-      "_note": "adopt-connection-registry (hydra connection-registry D8, hydra#667, #673, #674 and #676). The rows are integriq's `app_connection` objects, synced from lib/Settings/connections.json; integriq works out each status. The app=portaliq preset is the IntegrationsMenu entry's `query` (ADR-097 decision 5), which the index page merges into the fetch as a bare filter key. `showAdd` is false because a row nothing declared has nothing to check (D9). Add integration leaves for integriq's overview through the openIntegriqConnections handler in src/customComponents.js, because a header action's `navigate` only pushes a route inside this app."
+      "_note": "adopt-connection-registry (hydra connection-registry D8, hydra#667, #673, #674 and #676). The rows are integriq's `app_connection` objects, synced from lib/Settings/connections.json; integriq works out each status. The app=portaliq preset is the IntegrationsMenu entry's `query` (ADR-097 decision 5), which the index page merges into the fetch as a bare filter key. `showAdd` is false because a row nothing declared has nothing to check (D9). Add integration leaves for integriq's overview through the openIntegriqConnections handler in src/customComponents.js, because a header action's `navigate` only pushes a route inside this app. The page follows the portaliq/PtIntegraties board: its title with a count line, Add integration as the primary header button, pills All, Works, Needs attention and Switched off over portaliq's own connections (each pill carries app=portaliq, so the page shows only them also when opened without the menu's query), and a side panel with the connections that need attention and two notes on integriq."
     },
     {
       "id": "MailTemplates",
