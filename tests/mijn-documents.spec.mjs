@@ -12,6 +12,7 @@
 
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { channelIcon } from '../src/site/components/collections/timeline.js'
 import {
 	fileLine,
 	fileType,
@@ -142,6 +143,19 @@ test('the contact timeline lists events newest first, each a moment and a senten
 		2,
 		'an event without a moment has no <time>',
 	)
+	assert.doesNotMatch(html, /timeline-channel/, 'no channel, no pill')
+})
+
+test('a contact with a channel carries it as a pill with its icon (board Zaak)', async () => {
+	const html = await renderComponent(ContactTimeline, {
+		entries: [{ id: 'c1', message: 'Vraag over de planning', channel: 'Telefoon', occurredAt: '2026-10-05T14:20:00' }],
+		tr: nl,
+		locale: 'nl',
+	})
+	assert.match(html, /data-testid="timeline-channel"><svg class="pq-contact-timeline__channel-icon"[^>]*><path d="M6\.62,10\.79/)
+	assert.match(html, /<\/svg> Telefoon<\/span>/)
+	assert.equal(channelIcon('Balie').startsWith('M20,6H16'), true)
+	assert.equal(channelIcon('Bericht via het portaal').startsWith('M20,2H4'), true)
 })
 
 test('a description list is a dl of keys and values', async () => {
