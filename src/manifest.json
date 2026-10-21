@@ -2189,7 +2189,7 @@
         ],
         "showTitle": true,
         "showTitleIcon": false,
-        "countText": "{shown} of {total} sessions",
+        "countText": "{shown} of {total} sessions · a session starts when someone signs in",
         "headerButtons": [
           {
             "action": "export",
@@ -2219,12 +2219,6 @@
         ],
         "quickFilters": [
           {
-            "label": "Alles",
-            "filter": {},
-            "showCount": true,
-            "default": true
-          },
-          {
             "label": "Actief",
             "filter": {
               "revoked": false,
@@ -2232,7 +2226,8 @@
                 "gt": "@now"
               }
             },
-            "showCount": true
+            "showCount": true,
+            "default": true
           },
           {
             "label": "Verlopen",
@@ -6258,7 +6253,8 @@
         "{shown} of {total} files in the media library · usable on every page of the portal": "{shown} van {total} bestanden in de mediabibliotheek · te gebruiken op elke pagina van de portal",
         "Upload": "Uploaden",
         "{shown} of {total} submissions via the portals · with the proof that the resident received a confirmation": "{shown} van {total} inzendingen via de portals · met het bewijs dat de inwoner een ontvangstbevestiging kreeg",
-        "{shown} of {total} accounts · who may sign in, and how": "{shown} van {total} accounts · wie mag inloggen, en hoe"
+        "{shown} of {total} accounts · who may sign in, and how": "{shown} van {total} accounts · wie mag inloggen, en hoe",
+        "{shown} of {total} sessions · a session starts when someone signs in": "{shown} van {total} sessies · een sessie ontstaat bij het inloggen"
       }
     }
   }
