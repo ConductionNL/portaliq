@@ -56,7 +56,8 @@ class AvailabilityReport {
 	 * @param DateTimeImmutable $now The moment the report is asked for.
 	 * @param int $months How many full months, 1 to 12.
 	 *
-	 * @return array{portal: string, from: string, until: string, months: array<int, array<string, mixed>>, outages: array<int, array<string, mixed>>, summary: array<string, mixed>}
+	 * @return array{portal: string, from: string, until: string, months: array<int, array<string, mixed>>,
+	 *     outages: array<int, array<string, mixed>>, summary: array<string, mixed>}
 	 *
 	 * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
 	 */
@@ -119,7 +120,7 @@ class AvailabilityReport {
 	 * @param array<string, array<string, mixed>> $totals The months with their counters.
 	 * @param array<int, array<string, mixed>> $outages The outages of the period.
 	 *
-	 * @return array{percentage: float|null, outageCount: int, outageMinutes: int, longestMinutes: int, longestStartedAt: string}
+	 * @return array<string, mixed> percentage (float or null), outageCount, outageMinutes, longestMinutes, longestStartedAt.
 	 *
 	 * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
 	 */
@@ -140,8 +141,13 @@ class AvailabilityReport {
 			}
 		}
 
+		$percentage = null;
+		if ($intervals > 0) {
+			$percentage = round(($available / $intervals) * 100, 2);
+		}
+
 		return [
-			'percentage' => $intervals > 0 ? round(($available / $intervals) * 100, 2) : null,
+			'percentage' => $percentage,
 			'outageCount' => count($outages),
 			'outageMinutes' => $minutes,
 			'longestMinutes' => (int)$longest['durationMinutes'],

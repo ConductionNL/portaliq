@@ -1067,7 +1067,14 @@
             "id": "availability-download",
             "label": "Download",
             "icon": "Download",
-            "href": "/apps/portaliq/api/availability/@page.portal/export?months=12"
+            "type": "api-call",
+            "url": "/apps/portaliq/api/availability/@page.portal/export",
+            "method": "POST",
+            "params": {
+              "months": "12"
+            },
+            "download": true,
+            "filename": "availability.csv"
           }
         ],
         "widgets": [

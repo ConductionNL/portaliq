@@ -104,7 +104,11 @@ test('the months and the outages are tables side by side, the note under the out
 
 test('Download sits in the header and downloads the chosen portal', () => {
 	const [download] = CONFIG.headerActions
-	assert.equal(download.href, `${REPORT}/export?months=12`)
+	assert.equal(download.type, 'api-call')
+	assert.equal(download.url, `${REPORT}/export`)
+	assert.equal(download.method, 'POST')
+	assert.equal(download.download, true)
+	assert.match(ROUTES, /'name' => 'availability#export', 'url' => '\/api\/availability\/\{portal\}\/export', 'verb' => 'POST'/)
 	assert.equal(NL[download.label], 'Downloaden')
 	assert.ok(!CONFIG.widgets.some((w) => w.type === 'AvailabilityReport'), 'the old one-widget report is still placed')
 	assert.doesNotMatch(read('src/registry.js'), /AvailabilityReport/)

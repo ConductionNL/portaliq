@@ -61,7 +61,7 @@ class AvailabilityReportTest extends TestCase {
 	 * @return void
 	 */
 	public function testSummaryOverThePeriod(): void {
-		$store = $this->getMockBuilder(AvailabilityStore::class)
+		$store = $this->getMockBuilder(className: AvailabilityStore::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['dailyBetween', 'outagesBetween'])
 			->getMock();
@@ -70,15 +70,31 @@ class AvailabilityReportTest extends TestCase {
 			'2025-09-15' => ['intervals' => 100, 'available' => 100, 'degraded' => 0, 'down' => 0, 'noCheck' => 0],
 		]);
 		$store->method('outagesBetween')->willReturn([
-			['startedAt' => '2026-03-17T11:40:00+00:00', 'endedAt' => '2026-03-17T12:20:00+00:00', 'durationMinutes' => 40, 'cause' => 'site-error'],
-			['startedAt' => '2026-08-01T03:00:00+00:00', 'endedAt' => '2026-08-01T03:15:00+00:00', 'durationMinutes' => 15, 'cause' => 'no-check'],
+			[
+				'startedAt' => '2026-03-17T11:40:00+00:00',
+				'endedAt' => '2026-03-17T12:20:00+00:00',
+				'durationMinutes' => 40,
+				'cause' => 'site-error',
+			],
+			[
+				'startedAt' => '2026-08-01T03:00:00+00:00',
+				'endedAt' => '2026-08-01T03:15:00+00:00',
+				'durationMinutes' => 15,
+				'cause' => 'no-check',
+			],
 		]);
 
-		$report = (new AvailabilityReport($store))->forPortal(portal: 'open-tilburg', now: new DateTimeImmutable('2026-09-29T10:00:00+00:00'));
+		$report = (new AvailabilityReport(store: $store))->forPortal(portal: 'open-tilburg', now: new DateTimeImmutable('2026-09-29T10:00:00+00:00'));
 
 		$this->assertSame(
-			['percentage' => 99.25, 'outageCount' => 2, 'outageMinutes' => 55, 'longestMinutes' => 40, 'longestStartedAt' => '2026-03-17T11:40:00+00:00'],
-			$report['summary']
+			expected: [
+				'percentage' => 99.25,
+				'outageCount' => 2,
+				'outageMinutes' => 55,
+				'longestMinutes' => 40,
+				'longestStartedAt' => '2026-03-17T11:40:00+00:00',
+			],
+			actual: $report['summary']
 		);
 	}//end testSummaryOverThePeriod()
 
@@ -88,18 +104,18 @@ class AvailabilityReportTest extends TestCase {
 	 * @return void
 	 */
 	public function testSummaryOfAnUnmeasuredPeriod(): void {
-		$store = $this->getMockBuilder(AvailabilityStore::class)
+		$store = $this->getMockBuilder(className: AvailabilityStore::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['dailyBetween', 'outagesBetween'])
 			->getMock();
 		$store->method('dailyBetween')->willReturn([]);
 		$store->method('outagesBetween')->willReturn([]);
 
-		$report = (new AvailabilityReport($store))->forPortal(portal: 'open-tilburg', now: new DateTimeImmutable('2026-09-29T10:00:00+00:00'));
+		$report = (new AvailabilityReport(store: $store))->forPortal(portal: 'open-tilburg', now: new DateTimeImmutable('2026-09-29T10:00:00+00:00'));
 
 		$this->assertSame(
-			['percentage' => null, 'outageCount' => 0, 'outageMinutes' => 0, 'longestMinutes' => 0, 'longestStartedAt' => ''],
-			$report['summary']
+			expected: ['percentage' => null, 'outageCount' => 0, 'outageMinutes' => 0, 'longestMinutes' => 0, 'longestStartedAt' => ''],
+			actual: $report['summary']
 		);
 	}//end testSummaryOfAnUnmeasuredPeriod()
 }//end class
