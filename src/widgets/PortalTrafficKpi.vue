@@ -17,6 +17,8 @@
 
   The card sends the picked period as `days` through the `@range.preset`
   token; the manifest's `dateRange.default` opens the picker on 30 days.
+  With `content.days` (a token such as `@page.period`) the card follows the
+  page's period filter instead and draws no picker of its own.
   It links to the Traffic page with THIS portal selected: the portal's
   own slug, or on a page the page's `portal`.
 
@@ -54,7 +56,9 @@ export default {
 	props: {
 		/**
 		 * The widget's manifest content: `metric`, `label`, `variant`,
-		 * `dateRange`, an optional `testId` and an optional `scope`
+		 * `dateRange` or `days` (a token the period comes from, such as
+		 * `@page.period`, which replaces the card's own picker), an optional
+		 * `testId` and an optional `scope`
 		 * (`portal`, the default, or `page`).
 		 */
 		content: {
@@ -125,6 +129,21 @@ export default {
 		 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-open-with-four-traffic-kpi-cards
 		 * @return {object} The content.
 		 */
+		/**
+		 * Where the card's period comes from: the page's filter when the
+		 * manifest names a `days` token (no picker on the card), else the
+		 * card's own `dateRange` picker through `@range.preset`.
+		 *
+		 * @spec openspec/changes/portal-page-period/specs/portal-page-period/spec.md#requirement-the-portal-pages-traffic-figures-follow-one-period-selector
+		 * @return {{dateRange: (object|undefined), days: string}} The picker and the days token.
+		 */
+		period() {
+			if (typeof this.content.days === 'string' && this.content.days !== '') {
+				return { dateRange: undefined, days: this.content.days }
+			}
+			return { dateRange: this.content.dateRange, days: '@range.preset?' }
+		},
+
 		cardContent() {
 			const card = {
 				label: this.content.label,
@@ -145,10 +164,10 @@ export default {
 			}
 			return {
 				...card,
-				dateRange: this.content.dateRange,
+				dateRange: this.period.dateRange,
 				endpointSource: {
 					url: '/apps/portaliq/api/traffic/summary',
-					params: { portal: this.slug, days: '@range.preset?' },
+					params: { portal: this.slug, days: this.period.days },
 				},
 
 				valueField: this.content.metric,
@@ -212,10 +231,10 @@ export default {
 				...card,
 				caption,
 				emptyText,
-				dateRange: this.content.dateRange,
+				dateRange: this.period.dateRange,
 				endpointSource: {
 					url: '/apps/portaliq/api/traffic/page',
-					params: { portal: this.slug, route, days: '@range.preset?' },
+					params: { portal: this.slug, route, days: this.period.days },
 				},
 
 				valueField: this.content.metric,
