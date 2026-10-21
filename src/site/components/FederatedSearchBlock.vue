@@ -400,9 +400,11 @@
 									@change="
 										toggleFacet(bucket.value, group.field)
 									" />
-								{{ bucket.label }}
-								<span class="pq-search__facet-count"
-									>({{ bucket.count }})</span
+								<span
+									>{{ bucket.label }}
+									<span class="pq-search__facet-count"
+										>({{ bucket.count }})</span
+									></span
 								>
 							</label>
 						</li>

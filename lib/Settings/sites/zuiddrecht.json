@@ -2852,7 +2852,7 @@
                         "widgetKey": "nlParagraph",
                         "gridX": 0,
                         "gridY": 0,
-                        "gridWidth": 12,
+                        "gridWidth": 8,
                         "gridHeight": 1,
                         "props": {
                             "text": "Wij maken informatie openbaar volgens de Wet open overheid (Woo). Zoek in besluiten, rapporten en antwoorden op Woo-verzoeken.",
