@@ -99,6 +99,23 @@ const OWNS_HEADING = new Set([
 ])
 
 /**
+ * Whether an entry's page is one form and nothing else: a start point whose
+ * only block is an `action`. Such a page stands on a column of its own,
+ * without the resident menu beside it, so the form has the resident's full
+ * attention.
+ *
+ * @param {object|null} entry A navigation entry.
+ * @return {boolean}
+ * @spec exclude layout of a page that is only a form, as the Mijn form boards draw it
+ */
+export function isFormPage(entry) {
+	const blocks = entry?.page?.blocks
+	return (
+		Array.isArray(blocks) && blocks.length === 1 && blocks[0]?.type === 'action'
+	)
+}
+
+/**
  * Whether the page for an entry titles itself.
  *
  * @param {object|null} entry A navigation entry.
