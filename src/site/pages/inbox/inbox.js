@@ -56,6 +56,37 @@ export function formatDateTime(value, locale) {
 }
 
 /**
+ * A message's moment as a resident reads it in a list of messages: the day
+ * with the month in words and the time to the minute ("4 oktober 2026,
+ * 13:59"), '' when absent.
+ *
+ * @param {string} value An ISO date-time.
+ * @param {string} locale `nl` or `en`.
+ * @return {string} The formatted value.
+ * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
+ */
+export function formatMessageMoment(value, locale) {
+	if (!value) {
+		return ''
+	}
+	const date = new Date(value)
+	if (Number.isNaN(date.getTime())) {
+		return String(value)
+	}
+	const tag = locale === 'en' ? 'en-GB' : 'nl-NL'
+	const day = date.toLocaleDateString(tag, {
+		day: 'numeric',
+		month: 'long',
+		year: 'numeric',
+	})
+	const time = date.toLocaleTimeString(tag, {
+		hour: '2-digit',
+		minute: '2-digit',
+	})
+	return `${day}, ${time}`
+}
+
+/**
  * A date in the page language, '' when absent.
  *
  * @param {string} value An ISO date-time.
