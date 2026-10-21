@@ -383,7 +383,7 @@ test('the form asks for the code with a label, and shows an outcome with its rol
 		{ api: {}, t },
 	)
 	assert.match(empty, /data-testid="invitation-code"/)
-	assert.match(empty, /<h3[^>]*>\s*Code from a letter\s*<\/h3>/)
+	assert.match(empty, /<h2[^>]*>\s*Code from a letter\s*<\/h2>/)
 	assert.match(empty, /<label for="pq-account-code-input"[^>]*>\s*Code\s*<\/label>/)
 	assert.match(empty, /id="pq-account-code-input"[^>]*autocomplete="off"/)
 	assert.match(empty, /Use the code/)
