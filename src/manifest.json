@@ -400,45 +400,6 @@
             }
           },
           {
-            "id": "kpi-portals",
-            "type": "stat",
-            "title": "Portals",
-            "content": {
-              "label": "Portals",
-              "layout": "stacked",
-              "caption": "websites and Mijn Zuiddrecht",
-              "source": {
-                "register": "portaliq",
-                "schema": "portal",
-                "metric": "count"
-              },
-              "route": {
-                "name": "Portals"
-              }
-            }
-          },
-          {
-            "id": "kpi-accounts",
-            "type": "stat",
-            "title": "Active accounts",
-            "content": {
-              "label": "Active accounts",
-              "layout": "stacked",
-              "caption": "signed in to Mijn Zuiddrecht",
-              "source": {
-                "register": "portaliq",
-                "schema": "portalAccount",
-                "metric": "count",
-                "filter": {
-                  "status": "active"
-                }
-              },
-              "route": {
-                "name": "PortalAccounts"
-              }
-            }
-          },
-          {
             "id": "kpi-requests",
             "type": "stat",
             "title": "Open access requests",
@@ -481,10 +442,9 @@
           {
             "id": "attention-first",
             "type": "banner",
-            "title": "Vandaag eerst",
             "content": {
               "layout": "attention",
-              "variant": "warning",
+              "variant": "error",
               "kicker": "Vandaag eerst",
               "title": "Een toegangsverzoek wacht op antwoord",
               "reason": "Zolang u niet beslist, ziet de aanvrager niets.",
@@ -726,47 +686,31 @@
             "widgetId": "kpi-visitors",
             "gridX": 0,
             "gridY": 0,
-            "gridWidth": 2,
+            "gridWidth": 3,
             "gridHeight": 1
           },
           {
             "id": "kpi-availability",
             "widgetId": "kpi-availability",
-            "gridX": 2,
+            "gridX": 3,
             "gridY": 0,
-            "gridWidth": 2,
+            "gridWidth": 3,
             "gridHeight": 1
           },
           {
             "id": "kpi-requests",
             "widgetId": "kpi-requests",
-            "gridX": 4,
+            "gridX": 6,
             "gridY": 0,
-            "gridWidth": 2,
+            "gridWidth": 3,
             "gridHeight": 1
           },
           {
             "id": "kpi-submissions",
             "widgetId": "kpi-submissions",
-            "gridX": 6,
+            "gridX": 9,
             "gridY": 0,
-            "gridWidth": 2,
-            "gridHeight": 1
-          },
-          {
-            "id": "kpi-portals",
-            "widgetId": "kpi-portals",
-            "gridX": 8,
-            "gridY": 0,
-            "gridWidth": 2,
-            "gridHeight": 1
-          },
-          {
-            "id": "kpi-accounts",
-            "widgetId": "kpi-accounts",
-            "gridX": 10,
-            "gridY": 0,
-            "gridWidth": 2,
+            "gridWidth": 3,
             "gridHeight": 1
           },
           {
@@ -775,7 +719,8 @@
             "gridX": 0,
             "gridY": 0,
             "gridWidth": 12,
-            "gridHeight": 3
+            "gridHeight": 3,
+            "borderless": true
           },
           {
             "id": "list-requests",
@@ -830,9 +775,7 @@
           "kpi-visitors",
           "kpi-availability",
           "kpi-requests",
-          "kpi-submissions",
-          "kpi-portals",
-          "kpi-accounts"
+          "kpi-submissions"
         ],
         "showWidgetActions": false,
         "showRefresh": false,
@@ -970,7 +913,13 @@
             "gridWidth": 12,
             "gridHeight": 4
           }
-        ]
+        ],
+        "showActionsMenu": false,
+        "showWidgetActions": false,
+        "showRefresh": false,
+        "showRequestFeature": false,
+        "showReportBug": false,
+        "showDocumentation": false
       }
     },
     {
@@ -1307,7 +1256,12 @@
             "gridWidth": 12,
             "gridHeight": 4
           }
-        ]
+        ],
+        "showWidgetActions": false,
+        "showRefresh": false,
+        "showRequestFeature": false,
+        "showReportBug": false,
+        "showDocumentation": false
       },
       "_note": "portal-traffic-analytics. The three stats-blocks this page used to carry counted portalSession, revoked portalSession and portalMessage rows: authenticated-session bookkeeping that said nothing about visitors (task 0.1). The six widgets here read portalTrafficDaily through the object API and say 'not measured' for a portal with measurement off instead of drawing a zero. portal-traffic-visitors-and-geo added the period selector (on the overview, read by every widget through the report store) and the Visitors widget. portal-traffic-outcomes added Goals, Funnels, Forms and Custom dimensions, the missing pages under Pages and the searches under Sources. portal-traffic-reporting added the segment selector and the Export button on the overview, the roll-up note, and the Script errors widget. The Export is a button on the overview widget rather than a manifest headerAction: nc-vue's dashboard header actions cannot read the portal, period and segment the page has selected, and a download of the wrong selection is worse than none. portal-traffic-experiments added Experiments, Heatmap and Session recordings; the last two say \"off for this portal\" unless the operator accepted the switch's warning. portal-traffic-kpi-cards moved the four headline numbers out of the overview into four TrafficKpi cards below it. They follow the overview's portal, period and segment and carry no picker of their own: the page has one period. The page selects the portal named in ?portal=, which is how a portal page's KPI cards link here. The cards follow the portaliq/PtVerkeer board: two columns from Pages and Sources down, with the missing pages and the site searches as cards of their own (content.part on TrafficPages and TrafficSources)."
     },
@@ -1558,7 +1512,13 @@
             "gridWidth": 6,
             "gridHeight": 3
           }
-        ]
+        ],
+        "showActionsMenu": false,
+        "showWidgetActions": false,
+        "showRefresh": false,
+        "showRequestFeature": false,
+        "showReportBug": false,
+        "showDocumentation": false
       },
       "_note": "operate-availability-report, as the portaliq/PtBeschikbaarheid board: the portal is a page filter (published portals, by slug) that every card reads through @page.portal; three KPI cards from the report's summary, the months and the outages as tables over the same AvailabilityController answer (admin-only), 'How we measure' as an info note, and Download in the header. Reached from the Reports hub's Availability card; not in the main navigation (ADR-114 Decision 3)."
     },
@@ -1669,7 +1629,7 @@
         "_note": "identity-staff-account-screens T04: the generic Add is hidden, because a portal account made through the object form skips the identity de-duplication of the provision route. 'Issue an account' and 'Invite someone' are handlers that post PortalAccountAdminController behind portal.provision; see src/lib/staffAccountActions.js.",
         "showTitle": true,
         "showTitleIcon": false,
-        "countText": "{shown} of {total} accounts",
+        "countText": "{shown} of {total} accounts · who may sign in, and how",
         "headerButtons": [
           {
             "action": "export",
@@ -1740,7 +1700,6 @@
             "type": "banner",
             "content": {
               "variant": "warning",
-              "text": "{value} aanmeldingen wachten op goedkeuring.",
               "visibleWhen": {
                 "source": {
                   "register": "portaliq",
@@ -1757,7 +1716,9 @@
                   "label": "Beleid wijzigen",
                   "route": "Portals"
                 }
-              ]
+              ],
+              "icon": "AccountPlusOutline",
+              "lead": "{value} aanmeldingen wachten op goedkeuring."
             }
           }
         ]
@@ -2575,7 +2536,7 @@
         ],
         "showTitle": true,
         "showTitleIcon": false,
-        "countText": "{shown} of {total} submissions",
+        "countText": "{shown} of {total} submissions via the portals · with the proof that the resident received a confirmation",
         "headerButtons": [
           {
             "action": "export",
@@ -2599,9 +2560,9 @@
             "showCount": true
           },
           {
-            "label": "Bevestigd",
+            "label": "Bevestiging mislukt",
             "filter": {
-              "deliveryStatus": "delivered"
+              "deliveryStatus": "failed"
             },
             "showCount": true
           },
@@ -2609,13 +2570,6 @@
             "label": "Wacht op bevestiging",
             "filter": {
               "deliveryStatus": "pending"
-            },
-            "showCount": true
-          },
-          {
-            "label": "Bevestiging mislukt",
-            "filter": {
-              "deliveryStatus": "failed"
             },
             "showCount": true
           }
@@ -2628,7 +2582,8 @@
           "board",
           "map"
         ],
-        "footerNote": "what the resident filled in is only on the submission itself, not in this list"
+        "footerNote": "what the resident filled in is only on the submission itself, not in this list",
+        "showAdd": false
       }
     },
     {
@@ -4648,7 +4603,8 @@
           },
           {
             "action": "add",
-            "label": "Link a form"
+            "label": "Link a form",
+            "variant": "primary"
           }
         ],
         "quickFilters": [
@@ -5019,7 +4975,7 @@
         ],
         "showTitle": true,
         "showTitleIcon": false,
-        "countText": "{shown} of {total} terms",
+        "countText": "{shown} of {total} terms · visitors read them at /begrippen on every portal",
         "headerButtons": [
           {
             "action": "export",
@@ -5027,7 +4983,8 @@
           },
           {
             "action": "import",
-            "label": "Import"
+            "label": "Import",
+            "icon": "Upload"
           },
           {
             "action": "add",
@@ -5169,7 +5126,7 @@
         ],
         "showTitle": true,
         "showTitleIcon": false,
-        "countText": "{shown} of {total} media",
+        "countText": "{shown} of {total} files in the media library · usable on every page of the portal",
         "headerButtons": [
           {
             "action": "export",
@@ -5178,7 +5135,8 @@
           {
             "action": "add",
             "variant": "primary",
-            "label": "New media item"
+            "label": "Upload",
+            "icon": "Upload"
           }
         ],
         "quickFilters": [
@@ -5203,20 +5161,6 @@
             "showCount": true
           },
           {
-            "label": "Gepubliceerd",
-            "filter": {
-              "status": "published"
-            },
-            "showCount": true
-          },
-          {
-            "label": "Concept",
-            "filter": {
-              "status": "draft"
-            },
-            "showCount": true
-          },
-          {
             "label": "Nergens gebruikt",
             "filter": {
               "usedOn": 0
@@ -5230,7 +5174,8 @@
           "cards",
           "board",
           "map"
-        ]
+        ],
+        "viewMode": "cards"
       }
     },
     {
@@ -6308,7 +6253,12 @@
         "Cause": "Oorzaak",
         "How we measure": "Zo meten wij",
         "Outage began": "Begon",
-        "Outage ended": "Eindigde"
+        "Outage ended": "Eindigde",
+        "{shown} of {total} terms · visitors read them at /begrippen on every portal": "{shown} van {total} begrippen · bezoekers lezen ze op /begrippen van elke portal",
+        "{shown} of {total} files in the media library · usable on every page of the portal": "{shown} van {total} bestanden in de mediabibliotheek · te gebruiken op elke pagina van de portal",
+        "Upload": "Uploaden",
+        "{shown} of {total} submissions via the portals · with the proof that the resident received a confirmation": "{shown} van {total} inzendingen via de portals · met het bewijs dat de inwoner een ontvangstbevestiging kreeg",
+        "{shown} of {total} accounts · who may sign in, and how": "{shown} van {total} accounts · wie mag inloggen, en hoe"
       }
     }
   }
