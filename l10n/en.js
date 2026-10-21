@@ -2992,7 +2992,18 @@ OC.L10N.register(
         "Your plan is nearly ending": "Your plan is nearly ending",
         "The plan %1$s ends on %2$s": "The plan %1$s ends on %2$s",
         "The plan \"%1$s\" ends on %2$s. %3$s actions are still open. Extend the plan with your caseworker, or complete the actions.": "The plan \"%1$s\" ends on %2$s. %3$s actions are still open. Extend the plan with your caseworker, or complete the actions.",
-        "Go to %1$s": "Go to %1$s"
+        "Go to %1$s": "Go to %1$s",
+        "{total} connections that Portaliq registers, shown by integriq": "{total} connections that Portaliq registers, shown by integriq",
+        "Works": "Works",
+        "Needs attention": "Needs attention",
+        "Switched off": "Switched off",
+        "Nothing needs attention": "Nothing needs attention",
+        "Checked by integriq": "Checked by integriq",
+        "Portaliq reports how its connections stand; integriq puts them in one overview beside those of other apps.": "Portaliq reports how its connections stand; integriq puts them in one overview beside those of other apps.",
+        "Adding a connection": "Adding a connection",
+        "A connection the app does not register cannot be checked. Add new connections in integriq.": "A connection the app does not register cannot be checked. Add new connections in integriq.",
+        "All": "All",
+        "Add a connection": "Add a connection"
     },
     "nplurals=2; plural=(n != 1);"
 )

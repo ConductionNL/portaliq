@@ -3162,7 +3162,18 @@
         "Your plan is nearly ending": "Uw plan loopt bijna af",
         "The plan %1$s ends on %2$s": "Het plan %1$s eindigt op %2$s",
         "The plan \"%1$s\" ends on %2$s. %3$s actions are still open. Extend the plan with your caseworker, or complete the actions.": "Het plan \"%1$s\" eindigt op %2$s. Er staan nog %3$s acties open. Verleng het plan met uw begeleider, of rond de acties af.",
-        "Go to %1$s": "Ga naar %1$s"
+        "Go to %1$s": "Ga naar %1$s",
+        "{total} connections that Portaliq registers, shown by integriq": "{total} koppelingen die Portaliq aanmeldt, getoond door integriq",
+        "Works": "Werkt",
+        "Needs attention": "Vraagt aandacht",
+        "Switched off": "Uitgeschakeld",
+        "Nothing needs attention": "Niets vraagt aandacht",
+        "Checked by integriq": "Gecontroleerd door integriq",
+        "Portaliq reports how its connections stand; integriq puts them in one overview beside those of other apps.": "Portaliq meldt zelf hoe zijn koppelingen ervoor staan; integriq zet ze op één overzicht naast die van andere apps.",
+        "Adding a connection": "Een koppeling toevoegen",
+        "A connection the app does not register cannot be checked. Add new connections in integriq.": "Een koppeling die de app niet aanmeldt, kan niet worden gecontroleerd. Nieuwe koppelingen voegt u daarom toe in integriq.",
+        "All": "Alle",
+        "Add a connection": "Koppeling toevoegen"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"
