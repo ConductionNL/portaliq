@@ -242,13 +242,23 @@ export default {
 </script>
 
 <style scoped>
+/* The dialog as the Machtigen board draws it: 640px on a dimmed page, no
+   frame but rounded corners and a shadow, the actions at the end of the
+   last line. */
 .pq-mandate-invite {
-	max-inline-size: min(36rem, calc(100vw - 2rem));
-	padding: var(--utrecht-space-block-lg, 1.5rem);
-	color: var(--utrecht-document-color, inherit);
 	background: var(--utrecht-document-background-color, Canvas);
-	border: var(--utrecht-border-width-sm, 1px) solid
-		var(--utrecht-color-grey-80, currentcolor);
+	border: 0;
+	border-radius: var(--nldesign-website-border-radius-large, 8px);
+	box-shadow: 0 8px 32px rgb(0 0 0 / 20%);
+	box-sizing: border-box;
+	color: var(--utrecht-document-color, inherit);
+	inline-size: min(40rem, calc(100vw - 2rem));
+	max-inline-size: none;
+	padding: 1.75rem;
+}
+
+.pq-mandate-invite::backdrop {
+	background: rgb(0 0 0 / 40%);
 }
 
 .pq-mandate-invite form > * + * {
@@ -288,6 +298,7 @@ export default {
 .pq-mandate-invite__buttons {
 	display: flex;
 	flex-wrap: wrap;
-	gap: var(--utrecht-space-inline-sm, 0.5rem);
+	gap: 0.75rem;
+	justify-content: flex-end;
 }
 </style>
