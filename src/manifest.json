@@ -308,6 +308,17 @@
       "visibleIf": {
         "access.admin": true
       }
+    },
+    {
+      "id": "AdminRightsMenu",
+      "label": "Admin rights",
+      "icon": "ShieldAccount",
+      "route": "AdminRights",
+      "section": "settings",
+      "order": 93,
+      "visibleIf": {
+        "access.admin": true
+      }
     }
   ],
   "pages": [
@@ -5290,6 +5301,48 @@
       "title": "Shared block layout",
       "component": "PageLayoutDesigner",
       "_note": "The page designer on a shared block: it saves `draftWidgets` and publishes into `widgets` (src/editor/blockSaver.js)."
+    },
+    {
+      "id": "AdminRights",
+      "route": "/admin-rights",
+      "type": "dashboard",
+      "title": "Admin rights",
+      "config": {
+        "description": "Which groups may do what in portaliq. Change the rights under Administration settings, Portaliq.",
+        "showWidgetActions": false,
+        "showRefresh": false,
+        "showRequestFeature": false,
+        "showReportBug": false,
+        "showDocumentation": false,
+        "widgets": [
+          {
+            "id": "admin-rights-groups",
+            "type": "record-list",
+            "title": "Admin groups",
+            "content": {
+              "endpointSource": {
+                "url": "/apps/portaliq/api/settings/action-groups",
+                "responsePath": "results"
+              },
+              "presentation": "rows",
+              "title": "{name}",
+              "meta": "{rights}",
+              "trailing": "{members} leden",
+              "emptyText": "Only administrators have rights so far"
+            }
+          }
+        ],
+        "layout": [
+          {
+            "id": "admin-rights-groups",
+            "widgetId": "admin-rights-groups",
+            "gridX": 0,
+            "gridY": 0,
+            "gridWidth": 12,
+            "gridHeight": 6
+          }
+        ]
+      }
     }
   ],
   "walkthrough": {
