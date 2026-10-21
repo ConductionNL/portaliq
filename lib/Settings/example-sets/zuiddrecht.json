@@ -1110,6 +1110,141 @@
 				"endDateCurrent": "{{date:14}}",
 				"status": "lopend"
 			}
+		},
+		{
+			"key": "contact-sanne-mark",
+			"register": "portaliq",
+			"schema": "portalContact",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"role": "begeleider",
+				"displayName": "{{cast:mark.displayName}}",
+				"line": "Gemeente Zuiddrecht, schuldhulpverlening",
+				"state": "approved",
+				"contactRef": "{{cast:mark.uid}}"
+			}
+		},
+		{
+			"key": "contact-sanne-henk",
+			"register": "portaliq",
+			"schema": "portalContact",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"role": "contact",
+				"displayName": "{{cast:henk.displayName}}",
+				"line": "Uw vader",
+				"state": "approved",
+				"contactRef": "{{cast:henk.uid}}"
+			}
+		},
+		{
+			"key": "contact-sanne-uitnodiging",
+			"register": "portaliq",
+			"schema": "portalContact",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"role": "contact",
+				"displayName": "J. de Vries",
+				"line": "Nog geen account aangemaakt",
+				"state": "invited",
+				"email": "j.devries@example.nl",
+				"sentAt": "{{datetime:-16 10:00}}"
+			}
+		},
+		{
+			"key": "plan-sanne-schuldhulp",
+			"register": "portaliq",
+			"schema": "portalPlan",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"participants": [
+					"{{cast:mark.uid}}"
+				],
+				"title": "Schuldhulp op orde",
+				"goal": "Over drie maanden heb ik een overzicht van al mijn schulden en een vaste afspraak over aflossen.",
+				"goalDetail": "Samen met Mark zet ik alle rekeningen op een rij. Daarna vragen we schuldhulpverlening aan bij de gemeente, zodat ik met één afspraak per maand aflos.",
+				"endDate": "{{date:12}}",
+				"status": "running"
+			}
+		},
+		{
+			"key": "plan-sanne-schuldhulp-actie-1",
+			"register": "portaliq",
+			"schema": "portalAction",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"assignee": "{{cast:sanne.uid}}",
+				"title": "Overzicht maken van al mijn schulden",
+				"kind": "once",
+				"status": "done",
+				"endDate": "{{date:-21}}",
+				"plan": "{{object:plan-sanne-schuldhulp.id}}"
+			}
+		},
+		{
+			"key": "plan-sanne-schuldhulp-actie-2",
+			"register": "portaliq",
+			"schema": "portalAction",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"assignee": "{{cast:mark.uid}}",
+				"title": "Afspraak met de budgetcoach plannen",
+				"kind": "once",
+				"status": "done",
+				"endDate": "{{date:-14}}",
+				"plan": "{{object:plan-sanne-schuldhulp.id}}"
+			}
+		},
+		{
+			"key": "plan-sanne-schuldhulp-actie-3",
+			"register": "portaliq",
+			"schema": "portalAction",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"assignee": "{{cast:sanne.uid}}",
+				"title": "Bankafschriften van drie maanden uploaden",
+				"kind": "once",
+				"status": "doing",
+				"endDate": "{{date:6}}",
+				"plan": "{{object:plan-sanne-schuldhulp.id}}"
+			}
+		},
+		{
+			"key": "plan-sanne-schuldhulp-actie-4",
+			"register": "portaliq",
+			"schema": "portalAction",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"assignee": "{{cast:mark.uid}}",
+				"title": "Aanvraag schuldhulpverlening indienen",
+				"kind": "once",
+				"status": "todo",
+				"endDate": "{{date:12}}",
+				"plan": "{{object:plan-sanne-schuldhulp.id}}"
+			}
+		},
+		{
+			"key": "plan-sanne-schuldhulp-actie-5",
+			"register": "portaliq",
+			"schema": "portalAction",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"assignee": "{{cast:sanne.uid}}",
+				"title": "Vaste lasten bijwerken in het budgetplan",
+				"kind": "recurring",
+				"status": "todo",
+				"endDate": "{{date:23}}",
+				"plan": "{{object:plan-sanne-schuldhulp.id}}"
+			}
 		}
 	],
 	"tasks": [
@@ -1194,6 +1329,18 @@
 			},
 			"set": {
 				"authentication.registration.businessGroup": "ondernemers"
+			}
+		},
+		{
+			"key": "samenwerken-en-contacten",
+			"register": "portaliq",
+			"schema": "portal",
+			"where": {
+				"slug": "zuiddrecht"
+			},
+			"set": {
+				"contactsEnabled": true,
+				"plansEnabled": true
 			}
 		}
 	]
