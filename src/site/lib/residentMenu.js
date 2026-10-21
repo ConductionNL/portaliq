@@ -294,6 +294,82 @@ export function residentMenuGroups(
 }
 
 /**
+ * The menu item a route belongs to, so the menu marks where the resident is
+ * on a page one level deeper too: the route itself when an item links to it,
+ * else the deepest item the route lies under, else, for a record of a cases
+ * collection (a case opened from "Mijn zaken"), the cases section. A route
+ * that belongs to no item is handed back, and nothing is marked.
+ *
+ * @param {string} route The route on screen.
+ * @param {Array<{items: Array<{link: string}>}>} groups The menu's groups.
+ * @param {Array<object>} [nav] The signed-in navigation.
+ * @param {object|null} [contributions] The contributions aggregate (`{contributions: [{app, collections}]}`).
+ * @return {string} The route of the item to mark, or the route itself.
+ * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
+ */
+export function menuCurrentRoute(route, groups, nav = [], contributions = null) {
+	const links = (Array.isArray(groups) ? groups : [])
+		.flatMap((group) => (Array.isArray(group?.items) ? group.items : []))
+		.map((item) => item?.link)
+		.filter((link) => typeof link === 'string' && link !== '')
+	if (typeof route !== 'string' || route === '' || links.includes(route)) {
+		return route || ''
+	}
+	const under = links
+		.filter((link) => link !== ACCOUNT_ROUTE && route.startsWith(`${link}/`))
+		.sort((a, b) => b.length - a.length)[0]
+	if (under) {
+		return under
+	}
+	const entries = Array.isArray(nav) ? nav : []
+	const entry = entries.find(
+		(candidate) =>
+			!candidate.special && route.startsWith(`${routeForNav(candidate)}/`),
+	)
+	const cases = entries.find((candidate) => candidate.special === 'cases')
+	if (entry && cases && isCasesPage(entry, contributions)) {
+		const link = routeForNav(cases)
+		if (links.includes(link)) {
+			return link
+		}
+	}
+	return route
+}
+
+/**
+ * Whether a navigation entry's page shows a `cases` collection.
+ *
+ * @param {object} entry A navigation entry.
+ * @param {object|null} contributions The contributions aggregate.
+ * @return {boolean}
+ * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
+ */
+function isCasesPage(entry, contributions) {
+	const app = entry.contribution?.app || ''
+	const page = entry.page || {}
+	const names = [
+		page.record?.collection,
+		...(Array.isArray(page.blocks) ? page.blocks : []).map(
+			(block) => block?.collection,
+		),
+	].filter((name) => typeof name === 'string' && name !== '')
+	const list = Array.isArray(contributions?.contributions)
+		? contributions.contributions
+		: []
+	return list.some(
+		(contribution) =>
+			contribution?.app === app
+			&& (Array.isArray(contribution.collections)
+				? contribution.collections
+				: []
+			).some(
+				(collection) =>
+					collection?.kind === 'cases' && names.includes(collection.id),
+			),
+	)
+}
+
+/**
  * The groups without the items the portal leaves out by name, and without a
  * group that is empty then (resident-menu-leave-out).
  *
