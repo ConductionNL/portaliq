@@ -344,10 +344,11 @@ export default {
 
 .pq-access__pill {
 	border-radius: var(--nldesign-website-badge-border-radius, 14px);
-	font-size: 0.8125rem;
+	font-size: 0.9375rem;
 	font-weight: var(--utrecht-typography-weight-scale-bold, 600);
-	line-height: 1.5rem;
-	padding-inline: 0.625rem;
+	line-height: 1.75rem;
+	padding-inline: 0.75rem;
+	white-space: nowrap;
 }
 
 .pq-access__pill--pending {
