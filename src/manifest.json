@@ -157,6 +157,26 @@
       }
     },
     {
+      "id": "AccountlessReportsMenu",
+      "label": "Reports without an account",
+      "icon": "ShieldAccount",
+      "route": "AccountlessReports",
+      "order": 35,
+      "visibleIf": {
+        "access.admin": true
+      }
+    },
+    {
+      "id": "RevealRequestsMenu",
+      "label": "Reveal requests",
+      "icon": "EyeLock",
+      "route": "RevealRequests",
+      "order": 35,
+      "visibleIf": {
+        "access.admin": true
+      }
+    },
+    {
       "id": "FormBindingsMenu",
       "label": "Request forms",
       "icon": "ChartLine",
@@ -2336,6 +2356,100 @@
           "submission-forms",
           "submission-history"
         ]
+      }
+    },
+    {
+      "id": "AccountlessReports",
+      "route": "/accountless-reports",
+      "type": "index",
+      "title": "Reports without an account",
+      "config": {
+        "entitySource": "endpoint",
+        "sourceConfig": {
+          "url": "/apps/portaliq/api/reports",
+          "rowsPath": "results",
+          "totalPath": "total"
+        },
+        "columns": [
+          {
+            "key": "subject",
+            "label": "Subject"
+          },
+          {
+            "key": "state",
+            "label": "Status",
+            "widget": "badge",
+            "widgetProps": {
+              "colorMap": {
+                "open": "warning",
+                "acknowledged": "info",
+                "closed": "success"
+              }
+            }
+          },
+          {
+            "key": "receivedAt",
+            "label": "Received on",
+            "format": "datetime"
+          }
+        ],
+        "showAdd": false,
+        "showTitle": true,
+        "showTitleIcon": false,
+        "_note": "intake-report-pages T08 / REQ-IRP-004: the reports the caller handles, read from GET /api/reports through the projection, never from a generic OpenRegister index on portalReport."
+      }
+    },
+    {
+      "id": "RevealRequests",
+      "route": "/reveal-requests",
+      "type": "index",
+      "title": "Reveal requests",
+      "config": {
+        "entitySource": "endpoint",
+        "sourceConfig": {
+          "url": "/apps/portaliq/api/reveal-requests",
+          "rowsPath": "results",
+          "totalPath": "total"
+        },
+        "columns": [
+          {
+            "key": "subject",
+            "label": "Report"
+          },
+          {
+            "key": "motivation",
+            "label": "Motivation"
+          },
+          {
+            "key": "requestedBy",
+            "label": "Asked by"
+          },
+          {
+            "key": "requestedAt",
+            "label": "Asked on",
+            "format": "datetime"
+          }
+        ],
+        "actions": [
+          {
+            "id": "allow-reveal",
+            "label": "Allow",
+            "icon": "Check",
+            "type": "handler",
+            "handler": "allowReveal"
+          },
+          {
+            "id": "refuse-reveal",
+            "label": "Refuse",
+            "icon": "Close",
+            "type": "handler",
+            "handler": "refuseReveal"
+          }
+        ],
+        "showAdd": false,
+        "showTitle": true,
+        "showTitleIcon": false,
+        "_note": "intake-report-pages T09 / REQ-IRP-006: the pending requests on reports whose custodian group the caller is in, from GET /api/reveal-requests."
       }
     },
     {
