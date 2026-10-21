@@ -17,6 +17,7 @@
 				:api="api"
 				:t="t"
 				cancellable
+				:portalHelp="portalHelp"
 				@cancel="leave"
 				@submitted="(object) => $emit('created', object, resolved)" />
 		</template>
@@ -66,6 +67,7 @@
 				:t="t"
 				:send="sendForward"
 				cancellable
+				:portalHelp="portalHelp"
 				@cancel="leave"
 				@submitted="(object) => $emit('created', object, resolved)" />
 		</template>
@@ -163,6 +165,8 @@ export default {
 		action: { type: Object, default: null },
 		/** Where a checked redirect goes; the browser by default. */
 		navigate: { type: Function, default: goTo },
+		/** The portal's help details, offered on a form with a page of its own. */
+		portalHelp: { type: Object, default: null },
 	},
 
 	emits: ['created'],
