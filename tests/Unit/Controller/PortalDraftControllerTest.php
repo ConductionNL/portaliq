@@ -101,9 +101,40 @@ class PortalDraftControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame(['title' => 'Half'], $data['answers']);
 		$this->assertSame('d-1', $data['id']);
+		$this->assertNotSame('', $data['updatedAt'], 'the resume dialog names the last save');
 		$this->assertSame('portal:sanne', $this->call('findDraft')['owner']->value);
 		$this->assertSame(['caseType' => 'ct-1'], $this->call('findDraft')['match']);
 	}//end testShowAnswersTheLiveDraftsAnswersAndExpiry()
+
+	/**
+	 * The index lists each live draft with its label and moments, and nothing
+	 * for an action without a draft declaration or a draft past retention.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
+	 */
+	public function testIndexListsTheLiveDrafts(): void {
+		$labelled = self::ACTION + ['label' => 'Woo-verzoek'];
+		$data     = $this->controller(subjectRef: 'sanne', found: $this->live(), action: $labelled)->index()->getData();
+
+		$this->assertCount(expectedCount: 1, haystack: $data['drafts']);
+		$first = $data['drafts'][0];
+		$this->assertSame(expected: ['dossiq', 'request', 'Woo-verzoek'], actual: [$first['app'], $first['action'], $first['label']]);
+		$this->assertNotSame(expected: '', actual: $data['drafts'][0]['expiresAt']);
+
+		$undeclared = $labelled;
+		unset($undeclared['draft']);
+		$withoutDeclaration = $this->controller(subjectRef: 'sanne', found: $this->live(), action: $undeclared);
+		$this->assertSame(expected: ['drafts' => []], actual: $withoutDeclaration->index()->getData());
+
+		$old = ['id' => 'd-old', 'status' => 'draft', 'data' => ['title' => 'Old'], 'updatedAt' => '2026-01-01T00:00:00+00:00'];
+		$this->assertSame(expected: ['drafts' => []], actual: $this->controller(subjectRef: 'sanne', found: $old)->index()->getData());
+
+		$this->assertSame(expected: Http::STATUS_UNAUTHORIZED, actual: $this->controller(subjectRef: '')->index()->getStatus());
+		$unreachable = $this->controller(subjectRef: 'sanne', registryFails: true);
+		$this->assertSame(expected: Http::STATUS_SERVICE_UNAVAILABLE, actual: $unreachable->index()->getStatus());
+	}//end testIndexListsTheLiveDrafts()
 
 	public function testADraftPastItsRetentionIsNotShownAndIsDiscarded(): void {
 		$old      = ['id' => 'd-old', 'status' => 'draft', 'data' => ['title' => 'Old'], 'updatedAt' => '2026-01-01T00:00:00+00:00'];

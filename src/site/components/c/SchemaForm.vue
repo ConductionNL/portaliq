@@ -276,7 +276,7 @@
 				class="utrecht-button utrecht-button--subtle"
 				:disabled="submitting"
 				data-testid="schema-form-save-draft"
-				@click="saveDraft">
+				@click="askingToSave = true">
 				{{ translate('Save and continue later') }}
 			</button>
 			<button
@@ -296,10 +296,31 @@
 			data-testid="schema-form-done">
 			{{ done }}
 		</p>
+
+		<SaveDraftModal
+			v-if="askingToSave"
+			:t="translate"
+			:formTitle="action.label || ''"
+			:days="draftDays"
+			:until="keptUntil"
+			:busy="submitting"
+			@continue="askingToSave = false"
+			@leave="leaveForm"
+			@save="saveAndStop" />
+		<ResumeDraftModal
+			v-if="pendingDraft"
+			:t="translate"
+			:formTitle="action.label || ''"
+			:savedAt="pendingDraftMoment"
+			:busy="submitting"
+			@resume="continueDraft"
+			@restart="startAgain" />
 	</form>
 </template>
 
 <script>
+import ResumeDraftModal from '../../modals/forms/ResumeDraftModal.vue'
+import SaveDraftModal from '../../modals/forms/SaveDraftModal.vue'
 import FormHelp from '../FormHelp.vue'
 import ErrorSummary from '../forms/ErrorSummary.vue'
 import FormProgress from '../forms/FormProgress.vue'
@@ -327,6 +348,7 @@ import {
 	stepHeading,
 } from '../forms/steps.js'
 import { summarySentence } from '../forms/summary.js'
+import { momentInWords } from '../mijn/documents.js'
 import {
 	collectionProviders,
 	fieldConfig,
@@ -364,7 +386,15 @@ import '@utrecht/alert-css/dist/index.css'
 export default {
 	name: 'SchemaForm',
 
-	components: { ErrorSummary, FormHelp, FormProgress, ReviewList, SchemaField },
+	components: {
+		ErrorSummary,
+		FormHelp,
+		FormProgress,
+		ResumeDraftModal,
+		ReviewList,
+		SaveDraftModal,
+		SchemaField,
+	},
 
 	mixins: [stepFlow],
 
@@ -416,6 +446,8 @@ export default {
 			pending: null,
 			confirmed: null,
 			draftId: '',
+			askingToSave: false,
+			pendingDraft: null,
 			prefilled: [],
 			// One key per opened form; every send of these answers carries it,
 			// so a repeated send gets the first one's case (REQ-AFS-001).
@@ -518,6 +550,28 @@ export default {
 		 * @return {string} The href.
 		 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
 		 */
+		/**
+		 * The day a draft saved now is kept until, in words (REQ-FSR-001).
+		 *
+		 * @return {string}
+		 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-saving-a-form-first-says-what-saving-does-req-fsr-001
+		 */
+		keptUntil() {
+			const until = new Date(Date.now() + this.draftDays * 86400000)
+			return retentionDate(until.toISOString(), this.pageLocale())
+		},
+
+		/**
+		 * When the draft waiting to be resumed was last saved, in words.
+		 *
+		 * @return {string}
+		 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-reopening-a-form-asks-before-it-continues-req-fsr-002
+		 */
+		pendingDraftMoment() {
+			const at = this.pendingDraft && this.pendingDraft.updatedAt
+			return at ? momentInWords(at, this.translate, this.pageLocale()) : ''
+		},
+
 		myCasesHref() {
 			const route = `${ACCOUNT_ROUTE}/cases`
 			try {
@@ -990,6 +1044,22 @@ export default {
 			if (!draft || typeof draft.answers !== 'object') {
 				return
 			}
+			this.pendingDraft = draft
+		},
+
+		/**
+		 * Continue with the saved answers: they go back in the fields, on the
+		 * first step with a missing required answer, else on the review.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-reopening-a-form-asks-before-it-continues-req-fsr-002
+		 */
+		continueDraft() {
+			const draft = this.pendingDraft
+			this.pendingDraft = null
+			if (!draft) {
+				return
+			}
 			this.draftId = String(draft.id || '')
 			const values = { ...this.values }
 			for (const field of this.fields) {
@@ -1007,6 +1077,50 @@ export default {
 				'Your answers are saved until {date}. You can continue later.',
 				{ date: retentionDate(draft.expiresAt, this.pageLocale()) },
 			)
+		},
+
+		/**
+		 * Start again: discard the saved draft and keep the fields empty.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-reopening-a-form-asks-before-it-continues-req-fsr-002
+		 */
+		async startAgain() {
+			this.submitting = true
+			if (typeof this.api.discardDraft === 'function') {
+				await this.api.discardDraft(this.draftApp, this.action.id)
+			}
+			this.submitting = false
+			this.pendingDraft = null
+			this.draftId = ''
+		},
+
+		/**
+		 * "Opslaan en stoppen": save the draft, then leave the form the way
+		 * cancelling does; Mijn zaken lists it as an unfinished form. A refused
+		 * save keeps the resident here with the refusal shown.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-saving-a-form-first-says-what-saving-does-req-fsr-001
+		 */
+		async saveAndStop() {
+			await this.saveDraft()
+			this.askingToSave = false
+			if (this.error === '' && Object.keys(this.errors).length === 0) {
+				this.$emit('cancel')
+			}
+		},
+
+		/**
+		 * "Stoppen zonder opslaan": leave the form the way cancelling does,
+		 * keeping nothing new.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-saving-a-form-first-says-what-saving-does-req-fsr-001
+		 */
+		leaveForm() {
+			this.askingToSave = false
+			this.$emit('cancel')
 		},
 
 		/**

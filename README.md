@@ -204,6 +204,12 @@ with app config `dev_login_enabled` = `yes` (system `debug` does not open it)
 and always issues `trust: low` — the local-development door,
 unrelated to and unaffected by the OIDC edge.
 
+**Idle warning on request.** On a test instance, app config
+`session_idle_preview_enabled` = `yes` lets a signed-in page open the idle
+warning at once when its address holds `idleWarning=now`, so the warning
+can be measured and tested without waiting out the idle window. It is off
+unless set to `yes`.
+
 **Decoupling.** The RP is a standard OIDC client and does **not** hard-depend
 on OpenConnector — if OpenConnector later fronts a broker, it is just another
 OIDC issuer in the per-org config, no portaliq code change.

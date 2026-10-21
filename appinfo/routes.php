@@ -79,6 +79,8 @@ return [
         // contrast verdict per set (nldesign-theme-integration). Admin-only.
         ['name' => 'portalTheme#index', 'url' => '/api/portals/{slug}/theme', 'verb' => 'GET'],
         ['name' => 'portalTheme#update', 'url' => '/api/portals/{slug}/theme', 'verb' => 'PUT'],
+        // Every portal with its theme and contrast, for the Themes page (themes-contrast-column). Admin only.
+        ['name' => 'themeOverview#portals', 'url' => '/api/themes/portals', 'verb' => 'GET'],
         // Whether the portal has a published page at its root, for the "Home
         // page" report on the portal's own page (portaliq-cms). Admin-only: it
         // says whether a DRAFT page sits at a route, which the public content
@@ -424,6 +426,7 @@ return [
         ['name' => 'portalAccountSelf#details', 'url' => '/portal/api/identity/details', 'verb' => 'GET'],
         // The resident's saved draft of a create or endpoint action
         // (site-multi-step-forms T8). Subject from the bearer only.
+        ['name' => 'portalDraft#index', 'url' => '/portal/api/drafts', 'verb' => 'GET'],
         ['name' => 'portalDraft#show', 'url' => '/portal/api/drafts/{appId}/{actionId}', 'verb' => 'GET'],
         ['name' => 'portalDraft#save', 'url' => '/portal/api/drafts/{appId}/{actionId}', 'verb' => 'PUT'],
         ['name' => 'portalDraft#discard', 'url' => '/portal/api/drafts/{appId}/{actionId}', 'verb' => 'DELETE'],

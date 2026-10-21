@@ -15,7 +15,7 @@
 //     uses it, and every object it quotes was declared before it;
 //   - the sign-in card and every text a resident reads follow the house rules
 //     (no em-dash, no Title Case on the card);
-//   - the Zuiddrecht resident keeps the five cases the Woo journey and the
+//   - the Zuiddrecht resident keeps the six cases the Woo journey and the
 //     resident boards depend on.
 //
 // The cases live in another app's register and the cast lives in
@@ -314,7 +314,7 @@ test('zuiddrecht.json puts the business contacts in the business group the porta
 	assert.equal(registration.businessAudience.type, 'string', 'the schema declares the business audience')
 })
 
-test('zuiddrecht.json keeps the five cases of the Woo journey and the resident boards', () => {
+test('zuiddrecht.json keeps the six cases of the Woo journey and the resident boards', () => {
 	const zuiddrecht = fragments.find(({ file }) => file === 'zuiddrecht.json').fragment
 	const cases = zuiddrecht.objects
 		.filter((object) => object.schema === 'case' && object.data['@self']?.status !== 'draft')
@@ -325,9 +325,21 @@ test('zuiddrecht.json keeps the five cases of the Woo journey and the resident b
 		'Losse stoeptegel bij de bushalte Lindelaan',
 		'Kapotte lantaarnpaal Kerkplein',
 		'Subsidie buurtfeest Lindelaan',
+		'Parkeervergunning Lindelaan',
 	])
 	assert.deepEqual(zuiddrecht.after, ['dossiq'])
 	assert.equal(zuiddrecht.exampleResident[0].cast, 'sanne')
+})
+
+test('Sanne has an open portal task on her parking permit: a copy of her ID, at most two files', () => {
+	const zuiddrecht = fragments.find(({ file }) => file === 'zuiddrecht.json').fragment
+	const task = zuiddrecht.tasks.find((entry) => entry.key === 'parkeervergunning-sanne-id-kopie').data
+	assert.equal(task.title, 'Stuur een kopie van uw ID-bewijs')
+	assert.equal(task.performerType, 'external')
+	assert.equal(task.assignee, 'party:{{cast:sanne.uid}}')
+	assert.equal(task.objectUuid, '{{object:parkeervergunning-sanne.id}}')
+	assert.deepEqual(task.uploadRules, { required: true, maxFiles: 2 })
+	assert.match(task.description, /Lindelaan 14/)
 })
 
 test('Sanne has one saved Woo request: a draft of the case, owned by her portal subject', () => {

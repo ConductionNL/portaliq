@@ -573,7 +573,7 @@ import {
 import { crumbLabel, signInCrumbs } from './lib/crumbWords.js'
 import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
 import { asideOf } from './lib/gridPlacement.js'
-import { createIdleTracker } from './lib/idleTracker.js'
+import { createIdleTracker, idlePreviewWanted } from './lib/idleTracker.js'
 import { instanceRootFrom } from './lib/instanceRoot.js'
 import { languageEntries, requestedLocale } from './lib/languageNav.js'
 import { loadSiteEditor } from './lib/loadSiteEditor.js'
@@ -2147,6 +2147,9 @@ export default {
 			}
 			this.idleSignedOut = false
 			this.idleTracker.start(this.session)
+			if (idlePreviewWanted(this.session, window.location.search)) {
+				this.idleWarning = true
+			}
 		},
 
 		/**

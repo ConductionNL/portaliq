@@ -111,6 +111,52 @@ class ActionDraft {
 	}//end actionFor()
 
 	/**
+	 * The subject's live drafts, one per action that declares a draft and can
+	 * keep one: its app, action, label, last save and expiry. A draft past its
+	 * retention is discarded on the way, as find() does (REQ-FSR-003).
+	 *
+	 * @param array<string, mixed> $subject The resolved portal subject.
+	 *
+	 * @return array<int, array{app: string, action: string, label: string, updatedAt: string, expiresAt: string}>
+	 *
+	 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
+	 */
+	public function liveDrafts(array $subject): array {
+		$subjectRef = (string)($subject['subjectRef'] ?? '');
+		$live       = [];
+		foreach (($this->registry->aggregateFor($subject)['contributions'] ?? []) as $contribution) {
+			if (is_array($contribution) === false) {
+				continue;
+			}
+
+			$appId = (string)($contribution['app'] ?? '');
+			foreach ((array)($contribution['actions'] ?? []) as $action) {
+				if (is_array($action) === false
+					|| is_array($action['draft'] ?? null) === false
+					|| $this->isDraftable(action: $action, subject: $subject) === false
+				) {
+					continue;
+				}
+
+				$draft = $this->find(action: $action, subjectRef: $subjectRef);
+				if ($draft === null) {
+					continue;
+				}
+
+				$live[] = [
+					'app'       => $appId,
+					'action'    => (string)($action['id'] ?? ''),
+					'label'     => (string)($action['label'] ?? ''),
+					'updatedAt' => (string)($draft['updatedAt'] ?? ''),
+					'expiresAt' => (string)$draft['expiresAt'],
+				];
+			}//end foreach
+		}//end foreach
+
+		return $live;
+	}//end liveDrafts()
+
+	/**
 	 * Where the action's draft lives: the register and schema it creates in.
 	 *
 	 * @param array<string, mixed> $action The create action.
