@@ -324,7 +324,11 @@ export default {
 
 .pq-access__request {
 	align-items: center;
-	border: 1px solid var(--nldesign-color-border, #d3d8df);
+	border: 1px solid
+		var(
+			--nldesign-website-card-border-color,
+			var(--nldesign-color-border, #d3d8df)
+		);
 	border-radius: var(--nldesign-website-border-radius, 4px);
 	display: flex;
 	flex-wrap: wrap;

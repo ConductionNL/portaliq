@@ -68,3 +68,18 @@ test('an access request tag is the boards 28px pill in 15px', () => {
 		/\.pq-access__pill \{[^}]*font-size: 0\.9375rem;[^}]*line-height: 1\.75rem; padding-inline: 0\.75rem;/,
 	)
 })
+
+test('a message, a case and an access request frame in the website card line', () => {
+	assert.match(
+		css,
+		/\.pq-inbox-row \{[^}]*border: 1px solid var\( --nldesign-website-card-border-color,/,
+	)
+	assert.match(
+		sfcStyle('src/site/components/mijn/CaseCard.vue'),
+		/border: 1px solid var\( --nldesign-website-card-border-color,/,
+	)
+	assert.match(
+		sfcStyle('src/site/pages/e/AccessRequestsPage.vue'),
+		/\.pq-access__request \{[^}]*border: 1px solid var\( --nldesign-website-card-border-color,/,
+	)
+})
