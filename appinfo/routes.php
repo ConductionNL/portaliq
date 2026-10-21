@@ -341,6 +341,7 @@ return [
         // revoke every active portal session for an Organisation.
         ['name' => 'sessionAdmin#revokeOrganisation', 'url' => '/api/session-admin/revoke-organisation', 'verb' => 'POST'],
         ['name' => 'sessionAdmin#revokeAccount', 'url' => '/api/session-admin/revoke-account', 'verb' => 'POST'],
+        ['name' => 'sessionAdmin#revokeSession', 'url' => '/api/session-admin/revoke-session', 'verb' => 'POST'],
 
         // Aggregated portal contributions for the authenticated subject
         // (supplier-portal T04). Guarded by PortalAuthMiddleware (fail-closed).

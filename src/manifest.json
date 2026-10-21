@@ -1649,6 +1649,27 @@
             "label": "Download"
           }
         ],
+        "actions": [
+          {
+            "id": "open-session-account",
+            "label": "Go to the account",
+            "icon": "Account",
+            "type": "handler",
+            "handler": "openSessionAccount"
+          },
+          {
+            "id": "revoke-session",
+            "label": "Revoke session",
+            "icon": "Close",
+            "type": "handler",
+            "handler": "revokeSession",
+            "visibleWhen": {
+              "field": "revoked",
+              "op": "neq",
+              "value": true
+            }
+          }
+        ],
         "quickFilters": [
           {
             "label": "Alles",

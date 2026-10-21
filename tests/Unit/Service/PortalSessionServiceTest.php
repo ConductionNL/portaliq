@@ -273,6 +273,52 @@ class PortalSessionServiceTest extends TestCase {
 
 	}//end testLogoutRevokesOnlyItsOwnSession()
 
+	/**
+	 * An admin revokes one session: only that bearer stops working, and the
+	 * history names the admin as an `admin-revoke`, not as a logout.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
+	 */
+	public function testAnAdminRevokesOneSessionAndIsNamed(): void {
+		$store = [];
+		$issuer = $this->service(store: $store);
+		$mine = $issuer->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1');
+		$theirs = $issuer->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1');
+
+		$seen = [];
+		$auditor = $this->createMock(originalClassName: AuditTrailService::class);
+		$auditor->method('record')->willReturnCallback(
+			function (string $verb, string $subjectRef, string $organisation, string $register, string $schema, string $id, ...$rest) use (&$seen) {
+				$seen[] = [$verb, $subjectRef, $organisation, $id, ($rest[2] ?? [])];
+			}
+		);
+		$service = $this->service(store: $store, auditor: $auditor);
+
+		$this->assertTrue(condition: $service->revokeByAdmin(jti: $mine['jti'], admin: 'beheerder'));
+		$this->assertNull(actual: $service->resolveFromBearer(authorizationHeader: 'Bearer ' . $mine['token']));
+		$this->assertNotNull(actual: $service->resolveFromBearer(authorizationHeader: 'Bearer ' . $theirs['token']));
+		$revokes = array_values(array_filter($seen, fn (array $entry) => $entry[0] === 'admin-revoke'));
+		$this->assertSame(expected: [['admin-revoke', 's1', 'org-1', $mine['jti'], ['admin' => 'beheerder']]], actual: $revokes);
+	}//end testAnAdminRevokesOneSessionAndIsNamed()
+
+	/**
+	 * An unknown token id revokes nothing and records nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
+	 */
+	public function testAnAdminRevokeOfAnUnknownSessionDoesNothing(): void {
+		$store = [];
+		$auditor = $this->createMock(originalClassName: AuditTrailService::class);
+		$auditor->expects($this->never())->method('record');
+
+		$this->assertFalse(condition: $this->service(store: $store, auditor: $auditor)->revokeByAdmin(jti: 'no-such-jti', admin: 'beheerder'));
+		$this->assertFalse(condition: $this->service(store: $store, auditor: $auditor)->revokeByAdmin(jti: '', admin: 'beheerder'));
+	}//end testAnAdminRevokeOfAnUnknownSessionDoesNothing()
+
 	public function testRevokeAllForOrganisationRevokesEveryActiveSession(): void {
 		$store = [];
 		$service = $this->service(store: $store);
