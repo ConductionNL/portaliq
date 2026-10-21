@@ -25,3 +25,10 @@ test('an outlined button reads its own ink over the vendored !important', () => 
 		/\.pq-site \.utrecht-button--secondary-action \{ border-color: var\(--_utrecht-button-border-color\) !important; color: var\(--_utrecht-button-color\) !important; \}/,
 	)
 })
+
+test('a resident list page opens with a 44px title on the page title line', () => {
+	assert.match(
+		css,
+		/:is\(#pq-account-title, #pq-details-title, #pq-access-title\) \{ margin-block-start: 0; font-size: var\(--utrecht-heading-1-font-size, 2\.75rem\); line-height: var\( --nldesign-website-page-title-line-height,/,
+	)
+})

@@ -112,3 +112,27 @@ test('markers read the theme step tokens: size, current ring, done fill', () => 
 		/\.pq-form-progress__item--done \.pq-form-progress__marker \{[^}]*background: var\(\s*--nldesign-website-step-done-color/,
 	)
 })
+
+test('steps set as the Woo boards draw them (WooVerzoek, WooVerzoekGegevens)', () => {
+	const css = style()
+	assert.match(css, /\.pq-form-progress__title \{ font-weight: 500; \}/)
+	assert.match(
+		css,
+		/\.pq-form-progress__item--current \.pq-form-progress__title \{ font-weight: var\(--utrecht-typography-weight-scale-bold, 700\); \}/,
+	)
+	assert.match(
+		css,
+		/\.pq-form-progress__item--todo \.pq-form-progress__title \{ color: var\(--nldesign-color-text-muted/,
+	)
+	assert.match(
+		css,
+		/\.pq-form-progress__item--current \.pq-form-progress__marker \{ border-width: 3px;/,
+	)
+	assert.match(css, /\.pq-form-progress__state \{[^}]*font-size: 0\.875rem/)
+	const band = wide()
+	assert.match(band, /\.pq-form-progress__list \{[^}]*padding: 1rem 1\.25rem/)
+	assert.match(
+		band,
+		/\.pq-form-progress__item:not\(:last-child\)::after \{[^}]*block-size: 3px/,
+	)
+})

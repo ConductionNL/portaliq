@@ -2611,12 +2611,19 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	line-height: 1;
 }
 
-/* A resident page's own title (boards MijnZaken, Berichten): 44px, as the
+/* A resident page's own title (boards MijnZaken, Berichten, MijnAccount,
+   MijnGegevens, Machtigingen): 44px on the page title's line, as the
    overview's greeting; a record's name keeps the 40px of its heading. */
 .pq-site:has(.pq-site__header--designed) .pq-account__content > h1,
-.pq-site:has(.pq-site__header--designed) .pq-cases > h1 {
+.pq-site:has(.pq-site__header--designed) .pq-cases > h1,
+.pq-site:has(.pq-site__header--designed)
+	:is(#pq-account-title, #pq-details-title, #pq-access-title) {
 	margin-block-start: 0;
 	font-size: var(--utrecht-heading-1-font-size, 2.75rem);
+	line-height: var(
+		--nldesign-website-page-title-line-height,
+		var(--utrecht-heading-1-line-height, revert)
+	);
 }
 
 /*
