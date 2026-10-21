@@ -49,6 +49,14 @@
 		data-testid="schema-form"
 		novalidate
 		@submit.prevent="onSubmit">
+		<!-- "Hulp nodig?": the portal's help, merged with the action's own;
+		     it opens a dialog and leaves the answers alone. -->
+		<FormHelp
+			v-if="portalHelp || action.help"
+			class="pq-schema-form__help"
+			:portalHelp="portalHelp"
+			:formHelp="isPlainObject(action.help) ? action.help : null"
+			:title="action.label || ''" />
 		<p
 			v-if="draftId !== ''"
 			class="utrecht-paragraph pq-schema-form__draft-status"
@@ -224,6 +232,7 @@
 </template>
 
 <script>
+import FormHelp from '../FormHelp.vue'
 import ErrorSummary from '../forms/ErrorSummary.vue'
 import FormProgress from '../forms/FormProgress.vue'
 import ReviewList from '../forms/ReviewList.vue'
@@ -285,7 +294,7 @@ import {
 export default {
 	name: 'SchemaForm',
 
-	components: { ErrorSummary, FormProgress, ReviewList, SchemaField },
+	components: { ErrorSummary, FormHelp, FormProgress, ReviewList, SchemaField },
 
 	mixins: [stepFlow],
 
@@ -312,6 +321,8 @@ export default {
 		 * the row's own values on an update (site-action-forms).
 		 */
 		initial: { type: Object, default: () => ({}) },
+		/** The portal's help details (`help` on the site), for "Hulp nodig?". */
+		portalHelp: { type: Object, default: null },
 	},
 
 	emits: ['submitted'],
@@ -595,6 +606,20 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * Whether a value is a plain object, such as an action's `help`.
+		 *
+		 * @param {unknown} value The value.
+		 * @return {boolean}
+		 *
+		 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
+		 */
+		isPlainObject(value) {
+			return (
+				Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+			)
+		},
+
 		/**
 		 * One empty string per whitelisted field, or the value the page gives
 		 * for it (`preset`), or the value the form starts from (`initial`).
@@ -1084,6 +1109,13 @@ export default {
 .pq-schema-form {
 	display: block;
 	margin-block: var(--utrecht-space-block-md, 1rem);
+}
+
+/* "Hulp nodig?" at the end of the line above the form. */
+.pq-schema-form__help {
+	display: flex;
+	justify-content: flex-end;
+	margin-block-end: var(--utrecht-space-block-sm, 0.75rem);
 }
 
 .pq-schema-form__buttons {

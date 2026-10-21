@@ -16,6 +16,7 @@
 				:action="resolved"
 				:api="api"
 				:t="t"
+				:portalHelp="portalHelp"
 				@submitted="(object) => $emit('created', object, resolved)" />
 		</template>
 		<!-- A call to action that creates something about the open record
@@ -60,6 +61,7 @@
 				:api="api"
 				:t="t"
 				:send="sendForward"
+				:portalHelp="portalHelp"
 				@submitted="(object) => $emit('created', object, resolved)" />
 		</template>
 		<!-- A call to action (a cta, a greeting's button) whose action needs
@@ -152,6 +154,8 @@ export default {
 		action: { type: Object, default: null },
 		/** Where a checked redirect goes; the browser by default. */
 		navigate: { type: Function, default: goTo },
+		/** The portal's help details, offered on a form with a page of its own. */
+		portalHelp: { type: Object, default: null },
 	},
 
 	emits: ['created'],
