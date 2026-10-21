@@ -22,10 +22,10 @@
 		<p class="utrecht-paragraph pq-not-found__code" data-testid="not-found-code">
 			{{ tr('Error code 404') }}
 		</p>
-		<h2 class="utrecht-heading-2">
+		<h1 class="utrecht-heading-1">
 			{{ t('Page not found') }}
-		</h2>
-		<p class="utrecht-paragraph">
+		</h1>
+		<p class="utrecht-paragraph pq-not-found__intro">
 			{{
 				tr(
 					'This page does not exist (any more). Maybe the address was typed wrong, or we moved the page.',
@@ -42,37 +42,48 @@
 			<label class="utrecht-form-label" for="pq-not-found-term">{{
 				tr('Search for what you need')
 			}}</label>
-			<input
-				id="pq-not-found-term"
-				v-model="term"
-				class="utrecht-textbox utrecht-textbox--html-input"
-				type="search"
-				name="q"
-				autocomplete="off" />
-			<button
-				type="submit"
-				class="utrecht-button utrecht-button--primary-action">
-				{{ t('Search') }}
-			</button>
+			<!-- The plain search's field: input and button joined. -->
+			<div class="ac-search-box__search">
+				<input
+					id="pq-not-found-term"
+					v-model="term"
+					class="ac-search-box__input utrecht-textbox utrecht-textbox--html-input"
+					type="search"
+					name="q"
+					autocomplete="off" />
+				<button
+					type="submit"
+					class="ac-search-box__button utrecht-button utrecht-button--primary-action">
+					{{ t('Search') }}
+				</button>
+			</div>
 		</form>
 
-		<p class="utrecht-paragraph">
+		<h2 class="utrecht-heading-3 pq-not-found__more">
 			{{ tr('Or go on to') }}
-		</p>
+		</h2>
 		<ul class="pq-not-found__links" data-testid="not-found-links">
 			<li v-for="link in view.links" :key="link.kind">
 				<a
 					:href="hrefFor(link.route)"
+					class="utrecht-link pq-not-found__link"
 					:data-testid="`not-found-${link.kind}`"
-					@click.prevent="$emit('navigate', link.route)"
-					>{{ link.label }}</a
-				>
+					@click.prevent="$emit('navigate', link.route)">
+					<svg
+						class="pq-not-found__chevron"
+						viewBox="0 0 24 24"
+						aria-hidden="true"
+						focusable="false">
+						<path d="M9 5l7 7-7 7" />
+					</svg>
+					<span>{{ link.label }}</span>
+				</a>
 			</li>
 		</ul>
 
 		<p
 			v-if="view.report"
-			class="utrecht-paragraph"
+			class="utrecht-paragraph pq-not-found__report"
 			data-testid="not-found-report">
 			{{ view.report }}
 		</p>
@@ -86,6 +97,7 @@ import { notFoundView } from '../lib/notFoundView.js'
 import { pageLocale } from '../pages/inbox/translate.js'
 
 import '@utrecht/button-css/dist/index.css'
+import '@utrecht/link-css/dist/index.css'
 import '@utrecht/form-label-css/dist/index.css'
 import '@utrecht/paragraph-css/dist/index.css'
 import '@utrecht/textbox-css/dist/index.css'
@@ -224,20 +236,79 @@ export default {
 </script>
 
 <style scoped>
-.pq-not-found__code {
-	color: var(--utrecht-color-grey-600, #5f6368);
+/* Board NietGevonden: one column of at most 760px, its parts 24px apart. */
+.pq-not-found {
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+	padding-block: 1.5rem 1rem;
+}
+
+.pq-not-found > * {
+	max-inline-size: 47.5rem;
+	margin: 0;
+}
+
+.pq-not-found__code.utrecht-paragraph {
+	color: var(--nldesign-color-text-muted, var(--utrecht-document-color, CanvasText));
+	font-size: 1.125rem;
 	font-weight: 600;
+}
+
+.pq-not-found__intro.utrecht-paragraph {
+	font-size: 1.3125rem;
+	line-height: 1.55;
 }
 
 .pq-not-found__search {
 	display: flex;
-	flex-wrap: wrap;
+	flex-direction: column;
 	gap: 0.5rem;
-	align-items: end;
-	margin-block: var(--utrecht-space-block-md, 1rem);
+}
+
+.pq-not-found__search .utrecht-form-label {
+	font-size: 1.0625rem;
+	font-weight: 600;
+}
+
+/* The field takes the column's width, as on the board. */
+.pq-not-found__search .utrecht-textbox {
+	max-inline-size: none;
+}
+
+.pq-not-found__more {
+	margin-block-start: 0.5rem;
 }
 
 .pq-not-found__links {
-	margin-block: 0 var(--utrecht-space-block-md, 1rem);
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	padding: 0;
+	list-style: none;
+	font-size: 1.1875rem;
+}
+
+.pq-not-found__link {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	min-block-size: 2.75rem;
+	font-weight: 600;
+}
+
+.pq-not-found__chevron {
+	flex: none;
+	inline-size: 1.25rem;
+	block-size: 1.25rem;
+	fill: none;
+	stroke: currentcolor;
+	stroke-width: 2;
+}
+
+.pq-not-found__report.utrecht-paragraph {
+	color: var(--nldesign-color-text-muted, var(--utrecht-document-color, CanvasText));
+	font-size: 1rem;
+	line-height: 1.5;
 }
 </style>
