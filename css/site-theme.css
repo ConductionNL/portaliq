@@ -1446,6 +1446,19 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 }
 
 /*
+ * Every other page that opens with an h1 of its own (the sign-in page, a
+ * publication, the accessibility statement, a news article) keeps the set's
+ * size but takes the page title's line height, so every title on the site
+ * sets the same. Without the token nothing changes.
+ */
+.pq-site h1.utrecht-heading-1 {
+	line-height: var(
+		--nldesign-website-page-title-line-height,
+		var(--utrecht-heading-1-line-height, revert)
+	);
+}
+
+/*
  * THE PLAIN HERO (site-matches-the-zuiddrecht-boards, board Home): the
  * question large, the form on the band itself with input and button joined,
  * the popular links under it, the emblem faint at the end of the band. Only
