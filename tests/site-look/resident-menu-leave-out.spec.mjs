@@ -64,3 +64,32 @@ test('the site hands the portal list to the menu in both places', () => {
 	const app = readFileSync(join(ROOT, 'src/site/App.vue'), 'utf8')
 	assert.equal(app.split('this.site?.residentMenu?.leaveOut,').length - 1, 2)
 })
+
+test('Zuiddrecht leaves out the contributed pages its MijnMenu board does not draw', () => {
+	const site = JSON.parse(
+		readFileSync(join(ROOT, 'lib/Settings/sites/zuiddrecht.json'), 'utf8'),
+	)
+	const find = (node) => {
+		if (node === null || typeof node !== 'object') return null
+		if (node.residentMenu) return node.residentMenu
+		for (const value of Object.values(node)) {
+			const found = find(value)
+			if (found) return found
+		}
+		return null
+	}
+	const leaveOut = find(site).leaveOut
+	for (const name of [
+		'decidiq:citizenReactions',
+		'decidiq:motionsOpenForAdvice',
+		'opencatalogi:dossiers',
+		'pipelinq:requests',
+		'zaakafhandelapp:citizenZaken',
+	]) {
+		assert.ok(leaveOut.includes(name), name)
+	}
+	// The board's own items stay.
+	for (const name of ['cases', 'tasks', 'access', 'inbox', 'details', 'account']) {
+		assert.ok(!leaveOut.includes(name), name)
+	}
+})
