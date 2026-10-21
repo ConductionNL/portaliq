@@ -325,8 +325,8 @@
 				"intakeChannel": "website",
 				"communicationChannel": "portal",
 				"confidentiality": "intern",
-				"assignee": "{{cast:thomas.uid}}",
-				"assignedGroup": "behandelaars",
+				"assignee": "{{cast:pieter.uid}}",
+				"assignedGroup": "zuiddrecht-woo-en-informatie",
 				"externalReference": "MZ-ZDR-2026-0412",
 				"startDate": "{{date:-14}}",
 				"receivedAt": "{{datetime:-14 09:12}}",
@@ -1459,7 +1459,7 @@
 				"description": "3 van 7 nog open",
 				"objectUuid": "{{object:woo-fietspad.id}}",
 				"state": "active",
-				"assignee": "{{cast:thomas.uid}}",
+				"assignee": "{{cast:pieter.uid}}",
 				"dueAt": "{{date:1}}",
 				"priority": "high"
 			}
