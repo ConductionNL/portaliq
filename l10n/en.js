@@ -1961,6 +1961,7 @@ OC.L10N.register(
         "Anyone, after a staff member approves": "Anyone, after a staff member approves",
         "Approve": "Approve",
         "E-mail address": "E-mail address",
+        "DigiD, eHerkenning, eIDAS or another sign-in service.": "DigiD, eHerkenning, eIDAS or another sign-in service.",
         "For example client or supplier.": "For example client or supplier.",
         "Give a reason.": "Give a reason.",
         "Give an identity reference or an e-mail address.": "Give an identity reference or an e-mail address.",
