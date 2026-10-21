@@ -283,6 +283,50 @@ class PortalAccountAdminController extends Controller {
 	}//end revokeInvitation()
 
 	/**
+	 * Send an invitation that was not accepted again, with a new link.
+	 *
+	 * @param string $id The invitation's id.
+	 * @param string $organisation The tenant the clerk works for.
+	 *
+	 * @return JSONResponse `{state: sent, expiresAt}`, or a refusal. Never the
+	 *                      secret: that is in the mail only.
+	 *
+	 * @spec openspec/changes/staff-resend-an-invitation/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
+	 */
+	#[NoAdminRequired]
+	public function resendInvitation(string $id, string $organisation = ''): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		try {
+			$this->actionAuth->requireAction(user: $user, action: self::ACTION_PROVISION);
+		} catch (OCSForbiddenException $exception) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$resent = $this->invitations->resend(id: $id, organisation: $organisation);
+		if (isset($resent['error']) === true) {
+			return new JSONResponse(['error' => $resent['error']], Http::STATUS_BAD_REQUEST);
+		}
+
+		$sent = $this->mailer->send(
+			template: PortalIdentityMailer::TEMPLATE_INVITATION,
+			email: (string)$resent['email'],
+			secret: (string)$resent['token'],
+			organisation: $organisation
+		);
+		if ($sent === false) {
+			// The old link was replaced and the new one did not leave, so
+			// nobody holds a working secret. The clerk sends it again.
+			return new JSONResponse(['error' => 'mail_not_sent'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		return new JSONResponse(['state' => 'sent', 'expiresAt' => $resent['expiresAt']]);
+	}//end resendInvitation()
+
+	/**
 	 * Approve a self-registration that waits for a decision.
 	 *
 	 * @param string $subjectRef The account.

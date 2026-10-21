@@ -278,6 +278,76 @@ class PortalAccountAdminControllerTest extends TestCase {
 	}//end user()
 
 	/**
+	 * A controller whose invitation service answers `$resent` to a resend.
+	 *
+	 * @param bool $allowed Whether the clerk holds the provision action.
+	 * @param array<string, string> $resent What the service answers.
+	 * @param bool $mailed Whether the mail leaves.
+	 * @param int $resends How often the service may be asked.
+	 *
+	 * @return PortalAccountAdminController
+	 */
+	private function resending(bool $allowed, array $resent, bool $mailed = true, int $resends = 1): PortalAccountAdminController {
+		$actionAuth = $this->createMock(originalClassName: ActionAuthService::class);
+		if ($allowed === false) {
+			$actionAuth->method('requireAction')->willThrowException(exception: new OCSForbiddenException(message: 'nope'));
+		}
+
+		$session = $this->createMock(originalClassName: IUserSession::class);
+		$session->method('getUser')->willReturn(value: $this->user(uid: 'clerk-anna'));
+		$invitations = $this->createMock(originalClassName: PortalInvitationService::class);
+		$invitations->expects($this->exactly(count: $resends))->method('resend')->willReturn(value: $resent);
+		$mailer = $this->createMock(originalClassName: PortalIdentityMailer::class);
+		$mailer->method('send')->willReturn(value: $mailed);
+
+		return new PortalAccountAdminController(
+			request: $this->createMock(originalClassName: IRequest::class),
+			accounts: $this->createMock(originalClassName: PortalAccountService::class),
+			actionAuth: $actionAuth,
+			userSession: $session,
+			invitations: $invitations,
+			mailer: $mailer
+		);
+	}//end resending()
+
+	/**
+	 * A clerk without the provision action is refused before the invitation
+	 * is read; one with it gets the new expiry and never the secret.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/staff-resend-an-invitation/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
+	 */
+	public function testAnInvitationIsSentAgainOnlyByAClerkWithTheAction(): void {
+		$resent = ['token' => 'secret-2', 'email' => 'ans@example.org', 'expiresAt' => '2026-10-27T09:00:00+00:00'];
+
+		$refused = $this->resending(allowed: false, resent: $resent, resends: 0)->resendInvitation(id: 'inv-1', organisation: 'gemeente-x');
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $refused->getStatus());
+
+		$data = $this->resending(allowed: true, resent: $resent)->resendInvitation(id: 'inv-1', organisation: 'gemeente-x')->getData();
+		$this->assertSame(expected: ['state' => 'sent', 'expiresAt' => '2026-10-27T09:00:00+00:00'], actual: $data);
+		$this->assertStringNotContainsString(needle: 'secret-2', haystack: (string)json_encode(value: $data));
+	}//end testAnInvitationIsSentAgainOnlyByAClerkWithTheAction()
+
+	/**
+	 * A refusal of the service and a mail that did not leave are told apart.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/staff-resend-an-invitation/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
+	 */
+	public function testAResendThatCannotBeDoneSaysWhy(): void {
+		$accepted = $this->resending(allowed: true, resent: ['error' => 'already_accepted'])->resendInvitation(id: 'inv-1', organisation: 'gemeente-x');
+		$this->assertSame(expected: Http::STATUS_BAD_REQUEST, actual: $accepted->getStatus());
+		$this->assertSame(expected: ['error' => 'already_accepted'], actual: $accepted->getData());
+
+		$resent = ['token' => 'secret-2', 'email' => 'ans@example.org', 'expiresAt' => '2026-10-27T09:00:00+00:00'];
+		$unsent = $this->resending(allowed: true, resent: $resent, mailed: false)->resendInvitation(id: 'inv-1', organisation: 'gemeente-x');
+		$this->assertSame(expected: Http::STATUS_SERVICE_UNAVAILABLE, actual: $unsent->getStatus());
+		$this->assertSame(expected: ['error' => 'mail_not_sent'], actual: $unsent->getData());
+	}//end testAResendThatCannotBeDoneSaysWhy()
+
+	/**
 	 * sign-in-with-an-email-link H2: staff change an e-mail account's sign-in
 	 * address. Every refusal is told apart, and the address is only echoed
 	 * back lower case and trimmed when the change was made.

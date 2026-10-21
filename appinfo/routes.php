@@ -55,6 +55,7 @@ return [
         ['name' => 'portalAccountAdmin#invite', 'url' => '/api/invitations', 'verb' => 'POST'],
         ['name' => 'portalAccountAdmin#invitations', 'url' => '/api/invitations', 'verb' => 'GET'],
         ['name' => 'portalAccountAdmin#revokeInvitation', 'url' => '/api/invitations/{id}/revoke', 'verb' => 'POST'],
+        ['name' => 'portalAccountAdmin#resendInvitation', 'url' => '/api/invitations/{id}/resend', 'verb' => 'POST'],
 
         // The owner's side of an access request (identity-access-requests):
         // staff holding `portal.answer-access-request` list, grant and refuse.
