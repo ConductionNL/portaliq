@@ -2992,7 +2992,11 @@ OC.L10N.register(
         "Your plan is nearly ending": "Your plan is nearly ending",
         "The plan %1$s ends on %2$s": "The plan %1$s ends on %2$s",
         "The plan \"%1$s\" ends on %2$s. %3$s actions are still open. Extend the plan with your caseworker, or complete the actions.": "The plan \"%1$s\" ends on %2$s. %3$s actions are still open. Extend the plan with your caseworker, or complete the actions.",
-        "Go to %1$s": "Go to %1$s"
+        "Go to %1$s": "Go to %1$s",
+        "The receipt did not arrive.": "The receipt did not arrive.",
+        "The mail to the resident was refused. The submission itself did reach the case app. Contact the resident another way, for instance by the phone number in the submission.": "The mail to the resident was refused. The submission itself did reach the case app. Contact the resident another way, for instance by the phone number in the submission.",
+        "Details": "Details",
+        "Evidence log": "Evidence log"
     },
     "nplurals=2; plural=(n != 1);"
 )

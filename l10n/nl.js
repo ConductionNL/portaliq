@@ -3148,7 +3148,11 @@ OC.L10N.register(
         "Your plan is nearly ending": "Uw plan loopt bijna af",
         "The plan %1$s ends on %2$s": "Het plan %1$s eindigt op %2$s",
         "The plan \"%1$s\" ends on %2$s. %3$s actions are still open. Extend the plan with your caseworker, or complete the actions.": "Het plan \"%1$s\" eindigt op %2$s. Er staan nog %3$s acties open. Verleng het plan met uw begeleider, of rond de acties af.",
-        "Go to %1$s": "Ga naar %1$s"
+        "Go to %1$s": "Ga naar %1$s",
+        "The receipt did not arrive.": "De ontvangstbevestiging kwam niet aan.",
+        "The mail to the resident was refused. The submission itself did reach the case app. Contact the resident another way, for instance by the phone number in the submission.": "De mail naar de inwoner werd geweigerd. De inzending zelf is wel in de zaakapp aangekomen. Neem op een andere manier contact op, bijvoorbeeld via het telefoonnummer uit de inzending.",
+        "Details": "Gegevens",
+        "Evidence log": "Bewijslog"
     },
     "nplurals=2; plural=(n != 1);"
 )
