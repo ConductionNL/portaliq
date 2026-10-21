@@ -297,6 +297,55 @@
 					</li>
 				</ol>
 
+				<!-- NOTHING FOUND (board ZoekenGeenTreffers): what to try next,
+				     with a way out of the filters when any are on. -->
+				<div
+					v-if="nothingFound"
+					class="pq-search__empty"
+					data-testid="federated-search-empty">
+					<h3 class="utrecht-heading-3">{{ emptyTitle }}</h3>
+					<p class="utrecht-paragraph">{{ emptyText }}</p>
+					<ul class="utrecht-unordered-list pq-search__empty-tips">
+						<li class="utrecht-unordered-list__item">
+							{{ emptySpelling }}
+						</li>
+						<li
+							v-if="fewerWordsTip"
+							class="utrecht-unordered-list__item">
+							{{ fewerWordsTip }}
+						</li>
+						<li
+							v-if="filtersOn"
+							class="utrecht-unordered-list__item">
+							{{ emptyFewerFilters }}
+						</li>
+					</ul>
+					<div
+						v-if="filtersOn || emptyActionHref"
+						class="pq-search__empty-actions">
+						<button
+							v-if="filtersOn"
+							type="button"
+							class="utrecht-button utrecht-button--secondary-action"
+							data-testid="federated-search-clear-filters"
+							@click="clearFilters">
+							{{ clearFiltersLabel }}
+						</button>
+						<a
+							v-if="emptyActionHref && emptyActionLabel"
+							class="utrecht-button-link utrecht-button-link--html-a utrecht-button-link--primary-action"
+							:href="emptyActionAddress"
+							data-testid="federated-search-empty-action">
+							{{ emptyActionLabel }}
+						</a>
+					</div>
+					<p
+						v-if="emptyActionNote"
+						class="utrecht-paragraph pq-search__empty-note">
+						{{ emptyActionNote }}
+					</p>
+				</div>
+
 				<!--
 					PAGINATION IS A NAV OF LINKS, not buttons.
 
@@ -639,6 +688,36 @@ export default {
 			default: 'De zoekresultaten konden niet worden geladen.',
 		},
 
+		/** The heading when a search finds nothing. */
+		emptyTitle: { type: String, default: 'Niets gevonden' },
+		/** The line under it. */
+		emptyText: {
+			type: String,
+			default: 'Probeer een ander woord of minder filters.',
+		},
+
+		/** The first tip. */
+		emptySpelling: { type: String, default: 'Controleer de spelling.' },
+		/** The tip for a term of several words; `{word}` is its last word. */
+		emptyFewerWords: {
+			type: String,
+			default: 'Gebruik minder woorden, bijvoorbeeld alleen "{word}".',
+		},
+
+		/** The tip while a filter is on. */
+		emptyFewerFilters: {
+			type: String,
+			default: 'Haal een of meer filters weg.',
+		},
+
+		/** The button that takes every filter off. */
+		clearFiltersLabel: { type: String, default: 'Alle filters weghalen' },
+		/** A way on the portal offers when nothing is found, with its address. */
+		emptyActionLabel: { type: String, default: '' },
+		emptyActionHref: { type: String, default: '' },
+		/** The line under that way on. */
+		emptyActionNote: { type: String, default: '' },
+
 		/**
 		 * The endpoint to search.
 		 *
@@ -825,6 +904,58 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * @return {boolean} Whether a finished search found nothing.
+		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md
+		 */
+		nothingFound() {
+			return (
+				!this.loading
+				&& !this.error
+				&& this.sequence > 0
+				&& this.total === 0
+			)
+		},
+
+		/**
+		 * @return {boolean} Whether a filter or a period is on.
+		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md
+		 */
+		filtersOn() {
+			return (
+				Object.values(this.facets).some(
+					(values) => Array.isArray(values) && values.length > 0,
+				)
+				|| this.periodFrom !== ''
+				|| this.periodTo !== ''
+			)
+		},
+
+		/**
+		 * @return {string} The way on's href: a site route in this host's own
+		 *   addressing, anything else as it is.
+		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md
+		 */
+		emptyActionAddress() {
+			const href = this.emptyActionHref
+			if (!href.startsWith('/') || href.startsWith('//') || typeof window === 'undefined') {
+				return href
+			}
+			return addressOfRoute(href, window.location.href, runtimeConfig()).toString()
+		},
+
+		/**
+		 * @return {string} The fewer-words tip with the term's last word, or ''
+		 *   for a term of one word.
+		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md
+		 */
+		fewerWordsTip() {
+			const words = String(this.query || '').trim().split(/\s+/).filter(Boolean)
+			return words.length > 1
+				? this.emptyFewerWords.replace('{word}', words[words.length - 1])
+				: ''
+		},
+
 		/**
 		 * The facet fields in effect: the old single field when a placement
 		 * sets it, else the list.
@@ -1470,6 +1601,21 @@ export default {
 		},
 
 		/**
+		 * Take every filter and the period off and search again.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md
+		 */
+		clearFilters() {
+			this.facets = {}
+			this.periodFrom = ''
+			this.periodTo = ''
+			this.page = 1
+			this.writeLocation(true)
+			this.search()
+		},
+
+		/**
 		 * Change one end of the period and search again.
 		 *
 		 * @param {string} which `periodFrom` or `periodTo`.
@@ -1631,6 +1777,39 @@ export default {
 
 /* A filter group: the fieldset carries the legend for assistive tech and no
    frame of its own; the groups are separated by space only. */
+/* Nothing found (board ZoekenGeenTreffers): a card with what to try next. */
+.pq-search__empty {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	padding: 2rem;
+	border: 1px solid
+		var(
+			--nldesign-website-card-border-color,
+			var(--nldesign-color-border, currentcolor)
+		);
+	border-radius: var(--nldesign-website-border-radius-large, 0);
+}
+
+.pq-search__empty > * {
+	margin: 0;
+}
+
+.pq-search__empty-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+	margin-block-start: 0.5rem;
+}
+
+.pq-search__empty-note {
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, currentcolor)
+	);
+	font-size: 0.9375rem;
+}
+
 .pq-search__locked {
 	display: flex;
 	flex-wrap: wrap;

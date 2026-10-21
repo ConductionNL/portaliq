@@ -2875,7 +2875,10 @@
                             "periodLabel": "Periode",
                             "periodFromLabel": "Vanaf",
                             "periodToLabel": "Tot en met",
-                            "sortLabel": "Sorteren"
+                            "sortLabel": "Sorteren",
+                            "emptyActionLabel": "Woo-verzoek indienen",
+                            "emptyActionHref": "/mijn/dossiq/startWooVerzoekAlgemeen",
+                            "emptyActionNote": "Staat de informatie er niet bij? Dan kunt u erom vragen met een Woo-verzoek."
                         }
                     }
                 ]
