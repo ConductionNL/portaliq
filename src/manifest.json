@@ -1925,11 +1925,14 @@
           {
             "when": {
               "field": "state",
-              "op": "in",
-              "value": [
-                "sent",
-                "opened"
-              ]
+              "value": "sent"
+            },
+            "class": "cn-row--attention"
+          },
+          {
+            "when": {
+              "field": "state",
+              "value": "opened"
             },
             "class": "cn-row--attention"
           }
