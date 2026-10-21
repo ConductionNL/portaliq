@@ -198,21 +198,26 @@
             "items": [
                 {
                     "order": 1,
+                    "name": "Begrippenlijst",
+                    "link": "/begrippen"
+                },
+                {
+                    "order": 2,
                     "name": "Toegankelijkheid",
                     "link": "/toegankelijkheid"
                 },
                 {
-                    "order": 2,
+                    "order": 3,
                     "name": "Privacy",
                     "link": "/privacy"
                 },
                 {
-                    "order": 3,
+                    "order": 4,
                     "name": "Cookies",
                     "link": "/cookies"
                 },
                 {
-                    "order": 4,
+                    "order": 5,
                     "name": "Kwetsbaarheid melden",
                     "link": "/kwetsbaarheid-melden"
                 }
@@ -2328,6 +2333,32 @@
             }
         },
         {
+            "route": "/begrippen",
+            "title": "Begrippenlijst",
+            "summary": "De begrippen die op deze website worden gebruikt, met wat ze betekenen.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-begrippen-01-glossary",
+                        "widgetKey": "glossary",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 6,
+                        "props": {
+                            "description": "Hieronder staan de begrippen die op deze website worden gebruikt. Op andere pagina's ziet u een begrip onderstreept: kies het en u leest de uitleg.",
+                            "synonymsLabel": "Ook bekend als:",
+                            "sourceLabel": "Bron:",
+                            "emptyLabel": "Er staan nog geen begrippen in deze lijst."
+                        }
+                    }
+                ]
+            }
+        },
+        {
             "route": "/toegankelijkheid",
             "title": "Toegankelijkheid",
             "summary": "Deze website is gemaakt om voor iedereen bruikbaar te zijn.",
@@ -2743,6 +2774,45 @@
                 "schoolRef": "zuiddrecht"
             },
             "body": "Aan de oude haven komt een park. Wij horen graag wat u daar wilt doen en zien.\n\nOp dinsdag 20 oktober is er een inloopavond in het stadskantoor, van 19.00 tot 21.00 uur. U kunt uw idee ook mailen."
+        }
+    ],
+    "glossary": [
+        {
+            "term": "Bestemmingsplan",
+            "definition": "Regels van de gemeente over wat er op een plek gebouwd mag worden en hoe de grond gebruikt mag worden. Sinds 2024 heet dit het omgevingsplan.",
+            "synonyms": [
+                "Omgevingsplan"
+            ],
+            "source": "Omgevingswet"
+        },
+        {
+            "term": "Machtiging",
+            "definition": "Toestemming die u iemand geeft om zaken voor u te regelen bij de gemeente."
+        },
+        {
+            "term": "Omgevingsvergunning",
+            "definition": "Toestemming van de gemeente voor bijvoorbeeld bouwen, verbouwen of een boom kappen.",
+            "synonyms": [
+                "Bouwvergunning"
+            ],
+            "source": "Omgevingswet, hoofdstuk 5"
+        },
+        {
+            "term": "Publicatie",
+            "definition": "Een document dat de gemeente actief openbaar maakt.",
+            "source": "Wet open overheid, artikel 3.3"
+        },
+        {
+            "term": "Woo-verzoek",
+            "definition": "Een verzoek om openbaarmaking van overheidsinformatie.",
+            "synonyms": [
+                "Wob-verzoek"
+            ],
+            "source": "Wet open overheid, artikel 4.1"
+        },
+        {
+            "term": "Zaaknummer",
+            "definition": "Het nummer van uw aanvraag of melding. U vindt het in de ontvangstbevestiging."
         }
     ]
 }

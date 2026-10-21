@@ -170,6 +170,17 @@ for (const [key, path] of Object.entries(blockComponents)) {
 	)
 	widgetProps[key] = propsOfVue(path)
 }
+// The blocks the shared library's public registry brings, which WidgetGrid
+// spreads into its own map.
+const libraryIndex = read('node_modules/@conduction/nextcloud-vue/src/public/index.js')
+const libraryBlocks = {
+	glossary: 'node_modules/@conduction/nextcloud-vue/src/public/components/CnSiteGlossary.vue',
+}
+assert.match(publicMap, /\.\.\.siteBlockRegistry/, 'the library blocks are public')
+for (const [key, path] of Object.entries(libraryBlocks)) {
+	assert.match(libraryIndex, new RegExp(`\\n\\t${key}: `), `${key} is a library block`)
+	widgetProps[key] = propsOfVue(path)
+}
 assert.match(
 	publicMap,
 	/\.\.\.nldsWidgets/,
@@ -381,6 +392,14 @@ for (const { file, site } of sites) {
 				problems,
 			),
 		)
+		for (const term of site.glossary || []) {
+			hold(
+				{ ...term, portal: site.portal.slug },
+				schemas.glossaryTerm,
+				`glossary "${term.term}"`,
+				problems,
+			)
+		}
 		assert.deepEqual(problems, [])
 	})
 
