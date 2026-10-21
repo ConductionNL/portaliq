@@ -9,6 +9,8 @@
 
 export default {
 	nl: {
+		'For example the name or the KvK number of a company':
+			'Bijvoorbeeld de naam of het KvK-nummer van een bedrijf',
 		'Send the invitation': 'Uitnodiging sturen',
 		'Who may arrange matters for you, and for whom you arrange matters.':
 			'Wie zaken voor u mag regelen, en voor wie u zaken regelt.',
@@ -290,6 +292,8 @@ export default {
 		'{name} has been added to your case.': '{name} is aan uw zaak toegevoegd.',
 	},
 	en: {
+		'For example the name or the KvK number of a company':
+			'For example the name or the KvK number of a company',
 		'Send the invitation': 'Send the invitation',
 		'Who may arrange matters for you, and for whom you arrange matters.':
 			'Who may arrange matters for you, and for whom you arrange matters.',
