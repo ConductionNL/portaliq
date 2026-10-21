@@ -49,6 +49,14 @@
 		data-testid="schema-form"
 		novalidate
 		@submit.prevent="onSubmit">
+		<!-- "Hulp nodig?": the portal's help, merged with the action's own;
+		     it opens a dialog and leaves the answers alone. -->
+		<FormHelp
+			v-if="portalHelp || action.help"
+			class="pq-schema-form__help"
+			:portalHelp="portalHelp"
+			:formHelp="isPlainObject(action.help) ? action.help : null"
+			:title="action.label || ''" />
 		<p
 			v-if="draftId !== ''"
 			class="utrecht-paragraph pq-schema-form__draft-status"
@@ -62,7 +70,7 @@
 				:current="stepIndex"
 				:idBase="`f-${action.id}-progress`"
 				:label="translate('Progress')"
-				:shortPattern="translate('Step {n} of {m}')"
+				:shortPattern="translate('Step {n} of {m}: {title}')"
 				:showLabel="translate('Show all steps')"
 				:hideLabel="translate('Hide the steps')"
 				:doneLabel="translate('Done')"
@@ -89,6 +97,24 @@
 			data-testid="schema-form-optional-note">
 			{{ translate('A field without "optional" must be filled in.') }}
 		</p>
+
+		<div
+			v-if="showsPrefill"
+			class="utrecht-alert utrecht-alert--info pq-schema-form__prefilled"
+			data-testid="schema-form-prefilled">
+			<div class="utrecht-alert__content">
+				<p class="utrecht-paragraph pq-schema-form__prefilled-title">
+					{{ translate('We filled in some things for you') }}
+				</p>
+				<p class="utrecht-paragraph">
+					{{
+						translate(
+							'This comes from your account. Is something wrong? Change it here for this request.',
+						)
+					}}
+				</p>
+			</div>
+		</div>
 
 		<ErrorSummary
 			ref="summary"
@@ -149,6 +175,23 @@
 				:error="errors[field] || ''"
 				:t="t"
 				@pick="(picked) => pick(field, picked)" />
+			<!-- What the resident may want to know before going on, after
+			     the step's questions (the step's `note`). -->
+			<div
+				v-if="hasSteps && currentStep.note"
+				class="utrecht-alert utrecht-alert--info pq-schema-form__note"
+				data-testid="schema-form-step-note">
+				<div class="utrecht-alert__content">
+					<p
+						v-if="currentStep.note.title !== ''"
+						class="utrecht-paragraph pq-schema-form__note-title">
+						{{ currentStep.note.title }}
+					</p>
+					<p v-if="currentStep.note.text !== ''" class="utrecht-paragraph">
+						{{ currentStep.note.text }}
+					</p>
+				</div>
+			</div>
 		</template>
 
 		<!-- The answers in one sentence, as they are given
@@ -169,7 +212,9 @@
 			</p>
 		</div>
 
-		<div class="pq-schema-form__buttons">
+		<div
+			class="pq-schema-form__buttons"
+			:class="{ 'pq-schema-form__buttons--steps': hasSteps }">
 			<button
 				v-if="hasSteps && stepIndex > 0"
 				type="button"
@@ -177,19 +222,50 @@
 				:disabled="submitting"
 				data-testid="schema-form-previous"
 				@click="previousStep">
+				<svg
+					class="pq-schema-form__chevron"
+					viewBox="0 0 16 16"
+					aria-hidden="true"
+					focusable="false">
+					<path
+						d="M10 3L5 8l5 5"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2" />
+				</svg>
 				{{ translate('Previous step') }}
+			</button>
+			<button
+				v-else-if="cancellable"
+				type="button"
+				class="utrecht-button utrecht-button--secondary-action"
+				:disabled="submitting"
+				data-testid="schema-form-cancel"
+				@click="$emit('cancel')">
+				{{ translate('Cancel') }}
 			</button>
 			<button
 				v-if="hasSteps && !onReview"
 				type="submit"
-				class="utrecht-button utrecht-button--primary-action"
+				class="utrecht-button utrecht-button--primary-action pq-schema-form__forward"
 				data-testid="schema-form-next">
 				{{ translate('Next step') }}
+				<svg
+					class="pq-schema-form__chevron"
+					viewBox="0 0 16 16"
+					aria-hidden="true"
+					focusable="false">
+					<path
+						d="M6 3l5 5-5 5"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2" />
+				</svg>
 			</button>
 			<button
 				v-else
 				type="submit"
-				class="utrecht-button utrecht-button--primary-action"
+				class="utrecht-button utrecht-button--primary-action pq-schema-form__forward"
 				:disabled="submitting"
 				data-testid="schema-form-submit">
 				{{ submitting ? translate('Please wait…') : submitLabel }}
@@ -224,6 +300,7 @@
 </template>
 
 <script>
+import FormHelp from '../FormHelp.vue'
 import ErrorSummary from '../forms/ErrorSummary.vue'
 import FormProgress from '../forms/FormProgress.vue'
 import ReviewList from '../forms/ReviewList.vue'
@@ -241,7 +318,7 @@ import {
 import { runtimeConfig } from '../../lib/contentApi.js'
 import { addressOfRoute } from '../../lib/siteAddress.js'
 import { explainsOptional, summaryEntries } from '../forms/fields.js'
-import { prefillFields, withProfile } from '../forms/profilePrefill.js'
+import { filledFields, prefillFields, withProfile } from '../forms/profilePrefill.js'
 import stepFlow from '../forms/stepFlow.js'
 import {
 	confirmationText,
@@ -266,6 +343,8 @@ import {
 	withSingleOptions,
 } from './forms.js'
 
+import '@utrecht/alert-css/dist/index.css'
+
 /**
  * A manifest-driven form (the Vue port of SchemaForm.jsx, which also replaces
  * ActionFieldsForm.jsx). It renders exactly the action's whitelisted `fields`,
@@ -285,7 +364,7 @@ import {
 export default {
 	name: 'SchemaForm',
 
-	components: { ErrorSummary, FormProgress, ReviewList, SchemaField },
+	components: { ErrorSummary, FormHelp, FormProgress, ReviewList, SchemaField },
 
 	mixins: [stepFlow],
 
@@ -312,9 +391,16 @@ export default {
 		 * the row's own values on an update (site-action-forms).
 		 */
 		initial: { type: Object, default: () => ({}) },
+		/**
+		 * Offer "Annuleren" where there is no step to go back to; the form
+		 * emits `cancel` and its host decides where that leads.
+		 */
+		cancellable: { type: Boolean, default: false },
+		/** The portal's help details (`help` on the site), for "Hulp nodig?". */
+		portalHelp: { type: Object, default: null },
 	},
 
-	emits: ['submitted'],
+	emits: ['submitted', 'cancel'],
 
 	data() {
 		const options = staticOptions(this.action)
@@ -330,6 +416,7 @@ export default {
 			pending: null,
 			confirmed: null,
 			draftId: '',
+			prefilled: [],
 			// One key per opened form; every send of these answers carries it,
 			// so a repeated send gets the first one's case (REQ-AFS-001).
 			submissionKey: newSubmissionKey(),
@@ -456,6 +543,21 @@ export default {
 		 *
 		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-site-form-must-mark-the-fields-that-are-not-required-req-smf-001
 		 */
+		/**
+		 * Whether the fields on screen hold something the resident's own
+		 * account filled in, so the form says so and invites a correction.
+		 *
+		 * @return {boolean}
+		 *
+		 * @spec openspec/changes/action-fields-prefill-from-the-residents-profile/specs/portal-contribution-contract/spec.md#requirement-an-action-field-may-start-from-the-signed-in-residents-name-or-e-mail-address
+		 */
+		showsPrefill() {
+			return (
+				!this.onReview
+				&& this.prefilled.some((field) => this.shownFields.includes(field))
+			)
+		},
+
 		explainOptional() {
 			return (
 				!this.onReview
@@ -595,6 +697,20 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * Whether a value is a plain object, such as an action's `help`.
+		 *
+		 * @param {unknown} value The value.
+		 * @return {boolean}
+		 *
+		 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
+		 */
+		isPlainObject(value) {
+			return (
+				Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+			)
+		},
+
 		/**
 		 * One empty string per whitelisted field, or the value the page gives
 		 * for it (`preset`), or the value the form starts from (`initial`).
@@ -860,7 +976,9 @@ export default {
 			const actionId = this.action.id
 			const profile = await this.api.getDetails().catch(() => null)
 			if (this.action.id === actionId) {
-				this.values = withProfile(this.values, this.action, profile)
+				const before = this.values
+				this.values = withProfile(before, this.action, profile)
+				this.prefilled = filledFields(before, this.values, this.action)
 			}
 		},
 
@@ -1086,11 +1204,59 @@ export default {
 	margin-block: var(--utrecht-space-block-md, 1rem);
 }
 
+/* "Hulp nodig?" at the end of the line above the form. */
+.pq-schema-form__help {
+	display: flex;
+	justify-content: flex-end;
+	margin-block-end: var(--utrecht-space-block-sm, 0.75rem);
+}
+
 .pq-schema-form__buttons {
 	display: flex;
 	flex-wrap: wrap;
 	gap: var(--utrecht-space-inline-sm, 0.5rem);
 	margin-block-start: var(--utrecht-space-block-md, 1rem);
+}
+
+/* A form in steps ends on a rule: the way back (or out) at the start, the
+   way forward at the end. */
+.pq-schema-form__buttons--steps {
+	border-block-start: 1px solid
+		var(--nldesign-color-border, var(--utrecht-color-grey-80, currentcolor));
+	margin-block-start: var(--utrecht-space-block-xl, 2rem);
+	padding-block-start: var(--utrecht-space-block-lg, 1.5rem);
+}
+
+.pq-schema-form__buttons--steps .pq-schema-form__forward {
+	margin-inline-start: auto;
+}
+
+.pq-schema-form__chevron {
+	block-size: 1em;
+	flex: none;
+	inline-size: 1em;
+}
+
+.pq-schema-form__prefilled {
+	border: var(--nldesign-website-notice-border-width, 1px) solid
+		var(--nldesign-website-notice-border-color, #b9cbe2);
+	border-radius: var(--nldesign-website-border-radius, 4px);
+	margin-block-end: var(--utrecht-space-block-md, 1rem);
+}
+
+.pq-schema-form__prefilled-title {
+	font-weight: var(--utrecht-typography-weight-scale-bold, 600);
+}
+
+.pq-schema-form__note {
+	border: var(--nldesign-website-notice-border-width, 1px) solid
+		var(--nldesign-website-notice-border-color, #b9cbe2);
+	border-radius: var(--nldesign-website-border-radius, 4px);
+	margin-block-start: var(--utrecht-space-block-lg, 1.5rem);
+}
+
+.pq-schema-form__note-title {
+	font-weight: var(--utrecht-typography-weight-scale-bold, 600);
 }
 
 .pq-schema-form__intro {

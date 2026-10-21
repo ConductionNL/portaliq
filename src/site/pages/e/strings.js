@@ -9,6 +9,11 @@
 
 export default {
 	nl: {
+		'How you are signed in, how we reach you and what we let you know about.':
+			'Hoe u bent ingelogd, hoe wij u bereiken en waarover wij u laten weten.',
+		'Contact preferences': 'Contactvoorkeuren',
+		'For example the name or the KvK number of a company':
+			'Bijvoorbeeld de naam of het KvK-nummer van een bedrijf',
 		'Send the invitation': 'Uitnodiging sturen',
 		'Who may arrange matters for you, and for whom you arrange matters.':
 			'Wie zaken voor u mag regelen, en voor wie u zaken regelt.',
@@ -289,6 +294,11 @@ export default {
 		'{name} has been added to your case.': '{name} is aan uw zaak toegevoegd.',
 	},
 	en: {
+		'How you are signed in, how we reach you and what we let you know about.':
+			'How you are signed in, how we reach you and what we let you know about.',
+		'Contact preferences': 'Contact preferences',
+		'For example the name or the KvK number of a company':
+			'For example the name or the KvK number of a company',
 		'Send the invitation': 'Send the invitation',
 		'Who may arrange matters for you, and for whom you arrange matters.':
 			'Who may arrange matters for you, and for whom you arrange matters.',

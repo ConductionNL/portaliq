@@ -13,7 +13,10 @@
 	-->
 	<section
 		class="container pq-account"
-		:class="{ 'pq-account--with-menu': withMenu }"
+		:class="{
+			'pq-account--with-menu': withMenu,
+			'pq-account--form': formPage,
+		}"
 		data-testid="site-account">
 		<!-- The resident's own menu, beside the content on every page of this
 		     area once signed in (site-resident-menu REQ-SRM-002). -->
@@ -206,7 +209,7 @@ import {
 } from '../../shared/portalNav.js'
 import { sectionOf } from '../lib/help.js'
 import { menuCurrentRoute } from '../lib/residentMenu.js'
-import { pageOwnsHeading, sitePageLoader } from '../pages/registry.js'
+import { isFormPage, pageOwnsHeading, sitePageLoader } from '../pages/registry.js'
 import { actingFor } from './e/actingFor.js'
 
 // The sign-in links are button links. Without this stylesheet their classes
@@ -395,7 +398,19 @@ export default {
 		 * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
 		 */
 		withMenu() {
-			return Boolean(this.session) && this.menuGroups.length > 0
+			return (
+				Boolean(this.session) && this.menuGroups.length > 0 && !this.formPage
+			)
+		},
+
+		/**
+		 * Whether the page on screen is one form and nothing else.
+		 *
+		 * @return {boolean}
+		 * @spec exclude layout of a page that is only a form, as the Mijn form boards draw it
+		 */
+		formPage() {
+			return Boolean(this.session) && isFormPage(this.entry)
 		},
 
 		/**
@@ -618,6 +633,12 @@ export default {
 		gap: 40px;
 		align-items: start;
 	}
+}
+
+/* A page that is only a form: one centred reading column. */
+.pq-account--form .pq-account__content {
+	margin-inline: auto;
+	max-inline-size: 55rem;
 }
 
 .pq-account__ways-in {

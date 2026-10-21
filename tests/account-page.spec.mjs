@@ -254,7 +254,8 @@ test('site: "My account" shows the name, both kinds of address with the preferre
 	assert.match(html, /Waiting for confirmation/)
 	assert.match(html, /\+31612345678/)
 	assert.equal(
-		(html.match(/\(Preferred\)/g) || []).length,
+		(html.match(/pq-address__pill--preferred[^>]*>\s*Preferred\s*</g) || [])
+			.length,
 		2,
 		'one preferred e-mail and one preferred phone',
 	)
@@ -262,11 +263,12 @@ test('site: "My account" shows the name, both kinds of address with the preferre
 	assert.match(html, /Send the link again/)
 	assert.equal((html.match(/Make preferred/g) || []).length, 0)
 	assert.match(html, /<label for="pq-account-name"/)
-	assert.doesNotMatch(
+	assert.match(
 		html,
-		/Your cases stay with the organisation\./,
-		'the removal text shows in the confirmation step only',
+		/Your cases stay with the organisation\.[\s\S]*data-testid="account-remove"/,
+		'the removal says what it does before the button, as the MijnAccount board draws it',
 	)
+	assert.doesNotMatch(html, /Yes, remove my account/, 'no confirmation yet')
 })
 
 test('site: the removal step says the cases stay, and a failed read says so', async () => {
