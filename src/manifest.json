@@ -3346,20 +3346,11 @@
                 {
                   "id": "overview",
                   "widgetIds": [
-                    "portal-home-page",
-                    "portal-kpi-page-views",
-                    "portal-kpi-sessions",
-                    "portal-kpi-visitors",
-                    "portal-kpi-engaged",
                     "portal-data"
                   ],
                   "label": "Overzicht",
                   "columns": 4,
                   "layout": [
-                    {
-                      "widgetId": "portal-home-page",
-                      "gridWidth": 12
-                    },
                     {
                       "widgetId": "portal-data",
                       "gridWidth": 12
@@ -3943,7 +3934,54 @@
           "portal-side-status",
           "portal-side-editors",
           "portal-side-traffic"
+        ],
+        "band": [
+          {
+            "widgetId": "portal-kpi-page-views",
+            "span": 3,
+            "chrome": "bare"
+          },
+          {
+            "widgetId": "portal-kpi-sessions",
+            "span": 3,
+            "chrome": "bare"
+          },
+          {
+            "widgetId": "portal-kpi-visitors",
+            "span": 3,
+            "chrome": "bare"
+          },
+          {
+            "widgetId": "portal-kpi-engaged",
+            "span": 3,
+            "chrome": "bare"
+          },
+          {
+            "widgetId": "portal-home-page",
+            "span": 12
+          }
+        ],
+        "headerActions": [
+          {
+            "id": "view-site",
+            "label": "View website",
+            "icon": "OpenInNew",
+            "href": "/apps/portaliq/site?route=%2F&portal=@object.slug",
+            "target": "_blank"
+          }
+        ],
+        "quickActions": [
+          "view-site"
         ]
+      },
+      "primaryAction": {
+        "id": "new-page",
+        "label": "New page",
+        "icon": "Plus",
+        "route": "Pages",
+        "query": {
+          "action": "create"
+        }
       }
     },
     {
@@ -6258,7 +6296,8 @@
         "{shown} of {total} files in the media library · usable on every page of the portal": "{shown} van {total} bestanden in de mediabibliotheek · te gebruiken op elke pagina van de portal",
         "Upload": "Uploaden",
         "{shown} of {total} submissions via the portals · with the proof that the resident received a confirmation": "{shown} van {total} inzendingen via de portals · met het bewijs dat de inwoner een ontvangstbevestiging kreeg",
-        "{shown} of {total} accounts · who may sign in, and how": "{shown} van {total} accounts · wie mag inloggen, en hoe"
+        "{shown} of {total} accounts · who may sign in, and how": "{shown} van {total} accounts · wie mag inloggen, en hoe",
+        "View website": "Website bekijken"
       }
     }
   }
