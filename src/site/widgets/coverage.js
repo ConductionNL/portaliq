@@ -1017,6 +1017,11 @@ export const SITE_COMPOSITIONS = [
 		why: 'A heading over columns of links on a band of its own ("Bestuur en organisatie").',
 	},
 	{
+		key: 'nlLocationMap',
+		composes: ['Heading', 'Link List', 'Button'],
+		why: 'The organisation\'s places as a numbered list beside a sketch map, with chips per kind of place and a route link ("Locaties").',
+	},
+	{
 		key: 'nlLookupForm',
 		composes: ['Form Field', 'Button'],
 		why: 'A few fields in one row and a button that opens a page with the answers in its address ("Toon mijn afvalkalender").',

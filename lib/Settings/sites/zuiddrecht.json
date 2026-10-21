@@ -2017,6 +2017,10 @@
                                 {
                                     "label": "Afspraak maken",
                                     "href": "/afspraak-maken"
+                                },
+                                {
+                                    "label": "Alle locaties",
+                                    "href": "/contact/locaties"
                                 }
                             ]
                         }
@@ -2137,6 +2141,87 @@
                             "action": "askQuestion",
                             "intro": "Noem het onderwerp en stel uw vraag. U vindt hem terug bij Mijn vragen.",
                             "questionsRoute": "/mijn"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/contact/locaties",
+            "title": "Locaties",
+            "summary": "De gebouwen van de gemeente, met adres en openingstijden.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-locaties-01-nllocationmap",
+                        "widgetKey": "nlLocationMap",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 12,
+                        "gridHeight": 6,
+                        "props": {
+                            "intro": "Hier vindt u de gebouwen van de gemeente, met adres en openingstijden. Voor de balie in het stadskantoor maakt u eerst een afspraak.",
+                            "heading": "{count} locaties",
+                            "allLabel": "Alle locaties",
+                            "locations": [
+                                {
+                                    "name": "Stadskantoor",
+                                    "address": "Marktplein 1, 3311 AA Zuiddrecht",
+                                    "opening": "Maandag tot en met vrijdag 8.30 tot 17.00 uur, alleen op afspraak",
+                                    "category": "Balie en loket",
+                                    "lat": 51.8133,
+                                    "lon": 4.6697,
+                                    "links": [
+                                        {
+                                            "label": "Afspraak maken",
+                                            "href": "/afspraak-maken"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "Milieustraat",
+                                    "address": "Industrieweg 40, 3316 BK Zuiddrecht",
+                                    "opening": "Maandag tot en met vrijdag 8.00 tot 16.00 uur, zaterdag 9.00 tot 15.00 uur",
+                                    "category": "Afval",
+                                    "lat": 51.8051,
+                                    "lon": 4.6912,
+                                    "links": [
+                                        {
+                                            "label": "Wat kunt u brengen",
+                                            "href": "/afval/afvalbrengstation"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "Bibliotheek",
+                                    "address": "Havenkade 8, 3312 CE Zuiddrecht",
+                                    "opening": "Dinsdag tot en met zaterdag 10.00 tot 17.00 uur",
+                                    "category": "Bibliotheek en cultuur",
+                                    "lat": 51.8178,
+                                    "lon": 4.6589,
+                                    "links": []
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "id": "zd-locaties-02-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 0,
+                        "gridY": 6,
+                        "gridWidth": 12,
+                        "gridHeight": 1,
+                        "props": {
+                            "intro": "Heeft u een vraag? Bel of mail ons. We helpen u graag.",
+                            "links": [
+                                {
+                                    "label": "Contact en openingstijden",
+                                    "href": "/contact"
+                                }
+                            ]
                         }
                     }
                 ]
