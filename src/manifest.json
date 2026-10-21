@@ -850,33 +850,82 @@
           {
             "id": "themes-portal-table",
             "title": "Portals and their themes",
-            "type": "table",
+            "type": "object-table",
             "icon": "Palette",
+            "_note": "themes-contrast-column: the rows come from /api/themes/portals, which adds the contrast verdict a theme choice is checked with (PortalThemeContrast) to every published portal.",
             "content": {
-              "register": "portaliq",
-              "schema": "portal",
-              "sort": {
-                "field": "title",
-                "dir": "asc"
+              "endpointSource": {
+                "url": "/apps/portaliq/api/themes/portals",
+                "responsePath": "portals"
               },
               "columns": [
                 {
                   "key": "title",
-                  "label": "Portal"
+                  "label": "Portal",
+                  "secondary": "domain"
                 },
                 {
-                  "key": "theme",
+                  "key": "themeName",
                   "label": "Theme"
                 },
                 {
-                  "key": "status",
-                  "label": "Status"
+                  "key": "contrast",
+                  "label": "Contrast",
+                  "widget": "badge",
+                  "enum": [
+                    "readable",
+                    "poor",
+                    "unchecked"
+                  ],
+                  "enumLabels": {
+                    "readable": "Readable",
+                    "poor": "Hard to read",
+                    "unchecked": "Not checked"
+                  },
+                  "widgetProps": {
+                    "colorMap": {
+                      "readable": "success",
+                      "poor": "warning",
+                      "unchecked": "default"
+                    }
+                  }
+                },
+                {
+                  "key": "houseStyle",
+                  "label": "",
+                  "widget": "link",
+                  "enum": [
+                    "change"
+                  ],
+                  "enumLabels": {
+                    "change": "Change house style"
+                  },
+                  "widgetProps": {
+                    "route": "PortalDetail",
+                    "params": {
+                      "id": "id"
+                    }
+                  }
                 }
               ],
-              "limit": 25,
               "rowRoute": "PortalDetail",
               "viewAllRoute": "Portals",
               "emptyText": "There are no portals yet"
+            }
+          },
+          {
+            "id": "themes-contrast-note",
+            "type": "banner",
+            "content": {
+              "variant": "warning",
+              "lead": "Hard to read:",
+              "text": "the text in the footer does not reach a contrast of 4.5 to 1 with this theme. An editor can still use the theme; that is recorded. You choose the house style at the portal, under Settings.",
+              "visibleWhen": {
+                "endpoint": "/apps/portaliq/api/themes/portals",
+                "field": "poorCount",
+                "op": "gt",
+                "value": 0
+              }
             }
           }
         ],
@@ -912,6 +961,14 @@
             "gridY": 1,
             "gridWidth": 12,
             "gridHeight": 4
+          },
+          {
+            "id": 5,
+            "widgetId": "themes-contrast-note",
+            "gridX": 0,
+            "gridY": 5,
+            "gridWidth": 12,
+            "gridHeight": 1
           }
         ],
         "showActionsMenu": false,
@@ -6258,7 +6315,14 @@
         "{shown} of {total} files in the media library · usable on every page of the portal": "{shown} van {total} bestanden in de mediabibliotheek · te gebruiken op elke pagina van de portal",
         "Upload": "Uploaden",
         "{shown} of {total} submissions via the portals · with the proof that the resident received a confirmation": "{shown} van {total} inzendingen via de portals · met het bewijs dat de inwoner een ontvangstbevestiging kreeg",
-        "{shown} of {total} accounts · who may sign in, and how": "{shown} van {total} accounts · wie mag inloggen, en hoe"
+        "{shown} of {total} accounts · who may sign in, and how": "{shown} van {total} accounts · wie mag inloggen, en hoe",
+        "Contrast": "Contrast",
+        "Readable": "Leesbaar",
+        "Hard to read": "Slecht leesbaar",
+        "Not checked": "Niet gecontroleerd",
+        "Change house style": "Huisstijl wijzigen",
+        "Hard to read:": "Slecht leesbaar:",
+        "the text in the footer does not reach a contrast of 4.5 to 1 with this theme. An editor can still use the theme; that is recorded. You choose the house style at the portal, under Settings.": "de tekst in de voet haalt met dit thema geen contrast van 4,5 op 1. Een redacteur kan het thema toch gebruiken; dat wordt vastgelegd. De huisstijl kiest u bij de portal, onder Instellingen."
       }
     }
   }
