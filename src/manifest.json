@@ -878,8 +878,7 @@
               "aggregate": "count"
             },
             "props": {
-              "countLabel": "portals",
-              "variant": "primary"
+              "countLabel": "portals"
             }
           },
           {
@@ -888,10 +887,13 @@
             "type": "tile",
             "icon": "M12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2C17.5,2 22,6 22,11A5,5 0 0,1 17,16H15.2C14.9,16 14.7,16.2 14.7,16.5C14.7,16.6 14.75,16.7 14.8,16.8C15.1,17.2 15.2,17.6 15.2,18A2,2 0 0,1 13.2,20H12M6.5,10A1.5,1.5 0 0,0 5,11.5A1.5,1.5 0 0,0 6.5,13A1.5,1.5 0 0,0 8,11.5A1.5,1.5 0 0,0 6.5,10M9.5,6A1.5,1.5 0 0,0 8,7.5A1.5,1.5 0 0,0 9.5,9A1.5,1.5 0 0,0 11,7.5A1.5,1.5 0 0,0 9.5,6M14.5,6A1.5,1.5 0 0,0 13,7.5A1.5,1.5 0 0,0 14.5,9A1.5,1.5 0 0,0 16,7.5A1.5,1.5 0 0,0 14.5,6M17.5,10A1.5,1.5 0 0,0 16,11.5A1.5,1.5 0 0,0 17.5,13A1.5,1.5 0 0,0 19,11.5A1.5,1.5 0 0,0 17.5,10Z",
             "iconType": "svg",
-            "backgroundColor": "#0078c8",
-            "textColor": "#ffffff",
+            "backgroundColor": "var(--color-primary-element)",
+            "textColor": "var(--color-primary-element-text)",
             "linkType": "url",
-            "linkValue": "/index.php/settings/admin/theming"
+            "linkValue": "/index.php/settings/admin/theming",
+            "content": {
+              "subtitle": "in the Nextcloud settings"
+            }
           },
           {
             "id": "themes-portal-list",
@@ -899,10 +901,13 @@
             "type": "tile",
             "icon": "M16,9H21.5L16,3.5V9M7,2H17L23,8V18A2,2 0 0,1 21,20H7C5.89,20 5,19.1 5,18V4A2,2 0 0,1 7,2M3,6V22H21V24H3A2,2 0 0,1 1,22V6H3Z",
             "iconType": "svg",
-            "backgroundColor": "#003865",
-            "textColor": "#ffffff",
+            "backgroundColor": "color-mix(in srgb, var(--color-primary-element) 80%, black)",
+            "textColor": "var(--color-primary-element-text)",
             "linkType": "app",
-            "linkValue": "portaliq/portals"
+            "linkValue": "portaliq/portals",
+            "content": {
+              "subtitle": "to Portals"
+            }
           },
           {
             "id": "themes-portal-table",
@@ -970,7 +975,8 @@
             "gridWidth": 12,
             "gridHeight": 4
           }
-        ]
+        ],
+        "description": "The house style of every portal · themes come from the Nextcloud theme catalogue"
       }
     },
     {
@@ -6308,7 +6314,10 @@
         "Cause": "Oorzaak",
         "How we measure": "Zo meten wij",
         "Outage began": "Begon",
-        "Outage ended": "Eindigde"
+        "Outage ended": "Eindigde",
+        "The house style of every portal · themes come from the Nextcloud theme catalogue": "De huisstijl van elke portal · thema's komen uit de themacatalogus van Nextcloud",
+        "in the Nextcloud settings": "in de Nextcloud-instellingen",
+        "to Portals": "naar Portals"
       }
     }
   }
