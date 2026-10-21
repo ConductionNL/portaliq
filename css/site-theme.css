@@ -2572,6 +2572,7 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 .pq-site:has(.pq-site__header--designed) .pq-account .pq-resident-menu__link {
 	min-block-size: 60px;
 	padding-block: 8px;
+	border-radius: 0;
 	font-weight: 500;
 }
 

@@ -21,7 +21,7 @@
 			v-if="withMenu"
 			class="pq-account__menu"
 			:groups="menuGroups"
-			:currentRoute="currentRoute"
+			:currentRoute="menuRoute"
 			:label="t('My area')"
 			:showLabel="(portal && portal.accountLabel) || t('Menu of my area')"
 			:card="menuCard"
@@ -205,6 +205,7 @@ import {
 	routeForNav,
 } from '../../shared/portalNav.js'
 import { sectionOf } from '../lib/help.js'
+import { menuCurrentRoute } from '../lib/residentMenu.js'
 import { pageOwnsHeading, sitePageLoader } from '../pages/registry.js'
 import { actingFor } from './e/actingFor.js'
 
@@ -314,6 +315,22 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The menu item to mark: the route's own, or on a page one level
+		 * deeper (a case opened from "Mijn zaken") the item it belongs to.
+		 *
+		 * @return {string} The route.
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
+		 */
+		menuRoute() {
+			return menuCurrentRoute(
+				this.currentRoute,
+				this.menuGroups,
+				this.nav,
+				this.contributions,
+			)
+		},
+
 		/**
 		 * The help text of the part of Mijn omgeving on screen, or ''.
 		 *

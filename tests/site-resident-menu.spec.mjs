@@ -18,6 +18,7 @@ import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { buildNav, shellSections } from '../src/shared/portalNav.js'
 import {
+	menuCurrentRoute,
 	ownAreaLink,
 	residentMenuGroups,
 	showsResidentMenu,
@@ -262,6 +263,74 @@ test('the menu is a named landmark with labelled groups and marks the current it
 
 	// The unread count is read out in words.
 	assert.match(html, /data-testid="site-resident-menu-badge"[\s\S]*?2 ongelezen/)
+})
+
+test('on a case opened from "Mijn zaken" the menu marks "Mijn zaken"; a route of its own item stays its own', () => {
+	const groups = [
+		{ items: [{ link: '/mijn' }, { link: '/mijn/inbox' }] },
+		{ items: [{ link: '/mijn/cases' }, { link: '/mijn/tasks' }] },
+		{ items: [{ link: '/mijn/opencatalogi/dossiers' }] },
+	]
+	const nav = [
+		{ key: 'cases', special: 'cases' },
+		{
+			key: 'dossiq:mijnZaken',
+			contribution: { app: 'dossiq' },
+			page: { id: 'mijnZaken', record: { collection: 'mijnZaken' } },
+		},
+		{
+			key: 'dossiq:mijnMeldingen',
+			contribution: { app: 'dossiq' },
+			page: { id: 'mijnMeldingen', blocks: [{ collection: 'meldingen' }] },
+		},
+	]
+	const contributions = {
+		contributions: [
+			{
+				app: 'dossiq',
+				collections: [
+					{ id: 'mijnZaken', kind: 'cases' },
+					{ id: 'meldingen', kind: 'list' },
+				],
+			},
+		],
+	}
+	// The case page is no item of the menu: the cases section is marked.
+	assert.equal(
+		menuCurrentRoute('/mijn/dossiq/mijnZaken/c-82', groups, nav, contributions),
+		'/mijn/cases',
+	)
+	// A page with an item of its own keeps it.
+	assert.equal(menuCurrentRoute('/mijn/inbox', groups, nav, contributions), '/mijn/inbox')
+	// A page one level under an item marks that item, never the overview.
+	assert.equal(
+		menuCurrentRoute('/mijn/opencatalogi/dossiers/d-1', groups, nav, contributions),
+		'/mijn/opencatalogi/dossiers',
+	)
+	// A record of a collection that is no cases collection marks nothing.
+	assert.equal(
+		menuCurrentRoute('/mijn/dossiq/mijnMeldingen/m-1', groups, nav, contributions),
+		'/mijn/dossiq/mijnMeldingen/m-1',
+	)
+	// Without the cases section in the menu, nothing either.
+	assert.equal(
+		menuCurrentRoute('/mijn/dossiq/mijnZaken/c-82', groups.slice(0, 1), nav, contributions),
+		'/mijn/dossiq/mijnZaken/c-82',
+	)
+})
+
+test('the signed-in area hands the menu the item a deeper page belongs to', () => {
+	const area = read('src', 'site', 'components', 'AccountArea.vue')
+	assert.match(area, /:currentRoute="menuRoute"/)
+	assert.match(area, /menuCurrentRoute\(\s*this\.currentRoute,\s*this\.menuGroups,\s*this\.nav,\s*this\.contributions,?\s*\)/)
+})
+
+test('on the board look the menu links are square, as the boards draw them', () => {
+	const css = read('css', 'site-theme.css')
+	assert.match(
+		css,
+		/\.pq-site:has\(\.pq-site__header--designed\) \.pq-account \.pq-resident-menu__link \{[^}]*border-radius: 0;/,
+	)
 })
 
 test('on a phone the menu folds behind one button that says whether it is open', async () => {
