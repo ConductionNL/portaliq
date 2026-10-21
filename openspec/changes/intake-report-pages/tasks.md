@@ -7,8 +7,8 @@
 ## Access
 
 - [ ] **T02**: Add optional `handlerGroup` to `portalReportDeclaration`; gate `show()`, `reply()` and `requestReveal()` on handler or custodian membership, with the single 404 (REQ-IRP-005). Verification: `ReportControllerTest::testNonHandlerGets404`, `::testCustodianHandlesWhenNoHandlerGroup`.
-- [ ] **T03**: `ReportController::index()` and route `GET /api/reports`: projected reports and terms for the caller's case types (REQ-IRP-004). Verification: `ReportControllerTest::testIndexNeverReturnsContact`, `::testIndexListsOnlyHandledCaseTypes`.
-- [ ] **T04**: `ReportController::revealRequests()` and route `GET /api/reveal-requests`: pending requests for the caller's custodian groups (REQ-IRP-006). Verification: `ReportControllerTest::testRevealRequestsOnlyForCustodian`.
+- [x] **T03**: `ReportController::index()` and route `GET /api/reports`: projected reports and terms for the caller's case types (REQ-IRP-004). Verification: `ReportControllerTest::testIndexNeverReturnsContact`, `::testIndexListsOnlyHandledCaseTypes`.
+- [x] **T04**: `ReportController::revealRequests()` and route `GET /api/reveal-requests`: pending requests for the caller's custodian groups (REQ-IRP-006). Verification: `ReportControllerTest::testRevealRequestsOnlyForCustodian`.
 
 ## The reporter's pages
 
