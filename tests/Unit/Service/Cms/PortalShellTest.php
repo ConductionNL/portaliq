@@ -86,6 +86,7 @@ class PortalShellTest extends TestCase {
 			actual: $projected['residentMenu']
 		);
 		$this->assertSame(expected: ['display' => 'rows'], actual: $projected['myCases']);
+		$this->assertSame(expected: ['display' => 'folders'], actual: (new PortalShell())->project(portal: ['myCases' => ['display' => 'folders']])['myCases']);
 		$this->assertSame(expected: [], actual: (new PortalShell())->project(portal: ['myCases' => ['display' => 'cards']])['myCases']);
 		$this->assertSame(expected: [], actual: (new PortalShell())->project(portal: [])['myCases']);
 	}//end testTheProjectionServesTheMenuGroupsAndTheCasesDisplay()

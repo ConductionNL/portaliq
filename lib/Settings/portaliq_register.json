@@ -3354,9 +3354,10 @@
                                 "type": "string",
                                 "enum": [
                                     "cards",
-                                    "rows"
+                                    "rows",
+                                    "folders"
                                 ],
-                                "description": "cards draws the folder cards; rows draws one line per case with its number, title, tag and the day it is due by.",
+                                "description": "cards draws the folder cards; rows draws one line per case with its number, title, tag and the day it is due by; folders draws the board folders with the case number, title, tag and the day it is due by.",
                                 "example": "rows"
                             }
                         }
