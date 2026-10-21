@@ -105,7 +105,7 @@ test('a draft at the root is opened, an absent one sends the admin to the pages'
 	assert.ok(ids.has('Pages'))
 })
 
-test('the report is PLACED on the portal page, first on the tab that opens', () => {
+test('the report is PLACED on the portal page, in the band above the tabs', () => {
 	const widget = PORTAL_DETAIL.config.widgets.find(
 		(entry) => entry.type === 'PortalHomePage',
 	)
@@ -113,28 +113,20 @@ test('the report is PLACED on the portal page, first on the tab that opens', () 
 	assert.equal(widget.id, 'portal-home-page')
 	assert.equal(widget.title, 'Home page')
 
-	// The strip is the only grid cell; the report is drawn by the strip's first
-	// tab (Overzicht, the tab the page opens on), above the portal's own fields.
-	const strip = PORTAL_DETAIL.config.layout.find(
-		(entry) => entry.widgetId === 'portal-tabs',
-	)
-	assert.ok(strip, 'the portal fields sit in the tab strip')
+	// The PtPortal board draws the report across the page, under the four
+	// traffic figures and above the tabs and the side column: the page's band.
+	const band = PORTAL_DETAIL.config.band.map((entry) => (typeof entry === 'string' ? entry : entry.widgetId))
+	assert.equal(band.at(-1), widget.id, 'the report closes the band, under the figures')
+	assert.equal(PORTAL_DETAIL.config.band.at(-1).span, 12, 'the report takes the full row')
+
 	const tabsWidget = PORTAL_DETAIL.config.widgets.find((entry) => entry.id === 'portal-tabs')
-	const overview = tabsWidget.content.tabs[0]
-	assert.equal(overview.label, 'Overzicht')
-	assert.deepEqual(
-		overview.widgetIds.slice(0, 1),
-		[widget.id],
-		'a declared widget that no tab names never renders; on the opening tab a configuration error is the first thing read',
-	)
-	assert.ok(
-		overview.widgetIds.indexOf('portal-data') > 0,
-		'the report comes above the portal fields',
-	)
+	for (const tab of tabsWidget.content.tabs) {
+		assert.ok(!(tab.widgetIds || []).includes(widget.id), 'a tab as well as the band would draw it twice')
+	}
 	assert.equal(
 		PORTAL_DETAIL.config.layout.filter((entry) => entry.widgetId === widget.id).length,
 		0,
-		'a layout cell as well as a tab would draw it twice',
+		'a layout cell as well as the band would draw it twice',
 	)
 })
 
