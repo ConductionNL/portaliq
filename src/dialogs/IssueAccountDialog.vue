@@ -20,61 +20,81 @@
 		size="normal"
 		data-testid="issue-account"
 		@closing="$emit('close', null)">
-		<NcTextField
-			v-model="fields.displayName"
-			:label="t('portaliq', 'Name')"
-			data-testid="issue-account-name" />
-		<NcTextField
-			v-model="fields.email"
-			type="email"
-			:label="t('portaliq', 'E-mail address')"
-			data-testid="issue-account-email" />
-		<NcCheckboxRadioSwitch
-			v-model="fields.verifiedEmail"
-			data-testid="issue-account-verified">
-			{{ t('portaliq', 'I checked this address with its owner') }}
-		</NcCheckboxRadioSwitch>
-		<p class="issue__intro">
-			{{
-				t(
-					'portaliq',
-					'The account gets this address as confirmed, without a confirmation e-mail.',
-				)
-			}}
-		</p>
-		<NcSelect
-			v-model="identityType"
-			:options="identityTypes"
-			:inputLabel="t('portaliq', 'Identity type')"
-			:clearable="true"
-			data-testid="issue-account-identity-type" />
-		<NcTextField
-			v-model="fields.identityRef"
-			:label="t('portaliq', 'Identity reference')"
-			:helperText="
-				t(
-					'portaliq',
-					'The BSN, KVK number or other number the sign-in service returns.',
-				)
-			"
-			data-testid="issue-account-identity-ref" />
-		<NcTextField
-			v-model="fields.organisation"
-			:label="t('portaliq', 'Organisation')"
-			data-testid="issue-account-organisation" />
-		<NcTextField
-			v-model="fields.audience"
-			:label="t('portaliq', 'Audience')"
-			:helperText="t('portaliq', 'For example client or supplier.')"
-			data-testid="issue-account-audience" />
-		<p class="issue__intro">
+		<div class="issue__grid">
+			<NcTextField
+				v-model="fields.displayName"
+				:label="t('portaliq', 'Name')"
+				data-testid="issue-account-name" />
+			<NcTextField
+				v-model="fields.email"
+				type="email"
+				:label="t('portaliq', 'E-mail address')"
+				data-testid="issue-account-email" />
+			<div class="issue__wide">
+				<NcCheckboxRadioSwitch
+					v-model="fields.verifiedEmail"
+					data-testid="issue-account-verified">
+					{{ t('portaliq', 'I checked this address with its owner') }}
+				</NcCheckboxRadioSwitch>
+				<p class="issue__help issue__help--check">
+					{{
+						t(
+							'portaliq',
+							'The account gets this address as confirmed, without a confirmation e-mail.',
+						)
+					}}
+				</p>
+			</div>
+			<div>
+				<NcSelect
+					v-model="identityType"
+					:options="identityTypes"
+					:inputLabel="t('portaliq', 'Identity type')"
+					:clearable="true"
+					data-testid="issue-account-identity-type" />
+				<p class="issue__help">
+					{{ t('portaliq', 'DigiD, eHerkenning, eIDAS or another sign-in service.') }}
+				</p>
+			</div>
+			<div>
+				<NcTextField
+					v-model="fields.identityRef"
+					:label="t('portaliq', 'Identity reference')"
+					data-testid="issue-account-identity-ref" />
+				<p class="issue__help">
+					{{
+						t(
+							'portaliq',
+							'The BSN, KVK number or other number the sign-in service returns.',
+						)
+					}}
+				</p>
+			</div>
+			<NcTextField
+				v-model="fields.organisation"
+				:label="t('portaliq', 'Organisation')"
+				data-testid="issue-account-organisation" />
+			<div>
+				<NcSelect
+					v-model="audience"
+					:options="audiences"
+					:inputLabel="t('portaliq', 'Audience')"
+					:clearable="false"
+					:taggable="true"
+					data-testid="issue-account-audience" />
+				<p class="issue__help">
+					{{ t('portaliq', 'For example client or supplier.') }}
+				</p>
+			</div>
+		</div>
+		<NcNoteCard type="info" class="issue__note">
 			{{
 				t(
 					'portaliq',
 					'If an account already exists for this identity, portaliq does not create a second one but tells you. The first sign-in links the account to the person.',
 				)
 			}}
-		</p>
+		</NcNoteCard>
 		<p
 			v-if="refusal"
 			class="issue__refusal"
@@ -92,6 +112,9 @@
 				:disabled="busy"
 				data-testid="issue-account-confirm"
 				@click="confirm">
+				<template #icon>
+					<Plus :size="20" />
+				</template>
 				{{ t('portaliq', 'Issue account') }}
 			</NcButton>
 		</template>
@@ -104,9 +127,11 @@ import { translate as t } from '@nextcloud/l10n'
 import {
 	NcButton,
 	NcCheckboxRadioSwitch,
+	NcNoteCard,
 	NcSelect,
 	NcTextField,
 } from '@nextcloud/vue'
+import Plus from 'vue-material-design-icons/Plus.vue'
 
 export default {
 	name: 'IssueAccountDialog',
@@ -115,8 +140,10 @@ export default {
 		NcButton,
 		NcCheckboxRadioSwitch,
 		CnDialog,
+		NcNoteCard,
 		NcSelect,
 		NcTextField,
+		Plus,
 	},
 
 	props: {
@@ -153,6 +180,38 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The audience as a select option; a typed audience the list does not
+		 * know is kept as its own option (the audience set is open).
+		 *
+		 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-issue-and-withdraw-accounts-through-the-validated-actions-req-isa-003
+		 */
+		audience: {
+			get() {
+				const id = this.fields.audience
+				return this.audiences.find((option) => option.id === id) || { id, label: id }
+			},
+
+			set(option) {
+				this.fields.audience = typeof option === 'string' ? option : option?.id || ''
+			},
+		},
+
+		/**
+		 * The audiences the clerk picks from most.
+		 *
+		 * @return {Array<{id: string, label: string}>}
+		 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-issue-and-withdraw-accounts-through-the-validated-actions-req-isa-003
+		 */
+		audiences() {
+			return [
+				{ id: 'citizen', label: t('portaliq', 'Resident') },
+				{ id: 'client', label: t('portaliq', 'Client') },
+				{ id: 'organisation', label: t('portaliq', 'Business') },
+				{ id: 'supplier', label: t('portaliq', 'Supplier') },
+			]
+		},
+
 		/**
 		 * The identity types the account schema knows.
 		 *
@@ -197,8 +256,31 @@ export default {
 </script>
 
 <style scoped>
-.issue__intro {
-	margin-bottom: 8px;
+.issue__grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: 14px 16px;
+	align-items: start;
+}
+
+.issue__wide {
+	grid-column: 1 / -1;
+}
+
+.issue__help {
+	margin: 4px 0 0;
+	color: var(--color-text-maxcontrast);
+	font-size: 13px;
+	line-height: 1.3;
+}
+
+.issue__help--check {
+	margin-top: 0;
+	padding-inline-start: 28px;
+}
+
+.issue__note {
+	margin-top: 16px;
 }
 
 .issue__refusal {
