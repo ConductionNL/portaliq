@@ -2992,7 +2992,12 @@ OC.L10N.register(
         "Your plan is nearly ending": "Your plan is nearly ending",
         "The plan %1$s ends on %2$s": "The plan %1$s ends on %2$s",
         "The plan \"%1$s\" ends on %2$s. %3$s actions are still open. Extend the plan with your caseworker, or complete the actions.": "The plan \"%1$s\" ends on %2$s. %3$s actions are still open. Extend the plan with your caseworker, or complete the actions.",
-        "Go to %1$s": "Go to %1$s"
+        "Go to %1$s": "Go to %1$s",
+        "Search on the site": "Search on the site",
+        "No missing page requested in this period.": "No missing page requested in this period.",
+        "Addresses where visitors looked for a page that does not exist. Make the page or a redirect.": "Addresses where visitors looked for a page that does not exist. Make the page or a redirect.",
+        "No search recorded in this period.": "No search recorded in this period.",
+        "What visitors typed into the search box of the portal. Counted per term, not per person.": "What visitors typed into the search box of the portal. Counted per term, not per person."
     },
     "nplurals=2; plural=(n != 1);"
 )

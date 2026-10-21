@@ -1138,7 +1138,7 @@
         "{path} ({samples} samples)": "{path} ({samples} metingen)",
         "The masked events: snapshots (`s`), stylesheets sent once and referred to by hash (`y`), pointer moves (`m`), clicks (`c`), scrolls (`r`), viewport sizes (`v`) and navigations (`n`), each with a time offset.": "De gemaskeerde gebeurtenissen: momentopnamen (`s`), stijlbladen die eenmaal worden gestuurd en per hash worden aangehaald (`y`), muisbewegingen (`m`), klikken (`c`), scrolls (`r`), schermformaten (`v`) en navigaties (`n`), elk met een tijdverschil.",
         "Heatmap": "Heatmap",
-        "Session recordings": "Sessieopnames",
+        "Session recordings": "Sessie-opnames",
         "Integrations": "Koppelingen",
         "Connection": "Verbinding",
         "Status message": "Statusbericht",
@@ -3162,7 +3162,12 @@
         "Your plan is nearly ending": "Uw plan loopt bijna af",
         "The plan %1$s ends on %2$s": "Het plan %1$s eindigt op %2$s",
         "The plan \"%1$s\" ends on %2$s. %3$s actions are still open. Extend the plan with your caseworker, or complete the actions.": "Het plan \"%1$s\" eindigt op %2$s. Er staan nog %3$s acties open. Verleng het plan met uw begeleider, of rond de acties af.",
-        "Go to %1$s": "Ga naar %1$s"
+        "Go to %1$s": "Ga naar %1$s",
+        "Search on the site": "Zoeken op de site",
+        "No missing page requested in this period.": "Geen ontbrekende pagina gevraagd in deze periode.",
+        "Addresses where visitors looked for a page that does not exist. Make the page or a redirect.": "Adressen waar bezoekers een pagina zochten die niet bestaat. Maak de pagina of een doorverwijzing.",
+        "No search recorded in this period.": "Geen zoekopdracht vastgelegd in deze periode.",
+        "What visitors typed into the search box of the portal. Counted per term, not per person.": "Wat bezoekers in het zoekvak van de portal typten. Geteld per term, niet per persoon."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

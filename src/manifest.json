@@ -829,7 +829,18 @@
           {
             "id": "traffic-pages",
             "type": "TrafficPages",
-            "title": "Pages"
+            "title": "Pages",
+            "content": {
+              "part": "pages"
+            }
+          },
+          {
+            "id": "traffic-missing-pages",
+            "type": "TrafficPages",
+            "title": "Missing pages",
+            "content": {
+              "part": "missing"
+            }
           },
           {
             "id": "traffic-paths",
@@ -839,7 +850,18 @@
           {
             "id": "traffic-sources",
             "type": "TrafficSources",
-            "title": "Sources"
+            "title": "Sources",
+            "content": {
+              "part": "channels"
+            }
+          },
+          {
+            "id": "traffic-searches",
+            "type": "TrafficSources",
+            "title": "Search on the site",
+            "content": {
+              "part": "searches"
+            }
           },
           {
             "id": "traffic-visitors",
@@ -945,86 +967,46 @@
             "widgetId": "traffic-pages",
             "gridX": 0,
             "gridY": 7,
-            "gridWidth": 12,
+            "gridWidth": 6,
+            "gridHeight": 4
+          },
+          {
+            "id": 5,
+            "widgetId": "traffic-sources",
+            "gridX": 6,
+            "gridY": 7,
+            "gridWidth": 6,
+            "gridHeight": 4
+          },
+          {
+            "id": 19,
+            "widgetId": "traffic-missing-pages",
+            "gridX": 0,
+            "gridY": 11,
+            "gridWidth": 6,
+            "gridHeight": 4
+          },
+          {
+            "id": 20,
+            "widgetId": "traffic-searches",
+            "gridX": 6,
+            "gridY": 11,
+            "gridWidth": 6,
             "gridHeight": 4
           },
           {
             "id": 4,
             "widgetId": "traffic-paths",
             "gridX": 0,
-            "gridY": 11,
+            "gridY": 15,
             "gridWidth": 12,
             "gridHeight": 8
-          },
-          {
-            "id": 5,
-            "widgetId": "traffic-sources",
-            "gridX": 0,
-            "gridY": 19,
-            "gridWidth": 12,
-            "gridHeight": 3
-          },
-          {
-            "id": 6,
-            "widgetId": "traffic-visitors",
-            "gridX": 0,
-            "gridY": 22,
-            "gridWidth": 12,
-            "gridHeight": 5
-          },
-          {
-            "id": 7,
-            "widgetId": "traffic-goals",
-            "gridX": 0,
-            "gridY": 27,
-            "gridWidth": 6,
-            "gridHeight": 4
-          },
-          {
-            "id": 8,
-            "widgetId": "traffic-funnels",
-            "gridX": 6,
-            "gridY": 27,
-            "gridWidth": 6,
-            "gridHeight": 4
-          },
-          {
-            "id": 9,
-            "widgetId": "traffic-forms",
-            "gridX": 0,
-            "gridY": 31,
-            "gridWidth": 6,
-            "gridHeight": 4
-          },
-          {
-            "id": 10,
-            "widgetId": "traffic-dimensions",
-            "gridX": 6,
-            "gridY": 31,
-            "gridWidth": 6,
-            "gridHeight": 4
-          },
-          {
-            "id": 11,
-            "widgetId": "traffic-errors",
-            "gridX": 0,
-            "gridY": 35,
-            "gridWidth": 12,
-            "gridHeight": 3
-          },
-          {
-            "id": 12,
-            "widgetId": "traffic-experiments",
-            "gridX": 0,
-            "gridY": 38,
-            "gridWidth": 12,
-            "gridHeight": 4
           },
           {
             "id": 13,
             "widgetId": "traffic-heatmap",
             "gridX": 0,
-            "gridY": 42,
+            "gridY": 23,
             "gridWidth": 6,
             "gridHeight": 5
           },
@@ -1032,13 +1014,69 @@
             "id": 14,
             "widgetId": "traffic-recordings",
             "gridX": 6,
-            "gridY": 42,
+            "gridY": 23,
             "gridWidth": 6,
             "gridHeight": 5
+          },
+          {
+            "id": 10,
+            "widgetId": "traffic-dimensions",
+            "gridX": 0,
+            "gridY": 28,
+            "gridWidth": 6,
+            "gridHeight": 4
+          },
+          {
+            "id": 11,
+            "widgetId": "traffic-errors",
+            "gridX": 6,
+            "gridY": 28,
+            "gridWidth": 6,
+            "gridHeight": 4
+          },
+          {
+            "id": 6,
+            "widgetId": "traffic-visitors",
+            "gridX": 0,
+            "gridY": 32,
+            "gridWidth": 6,
+            "gridHeight": 8
+          },
+          {
+            "id": 7,
+            "widgetId": "traffic-goals",
+            "gridX": 6,
+            "gridY": 32,
+            "gridWidth": 6,
+            "gridHeight": 3
+          },
+          {
+            "id": 8,
+            "widgetId": "traffic-funnels",
+            "gridX": 6,
+            "gridY": 35,
+            "gridWidth": 6,
+            "gridHeight": 2
+          },
+          {
+            "id": 9,
+            "widgetId": "traffic-forms",
+            "gridX": 6,
+            "gridY": 37,
+            "gridWidth": 6,
+            "gridHeight": 3
+          },
+          {
+            "id": 12,
+            "widgetId": "traffic-experiments",
+            "gridX": 0,
+            "gridY": 40,
+            "gridWidth": 12,
+            "gridHeight": 4
           }
         ]
       },
-      "_note": "portal-traffic-analytics. The three stats-blocks this page used to carry counted portalSession, revoked portalSession and portalMessage rows: authenticated-session bookkeeping that said nothing about visitors (task 0.1). The six widgets here read portalTrafficDaily through the object API and say 'not measured' for a portal with measurement off instead of drawing a zero. portal-traffic-visitors-and-geo added the period selector (on the overview, read by every widget through the report store) and the Visitors widget. portal-traffic-outcomes added Goals, Funnels, Forms and Custom dimensions, the missing pages under Pages and the searches under Sources. portal-traffic-reporting added the segment selector and the Export button on the overview, the roll-up note, and the Script errors widget. The Export is a button on the overview widget rather than a manifest headerAction: nc-vue's dashboard header actions cannot read the portal, period and segment the page has selected, and a download of the wrong selection is worse than none. portal-traffic-experiments added Experiments, Heatmap and Session recordings; the last two say \"off for this portal\" unless the operator accepted the switch's warning. portal-traffic-kpi-cards moved the four headline numbers out of the overview into four TrafficKpi cards below it. They follow the overview's portal, period and segment and carry no picker of their own: the page has one period. The page selects the portal named in ?portal=, which is how a portal page's KPI cards link here."
+      "_note": "portal-traffic-analytics. The three stats-blocks this page used to carry counted portalSession, revoked portalSession and portalMessage rows: authenticated-session bookkeeping that said nothing about visitors (task 0.1). The six widgets here read portalTrafficDaily through the object API and say 'not measured' for a portal with measurement off instead of drawing a zero. portal-traffic-visitors-and-geo added the period selector (on the overview, read by every widget through the report store) and the Visitors widget. portal-traffic-outcomes added Goals, Funnels, Forms and Custom dimensions, the missing pages under Pages and the searches under Sources. portal-traffic-reporting added the segment selector and the Export button on the overview, the roll-up note, and the Script errors widget. The Export is a button on the overview widget rather than a manifest headerAction: nc-vue's dashboard header actions cannot read the portal, period and segment the page has selected, and a download of the wrong selection is worse than none. portal-traffic-experiments added Experiments, Heatmap and Session recordings; the last two say \"off for this portal\" unless the operator accepted the switch's warning. portal-traffic-kpi-cards moved the four headline numbers out of the overview into four TrafficKpi cards below it. They follow the overview's portal, period and segment and carry no picker of their own: the page has one period. The page selects the portal named in ?portal=, which is how a portal page's KPI cards link here. The cards follow the portaliq/PtVerkeer board: two columns from Pages and Sources down, with the missing pages and the site searches as cards of their own (content.part on TrafficPages and TrafficSources)."
     },
     {
       "id": "Availability",
@@ -4898,7 +4936,7 @@
         "Script errors": "Scriptfouten",
         "Experiments": "Experimenten",
         "Heatmap": "Heatmap",
-        "Session recordings": "Sessieopnames",
+        "Session recordings": "Sessie-opnames",
         "Availability": "Beschikbaarheid",
         "How available each portal was over the last twelve full months, measured by the portal itself every five minutes, with every outage. For a service level review.": "Hoe beschikbaar elke portal was over de laatste twaalf volle maanden, met elke storing · voor een overleg over het serviceniveau",
         "Visible from": "Zichtbaar van",
@@ -4928,7 +4966,9 @@
         "Refuse with a reason": "Afwijzen met een reden",
         "Record a request": "Verzoek vastleggen",
         "on approval the requester sees the cases at once, on refusal they read your reason": "bij goedkeuren ziet de aanvrager de zaken direct, bij afwijzen leest hij uw reden",
-        "not checked yet": "nog niet gecontroleerd"
+        "not checked yet": "nog niet gecontroleerd",
+        "Search on the site": "Zoeken op de site",
+        "Missing pages": "Ontbrekende pagina's"
       }
     }
   }
