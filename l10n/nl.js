@@ -2017,6 +2017,7 @@ OC.L10N.register(
         "Anyone, after a staff member approves": "Iedereen, na goedkeuring door een medewerker",
         "Approve": "Goedkeuren",
         "E-mail address": "E-mailadres",
+        "DigiD, eHerkenning, eIDAS or another sign-in service.": "DigiD, eHerkenning, eIDAS of een andere inlogdienst.",
         "For example client or supplier.": "Bijvoorbeeld klant of leverancier.",
         "Give a reason.": "Geef een reden.",
         "Give an identity reference or an e-mail address.": "Geef een identiteitsnummer of een e-mailadres.",
