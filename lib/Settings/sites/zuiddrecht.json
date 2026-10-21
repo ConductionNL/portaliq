@@ -96,6 +96,24 @@
                         "account"
                     ]
                 }
+            ],
+            "leaveOut": [
+                "decidiq:citizenReactions",
+                "decidiq:citizenVotes",
+                "decidiq:citizenBudgetProposals",
+                "decidiq:citizenNotifications",
+                "decidiq:citizenSubscriptions",
+                "decidiq:publicCalendar",
+                "decidiq:publicBroadcasts",
+                "decidiq:motionsOpenForAdvice",
+                "opencatalogi:dossiers",
+                "opencatalogi:zoekopdrachten",
+                "pipelinq:requests",
+                "pipelinq:complaints",
+                "pipelinq:questions",
+                "zaakafhandelapp:citizenZaken",
+                "zaakafhandelapp:citizenTaken",
+                "zaakafhandelapp:citizenBerichten"
             ]
         },
         "myCases": {

@@ -473,7 +473,10 @@ export default {
 	min-block-size: 0;
 	padding: 1.375rem 1.5rem;
 	border: 1px solid
-		var(--nldesign-color-border, var(--denhaag-case-card-border-color, #ccc));
+		var(
+			--nldesign-website-card-border-color,
+			var(--nldesign-color-border, var(--denhaag-case-card-border-color, #ccc))
+		);
 	border-radius: var(
 		--nldesign-website-border-radius-large,
 		var(--denhaag-case-card-border-radius, 0.375rem)
