@@ -29,7 +29,9 @@
 <template>
 	<div class="designer">
 		<header class="designer__bar">
-			<div class="designer__identity">
+			<!-- Embedded in the page's own tab the page header already names
+			     the page, its route and its status. -->
+			<div v-if="!embedded" class="designer__identity">
 				<h2 class="designer__title" data-testid="designer-title">
 					{{ page.title || t('portaliq', 'Page') }}
 				</h2>
@@ -53,41 +55,84 @@
 				</p>
 			</div>
 
+			<div class="designer__toolbar">
+				<div class="designer__actions">
+					<!--
+						A DISCLOSURE, NOT A DIALOG OPENER. The palette is a panel
+						beside the canvas, so this button shows and hides it, and
+						says which it is doing through `aria-expanded`.
+					-->
+					<NcButton
+						variant="primary"
+						data-testid="designer-add-widget"
+						:disabled="state.loading || state.kind !== 'grid'"
+						:aria-expanded="paletteOpen"
+						aria-controls="widget-palette"
+						@click="paletteOpen = !paletteOpen">
+						<template #icon>
+							<Plus :size="20" />
+						</template>
+						{{ t('portaliq', 'Add block') }}
+					</NcButton>
+					<NcButton
+						data-testid="designer-undo"
+						:disabled="!state.canUndo || state.saving"
+						:aria-label="t('portaliq', 'Undo (Ctrl+Z)')"
+						:title="t('portaliq', 'Undo (Ctrl+Z)')"
+						@click="editor.undo()">
+						<template #icon>
+							<Undo :size="20" />
+						</template>
+					</NcButton>
+					<NcButton
+						data-testid="designer-redo"
+						:disabled="!state.canRedo || state.saving"
+						:aria-label="t('portaliq', 'Redo (Ctrl+Shift+Z)')"
+						:title="t('portaliq', 'Redo (Ctrl+Shift+Z)')"
+						@click="editor.redo()">
+						<template #icon>
+							<Redo :size="20" />
+						</template>
+					</NcButton>
+					<NcButton
+						v-if="!isBlock"
+						data-testid="designer-media"
+						:disabled="state.loading"
+						@click="mediaOpen = true">
+						<template #icon>
+							<ImageMultipleOutline :size="20" />
+						</template>
+						{{ t('portaliq', 'Media') }}
+					</NcButton>
+				</div>
+				<p
+					v-if="state.dirty"
+					class="designer__unsaved"
+					role="status"
+					data-testid="designer-unsaved">
+					<AlertCircleOutline :size="18" />
+					{{ t('portaliq', 'Unsaved changes') }}
+				</p>
+			</div>
+
 			<div class="designer__actions">
-				<!--
-					A DISCLOSURE, NOT A DIALOG OPENER. The palette is a panel
-					beside the canvas now, so this button is the control that
-					shows and hides it, and says which it is doing through
-					`aria-expanded`.
-				-->
 				<NcButton
-					data-testid="designer-add-widget"
-					:disabled="state.loading || state.kind !== 'grid'"
-					:aria-expanded="paletteOpen"
-					aria-controls="widget-palette"
-					@click="paletteOpen = !paletteOpen">
-					{{ t('portaliq', 'Add widget') }}
-				</NcButton>
-				<NcButton
-					data-testid="designer-undo"
-					:disabled="!state.canUndo || state.saving"
-					:aria-label="t('portaliq', 'Undo (Ctrl+Z)')"
-					:title="t('portaliq', 'Undo (Ctrl+Z)')"
-					@click="editor.undo()">
-					{{ t('portaliq', 'Undo') }}
-				</NcButton>
-				<NcButton
-					data-testid="designer-redo"
-					:disabled="!state.canRedo || state.saving"
-					:aria-label="t('portaliq', 'Redo (Ctrl+Shift+Z)')"
-					:title="t('portaliq', 'Redo (Ctrl+Shift+Z)')"
-					@click="editor.redo()">
-					{{ t('portaliq', 'Redo') }}
+					v-if="state.hasDraft"
+					data-testid="designer-discard-draft"
+					:disabled="state.loading || state.saving"
+					@click="editor.discard()">
+					<template #icon>
+						<DeleteOutline :size="20" />
+					</template>
+					{{ t('portaliq', 'Discard draft') }}
 				</NcButton>
 				<NcButton
 					data-testid="designer-save-draft"
 					:disabled="state.loading || state.saving"
 					@click="editor.saveDraft()">
+					<template #icon>
+						<ContentSaveOutline :size="20" />
+					</template>
 					{{ t('portaliq', 'Save draft') }}
 				</NcButton>
 				<NcButton
@@ -99,24 +144,10 @@
 				</NcButton>
 				<NcButton
 					v-if="!isBlock"
-					data-testid="designer-media"
-					:disabled="state.loading"
-					@click="mediaOpen = true">
-					{{ t('portaliq', 'Media') }}
-				</NcButton>
-				<NcButton
-					v-if="!isBlock"
 					data-testid="designer-history"
 					:disabled="state.loading"
 					@click="historyOpen = true">
 					{{ t('portaliq', 'History') }}
-				</NcButton>
-				<NcButton
-					v-if="state.hasDraft"
-					data-testid="designer-discard-draft"
-					:disabled="state.loading || state.saving"
-					@click="editor.discard()">
-					{{ t('portaliq', 'Discard draft') }}
 				</NcButton>
 				<!--
 					THE WAY BACK. An editor arrives here from a floating control
@@ -124,7 +155,7 @@
 					route, so it returns them to that page.
 				-->
 				<NcButton
-					v-if="page.route"
+					v-if="page.route && !embedded"
 					:href="siteUrl"
 					data-testid="designer-view-on-site">
 					{{ t('portaliq', 'View on the site') }}
@@ -148,12 +179,6 @@
 			type="success"
 			data-testid="designer-notice">
 			{{ state.notice }}
-		</NcNoteCard>
-		<NcNoteCard
-			v-else-if="state.dirty"
-			type="warning"
-			data-testid="designer-dirty">
-			{{ t('portaliq', 'Unsaved changes. Save the draft to keep them.') }}
 		</NcNoteCard>
 
 		<div v-if="state.loading" class="designer__loading">
@@ -185,6 +210,13 @@ import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import { reactive } from 'vue'
+import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
+import ContentSaveOutline from 'vue-material-design-icons/ContentSaveOutline.vue'
+import DeleteOutline from 'vue-material-design-icons/DeleteOutline.vue'
+import ImageMultipleOutline from 'vue-material-design-icons/ImageMultipleOutline.vue'
+import Plus from 'vue-material-design-icons/Plus.vue'
+import Redo from 'vue-material-design-icons/Redo.vue'
+import Undo from 'vue-material-design-icons/Undo.vue'
 import MediaPickerDialog from '../dialogs/MediaPickerDialog.vue'
 import PageHistoryDialog from '../dialogs/PageHistoryDialog.vue'
 import PageGridEditor from '../editor/PageGridEditor.vue'
@@ -203,12 +235,32 @@ export default {
 	name: 'PageLayoutDesigner',
 
 	components: {
+		AlertCircleOutline,
+		ContentSaveOutline,
+		DeleteOutline,
+		ImageMultipleOutline,
 		NcButton,
 		NcLoadingIcon,
 		MediaPickerDialog,
 		NcNoteCard,
 		PageGridEditor,
 		PageHistoryDialog,
+		Plus,
+		Redo,
+		Undo,
+	},
+
+	props: {
+		/**
+		 * Drawn inside the page's own Indeling tab (PageLayoutEditor), where the
+		 * page header already names the page: no title line of its own.
+		 *
+		 * @spec openspec/changes/page-editor-in-the-page/specs/portal-page-designer/spec.md#requirement-the-layout-editor-is-a-tab-of-the-page
+		 */
+		embedded: {
+			type: Boolean,
+			default: false,
+		},
 	},
 
 	data() {
@@ -407,6 +459,25 @@ export default {
 	display: flex;
 	gap: 8px;
 	flex-wrap: wrap;
+}
+
+.designer__toolbar {
+	display: flex;
+	flex: 1 1 100%;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	gap: 8px 16px;
+}
+
+.designer__unsaved {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+	color: var(--color-warning-text, var(--color-text-maxcontrast));
+	font-size: 14px;
+	font-weight: 600;
 }
 
 .designer__loading {

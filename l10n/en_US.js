@@ -310,6 +310,8 @@ OC.L10N.register(
         "Change house style": "Change house style",
         "Hard to read:": "Hard to read:",
         "the text in the footer does not reach a contrast of 4.5 to 1 with this theme. An editor can still use the theme; that is recorded. You choose the house style at the portal, under Settings.": "the text in the footer does not reach a contrast of 4.5 to 1 with this theme. An editor can still use the theme; that is recorded. You choose the house style at the portal, under Settings.",
+        "Add block": "Add block",
+        "Unsaved changes": "Unsaved changes",
         "For example client or supplier.": "For example client or supplier.",
         "Give a reason.": "Give a reason.",
         "Give an identity reference or an e-mail address.": "Give an identity reference or an e-mail address.",

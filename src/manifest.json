@@ -4400,6 +4400,11 @@
                   "label": "Overzicht"
                 },
                 {
+                  "id": "layout",
+                  "widgetId": "page-layout",
+                  "label": "Indeling"
+                },
+                {
                   "widgetId": "page-search",
                   "label": "Zoekmachines"
                 },
@@ -4447,10 +4452,17 @@
                 }
               ]
             }
+          },
+          {
+            "id": "page-layout",
+            "type": "PageLayoutEditor",
+            "title": "Layout",
+            "content": {}
           }
         ],
         "tabsLabel": "Onderdelen van de pagina"
-      }
+      },
+      "tabInAddress": true
     },
     {
       "id": "PageLayout",
