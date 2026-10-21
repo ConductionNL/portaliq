@@ -311,6 +311,50 @@
       "config": {
         "widgets": [
           {
+            "id": "kpi-visitors",
+            "type": "stat",
+            "title": "Visitors, last 7 days",
+            "content": {
+              "label": "Visitors, last 7 days",
+              "layout": "stacked",
+              "caption": "website and Mijn Zuiddrecht together",
+              "source": {
+                "kind": "endpoint",
+                "url": "/apps/portaliq/api/overview/traffic",
+                "params": {
+                  "days": "7"
+                },
+                "path": "visitors"
+              },
+              "route": {
+                "name": "Traffic"
+              }
+            }
+          },
+          {
+            "id": "kpi-availability",
+            "type": "stat",
+            "title": "Availability, last month",
+            "content": {
+              "label": "Availability, last month",
+              "layout": "stacked",
+              "caption": "website and Mijn Zuiddrecht together",
+              "format": {
+                "style": "decimal",
+                "decimals": 2,
+                "suffix": "%"
+              },
+              "source": {
+                "kind": "endpoint",
+                "url": "/apps/portaliq/api/overview/availability",
+                "path": "percentage"
+              },
+              "route": {
+                "name": "Availability"
+              }
+            }
+          },
+          {
             "id": "kpi-portals",
             "type": "stat",
             "title": "Portals",
@@ -493,6 +537,108 @@
             }
           },
           {
+            "id": "overview-availability",
+            "type": "record-list",
+            "title": "Availability, last month",
+            "content": {
+              "endpointSource": {
+                "url": "/apps/portaliq/api/overview/availability",
+                "responsePath": "portals"
+              },
+              "presentation": "rows",
+              "title": "{title}",
+              "trailing": "{percentage}%",
+              "emptyText": "No availability measured yet"
+            },
+            "headerLink": {
+              "label": "Rapport over 12 maanden",
+              "route": "Availability"
+            }
+          },
+          {
+            "id": "overview-traffic",
+            "type": "stats-block",
+            "title": "Traffic, last 7 days",
+            "content": {
+              "layout": "grid",
+              "columns": 2,
+              "stats": [
+                {
+                  "label": "Page views",
+                  "source": {
+                    "kind": "endpoint",
+                    "url": "/apps/portaliq/api/overview/traffic",
+                    "params": {
+                      "days": "7"
+                    },
+                    "path": "pageViews"
+                  }
+                },
+                {
+                  "label": "Sessions",
+                  "source": {
+                    "kind": "endpoint",
+                    "url": "/apps/portaliq/api/overview/traffic",
+                    "params": {
+                      "days": "7"
+                    },
+                    "path": "sessions"
+                  }
+                },
+                {
+                  "label": "Visitors",
+                  "source": {
+                    "kind": "endpoint",
+                    "url": "/apps/portaliq/api/overview/traffic",
+                    "params": {
+                      "days": "7"
+                    },
+                    "path": "visitors"
+                  }
+                },
+                {
+                  "label": "Engaged sessions",
+                  "format": {
+                    "style": "decimal",
+                    "decimals": 0,
+                    "suffix": "%"
+                  },
+                  "source": {
+                    "kind": "endpoint",
+                    "url": "/apps/portaliq/api/overview/traffic",
+                    "params": {
+                      "days": "7"
+                    },
+                    "path": "engagedShare"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "overview-top-pages",
+            "type": "record-list",
+            "title": "Most viewed pages",
+            "content": {
+              "endpointSource": {
+                "url": "/apps/portaliq/api/overview/traffic",
+                "params": {
+                  "days": "7"
+                },
+                "responsePath": "pages"
+              },
+              "presentation": "rows",
+              "title": "{path}",
+              "meta": "{title}",
+              "trailing": "{views}",
+              "emptyText": "No traffic recorded yet"
+            },
+            "headerLink": {
+              "label": "Naar verkeer",
+              "route": "Traffic"
+            }
+          },
+          {
             "id": "now-mijn",
             "type": "stats-block",
             "title": "Mijn Zuiddrecht nu",
@@ -531,35 +677,51 @@
         ],
         "layout": [
           {
-            "id": 1,
-            "widgetId": "kpi-portals",
+            "id": "kpi-visitors",
+            "widgetId": "kpi-visitors",
             "gridX": 0,
             "gridY": 0,
-            "gridWidth": 3,
+            "gridWidth": 2,
             "gridHeight": 1
           },
           {
-            "id": 2,
-            "widgetId": "kpi-accounts",
-            "gridX": 3,
+            "id": "kpi-availability",
+            "widgetId": "kpi-availability",
+            "gridX": 2,
             "gridY": 0,
-            "gridWidth": 3,
+            "gridWidth": 2,
             "gridHeight": 1
           },
           {
-            "id": 3,
+            "id": "kpi-requests",
             "widgetId": "kpi-requests",
+            "gridX": 4,
+            "gridY": 0,
+            "gridWidth": 2,
+            "gridHeight": 1
+          },
+          {
+            "id": "kpi-submissions",
+            "widgetId": "kpi-submissions",
             "gridX": 6,
             "gridY": 0,
-            "gridWidth": 3,
+            "gridWidth": 2,
             "gridHeight": 1
           },
           {
-            "id": 4,
-            "widgetId": "kpi-submissions",
-            "gridX": 9,
+            "id": "kpi-portals",
+            "widgetId": "kpi-portals",
+            "gridX": 8,
             "gridY": 0,
-            "gridWidth": 3,
+            "gridWidth": 2,
+            "gridHeight": 1
+          },
+          {
+            "id": "kpi-accounts",
+            "widgetId": "kpi-accounts",
+            "gridX": 10,
+            "gridY": 0,
+            "gridWidth": 2,
             "gridHeight": 1
           },
           {
@@ -587,19 +749,45 @@
             "gridHeight": 5
           },
           {
+            "id": "overview-availability",
+            "widgetId": "overview-availability",
+            "gridX": 8,
+            "gridY": 3,
+            "gridWidth": 4,
+            "gridHeight": 4
+          },
+          {
+            "id": "overview-traffic",
+            "widgetId": "overview-traffic",
+            "gridX": 8,
+            "gridY": 7,
+            "gridWidth": 4,
+            "gridHeight": 4
+          },
+          {
+            "id": "overview-top-pages",
+            "widgetId": "overview-top-pages",
+            "gridX": 8,
+            "gridY": 11,
+            "gridWidth": 4,
+            "gridHeight": 4
+          },
+          {
             "id": "now-mijn",
             "widgetId": "now-mijn",
             "gridX": 8,
-            "gridY": 3,
+            "gridY": 15,
             "gridWidth": 4,
             "gridHeight": 4
           }
         ],
         "kpiRow": [
-          "kpi-portals",
-          "kpi-accounts",
+          "kpi-visitors",
+          "kpi-availability",
           "kpi-requests",
-          "kpi-submissions"
+          "kpi-submissions",
+          "kpi-portals",
+          "kpi-accounts"
         ],
         "showWidgetActions": false,
         "showRefresh": false,
