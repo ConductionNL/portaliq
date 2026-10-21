@@ -90,6 +90,24 @@
 			{{ translate('A field without "optional" must be filled in.') }}
 		</p>
 
+		<div
+			v-if="showsPrefill"
+			class="utrecht-alert utrecht-alert--info pq-schema-form__prefilled"
+			data-testid="schema-form-prefilled">
+			<div class="utrecht-alert__content">
+				<p class="utrecht-paragraph pq-schema-form__prefilled-title">
+					{{ translate('We filled in some things for you') }}
+				</p>
+				<p class="utrecht-paragraph">
+					{{
+						translate(
+							'This comes from your account. Is something wrong? Change it here for this request.',
+						)
+					}}
+				</p>
+			</div>
+		</div>
+
 		<ErrorSummary
 			ref="summary"
 			:entries="summary"
@@ -241,7 +259,7 @@ import {
 import { runtimeConfig } from '../../lib/contentApi.js'
 import { addressOfRoute } from '../../lib/siteAddress.js'
 import { explainsOptional, summaryEntries } from '../forms/fields.js'
-import { prefillFields, withProfile } from '../forms/profilePrefill.js'
+import { filledFields, prefillFields, withProfile } from '../forms/profilePrefill.js'
 import stepFlow from '../forms/stepFlow.js'
 import {
 	confirmationText,
@@ -265,6 +283,8 @@ import {
 	translatorOr,
 	withSingleOptions,
 } from './forms.js'
+
+import '@utrecht/alert-css/dist/index.css'
 
 /**
  * A manifest-driven form (the Vue port of SchemaForm.jsx, which also replaces
@@ -330,6 +350,7 @@ export default {
 			pending: null,
 			confirmed: null,
 			draftId: '',
+			prefilled: [],
 			// One key per opened form; every send of these answers carries it,
 			// so a repeated send gets the first one's case (REQ-AFS-001).
 			submissionKey: newSubmissionKey(),
@@ -456,6 +477,21 @@ export default {
 		 *
 		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-site-form-must-mark-the-fields-that-are-not-required-req-smf-001
 		 */
+		/**
+		 * Whether the fields on screen hold something the resident's own
+		 * account filled in, so the form says so and invites a correction.
+		 *
+		 * @return {boolean}
+		 *
+		 * @spec openspec/changes/action-fields-prefill-from-the-residents-profile/specs/portal-contribution-contract/spec.md#requirement-an-action-field-may-start-from-the-signed-in-residents-name-or-e-mail-address
+		 */
+		showsPrefill() {
+			return (
+				!this.onReview
+				&& this.prefilled.some((field) => this.shownFields.includes(field))
+			)
+		},
+
 		explainOptional() {
 			return (
 				!this.onReview
@@ -860,7 +896,9 @@ export default {
 			const actionId = this.action.id
 			const profile = await this.api.getDetails().catch(() => null)
 			if (this.action.id === actionId) {
-				this.values = withProfile(this.values, this.action, profile)
+				const before = this.values
+				this.values = withProfile(before, this.action, profile)
+				this.prefilled = filledFields(before, this.values, this.action)
 			}
 		},
 
@@ -1091,6 +1129,17 @@ export default {
 	flex-wrap: wrap;
 	gap: var(--utrecht-space-inline-sm, 0.5rem);
 	margin-block-start: var(--utrecht-space-block-md, 1rem);
+}
+
+.pq-schema-form__prefilled {
+	border: var(--nldesign-website-notice-border-width, 1px) solid
+		var(--nldesign-website-notice-border-color, #b9cbe2);
+	border-radius: var(--nldesign-website-border-radius, 4px);
+	margin-block-end: var(--utrecht-space-block-md, 1rem);
+}
+
+.pq-schema-form__prefilled-title {
+	font-weight: var(--utrecht-typography-weight-scale-bold, 600);
 }
 
 .pq-schema-form__intro {
