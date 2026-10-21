@@ -3203,7 +3203,11 @@ OC.L10N.register(
         "Refused": "Afgewezen",
         "Waiting": "Wacht",
         "Failed": "Mislukt",
-        "Set up again": "Opnieuw instellen"
+        "Set up again": "Opnieuw instellen",
+        "The receipt did not arrive.": "De ontvangstbevestiging kwam niet aan.",
+        "The mail to the resident was refused. The submission itself did reach the case app. Contact the resident another way, for instance by the phone number in the submission.": "De mail naar de inwoner werd geweigerd. De inzending zelf is wel in de zaakapp aangekomen. Neem op een andere manier contact op, bijvoorbeeld via het telefoonnummer uit de inzending.",
+        "Details": "Gegevens",
+        "Evidence log": "Bewijslog"
     },
     "nplurals=2; plural=(n != 1);"
 )

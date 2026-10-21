@@ -2383,18 +2383,40 @@
       "config": {
         "register": "portaliq",
         "schema": "portalSubmission",
+        "titleField": "actionId",
         "documentationUrl": "https://portaliq.conduction.nl",
         "_note": "Detail in the v2 shape: the body is the grid below and the facts beside it are the sideColumn, History last (the board has no tab strip on this record).",
         "widgets": [
           {
+            "id": "submission-receipt-failed",
+            "type": "banner",
+            "title": "The receipt did not arrive.",
+            "visibleWhen": {
+              "field": "deliveryStatus",
+              "op": "eq",
+              "value": "failed"
+            },
+            "content": {
+              "variant": "error",
+              "lead": "The receipt did not arrive.",
+              "text": "The mail to the resident was refused. The submission itself did reach the case app. Contact the resident another way, for instance by the phone number in the submission."
+            }
+          },
+          {
             "id": "submission-data",
             "type": "data",
-            "title": "Submission",
+            "title": "Details",
             "icon": "FileCheckOutline",
             "content": {
-              "columns": 2,
-              "exclude": [
-                "payloadCopy"
+              "columns": 3,
+              "include": [
+                "actionId",
+                "appId",
+                "submittedAt",
+                "deliveryStatus",
+                "subjectRef",
+                "organisation",
+                "receiptMessageRef"
               ]
             }
           },
@@ -2420,16 +2442,25 @@
           {
             "id": "submission-history",
             "type": "audit-trail",
-            "title": "Historie",
+            "title": "Evidence log",
             "icon": "History"
           }
         ],
         "layout": [
           {
+            "id": "submission-receipt-failed",
+            "widgetId": "submission-receipt-failed",
+            "gridX": 0,
+            "gridY": 0,
+            "gridWidth": 12,
+            "gridHeight": 1,
+            "showTitle": false
+          },
+          {
             "id": "submission-data",
             "widgetId": "submission-data",
             "gridX": 0,
-            "gridY": 0,
+            "gridY": 1,
             "gridWidth": 12,
             "gridHeight": 5
           },
@@ -2437,7 +2468,7 @@
             "id": "submission-payload",
             "widgetId": "submission-payload",
             "gridX": 0,
-            "gridY": 5,
+            "gridY": 6,
             "gridWidth": 12,
             "gridHeight": 4
           }

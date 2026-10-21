@@ -32,13 +32,15 @@ test('what the resident sent has its own card over the stored copy', () => {
 })
 
 test('the facts card leaves the copy out, so it is shown once', () => {
-	assert.deepEqual(widget('submission-data').content.exclude, ['payloadCopy'])
+	const facts = widget('submission-data').content
+	const shown = Array.isArray(facts.include) ? facts.include.includes('payloadCopy') : !(facts.exclude || []).includes('payloadCopy')
+	assert.equal(shown, false, 'the facts card shows the copy too')
 })
 
 test('the main column reads facts, then what was sent; Forms and history stand beside it', () => {
-	const main = DETAIL.layout.map((cell) => cell.widgetId)
+	const main = DETAIL.layout.map((cell) => cell.widgetId).filter((id) => id !== 'submission-receipt-failed')
 	assert.deepEqual(main, ['submission-data', 'submission-payload'])
-	const [facts, sent] = DETAIL.layout
+	const [facts, sent] = DETAIL.layout.filter((cell) => main.includes(cell.widgetId))
 	assert.ok(sent.gridY >= facts.gridY + facts.gridHeight, 'the copy card overlaps the facts card')
 	assert.deepEqual(DETAIL.sideColumn, ['submission-forms', 'submission-history'])
 })
