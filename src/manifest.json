@@ -1920,6 +1920,19 @@
           "cards",
           "board",
           "map"
+        ],
+        "rowClass": [
+          {
+            "when": {
+              "field": "state",
+              "op": "in",
+              "value": [
+                "sent",
+                "opened"
+              ]
+            },
+            "class": "cn-row--attention"
+          }
         ]
       }
     },
@@ -4521,7 +4534,7 @@
         ],
         "showTitle": true,
         "showTitleIcon": false,
-        "countText": "{shown} of {total} requests",
+        "countText": "{shown} of {total} requests to see cases on behalf of someone else",
         "headerButtons": [
           {
             "action": "export",
@@ -4569,7 +4582,16 @@
           "board",
           "map"
         ],
-        "footerNote": "on approval the requester sees the cases at once, on refusal they read your reason"
+        "footerNote": "on approval the requester sees the cases at once, on refusal they read your reason",
+        "rowClass": [
+          {
+            "when": {
+              "field": "state",
+              "value": "pending"
+            },
+            "class": "cn-row--attention"
+          }
+        ]
       }
     },
     {
@@ -6308,7 +6330,8 @@
         "Cause": "Oorzaak",
         "How we measure": "Zo meten wij",
         "Outage began": "Begon",
-        "Outage ended": "Eindigde"
+        "Outage ended": "Eindigde",
+        "{shown} of {total} requests to see cases on behalf of someone else": "{shown} van {total} verzoeken om zaken van een ander te zien"
       }
     }
   }
