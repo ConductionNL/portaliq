@@ -72,7 +72,15 @@
                     "title": "Zaken en taken",
                     "items": [
                         "cases",
-                        "tasks"
+                        "tasks",
+                        "access"
+                    ]
+                },
+                {
+                    "title": "Samenwerken",
+                    "items": [
+                        "samenwerken",
+                        "contacts"
                     ]
                 },
                 {

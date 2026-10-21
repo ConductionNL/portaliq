@@ -23,6 +23,9 @@ import {
 /** Shell sections about cases, in the first group. */
 const CASE_SECTIONS = ['cases', 'tasks', 'access']
 
+/** The own-area pages for working with others, when the portal switches them on. */
+const COLLABORATE_SECTIONS = ['samenwerken', 'contacts']
+
 /** Shell sections about messages, in the group after the apps. */
 const MESSAGE_SECTIONS = ['inbox', 'messages', 'news']
 
@@ -264,6 +267,7 @@ export function residentMenuGroups(
 	const groups = [
 		sectionGroup('cases', t('Cases and tasks'), CASE_SECTIONS),
 		themeGroup,
+		sectionGroup('collaborate', t('Collaborate'), COLLABORATE_SECTIONS),
 		...appGroups,
 		...recordGroups,
 		sectionGroup('messages', t('Messages and news'), MESSAGE_SECTIONS),

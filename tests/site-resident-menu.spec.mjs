@@ -117,6 +117,66 @@ test('the resident items go into groups: cases, one per app, messages, then deta
 	assert.equal(dossiers.href, href('/mijn/opencatalogi/dossiers'))
 })
 
+test('plans and contacts, once the portal switches them on, sit in a group of their own', () => {
+	const areaPages = [
+		{ special: 'contacts', label: 'My contacts', icon: 'AccountMultiple' },
+		{ special: 'samenwerken', label: 'Collaborate', icon: 'ClipboardCheckOutline' },
+	]
+	const groups = residentMenuGroups(navFor(nl, { pages: areaPages }), nl, 0, href)
+	const collaborate = groups.find((group) => group.key === 'collaborate')
+	assert.ok(collaborate, 'a Samenwerken group')
+	assert.equal(collaborate.title, 'Samenwerken')
+	assert.deepEqual(
+		collaborate.items.map((item) => item.link),
+		['/mijn/samenwerken', '/mijn/contacts'],
+	)
+	// The portal's layout places them by name.
+	const laid = residentMenuGroups(navFor(nl, { pages: areaPages }), nl, 0, href, {}, [
+		{ title: 'Samenwerken', items: ['samenwerken', 'contacts'] },
+	])
+	assert.deepEqual(laid[0].items.map((item) => item.link), ['/mijn/samenwerken', '/mijn/contacts'])
+	// Switched off, no group.
+	assert.equal(
+		residentMenuGroups(navFor(nl), nl, 0, href).find((group) => group.key === 'collaborate'),
+		undefined,
+	)
+})
+
+test('Mijn Zuiddrecht lays out Samenwerken, and its example set switches plans and contacts on with something in them', () => {
+	const site = JSON.parse(read('lib', 'Settings', 'sites', 'zuiddrecht.json'))
+	const layout = site.portal.residentMenu.groups
+	assert.deepEqual(
+		layout.find((group) => group.title === 'Samenwerken')?.items,
+		['samenwerken', 'contacts'],
+	)
+	assert.ok(layout.find((group) => group.title === 'Zaken en taken').items.includes('access'))
+	const set = JSON.parse(read('lib', 'Settings', 'example-sets', 'zuiddrecht.json'))
+	const change = set.changes.find((entry) => entry.schema === 'portal' && entry.set?.plansEnabled === true)
+	assert.ok(change, 'a change that switches plans on')
+	assert.equal(change.set.contactsEnabled, true)
+	assert.deepEqual(change.where, { slug: 'zuiddrecht' })
+	const sanne = '{{cast:sanne.uid}}'
+	const of = (schema) => set.objects.filter((object) => object.schema === schema && object.data.owner === sanne)
+	const contacts = of('portalContact')
+	const approved = contacts.filter((row) => row.data.state === 'approved').map((row) => row.data.contactRef)
+	assert.ok(approved.length >= 2)
+	assert.ok(contacts.some((row) => row.data.role === 'begeleider'))
+	assert.ok(contacts.some((row) => row.data.state === 'invited' && row.data.email))
+	const [plan] = of('portalPlan')
+	assert.equal(plan.data.status, 'running')
+	// Everyone in the plan is an approved contact of its owner.
+	for (const participant of plan.data.participants) {
+		assert.ok(approved.includes(participant), participant)
+	}
+	const actions = of('portalAction')
+	assert.equal(actions.length, 5)
+	for (const action of actions) {
+		assert.equal(action.data.plan, `{{object:${plan.key}.id}}`)
+		assert.ok([sanne, ...approved].includes(action.data.assignee))
+		assert.ok(['todo', 'doing', 'done'].includes(action.data.status))
+	}
+})
+
 test('no two items read the same, in either language', () => {
 	for (const t of [nl, en]) {
 		const all = residentMenuGroups(navFor(t, { messages: true, news: true }), t, 0, href)
