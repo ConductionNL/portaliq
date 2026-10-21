@@ -583,6 +583,12 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	font-family: var(--utrecht-document-font-family, inherit);
 }
 
+/* The vendored sheet names its own face on a bulleted list with !important,
+   so only an !important rule puts the list in the set's face. */
+.pq-site:has(.pq-site__header--designed) .utrecht-unordered-list {
+	font-family: var(--utrecht-document-font-family, inherit) !important;
+}
+
 /*
  * AND ITS HEADINGS IN THE SET'S HEADING FACE (designed-site-type).
  *
