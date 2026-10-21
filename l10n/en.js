@@ -1,6 +1,7 @@
 OC.L10N.register(
     "portaliq",
     {
+        "Choose media": "Choose media",
         "change proposals": "change proposals",
         "A bounded map of extra values the client attached: at most 20 keys, scalar values, 256 characters each.": "A bounded map of extra values the client attached: at most 20 keys, scalar values, 256 characters each.",
         "A bounded map of extra values the client attached: at most 20 keys, scalar values, 256 characters each. On a form event only `formId`, `fieldId`, `lastFieldId` and `ms` survive, so what was typed can never be stored; a `cd_<id>` custom dimension survives only when the portal declared the id.": "A bounded map of extra values the client attached: at most 20 keys, scalar values, 256 characters each. On a form event only `formId`, `fieldId`, `lastFieldId` and `ms` survive, so what was typed can never be stored; a `cd_<id>` custom dimension survives only when the portal declared the id.",
@@ -1400,6 +1401,7 @@ OC.L10N.register(
         "Visits on {day} are only partly counted.": "Visits on {day} are only partly counted.",
         "Step 0": "Step 0",
         "Step {step}": "Step {step}",
+        "{title}, choose media": "{title}, choose media",
         "{visits} visits, {count} began here": "{visits} visits, {count} began here",
         "{visits} visits, {count} ended here": "{visits} visits, {count} ended here",
         "{step}, {page}: {visits} visits, {count} began here": "{step}, {page}: {visits} visits, {count} began here",

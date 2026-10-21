@@ -13,7 +13,8 @@
   @spec openspec/specs/site-page-seo-history-and-media/spec.md
 -->
 <template>
-	<NcDialog
+	<CnDialog
+		:look="look"
 		:name="t('portaliq', 'Page history')"
 		:open="open"
 		size="normal"
@@ -77,14 +78,15 @@
 				{{ t('portaliq', 'Close') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { translate } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
-import { NcButton, NcDialog, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
+import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import { createPageHistory } from '../lib/pageHistory.js'
 
 export default {
@@ -92,12 +94,18 @@ export default {
 
 	components: {
 		NcButton,
-		NcDialog,
+		CnDialog,
 		NcLoadingIcon,
 		NcNoteCard,
 	},
 
 	props: {
+		/** The look to draw in; a spawned dialog gets the app's (src/lib/dialogLook.js). */
+		look: {
+			type: String,
+			default: undefined,
+		},
+
 		/** Whether the dialog is open. */
 		open: {
 			type: Boolean,
