@@ -4033,6 +4033,319 @@
       }
     },
     {
+      "id": "FormBindingDetail",
+      "route": "/form-bindings/:id",
+      "type": "detail",
+      "title": "Request form",
+      "config": {
+        "register": "portaliq",
+        "schema": "portalFormBinding",
+        "breadcrumb": {
+          "label": "Request forms",
+          "route": "FormBindings",
+          "currentField": "route"
+        },
+        "statusPill": {
+          "field": "status",
+          "colorMap": {
+            "published": "success",
+            "draft": "warning"
+          },
+          "labels": {
+            "published": "Published",
+            "draft": "Draft"
+          }
+        },
+        "follow": false,
+        "favourite": false,
+        "tabsLabel": "Instellingen van het formulier",
+        "widgets": [
+          {
+            "id": "binding-form",
+            "type": "settings-form",
+            "title": "Form",
+            "content": {
+              "columns": 2,
+              "saveLabel": "Save",
+              "savedText": "The form settings are saved.",
+              "fields": [
+                {
+                  "key": "route",
+                  "label": "Route",
+                  "required": true,
+                  "hint": "The address of the form page on the portal."
+                },
+                {
+                  "key": "audience",
+                  "label": "Audience"
+                },
+                {
+                  "key": "formName",
+                  "label": "Form name",
+                  "hint": "Only when the case type and audience carry more than one published form."
+                },
+                {
+                  "key": "intakeKind",
+                  "label": "Kind of intake",
+                  "type": "select",
+                  "options": [
+                    {
+                      "value": "hosted",
+                      "label": "Filled in on the portal"
+                    },
+                    {
+                      "value": "external",
+                      "label": "Opens a form on another site"
+                    }
+                  ],
+                  "default": "hosted"
+                },
+                {
+                  "key": "externalUrl",
+                  "label": "Address of the external form",
+                  "pattern": "^https://\\S+$",
+                  "patternMessage": "An address starts with https://."
+                },
+                {
+                  "key": "addressLookup",
+                  "label": "Look up the address by postcode",
+                  "type": "switch"
+                },
+                {
+                  "key": "prefillFromEarlierCases",
+                  "label": "Offer answers given before",
+                  "type": "switch"
+                },
+                {
+                  "key": "staffMayFill",
+                  "label": "An employee may fill it in for a resident",
+                  "type": "switch"
+                },
+                {
+                  "key": "challenge",
+                  "label": "Run the portal's check against automated sending",
+                  "type": "switch"
+                }
+              ]
+            }
+          },
+          {
+            "id": "binding-signin",
+            "type": "settings-form",
+            "title": "Sign in",
+            "content": {
+              "columns": 2,
+              "saveLabel": "Save",
+              "savedText": "The form settings are saved.",
+              "fields": [
+                {
+                  "key": "minTrust",
+                  "label": "Sign-in needed",
+                  "type": "select",
+                  "options": [
+                    {
+                      "value": "low",
+                      "label": "Anyone may fill it in"
+                    },
+                    {
+                      "value": "substantial",
+                      "label": "DigiD or eHerkenning, substantial"
+                    },
+                    {
+                      "value": "high",
+                      "label": "DigiD or eHerkenning, high"
+                    }
+                  ],
+                  "default": "low"
+                }
+              ]
+            }
+          },
+          {
+            "id": "binding-status",
+            "type": "settings-form",
+            "title": "Status",
+            "content": {
+              "columns": 2,
+              "saveLabel": "Save",
+              "savedText": "The form settings are saved.",
+              "fields": [
+                {
+                  "key": "status",
+                  "label": "Status",
+                  "type": "select",
+                  "options": [
+                    {
+                      "value": "draft",
+                      "label": "Draft"
+                    },
+                    {
+                      "value": "published",
+                      "label": "Published"
+                    }
+                  ],
+                  "default": "draft",
+                  "hint": "Only a published form is shown on the portal."
+                }
+              ]
+            }
+          },
+          {
+            "id": "binding-general",
+            "type": "sections",
+            "title": "Algemeen",
+            "content": {
+              "cards": true,
+              "sections": [
+                {
+                  "key": "form",
+                  "title": "Form",
+                  "widgetId": "binding-form"
+                },
+                {
+                  "key": "signin",
+                  "title": "Sign in",
+                  "widgetId": "binding-signin"
+                },
+                {
+                  "key": "status",
+                  "title": "Status",
+                  "widgetId": "binding-status"
+                }
+              ]
+            }
+          },
+          {
+            "id": "binding-confirmation",
+            "type": "settings-form",
+            "title": "Confirmation",
+            "content": {
+              "columns": 2,
+              "saveLabel": "Save",
+              "savedText": "The form settings are saved.",
+              "fields": [
+                {
+                  "key": "confirmation.title",
+                  "label": "Confirmation title"
+                },
+                {
+                  "key": "confirmation.body",
+                  "label": "Confirmation text",
+                  "type": "textarea",
+                  "rows": 4,
+                  "hint": "Write {reference} and {deadline} where they belong."
+                },
+                {
+                  "key": "confirmationText",
+                  "label": "Short confirmation",
+                  "type": "textarea",
+                  "rows": 2
+                },
+                {
+                  "key": "confirmationMail.enabled",
+                  "label": "Send a confirmation mail with the answers",
+                  "type": "switch"
+                }
+              ]
+            }
+          },
+          {
+            "id": "binding-statements",
+            "type": "settings-form",
+            "title": "Statements",
+            "content": {
+              "columns": 2,
+              "saveLabel": "Save",
+              "savedText": "The form settings are saved.",
+              "fields": [
+                {
+                  "key": "statements.truth.required",
+                  "label": "The statement of truth is required",
+                  "type": "switch"
+                },
+                {
+                  "key": "statements.privacy.required",
+                  "label": "The privacy consent is required",
+                  "type": "switch"
+                }
+              ]
+            }
+          },
+          {
+            "id": "binding-cosign",
+            "type": "settings-form",
+            "title": "Co-signing",
+            "content": {
+              "columns": 2,
+              "saveLabel": "Save",
+              "savedText": "The form settings are saved.",
+              "fields": [
+                {
+                  "key": "cosign.required",
+                  "label": "A second person must co-sign",
+                  "type": "switch"
+                },
+                {
+                  "key": "cosign.deadlineDays",
+                  "label": "Days to co-sign",
+                  "type": "number",
+                  "min": 1,
+                  "max": 90,
+                  "default": 14
+                }
+              ]
+            }
+          },
+          {
+            "id": "binding-history",
+            "type": "audit-trail",
+            "title": "Historie",
+            "icon": "History"
+          },
+          {
+            "id": "binding-tabs",
+            "type": "tabs",
+            "title": "Instellingen van het formulier",
+            "content": {
+              "ariaLabel": "Instellingen van het formulier",
+              "tabs": [
+                {
+                  "widgetId": "binding-general",
+                  "label": "Algemeen"
+                },
+                {
+                  "widgetId": "binding-confirmation",
+                  "label": "Bevestiging"
+                },
+                {
+                  "widgetId": "binding-statements",
+                  "label": "Verklaringen"
+                },
+                {
+                  "widgetId": "binding-cosign",
+                  "label": "Mede-ondertekenen"
+                },
+                {
+                  "widgetId": "binding-history",
+                  "label": "Historie"
+                }
+              ]
+            }
+          }
+        ],
+        "layout": [
+          {
+            "id": "binding-tabs",
+            "widgetId": "binding-tabs",
+            "gridX": 0,
+            "gridY": 0,
+            "gridWidth": 12,
+            "gridHeight": 10
+          }
+        ]
+      }
+    },
+    {
       "id": "Glossary",
       "route": "/glossary",
       "type": "index",
