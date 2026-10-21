@@ -329,6 +329,8 @@
 	"(optional)": "(niet verplicht)",
 	"A field without \"optional\" must be filled in.": "Een veld zonder \"niet verplicht\" moet u invullen.",
 	"Something is still missing": "Er ontbreekt nog iets",
+	"We filled in some things for you": "Wij vulden al iets voor u in",
+	"This comes from your account. Is something wrong? Change it here for this request.": "Dit komt uit uw account. Klopt iets niet? Pas het hier aan voor dit verzoek.",
 	"Fill this in. Then you can continue.": "Vul dit aan. Daarna kunt u verder.",
 	"Error: ": "Fout: ",
 	"Day": "Dag",
