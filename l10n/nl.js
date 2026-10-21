@@ -1784,6 +1784,8 @@ OC.L10N.register(
         "Close": "Sluiten",
         "Alternative text": "Alternatieve tekst",
         "Media item": "Media-item",
+        "Nergens gebruikt": "Nergens gebruikt",
+        "Used on": "Gebruikt op",
         "Media": "Media",
         "Only a published item is served to the public.": "Alleen een gepubliceerd item wordt aan het publiek getoond.",
         "The address of an image shown by a hero widget, or media:<id> for an item of this portal's media library. Optional: a page without one renders as before.": "Het adres van een afbeelding die een hero-widget toont, of media:<id> voor een item uit de mediabibliotheek van dit portaal. Optioneel: een pagina zonder afbeelding wordt getoond zoals voorheen.",
