@@ -244,12 +244,11 @@ export default {
 		'We sent a link to {address}. Follow it to confirm the address.':
 			'We hebben een link gestuurd naar {address}. Open de link om het adres te bevestigen.',
 		'Whose cases do you need access to?': 'Voor wiens zaken wilt u toegang?',
-		'Why are you withdrawing? (optional)':
-			'Waarom trekt u de aanvraag in? (niet verplicht)',
+		'Why are you withdrawing? (optional)': 'Waarom trekt u in? (niet verplicht)',
 		'Why do you need access?': 'Waarom hebt u toegang nodig?',
 		'Withdraw request': 'Aanvraag intrekken',
 		'Withdraw this request': 'Deze aanvraag intrekken',
-		'Withdraw this request?': 'Deze aanvraag intrekken?',
+		'Withdraw this request?': 'Wilt u deze aanvraag intrekken?',
 		'Withdrawn on {date}.': 'Ingetrokken op {date}.',
 		'We still need documents from you. Send them before {due}, and we will decide by {legal}.':
 			'Wij hebben nog stukken van u nodig. Stuur ze voor {due}, dan nemen wij uiterlijk {legal} een besluit.',

@@ -210,6 +210,37 @@
 }
 
 /*
+ * A BUTTON THAT UNDOES SOMETHING ("Aanvraag intrekken"): the danger tokens
+ * when the theme sets them, else the set's dark error colour, which reaches
+ * AA on white. Text and outline carry the meaning together with the words.
+ */
+.pq-site .utrecht-button--secondary-action.utrecht-button--danger {
+	--_utrecht-button-hint-color: var(
+		--utrecht-button-secondary-action-danger-color,
+		var(--nldesign-color-error-hover, currentcolor)
+	);
+	--_utrecht-button-hint-border-color: var(
+		--utrecht-button-secondary-action-danger-border-color,
+		var(--nldesign-color-error-hover, currentcolor)
+	);
+}
+
+.pq-site .utrecht-button--primary-action.utrecht-button--danger {
+	--_utrecht-button-hint-background-color: var(
+		--utrecht-button-primary-action-danger-background-color,
+		var(--nldesign-color-error-hover, CanvasText)
+	);
+	--_utrecht-button-hint-border-color: var(
+		--utrecht-button-primary-action-danger-border-color,
+		var(--nldesign-color-error-hover, CanvasText)
+	);
+	--_utrecht-button-hint-color: var(
+		--utrecht-button-primary-action-danger-color,
+		var(--nldesign-color-text-light, Canvas)
+	);
+}
+
+/*
  * THE SAME FORM'S SECONDARY BUTTONS: the file picker ("Bestand of foto
  * kiezen") and the step buttons. Without a theme they had no border and no
  * padding either, so the picker read as a sentence. Scoped to the form, so the

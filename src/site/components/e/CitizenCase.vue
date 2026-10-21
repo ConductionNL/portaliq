@@ -153,7 +153,7 @@
 		</div>
 
 		<button
-			v-if="windowOpen"
+			v-if="windowOpen && hasWritableField"
 			type="button"
 			class="utrecht-button utrecht-button--primary-action pq-case-save"
 			data-testid="case-save"
@@ -241,11 +241,11 @@
 			v-if="withdrawal.kind === 'button'"
 			ref="withdrawButton"
 			type="button"
-			class="utrecht-button utrecht-button--secondary-action pq-case-withdraw"
+			class="utrecht-button utrecht-button--secondary-action utrecht-button--danger pq-case-withdraw"
 			data-testid="case-withdraw"
 			:disabled="busy"
 			@click="openWithdraw">
-			{{ t('Withdraw this request') }}
+			{{ t('Withdraw request') }}
 		</button>
 
 		<WithdrawCaseConfirm
@@ -392,6 +392,19 @@ export default {
 
 		fields() {
 			return caseFieldNames(this.caseRow, this.writableSet)
+		},
+
+		/**
+		 * Whether any field on screen may be changed: without one there is
+		 * nothing to save, so the save button stays away.
+		 *
+		 * @return {boolean}
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
+		 */
+		hasWritableField() {
+			return this.fields.some(
+				(field) => this.fieldStates[field]?.writable === true,
+			)
 		},
 
 		withdrawal() {
