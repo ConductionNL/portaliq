@@ -112,9 +112,17 @@
 							@keydown.enter.prevent="editor.select(item.id)"
 							@keydown.space.prevent="editor.select(item.id)">
 							<header class="page-grid-editor__cell-bar">
-								<span class="page-grid-editor__cell-key">{{
-									labelOf(item.widgetKey)
-								}}</span>
+								<span class="page-grid-editor__cell-name">
+									<span class="page-grid-editor__cell-key">{{
+										labelOf(item.widgetKey)
+									}}</span>
+									<span
+										v-if="widthLineOf(item)"
+										class="page-grid-editor__cell-width"
+										:data-testid="`designer-width-${item.id}`"
+										>{{ widthLineOf(item) }}</span
+									>
+								</span>
 								<NcButton
 									variant="tertiary"
 									:aria-label="t('portaliq', 'Remove this widget')"
@@ -303,7 +311,7 @@ import {
 	isPublicWidget,
 	previewComponentFor,
 } from '../lib/pageWidgetCatalogue.js'
-import { widgetLabel } from '../lib/widgetLabels.js'
+import { widgetLabel, widgetWidthLine } from '../lib/widgetLabels.js'
 import { historyIntent } from './editHistory.js'
 import { cellFromDrop } from './geometry.js'
 import { PALETTE_DRAG_TYPE } from './paletteDrag.js'
@@ -650,6 +658,17 @@ export default {
 		},
 
 		/**
+		 * The width line under a block's name ("8 kolommen").
+		 *
+		 * @param {object} item The placement.
+		 * @return {string} The line.
+		 * @spec openspec/changes/page-editor-in-the-page/specs/portal-page-designer/spec.md#requirement-the-editor-toolbar-and-block-cards-read-as-the-board
+		 */
+		widthLineOf(item) {
+			return widgetWidthLine(item?.gridWidth)
+		},
+
+		/**
 		 * The grid item's accessible name.
 		 *
 		 * @param {object} item The placement.
@@ -880,10 +899,24 @@ export default {
 	background: var(--color-background-hover);
 }
 
+/* A block card is named as the board names it: the block's name in the
+   main ink, its width in a muted line under it (PtPagina "Hero" over
+   "12 kolommen"). */
+.page-grid-editor__cell-name {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
 .page-grid-editor__cell-key {
-	font-family: monospace;
-	font-size: 0.85em;
+	color: var(--color-main-text);
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.page-grid-editor__cell-width {
 	color: var(--color-text-maxcontrast);
+	font-size: 12px;
 }
 
 .page-grid-editor__cell-body {
