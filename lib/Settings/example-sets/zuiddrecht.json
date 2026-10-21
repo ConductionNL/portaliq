@@ -1520,6 +1520,18 @@
 			}
 		}
 	],
+	"watchers": [
+		{
+			"key": "anouk-volgt-woo-fietspad",
+			"data": {
+				"user": "{{cast:anouk.uid}}",
+				"objectUuid": "{{object:woo-fietspad.id}}",
+				"register": "dossiq",
+				"schema": "case",
+				"notify": true
+			}
+		}
+	],
 	"changes": [
 		{
 			"key": "inloggen-met-account",
