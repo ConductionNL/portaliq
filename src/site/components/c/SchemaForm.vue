@@ -149,6 +149,23 @@
 				:error="errors[field] || ''"
 				:t="t"
 				@pick="(picked) => pick(field, picked)" />
+			<!-- What the resident may want to know before going on, after
+			     the step's questions (the step's `note`). -->
+			<div
+				v-if="hasSteps && currentStep.note"
+				class="utrecht-alert utrecht-alert--info pq-schema-form__note"
+				data-testid="schema-form-step-note">
+				<div class="utrecht-alert__content">
+					<p
+						v-if="currentStep.note.title !== ''"
+						class="utrecht-paragraph pq-schema-form__note-title">
+						{{ currentStep.note.title }}
+					</p>
+					<p v-if="currentStep.note.text !== ''" class="utrecht-paragraph">
+						{{ currentStep.note.text }}
+					</p>
+				</div>
+			</div>
 		</template>
 
 		<!-- The answers in one sentence, as they are given
@@ -265,6 +282,8 @@ import {
 	translatorOr,
 	withSingleOptions,
 } from './forms.js'
+
+import '@utrecht/alert-css/dist/index.css'
 
 /**
  * A manifest-driven form (the Vue port of SchemaForm.jsx, which also replaces
@@ -1091,6 +1110,17 @@ export default {
 	flex-wrap: wrap;
 	gap: var(--utrecht-space-inline-sm, 0.5rem);
 	margin-block-start: var(--utrecht-space-block-md, 1rem);
+}
+
+.pq-schema-form__note {
+	border: var(--nldesign-website-notice-border-width, 1px) solid
+		var(--nldesign-website-notice-border-color, #b9cbe2);
+	border-radius: var(--nldesign-website-border-radius, 4px);
+	margin-block-start: var(--utrecht-space-block-lg, 1.5rem);
+}
+
+.pq-schema-form__note-title {
+	font-weight: var(--utrecht-typography-weight-scale-bold, 600);
 }
 
 .pq-schema-form__intro {
