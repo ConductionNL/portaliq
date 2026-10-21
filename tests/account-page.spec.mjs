@@ -254,7 +254,8 @@ test('site: "My account" shows the name, both kinds of address with the preferre
 	assert.match(html, /Waiting for confirmation/)
 	assert.match(html, /\+31612345678/)
 	assert.equal(
-		(html.match(/\(Preferred\)/g) || []).length,
+		(html.match(/pq-address__pill--preferred[^>]*>\s*Preferred\s*</g) || [])
+			.length,
 		2,
 		'one preferred e-mail and one preferred phone',
 	)
