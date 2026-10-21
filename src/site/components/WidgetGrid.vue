@@ -36,14 +36,14 @@
 			     container is here rather than around the whole component so a
 			     band between two runs still reaches the viewport edge. -->
 			<div v-else-if="!run.band" class="container">
-				<div class="pq-grid">
+				<div class="pq-grid" :style="gridStyle(run)">
 					<div
 						v-for="widget in run.widgets"
 						:key="widget.id || `${widget.gridX}-${widget.gridY}`"
 						class="pq-grid__cell"
 						:data-testid="`widget-${widget.id || widget.widgetKey}`"
 						:data-widget-key="widget.widgetKey"
-						:style="cellStyle(widget, run.rowOffset)">
+						:style="placeCell(widget, run)">
 						<component
 							:is="componentFor(widget.widgetKey)"
 							v-if="componentFor(widget.widgetKey)"
@@ -76,7 +76,13 @@ import HeroBlock from './HeroBlock.vue'
 import MarkdownBlock from './MarkdownBlock.vue'
 import { assistantAvailable } from '../lib/assistantAvailable.js'
 import { withoutStyling } from '../lib/blockProps.js'
-import { cellStyle, ownBand, runsFor } from '../lib/gridPlacement.js'
+import {
+	asideCellStyle,
+	cellStyle,
+	isAsideRun,
+	ownBand,
+	runsFor,
+} from '../lib/gridPlacement.js'
 import { loaders as siteWidgetLoaders } from '../widgets/loaders.js'
 
 /**
@@ -305,6 +311,15 @@ export default {
 	},
 
 	props: {
+		/**
+		 * The page's aside column (`asideOf(page.body)`): a run of a main
+		 * column beside an aside then gives the aside this fixed width.
+		 */
+		aside: {
+			type: Object,
+			default: null,
+		},
+
 		/** Widget placements in the canonical manifest-v2 widgetEntry shape. */
 		widgets: {
 			type: Array,
@@ -768,16 +783,45 @@ export default {
 		},
 
 		/**
-		 * Place one widget on the 12-column grid, re-based onto its run.
+		 * Whether this run draws as main column and fixed aside.
 		 *
-		 * @param {object} widget    The placement.
-		 * @param {number} rowOffset The run's first authored row.
-		 * @return {object} The style bindings.
-		 *
-		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-hero-must-cap-its-calls-to-action-and-keep-one-outline-entry-req-ptb-006
+		 * @param {object} run A run of ordinary widgets.
+		 * @return {boolean}
+		 * @spec openspec/changes/site-aside-column/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
 		 */
-		cellStyle(widget, rowOffset) {
-			return cellStyle(widget, rowOffset)
+		asideRun(run) {
+			return this.aside !== null && isAsideRun(run.widgets)
+		},
+
+		/**
+		 * The run's grid columns: twelve, or the main column and the aside.
+		 *
+		 * @param {object} run A run of ordinary widgets.
+		 * @return {object|null} The style bindings.
+		 * @spec openspec/changes/site-aside-column/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
+		 */
+		gridStyle(run) {
+			if (!this.asideRun(run)) {
+				return null
+			}
+			return {
+				gridTemplateColumns: `minmax(0, 1fr) ${this.aside.width}px`,
+				columnGap: `${this.aside.gap}px`,
+			}
+		},
+
+		/**
+		 * One widget's place in its run.
+		 *
+		 * @param {object} widget The placement.
+		 * @param {object} run    Its run.
+		 * @return {object} The style bindings.
+		 * @spec openspec/changes/site-aside-column/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
+		 */
+		placeCell(widget, run) {
+			return this.asideRun(run)
+				? asideCellStyle(widget, run.rowOffset)
+				: cellStyle(widget, run.rowOffset)
 		},
 	},
 }

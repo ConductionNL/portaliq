@@ -83,3 +83,34 @@ test('a message, a case and an access request frame in the website card line', (
 		/\.pq-access__request \{[^}]*border: 1px solid var\( --nldesign-website-card-border-color,/,
 	)
 })
+
+test('the mark-as-read text button has square ends', () => {
+	assert.match(css, /\.pq-site \.pq-inbox-row \.utrecht-button--subtle \{ border-radius: 0; \}/)
+})
+
+test('a partial accessibility status is the attention strip', () => {
+	const page = sfcStyle('src/site/components/AccessibilityStatementPage.vue')
+	assert.match(
+		page,
+		/\.pq-accessibility-statement__status\.utrecht-alert--warning \{ border-color: var\( --nldesign-website-attention-border-color,/,
+	)
+	assert.match(page, /\.pq-accessibility-statement__status h2 \{[^}]*font-size: 1\.1875rem;/)
+})
+
+test('the sign-in ways stand three in a row on the designed site', () => {
+	assert.match(
+		css,
+		/\.pq-site:has\(\.pq-site__header--designed\) \.pq-signin__cards \{ grid-template-columns: repeat\(auto-fit, minmax\(min\(100%, 320px\), 1fr\)\); max-inline-size: none; \}/,
+	)
+})
+
+test('the add, authorise and invite buttons lead with the boards icon', () => {
+	assert.match(css, /\.pq-site \.utrecht-button \.pq-button-icon \{ inline-size: 20px; block-size: 20px;/)
+	for (const rel of [
+		'src/site/components/e/AddressList.vue',
+		'src/site/components/e/MandatesGiven.vue',
+		'src/site/modals/e/MandateInviteModal.vue',
+	]) {
+		assert.match(readFileSync(join(ROOT, rel), 'utf8'), /class="pq-button-icon"/, rel)
+	}
+})

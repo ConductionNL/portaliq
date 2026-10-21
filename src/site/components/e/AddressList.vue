@@ -22,7 +22,11 @@
 				:aria-controls="formId"
 				:data-testid="`address-open-${kind}`"
 				@click="toggle">
-				<span aria-hidden="true" class="pq-address__plus">+</span>
+				<svg
+					class="pq-button-icon"
+					viewBox="0 0 24 24"
+					aria-hidden="true"
+					focusable="false"><path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" /></svg>
 				{{ email ? t('Add e-mail address') : t('Add phone number') }}
 			</button>
 		</div>
@@ -211,11 +215,6 @@ export default {
 
 .pq-address__head .utrecht-heading-3 {
 	margin-block: 0;
-}
-
-.pq-address__plus {
-	font-weight: normal;
-	margin-inline-end: 0.25em;
 }
 
 .pq-address__list {

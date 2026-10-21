@@ -1,0 +1,4 @@
+- [x] Serve `body.aside` from CmsReader::shapePage
+- [x] `asideOf`, `isAsideRun`, `asideCellStyle` in src/site/lib/gridPlacement.js; WidgetGrid lays an aside run out with them
+- [x] Page body schema documents `aside`
+- [x] Zuiddrecht Home declares the 340px aside

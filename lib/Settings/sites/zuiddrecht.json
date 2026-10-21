@@ -259,6 +259,10 @@
             "locale": "nl",
             "body": {
                 "type": "grid",
+                "aside": {
+                    "width": 340,
+                    "gap": 56
+                },
                 "widgets": [
                     {
                         "id": "zd-home-01-nlbanner",

@@ -280,6 +280,23 @@
 	font-size: var(--utrecht-select-font-size, inherit);
 }
 
+/* A button's leading icon, as the boards draw it: 20px in the label's ink,
+   8px before the words. */
+.pq-site .utrecht-button .pq-button-icon {
+	inline-size: 20px;
+	block-size: 20px;
+	flex: none;
+	margin-inline-end: 8px;
+	vertical-align: -4px;
+	fill: currentcolor;
+}
+
+/* "Markeren als gelezen" on a message row is an underlined text button with
+   square ends (board Berichten). */
+.pq-site .pq-inbox-row .utrecht-button--subtle {
+	border-radius: 0;
+}
+
 /*
  * THE SAME FORM'S SECONDARY BUTTONS: the file picker ("Bestand of foto
  * kiezen") and the step buttons. Without a theme they had no border and no
@@ -2515,6 +2532,12 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	max-inline-size: 760px;
 	font-size: 1.25rem;
 	line-height: 1.5 !important;
+}
+
+/* The three ways in stand in one row across the page (board Inloggen). */
+.pq-site:has(.pq-site__header--designed) .pq-signin__cards {
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+	max-inline-size: none;
 }
 
 .pq-site:has(.pq-site__header--designed) .pq-signin__card-head {
