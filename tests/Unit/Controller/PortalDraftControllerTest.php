@@ -119,18 +119,21 @@ class PortalDraftControllerTest extends TestCase {
 		$data     = $this->controller(subjectRef: 'sanne', found: $this->live(), action: $labelled)->index()->getData();
 
 		$this->assertCount(expectedCount: 1, haystack: $data['drafts']);
-		$this->assertSame(expected: ['dossiq', 'request', 'Woo-verzoek'], actual: [$data['drafts'][0]['app'], $data['drafts'][0]['action'], $data['drafts'][0]['label']]);
+		$first = $data['drafts'][0];
+		$this->assertSame(expected: ['dossiq', 'request', 'Woo-verzoek'], actual: [$first['app'], $first['action'], $first['label']]);
 		$this->assertNotSame(expected: '', actual: $data['drafts'][0]['expiresAt']);
 
 		$undeclared = $labelled;
 		unset($undeclared['draft']);
-		$this->assertSame(expected: ['drafts' => []], actual: $this->controller(subjectRef: 'sanne', found: $this->live(), action: $undeclared)->index()->getData());
+		$withoutDeclaration = $this->controller(subjectRef: 'sanne', found: $this->live(), action: $undeclared);
+		$this->assertSame(expected: ['drafts' => []], actual: $withoutDeclaration->index()->getData());
 
 		$old = ['id' => 'd-old', 'status' => 'draft', 'data' => ['title' => 'Old'], 'updatedAt' => '2026-01-01T00:00:00+00:00'];
 		$this->assertSame(expected: ['drafts' => []], actual: $this->controller(subjectRef: 'sanne', found: $old)->index()->getData());
 
 		$this->assertSame(expected: Http::STATUS_UNAUTHORIZED, actual: $this->controller(subjectRef: '')->index()->getStatus());
-		$this->assertSame(expected: Http::STATUS_SERVICE_UNAVAILABLE, actual: $this->controller(subjectRef: 'sanne', registryFails: true)->index()->getStatus());
+		$unreachable = $this->controller(subjectRef: 'sanne', registryFails: true);
+		$this->assertSame(expected: Http::STATUS_SERVICE_UNAVAILABLE, actual: $unreachable->index()->getStatus());
 	}//end testIndexListsTheLiveDrafts()
 
 	public function testADraftPastItsRetentionIsNotShownAndIsDiscarded(): void {

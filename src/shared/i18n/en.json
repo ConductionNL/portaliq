@@ -476,5 +476,20 @@
 	"Go to My cases": "Go to My cases",
 	"For these papers you must log in with {providers}.": "For these papers you must log in with {providers}.",
 	"Logging in with DigiD is not available here yet.": "Logging in with DigiD is not available here yet.",
-	"{first} or {last}": "{first} or {last}"
+	"{first} or {last}": "{first} or {last}",
+	"Do you want to continue later?": "Do you want to continue later?",
+	"Save your answers, so you do not have to start again. We send nothing yet and make no case yet.": "Save your answers, so you do not have to start again. We send nothing yet and make no case yet.",
+	"We keep your answers for {days} days, until {date}. Open this form again to continue.": "We keep your answers for {days} days, until {date}. Open this form again to continue.",
+	"Stop without saving": "Stop without saving",
+	"Continue filling in": "Continue filling in",
+	"Save and stop": "Save and stop",
+	"You already started this form": "You already started this form",
+	"You filled in answers on {moment}. Do you want to continue with them?": "You filled in answers on {moment}. Do you want to continue with them?",
+	"You already filled in answers. Do you want to continue with them?": "You already filled in answers. Do you want to continue with them?",
+	"If you start again, we throw the earlier answers away.": "If you start again, we throw the earlier answers away.",
+	"Start again": "Start again",
+	"Continue with my answers": "Continue with my answers",
+	"Unfinished form": "Unfinished form",
+	"Saved on {date}. Not sent yet.": "Saved on {date}. Not sent yet.",
+	"Finish the form": "Finish the form"
 }

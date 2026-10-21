@@ -10,7 +10,7 @@ Live, saving shows only a sentence, reopening silently refills the answers, and 
 
 ## What Changes
 
-- "Save and continue later" opens a save dialog with three choices: "Stoppen zonder opslaan", "Doorgaan met invullen" and "Opslaan en stoppen". The dialog names how long the answers are kept. "Opslaan en stoppen" saves the draft and goes to the own area.
+- "Save and continue later" opens a save dialog with three choices: "Stoppen zonder opslaan", "Doorgaan met invullen" and "Opslaan en stoppen". The dialog names how long the answers are kept. "Opslaan en stoppen" saves the draft and leaves the form the way cancelling does.
 - Opening a form for which the resident has a live draft asks first: "Verder met mijn antwoorden" restores the answers, and "Opnieuw beginnen" discards the draft.
 - `GET /portal/api/drafts` lists the signed-in resident's live drafts: app, action, label, when last saved, and until when they are kept. Mijn zaken shows each draft as an "Onvoltooid formulier" card that opens its form.
 - The draft answer (`GET /portal/api/drafts/{app}/{action}`) also carries `updatedAt`, the moment the resume dialog names.

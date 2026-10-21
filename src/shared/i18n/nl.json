@@ -476,5 +476,20 @@
 	"Go to My cases": "Naar Mijn zaken",
 	"For these papers you must log in with {providers}.": "Voor deze stukken moet u inloggen met {providers}.",
 	"Logging in with DigiD is not available here yet.": "Inloggen met DigiD is hier nog niet beschikbaar.",
-	"{first} or {last}": "{first} of {last}"
+	"{first} or {last}": "{first} of {last}",
+	"Do you want to continue later?": "Wilt u later verder gaan?",
+	"Save your answers, so you do not have to start again. We send nothing yet and make no case yet.": "Sla uw antwoorden op. Dan hoeft u niet opnieuw te beginnen. Wij versturen nog niets en maken nog geen zaak aan.",
+	"We keep your answers for {days} days, until {date}. Open this form again to continue.": "Wij bewaren uw antwoorden {days} dagen, tot {date}. Open dit formulier opnieuw om verder te gaan.",
+	"Stop without saving": "Stoppen zonder opslaan",
+	"Continue filling in": "Doorgaan met invullen",
+	"Save and stop": "Opslaan en stoppen",
+	"You already started this form": "U was al bezig met dit formulier",
+	"You filled in answers on {moment}. Do you want to continue with them?": "U heeft op {moment} al antwoorden ingevuld. Wilt u daarmee verder gaan?",
+	"You already filled in answers. Do you want to continue with them?": "U heeft al antwoorden ingevuld. Wilt u daarmee verder gaan?",
+	"If you start again, we throw the earlier answers away.": "Begint u opnieuw, dan gooien wij de eerdere antwoorden weg.",
+	"Start again": "Opnieuw beginnen",
+	"Continue with my answers": "Verder met mijn antwoorden",
+	"Unfinished form": "Onvoltooid formulier",
+	"Saved on {date}. Not sent yet.": "Opgeslagen op {date}. Nog niet ingediend.",
+	"Finish the form": "Formulier afmaken"
 }

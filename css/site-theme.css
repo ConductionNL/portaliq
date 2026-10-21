@@ -3582,3 +3582,37 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	margin-block: 0 12px;
 	font-size: 1.375rem;
 }
+
+/*
+ * THE DRAFT DIALOGS (form-save-and-resume-dialogs, boards FormulierOpslaan
+ * and FormulierHervatten): the form's name small above the question, the
+ * buttons in one row at the end.
+ */
+.pq-site .pq-draft-dialog {
+	box-sizing: border-box;
+	max-inline-size: min(40rem, calc(100vw - 2rem));
+	padding: 2rem;
+	color: var(--utrecht-document-color, inherit);
+	background: var(--utrecht-document-background-color, Canvas);
+	border: 0;
+	border-radius: var(--nldesign-website-border-radius-large, 6px);
+}
+
+.pq-site .pq-draft-dialog > * + * {
+	margin-block-start: 1rem;
+}
+
+.pq-site .pq-draft-dialog__form {
+	margin: 0;
+	color: var(--thematiq-website-text-muted, var(--nldesign-color-text-muted, inherit));
+	font-size: 0.9375rem;
+	font-weight: 600;
+}
+
+.pq-site .pq-draft-dialog__buttons {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: 0.75rem;
+	margin-block-start: 1.5rem;
+}

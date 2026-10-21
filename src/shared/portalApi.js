@@ -1092,6 +1092,29 @@ export function createPortalApi(config, store = {}) {
 		},
 
 		/**
+		 * The resident's live drafts, every form they can still finish; an
+		 * empty list when there is none or the list cannot be read.
+		 *
+		 * @return {Promise<Array<{app: string, action: string, label: string, updatedAt: string, expiresAt: string}>>}
+		 *
+		 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
+		 */
+		async listDrafts() {
+			try {
+				const res = await fetch(`${base}/drafts`, {
+					headers: { Accept: 'application/json', ...authHeaders() },
+				})
+				if (!res.ok) {
+					return []
+				}
+				const body = await res.json()
+				return Array.isArray(body?.drafts) ? body.drafts : []
+			} catch {
+				return []
+			}
+		},
+
+		/**
 		 * Delete the draft once the action was sent.
 		 *
 		 * @param {string} app The contributing app, or the action's register.

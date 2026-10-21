@@ -4,7 +4,7 @@
 
 On a form whose action can keep a draft, "Save and continue later" SHALL open a dialog before anything is saved. The dialog SHALL say that nothing is sent and no case is made yet, and how many days the answers are kept and until which date. It SHALL offer three choices:
 
-- "Opslaan en stoppen" saves the draft and opens the own area.
+- "Opslaan en stoppen" saves the draft and leaves the form the way cancelling does.
 - "Doorgaan met invullen" closes the dialog.
 - "Stoppen zonder opslaan" leaves the form without saving.
 
@@ -12,7 +12,7 @@ On a form whose action can keep a draft, "Save and continue later" SHALL open a 
 @e2e exclude Unit test in node: tests/form-save-and-resume.spec.mjs
 - GIVEN a signed-in resident halfway through a form whose action keeps drafts for 30 days
 - WHEN they choose "Save and continue later" and then "Opslaan en stoppen"
-- THEN the draft is saved and the own area opens
+- THEN the draft is saved and the form is left as when cancelling
 
 ### Requirement: Reopening a form asks before it continues (REQ-FSR-002)
 
