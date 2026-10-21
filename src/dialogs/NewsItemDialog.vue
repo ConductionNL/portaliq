@@ -17,7 +17,8 @@
   @spec openspec/changes/staff-news-screen/tasks.md#T4
 -->
 <template>
-	<NcDialog
+	<CnDialog
+		:look="look"
 		:name="
 			item ? t('portaliq', 'Change news item') : t('portaliq', 'New news item')
 		"
@@ -132,15 +133,15 @@
 				{{ t('portaliq', 'Save') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
 import {
 	NcButton,
 	NcCheckboxRadioSwitch,
-	NcDialog,
 	NcNoteCard,
 	NcSelect,
 	NcTextArea,
@@ -154,7 +155,7 @@ export default {
 	components: {
 		NcButton,
 		NcCheckboxRadioSwitch,
-		NcDialog,
+		CnDialog,
 		NcNoteCard,
 		NcSelect,
 		NcTextArea,
@@ -162,6 +163,12 @@ export default {
 	},
 
 	props: {
+		/** The look to draw in; a spawned dialog gets the app's (src/lib/dialogLook.js). */
+		look: {
+			type: String,
+			default: undefined,
+		},
+
 		/** The news item to change, or null for a new one. */
 		item: {
 			type: Object,

@@ -15,7 +15,7 @@
 	<div class="traffic-table" data-testid="traffic-sources">
 		<TrafficEmptyState :state="emptyState" />
 		<table
-			v-if="emptyState === ''"
+			v-if="emptyState === '' && part !== 'searches'"
 			class="traffic-table__table"
 			data-testid="traffic-sources-table">
 			<thead>
@@ -47,12 +47,12 @@
 		     site's own search, from the URL and from the built-in search
 		     block alike. Only present when the portal keeps search terms. -->
 		<h3
-			v-if="emptyState === '' && summary.searches.length > 0"
+			v-if="emptyState === '' && part === 'all' && summary.searches.length > 0"
 			class="traffic-table__subheading">
 			{{ t('portaliq', 'Searches') }}
 		</h3>
 		<table
-			v-if="emptyState === '' && summary.searches.length > 0"
+			v-if="emptyState === '' && showSearches"
 			class="traffic-table__table"
 			data-testid="traffic-searches">
 			<thead>
@@ -68,6 +68,11 @@
 					<td class="traffic-table__path">{{ row.term }}</td>
 					<td class="traffic-table__number">{{ row.count }}</td>
 				</tr>
+				<tr v-if="summary.searches.length === 0">
+					<td colspan="2" class="traffic-table__muted">
+						{{ t('portaliq', 'No search recorded in this period.') }}
+					</td>
+				</tr>
 			</tbody>
 		</table>
 
@@ -75,12 +80,12 @@
 		     each term opens the public search, so the editor sees what the
 		     visitor saw. -->
 		<h3
-			v-if="emptyState === '' && showZeroResults"
+			v-if="emptyState === '' && part !== 'channels' && showZeroResults"
 			class="traffic-table__subheading">
 			{{ t('portaliq', 'Searched, nothing found') }}
 		</h3>
 		<table
-			v-if="emptyState === '' && summary.zeroResultSearches.length > 0"
+			v-if="emptyState === '' && part !== 'channels' && showZeroResults"
 			class="traffic-table__table"
 			data-testid="traffic-zero-results">
 			<thead>
@@ -110,7 +115,7 @@
 			</tbody>
 		</table>
 		<p
-			v-if="emptyState === '' && summary.searchesWithoutCount > 0"
+			v-if="emptyState === '' && part !== 'channels' && summary.searchesWithoutCount > 0"
 			class="traffic-table__muted"
 			data-testid="traffic-searches-without-count">
 			{{
@@ -119,6 +124,17 @@
 					'%n search did not report how many results it found.',
 					'%n searches did not report how many results they found.',
 					summary.searchesWithoutCount,
+				)
+			}}
+		</p>
+		<p
+			v-if="emptyState === '' && part === 'searches'"
+			class="traffic-table__muted traffic-table__note"
+			data-testid="traffic-searches-note">
+			{{
+				t(
+					'portaliq',
+					'What visitors typed into the search box of the portal. Counted per term, not per person.',
 				)
 			}}
 		</p>
@@ -140,7 +156,43 @@ export default {
 
 	mixins: [trafficWidgetMixin],
 
+	props: {
+		/**
+		 * The widget's manifest content. `part` picks what it shows: "all"
+		 * (the default: channels, then the searches under them),
+		 * "channels" or "searches".
+		 */
+		content: {
+			type: Object,
+			default: () => ({}),
+		},
+	},
+
 	computed: {
+		/**
+		 * Which part of the sources report this card shows.
+		 *
+		 * @return {string} "all", "channels" or "searches".
+		 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-site-search-must-be-reported-by-the-built-in-search-box
+		 */
+		part() {
+			return ['channels', 'searches'].includes(this.content?.part) ? this.content.part : 'all'
+		},
+
+		/**
+		 * Whether the searched terms are shown: always on their own card,
+		 * under the channels only when there are any.
+		 *
+		 * @return {boolean} True when the searches table is drawn.
+		 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-site-search-must-be-reported-by-the-built-in-search-box
+		 */
+		showSearches() {
+			if (this.part === 'searches') {
+				return true
+			}
+			return this.part === 'all' && this.summary.searches.length > 0
+		},
+
 		/**
 		 * Whether to show the heading: a list of terms, or only a count of unknown searches.
 		 *

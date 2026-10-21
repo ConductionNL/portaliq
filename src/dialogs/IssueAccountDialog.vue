@@ -13,8 +13,10 @@
   @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-issue-and-withdraw-accounts-through-the-validated-actions-req-isa-003
 -->
 <template>
-	<NcDialog
+	<CnDialog
+		:look="look"
 		:name="t('portaliq', 'Issue an account')"
+		:eyebrow="t('portaliq', 'Accounts')"
 		size="normal"
 		data-testid="issue-account"
 		@closing="$emit('close', null)">
@@ -93,15 +95,15 @@
 				{{ t('portaliq', 'Issue account') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
 import {
 	NcButton,
 	NcCheckboxRadioSwitch,
-	NcDialog,
 	NcSelect,
 	NcTextField,
 } from '@nextcloud/vue'
@@ -112,12 +114,18 @@ export default {
 	components: {
 		NcButton,
 		NcCheckboxRadioSwitch,
-		NcDialog,
+		CnDialog,
 		NcSelect,
 		NcTextField,
 	},
 
 	props: {
+		/** The look to draw in; a spawned dialog gets the app's (src/lib/dialogLook.js). */
+		look: {
+			type: String,
+			default: undefined,
+		},
+
 		/** Posts the fields; answers `{ok, message}`. */
 		submit: {
 			type: Function,

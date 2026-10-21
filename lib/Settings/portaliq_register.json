@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.99.0"
+        "version": "0.100.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.99.0",
+                "version": "0.100.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -2628,7 +2628,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.26.0",
+                "version": "0.27.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -3354,9 +3354,10 @@
                                 "type": "string",
                                 "enum": [
                                     "cards",
-                                    "rows"
+                                    "rows",
+                                    "folders"
                                 ],
-                                "description": "cards draws the folder cards; rows draws one line per case with its number, title, tag and the day it is due by.",
+                                "description": "cards draws the folder cards; rows draws one line per case with its number, title, tag and the day it is due by; folders draws the board folders with the case number, title, tag and the day it is due by.",
                                 "example": "rows"
                             }
                         }

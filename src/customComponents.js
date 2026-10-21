@@ -41,7 +41,6 @@ import {
 } from '@nextcloud/dialogs'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
-import { spawnDialog } from '@nextcloud/vue/functions/dialog'
 import FormEmbedDialog from './dialogs/FormEmbedDialog.vue'
 import InviteDialog from './dialogs/InviteDialog.vue'
 import IssueAccountDialog from './dialogs/IssueAccountDialog.vue'
@@ -51,6 +50,7 @@ import RevealDecisionDialog from './dialogs/RevealDecisionDialog.vue'
 import RevealedContactDialog from './dialogs/RevealedContactDialog.vue'
 import { createAccessRequestHandlers } from './lib/accessRequestActions.js'
 import { createConnectionHandlers } from './lib/connectionRegistry.js'
+import { spawnLookDialog } from './lib/dialogLook.js'
 import { createFormBindingEmbed } from './lib/formBindingEmbed.js'
 import { createFormBindingPreview } from './lib/formBindingPreview.js'
 import { refreshList } from './lib/listRefresh.js'
@@ -93,7 +93,7 @@ const accessRequestHandlers = createAccessRequestHandlers({
 			labelConfirm: t('portaliq', 'Grant'),
 			labelReject: t('portaliq', 'Cancel'),
 		}),
-	askReason: () => spawnDialog(RefuseAccessRequestDialog),
+	askReason: () => spawnLookDialog(RefuseAccessRequestDialog),
 	notify: showSuccess,
 	notifyError: showError,
 	translate: (text) => t('portaliq', text),
@@ -126,7 +126,7 @@ const formBindingPreview = createFormBindingPreview({
 const formBindingEmbed = createFormBindingEmbed({
 	post: (url, body) => axios.post(url, body),
 	generateUrl,
-	openDialog: (props) => spawnDialog(FormEmbedDialog, props),
+	openDialog: (props) => spawnLookDialog(FormEmbedDialog, props),
 	notifyError: showError,
 	translate: (text) => t('portaliq', text),
 })
@@ -140,8 +140,8 @@ const staffAccountHandlers = createStaffAccountHandlers({
 			return Number.isNaN(date.getTime()) ? iso : date.toLocaleDateString()
 		},
 	}),
-	openIssue: (submit) => spawnDialog(IssueAccountDialog, { submit }),
-	openInvite: (submit) => spawnDialog(InviteDialog, { submit }),
+	openIssue: (submit) => spawnLookDialog(IssueAccountDialog, { submit }),
+	openInvite: (submit) => spawnLookDialog(InviteDialog, { submit }),
 	confirmWithdrawInvitation: (row) =>
 		showConfirmation({
 			name: t('portaliq', 'Withdraw this invitation?'),
@@ -190,8 +190,8 @@ const sessionHandlers = createSessionHandlers({
 const revealHandlers = createRevealHandlers({
 	post: (url, body) => axios.post(url, body),
 	generateUrl,
-	askReason: (allow) => spawnDialog(RevealDecisionDialog, { allow }),
-	showContact: (contact) => spawnDialog(RevealedContactDialog, { contact }),
+	askReason: (allow) => spawnLookDialog(RevealDecisionDialog, { allow }),
+	showContact: (contact) => spawnLookDialog(RevealedContactDialog, { contact }),
 	notify: showSuccess,
 	notifyError: showError,
 	translate: (text) => t('portaliq', text),
@@ -209,7 +209,7 @@ const newsHandlers = createNewsHandlers({
 		put: (url, body) => axios.put(url, body),
 		generateUrl,
 	}),
-	openDialog: (props) => spawnDialog(NewsItemDialog, props),
+	openDialog: (props) => spawnLookDialog(NewsItemDialog, props),
 	currentUser: () => getCurrentUser()?.uid || '',
 	translate: (text, vars) => t('portaliq', text, vars),
 	notify: showSuccess,

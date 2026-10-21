@@ -1,6 +1,7 @@
 OC.L10N.register(
     "portaliq",
     {
+        "Choose media": "Choose media",
         "change proposals": "change proposals",
         "Per day": "Per day",
         "Sources": "Sources",
@@ -102,6 +103,7 @@ OC.L10N.register(
         "The theme app offers no house styles. Install and enable it to choose one.": "The theme app offers no house styles. Install and enable it to choose one.",
         "House style": "House style",
         "This house style has text that is hard to read on this portal:": "This house style has text that is hard to read on this portal:",
+        "{title}, choose media": "{title}, choose media",
         "{token} on the {surface} is {ratio}:1, and needs {threshold}:1.": "{token} on the {surface} is {ratio}:1, and needs {threshold}:1.",
         "Use it anyway": "Use it anyway",
         "Save": "Save",

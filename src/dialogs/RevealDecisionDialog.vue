@@ -10,7 +10,8 @@
   @spec openspec/changes/intake-report-pages/specs/report-pages/spec.md#requirement-the-custodian-decides-a-reveal-on-a-screen-of-their-own-req-irp-006
 -->
 <template>
-	<NcDialog
+	<CnDialog
+		:look="look"
 		:name="allow ? t('portaliq', 'Allow this reveal') : t('portaliq', 'Refuse this reveal')"
 		size="normal"
 		data-testid="reveal-decision"
@@ -35,25 +36,31 @@
 				{{ allow ? t('portaliq', 'Allow') : t('portaliq', 'Refuse') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
-import { NcButton, NcDialog, NcTextArea } from '@nextcloud/vue'
+import { NcButton, NcTextArea } from '@nextcloud/vue'
 
 export default {
 	name: 'RevealDecisionDialog',
 
 	components: {
 		NcButton,
-		NcDialog,
+		CnDialog,
 		NcTextArea,
 	},
 
 	props: {
 		/** Whether the custodian is allowing (true) or refusing (false). */
 		allow: { type: Boolean, default: false },
+		/** The look to draw in; a spawned dialog gets the app's (src/lib/dialogLook.js). */
+		look: {
+			type: String,
+			default: undefined,
+		},
 	},
 
 	emits: ['close'],

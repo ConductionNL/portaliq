@@ -56,7 +56,8 @@ class AvailabilityReport {
 	 * @param DateTimeImmutable $now The moment the report is asked for.
 	 * @param int $months How many full months, 1 to 12.
 	 *
-	 * @return array{portal: string, from: string, until: string, months: array<int, array<string, mixed>>, outages: array<int, array<string, mixed>>}
+	 * @return array{portal: string, from: string, until: string, months: array<int, array<string, mixed>>,
+	 *     outages: array<int, array<string, mixed>>, summary: array<string, mixed>}
 	 *
 	 * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
 	 */
@@ -107,8 +108,52 @@ class AvailabilityReport {
 			'until' => $until->format('Y-m-d'),
 			'months' => array_values($totals),
 			'outages' => $outages,
+			'summary' => $this->summary(totals: $totals, outages: $outages),
 		];
 	}//end forPortal()
+
+	/**
+	 * The figures over the whole period: the availability of all months
+	 * together, how many outages there were and how long they took, and the
+	 * longest one.
+	 *
+	 * @param array<string, array<string, mixed>> $totals The months with their counters.
+	 * @param array<int, array<string, mixed>> $outages The outages of the period.
+	 *
+	 * @return array<string, mixed> percentage (float or null), outageCount, outageMinutes, longestMinutes, longestStartedAt.
+	 *
+	 * @spec openspec/specs/portal-availability/spec.md#requirement-an-administrator-reads-a-twelve-month-report-req-oar-004
+	 */
+	private function summary(array $totals, array $outages): array {
+		$intervals = 0;
+		$available = 0;
+		foreach ($totals as $total) {
+			$intervals += (int)$total['intervals'];
+			$available += (int)$total['available'];
+		}
+
+		$minutes = 0;
+		$longest = ['durationMinutes' => 0, 'startedAt' => ''];
+		foreach ($outages as $outage) {
+			$minutes += (int)$outage['durationMinutes'];
+			if ((int)$outage['durationMinutes'] > (int)$longest['durationMinutes']) {
+				$longest = $outage;
+			}
+		}
+
+		$percentage = null;
+		if ($intervals > 0) {
+			$percentage = round(($available / $intervals) * 100, 2);
+		}
+
+		return [
+			'percentage' => $percentage,
+			'outageCount' => count($outages),
+			'outageMinutes' => $minutes,
+			'longestMinutes' => (int)$longest['durationMinutes'],
+			'longestStartedAt' => (string)$longest['startedAt'],
+		];
+	}//end summary()
 
 	/**
 	 * The report as CSV: one line per month, then one line per outage.

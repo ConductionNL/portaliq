@@ -170,6 +170,7 @@
 		<MediaPickerDialog
 			v-model:open="mediaOpen"
 			:portal="page.portal || ''"
+			:pageTitle="page.title || ''"
 			@choose="useMedia" />
 		<PageHistoryDialog
 			v-model:open="historyOpen"

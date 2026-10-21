@@ -326,6 +326,7 @@ test.describe('page traffic', () => {
 
 		await login(page)
 		await page.goto(`${APP}/pages/${idOf(contact)}`)
+		await page.getByRole('tab', { name: /Verkeer|Traffic/ }).click()
 		for (const metric of METRICS) {
 			await expect(page.getByTestId(`page-kpi-${metric}`)).toBeVisible({
 				timeout: 30_000,
@@ -380,6 +381,7 @@ test.describe('page traffic', () => {
 
 		await login(page)
 		await page.goto(`${APP}/pages/${idOf(venray)}`)
+		await page.getByRole('tab', { name: /Verkeer|Traffic/ }).click()
 		for (const metric of METRICS) {
 			await expect(page.getByTestId(`page-kpi-${metric}`)).toContainText(
 				'Not measured',

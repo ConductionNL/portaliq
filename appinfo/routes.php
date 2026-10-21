@@ -113,6 +113,8 @@ return [
         // operate-availability-report: a portal's last twelve months, admin-only.
         ['name' => 'availability#index', 'url' => '/api/availability/{portal}', 'verb' => 'GET'],
         ['name' => 'availability#export', 'url' => '/api/availability/{portal}/export', 'verb' => 'GET'],
+        // The same download as a POST, for the page's header action (an api-call download).
+        ['name' => 'availability#export', 'url' => '/api/availability/{portal}/export', 'verb' => 'POST', 'postfix' => 'download'],
         // Dashboard-figures-across-portals: the dashboard's figures of all portals together, admin-only.
         ['name' => 'portalOverview#traffic', 'url' => '/api/overview/traffic', 'verb' => 'GET'],
         ['name' => 'portalOverview#availability', 'url' => '/api/overview/availability', 'verb' => 'GET'],

@@ -12,8 +12,11 @@
   @spec openspec/specs/site-page-seo-history-and-media/spec.md
 -->
 <template>
-	<NcDialog
+	<CnDialog
+		:look="look"
+		width="wizard"
 		:name="t('portaliq', 'Media')"
+		:eyebrow="eyebrow"
 		:open="open"
 		size="normal"
 		data-testid="media-picker"
@@ -76,13 +79,15 @@
 				{{ t('portaliq', 'Close') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
+import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
-import { NcButton, NcDialog, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
+import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import { createMediaLibrary, markdownReference } from '../lib/mediaLibrary.js'
 
 export default {
@@ -90,12 +95,18 @@ export default {
 
 	components: {
 		NcButton,
-		NcDialog,
+		CnDialog,
 		NcLoadingIcon,
 		NcNoteCard,
 	},
 
 	props: {
+		/** The look to draw in; a spawned dialog gets the app's (src/lib/dialogLook.js). */
+		look: {
+			type: String,
+			default: undefined,
+		},
+
 		/** Whether the dialog is open. */
 		open: {
 			type: Boolean,
@@ -104,6 +115,12 @@ export default {
 
 		/** The page's portal slug. */
 		portal: {
+			type: String,
+			default: '',
+		},
+
+		/** The title of the page the media is chosen for, named above the dialog title. */
+		pageTitle: {
 			type: String,
 			default: '',
 		},
@@ -117,6 +134,20 @@ export default {
 			items: [],
 			copied: false,
 		}
+	},
+
+	computed: {
+		/**
+		 * The context line above the title: the page and what is done for it.
+		 *
+		 * @return {string}
+		 * @spec openspec/changes/admin-dialogs-board-look/specs/admin-dialogs-board-look/spec.md#requirement-an-admin-dialog-names-where-it-was-opened
+		 */
+		eyebrow() {
+			return this.pageTitle
+				? t('portaliq', '{title}, choose media', { title: this.pageTitle })
+				: t('portaliq', 'Choose media')
+		},
 	},
 
 	watch: {

@@ -1,6 +1,6 @@
 {
 	"set": "zuiddrecht",
-	"$comment": "portaliq's part of the Zuiddrecht example set: portal accounts for the residents Sanne de Vries, Henk Bakker, Linda Bakker and Fatima El-Amrani and the business contacts Jan-Willem and Mark, the mandates that let Linda act for her father Henk and Jan-Willem and Mark for their companies, Sanne's five cases, one question and four messages, the parking product finder over the twelve parking product pages of the site, the residents' group `inwoners`, the business contacts' group `ondernemers`, and on the portal the `nextcloud` way in with the account card of the Inloggen board, the resident group the Nextcloud registration app fills and the business group. Installed by `occ openregister:example-set:install zuiddrecht` after `occ portaliq:example-site:install zuiddrecht`; dossiq goes first because the cases are dossiq's. `exampleResident` lists the residents portaliq's one-click demo sign-in offers, each with its portal account object and its card; the cards show beside the account card only while `example_resident_demo_login` is `yes`. Business contacts get no one-click card and stay out of `inwoners`: they act for a company, which is eHerkenning, and the group is the portal's statement of who its residents are. They are in `ondernemers`, the portal's business group, so a direct Nextcloud sign-in lands them on the portal with the business audience. Every date is a number of days from the install day. `waitingOnApplicant` is written beside the open question on purpose: dossiq sets that flag in the act that sends a question, and a seed is not that act.",
+	"$comment": "portaliq's part of the Zuiddrecht example set: portal accounts for the residents Sanne de Vries (a phone number and an e-mail address still waiting for confirmation, as the MijnAccount board lists them; no confirmed `email`, so she still meets the prompt for one on the MijnOverzicht board), Henk Bakker, Linda Bakker and Fatima El-Amrani and the business contacts Jan-Willem and Mark, the mandates that let Linda act for her father Henk, Sanne for the butcher's shop and Jan-Willem and Mark for their companies, Sanne's two access requests (one granted, one waiting) of the Machtigingen board, Sanne's five cases, one question and four messages, the parking product finder over the twelve parking product pages of the site, the residents' group `inwoners`, the business contacts' group `ondernemers`, and on the portal the `nextcloud` way in with the account card of the Inloggen board, the resident group the Nextcloud registration app fills and the business group. Installed by `occ openregister:example-set:install zuiddrecht` after `occ portaliq:example-site:install zuiddrecht`; dossiq goes first because the cases are dossiq's. `exampleResident` lists the residents portaliq's one-click demo sign-in offers, each with its portal account object and its card; the cards show beside the account card only while `example_resident_demo_login` is `yes`. Business contacts get no one-click card and stay out of `inwoners`: they act for a company, which is eHerkenning, and the group is the portal's statement of who its residents are. They are in `ondernemers`, the portal's business group, so a direct Nextcloud sign-in lands them on the portal with the business audience. Every date is a number of days from the install day. `waitingOnApplicant` is written beside the open question on purpose: dossiq sets that flag in the act that sends a question, and a seed is not that act.",
 	"after": [
 		"dossiq"
 	],
@@ -76,7 +76,21 @@
 				"identityType": "dev",
 				"identityRef": "example-resident",
 				"status": "active",
-				"contactChannel": "portal"
+				"contactChannel": "portal",
+				"contactAddresses": [
+					{
+						"kind": "email",
+						"value": "s.devries@werk.example.nl",
+						"confirmed": false,
+						"preferred": false
+					},
+					{
+						"kind": "phone",
+						"value": "+31612345678",
+						"confirmed": false,
+						"preferred": true
+					}
+				]
 			}
 		},
 		{
@@ -197,6 +211,51 @@
 				"status": "active",
 				"grantedBy": "example-set",
 				"grantedAt": "{{datetime:-300 09:00}}"
+			}
+		},
+		{
+			"key": "machtiging-sanne-slagerij",
+			"register": "portaliq",
+			"schema": "portalMandate",
+			"data": {
+				"subjectRef": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"onBehalfOf": "kvk:{{cast:slagerij.kvk}}",
+				"label": "{{cast:slagerij.name}}",
+				"reach": "organisation",
+				"status": "active",
+				"grantedBy": "example-set",
+				"grantedAt": "{{datetime:-39 09:00}}"
+			}
+		},
+		{
+			"key": "toegangsaanvraag-sanne-slagerij",
+			"register": "portaliq",
+			"schema": "portalAccessRequest",
+			"data": {
+				"subjectRef": "{{cast:sanne.uid}}",
+				"displayName": "{{cast:sanne.displayName}}",
+				"organisation": "zuiddrecht",
+				"onBehalfOf": "{{cast:slagerij.name}} (KvK {{cast:slagerij.kvk}})",
+				"reason": "Ik doe de administratie van de zaak.",
+				"state": "granted",
+				"decidedBy": "example-set",
+				"decidedAt": "{{datetime:-39 09:00}}",
+				"requestedAt": "{{datetime:-40 10:00}}"
+			}
+		},
+		{
+			"key": "toegangsaanvraag-sanne-henk",
+			"register": "portaliq",
+			"schema": "portalAccessRequest",
+			"data": {
+				"subjectRef": "{{cast:sanne.uid}}",
+				"displayName": "{{cast:sanne.displayName}}",
+				"organisation": "zuiddrecht",
+				"onBehalfOf": "{{cast:henk.displayName}}",
+				"reason": "Ik help mijn buurman met zijn post van de gemeente.",
+				"state": "pending",
+				"requestedAt": "{{datetime:-19 10:00}}"
 			}
 		},
 		{
@@ -1193,6 +1252,141 @@
 					}
 				]
 			}
+		},
+		{
+			"key": "contact-sanne-mark",
+			"register": "portaliq",
+			"schema": "portalContact",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"role": "begeleider",
+				"displayName": "{{cast:mark.displayName}}",
+				"line": "Gemeente Zuiddrecht, schuldhulpverlening",
+				"state": "approved",
+				"contactRef": "{{cast:mark.uid}}"
+			}
+		},
+		{
+			"key": "contact-sanne-henk",
+			"register": "portaliq",
+			"schema": "portalContact",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"role": "contact",
+				"displayName": "{{cast:henk.displayName}}",
+				"line": "Uw vader",
+				"state": "approved",
+				"contactRef": "{{cast:henk.uid}}"
+			}
+		},
+		{
+			"key": "contact-sanne-uitnodiging",
+			"register": "portaliq",
+			"schema": "portalContact",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"role": "contact",
+				"displayName": "J. de Vries",
+				"line": "Nog geen account aangemaakt",
+				"state": "invited",
+				"email": "j.devries@example.nl",
+				"sentAt": "{{datetime:-16 10:00}}"
+			}
+		},
+		{
+			"key": "plan-sanne-schuldhulp",
+			"register": "portaliq",
+			"schema": "portalPlan",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"participants": [
+					"{{cast:mark.uid}}"
+				],
+				"title": "Schuldhulp op orde",
+				"goal": "Over drie maanden heb ik een overzicht van al mijn schulden en een vaste afspraak over aflossen.",
+				"goalDetail": "Samen met Mark zet ik alle rekeningen op een rij. Daarna vragen we schuldhulpverlening aan bij de gemeente, zodat ik met één afspraak per maand aflos.",
+				"endDate": "{{date:12}}",
+				"status": "running"
+			}
+		},
+		{
+			"key": "plan-sanne-schuldhulp-actie-1",
+			"register": "portaliq",
+			"schema": "portalAction",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"assignee": "{{cast:sanne.uid}}",
+				"title": "Overzicht maken van al mijn schulden",
+				"kind": "once",
+				"status": "done",
+				"endDate": "{{date:-21}}",
+				"plan": "{{object:plan-sanne-schuldhulp.id}}"
+			}
+		},
+		{
+			"key": "plan-sanne-schuldhulp-actie-2",
+			"register": "portaliq",
+			"schema": "portalAction",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"assignee": "{{cast:mark.uid}}",
+				"title": "Afspraak met de budgetcoach plannen",
+				"kind": "once",
+				"status": "done",
+				"endDate": "{{date:-14}}",
+				"plan": "{{object:plan-sanne-schuldhulp.id}}"
+			}
+		},
+		{
+			"key": "plan-sanne-schuldhulp-actie-3",
+			"register": "portaliq",
+			"schema": "portalAction",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"assignee": "{{cast:sanne.uid}}",
+				"title": "Bankafschriften van drie maanden uploaden",
+				"kind": "once",
+				"status": "doing",
+				"endDate": "{{date:6}}",
+				"plan": "{{object:plan-sanne-schuldhulp.id}}"
+			}
+		},
+		{
+			"key": "plan-sanne-schuldhulp-actie-4",
+			"register": "portaliq",
+			"schema": "portalAction",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"assignee": "{{cast:mark.uid}}",
+				"title": "Aanvraag schuldhulpverlening indienen",
+				"kind": "once",
+				"status": "todo",
+				"endDate": "{{date:12}}",
+				"plan": "{{object:plan-sanne-schuldhulp.id}}"
+			}
+		},
+		{
+			"key": "plan-sanne-schuldhulp-actie-5",
+			"register": "portaliq",
+			"schema": "portalAction",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"assignee": "{{cast:sanne.uid}}",
+				"title": "Vaste lasten bijwerken in het budgetplan",
+				"kind": "recurring",
+				"status": "todo",
+				"endDate": "{{date:23}}",
+				"plan": "{{object:plan-sanne-schuldhulp.id}}"
+			}
 		}
 	],
 	"tasks": [
@@ -1277,6 +1471,18 @@
 			},
 			"set": {
 				"authentication.registration.businessGroup": "ondernemers"
+			}
+		},
+		{
+			"key": "samenwerken-en-contacten",
+			"register": "portaliq",
+			"schema": "portal",
+			"where": {
+				"slug": "zuiddrecht"
+			},
+			"set": {
+				"contactsEnabled": true,
+				"plansEnabled": true
 			}
 		}
 	]

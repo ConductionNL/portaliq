@@ -765,13 +765,14 @@ test('the Zuiddrecht site lays out its own area as the MijnMenu and MijnZaken bo
 		site.portal.residentMenu.groups.map((group) => [group.title, group.items]),
 		[
 			['Mijn Zuiddrecht', ['overview', 'inbox']],
-			['Zaken en taken', ['cases', 'tasks']],
+			['Zaken en taken', ['cases', 'tasks', 'access']],
+			['Samenwerken', ['samenwerken', 'contacts']],
 			['Vragen en meldingen', ['portaliq:meldingen']],
 			['Uw gegevens', ['details', 'account']],
 		],
 	)
-	// Mijn zaken as rows (the MijnZaken board).
-	assert.equal(site.portal.myCases.display, 'rows')
+	// Mijn zaken as the board folders (the MijnZaken board).
+	assert.equal(site.portal.myCases.display, 'folders')
 	// Both keys are in the portal schema, so OpenRegister keeps them.
 	const portal = schemas.portal
 	assert.ok(
@@ -781,9 +782,10 @@ test('the Zuiddrecht site lays out its own area as the MijnMenu and MijnZaken bo
 	assert.deepEqual(portal.properties.myCases.properties.display.enum, [
 		'cards',
 		'rows',
+		'folders',
 	])
-	assert.equal(portal.version, '0.26.0')
-	assert.equal(register.info.version, '0.99.0')
+	assert.equal(portal.version, '0.27.0')
+	assert.equal(register.info.version, '0.100.0')
 })
 
 // zuiddrecht-site-details: the portal names the organisation of the example

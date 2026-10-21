@@ -13,8 +13,10 @@
   @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-invite-an-address-and-portaliq-mails-it-req-isa-001
 -->
 <template>
-	<NcDialog
+	<CnDialog
+		:look="look"
 		:name="t('portaliq', 'Invite someone')"
+		:eyebrow="t('portaliq', 'Invitations')"
 		size="normal"
 		data-testid="invite-someone"
 		@closing="$emit('close', null)">
@@ -69,23 +71,30 @@
 				{{ t('portaliq', 'Send invitation') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
-import { NcButton, NcDialog, NcTextField } from '@nextcloud/vue'
+import { NcButton, NcTextField } from '@nextcloud/vue'
 
 export default {
 	name: 'InviteDialog',
 
 	components: {
 		NcButton,
-		NcDialog,
+		CnDialog,
 		NcTextField,
 	},
 
 	props: {
+		/** The look to draw in; a spawned dialog gets the app's (src/lib/dialogLook.js). */
+		look: {
+			type: String,
+			default: undefined,
+		},
+
 		/** Posts the fields; answers `{ok, message}`. */
 		submit: {
 			type: Function,

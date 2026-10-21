@@ -45,3 +45,8 @@
 	font-size: 14px;
 	font-weight: bold;
 }
+
+.traffic-table__note {
+	margin: 8px;
+	font-size: 13px;
+}

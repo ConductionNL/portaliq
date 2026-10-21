@@ -118,7 +118,7 @@
 						<strong
 							v-if="message.read !== true"
 							class="pq-inbox-row__unread">
-							{{ tr('Unread') }}
+							{{ tr('New') }}
 						</strong>
 						<span class="pq-inbox-row__subject">{{
 							message.subject || ''
@@ -129,7 +129,7 @@
 							{{ message._source.label }}
 						</span>
 						<span class="pq-inbox-row__date">
-							{{ dateTime(message.receivedAt) }}
+							{{ moment(message.receivedAt) }}
 						</span>
 					</div>
 					<p
@@ -306,6 +306,7 @@ import {
 	canDelete,
 	downloadCollection,
 	formatDateTime,
+	formatMessageMoment,
 	hasReadiness,
 	inboxTabs,
 	keepRecordToOpen,
@@ -529,6 +530,17 @@ export default {
 		 */
 		idOf(message, i) {
 			return rowId(message, i)
+		},
+
+		/**
+		 * When a message came in, with the month in words.
+		 *
+		 * @param {string} value An ISO date-time.
+		 * @return {string} The formatted value.
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
+		 */
+		moment(value) {
+			return formatMessageMoment(value, this.lang)
 		},
 
 		/**

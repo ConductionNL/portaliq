@@ -12,7 +12,8 @@
   @spec openspec/specs/portal-access-requests/spec.md#requirement-staff-answer-the-requests-of-their-organisation-req-iar-002
 -->
 <template>
-	<NcDialog
+	<CnDialog
+		:look="look"
 		:name="t('portaliq', 'Refuse this request')"
 		size="normal"
 		data-testid="refuse-access-request"
@@ -37,20 +38,29 @@
 				{{ t('portaliq', 'Refuse') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
-import { NcButton, NcDialog, NcTextArea } from '@nextcloud/vue'
+import { NcButton, NcTextArea } from '@nextcloud/vue'
 
 export default {
 	name: 'RefuseAccessRequestDialog',
 
 	components: {
 		NcButton,
-		NcDialog,
+		CnDialog,
 		NcTextArea,
+	},
+
+	props: {
+		/** The look to draw in; a spawned dialog gets the app's (src/lib/dialogLook.js). */
+		look: {
+			type: String,
+			default: undefined,
+		},
 	},
 
 	emits: ['close'],

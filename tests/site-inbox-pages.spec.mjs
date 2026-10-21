@@ -338,7 +338,9 @@ test('an inbox row shows unread in text, its readiness fields, its delivery and 
 		inState(InboxPage, { loading: false, messages: MESSAGES }),
 		{ api: {}, t, locale: 'en', nav: NAV },
 	)
-	assert.match(html, /<strong class="pq-inbox-row__unread">Unread<\/strong>/)
+	assert.match(html, /<strong class="pq-inbox-row__unread">New<\/strong>/)
+	// The date with the month in words, as the board draws it.
+	assert.doesNotMatch(html, /pq-inbox-row__date">\s*\d+\/\d+\/\d{4}/)
 	assert.equal(
 		(html.match(/pq-inbox-row__unread"/g) || []).length,
 		1,
