@@ -16,6 +16,8 @@
 				:action="resolved"
 				:api="api"
 				:t="t"
+				cancellable
+				@cancel="leave"
 				@submitted="(object) => $emit('created', object, resolved)" />
 		</template>
 		<!-- A call to action that creates something about the open record
@@ -25,6 +27,7 @@
 		<template v-else-if="isRecordForm">
 			<div class="pq-action-button">
 				<button
+					ref="opener"
 					type="button"
 					class="utrecht-button utrecht-button--primary-action"
 					:aria-expanded="String(open)"
@@ -46,6 +49,8 @@
 					:api="api"
 					:t="t"
 					:preset="{ [resolved.recordField]: block.record }"
+					cancellable
+					@cancel="close"
 					@submitted="(object) => $emit('created', object, resolved)" />
 			</div>
 		</template>
@@ -60,6 +65,8 @@
 				:api="api"
 				:t="t"
 				:send="sendForward"
+				cancellable
+				@cancel="leave"
 				@submitted="(object) => $emit('created', object, resolved)" />
 		</template>
 		<!-- A call to action (a cta, a greeting's button) whose action needs
@@ -68,6 +75,7 @@
 		<template v-else-if="opensForm">
 			<div class="pq-action-button">
 				<button
+					ref="opener"
 					type="button"
 					class="utrecht-button utrecht-button--primary-action"
 					:aria-expanded="String(open)"
@@ -89,6 +97,8 @@
 					:api="api"
 					:t="t"
 					:send="endpoint ? sendForward : null"
+					cancellable
+					@cancel="close"
 					@submitted="(object) => $emit('created', object, resolved)" />
 			</div>
 		</template>
@@ -110,6 +120,7 @@ import SchemaForm from './SchemaForm.vue'
 import { redirectTarget } from '../../../shared/rowAction.js'
 import { forwardApi } from '../../lib/residentActions.js'
 import { residentAuthBase, residentToken } from '../../lib/residentSession.js'
+import { siteHref } from '../mijn/rows.js'
 import { asksInput, forwardResult, isEndpointAction } from './forms.js'
 
 /**
@@ -260,6 +271,35 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * Leave a form that has a page of its own: back to where the
+		 * resident came from, or to the site's home when the form was the
+		 * first page they opened.
+		 *
+		 * @spec exclude navigation of the form's cancel button, no requirement yet
+		 */
+		leave() {
+			if (typeof window === 'undefined') {
+				return
+			}
+			if (window.history.length > 1) {
+				window.history.back()
+				return
+			}
+			window.location.assign(siteHref('/'))
+		},
+
+		/**
+		 * Close a form a button opened, and give the focus back to that
+		 * button.
+		 *
+		 * @spec exclude navigation of the form's cancel button, no requirement yet
+		 */
+		close() {
+			this.open = false
+			this.$nextTick(() => this.$refs.opener?.focus?.())
+		},
+
 		/**
 		 * Send the form's answers to the action's endpoint through the portal,
 		 * and follow a checked redirect the app answers with.
