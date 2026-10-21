@@ -3007,7 +3007,13 @@ OC.L10N.register(
         "Download": "Download",
         "How we measure": "How we measure",
         "Outage began": "Outage began",
-        "Outage ended": "Outage ended"
+        "Outage ended": "Outage ended",
+        "Title and path": "Title and path",
+        "Measure traffic": "Measure traffic",
+        "Without cookies, on our own server.": "Without cookies, on our own server.",
+        "Location of visitors": "Location of visitors",
+        "No location": "No location",
+        "Country": "Country"
     },
     "nplurals=2; plural=(n != 1);"
 )

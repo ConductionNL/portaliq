@@ -3162,7 +3162,13 @@ OC.L10N.register(
         "Availability per month": "Beschikbaarheid per maand",
         "How we measure": "Zo meten wij",
         "Outage began": "Begon",
-        "Outage ended": "Eindigde"
+        "Outage ended": "Eindigde",
+        "Title and path": "Titel en pad",
+        "Measure traffic": "Verkeer meten",
+        "Without cookies, on our own server.": "Zonder cookies, op de eigen server.",
+        "Location of visitors": "Locatie van bezoekers",
+        "No location": "Geen locatie",
+        "Country": "Land"
     },
     "nplurals=2; plural=(n != 1);"
 )
