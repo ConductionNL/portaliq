@@ -2228,7 +2228,7 @@
         ],
         "showTitle": true,
         "showTitleIcon": false,
-        "countText": "{shown} of {total} sessions",
+        "countText": "{shown} of {total} sessions · a session starts when someone signs in",
         "headerButtons": [
           {
             "action": "export",
@@ -2258,12 +2258,6 @@
         ],
         "quickFilters": [
           {
-            "label": "Alles",
-            "filter": {},
-            "showCount": true,
-            "default": true
-          },
-          {
             "label": "Actief",
             "filter": {
               "revoked": false,
@@ -2271,7 +2265,8 @@
                 "gt": "@now"
               }
             },
-            "showCount": true
+            "showCount": true,
+            "default": true
           },
           {
             "label": "Verlopen",
@@ -6308,7 +6303,8 @@
         "Cause": "Oorzaak",
         "How we measure": "Zo meten wij",
         "Outage began": "Begon",
-        "Outage ended": "Eindigde"
+        "Outage ended": "Eindigde",
+        "{shown} of {total} sessions · a session starts when someone signs in": "{shown} van {total} sessies · een sessie ontstaat bij het inloggen"
       }
     }
   }
