@@ -53,7 +53,12 @@
 					:clearable="true"
 					data-testid="issue-account-identity-type" />
 				<p class="issue__help">
-					{{ t('portaliq', 'DigiD, eHerkenning, eIDAS or another sign-in service.') }}
+					{{
+						t(
+							'portaliq',
+							'DigiD, eHerkenning, eIDAS or another sign-in service.',
+						)
+					}}
 				</p>
 			</div>
 			<div>
@@ -132,6 +137,11 @@ import {
 	NcTextField,
 } from '@nextcloud/vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
+import {
+	audienceOption,
+	audienceOptions,
+	audienceValue,
+} from '../lib/audienceOptions.js'
 
 export default {
 	name: 'IssueAccountDialog',
@@ -180,36 +190,20 @@ export default {
 	},
 
 	computed: {
-		/**
-		 * The audience as a select option; a typed audience the list does not
-		 * know is kept as its own option (the audience set is open).
-		 *
-		 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-issue-and-withdraw-accounts-through-the-validated-actions-req-isa-003
-		 */
+		/** The audience as a select option. */
 		audience: {
 			get() {
-				const id = this.fields.audience
-				return this.audiences.find((option) => option.id === id) || { id, label: id }
+				return audienceOption(this.fields.audience)
 			},
 
 			set(option) {
-				this.fields.audience = typeof option === 'string' ? option : option?.id || ''
+				this.fields.audience = audienceValue(option)
 			},
 		},
 
-		/**
-		 * The audiences the clerk picks from most.
-		 *
-		 * @return {Array<{id: string, label: string}>}
-		 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-issue-and-withdraw-accounts-through-the-validated-actions-req-isa-003
-		 */
+		/** The audiences to pick from. */
 		audiences() {
-			return [
-				{ id: 'citizen', label: t('portaliq', 'Resident') },
-				{ id: 'client', label: t('portaliq', 'Client') },
-				{ id: 'organisation', label: t('portaliq', 'Business') },
-				{ id: 'supplier', label: t('portaliq', 'Supplier') },
-			]
+			return audienceOptions()
 		},
 
 		/**

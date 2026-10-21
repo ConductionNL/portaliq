@@ -38,19 +38,26 @@
 				t('portaliq', 'Leave empty for a resident who comes for themselves.')
 			"
 			data-testid="invite-someone-organisation" />
-		<NcTextField
-			v-model="fields.audience"
-			:label="t('portaliq', 'Audience')"
-			:helperText="t('portaliq', 'For example client or supplier.')"
-			data-testid="invite-someone-audience" />
-		<p class="invite__intro">
+		<div>
+			<NcSelect
+				v-model="audience"
+				:options="audiences"
+				:inputLabel="t('portaliq', 'Audience')"
+				:clearable="false"
+				:taggable="true"
+				data-testid="invite-someone-audience" />
+			<p class="invite__help">
+				{{ t('portaliq', 'For example client or supplier.') }}
+			</p>
+		</div>
+		<NcNoteCard type="info" class="invite__note">
 			{{
 				t(
 					'portaliq',
 					'The invitation is valid for 14 days. You see it afterwards under Invitations, where you can withdraw it as long as it is not accepted.',
 				)
 			}}
-		</p>
+		</NcNoteCard>
 		<p
 			v-if="refusal"
 			class="invite__refusal"
@@ -68,6 +75,9 @@
 				:disabled="busy"
 				data-testid="invite-someone-confirm"
 				@click="confirm">
+				<template #icon>
+					<EmailFastOutline :size="20" />
+				</template>
 				{{ t('portaliq', 'Send invitation') }}
 			</NcButton>
 		</template>
@@ -77,7 +87,13 @@
 <script>
 import { CnDialog } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
-import { NcButton, NcTextField } from '@nextcloud/vue'
+import { NcButton, NcNoteCard, NcSelect, NcTextField } from '@nextcloud/vue'
+import EmailFastOutline from 'vue-material-design-icons/EmailFastOutline.vue'
+import {
+	audienceOption,
+	audienceOptions,
+	audienceValue,
+} from '../lib/audienceOptions.js'
 
 export default {
 	name: 'InviteDialog',
@@ -85,6 +101,9 @@ export default {
 	components: {
 		NcButton,
 		CnDialog,
+		EmailFastOutline,
+		NcNoteCard,
+		NcSelect,
 		NcTextField,
 	},
 
@@ -112,6 +131,24 @@ export default {
 		}
 	},
 
+	computed: {
+		/** The audience as a select option. */
+		audience: {
+			get() {
+				return audienceOption(this.fields.audience)
+			},
+
+			set(option) {
+				this.fields.audience = audienceValue(option)
+			},
+		},
+
+		/** The audiences to pick from. */
+		audiences() {
+			return audienceOptions()
+		},
+	},
+
 	methods: {
 		t,
 
@@ -137,8 +174,15 @@ export default {
 </script>
 
 <style scoped>
-.invite__intro {
-	margin-bottom: 8px;
+.invite__help {
+	margin: 4px 0 0;
+	color: var(--color-text-maxcontrast);
+	font-size: 13px;
+	line-height: 1.3;
+}
+
+.invite__note {
+	margin-top: 16px;
 }
 
 .invite__refusal {
