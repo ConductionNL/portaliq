@@ -363,6 +363,8 @@ test('an inbox block as a plain list: a title and "vandaag", no badge, no chevro
 	})
 	assert.match(list, /data-testid="mijn-inbox-all"[^>]*>Alle berichten</)
 	assert.equal((list.match(/mijn-inbox-plain-row/g) || []).length, 3)
+	// Each row leads with the board's round mark (MijnOverzicht "Recent").
+	assert.equal((list.match(/class="pq-inbox-block__plain-mark" aria-hidden="true"><svg/g) || []).length, 3)
 	assert.match(
 		list,
 		/Het besluit op uw Woo-verzoek is gepubliceerd<\/a>.{0,80}pq-inbox-block__plain-day[^>]*>vandaag</,
