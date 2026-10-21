@@ -1085,11 +1085,47 @@
           },
           {
             "key": "audience",
-            "label": "Audience"
+            "label": "Audience",
+            "enum": [
+              "citizen",
+              "client",
+              "organisation",
+              "supplier",
+              "vendor-org",
+              "student",
+              "parent",
+              "external-employee"
+            ],
+            "enumLabels": {
+              "citizen": "Resident",
+              "client": "Client",
+              "organisation": "Business",
+              "supplier": "Supplier",
+              "vendor-org": "Supplier",
+              "student": "Student",
+              "parent": "Parent",
+              "external-employee": "External employee"
+            }
           },
           {
             "key": "identityType",
-            "label": "Sign-in method"
+            "label": "Sign-in method",
+            "enum": [
+              "eherkenning",
+              "digid",
+              "eidas",
+              "generic",
+              "dev",
+              "email"
+            ],
+            "enumLabels": {
+              "eherkenning": "eHerkenning",
+              "digid": "DigiD",
+              "eidas": "eIDAS",
+              "generic": "OIDC broker",
+              "dev": "Developer sign-in",
+              "email": "Account"
+            }
           },
           {
             "key": "status",
@@ -1100,6 +1136,20 @@
                 "active": "success",
                 "suspended": "error"
               }
+            },
+            "enum": [
+              "pending",
+              "active",
+              "suspended",
+              "void",
+              "removed"
+            ],
+            "enumLabels": {
+              "pending": "Awaiting approval",
+              "active": "Active",
+              "suspended": "Suspended",
+              "void": "Withdrawn",
+              "removed": "Removed"
             }
           },
           {
@@ -1246,6 +1296,20 @@
                 "expired": "warning",
                 "revoked": "error"
               }
+            },
+            "enum": [
+              "sent",
+              "opened",
+              "accepted",
+              "expired",
+              "revoked"
+            ],
+            "enumLabels": {
+              "sent": "Open",
+              "opened": "Opened",
+              "accepted": "Accepted",
+              "expired": "Expired",
+              "revoked": "Withdrawn"
             }
           },
           {
@@ -1942,6 +2006,16 @@
                 "pending": "warning",
                 "failed": "error"
               }
+            },
+            "enum": [
+              "delivered",
+              "pending",
+              "failed"
+            ],
+            "enumLabels": {
+              "delivered": "Confirmed",
+              "pending": "Waiting",
+              "failed": "Failed"
             }
           }
         ],
@@ -2138,7 +2212,15 @@
           },
           {
             "key": "kind",
-            "label": "Type"
+            "label": "Type",
+            "enum": [
+              "site",
+              "external"
+            ],
+            "enumLabels": {
+              "site": "Website",
+              "external": "Umbrella"
+            }
           },
           {
             "key": "theme",
@@ -2174,6 +2256,14 @@
                 "published": "success",
                 "draft": "warning"
               }
+            },
+            "enum": [
+              "published",
+              "draft"
+            ],
+            "enumLabels": {
+              "published": "Published",
+              "draft": "Draft"
             }
           }
         ],
@@ -3633,6 +3723,16 @@
                 "granted": "success",
                 "refused": "error"
               }
+            },
+            "enum": [
+              "pending",
+              "granted",
+              "refused"
+            ],
+            "enumLabels": {
+              "pending": "Awaiting a decision",
+              "granted": "Granted",
+              "refused": "Refused"
             }
           }
         ],
@@ -3744,6 +3844,14 @@
                 "published": "success",
                 "draft": "warning"
               }
+            },
+            "enum": [
+              "published",
+              "draft"
+            ],
+            "enumLabels": {
+              "published": "Published",
+              "draft": "Draft"
             }
           }
         ],
@@ -3941,7 +4049,15 @@
           },
           {
             "key": "kind",
-            "label": "Type"
+            "label": "Type",
+            "enum": [
+              "image",
+              "file"
+            ],
+            "enumLabels": {
+              "image": "Image",
+              "file": "Document"
+            }
           },
           {
             "key": "portal",
@@ -3956,6 +4072,14 @@
                 "published": "success",
                 "draft": "warning"
               }
+            },
+            "enum": [
+              "published",
+              "draft"
+            ],
+            "enumLabels": {
+              "published": "Published",
+              "draft": "Draft"
             }
           }
         ],
@@ -4110,6 +4234,14 @@
                 "published": "success",
                 "draft": "warning"
               }
+            },
+            "enum": [
+              "published",
+              "draft"
+            ],
+            "enumLabels": {
+              "published": "Published",
+              "draft": "Draft"
             }
           }
         ],
@@ -4243,6 +4375,14 @@
                 "published": "success",
                 "draft": "warning"
               }
+            },
+            "enum": [
+              "published",
+              "draft"
+            ],
+            "enumLabels": {
+              "published": "Published",
+              "draft": "Draft"
             }
           },
           {
