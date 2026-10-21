@@ -10,7 +10,8 @@
   @spec openspec/changes/intake-report-pages/specs/report-pages/spec.md#requirement-the-custodian-decides-a-reveal-on-a-screen-of-their-own-req-irp-006
 -->
 <template>
-	<NcDialog
+	<CnDialog
+		:look="look"
 		:name="t('portaliq', 'What the reporter gave')"
 		size="normal"
 		data-testid="revealed-contact"
@@ -33,25 +34,31 @@
 				{{ t('portaliq', 'Close') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
-import { NcButton, NcDialog, NcNoteCard } from '@nextcloud/vue'
+import { NcButton, NcNoteCard } from '@nextcloud/vue'
 
 export default {
 	name: 'RevealedContactDialog',
 
 	components: {
 		NcButton,
-		NcDialog,
+		CnDialog,
 		NcNoteCard,
 	},
 
 	props: {
 		/** What the reporter gave: `name`, `email`, `phone`. */
 		contact: { type: Object, default: () => ({}) },
+		/** The look to draw in; a spawned dialog gets the app's (src/lib/dialogLook.js). */
+		look: {
+			type: String,
+			default: undefined,
+		},
 	},
 
 	emits: ['close'],

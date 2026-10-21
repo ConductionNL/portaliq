@@ -25,6 +25,7 @@ export const DIALOG_LOOK = bundledManifest.look === 'board' ? 'board' : 'nextclo
  * @param {object} dialog The dialog component.
  * @param {object} [props] Its props; an explicit `look` wins.
  * @return {Promise<unknown>} What the dialog closes with.
+ * @spec openspec/changes/admin-dialogs-board-look/specs/admin-dialogs-board-look/spec.md#requirement-a-spawned-dialog-takes-the-apps-look
  */
 export function spawnLookDialog(dialog, props = {}) {
 	return spawnDialog(dialog, { look: DIALOG_LOOK, ...props })

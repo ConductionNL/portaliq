@@ -151,6 +151,12 @@ export default {
 			return `pq-account-add-${this.kind}`
 		},
 
+		/**
+		 * The id of the add form, for the open button's aria-controls.
+		 *
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-manage-their-own-account-req-srp-037
+		 * @return {string} The form id.
+		 */
 		formId() {
 			return `pq-account-add-form-${this.kind}`
 		},

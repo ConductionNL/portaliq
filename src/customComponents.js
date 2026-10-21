@@ -190,8 +190,8 @@ const sessionHandlers = createSessionHandlers({
 const revealHandlers = createRevealHandlers({
 	post: (url, body) => axios.post(url, body),
 	generateUrl,
-	askReason: (allow) => spawnDialog(RevealDecisionDialog, { allow }),
-	showContact: (contact) => spawnDialog(RevealedContactDialog, { contact }),
+	askReason: (allow) => spawnLookDialog(RevealDecisionDialog, { allow }),
+	showContact: (contact) => spawnLookDialog(RevealedContactDialog, { contact }),
 	notify: showSuccess,
 	notifyError: showError,
 	translate: (text) => t('portaliq', text),
