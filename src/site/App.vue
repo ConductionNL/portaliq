@@ -1442,11 +1442,13 @@ export default {
 		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
 		 */
 		legalLinks() {
-			// Every portal links its accessibility statement in the legal
-			// strip (site-accessibility-statement REQ-SAS-002).
+			// Every portal links its accessibility statement from the footer
+			// (site-accessibility-statement REQ-SAS-002): in the legal strip,
+			// unless a footer column already does.
 			return withStatementLink(
 				legalLinksOf(this.site, this.menus),
 				this.t('Accessibility'),
+				this.footerMenus,
 			)
 		},
 
