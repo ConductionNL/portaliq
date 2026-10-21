@@ -677,6 +677,94 @@
                         }
                     }
                 ]
+            },
+            "draftBody": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-afval-draft-01-hero",
+                        "widgetKey": "hero",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 12,
+                        "gridHeight": 3,
+                        "props": {
+                            "title": "Afval scheiden en ophalen",
+                            "subtitle": "Wij halen uw afval om de week op.",
+                            "variant": "card",
+                            "headingVisible": true
+                        }
+                    },
+                    {
+                        "id": "zd-afval-draft-02-nlalert",
+                        "widgetKey": "nlAlert",
+                        "gridX": 0,
+                        "gridY": 3,
+                        "gridWidth": 12,
+                        "gridHeight": 1,
+                        "props": {
+                            "kind": "warning",
+                            "text": "Let op: door Kerst en Oud en Nieuw schuiven de ophaaldagen in week 52 en 1."
+                        }
+                    },
+                    {
+                        "id": "zd-afval-draft-03-nllookupform",
+                        "widgetKey": "nlLookupForm",
+                        "gridX": 0,
+                        "gridY": 4,
+                        "gridWidth": 8,
+                        "gridHeight": 2,
+                        "props": {
+                            "fields": [
+                                {
+                                    "name": "postcode",
+                                    "label": "Postcode",
+                                    "value": "3311 AB",
+                                    "width": "10rem",
+                                    "autocomplete": "postal-code"
+                                },
+                                {
+                                    "name": "huisnummer",
+                                    "label": "Huisnummer",
+                                    "value": "12",
+                                    "width": "7.5rem"
+                                }
+                            ],
+                            "buttonLabel": "Toon mijn afvalkalender",
+                            "href": "/afval"
+                        }
+                    },
+                    {
+                        "id": "zd-afval-draft-04-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 8,
+                        "gridY": 4,
+                        "gridWidth": 4,
+                        "gridHeight": 4,
+                        "props": {
+                            "heading": "Meer over afval",
+                            "links": [
+                                {
+                                    "label": "Afvalbrengstation",
+                                    "href": "/afval/afvalbrengstation"
+                                },
+                                {
+                                    "label": "Container kapot of kwijt",
+                                    "href": "/afval/container"
+                                },
+                                {
+                                    "label": "Afvalstoffenheffing",
+                                    "href": "/afval/afvalstoffenheffing"
+                                },
+                                {
+                                    "label": "Zwerfafval melden",
+                                    "href": "/melding-openbare-ruimte"
+                                }
+                            ],
+                            "display": "accent"
+                        }
+                    }
+                ]
             }
         },
         {
@@ -1586,7 +1674,8 @@
                         }
                     }
                 ]
-            }
+            },
+            "helpText": "Hier ziet u hoe een raadslid stemde over voorstellen, moties en amendementen. Kies een vergadering om alleen die stemmingen te zien. Een stemming opent het besluit met de stukken erbij. Stemde een raadslid niet mee, dan staat er Afwezig."
         },
         {
             "route": "/bestuur/raadsleden",

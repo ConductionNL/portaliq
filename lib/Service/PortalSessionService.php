@@ -121,6 +121,12 @@ class PortalSessionService {
 	private const IDLE_TIMEOUT_CONFIG_KEY = 'session_idle_timeout';
 
 	/**
+	 * The app flag that lets a test instance open the idle warning on request
+	 * (idle-warning-preview). Off unless set to `yes`.
+	 */
+	private const IDLE_PREVIEW_CONFIG_KEY = 'session_idle_preview_enabled';
+
+	/**
 	 * Default idle window: 15 minutes.
 	 */
 	private const DEFAULT_IDLE_TIMEOUT = 900;
@@ -441,6 +447,18 @@ class PortalSessionService {
 	}//end mintSession()
 
 	/**
+	 * Whether this instance may open the idle warning on request: app flag
+	 * `session_idle_preview_enabled` set to `yes`, for a test instance only.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/idle-warning-preview/tasks.md#T01
+	 */
+	private function idlePreviewEnabled(): bool {
+		return $this->config->getAppValue(Application::APP_ID, self::IDLE_PREVIEW_CONFIG_KEY, 'no') === 'yes';
+	}//end idlePreviewEnabled()
+
+	/**
 	 * The idle window in seconds: config `session_idle_timeout`, default 900,
 	 * clamped to 300 through 3600. A value that is not a positive number falls
 	 * back to the default rather than to a clamp.
@@ -465,15 +483,17 @@ class PortalSessionService {
 	 *
 	 * @param array<string, mixed> $subject A subject from resolveFromBearer().
 	 *
-	 * @return array{expiresAt: int, hardExpiresAt: int, idleTimeout: int}
+	 * @return array{expiresAt: int, hardExpiresAt: int, idleTimeout: int, idlePreview: bool}
 	 *
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T02
+	 * @spec openspec/changes/idle-warning-preview/tasks.md#T01
 	 */
 	public function sessionTimes(array $subject): array {
 		return [
 			'expiresAt' => (int)($subject['expiresAt'] ?? 0),
 			'hardExpiresAt' => ((int)($subject['authTime'] ?? 0) + $this->maxLifetimeSeconds()),
 			'idleTimeout' => $this->idleTimeoutSeconds(),
+			'idlePreview' => $this->idlePreviewEnabled(),
 		];
 	}//end sessionTimes()
 
