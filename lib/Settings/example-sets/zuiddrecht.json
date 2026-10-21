@@ -1,6 +1,6 @@
 {
 	"set": "zuiddrecht",
-	"$comment": "portaliq's part of the Zuiddrecht example set: portal accounts for the residents Sanne de Vries (a phone number and an e-mail address still waiting for confirmation, as the MijnAccount board lists them; no confirmed `email`, so she still meets the prompt for one on the MijnOverzicht board), Henk Bakker, Linda Bakker and Fatima El-Amrani and the business contacts Jan-Willem and Mark, the mandates that let Linda act for her father Henk and Jan-Willem and Mark for their companies, Sanne's five cases, one question and four messages, the residents' group `inwoners`, the business contacts' group `ondernemers`, and on the portal the `nextcloud` way in with the account card of the Inloggen board, the resident group the Nextcloud registration app fills and the business group. Installed by `occ openregister:example-set:install zuiddrecht` after `occ portaliq:example-site:install zuiddrecht`; dossiq goes first because the cases are dossiq's. `exampleResident` lists the residents portaliq's one-click demo sign-in offers, each with its portal account object and its card; the cards show beside the account card only while `example_resident_demo_login` is `yes`. Business contacts get no one-click card and stay out of `inwoners`: they act for a company, which is eHerkenning, and the group is the portal's statement of who its residents are. They are in `ondernemers`, the portal's business group, so a direct Nextcloud sign-in lands them on the portal with the business audience. Every date is a number of days from the install day. `waitingOnApplicant` is written beside the open question on purpose: dossiq sets that flag in the act that sends a question, and a seed is not that act.",
+	"$comment": "portaliq's part of the Zuiddrecht example set: portal accounts for the residents Sanne de Vries (a phone number and an e-mail address still waiting for confirmation, as the MijnAccount board lists them; no confirmed `email`, so she still meets the prompt for one on the MijnOverzicht board), Henk Bakker, Linda Bakker and Fatima El-Amrani and the business contacts Jan-Willem and Mark, the mandates that let Linda act for her father Henk, Sanne for the butcher's shop and Jan-Willem and Mark for their companies, Sanne's two access requests (one granted, one waiting) of the Machtigingen board, Sanne's five cases, one question and four messages, the residents' group `inwoners`, the business contacts' group `ondernemers`, and on the portal the `nextcloud` way in with the account card of the Inloggen board, the resident group the Nextcloud registration app fills and the business group. Installed by `occ openregister:example-set:install zuiddrecht` after `occ portaliq:example-site:install zuiddrecht`; dossiq goes first because the cases are dossiq's. `exampleResident` lists the residents portaliq's one-click demo sign-in offers, each with its portal account object and its card; the cards show beside the account card only while `example_resident_demo_login` is `yes`. Business contacts get no one-click card and stay out of `inwoners`: they act for a company, which is eHerkenning, and the group is the portal's statement of who its residents are. They are in `ondernemers`, the portal's business group, so a direct Nextcloud sign-in lands them on the portal with the business audience. Every date is a number of days from the install day. `waitingOnApplicant` is written beside the open question on purpose: dossiq sets that flag in the act that sends a question, and a seed is not that act.",
 	"after": [
 		"dossiq"
 	],
@@ -211,6 +211,51 @@
 				"status": "active",
 				"grantedBy": "example-set",
 				"grantedAt": "{{datetime:-300 09:00}}"
+			}
+		},
+		{
+			"key": "machtiging-sanne-slagerij",
+			"register": "portaliq",
+			"schema": "portalMandate",
+			"data": {
+				"subjectRef": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"onBehalfOf": "kvk:{{cast:slagerij.kvk}}",
+				"label": "{{cast:slagerij.name}}",
+				"reach": "organisation",
+				"status": "active",
+				"grantedBy": "example-set",
+				"grantedAt": "{{datetime:-39 09:00}}"
+			}
+		},
+		{
+			"key": "toegangsaanvraag-sanne-slagerij",
+			"register": "portaliq",
+			"schema": "portalAccessRequest",
+			"data": {
+				"subjectRef": "{{cast:sanne.uid}}",
+				"displayName": "{{cast:sanne.displayName}}",
+				"organisation": "zuiddrecht",
+				"onBehalfOf": "{{cast:slagerij.name}} (KvK {{cast:slagerij.kvk}})",
+				"reason": "Ik doe de administratie van de zaak.",
+				"state": "granted",
+				"decidedBy": "example-set",
+				"decidedAt": "{{datetime:-39 09:00}}",
+				"requestedAt": "{{datetime:-40 10:00}}"
+			}
+		},
+		{
+			"key": "toegangsaanvraag-sanne-henk",
+			"register": "portaliq",
+			"schema": "portalAccessRequest",
+			"data": {
+				"subjectRef": "{{cast:sanne.uid}}",
+				"displayName": "{{cast:sanne.displayName}}",
+				"organisation": "zuiddrecht",
+				"onBehalfOf": "{{cast:henk.displayName}}",
+				"reason": "Ik help mijn buurman met zijn post van de gemeente.",
+				"state": "pending",
+				"requestedAt": "{{datetime:-19 10:00}}"
 			}
 		},
 		{

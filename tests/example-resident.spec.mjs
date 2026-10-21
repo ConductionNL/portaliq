@@ -259,6 +259,31 @@ test('zuiddrecht.json gives Sanne the addresses of the MijnAccount board, and st
 	assert.match(email.value, /@[a-z.]*example\.nl$/, 'a reserved example domain')
 })
 
+test('zuiddrecht.json lets Sanne act for a company and follow two access requests, as the Machtigingen board draws her', () => {
+	const zuiddrecht = fragments.find(({ file }) => file === 'zuiddrecht.json').fragment
+	const sanne = '{{cast:sanne.uid}}'
+	const held = zuiddrecht.objects.filter(
+		(object) => object.schema === 'portalMandate' && object.data.subjectRef === sanne,
+	)
+	assert.equal(held.length, 1, 'one mandate held, so "Namens wie u werkt" offers a choice')
+	assert.match(held[0].data.onBehalfOf, /^kvk:\{\{cast:[a-z]+\.kvk\}\}$/)
+	const requests = zuiddrecht.objects.filter(
+		(object) => object.schema === 'portalAccessRequest' && object.data.subjectRef === sanne,
+	)
+	assert.deepEqual(requests.map((object) => object.data.state).sort(), ['granted', 'pending'])
+	const schema = schemas.portalAccessRequest
+	for (const request of requests) {
+		for (const key of schema.required) {
+			assert.ok(key in request.data, `${request.key}: ${key} is required`)
+		}
+		for (const [key, value] of Object.entries(request.data)) {
+			assert.ok(schema.properties[key], `${request.key}: ${key} is a property`)
+			assert.equal(typeof value, schema.properties[key].type)
+		}
+		assert.match(request.data.requestedAt, /^\{\{datetime:-\d+ \d\d:\d\d\}\}$/)
+	}
+})
+
 test('zuiddrecht.json puts the residents in the group the portal names', () => {
 	const zuiddrecht = fragments.find(({ file }) => file === 'zuiddrecht.json').fragment
 	assert.deepEqual(zuiddrecht.groups, [
