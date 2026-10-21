@@ -2246,7 +2246,7 @@
       "config": {
         "register": "portaliq",
         "schema": "portal",
-        "_note": "A portal's menus, pages and glossary live HERE rather than as their own top-level navigation entries: they are not free-standing collections, they are what one portal is made of, and a fleet-wide list of 'all pages' answers no question an editor actually has. They are `object-list` widgets filtered on `portal: @object.slug` — the token resolves against the portal being viewed. NOT `@objectId`: these children reference their portal by SLUG, not by object id, and a filter naming a property the rows do not carry matches nothing and says nothing (see PortalAccountDetail, where exactly that went unnoticed). Each filter was run against the API before being written here: 7 pages, 1 menu, 2 glossary terms for open-tilburg. portal-traffic-kpi-cards: four traffic KPI cards head the page (page views, sessions, visitors, engaged sessions), the same four numbers the Traffic page shows. Each is a PortalTrafficKpi around nc-vue's CnStatWidget with its own period picker; the picker opens on its `default`, 30 days, and the card sends the picked preset as `days` through the `@range.preset` token. A card opens the Traffic page with this portal selected. A portal with measurement off reads 'Not measured' and asks for nothing. portal-home-page sits DIRECTLY under the KPI row and above the portal's own fields, because it reports a configuration error and an error nobody scrolls to is not reported. It is the only widget on this page whose subject is a route rather than a record: a portal with no published page at `/` serves not-found at its own address, which no other widget here can show. Its placement, not its registration, is what puts it in front of an administrator, and tests/portal-home-page.spec.mjs asserts both. Detail in the v2 shape: the body is one tab strip (Overzicht first, Historie last) and the facts that sit beside it are the sideColumn. The tab children stay in `widgets` and out of `layout`, or the grid and the strip would each draw them once.",
+        "_note": "A portal's menus, pages and glossary live HERE rather than as their own top-level navigation entries: they are not free-standing collections, they are what one portal is made of, and a fleet-wide list of 'all pages' answers no question an editor actually has. They are `object-list` widgets filtered on `portal: @object.slug` — the token resolves against the portal being viewed. NOT `@objectId`: these children reference their portal by SLUG, not by object id, and a filter naming a property the rows do not carry matches nothing and says nothing (see PortalAccountDetail, where exactly that went unnoticed). Each filter was run against the API before being written here: 7 pages, 1 menu, 2 glossary terms for open-tilburg. portal-traffic-kpi-cards: four traffic KPI cards head the page (page views, sessions, visitors, engaged sessions), the same four numbers the Traffic page shows. Each is a PortalTrafficKpi around nc-vue's CnStatWidget with its own period picker; the picker opens on its `default`, 30 days, and the card sends the picked preset as `days` through the `@range.preset` token. A card opens the Traffic page with this portal selected. A portal with measurement off reads 'Not measured' and asks for nothing. portal-home-page sits DIRECTLY under the KPI row and above the portal's own fields, because it reports a configuration error and an error nobody scrolls to is not reported. It is the only widget on this page whose subject is a route rather than a record: a portal with no published page at `/` serves not-found at its own address, which no other widget here can show. Its placement, not its registration, is what puts it in front of an administrator, and tests/portal-home-page.spec.mjs asserts both. Detail in the v2 shape: the body is one tab strip (Overzicht first, Historie last) and the facts that sit beside it are the sideColumn. The tab children stay in `widgets` and out of `layout`, or the grid and the strip would each draw them once. The four summary cards (domain, theme, status, administrators) are the sideColumn beside every tab except Instellingen and Historie, and Measure traffic sits beside Instellingen, as the portaliq/PtPortal and PtPortalInstellingen boards draw them.",
         "widgets": [
           {
             "id": "portal-kpi-page-views",
@@ -2404,21 +2404,36 @@
               "columns": [
                 {
                   "key": "title",
-                  "label": "Title"
-                },
-                {
-                  "key": "route",
-                  "label": "Route"
+                  "label": "Title and path",
+                  "secondary": "{route}"
                 },
                 {
                   "key": "status",
-                  "label": "Status"
+                  "label": "Status",
+                  "widget": "badge",
+                  "enum": [
+                    "published",
+                    "draft"
+                  ],
+                  "enumLabels": {
+                    "published": "Published",
+                    "draft": "Draft"
+                  },
+                  "colorMap": {
+                    "published": "success",
+                    "draft": "warning"
+                  }
+                },
+                {
+                  "key": "@self.updated",
+                  "label": "Last changed"
                 }
               ],
               "limit": 25,
               "rowRoute": "PageDetail",
               "viewAllRoute": "Pages",
-              "emptyText": "This portal has no pages yet"
+              "emptyText": "This portal has no pages yet",
+              "selectable": true
             }
           },
           {
@@ -2605,17 +2620,14 @@
               "ariaLabel": "Onderdelen van de portal",
               "tabs": [
                 {
+                  "id": "overview",
                   "widgetIds": [
                     "portal-home-page",
                     "portal-kpi-page-views",
                     "portal-kpi-sessions",
                     "portal-kpi-visitors",
                     "portal-kpi-engaged",
-                    "portal-data",
-                    "portal-side-domain",
-                    "portal-side-theme",
-                    "portal-side-status",
-                    "portal-side-editors"
+                    "portal-data"
                   ],
                   "label": "Overzicht",
                   "columns": 4,
@@ -2627,22 +2639,6 @@
                     {
                       "widgetId": "portal-data",
                       "gridWidth": 12
-                    },
-                    {
-                      "widgetId": "portal-side-domain",
-                      "gridWidth": 6
-                    },
-                    {
-                      "widgetId": "portal-side-theme",
-                      "gridWidth": 6
-                    },
-                    {
-                      "widgetId": "portal-side-status",
-                      "gridWidth": 6
-                    },
-                    {
-                      "widgetId": "portal-side-editors",
-                      "gridWidth": 6
                     }
                   ]
                 },
@@ -3064,7 +3060,16 @@
             "icon": "Web",
             "content": {
               "kind": "domain"
-            }
+            },
+            "tabs": [
+              "overview",
+              "portal-pages",
+              "portal-menus",
+              "portal-media",
+              "portal-news",
+              "portal-notices",
+              "portal-glossary"
+            ]
           },
           {
             "id": "portal-side-theme",
@@ -3073,7 +3078,16 @@
             "icon": "Palette",
             "content": {
               "kind": "theme"
-            }
+            },
+            "tabs": [
+              "overview",
+              "portal-pages",
+              "portal-menus",
+              "portal-media",
+              "portal-news",
+              "portal-notices",
+              "portal-glossary"
+            ]
           },
           {
             "id": "portal-side-status",
@@ -3082,7 +3096,16 @@
             "icon": "ClockOutline",
             "content": {
               "kind": "status"
-            }
+            },
+            "tabs": [
+              "overview",
+              "portal-pages",
+              "portal-menus",
+              "portal-media",
+              "portal-news",
+              "portal-notices",
+              "portal-glossary"
+            ]
           },
           {
             "id": "portal-side-editors",
@@ -3091,6 +3114,57 @@
             "icon": "AccountGroupOutline",
             "content": {
               "kind": "editors"
+            },
+            "tabs": [
+              "overview",
+              "portal-pages",
+              "portal-menus",
+              "portal-media",
+              "portal-news",
+              "portal-notices",
+              "portal-glossary"
+            ]
+          },
+          {
+            "id": "portal-side-traffic",
+            "type": "settings-form",
+            "title": "Measure traffic",
+            "icon": "ChartLine",
+            "tabs": [
+              "portal-settings"
+            ],
+            "content": {
+              "columns": 1,
+              "saveLabel": "Save",
+              "savedText": "The portal is saved.",
+              "fields": [
+                {
+                  "key": "traffic.enabled",
+                  "label": "Measure traffic",
+                  "type": "switch",
+                  "hint": "Without cookies, on our own server."
+                },
+                {
+                  "key": "traffic.regionGranularity",
+                  "label": "Location of visitors",
+                  "type": "select",
+                  "options": [
+                    {
+                      "value": "none",
+                      "label": "No location"
+                    },
+                    {
+                      "value": "country",
+                      "label": "Country"
+                    },
+                    {
+                      "value": "region",
+                      "label": "Region"
+                    }
+                  ],
+                  "default": "country"
+                }
+              ]
             }
           }
         ],
@@ -3138,7 +3212,14 @@
             "external": "Umbrella"
           }
         },
-        "tabsLabel": "Onderdelen van de portal"
+        "tabsLabel": "Onderdelen van de portal",
+        "sideColumn": [
+          "portal-side-domain",
+          "portal-side-theme",
+          "portal-side-status",
+          "portal-side-editors",
+          "portal-side-traffic"
+        ]
       }
     },
     {

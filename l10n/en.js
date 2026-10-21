@@ -2992,7 +2992,13 @@ OC.L10N.register(
         "Your plan is nearly ending": "Your plan is nearly ending",
         "The plan %1$s ends on %2$s": "The plan %1$s ends on %2$s",
         "The plan \"%1$s\" ends on %2$s. %3$s actions are still open. Extend the plan with your caseworker, or complete the actions.": "The plan \"%1$s\" ends on %2$s. %3$s actions are still open. Extend the plan with your caseworker, or complete the actions.",
-        "Go to %1$s": "Go to %1$s"
+        "Go to %1$s": "Go to %1$s",
+        "Title and path": "Title and path",
+        "Measure traffic": "Measure traffic",
+        "Without cookies, on our own server.": "Without cookies, on our own server.",
+        "Location of visitors": "Location of visitors",
+        "No location": "No location",
+        "Country": "Country"
     },
     "nplurals=2; plural=(n != 1);"
 )

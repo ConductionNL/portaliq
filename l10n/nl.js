@@ -3148,7 +3148,13 @@ OC.L10N.register(
         "Your plan is nearly ending": "Uw plan loopt bijna af",
         "The plan %1$s ends on %2$s": "Het plan %1$s eindigt op %2$s",
         "The plan \"%1$s\" ends on %2$s. %3$s actions are still open. Extend the plan with your caseworker, or complete the actions.": "Het plan \"%1$s\" eindigt op %2$s. Er staan nog %3$s acties open. Verleng het plan met uw begeleider, of rond de acties af.",
-        "Go to %1$s": "Ga naar %1$s"
+        "Go to %1$s": "Ga naar %1$s",
+        "Title and path": "Titel en pad",
+        "Measure traffic": "Verkeer meten",
+        "Without cookies, on our own server.": "Zonder cookies, op de eigen server.",
+        "Location of visitors": "Locatie van bezoekers",
+        "No location": "Geen locatie",
+        "Country": "Land"
     },
     "nplurals=2; plural=(n != 1);"
 )
