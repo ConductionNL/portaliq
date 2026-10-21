@@ -40,8 +40,9 @@ test('the tabs follow the board order', () => {
 
 test('Verkeer shows the incoming and the outgoing flow together', () => {
 	const traffic = tab('Verkeer')
-	assert.deepEqual(widgetsOf(traffic), ['page-traffic-incoming', 'page-traffic-outgoing'])
-	assert.deepEqual(traffic.layout.map((cell) => cell.widgetId), ['page-traffic-incoming', 'page-traffic-outgoing'])
+	const flows = ['page-traffic-incoming', 'page-traffic-outgoing']
+	assert.deepEqual(widgetsOf(traffic).slice(-2), flows)
+	assert.deepEqual(traffic.layout.filter((cell) => flows.includes(cell.widgetId)).map((cell) => cell.gridWidth), [6, 6])
 	assert.equal(widget('page-traffic-incoming').content.direction, 'incoming')
 	assert.equal(widget('page-traffic-outgoing').content.direction, 'outgoing')
 })

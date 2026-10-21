@@ -3332,45 +3332,13 @@
       "config": {
         "register": "portaliq",
         "schema": "page",
-        "_note": "portal-page-traffic: four traffic KPI cards head the page (page views, sessions, visitors, engaged sessions) for this one page, then the page details, then Incoming and Outgoing traffic side by side. The cards are the portal page's PortalTrafficKpi with scope 'page': they read GET /api/traffic/page with the page's `portal` slug and `route`, each with its own period picker, and open the Traffic page with the portal selected. A page is matched to its traffic by its route within its portal; see openspec/changes/portal-page-traffic/proposal.md. Adding widgets replaces the default detail body, so the page details are a `data` widget here, as on PortalDetail. Detail in the v2 shape: the body is one tab strip (Overzicht first, Historie last) and the facts that sit beside it are the sideColumn. The tab children stay in `widgets` and out of `layout`, or the grid and the strip would each draw them once.",
+        "_note": "portal-page-traffic: four traffic KPI cards (in the Verkeer tab, as the portaliq/PtPaginaVerkeer board draws them) (page views, sessions, visitors, engaged sessions) for this one page, then the page details, then Incoming and Outgoing traffic side by side. The cards are the portal page's PortalTrafficKpi with scope 'page': they read GET /api/traffic/page with the page's `portal` slug and `route`, each with its own period picker, and open the Traffic page with the portal selected. A page is matched to its traffic by its route within its portal; see openspec/changes/portal-page-traffic/proposal.md. Adding widgets replaces the default detail body, so the page details are a `data` widget here, as on PortalDetail. Detail in the v2 shape: the body is one tab strip (Overzicht first, Historie last) and the facts that sit beside it are the sideColumn. The tab children stay in `widgets` and out of `layout`, or the grid and the strip would each draw them once.",
         "layout": [
-          {
-            "id": "kpi-page-views",
-            "widgetId": "page-kpi-page-views",
-            "gridX": 0,
-            "gridY": 0,
-            "gridWidth": 3,
-            "gridHeight": 2
-          },
-          {
-            "id": "kpi-sessions",
-            "widgetId": "page-kpi-sessions",
-            "gridX": 3,
-            "gridY": 0,
-            "gridWidth": 3,
-            "gridHeight": 2
-          },
-          {
-            "id": "kpi-visitors",
-            "widgetId": "page-kpi-visitors",
-            "gridX": 6,
-            "gridY": 0,
-            "gridWidth": 3,
-            "gridHeight": 2
-          },
-          {
-            "id": "kpi-engaged",
-            "widgetId": "page-kpi-engaged",
-            "gridX": 9,
-            "gridY": 0,
-            "gridWidth": 3,
-            "gridHeight": 2
-          },
           {
             "id": "page-tabs",
             "widgetId": "page-tabs",
             "gridX": 0,
-            "gridY": 2,
+            "gridY": 0,
             "gridWidth": 12,
             "gridHeight": 8
           }
@@ -3388,6 +3356,25 @@
           "enabled": true,
           "showMetadata": true
         },
+        "follow": false,
+        "favourite": false,
+        "breadcrumb": {
+          "label": "Pages",
+          "route": "Pages",
+          "currentField": "title"
+        },
+        "statusPill": {
+          "field": "status",
+          "colorMap": {
+            "published": "success",
+            "draft": "warning"
+          },
+          "labels": {
+            "published": "Published",
+            "draft": "Draft"
+          }
+        },
+        "headerMeta": "{route}",
         "widgets": [
           {
             "id": "page-kpi-page-views",
@@ -3622,12 +3609,32 @@
                 },
                 {
                   "widgetIds": [
+                    "page-kpi-page-views",
+                    "page-kpi-sessions",
+                    "page-kpi-visitors",
+                    "page-kpi-engaged",
                     "page-traffic-incoming",
                     "page-traffic-outgoing"
                   ],
                   "label": "Verkeer",
-                  "columns": 2,
+                  "columns": 4,
                   "layout": [
+                    {
+                      "widgetId": "page-kpi-page-views",
+                      "gridWidth": 3
+                    },
+                    {
+                      "widgetId": "page-kpi-sessions",
+                      "gridWidth": 3
+                    },
+                    {
+                      "widgetId": "page-kpi-visitors",
+                      "gridWidth": 3
+                    },
+                    {
+                      "widgetId": "page-kpi-engaged",
+                      "gridWidth": 3
+                    },
                     {
                       "widgetId": "page-traffic-incoming",
                       "gridWidth": 6
