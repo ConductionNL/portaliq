@@ -104,7 +104,7 @@ class ExampleSiteInstallerTest extends TestCase {
 		$this->assertTrue($report['ok'], implode("\n", array_merge($report['missing'], $report['lost'])));
 		$this->assertSame(['declared' => 1, 'created' => 1, 'kept' => 0, 'arrived' => 1], $report['types']['portal']);
 		$this->assertSame(['declared' => 3, 'created' => 3, 'kept' => 0, 'arrived' => 3], $report['types']['menu']);
-		$this->assertSame(['declared' => 49, 'created' => 49, 'kept' => 0, 'arrived' => 49], $report['types']['page']);
+		$this->assertSame(['declared' => 50, 'created' => 50, 'kept' => 0, 'arrived' => 50], $report['types']['page']);
 		$this->assertSame(['declared' => 4, 'created' => 4, 'kept' => 0, 'arrived' => 4], $report['types']['newsItem']);
 		$this->assertSame(['declared' => 6, 'created' => 6, 'kept' => 0, 'arrived' => 6], $report['types']['glossaryTerm']);
 
@@ -117,7 +117,7 @@ class ExampleSiteInstallerTest extends TestCase {
 		}
 
 		$record = json_decode($this->config['example_site_zuiddrecht'], true);
-		$this->assertCount(49, $record['page']);
+		$this->assertCount(50, $record['page']);
 		$this->assertCount(6, $record['glossaryTerm']);
 		$this->assertCount(3, $record['menu']);
 		$this->assertCount(4, $record['newsItem']);
@@ -166,7 +166,7 @@ class ExampleSiteInstallerTest extends TestCase {
 
 		$this->assertSame($before, $this->rows);
 		$this->assertSame(0, $report['types']['page']['created']);
-		$this->assertSame(49, $report['types']['page']['kept']);
+		$this->assertSame(50, $report['types']['page']['kept']);
 		$this->assertSame(1, $report['types']['portal']['kept']);
 		// The edited page is kept and not held against the declaration.
 		$this->assertTrue($report['ok']);
@@ -201,9 +201,9 @@ class ExampleSiteInstallerTest extends TestCase {
 		$report = $this->installer()->install(site: $this->zuiddrecht());
 
 		$this->assertFalse($report['ok']);
-		$this->assertSame(49, $report['types']['page']['declared']);
-		$this->assertSame(48, $report['types']['page']['created']);
-		$this->assertSame(48, $report['types']['page']['arrived']);
+		$this->assertSame(50, $report['types']['page']['declared']);
+		$this->assertSame(49, $report['types']['page']['created']);
+		$this->assertSame(49, $report['types']['page']['arrived']);
 		$this->assertSame(['page /afval'], $report['missing']);
 	}//end testAPageThatDoesNotArriveIsNamed()
 
@@ -221,7 +221,7 @@ class ExampleSiteInstallerTest extends TestCase {
 		$this->assertFalse($report['ok']);
 		$this->assertContains('page /afval: summary', $report['lost']);
 		$this->assertContains('newsItem Nieuwe afvalkalender voor 2027: public', $report['lost']);
-		$this->assertCount(53, $report['lost']);
+		$this->assertCount(54, $report['lost']);
 	}//end testAKeyLostOnAPageIsNamed()
 
 	/**
@@ -236,7 +236,7 @@ class ExampleSiteInstallerTest extends TestCase {
 
 		$report = $this->installer()->install(site: $this->zuiddrecht());
 
-		$this->assertSame(49, $report['types']['page']['created']);
+		$this->assertSame(50, $report['types']['page']['created']);
 		$this->assertTrue($report['ok']);
 	}//end testAnotherPortalsPageIsNotThisSites()
 
@@ -265,7 +265,7 @@ class ExampleSiteInstallerTest extends TestCase {
 		$report = $this->remover->remove(site: 'zuiddrecht', slug: 'zuiddrecht');
 
 		$this->assertTrue($report['recorded']);
-		$this->assertSame(['menu' => 3, 'page' => 49, 'newsItem' => 4, 'glossaryTerm' => 6], $report['deleted']);
+		$this->assertSame(['menu' => 3, 'page' => 50, 'newsItem' => 4, 'glossaryTerm' => 6], $report['deleted']);
 		$this->assertSame('deleted', $report['portal']);
 		$this->assertSame([], $report['failed']);
 		$this->assertSame(['portal' => [], 'menu' => [], 'page' => [], 'newsItem' => [], 'glossaryTerm' => []], $this->rows);
@@ -286,7 +286,7 @@ class ExampleSiteInstallerTest extends TestCase {
 
 		$report = $this->remover->remove(site: 'zuiddrecht', slug: 'zuiddrecht');
 
-		$this->assertSame(49, $report['deleted']['page']);
+		$this->assertSame(50, $report['deleted']['page']);
 		$this->assertSame('kept-content', $report['portal']);
 		$this->assertSame(['own-page', 'other'], array_keys($this->rows['page']));
 		$this->assertCount(1, $this->rows['portal']);
@@ -312,7 +312,7 @@ class ExampleSiteInstallerTest extends TestCase {
 
 		$report = $installer->install(site: $this->zuiddrecht());
 		$this->assertSame(['declared' => 1, 'created' => 0, 'kept' => 1, 'arrived' => 1], $report['types']['portal']);
-		$this->assertSame(48, $report['types']['page']['created']);
+		$this->assertSame(49, $report['types']['page']['created']);
 		$this->assertSame('Onze home', $this->rows['page']['mine-home']['title']);
 
 		$removed = $this->remover->remove(site: 'zuiddrecht', slug: 'zuiddrecht');
@@ -334,7 +334,7 @@ class ExampleSiteInstallerTest extends TestCase {
 
 		$report = $this->remover->remove(site: 'zuiddrecht', slug: 'zuiddrecht');
 
-		$this->assertSame(48, $report['deleted']['page']);
+		$this->assertSame(49, $report['deleted']['page']);
 		$this->assertSame(1, $report['gone']['page']);
 		$this->assertSame([], $report['failed']);
 		$this->assertSame('deleted', $report['portal']);
