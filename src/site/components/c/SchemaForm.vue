@@ -62,7 +62,7 @@
 				:current="stepIndex"
 				:idBase="`f-${action.id}-progress`"
 				:label="translate('Progress')"
-				:shortPattern="translate('Step {n} of {m}')"
+				:shortPattern="translate('Step {n} of {m}: {title}')"
 				:showLabel="translate('Show all steps')"
 				:hideLabel="translate('Hide the steps')"
 				:doneLabel="translate('Done')"
