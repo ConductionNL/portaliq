@@ -1686,7 +1686,7 @@
         "_note": "identity-staff-account-screens T04: the generic Add is hidden, because a portal account made through the object form skips the identity de-duplication of the provision route. 'Issue an account' and 'Invite someone' are handlers that post PortalAccountAdminController behind portal.provision; see src/lib/staffAccountActions.js.",
         "showTitle": true,
         "showTitleIcon": false,
-        "countText": "{shown} of {total} accounts",
+        "countText": "{shown} of {total} accounts · who may sign in, and how",
         "headerButtons": [
           {
             "action": "export",
@@ -1757,7 +1757,6 @@
             "type": "banner",
             "content": {
               "variant": "warning",
-              "text": "{value} aanmeldingen wachten op goedkeuring.",
               "visibleWhen": {
                 "source": {
                   "register": "portaliq",
@@ -1774,7 +1773,9 @@
                   "label": "Beleid wijzigen",
                   "route": "Portals"
                 }
-              ]
+              ],
+              "icon": "AccountPlusOutline",
+              "lead": "{value} aanmeldingen wachten op goedkeuring."
             }
           }
         ]
@@ -6313,7 +6314,8 @@
         "{shown} of {total} terms · visitors read them at /begrippen on every portal": "{shown} van {total} begrippen · bezoekers lezen ze op /begrippen van elke portal",
         "{shown} of {total} files in the media library · usable on every page of the portal": "{shown} van {total} bestanden in de mediabibliotheek · te gebruiken op elke pagina van de portal",
         "Upload": "Uploaden",
-        "{shown} of {total} submissions via the portals · with the proof that the resident received a confirmation": "{shown} van {total} inzendingen via de portals · met het bewijs dat de inwoner een ontvangstbevestiging kreeg"
+        "{shown} of {total} submissions via the portals · with the proof that the resident received a confirmation": "{shown} van {total} inzendingen via de portals · met het bewijs dat de inwoner een ontvangstbevestiging kreeg",
+        "{shown} of {total} accounts · who may sign in, and how": "{shown} van {total} accounts · wie mag inloggen, en hoe"
       }
     }
   }
