@@ -1586,7 +1586,8 @@
                         }
                     }
                 ]
-            }
+            },
+            "helpText": "Hier ziet u hoe een raadslid stemde over voorstellen, moties en amendementen. Kies een vergadering om alleen die stemmingen te zien. Een stemming opent het besluit met de stukken erbij. Stemde een raadslid niet mee, dan staat er Afwezig."
         },
         {
             "route": "/bestuur/raadsleden",
