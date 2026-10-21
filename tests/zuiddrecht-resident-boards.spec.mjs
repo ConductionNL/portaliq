@@ -399,7 +399,7 @@ test('the case screen with display actions: the closed window as an ok notice, n
 				description: 'Wij kijken of uw verzoek compleet is.',
 			},
 			window: { open: true },
-			fields: { toelichting: { open: true } },
+			fields: { toelichting: { writable: true } },
 			documents: { open: true },
 		},
 		documents: [],
@@ -416,10 +416,25 @@ test('the case screen with display actions: the closed window as an ok notice, n
 		/data-testid="case-status"|data-testid="case-documents"/,
 	)
 	assert.match(actions, /data-testid="case-save"/)
+	// The board's "Aanvraag intrekken", in the danger tone.
 	assert.match(
 		actions,
-		/data-testid="case-withdraw"[^>]*>Deze aanvraag intrekken</,
+		/utrecht-button--danger pq-case-withdraw" data-testid="case-withdraw"[^>]*>Aanvraag intrekken</,
 	)
+	// No field the resident may change: nothing to save, no save button.
+	const nothingToSave = await renderComponent(CitizenCase, {
+		...base,
+		block: { type: 'citizenCase', collection: 'mijnZaken', display: 'actions' },
+		initialData: {
+			...data,
+			writableSet: {
+				...data.writableSet,
+				fields: { toelichting: { writable: false, reason: 'Dicht.' } },
+			},
+		},
+	})
+	assert.doesNotMatch(nothingToSave, /data-testid="case-save"/)
+	assert.match(nothingToSave, /data-testid="case-withdraw"/)
 	const closed = await renderComponent(CitizenCase, {
 		...base,
 		block: { type: 'citizenCase', collection: 'mijnZaken', display: 'actions' },
