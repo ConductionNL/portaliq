@@ -466,6 +466,18 @@ class CmsReader {
 
 		$shaped['body']['widgets'] = $widgets;
 
+		// A fixed-width aside column, when the page asks for one
+		// (site-aside-column); the site checks the range.
+		$aside = $body['aside'] ?? null;
+		if (is_array($aside) === true && is_numeric($aside['width'] ?? null) === true) {
+			$gap = null;
+			if (is_numeric($aside['gap'] ?? null) === true) {
+				$gap = (int) $aside['gap'];
+			}
+
+			$shaped['body']['aside'] = ['width' => (int) $aside['width'], 'gap' => $gap];
+		}
+
 		// The same widgets grouped by region, beside the flat list the
 		// Docusaurus plugin reads (REQ-PTB-008). A slot that names no region
 		// is reported, not dropped silently. An empty map stays an object.

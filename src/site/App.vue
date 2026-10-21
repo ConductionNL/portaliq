@@ -572,6 +572,7 @@ import {
 } from './lib/contentApi.js'
 import { crumbLabel, signInCrumbs } from './lib/crumbWords.js'
 import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
+import { asideOf } from './lib/gridPlacement.js'
 import { createIdleTracker } from './lib/idleTracker.js'
 import { instanceRootFrom } from './lib/instanceRoot.js'
 import { languageEntries, requestedLocale } from './lib/languageNav.js'
@@ -1018,6 +1019,8 @@ export default {
 				signInRoutes: this.signInRoutes,
 				// The help details every form offers (help-texts-and-form-help).
 				portalHelp: this.site.help || null,
+				// A fixed-width aside column (site-aside-column).
+				aside: asideOf(this.page && this.page.body),
 			}
 		},
 

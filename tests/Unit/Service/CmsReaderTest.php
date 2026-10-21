@@ -835,6 +835,29 @@ class CmsReaderTest extends TestCase {
 	}//end testAPageServesItsRegionsBesideItsWidgets()
 
 	/**
+	 * A grid page serves the aside column it asks for, as whole pixels, and
+	 * a page that asks for none serves no aside.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-aside-column/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
+	 */
+	public function testAGridPageServesItsAsideColumn(): void {
+		$this->withRows(
+			rows: [
+				['title' => 'Home', 'route' => '/', 'body' => ['type' => 'grid', 'aside' => ['width' => '340', 'gap' => 56], 'widgets' => []]],
+				['title' => 'Over', 'route' => '/over', 'body' => ['type' => 'grid', 'aside' => ['gap' => 56], 'widgets' => []]],
+			]
+		);
+
+		$home = $this->reader->page(portal: 'open-tilburg', route: '/', locale: 'nl', audience: 'anonymous');
+		$over = $this->reader->page(portal: 'open-tilburg', route: '/over', locale: 'nl', audience: 'anonymous');
+
+		$this->assertSame(expected: ['width' => 340, 'gap' => 56], actual: $home['body']['aside']);
+		$this->assertArrayNotHasKey(key: 'aside', array: $over['body'], message: 'an aside without a width is not served');
+	}//end testAGridPageServesItsAsideColumn()
+
+	/**
 	 * A grid page without widgets serves `regions` as an empty JSON object,
 	 * and a markdown page still carries the regions it clears.
 	 *

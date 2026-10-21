@@ -300,8 +300,8 @@ export function residentMenuGroups(
 /**
  * The menu item a route belongs to, so the menu marks where the resident is
  * on a page one level deeper too: the route itself when an item links to it,
- * else the deepest item the route lies under, else, for a record of a cases
- * collection (a case opened from "Mijn zaken"), the cases section. A route
+ * else the deepest item the route lies under, else, for a cases collection's
+ * page or a record of it (a case opened from "Mijn zaken"), the cases section. A route
  * that belongs to no item is handed back, and nothing is marked.
  *
  * @param {string} route The route on screen.
@@ -326,10 +326,13 @@ export function menuCurrentRoute(route, groups, nav = [], contributions = null) 
 		return under
 	}
 	const entries = Array.isArray(nav) ? nav : []
-	const entry = entries.find(
-		(candidate) =>
-			!candidate.special && route.startsWith(`${routeForNav(candidate)}/`),
-	)
+	const entry = entries.find((candidate) => {
+		if (candidate.special) {
+			return false
+		}
+		const own = routeForNav(candidate)
+		return route === own || route.startsWith(`${own}/`)
+	})
 	const cases = entries.find((candidate) => candidate.special === 'cases')
 	if (entry && cases && isCasesPage(entry, contributions)) {
 		const link = routeForNav(cases)

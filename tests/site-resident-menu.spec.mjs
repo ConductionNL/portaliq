@@ -360,6 +360,11 @@ test('on a case opened from "Mijn zaken" the menu marks "Mijn zaken"; a route of
 		menuCurrentRoute('/mijn/dossiq/mijnZaken/c-82', groups, nav, contributions),
 		'/mijn/cases',
 	)
+	// A case opened on the cases collection's own page marks it too (Zaak board).
+	assert.equal(
+		menuCurrentRoute('/mijn/dossiq/mijnZaken', groups, nav, contributions),
+		'/mijn/cases',
+	)
 	// A page with an item of its own keeps it.
 	assert.equal(menuCurrentRoute('/mijn/inbox', groups, nav, contributions), '/mijn/inbox')
 	// A page one level under an item marks that item, never the overview.
