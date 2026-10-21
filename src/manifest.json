@@ -4510,14 +4510,14 @@
             "label": "New term"
           }
         ],
-        "quickFilters": [
-          {
-            "label": "Alles",
-            "filter": {},
-            "showCount": true,
-            "default": true
-          }
-        ],
+        "quickFiltersFrom": {
+          "field": "portal",
+          "register": "portaliq",
+          "schema": "portal",
+          "valueField": "slug",
+          "labelField": "title",
+          "allLabel": "Alles"
+        },
         "filterMenu": true,
         "viewSwitch": [
           "table",
