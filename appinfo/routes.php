@@ -424,6 +424,7 @@ return [
         ['name' => 'portalAccountSelf#details', 'url' => '/portal/api/identity/details', 'verb' => 'GET'],
         // The resident's saved draft of a create or endpoint action
         // (site-multi-step-forms T8). Subject from the bearer only.
+        ['name' => 'portalDraft#index', 'url' => '/portal/api/drafts', 'verb' => 'GET'],
         ['name' => 'portalDraft#show', 'url' => '/portal/api/drafts/{appId}/{actionId}', 'verb' => 'GET'],
         ['name' => 'portalDraft#save', 'url' => '/portal/api/drafts/{appId}/{actionId}', 'verb' => 'PUT'],
         ['name' => 'portalDraft#discard', 'url' => '/portal/api/drafts/{appId}/{actionId}', 'verb' => 'DELETE'],

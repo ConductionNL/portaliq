@@ -31,6 +31,13 @@
 			{{ t('My cases') }}
 		</h1>
 
+		<!-- Forms the resident saved to finish later (REQ-FSR-003). -->
+		<UnfinishedForms
+			v-if="session"
+			:api="api"
+			:t="t"
+			:locale="locale || 'nl'" />
+
 		<!-- What the case apps say above the list, as plain text (collection-intro). -->
 		<p
 			v-for="(intro, i) in intros"
@@ -197,6 +204,7 @@
 </template>
 
 <script>
+import UnfinishedForms from '../../components/forms/UnfinishedForms.vue'
 import CaseCard from '../../components/mijn/CaseCard.vue'
 import LoadError from '../../components/mijn/LoadError.vue'
 import { casesIntros } from '../../../shared/collectionIntro.js'
@@ -222,7 +230,7 @@ import { longDate, readerLocale } from './format.js'
 export default {
 	name: 'MyCasesPage',
 
-	components: { CaseCard, LoadError },
+	components: { CaseCard, LoadError, UnfinishedForms },
 
 	props: {
 		/** The session as `/portal/api/session` returns it. */
