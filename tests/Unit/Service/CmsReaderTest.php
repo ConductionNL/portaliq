@@ -313,12 +313,13 @@ class CmsReaderTest extends TestCase {
 						['id' => 'q2', 'text' => ''],
 					],
 				],
-				['title' => 'Product A', 'route' => '/p/a', 'status' => 'published', 'body' => ['type' => 'markdown']],
+				['title' => 'Product A', 'route' => '/p/a', 'summary' => '38,50 euro per jaar', 'status' => 'published', 'body' => ['type' => 'markdown']],
 			]
 		);
 
 		$finder = $this->reader->finder('open-tilburg', 'f1', 'nl', 'anonymous');
-		$this->assertSame([['route' => '/p/a', 'title' => 'Product A']], $finder['products']);
+		// Each product carries its page's summary, the line under its name.
+		$this->assertSame([['route' => '/p/a', 'title' => 'Product A', 'summary' => '38,50 euro per jaar']], $finder['products']);
 		$this->assertCount(1, $finder['questions']);
 		$this->assertSame(['/p/a'], $finder['questions'][0]['excludesOnNo']);
 		$this->assertNull($this->reader->finder('open-tilburg', 'other', 'nl', 'anonymous'));
