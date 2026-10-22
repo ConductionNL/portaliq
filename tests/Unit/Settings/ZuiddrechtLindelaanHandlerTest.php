@@ -55,6 +55,7 @@ class ZuiddrechtLindelaanHandlerTest extends TestCase {
 		foreach (['woo-fietspad-telefoon', 'woo-fietspad-uitleg', 'woo-fietspad-reactie', 'woo-fietspad-aanvulling'] as $key) {
 			$this->assertSame(expected: '{{cast:pieter.uid}}', actual: $objects[$key]['kccEmployeeId'], message: $key);
 			$this->assertSame(expected: '{{cast:sanne.bsn}}', actual: $objects[$key]['geidentificeerdeBurgerId'], message: $key);
+			$this->assertSame(expected: '{{lookup:sanne}}', actual: ($objects[$key]['contact'] ?? null), message: $key);
 		}
 	}//end testPieterHandlesTheWooCaseForTheWooTeam()
 }//end class
