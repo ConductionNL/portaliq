@@ -7,6 +7,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\PortalDraftController;
 use OCA\Portaliq\Service\Intake\ActionDraft;
+use OCA\Portaliq\Service\Intake\LiveDrafts;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -32,6 +33,7 @@ use Psr\Log\LoggerInterface;
  */
 #[CoversClass(PortalDraftController::class)]
 #[UsesClass(ActionDraft::class)]
+#[UsesClass(LiveDrafts::class)]
 #[UsesClass(\OCA\Portaliq\Service\Intake\DestinationDraft::class)]
 #[UsesClass(\OCA\Portaliq\Service\Intake\DestinationSubmit::class)]
 #[UsesClass(\OCA\Portaliq\Contribution\ActionScopeResolver::class)]
@@ -281,11 +283,14 @@ class PortalDraftControllerTest extends TestCase {
 		};
 		$drafts = new PortalOwnerDraft($this->fake->container(['OCA\\OpenRegister\\Service\\Object\\DraftDiscard' => $discard]), $this->createMock(LoggerInterface::class), new DestinationSubmit($this->fake->container(['OCA\\OpenRegister\\Service\\Object\\DraftDiscard' => $discard]), $this->createMock(LoggerInterface::class)));
 
+		$actions = new ActionDraft(registry: $registry, reader: $reader, writer: $writer, drafts: $drafts);
+
 		return new PortalDraftController(
 			$this->createMock(IRequest::class),
 			$session,
-			new ActionDraft(registry: $registry, reader: $reader, writer: $writer, drafts: $drafts),
-			$drafts
+			$actions,
+			$drafts,
+			new LiveDrafts(registry: $registry, actions: $actions)
 		);
 	}//end controller()
 }//end class
