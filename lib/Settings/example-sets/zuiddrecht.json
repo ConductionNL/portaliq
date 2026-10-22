@@ -1472,10 +1472,10 @@
 				"description": "Adviezen en mail 2025 en 2026",
 				"objectUuid": "{{object:woo-fietspad.id}}",
 				"state": "completed",
-				"assignee": "{{cast:daan.uid}}",
+				"assignee": "{{cast:lars.uid}}",
 				"dueAt": "{{date:-11}}",
 				"completedAt": "{{datetime:-11 15:40}}",
-				"completedBy": "{{cast:daan.uid}}"
+				"completedBy": "{{cast:lars.uid}}"
 			}
 		},
 		{
