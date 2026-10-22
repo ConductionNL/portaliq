@@ -517,9 +517,9 @@
               },
               "limit": 5,
               "presentation": "rows",
+              "leading": "{submittedAt|time}",
               "title": "{actionId}",
-              "meta": "{appId}",
-              "trailing": "{submittedAt|datetime}",
+              "meta": "{appId} · {submittedAt|relative}",
               "pill": {
                 "field": "deliveryStatus",
                 "labels": {
