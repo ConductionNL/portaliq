@@ -295,20 +295,32 @@
 			],
 			"files": [
 				{
-					"path": "zuiddrecht/woo-fietspad/01-verzoek-om-informatie.pdf",
-					"title": "Verzoek om informatie"
-				},
-				{
 					"path": "zuiddrecht/woo-fietspad/02-advies-verlichting-fietspad.pdf",
 					"title": "Advies verlichting fietspad"
+				},
+				{
+					"path": "zuiddrecht/woo-fietspad/06-mail-aannemer-planning.eml",
+					"title": "Mail aannemer over planning"
 				},
 				{
 					"path": "zuiddrecht/woo-fietspad/03-raadsvoorstel-fietspad-lindelaan.pdf",
 					"title": "Raadsvoorstel fietspad Lindelaan"
 				},
 				{
+					"path": "zuiddrecht/woo-fietspad/07-klachtenlijst-bewoners-lindelaan.csv",
+					"title": "Klachtenlijst bewoners Lindelaan"
+				},
+				{
+					"path": "zuiddrecht/woo-fietspad/05-interne-notitie-budget.pdf",
+					"title": "Interne notitie budget"
+				},
+				{
 					"path": "zuiddrecht/woo-fietspad/04-offerte-verlichting.pdf",
 					"title": "Offerte verlichting"
+				},
+				{
+					"path": "zuiddrecht/woo-fietspad/08-plattegrond-lichtmasten.pdf",
+					"title": "Plattegrond lichtmasten"
 				}
 			],
 			"data": {
