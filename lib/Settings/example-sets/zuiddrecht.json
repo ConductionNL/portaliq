@@ -730,7 +730,16 @@
 				"nature": "new_request",
 				"summary": "Vraag over de stukken van het fietspad. Het Woo-verzoek samen opgenomen.",
 				"firstTimeFix": false,
-				"visibleToApplicant": true
+				"visibleToApplicant": true,
+				"contact": "{{lookup:sanne}}"
+			},
+			"lookups": {
+				"sanne": {
+					"schema": "brpPerson",
+					"where": {
+						"citizenServiceNumber": "{{cast:sanne.bsn}}"
+					}
+				}
 			}
 		},
 		{
@@ -750,7 +759,16 @@
 				"summary": "Uitgelegd dat de aanleg in maart begint.",
 				"firstTimeFix": false,
 				"visibleToApplicant": true,
-				"geidentificeerdeBurgerId": "{{cast:sanne.bsn}}"
+				"geidentificeerdeBurgerId": "{{cast:sanne.bsn}}",
+				"contact": "{{lookup:sanne}}"
+			},
+			"lookups": {
+				"sanne": {
+					"schema": "brpPerson",
+					"where": {
+						"citizenServiceNumber": "{{cast:sanne.bsn}}"
+					}
+				}
 			}
 		},
 		{
@@ -770,7 +788,16 @@
 				"nature": "informatieverzoek",
 				"summary": "Wil graag alle stukken over de verlichting zien.",
 				"firstTimeFix": false,
-				"visibleToApplicant": true
+				"visibleToApplicant": true,
+				"contact": "{{lookup:sanne}}"
+			},
+			"lookups": {
+				"sanne": {
+					"schema": "brpPerson",
+					"where": {
+						"citizenServiceNumber": "{{cast:sanne.bsn}}"
+					}
+				}
 			}
 		},
 		{
@@ -790,7 +817,16 @@
 				"nature": "informatieverzoek",
 				"summary": "Vult het verzoek aan met de offertes voor de lantaarnpalen.",
 				"firstTimeFix": false,
-				"visibleToApplicant": true
+				"visibleToApplicant": true,
+				"contact": "{{lookup:sanne}}"
+			},
+			"lookups": {
+				"sanne": {
+					"schema": "brpPerson",
+					"where": {
+						"citizenServiceNumber": "{{cast:sanne.bsn}}"
+					}
+				}
 			}
 		},
 		{
