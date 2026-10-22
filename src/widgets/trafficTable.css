@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: EUPL-1.2 */
 /* SPDX-FileCopyrightText: 2026 Conduction B.V. */
 
-/* The ranked tables on the Traffic page share one look: the compact table a
-   board draws in a card (PtVerkeer, as DqInstellingen), on the card's 22px
-   inset, a tinted header row at 10px 12px and cells at 11px 12px. */
+/* The ranked tables on the Traffic page share one look, the table PtVerkeer
+   draws in a card: on the card's 22px inset, a tinted 42px header row at
+   10px 14px on a 22px line, and 42px rows with cells at 12px 14px. */
 
 .traffic-table {
 	padding: 0 22px 20px;
@@ -19,15 +19,16 @@
 
 .traffic-table__table th,
 .traffic-table__table td {
-	padding: 11px 12px;
+	padding: 12px 14px;
 	text-align: start;
 	border-top: 1px solid var(--cn-board-hairline, var(--color-border));
 	vertical-align: middle;
 }
 
 .traffic-table__table th {
-	padding: 10px 12px;
+	padding: 10px 14px;
 	border-top: 0;
+	line-height: 22px;
 	background: color-mix(in srgb, var(--color-background-hover) 40%, var(--color-main-background));
 	color: var(--color-text-maxcontrast);
 	font-weight: 600;
