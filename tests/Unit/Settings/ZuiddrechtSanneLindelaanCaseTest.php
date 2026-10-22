@@ -80,8 +80,8 @@ class ZuiddrechtSanneLindelaanCaseTest extends TestCase {
 		$case   = $this->object(key: 'woo-fietspad');
 		$status = (string)$case['lookups']['status']['where']['name'];
 
-		// Dossiq's Woo case type gives this status, step 2, the role in-progress (register.d/81-woo-verzoek.json).
-		$this->assertSame(expected: 'Beoordeling ontvankelijkheid', actual: $status);
+		// Version 2 of dossiq's Woo case type gives this status, step 2, the role in-progress (register.d/81-woo-verzoek-version-2.json).
+		$this->assertSame(expected: 'In behandeling', actual: $status);
 		$this->assertArrayNotHasKey(key: 'wooPublicationStatus', array: $case['data']);
 		$this->assertSame(expected: '{{lookup:status}}', actual: $case['data']['statusHistory'][1]['status']);
 		$this->assertSame(expected: '{{lookup:sanne}}', actual: $case['data']['requester']);
