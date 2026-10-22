@@ -546,6 +546,79 @@
 			}
 		},
 		{
+			"key": "melding-lantaarnpaal-lindelaan",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "melding-openbare-ruimte"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"bezig": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				},
+				"sanne": {
+					"schema": "brpPerson",
+					"where": {
+						"citizenServiceNumber": "{{cast:sanne.bsn}}"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Kapotte lantaarnpaal Lindelaan",
+				"description": "De lantaarnpaal voor Lindelaan 14 knippert en gaat 's avonds uit.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{lookup:sanne}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:sanne.displayName}}",
+				"portalSubject": "{{cast:sanne.uid}}",
+				"intakeChannel": "website",
+				"startDate": "{{date:-210}}",
+				"endDate": "{{date:-202}}",
+				"receivedAt": "{{datetime:-210 20:10}}",
+				"currentStatusEnteredAt": "{{datetime:-202 15:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-210 20:10}}"
+					},
+					{
+						"status": "{{lookup:bezig}}",
+						"enteredAt": "{{datetime:-208 09:00}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-202 15:00}}"
+					}
+				],
+				"assignee": "{{cast:anouk.uid}}"
+			}
+		},
+		{
 			"key": "subsidie-buurtfeest",
 			"register": "dossiq",
 			"schema": "case",
