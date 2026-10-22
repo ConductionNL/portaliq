@@ -259,6 +259,60 @@
 			}
 		},
 		{
+			"key": "omgevingsvergunning-fietspad",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Aanleg fietspad Lindelaan",
+				"description": "Omgevingsvergunning voor de aanleg van het fietspad langs de Lindelaan, met verlichting langs het hele tracé.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"initiatorDisplayName": "Gemeente Zuiddrecht, Openbare ruimte",
+				"intakeChannel": "email",
+				"confidentiality": "openbaar",
+				"assignee": "{{cast:pieter.uid}}",
+				"startDate": "{{date:-420}}",
+				"receivedAt": "{{datetime:-420 10:00}}",
+				"endDate": "{{date:-314}}",
+				"currentStatusEnteredAt": "{{datetime:-314 16:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-420 10:00}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-314 16:00}}"
+					}
+				]
+			}
+		},
+		{
 			"key": "woo-fietspad",
 			"register": "dossiq",
 			"schema": "case",
@@ -291,7 +345,8 @@
 				}
 			},
 			"jsonFields": [
-				"statusHistory"
+				"statusHistory",
+				"relatedCases"
 			],
 			"files": [
 				{
@@ -359,7 +414,16 @@
 					"woo",
 					"openbare-ruimte"
 				],
-				"archiveStatus": "nog_te_archiveren"
+				"archiveStatus": "nog_te_archiveren",
+				"subjectCases": [
+					"{{object:omgevingsvergunning-fietspad.id}}"
+				],
+				"relatedCases": [
+					{
+						"caseId": "{{object:omgevingsvergunning-fietspad.id}}",
+						"aardRelatie": "subject"
+					}
+				]
 			}
 		},
 		{
@@ -1205,6 +1269,128 @@
 				"endDateCalculated": "{{date:14}}",
 				"endDateCurrent": "{{date:14}}",
 				"status": "lopend"
+			}
+		},
+		{
+			"key": "woo-fietspad-deelzaak-zienswijze",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Beoordeling ontvankelijkheid"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Zienswijze Aannemersbedrijf Van Wijk",
+				"description": "Het aannemersbedrijf geeft zijn zienswijze op de openbaarmaking van de offerte en de planning.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"parentCase": "{{object:woo-fietspad.id}}",
+				"initiatorDisplayName": "Gemeente Zuiddrecht",
+				"intakeChannel": "manual",
+				"confidentiality": "intern",
+				"assignee": "{{cast:lars.uid}}",
+				"startDate": "{{date:-3}}",
+				"receivedAt": "{{datetime:-3 11:00}}",
+				"currentStatusEnteredAt": "{{datetime:-2 09:30}}",
+				"deadline": "{{date:5}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-2 09:30}}"
+					}
+				]
+			}
+		},
+		{
+			"key": "woo-fietspad-deelzaak-lakken",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangst"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Lakken offerte lantaarnpalen",
+				"description": "De offerte wordt deels openbaar: prijzen en contactgegevens worden gelakt.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"parentCase": "{{object:woo-fietspad.id}}",
+				"initiatorDisplayName": "Gemeente Zuiddrecht",
+				"intakeChannel": "manual",
+				"confidentiality": "intern",
+				"assignee": "{{cast:pieter.uid}}",
+				"startDate": "{{date:-3}}",
+				"receivedAt": "{{datetime:-3 11:00}}",
+				"currentStatusEnteredAt": "{{datetime:-2 09:30}}",
+				"deadline": "{{date:9}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-2 09:30}}"
+					}
+				],
+				"assignedGroup": "zuiddrecht-woo-en-informatie"
+			}
+		},
+		{
+			"key": "woo-fietspad-object-fietspad",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"objectType": "Openbare ruimte",
+				"objectIdentification": "BGT wgl.0505.1234",
+				"description": "Het fietspad zelf"
+			}
+		},
+		{
+			"key": "woo-fietspad-object-lichtmast-14",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"objectType": "Lichtmast",
+				"objectIdentification": "LM-0014",
+				"description": "Nieuwe mast bij de brug"
+			}
+		},
+		{
+			"key": "woo-fietspad-object-lichtmast-15",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"objectType": "Lichtmast",
+				"objectIdentification": "LM-0015",
+				"description": "Mast bij de bushalte, nog niet geplaatst"
 			}
 		},
 		{
