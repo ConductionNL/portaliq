@@ -35,6 +35,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -78,6 +79,7 @@ class PortalManifestController extends Controller {
 	 * @return DataDisplayResponse
 	 *
 	 * @spec openspec/changes/parent-pwa-installability/specs/parent-pwa-installability/spec.md#requirement-the-portal-serves-a-web-app-manifest-naming-the-resolved-portal
+	 * @spec openspec/changes/portal-settings-side-cards/specs/portal-settings/spec.md#requirement-an-administrator-switches-whether-a-portal-can-be-installed
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -88,6 +90,13 @@ class PortalManifestController extends Controller {
 		$portalSlug = (string)$this->request->getParam('portal', '');
 
 		$portal = $this->configResolver->resolvePortal(request: $this->request, portalSlug: $portalSlug, orgValue: $orgValue);
+		// An administrator can switch installing off per portal: with no
+		// manifest the browser offers no install. The worker keeps serving the
+		// site shell, so a page already open goes on working.
+		if (is_array($portal) === true && ($portal['installable'] ?? true) === false) {
+			return new DataDisplayResponse('', Http::STATUS_NOT_FOUND);
+		}
+
 		$runtimeConfig = $this->configResolver->runtimeConfigFor(portal: $portal, orgValue: $orgValue, locale: 'nl');
 
 		$name = (string)($runtimeConfig['organisationName'] ?? '');

@@ -48,6 +48,7 @@ import PortalAccessibility from './widgets/PortalAccessibility.vue'
 import PortalAccountWithdraw from './widgets/PortalAccountWithdraw.vue'
 import PortalCaseTypes from './widgets/PortalCaseTypes.vue'
 import PortalHomePage from './widgets/PortalHomePage.vue'
+import PortalMessageBox from './widgets/PortalMessageBox.vue'
 import PortalRegistration from './widgets/PortalRegistration.vue'
 import PortalSignin from './widgets/PortalSignin.vue'
 import PortalSummaryCard from './widgets/PortalSummaryCard.vue'
@@ -283,6 +284,17 @@ export default {
 		allowedSlots: ['body'],
 		propsSchema: null,
 		_note: 'The page layout editor as the Indeling tab of a page (page-editor-in-the-page, PtPagina). The same PageLayoutDesigner the standalone /pages/:id/layout route shows, embedded: the page header above it names the page, so it draws no title line.',
+	},
+	// @custom-widget-ratchet exclude the switch reads and writes the organisation's message box offer through an admin controller and keeps the integriq source aside when off, which no built-in settings form can
+	PortalMessageBox: {
+		kind: 'widget',
+		component: PortalMessageBox,
+		defaultSize: { w: 4, h: 3 },
+		minSize: { w: 3, h: 2 },
+		maxSize: { w: 12, h: 4 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: "The Berichtenbox side card on a portal's settings tab (portal-settings-side-cards, PtPortalInstellingen): a switch on whether the portal's organisation offers the government message box. Custom because the offer lives in the organisation's presentation settings, not on the portal, and switching it off keeps the integriq source aside.",
 	},
 	// @custom-widget-ratchet exclude the three states are a classification over the portal's pages read through an admin controller, and a built-in widget has no way to say "no page at the root" rather than show an empty list
 	PortalHomePage: {

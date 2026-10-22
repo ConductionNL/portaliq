@@ -42,6 +42,24 @@ class PortalManifestControllerTest extends TestCase {
 
 	}//end testManifestNamesTheResolvedOrganisation()
 
+	/**
+	 * portal-settings-side-cards: a portal an administrator made not
+	 * installable has no manifest, so the browser offers no install; one that
+	 * says nothing stays installable.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-settings-side-cards/specs/portal-settings/spec.md#requirement-an-administrator-switches-whether-a-portal-can-be-installed
+	 */
+	public function testAPortalSwitchedNotInstallableHasNoManifest(): void {
+		$off = $this->controller(orgSlug: '', portalSlug: 'zuiddrecht', portal: ['slug' => 'zuiddrecht', 'installable' => false]);
+		$on  = $this->controller(orgSlug: '', portalSlug: 'zuiddrecht', portal: ['slug' => 'zuiddrecht']);
+
+		$this->assertSame(expected: 404, actual: $off->manifest()->getStatus());
+		$this->assertSame(expected: 200, actual: $on->manifest()->getStatus());
+
+	}//end testAPortalSwitchedNotInstallableHasNoManifest()
+
 	public function testManifestAnswersTheCorrectContentType(): void {
 		$controller = $this->controller(orgSlug: '');
 
@@ -306,6 +324,7 @@ class PortalManifestControllerTest extends TestCase {
 		string $portalSlug = '',
 		string $requestUri = '/index.php/apps/portaliq/portal/sw.js',
 		string $workerRoute = '/index.php/apps/portaliq/portal/sw.js',
+		?array $portal = null,
 	): PortalManifestController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getRequestUri')->willReturn($requestUri);
@@ -337,7 +356,7 @@ class PortalManifestControllerTest extends TestCase {
 		];
 
 		$configResolver = $this->createMock(PortalRuntimeConfigResolver::class);
-		$configResolver->method('resolvePortal')->willReturn(null);
+		$configResolver->method('resolvePortal')->willReturn($portal);
 		$configResolver->method('runtimeConfigFor')->willReturn(array_merge($default, $resolved));
 
 		$urlGenerator = $this->createMock(IURLGenerator::class);

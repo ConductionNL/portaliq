@@ -3942,6 +3942,39 @@
                 }
               ]
             }
+          },
+          {
+            "id": "portal-side-message-box",
+            "type": "PortalMessageBox",
+            "title": "MijnOverheid message box",
+            "icon": "EmailOutline",
+            "tabs": [
+              "portal-settings"
+            ],
+            "content": {}
+          },
+          {
+            "id": "portal-side-install",
+            "type": "settings-form",
+            "title": "Install as an app",
+            "icon": "Cellphone",
+            "tabs": [
+              "portal-settings"
+            ],
+            "content": {
+              "columns": 1,
+              "saveLabel": "Save",
+              "savedText": "The portal is saved.",
+              "fields": [
+                {
+                  "key": "installable",
+                  "label": "Visitors can install the portal on their phone",
+                  "type": "switch",
+                  "hint": "The app keeps only the site's shell, never data from the resident area.",
+                  "default": true
+                }
+              ]
+            }
           }
         ],
         "layout": [
@@ -3994,7 +4027,9 @@
           "portal-side-theme",
           "portal-side-status",
           "portal-side-editors",
-          "portal-side-traffic"
+          "portal-side-traffic",
+          "portal-side-message-box",
+          "portal-side-install"
         ]
       }
     },
@@ -6330,7 +6365,11 @@
         "Not checked": "Niet gecontroleerd",
         "Change house style": "Huisstijl wijzigen",
         "Hard to read:": "Slecht leesbaar:",
-        "the text in the footer does not reach a contrast of 4.5 to 1 with this theme. An editor can still use the theme; that is recorded. You choose the house style at the portal, under Settings.": "de tekst in de voet haalt met dit thema geen contrast van 4,5 op 1. Een redacteur kan het thema toch gebruiken; dat wordt vastgelegd. De huisstijl kiest u bij de portal, onder Instellingen."
+        "the text in the footer does not reach a contrast of 4.5 to 1 with this theme. An editor can still use the theme; that is recorded. You choose the house style at the portal, under Settings.": "de tekst in de voet haalt met dit thema geen contrast van 4,5 op 1. Een redacteur kan het thema toch gebruiken; dat wordt vastgelegd. De huisstijl kiest u bij de portal, onder Instellingen.",
+        "MijnOverheid message box": "Berichtenbox van MijnOverheid",
+        "Install as an app": "Als app installeren",
+        "Visitors can install the portal on their phone": "Bezoekers kunnen de portal installeren op hun telefoon",
+        "The app keeps only the site's shell, never data from the resident area.": "De app bewaart alleen de schil van de site, nooit gegevens uit het inwonersdeel."
       }
     }
   }

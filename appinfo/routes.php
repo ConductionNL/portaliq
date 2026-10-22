@@ -79,6 +79,9 @@ return [
         // contrast verdict per set (nldesign-theme-integration). Admin-only.
         ['name' => 'portalTheme#index', 'url' => '/api/portals/{slug}/theme', 'verb' => 'GET'],
         ['name' => 'portalTheme#update', 'url' => '/api/portals/{slug}/theme', 'verb' => 'PUT'],
+        // Whether the portal's organisation offers the Berichtenbox (portal-settings-side-cards). Admin only.
+        ['name' => 'portalMessageBox#index', 'url' => '/api/portals/{slug}/message-box', 'verb' => 'GET'],
+        ['name' => 'portalMessageBox#update', 'url' => '/api/portals/{slug}/message-box', 'verb' => 'PUT'],
         // Every portal with its theme and contrast, for the Themes page (themes-contrast-column). Admin only.
         ['name' => 'themeOverview#portals', 'url' => '/api/themes/portals', 'verb' => 'GET'],
         // Whether the portal has a published page at its root, for the "Home

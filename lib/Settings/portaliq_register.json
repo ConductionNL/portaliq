@@ -4438,6 +4438,13 @@
                             }
                         }
                     },
+                    "installable": {
+                        "title": "Installable",
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Whether visitors can install this portal as an app on their phone. Off means the web app manifest answers 404, so the browser offers no install. The installed app keeps only the site's shell, never data from the resident area.",
+                        "example": true
+                    },
                     "hiddenCaseTypes": {
                         "title": "Hidden case types",
                         "type": "array",
