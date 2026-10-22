@@ -316,7 +316,9 @@ test('zuiddrecht.json puts the business contacts in the business group the porta
 
 test('zuiddrecht.json keeps the six cases of the Woo journey and the resident boards', () => {
 	const zuiddrecht = fragments.find(({ file }) => file === 'zuiddrecht.json').fragment
-	const cases = zuiddrecht.objects.filter((object) => object.schema === 'case').map((object) => object.data.title)
+	const cases = zuiddrecht.objects
+		.filter((object) => object.schema === 'case' && object.data['@self']?.status !== 'draft')
+		.map((object) => object.data.title)
 	assert.deepEqual(cases, [
 		'Verlichting fietspad Lindelaan',
 		'Dakkapel Lindelaan 14',
@@ -338,4 +340,15 @@ test('Sanne has an open portal task on her parking permit: a copy of her ID, at 
 	assert.equal(task.objectUuid, '{{object:parkeervergunning-sanne.id}}')
 	assert.deepEqual(task.uploadRules, { required: true, maxFiles: 2 })
 	assert.match(task.description, /Lindelaan 14/)
+})
+
+test('Sanne has one saved Woo request: a draft of the case, owned by her portal subject', () => {
+	const zuiddrecht = fragments.find(({ file }) => file === 'zuiddrecht.json').fragment
+	const drafts = zuiddrecht.objects.filter((object) => object.data['@self']?.status === 'draft')
+	assert.equal(drafts.length, 1)
+	const [draft] = drafts
+	assert.equal(draft.schema, 'case')
+	assert.deepEqual(draft.lookups.caseType.where, { identifier: 'woo-verzoek' })
+	assert.equal(draft.data['@self'].owner, 'portal:{{cast:sanne.uid}}')
+	assert.equal(draft.data.intakeChannel, 'website', 'the Woo action finds its draft by its defaults')
 })
