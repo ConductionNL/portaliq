@@ -7,5 +7,6 @@ Every DqZaak board shows the Lindelaan Woo case with the handler Pieter Jansen a
 ## What changes
 
 - `woo-fietspad` gets the assignee `{{cast:pieter.uid}}` and the group `zuiddrecht-woo-en-informatie`.
-- The review task "Documenten beoordelen" is Pieter's.
+- The tasks "Documenten beoordelen", "Verzoek compleet maken" and "Ontvangst bevestigen" are Pieter's.
+- The four contact moments with Sanne (DqZaakContact) were handled by Pieter, and each names Sanne.
 - The group comes from the OpenRegister cast (openregister branch `feat/zuiddrecht-woo-team`).

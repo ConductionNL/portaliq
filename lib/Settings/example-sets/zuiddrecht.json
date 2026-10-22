@@ -725,7 +725,7 @@
 				"durationSeconds": 720,
 				"identificationMethod": "identificatievragen",
 				"geidentificeerdeBurgerId": "{{cast:sanne.bsn}}",
-				"kccEmployeeId": "{{cast:thomas.uid}}",
+				"kccEmployeeId": "{{cast:pieter.uid}}",
 				"case": "{{object:woo-fietspad.id}}",
 				"nature": "new_request",
 				"summary": "Vraag over de stukken van het fietspad. Het Woo-verzoek samen opgenomen.",
@@ -744,12 +744,13 @@
 				"endTime": "{{datetime:-13 10:26}}",
 				"durationSeconds": 120,
 				"identificationMethod": "digid",
-				"kccEmployeeId": "{{cast:thomas.uid}}",
+				"kccEmployeeId": "{{cast:pieter.uid}}",
 				"case": "{{object:woo-fietspad.id}}",
 				"nature": "informatieverzoek",
 				"summary": "Uitgelegd dat de aanleg in maart begint.",
 				"firstTimeFix": false,
-				"visibleToApplicant": true
+				"visibleToApplicant": true,
+				"geidentificeerdeBurgerId": "{{cast:sanne.bsn}}"
 			}
 		},
 		{
@@ -764,7 +765,7 @@
 				"durationSeconds": 120,
 				"identificationMethod": "digid",
 				"geidentificeerdeBurgerId": "{{cast:sanne.bsn}}",
-				"kccEmployeeId": "{{cast:thomas.uid}}",
+				"kccEmployeeId": "{{cast:pieter.uid}}",
 				"case": "{{object:woo-fietspad.id}}",
 				"nature": "informatieverzoek",
 				"summary": "Wil graag alle stukken over de verlichting zien.",
@@ -784,7 +785,7 @@
 				"durationSeconds": 120,
 				"identificationMethod": "identificatievragen",
 				"geidentificeerdeBurgerId": "{{cast:sanne.bsn}}",
-				"kccEmployeeId": "{{cast:thomas.uid}}",
+				"kccEmployeeId": "{{cast:pieter.uid}}",
 				"case": "{{object:woo-fietspad.id}}",
 				"nature": "informatieverzoek",
 				"summary": "Vult het verzoek aan met de offertes voor de lantaarnpalen.",
@@ -1484,10 +1485,10 @@
 				"description": "Periode en onderwerp vastgelegd",
 				"objectUuid": "{{object:woo-fietspad.id}}",
 				"state": "completed",
-				"assignee": "{{cast:thomas.uid}}",
+				"assignee": "{{cast:pieter.uid}}",
 				"dueAt": "{{date:-13}}",
 				"completedAt": "{{datetime:-13 11:20}}",
-				"completedBy": "{{cast:thomas.uid}}"
+				"completedBy": "{{cast:pieter.uid}}"
 			}
 		},
 		{
@@ -1497,10 +1498,10 @@
 				"description": "Bericht via Mijn Zuiddrecht",
 				"objectUuid": "{{object:woo-fietspad.id}}",
 				"state": "completed",
-				"assignee": "{{cast:thomas.uid}}",
+				"assignee": "{{cast:pieter.uid}}",
 				"dueAt": "{{date:-13}}",
 				"completedAt": "{{datetime:-14 09:30}}",
-				"completedBy": "{{cast:thomas.uid}}"
+				"completedBy": "{{cast:pieter.uid}}"
 			}
 		},
 		{

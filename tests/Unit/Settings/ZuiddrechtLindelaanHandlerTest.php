@@ -35,7 +35,7 @@ use PHPUnit\Framework\TestCase;
 class ZuiddrechtLindelaanHandlerTest extends TestCase {
 
 	/**
-	 * Pieter handles the case for Woo en informatie, and the review task is his.
+	 * Pieter handles the case for Woo en informatie: its tasks and its conversation with Sanne are his.
 	 *
 	 * @return void
 	 */
@@ -48,6 +48,13 @@ class ZuiddrechtLindelaanHandlerTest extends TestCase {
 		$this->assertSame(expected: 'zuiddrecht-woo-en-informatie', actual: $objects['woo-fietspad']['assignedGroup']);
 
 		$tasks = array_column($set['tasks'], 'data', 'key');
-		$this->assertSame(expected: '{{cast:pieter.uid}}', actual: $tasks['woo-fietspad-taak-beoordelen']['assignee']);
+		foreach (['woo-fietspad-taak-beoordelen', 'woo-fietspad-taak-compleet', 'woo-fietspad-taak-ontvangst'] as $key) {
+			$this->assertSame(expected: '{{cast:pieter.uid}}', actual: $tasks[$key]['assignee'], message: $key);
+		}
+
+		foreach (['woo-fietspad-telefoon', 'woo-fietspad-uitleg', 'woo-fietspad-reactie', 'woo-fietspad-aanvulling'] as $key) {
+			$this->assertSame(expected: '{{cast:pieter.uid}}', actual: $objects[$key]['kccEmployeeId'], message: $key);
+			$this->assertSame(expected: '{{cast:sanne.bsn}}', actual: $objects[$key]['geidentificeerdeBurgerId'], message: $key);
+		}
 	}//end testPieterHandlesTheWooCaseForTheWooTeam()
 }//end class
