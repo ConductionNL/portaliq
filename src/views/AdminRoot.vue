@@ -92,7 +92,8 @@
 					no lint error.
 				-->
 					<NcButton
-						variant="error"
+						class="portaliq-admin-settings__revoke-button"
+						variant="secondary"
 						:disabled="revoking || organisationInput === ''"
 						type="submit">
 						{{
@@ -902,6 +903,18 @@ export default {
 .portaliq-admin-settings__revoke > .button-vue {
 	flex: none;
 	align-self: flex-end;
+}
+
+/* The board draws the revoke as an outlined button in the error colour on
+   the main background (PtBeheerinstellingen), not a filled one. */
+.portaliq-admin-settings__revoke > .button-vue.portaliq-admin-settings__revoke-button {
+	border: 1px solid var(--color-error-text);
+	background: var(--color-main-background);
+	color: var(--color-error-text);
+}
+
+.portaliq-admin-settings__revoke > .button-vue.portaliq-admin-settings__revoke-button:hover:not(:disabled) {
+	background: var(--color-background-hover);
 }
 
 .portaliq-admin-settings__geo {

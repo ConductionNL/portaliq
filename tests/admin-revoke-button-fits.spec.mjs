@@ -43,3 +43,11 @@ test('the button keeps its label\'s width, at the end of the row', () => {
 	assert.match(button, /flex: none;/)
 	assert.match(button, /align-self: flex-end;/)
 })
+
+test('the button is the board\'s outlined red button, not a filled one', () => {
+	assert.match(SFC, /<NcButton\s+class="portaliq-admin-settings__revoke-button"\s+variant="secondary"/)
+	const button = rule('.portaliq-admin-settings__revoke > .button-vue.portaliq-admin-settings__revoke-button')
+	assert.match(button, /border: 1px solid var\(--color-error-text\);/)
+	assert.match(button, /color: var\(--color-error-text\);/)
+	assert.match(button, /background: var\(--color-main-background\);/)
+})
