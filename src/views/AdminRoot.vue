@@ -888,11 +888,20 @@ export default {
 	color: var(--color-text-maxcontrast);
 }
 
+/* The field full width and the button under it at the end, at its label's
+   width (PtBeheerinstellingen); on one row the button shrank below its
+   label. */
 .portaliq-admin-settings__revoke {
 	display: flex;
-	align-items: flex-end;
-	gap: 8px;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 12px;
 	margin-top: 12px;
+}
+
+.portaliq-admin-settings__revoke > .button-vue {
+	flex: none;
+	align-self: flex-end;
 }
 
 .portaliq-admin-settings__geo {
