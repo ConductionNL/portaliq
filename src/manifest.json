@@ -4488,7 +4488,8 @@
           },
           {
             "key": "onBehalfOf",
-            "label": "Access requested to"
+            "label": "Access requested to",
+            "overlineText": "Cases of"
           },
           {
             "key": "reason",
@@ -4588,7 +4589,8 @@
           "board",
           "map"
         ],
-        "footerNote": "on approval the requester sees the cases at once, on refusal they read your reason"
+        "footerNote": "on approval the requester sees the cases at once, on refusal they read your reason",
+        "defaultOrder": "stateRank,-requestedAt"
       }
     },
     {
@@ -6330,7 +6332,8 @@
         "Not checked": "Niet gecontroleerd",
         "Change house style": "Huisstijl wijzigen",
         "Hard to read:": "Slecht leesbaar:",
-        "the text in the footer does not reach a contrast of 4.5 to 1 with this theme. An editor can still use the theme; that is recorded. You choose the house style at the portal, under Settings.": "de tekst in de voet haalt met dit thema geen contrast van 4,5 op 1. Een redacteur kan het thema toch gebruiken; dat wordt vastgelegd. De huisstijl kiest u bij de portal, onder Instellingen."
+        "the text in the footer does not reach a contrast of 4.5 to 1 with this theme. An editor can still use the theme; that is recorded. You choose the house style at the portal, under Settings.": "de tekst in de voet haalt met dit thema geen contrast van 4,5 op 1. Een redacteur kan het thema toch gebruiken; dat wordt vastgelegd. De huisstijl kiest u bij de portal, onder Instellingen.",
+        "Cases of": "Zaken van"
       }
     }
   }
