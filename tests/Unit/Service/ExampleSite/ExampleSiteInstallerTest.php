@@ -25,6 +25,7 @@ use OCA\Portaliq\Service\ExampleSite\ExampleSiteRecord;
 use OCA\Portaliq\Service\ExampleSite\ExampleSiteRemover;
 use OCA\Portaliq\Service\ExampleSite\ExampleSiteRows;
 use OCA\Portaliq\Service\ExampleSite\ExampleSiteStore;
+use OCA\Portaliq\Service\PortalNameSetting;
 use OCA\Portaliq\Service\PortalThemeResolver;
 use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
@@ -123,6 +124,23 @@ class ExampleSiteInstallerTest extends TestCase {
 		$this->assertCount(4, $record['newsItem']);
 		$this->assertNotSame('', $record['portal']);
 	}//end testAFreshInstanceGetsTheWholeSite()
+
+	/**
+	 * The install names the resident portal for the other apps after the
+	 * site's own area ("Mijn Zuiddrecht"), and leaves a name an
+	 * administrator set alone.
+	 *
+	 * @return void
+	 */
+	public function testTheInstallNamesThePortalOnlyWhenNoneIsSet(): void {
+		$this->installer()->install(site: $this->zuiddrecht());
+		$this->assertSame(expected: 'Mijn Zuiddrecht', actual: $this->config['portalName']);
+
+		$this->setUp();
+		$this->config['portalName'] = 'Loket Zuiddrecht';
+		$this->installer()->install(site: $this->zuiddrecht());
+		$this->assertSame(expected: 'Loket Zuiddrecht', actual: $this->config['portalName']);
+	}//end testTheInstallNamesThePortalOnlyWhenNoneIsSet()
 
 	/**
 	 * A site's form is installed before its pages, and the page's form block
@@ -582,6 +600,6 @@ class ExampleSiteInstallerTest extends TestCase {
 		$record = new ExampleSiteRecord($appConfig);
 		$this->remover = new ExampleSiteRemover($store, $rows, $record);
 
-		return new ExampleSiteInstaller($store, $rows, $record, new ExampleSiteProof(), $themes);
+		return new ExampleSiteInstaller($store, $rows, $record, new ExampleSiteProof(), $themes, new PortalNameSetting(appConfig: $appConfig));
 	}//end installer()
 }//end class
