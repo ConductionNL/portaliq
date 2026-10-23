@@ -31,3 +31,19 @@ test('the page places the public records block on stackiq softwareCatalogue', ()
 	assert.equal(block.props.list, 'softwareCatalogue')
 	assert.ok(block.props.searchLabel, 'the list needs a search label')
 })
+
+// @spec openspec/changes/site-organisation-registration-form/specs/example-site/spec.md#requirement-the-example-site-lets-an-organisation-register-from-the-software-catalogue
+test('the page carries the registration form, which saves into stackiq as pending', () => {
+	const form = (site.forms || []).find((f) => f.externalReference === 'organisation-registration')
+	assert.ok(form, 'no registration form declared')
+	assert.equal(form.requiresApp, 'stackiq')
+	assert.equal(form.status, 'active')
+	assert.deepEqual(form.destination, { register: 'stackiq', schema: 'organization', fixed: { registrationStatus: 'pending' } })
+	assert.deepEqual(form.fields.map((f) => f.id), ['name', 'type', 'registrationNumber', 'registrationContactName', 'registrationContactEmail', 'website'])
+	assert.ok(form.fields.every((f) => f.id !== 'registrationStatus'), 'the status is fixed by the server, never a field')
+
+	const block = page.body.widgets.find((w) => w.widgetKey === 'form')
+	assert.ok(block, 'no form block on the page')
+	assert.equal(block.props.formKey, 'organisation-registration')
+	assert.deepEqual(block.props.fields, form.fields)
+})

@@ -392,11 +392,12 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.98.0: the portal schema declares `authentication.registration.businessGroup` and `businessAudience` (business-audience-group).
 		// 0.99.0 (media 0.2.0): `usedOn`, how many records of its portal use the item (media-usage-count). Additive.
 		// 0.100.0 (portal 0.27.0): `myCases.display` takes `folders`, the board folders (mijn-case-folder-card). Additive.
-		$this->assertSame(expected: '0.100.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.100.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		// 0.101.0 (form 0.4.0): a form field's `optionLabels`, the words shown per option (site-organisation-registration-form). Additive.
+		$this->assertSame(expected: '0.101.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.101.0', actual: self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame(expected: '0.2.0', actual: self::$register['components']['schemas']['media']['version']);
 		$this->assertSame(expected: 'integer', actual: self::$register['components']['schemas']['media']['properties']['usedOn']['type']);
-		$this->assertSame('0.3.0', self::$register['components']['schemas']['form']['version']);
+		$this->assertSame('0.4.0', self::$register['components']['schemas']['form']['version']);
 		$this->assertSame('object', self::$register['components']['schemas']['form']['properties']['destination']['type']);
 		$this->assertSame('0.8.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame(200, self::$register['components']['schemas']['portalPage']['properties']['actions']['items']['properties']['summary']['maxLength']);
