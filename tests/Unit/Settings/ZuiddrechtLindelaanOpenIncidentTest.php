@@ -48,7 +48,8 @@ class ZuiddrechtLindelaanOpenIncidentTest extends TestCase {
 		$this->assertSame(
 			expected: [
 				'case'        => '{{object:woo-fietspad.id}}',
-				'eventDate'   => '{{date:-9}}',
+				// dossiq's caseIncident.eventDate is format date-time; a bare date is refused by the install.
+				'eventDate'   => '{{datetime:-9 10:00}}',
 				'recordedAt'  => '{{datetime:-9 10:15}}',
 				'reporter'    => '{{cast:sanne.displayName}}',
 				'description' => 'Verzoeker meldt dat de link in Mijn Zuiddrecht niet werkt',
