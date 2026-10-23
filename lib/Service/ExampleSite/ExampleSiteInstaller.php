@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\ExampleSite;
 
+use OCA\Portaliq\Service\PortalNameSetting;
 use OCA\Portaliq\Service\PortalThemeResolver;
 
 /**
@@ -53,6 +54,7 @@ class ExampleSiteInstaller {
 	 * @param ExampleSiteRecord   $record Keeps what was created.
 	 * @param ExampleSiteProof    $proof  Compares declared with stored.
 	 * @param PortalThemeResolver $themes Says whether the theme app offers the site's set.
+	 * @param PortalNameSetting   $name   Names the portal for other apps.
 	 *
 	 * @return void
 	 */
@@ -62,6 +64,7 @@ class ExampleSiteInstaller {
 		private readonly ExampleSiteRecord $record,
 		private readonly ExampleSiteProof $proof,
 		private readonly PortalThemeResolver $themes,
+		private readonly PortalNameSetting $name,
 	) {
 	}//end __construct()
 
@@ -106,6 +109,8 @@ class ExampleSiteInstaller {
 				$created['portal'][] = $slug;
 			}
 		}
+
+		$this->name->fillFrom(portal: $site['portal']);
 
 		foreach (self::SCHEMAS as $list => $schema) {
 			$report['types'][$schema] = $this->installList(
