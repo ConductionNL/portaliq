@@ -1422,8 +1422,51 @@
                                 {
                                     "label": "Parkeren",
                                     "href": "/parkeren"
+                                },
+                                {
+                                    "label": "Softwarecatalogus",
+                                    "href": "/softwarecatalogus",
+                                    "requiresApp": "stackiq"
                                 }
                             ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/softwarecatalogus",
+            "title": "Softwarecatalogus",
+            "summary": "Welke software leveranciers aan de overheid aanbieden.",
+            "status": "published",
+            "locale": "nl",
+            "requiresApp": "stackiq",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-softwarecatalogus-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Zoek welke software leveranciers aan de overheid aanbieden. U hoeft niet in te loggen."
+                        }
+                    },
+                    {
+                        "id": "zd-softwarecatalogus-02-publicrecords",
+                        "widgetKey": "publicRecords",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 12,
+                        "gridHeight": 6,
+                        "props": {
+                            "app": "stackiq",
+                            "list": "softwareCatalogue",
+                            "searchLabel": "Zoeken in de catalogus",
+                            "backText": "Alle software"
                         }
                     }
                 ]
