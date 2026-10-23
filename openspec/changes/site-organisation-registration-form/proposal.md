@@ -25,6 +25,9 @@ What is missing:
   a page, can require an app.
 - A form field MAY carry `optionLabels`, the words shown per stored option. The
   form block shows them and still sends the stored value.
+- A landing-page form's campaign fields (`utmFirstTouch`, `utmLastTouch`,
+  `referrer`) go only to a destination that declares them. Until now they went to
+  every destination, and one that lacks them refuses the whole submission.
 - The Zuiddrecht example site gets the registration form on `/softwarecatalogus`:
   organisation name, type, OIN, website, contact name and e-mail, saved into
   `stackiq` / `organization` with `registrationStatus: pending` fixed. Stackiq also
