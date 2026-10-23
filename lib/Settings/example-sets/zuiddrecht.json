@@ -320,21 +320,22 @@
 				"caseType": {
 					"schema": "caseType",
 					"where": {
-						"identifier": "woo-verzoek"
+						"identifier": "woo-verzoek",
+						"version": 2
 					}
 				},
 				"ontvangen": {
 					"schema": "statusType",
 					"where": {
 						"caseType": "{{lookup:caseType}}",
-						"name": "Ontvangst"
+						"name": "Ontvangen"
 					}
 				},
 				"status": {
 					"schema": "statusType",
 					"where": {
 						"caseType": "{{lookup:caseType}}",
-						"name": "Beoordeling ontvankelijkheid"
+						"name": "In behandeling"
 					}
 				},
 				"sanne": {
@@ -1479,14 +1480,15 @@
 				"caseType": {
 					"schema": "caseType",
 					"where": {
-						"identifier": "woo-verzoek"
+						"identifier": "woo-verzoek",
+						"version": 2
 					}
 				},
 				"status": {
 					"schema": "statusType",
 					"where": {
 						"caseType": "{{lookup:caseType}}",
-						"name": "Beoordeling ontvankelijkheid"
+						"name": "In behandeling"
 					}
 				}
 			},
@@ -1523,14 +1525,15 @@
 				"caseType": {
 					"schema": "caseType",
 					"where": {
-						"identifier": "woo-verzoek"
+						"identifier": "woo-verzoek",
+						"version": 2
 					}
 				},
 				"status": {
 					"schema": "statusType",
 					"where": {
 						"caseType": "{{lookup:caseType}}",
-						"name": "Ontvangst"
+						"name": "Ontvangen"
 					}
 				}
 			},
