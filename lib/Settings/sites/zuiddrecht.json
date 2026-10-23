@@ -246,6 +246,11 @@
                     "order": 5,
                     "name": "Kwetsbaarheid melden",
                     "link": "/kwetsbaarheid-melden"
+                },
+                {
+                    "order": 6,
+                    "name": "Status van de dienstverlening",
+                    "link": "/status"
                 }
             ]
         }
@@ -2928,6 +2933,73 @@
                         "gridHeight": 1,
                         "props": {
                             "text": "Mail uw melding naar info@zuiddrecht.example. U krijgt binnen drie werkdagen antwoord."
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/status",
+            "title": "Status van de dienstverlening",
+            "summary": "Welke online diensten werken, waar een verstoring is en wanneer er onderhoud is.",
+            "status": "published",
+            "locale": "nl",
+            "requiresApp": "opencatalogi",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-status-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Hier ziet u of onze online diensten werken. Bij een verstoring staat erbij wat er aan de hand is en sinds wanneer."
+                        }
+                    },
+                    {
+                        "id": "zd-status-02-nlpublictable",
+                        "widgetKey": "nlPublicTable",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 12,
+                        "gridHeight": 4,
+                        "props": {
+                            "caption": "Diensten",
+                            "source": {
+                                "app": "opencatalogi",
+                                "kind": "serviceStatus"
+                            },
+                            "columns": [
+                                {
+                                    "key": "service",
+                                    "label": "Dienst"
+                                },
+                                {
+                                    "key": "message",
+                                    "label": "Toelichting"
+                                },
+                                {
+                                    "key": "state",
+                                    "label": "Status"
+                                }
+                            ],
+                            "display": "boxed",
+                            "emptyLabel": "De status van de diensten is nu niet bekend."
+                        },
+                        "requiresApp": "opencatalogi"
+                    },
+                    {
+                        "id": "zd-status-03-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 5,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Werkt iets niet en staat het hier niet bij? Bel of mail ons, dan zoeken wij het uit."
                         }
                     }
                 ]
