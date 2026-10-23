@@ -160,6 +160,7 @@ const blockComponents = {
 	publicationDetail: 'src/site/components/PublicationDetailBlock.vue',
 	contactForm: 'src/site/components/ContactForm.vue',
 	publicRecords: 'src/site/components/PublicRecordsBlock.vue',
+	form: 'src/site/components/FormBlock.vue',
 }
 const widgetProps = {}
 for (const [key, path] of Object.entries(blockComponents)) {
@@ -170,6 +171,9 @@ for (const [key, path] of Object.entries(blockComponents)) {
 	)
 	widgetProps[key] = propsOfVue(path)
 }
+// A declared form block names its form by key; the installer writes the
+// installed form's id as `formId` (site-organisation-registration-form).
+widgetProps.form.push('formKey')
 // The blocks the shared library's public registry brings, which WidgetGrid
 // spreads into its own map.
 const libraryIndex = read('node_modules/@conduction/nextcloud-vue/src/public/index.js')
@@ -392,6 +396,14 @@ for (const { file, site } of sites) {
 				problems,
 			),
 		)
+		for (const form of site.forms || []) {
+			hold(
+				{ ...form, portal: site.portal.slug },
+				schemas.form,
+				`form ${form.externalReference}`,
+				problems,
+			)
+		}
 		for (const term of site.glossary || []) {
 			hold(
 				{ ...term, portal: site.portal.slug },
@@ -785,7 +797,7 @@ test('the Zuiddrecht site lays out its own area as the MijnMenu and MijnZaken bo
 		'folders',
 	])
 	assert.equal(portal.version, '0.27.0')
-	assert.equal(register.info.version, '0.100.0')
+	assert.equal(register.info.version, '0.101.0')
 })
 
 // zuiddrecht-site-details: the portal names the organisation of the example

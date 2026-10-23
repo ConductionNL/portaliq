@@ -38,6 +38,13 @@ namespace OCA\Portaliq\Service\Intake;
  */
 class DestinationMapping {
 	/**
+	 * The campaign fields a landing-page form always whitelists. They travel only
+	 * to a destination that declares them: another destination would refuse each
+	 * as a property it does not have, and the whole submission with it.
+	 */
+	public const TRACKING_FIELDS = ['utmFirstTouch', 'utmLastTouch', 'referrer'];
+
+	/**
 	 * What a binding check puts in the subject property, standing in for the
 	 * subject reference only a submit knows.
 	 */
@@ -123,6 +130,16 @@ class DestinationMapping {
 		foreach ((array)($destination['fixed'] ?? []) as $property => $value) {
 			$fixed[(string)$property] = $value;
 		}
+
+		$fields = array_values(
+			array_filter(
+				$fields,
+				static fn (mixed $field): bool => is_array($field) === false
+					|| in_array((string)($field['name'] ?? ''), self::TRACKING_FIELDS, true) === false
+					|| $properties === []
+					|| array_key_exists((string)$field['name'], $properties) === true
+			)
+		);
 
 		return ['fields' => $this->fieldsOf(fields: $fields, renames: (array)($destination['fields'] ?? [])), 'fixed' => $fixed];
 	}//end mappingFor()

@@ -72,7 +72,7 @@
 						v-for="option in field.options || []"
 						:key="option"
 						:value="option">
-						{{ option }}
+						{{ optionLabel(field, option) }}
 					</option>
 				</select>
 
@@ -146,6 +146,7 @@ import { hasHelp, mergeHelp } from '../lib/help.js'
 import {
 	DUTCH,
 	explainsOptional,
+	optionLabel,
 	plainFieldErrors,
 	summaryEntries,
 } from './forms/fields.js'
@@ -325,6 +326,8 @@ export default {
 		fieldElementId(field) {
 			return `pq-form-field-${this.formId || 'x'}-${field.id}`
 		},
+
+		optionLabel,
 
 		/**
 		 * @param {object} field One declared form field.

@@ -150,6 +150,73 @@
             }
         ]
     },
+    "forms": [
+        {
+            "externalReference": "organisation-registration",
+            "requiresApp": "stackiq",
+            "sourceApp": "stackiq",
+            "pageRoute": "/softwarecatalogus",
+            "fields": [
+                {
+                    "id": "name",
+                    "label": "Naam organisatie",
+                    "type": "text",
+                    "required": true
+                },
+                {
+                    "id": "type",
+                    "label": "Soort organisatie",
+                    "type": "select",
+                    "required": true,
+                    "options": [
+                        "Supplier",
+                        "Municipality",
+                        "Collaboration",
+                        "Community"
+                    ],
+                    "optionLabels": {
+                        "Supplier": "Leverancier",
+                        "Municipality": "Gemeente",
+                        "Collaboration": "Samenwerkingsverband",
+                        "Community": "Gemeenschap"
+                    }
+                },
+                {
+                    "id": "registrationNumber",
+                    "label": "KvK-nummer of OIN",
+                    "type": "text",
+                    "required": true
+                },
+                {
+                    "id": "registrationContactName",
+                    "label": "Naam contactpersoon",
+                    "type": "text",
+                    "required": true
+                },
+                {
+                    "id": "registrationContactEmail",
+                    "label": "E-mailadres",
+                    "type": "email",
+                    "required": true
+                },
+                {
+                    "id": "website",
+                    "label": "Website",
+                    "type": "url",
+                    "required": false
+                }
+            ],
+            "submitLabel": "Aanmelding versturen",
+            "status": "active",
+            "destination": {
+                "register": "stackiq",
+                "schema": "organization",
+                "fixed": {
+                    "registrationStatus": "pending"
+                }
+            }
+        }
+    ],
     "menus": [
         {
             "title": "Hoofdmenu",
@@ -1472,6 +1539,92 @@
                             "list": "softwareCatalogue",
                             "searchLabel": "Zoeken in de catalogus",
                             "backText": "Alle software"
+                        }
+                    },
+                    {
+                        "id": "zd-softwarecatalogus-03-nlheading",
+                        "widgetKey": "nlHeading",
+                        "gridX": 0,
+                        "gridY": 7,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Uw organisatie aanmelden",
+                            "level": 2
+                        }
+                    },
+                    {
+                        "id": "zd-softwarecatalogus-04-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 8,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Bent u leverancier of overheidsorganisatie? Meld uw organisatie aan zonder account. Een beheerder beoordeelt de aanmelding en neemt daarna contact met u op. De catalogus is gratis voor gemeenten en leveranciers."
+                        }
+                    },
+                    {
+                        "id": "zd-softwarecatalogus-05-form",
+                        "widgetKey": "form",
+                        "gridX": 0,
+                        "gridY": 9,
+                        "gridWidth": 8,
+                        "gridHeight": 6,
+                        "props": {
+                            "formKey": "organisation-registration",
+                            "title": "Uw organisatie aanmelden",
+                            "fields": [
+                                {
+                                    "id": "name",
+                                    "label": "Naam organisatie",
+                                    "type": "text",
+                                    "required": true
+                                },
+                                {
+                                    "id": "type",
+                                    "label": "Soort organisatie",
+                                    "type": "select",
+                                    "required": true,
+                                    "options": [
+                                        "Supplier",
+                                        "Municipality",
+                                        "Collaboration",
+                                        "Community"
+                                    ],
+                                    "optionLabels": {
+                                        "Supplier": "Leverancier",
+                                        "Municipality": "Gemeente",
+                                        "Collaboration": "Samenwerkingsverband",
+                                        "Community": "Gemeenschap"
+                                    }
+                                },
+                                {
+                                    "id": "registrationNumber",
+                                    "label": "KvK-nummer of OIN",
+                                    "type": "text",
+                                    "required": true
+                                },
+                                {
+                                    "id": "registrationContactName",
+                                    "label": "Naam contactpersoon",
+                                    "type": "text",
+                                    "required": true
+                                },
+                                {
+                                    "id": "registrationContactEmail",
+                                    "label": "E-mailadres",
+                                    "type": "email",
+                                    "required": true
+                                },
+                                {
+                                    "id": "website",
+                                    "label": "Website",
+                                    "type": "url",
+                                    "required": false
+                                }
+                            ],
+                            "submitLabel": "Aanmelding versturen"
                         }
                     }
                 ]

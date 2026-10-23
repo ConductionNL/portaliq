@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.100.0"
+        "version": "0.101.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.100.0",
+                "version": "0.101.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -6826,7 +6826,7 @@
             "form": {
                 "slug": "form",
                 "icon": "FormSelect",
-                "version": "0.3.0",
+                "version": "0.4.0",
                 "title": "Form",
                 "authorization": {
                     "read": [
@@ -6979,6 +6979,14 @@
                                     "items": {
                                         "type": "string"
                                     }
+                                },
+                                "optionLabels": {
+                                    "title": "Option labels",
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "string"
+                                    },
+                                    "description": "The words a visitor sees for each option, keyed by the option that is sent. An option without words shows as itself."
                                 }
                             }
                         }

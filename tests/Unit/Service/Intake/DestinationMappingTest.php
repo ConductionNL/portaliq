@@ -68,6 +68,24 @@ class DestinationMappingTest extends TestCase {
 		$this->assertArrayNotHasKey('portal', $built['fixed']);
 	}//end testTheServerSetsTheTypeTheSubjectAndOnlyTheValuesTheDestinationDeclares()
 
+	/**
+	 * A landing-page form's campaign fields reach only a destination that declares
+	 * them, and the fixed values stay the server's (site-organisation-registration-form).
+	 *
+	 * @return void
+	 */
+	public function testCampaignFieldsGoOnlyWhereTheDestinationDeclaresThem(): void {
+		$binding = ['destination' => ['register' => 'stackiq', 'schema' => 'organization', 'fixed' => ['registrationStatus' => 'pending']]];
+		$fields = [['name' => 'name'], ['name' => 'utmFirstTouch'], ['name' => 'referrer'], ['name' => 'nonsense']];
+
+		$organisation = (new DestinationMapping())->mappingFor(binding: $binding, fields: $fields, schema: ['properties' => ['name' => [], 'registrationStatus' => []]]);
+		$lead = (new DestinationMapping())->mappingFor(binding: $binding, fields: $fields, schema: ['properties' => ['name' => [], 'referrer' => []]]);
+
+		$this->assertSame(['name', 'nonsense'], array_column($organisation['fields'], 'property'));
+		$this->assertSame(['name', 'referrer', 'nonsense'], array_column($lead['fields'], 'property'));
+		$this->assertSame('pending', $organisation['fixed']['registrationStatus']);
+	}//end testCampaignFieldsGoOnlyWhereTheDestinationDeclaresThem()
+
 	public function testAnAnonymousSubmitStampsNoSubject(): void {
 		$built = (new DestinationMapping())->mappingFor(
 			binding: ['destination' => ['register' => 'dossiq', 'schema' => 'case', 'subjectField' => 'portalSubject']],

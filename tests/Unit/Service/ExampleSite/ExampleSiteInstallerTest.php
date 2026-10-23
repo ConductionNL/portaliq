@@ -84,7 +84,7 @@ class ExampleSiteInstallerTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->rows = ['portal' => [], 'menu' => [], 'page' => [], 'newsItem' => [], 'glossaryTerm' => []];
+		$this->rows = ['portal' => [], 'form' => [], 'menu' => [], 'page' => [], 'newsItem' => [], 'glossaryTerm' => []];
 		$this->unknownKeys = [];
 		$this->refusedRoutes = [];
 		$this->ignoreFilters = false;
@@ -123,6 +123,43 @@ class ExampleSiteInstallerTest extends TestCase {
 		$this->assertCount(4, $record['newsItem']);
 		$this->assertNotSame('', $record['portal']);
 	}//end testAFreshInstanceGetsTheWholeSite()
+
+	/**
+	 * A site's form is installed before its pages, and the page's form block
+	 * carries the installed form's id instead of its key.
+	 *
+	 * @return void
+	 */
+	public function testAFormArrivesBeforeThePageThatShowsIt(): void {
+		$site = $this->zuiddrecht();
+		$site['forms'] = [[
+			'externalReference' => 'organisation-registration',
+			'sourceApp' => 'stackiq',
+			'fields' => [['id' => 'name', 'label' => 'Naam', 'type' => 'text']],
+			'submitLabel' => 'Versturen',
+			'status' => 'active',
+			'destination' => ['register' => 'stackiq', 'schema' => 'organization', 'fixed' => ['registrationStatus' => 'pending']],
+		]];
+		$site['pages'][] = [
+			'route' => '/aanmelden',
+			'title' => 'Aanmelden',
+			'status' => 'published',
+			'body' => ['type' => 'grid', 'widgets' => [['id' => 'f', 'widgetKey' => 'form', 'props' => ['formKey' => 'organisation-registration', 'submitLabel' => 'Versturen']]]],
+		];
+
+		$report = $this->installer()->install(site: $site);
+
+		$this->assertTrue($report['ok'], implode("\n", array_merge($report['missing'], $report['lost'])));
+		$formId = array_key_first($this->rows['form']);
+		$this->assertSame('zuiddrecht', $this->rows['form'][$formId]['portal']);
+		$this->assertSame(['registrationStatus' => 'pending'], $this->rows['form'][$formId]['destination']['fixed']);
+		$props = $this->rows['page'][$this->idOfPage(route: '/aanmelden')]['body']['widgets'][0]['props'];
+		$this->assertSame($formId, $props['formId']);
+		$this->assertArrayNotHasKey('formKey', $props);
+
+		$again = $this->installer()->install(site: $site);
+		$this->assertSame(['declared' => 1, 'created' => 0, 'kept' => 1, 'arrived' => 1], $again['types']['form']);
+	}//end testAFormArrivesBeforeThePageThatShowsIt()
 
 	/**
 	 * The glossary terms arrive with the portal's slug, keyed by their term,
@@ -265,10 +302,10 @@ class ExampleSiteInstallerTest extends TestCase {
 		$report = $this->remover->remove(site: 'zuiddrecht', slug: 'zuiddrecht');
 
 		$this->assertTrue($report['recorded']);
-		$this->assertSame(['menu' => 3, 'page' => 50, 'newsItem' => 4, 'glossaryTerm' => 6], $report['deleted']);
+		$this->assertSame(['menu' => 3, 'page' => 50, 'newsItem' => 4, 'glossaryTerm' => 6, 'form' => 0], $report['deleted']);
 		$this->assertSame('deleted', $report['portal']);
 		$this->assertSame([], $report['failed']);
-		$this->assertSame(['portal' => [], 'menu' => [], 'page' => [], 'newsItem' => [], 'glossaryTerm' => []], $this->rows);
+		$this->assertSame(['portal' => [], 'form' => [], 'menu' => [], 'page' => [], 'newsItem' => [], 'glossaryTerm' => []], $this->rows);
 		$this->assertArrayNotHasKey('example_site_zuiddrecht', $this->config);
 	}//end testRemoveDeletesWhatTheInstallCreated()
 
