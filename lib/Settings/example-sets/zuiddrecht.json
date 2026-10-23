@@ -1613,6 +1613,20 @@
 					}
 				]
 			}
+		},
+		{
+			"key": "woo-fietspad-incident-link",
+			"register": "dossiq",
+			"schema": "caseIncident",
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"eventDate": "{{date:-9}}",
+				"recordedAt": "{{datetime:-9 10:15}}",
+				"reporter": "{{cast:sanne.displayName}}",
+				"description": "Verzoeker meldt dat de link in Mijn Zuiddrecht niet werkt",
+				"assignee": "{{cast:pieter.uid}}",
+				"state": "open"
+			}
 		}
 	],
 	"tasks": [
