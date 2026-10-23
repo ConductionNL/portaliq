@@ -375,6 +375,121 @@
 			}
 		},
 		{
+			"key": "rol-woo-fietspad-verzoeker",
+			"register": "dossiq",
+			"schema": "role",
+			"lookups": {
+				"roleType": {
+					"schema": "roleType",
+					"where": {
+						"name": "Verzoeker",
+						"caseType": "3c0f5a00-0000-4000-a000-00000000a001"
+					}
+				},
+				"sanne": {
+					"schema": "brpPerson",
+					"where": {
+						"citizenServiceNumber": "{{cast:sanne.bsn}}"
+					}
+				}
+			},
+			"data": {
+				"name": "{{cast:sanne.displayName}}",
+				"roleType": "{{lookup:roleType}}",
+				"case": "{{object:woo-fietspad.id}}",
+				"participant": "{{lookup:sanne}}",
+				"description": "Deed het Woo-verzoek via Mijn Zuiddrecht, ingelogd met DigiD."
+			}
+		},
+		{
+			"key": "rol-woo-fietspad-belanghebbende",
+			"register": "dossiq",
+			"schema": "role",
+			"lookups": {
+				"roleType": {
+					"schema": "roleType",
+					"where": {
+						"name": "Belanghebbende",
+						"caseType": "3c0f5a00-0000-4000-a000-00000000a001"
+					}
+				},
+				"vanwijk": {
+					"schema": "kvkCompany",
+					"where": {
+						"kvkNumber": "{{cast:vanwijk.kvk}}"
+					}
+				}
+			},
+			"data": {
+				"name": "{{cast:vanwijk.name}}",
+				"roleType": "{{lookup:roleType}}",
+				"case": "{{object:woo-fietspad.id}}",
+				"participant": "{{lookup:vanwijk}}",
+				"description": "Aannemer van de verlichting; staat in de offerte en de mail die openbaar kunnen worden."
+			}
+		},
+		{
+			"key": "rol-woo-fietspad-gemachtigde",
+			"register": "dossiq",
+			"schema": "role",
+			"lookups": {
+				"roleType": {
+					"schema": "roleType",
+					"where": {
+						"name": "Gemachtigde",
+						"caseType": "3c0f5a00-0000-4000-a000-00000000a001"
+					}
+				},
+				"jvanwijk": {
+					"schema": "brpPerson",
+					"where": {
+						"citizenServiceNumber": "{{cast:jvanwijk.bsn}}"
+					}
+				},
+				"vanwijk": {
+					"schema": "kvkCompany",
+					"where": {
+						"kvkNumber": "{{cast:vanwijk.kvk}}"
+					}
+				}
+			},
+			"data": {
+				"name": "{{cast:jvanwijk.displayName}}",
+				"roleType": "{{lookup:roleType}}",
+				"case": "{{object:woo-fietspad.id}}",
+				"participant": "{{lookup:jvanwijk}}",
+				"representedParty": "{{lookup:vanwijk}}",
+				"description": "Gemachtigde namens Aannemersbedrijf Van Wijk B.V., Awb 2:1."
+			}
+		},
+		{
+			"key": "rol-woo-fietspad-melder",
+			"register": "dossiq",
+			"schema": "role",
+			"lookups": {
+				"roleType": {
+					"schema": "roleType",
+					"where": {
+						"name": "Melder",
+						"caseType": "3c0f5a00-0000-4000-a000-00000000a001"
+					}
+				},
+				"bewoners": {
+					"schema": "kvkCompany",
+					"where": {
+						"kvkNumber": "{{cast:bewonerslindelaan.kvk}}"
+					}
+				}
+			},
+			"data": {
+				"name": "{{cast:bewonerslindelaan.name}}",
+				"roleType": "{{lookup:roleType}}",
+				"case": "{{object:woo-fietspad.id}}",
+				"participant": "{{lookup:bewoners}}",
+				"description": "Meldde het donkere fietspad aan de balie, zonder account."
+			}
+		},
+		{
 			"key": "vergunning-dakkapel",
 			"register": "dossiq",
 			"schema": "case",
@@ -1578,6 +1693,48 @@
 				"register": "dossiq",
 				"schema": "case",
 				"notify": true
+			}
+		}
+	],
+	"parties": [
+		{
+			"key": "partij-sanne-verzoeker",
+			"data": {
+				"objectUuid": "{{object:woo-fietspad.id}}",
+				"partyUuid": "{{object:rol-woo-fietspad-verzoeker.participant}}",
+				"role": "3c0f5a00-0000-4000-a000-0000000c0001",
+				"validFrom": "{{date:-14}}",
+				"primary": true
+			}
+		},
+		{
+			"key": "partij-vanwijk-belanghebbende",
+			"data": {
+				"objectUuid": "{{object:woo-fietspad.id}}",
+				"partyUuid": "{{object:rol-woo-fietspad-belanghebbende.participant}}",
+				"role": "3c0f5a00-0000-4000-a000-0000000c0003",
+				"validFrom": "{{date:-11}}"
+			}
+		},
+		{
+			"key": "partij-jvanwijk-gemachtigde",
+			"data": {
+				"objectUuid": "{{object:woo-fietspad.id}}",
+				"partyUuid": "{{object:rol-woo-fietspad-gemachtigde.participant}}",
+				"role": "3c0f5a00-0000-4000-a000-0000000c0002",
+				"validFrom": "{{date:-11}}",
+				"validUntil": "{{date:+70}}",
+				"note": "Machtiging namens Aannemersbedrijf Van Wijk B.V., Awb 2:1"
+			}
+		},
+		{
+			"key": "partij-bewonerslindelaan-melder",
+			"data": {
+				"objectUuid": "{{object:woo-fietspad.id}}",
+				"partyUuid": "{{object:rol-woo-fietspad-melder.participant}}",
+				"role": "3c0f5a00-0000-4000-a000-0000000c0005",
+				"validFrom": "{{date:-20}}",
+				"note": "Via de balie, zonder account"
 			}
 		}
 	],
