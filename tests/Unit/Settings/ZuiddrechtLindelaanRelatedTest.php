@@ -60,10 +60,34 @@ class ZuiddrechtLindelaanRelatedTest extends TestCase {
 			expected: ['Zienswijze Aannemersbedrijf Van Wijk' => '{{cast:lars.uid}}', 'Lakken offerte lantaarnpalen' => '{{cast:pieter.uid}}'],
 			actual: $titles
 		);
-		foreach ($subs as $sub) {
-			$this->assertNotEmpty(actual: $sub['data']['deadline']);
-		}
 	}//end testTheLindelaanCaseHasTwoSubCases()
+
+	/**
+	 * A dossiq case row writes no property the case schema declares readOnly: dossiq derives those (`deadline`
+	 * from the statutory term), OpenRegister keeps its own value, and the install reports the field as written
+	 * but not kept (:8080, 24 Oct: both Lindelaan sub-cases' deadline). Read against the dossiq case schema
+	 * fixture.
+	 *
+	 * @return void
+	 */
+	public function testACaseRowWritesNoReadOnlyProperty(): void {
+		$schema   = json_decode((string)file_get_contents(__DIR__.'/../../Fixtures/dossiq-case-schema-d179.json'), true)['schema'];
+		$readOnly = array_keys(
+			array_filter($schema['properties'], static fn (mixed $p): bool => is_array($p) === true && ($p['readOnly'] ?? false) === true)
+		);
+		$written  = [];
+		foreach ($this->objects() as $key => $object) {
+			if (($object['register'] ?? '') !== 'dossiq' || ($object['schema'] ?? '') !== 'case') {
+				continue;
+			}
+
+			foreach (array_intersect(array_keys($object['data'] ?? []), $readOnly) as $field) {
+				$written[] = $key.'.'.$field;
+			}
+		}
+
+		$this->assertSame(expected: [], actual: $written);
+	}//end testACaseRowWritesNoReadOnlyProperty()
 
 	/**
 	 * The Woo case is about the cycle-path permit, which closed before it and comes first in the file.
