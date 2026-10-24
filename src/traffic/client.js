@@ -689,7 +689,10 @@ export function boot(win) {
 			name,
 			timestamp: new Date().toISOString(),
 			sequence: state.sequence++,
-			pageLocation: String(win.location.href).substring(0, 512),
+			// Never the fragment: it can carry a mailed secret (#email-link=).
+			pageLocation: String(win.location.href)
+				.replace(/#.*$/, '')
+				.substring(0, 512),
 			pageReferrer: String(doc.referrer || '').substring(0, 512),
 			pageTitle: String(doc.title || '').substring(0, 256),
 			params: {},

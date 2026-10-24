@@ -7,8 +7,8 @@
 ## Access
 
 - [ ] **T02**: Add optional `handlerGroup` to `portalReportDeclaration`; gate `show()`, `reply()` and `requestReveal()` on handler or custodian membership, with the single 404 (REQ-IRP-005). Verification: `ReportControllerTest::testNonHandlerGets404`, `::testCustodianHandlesWhenNoHandlerGroup`.
-- [ ] **T03**: `ReportController::index()` and route `GET /api/reports`: projected reports and terms for the caller's case types (REQ-IRP-004). Verification: `ReportControllerTest::testIndexNeverReturnsContact`, `::testIndexListsOnlyHandledCaseTypes`.
-- [ ] **T04**: `ReportController::revealRequests()` and route `GET /api/reveal-requests`: pending requests for the caller's custodian groups (REQ-IRP-006). Verification: `ReportControllerTest::testRevealRequestsOnlyForCustodian`.
+- [x] **T03**: `ReportController::index()` and route `GET /api/reports`: projected reports and terms for the caller's case types (REQ-IRP-004). Verification: `ReportControllerTest::testIndexNeverReturnsContact`, `::testIndexListsOnlyHandledCaseTypes`.
+- [x] **T04**: `ReportController::revealRequests()` and route `GET /api/reveal-requests`: pending requests for the caller's custodian groups (REQ-IRP-006). Verification: `ReportControllerTest::testRevealRequestsOnlyForCustodian`.
 
 ## The reporter's pages
 
@@ -18,8 +18,8 @@
 
 ## The staff screens
 
-- [ ] **T08**: `WrongdoingReportList` and `WrongdoingReportDetail` custom pages and the menu entry in `src/manifest.json`: list, detail, thread, reply with the visibility toggle, reveal request with motivation (REQ-IRP-004). Verification: the Playwright spec replies as a handler and the reporter reads it.
-- [ ] **T09**: `RevealRequestDesk` custom page: pending requests, allow or refuse with a reason, contact shown once (REQ-IRP-006). Verification: the Playwright spec allows a reveal and then checks the report detail shows no contact.
+- [ ] **T08**: `WrongdoingReportList` and `WrongdoingReportDetail` custom pages and the menu entry in `src/manifest.json`: list, detail, thread, reply with the visibility toggle, reveal request with motivation (REQ-IRP-004). Verification: the Playwright spec replies as a handler and the reporter reads it. (partly: the list is the index page AccountlessReports over `entitySource: endpoint`, manifest config instead of custom pages; the detail with thread, reply and reveal request is not built, because a detail page cannot yet read its record from an app endpoint in nextcloud-vue)
+- [x] **T09**: `RevealRequestDesk` custom page: pending requests, allow or refuse with a reason, contact shown once (REQ-IRP-006). Verification: the Playwright spec allows a reveal and then checks the report detail shows no contact. (the RevealRequests index page over `entitySource: endpoint` with the row actions Allow and Refuse, RevealDecisionDialog and RevealedContactDialog; manifest config instead of a custom page)
 
 ## Docs, strings and validation
 

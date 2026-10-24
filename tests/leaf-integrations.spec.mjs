@@ -33,6 +33,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
+import { isPlaced } from './lib/placement.mjs'
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -40,7 +41,10 @@ const manifest = JSON.parse(
 	readFileSync(join(REPO_ROOT, 'src', 'manifest.json'), 'utf8'),
 )
 const register = JSON.parse(
-	readFileSync(join(REPO_ROOT, 'lib', 'Settings', 'portaliq_register.json'), 'utf8'),
+	readFileSync(
+		join(REPO_ROOT, 'lib', 'Settings', 'portaliq_register.json'),
+		'utf8',
+	),
 )
 const mainJs = readFileSync(join(REPO_ROOT, 'src', 'main.js'), 'utf8')
 
@@ -60,7 +64,9 @@ const mainCode = mainJs
 	.split('\n')
 	.filter((line) => {
 		const trimmed = line.trim()
-		return trimmed.startsWith('//') === false && trimmed.startsWith('*') === false
+		return (
+			trimmed.startsWith('//') === false && trimmed.startsWith('*') === false
+		)
 	})
 	.join('\n')
 const iconsJs = readFileSync(join(REPO_ROOT, 'src', 'icons.js'), 'utf8')
@@ -90,27 +96,27 @@ test('every integration widget names an integration', () => {
 	assert.ok(
 		widgets.length > 0,
 		'No integration widget is declared at all. If the leaves were '
-		+ 'deliberately dropped, delete this file with them; a silently empty '
-		+ 'check is worse than no check.',
+			+ 'deliberately dropped, delete this file with them; a silently empty '
+			+ 'check is worse than no check.',
 	)
 
 	for (const { page, widget } of widgets) {
 		assert.ok(
 			typeof widget.integrationId === 'string' && widget.integrationId !== '',
 			`${page.id}/${widget.id}: an integration widget without an `
-			+ 'integrationId resolves to nothing and renders as a blank card.',
+				+ 'integrationId resolves to nothing and renders as a blank card.',
 		)
 	}
 })
 
 test('every integration widget is placed in its page layout', () => {
 	for (const { page, config, widget } of integrationWidgets()) {
-		const placed = (config.layout || []).some((item) => item.widgetId === widget.id)
+		const placed = isPlaced(config, widget)
 		assert.ok(
 			placed,
-			`${page.id}/${widget.id}: declared but absent from config.layout. A `
-			+ 'widget the grid never places is dark in exactly the way this file '
-			+ 'exists to catch, and nothing else reports it.',
+			`${page.id}/${widget.id}: declared but absent from the layout, the side column and every tab. A `
+				+ 'widget the grid never places is dark in exactly the way this file '
+				+ 'exists to catch, and nothing else reports it.',
 		)
 	}
 })
@@ -127,16 +133,19 @@ test('the bundle that renders a leaf installs the registry first', () => {
 	assert.ok(
 		install !== -1,
 		'src/main.js does not call installIntegrationRegistry(). Every '
-		+ 'integration widget in the manifest then resolves to null and renders '
-		+ 'nothing, with no error anywhere.',
+			+ 'integration widget in the manifest then resolves to null and renders '
+			+ 'nothing, with no error anywhere.',
 	)
-	assert.ok(builtin !== -1, 'src/main.js does not call registerBuiltinIntegrations().')
+	assert.ok(
+		builtin !== -1,
+		'src/main.js does not call registerBuiltinIntegrations().',
+	)
 	assert.ok(leaves !== -1, 'src/main.js does not call registerLeafIntegrations().')
 	assert.ok(
 		install < builtin && builtin < leaves,
 		'installIntegrationRegistry() must run before the two register calls, '
-		+ 'and the builtin (bespoke) pairs before the generic leaf factory, so '
-		+ 'the first-wins collision policy keeps the richer component.',
+			+ 'and the builtin (bespoke) pairs before the generic leaf factory, so '
+			+ 'the first-wins collision policy keeps the richer component.',
 	)
 })
 
@@ -148,8 +157,8 @@ test('every integration icon the manifest names is registered', () => {
 		assert.ok(
 			new RegExp(`\\b${widget.icon}\\b`).test(iconsJs),
 			`${page.id}/${widget.id}: icon "${widget.icon}" is not in `
-			+ 'src/icons.js. An unregistered icon draws no glyph at all rather '
-			+ 'than a fallback, so the card renders half-built.',
+				+ 'src/icons.js. An unregistered icon draws no glyph at all rather '
+				+ 'than a fallback, so the card renders half-built.',
 		)
 	}
 })
@@ -157,18 +166,24 @@ test('every integration icon the manifest names is registered', () => {
 test('the schema behind an integration widget declares the same leaf', () => {
 	for (const { page, config, widget } of integrationWidgets()) {
 		const schemaSlug = config.schema
-		assert.ok(schemaSlug, `${page.id}: an integration widget on a page with no schema.`)
+		assert.ok(
+			schemaSlug,
+			`${page.id}: an integration widget on a page with no schema.`,
+		)
 
 		const schema = schemas[schemaSlug]
-		assert.ok(schema, `${page.id}: schema "${schemaSlug}" is not in the register.`)
+		assert.ok(
+			schema,
+			`${page.id}: schema "${schemaSlug}" is not in the register.`,
+		)
 
 		const linkedTypes = (schema.configuration || {}).linkedTypes || []
 		assert.ok(
 			linkedTypes.includes(widget.integrationId),
 			`${schemaSlug}: the manifest adopts the "${widget.integrationId}" leaf `
-			+ 'but the schema does not declare it in configuration.linkedTypes, so '
-			+ 'the sidebar tab surface offers a different set from the page body. '
-			+ 'Note the nesting: a top-level linkedTypes is dropped on save.',
+				+ 'but the schema does not declare it in configuration.linkedTypes, so '
+				+ 'the sidebar tab surface offers a different set from the page body. '
+				+ 'Note the nesting: a top-level linkedTypes is dropped on save.',
 		)
 	}
 })
@@ -202,8 +217,8 @@ test('no portal-edge page renders an integration widget', () => {
 		assert.ok(
 			edgeSchemas.has(config.schema) === false,
 			`${page.id}/${widget.id}: an integration leaf on "${config.schema}", `
-			+ 'which is visitor-facing content. A leaf is a Nextcloud component '
-			+ 'for a Nextcloud user (ADR-046).',
+				+ 'which is visitor-facing content. A leaf is a Nextcloud component '
+				+ 'for a Nextcloud user (ADR-046).',
 		)
 	}
 })

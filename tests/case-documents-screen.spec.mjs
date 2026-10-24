@@ -87,7 +87,30 @@ test('a document opens through the case route, naming only the entry id, with th
 	assert.equal(calls[0].init.headers.Authorization, 'Bearer token-1')
 	assert.deepEqual(clicked, ['bewijs.pdf'])
 
+	// site-member-voting-record-and-confidential-papers T4: any collection
+	// that declares documents lists and opens them on its own route.
+	calls.length = 0
+	globalThis.fetch = async (url, init) => {
+		calls.push({ url, init })
+		return url.endsWith('/documents')
+			? { ok: true, status: 200, json: async () => ({ label: 'Stukken', documents: [{ id: 'p1', title: 'nota.pdf' }] }) }
+			: { ok: false, status: 503, blob: async () => ({}) }
+	}
+	assert.deepEqual(
+		await api.fetchCollectionDocuments({ register: 'decidiq', schema: 'agendaItem' }, 'a 7'),
+		{ documents: [{ id: 'p1', title: 'nota.pdf' }], documentsLabel: 'Stukken' },
+	)
+	assert.equal(calls[0].url, '/apps/portaliq/portal/api/collections/decidiq/agendaItem/a%207/documents')
+	assert.equal(calls[0].init.headers.Authorization, 'Bearer token-1')
+	assert.deepEqual(
+		await api.downloadCollectionDocument({ register: 'decidiq', schema: 'agendaItem' }, 'a 7', { id: 'p1', title: 'nota.pdf' }),
+		{ ok: false, status: 503 },
+		'a paper the opened hook refuses is not saved',
+	)
+	assert.equal(calls[1].url, '/apps/portaliq/portal/api/collections/decidiq/agendaItem/a%207/documents/p1')
+
 	globalThis.fetch = async () => ({ ok: false, status: 404 })
+	assert.equal(await api.fetchCollectionDocuments({ register: 'decidiq', schema: 'agendaItem' }, 'x'), null)
 	assert.deepEqual(
 		await api.downloadCitizenDocument(
 			{ register: 'zaken', schema: 'zaak' },

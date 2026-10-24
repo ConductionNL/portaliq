@@ -88,6 +88,7 @@ class CitizenWriteRecorder {
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/changes/write-record-names-the-mandate/specs/portal-visibility-and-the-party-tree/spec.md
 	 */
 	public function mandate(array $action, array $subject): array {
 		$mandate = [
@@ -104,6 +105,10 @@ class CitizenWriteRecorder {
 		if ($entity !== '') {
 			$mandate['actingFor'] = $entity;
 			$mandate['mandate'] = (string)($subject['actingUnderMandate'] ?? '');
+			$label = trim((string)($subject['actingForLabel'] ?? ''));
+			if ($label !== '') {
+				$mandate['actingForLabel'] = $label;
+			}
 		}
 
 		return $mandate;

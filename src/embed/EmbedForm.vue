@@ -13,12 +13,12 @@
 	by slice c's SchemaForm (src/site/components/c/SchemaForm.vue) once that
 	lands, which knows field types, conditions and file fields. Keep this
 	component's contract when swapping: props `fields`, `fieldErrors`, `busy`,
-	`t`; emits `submit(answers)`.
+	`t`; emits `submit(answers, honeypot)`.
 -->
 <template>
 	<form class="pq-embed-form" data-testid="embed-form" @submit.prevent="submit">
 		<div
-			v-for="field in fields"
+			v-for="field in shownFields"
 			:key="field.name"
 			class="utrecht-form-field utrecht-form-field--text">
 			<div class="utrecht-form-field__label">
@@ -58,10 +58,23 @@
 			:disabled="busy">
 			{{ busy ? t('Sending…') : t('Send') }}
 		</button>
+		<!-- The honeypot: hidden from people and from assistive technology, so
+			only a bot fills it (submit-creates-the-case-directly 2.2). -->
+		<div class="pq-embed-form__hp" aria-hidden="true">
+			<label for="embed-hp">Website</label>
+			<input
+				id="embed-hp"
+				v-model="honeypot"
+				name="_hp"
+				type="text"
+				tabindex="-1"
+				autocomplete="off" />
+		</div>
 	</form>
 </template>
 
 <script>
+import { evaluateVisibleWhenLocal } from '@conduction/nextcloud-vue/src/utils/visibleWhen.js'
 import { labelFor } from '../shared/embedCopy.js'
 import { initialAnswers } from './frame.js'
 
@@ -99,7 +112,25 @@ export default {
 	data() {
 		return {
 			answers: initialAnswers(this.fields),
+			honeypot: '',
 		}
+	},
+
+	computed: {
+		/**
+		 * The fields whose condition holds for the answers so far.
+		 *
+		 * @return {Array<object>} The fields to show.
+		 *
+		 * @spec openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md#requirement-a-fields-condition-decides-whether-the-resident-sees-it-req-icq-001
+		 */
+		shownFields() {
+			return this.fields.filter(
+				(field) =>
+					!field.visibleWhen
+					|| evaluateVisibleWhenLocal(field.visibleWhen, this.answers),
+			)
+		},
 	},
 
 	methods: {
@@ -117,13 +148,26 @@ export default {
 				return
 			}
 
-			this.$emit('submit', { ...this.answers })
+			// A hidden field's answer is not sent.
+			const sent = {}
+			for (const field of this.shownFields) {
+				sent[field.name] = this.answers[field.name]
+			}
+			this.$emit('submit', sent, this.honeypot)
 		},
 	},
 }
 </script>
 
 <style scoped>
+.pq-embed-form__hp {
+	position: absolute;
+	inset-inline-start: -10000px;
+	inline-size: 1px;
+	block-size: 1px;
+	overflow: hidden;
+}
+
 .pq-embed-form {
 	display: flex;
 	flex-direction: column;

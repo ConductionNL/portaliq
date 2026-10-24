@@ -15,9 +15,12 @@
  *     `portaliq` / `internal_base_url`), when it is a valid http(s) address;
  *  2. otherwise the absolute URL, exactly as before;
  *  3. when (2) fails before any HTTP answer (DNS, refused, unreachable, a
- *     connect timeout), ONE retry against `http://127.0.0.1` with the same
- *     path and the original `Host` header, so trusted_domains and routing
- *     still match. A real HTTP answer, whatever its status, is never retried.
+ *     connect timeout), a retry on each address this server may answer on
+ *     from inside itself (LoopbackOrigins: the address and port PHP was
+ *     reached on, 127.0.0.1 on that port, overwrite.cli.url, 127.0.0.1),
+ *     with the same path and the original `Host` header, so trusted_domains
+ *     and routing still match. The first address that answers ends the
+ *     retries. A real HTTP answer, whatever its status, is never retried.
  *
  * The address that worked is remembered for the rest of this PHP request
  * (the service is shared per request) and never across requests.
@@ -57,13 +60,6 @@ use Throwable;
  */
 class InstanceLoopback {
 	/**
-	 * The origin of the loopback retry. Plain http: the request never leaves
-	 * the server, and a webserver inside a container rarely has a certificate
-	 * for 127.0.0.1.
-	 */
-	private const LOOPBACK_ORIGIN = 'http://127.0.0.1';
-
-	/**
 	 * cURL errors raised before a connection exists: couldn't resolve proxy (5),
 	 * couldn't resolve host (6), couldn't connect (7), TLS handshake failed (35).
 	 * Nothing of the request reached the server, so a retry cannot apply it twice.
@@ -77,8 +73,8 @@ class InstanceLoopback {
 	private const CURL_TIMEOUT = 28;
 
 	/**
-	 * The address that answered in this request: 'absolute' or 'loopback'.
-	 * Null until a call has gone through.
+	 * The address that answered in this request: 'absolute', or the loopback
+	 * origin that answered. Null until a call has gone through.
 	 *
 	 * @var string|null
 	 */
@@ -91,12 +87,14 @@ class InstanceLoopback {
 	 * @param IURLGenerator $urlGenerator Builds the instance's absolute URL.
 	 * @param InternalBaseUrl $internalBaseUrl The optional address an administrator set.
 	 * @param LoggerInterface $logger Reports the fallback and a double failure.
+	 * @param LoopbackOrigins|null $loopbackOrigins The addresses to retry on; without it only 127.0.0.1.
 	 */
 	public function __construct(
 		private readonly IClientService $clientService,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly InternalBaseUrl $internalBaseUrl,
 		private readonly LoggerInterface $logger,
+		private readonly ?LoopbackOrigins $loopbackOrigins = null,
 	) {
 	}//end __construct()
 
@@ -133,8 +131,8 @@ class InstanceLoopback {
 			);
 		}
 
-		if ($this->workingRoute === 'loopback') {
-			return $this->sendLoopback(method: $method, absolute: $absolute, options: $options);
+		if ($this->workingRoute !== null && $this->workingRoute !== 'absolute') {
+			return $this->sendLoopback(origin: $this->workingRoute, method: $method, absolute: $absolute, options: $options);
 		}
 
 		try {
@@ -152,7 +150,9 @@ class InstanceLoopback {
 	}//end request()
 
 	/**
-	 * The retry on the loopback after a transport failure on the absolute URL.
+	 * The retries on the loopback origins after a transport failure on the
+	 * absolute URL. The next origin is tried only after a connect-phase
+	 * failure, so a request that reached a server is never sent twice.
 	 *
 	 * @param string $method The HTTP method.
 	 * @param string $absolute The absolute URL that failed.
@@ -161,50 +161,78 @@ class InstanceLoopback {
 	 *
 	 * @return IResponse
 	 *
-	 * @throws Throwable The original failure when the loopback fails too.
+	 * @throws Throwable The original failure when no loopback origin answers.
+	 *
+	 * @spec openspec/changes/loopback-tries-the-address-php-was-reached-on/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
 	 */
 	private function retryOnLoopback(string $method, string $absolute, array $options, Throwable $failure): IResponse {
-		try {
-			$response = $this->sendLoopback(method: $method, absolute: $absolute, options: $this->rewound(options: $options));
-		} catch (Throwable $second) {
-			$this->logger->warning(
-				'[InstanceLoopback] This instance could not be reached at its absolute URL nor on the loopback.'
-				. ' Set internal_base_url to the address the server reaches itself on.',
-				[
-					'app' => Application::APP_ID,
-					'absolute' => $failure->getMessage(),
-					'loopback' => $second->getMessage(),
-				]
+		$failures = [];
+		foreach ($this->loopbackOrigins(absolute: $absolute) as $origin) {
+			try {
+				$response = $this->sendLoopback(origin: $origin, method: $method, absolute: $absolute, options: $this->rewound(options: $options));
+			} catch (Throwable $next) {
+				$failures[$origin] = $next->getMessage();
+				if ($this->isConnectPhaseFailure(failure: $next) === true) {
+					continue;
+				}
+
+				break;
+			}
+
+			// Remembered for the rest of this request, so this runs, and logs,
+			// at most once per request.
+			$this->workingRoute = $origin;
+			$this->logger->info(
+				'[InstanceLoopback] The absolute URL did not answer from inside the server; calls to this instance use ' . $origin . ' for this request.'
+				. ' Set internal_base_url to skip the failed attempt.',
+				['app' => Application::APP_ID, 'reason' => $failure->getMessage(), 'origin' => $origin]
 			);
 
-			throw $failure;
-		}
+			return $response;
+		}//end foreach
 
-		// Remembered for the rest of this request, so this runs, and logs,
-		// at most once per request.
-		$this->workingRoute = 'loopback';
-		$this->logger->info(
-			'[InstanceLoopback] The absolute URL did not answer from inside the server; calls to this instance use the loopback for this request.'
-			. ' Set internal_base_url to skip the failed attempt.',
-			['app' => Application::APP_ID, 'reason' => $failure->getMessage()]
+		$this->logger->warning(
+			'[InstanceLoopback] This instance could not be reached at its absolute URL nor on the loopback.'
+			. ' Set internal_base_url to the address the server reaches itself on.',
+			[
+				'app' => Application::APP_ID,
+				'absolute' => $failure->getMessage(),
+				'loopback' => $failures,
+			]
 		);
 
-		return $response;
+		throw $failure;
 	}//end retryOnLoopback()
 
 	/**
-	 * Send the request to the loopback origin with the original Host header.
+	 * The origins to retry on, in order.
 	 *
+	 * @param string $absolute The absolute URL that failed.
+	 *
+	 * @return list<string>
+	 */
+	private function loopbackOrigins(string $absolute): array {
+		if ($this->loopbackOrigins === null) {
+			return [LoopbackOrigins::LOCALHOST];
+		}
+
+		return $this->loopbackOrigins->candidates(absolute: $absolute);
+	}//end loopbackOrigins()
+
+	/**
+	 * Send the request to a loopback origin with the original Host header.
+	 *
+	 * @param string $origin The loopback origin.
 	 * @param string $method The HTTP method.
 	 * @param string $absolute The absolute URL whose path and host are kept.
 	 * @param array<string, mixed> $options The client options.
 	 *
 	 * @return IResponse
 	 */
-	private function sendLoopback(string $method, string $absolute, array $options): IResponse {
+	private function sendLoopback(string $origin, string $method, string $absolute, array $options): IResponse {
 		return $this->send(
 			method: $method,
-			url: self::LOOPBACK_ORIGIN . $this->absolutePath(absolute: $absolute),
+			url: $origin . $this->absolutePath(absolute: $absolute),
 			options: $this->withHost(options: $options, absolute: $absolute)
 		);
 	}//end sendLoopback()

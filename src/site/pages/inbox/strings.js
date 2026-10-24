@@ -44,6 +44,8 @@ export default {
 		'Legal effect': 'Rechtsgevolg',
 		'Loading…': 'Laden…',
 		'Mark as read': 'Markeren als gelezen',
+		'The sender sees when you opened this message.':
+			'De afzender ziet wanneer u dit bericht hebt geopend.',
 		'Maximum file size: {size} MB.': 'Maximale bestandsgrootte: {size} MB.',
 		Messages: 'Berichten',
 		'Messages from school are translated by AI into this language. You can always see the original text.':
@@ -52,6 +54,7 @@ export default {
 		'Move up': 'Omhoog',
 		'My tasks': 'Mijn taken',
 		Nature: 'Aard',
+		New: 'Nieuw',
 		'New messages': 'Nieuwe berichten',
 		News: 'Nieuws',
 		'News from school is translated by AI into your language. You can always see the original text.':
@@ -117,6 +120,10 @@ export default {
 		'This task does not exist or is not yours.':
 			'Deze taak bestaat niet of is niet van u.',
 		'This task is already closed.': 'Deze taak is al afgerond.',
+		'This task has its own form. Open the task again to fill it in.':
+			'Deze taak heeft een eigen formulier. Open de taak opnieuw om het in te vullen.',
+		'The form for this task is not available to you right now.':
+			'Het formulier voor deze taak is nu niet voor u beschikbaar.',
 		'This test could not be started.': 'Deze toets kon niet worden gestart.',
 		'Time is up. Your test has been handed in.':
 			'De tijd is om. Je toets is ingeleverd.',
@@ -147,6 +154,11 @@ export default {
 			'Uw taak is ingediend. Dank u wel.',
 		'Your teacher marks this question.': 'Je docent kijkt deze vraag na.',
 		'Your test is handed in.': 'Je toets is ingeleverd.',
+		'About: {value}': 'Over: {value}',
+		All: 'Alles',
+		'Unread ({count})': 'Ongelezen ({count})',
+		'Mark all as read': 'Alles als gelezen markeren',
+		'Filter messages': 'Berichten filteren',
 	},
 	en: {
 		'A file is required for this task.': 'A file is required for this task.',
@@ -182,6 +194,8 @@ export default {
 		'Legal effect': 'Legal effect',
 		'Loading…': 'Loading…',
 		'Mark as read': 'Mark as read',
+		'The sender sees when you opened this message.':
+			'The sender sees when you opened this message.',
 		'Maximum file size: {size} MB.': 'Maximum file size: {size} MB.',
 		Messages: 'Messages',
 		'Messages from school are translated by AI into this language. You can always see the original text.':
@@ -190,6 +204,7 @@ export default {
 		'Move up': 'Move up',
 		'My tasks': 'My tasks',
 		Nature: 'Nature',
+		New: 'New',
 		'New messages': 'New messages',
 		News: 'News',
 		'News from school is translated by AI into your language. You can always see the original text.':
@@ -255,6 +270,10 @@ export default {
 		'This task does not exist or is not yours.':
 			'This task does not exist or is not yours.',
 		'This task is already closed.': 'This task is already closed.',
+		'This task has its own form. Open the task again to fill it in.':
+			'This task has its own form. Open the task again to fill it in.',
+		'The form for this task is not available to you right now.':
+			'The form for this task is not available to you right now.',
 		'This test could not be started.': 'This test could not be started.',
 		'Time is up. Your test has been handed in.':
 			'Time is up. Your test has been handed in.',
@@ -285,5 +304,10 @@ export default {
 			'Your task has been submitted. Thank you.',
 		'Your teacher marks this question.': 'Your teacher marks this question.',
 		'Your test is handed in.': 'Your test is handed in.',
+		'About: {value}': 'About: {value}',
+		All: 'All',
+		'Unread ({count})': 'Unread ({count})',
+		'Mark all as read': 'Mark all as read',
+		'Filter messages': 'Filter messages',
 	},
 }

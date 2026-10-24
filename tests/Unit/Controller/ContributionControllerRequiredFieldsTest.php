@@ -131,6 +131,55 @@ class ContributionControllerRequiredFieldsTest extends TestCase {
 	}//end testAFilledCreateIsWritten()
 
 	/**
+	 * A value the store refuses names its field (site-action-forms): 422 with
+	 * the field and the kind of value it wants, and none of the store's text.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+	 */
+	public function testAValueTheStoreRefusesNamesItsField(): void {
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->once())->method('createObject')->willReturn(null);
+		$writer->method('lastFailure')->willReturn(
+			"Property 'notes' should be type 'number' but is 'string'. Make sure the value is a number."
+		);
+		$controller = $this->controller(
+			params: ['actionId' => 'bookConferenceSlot', 'learnerRef' => 'vera-1', 'slotId' => 'slot-9', 'notes' => '8'],
+			action: $this->booking(),
+			writer: $writer
+		);
+
+		$response = $controller->create('learniq', 'conference-signup');
+
+		$this->assertSame(422, $response->getStatus());
+		$this->assertSame(['error' => 'invalid', 'invalid' => ['notes' => 'number']], $response->getData());
+	}//end testAValueTheStoreRefusesNamesItsField()
+
+	/**
+	 * A refusal that names no field the portal wrote stays the plain 502.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+	 */
+	public function testARefusalOfAnotherFieldStaysAWriteFailure(): void {
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturn(null);
+		$writer->method('lastFailure')->willReturn("Property 'organisation' should be type 'string' but is 'null'.");
+		$controller = $this->controller(
+			params: ['actionId' => 'bookConferenceSlot', 'learnerRef' => 'vera-1', 'slotId' => 'slot-9'],
+			action: $this->booking(),
+			writer: $writer
+		);
+
+		$response = $controller->create('learniq', 'conference-signup');
+
+		$this->assertSame(502, $response->getStatus());
+		$this->assertSame(['error' => 'write_failed'], $response->getData());
+	}//end testARefusalOfAnotherFieldStaysAWriteFailure()
+
+	/**
 	 * An anonymous create (a landing page form) is held to the same rule.
 	 *
 	 * @return void

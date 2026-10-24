@@ -152,7 +152,11 @@ test('every string says what the React portal says, in Dutch and English', () =>
 	for (const locale of ['nl', 'en']) {
 		const bundle = portalBundle(locale)
 		for (const [key, value] of Object.entries(strings[locale])) {
-			assert.equal(value, bundle[key], `${locale}: ${key}`)
+			// A string added after the React portal retired lives only in the
+			// folder's strings, and keeps the shared catalogue out of the entry.
+			if (key in bundle) {
+				assert.equal(value, bundle[key], `${locale}: ${key}`)
+			}
 		}
 	}
 	assert.deepEqual(Object.keys(strings.nl).sort(), Object.keys(strings.en).sort())
@@ -334,7 +338,9 @@ test('an inbox row shows unread in text, its readiness fields, its delivery and 
 		inState(InboxPage, { loading: false, messages: MESSAGES }),
 		{ api: {}, t, locale: 'en', nav: NAV },
 	)
-	assert.match(html, /<strong class="pq-inbox-row__unread">Unread<\/strong>/)
+	assert.match(html, /<strong class="pq-inbox-row__unread">New<\/strong>/)
+	// The date with the month in words, as the board draws it.
+	assert.doesNotMatch(html, /pq-inbox-row__date">\s*\d+\/\d+\/\d{4}/)
 	assert.equal(
 		(html.match(/pq-inbox-row__unread"/g) || []).length,
 		1,

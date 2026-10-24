@@ -17,9 +17,14 @@ export const metaOf = {
 	nlds: 'Alert',
 	synonyms: ['melding', 'waarschuwing', 'let op', 'fout', 'gelukt', 'attentie'],
 	fields: [
-		{ name: 'kind', kind: 'string', label: 'Soort: info, ok, warning of error' },
+		{
+			name: 'kind',
+			kind: 'string',
+			label: 'Soort: info, ok, warning, error of plain',
+		},
 		{ name: 'heading', kind: 'string', label: 'Kop' },
-		{ name: 'text', kind: 'text', label: 'Tekst' },
+		{ name: 'text', kind: 'text', label: 'Tekst (**vet** mag)' },
+		{ name: 'action', kind: 'json', label: 'Knop: {label, href}' },
 	],
 	defaultSize: { gridWidth: 12, gridHeight: 2 },
 	scope: 'public',

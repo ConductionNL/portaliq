@@ -41,7 +41,7 @@ export const metaOf = {
 		{
 			name: 'source',
 			kind: 'json',
-			label: 'Uit het aanbod in plaats van de data: {"types": ["event"]} of ["course"]',
+			label: 'Uit het aanbod in plaats van de data: {"types": ["event"]}, of uit een app: {"app": "learniq", "kind": "schoolDay", "categories": ["holiday"], "range": "schoolYear"}',
 		},
 	],
 	defaultSize: { gridWidth: 4, gridHeight: 4 },

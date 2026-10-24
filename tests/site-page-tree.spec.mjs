@@ -73,7 +73,7 @@ test('the page schema carries parent and order, and the register version moved',
 	assert.equal(schemas.page.properties.parent.type, 'string')
 	assert.equal(schemas.page.properties.order.type, 'integer')
 	assert.equal('format' in schemas.page.properties.parent, false, 'adding a format to a stored field is breaking')
-	assert.equal(schemas.page.version, '0.6.0')
+	assert.equal(schemas.page.version, '0.7.0')
 	// At least 0.49.0, which added the tree; a later additive bump (0.50.0,
 	// signin-session-idle-warning-and-sso) keeps it.
 	const atLeast = (v) => v.split('.').map(Number).reduce((acc, n, i) => acc || (acc === 0 ? Math.sign(n - [0, 49, 0][i]) : acc), 0) >= 0

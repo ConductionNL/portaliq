@@ -42,13 +42,15 @@ import EmailField from './formFields/EmailField.vue'
 import ExampleModal from './modals/ExampleModal.vue'
 import FlowDetailSidebar from './views/flows/FlowDetailSidebar.vue'
 import PageLayoutDesigner from './views/PageLayoutDesigner.vue'
-import AvailabilityReport from './widgets/AvailabilityReport.vue'
+import PageLayoutEditor from './widgets/PageLayoutEditor.vue'
 import PageTrafficFlow from './widgets/PageTrafficFlow.vue'
+import PortalAccessibility from './widgets/PortalAccessibility.vue'
 import PortalAccountWithdraw from './widgets/PortalAccountWithdraw.vue'
 import PortalCaseTypes from './widgets/PortalCaseTypes.vue'
 import PortalHomePage from './widgets/PortalHomePage.vue'
 import PortalRegistration from './widgets/PortalRegistration.vue'
 import PortalSignin from './widgets/PortalSignin.vue'
+import PortalSummaryCard from './widgets/PortalSummaryCard.vue'
 import PortalTheme from './widgets/PortalTheme.vue'
 import PortalTrafficKpi from './widgets/PortalTrafficKpi.vue'
 import TrafficDaily from './widgets/TrafficDaily.vue'
@@ -205,17 +207,6 @@ export default {
 		...TRAFFIC_WIDGET_META,
 		_note: 'A page picker, the click grid on a canvas over a plain rectangle, and the scroll deciles as bars (portal-traffic-experiments). Custom because no built-in widget draws a grid, and because a portal with the switch off must read "off" rather than "no clicks".',
 	},
-	// @custom-widget-ratchet exclude the report reads an admin controller that folds the portal's own availability records into twelve months, which no built-in widget reads
-	AvailabilityReport: {
-		kind: 'widget',
-		component: AvailabilityReport,
-		defaultSize: { w: 12, h: 10 },
-		minSize: { w: 6, h: 6 },
-		maxSize: { w: 12, h: 16 },
-		allowedSlots: ['body'],
-		propsSchema: null,
-		_note: "A portal picker, the twelve monthly availability percentages, the outages and a CSV download (operate-availability-report). Custom because a month without intervals must read 'Not measured' rather than 0 or 100, and because the page must say how the figure is measured.",
-	},
 	// @custom-widget-ratchet exclude the switches write the portal's hiddenCaseTypes through an admin controller that lists case types from three sources, which no built-in widget reads or writes
 	PortalCaseTypes: {
 		kind: 'widget',
@@ -249,6 +240,17 @@ export default {
 		propsSchema: null,
 		_note: "Who may make an account on the portal and the registrations waiting for approval (identity-staff-account-screens T07). Custom because the policy is saved inside the portal's authentication block and Approve and Refuse post the guarded account routes.",
 	},
+	// @custom-widget-ratchet exclude a read-only summary of the portal record in the side column (domains, house style, status) with the portal's own computed values, which no built-in widget draws without a data source
+	PortalSummaryCard: {
+		kind: 'widget',
+		component: PortalSummaryCard,
+		defaultSize: { w: 4, h: 3 },
+		minSize: { w: 3, h: 2 },
+		maxSize: { w: 12, h: 6 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: 'A summary card on the portal page: content.kind is domain, theme, status or editors. Reads the portal the page shows.',
+	},
 	// @custom-widget-ratchet exclude per provider a route choice, the broker settings and a write-only secret, saved through an admin controller that refuses a broker route whose settings are incomplete, which no built-in widget does
 	PortalSignin: {
 		kind: 'widget',
@@ -259,6 +261,28 @@ export default {
 		allowedSlots: ['body'],
 		propsSchema: null,
 		_note: "How residents sign in to the portal's organisation: per provider its own OIDC broker or integriq, and the integriq broker settings (signin-integriq-broker-login T11). Custom because the secret is write-only and the server refuses a broker route whose settings are incomplete.",
+	},
+	// @custom-widget-ratchet exclude the measurement frames each page in this browser and runs axe-core inside it, then posts the run to a guarded controller, which no built-in widget does
+	PortalAccessibility: {
+		kind: 'widget',
+		component: PortalAccessibility,
+		defaultSize: { w: 12, h: 10 },
+		minSize: { w: 6, h: 6 },
+		maxSize: { w: 12, h: 14 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: "The accessibility measurement and the audit the public statement rests on (site-accessibility-statement). Custom because axe-core runs in a frame of each page in the administrator's browser and the server refuses an A or B claim without an audit.",
+	},
+	// @custom-widget-ratchet exclude the page designer is a drag-and-resize editor over OpenRegister with undo, drafts and a block inspector, which no built-in widget is
+	PageLayoutEditor: {
+		kind: 'widget',
+		component: PageLayoutEditor,
+		defaultSize: { w: 12, h: 12 },
+		minSize: { w: 12, h: 8 },
+		maxSize: { w: 12, h: 40 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: 'The page layout editor as the Indeling tab of a page (page-editor-in-the-page, PtPagina). The same PageLayoutDesigner the standalone /pages/:id/layout route shows, embedded: the page header above it names the page, so it draws no title line.',
 	},
 	// @custom-widget-ratchet exclude the three states are a classification over the portal's pages read through an admin controller, and a built-in widget has no way to say "no page at the root" rather than show an empty list
 	PortalHomePage: {

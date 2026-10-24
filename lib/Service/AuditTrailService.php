@@ -64,8 +64,11 @@ class AuditTrailService {
 	/**
 	 * The verbs the portal records. `claim` is an account taking over the
 	 * claims of a waiting account (confirmed-address-joins-the-waiting-account).
+	 * `audience` is an account taking on the audience of the invitation it
+	 * redeemed, with the old and the new audience as its detail
+	 * (invitation-joins-an-unbound-account).
 	 */
-	public const VERBS = ['create', 'update', 'forward', 'download', 'login', 'logout', 'refresh', 'complete', 'claim'];
+	public const VERBS = ['create', 'update', 'forward', 'download', 'login', 'logout', 'refresh', 'complete', 'claim', 'audience', 'admin-revoke'];
 
 	/**
 	 * A uuid, so a target that is an object is linked to that object's history.
@@ -95,10 +98,13 @@ class AuditTrailService {
 	 * @param string $id The target object id (may be empty for session events).
 	 * @param string $jti The acting session's token id, when known.
 	 * @param string $appId The contributing app id recording the entry.
+	 * @param array<string, string> $detail What changed, when the verb needs it
+	 *                                      (an `audience` row: `from` and `to`).
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T01
+	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
 	 */
 	public function record(
 		string $verb,
@@ -109,8 +115,10 @@ class AuditTrailService {
 		string $id,
 		string $jti = '',
 		string $appId = Application::APP_ID,
+		array $detail = [],
 	): void {
 		$fact = [
+			'detail' => $detail,
 			'jti' => $jti,
 			'subjectRef' => $subjectRef,
 			'organisation' => $organisation,
@@ -160,7 +168,7 @@ class AuditTrailService {
 				'register' => (string)($fact['register'] ?? ''),
 				'schema' => (string)($fact['schema'] ?? ''),
 				'targetId' => $target,
-			]
+			] + $this->detailOf(fact: $fact)
 		);
 		if ((string)($fact['jti'] ?? '') !== '') {
 			$row->setSession((string)$fact['jti']);
@@ -178,6 +186,23 @@ class AuditTrailService {
 
 		$this->mapper()->insertAuditTrails([$row]);
 	}//end append()
+
+	/**
+	 * The detail of a fact as the `detail` key of its changed record, or
+	 * nothing when it has none.
+	 *
+	 * @param array<string, mixed> $fact The fact fields.
+	 *
+	 * @return array<string, array<string, string>>
+	 */
+	private function detailOf(array $fact): array {
+		$detail = array_filter((array)($fact['detail'] ?? []), static fn (mixed $value): bool => is_string($value) === true);
+		if ($detail === []) {
+			return [];
+		}
+
+		return ['detail' => $detail];
+	}//end detailOf()
 
 	/**
 	 * Whether the audit trail already holds a row with this uuid.

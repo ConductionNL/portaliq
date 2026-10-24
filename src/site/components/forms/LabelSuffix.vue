@@ -4,7 +4,9 @@
   -->
 
 <template>
-	<span class="pq-label-suffix" data-testid="label-suffix"> {{ text }}</span>
+	<!-- The space is part of the interpolation: Vue drops a leading
+		whitespace-only text node inside an element. -->
+	<span class="pq-label-suffix" data-testid="label-suffix">{{ ` ${text}` }}</span>
 </template>
 
 <script>

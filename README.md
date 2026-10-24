@@ -96,7 +96,7 @@ the session routes are the public auth edge.
 | Method | Path | Purpose |
 |--------|------|---------|
 | `GET` | `/apps/portaliq/portal/api/session` | Resolve the caller's bearer to a subject (401 without one) |
-| `POST` | `/apps/portaliq/portal/api/session/dev-login` | Mint a dev session (debug-gated; issues `trust: low`) |
+| `POST` | `/apps/portaliq/portal/api/session/dev-login` | Mint a dev session (only with app config `dev_login_enabled` = `yes`; issues `trust: low`) |
 | `DELETE` | `/apps/portaliq/portal/api/session` | End the client session |
 | `POST` | `/apps/portaliq/portal/api/session/refresh` | Rotate the bearer within the absolute session lifetime cap (portal-session-hardening-v2) — mints a NEW `jti`, revokes the OLD one; fails closed (401) on a revoked/expired/malformed bearer, past the cap, or when the edge is unconfigured |
 | `GET` | `/apps/portaliq/portal/api/session/oidc/start?org=&provider=` | Start a broker OIDC login (portal-oidc-broker-login) — 302 to the broker's authorization endpoint with `state`+`nonce`+PKCE; fails closed (generic error, no redirect) on an unconfigured org/provider |
@@ -199,9 +199,16 @@ claims, account/session mint failure — returns the IDENTICAL generic
 `{"error":"oidc_failed"}` response.** No response ever distinguishes which
 check failed (no oracle).
 
-**Dev-login is unaffected.** `POST /portal/api/session/dev-login` remains
-debug-gated and always issues `trust: low` — the local-development door,
+**Dev-login is unaffected.** `POST /portal/api/session/dev-login` opens only
+with app config `dev_login_enabled` = `yes` (system `debug` does not open it)
+and always issues `trust: low` — the local-development door,
 unrelated to and unaffected by the OIDC edge.
+
+**Idle warning on request.** On a test instance, app config
+`session_idle_preview_enabled` = `yes` lets a signed-in page open the idle
+warning at once when its address holds `idleWarning=now`, so the warning
+can be measured and tested without waiting out the idle window. It is off
+unless set to `yes`.
 
 **Decoupling.** The RP is a standard OIDC client and does **not** hard-depend
 on OpenConnector — if OpenConnector later fronts a broker, it is just another

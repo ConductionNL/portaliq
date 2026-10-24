@@ -193,4 +193,64 @@ class PublicNewsReaderTest extends TestCase {
 		$this->assertLessThanOrEqual(281, mb_strlen($intro));
 		$this->assertStringEndsWith('woord…', $intro);
 	}//end testTheIntroIsPlainTextCutOnAWord()
+
+	/**
+	 * A reader over a store that answers per schema.
+	 *
+	 * @param array<int, array<string, mixed>> $news   The newsItem rows.
+	 * @param array<int, array<string, mixed>> $events The schoolEvent rows.
+	 *
+	 * @return PublicNewsReader
+	 */
+	private function readerWithEvents(array $news, array $events): PublicNewsReader {
+		$store = new class ($news, $events) {
+			private string $schema = '';
+
+			public function __construct(private array $news, private array $events) {
+			}//end __construct()
+
+			public function setRegister(string $register): self {
+				return $this;
+			}//end setRegister()
+
+			public function setSchema(string $schema): self {
+				$this->schema = $schema;
+				return $this;
+			}//end setSchema()
+
+			public function findAll(array $config, bool $_rbac = true, bool $_multitenancy = true): array {
+				return ($this->schema === 'schoolEvent') ? $this->events : $this->news;
+			}//end findAll()
+		};
+
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturnCallback(static fn (string $id) => ($id === self::OS) ? $store : throw new RuntimeException('no service'));
+		$urls = $this->createMock(IURLGenerator::class);
+
+		return new PublicNewsReader($container, new MediaReferences($urls, $this->createMock(MediaLibraryReader::class)), $this->createMock(LoggerInterface::class));
+	}//end readerWithEvents()
+
+	/**
+	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/tasks.md#task-3
+	 */
+	public function testAnArticleCarriesTheFactsOfItsPublishedEventOnly(): void {
+		$event = ['id' => 'ev1', 'title' => 'Informatieavond profielkeuze', 'start' => '2026-11-03T19:30:00+01:00', 'location' => 'De aula', 'status' => 'published', 'rsvpEnabled' => true, 'askSeats' => true, 'signupDeadline' => '2099-10-30', 'target' => ['groupRefs' => ['g3']], 'capacity' => 300];
+		$reader = $this->readerWithEvents([$this->row(['eventRef' => 'ev1'])], [$event]);
+
+		$item = $reader->itemFor('wilgenboom', 'n1');
+		$this->assertSame('De aula', $item['event']['location']);
+		$this->assertSame(false, $item['event']['closed']);
+		$this->assertTrue($item['event']['askSeats']);
+		$this->assertArrayNotHasKey('target', $item['event'], "the event's audience stays with the school");
+		$this->assertArrayNotHasKey('capacity', $item['event']);
+
+		$draft = $this->readerWithEvents([$this->row(['eventRef' => 'ev1'])], [['status' => 'draft'] + $event]);
+		$this->assertArrayNotHasKey('event', $draft->itemFor('wilgenboom', 'n1'), 'a draft event is an absent one');
+
+		$past = $this->readerWithEvents([$this->row(['eventRef' => 'ev1'])], [['signupDeadline' => '2020-01-01'] + $event]);
+		$this->assertTrue($past->itemFor('wilgenboom', 'n1')['event']['closed'], 'after the deadline the card closes');
+
+		$plain = $this->readerWithEvents([$this->row()], [$event]);
+		$this->assertArrayNotHasKey('event', $plain->itemFor('wilgenboom', 'n1'));
+	}//end testAnArticleCarriesTheFactsOfItsPublishedEventOnly()
 }//end class

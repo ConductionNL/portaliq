@@ -94,9 +94,20 @@ const fs = require('fs')
 const path = require('path')
 
 const repoRoot = path.join(__dirname, '..')
-const jsDir = path.join(repoRoot, 'js')
+// The bundle directory; a test points it at a fixture (`DEXIE_CHECK_JS_DIR`).
+const jsDir = process.env.DEXIE_CHECK_JS_DIR || path.join(repoRoot, 'js')
 
-const SENTINEL = 'Two different versions of Dexie'
+// THE SENTINEL IS THE ERROR AS DEXIE THROWS IT, colon included.
+//
+// The bare phrase "Two different versions of Dexie" also stands in PROSE:
+// @conduction/nextcloud-vue explains in a comment why it loads Dexie lazily
+// and quotes the error ("... loaded in the same app" at module init). A
+// development build keeps comments, so every chunk that bundles that module
+// read as a Dexie copy with no version literal, and `check:dexie` failed a
+// good bundle set (school portal proof, 06 Oct, item 17). Dexie's own throw
+// is followed by the two versions: `... in the same app: ${a} and ${b}`, and
+// the colon survives minification inside the string.
+const SENTINEL = 'Two different versions of Dexie loaded in the same app: '
 const VERSION_PATTERNS = [
 	// Production: Dexie.semVer survives minification as a property literal.
 	// The left boundary matters: without it `mySemVer:"1.2.3"` in the same

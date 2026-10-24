@@ -11,8 +11,9 @@
 - [x] **T5**: `nlList` steps display.
 - [x] **T6**: registry, metas (the editor's fields), `SITE_COMPOSITIONS` in the coverage record, the token allow-list.
   - node `tests/site-school-blocks.spec.mjs` (`check:site-school-blocks`, in `check:specs`); `check:widget-registry` gains the compositions test.
-- [ ] **T7**: chrome lane: pass `signInRoutes: this.signInRoutes` in `App.vue`'s `gridContext()`.
-- [ ] **T8**: live check on a portal with the primary-school example set: each block next to its board.
+- [x] **T7**: chrome lane: pass `signInRoutes: this.signInRoutes` in `App.vue`'s `gridContext()`.
+  - Done on this branch; node test "T7" in `tests/site-school-blocks.spec.mjs` asserts it.
+- [ ] **T8**: live check on a portal with the primary-school example set: each block next to its board. — not run: needs a live instance
 
 ## Wave 2: the Mijn omgeving displays (plan L2-2)
 
@@ -22,7 +23,7 @@
   - node `tests/site-school-displays.spec.mjs` (`check:site-school-displays`, in `check:specs`).
 - [x] **T13**: `visibleFromField` on a collection (request of the learniq lane): `VisibleFromGate` in the collection list, the read by id and the inbox; the normaliser projects the field.
   - PHPUnit `VisibleFromGateTest` (3), `PortalInboxReaderTest::testAMessageWaitsForItsVisibleFromMoment`, `ContributionControllerTest::testARowBeforeItsVisibleFromMomentIsNotServed`.
-- [ ] **T12**: live check on a portal with the primary-school example set, next to the MijnOverzicht, MijnLijst and Detail boards (the learniq lane declares the pages).
+- [ ] **T12**: live check on a portal with the primary-school example set, next to the MijnOverzicht, MijnLijst and Detail boards (the learniq lane declares the pages). — not run: needs a live instance
 
 ## Validation
 

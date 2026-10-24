@@ -64,7 +64,7 @@ class TrafficRollupSum {
 	 *
 	 * @var string[]
 	 */
-	private const COUNTERS = ['pageViews', 'sessions', 'visitors', 'engagedSessions'];
+	private const COUNTERS = ['pageViews', 'sessions', 'visitors', 'engagedSessions', 'searchesWithoutCount'];
 
 	/**
 	 * The most referrers and outbound links a summed page row keeps, as
@@ -95,6 +95,7 @@ class TrafficRollupSum {
 		'referrers' => [['host', 'channel'], ['count']],
 		'campaigns' => [['campaign', 'source', 'medium'], ['sessions']],
 		'searches' => [['term'], ['count']],
+		'zeroResultSearches' => [['term'], ['count']],
 		'downloads' => [['file'], ['count']],
 		'outbound' => [['url'], ['count']],
 		'notFound' => [['path'], ['hits']],

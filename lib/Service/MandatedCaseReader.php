@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Service\Identity\MandateParties;
 use OCA\Portaliq\Service\Identity\PortalMandateService;
 use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
 use OCP\AppFramework\Http\JSONResponse;
@@ -174,7 +175,8 @@ class MandatedCaseReader {
 
 		$held = $this->mandates->mandatesFor(
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			organisation: (string)($subject['organisation'] ?? '')
+			organisation: (string)($subject['organisation'] ?? ''),
+			holders: (new MandateParties())->holdersOf(subject: $subject)
 		);
 
 		return $this->mandates->activeMandate(mandates: $held, mandateId: $mandateId);

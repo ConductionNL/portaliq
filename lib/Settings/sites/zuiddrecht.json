@@ -6,6 +6,7 @@
     "portal": {
         "slug": "zuiddrecht",
         "title": "Gemeente Zuiddrecht",
+        "organisation": "zuiddrecht",
         "status": "published",
         "kind": "site",
         "theme": "zuiddrecht",
@@ -37,7 +38,7 @@
                 "title": "Inloggen op Mijn Zuiddrecht",
                 "intro": "Kies hoe u inlogt. Als inwoner gebruikt u DigiD. Namens een bedrijf gebruikt u eHerkenning.",
                 "notice": {
-                    "text": "Geen DigiD? Bel [telefoonnummer]. Wij helpen u op een andere manier."
+                    "text": "Geen DigiD? Bel 14 0999. Wij helpen u op een andere manier."
                 }
             }
         },
@@ -47,6 +48,17 @@
             "route": "/zoeken"
         },
         "accountLabel": "Mijn Zuiddrecht",
+        "help": {
+            "intro": "Komt u er niet uit? Wij helpen u graag.",
+            "phone": "14 020",
+            "phoneNote": "Noem dat u hulp nodig heeft bij {formulier}.",
+            "hours": "Maandag tot en met vrijdag, 9.00 tot 17.00 uur",
+            "desk": "Stadskantoor, Lindelaan 1. Maak eerst een afspraak, dan vullen wij het formulier samen met u in.",
+            "email": "info@zuiddrecht.example"
+        },
+        "sectionHelp": {
+            "tasks": "Hier staat wat de gemeente van u nodig heeft."
+        },
         "residentMenu": {
             "groups": [
                 {
@@ -60,7 +72,15 @@
                     "title": "Zaken en taken",
                     "items": [
                         "cases",
-                        "tasks"
+                        "tasks",
+                        "access"
+                    ]
+                },
+                {
+                    "title": "Samenwerken",
+                    "items": [
+                        "samenwerken",
+                        "contacts"
                     ]
                 },
                 {
@@ -76,10 +96,28 @@
                         "account"
                     ]
                 }
+            ],
+            "leaveOut": [
+                "decidiq:citizenReactions",
+                "decidiq:citizenVotes",
+                "decidiq:citizenBudgetProposals",
+                "decidiq:citizenNotifications",
+                "decidiq:citizenSubscriptions",
+                "decidiq:publicCalendar",
+                "decidiq:publicBroadcasts",
+                "decidiq:motionsOpenForAdvice",
+                "opencatalogi:dossiers",
+                "opencatalogi:zoekopdrachten",
+                "pipelinq:requests",
+                "pipelinq:complaints",
+                "pipelinq:questions",
+                "zaakafhandelapp:citizenZaken",
+                "zaakafhandelapp:citizenTaken",
+                "zaakafhandelapp:citizenBerichten"
             ]
         },
         "myCases": {
-            "display": "rows"
+            "display": "folders"
         },
         "footer": {
             "description": "Heeft u een vraag? Bel of mail ons. We helpen u graag.",
@@ -92,18 +130,93 @@
                 "title": "Contact",
                 "lines": [
                     {
-                        "text": "Telefoon: [telefoonnummer]"
+                        "text": "Telefoon: 14 0999 (voorbeeldnummer)"
                     },
                     {
-                        "text": "E-mail: [e-mailadres]"
+                        "text": "E-mail: info@zuiddrecht.example"
                     },
                     {
-                        "text": "Stadskantoor: [adres]"
+                        "text": "Stadskantoor: Lindelaan 1, Zuiddrecht"
                     }
                 ]
             }
-        }
+        },
+        "themes": [
+            {
+                "slug": "parkeren",
+                "title": "Parkeren",
+                "intro": "Uw parkeervergunningen, wat u nog moet doen en wat u kunt regelen, op één plek.",
+                "productsLabel": "parkeervergunningen"
+            }
+        ]
     },
+    "forms": [
+        {
+            "externalReference": "organisation-registration",
+            "requiresApp": "stackiq",
+            "sourceApp": "stackiq",
+            "pageRoute": "/softwarecatalogus",
+            "fields": [
+                {
+                    "id": "name",
+                    "label": "Naam organisatie",
+                    "type": "text",
+                    "required": true
+                },
+                {
+                    "id": "type",
+                    "label": "Soort organisatie",
+                    "type": "select",
+                    "required": true,
+                    "options": [
+                        "Supplier",
+                        "Municipality",
+                        "Collaboration",
+                        "Community"
+                    ],
+                    "optionLabels": {
+                        "Supplier": "Leverancier",
+                        "Municipality": "Gemeente",
+                        "Collaboration": "Samenwerkingsverband",
+                        "Community": "Gemeenschap"
+                    }
+                },
+                {
+                    "id": "registrationNumber",
+                    "label": "KvK-nummer of OIN",
+                    "type": "text",
+                    "required": true
+                },
+                {
+                    "id": "registrationContactName",
+                    "label": "Naam contactpersoon",
+                    "type": "text",
+                    "required": true
+                },
+                {
+                    "id": "registrationContactEmail",
+                    "label": "E-mailadres",
+                    "type": "email",
+                    "required": true
+                },
+                {
+                    "id": "website",
+                    "label": "Website",
+                    "type": "url",
+                    "required": false
+                }
+            ],
+            "submitLabel": "Aanmelding versturen",
+            "status": "active",
+            "destination": {
+                "register": "stackiq",
+                "schema": "organization",
+                "fixed": {
+                    "registrationStatus": "pending"
+                }
+            }
+        }
+    ],
     "menus": [
         {
             "title": "Hoofdmenu",
@@ -178,23 +291,33 @@
             "items": [
                 {
                     "order": 1,
+                    "name": "Begrippenlijst",
+                    "link": "/begrippen"
+                },
+                {
+                    "order": 2,
                     "name": "Toegankelijkheid",
                     "link": "/toegankelijkheid"
                 },
                 {
-                    "order": 2,
+                    "order": 3,
                     "name": "Privacy",
                     "link": "/privacy"
                 },
                 {
-                    "order": 3,
+                    "order": 4,
                     "name": "Cookies",
                     "link": "/cookies"
                 },
                 {
-                    "order": 4,
+                    "order": 5,
                     "name": "Kwetsbaarheid melden",
                     "link": "/kwetsbaarheid-melden"
+                },
+                {
+                    "order": 6,
+                    "name": "Status van de dienstverlening",
+                    "link": "/status"
                 }
             ]
         }
@@ -208,6 +331,10 @@
             "locale": "nl",
             "body": {
                 "type": "grid",
+                "aside": {
+                    "width": 340,
+                    "gap": 56
+                },
                 "widgets": [
                     {
                         "id": "zd-home-01-nlbanner",
@@ -622,6 +749,94 @@
                         }
                     }
                 ]
+            },
+            "draftBody": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-afval-draft-01-hero",
+                        "widgetKey": "hero",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 12,
+                        "gridHeight": 3,
+                        "props": {
+                            "title": "Afval scheiden en ophalen",
+                            "subtitle": "Wij halen uw afval om de week op.",
+                            "variant": "card",
+                            "headingVisible": true
+                        }
+                    },
+                    {
+                        "id": "zd-afval-draft-02-nlalert",
+                        "widgetKey": "nlAlert",
+                        "gridX": 0,
+                        "gridY": 3,
+                        "gridWidth": 12,
+                        "gridHeight": 1,
+                        "props": {
+                            "kind": "warning",
+                            "text": "Let op: door Kerst en Oud en Nieuw schuiven de ophaaldagen in week 52 en 1."
+                        }
+                    },
+                    {
+                        "id": "zd-afval-draft-03-nllookupform",
+                        "widgetKey": "nlLookupForm",
+                        "gridX": 0,
+                        "gridY": 4,
+                        "gridWidth": 8,
+                        "gridHeight": 2,
+                        "props": {
+                            "fields": [
+                                {
+                                    "name": "postcode",
+                                    "label": "Postcode",
+                                    "value": "3311 AB",
+                                    "width": "10rem",
+                                    "autocomplete": "postal-code"
+                                },
+                                {
+                                    "name": "huisnummer",
+                                    "label": "Huisnummer",
+                                    "value": "12",
+                                    "width": "7.5rem"
+                                }
+                            ],
+                            "buttonLabel": "Toon mijn afvalkalender",
+                            "href": "/afval"
+                        }
+                    },
+                    {
+                        "id": "zd-afval-draft-04-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 8,
+                        "gridY": 4,
+                        "gridWidth": 4,
+                        "gridHeight": 4,
+                        "props": {
+                            "heading": "Meer over afval",
+                            "links": [
+                                {
+                                    "label": "Afvalbrengstation",
+                                    "href": "/afval/afvalbrengstation"
+                                },
+                                {
+                                    "label": "Container kapot of kwijt",
+                                    "href": "/afval/container"
+                                },
+                                {
+                                    "label": "Afvalstoffenheffing",
+                                    "href": "/afval/afvalstoffenheffing"
+                                },
+                                {
+                                    "label": "Zwerfafval melden",
+                                    "href": "/melding-openbare-ruimte"
+                                }
+                            ],
+                            "display": "accent"
+                        }
+                    }
+                ]
             }
         },
         {
@@ -955,7 +1170,7 @@
                         "gridWidth": 8,
                         "gridHeight": 1,
                         "props": {
-                            "text": "Is er direct gevaar? Bel dan [telefoonnummer]."
+                            "text": "Is er direct gevaar? Bel dan 112."
                         }
                     },
                     {
@@ -1002,7 +1217,7 @@
                         "gridWidth": 8,
                         "gridHeight": 1,
                         "props": {
-                            "text": "U maakt een afspraak per telefoon, op werkdagen van 8.30 tot 17.00 uur. Bel [telefoonnummer]."
+                            "text": "U maakt een afspraak per telefoon, op werkdagen van 8.30 tot 17.00 uur. Bel 14 0999."
                         }
                     },
                     {
@@ -1115,6 +1330,105 @@
                             "href": "/mijn",
                             "kind": "primary"
                         }
+                    },
+                    {
+                        "id": "zd-parkeren-04-nlproductfinder-link",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 4,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Zelf uitzoeken wat bij u past",
+                            "href": "/parkeren/productzoeker",
+                            "kind": "secondary"
+                        }
+                    },
+                    {
+                        "id": "zd-parkeren-05-nlfaqlist",
+                        "widgetKey": "nlFaqList",
+                        "gridX": 0,
+                        "gridY": 3,
+                        "gridWidth": 8,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Veelgestelde vragen",
+                            "moreLabel": "Alle veelgestelde vragen",
+                            "moreHref": "/veelgestelde-vragen"
+                        }
+                    },
+                    {
+                        "id": "zd-parkeren-06-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 0,
+                        "gridY": 6,
+                        "gridWidth": 8,
+                        "gridHeight": 4,
+                        "props": {
+                            "heading": "Vergunningen en ontheffingen",
+                            "links": [
+                                {
+                                    "label": "Parkeervergunning bewoners",
+                                    "href": "/parkeren/parkeervergunning-bewoners",
+                                    "description": "38,50 euro per jaar"
+                                },
+                                {
+                                    "label": "Bezoekersvergunning",
+                                    "href": "/parkeren/bezoekersvergunning",
+                                    "description": "Per uur, met DigiD"
+                                },
+                                {
+                                    "label": "Kenteken wijzigen",
+                                    "href": "/parkeren/kenteken-wijzigen",
+                                    "description": "Gratis"
+                                },
+                                {
+                                    "label": "Laadpaal aanvragen",
+                                    "href": "/parkeren/laadpaal-aanvragen",
+                                    "description": "Gratis, binnen 26 weken geplaatst"
+                                },
+                                {
+                                    "label": "Bedrijfsvergunning",
+                                    "href": "/parkeren/bedrijfsvergunning",
+                                    "description": "125,00 euro per jaar"
+                                },
+                                {
+                                    "label": "Ontheffing laden en lossen",
+                                    "href": "/parkeren/ontheffing-laden-en-lossen",
+                                    "description": "Gratis"
+                                },
+                                {
+                                    "label": "Fietsenkluis huren",
+                                    "href": "/parkeren/fietsenkluis-huren",
+                                    "description": "7,50 euro per maand"
+                                },
+                                {
+                                    "label": "Parkeerabonnement garage",
+                                    "href": "/parkeren/parkeerabonnement-garage",
+                                    "description": "Vanaf 65 euro per maand"
+                                },
+                                {
+                                    "label": "Mantelzorgvergunning",
+                                    "href": "/parkeren/mantelzorgvergunning",
+                                    "description": "Gratis"
+                                },
+                                {
+                                    "label": "Ontheffing milieuzone",
+                                    "href": "/parkeren/ontheffing-milieuzone",
+                                    "description": "Gratis voor één dag per jaar"
+                                },
+                                {
+                                    "label": "Standplaatsvergunning",
+                                    "href": "/parkeren/standplaatsvergunning",
+                                    "description": "Vanaf 40 euro per dag"
+                                },
+                                {
+                                    "label": "Gehandicaptenparkeerplaats",
+                                    "href": "/parkeren/gehandicaptenparkeerplaats",
+                                    "description": "Gratis"
+                                }
+                            ]
+                        }
                     }
                 ]
             }
@@ -1180,8 +1494,137 @@
                                 {
                                     "label": "Parkeren",
                                     "href": "/parkeren"
+                                },
+                                {
+                                    "label": "Softwarecatalogus",
+                                    "href": "/softwarecatalogus",
+                                    "requiresApp": "stackiq"
                                 }
                             ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/softwarecatalogus",
+            "title": "Softwarecatalogus",
+            "summary": "Welke software leveranciers aan de overheid aanbieden.",
+            "status": "published",
+            "locale": "nl",
+            "requiresApp": "stackiq",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-softwarecatalogus-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Zoek welke software leveranciers aan de overheid aanbieden. U hoeft niet in te loggen."
+                        }
+                    },
+                    {
+                        "id": "zd-softwarecatalogus-02-publicrecords",
+                        "widgetKey": "publicRecords",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 12,
+                        "gridHeight": 6,
+                        "props": {
+                            "app": "stackiq",
+                            "list": "softwareCatalogue",
+                            "searchLabel": "Zoeken in de catalogus",
+                            "backText": "Alle software"
+                        }
+                    },
+                    {
+                        "id": "zd-softwarecatalogus-03-nlheading",
+                        "widgetKey": "nlHeading",
+                        "gridX": 0,
+                        "gridY": 7,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Uw organisatie aanmelden",
+                            "level": 2
+                        }
+                    },
+                    {
+                        "id": "zd-softwarecatalogus-04-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 8,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Bent u leverancier of overheidsorganisatie? Meld uw organisatie aan zonder account. Een beheerder beoordeelt de aanmelding en neemt daarna contact met u op. De catalogus is gratis voor gemeenten en leveranciers."
+                        }
+                    },
+                    {
+                        "id": "zd-softwarecatalogus-05-form",
+                        "widgetKey": "form",
+                        "gridX": 0,
+                        "gridY": 9,
+                        "gridWidth": 8,
+                        "gridHeight": 6,
+                        "props": {
+                            "formKey": "organisation-registration",
+                            "title": "Uw organisatie aanmelden",
+                            "fields": [
+                                {
+                                    "id": "name",
+                                    "label": "Naam organisatie",
+                                    "type": "text",
+                                    "required": true
+                                },
+                                {
+                                    "id": "type",
+                                    "label": "Soort organisatie",
+                                    "type": "select",
+                                    "required": true,
+                                    "options": [
+                                        "Supplier",
+                                        "Municipality",
+                                        "Collaboration",
+                                        "Community"
+                                    ],
+                                    "optionLabels": {
+                                        "Supplier": "Leverancier",
+                                        "Municipality": "Gemeente",
+                                        "Collaboration": "Samenwerkingsverband",
+                                        "Community": "Gemeenschap"
+                                    }
+                                },
+                                {
+                                    "id": "registrationNumber",
+                                    "label": "KvK-nummer of OIN",
+                                    "type": "text",
+                                    "required": true
+                                },
+                                {
+                                    "id": "registrationContactName",
+                                    "label": "Naam contactpersoon",
+                                    "type": "text",
+                                    "required": true
+                                },
+                                {
+                                    "id": "registrationContactEmail",
+                                    "label": "E-mailadres",
+                                    "type": "email",
+                                    "required": true
+                                },
+                                {
+                                    "id": "website",
+                                    "label": "Website",
+                                    "type": "url",
+                                    "required": false
+                                }
+                            ],
+                            "submitLabel": "Aanmelding versturen"
                         }
                     }
                 ]
@@ -1220,6 +1663,11 @@
                                 {
                                     "label": "Vergaderingen en stukken",
                                     "href": "/bestuur/vergaderingen"
+                                },
+                                {
+                                    "label": "Besluiten",
+                                    "href": "/bestuur/besluiten",
+                                    "requiresApp": "decidiq"
                                 },
                                 {
                                     "label": "Raadsleden",
@@ -1313,19 +1761,44 @@
                         "gridWidth": 8,
                         "gridHeight": 1,
                         "props": {
-                            "text": "De agenda en de stukken staan een week van tevoren bij de openbare informatie."
+                            "text": "Kies een vergadering om de agenda te lezen. De agenda staat er een week van tevoren."
                         }
+                    },
+                    {
+                        "id": "zd-vergaderingen-04-publicrecords",
+                        "widgetKey": "publicRecords",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 12,
+                        "gridHeight": 6,
+                        "props": {
+                            "app": "decidiq",
+                            "list": "publicMeetings",
+                            "searchLabel": "Zoek een vergadering",
+                            "backText": "Alle vergaderingen"
+                        },
+                        "requiresApp": "decidiq"
                     },
                     {
                         "id": "zd-vergaderingen-03-nllinklist",
                         "widgetKey": "nlLinkList",
                         "gridX": 0,
-                        "gridY": 2,
+                        "gridY": 8,
                         "gridWidth": 8,
                         "gridHeight": 3,
                         "props": {
                             "heading": "Lees ook",
                             "links": [
+                                {
+                                    "label": "Besluiten van raad en college",
+                                    "href": "/bestuur/besluiten",
+                                    "requiresApp": "decidiq"
+                                },
+                                {
+                                    "label": "Hoe stemden de raadsleden",
+                                    "href": "/bestuur/hoe-stemden-de-raadsleden",
+                                    "requiresApp": "decidiq"
+                                },
                                 {
                                     "label": "Zoeken in Woo-publicaties",
                                     "href": "/zoeken"
@@ -1339,6 +1812,71 @@
                     }
                 ]
             }
+        },
+        {
+            "route": "/bestuur/hoe-stemden-de-raadsleden",
+            "title": "Hoe stemden de raadsleden",
+            "summary": "Zo stemde elk raadslid in de openbare rondes van de gemeenteraad.",
+            "status": "published",
+            "locale": "nl",
+            "requiresApp": "decidiq",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-stemmen-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Kies een raadslid en lees hoe hij of zij stemde in de openbare rondes."
+                        }
+                    },
+                    {
+                        "id": "zd-stemmen-02-publicrecords",
+                        "widgetKey": "publicRecords",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 12,
+                        "gridHeight": 6,
+                        "props": {
+                            "app": "decidiq",
+                            "list": "memberVotingRecords",
+                            "searchLabel": "Zoek een raadslid",
+                            "backText": "Alle raadsleden",
+                            "recordHeading": "Stemgedrag van {title}",
+                            "filterBy": [
+                                {
+                                    "key": "date",
+                                    "label": "Vergadering",
+                                    "all": "Alle vergaderingen"
+                                },
+                                {
+                                    "key": "choice",
+                                    "label": "Stem",
+                                    "all": "Voor en tegen"
+                                }
+                            ],
+                            "filterButton": "Toon stemmingen",
+                            "countText": "{count} stemmingen, u ziet {from} tot {to}.",
+                            "pageSize": 5,
+                            "links": [
+                                {
+                                    "label": "Vergaderingen van de raad",
+                                    "href": "/bestuur/vergaderingen"
+                                },
+                                {
+                                    "label": "Besluiten zoeken",
+                                    "href": "/bestuur/besluiten"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            },
+            "helpText": "Hier ziet u hoe een raadslid stemde over voorstellen, moties en amendementen. Kies een vergadering om alleen die stemmingen te zien. Een stemming opent het besluit met de stukken erbij. Stemde een raadslid niet mee, dan staat er Afwezig."
         },
         {
             "route": "/bestuur/raadsleden",
@@ -1381,6 +1919,11 @@
                         "props": {
                             "heading": "Lees ook",
                             "links": [
+                                {
+                                    "label": "Hoe stemden de raadsleden",
+                                    "href": "/bestuur/hoe-stemden-de-raadsleden",
+                                    "requiresApp": "decidiq"
+                                },
                                 {
                                     "label": "Contact en openingstijden",
                                     "href": "/contact"
@@ -1527,6 +2070,74 @@
                         "props": {
                             "heading": "Lees ook",
                             "links": [
+                                {
+                                    "label": "Alle besluiten van raad en college",
+                                    "href": "/bestuur/besluiten",
+                                    "requiresApp": "decidiq"
+                                },
+                                {
+                                    "label": "Zoeken in Woo-publicaties",
+                                    "href": "/zoeken"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/bestuur/besluiten",
+            "title": "Besluiten van raad en college",
+            "summary": "Wat de gemeenteraad en het college hebben besloten.",
+            "status": "published",
+            "locale": "nl",
+            "requiresApp": "decidiq",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-besluiten-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Kies een besluit en lees wat er is besloten. Bij een besluit van de raad staat ook hoe er is gestemd."
+                        }
+                    },
+                    {
+                        "id": "zd-besluiten-02-publicrecords",
+                        "widgetKey": "publicRecords",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 12,
+                        "gridHeight": 6,
+                        "props": {
+                            "app": "decidiq",
+                            "list": "publicDecisions",
+                            "searchLabel": "Zoek een besluit",
+                            "backText": "Alle besluiten"
+                        }
+                    },
+                    {
+                        "id": "zd-besluiten-03-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 0,
+                        "gridY": 7,
+                        "gridWidth": 8,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Lees ook",
+                            "links": [
+                                {
+                                    "label": "Vergaderingen en stukken",
+                                    "href": "/bestuur/vergaderingen"
+                                },
+                                {
+                                    "label": "Hoe stemden de raadsleden",
+                                    "href": "/bestuur/hoe-stemden-de-raadsleden"
+                                },
                                 {
                                     "label": "Zoeken in Woo-publicaties",
                                     "href": "/zoeken"
@@ -1744,63 +2355,304 @@
                         "widgetKey": "nlParagraph",
                         "gridX": 0,
                         "gridY": 0,
-                        "gridWidth": 8,
+                        "gridWidth": 12,
                         "gridHeight": 1,
                         "props": {
-                            "text": "Heeft u een vraag? Bel of mail ons. We helpen u graag."
+                            "text": "Heeft u een vraag? Kies hoe u ons het liefst bereikt. Wij helpen u graag.",
+                            "lead": true
                         }
                     },
                     {
-                        "id": "zd-contact-02-nlparagraph",
-                        "widgetKey": "nlParagraph",
+                        "id": "zd-contact-02-nllinklist",
+                        "widgetKey": "nlLinkList",
                         "gridX": 0,
                         "gridY": 1,
-                        "gridWidth": 8,
-                        "gridHeight": 1,
+                        "gridWidth": 4,
+                        "gridHeight": 2,
                         "props": {
-                            "text": "Telefoon: [telefoonnummer]. E-mail: [e-mailadres]. Stadskantoor: [adres]."
-                        }
-                    },
-                    {
-                        "id": "zd-contact-03-nltable",
-                        "widgetKey": "nlTable",
-                        "gridX": 0,
-                        "gridY": 2,
-                        "gridWidth": 8,
-                        "gridHeight": 3,
-                        "props": {
-                            "caption": "Openingstijden van het stadskantoor",
-                            "columns": [
-                                "Dag",
-                                "Open"
-                            ],
-                            "rows": [
-                                [
-                                    "Maandag tot en met vrijdag",
-                                    "8.30 tot 17.00 uur"
-                                ],
-                                [
-                                    "Donderdag",
-                                    "8.30 tot 20.00 uur"
-                                ],
-                                [
-                                    "Zaterdag",
-                                    "9.00 tot 13.00 uur"
-                                ]
+                            "heading": "Bellen",
+                            "intro": "Bel 14 0999. Op werkdagen van 8.30 tot 17.00 uur, op vrijdag tot 12.30 uur.",
+                            "display": "card",
+                            "links": [
+                                {
+                                    "label": "Nu bellen",
+                                    "href": "tel:+31000000000"
+                                }
                             ]
                         }
                     },
                     {
-                        "id": "zd-contact-04-nlbuttonlink",
+                        "id": "zd-contact-03-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 4,
+                        "gridY": 1,
+                        "gridWidth": 4,
+                        "gridHeight": 2,
+                        "props": {
+                            "heading": "Een bericht sturen",
+                            "intro": "Ingelogd stuurt u een bericht vanuit Mijn Zuiddrecht. Het antwoord vindt u bij Berichten.",
+                            "display": "card",
+                            "links": [
+                                {
+                                    "label": "Naar Berichten",
+                                    "href": "/contact/vraag"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "id": "zd-contact-04-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 8,
+                        "gridY": 1,
+                        "gridWidth": 4,
+                        "gridHeight": 2,
+                        "props": {
+                            "heading": "Langskomen",
+                            "intro": "In het stadskantoor aan de Lindelaan 1. Voor paspoort, rijbewijs en verhuizen maakt u eerst een afspraak.",
+                            "display": "card",
+                            "links": [
+                                {
+                                    "label": "Afspraak maken",
+                                    "href": "/afspraak-maken"
+                                },
+                                {
+                                    "label": "Alle locaties",
+                                    "href": "/contact/locaties"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "id": "zd-contact-05-nlheading",
+                        "widgetKey": "nlHeading",
+                        "gridX": 0,
+                        "gridY": 3,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Openingstijden",
+                            "level": 2
+                        }
+                    },
+                    {
+                        "id": "zd-contact-06-nltable",
+                        "widgetKey": "nlTable",
+                        "gridX": 0,
+                        "gridY": 4,
+                        "gridWidth": 8,
+                        "gridHeight": 3,
+                        "props": {
+                            "caption": "Openingstijden",
+                            "columns": [
+                                "Dag",
+                                "Telefonisch",
+                                "Stadskantoor"
+                            ],
+                            "rows": [
+                                [
+                                    "Maandag tot en met donderdag",
+                                    "8.30 tot 17.00 uur",
+                                    "9.00 tot 17.00 uur, op afspraak"
+                                ],
+                                [
+                                    "Vrijdag",
+                                    "8.30 tot 12.30 uur",
+                                    "9.00 tot 12.30 uur, op afspraak"
+                                ],
+                                [
+                                    "Zaterdag en zondag",
+                                    "Gesloten",
+                                    "Gesloten"
+                                ]
+                            ],
+                            "display": "boxed",
+                            "captionVisible": false,
+                            "rowHeaders": true
+                        }
+                    },
+                    {
+                        "id": "zd-contact-07-nlalert",
+                        "widgetKey": "nlAlert",
+                        "gridX": 0,
+                        "gridY": 7,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "kind": "info",
+                            "text": "Een vraag over uw eigen zaak? Open de zaak bij Mijn zaken en stuur daar een bericht. Dan weten wij meteen waar het over gaat."
+                        }
+                    },
+                    {
+                        "id": "zd-contact-08-nlheading",
+                        "widgetKey": "nlHeading",
+                        "gridX": 0,
+                        "gridY": 8,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Iets melden in de openbare ruimte",
+                            "level": 2
+                        }
+                    },
+                    {
+                        "id": "zd-contact-09-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 9,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Een losse stoeptegel, een kapotte lantaarnpaal of afval op straat? Meld het ons. Dat kan ook buiten openingstijden."
+                        }
+                    },
+                    {
+                        "id": "zd-contact-10-nlbuttonlink",
                         "widgetKey": "nlButtonLink",
                         "gridX": 0,
-                        "gridY": 5,
+                        "gridY": 10,
                         "gridWidth": 4,
                         "gridHeight": 1,
                         "props": {
-                            "label": "Afspraak maken",
-                            "href": "/afspraak-maken",
-                            "kind": "primary"
+                            "label": "Melding indienen",
+                            "href": "/melding-openbare-ruimte"
+                        }
+                    },
+                    {
+                        "id": "zd-contact-08-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 8,
+                        "gridY": 3,
+                        "gridWidth": 4,
+                        "gridHeight": 8,
+                        "props": {
+                            "heading": "Meer contact",
+                            "links": [
+                                {
+                                    "label": "Spreekuur wethouders",
+                                    "href": "/bestuur/college"
+                                },
+                                {
+                                    "label": "Klacht indienen",
+                                    "href": "/klacht"
+                                },
+                                {
+                                    "label": "Bezwaar maken",
+                                    "href": "/mijn"
+                                },
+                                {
+                                    "label": "Kwetsbaarheid melden",
+                                    "href": "/kwetsbaarheid-melden"
+                                }
+                            ],
+                            "display": "accent"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/contact/vraag",
+            "title": "Stel een vraag",
+            "summary": "Stel een vraag aan de gemeente zonder dat het over een zaak gaat.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-contact-vraag-01-contactform",
+                        "widgetKey": "contactForm",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 6,
+                        "props": {
+                            "app": "pipelinq",
+                            "action": "askQuestion",
+                            "intro": "Noem het onderwerp en stel uw vraag. U vindt hem terug bij Mijn vragen.",
+                            "questionsRoute": "/mijn"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/contact/locaties",
+            "title": "Locaties",
+            "summary": "De gebouwen van de gemeente, met adres en openingstijden.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-locaties-01-nllocationmap",
+                        "widgetKey": "nlLocationMap",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 12,
+                        "gridHeight": 6,
+                        "props": {
+                            "intro": "Hier vindt u de gebouwen van de gemeente, met adres en openingstijden. Voor de balie in het stadskantoor maakt u eerst een afspraak.",
+                            "heading": "{count} locaties",
+                            "allLabel": "Alle locaties",
+                            "locations": [
+                                {
+                                    "name": "Stadskantoor",
+                                    "address": "Marktplein 1, 3311 AA Zuiddrecht",
+                                    "opening": "Maandag tot en met vrijdag 8.30 tot 17.00 uur, alleen op afspraak",
+                                    "category": "Balie en loket",
+                                    "lat": 51.8133,
+                                    "lon": 4.6697,
+                                    "links": [
+                                        {
+                                            "label": "Afspraak maken",
+                                            "href": "/afspraak-maken"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "Milieustraat",
+                                    "address": "Industrieweg 40, 3316 BK Zuiddrecht",
+                                    "opening": "Maandag tot en met vrijdag 8.00 tot 16.00 uur, zaterdag 9.00 tot 15.00 uur",
+                                    "category": "Afval",
+                                    "lat": 51.8051,
+                                    "lon": 4.6912,
+                                    "links": [
+                                        {
+                                            "label": "Wat kunt u brengen",
+                                            "href": "/afval/afvalbrengstation"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "Bibliotheek",
+                                    "address": "Havenkade 8, 3312 CE Zuiddrecht",
+                                    "opening": "Dinsdag tot en met zaterdag 10.00 tot 17.00 uur",
+                                    "category": "Bibliotheek en cultuur",
+                                    "lat": 51.8178,
+                                    "lon": 4.6589,
+                                    "links": []
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "id": "zd-locaties-02-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 0,
+                        "gridY": 6,
+                        "gridWidth": 12,
+                        "gridHeight": 1,
+                        "props": {
+                            "intro": "Heeft u een vraag? Bel of mail ons. We helpen u graag.",
+                            "links": [
+                                {
+                                    "label": "Contact en openingstijden",
+                                    "href": "/contact"
+                                }
+                            ]
                         }
                     }
                 ]
@@ -1907,6 +2759,32 @@
             }
         },
         {
+            "route": "/begrippen",
+            "title": "Begrippenlijst",
+            "summary": "De begrippen die op deze website worden gebruikt, met wat ze betekenen.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-begrippen-01-glossary",
+                        "widgetKey": "glossary",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 6,
+                        "props": {
+                            "description": "Hieronder staan de begrippen die op deze website worden gebruikt. Op andere pagina's ziet u een begrip onderstreept: kies het en u leest de uitleg.",
+                            "synonymsLabel": "Ook bekend als:",
+                            "sourceLabel": "Bron:",
+                            "emptyLabel": "Er staan nog geen begrippen in deze lijst."
+                        }
+                    }
+                ]
+            }
+        },
+        {
             "route": "/toegankelijkheid",
             "title": "Toegankelijkheid",
             "summary": "Deze website is gemaakt om voor iedereen bruikbaar te zijn.",
@@ -1982,7 +2860,7 @@
         },
         {
             "route": "/cookies",
-            "title": "Cookies",
+            "title": "Cookieverklaring",
             "summary": "Deze website gebruikt alleen cookies die nodig zijn om in te loggen.",
             "status": "published",
             "locale": "nl",
@@ -1998,6 +2876,182 @@
                         "gridHeight": 1,
                         "props": {
                             "text": "Deze website gebruikt alleen cookies die nodig zijn om in te loggen. Wij volgen u niet."
+                        }
+                    },
+                    {
+                        "id": "zd-cookies-02-nlalert",
+                        "widgetKey": "nlAlert",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "kind": "ok",
+                            "heading": "U hoeft niets te kiezen",
+                            "text": "Geen cookies voor reclame of om u te volgen. Daarom vragen wij ook geen toestemming."
+                        }
+                    },
+                    {
+                        "id": "zd-cookies-03-nlheading",
+                        "widgetKey": "nlHeading",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Wat wij bewaren",
+                            "level": 2
+                        }
+                    },
+                    {
+                        "id": "zd-cookies-04-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 3,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Om u veilig te laten inloggen, bewaren wij een paar kleine dingen in uw browser. Zonder deze gegevens werkt Mijn Zuiddrecht niet."
+                        }
+                    },
+                    {
+                        "id": "zd-cookies-05-nltable",
+                        "widgetKey": "nlTable",
+                        "gridX": 0,
+                        "gridY": 4,
+                        "gridWidth": 8,
+                        "gridHeight": 3,
+                        "props": {
+                            "caption": "Wat deze website in uw browser bewaart",
+                            "columns": [
+                                "Naam",
+                                "Soort",
+                                "Waarvoor",
+                                "Hoe lang"
+                            ],
+                            "rows": [
+                                [
+                                    "Inlogsessie",
+                                    "Cookie",
+                                    "Houdt u ingelogd als u van pagina naar pagina gaat in Mijn Zuiddrecht.",
+                                    "Tot u uitlogt of uw browser sluit"
+                                ],
+                                [
+                                    "Inlogbewijs",
+                                    "Opslag in uw browser (sessie)",
+                                    "Bewijst bij elke vraag aan de server dat u het bent. Alleen in dit tabblad.",
+                                    "Tot u het tabblad sluit"
+                                ],
+                                [
+                                    "Herkomst van uw bezoek",
+                                    "Opslag in uw browser (sessie)",
+                                    "Als u via een campagne binnenkwam, onthouden wij welke. Alleen als u een formulier verstuurt, sturen wij dat mee.",
+                                    "Tot u het tabblad sluit"
+                                ]
+                            ],
+                            "display": "boxed",
+                            "captionVisible": true,
+                            "rowHeaders": true
+                        }
+                    },
+                    {
+                        "id": "zd-cookies-06-nlheading",
+                        "widgetKey": "nlHeading",
+                        "gridX": 0,
+                        "gridY": 7,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Wat wij niet doen",
+                            "level": 2
+                        }
+                    },
+                    {
+                        "id": "zd-cookies-07-nllist",
+                        "widgetKey": "nlList",
+                        "gridX": 0,
+                        "gridY": 8,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "items": [
+                                "Wij tellen bezoeken zonder cookies. Wij kunnen u daarmee niet herkennen bij een volgend bezoek.",
+                                "Video's van YouTube laden wij zonder hun reclamecookies, via youtube-nocookie.com.",
+                                "Wij delen niets met advertentiebedrijven."
+                            ]
+                        }
+                    },
+                    {
+                        "id": "zd-cookies-08-nlheading",
+                        "widgetKey": "nlHeading",
+                        "gridX": 0,
+                        "gridY": 9,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Cookies weghalen",
+                            "level": 2
+                        }
+                    },
+                    {
+                        "id": "zd-cookies-09-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 10,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "U kunt cookies altijd zelf weghalen in de instellingen van uw browser. Daarna logt u gewoon opnieuw in."
+                        }
+                    },
+                    {
+                        "id": "zd-cookies-10-nldescriptionlist",
+                        "widgetKey": "nlDescriptionList",
+                        "gridX": 0,
+                        "gridY": 11,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "items": [
+                                {
+                                    "term": "Laatst gewijzigd",
+                                    "description": "15 september 2026"
+                                },
+                                {
+                                    "term": "Vragen over privacy",
+                                    "description": "Lees de privacyverklaring of neem contact op."
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "id": "zd-cookies-11-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 8,
+                        "gridY": 0,
+                        "gridWidth": 4,
+                        "gridHeight": 3,
+                        "props": {
+                            "heading": "Over deze website",
+                            "display": "accent",
+                            "links": [
+                                {
+                                    "label": "Toegankelijkheid",
+                                    "href": "/toegankelijkheid"
+                                },
+                                {
+                                    "label": "Cookies",
+                                    "href": "/cookies"
+                                },
+                                {
+                                    "label": "Privacy",
+                                    "href": "/privacy"
+                                },
+                                {
+                                    "label": "Kwetsbaarheid melden",
+                                    "href": "/kwetsbaarheid-melden"
+                                }
+                            ]
                         }
                     }
                 ]
@@ -2031,7 +3085,74 @@
                         "gridWidth": 8,
                         "gridHeight": 1,
                         "props": {
-                            "text": "Mail uw melding naar [e-mailadres]. U krijgt binnen drie werkdagen antwoord."
+                            "text": "Mail uw melding naar info@zuiddrecht.example. U krijgt binnen drie werkdagen antwoord."
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/status",
+            "title": "Status van de dienstverlening",
+            "summary": "Welke online diensten werken, waar een verstoring is en wanneer er onderhoud is.",
+            "status": "published",
+            "locale": "nl",
+            "requiresApp": "opencatalogi",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-status-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Hier ziet u of onze online diensten werken. Bij een verstoring staat erbij wat er aan de hand is en sinds wanneer."
+                        }
+                    },
+                    {
+                        "id": "zd-status-02-nlpublictable",
+                        "widgetKey": "nlPublicTable",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 12,
+                        "gridHeight": 4,
+                        "props": {
+                            "caption": "Diensten",
+                            "source": {
+                                "app": "opencatalogi",
+                                "kind": "serviceStatus"
+                            },
+                            "columns": [
+                                {
+                                    "key": "service",
+                                    "label": "Dienst"
+                                },
+                                {
+                                    "key": "message",
+                                    "label": "Toelichting"
+                                },
+                                {
+                                    "key": "state",
+                                    "label": "Status"
+                                }
+                            ],
+                            "display": "boxed",
+                            "emptyLabel": "De status van de diensten is nu niet bekend."
+                        },
+                        "requiresApp": "opencatalogi"
+                    },
+                    {
+                        "id": "zd-status-03-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 5,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Werkt iets niet en staat het hier niet bij? Bel of mail ons, dan zoeken wij het uit."
                         }
                     }
                 ]
@@ -2118,7 +3239,7 @@
                         "widgetKey": "nlParagraph",
                         "gridX": 0,
                         "gridY": 0,
-                        "gridWidth": 12,
+                        "gridWidth": 8,
                         "gridHeight": 1,
                         "props": {
                             "text": "Wij maken informatie openbaar volgens de Wet open overheid (Woo). Zoek in besluiten, rapporten en antwoorden op Woo-verzoeken.",
@@ -2141,7 +3262,10 @@
                             "periodLabel": "Periode",
                             "periodFromLabel": "Vanaf",
                             "periodToLabel": "Tot en met",
-                            "sortLabel": "Sorteren"
+                            "sortLabel": "Sorteren",
+                            "emptyActionLabel": "Woo-verzoek indienen",
+                            "emptyActionHref": "/mijn/dossiq/startWooVerzoekAlgemeen",
+                            "emptyActionNote": "Staat de informatie er niet bij? Dan kunt u erom vragen met een Woo-verzoek."
                         }
                     }
                 ]
@@ -2180,6 +3304,7 @@
                             "display": "card",
                             "tone": "outline",
                             "intro": "Log in om deze publicatie in uw eigen dossier te bewaren.",
+                            "signedInIntro": "U bent ingelogd. Uw dossiers vindt u in Mijn Zuiddrecht.",
                             "buttonLabel": "Inloggen en bewaren"
                         }
                     },
@@ -2200,6 +3325,1036 @@
                                     "href": "/mijn"
                                 }
                             ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/onderwerp",
+            "title": "Onderwerp",
+            "summary": "Alles wat de gemeente over één onderwerp publiceert.",
+            "status": "published",
+            "locale": "nl",
+            "requiresApp": "opencatalogi",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-onderwerp-01-nlsubjectlanding",
+                        "widgetKey": "nlSubjectLanding",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 12,
+                        "gridHeight": 10,
+                        "props": {
+                            "backLabel": "Alle onderwerpen",
+                            "backHref": "/onderwerpen"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/parkeren/parkeervergunning-bewoners",
+            "title": "Parkeervergunning bewoners",
+            "summary": "38,50 euro per jaar",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-parkeervergunning-bewoners-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Woont u in de binnenstad of in een andere parkeerzone? Met een parkeervergunning parkeert u uw auto in uw eigen zone, zonder parkeergeld te betalen.",
+                            "lead": true
+                        }
+                    },
+                    {
+                        "id": "zd-parkeervergunning-bewoners-02-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Aanvragen",
+                            "href": "/mijn",
+                            "kind": "primary"
+                        }
+                    },
+                    {
+                        "id": "zd-parkeervergunning-bewoners-03-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 4,
+                        "gridY": 1,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "38,50 euro per jaar, u regelt het in ongeveer 10 minuten"
+                        }
+                    },
+                    {
+                        "id": "zd-parkeervergunning-bewoners-04-nlheading",
+                        "widgetKey": "nlHeading",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Wat u moet weten",
+                            "level": 2
+                        }
+                    },
+                    {
+                        "id": "zd-parkeervergunning-bewoners-05-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 3,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Een parkeervergunning hoort bij één kenteken en één adres. U parkeert alleen in de zone die op de vergunning staat. Per adres geven wij maximaal twee vergunningen uit. Voor de binnenstad is er een wachtlijst als de zone vol is."
+                        }
+                    },
+                    {
+                        "id": "zd-parkeervergunning-bewoners-06-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 4,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "De vergunning is digitaal. U krijgt geen kaart voor achter de voorruit: de handhaver ziet aan uw kenteken dat u een vergunning heeft."
+                        }
+                    },
+                    {
+                        "id": "zd-parkeervergunning-bewoners-07-nlheading",
+                        "widgetKey": "nlHeading",
+                        "gridX": 0,
+                        "gridY": 5,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "U komt in aanmerking als",
+                            "level": 3
+                        }
+                    },
+                    {
+                        "id": "zd-parkeervergunning-bewoners-08-nllist",
+                        "widgetKey": "nlList",
+                        "gridX": 0,
+                        "gridY": 6,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "items": [
+                                "u staat ingeschreven op een adres in een parkeerzone",
+                                "de auto staat op uw naam, of u rijdt in een lease- of bedrijfsauto",
+                                "er geen parkeerplaats bij uw woning op eigen terrein is"
+                            ]
+                        }
+                    },
+                    {
+                        "id": "zd-parkeervergunning-bewoners-09-nlheading",
+                        "widgetKey": "nlHeading",
+                        "gridX": 0,
+                        "gridY": 7,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "U komt niet in aanmerking als",
+                            "level": 3
+                        }
+                    },
+                    {
+                        "id": "zd-parkeervergunning-bewoners-10-nllist",
+                        "widgetKey": "nlList",
+                        "gridX": 0,
+                        "gridY": 8,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "items": [
+                                "uw woning een eigen garage of oprit heeft",
+                                "er op uw adres al twee vergunningen zijn uitgegeven"
+                            ]
+                        }
+                    },
+                    {
+                        "id": "zd-parkeervergunning-bewoners-11-nlheading",
+                        "widgetKey": "nlHeading",
+                        "gridX": 0,
+                        "gridY": 9,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Kosten",
+                            "level": 2
+                        }
+                    },
+                    {
+                        "id": "zd-parkeervergunning-bewoners-12-nldescriptionlist",
+                        "widgetKey": "nlDescriptionList",
+                        "gridX": 0,
+                        "gridY": 10,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "items": [
+                                {
+                                    "term": "Eerste vergunning",
+                                    "description": "38,50 euro per jaar"
+                                },
+                                {
+                                    "term": "Tweede vergunning",
+                                    "description": "77,00 euro per jaar"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "id": "zd-parkeervergunning-bewoners-13-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 11,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "U betaalt bij de aanvraag met iDEAL. Gaat de vergunning later in het jaar in, dan betaalt u alleen voor de resterende maanden."
+                        }
+                    },
+                    {
+                        "id": "zd-parkeervergunning-bewoners-14-nlheading",
+                        "widgetKey": "nlHeading",
+                        "gridX": 0,
+                        "gridY": 12,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Aanvragen",
+                            "level": 2
+                        }
+                    },
+                    {
+                        "id": "zd-parkeervergunning-bewoners-15-nllist",
+                        "widgetKey": "nlList",
+                        "gridX": 0,
+                        "gridY": 13,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "ordered": true,
+                            "items": [
+                                "Log in met DigiD. Wij vullen uw adres en kenteken alvast in.",
+                                "Kies de ingangsdatum en controleer uw gegevens.",
+                                "Betaal de leges. U krijgt binnen vijf werkdagen bericht in Mijn Zuiddrecht."
+                            ]
+                        }
+                    },
+                    {
+                        "id": "zd-parkeervergunning-bewoners-16-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 0,
+                        "gridY": 14,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Parkeervergunning aanvragen",
+                            "href": "/mijn",
+                            "kind": "primary"
+                        }
+                    },
+                    {
+                        "id": "zd-parkeervergunning-bewoners-17-nlheading",
+                        "widgetKey": "nlHeading",
+                        "gridX": 0,
+                        "gridY": 15,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Veelgestelde vragen",
+                            "level": 2
+                        }
+                    },
+                    {
+                        "id": "zd-parkeervergunning-bewoners-18-nlaccordion",
+                        "widgetKey": "nlAccordion",
+                        "gridX": 0,
+                        "gridY": 16,
+                        "gridWidth": 8,
+                        "gridHeight": 2,
+                        "props": {
+                            "items": [
+                                {
+                                    "title": "Hoe lang duurt het voordat ik mijn vergunning heb?",
+                                    "text": "Binnen vijf werkdagen. Staat de binnenstad op de wachtlijst, dan ziet u in Mijn Zuiddrecht op welke plek u staat."
+                                },
+                                {
+                                    "title": "Ik heb een nieuwe auto. Wat moet ik doen?",
+                                    "text": "Geef uw nieuwe kenteken door in Mijn Zuiddrecht. Dat is gratis en de wijziging geldt dezelfde dag."
+                                },
+                                {
+                                    "title": "Kan ik mijn vergunning tussentijds stoppen?",
+                                    "text": "Ja. Stop de vergunning in Mijn Zuiddrecht. U krijgt het bedrag voor de hele maanden die over zijn terug."
+                                },
+                                {
+                                    "title": "Mag mijn bezoek ook bij mij parkeren?",
+                                    "text": "Ja, met een bezoekersvergunning. Uw bezoek betaalt dan het bezoekerstarief."
+                                }
+                            ],
+                            "headingLevel": 3,
+                            "firstOpen": true
+                        }
+                    },
+                    {
+                        "id": "zd-parkeervergunning-bewoners-19-nllinklist",
+                        "widgetKey": "nlLinkList",
+                        "gridX": 0,
+                        "gridY": 18,
+                        "gridWidth": 8,
+                        "gridHeight": 2,
+                        "props": {
+                            "heading": "Gerelateerd",
+                            "links": [
+                                {
+                                    "label": "Bezoekersvergunning",
+                                    "href": "/parkeren/bezoekersvergunning",
+                                    "description": "Per uur, met DigiD"
+                                },
+                                {
+                                    "label": "Kenteken wijzigen",
+                                    "href": "/parkeren/kenteken-wijzigen",
+                                    "description": "Gratis"
+                                },
+                                {
+                                    "label": "Welke vergunning past bij u?",
+                                    "href": "/parkeren/productzoeker"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/parkeren/bezoekersvergunning",
+            "title": "Bezoekersvergunning",
+            "summary": "Per uur, met DigiD",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-bezoekersvergunning-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Uw bezoek parkeert in uw zone tegen het bezoekerstarief. U meldt het kenteken van uw bezoek aan in Mijn Zuiddrecht.",
+                            "lead": true
+                        }
+                    },
+                    {
+                        "id": "zd-bezoekersvergunning-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Kosten: Per uur, met DigiD."
+                        }
+                    },
+                    {
+                        "id": "zd-bezoekersvergunning-03-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Aanvragen",
+                            "href": "/mijn",
+                            "kind": "primary"
+                        }
+                    },
+                    {
+                        "id": "zd-bezoekersvergunning-04-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 4,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Welke vergunning past bij u?",
+                            "href": "/parkeren/productzoeker",
+                            "kind": "secondary"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/parkeren/kenteken-wijzigen",
+            "title": "Kenteken wijzigen",
+            "summary": "Gratis",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-kenteken-wijzigen-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Heeft u een andere auto? Geef het nieuwe kenteken door. De wijziging geldt dezelfde dag.",
+                            "lead": true
+                        }
+                    },
+                    {
+                        "id": "zd-kenteken-wijzigen-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Kosten: Gratis."
+                        }
+                    },
+                    {
+                        "id": "zd-kenteken-wijzigen-03-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Aanvragen",
+                            "href": "/mijn",
+                            "kind": "primary"
+                        }
+                    },
+                    {
+                        "id": "zd-kenteken-wijzigen-04-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 4,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Welke vergunning past bij u?",
+                            "href": "/parkeren/productzoeker",
+                            "kind": "secondary"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/parkeren/laadpaal-aanvragen",
+            "title": "Laadpaal aanvragen",
+            "summary": "Gratis, binnen 26 weken geplaatst",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-laadpaal-aanvragen-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Heeft u een elektrische auto en geen eigen oprit? Vraag een openbare laadpaal in uw straat aan.",
+                            "lead": true
+                        }
+                    },
+                    {
+                        "id": "zd-laadpaal-aanvragen-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Kosten: Gratis, binnen 26 weken geplaatst."
+                        }
+                    },
+                    {
+                        "id": "zd-laadpaal-aanvragen-03-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Aanvragen",
+                            "href": "/mijn",
+                            "kind": "primary"
+                        }
+                    },
+                    {
+                        "id": "zd-laadpaal-aanvragen-04-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 4,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Welke vergunning past bij u?",
+                            "href": "/parkeren/productzoeker",
+                            "kind": "secondary"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/parkeren/bedrijfsvergunning",
+            "title": "Bedrijfsvergunning",
+            "summary": "125,00 euro per jaar",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-bedrijfsvergunning-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Heeft u een bedrijf in een parkeerzone? Met een bedrijfsvergunning parkeren u en uw medewerkers bij uw bedrijf.",
+                            "lead": true
+                        }
+                    },
+                    {
+                        "id": "zd-bedrijfsvergunning-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Kosten: 125,00 euro per jaar."
+                        }
+                    },
+                    {
+                        "id": "zd-bedrijfsvergunning-03-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Aanvragen",
+                            "href": "/mijn",
+                            "kind": "primary"
+                        }
+                    },
+                    {
+                        "id": "zd-bedrijfsvergunning-04-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 4,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Welke vergunning past bij u?",
+                            "href": "/parkeren/productzoeker",
+                            "kind": "secondary"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/parkeren/ontheffing-laden-en-lossen",
+            "title": "Ontheffing laden en lossen",
+            "summary": "Gratis",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-ontheffing-laden-en-lossen-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Moet u buiten de venstertijden laden en lossen in de binnenstad? Vraag een ontheffing aan.",
+                            "lead": true
+                        }
+                    },
+                    {
+                        "id": "zd-ontheffing-laden-en-lossen-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Kosten: Gratis."
+                        }
+                    },
+                    {
+                        "id": "zd-ontheffing-laden-en-lossen-03-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Aanvragen",
+                            "href": "/mijn",
+                            "kind": "primary"
+                        }
+                    },
+                    {
+                        "id": "zd-ontheffing-laden-en-lossen-04-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 4,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Welke vergunning past bij u?",
+                            "href": "/parkeren/productzoeker",
+                            "kind": "secondary"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/parkeren/fietsenkluis-huren",
+            "title": "Fietsenkluis huren",
+            "summary": "7,50 euro per maand",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-fietsenkluis-huren-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Huur een plek in een fietsenkluis in uw buurt. Uw fiets staat droog en veilig.",
+                            "lead": true
+                        }
+                    },
+                    {
+                        "id": "zd-fietsenkluis-huren-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Kosten: 7,50 euro per maand."
+                        }
+                    },
+                    {
+                        "id": "zd-fietsenkluis-huren-03-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Aanvragen",
+                            "href": "/mijn",
+                            "kind": "primary"
+                        }
+                    },
+                    {
+                        "id": "zd-fietsenkluis-huren-04-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 4,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Welke vergunning past bij u?",
+                            "href": "/parkeren/productzoeker",
+                            "kind": "secondary"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/parkeren/parkeerabonnement-garage",
+            "title": "Parkeerabonnement garage",
+            "summary": "Vanaf 65 euro per maand",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-parkeerabonnement-garage-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Parkeer met een abonnement in een van de parkeergarages van de gemeente.",
+                            "lead": true
+                        }
+                    },
+                    {
+                        "id": "zd-parkeerabonnement-garage-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Kosten: Vanaf 65 euro per maand."
+                        }
+                    },
+                    {
+                        "id": "zd-parkeerabonnement-garage-03-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Aanvragen",
+                            "href": "/mijn",
+                            "kind": "primary"
+                        }
+                    },
+                    {
+                        "id": "zd-parkeerabonnement-garage-04-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 4,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Welke vergunning past bij u?",
+                            "href": "/parkeren/productzoeker",
+                            "kind": "secondary"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/parkeren/mantelzorgvergunning",
+            "title": "Mantelzorgvergunning",
+            "summary": "Gratis",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-mantelzorgvergunning-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Zorgt u voor iemand in een parkeerzone? Met een mantelzorgvergunning parkeert u bij die persoon.",
+                            "lead": true
+                        }
+                    },
+                    {
+                        "id": "zd-mantelzorgvergunning-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Kosten: Gratis."
+                        }
+                    },
+                    {
+                        "id": "zd-mantelzorgvergunning-03-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Aanvragen",
+                            "href": "/mijn",
+                            "kind": "primary"
+                        }
+                    },
+                    {
+                        "id": "zd-mantelzorgvergunning-04-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 4,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Welke vergunning past bij u?",
+                            "href": "/parkeren/productzoeker",
+                            "kind": "secondary"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/parkeren/ontheffing-milieuzone",
+            "title": "Ontheffing milieuzone",
+            "summary": "Gratis voor één dag per jaar",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-ontheffing-milieuzone-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Wilt u met een oudere auto de milieuzone in? Soms kan dat met een ontheffing.",
+                            "lead": true
+                        }
+                    },
+                    {
+                        "id": "zd-ontheffing-milieuzone-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Kosten: Gratis voor één dag per jaar."
+                        }
+                    },
+                    {
+                        "id": "zd-ontheffing-milieuzone-03-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Aanvragen",
+                            "href": "/mijn",
+                            "kind": "primary"
+                        }
+                    },
+                    {
+                        "id": "zd-ontheffing-milieuzone-04-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 4,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Welke vergunning past bij u?",
+                            "href": "/parkeren/productzoeker",
+                            "kind": "secondary"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/parkeren/standplaatsvergunning",
+            "title": "Standplaatsvergunning",
+            "summary": "Vanaf 40 euro per dag",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-standplaatsvergunning-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Wilt u op een vaste plek in de stad iets verkopen? Vraag een standplaatsvergunning aan.",
+                            "lead": true
+                        }
+                    },
+                    {
+                        "id": "zd-standplaatsvergunning-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Kosten: Vanaf 40 euro per dag."
+                        }
+                    },
+                    {
+                        "id": "zd-standplaatsvergunning-03-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Aanvragen",
+                            "href": "/mijn",
+                            "kind": "primary"
+                        }
+                    },
+                    {
+                        "id": "zd-standplaatsvergunning-04-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 4,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Welke vergunning past bij u?",
+                            "href": "/parkeren/productzoeker",
+                            "kind": "secondary"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/parkeren/gehandicaptenparkeerplaats",
+            "title": "Gehandicaptenparkeerplaats",
+            "summary": "Gratis",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-gehandicaptenparkeerplaats-01-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Heeft u een gehandicaptenparkeerkaart? Vraag een parkeerplaats bij uw woning aan.",
+                            "lead": true
+                        }
+                    },
+                    {
+                        "id": "zd-gehandicaptenparkeerplaats-02-nlparagraph",
+                        "widgetKey": "nlParagraph",
+                        "gridX": 0,
+                        "gridY": 1,
+                        "gridWidth": 8,
+                        "gridHeight": 1,
+                        "props": {
+                            "text": "Kosten: Gratis."
+                        }
+                    },
+                    {
+                        "id": "zd-gehandicaptenparkeerplaats-03-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 0,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Aanvragen",
+                            "href": "/mijn",
+                            "kind": "primary"
+                        }
+                    },
+                    {
+                        "id": "zd-gehandicaptenparkeerplaats-04-nlbuttonlink",
+                        "widgetKey": "nlButtonLink",
+                        "gridX": 4,
+                        "gridY": 2,
+                        "gridWidth": 4,
+                        "gridHeight": 1,
+                        "props": {
+                            "label": "Welke vergunning past bij u?",
+                            "href": "/parkeren/productzoeker",
+                            "kind": "secondary"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/parkeren/productzoeker",
+            "title": "Productzoeker parkeren",
+            "summary": "Beantwoord een paar vragen en zie welke parkeervergunning bij u past.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-productzoeker-01-nlproductfinder",
+                        "widgetKey": "nlProductFinder",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 12,
+                        "gridHeight": 6,
+                        "props": {
+                            "finder": ""
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "route": "/veelgestelde-vragen",
+            "title": "Veelgestelde vragen",
+            "summary": "De antwoorden op de vragen die inwoners ons het vaakst stellen.",
+            "status": "published",
+            "locale": "nl",
+            "body": {
+                "type": "grid",
+                "widgets": [
+                    {
+                        "id": "zd-faq-01-nlfaqlist",
+                        "widgetKey": "nlFaqList",
+                        "gridX": 0,
+                        "gridY": 0,
+                        "gridWidth": 8,
+                        "gridHeight": 6,
+                        "props": {
+                            "all": true
                         }
                     }
                 ]
@@ -2250,6 +4405,45 @@
                 "schoolRef": "zuiddrecht"
             },
             "body": "Aan de oude haven komt een park. Wij horen graag wat u daar wilt doen en zien.\n\nOp dinsdag 20 oktober is er een inloopavond in het stadskantoor, van 19.00 tot 21.00 uur. U kunt uw idee ook mailen."
+        }
+    ],
+    "glossary": [
+        {
+            "term": "Bestemmingsplan",
+            "definition": "Regels van de gemeente over wat er op een plek gebouwd mag worden en hoe de grond gebruikt mag worden. Sinds 2024 heet dit het omgevingsplan.",
+            "synonyms": [
+                "Omgevingsplan"
+            ],
+            "source": "Omgevingswet"
+        },
+        {
+            "term": "Machtiging",
+            "definition": "Toestemming die u iemand geeft om zaken voor u te regelen bij de gemeente."
+        },
+        {
+            "term": "Omgevingsvergunning",
+            "definition": "Toestemming van de gemeente voor bijvoorbeeld bouwen, verbouwen of een boom kappen.",
+            "synonyms": [
+                "Bouwvergunning"
+            ],
+            "source": "Omgevingswet, hoofdstuk 5"
+        },
+        {
+            "term": "Publicatie",
+            "definition": "Een document dat de gemeente actief openbaar maakt.",
+            "source": "Wet open overheid, artikel 3.3"
+        },
+        {
+            "term": "Woo-verzoek",
+            "definition": "Een verzoek om openbaarmaking van overheidsinformatie.",
+            "synonyms": [
+                "Wob-verzoek"
+            ],
+            "source": "Wet open overheid, artikel 4.1"
+        },
+        {
+            "term": "Zaaknummer",
+            "definition": "Het nummer van uw aanvraag of melding. U vindt het in de ontvangstbevestiging."
         }
     ]
 }

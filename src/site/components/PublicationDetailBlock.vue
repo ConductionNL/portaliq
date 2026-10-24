@@ -68,8 +68,10 @@
 					v-for="field in fields"
 					:key="field.name"
 					class="pq-detail__field">
+					<!-- The cards variant sets the labels in a column of their
+					     own, without the colon (board Publicatie). -->
 					<dt class="pq-detail__label">
-						<strong>{{ field.label }}:</strong>
+						<strong>{{ cards ? field.label : `${field.label}:` }}</strong>
 					</dt>
 					<dd class="pq-detail__value">
 						<ul v-if="field.kind === 'list'" class="pq-detail__list">
@@ -191,13 +193,13 @@
 <script>
 import { defineAsyncComponent } from 'vue'
 import { createTranslator } from '../../shared/i18n/index.js'
+import { pageLocale } from '../lib/facetLabels.js'
 import {
 	publicationSummary,
 	themeIdsOf,
 	toDocuments,
 	visitorRows,
 } from '../lib/publicationDetail.js'
-import { pageLocale } from '../lib/wooCategories.js'
 
 /**
  * One publication, as a visitor reads it: title, summary, date, category and
@@ -277,6 +279,8 @@ export default {
 			default: '/index.php/apps/opencatalogi/api/themes',
 		},
 	},
+
+	emits: ['subject'],
 
 	data() {
 		return {
@@ -450,6 +454,25 @@ export default {
 			} finally {
 				this.loading = false
 			}
+			this.tellSubject()
+		},
+
+		/**
+		 * Tell the page what it shows: the publication's title ends the
+		 * breadcrumb instead of the page's own title, which read
+		 * "Publicatie › Publicatie" (live round 3, 14 Oct). Nothing found
+		 * tells nothing, so the trail keeps the page's words.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/resident-pages-live-round-3/specs/site-navigation/spec.md#requirement-a-publication-ends-the-breadcrumb-with-its-own-title-req-rr3-004
+		 */
+		tellSubject() {
+			this.$emit(
+				'subject',
+				this.error === false && this.publication
+					? { title: String(this.title) }
+					: null,
+			)
 		},
 
 		/**
@@ -607,6 +630,15 @@ export default {
 	margin: 0;
 }
 
+/* The pill sits 12px over the title, the summary 20px under it. */
+.pq-detail__body--cards .pq-detail__pill + h1 {
+	margin-block-start: -1rem;
+}
+
+.pq-detail__body--cards h1 + .pq-detail__summary {
+	margin-block-start: -0.5rem;
+}
+
 .pq-detail__pill {
 	align-self: flex-start;
 	padding: 0.25rem 0.75rem;
@@ -654,6 +686,8 @@ export default {
 
 .pq-detail__body--cards .pq-detail__documents h2 {
 	margin: 0;
+	font-size: 1.75rem;
+	line-height: 1.2;
 }
 
 .pq-detail__document-cards {
@@ -672,7 +706,11 @@ export default {
 	align-items: center;
 	justify-content: space-between;
 	padding: 1rem 1.25rem;
-	border: 1px solid var(--nldesign-color-border-dark, currentcolor);
+	border: 1px solid
+		var(
+			--nldesign-website-card-border-color,
+			var(--nldesign-color-border-dark, currentcolor)
+		);
 	border-radius: var(--nldesign-website-border-radius-large, 0);
 }
 

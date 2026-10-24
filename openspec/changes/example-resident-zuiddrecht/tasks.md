@@ -5,4 +5,4 @@
 - [x] 3. `occ portaliq:example-resident:install` and `:remove`, registered in `appinfo/info.xml`.
 - [x] 4. Tests: `tests/example-resident.spec.mjs` in `check:specs`, PHPUnit for the installer, remover, values, catalogue and commands.
 - [x] 5. Documentation in `docs/Installation/example-site-zuiddrecht.md`: the resident, who can sign in, why the test sign-in stays off, removal.
-- [ ] 6. Live check on a fresh instance (coordinator).
+- [ ] 6. Live check on a fresh instance (coordinator). — not run: needs a live instance

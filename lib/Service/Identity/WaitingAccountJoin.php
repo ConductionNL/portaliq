@@ -121,6 +121,12 @@ class WaitingAccountJoin {
 	 * @param bool $addressProven Whether the way in proved the invited
 	 *                            address (an address or a mailed link did; a
 	 *                            code on paper did not).
+	 * @param UnboundAccount|null $unbound The rules for an unbound account, given
+	 *                                     only by the redeem of a mailed link,
+	 *                                     or null for every other way in. Only
+	 *                                     with them may an account take on the
+	 *                                     waiting account's audience, see
+	 *                                     mayAdoptAudience().
 	 *
 	 * @return string|null The identifier of the waiting account that was
 	 *                     joined, or null when nothing was.
@@ -128,12 +134,20 @@ class WaitingAccountJoin {
 	 * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
 	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
 	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- one field of the write
 	 * depends on it; two methods would differ in that value only.
 	 */
-	public function joinWaiting(array $account, array $waiting, string $reason = self::VOID_REASON, bool $addressProven = true): ?string {
-		if ($this->isJoinable(account: $account, waiting: $waiting) === false) {
+	public function joinWaiting(
+		array $account,
+		array $waiting,
+		string $reason = self::VOID_REASON,
+		bool $addressProven = true,
+		?UnboundAccount $unbound = null,
+	): ?string {
+		$audience = $this->audienceAfterJoin(account: $account, waiting: $waiting, unbound: $unbound);
+		if ($audience === null) {
 			return null;
 		}
 
@@ -144,6 +158,10 @@ class WaitingAccountJoin {
 		}
 
 		$data = $this->joinData(account: $account, waiting: $waiting, addressProven: $addressProven);
+		if ($audience !== '') {
+			$data['audience'] = $audience;
+		}
+
 		if ($data !== [] && $this->write(id: $accountId, data: $data) === false) {
 			return null;
 		}
@@ -187,6 +205,72 @@ class WaitingAccountJoin {
 			&& $audience === (string)($account['audience'] ?? '')
 			&& $this->claimsConflict(account: $account, waiting: $waiting) === false;
 	}//end isJoinable()
+
+	/**
+	 * Whether an account of another audience may still take over a waiting
+	 * account by its invitation's secret, and take on its audience.
+	 *
+	 * 🔑 A GUARDIAN WHO SIGNED IN BEFORE SHE WAS INVITED. Her first DigiD
+	 * sign-in made an account with the sign-in route's audience (`client`).
+	 * The school's invitation then made a `parent` account, and the audience
+	 * check (security review M3) refused every join between the two, so she
+	 * stood on an empty page with an invitation she could never accept
+	 * (proof run 3, 09 Oct 2026). This lets exactly that account through:
+	 *
+	 * - it names one natural person (DigiD or eIDAS) and carries its
+	 *   identity reference: the session's own sign-in, never an address;
+	 * - nobody provisioned it: no app and no clerk gave it an audience;
+	 * - it holds no claims yet, so no access is moved from one audience to
+	 *   another;
+	 * - the invitation's audience is one the organisation allows an unbound
+	 *   account to take on (default `parent`, never `supplier`), and the
+	 *   account is no company account, so a supplier still never takes over
+	 *   a parent's invitation (M3, review L1);
+	 * - the session is at substantial or higher;
+	 * - everything else isJoinable() asks holds, with the waiting account's
+	 *   audience in place of the account's own: pending, no identity
+	 *   reference, the same organisation, no conflicting claim (M1).
+	 *
+	 * Only the redeem of a mailed link passes these rules, so an address
+	 * alone (the join at sign-in, a confirmed address) and a code from a
+	 * paper letter never move an audience (second review M1).
+	 *
+	 * @param array<string, mixed> $account The account that would receive the claims.
+	 * @param array<string, mixed> $waiting The account that would be withdrawn.
+	 * @param UnboundAccount $unbound The rules: the session's trust and the
+	 *                                audiences the organisation allows.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 */
+	public function mayAdoptAudience(array $account, array $waiting, UnboundAccount $unbound): bool {
+		return $unbound->mayTakeOn(account: $account, waiting: $waiting)
+			&& $this->isJoinable(account: ['audience' => (string)($waiting['audience'] ?? '')] + $account, waiting: $waiting) === true;
+	}//end mayAdoptAudience()
+
+	/**
+	 * The audience the receiver holds after the join: '' when it keeps its
+	 * own, the waiting account's when an unbound account takes it on, and
+	 * null when the join is refused.
+	 *
+	 * @param array<string, mixed> $account The account that receives the claims.
+	 * @param array<string, mixed> $waiting The waiting account.
+	 * @param UnboundAccount|null $unbound The rules for an unbound account, or null.
+	 *
+	 * @return string|null
+	 */
+	private function audienceAfterJoin(array $account, array $waiting, ?UnboundAccount $unbound): ?string {
+		if ($this->isJoinable(account: $account, waiting: $waiting) === true) {
+			return '';
+		}
+
+		if ($unbound !== null && $this->mayAdoptAudience(account: $account, waiting: $waiting, unbound: $unbound) === true) {
+			return (string)$waiting['audience'];
+		}
+
+		return null;
+	}//end audienceAfterJoin()
 
 	/**
 	 * Whether the waiting account carries a claim the receiver already holds

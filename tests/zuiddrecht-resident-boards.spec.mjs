@@ -117,7 +117,7 @@ const NAV = [
 	},
 ]
 
-test('a compact case card: the number left, the tag right, the title a link, one line under the bar', async () => {
+test('a compact case card is the board folder: "Zaaknummer" over the title, one line over the bar, the tag in the foot', async () => {
 	const card = caseCard(WOO, ZAKEN, {
 		tr: mijn,
 		locale: 'nl',
@@ -126,6 +126,7 @@ test('a compact case card: the number left, the tag right, the title a link, one
 		yourTurn: ['applicant'],
 	})
 	assert.equal(card.number, '2026-0082')
+	assert.equal(card.numberLabel, 'Zaaknummer')
 	assert.equal(card.readyBy, 'klaar uiterlijk 1 november')
 	assert.equal(card.yourTurn, false)
 	const html = await renderComponent(CaseCard, {
@@ -133,21 +134,61 @@ test('a compact case card: the number left, the tag right, the title a link, one
 		route: '/mijn/dossiq/mijnZaken/c-82',
 		display: 'compact',
 	})
+	assert.match(html, /pq-case-card--folder/)
 	assert.match(html, /pq-case-card--compact/)
-	assert.match(html, /pq-case-card__number[^>]*>2026-0082</)
-	assert.doesNotMatch(html, /Zaak 2026-0082/)
-	// The status in the info tone, since nothing is asked of the resident.
-	assert.match(html, /nl-data-badge--info[^>]*>(<!--\[-->)?Ontvangen/)
+	assert.match(html, /pq-case-card__tab/)
+	assert.match(html, /pq-case-card__paper/)
+	assert.match(
+		html,
+		/pq-case-card__number[^>]*>Zaaknummer <span translate="no">2026-0082<\/span>/,
+	)
 	assert.match(
 		html,
 		/pq-case-card__link" href="\/mijn\/dossiq\/mijnZaken\/c-82">Verlichting fietspad Lindelaan<\/a>/,
 	)
-	assert.match(html, /pq-case-card__bar--board/)
 	assert.match(
 		html,
 		/pq-case-card__line[^>]*>Stap 2 van 5 · klaar uiterlijk 1 november</,
 	)
+	assert.match(html, /pq-case-card__bar--board/)
+	// The line over the bar, the tag under both, in the foot.
+	const foot = html.indexOf('pq-case-card__foot')
+	assert.ok(html.indexOf('pq-case-card__line') < html.indexOf('pq-case-card__bar--board'))
+	assert.ok(html.indexOf('pq-case-card__bar--board') < foot)
+	assert.match(html.slice(foot), /nl-data-badge--info[^>]*>(<!--\[-->)?Ontvangen/)
+	// The compact folder has no due day block: the day is in the line.
+	assert.doesNotMatch(html, /mijn-case-card-due/)
 	assert.doesNotMatch(html, /denhaag-case-card/)
+})
+
+test('a folder on the cases page: the tag and "Uiterlijk klaar op" with the day in the foot, the mandate under the title', async () => {
+	const card = caseCard(WOO, ZAKEN, { tr: mijn, locale: 'nl', today: TODAY, steps: STEPS })
+	const html = await renderComponent(CaseCard, {
+		card,
+		route: '/mijn/x',
+		display: 'folder',
+		dueLabel: 'Uiterlijk klaar op',
+		mandate: 'Zaak van Bakkerij Lindelaan B.V., u ziet hem via uw machtiging',
+	})
+	assert.match(html, /pq-case-card-item--folder/)
+	assert.match(html, /pq-case-card--folder/)
+	assert.doesNotMatch(html, /pq-case-card--compact|pq-case-card--row/)
+	assert.match(html, /Zaaknummer <span translate="no">2026-0082/)
+	assert.match(html, /pq-case-card__via[^>]*>Zaak van Bakkerij Lindelaan B\.V\./)
+	const foot = html.slice(html.indexOf('pq-case-card__foot'))
+	assert.match(foot, /nl-data-badge--info[^>]*>(<!--\[-->)?Ontvangen/)
+	assert.match(foot, /pq-case-card__due-label[^>]*>Uiterlijk klaar op</)
+	assert.match(foot, /<strong>1 november<\/strong>/)
+	// The step line and bar belong to the overview folder only.
+	assert.doesNotMatch(html, /pq-case-card__bar|pq-case-card__line/)
+	assert.equal((html.match(/<a /g) || []).length, 1)
+	// A finished case is the neutral folder.
+	const done = await renderComponent(CaseCard, {
+		card: { ...card, closed: true },
+		display: 'folder',
+	})
+	assert.match(done, /pq-case-card--closed[^"]*pq-case-card--folder/)
+	assert.match(done, /nl-data-badge--neutral/)
 })
 
 test('a compact card reads "Wacht op u" in the warning tone when the resident must act', async () => {
@@ -322,6 +363,8 @@ test('an inbox block as a plain list: a title and "vandaag", no badge, no chevro
 	})
 	assert.match(list, /data-testid="mijn-inbox-all"[^>]*>Alle berichten</)
 	assert.equal((list.match(/mijn-inbox-plain-row/g) || []).length, 3)
+	// Each row leads with the board's round mark (MijnOverzicht "Recent").
+	assert.equal((list.match(/class="pq-inbox-block__plain-mark" aria-hidden="true"><svg/g) || []).length, 3)
 	assert.match(
 		list,
 		/Het besluit op uw Woo-verzoek is gepubliceerd<\/a>.{0,80}pq-inbox-block__plain-day[^>]*>vandaag</,
@@ -399,7 +442,7 @@ test('the case screen with display actions: the closed window as an ok notice, n
 				description: 'Wij kijken of uw verzoek compleet is.',
 			},
 			window: { open: true },
-			fields: { toelichting: { open: true } },
+			fields: { toelichting: { writable: true } },
 			documents: { open: true },
 		},
 		documents: [],
@@ -416,10 +459,25 @@ test('the case screen with display actions: the closed window as an ok notice, n
 		/data-testid="case-status"|data-testid="case-documents"/,
 	)
 	assert.match(actions, /data-testid="case-save"/)
+	// The board's "Aanvraag intrekken", in the danger tone.
 	assert.match(
 		actions,
-		/data-testid="case-withdraw"[^>]*>Deze aanvraag intrekken</,
+		/utrecht-button--danger pq-case-withdraw" data-testid="case-withdraw"[^>]*>Aanvraag intrekken</,
 	)
+	// No field the resident may change: nothing to save, no save button.
+	const nothingToSave = await renderComponent(CitizenCase, {
+		...base,
+		block: { type: 'citizenCase', collection: 'mijnZaken', display: 'actions' },
+		initialData: {
+			...data,
+			writableSet: {
+				...data.writableSet,
+				fields: { toelichting: { writable: false, reason: 'Dicht.' } },
+			},
+		},
+	})
+	assert.doesNotMatch(nothingToSave, /data-testid="case-save"/)
+	assert.match(nothingToSave, /data-testid="case-withdraw"/)
 	const closed = await renderComponent(CitizenCase, {
 		...base,
 		block: { type: 'citizenCase', collection: 'mijnZaken', display: 'actions' },
@@ -619,6 +677,19 @@ test('Mijn zaken as rows when the portal says so, folder cards otherwise', async
 		cards,
 		/pq-cases__list--rows|pq-case-card--row|Uiterlijk klaar op/,
 	)
+	const folders = await renderSfc('src/site/pages/e/MyCasesPage.vue', {
+		api: {},
+		t: nl,
+		locale: 'nl',
+		initialData: { ok: true, cases },
+		portal: { myCases: { display: 'folders' } },
+		contributions,
+	})
+	assert.match(folders, /pq-cases__list--folders/)
+	assert.match(folders, /pq-case-card--folder/)
+	assert.match(folders, /Uiterlijk klaar op/)
+	assert.match(folders, /<strong>1 november<\/strong>/)
+	assert.doesNotMatch(folders, /denhaag-case-card|pq-case-card--row|pq-cases__list--rows/)
 })
 
 test('the moved controls keep their place: the two ctas on the overview, save and withdraw on the case page', () => {

@@ -13,7 +13,10 @@
 	-->
 	<section
 		class="container pq-account"
-		:class="{ 'pq-account--with-menu': withMenu }"
+		:class="{
+			'pq-account--with-menu': withMenu,
+			'pq-account--form': formPage,
+		}"
 		data-testid="site-account">
 		<!-- The resident's own menu, beside the content on every page of this
 		     area once signed in (site-resident-menu REQ-SRM-002). -->
@@ -21,7 +24,7 @@
 			v-if="withMenu"
 			class="pq-account__menu"
 			:groups="menuGroups"
-			:currentRoute="currentRoute"
+			:currentRoute="menuRoute"
 			:label="t('My area')"
 			:showLabel="(portal && portal.accountLabel) || t('Menu of my area')"
 			:card="menuCard"
@@ -52,6 +55,8 @@
 					:welcomeLabel="t('Welcome')"
 					:demoLabel="t('Only on this demo. No password is asked.')"
 					:introLabel="t('Log in to view your information.')"
+					:lostPasswordLabel="t('Forgot your password?')"
+					:registerLabel="t('Create an account')"
 					:noWayLabel="
 						t('No login method is configured for this organisation yet.')
 					" />
@@ -63,13 +68,33 @@
 						{{ t('Log in to view your information.') }}
 					</p>
 					<ul v-if="signInRoutes.length" class="pq-account__ways-in">
-						<li v-for="way in signInRoutes" :key="way.mode">
+						<li v-for="way in signInRoutes" :key="way.key || way.mode">
+							<EmailLinkForm
+								v-if="way.form === 'email-link'"
+								:authBase="way.authBase"
+								:portal="way.portal"
+								:label="way.label" />
 							<a
+								v-else
 								class="utrecht-button-link utrecht-button-link--html-a utrecht-button-link--primary-action"
 								:href="way.href"
 								:data-mode="way.mode"
 								data-testid="site-account-signin-route">
 								{{ way.label }}
+							</a>
+							<a
+								v-if="way.lostPasswordUrl"
+								class="utrecht-link pq-account__lost-password"
+								:href="way.lostPasswordUrl"
+								data-testid="site-signin-lost-password">
+								{{ t('Forgot your password?') }}
+							</a>
+							<a
+								v-if="way.registerUrl"
+								class="utrecht-link pq-account__lost-password"
+								:href="way.registerUrl"
+								data-testid="site-signin-register">
+								{{ t('Create an account') }}
 							</a>
 						</li>
 					</ul>
@@ -116,6 +141,7 @@
 			<!-- `/mijn` itself: the resident's home, loaded on demand
 			     (site-mijn-omgeving-components REQ-SMO-007, design D4). -->
 			<template v-else-if="isHome">
+				<PageHelp v-if="sectionHelpText" :text="sectionHelpText" />
 				<component
 					:is="homeComponent"
 					v-if="homeComponent"
@@ -139,7 +165,15 @@
 					data-testid="site-account-title">
 					{{ entry.label }}
 				</h1>
-				<p v-if="pageLoading" class="utrecht-paragraph" role="status">
+				<PageHelp v-if="sectionHelpText" :text="sectionHelpText" />
+				<!-- A page the login is too low for: which login reaches it
+				     (site-member-voting-record-and-confidential-papers REQ-SCR-004). -->
+				<StepUpPrompt
+					v-if="entry.stepUp"
+					:stepUp="entry.stepUp"
+					:routes="signInRoutes"
+					:t="t" />
+				<p v-else-if="pageLoading" class="utrecht-paragraph" role="status">
 					{{ t('Loading…') }}
 				</p>
 				<component
@@ -173,7 +207,9 @@ import {
 	recordIdOfRoute,
 	routeForNav,
 } from '../../shared/portalNav.js'
-import { pageOwnsHeading, sitePageLoader } from '../pages/registry.js'
+import { sectionOf } from '../lib/help.js'
+import { menuCurrentRoute } from '../lib/residentMenu.js'
+import { isFormPage, pageOwnsHeading, sitePageLoader } from '../pages/registry.js'
 import { actingFor } from './e/actingFor.js'
 
 // The sign-in links are button links. Without this stylesheet their classes
@@ -203,12 +239,17 @@ export default {
 	name: 'AccountArea',
 
 	components: {
+		PageHelp: defineAsyncComponent(() => import('./PageHelp.vue')),
 		// Loaded only while the resident acts for someone else.
 		ActingForBar: defineAsyncComponent(() => import('./mijn/ActingForBar.vue')),
 		// Loaded only on a portal that writes its sign-in cards.
 		SignInPage: defineAsyncComponent(() => import('./chrome/SignInPage.vue')),
 		ResidentMenu,
 		WaysIn,
+		// On demand: the form only shows when the instance switch is on.
+		EmailLinkForm: defineAsyncComponent(() => import('./EmailLinkForm.vue')),
+		// Only on a page the login is too low for.
+		StepUpPrompt: defineAsyncComponent(() => import('./mijn/StepUpPrompt.vue')),
 	},
 
 	props: {
@@ -278,6 +319,36 @@ export default {
 
 	computed: {
 		/**
+		 * The menu item to mark: the route's own, or on a page one level
+		 * deeper (a case opened from "Mijn zaken") the item it belongs to.
+		 *
+		 * @return {string} The route.
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
+		 */
+		menuRoute() {
+			return menuCurrentRoute(
+				this.currentRoute,
+				this.menuGroups,
+				this.nav,
+				this.contributions,
+			)
+		},
+
+		/**
+		 * The help text of the part of Mijn omgeving on screen, or ''.
+		 *
+		 * @return {string} The text.
+		 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-page-and-each-part-of-mijn-omgeving-can-carry-a-help-text-req-htf-002
+		 */
+		sectionHelpText() {
+			const section = sectionOf(this.entry, this.isHome)
+			const texts = (this.portal && this.portal.sectionHelp) || {}
+			return section && typeof texts[section] === 'string'
+				? texts[section]
+				: ''
+		},
+
+		/**
 		 * The card at the top of the resident menu: whom the resident acts for,
 		 * when the session acts for an organisation and the portal names the
 		 * card's label (resident-menu-badges-and-cards, G-06).
@@ -327,7 +398,19 @@ export default {
 		 * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
 		 */
 		withMenu() {
-			return Boolean(this.session) && this.menuGroups.length > 0
+			return (
+				Boolean(this.session) && this.menuGroups.length > 0 && !this.formPage
+			)
+		},
+
+		/**
+		 * Whether the page on screen is one form and nothing else.
+		 *
+		 * @return {boolean}
+		 * @spec exclude layout of a page that is only a form, as the Mijn form boards draw it
+		 */
+		formPage() {
+			return Boolean(this.session) && isFormPage(this.entry)
 		},
 
 		/**
@@ -392,6 +475,9 @@ export default {
 				// The record a route chooses on a record page
 				// (site-mijn-omgeving-components REQ-SMO-008).
 				routeRecordId: recordIdOfRoute(this.currentRoute),
+				// The route on screen, for a page with a list one segment
+				// deeper (life-domain-theme-pages T05b).
+				currentRoute: this.currentRoute,
 			}
 			const wanted = declaredProps(this.pageComponent)
 			return Object.fromEntries(
@@ -442,6 +528,12 @@ export default {
 		 */
 		async loadPage() {
 			const entry = this.entry
+			if (entry && entry.stepUp) {
+				// The step-up prompt is the page; nothing to load.
+				this.pageComponent = null
+				this.pageLoading = false
+				return
+			}
 			const loader = sitePageLoader(entry)
 			if (!loader) {
 				this.pageComponent = markRaw(PlaceholderPage)
@@ -541,6 +633,12 @@ export default {
 		gap: 40px;
 		align-items: start;
 	}
+}
+
+/* A page that is only a form: one centred reading column. */
+.pq-account--form .pq-account__content {
+	margin-inline: auto;
+	max-inline-size: 55rem;
 }
 
 .pq-account__ways-in {

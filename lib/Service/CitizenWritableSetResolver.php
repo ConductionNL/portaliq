@@ -70,6 +70,11 @@ class CitizenWritableSetResolver {
 	public const STATUS_LABELS_PROPERTY = 'portalStatusLabels';
 
 	/**
+	 * The case type property naming what the current status step offers next.
+	 */
+	public const STATUS_ACTIONS_PROPERTY = 'portalStatusActions';
+
+	/**
 	 * The property on the case type declaring whether an applicant may end
 	 * their own request, until when, and onto which status.
 	 *
@@ -189,7 +194,7 @@ class CitizenWritableSetResolver {
 			'writable' => $writable,
 			'window' => $window,
 			'documents' => $documents,
-			'status' => $this->status(caseType: $caseType, status: $status),
+			'status' => (new CaseStatusView())->status(caseType: $caseType, status: $status),
 		];
 	}//end resolveOpen()
 
@@ -437,41 +442,6 @@ class CitizenWritableSetResolver {
 	}//end window()
 
 	/**
-	 * The public status label the case app supplied, rendered as given. The
-	 * portal holds no vocabulary of its own, so an unlabelled status yields
-	 * empty strings rather than a portal-invented word.
-	 *
-	 * @param array<string, mixed> $caseType The case type.
-	 * @param string $status The case's current status.
-	 *
-	 * @return array<string, string> `value`, `label` and `description`.
-	 */
-	private function status(array $caseType, string $status): array {
-		$labels = ($caseType[self::STATUS_LABELS_PROPERTY] ?? null);
-		$entry = null;
-		if (is_array($labels) === true) {
-			$entry = ($labels[$status] ?? null);
-		}
-
-		if (is_array($entry) === false) {
-			return ['value' => $status, 'label' => '', 'description' => ''];
-		}
-
-		$label = ($entry['label'] ?? '');
-		$description = ($entry['description'] ?? '');
-
-		if (is_string($label) === false) {
-			$label = '';
-		}
-
-		if (is_string($description) === false) {
-			$description = '';
-		}
-
-		return ['value' => $status, 'label' => $label, 'description' => $description];
-	}//end status()
-
-	/**
 	 * The set a case with no reachable declaration resolves to: nothing
 	 * writable, both windows closed, no status label invented.
 	 *
@@ -485,7 +455,7 @@ class CitizenWritableSetResolver {
 			'writable' => [],
 			'window' => ['open' => false, 'reason' => $reason],
 			'documents' => ['open' => false, 'reason' => $reason],
-			'status' => ['value' => '', 'label' => '', 'description' => ''],
+			'status' => ['value' => '', 'label' => '', 'description' => '', 'action' => null, 'next' => null],
 		];
 	}//end closedSet()
 }//end class

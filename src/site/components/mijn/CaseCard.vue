@@ -30,27 +30,79 @@
 		class="pq-case-card-item"
 		:class="{ [`pq-case-card-item--${display}`]: display !== '' }"
 		data-testid="mijn-case-card">
-		<!-- The board card and the board row. -->
+		<!-- The board folder: the overview card and the cases page card. -->
 		<div
-			v-if="display === 'compact' || display === 'row'"
-			class="pq-case-card pq-case-card--board"
+			v-if="display === 'compact' || display === 'folder'"
+			class="pq-case-card pq-case-card--folder"
 			:class="{
 				'pq-case-card--compact': display === 'compact',
-				'pq-case-card--row': display === 'row',
 				'pq-case-card--closed': card.closed,
 			}"
 			:data-display="display">
-			<span class="pq-case-card__ident">
-				<span v-if="card.number" class="pq-case-card__number">{{
-					card.number
-				}}</span>
+			<span class="pq-case-card__tab" aria-hidden="true" />
+			<span class="pq-case-card__paper" aria-hidden="true" />
+			<span v-if="card.number" class="pq-case-card__number"
+				>{{ card.numberLabel }}
+				<span translate="no">{{ card.number }}</span></span
+			>
+			<span class="pq-case-card__main">
+				<p class="pq-case-card__title pq-case-card__title--board">
+					<a
+						v-if="tag === 'a'"
+						class="pq-case-card__link"
+						:href="href"
+						@click="onClick"
+						>{{ card.title }}</a
+					><button
+						v-else-if="tag === 'button'"
+						class="pq-case-card__link"
+						type="button"
+						@click="onClick">
+						{{ card.title }}</button
+					><span v-else>{{ card.title }}</span>
+				</p>
+				<span v-if="via" class="pq-case-card__via">{{ via }}</span>
+			</span>
+			<span
+				v-if="display === 'compact' && (stepLine || card.position)"
+				class="pq-case-card__steps">
+				<span v-if="stepLine" class="pq-case-card__line">{{ stepLine }}</span>
+				<span
+					v-if="card.position"
+					class="pq-case-card__bar pq-case-card__bar--board"
+					aria-hidden="true"
+					><span :style="{ inlineSize: barWidth }"
+				/></span>
+			</span>
+			<span class="pq-case-card__foot">
 				<DataBadge
-					v-if="display === 'compact' && boardTag"
+					v-if="boardTag"
 					:text="boardTag.text"
 					:state="boardTag.state" />
-				<p
-					v-if="display === 'row'"
-					class="pq-case-card__title pq-case-card__title--board">
+				<span
+					v-if="display === 'folder' && card.dueDay"
+					class="pq-case-card__due"
+					data-testid="mijn-case-card-due">
+					<span class="pq-case-card__due-label">{{ dueLabel }}</span>
+					<strong>{{ card.dueDay }}</strong>
+				</span>
+			</span>
+		</div>
+
+		<!-- The board row. -->
+		<div
+			v-else-if="display === 'row'"
+			class="pq-case-card pq-case-card--board pq-case-card--row"
+			:class="{ 'pq-case-card--closed': card.closed }"
+			:data-display="display">
+			<span class="pq-case-card__ident">
+				<span
+					v-if="card.number"
+					class="pq-case-card__number"
+					translate="no"
+					>{{ card.number }}</span
+				>
+				<p class="pq-case-card__title pq-case-card__title--board">
 					<a
 						v-if="tag === 'a'"
 						class="pq-case-card__link"
@@ -66,42 +118,14 @@
 					><span v-else>{{ card.title }}</span>
 				</p>
 			</span>
-			<p
-				v-if="display === 'compact'"
-				class="pq-case-card__title pq-case-card__title--board">
-				<a
-					v-if="tag === 'a'"
-					class="pq-case-card__link"
-					:href="href"
-					@click="onClick"
-					>{{ card.title }}</a
-				><button
-					v-else-if="tag === 'button'"
-					class="pq-case-card__link"
-					type="button"
-					@click="onClick">
-					{{ card.title }}</button
-				><span v-else>{{ card.title }}</span>
-			</p>
-			<span v-if="display === 'row'" class="pq-case-card__tag">
+			<span class="pq-case-card__tag">
 				<DataBadge
 					v-if="boardTag"
 					:text="boardTag.text"
 					:state="boardTag.state" />
 			</span>
-			<template v-if="display === 'compact'">
-				<span
-					v-if="card.position"
-					class="pq-case-card__bar pq-case-card__bar--board"
-					aria-hidden="true"
-					><span :style="{ inlineSize: barWidth }"
-				/></span>
-				<span v-if="stepLine" class="pq-case-card__line">{{
-					stepLine
-				}}</span>
-			</template>
 			<span
-				v-else-if="card.dueDay"
+				v-if="card.dueDay"
 				class="pq-case-card__due"
 				data-testid="mijn-case-card-due">
 				<span class="pq-case-card__due-label">{{ dueLabel }}</span>
@@ -126,9 +150,12 @@
 						v-if="card.status"
 						:text="card.status"
 						:state="card.closed ? 'neutral' : 'success'" />
-					<span v-if="card.reference" class="pq-case-card__reference">{{
-						card.reference
-					}}</span>
+					<span
+						v-if="card.reference"
+						class="pq-case-card__reference"
+						translate="no"
+						>{{ card.reference }}</span
+					>
 				</div>
 				<div>
 					<p class="denhaag-case-card__title pq-case-card__title">
@@ -186,7 +213,7 @@ import DataBadge from './DataBadge.vue'
 import { siteHref } from './rows.js'
 
 /** The displays besides the Den Haag folder card. */
-const DISPLAYS = ['', 'compact', 'row']
+const DISPLAYS = ['', 'compact', 'folder', 'row']
 
 /**
  * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
@@ -207,14 +234,14 @@ export default {
 		route: { type: String, default: '' },
 		/** Whether the card opens the case on this page (a button). */
 		button: { type: Boolean, default: false },
-		/** '' (the folder card), `compact` (the board card) or `row` (the board row). */
+		/** '' (the Den Haag folder card), `compact` (the board's overview folder), `folder` (the board's cases page folder) or `row` (the board row). */
 		display: {
 			type: String,
 			default: '',
 			validator: (value) => DISPLAYS.includes(value),
 		},
 
-		/** The words before the due day on a row ("Uiterlijk klaar op"). */
+		/** The words before the due day on a row or folder ("Uiterlijk klaar op"). */
 		dueLabel: { type: String, default: '' },
 	},
 
@@ -270,6 +297,20 @@ export default {
 				}
 			}
 			return null
+		},
+
+		/**
+		 * The line under a folder's title: for whom the case is read under a
+		 * mandate; on the cases page folder, else the case type.
+		 *
+		 * @return {string}
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
+		 */
+		via() {
+			if (this.mandate) {
+				return this.mandate
+			}
+			return this.display === 'folder' ? this.card.typeName || '' : ''
 		},
 
 		/**
@@ -418,10 +459,10 @@ export default {
 }
 
 /*
- * THE BOARD CARD AND ROW (zuiddrecht-resident-pages-match-the-boards): white
- * on a hairline, the website's card corners, the title in the link colour.
- * Every colour and corner is a token of the set; the fallbacks are the
- * folder card's own.
+ * THE BOARD ROW (zuiddrecht-resident-pages-match-the-boards): white on a
+ * hairline, the website's card corners, the title in the link colour. Every
+ * colour and corner is a token of the set; the fallbacks are the folder
+ * card's own.
  */
 .pq-case-card--board {
 	position: relative;
@@ -432,7 +473,10 @@ export default {
 	min-block-size: 0;
 	padding: 1.375rem 1.5rem;
 	border: 1px solid
-		var(--nldesign-color-border, var(--denhaag-case-card-border-color, #ccc));
+		var(
+			--nldesign-website-card-border-color,
+			var(--nldesign-color-border, var(--denhaag-case-card-border-color, #ccc))
+		);
 	border-radius: var(
 		--nldesign-website-border-radius-large,
 		var(--denhaag-case-card-border-radius, 0.375rem)
@@ -461,6 +505,7 @@ export default {
 
 .pq-case-card__number,
 .pq-case-card__line,
+.pq-case-card__via,
 .pq-case-card__due-label {
 	color: var(
 		--thematiq-website-text-muted,
@@ -494,6 +539,169 @@ export default {
 
 .pq-case-card__line {
 	font-size: 1rem;
+}
+
+/*
+ * THE BOARD FOLDER: a tinted folder with a tab above its left side and a
+ * sheet of paper peeking out on the right; a finished case in the neutral
+ * tint. The tag sits in a footer under a divider, with the due day beside
+ * it on the cases page. On a phone the folder flattens to a plain row.
+ */
+.pq-case-card-item--compact,
+.pq-case-card-item--folder {
+	margin-block-start: 1.25rem;
+}
+
+.pq-case-card--folder {
+	--pq-folder-tint: var(
+		--denhaag-case-card-background-color,
+		var(--nldesign-color-primary-light, #e4ecf6)
+	);
+	--pq-folder-line: var(--nldesign-color-background-darker, #c5d3e6);
+	position: relative;
+	isolation: isolate;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	box-sizing: border-box;
+	block-size: 100%;
+	min-block-size: var(--denhaag-case-card-height, 15rem);
+	padding: 2.5rem 1.25rem 1.25rem;
+	border-radius: 0 0.75rem 0.75rem;
+	background-color: var(--pq-folder-tint);
+	color: var(--nldesign-color-text, inherit);
+}
+
+.pq-case-card--folder.pq-case-card--closed {
+	--pq-folder-tint: var(--nldesign-color-background-dark, #e9ecef);
+}
+
+.pq-case-card__tab {
+	position: absolute;
+	z-index: -1;
+	inset-block-start: -1.25rem;
+	inset-inline-start: 0;
+	inline-size: 60%;
+	block-size: 1.5625rem;
+	border-start-start-radius: 0.75rem;
+	background-color: var(--pq-folder-tint);
+}
+
+.pq-case-card__tab::after {
+	content: '';
+	position: absolute;
+	inset-block-start: 0;
+	inset-inline-start: 91.6%;
+	inline-size: 16.7%;
+	block-size: 1.375rem;
+	transform: skewX(30deg);
+	background-color: var(--pq-folder-tint);
+}
+
+.pq-case-card__paper {
+	position: absolute;
+	inset-block-start: 0.5rem;
+	inset-inline-end: 0.5rem;
+	inline-size: 50%;
+	block-size: 1.25rem;
+	border-start-end-radius: 0.75rem;
+	background-color: var(--nldesign-color-background, #fff);
+}
+
+.pq-case-card__main {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	gap: 0.375rem;
+}
+
+.pq-case-card--folder .pq-case-card__title--board {
+	font-size: 1.25rem;
+	font-weight: 700;
+	line-height: 1.35;
+}
+
+.pq-case-card__via {
+	font-size: 0.9375rem;
+	line-height: 1.45;
+}
+
+.pq-case-card__steps {
+	display: flex;
+	flex-direction: column;
+	gap: 0.375rem;
+}
+
+.pq-case-card--folder .pq-case-card__line {
+	font-size: 0.9375rem;
+}
+
+.pq-case-card--folder .pq-case-card__bar--board {
+	block-size: 0.375rem;
+	background-color: var(--nldesign-color-background, #fff);
+}
+
+/* The tag in a folder: a white pill on the tint, its words in the dark
+   primary when nothing is asked of the resident. */
+.pq-case-card--folder .pq-data-badge {
+	padding: 0.25rem 0.75rem;
+	border-width: 0;
+	border-radius: 0.875rem;
+	font-size: 0.9375rem;
+	line-height: 1.35;
+}
+
+.pq-case-card--folder .pq-data-badge.nl-data-badge--info,
+.pq-case-card--folder .pq-data-badge.nl-data-badge--neutral {
+	background-color: var(--nldesign-color-background, #fff);
+	color: var(--nldesign-color-primary-hover, #234a78);
+}
+
+.pq-case-card--folder.pq-case-card--closed .pq-data-badge.nl-data-badge--neutral {
+	color: var(--nldesign-color-text, inherit);
+}
+
+.pq-case-card__foot {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: flex-end;
+	gap: 0.5rem 0.75rem;
+	padding-block-start: 0.875rem;
+	border-block-start: 1px solid var(--pq-folder-line);
+}
+
+.pq-case-card--compact .pq-case-card__foot {
+	justify-content: flex-start;
+	align-items: center;
+}
+
+.pq-case-card--folder .pq-case-card__due {
+	font-size: 0.9375rem;
+}
+
+.pq-case-card--folder .pq-case-card__due strong {
+	font-size: 1rem;
+}
+
+@media (max-width: 480px) {
+	.pq-case-card-item--compact,
+	.pq-case-card-item--folder {
+		margin-block-start: 0;
+	}
+
+	.pq-case-card--folder {
+		min-block-size: 0;
+		padding: 1rem 0;
+		border-block-end: 1px solid var(--pq-folder-line);
+		border-radius: 0;
+		background-color: transparent;
+	}
+
+	.pq-case-card__tab,
+	.pq-case-card__paper {
+		display: none;
+	}
 }
 
 /* The row: the number over the title, the tag, the due day; three columns

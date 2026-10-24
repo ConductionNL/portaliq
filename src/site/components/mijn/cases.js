@@ -7,6 +7,7 @@
 //
 // @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
 
+import { dueValueOf } from '../../../shared/casePage.js'
 import { caseStatus, caseTitle } from '../../../shared/myCases.js'
 
 /** How many cases a `cases` block shows when it declares no limit (design D4). */
@@ -133,7 +134,7 @@ export function turnSentence(row, collection) {
  * @param {Date} context.today Today.
  * @param {Array<object>|null} [context.steps] The case's steps, when read.
  * @param {Array<string>} [context.yourTurn] The turn values at which the resident must act (the board card's tag).
- * @return {object} `{title, typeName, status, reference, number, due, dueDay, readyBy, turn, yourTurn, position, closed}`.
+ * @return {object} `{title, typeName, status, reference, number, numberLabel, due, dueDay, readyBy, turn, yourTurn, position, closed}`.
  * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
  * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
  */
@@ -149,8 +150,8 @@ export function caseCard(
 			(value) =>
 				typeof value === 'string' && value.trim() !== '' && value !== title,
 		)
-	const dueField = collection?.dueField
-	const dueDay = dueField ? dayInWords(row?.[dueField], today, locale) : ''
+	// The legal decision date is the due day when the case has one (case-page-tasks-decision-dates-and-next-step).
+	const dueDay = dayInWords(dueValueOf(row, collection), today, locale)
 	const position = stepPosition(steps)
 	const turnValue = collection?.turnField ? row?.[collection.turnField] : undefined
 	return {
@@ -160,6 +161,7 @@ export function caseCard(
 		reference: reference ? tr('Case {reference}', { reference }) : '',
 		// The bare number for the board card, where "Zaak" is not repeated.
 		number: reference || '',
+		numberLabel: reference ? tr('Case number') : '',
 		due: dueDay ? tr('Answer by {date}', { date: dueDay }) : '',
 		dueDay,
 		readyBy: dueDay ? tr('ready by {date}', { date: dueDay }) : '',
