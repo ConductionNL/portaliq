@@ -1508,7 +1508,6 @@
 				"startDate": "{{date:-3}}",
 				"receivedAt": "{{datetime:-3 11:00}}",
 				"currentStatusEnteredAt": "{{datetime:-2 09:30}}",
-				"deadline": "{{date:5}}",
 				"statusHistory": [
 					{
 						"status": "{{lookup:status}}",
@@ -1553,7 +1552,6 @@
 				"startDate": "{{date:-3}}",
 				"receivedAt": "{{datetime:-3 11:00}}",
 				"currentStatusEnteredAt": "{{datetime:-2 09:30}}",
-				"deadline": "{{date:9}}",
 				"statusHistory": [
 					{
 						"status": "{{lookup:status}}",
