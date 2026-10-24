@@ -440,6 +440,51 @@
 			}
 		},
 		{
+			"key": "woo-fietspad-bij-kcc",
+			"register": "dossiq",
+			"schema": "caseCustody",
+			"data": {
+				"caseId": "{{object:woo-fietspad.id}}",
+				"organisationUnit": "{{cast:kcc.gid}}",
+				"handler": "{{cast:daan.uid}}",
+				"from": "{{datetime:-14 09:12}}",
+				"until": "{{datetime:-14 09:20}}",
+				"open": false,
+				"reason": "Telefonisch binnengekomen bij het KCC",
+				"movedBy": "{{cast:daan.uid}}",
+				"sequence": 1
+			}
+		},
+		{
+			"key": "woo-fietspad-bij-woo",
+			"register": "dossiq",
+			"schema": "caseCustody",
+			"data": {
+				"caseId": "{{object:woo-fietspad.id}}",
+				"organisationUnit": "{{cast:woo-en-informatie.gid}}",
+				"handler": "{{cast:pieter.uid}}",
+				"from": "{{datetime:-14 09:20}}",
+				"open": true,
+				"reason": "Doorgezet na het telefoongesprek",
+				"movedBy": "{{cast:daan.uid}}",
+				"sequence": 2
+			}
+		},
+		{
+			"key": "woo-fietspad-overname-juridisch",
+			"register": "dossiq",
+			"schema": "caseTakeover",
+			"data": {
+				"caseId": "{{object:woo-fietspad.id}}",
+				"requestedBy": "{{cast:marloes.uid}}",
+				"holder": "{{cast:pieter.uid}}",
+				"holdingUnit": "{{cast:woo-en-informatie.gid}}",
+				"reason": "Lopend geschil met de aannemer; juridische zaken neemt de zaak over.",
+				"status": "pending",
+				"requestedAt": "{{datetime:-11 10:05}}"
+			}
+		},
+		{
 			"key": "rol-woo-fietspad-verzoeker",
 			"register": "dossiq",
 			"schema": "role",
