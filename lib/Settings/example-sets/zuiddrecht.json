@@ -2012,6 +2012,26 @@
 			}
 		}
 	],
+	"notes": [
+		{
+			"key": "lars-noteert-fietspad",
+			"data": {
+				"user": "{{cast:lars.uid}}",
+				"objectUuid": "{{object:woo-fietspad.id}}",
+				"message": "De planning met de aannemer is nog niet definitief; de mail van vorige week is de laatste stand.",
+				"createdAt": "{{datetime:-11 09:31}}"
+			}
+		},
+		{
+			"key": "pieter-noteert-fietspad-anouk",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"objectUuid": "{{object:woo-fietspad.id}}",
+				"message": "@Anouk Bakker de klachtenlijst noemt bewoners met naam. Naar het buurregister sturen voordat we publiceren?",
+				"createdAt": "{{datetime:-11 15:52}}"
+			}
+		}
+	],
 	"changes": [
 		{
 			"key": "inloggen-met-account",
