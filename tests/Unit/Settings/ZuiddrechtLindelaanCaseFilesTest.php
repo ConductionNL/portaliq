@@ -47,7 +47,8 @@ class ZuiddrechtLindelaanCaseFilesTest extends TestCase {
 
 		$documents = [];
 		foreach ($objects as $key => $object) {
-			if ($object['schema'] === 'informatieobject' && str_starts_with($key, 'woo-fietspad-') === true) {
+			// The concept decision letter is the case's own document, not one under review.
+			if ($object['schema'] === 'informatieobject' && str_starts_with($key, 'woo-fietspad-') === true && $key !== 'woo-fietspad-besluit-concept') {
 				$documents[] = $object['files'][0]['path'];
 			}
 		}

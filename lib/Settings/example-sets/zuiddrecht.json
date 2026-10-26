@@ -457,7 +457,7 @@
 				"wooRequest": {
 					"onderwerp": "Verlichting fietspad Lindelaan",
 					"omschrijving": "Alle adviezen en mails over de verlichting van het fietspad aan de Lindelaan, uit 2025 en 2026.",
-					"periodeVan": "{{date:-290}}",
+					"periodeVan": "{{date:-400}}",
 					"periodeTot": "{{date:-15}}",
 					"origin": "portal",
 					"documentSoorten": [
@@ -484,7 +484,20 @@
 				],
 				"blockingCases": [
 					"{{object:woo-fietspad-adviescase.id}}"
-				]
+				],
+				"besluitDocument": "Concept\n\nBesluit op uw verzoek om informatie over de verlichting van het fietspad aan de Lindelaan\n\nGeachte mevrouw De Vries,\n\nU heeft ons gevraagd om de stukken over de aanleg van de verlichting langs het fietspad aan de Lindelaan. Wij hebben zeven documenten gevonden en beoordeeld. Wij maken de informatie deels openbaar.\n\n- Het advies over de verlichting en het raadsvoorstel maken wij openbaar.\n- De mail van de aannemer over de planning maken wij deels openbaar. Wij lakken de persoonsgegevens van medewerkers van de aannemer, omdat hun privacy zwaarder weegt dan het belang van openbaarheid (artikel 5.1.2e Woo).\n- De klachtenlijst van bewoners maken wij niet openbaar. Openbaarmaking zou de bewoners die een klacht indienden onevenredig benadelen (artikel 5.2.1 Woo).\n- Over de drie overige documenten beslissen wij nog; zij volgen in een aanvullend besluit.\n\nBent u het niet eens met dit besluit? Dan kunt u binnen zes weken na de dag van bekendmaking bezwaar maken bij het college van burgemeester en wethouders van Zuiddrecht.\n\nMet vriendelijke groet,\n\nnamens het college van burgemeester en wethouders van Zuiddrecht,\n\nPieter Jansen\nWoo-coördinator"
+			}
+		},
+		{
+			"key": "collega-lars",
+			"register": "dossiq",
+			"schema": "colleague",
+			"data": {
+				"userId": "{{cast:lars.uid}}",
+				"displayName": "{{cast:lars.displayName}}",
+				"email": "{{cast:lars.email}}",
+				"jobTitle": "{{cast:lars.function}}",
+				"department": "Mobiliteit en verkeer"
 			}
 		},
 		{
@@ -1454,6 +1467,50 @@
 			}
 		},
 		{
+			"key": "iot-besluit",
+			"register": "dossiq",
+			"schema": "informatieobjecttype",
+			"data": {
+				"description": "Besluit",
+				"informatieobjectcategorie": "internal",
+				"vertrouwelijkheidaanduiding": "openbaar",
+				"schema": "informatieobject",
+				"startValidity": "{{date:-365}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluit-concept",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"files": [
+				{
+					"path": "zuiddrecht/woo-fietspad/09-concept-woo-besluit.docx",
+					"title": "Woo-besluit verlichting fietspad Lindelaan"
+				}
+			],
+			"data": {
+				"title": "Woo-besluit verlichting fietspad Lindelaan",
+				"fileName": "09-concept-woo-besluit.docx",
+				"format": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "draft",
+				"informatieobjecttype": "{{object:iot-besluit.id}}",
+				"direction": "outbound",
+				"creatiedatum": "{{date:-1}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-zio-besluit-concept",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"informatieobject": "{{object:woo-fietspad-besluit-concept.id}}",
+				"registrationDate": "{{datetime:-1 16:30}}"
+			}
+		},
+		{
 			"key": "woo-fietspad-advies-beoordeling",
 			"register": "dossiq",
 			"schema": "wooDocumentAssessment",
@@ -2281,6 +2338,17 @@
 				"role": "3c0f5a00-0000-4000-a000-0000000c0005",
 				"validFrom": "{{date:-20}}",
 				"note": "Via de balie, zonder account"
+			}
+		},
+		{
+			"key": "partij-lars-adviseur",
+			"data": {
+				"objectUuid": "{{object:woo-fietspad.id}}",
+				"partyUuid": "{{object:collega-lars.id}}",
+				"role": "3c0f5a00-0000-4000-a000-0000000c0004",
+				"validFrom": "{{date:-11}}",
+				"validUntil": "{{date:14}}",
+				"note": "Advies over de verlichting vanuit Mobiliteit en verkeer"
 			}
 		}
 	],
