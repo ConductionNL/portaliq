@@ -1538,7 +1538,7 @@
 				"vertrouwelijkheidaanduiding": "intern",
 				"status": "draft",
 				"informatieobjecttype": "{{object:iot-besluit.id}}",
-				"direction": "outbound",
+				"direction": "outgoing",
 				"creatiedatum": "{{date:-1}}",
 				"taal": "nld"
 			}
