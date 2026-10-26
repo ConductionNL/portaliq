@@ -437,7 +437,7 @@
 				"communicationChannel": "portal",
 				"confidentiality": "intern",
 				"urgency": "high",
-				"legalBasis": "Woo artikel 4.4",
+				"legalBasis": "Woo art 4.4",
 				"assignee": "{{cast:pieter.uid}}",
 				"assignedGroup": "zuiddrecht-woo-en-informatie",
 				"externalReference": "MZ-ZDR-2026-0412",
@@ -2166,6 +2166,198 @@
 			"set": {
 				"contactsEnabled": true,
 				"plansEnabled": true
+			}
+		}
+	],
+	"flows": [
+		{
+			"key": "flow-documenten-uit-dossier",
+			"data": {
+				"name": "Documenten uit dossier koppelen",
+				"description": "Koppelt de documenten die al in het dossier van de verzoeker staan aan een nieuwe zaak.",
+				"trigger": "object.created",
+				"triggerRegister": "dossiq",
+				"triggerSchema": "case",
+				"nodes": [
+					{
+						"id": "start",
+						"type": "openregister.trigger-object",
+						"name": "Gestart door de zaak",
+						"config": {
+							"event": "object.created",
+							"register": "dossiq",
+							"schema": "case"
+						},
+						"position": {
+							"x": 40,
+							"y": 40
+						}
+					},
+					{
+						"id": "stap",
+						"type": "openregister.link-object",
+						"name": "Documenten uit het dossier aan de zaak koppelen",
+						"position": {
+							"x": 40,
+							"y": 160
+						}
+					},
+					{
+						"id": "end",
+						"type": "openregister.end",
+						"position": {
+							"x": 40,
+							"y": 280
+						}
+					}
+				],
+				"edges": [
+					{
+						"from": "start",
+						"to": "stap"
+					},
+					{
+						"from": "stap",
+						"to": "end"
+					}
+				],
+				"runs": [
+					{
+						"subject": "{{object:woo-fietspad.id}}",
+						"subjectRegister": "dossiq",
+						"subjectSchema": "case",
+						"trigger": "object.created",
+						"status": "completed",
+						"created": "{{datetime:-14 09:20}}"
+					}
+				]
+			}
+		},
+		{
+			"key": "flow-ontvangstbevestiging",
+			"data": {
+				"name": "Ontvangstbevestiging versturen",
+				"description": "Stuurt de verzoeker een ontvangstbevestiging zodra de zaak is aangemaakt.",
+				"trigger": "object.created",
+				"triggerRegister": "dossiq",
+				"triggerSchema": "case",
+				"nodes": [
+					{
+						"id": "start",
+						"type": "openregister.trigger-object",
+						"name": "Gestart door de zaak",
+						"config": {
+							"event": "object.created",
+							"register": "dossiq",
+							"schema": "case"
+						},
+						"position": {
+							"x": 40,
+							"y": 40
+						}
+					},
+					{
+						"id": "stap",
+						"type": "dossiq.sendMessage",
+						"name": "Ontvangstbevestiging naar de verzoeker",
+						"position": {
+							"x": 40,
+							"y": 160
+						}
+					},
+					{
+						"id": "end",
+						"type": "openregister.end",
+						"position": {
+							"x": 40,
+							"y": 280
+						}
+					}
+				],
+				"edges": [
+					{
+						"from": "start",
+						"to": "stap"
+					},
+					{
+						"from": "stap",
+						"to": "end"
+					}
+				],
+				"runs": [
+					{
+						"subject": "{{object:woo-fietspad.id}}",
+						"subjectRegister": "dossiq",
+						"subjectSchema": "case",
+						"trigger": "object.created",
+						"status": "completed",
+						"created": "{{datetime:-14 09:34}}"
+					}
+				]
+			}
+		},
+		{
+			"key": "flow-statusbericht",
+			"data": {
+				"name": "Statusbericht naar de inwoner",
+				"description": "Laat de inwoner weten dat de status van de zaak is veranderd.",
+				"trigger": "object.updated",
+				"triggerRegister": "dossiq",
+				"triggerSchema": "case",
+				"nodes": [
+					{
+						"id": "start",
+						"type": "openregister.trigger-object",
+						"name": "Gestart door de zaak",
+						"config": {
+							"event": "object.updated",
+							"register": "dossiq",
+							"schema": "case"
+						},
+						"position": {
+							"x": 40,
+							"y": 40
+						}
+					},
+					{
+						"id": "stap",
+						"type": "dossiq.sendMessage",
+						"name": "Statusbericht naar de inwoner",
+						"position": {
+							"x": 40,
+							"y": 160
+						}
+					},
+					{
+						"id": "end",
+						"type": "openregister.end",
+						"position": {
+							"x": 40,
+							"y": 280
+						}
+					}
+				],
+				"edges": [
+					{
+						"from": "start",
+						"to": "stap"
+					},
+					{
+						"from": "stap",
+						"to": "end"
+					}
+				],
+				"runs": [
+					{
+						"subject": "{{object:woo-fietspad.id}}",
+						"subjectRegister": "dossiq",
+						"subjectSchema": "case",
+						"trigger": "object.updated",
+						"status": "failed",
+						"error": "E-mail niet bezorgd; het bericht staat wel in Mijn Zuiddrecht.",
+						"created": "{{datetime:-13 10:05}}"
+					}
+				]
 			}
 		}
 	]

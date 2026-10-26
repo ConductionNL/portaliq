@@ -97,7 +97,7 @@ class ZuiddrechtLindelaanCaseCompleteTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheCaseNamesItsLegalGround(): void {
-		$this->assertSame(expected: 'Woo artikel 4.4', actual: $this->objects()['woo-fietspad']['data']['legalBasis']);
+		$this->assertSame(expected: 'Woo art 4.4', actual: $this->objects()['woo-fietspad']['data']['legalBasis']);
 	}//end testTheCaseNamesItsLegalGround()
 
 	/**
@@ -171,4 +171,35 @@ class ZuiddrechtLindelaanCaseCompleteTest extends TestCase {
 		$this->assertSame(expected: ['woo-besluit-deels-openbaar', '3.0.0'], actual: [$letters[0]['templateId'], $letters[0]['templateVersion']]);
 		$this->assertSame(expected: '{{cast:sanne.displayName}}', actual: $letters[0]['addressee']['name']);
 	}//end testTheCaseHasAConceptDecisionLetter()
+
+	/**
+	 * Three flows ran on the case, each once and finished, at the moments the Flows card lists: the
+	 * documents were linked and the receipt confirmed on the day it came in, and the status message
+	 * failed the next morning, when the case went into handling.
+	 *
+	 * @return void
+	 */
+	public function testThreeFinishedFlowRunsOnTheCase(): void {
+		$set   = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), true);
+		$flows = array_column(($set['flows'] ?? []), 'data', 'key');
+		$runs  = [];
+		foreach ($flows as $flow) {
+			foreach (($flow['runs'] ?? []) as $run) {
+				$this->assertSame(
+					expected: ['{{object:woo-fietspad.id}}', 'dossiq', 'case'],
+					actual: [$run['subject'], $run['subjectRegister'], $run['subjectSchema']]
+				);
+				$runs[$flow['name']] = [$run['status'], $run['created']];
+			}
+		}
+
+		$this->assertSame(
+			expected: [
+				'Documenten uit dossier koppelen'  => ['completed', '{{datetime:-14 09:20}}'],
+				'Ontvangstbevestiging versturen'   => ['completed', '{{datetime:-14 09:34}}'],
+				'Statusbericht naar de inwoner'    => ['failed', '{{datetime:-13 10:05}}'],
+			],
+			actual: $runs
+		);
+	}//end testThreeFinishedFlowRunsOnTheCase()
 }//end class
