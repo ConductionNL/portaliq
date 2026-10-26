@@ -126,7 +126,7 @@ class ZuiddrechtLindelaanCaseCompleteTest extends TestCase {
 				['besluit-opstellen', 'Besluit opstellen', '{{cast:pieter.uid}}', 'planned'],
 				['termijn-controleren', 'Termijn controleren', '{{cast:woo-en-informatie.gid}}', 'planned'],
 			],
-			actual: array_map(static fn (array $row): array => [$row['actionType'], $row['label'], $row['owner'], $row['state']], $planned)
+			actual: array_map(static fn (array $row): array => [$row['actionType'], $row['label'], $row['owner'] ?? $row['ownerGroup'], $row['state']], $planned)
 		);
 		$this->assertGreaterThan(expected: 0, actual: $this->offsetOf(value: $planned[0]['plannedFor']));
 		$this->assertGreaterThan(expected: $this->offsetOf(value: $planned[0]['plannedFor']), actual: $this->offsetOf(value: $planned[1]['plannedFor']));
