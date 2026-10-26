@@ -2383,6 +2383,146 @@
 			}
 		}
 	],
+	"timelineEntries": [
+		{
+			"key": "woo-fietspad-historie-aangemaakt",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "statuswijziging",
+				"message": "Zaak aangemaakt",
+				"at": "{{datetime:-14 14:10}}",
+				"fields": {
+					"to": "Ontvangen"
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-historie-documenten-gekoppeld",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "document",
+				"message": "3 documenten gekoppeld",
+				"author": "{{cast:pieter.uid}}",
+				"at": "{{datetime:-14 14:18}}",
+				"fields": {
+					"act": "linked",
+					"count": 3
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-historie-ontvangstbevestiging",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "bericht",
+				"message": "Ontvangstbevestiging verstuurd",
+				"author": "{{cast:pieter.uid}}",
+				"at": "{{datetime:-14 14:32}}",
+				"fields": {
+					"direction": "outbound",
+					"channel": "e-mail"
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-historie-opgepakt",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "toewijzing",
+				"message": "Zaak opgepakt",
+				"author": "{{cast:pieter.uid}}",
+				"at": "{{datetime:-13 09:10}}",
+				"fields": {
+					"act": "picked-up",
+					"to": "{{cast:pieter.displayName}}"
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-historie-status-in-behandeling",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "statuswijziging",
+				"message": "Status gewijzigd",
+				"author": "{{cast:pieter.uid}}",
+				"at": "{{datetime:-13 09:12}}",
+				"fields": {
+					"from": "Ontvangen",
+					"to": "In behandeling"
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-historie-bericht-verstuurd",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "bericht",
+				"message": "Bericht verstuurd",
+				"author": "{{cast:pieter.uid}}",
+				"at": "{{datetime:-13 10:24}}",
+				"fields": {
+					"direction": "outbound",
+					"counterpart": "{{cast:sanne.displayName}}"
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-historie-bericht-ontvangen",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "bericht",
+				"message": "Bericht ontvangen",
+				"author": "{{cast:sanne.uid}}",
+				"at": "{{datetime:-13 10:52}}",
+				"fields": {
+					"direction": "inbound",
+					"counterpart": "{{cast:sanne.displayName}}"
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-historie-taak-afgerond",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "taak",
+				"message": "Taak afgerond",
+				"author": "{{cast:lars.uid}}",
+				"at": "{{datetime:-11 09:30}}",
+				"fields": {
+					"act": "completed",
+					"title": "Advies verlichting"
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-historie-document-beoordeeld-advies",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "document",
+				"message": "Document beoordeeld",
+				"author": "{{cast:pieter.uid}}",
+				"at": "{{datetime:-11 11:05}}",
+				"fields": {
+					"act": "reviewed",
+					"title": "Advies verlichting fietspad"
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-historie-document-beoordeeld-mail",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "document",
+				"message": "Document beoordeeld",
+				"author": "{{cast:pieter.uid}}",
+				"at": "{{datetime:-11 11:20}}",
+				"fields": {
+					"act": "reviewed",
+					"title": "Mail aannemer over planning"
+				}
+			}
+		}
+	],
 	"parties": [
 		{
 			"key": "partij-sanne-verzoeker",
