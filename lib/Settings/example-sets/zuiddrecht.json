@@ -1069,6 +1069,35 @@
 			}
 		},
 		{
+			"key": "woo-fietspad-ontvangstbevestiging",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "webformulier",
+				"direction": "outbound",
+				"startTime": "{{datetime:-14 14:32}}",
+				"endTime": "{{datetime:-14 14:33}}",
+				"durationSeconds": 60,
+				"identificationMethod": "digid",
+				"kccEmployeeId": "{{cast:pieter.uid}}",
+				"case": "{{object:woo-fietspad.id}}",
+				"nature": "informatieverzoek",
+				"summary": "Ontvangst van het Woo-verzoek bevestigd.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true,
+				"geidentificeerdeBurgerId": "{{cast:sanne.bsn}}",
+				"contact": "{{lookup:sanne}}"
+			},
+			"lookups": {
+				"sanne": {
+					"schema": "brpPerson",
+					"where": {
+						"citizenServiceNumber": "{{cast:sanne.bsn}}"
+					}
+				}
+			}
+		},
+		{
 			"key": "woo-fietspad-uitleg",
 			"register": "dossiq",
 			"schema": "contactmoment",
@@ -2296,6 +2325,26 @@
 						"at": "{{datetime:-13 10:00}}"
 					}
 				]
+			}
+		}
+	],
+	"notes": [
+		{
+			"key": "woo-fietspad-notitie-lars",
+			"data": {
+				"user": "{{cast:lars.uid}}",
+				"objectUuid": "{{object:woo-fietspad.id}}",
+				"message": "Stukken uit 2025 staan in het dossier Fietspad Lindelaan",
+				"createdAt": "{{datetime:-11 09:31}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-notitie-pieter",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"objectUuid": "{{object:woo-fietspad.id}}",
+				"message": "@\"{{cast:anouk.uid}}\" de offerte bevat bedragen van een derde, graag even meekijken",
+				"createdAt": "{{datetime:-11 15:52}}"
 			}
 		}
 	],
