@@ -62,4 +62,21 @@ class ZuiddrechtLarsColleaguePartyTest extends TestCase {
 		preg_match('/-(\d+)/', $period['periodeVan'], $days);
 		$this->assertGreaterThanOrEqual(366, (int) $days[1]);
 	}//end testTheRequestPeriodStartsInTheYearBefore()
+
+	/**
+	 * DqZaakBesluiten's Beschikking card reads the case's decision text (besluitDocument): the concept Woo decision,
+	 * deels openbaar, naming the refusal grounds the assessed documents carry.
+	 *
+	 * @return void
+	 */
+	public function testTheCaseCarriesItsConceptDecisionLetter(): void {
+		$set     = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), true);
+		$objects = array_column($set['objects'], null, 'key');
+		$letter  = (string) ($objects['woo-fietspad']['data']['besluitDocument'] ?? '');
+
+		$this->assertStringContainsString('deels openbaar', $letter);
+		$this->assertStringContainsString('5.1.2', $letter);
+		$this->assertStringContainsString('5.2.1', $letter);
+		$this->assertStringNotContainsString('{{', $letter, 'the letter holds no placeholder the installer would read as a set token');
+	}//end testTheCaseCarriesItsConceptDecisionLetter()
 }//end class
