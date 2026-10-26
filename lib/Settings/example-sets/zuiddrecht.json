@@ -440,6 +440,18 @@
 			}
 		},
 		{
+			"key": "collega-lars",
+			"register": "dossiq",
+			"schema": "colleague",
+			"data": {
+				"userId": "{{cast:lars.uid}}",
+				"displayName": "{{cast:lars.displayName}}",
+				"email": "{{cast:lars.email}}",
+				"jobTitle": "{{cast:lars.function}}",
+				"department": "Mobiliteit en verkeer"
+			}
+		},
+		{
 			"key": "rol-woo-fietspad-verzoeker",
 			"register": "dossiq",
 			"schema": "role",
@@ -2009,6 +2021,17 @@
 				"role": "3c0f5a00-0000-4000-a000-0000000c0005",
 				"validFrom": "{{date:-20}}",
 				"note": "Via de balie, zonder account"
+			}
+		},
+		{
+			"key": "partij-lars-adviseur",
+			"data": {
+				"objectUuid": "{{object:woo-fietspad.id}}",
+				"partyUuid": "{{object:collega-lars.id}}",
+				"role": "3c0f5a00-0000-4000-a000-0000000c0004",
+				"validFrom": "{{date:-11}}",
+				"validUntil": "{{date:14}}",
+				"note": "Advies over de verlichting vanuit Mobiliteit en verkeer"
 			}
 		}
 	],

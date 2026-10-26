@@ -43,7 +43,8 @@ class ZuiddrechtWooCasePartiesTest extends TestCase {
 	public function testTheWooCaseCarriesItsParties(): void {
 		$set     = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), true);
 		$roles   = array_column(array_filter($set['objects'], static fn (array $o): bool => $o['schema'] === 'role'), null, 'key');
-		$parties = array_column($set['parties'] ?? [], 'data', 'key');
+		// The colleague party (Lars, ZuiddrechtLarsColleaguePartyTest) links a colleague object, not a role record.
+		$parties = array_diff_key(array_column($set['parties'] ?? [], 'data', 'key'), ['partij-lars-adviseur' => true]);
 
 		$expected = [
 			'partij-sanne-verzoeker'           => ['rol-woo-fietspad-verzoeker', '3c0f5a00-0000-4000-a000-0000000c0001', true],
