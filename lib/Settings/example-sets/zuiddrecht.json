@@ -2329,6 +2329,7 @@
 						},
 						{
 							"key": "besluit-opstellen",
+							"entryCriteria": [{"id": "documenten-beoordeeld", "on": {"event": "case.item.completed", "item": "documenten-beoordelen"}}],
 							"type": "humanTask",
 							"name": "Besluit opstellen",
 							"description": "start als alle documenten beoordeeld zijn",
