@@ -1419,6 +1419,50 @@
 			}
 		},
 		{
+			"key": "iot-besluit",
+			"register": "dossiq",
+			"schema": "informatieobjecttype",
+			"data": {
+				"description": "Besluit",
+				"informatieobjectcategorie": "internal",
+				"vertrouwelijkheidaanduiding": "openbaar",
+				"schema": "informatieobject",
+				"startValidity": "{{date:-365}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluit-concept",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"files": [
+				{
+					"path": "zuiddrecht/woo-fietspad/09-concept-woo-besluit.docx",
+					"title": "Woo-besluit verlichting fietspad Lindelaan"
+				}
+			],
+			"data": {
+				"title": "Woo-besluit verlichting fietspad Lindelaan",
+				"fileName": "09-concept-woo-besluit.docx",
+				"format": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "draft",
+				"informatieobjecttype": "{{object:iot-besluit.id}}",
+				"direction": "outbound",
+				"creatiedatum": "{{date:-1}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-zio-besluit-concept",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"informatieobject": "{{object:woo-fietspad-besluit-concept.id}}",
+				"registrationDate": "{{datetime:-1 16:30}}"
+			}
+		},
+		{
 			"key": "woo-fietspad-advies-beoordeling",
 			"register": "dossiq",
 			"schema": "wooDocumentAssessment",

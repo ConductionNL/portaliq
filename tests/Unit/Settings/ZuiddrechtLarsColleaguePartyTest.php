@@ -79,4 +79,48 @@ class ZuiddrechtLarsColleaguePartyTest extends TestCase {
 		$this->assertStringContainsString('5.2.1', $letter);
 		$this->assertStringNotContainsString('{{', $letter, 'the letter holds no placeholder the installer would read as a set token');
 	}//end testTheCaseCarriesItsConceptDecisionLetter()
+
+	/**
+	 * The card reads dossiq's letters route: the case's newest dossier document whose type is the Woo case type's
+	 * documentDrafts.decision documentType ("Besluit", matched by informatieobjecttype description). The concept letter is
+	 * such a document, in draft, with the letter text as its .docx file, linked to the case.
+	 *
+	 * @return void
+	 */
+	public function testTheConceptLetterIsADecisionDocumentOnTheCase(): void {
+		$dir     = __DIR__.'/../../../lib/Settings/example-sets/';
+		$set     = json_decode((string)file_get_contents($dir.'zuiddrecht.json'), true);
+		$keys    = array_column($set['objects'], 'key');
+		$objects = array_column($set['objects'], null, 'key');
+
+		$type = $objects['iot-besluit'] ?? null;
+		$this->assertNotNull($type);
+		$this->assertSame(['dossiq', 'informatieobjecttype'], [$type['register'], $type['schema']]);
+		$this->assertSame('Besluit', $type['data']['description']);
+
+		$letter = $objects['woo-fietspad-besluit-concept'] ?? null;
+		$this->assertNotNull($letter);
+		$this->assertSame(['dossiq', 'informatieobject'], [$letter['register'], $letter['schema']]);
+		$this->assertSame('draft', $letter['data']['status']);
+		$this->assertSame('{{object:iot-besluit.id}}', $letter['data']['informatieobjecttype']);
+		$this->assertStringEndsWith('.docx', $letter['data']['fileName']);
+		$this->assertSame($letter['data']['fileName'], basename($letter['files'][0]['path']));
+
+		$docx = new \ZipArchive();
+		$this->assertTrue($docx->open($dir.$letter['files'][0]['path']));
+		$body = (string) $docx->getFromName('word/document.xml');
+		$docx->close();
+		$this->assertStringContainsString('deels openbaar', $body);
+		$this->assertStringContainsString('Woo-coördinator', $body);
+
+		$link = $objects['woo-fietspad-zio-besluit-concept'] ?? null;
+		$this->assertNotNull($link);
+		$this->assertSame('zaakinformatieobject', $link['schema']);
+		$this->assertSame('{{object:woo-fietspad.id}}', $link['data']['case']);
+		$this->assertSame('{{object:woo-fietspad-besluit-concept.id}}', $link['data']['informatieobject']);
+
+		$at = array_flip($keys);
+		$this->assertLessThan($at['woo-fietspad-besluit-concept'], $at['iot-besluit']);
+		$this->assertLessThan($at['woo-fietspad-zio-besluit-concept'], $at['woo-fietspad-besluit-concept']);
+	}//end testTheConceptLetterIsADecisionDocumentOnTheCase()
 }//end class

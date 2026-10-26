@@ -164,7 +164,8 @@ class ZuiddrechtSanneLindelaanCaseTest extends TestCase {
 		$assessments = [];
 		foreach ($this->objects() as $object) {
 			$data = (array)($object['data'] ?? []);
-			if (($object['schema'] ?? '') === 'zaakinformatieobject' && ($data['case'] ?? '') === '{{object:woo-fietspad.id}}') {
+			// The concept decision letter is the case's own document, not one under review.
+			if (($object['schema'] ?? '') === 'zaakinformatieobject' && ($data['case'] ?? '') === '{{object:woo-fietspad.id}}' && ($object['key'] ?? '') !== 'woo-fietspad-zio-besluit-concept') {
 				$documents[] = (string)$data['informatieobject'];
 			}
 
