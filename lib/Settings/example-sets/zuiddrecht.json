@@ -313,6 +313,49 @@
 			}
 		},
 		{
+			"key": "woo-fietspad-adviescase",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "adviesaanvraag"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Advies verlichting fietspad",
+				"description": "Mobiliteit en verkeer geeft advies over de stukken over de verlichting: wat openbaar kan en hoe de planning met de aannemer weegt.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"initiatorDisplayName": "Gemeente Zuiddrecht, Woo en informatie",
+				"intakeChannel": "manual",
+				"confidentiality": "intern",
+				"assignee": "{{cast:lars.uid}}",
+				"assignedGroup": "{{cast:mobiliteit-en-verkeer.gid}}",
+				"startDate": "{{date:-4}}",
+				"receivedAt": "{{datetime:-4 09:30}}",
+				"currentStatusEnteredAt": "{{datetime:-4 10:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-4 10:00}}"
+					}
+				]
+			}
+		},
+		{
 			"key": "woo-fietspad",
 			"register": "dossiq",
 			"schema": "case",
@@ -393,6 +436,8 @@
 				"intakeChannel": "website",
 				"communicationChannel": "portal",
 				"confidentiality": "intern",
+				"urgency": "high",
+				"legalBasis": "Woo artikel 4.4",
 				"assignee": "{{cast:pieter.uid}}",
 				"assignedGroup": "zuiddrecht-woo-en-informatie",
 				"externalReference": "MZ-ZDR-2026-0412",
@@ -436,6 +481,9 @@
 						"caseId": "{{object:omgevingsvergunning-fietspad.id}}",
 						"aardRelatie": "subject"
 					}
+				],
+				"blockingCases": [
+					"{{object:woo-fietspad-adviescase.id}}"
 				]
 			}
 		},
@@ -1104,7 +1152,7 @@
 				"type": "intern",
 				"subject": "Advies verlichting",
 				"questions": "Welke adviezen over de verlichting kunnen openbaar, en wat weegt de afdeling over de planning met de aannemer?",
-				"deadline": "{{date:3}}",
+				"deadline": "{{date:7}}",
 				"status": "requested",
 				"requestedAt": "{{datetime:-4 09:30}}"
 			}
@@ -1592,6 +1640,71 @@
 				"objectType": "Lichtmast",
 				"objectIdentification": "LM-0015",
 				"description": "Mast bij de bushalte, nog niet geplaatst"
+			}
+		},
+		{
+			"key": "woo-fietspad-locatie",
+			"register": "dossiq",
+			"schema": "case-location",
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"label": "Fietspad Lindelaan, tussen nummer 2 en 40",
+				"latitude": 51.8113,
+				"longitude": 4.6541,
+				"accuracyRadius": 250,
+				"source": "free"
+			}
+		},
+		{
+			"key": "woo-fietspad-gepland-besluit",
+			"register": "dossiq",
+			"schema": "plannedAction",
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"actionType": "besluit-opstellen",
+				"label": "Besluit opstellen",
+				"owner": "{{cast:pieter.uid}}",
+				"plannedFor": "{{date:3}}",
+				"state": "planned"
+			}
+		},
+		{
+			"key": "woo-fietspad-gepland-termijn",
+			"register": "dossiq",
+			"schema": "plannedAction",
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"actionType": "termijn-controleren",
+				"label": "Termijn controleren",
+				"owner": "{{cast:woo-en-informatie.gid}}",
+				"plannedFor": "{{date:8}}",
+				"state": "planned"
+			}
+		},
+		{
+			"key": "woo-fietspad-beschikking",
+			"register": "dossiq",
+			"schema": "beschikking",
+			"data": {
+				"caseId": "{{object:woo-fietspad.id}}",
+				"caseType": "woo-verzoek",
+				"decisionType": "toekenning",
+				"templateId": "woo-besluit-deels-openbaar",
+				"templateVersion": "3.0.0",
+				"draftVersion": 1,
+				"currentStatus": "draft",
+				"rationale": "Een deel van de stukken over de verlichting van het fietspad wordt openbaar. Waar informatie niet openbaar wordt, staat per document de grond uit de Wet open overheid.",
+				"addressee": {
+					"type": "burger",
+					"bsn": "{{cast:sanne.bsn}}",
+					"name": "{{cast:sanne.displayName}}",
+					"messageBoxChannel": "mijnoverheid",
+					"messageBoxConfirmed": true
+				},
+				"decision": {
+					"kind": "deels-openbaar",
+					"subject": "Verlichting fietspad Lindelaan"
+				}
 			}
 		},
 		{
