@@ -2083,6 +2083,93 @@
 			}
 		}
 	],
+	"deckCards": [
+		{
+			"key": "woo-fietspad-kaart-lakken",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"board": "Woo en informatie",
+				"list": "Deze week",
+				"title": "Lakken offerte lantaarnpalen",
+				"owner": "{{cast:pieter.uid}}",
+				"assignees": [
+					"{{cast:lars.uid}}"
+				],
+				"labels": [
+					{
+						"title": "Bezig"
+					}
+				],
+				"shareWith": [
+					"{{cast:woo-en-informatie.gid}}"
+				]
+			}
+		}
+	],
+	"appointments": [
+		{
+			"key": "woo-fietspad-afspraak-toelichting",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"owner": "{{cast:pieter.uid}}",
+				"summary": "Toelichting stukken aan de verzoeker",
+				"start": "{{datetime:-3 10:00}}",
+				"end": "{{datetime:-3 10:30}}",
+				"location": "Stadskantoor, balie 3",
+				"attendees": [
+					{
+						"name": "{{cast:sanne.displayName}}",
+						"email": "{{cast:sanne.email}}",
+						"status": "invited"
+					}
+				]
+			}
+		}
+	],
+	"casePlans": [
+		{
+			"key": "woo-fietspad-zaakplan",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"definition": {
+					"items": [
+						{
+							"key": "verzoek-compleet",
+							"type": "milestone",
+							"name": "Verzoek compleet",
+							"state": "completed"
+						},
+						{
+							"key": "documenten-beoordelen",
+							"type": "humanTask",
+							"name": "Documenten beoordelen",
+							"state": "active"
+						},
+						{
+							"key": "zienswijze-derde",
+							"type": "humanTask",
+							"name": "Zienswijze derde vragen",
+							"state": "available",
+							"discretionary": true
+						},
+						{
+							"key": "besluit-opstellen",
+							"type": "humanTask",
+							"name": "Besluit opstellen",
+							"state": "available"
+						}
+					]
+				},
+				"history": [
+					{
+						"item": "verzoek-compleet",
+						"to": "completed",
+						"at": "{{datetime:-13 10:00}}"
+					}
+				]
+			}
+		}
+	],
 	"parties": [
 		{
 			"key": "partij-sanne-verzoeker",
