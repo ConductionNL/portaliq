@@ -62,8 +62,8 @@ class ZuiddrechtLindelaanCardsAppointmentsPlanTest extends TestCase {
 		$this->assertSame('{{object:woo-fietspad.id}}', $appointment['object']);
 		$this->assertSame('{{cast:pieter.uid}}', $appointment['owner']);
 		$this->assertSame('Toelichting stukken aan de verzoeker', $appointment['summary']);
-		$this->assertSame('{{datetime:-3 10:00}}', $appointment['start']);
-		$this->assertSame('{{datetime:-3 10:30}}', $appointment['end']);
+		$this->assertSame('{{datetime:3 10:00}}', $appointment['start'], 'an upcoming appointment, as the board draws it');
+		$this->assertSame('{{datetime:3 10:30}}', $appointment['end']);
 		$this->assertSame('Stadskantoor, balie 3', $appointment['location']);
 		$this->assertSame([['name' => '{{cast:sanne.displayName}}', 'email' => '{{cast:sanne.email}}', 'status' => 'invited']], $appointment['attendees']);
 	}//end testTheCaseHasItsAppointment()
@@ -80,15 +80,15 @@ class ZuiddrechtLindelaanCardsAppointmentsPlanTest extends TestCase {
 		$this->assertNotNull($plan);
 		$this->assertSame('{{object:woo-fietspad.id}}', $plan['object']);
 		$items = array_map(
-			static fn (array $item): array => [$item['name'], $item['type'], $item['state'], (bool) ($item['discretionary'] ?? false)],
+			static fn (array $item): array => [$item['name'], $item['type'], $item['state'], (bool) ($item['discretionary'] ?? false), $item['description'] ?? null],
 			$plan['definition']['items']
 		);
 		$this->assertSame(
 			[
-				['Verzoek compleet', 'milestone', 'completed', false],
-				['Documenten beoordelen', 'humanTask', 'active', false],
-				['Zienswijze derde vragen', 'humanTask', 'available', true],
-				['Besluit opstellen', 'humanTask', 'available', false],
+				['Mijlpaal: verzoek compleet', 'milestone', 'completed', false, 'bereikt op 4 okt'],
+				['Documenten beoordelen', 'humanTask', 'active', false, '3 van 7 nog open'],
+				['Zienswijze derde vragen', 'humanTask', 'available', true, 'alleen als een derde belang heeft'],
+				['Besluit opstellen', 'humanTask', 'available', false, 'start als alle documenten beoordeeld zijn'],
 			],
 			$items
 		);
