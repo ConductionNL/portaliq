@@ -313,6 +313,49 @@
 			}
 		},
 		{
+			"key": "woo-fietspad-adviescase",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "adviesaanvraag"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Advies verlichting fietspad",
+				"description": "Mobiliteit en verkeer geeft advies over de stukken over de verlichting: wat openbaar kan en hoe de planning met de aannemer weegt.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"initiatorDisplayName": "Gemeente Zuiddrecht, Woo en informatie",
+				"intakeChannel": "manual",
+				"confidentiality": "intern",
+				"assignee": "{{cast:lars.uid}}",
+				"assignedGroup": "{{cast:mobiliteit-en-verkeer.gid}}",
+				"startDate": "{{date:-4}}",
+				"receivedAt": "{{datetime:-4 09:30}}",
+				"currentStatusEnteredAt": "{{datetime:-4 10:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-4 10:00}}"
+					}
+				]
+			}
+		},
+		{
 			"key": "woo-fietspad",
 			"register": "dossiq",
 			"schema": "case",
@@ -393,6 +436,8 @@
 				"intakeChannel": "website",
 				"communicationChannel": "portal",
 				"confidentiality": "intern",
+				"urgency": "high",
+				"legalBasis": "Woo art 4.4",
 				"assignee": "{{cast:pieter.uid}}",
 				"assignedGroup": "zuiddrecht-woo-en-informatie",
 				"externalReference": "MZ-ZDR-2026-0412",
@@ -436,6 +481,9 @@
 						"caseId": "{{object:omgevingsvergunning-fietspad.id}}",
 						"aardRelatie": "subject"
 					}
+				],
+				"blockingCases": [
+					"{{object:woo-fietspad-adviescase.id}}"
 				],
 				"besluitDocument": "Concept\n\nBesluit op uw verzoek om informatie over de verlichting van het fietspad aan de Lindelaan\n\nGeachte mevrouw De Vries,\n\nU heeft ons gevraagd om de stukken over de aanleg van de verlichting langs het fietspad aan de Lindelaan. Wij hebben zeven documenten gevonden en beoordeeld. Wij maken de informatie deels openbaar.\n\n- Het advies over de verlichting en het raadsvoorstel maken wij openbaar.\n- De mail van de aannemer over de planning maken wij deels openbaar. Wij lakken de persoonsgegevens van medewerkers van de aannemer, omdat hun privacy zwaarder weegt dan het belang van openbaarheid (artikel 5.1.2e Woo).\n- De klachtenlijst van bewoners maken wij niet openbaar. Openbaarmaking zou de bewoners die een klacht indienden onevenredig benadelen (artikel 5.2.1 Woo).\n- Over de drie overige documenten beslissen wij nog; zij volgen in een aanvullend besluit.\n\nBent u het niet eens met dit besluit? Dan kunt u binnen zes weken na de dag van bekendmaking bezwaar maken bij het college van burgemeester en wethouders van Zuiddrecht.\n\nMet vriendelijke groet,\n\nnamens het college van burgemeester en wethouders van Zuiddrecht,\n\nPieter Jansen\nWoo-coördinator"
 			}
@@ -1117,7 +1165,7 @@
 				"type": "intern",
 				"subject": "Advies verlichting",
 				"questions": "Welke adviezen over de verlichting kunnen openbaar, en wat weegt de afdeling over de planning met de aannemer?",
-				"deadline": "{{date:3}}",
+				"deadline": "{{date:7}}",
 				"status": "requested",
 				"requestedAt": "{{datetime:-4 09:30}}"
 			}
@@ -1622,10 +1670,20 @@
 			"key": "woo-fietspad-object-fietspad",
 			"register": "dossiq",
 			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "road-section",
+					"where": {
+						"identification": "BGT wgl.0505.1234"
+					}
+				}
+			},
 			"data": {
 				"case": "{{object:woo-fietspad.id}}",
 				"objectType": "Openbare ruimte",
 				"objectIdentification": "BGT wgl.0505.1234",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/road-section/{{lookup:object}}",
 				"description": "Het fietspad zelf"
 			}
 		},
@@ -1633,10 +1691,20 @@
 			"key": "woo-fietspad-object-lichtmast-14",
 			"register": "dossiq",
 			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "street-light",
+					"where": {
+						"identification": "LM-0014"
+					}
+				}
+			},
 			"data": {
 				"case": "{{object:woo-fietspad.id}}",
 				"objectType": "Lichtmast",
 				"objectIdentification": "LM-0014",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/street-light/{{lookup:object}}",
 				"description": "Nieuwe mast bij de brug"
 			}
 		},
@@ -1644,11 +1712,128 @@
 			"key": "woo-fietspad-object-lichtmast-15",
 			"register": "dossiq",
 			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "street-light",
+					"where": {
+						"identification": "LM-0015"
+					}
+				}
+			},
 			"data": {
 				"case": "{{object:woo-fietspad.id}}",
 				"objectType": "Lichtmast",
 				"objectIdentification": "LM-0015",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/street-light/{{lookup:object}}",
 				"description": "Mast bij de bushalte, nog niet geplaatst"
+			}
+		},
+		{
+			"key": "melding-lantaarnpaal-object",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "street-light",
+					"where": {
+						"identification": "LP-0703"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:melding-lantaarnpaal.id}}",
+				"objectType": "Lantaarnpaal",
+				"objectIdentification": "LP-0703",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/street-light/{{lookup:object}}",
+				"description": "De lantaarnpaal die niet meer brandde"
+			}
+		},
+		{
+			"key": "melding-lantaarnpaal-lindelaan-object",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "street-light",
+					"where": {
+						"identification": "LP-1408"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:melding-lantaarnpaal-lindelaan.id}}",
+				"objectType": "Lantaarnpaal",
+				"objectIdentification": "LP-1408",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/street-light/{{lookup:object}}",
+				"description": "De lantaarnpaal die knippert"
+			}
+		},
+		{
+			"key": "woo-fietspad-locatie",
+			"register": "dossiq",
+			"schema": "case-location",
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"label": "Fietspad Lindelaan, tussen nummer 2 en 40",
+				"latitude": 51.81,
+				"longitude": 4.65,
+				"accuracyRadius": 250,
+				"source": "free"
+			}
+		},
+		{
+			"key": "woo-fietspad-gepland-besluit",
+			"register": "dossiq",
+			"schema": "plannedAction",
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"actionType": "besluit-opstellen",
+				"label": "Besluit opstellen",
+				"owner": "{{cast:pieter.uid}}",
+				"plannedFor": "{{date:3}}",
+				"state": "planned"
+			}
+		},
+		{
+			"key": "woo-fietspad-gepland-termijn",
+			"register": "dossiq",
+			"schema": "plannedAction",
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"actionType": "termijn-controleren",
+				"label": "Termijn controleren",
+				"owner": "{{cast:woo-en-informatie.gid}}",
+				"plannedFor": "{{date:8}}",
+				"state": "planned"
+			}
+		},
+		{
+			"key": "woo-fietspad-beschikking",
+			"register": "dossiq",
+			"schema": "beschikking",
+			"data": {
+				"caseId": "{{object:woo-fietspad.id}}",
+				"caseType": "woo-verzoek",
+				"decisionType": "toekenning",
+				"templateId": "woo-besluit-deels-openbaar",
+				"templateVersion": "3.0.0",
+				"draftVersion": 1,
+				"currentStatus": "draft",
+				"rationale": "Een deel van de stukken over de verlichting van het fietspad wordt openbaar. Waar informatie niet openbaar wordt, staat per document de grond uit de Wet open overheid.",
+				"addressee": {
+					"type": "burger",
+					"bsn": "{{cast:sanne.bsn}}",
+					"name": "{{cast:sanne.displayName}}",
+					"messageBoxChannel": "mijnoverheid",
+					"messageBoxConfirmed": true
+				},
+				"decision": {
+					"kind": "deels-openbaar",
+					"subject": "Verlichting fietspad Lindelaan"
+				}
 			}
 		},
 		{
@@ -2027,6 +2212,93 @@
 			}
 		}
 	],
+	"deckCards": [
+		{
+			"key": "woo-fietspad-kaart-lakken",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"board": "Woo en informatie",
+				"list": "Deze week",
+				"title": "Lakken offerte lantaarnpalen",
+				"owner": "{{cast:pieter.uid}}",
+				"assignees": [
+					"{{cast:lars.uid}}"
+				],
+				"labels": [
+					{
+						"title": "Bezig"
+					}
+				],
+				"shareWith": [
+					"{{cast:woo-en-informatie.gid}}"
+				]
+			}
+		}
+	],
+	"appointments": [
+		{
+			"key": "woo-fietspad-afspraak-toelichting",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"owner": "{{cast:pieter.uid}}",
+				"summary": "Toelichting stukken aan de verzoeker",
+				"start": "{{datetime:-3 10:00}}",
+				"end": "{{datetime:-3 10:30}}",
+				"location": "Stadskantoor, balie 3",
+				"attendees": [
+					{
+						"name": "{{cast:sanne.displayName}}",
+						"email": "{{cast:sanne.email}}",
+						"status": "invited"
+					}
+				]
+			}
+		}
+	],
+	"casePlans": [
+		{
+			"key": "woo-fietspad-zaakplan",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"definition": {
+					"items": [
+						{
+							"key": "verzoek-compleet",
+							"type": "milestone",
+							"name": "Verzoek compleet",
+							"state": "completed"
+						},
+						{
+							"key": "documenten-beoordelen",
+							"type": "humanTask",
+							"name": "Documenten beoordelen",
+							"state": "active"
+						},
+						{
+							"key": "zienswijze-derde",
+							"type": "humanTask",
+							"name": "Zienswijze derde vragen",
+							"state": "available",
+							"discretionary": true
+						},
+						{
+							"key": "besluit-opstellen",
+							"type": "humanTask",
+							"name": "Besluit opstellen",
+							"state": "available"
+						}
+					]
+				},
+				"history": [
+					{
+						"item": "verzoek-compleet",
+						"to": "completed",
+						"at": "{{datetime:-13 10:00}}"
+					}
+				]
+			}
+		}
+	],
 	"parties": [
 		{
 			"key": "partij-sanne-verzoeker",
@@ -2121,6 +2393,198 @@
 			"set": {
 				"contactsEnabled": true,
 				"plansEnabled": true
+			}
+		}
+	],
+	"flows": [
+		{
+			"key": "flow-documenten-uit-dossier",
+			"data": {
+				"name": "Documenten uit dossier koppelen",
+				"description": "Koppelt de documenten die al in het dossier van de verzoeker staan aan een nieuwe zaak.",
+				"trigger": "object.created",
+				"triggerRegister": "dossiq",
+				"triggerSchema": "case",
+				"nodes": [
+					{
+						"id": "start",
+						"type": "openregister.trigger-object",
+						"name": "Gestart door de zaak",
+						"config": {
+							"event": "object.created",
+							"register": "dossiq",
+							"schema": "case"
+						},
+						"position": {
+							"x": 40,
+							"y": 40
+						}
+					},
+					{
+						"id": "stap",
+						"type": "openregister.link-object",
+						"name": "Documenten uit het dossier aan de zaak koppelen",
+						"position": {
+							"x": 40,
+							"y": 160
+						}
+					},
+					{
+						"id": "end",
+						"type": "openregister.end",
+						"position": {
+							"x": 40,
+							"y": 280
+						}
+					}
+				],
+				"edges": [
+					{
+						"from": "start",
+						"to": "stap"
+					},
+					{
+						"from": "stap",
+						"to": "end"
+					}
+				],
+				"runs": [
+					{
+						"subject": "{{object:woo-fietspad.id}}",
+						"subjectRegister": "dossiq",
+						"subjectSchema": "case",
+						"trigger": "object.created",
+						"status": "completed",
+						"created": "{{datetime:-14 09:20}}"
+					}
+				]
+			}
+		},
+		{
+			"key": "flow-ontvangstbevestiging",
+			"data": {
+				"name": "Ontvangstbevestiging versturen",
+				"description": "Stuurt de verzoeker een ontvangstbevestiging zodra de zaak is aangemaakt.",
+				"trigger": "object.created",
+				"triggerRegister": "dossiq",
+				"triggerSchema": "case",
+				"nodes": [
+					{
+						"id": "start",
+						"type": "openregister.trigger-object",
+						"name": "Gestart door de zaak",
+						"config": {
+							"event": "object.created",
+							"register": "dossiq",
+							"schema": "case"
+						},
+						"position": {
+							"x": 40,
+							"y": 40
+						}
+					},
+					{
+						"id": "stap",
+						"type": "dossiq.sendMessage",
+						"name": "Ontvangstbevestiging naar de verzoeker",
+						"position": {
+							"x": 40,
+							"y": 160
+						}
+					},
+					{
+						"id": "end",
+						"type": "openregister.end",
+						"position": {
+							"x": 40,
+							"y": 280
+						}
+					}
+				],
+				"edges": [
+					{
+						"from": "start",
+						"to": "stap"
+					},
+					{
+						"from": "stap",
+						"to": "end"
+					}
+				],
+				"runs": [
+					{
+						"subject": "{{object:woo-fietspad.id}}",
+						"subjectRegister": "dossiq",
+						"subjectSchema": "case",
+						"trigger": "object.created",
+						"status": "completed",
+						"created": "{{datetime:-14 09:34}}"
+					}
+				]
+			}
+		},
+		{
+			"key": "flow-statusbericht",
+			"data": {
+				"name": "Statusbericht naar de inwoner",
+				"description": "Laat de inwoner weten dat de status van de zaak is veranderd.",
+				"trigger": "object.updated",
+				"triggerRegister": "dossiq",
+				"triggerSchema": "case",
+				"nodes": [
+					{
+						"id": "start",
+						"type": "openregister.trigger-object",
+						"name": "Gestart door de zaak",
+						"config": {
+							"event": "object.updated",
+							"register": "dossiq",
+							"schema": "case"
+						},
+						"position": {
+							"x": 40,
+							"y": 40
+						}
+					},
+					{
+						"id": "stap",
+						"type": "dossiq.sendMessage",
+						"name": "Statusbericht naar de inwoner",
+						"position": {
+							"x": 40,
+							"y": 160
+						}
+					},
+					{
+						"id": "end",
+						"type": "openregister.end",
+						"position": {
+							"x": 40,
+							"y": 280
+						}
+					}
+				],
+				"edges": [
+					{
+						"from": "start",
+						"to": "stap"
+					},
+					{
+						"from": "stap",
+						"to": "end"
+					}
+				],
+				"runs": [
+					{
+						"subject": "{{object:woo-fietspad.id}}",
+						"subjectRegister": "dossiq",
+						"subjectSchema": "case",
+						"trigger": "object.updated",
+						"status": "failed",
+						"error": "E-mail niet bezorgd; het bericht staat wel in Mijn Zuiddrecht.",
+						"created": "{{datetime:-13 10:05}}"
+					}
+				]
 			}
 		}
 	]
