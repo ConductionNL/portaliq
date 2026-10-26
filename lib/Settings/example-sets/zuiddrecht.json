@@ -1532,7 +1532,7 @@
 				}
 			],
 			"data": {
-				"title": "Woo-besluit verlichting fietspad Lindelaan",
+				"title": "Besluit Woo-verzoek {{object:woo-fietspad.identifier}}.pdf",
 				"fileName": "09-concept-woo-besluit.docx",
 				"format": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 				"vertrouwelijkheidaanduiding": "intern",
