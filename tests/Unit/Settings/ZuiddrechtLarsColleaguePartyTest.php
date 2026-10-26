@@ -102,6 +102,7 @@ class ZuiddrechtLarsColleaguePartyTest extends TestCase {
 		$this->assertNotNull($letter);
 		$this->assertSame(['dossiq', 'informatieobject'], [$letter['register'], $letter['schema']]);
 		$this->assertSame('draft', $letter['data']['status']);
+		$this->assertSame('Besluit Woo-verzoek {{object:woo-fietspad.identifier}}.pdf', $letter['data']['title'], 'the title DqBesluit draws, with the case number');
 		$this->assertSame('{{object:iot-besluit.id}}', $letter['data']['informatieobjecttype']);
 		$this->assertStringEndsWith('.docx', $letter['data']['fileName']);
 		$this->assertSame($letter['data']['fileName'], basename($letter['files'][0]['path']));
