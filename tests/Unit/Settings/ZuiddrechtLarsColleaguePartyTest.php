@@ -46,4 +46,20 @@ class ZuiddrechtLarsColleaguePartyTest extends TestCase {
 		$this->assertSame('3c0f5a00-0000-4000-a000-0000000c0004', $link['role']);
 		$this->assertArrayHasKey('validUntil', $link);
 	}//end testLarsAdvisesOnTheLindelaanCaseAsAColleague()
+
+	/**
+	 * The request covers documents from last year to this year, as the Het verzoek pill reads ("Periode 2025 tot en met
+	 * 2026"): the period starts more than a year before the install day.
+	 *
+	 * @return void
+	 */
+	public function testTheRequestPeriodStartsInTheYearBefore(): void {
+		$set     = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), true);
+		$objects = array_column($set['objects'], null, 'key');
+		$period  = $objects['woo-fietspad']['data']['wooRequest'];
+
+		$this->assertMatchesRegularExpression('/^\{\{date:-(\d+)\}\}$/', $period['periodeVan']);
+		preg_match('/-(\d+)/', $period['periodeVan'], $days);
+		$this->assertGreaterThanOrEqual(366, (int) $days[1]);
+	}//end testTheRequestPeriodStartsInTheYearBefore()
 }//end class

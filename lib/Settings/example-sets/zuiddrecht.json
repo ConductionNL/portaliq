@@ -412,7 +412,7 @@
 				"wooRequest": {
 					"onderwerp": "Verlichting fietspad Lindelaan",
 					"omschrijving": "Alle adviezen en mails over de verlichting van het fietspad aan de Lindelaan, uit 2025 en 2026.",
-					"periodeVan": "{{date:-290}}",
+					"periodeVan": "{{date:-400}}",
 					"periodeTot": "{{date:-15}}",
 					"origin": "portal",
 					"documentSoorten": [
