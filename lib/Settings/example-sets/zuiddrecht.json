@@ -482,6 +482,20 @@
 						"aardRelatie": "subject"
 					}
 				],
+				"conversations": [
+					{
+						"kind": "conversation",
+						"subject": "Gesprek met Sanne de Vries over de stukken",
+						"startedAt": "{{datetime:-13 10:30}}",
+						"endedAt": "{{datetime:-13 10:42}}",
+						"startedBy": "{{cast:pieter.uid}}",
+						"participants": [
+							"{{cast:pieter.displayName}}",
+							"{{cast:sanne.displayName}}"
+						],
+						"durationSeconds": 720
+					}
+				],
 				"blockingCases": [
 					"{{object:woo-fietspad-adviescase.id}}"
 				],
@@ -2345,6 +2359,23 @@
 				"objectUuid": "{{object:woo-fietspad.id}}",
 				"message": "@\"{{cast:anouk.uid}}\" de offerte bevat bedragen van een derde, graag even meekijken",
 				"createdAt": "{{datetime:-11 15:52}}"
+			}
+		}
+	],
+	"talkConversations": [
+		{
+			"key": "woo-fietspad-gesprek-sanne",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"name": "Gesprek met Sanne de Vries over de stukken",
+				"owner": "{{cast:pieter.uid}}",
+				"participants": [
+					"{{cast:sanne.uid}}"
+				],
+				"call": {
+					"start": "{{datetime:-13 10:30}}",
+					"end": "{{datetime:-13 10:42}}"
+				}
 			}
 		}
 	],
