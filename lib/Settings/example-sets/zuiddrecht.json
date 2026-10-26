@@ -1613,10 +1613,20 @@
 			"key": "woo-fietspad-object-fietspad",
 			"register": "dossiq",
 			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "road-section",
+					"where": {
+						"identification": "BGT wgl.0505.1234"
+					}
+				}
+			},
 			"data": {
 				"case": "{{object:woo-fietspad.id}}",
 				"objectType": "Openbare ruimte",
 				"objectIdentification": "BGT wgl.0505.1234",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/road-section/{{lookup:object}}",
 				"description": "Het fietspad zelf"
 			}
 		},
@@ -1624,10 +1634,20 @@
 			"key": "woo-fietspad-object-lichtmast-14",
 			"register": "dossiq",
 			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "street-light",
+					"where": {
+						"identification": "LM-0014"
+					}
+				}
+			},
 			"data": {
 				"case": "{{object:woo-fietspad.id}}",
 				"objectType": "Lichtmast",
 				"objectIdentification": "LM-0014",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/street-light/{{lookup:object}}",
 				"description": "Nieuwe mast bij de brug"
 			}
 		},
@@ -1635,11 +1655,63 @@
 			"key": "woo-fietspad-object-lichtmast-15",
 			"register": "dossiq",
 			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "street-light",
+					"where": {
+						"identification": "LM-0015"
+					}
+				}
+			},
 			"data": {
 				"case": "{{object:woo-fietspad.id}}",
 				"objectType": "Lichtmast",
 				"objectIdentification": "LM-0015",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/street-light/{{lookup:object}}",
 				"description": "Mast bij de bushalte, nog niet geplaatst"
+			}
+		},
+		{
+			"key": "melding-lantaarnpaal-object",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "street-light",
+					"where": {
+						"identification": "LP-0703"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:melding-lantaarnpaal.id}}",
+				"objectType": "Lantaarnpaal",
+				"objectIdentification": "LP-0703",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/street-light/{{lookup:object}}",
+				"description": "De lantaarnpaal die niet meer brandde"
+			}
+		},
+		{
+			"key": "melding-lantaarnpaal-lindelaan-object",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "street-light",
+					"where": {
+						"identification": "LP-1408"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:melding-lantaarnpaal-lindelaan.id}}",
+				"objectType": "Lantaarnpaal",
+				"objectIdentification": "LP-1408",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/street-light/{{lookup:object}}",
+				"description": "De lantaarnpaal die knippert"
 			}
 		},
 		{

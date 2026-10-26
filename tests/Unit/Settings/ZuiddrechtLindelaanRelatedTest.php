@@ -130,4 +130,49 @@ class ZuiddrechtLindelaanRelatedTest extends TestCase {
 			actual: array_column(array_column($links, 'data'), 'objectIdentification')
 		);
 	}//end testTheCaseNamesItsObjects()
+
+	/**
+	 * Each case object points at its object in the public-space register,
+	 * found by identification, so the case shows the object's own name and
+	 * status. The two lamp-post reports link the lamp post they are about.
+	 *
+	 * @return void
+	 */
+	public function testTheCaseObjectsPointAtThePublicSpaceRegister(): void {
+		$objects = array_column($this->objects(), null, 'key');
+		$expected = [
+			'woo-fietspad-object-fietspad'          => ['road-section', 'BGT wgl.0505.1234', 'woo-fietspad'],
+			'woo-fietspad-object-lichtmast-14'      => ['street-light', 'LM-0014', 'woo-fietspad'],
+			'woo-fietspad-object-lichtmast-15'      => ['street-light', 'LM-0015', 'woo-fietspad'],
+			'melding-lantaarnpaal-object'           => ['street-light', 'LP-0703', 'melding-lantaarnpaal'],
+			'melding-lantaarnpaal-lindelaan-object' => ['street-light', 'LP-1408', 'melding-lantaarnpaal-lindelaan'],
+		];
+
+		foreach ($expected as $key => [$schema, $identification, $case]) {
+			$link = $objects[$key];
+			$this->assertSame(
+				expected: ['register' => 'public-space', 'schema' => $schema, 'where' => ['identification' => $identification]],
+				actual: $link['lookups']['object'],
+				message: $key
+			);
+			$this->assertSame(
+				expected: '{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/'.$schema.'/{{lookup:object}}',
+				actual: $link['data']['objectUrl'],
+				message: $key
+			);
+			$this->assertSame(
+				expected: [$identification, '{{object:'.$case.'.id}}'],
+				actual: [$link['data']['objectIdentification'], $link['data']['case']],
+				message: $key
+			);
+		}
+
+		$this->assertSame(
+			expected: ['Lantaarnpaal', 'Lantaarnpaal'],
+			actual: [
+				$objects['melding-lantaarnpaal-object']['data']['objectType'],
+				$objects['melding-lantaarnpaal-lindelaan-object']['data']['objectType'],
+			]
+		);
+	}//end testTheCaseObjectsPointAtThePublicSpaceRegister()
 }//end class
