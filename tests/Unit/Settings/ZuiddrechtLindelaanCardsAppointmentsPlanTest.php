@@ -93,6 +93,12 @@ class ZuiddrechtLindelaanCardsAppointmentsPlanTest extends TestCase {
 			$items
 		);
 		$this->assertSame([['item' => 'verzoek-compleet', 'to' => 'completed', 'at' => '{{datetime:-13 10:00}}']], $plan['history']);
+		$besluit = array_column($plan['definition']['items'], null, 'key')['besluit-opstellen'];
+		$this->assertSame(
+			[['id' => 'documenten-beoordeeld', 'on' => ['event' => 'case.item.completed', 'item' => 'documenten-beoordelen']]],
+			$besluit['entryCriteria'] ?? null,
+			'the decision waits until the documents are assessed'
+		);
 	}//end testTheCasePlanHasItsFourItems()
 
 	/**
