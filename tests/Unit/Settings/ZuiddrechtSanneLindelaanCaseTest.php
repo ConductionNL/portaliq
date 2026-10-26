@@ -108,8 +108,9 @@ class ZuiddrechtSanneLindelaanCaseTest extends TestCase {
 	}//end testSannesCasesNameHerAsRequester()
 
 	/**
-	 * The four contact moments of DqZaakContact are on the case, after it,
-	 * with the board's channels and directions.
+	 * The five contact moments of DqZaakContact are on the case, after it,
+	 * with the board's channels and directions: Pieter's acknowledgement
+	 * through Mijn Zuiddrecht follows Sanne's call.
 	 *
 	 * @return void
 	 */
@@ -125,7 +126,7 @@ class ZuiddrechtSanneLindelaanCaseTest extends TestCase {
 		}
 
 		$this->assertSame(
-			expected: [['phone', 'inbound'], ['webformulier', 'outbound'], ['webformulier', 'inbound'], ['email', 'inbound']],
+			expected: [['phone', 'inbound'], ['webformulier', 'outbound'], ['webformulier', 'outbound'], ['webformulier', 'inbound'], ['email', 'inbound']],
 			actual: $moments
 		);
 	}//end testTheCaseCarriesTheBoardsContactMoments()
