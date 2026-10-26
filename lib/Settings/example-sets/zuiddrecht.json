@@ -2299,6 +2299,26 @@
 			}
 		}
 	],
+	"notes": [
+		{
+			"key": "woo-fietspad-notitie-lars",
+			"data": {
+				"user": "{{cast:lars.uid}}",
+				"objectUuid": "{{object:woo-fietspad.id}}",
+				"message": "Stukken uit 2025 staan in het dossier Fietspad Lindelaan",
+				"createdAt": "{{datetime:-11 09:31}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-notitie-pieter",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"objectUuid": "{{object:woo-fietspad.id}}",
+				"message": "@\"{{cast:anouk.uid}}\" de offerte bevat bedragen van een derde, graag even meekijken",
+				"createdAt": "{{datetime:-11 15:52}}"
+			}
+		}
+	],
 	"parties": [
 		{
 			"key": "partij-sanne-verzoeker",
