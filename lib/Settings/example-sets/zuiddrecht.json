@@ -73,8 +73,8 @@
 				"audience": "citizen",
 				"organisation": "zuiddrecht",
 				"displayName": "{{cast:sanne.displayName}}",
-				"identityType": "dev",
-				"identityRef": "example-resident",
+				"identityType": "digid",
+				"identityRef": "{{cast:sanne.bsn}}",
 				"status": "active",
 				"contactChannel": "portal",
 				"contactAddresses": [
