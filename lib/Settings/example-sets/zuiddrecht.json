@@ -1649,8 +1649,8 @@
 			"data": {
 				"case": "{{object:woo-fietspad.id}}",
 				"label": "Fietspad Lindelaan, tussen nummer 2 en 40",
-				"latitude": 51.8113,
-				"longitude": 4.6541,
+				"latitude": 51.81,
+				"longitude": 4.65,
 				"accuracyRadius": 250,
 				"source": "free"
 			}

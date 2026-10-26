@@ -101,7 +101,8 @@ class ZuiddrechtLindelaanCaseCompleteTest extends TestCase {
 	}//end testTheCaseNamesItsLegalGround()
 
 	/**
-	 * One location on the case, the stretch of the cycle path, at the case's own point.
+	 * One location on the case, the stretch of the cycle path, at the case's own point to the two decimals
+	 * OpenRegister keeps for a number.
 	 *
 	 * @return void
 	 */
@@ -110,7 +111,7 @@ class ZuiddrechtLindelaanCaseCompleteTest extends TestCase {
 		$this->assertCount(expectedCount: 1, haystack: $locations);
 		$this->assertSame(expected: 'Fietspad Lindelaan, tussen nummer 2 en 40', actual: $locations[0]['label']);
 		$point = json_decode($this->objects()['woo-fietspad']['data']['geometry'], true)['coordinates'];
-		$this->assertSame(expected: [$point[1], $point[0]], actual: [$locations[0]['latitude'], $locations[0]['longitude']]);
+		$this->assertSame(expected: [round($point[1], 2), round($point[0], 2)], actual: [$locations[0]['latitude'], $locations[0]['longitude']]);
 	}//end testTheCaseHasOneLocation()
 
 	/**

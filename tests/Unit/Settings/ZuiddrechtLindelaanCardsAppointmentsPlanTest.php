@@ -94,4 +94,19 @@ class ZuiddrechtLindelaanCardsAppointmentsPlanTest extends TestCase {
 		);
 		$this->assertSame([['item' => 'verzoek-compleet', 'to' => 'completed', 'at' => '{{datetime:-13 10:00}}']], $plan['history']);
 	}//end testTheCasePlanHasItsFourItems()
+
+	/**
+	 * The case location's coordinates carry no more decimals than OpenRegister keeps for a number (NUMERIC(10,2)),
+	 * or a refresh reports them as written but not kept.
+	 *
+	 * @return void
+	 */
+	public function testTheLocationHoldsWhatTheStoreKeeps(): void {
+		$objects  = array_column($this->set()['objects'], 'data', 'key');
+		$location = $objects['woo-fietspad-locatie'];
+
+		foreach (['latitude', 'longitude'] as $field) {
+			$this->assertSame(round($location[$field], 2), $location[$field], $field);
+		}
+	}//end testTheLocationHoldsWhatTheStoreKeeps()
 }//end class
