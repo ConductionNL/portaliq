@@ -1068,7 +1068,8 @@
 				"kccEmployeeId": "{{cast:pieter.uid}}",
 				"case": "{{object:woo-fietspad.id}}",
 				"nature": "new_request",
-				"summary": "Hoe vraag ik de stukken over de verlichting van het fietspad op?",
+				"summary": "Vraag over stukken fietspad, Woo-verzoek samen opgenomen.",
+				"message": "Hoe vraag ik de stukken over de verlichting van het fietspad op?",
 				"firstTimeFix": false,
 				"visibleToApplicant": true,
 				"contact": "{{lookup:sanne}}"
@@ -1126,6 +1127,7 @@
 				"case": "{{object:woo-fietspad.id}}",
 				"nature": "informatieverzoek",
 				"summary": "De aanleg begint in maart. Er komt verlichting langs het hele fietspad.",
+				"message": "De aanleg begint in maart. Er komt verlichting langs het hele fietspad.",
 				"firstTimeFix": false,
 				"visibleToApplicant": true,
 				"geidentificeerdeBurgerId": "{{cast:sanne.bsn}}",
@@ -1155,7 +1157,8 @@
 				"kccEmployeeId": "{{cast:pieter.uid}}",
 				"case": "{{object:woo-fietspad.id}}",
 				"nature": "informatieverzoek",
-				"summary": "Dank u wel. Ik wil graag alle stukken over de verlichting zien.",
+				"summary": "Wil graag alle stukken over de verlichting zien.",
+				"message": "Dank u wel. Ik wil graag alle stukken over de verlichting zien.",
 				"firstTimeFix": false,
 				"visibleToApplicant": true,
 				"contact": "{{lookup:sanne}}"
@@ -1184,7 +1187,8 @@
 				"kccEmployeeId": "{{cast:pieter.uid}}",
 				"case": "{{object:woo-fietspad.id}}",
 				"nature": "informatieverzoek",
-				"summary": "Goedemorgen, ik wil mijn verzoek aanvullen. Kunt u ook de offertes voor de lantaarnpalen meenemen? Met vriendelijke groet, Sanne de Vries",
+				"summary": "Vult het verzoek aan met de offertes voor de lantaarnpalen.",
+				"message": "Goedemorgen, ik wil mijn verzoek aanvullen. Kunt u ook de offertes voor de lantaarnpalen meenemen? Met vriendelijke groet, Sanne de Vries",
 				"firstTimeFix": false,
 				"visibleToApplicant": true,
 				"contact": "{{lookup:sanne}}"
