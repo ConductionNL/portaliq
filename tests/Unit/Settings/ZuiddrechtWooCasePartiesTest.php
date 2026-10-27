@@ -36,7 +36,9 @@ use PHPUnit\Framework\TestCase;
 class ZuiddrechtWooCasePartiesTest extends TestCase {
 
 	/**
-	 * Four party links on the case, each pointing at its role record's participant, in the Woo role, Sanne primary.
+	 * Two party links on the case besides Lars, each pointing at its role record's participant, Sanne primary.
+	 * J. van Wijk is the organisation's contact person, not a party of his own, and the residents' association
+	 * is not a party to this case (DqZaakBetrokkenen draws three parties).
 	 *
 	 * @return void
 	 */
@@ -49,8 +51,6 @@ class ZuiddrechtWooCasePartiesTest extends TestCase {
 		$expected = [
 			'partij-sanne-verzoeker'           => ['rol-woo-fietspad-verzoeker', '3c0f5a00-0000-4000-a000-0000000c0001', true],
 			'partij-vanwijk-belanghebbende'    => ['rol-woo-fietspad-belanghebbende', '3c0f5a00-0000-4000-a000-0000000c0003', false],
-			'partij-jvanwijk-gemachtigde'      => ['rol-woo-fietspad-gemachtigde', '3c0f5a00-0000-4000-a000-0000000c0002', false],
-			'partij-bewonerslindelaan-melder'  => ['rol-woo-fietspad-melder', '3c0f5a00-0000-4000-a000-0000000c0005', false],
 		];
 		$this->assertSame(expected: array_keys($expected), actual: array_keys($parties));
 		foreach ($expected as $key => [$role, $roleType, $primary]) {
@@ -61,7 +61,7 @@ class ZuiddrechtWooCasePartiesTest extends TestCase {
 			$this->assertSame(expected: $primary, actual: ($parties[$key]['primary'] ?? false), message: $key);
 		}
 
-		$this->assertArrayHasKey(key: 'validUntil', array: $parties['partij-jvanwijk-gemachtigde']);
-		$this->assertSame(expected: '{{lookup:vanwijk}}', actual: $roles['rol-woo-fietspad-gemachtigde']['data']['representedParty']);
+		$this->assertArrayNotHasKey(key: 'rol-woo-fietspad-gemachtigde', array: $roles);
+		$this->assertArrayNotHasKey(key: 'rol-woo-fietspad-melder', array: $roles);
 	}//end testTheWooCaseCarriesItsParties()
 }//end class
