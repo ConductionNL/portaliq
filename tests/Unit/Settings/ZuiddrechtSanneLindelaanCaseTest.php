@@ -90,6 +90,18 @@ class ZuiddrechtSanneLindelaanCaseTest extends TestCase {
 	}//end testTheCaseIsInProgress()
 
 	/**
+	 * Sanne logged in with DigiD on Mijn Zuiddrecht, so the requester card reads "Ingelogd met DigiD" and the header "via Mijn Zuiddrecht".
+	 *
+	 * @return void
+	 */
+	public function testTheCaseCameInThroughThePortal(): void {
+		$case = $this->object(key: 'woo-fietspad');
+
+		$this->assertSame(expected: 'digid', actual: $case['data']['intakeIdentification']);
+		$this->assertSame(expected: 'Mijn Zuiddrecht', actual: $case['data']['intakeSourceName']);
+	}//end testTheCaseCameInThroughThePortal()
+
+	/**
 	 * Every case of Sanne's names her contact record as its requester, so her contact page lists them.
 	 *
 	 * @return void
