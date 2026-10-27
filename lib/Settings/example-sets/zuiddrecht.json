@@ -1836,6 +1836,7 @@
 				"actionType": "besluit-opstellen",
 				"label": "Besluit opstellen",
 				"owner": "{{cast:pieter.uid}}",
+				"plannedByRule": "de stappen van het Woo-verzoek",
 				"plannedFor": "{{date:3}}",
 				"state": "planned"
 			}
@@ -1848,7 +1849,8 @@
 				"case": "{{object:woo-fietspad.id}}",
 				"actionType": "termijn-controleren",
 				"label": "Termijn controleren",
-				"owner": "{{cast:woo-en-informatie.gid}}",
+				"ownerGroup": "{{cast:woo-en-informatie.gid}}",
+				"plannedBy": "{{cast:pieter.uid}}",
 				"plannedFor": "{{date:8}}",
 				"state": "planned"
 			}
