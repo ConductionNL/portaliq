@@ -27,25 +27,85 @@ class ZuiddrechtLindelaanConversationTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheConversationReadsAsTheBoard(): void {
-		$set     = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), true);
 		$moments = [];
-		foreach ($set['objects'] as $object) {
-			if ($object['schema'] === 'contactmoment' && ($object['data']['case'] ?? '') === '{{object:woo-fietspad.id}}') {
-				$moments[] = [$object['data']['startTime'], $object['data']['message'] ?? $object['data']['summary']];
-			}
+		foreach ($this->lindelaanMoments() as $data) {
+			$moments[] = [$data['startTime'], $data['message'] ?? $data['summary']];
 		}
 
 		$this->assertSame(
-			[
+			expected: [
 				['{{datetime:-14 14:10}}', 'Hoe vraag ik de stukken over de verlichting van het fietspad op?'],
 				['{{datetime:-14 14:32}}', 'Uw Woo-verzoek is ontvangen onder nummer {{object:woo-fietspad.identifier}}. U hoort binnen vier weken van ons.'],
 				['{{datetime:-13 10:24}}', 'De aanleg begint in maart. Er komt verlichting langs het hele fietspad.'],
 				['{{datetime:-13 10:52}}', 'Dank u wel. Ik wil graag alle stukken over de verlichting zien.'],
-				['{{datetime:-12 09:15}}', 'Goedemorgen, ik wil mijn verzoek aanvullen. Kunt u ook de offertes voor de lantaarnpalen meenemen? Met vriendelijke groet, Sanne de Vries'],
+				[
+					'{{datetime:-12 09:15}}',
+					'Goedemorgen, ik wil mijn verzoek aanvullen. Kunt u ook de offertes voor de lantaarnpalen meenemen? Met vriendelijke groet, Sanne de Vries',
+				],
 			],
-			$moments
+			actual: $moments
 		);
 	}//end testTheConversationReadsAsTheBoard()
+
+
+	/**
+	 * The contact-moments table shows the short summaries, and the thread the
+	 * note, subject and attachments under each message, as DqZaakContact draws them.
+	 *
+	 * @return void
+	 */
+	public function testTheTableAndNotesReadAsTheBoard(): void {
+		$receipt = 'Uw Woo-verzoek is ontvangen onder nummer {{object:woo-fietspad.identifier}}. U hoort binnen vier weken van ons.';
+		$rows    = [];
+		foreach ($this->lindelaanMoments() as $data) {
+			$rows[] = [
+				$data['summary'],
+				$data['subject'] ?? null,
+				$data['note'] ?? null,
+				$data['attachmentCount'] ?? 0,
+			];
+		}
+
+		$this->assertSame(
+			expected: [
+				[
+					'Vraag over stukken fietspad, Woo-verzoek samen opgenomen.',
+					null,
+					'Samengevat door Pieter Jansen, verzoek samen opgenomen',
+					0,
+				],
+				[$receipt, null, 'Ontvangstbevestiging, automatisch verstuurd', 0],
+				['Uitgelegd dat de aanleg in maart begint.', null, null, 0],
+				['Wil graag alle stukken over de verlichting zien.', null, null, 0],
+				[
+					'Vult het verzoek aan met de offertes voor de lantaarnpalen.',
+					'Aanvulling op Woo-verzoek {{object:woo-fietspad.identifier}}',
+					'Binnengekomen op het Woo-postvak',
+					1,
+				],
+			],
+			actual: $rows
+		);
+	}//end testTheTableAndNotesReadAsTheBoard()
+
+
+	/**
+	 * The data of the contact moments on the Lindelaan case, in set order.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function lindelaanMoments(): array {
+		$set     = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), true);
+		$moments = [];
+		foreach ($set['objects'] as $object) {
+			if ($object['schema'] === 'contactmoment' && ($object['data']['case'] ?? '') === '{{object:woo-fietspad.id}}') {
+				$moments[] = $object['data'];
+			}
+		}
+
+		return $moments;
+	}//end lindelaanMoments()
+
 
 	/**
 	 * The table keeps a short summary of each message Sanne or Pieter wrote.
