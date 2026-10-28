@@ -1,0 +1,39 @@
+{
+	"$comment": "The registration form of pipelinq's Informatieavond warmtenet Oost (EVT-2026-0012), as PqEvenement's form card draws it: a portal form binding on the Zuiddrecht portal at /warmtenet-oost whose submit creates a pipelinq eventRegistration, and the event's formBinding pointing at it, set from here because a fragment can quote only its own objects and this one runs after pipelinq's. The binding stays a draft: no published form leaf for the event exists yet, and a published binding without one renders an empty form on the public route.",
+	"objects": [
+		{
+			"key": "formulier-warmtenet-oost",
+			"register": "portaliq",
+			"schema": "portalFormBinding",
+			"data": {
+				"portal": "zuiddrecht",
+				"route": "/warmtenet-oost",
+				"typeRegister": "pipelinq",
+				"typeSchema": "campaignEvent",
+				"typeId": "EVT-2026-0012",
+				"audience": "citizen",
+				"formName": "Aanmelden informatieavond",
+				"intakeKind": "hosted",
+				"destination": {
+					"register": "pipelinq",
+					"schema": "eventRegistration"
+				},
+				"confirmationText": "Bedankt voor uw aanmelding voor de informatieavond over het warmtenet. U krijgt een bevestiging per e-mail.",
+				"status": "draft"
+			}
+		}
+	],
+	"changes": [
+		{
+			"key": "evenement-warmtenet-oost-formulier",
+			"register": "pipelinq",
+			"schema": "campaignEvent",
+			"where": {
+				"reference": "EVT-2026-0012"
+			},
+			"set": {
+				"formBinding": "{{object:formulier-warmtenet-oost.id}}"
+			}
+		}
+	]
+}
