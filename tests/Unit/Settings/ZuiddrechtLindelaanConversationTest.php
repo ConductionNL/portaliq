@@ -105,4 +105,24 @@ class ZuiddrechtLindelaanConversationTest extends TestCase {
 
 		return $moments;
 	}//end lindelaanMoments()
+
+
+	/**
+	 * The table keeps a short summary of each message Sanne or Pieter wrote.
+	 *
+	 * @return void
+	 */
+	public function testTheTableShowsShortSummaries(): void {
+		$set       = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/example-sets/zuiddrecht.json'), true);
+		$summaries = [];
+		foreach ($set['objects'] as $object) {
+			if ($object['schema'] === 'contactmoment' && ($object['data']['case'] ?? '') === '{{object:woo-fietspad.id}}') {
+				$summaries[$object['key']] = $object['data']['summary'];
+			}
+		}
+
+		$this->assertSame(expected: 'Vraag over stukken fietspad, Woo-verzoek samen opgenomen.', actual: $summaries['woo-fietspad-telefoon']);
+		$this->assertSame(expected: 'Wil graag alle stukken over de verlichting zien.', actual: $summaries['woo-fietspad-reactie']);
+		$this->assertSame(expected: 'Vult het verzoek aan met de offertes voor de lantaarnpalen.', actual: $summaries['woo-fietspad-aanvulling']);
+	}//end testTheTableShowsShortSummaries()
 }//end class

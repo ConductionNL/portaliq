@@ -423,6 +423,8 @@
 				}
 			],
 			"data": {
+				"intakeIdentification": "digid",
+				"intakeSourceName": "Mijn Zuiddrecht",
 				"title": "Verlichting fietspad Lindelaan",
 				"geometry": "{\"type\":\"Point\",\"coordinates\":[4.6541,51.8113]}",
 				"description": "Ik wil de documenten over de nieuwe verlichting langs het fietspad aan de Lindelaan.",
@@ -566,67 +568,6 @@
 				"case": "{{object:woo-fietspad.id}}",
 				"participant": "{{lookup:vanwijk}}",
 				"description": "Aannemer van de verlichting; staat in de offerte en de mail die openbaar kunnen worden."
-			}
-		},
-		{
-			"key": "rol-woo-fietspad-gemachtigde",
-			"register": "dossiq",
-			"schema": "role",
-			"lookups": {
-				"roleType": {
-					"schema": "roleType",
-					"where": {
-						"name": "Gemachtigde",
-						"caseType": "3c0f5a00-0000-4000-a000-00000000a001"
-					}
-				},
-				"jvanwijk": {
-					"schema": "brpPerson",
-					"where": {
-						"citizenServiceNumber": "{{cast:jvanwijk.bsn}}"
-					}
-				},
-				"vanwijk": {
-					"schema": "kvkCompany",
-					"where": {
-						"kvkNumber": "{{cast:vanwijk.kvk}}"
-					}
-				}
-			},
-			"data": {
-				"name": "{{cast:jvanwijk.displayName}}",
-				"roleType": "{{lookup:roleType}}",
-				"case": "{{object:woo-fietspad.id}}",
-				"participant": "{{lookup:jvanwijk}}",
-				"representedParty": "{{lookup:vanwijk}}",
-				"description": "Gemachtigde namens Aannemersbedrijf Van Wijk B.V., Awb 2:1."
-			}
-		},
-		{
-			"key": "rol-woo-fietspad-melder",
-			"register": "dossiq",
-			"schema": "role",
-			"lookups": {
-				"roleType": {
-					"schema": "roleType",
-					"where": {
-						"name": "Melder",
-						"caseType": "3c0f5a00-0000-4000-a000-00000000a001"
-					}
-				},
-				"bewoners": {
-					"schema": "kvkCompany",
-					"where": {
-						"kvkNumber": "{{cast:bewonerslindelaan.kvk}}"
-					}
-				}
-			},
-			"data": {
-				"name": "{{cast:bewonerslindelaan.name}}",
-				"roleType": "{{lookup:roleType}}",
-				"case": "{{object:woo-fietspad.id}}",
-				"participant": "{{lookup:bewoners}}",
-				"description": "Meldde het donkere fietspad aan de balie, zonder account."
 			}
 		},
 		{
@@ -1845,6 +1786,7 @@
 				"actionType": "besluit-opstellen",
 				"label": "Besluit opstellen",
 				"owner": "{{cast:pieter.uid}}",
+				"plannedByRule": "de stappen van het Woo-verzoek",
 				"plannedFor": "{{date:3}}",
 				"state": "planned"
 			}
@@ -1857,7 +1799,8 @@
 				"case": "{{object:woo-fietspad.id}}",
 				"actionType": "termijn-controleren",
 				"label": "Termijn controleren",
-				"owner": "{{cast:woo-en-informatie.gid}}",
+				"ownerGroup": "{{cast:woo-en-informatie.gid}}",
+				"plannedBy": "{{cast:pieter.uid}}",
 				"plannedFor": "{{date:8}}",
 				"state": "planned"
 			}
@@ -2393,6 +2336,146 @@
 			}
 		}
 	],
+	"timelineEntries": [
+		{
+			"key": "woo-fietspad-historie-aangemaakt",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "statuswijziging",
+				"message": "Zaak aangemaakt",
+				"at": "{{datetime:-14 14:10}}",
+				"fields": {
+					"to": "Ontvangen"
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-historie-documenten-gekoppeld",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "document",
+				"message": "3 documenten gekoppeld",
+				"author": "{{cast:pieter.uid}}",
+				"at": "{{datetime:-14 14:18}}",
+				"fields": {
+					"act": "linked",
+					"count": 3
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-historie-ontvangstbevestiging",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "bericht",
+				"message": "Ontvangstbevestiging verstuurd",
+				"author": "{{cast:pieter.uid}}",
+				"at": "{{datetime:-14 14:32}}",
+				"fields": {
+					"direction": "outbound",
+					"channel": "e-mail"
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-historie-opgepakt",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "toewijzing",
+				"message": "Zaak opgepakt",
+				"author": "{{cast:pieter.uid}}",
+				"at": "{{datetime:-13 09:10}}",
+				"fields": {
+					"act": "picked-up",
+					"to": "{{cast:pieter.displayName}}"
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-historie-status-in-behandeling",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "statuswijziging",
+				"message": "Status gewijzigd",
+				"author": "{{cast:pieter.uid}}",
+				"at": "{{datetime:-13 09:12}}",
+				"fields": {
+					"from": "Ontvangen",
+					"to": "In behandeling"
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-historie-bericht-verstuurd",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "bericht",
+				"message": "Bericht verstuurd",
+				"author": "{{cast:pieter.uid}}",
+				"at": "{{datetime:-13 10:24}}",
+				"fields": {
+					"direction": "outbound",
+					"counterpart": "{{cast:sanne.displayName}}"
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-historie-bericht-ontvangen",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "bericht",
+				"message": "Bericht ontvangen",
+				"author": "{{cast:sanne.uid}}",
+				"at": "{{datetime:-13 10:52}}",
+				"fields": {
+					"direction": "inbound",
+					"counterpart": "{{cast:sanne.displayName}}"
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-historie-taak-afgerond",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "taak",
+				"message": "Taak afgerond",
+				"author": "{{cast:lars.uid}}",
+				"at": "{{datetime:-11 09:30}}",
+				"fields": {
+					"act": "completed",
+					"title": "Advies verlichting"
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-historie-document-beoordeeld-advies",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "document",
+				"message": "Document beoordeeld",
+				"author": "{{cast:pieter.uid}}",
+				"at": "{{datetime:-11 11:05}}",
+				"fields": {
+					"act": "reviewed",
+					"title": "Advies verlichting fietspad"
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-historie-document-beoordeeld-mail",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "document",
+				"message": "Document beoordeeld",
+				"author": "{{cast:pieter.uid}}",
+				"at": "{{datetime:-11 11:20}}",
+				"fields": {
+					"act": "reviewed",
+					"title": "Mail aannemer over planning"
+				}
+			}
+		}
+	],
 	"parties": [
 		{
 			"key": "partij-sanne-verzoeker",
@@ -2411,27 +2494,6 @@
 				"partyUuid": "{{object:rol-woo-fietspad-belanghebbende.participant}}",
 				"role": "3c0f5a00-0000-4000-a000-0000000c0003",
 				"validFrom": "{{date:-11}}"
-			}
-		},
-		{
-			"key": "partij-jvanwijk-gemachtigde",
-			"data": {
-				"objectUuid": "{{object:woo-fietspad.id}}",
-				"partyUuid": "{{object:rol-woo-fietspad-gemachtigde.participant}}",
-				"role": "3c0f5a00-0000-4000-a000-0000000c0002",
-				"validFrom": "{{date:-11}}",
-				"validUntil": "{{date:+70}}",
-				"note": "Machtiging namens Aannemersbedrijf Van Wijk B.V., Awb 2:1"
-			}
-		},
-		{
-			"key": "partij-bewonerslindelaan-melder",
-			"data": {
-				"objectUuid": "{{object:woo-fietspad.id}}",
-				"partyUuid": "{{object:rol-woo-fietspad-melder.participant}}",
-				"role": "3c0f5a00-0000-4000-a000-0000000c0005",
-				"validFrom": "{{date:-20}}",
-				"note": "Via de balie, zonder account"
 			}
 		},
 		{
