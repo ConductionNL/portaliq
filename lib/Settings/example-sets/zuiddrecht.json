@@ -1095,6 +1095,7 @@
 				"nature": "informatieverzoek",
 				"summary": "Uw Woo-verzoek is ontvangen onder nummer {{object:woo-fietspad.identifier}}. U hoort binnen vier weken van ons.",
 				"note": "Ontvangstbevestiging, automatisch verstuurd",
+				"automatic": true,
 				"firstTimeFix": false,
 				"visibleToApplicant": true,
 				"geidentificeerdeBurgerId": "{{cast:sanne.bsn}}",

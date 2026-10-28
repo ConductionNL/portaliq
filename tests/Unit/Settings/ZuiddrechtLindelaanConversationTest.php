@@ -90,6 +90,23 @@ class ZuiddrechtLindelaanConversationTest extends TestCase {
 
 
 	/**
+	 * The receipt is the one message the system sent by itself: it carries
+	 * `automatic`, so the case's contact log counts the four recorded contacts
+	 * as DqZaakContact does ("4 vastgelegd"), and the thread still shows it.
+	 *
+	 * @return void
+	 */
+	public function testOnlyTheReceiptIsAutomatic(): void {
+		$automatic = [];
+		foreach ($this->lindelaanMoments() as $data) {
+			$automatic[] = $data['automatic'] ?? null;
+		}
+
+		$this->assertSame(expected: [null, true, null, null, null], actual: $automatic);
+	}//end testOnlyTheReceiptIsAutomatic()
+
+
+	/**
 	 * The data of the contact moments on the Lindelaan case, in set order.
 	 *
 	 * @return array<int, array<string, mixed>>
