@@ -425,6 +425,15 @@
 			"data": {
 				"intakeIdentification": "digid",
 				"intakeSourceName": "Mijn Zuiddrecht",
+				"acknowledgementDuty": {
+					"required": true,
+					"status": "met",
+					"channel": "email",
+					"recipient": "{{cast:sanne.email}}",
+					"sentAt": "{{datetime:-14 14:32}}",
+					"attempts": 1,
+					"lastError": ""
+				},
 				"title": "Verlichting fietspad Lindelaan",
 				"geometry": "{\"type\":\"Point\",\"coordinates\":[4.6541,51.8113]}",
 				"description": "Ik wil de documenten over de nieuwe verlichting langs het fietspad aan de Lindelaan.",
