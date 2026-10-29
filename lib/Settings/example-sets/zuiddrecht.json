@@ -2798,5 +2798,56 @@
 				]
 			}
 		}
+	],
+	"emailLinks": [
+		{
+			"key": "lindelaan-mail-aanvulling",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"messageId": "<aanvulling-woo-2026-0110@zuiddrecht.example>",
+				"subject": "Aanvulling op Woo-verzoek 2026-0110",
+				"sender": "{{cast:sanne.email}}",
+				"senderName": "{{cast:sanne.displayName}}",
+				"mailDate": "{{datetime:-12 09:15}}",
+				"linkedBy": "{{cast:pieter.uid}}",
+				"direction": "inbound",
+				"attachmentCount": 1,
+				"linkedVia": "mailbox",
+				"mailboxName": "Woo-postvak",
+				"archivedAs": "pdf"
+			}
+		},
+		{
+			"key": "lindelaan-mail-vraag-mobiliteit",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"messageId": "<vraag-mobiliteit-lindelaan@zuiddrecht.example>",
+				"subject": "Vraag aan Mobiliteit en verkeer over de stukken",
+				"sender": "{{cast:pieter.email}}",
+				"senderName": "{{cast:pieter.displayName}}",
+				"mailDate": "{{datetime:-13 11:02}}",
+				"linkedBy": "{{cast:pieter.uid}}",
+				"direction": "outbound",
+				"recipientName": "{{cast:lars.displayName}}",
+				"attachmentCount": 0,
+				"linkedVia": "manual",
+				"archivedAs": "pdf"
+			}
+		},
+		{
+			"key": "lindelaan-mail-planning-aannemer",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"messageId": "<planning-aanleg-verlichting@vanwijk.zuiddrecht.example>",
+				"subject": "Planning aanleg verlichting",
+				"sender": "{{cast:vanwijk.email}}",
+				"senderName": "Aannemersbedrijf Van Wijk",
+				"mailDate": "2026-03-12T10:40:00+01:00",
+				"linkedBy": "{{cast:pieter.uid}}",
+				"direction": "inbound",
+				"attachmentCount": 2,
+				"linkedVia": "file"
+			}
+		}
 	]
 }
