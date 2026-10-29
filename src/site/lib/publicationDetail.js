@@ -302,8 +302,10 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /**
  * One value as text: a related object by its name or title, a date the
- * reader's way, an enum value by the schema's label, a yes/no in words. A
- * related object known only by its id reads as nothing: no codes on the page.
+ * reader's way (by the schema's `date` or `date-time` format, or, without
+ * the schema, by its ISO look), an enum value by the schema's label, a
+ * yes/no in words. A related object known only by its id reads as nothing:
+ * no codes on the page.
  * Nor does a file (an object with a download or access link): no file names.
  * Without the schema a relation cannot be told apart, so a UUID reads as
  * nothing too.
@@ -357,9 +359,12 @@ function valueText(value, property, { locale, hasSchema, relation }) {
 		return labels[text]
 	}
 
+	// With the schema only its date formats make a date; without it an
+	// ISO-looking value is the only sign.
 	const isDate =
 		['date', 'date-time'].includes(property.format)
-		|| /^\d{4}-\d{2}-\d{2}(T[\d:.]+(Z|[+-]\d{2}:?\d{2})?)?$/.test(text)
+		|| (hasSchema === false
+			&& /^\d{4}-\d{2}-\d{2}(T[\d:.]+(Z|[+-]\d{2}:?\d{2})?)?$/.test(text))
 	if (isDate === true) {
 		return readableDate(text, locale) || text
 	}

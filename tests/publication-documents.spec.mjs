@@ -528,6 +528,24 @@ test('a long description or summary field marked visible: false stays off the pa
 	)
 })
 
+test('with a schema only a date format reads as a date (#1772 f5)', () => {
+	const rows = schemaRows(
+		{
+			'@self': {
+				schema: {
+					properties: { version: { title: 'Versie', type: 'string' } },
+				},
+			},
+			version: '2026-01-01',
+		},
+		{ locale: 'nl' },
+	)
+	assert.deepEqual(
+		rows.map((row) => [row.label, row.value]),
+		[['Versie', '2026-01-01']],
+	)
+})
+
 test('the publication page asks for the schema and renders the fields of the other schema as text (#1645)', async () => {
 	const { instance } = await import('./support/page-instance.mjs')
 	const nl = JSON.stringify(bundle('nl'))
