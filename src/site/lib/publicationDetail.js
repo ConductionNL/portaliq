@@ -59,8 +59,41 @@ function readableDate(value, locale) {
 }
 
 /**
+ * The schema the publication carries in `@self.schema` when it was asked
+ * for with `_extend=@self.schema`, or null: a peer that ignores the extend
+ * answers with the schema's id.
+ *
+ * @param {object} publication One publication object.
+ * @return {object|null} The schema's properties by name, or null.
+ */
+function schemaProperties(publication) {
+	const schema = ((publication || {})['@self'] || {}).schema
+	if (!schema || typeof schema !== 'object') {
+		return null
+	}
+
+	const properties = schema.properties
+	return properties && typeof properties === 'object' ? properties : null
+}
+
+/**
+ * Whether the schema the publication carries marks a property
+ * `visible: false`. Without the schema nothing is hidden.
+ *
+ * @param {object} publication One publication object.
+ * @param {string} name The property name.
+ * @return {boolean} True when the schema hides the property.
+ * @spec openspec/changes/publication-page-shows-the-schemas-fields/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-the-public-fields-of-any-other-schema
+ */
+function isHidden(publication, name) {
+	const property = (schemaProperties(publication) || {})[name]
+	return Boolean(property) && property.visible === false
+}
+
+/**
  * The summary a visitor reads under the title: `summary`, else `description`,
- * else `shortDescription` (the stackiq schemas name it so).
+ * else `shortDescription` (the stackiq schemas name it so). A field the
+ * schema marks `visible: false` is passed over.
  *
  * @param {object} publication One publication object.
  * @return {string} The summary, or ''.
@@ -70,6 +103,10 @@ function readableDate(value, locale) {
 export function publicationSummary(publication) {
 	const row = publication || {}
 	for (const key of ['summary', 'description', 'shortDescription']) {
+		if (isHidden(row, key) === true) {
+			continue
+		}
+
 		if (typeof row[key] === 'string' && row[key].trim() !== '') {
 			return row[key].trim()
 		}
@@ -101,7 +138,8 @@ export function themeIdsOf(publication) {
  * information category by name and the themes by name. Nothing else: the
  * Plooi and retention bookkeeping, the organisation id, the status and the
  * kind are the archive's business, not the visitor's. A row without a value
- * is left out, and so is a theme whose name is unknown.
+ * is left out, and so is a theme whose name is unknown, and the publication
+ * date when the schema marks it `visible: false`.
  *
  * @param {object} publication One publication object.
  * @param {object} context The reader.
@@ -110,6 +148,7 @@ export function themeIdsOf(publication) {
  * @param {Record<string, string>} [context.themeNames] Theme id to name.
  * @return {Array<{name: string, label: string, value: string|Array<string>, kind: string}>} The rows.
  * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+ * @spec openspec/changes/publication-page-shows-the-schemas-fields/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-the-public-fields-of-any-other-schema
  */
 export function visitorRows(publication, { t, locale, themeNames = {} }) {
 	if (!publication || typeof publication !== 'object') {
@@ -117,9 +156,11 @@ export function visitorRows(publication, { t, locale, themeNames = {} }) {
 	}
 
 	const rows = []
-	const date = isEmpty(publication.publicationDate)
-		? ''
-		: readableDate(publication.publicationDate, locale)
+	const date =
+		isEmpty(publication.publicationDate)
+		|| isHidden(publication, 'publicationDate') === true
+			? ''
+			: readableDate(publication.publicationDate, locale)
 	if (date !== '') {
 		rows.push({
 			name: 'publicationDate',
@@ -155,14 +196,18 @@ export function visitorRows(publication, { t, locale, themeNames = {} }) {
 
 /**
  * The long description a visitor reads under the summary, as lines of text
- * (its markdown headings and paragraphs, never markup), or none when absent
- * or the same as the summary.
+ * (its markdown headings and paragraphs, never markup), or none when absent,
+ * the same as the summary, or marked `visible: false` by the schema.
  *
  * @param {object} publication One publication object.
  * @return {Array<{index: number, level: number, text: string}>} The lines.
  * @spec openspec/changes/publication-page-shows-the-schemas-fields/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-the-public-fields-of-any-other-schema
  */
 export function longDescriptionLines(publication) {
+	if (isHidden(publication, 'longDescription') === true) {
+		return []
+	}
+
 	const value = (publication || {}).longDescription
 	if (typeof value !== 'string' || value.trim() === '') {
 		return []
@@ -211,24 +256,6 @@ export function fieldLabel(name) {
 }
 
 /**
- * The schema the publication carries in `@self.schema` when it was asked
- * for with `_extend=@self.schema`, or null: a peer that ignores the extend
- * answers with the schema's id.
- *
- * @param {object} publication One publication object.
- * @return {object|null} The schema's properties by name, or null.
- */
-function schemaProperties(publication) {
-	const schema = ((publication || {})['@self'] || {}).schema
-	if (!schema || typeof schema !== 'object') {
-		return null
-	}
-
-	const properties = schema.properties
-	return properties && typeof properties === 'object' ? properties : null
-}
-
-/**
  * The field names in the order the page shows them: the schema's `order`,
  * then the schema's own order, then whatever the schema does not describe.
  *
@@ -273,16 +300,29 @@ function isRelation(property) {
 }
 
 /**
+ * An object id: without the schema the only sign of a related object.
+ */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/**
  * One value as text: a related object by its name or title, a date the
- * reader's way, an enum value by the schema's label, a yes/no in words. A
- * related object known only by its id reads as nothing: no codes on the page.
+ * reader's way (by the schema's `date` or `date-time` format, or, without
+ * the schema, by its ISO look), an enum value by the schema's label, a
+ * yes/no in words. A related object known only by its id reads as nothing:
+ * no codes on the page.
+ * Nor does a file (an object with a download or access link): no file names.
+ * Without the schema a relation cannot be told apart, so a UUID reads as
+ * nothing too.
  *
  * @param {unknown} value The value.
  * @param {object} property The schema property, or `{}`.
- * @param {string} locale The site's language.
+ * @param {object} context The reader.
+ * @param {string} context.locale The site's language.
+ * @param {boolean} context.hasSchema Whether the schema describes this field.
+ * @param {boolean} context.relation Whether the value points at another object.
  * @return {string} The text, or '' when there is nothing to show.
  */
-function valueText(value, property, locale) {
+function valueText(value, property, { locale, hasSchema, relation }) {
 	if (value === null || value === undefined) {
 		return ''
 	}
@@ -295,24 +335,40 @@ function valueText(value, property, locale) {
 	}
 
 	if (typeof value === 'object') {
+		// A file (it carries a download or access link) never reads as its
+		// file name in a row.
+		if (
+			Object.hasOwn(value, 'downloadUrl')
+			|| Object.hasOwn(value, 'accessUrl')
+		) {
+			return ''
+		}
+
 		const self = value['@self'] || {}
 		const name = value.name || value.title || self.name
 		return typeof name === 'string' ? name.trim() : ''
 	}
 
-	if (isRelation(property) === true) {
+	if (relation === true) {
 		return ''
 	}
 
 	const text = String(value).trim()
+	if (hasSchema === false && UUID.test(text) === true) {
+		return ''
+	}
+
 	const labels = property['x-enum-labels']
 	if (labels && typeof labels[text] === 'string') {
 		return labels[text]
 	}
 
+	// With the schema only its date formats make a date; without it an
+	// ISO-looking value is the only sign.
 	const isDate =
 		['date', 'date-time'].includes(property.format)
-		|| /^\d{4}-\d{2}-\d{2}(T[\d:.]+(Z|[+-]\d{2}:?\d{2})?)?$/.test(text)
+		|| (hasSchema === false
+			&& /^\d{4}-\d{2}-\d{2}(T[\d:.]+(Z|[+-]\d{2}:?\d{2})?)?$/.test(text))
 	if (isDate === true) {
 		return readableDate(text, locale) || text
 	}
@@ -328,9 +384,10 @@ function valueText(value, property, locale) {
  * OpenRegister's own exports. The schema names and orders the rows when the
  * publication carries it; otherwise the field name is put in words.
  *
- * Left out: an empty value, a file, a related object known only by its id,
- * and every row of a Woo publication (it carries `wooCategory`), whose
- * remaining fields are the archive's bookkeeping (see visitorRows).
+ * Left out: an empty value, a file or a list of files, a related object
+ * known only by its id, and every row of a Woo publication (it carries
+ * `wooCategory`), whose remaining fields are the archive's bookkeeping (see
+ * visitorRows).
  *
  * @param {object} publication One publication object.
  * @param {object} context The reader.
@@ -352,11 +409,17 @@ export function schemaRows(publication, { locale }) {
 	for (const name of fieldOrder(publication, properties)) {
 		const value = publication[name]
 		const property = (properties || {})[name] || {}
+		// A field the schema does not describe reads as without a schema.
+		const hasSchema = properties !== null && Object.hasOwn(properties, name)
 		if (SHOWN_ELSEWHERE.has(name) || isEmpty(value)) {
 			continue
 		}
 
-		if (property.visible === false || property.type === 'file') {
+		if (
+			property.visible === false
+			|| property.type === 'file'
+			|| (property.items || {}).type === 'file'
+		) {
 			continue
 		}
 
@@ -365,9 +428,17 @@ export function schemaRows(publication, { locale }) {
 				? property.title.trim()
 				: fieldLabel(name)
 
+		// A list holds relations when the property or its items carry `$ref`.
+		const relation = isRelation(property)
 		if (Array.isArray(value) === true) {
 			const items = value
-				.map((item) => valueText(item, property.items || {}, locale))
+				.map((item) =>
+					valueText(item, property.items || {}, {
+						locale,
+						hasSchema,
+						relation,
+					}),
+				)
 				.filter((item) => item !== '')
 			if (items.length > 0) {
 				rows.push({ name, label, value: items, kind: 'list' })
@@ -383,7 +454,7 @@ export function schemaRows(publication, { locale }) {
 			continue
 		}
 
-		const text = valueText(value, property, locale)
+		const text = valueText(value, property, { locale, hasSchema, relation })
 		if (text === '') {
 			continue
 		}

@@ -438,6 +438,142 @@ test('without its schema a field name reads in words, and a date the way the rea
 	assert.equal(fieldLabel('hosting_location'), 'Hosting location')
 })
 
+test('a list of files reaches no row, with or without its schema (#1772 f1)', () => {
+	const file = { title: 'a.pdf', downloadUrl: 'x' }
+	assert.deepEqual(
+		schemaRows(
+			{
+				'@self': {
+					schema: {
+						properties: {
+							bijlagen: {
+								title: 'Bijlagen',
+								type: 'array',
+								items: { type: 'file' },
+							},
+						},
+					},
+				},
+				bijlagen: [file],
+			},
+			{ locale: 'nl' },
+		),
+		[],
+	)
+	assert.deepEqual(
+		schemaRows(
+			{ bijlagen: [file], bijlage: { title: 'b.pdf', accessUrl: 'y' } },
+			{ locale: 'nl' },
+		),
+		[],
+		'a file-shaped object without a schema reads as no row either',
+	)
+})
+
+test('a relation id reaches no row: without a schema as a UUID, with one by a $ref on the list (#1772 f2)', () => {
+	assert.deepEqual(
+		schemaRows(
+			{
+				provider: '5b0d1c7e-0000-0000-0000-000000000001',
+				compliancy: ['5b0d1c7e-0000-0000-0000-000000000002'],
+			},
+			{ locale: 'nl' },
+		),
+		[],
+	)
+	assert.deepEqual(
+		schemaRows(
+			{
+				'@self': {
+					schema: {
+						properties: {
+							c: { title: 'C', type: 'array', $ref: '#/x' },
+						},
+					},
+				},
+				c: ['5b0d1c7e-0000-0000-0000-000000000002'],
+			},
+			{ locale: 'nl' },
+		),
+		[],
+	)
+})
+
+test('a long description or summary field marked visible: false stays off the page (#1772 f4)', () => {
+	const hiding = (name) => ({
+		schema: { properties: { [name]: { title: name, visible: false } } },
+	})
+	assert.deepEqual(
+		longDescriptionLines({
+			'@self': hiding('longDescription'),
+			longDescription: 'Verborgen tekst.',
+		}),
+		[],
+	)
+	assert.equal(
+		publicationSummary({
+			'@self': hiding('shortDescription'),
+			shortDescription: 'Verborgen samenvatting.',
+		}),
+		'',
+	)
+	assert.equal(
+		publicationSummary({
+			'@self': hiding('summary'),
+			summary: 'Verborgen',
+			description: 'Wel zichtbaar',
+		}),
+		'Wel zichtbaar',
+		'the summary falls through to the next field',
+	)
+	assert.deepEqual(
+		visitorRows(
+			{
+				'@self': hiding('publicationDate'),
+				publicationDate: '2026-10-26T00:00:00+00:00',
+			},
+			{ t: createTranslator('nl'), locale: 'nl' },
+		),
+		[],
+		'the publication date honours visible: false',
+	)
+})
+
+test('with a schema only a date format reads as a date (#1772 f5)', () => {
+	const rows = schemaRows(
+		{
+			'@self': {
+				schema: {
+					properties: { version: { title: 'Versie', type: 'string' } },
+				},
+			},
+			version: '2026-01-01',
+		},
+		{ locale: 'nl' },
+	)
+	assert.deepEqual(
+		rows.map((row) => [row.label, row.value]),
+		[['Versie', '2026-01-01']],
+	)
+	const undescribed = schemaRows(
+		{
+			'@self': {
+				schema: {
+					properties: { version: { title: 'Versie', type: 'string' } },
+				},
+			},
+			releaseDate: '2026-03-01',
+			owner: '5b0d1c7e-0000-0000-0000-000000000003',
+		},
+		{ locale: 'nl' },
+	)
+	assert.deepEqual(
+		undescribed.map((row) => [row.label, row.value]),
+		[['Release date', '1 maart 2026']],
+		'a field the schema does not describe reads as without a schema',
+	)
+})
+
 test('the publication page asks for the schema and renders the fields of the other schema as text (#1645)', async () => {
 	const { instance } = await import('./support/page-instance.mjs')
 	const nl = JSON.stringify(bundle('nl'))
