@@ -12,10 +12,11 @@ Which fields are public is already decided in OpenRegister. Property-level RBAC 
 - After the Woo rows the page shows every other field of the answer as a row. The schema names them (the property's `title`), orders them (`order`, then the schema's own order) and formats them: a `date`/`date-time` reads the way the site's reader writes a date, an enum value reads as its `x-enum-labels` label, a link is a link, `markdown` reads as text lines.
 - A property the schema marks `visible: false` stays off the page, the long description and the summary fields included, as it stays out of OpenRegister's own exports. So do an empty value, a file, and a related object known only by its id: no codes on the page.
 - The summary falls back to `shortDescription` after `summary` and `description`. A `longDescription` shows under the summary as headings and paragraphs, never as markup.
+- The cards variant (board Publicatie) shows the new rows too, in its boxed list, and the long description under the summary.
 - Without the schema (a federated peer that ignores the extend), a field's name is put in words, and a UUID is left out as the id of a related object. `visible: false` can then not be honoured.
 
 ## Not changed
 
 - A Woo publication (it carries `wooCategory`) reads exactly as before: its other fields are the archive's bookkeeping.
 - Which fields are public: that stays with the schema's RBAC in OpenRegister. Portaliq adds no visibility rule of its own.
-- The documents, the cards variant and the search results.
+- The documents and the search results.
