@@ -15,7 +15,7 @@
 //     uses it, and every object it quotes was declared before it;
 //   - the sign-in card and every text a resident reads follow the house rules
 //     (no em-dash, no Title Case on the card);
-//   - the Zuiddrecht resident keeps the five cases the Woo journey and the
+//   - the Zuiddrecht resident keeps the six cases the Woo journey and the
 //     resident boards depend on.
 //
 // The cases live in another app's register and the cast lives in
@@ -129,7 +129,8 @@ for (const { file, fragment } of fragments) {
 			for (const [key, value] of Object.entries(account.data)) {
 				const property = schema.properties[key]
 				assert.ok(property, `${key} is a property of portalAccount`)
-				assert.equal(typeof value, property.type)
+				const type = Array.isArray(value) ? 'array' : typeof value
+				assert.equal(type, property.type)
 				if (property.enum) {
 					assert.ok(property.enum.includes(value), `${key}: ${value} is allowed`)
 				}
@@ -209,7 +210,8 @@ test('zuiddrecht.json: every portal account and mandate fits its schema, and the
 		for (const [key, value] of Object.entries(object.data)) {
 			const property = schema.properties[key]
 			assert.ok(property, `${object.key}: ${key} is a property of ${object.schema}`)
-			assert.equal(typeof value, property.type, `${object.key}: ${key} is a ${property.type}`)
+			const type = Array.isArray(value) ? 'array' : typeof value
+			assert.equal(type, property.type, `${object.key}: ${key} is a ${property.type}`)
 			if (property.enum && !value.includes('{{')) {
 				assert.ok(property.enum.includes(value), `${object.key}: ${key} ${value} is allowed`)
 			}
@@ -236,6 +238,50 @@ test('zuiddrecht.json: every portal account and mandate fits its schema, and the
 		['sanne', 'henk', 'linda', 'fatima'],
 		'the business contacts get no one-click card',
 	)
+})
+
+test('zuiddrecht.json gives Sanne the addresses of the MijnAccount board, and still the prompt for a confirmed e-mail address', () => {
+	const zuiddrecht = fragments.find(({ file }) => file === 'zuiddrecht.json').fragment
+	const sanne = zuiddrecht.objects.find((object) => object.key === 'portaalaccount-sanne').data
+	assert.deepEqual(
+		sanne.contactAddresses.map((entry) => entry.kind),
+		['email', 'phone'],
+	)
+	const email = sanne.contactAddresses.find((entry) => entry.kind === 'email')
+	assert.equal(email.confirmed, false, 'the e-mail address waits for confirmation')
+	assert.equal(email.preferred, false, 'only a confirmed e-mail address can be preferred')
+	assert.ok(!('email' in sanne), 'no confirmed address, so the prompt stays')
+	assert.match(
+		sanne.contactAddresses.find((entry) => entry.kind === 'phone').value,
+		/^\+31\d{9}$/,
+		'a phone number in E.164',
+	)
+	assert.match(email.value, /@[a-z.]*example\.nl$/, 'a reserved example domain')
+})
+
+test('zuiddrecht.json lets Sanne act for a company and follow two access requests, as the Machtigingen board draws her', () => {
+	const zuiddrecht = fragments.find(({ file }) => file === 'zuiddrecht.json').fragment
+	const sanne = '{{cast:sanne.uid}}'
+	const held = zuiddrecht.objects.filter(
+		(object) => object.schema === 'portalMandate' && object.data.subjectRef === sanne,
+	)
+	assert.equal(held.length, 1, 'one mandate held, so "Namens wie u werkt" offers a choice')
+	assert.match(held[0].data.onBehalfOf, /^kvk:\{\{cast:[a-z]+\.kvk\}\}$/)
+	const requests = zuiddrecht.objects.filter(
+		(object) => object.schema === 'portalAccessRequest' && object.data.subjectRef === sanne,
+	)
+	assert.deepEqual(requests.map((object) => object.data.state).sort(), ['granted', 'pending'])
+	const schema = schemas.portalAccessRequest
+	for (const request of requests) {
+		for (const key of schema.required) {
+			assert.ok(key in request.data, `${request.key}: ${key} is required`)
+		}
+		for (const [key, value] of Object.entries(request.data)) {
+			assert.ok(schema.properties[key], `${request.key}: ${key} is a property`)
+			assert.equal(typeof value, schema.properties[key].type)
+		}
+		assert.match(request.data.requestedAt, /^\{\{datetime:-\d+ \d\d:\d\d\}\}$/)
+	}
 })
 
 test('zuiddrecht.json puts the residents in the group the portal names', () => {
@@ -268,7 +314,7 @@ test('zuiddrecht.json puts the business contacts in the business group the porta
 	assert.equal(registration.businessAudience.type, 'string', 'the schema declares the business audience')
 })
 
-test('zuiddrecht.json keeps the five cases of the Woo journey and the resident boards', () => {
+test('zuiddrecht.json keeps the six cases of the Woo journey and the resident boards', () => {
 	const zuiddrecht = fragments.find(({ file }) => file === 'zuiddrecht.json').fragment
 	const cases = zuiddrecht.objects.filter((object) => object.schema === 'case').map((object) => object.data.title)
 	assert.deepEqual(cases, [
@@ -277,7 +323,19 @@ test('zuiddrecht.json keeps the five cases of the Woo journey and the resident b
 		'Losse stoeptegel bij de bushalte Lindelaan',
 		'Kapotte lantaarnpaal Kerkplein',
 		'Subsidie buurtfeest Lindelaan',
+		'Parkeervergunning Lindelaan',
 	])
 	assert.deepEqual(zuiddrecht.after, ['dossiq'])
 	assert.equal(zuiddrecht.exampleResident[0].cast, 'sanne')
+})
+
+test('Sanne has an open portal task on her parking permit: a copy of her ID, at most two files', () => {
+	const zuiddrecht = fragments.find(({ file }) => file === 'zuiddrecht.json').fragment
+	const task = zuiddrecht.tasks.find((entry) => entry.key === 'parkeervergunning-sanne-id-kopie').data
+	assert.equal(task.title, 'Stuur een kopie van uw ID-bewijs')
+	assert.equal(task.performerType, 'external')
+	assert.equal(task.assignee, 'party:{{cast:sanne.uid}}')
+	assert.equal(task.objectUuid, '{{object:parkeervergunning-sanne.id}}')
+	assert.deepEqual(task.uploadRules, { required: true, maxFiles: 2 })
+	assert.match(task.description, /Lindelaan 14/)
 })

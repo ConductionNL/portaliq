@@ -236,7 +236,7 @@ test('a Woo request in steps: progress, per-step checks, the review round trip a
 	)
 	assert.equal(
 		form.textOf(form.find('form-progress-short')),
-		'Stap 1 van 4',
+		'Stap 1 van 4: Uw vraag',
 		'the short progress',
 	)
 	assert.ok(

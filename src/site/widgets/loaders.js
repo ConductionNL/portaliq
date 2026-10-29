@@ -29,6 +29,7 @@ export const loaders = {
 	nlParagraph: () => import('./nlParagraph/NlParagraph.vue'),
 	nlLink: () => import('./nlLink/NlLink.vue'),
 	nlLinkList: () => import('./nlLinkList/NlLinkList.vue'),
+	nlLocationMap: () => import('./nlLocationMap/NlLocationMap.vue'),
 	nlList: () => import('./nlList/NlList.vue'),
 	nlQuote: () => import('./nlQuote/NlQuote.vue'),
 	nlButtonLink: () => import('./nlButtonLink/NlButtonLink.vue'),

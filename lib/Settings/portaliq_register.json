@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.98.0"
+        "version": "0.101.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.98.0",
+                "version": "0.101.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -2628,7 +2628,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.26.0",
+                "version": "0.27.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -3354,9 +3354,10 @@
                                 "type": "string",
                                 "enum": [
                                     "cards",
-                                    "rows"
+                                    "rows",
+                                    "folders"
                                 ],
-                                "description": "cards draws the folder cards; rows draws one line per case with its number, title, tag and the day it is due by.",
+                                "description": "cards draws the folder cards; rows draws one line per case with its number, title, tag and the day it is due by; folders draws the board folders with the case number, title, tag and the day it is due by.",
                                 "example": "rows"
                             }
                         }
@@ -5061,6 +5062,27 @@
                                 ],
                                 "example": "markdown"
                             },
+                            "aside": {
+                                "title": "Aside column",
+                                "type": "object",
+                                "description": "For a grid body: a run with a main column at the left edge and a column ending at the right edge draws that right column at this fixed width in pixels (160 to 640), with this gap (0 to 160, default 48), the main column taking the rest. Unset, the run keeps the 12-column grid.",
+                                "properties": {
+                                    "width": {
+                                        "type": "integer",
+                                        "minimum": 160,
+                                        "maximum": 640
+                                    },
+                                    "gap": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 160
+                                    }
+                                },
+                                "example": {
+                                    "width": 340,
+                                    "gap": 56
+                                }
+                            },
                             "markdown": {
                                 "title": "Markdown",
                                 "type": "string",
@@ -5169,6 +5191,27 @@
                                     "markdown"
                                 ],
                                 "example": "markdown"
+                            },
+                            "aside": {
+                                "title": "Aside column",
+                                "type": "object",
+                                "description": "For a grid body: a run with a main column at the left edge and a column ending at the right edge draws that right column at this fixed width in pixels (160 to 640), with this gap (0 to 160, default 48), the main column taking the rest. Unset, the run keeps the 12-column grid.",
+                                "properties": {
+                                    "width": {
+                                        "type": "integer",
+                                        "minimum": 160,
+                                        "maximum": 640
+                                    },
+                                    "gap": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 160
+                                    }
+                                },
+                                "example": {
+                                    "width": 340,
+                                    "gap": 56
+                                }
                             },
                             "markdown": {
                                 "title": "Markdown",
@@ -5352,7 +5395,7 @@
             "media": {
                 "slug": "media",
                 "icon": "FolderOutline",
-                "version": "0.1.0",
+                "version": "0.2.0",
                 "title": "Media item",
                 "authorization": {
                     "read": [
@@ -5374,6 +5417,13 @@
                     "status"
                 ],
                 "properties": {
+                    "usedOn": {
+                        "title": "Used on",
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "How many records of this portal refer to the item (pages, news, the portal itself), counted hourly by portaliq. 0 means nothing uses it.",
+                        "example": 3
+                    },
                     "title": {
                         "title": "Title",
                         "type": "string",
@@ -6776,7 +6826,7 @@
             "form": {
                 "slug": "form",
                 "icon": "FormSelect",
-                "version": "0.3.0",
+                "version": "0.4.0",
                 "title": "Form",
                 "authorization": {
                     "read": [
@@ -6929,6 +6979,14 @@
                                     "items": {
                                         "type": "string"
                                     }
+                                },
+                                "optionLabels": {
+                                    "title": "Option labels",
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "string"
+                                    },
+                                    "description": "The words a visitor sees for each option, keyed by the option that is sent. An option without words shows as itself."
                                 }
                             }
                         }

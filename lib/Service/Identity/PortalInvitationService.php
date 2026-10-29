@@ -41,6 +41,9 @@ use OCP\Security\ISecureRandom;
  * Issues, tracks and redeems portal invitations.
  *
  * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- issue, resend, withdraw
+ * and redeem each check the invitation's state before they act.
  */
 class PortalInvitationService {
 	/**
@@ -278,6 +281,65 @@ class PortalInvitationService {
 	}//end revoke()
 
 	/**
+	 * Send an invitation that was not accepted again (REQ-ISA-011): a new
+	 * secret replaces the old one, so the earlier link admits nobody, and the
+	 * window starts again. A withdrawn or accepted invitation is not resent.
+	 *
+	 * @param string $id The invitation's id.
+	 * @param string $organisation The tenant the clerk works for.
+	 * @param string $ttl An ISO 8601 duration, or '' for the default week.
+	 *
+	 * @return array{token?: string, email?: string, expiresAt?: string, error?: string}
+	 *         The new secret to mail with its address and expiry, or an `error`
+	 *         of `not_found`, `already_accepted`, `withdrawn` or `not_saved`.
+	 *
+	 * @spec openspec/changes/staff-resend-an-invitation/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
+	 */
+	public function resend(string $id, string $organisation, string $ttl = ''): array {
+		$row = $this->findById(id: $id, organisation: $organisation);
+		if ($row === null) {
+			return ['error' => 'not_found'];
+		}
+
+		$state = (string)($row['state'] ?? 'sent');
+		if ($state === 'accepted') {
+			return ['error' => 'already_accepted'];
+		}
+
+		if ($state === 'revoked') {
+			return ['error' => 'withdrawn'];
+		}
+
+		$token = $this->random->generate(48, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS));
+		$email = (string)($row['email'] ?? '');
+		if ($token === '' || $email === '') {
+			return ['error' => 'not_saved'];
+		}
+
+		$window = self::DEFAULT_TTL;
+		if ($ttl !== '') {
+			$window = $ttl;
+		}
+
+		$now    = new DateTimeImmutable();
+		$expiry = $now->add(new DateInterval($window));
+		$saved  = $this->markState(
+			row: $row,
+			state: 'sent',
+			extra: [
+				'tokenHash' => hash('sha256', $token),
+				'sentAt' => $now->format(DATE_ATOM),
+				'expiresAt' => $expiry->format(DATE_ATOM),
+			]
+		);
+		if ($saved === false) {
+			return ['error' => 'not_saved'];
+		}
+
+		return ['token' => $token, 'email' => $email, 'expiresAt' => $expiry->format(DATE_ATOM)];
+	}//end resend()
+
+	/**
 	 * The invitation with this id in this organisation, or null.
 	 *
 	 * @param string $id The invitation's id.
@@ -378,9 +440,9 @@ class PortalInvitationService {
 	 * @param string $state The new state.
 	 * @param array<string, mixed> $extra Anything else to stamp.
 	 *
-	 * @return void
+	 * @return bool Whether the row was written.
 	 */
-	private function markState(array $row, string $state, array $extra = []): void {
+	private function markState(array $row, string $state, array $extra = []): bool {
 		$id = (string)($row['uuid'] ?? $row['id'] ?? '');
 		if ($id === '') {
 			$self = (array)($row['@self'] ?? []);
@@ -388,10 +450,10 @@ class PortalInvitationService {
 		}
 
 		if ($id === '') {
-			return;
+			return false;
 		}
 
-		$this->writer->updateObject(
+		$updated = $this->writer->updateObject(
 			register: self::REGISTER,
 			schema: self::SCHEMA,
 			scopeField: '',
@@ -400,5 +462,7 @@ class PortalInvitationService {
 			id: $id,
 			data: array_merge(['state' => $state], $extra)
 		);
+
+		return $updated !== null;
 	}//end markState()
 }//end class

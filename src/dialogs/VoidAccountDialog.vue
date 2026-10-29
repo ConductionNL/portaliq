@@ -14,7 +14,8 @@
   @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-issue-and-withdraw-accounts-through-the-validated-actions-req-isa-003
 -->
 <template>
-	<NcDialog
+	<CnDialog
+		:look="look"
 		:name="title || t('portaliq', 'Withdraw this account')"
 		size="normal"
 		data-testid="void-account"
@@ -39,23 +40,30 @@
 				{{ confirmLabel || t('portaliq', 'Withdraw') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
-import { NcButton, NcDialog, NcTextArea } from '@nextcloud/vue'
+import { NcButton, NcTextArea } from '@nextcloud/vue'
 
 export default {
 	name: 'VoidAccountDialog',
 
 	components: {
 		NcButton,
-		NcDialog,
+		CnDialog,
 		NcTextArea,
 	},
 
 	props: {
+		/** The look to draw in; a spawned dialog gets the app's (src/lib/dialogLook.js). */
+		look: {
+			type: String,
+			default: undefined,
+		},
+
 		/** The dialog title; "Withdraw this account" when empty. */
 		title: {
 			type: String,

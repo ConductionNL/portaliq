@@ -229,7 +229,7 @@ test('the page shows date, category and named themes only, never internal fields
 	assert.deepEqual(
 		rows.map((row) => [row.label, row.value]),
 		[
-			['Publicatiedatum', '2-9-2026'],
+			['Publicatiedatum', '2 september 2026'],
 			['Informatiecategorie', 'Woo-verzoeken en -besluiten'],
 			["Thema's", ['Verkeer en parkeren']],
 		],

@@ -71,5 +71,5 @@ test('the schema form prefills after the draft and on a new action', () => {
 		/this\.resumeDraft\(\)\.then\(\(\) => this\.prefillFromProfile\(\)\)/,
 	)
 	assert.match(source, /this\.api\.getDetails\(\)/)
-	assert.match(source, /withProfile\(this\.values, this\.action, profile\)/)
+	assert.match(source, /withProfile\(before, this\.action, profile\)/)
 })

@@ -38,7 +38,7 @@ function isEmpty(value) {
  *
  * @param {string} value An ISO-8601 date or moment.
  * @param {string} locale The site's language.
- * @return {string} For example `2-9-2026`.
+ * @return {string} For example `2 september 2026`, as the site writes dates elsewhere.
  */
 function readableDate(value, locale) {
 	const date = new Date(value)
@@ -47,7 +47,12 @@ function readableDate(value, locale) {
 	}
 
 	try {
-		return date.toLocaleDateString(locale === 'en' ? 'en-GB' : 'nl-NL')
+		return date.toLocaleDateString(locale === 'en' ? 'en-GB' : 'nl-NL', {
+			day: 'numeric',
+			month: 'long',
+			year: 'numeric',
+			timeZone: 'Europe/Amsterdam',
+		})
 	} catch {
 		return ''
 	}

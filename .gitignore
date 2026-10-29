@@ -37,6 +37,8 @@ phpqa_output.log
 
 # Data files
 *.csv
+# Example-set fixtures ship as CSV and are tracked.
+!lib/Settings/example-sets/**/*.csv
 *.xls
 *.xlsx
 

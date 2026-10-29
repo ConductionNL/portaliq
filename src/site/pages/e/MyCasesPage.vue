@@ -31,6 +31,13 @@
 			{{ t('My cases') }}
 		</h1>
 
+		<!-- Forms the resident saved to finish later (REQ-FSR-003). -->
+		<UnfinishedForms
+			v-if="session"
+			:api="api"
+			:t="t"
+			:locale="locale || 'nl'" />
+
 		<!-- What the case apps say above the list, as plain text (collection-intro). -->
 		<p
 			v-for="(intro, i) in intros"
@@ -164,11 +171,15 @@
 				<!-- Each case a Den Haag case card (site-mijn-omgeving-components
 				     REQ-SMO-002), naming its type (REQ-SMO-030). -->
 				<!-- Or, when the portal says `myCases.display: rows`, one row per
+				     case; with `folders`, one board folder per
 				     case (zuiddrecht-resident-pages-match-the-boards). -->
 				<ul
 					v-else
 					class="pq-cases__list"
-					:class="{ 'pq-cases__list--rows': asRows }"
+					:class="{
+						'pq-cases__list--rows': asRows,
+						'pq-cases__list--folders': asFolders,
+					}"
 					data-testid="my-cases-list">
 					<CaseCard
 						v-for="(item, index) in rows"
@@ -180,10 +191,10 @@
 						data-testid="my-cases-row"
 						:card="item.card"
 						:mandate="item.mandate"
-						:meta="asRows ? '' : item.meta"
+						:meta="boardDisplay ? '' : item.meta"
 						:route="item.route"
 						:button="item.openable && !item.route"
-						:display="asRows ? 'row' : ''"
+						:display="boardDisplay"
 						:dueLabel="t('Due by')"
 						@open="openCase(item.target, item.row)" />
 				</ul>
@@ -193,6 +204,7 @@
 </template>
 
 <script>
+import UnfinishedForms from '../../components/forms/UnfinishedForms.vue'
 import CaseCard from '../../components/mijn/CaseCard.vue'
 import LoadError from '../../components/mijn/LoadError.vue'
 import { casesIntros } from '../../../shared/collectionIntro.js'
@@ -218,7 +230,7 @@ import { longDate, readerLocale } from './format.js'
 export default {
 	name: 'MyCasesPage',
 
-	components: { CaseCard, LoadError },
+	components: { CaseCard, LoadError, UnfinishedForms },
 
 	props: {
 		/** The session as `/portal/api/session` returns it. */
@@ -347,6 +359,25 @@ export default {
 		},
 
 		/**
+		 * @return {boolean} Whether the portal draws the list as board folders.
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
+		 */
+		asFolders() {
+			return this.portal?.myCases?.display === 'folders'
+		},
+
+		/**
+		 * @return {string} The case card display the portal asks for: row, folder or '' (the Den Haag card).
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
+		 */
+		boardDisplay() {
+			if (this.asRows) {
+				return 'row'
+			}
+			return this.asFolders ? 'folder' : ''
+		},
+
+		/**
 		 * The cases, open and closed apart.
 		 *
 		 * @return {{open: Array<object>, closed: Array<object>}} The two lists.
@@ -393,7 +424,7 @@ export default {
 					// folder card stays as it was.
 					card: caseCard(
 						row,
-						this.asRows ? this.collectionOf(row) : null,
+						this.boardDisplay ? this.collectionOf(row) : null,
 						{
 							tr: this.mt,
 							locale,
@@ -603,6 +634,12 @@ export default {
 	gap: var(--utrecht-space-block-lg, 1.5rem) var(--utrecht-space-inline-md, 1rem);
 	margin: 0;
 	padding: 0;
+}
+
+/* The folders: as many 16rem columns as fit, 20px apart. */
+.pq-cases__list--folders {
+	grid-template-columns: repeat(auto-fill, minmax(min(100%, 16.25rem), 1fr));
+	gap: 1.25rem;
 }
 
 /* The rows: one under the other, 12px apart. */

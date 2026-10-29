@@ -572,7 +572,8 @@ import {
 } from './lib/contentApi.js'
 import { crumbLabel, signInCrumbs } from './lib/crumbWords.js'
 import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
-import { createIdleTracker } from './lib/idleTracker.js'
+import { asideOf } from './lib/gridPlacement.js'
+import { createIdleTracker, idlePreviewWanted } from './lib/idleTracker.js'
 import { instanceRootFrom } from './lib/instanceRoot.js'
 import { languageEntries, requestedLocale } from './lib/languageNav.js'
 import { loadSiteEditor } from './lib/loadSiteEditor.js'
@@ -1018,6 +1019,8 @@ export default {
 				signInRoutes: this.signInRoutes,
 				// The help details every form offers (help-texts-and-form-help).
 				portalHelp: this.site.help || null,
+				// A fixed-width aside column (site-aside-column).
+				aside: asideOf(this.page && this.page.body),
 			}
 		},
 
@@ -1442,11 +1445,13 @@ export default {
 		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
 		 */
 		legalLinks() {
-			// Every portal links its accessibility statement in the legal
-			// strip (site-accessibility-statement REQ-SAS-002).
+			// Every portal links its accessibility statement from the footer
+			// (site-accessibility-statement REQ-SAS-002): in the legal strip,
+			// unless a footer column already does.
 			return withStatementLink(
 				legalLinksOf(this.site, this.menus),
 				this.t('Accessibility'),
+				this.footerMenus,
 			)
 		},
 
@@ -2142,6 +2147,9 @@ export default {
 			}
 			this.idleSignedOut = false
 			this.idleTracker.start(this.session)
+			if (idlePreviewWanted(this.session, window.location.search)) {
+				this.idleWarning = true
+			}
 		},
 
 		/**

@@ -95,8 +95,8 @@ class PortalShell {
 	}//end project()
 
 	/**
-	 * How Mijn zaken draws its list: `{display: rows}` when the portal says
-	 * so, else [] (zuiddrecht-resident-pages-match-the-boards).
+	 * How Mijn zaken draws its list: `{display: rows}` or `{display: folders}`
+	 * when the portal says so, else [] (zuiddrecht-resident-pages-match-the-boards).
 	 *
 	 * @param array<string, mixed> $portal The portal record.
 	 *
@@ -106,8 +106,13 @@ class PortalShell {
 	 */
 	private function myCases(array $portal): array {
 		$cases = $portal['myCases'] ?? [];
-		if (is_array($cases) === true && ($cases['display'] ?? null) === 'rows') {
-			return ['display' => 'rows'];
+		if (is_array($cases) === false) {
+			return [];
+		}
+
+		$display = ($cases['display'] ?? null);
+		if (in_array($display, ['rows', 'folders'], true) === true) {
+			return ['display' => $display];
 		}
 
 		return [];

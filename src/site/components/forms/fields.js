@@ -387,3 +387,17 @@ export function countLine(value, unit, priceLabel) {
 		? `${line} × ${priceLabel}`
 		: line
 }
+
+/**
+ * The words a visitor sees for a select option: the field's `optionLabels`
+ * entry, or the option itself. The option is what the form sends.
+ *
+ * @param {object} field One declared form field.
+ * @param {string} option One of its options.
+ * @return {string} The words to show.
+ * @spec openspec/changes/site-organisation-registration-form/specs/landing-page-provisioning/spec.md#requirement-a-select-field-shows-words-for-its-stored-values
+ */
+export function optionLabel(field, option) {
+	const labels = field && field.optionLabels
+	return labels && typeof labels[option] === 'string' && labels[option] !== '' ? labels[option] : option
+}

@@ -127,6 +127,11 @@
 					class="utrecht-button utrecht-button--primary-action"
 					data-testid="mandate-invite-submit"
 					:disabled="busy">
+					<svg
+						class="pq-button-icon"
+						viewBox="0 0 24 24"
+						aria-hidden="true"
+						focusable="false"><path d="M22 5.5H9C7.9 5.5 7 6.4 7 7.5V16.5C7 17.61 7.9 18.5 9 18.5H22C23.11 18.5 24 17.61 24 16.5V7.5C24 6.4 23.11 5.5 22 5.5M22 16.5H9V9.17L15.5 12.5L22 9.17V16.5M15.5 10.81L9 7.5H22L15.5 10.81M5 16.5C5 16.67 5.03 16.83 5.05 17H1C.448 17 0 16.55 0 16S.448 15 1 15H5V16.5M3 7H5.05C5.03 7.17 5 7.33 5 7.5V9H3C2.45 9 2 8.55 2 8S2.45 7 3 7M1 12C1 11.45 1.45 11 2 11H5V13H2C1.45 13 1 12.55 1 12Z" /></svg>
 					{{ t('Send the invitation') }}
 				</button>
 			</div>
@@ -242,13 +247,23 @@ export default {
 </script>
 
 <style scoped>
+/* The dialog as the Machtigen board draws it: 640px on a dimmed page, no
+   frame but rounded corners and a shadow, the actions at the end of the
+   last line. */
 .pq-mandate-invite {
-	max-inline-size: min(36rem, calc(100vw - 2rem));
-	padding: var(--utrecht-space-block-lg, 1.5rem);
-	color: var(--utrecht-document-color, inherit);
 	background: var(--utrecht-document-background-color, Canvas);
-	border: var(--utrecht-border-width-sm, 1px) solid
-		var(--utrecht-color-grey-80, currentcolor);
+	border: 0;
+	border-radius: var(--nldesign-website-border-radius-large, 8px);
+	box-shadow: 0 8px 32px rgb(0 0 0 / 20%);
+	box-sizing: border-box;
+	color: var(--utrecht-document-color, inherit);
+	inline-size: min(40rem, calc(100vw - 2rem));
+	max-inline-size: none;
+	padding: 1.75rem;
+}
+
+.pq-mandate-invite::backdrop {
+	background: rgb(0 0 0 / 40%);
 }
 
 .pq-mandate-invite form > * + * {
@@ -288,6 +303,7 @@ export default {
 .pq-mandate-invite__buttons {
 	display: flex;
 	flex-wrap: wrap;
-	gap: var(--utrecht-space-inline-sm, 0.5rem);
+	gap: 0.75rem;
+	justify-content: flex-end;
 }
 </style>

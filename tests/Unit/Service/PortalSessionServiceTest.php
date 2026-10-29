@@ -273,6 +273,52 @@ class PortalSessionServiceTest extends TestCase {
 
 	}//end testLogoutRevokesOnlyItsOwnSession()
 
+	/**
+	 * An admin revokes one session: only that bearer stops working, and the
+	 * history names the admin as an `admin-revoke`, not as a logout.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
+	 */
+	public function testAnAdminRevokesOneSessionAndIsNamed(): void {
+		$store = [];
+		$issuer = $this->service(store: $store);
+		$mine = $issuer->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1');
+		$theirs = $issuer->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1');
+
+		$seen = [];
+		$auditor = $this->createMock(originalClassName: AuditTrailService::class);
+		$auditor->method('record')->willReturnCallback(
+			function (string $verb, string $subjectRef, string $organisation, string $register, string $schema, string $id, ...$rest) use (&$seen) {
+				$seen[] = [$verb, $subjectRef, $organisation, $id, ($rest[2] ?? [])];
+			}
+		);
+		$service = $this->service(store: $store, auditor: $auditor);
+
+		$this->assertTrue(condition: $service->revokeByAdmin(jti: $mine['jti'], admin: 'beheerder'));
+		$this->assertNull(actual: $service->resolveFromBearer(authorizationHeader: 'Bearer ' . $mine['token']));
+		$this->assertNotNull(actual: $service->resolveFromBearer(authorizationHeader: 'Bearer ' . $theirs['token']));
+		$revokes = array_values(array_filter($seen, fn (array $entry) => $entry[0] === 'admin-revoke'));
+		$this->assertSame(expected: [['admin-revoke', 's1', 'org-1', $mine['jti'], ['admin' => 'beheerder']]], actual: $revokes);
+	}//end testAnAdminRevokesOneSessionAndIsNamed()
+
+	/**
+	 * An unknown token id revokes nothing and records nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
+	 */
+	public function testAnAdminRevokeOfAnUnknownSessionDoesNothing(): void {
+		$store = [];
+		$auditor = $this->createMock(originalClassName: AuditTrailService::class);
+		$auditor->expects($this->never())->method('record');
+
+		$this->assertFalse(condition: $this->service(store: $store, auditor: $auditor)->revokeByAdmin(jti: 'no-such-jti', admin: 'beheerder'));
+		$this->assertFalse(condition: $this->service(store: $store, auditor: $auditor)->revokeByAdmin(jti: '', admin: 'beheerder'));
+	}//end testAnAdminRevokeOfAnUnknownSessionDoesNothing()
+
 	public function testRevokeAllForOrganisationRevokesEveryActiveSession(): void {
 		$store = [];
 		$service = $this->service(store: $store);
@@ -996,11 +1042,29 @@ class PortalSessionServiceTest extends TestCase {
 		$claims = (new PortalJwtService(self::SECRET))->validate($issued['token']);
 
 		$this->assertSame(
-			['expiresAt' => (int)$claims['exp'], 'hardExpiresAt' => ((int)$claims['authTime'] + 28800), 'idleTimeout' => 900],
+			['expiresAt' => (int)$claims['exp'], 'hardExpiresAt' => ((int)$claims['authTime'] + 28800), 'idleTimeout' => 900, 'idlePreview' => false],
 			$service->sessionTimes($subject)
 		);
 
 	}//end testSessionTimesComeFromTheBearer()
+
+	/**
+	 * REQ-SIS-007: a session reports `idlePreview` only when the instance
+	 * sets `session_idle_preview_enabled` to `yes`; any other value is off.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/idle-warning-preview/tasks.md#T01
+	 */
+	public function testIdlePreviewFollowsItsOwnFlag(): void {
+		foreach (['yes' => true, 'no' => false, '1' => false, 'true' => false] as $value => $expected) {
+			$service = $this->service(idlePreview: (string) $value);
+			$issued = $service->issueSession(subjectRef: 's1', audience: 'client', organisation: 'org-1');
+			$subject = $service->resolveFromBearer('Bearer ' . $issued['token']);
+			$this->assertSame(expected: $expected, actual: $service->sessionTimes(subject: $subject)['idlePreview'], message: 'flag value ' . $value);
+		}
+
+	}//end testIdlePreviewFollowsItsOwnFlag()
 
 	/**
 	 * REQ-SIS-006: an OIDC-minted session carries the provider it came from,
@@ -1037,8 +1101,23 @@ class PortalSessionServiceTest extends TestCase {
 	 * @param array<string, mixed>& $store      Backing store, keyed by uuid.
 	 * @param AuditTrailService|null $auditor Override the audit recorder; null uses a permissive mock.
 	 * @param int $maxLifetime Override `session_max_lifetime` (seconds); the default 8h otherwise.
+	 * @param string|null $idleTimeout Override `session_idle_timeout`; null keeps its default.
+	 * @param callable|null $onCreate Called with each created session row.
+	 * @param bool $orDown Whether the store fails as if OpenRegister were down.
+	 * @param string|null $idlePreview Override `session_idle_preview_enabled`; null keeps its default.
+	 *
+	 * @return PortalSessionService
 	 */
-	private function service(?string $secret = self::SECRET, array &$store = [], ?AuditTrailService $auditor = null, int $maxLifetime = 0, ?string $idleTimeout = null, ?callable $onCreate = null, bool $orDown = false): PortalSessionService {
+	private function service(
+		?string $secret = self::SECRET,
+		array &$store = [],
+		?AuditTrailService $auditor = null,
+		int $maxLifetime = 0,
+		?string $idleTimeout = null,
+		?callable $onCreate = null,
+		bool $orDown = false,
+		?string $idlePreview = null,
+	): PortalSessionService {
 		// The signing secret lives in IAppConfig, flagged sensitive (review S4);
 		// IConfig answers the other session settings only.
 		$appConfig = $this->createMock(IAppConfig::class);
@@ -1047,7 +1126,10 @@ class PortalSessionServiceTest extends TestCase {
 		);
 		$config = $this->createMock(IConfig::class);
 		$config->method('getAppValue')->willReturnCallback(
-			function (string $appId, string $key, string $default = '') use ($secret, $maxLifetime, $idleTimeout) {
+			function (string $appId, string $key, string $default = '') use ($secret, $maxLifetime, $idleTimeout, $idlePreview) {
+				if ($key === 'session_idle_preview_enabled') {
+					return ($idlePreview ?? $default);
+				}
 				if ($key === 'session_max_lifetime' && $maxLifetime > 0) {
 					return (string)$maxLifetime;
 				}

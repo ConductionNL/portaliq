@@ -168,16 +168,24 @@ export default {
 </script>
 
 <style scoped>
+/* A side card as the dossiq boards draw one (DqZaak, PtPortal): the board
+   card's 20px 22px padding, headed by a 15px muted label at weight 600. The
+   heading ink carries `!important` against a theme that colours every
+   heading (thematiq). */
 .portal-summary {
 	background: var(--color-main-background);
 	border: 1px solid var(--color-border);
 	border-radius: var(--border-radius-large, 12px);
-	padding: 16px 20px;
+	padding: 20px 22px;
+	font-size: 14px;
 }
 
 .portal-summary__title {
-	margin: 0 0 10px;
+	margin: 0 0 12px;
+	color: var(--color-text-maxcontrast) !important;
 	font-size: 15px;
+	font-weight: 600;
+	line-height: 1.2;
 }
 
 .portal-summary__row {
@@ -196,6 +204,7 @@ export default {
 }
 
 .portal-summary__empty {
+	margin: 0;
 	color: var(--color-text-maxcontrast);
 }
 </style>

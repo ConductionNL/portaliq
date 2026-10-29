@@ -30,29 +30,40 @@
 			}}
 		</p>
 		<template v-else>
-			<p class="utrecht-paragraph">
+			<p class="utrecht-paragraph pq-accessibility-statement__intro">
 				{{
 					t(
 						'{organisation} wants everybody to be able to use {website}. This statement says how far that succeeds and what is still wrong.',
-						{ organisation: statement.organisation || website, website },
+						{ organisation: website, website: t('this website') },
 					)
 				}}
 			</p>
 
-			<h2 class="utrecht-heading-2">
-				{{ t('Status') }}
-			</h2>
-			<p
-				class="utrecht-paragraph"
-				data-testid="accessibility-statement-status">
-				{{ lines.status }}
-			</p>
-			<p v-if="lines.automated" class="utrecht-paragraph">
-				{{ lines.automated }}
-			</p>
-			<p v-if="lines.auditExpired" class="utrecht-paragraph">
-				{{ lines.auditExpired }}
-			</p>
+			<!-- The status in a box of its own (board Toegankelijkheid): the
+			     ok colour only for a website that fully meets the requirements. -->
+			<section
+				class="utrecht-alert pq-accessibility-statement__status"
+				:class="`utrecht-alert--${statusKind}`"
+				aria-labelledby="pq-accessibility-status">
+				<div class="utrecht-alert__content">
+					<h2
+						id="pq-accessibility-status"
+						class="utrecht-heading-3">
+						{{ t('Status') }}
+					</h2>
+					<p
+						class="utrecht-paragraph"
+						data-testid="accessibility-statement-status">
+						{{ lines.status }}
+					</p>
+					<p v-if="lines.automated" class="utrecht-paragraph">
+						{{ lines.automated }}
+					</p>
+					<p v-if="lines.auditExpired" class="utrecht-paragraph">
+						{{ lines.auditExpired }}
+					</p>
+				</div>
+			</section>
 
 			<h2 class="utrecht-heading-2">
 				{{ t('Evidence') }}
@@ -154,6 +165,11 @@
 import { fetchAccessibilityStatement } from '../lib/contentApi.js'
 import { statementLines } from '../lib/statementLines.js'
 
+import '@utrecht/alert-css/dist/index.css'
+import '@utrecht/heading-2-css/dist/index.css'
+import '@utrecht/heading-3-css/dist/index.css'
+import '@utrecht/paragraph-css/dist/index.css'
+
 export default {
 	name: 'AccessibilityStatementPage',
 
@@ -187,6 +203,19 @@ export default {
 		 */
 		lines() {
 			return statementLines(this.statement, this.t, this.formatDate)
+		},
+
+		/**
+		 * @return {string} The status box's kind: `ok` for status A, `info`
+		 *   without a status, `warning` for any other.
+		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+		 */
+		statusKind() {
+			const status = this.statement.status
+			if (status === 'A') {
+				return 'ok'
+			}
+			return status ? 'warning' : 'info'
 		},
 	},
 
@@ -247,3 +276,53 @@ export default {
 	},
 }
 </script>
+
+<style scoped>
+/* Board Toegankelijkheid: one column of at most 820px, the title where a
+   content page has its own, the sections apart. */
+.pq-accessibility-statement {
+	padding-block: 1.5rem 2rem;
+}
+
+.pq-accessibility-statement > * {
+	max-inline-size: 51.25rem;
+}
+
+.pq-accessibility-statement > h1 {
+	margin-block: 0 1rem;
+}
+
+.pq-accessibility-statement > h2 {
+	margin-block: 2rem 0.75rem;
+}
+
+.pq-accessibility-statement > .utrecht-paragraph,
+.pq-accessibility-statement > .utrecht-unordered-list {
+	margin-block: 0 0.75rem;
+}
+
+.pq-accessibility-statement__intro.utrecht-paragraph {
+	font-size: 1.3125rem;
+}
+
+.pq-accessibility-statement__status {
+	margin-block: 1.5rem;
+	padding: 1.25rem 1.5rem;
+	border-radius: var(--nldesign-website-border-radius-large, 6px);
+}
+
+/* A status short of full compliance is the attention strip the board draws:
+   its own border, not the plain notice's. */
+.pq-accessibility-statement__status.utrecht-alert--warning {
+	border-color: var(
+		--nldesign-website-attention-border-color,
+		var(--utrecht-alert-warning-border-color, currentcolor)
+	);
+}
+
+.pq-accessibility-statement__status h2 {
+	margin-block: 0 0.25rem;
+	font-size: 1.1875rem;
+	line-height: 1.2;
+}
+</style>

@@ -146,6 +146,7 @@
 				</div>
 				<KpiCards
 					v-if="record.summary.length"
+					variant="list"
 					:cards="figures.cards"
 					:row="figures.row"
 					:level="3"
@@ -178,9 +179,13 @@
 				class="utrecht-textbox utrecht-textbox--html-input"
 				type="search"
 				autocomplete="off" />
-			<ul>
+			<ul class="pq-records__list">
 				<li v-for="entry in shown" :key="entry.id">
-					<a :href="hrefFor(entry)">{{ entry.title }}</a>
+					<a
+						class="utrecht-link pq-records__link"
+						:href="hrefFor(entry)"
+						>{{ entry.title }}</a
+					>
 					<span v-if="entry.subtitle" class="pq-records__subtitle">
 						{{ entry.subtitle }}
 					</span>
@@ -640,6 +645,33 @@ export default {
 </script>
 
 <style scoped>
+/* The list of records: one per line, the name as a link and what it is
+   under it in the muted ink. */
+.pq-records__list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	margin: 1rem 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.pq-records__list li {
+	display: flex;
+	flex-direction: column;
+	gap: 0.125rem;
+}
+
+.pq-records__link {
+	font-size: 1.125rem;
+	font-weight: 600;
+}
+
+.pq-records__subtitle {
+	color: var(--nldesign-color-text-muted, currentcolor);
+	font-size: 0.9375rem;
+}
+
 .pq-records__record {
 	display: grid;
 	gap: var(--utrecht-space-block-lg, 2rem);
@@ -680,10 +712,35 @@ export default {
 	text-decoration: underline;
 }
 
+/* The side column as the voting record board draws it: no box, a 4px rule in
+   the accent colour on top (PtStemgedrag). */
 .pq-records__side {
-	border: 1px solid var(--utrecht-color-grey-80, var(--color-border));
-	border-radius: var(--utrecht-border-radius-md, 4px);
-	padding: var(--utrecht-space-block-md, 1rem);
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	border-block-start: 4px solid var(--nldesign-color-accent, currentcolor);
+	padding-block-start: 1.25rem;
+}
+
+/* The record's table: a tinted header row, 12px 16px cells, a hairline
+   between the rows. */
+.pq-records__main :deep(table) {
+	border-collapse: collapse;
+	inline-size: 100%;
+}
+
+.pq-records__main :deep(th) {
+	padding: 12px 16px;
+	background: var(--nldesign-color-surface, #f4f6f9);
+	border: 0;
+	text-align: start;
+}
+
+.pq-records__main :deep(td) {
+	padding: 12px 16px;
+	border: 0;
+	border-block-start: 1px solid var(--nldesign-color-border, #d3d8df);
+	vertical-align: top;
 }
 
 .pq-records__who {
@@ -711,7 +768,11 @@ export default {
 }
 
 .pq-records__links {
-	margin-block-start: var(--utrecht-space-block-md, 1rem);
-	padding-inline-start: 1.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
 }
 </style>

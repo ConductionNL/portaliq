@@ -160,6 +160,7 @@ const blockComponents = {
 	publicationDetail: 'src/site/components/PublicationDetailBlock.vue',
 	contactForm: 'src/site/components/ContactForm.vue',
 	publicRecords: 'src/site/components/PublicRecordsBlock.vue',
+	form: 'src/site/components/FormBlock.vue',
 }
 const widgetProps = {}
 for (const [key, path] of Object.entries(blockComponents)) {
@@ -168,6 +169,20 @@ for (const [key, path] of Object.entries(blockComponents)) {
 		new RegExp(`\\n\\t${key}: `),
 		`${key} is a public widget`,
 	)
+	widgetProps[key] = propsOfVue(path)
+}
+// A declared form block names its form by key; the installer writes the
+// installed form's id as `formId` (site-organisation-registration-form).
+widgetProps.form.push('formKey')
+// The blocks the shared library's public registry brings, which WidgetGrid
+// spreads into its own map.
+const libraryIndex = read('node_modules/@conduction/nextcloud-vue/src/public/index.js')
+const libraryBlocks = {
+	glossary: 'node_modules/@conduction/nextcloud-vue/src/public/components/CnSiteGlossary.vue',
+}
+assert.match(publicMap, /\.\.\.siteBlockRegistry/, 'the library blocks are public')
+for (const [key, path] of Object.entries(libraryBlocks)) {
+	assert.match(libraryIndex, new RegExp(`\\n\\t${key}: `), `${key} is a library block`)
 	widgetProps[key] = propsOfVue(path)
 }
 assert.match(
@@ -349,7 +364,7 @@ test('the Zuiddrecht site holds what the design shows', () => {
 	)
 	// Counts the installer's own test and the documentation name.
 	assert.equal(site.menus.length, 3)
-	assert.equal(site.pages.length, 39)
+	assert.equal(site.pages.length, 55)
 	assert.equal(site.news.length, 4)
 })
 
@@ -381,6 +396,22 @@ for (const { file, site } of sites) {
 				problems,
 			),
 		)
+		for (const form of site.forms || []) {
+			hold(
+				{ ...form, portal: site.portal.slug },
+				schemas.form,
+				`form ${form.externalReference}`,
+				problems,
+			)
+		}
+		for (const term of site.glossary || []) {
+			hold(
+				{ ...term, portal: site.portal.slug },
+				schemas.glossaryTerm,
+				`glossary "${term.term}"`,
+				problems,
+			)
+		}
 		assert.deepEqual(problems, [])
 	})
 
@@ -746,13 +777,14 @@ test('the Zuiddrecht site lays out its own area as the MijnMenu and MijnZaken bo
 		site.portal.residentMenu.groups.map((group) => [group.title, group.items]),
 		[
 			['Mijn Zuiddrecht', ['overview', 'inbox']],
-			['Zaken en taken', ['cases', 'tasks']],
+			['Zaken en taken', ['cases', 'tasks', 'access']],
+			['Samenwerken', ['samenwerken', 'contacts']],
 			['Vragen en meldingen', ['portaliq:meldingen']],
 			['Uw gegevens', ['details', 'account']],
 		],
 	)
-	// Mijn zaken as rows (the MijnZaken board).
-	assert.equal(site.portal.myCases.display, 'rows')
+	// Mijn zaken as the board folders (the MijnZaken board).
+	assert.equal(site.portal.myCases.display, 'folders')
 	// Both keys are in the portal schema, so OpenRegister keeps them.
 	const portal = schemas.portal
 	assert.ok(
@@ -762,9 +794,10 @@ test('the Zuiddrecht site lays out its own area as the MijnMenu and MijnZaken bo
 	assert.deepEqual(portal.properties.myCases.properties.display.enum, [
 		'cards',
 		'rows',
+		'folders',
 	])
-	assert.equal(portal.version, '0.25.0')
-	assert.equal(register.info.version, '0.97.0')
+	assert.equal(portal.version, '0.27.0')
+	assert.equal(register.info.version, '0.101.0')
 })
 
 // zuiddrecht-site-details: the portal names the organisation of the example

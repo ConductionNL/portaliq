@@ -5,7 +5,7 @@
  *
  * Reads the example sites this app ships, one declaration per file under
  * `lib/Settings/sites/`. A declaration holds a portal record, its menus, its
- * pages and its news items, as an administrator installs them with
+ * pages, its news items and its glossary terms, as an administrator installs them with
  * `occ portaliq:example-site:install`.
  *
  * @category Service
@@ -38,7 +38,7 @@ class ExampleSiteCatalogue {
 	/**
 	 * The object lists a declaration holds besides its portal, by key.
 	 */
-	public const LISTS = ['menus', 'pages', 'news'];
+	public const LISTS = ['forms', 'menus', 'pages', 'news', 'glossary'];
 
 	/**
 	 * Constructor.
@@ -103,6 +103,7 @@ class ExampleSiteCatalogue {
 		}
 
 		$site['pages'] = $this->pagesWithTheirApps(value: $site['pages']);
+		$site['forms'] = $this->pagesWithTheirApps(value: $site['forms']);
 
 		return $site;
 	}//end find()
@@ -110,7 +111,7 @@ class ExampleSiteCatalogue {
 	/**
 	 * Keep an object that needs an app only when that app is installed, and
 	 * strip the `requiresApp` key so it is never written to the store. It holds
-	 * for a page and for a link inside a page, at any depth.
+	 * for a page, a form and a link inside a page, at any depth.
 	 *
 	 * @param array<int|string, mixed> $value The declared pages, or anything inside them.
 	 *

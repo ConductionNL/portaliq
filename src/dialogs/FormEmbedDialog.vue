@@ -11,7 +11,8 @@
   @spec openspec/changes/embedded-intake-form/specs/embedded-intake-form/spec.md
 -->
 <template>
-	<NcDialog
+	<CnDialog
+		:look="look"
 		:name="t('portaliq', 'Put the form on your website')"
 		size="normal"
 		data-testid="form-embed"
@@ -72,24 +73,31 @@
 				{{ t('portaliq', 'Close') }}
 			</NcButton>
 		</template>
-	</NcDialog>
+	</CnDialog>
 </template>
 
 <script>
+import { CnDialog } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
-import { NcButton, NcDialog, NcNoteCard, NcTextArea } from '@nextcloud/vue'
+import { NcButton, NcNoteCard, NcTextArea } from '@nextcloud/vue'
 
 export default {
 	name: 'FormEmbedDialog',
 
 	components: {
 		NcButton,
-		NcDialog,
+		CnDialog,
 		NcNoteCard,
 		NcTextArea,
 	},
 
 	props: {
+		/** The look to draw in; a spawned dialog gets the app's (src/lib/dialogLook.js). */
+		look: {
+			type: String,
+			default: undefined,
+		},
+
 		/** The name of the form the entry opens. */
 		formName: {
 			type: String,

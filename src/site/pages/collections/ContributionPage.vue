@@ -500,6 +500,7 @@
 				:api="api"
 				:t="tr"
 				:locale="lang"
+				:portalHelp="(portal && portal.help) || null"
 				@created="(object, written) => afterWrite(written || item.action)" />
 		</template>
 	</section>
@@ -648,6 +649,8 @@ export default {
 		page: { type: Object, default: null },
 		/** The contribution, when no entry carries it. */
 		contribution: { type: Object, default: null },
+		/** The portal record, for its `help` on a form. */
+		portal: { type: Object, default: null },
 		/** The shared portal api, bound to the resident's bearer. */
 		api: { type: Object, default: null },
 		/** The contributions aggregate, or its list. */

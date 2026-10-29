@@ -132,4 +132,33 @@ class SessionAdminController extends Controller {
 
 		return new JSONResponse($result);
 	}//end revokeAccount()
+
+	/**
+	 * Revoke one portal session, found by its token id.
+	 *
+	 * @param string $jti The session's token id.
+	 *
+	 * @return JSONResponse `{revoked: true}`; 400 when `jti` is empty; 404
+	 *                      when no live session carries it or it could not
+	 *                      be written.
+	 *
+	 * @auth admin-only Incident response on one session, the same posture as
+	 *       revokeOrganisation(): instance admin + CSRF, expressed by the
+	 *       absence of an opt-out attribute, checked by Nextcloud before this
+	 *       method runs.
+	 *
+	 * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
+	 */
+	public function revokeSession(string $jti = ''): JSONResponse {
+		if ($jti === '') {
+			return new JSONResponse(['error' => 'session_required'], Http::STATUS_BAD_REQUEST);
+		}
+
+		$admin = (string)$this->userSession->getUser()?->getUID();
+		if ($this->session->revokeByAdmin(jti: $jti, admin: $admin) === false) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return new JSONResponse(['revoked' => true]);
+	}//end revokeSession()
 }//end class

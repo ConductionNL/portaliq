@@ -131,7 +131,8 @@ class ExampleSiteRows {
 	 * @param string               $schema The schema slug.
 	 * @param array<string, mixed> $object The object.
 	 *
-	 * @return string A menu's position and title, a page's route, a news item's title.
+	 * @return string A menu's position and title, a page's route, a form's external reference, a glossary term's term,
+	 *                a news item's title.
 	 *
 	 * @spec openspec/changes/example-site-zuiddrecht/specs/example-site/spec.md#requirement-an-administrator-must-be-able-to-install-an-example-site-with-one-command
 	 */
@@ -142,6 +143,14 @@ class ExampleSiteRows {
 
 		if ($schema === 'page') {
 			return (string)($object['route'] ?? '');
+		}
+
+		if ($schema === 'form') {
+			return (string)($object['externalReference'] ?? '');
+		}
+
+		if ($schema === 'glossaryTerm') {
+			return (string)($object['term'] ?? '');
 		}
 
 		return (string)($object['title'] ?? '');

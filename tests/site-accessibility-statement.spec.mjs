@@ -21,6 +21,7 @@ import {
 	withStatementLink,
 } from '../src/site/lib/accessibilityStatement.js'
 import { statementLines } from '../src/site/lib/statementLines.js'
+import { loadSfc, renderComponent } from './support/render-sfc.mjs'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const read = (path) => readFileSync(join(root, path), 'utf8')
@@ -51,6 +52,25 @@ test('the statement is linked from the footer, once', () => {
 	assert.deepEqual(withStatementLink(undefined, 'Toegankelijkheid'), [
 		{ label: 'Toegankelijkheid', href: '/toegankelijkheid' },
 	])
+})
+
+test('a footer column that links the statement keeps it out of the legal strip', () => {
+	const columns = [
+		{
+			title: 'Over deze website',
+			items: [
+				{ name: 'Toegankelijkheid', link: '/toegankelijkheid' },
+				{ name: 'Privacy', link: '/privacy' },
+			],
+		},
+	]
+	assert.deepEqual(withStatementLink([], 'Toegankelijkheid', columns), [])
+	assert.deepEqual(
+		withStatementLink([], 'Toegankelijkheid', [
+			{ title: 'Snel naar', items: [{ name: 'Afval', link: '/afval' }] },
+		]),
+		[{ label: 'Toegankelijkheid', href: '/toegankelijkheid' }],
+	)
 })
 
 test('the statement follows the measurement and lists the measurement date', () => {
@@ -128,7 +148,7 @@ test('the shell renders the statement page on its route and puts the link in the
 	assert.match(app, /<AccessibilityStatementPage\s+v-else-if="statementRoute"/)
 	assert.match(
 		app,
-		/withStatementLink\(\s*legalLinksOf\(this\.site, this\.menus\)/,
+		/withStatementLink\(\s*legalLinksOf\(this\.site, this\.menus\),\s*this\.t\('Accessibility'\),\s*this\.footerMenus,/,
 	)
 	assert.match(app, /if \(isStatementRoute\(route\)\) \{/)
 	assert.match(read('src/site/lib/contentApi.js'), /get\('\/accessibility'/)
@@ -146,3 +166,32 @@ test('every string of the statement page is in the Dutch bundle', () => {
 		assert.ok(nl[key], `nl.json translates "${key}"`)
 	}
 })
+
+/**
+ * The statement page as a visitor sees it once the statement arrived.
+ *
+ * @param {object} statement The server's statement.
+ * @return {Promise<string>} The page's markup.
+ */
+async function statementPage(statement) {
+	const page = await loadSfc('src/site/components/AccessibilityStatementPage.vue')
+	return renderComponent(
+		{ ...page, data: () => ({ loaded: true, failed: false, statement }) },
+		{ portalSlug: 'zuiddrecht', portalName: 'Gemeente Zuiddrecht', locale: 'nl', t },
+	)
+}
+
+test('the statement names the organisation, never its tenant key, and says "this website"', async () => {
+	const html = await statementPage({ organisation: 'zuiddrecht', website: 'Gemeente Zuiddrecht', status: 'C' })
+	assert.match(html, /Gemeente Zuiddrecht wil dat iedereen deze website kan gebruiken\./)
+	assert.doesNotMatch(html, />\s*zuiddrecht wil/)
+})
+
+test('the status stands in a box of its own, coloured by how far the site is', async () => {
+	const partly = await statementPage({ website: 'Gemeente Zuiddrecht', status: 'C' })
+	assert.match(partly, /<section class="utrecht-alert--warning utrecht-alert pq-accessibility-statement__status" aria-labelledby="pq-accessibility-status">/)
+	assert.match(partly, /<h2 id="pq-accessibility-status" class="utrecht-heading-3">\s*Status\s*<\/h2>/)
+	assert.match(await statementPage({ status: 'A' }), /utrecht-alert--ok/)
+	assert.match(await statementPage({ status: null }), /utrecht-alert--info/)
+})
+

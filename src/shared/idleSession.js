@@ -31,6 +31,10 @@ export const IDLE_WARNING_STRINGS = [
 	'{count} minutes',
 	'1 minute',
 	'{count} seconds',
+	'1 second',
+	'{minutes} and {seconds}',
+	'{time} left',
+	'What you have not sent yet is lost then.',
 ]
 
 const IDLE_SIGNOUT_KEY = 'portaliq.signedOutIdle'
@@ -113,6 +117,34 @@ export function remainingText(seconds, t) {
 	}
 	const minutes = Math.ceil(left / 60)
 	return minutes === 1 ? t('1 minute') : t('{count} minutes', { count: minutes })
+}
+
+/**
+ * The remaining time to the second, for the countdown on screen: "1 minute
+ * and 58 seconds", "2 minutes", "40 seconds".
+ *
+ * @param {number} seconds Seconds left.
+ * @param {(key: string, vars?: object) => string} t The translator.
+ * @return {string}
+ * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T06
+ */
+export function countdownText(seconds, t) {
+	const left = Math.max(0, Math.round(seconds))
+	const minutes = Math.floor(left / 60)
+	const rest = left % 60
+	const secondsText =
+		rest === 1 ? t('1 second') : t('{count} seconds', { count: rest })
+	if (minutes === 0) {
+		return secondsText
+	}
+	const minutesText =
+		minutes === 1 ? t('1 minute') : t('{count} minutes', { count: minutes })
+	return rest === 0
+		? minutesText
+		: t('{minutes} and {seconds}', {
+				minutes: minutesText,
+				seconds: secondsText,
+			})
 }
 
 /**

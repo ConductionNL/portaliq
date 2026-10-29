@@ -210,6 +210,94 @@
 }
 
 /*
+ * A BUTTON THAT UNDOES SOMETHING ("Aanvraag intrekken"): the danger tokens
+ * when the theme sets them, else the set's dark error colour, which reaches
+ * AA on white. Text and outline carry the meaning together with the words.
+ */
+.pq-site .utrecht-button--secondary-action.utrecht-button--danger {
+	--_utrecht-button-hint-color: var(
+		--utrecht-button-secondary-action-danger-color,
+		var(--nldesign-color-error-hover, currentcolor)
+	);
+	--_utrecht-button-hint-border-color: var(
+		--utrecht-button-secondary-action-danger-border-color,
+		var(--nldesign-color-error-hover, currentcolor)
+	);
+}
+
+.pq-site .utrecht-button--primary-action.utrecht-button--danger {
+	--_utrecht-button-hint-background-color: var(
+		--utrecht-button-primary-action-danger-background-color,
+		var(--nldesign-color-error-hover, CanvasText)
+	);
+	--_utrecht-button-hint-border-color: var(
+		--utrecht-button-primary-action-danger-border-color,
+		var(--nldesign-color-error-hover, CanvasText)
+	);
+	--_utrecht-button-hint-color: var(
+		--utrecht-button-primary-action-danger-color,
+		var(--nldesign-color-text-light, Canvas)
+	);
+}
+
+/*
+ * AN OUTLINED BUTTON TAKES ITS INK FROM THE BUTTON'S OWN TOKENS.
+ *
+ * The vendored nlds-app.css paints every secondary button in
+ * `--tilburg-color-blue-400` with !important, which the bridge maps to the
+ * primary's HOVER colour, and that also beat the danger hint: "Aanvraag
+ * intrekken" and "Mijn account verwijderen" drew #234A78 where the boards
+ * draw #3669A5 and the red #A30000. The private `--_utrecht-button-*`
+ * values already resolve hint, appearance and token in that order, so the
+ * button's own states and the danger variant win again.
+ */
+.pq-site .utrecht-button--secondary-action {
+	border-color: var(--_utrecht-button-border-color) !important;
+	color: var(--_utrecht-button-color) !important;
+}
+
+/*
+ * A SELECT IS A FORM CONTROL TOO. The vendored stylesheets style the Utrecht
+ * text box but carry no select rules, so every `utrecht-select` on the site
+ * ("Namens", "Iedereen voor wie ik werk") drew as the browser's 25px grey
+ * box. It reads the select tokens the theme gives, and keeps the browser's
+ * own arrow.
+ */
+.pq-site .utrecht-select {
+	box-sizing: border-box;
+	min-block-size: var(
+		--utrecht-select-min-block-size,
+		var(--utrecht-pointer-target-min-size, 44px)
+	);
+	padding-block: 0;
+	padding-inline: 12px;
+	border: var(--utrecht-select-border-width, 1px) solid
+		var(--utrecht-select-border-color, currentcolor);
+	border-radius: var(--utrecht-select-border-radius, 4px);
+	background-color: var(--utrecht-select-background-color, Canvas);
+	color: var(--utrecht-select-color, CanvasText);
+	font-family: var(--utrecht-select-font-family, inherit);
+	font-size: var(--utrecht-select-font-size, inherit);
+}
+
+/* A button's leading icon, as the boards draw it: 20px in the label's ink,
+   8px before the words. */
+.pq-site .utrecht-button .pq-button-icon {
+	inline-size: 20px;
+	block-size: 20px;
+	flex: none;
+	margin-inline-end: 8px;
+	vertical-align: -4px;
+	fill: currentcolor;
+}
+
+/* "Markeren als gelezen" on a message row is an underlined text button with
+   square ends (board Berichten). */
+.pq-site .pq-inbox-row .utrecht-button--subtle {
+	border-radius: 0;
+}
+
+/*
  * THE SAME FORM'S SECONDARY BUTTONS: the file picker ("Bestand of foto
  * kiezen") and the step buttons. Without a theme they had no border and no
  * padding either, so the picker read as a sentence. Scoped to the form, so the
@@ -581,6 +669,12 @@
 body:has(.pq-site__header--designed),
 body:has(.pq-site__header--designed) .pq-site__skip {
 	font-family: var(--utrecht-document-font-family, inherit);
+}
+
+/* The vendored sheet names its own face on a bulleted list with !important,
+   so only an !important rule puts the list in the set's face. */
+.pq-site:has(.pq-site__header--designed) .utrecht-unordered-list {
+	font-family: var(--utrecht-document-font-family, inherit) !important;
 }
 
 /*
@@ -1136,7 +1230,11 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	flex-direction: column;
 	gap: 16px;
 	padding: 28px;
-	border: 1px solid var(--nldesign-color-border, var(--tilburg-line-border-color));
+	border: 1px solid
+		var(
+			--nldesign-website-card-border-color,
+			var(--nldesign-color-border, var(--tilburg-line-border-color))
+		);
 	border-radius: var(--nldesign-website-border-radius-large, 8px);
 	background-color: var(--nldesign-color-background, var(--tilburg-color-white));
 }
@@ -1446,6 +1544,19 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 }
 
 /*
+ * Every other page that opens with an h1 of its own (the sign-in page, a
+ * publication, the accessibility statement, a news article) keeps the set's
+ * size but takes the page title's line height, so every title on the site
+ * sets the same. Without the token nothing changes.
+ */
+.pq-site h1.utrecht-heading-1 {
+	line-height: var(
+		--nldesign-website-page-title-line-height,
+		var(--utrecht-heading-1-line-height, revert)
+	);
+}
+
+/*
  * THE PLAIN HERO (site-matches-the-zuiddrecht-boards, board Home): the
  * question large, the form on the band itself with input and button joined,
  * the popular links under it, the emblem faint at the end of the band. Only
@@ -1712,14 +1823,16 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	white-space: nowrap;
 }
 
-.pq-site .pq-search--plain .ac-search-box__search {
+.pq-site .pq-search--plain .ac-search-box__search,
+.pq-site .pq-not-found .ac-search-box__search {
 	display: flex;
 	flex-direction: row;
 	flex-wrap: wrap;
 	gap: 0;
 }
 
-.pq-site .pq-search--plain .ac-search-box__input.utrecht-textbox {
+.pq-site .pq-search--plain .ac-search-box__input.utrecht-textbox,
+.pq-site .pq-not-found .ac-search-box__input.utrecht-textbox {
 	flex: 1 1 20rem;
 	min-inline-size: 0;
 	block-size: 3.25rem;
@@ -1732,7 +1845,8 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	font-size: 1.125rem;
 }
 
-.pq-site .pq-search--plain .ac-search-box__button.utrecht-button {
+.pq-site .pq-search--plain .ac-search-box__button.utrecht-button,
+.pq-site .pq-not-found .ac-search-box__button.utrecht-button {
 	block-size: 3.25rem;
 	padding-inline: 1.625rem;
 	border: 0;
@@ -1769,6 +1883,40 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	font-weight: 600;
 }
 
+/* Each filter a 22px box in the primary colour beside its 17px words, the
+   boxes 10px apart; the headings at the board's 24px and 26px. */
+.pq-site .pq-search--plain .pq-search__facets h2 {
+	font-size: 1.5rem;
+	line-height: 1.2;
+}
+
+.pq-site .pq-search--plain .pq-search__count {
+	font-size: 1.625rem;
+	line-height: 1.2;
+}
+
+.pq-site .pq-search--plain .pq-search__facet-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.625rem;
+}
+
+.pq-site .pq-search--plain .utrecht-form-label--checkbox {
+	display: flex;
+	align-items: center;
+	gap: 0.625rem;
+	font-size: 1.0625rem;
+	font-weight: 400;
+}
+
+.pq-site .pq-search--plain .pq-search__facet-list .utrecht-checkbox {
+	flex: none;
+	inline-size: 1.375rem;
+	block-size: 1.375rem;
+	margin: 0;
+	accent-color: var(--nldesign-color-primary, currentcolor);
+}
+
 .pq-site .pq-search--plain .pq-search__facet-group input[type='date'] {
 	block-size: 3rem;
 	box-sizing: border-box;
@@ -1796,10 +1944,21 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 .pq-site .pq-search--plain .pq-search__result.ac-card {
 	margin: 0;
 	padding: 1.25rem 1.5rem;
-	border: 1px solid var(--nldesign-color-border-dark, currentcolor);
+	border: 1px solid
+		var(
+			--nldesign-website-card-border-color,
+			var(--nldesign-color-border-dark, currentcolor)
+		);
 	border-radius: var(--nldesign-website-border-radius-large, 0);
 	background: var(--utrecht-document-background-color, Canvas);
 	box-shadow: none;
+}
+
+/* The card's own 20px and 24px are all the room a result has (board
+   Zoeken): the vendored card content adds 24px of its own. */
+.pq-site .pq-search--plain .pq-search__result .ac-card__content {
+	gap: 0.375rem;
+	padding: 0;
 }
 
 .pq-site .pq-search--plain .pq-search__result-title {
@@ -2125,11 +2284,43 @@ body:has(.pq-site__header--designed) .pq-site__skip {
  * column 380px wide and 72px from three link columns 32px apart, the
  * sentence in 17px, the button 46px in 600; the bottom line in 14px on the
  * page column.
+ *
+ * The 56px start under the motif: the stripe is drawn over the band's top
+ * edge, so the band adds the stripe's height to its own room.
  */
 .pq-site:has(.pq-site__header--designed)
 	.ac-footer
 	section.pq-footer__band--designed.pq-footer__band--content {
-	padding-block: 56px 44px;
+	padding-block: calc(56px + var(--cn-brand-stripe-height, 0px)) 44px;
+}
+
+/* A column title 14px above its list, the lines 10px apart. */
+.pq-site:has(.pq-site__header--designed)
+	.ac-footer
+	section.pq-footer__band--designed.pq-footer__band--content
+	h3.ac-footer__menu-title {
+	margin-block-end: 14px;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.ac-footer
+	section.pq-footer__band--designed.pq-footer__band--content
+	ul
+	li:not(:last-child),
+.pq-site:has(.pq-site__header--designed)
+	.ac-footer
+	.pq-footer__band--designed
+	.pq-footer__contact
+	p:not(:last-child) {
+	margin-block-end: 10px;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.ac-footer
+	.pq-footer__band--designed
+	.pq-footer__contact
+	p:last-child {
+	margin-block-end: 0;
 }
 
 @media screen and (min-width: 1025px) {
@@ -2217,7 +2408,8 @@ body:has(.pq-site__header--designed) .pq-site__skip {
  */
 .pq-site:has(.pq-site__header--designed)
 	[data-widget-key='nlHeading']
-	:is(h2, .utrecht-heading-2) {
+	:is(h2, .utrecht-heading-2),
+.pq-site:has(.pq-site__header--designed) .pq-accessibility-statement > h2 {
 	margin-block-start: 12px;
 	font-size: 1.875rem;
 	line-height: 1.2;
@@ -2225,7 +2417,10 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 
 .pq-site:has(.pq-site__header--designed)
 	[data-widget-key='nlParagraph']
-	.utrecht-paragraph:not(.utrecht-paragraph--lead) {
+	.utrecht-paragraph:not(.utrecht-paragraph--lead),
+.pq-site:has(.pq-site__header--designed)
+	.pq-accessibility-statement
+	> .utrecht-paragraph:not(.pq-accessibility-statement__intro) {
 	font-size: 1.125rem;
 	/* The vendored sheet sets a paragraph's line height with !important. */
 	line-height: 1.6 !important;
@@ -2339,6 +2534,12 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	line-height: 1.5 !important;
 }
 
+/* The three ways in stand in one row across the page (board Inloggen). */
+.pq-site:has(.pq-site__header--designed) .pq-signin__cards {
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+	max-inline-size: none;
+}
+
 .pq-site:has(.pq-site__header--designed) .pq-signin__card-head {
 	display: grid;
 	grid-template-columns: 56px minmax(0, 1fr);
@@ -2434,6 +2635,7 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 .pq-site:has(.pq-site__header--designed) .pq-account .pq-resident-menu__link {
 	min-block-size: 60px;
 	padding-block: 8px;
+	border-radius: 0;
 	font-weight: 500;
 }
 
@@ -2456,12 +2658,19 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	line-height: 1;
 }
 
-/* A resident page's own title (boards MijnZaken, Berichten): 44px, as the
+/* A resident page's own title (boards MijnZaken, Berichten, MijnAccount,
+   MijnGegevens, Machtigingen): 44px on the page title's line, as the
    overview's greeting; a record's name keeps the 40px of its heading. */
 .pq-site:has(.pq-site__header--designed) .pq-account__content > h1,
-.pq-site:has(.pq-site__header--designed) .pq-cases > h1 {
+.pq-site:has(.pq-site__header--designed) .pq-cases > h1,
+.pq-site:has(.pq-site__header--designed)
+	:is(#pq-account-title, #pq-details-title, #pq-access-title) {
 	margin-block-start: 0;
 	font-size: var(--utrecht-heading-1-font-size, 2.75rem);
+	line-height: var(
+		--nldesign-website-page-title-line-height,
+		var(--utrecht-heading-1-line-height, revert)
+	);
 }
 
 /*
@@ -2748,7 +2957,11 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	gap: 10px;
 	margin: 0;
 	padding: 20px 24px;
-	border: 1px solid var(--nldesign-color-border, var(--tilburg-line-border-color));
+	border: 1px solid
+		var(
+			--nldesign-website-card-border-color,
+			var(--nldesign-color-border, var(--tilburg-line-border-color))
+		);
 	border-radius: var(--nldesign-website-border-radius-large, 6px);
 }
 
@@ -3368,4 +3581,38 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 .pq-site:has(.pq-site__header--designed) .pq-action-block__form > h2 {
 	margin-block: 0 12px;
 	font-size: 1.375rem;
+}
+
+/*
+ * THE DRAFT DIALOGS (form-save-and-resume-dialogs, boards FormulierOpslaan
+ * and FormulierHervatten): the form's name small above the question, the
+ * buttons in one row at the end.
+ */
+.pq-site .pq-draft-dialog {
+	box-sizing: border-box;
+	max-inline-size: min(40rem, calc(100vw - 2rem));
+	padding: 2rem;
+	color: var(--utrecht-document-color, inherit);
+	background: var(--utrecht-document-background-color, Canvas);
+	border: 0;
+	border-radius: var(--nldesign-website-border-radius-large, 6px);
+}
+
+.pq-site .pq-draft-dialog > * + * {
+	margin-block-start: 1rem;
+}
+
+.pq-site .pq-draft-dialog__form {
+	margin: 0;
+	color: var(--thematiq-website-text-muted, var(--nldesign-color-text-muted, inherit));
+	font-size: 0.9375rem;
+	font-weight: 600;
+}
+
+.pq-site .pq-draft-dialog__buttons {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: 0.75rem;
+	margin-block-start: 1.5rem;
 }

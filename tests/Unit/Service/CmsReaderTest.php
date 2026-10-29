@@ -313,12 +313,13 @@ class CmsReaderTest extends TestCase {
 						['id' => 'q2', 'text' => ''],
 					],
 				],
-				['title' => 'Product A', 'route' => '/p/a', 'status' => 'published', 'body' => ['type' => 'markdown']],
+				['title' => 'Product A', 'route' => '/p/a', 'summary' => '38,50 euro per jaar', 'status' => 'published', 'body' => ['type' => 'markdown']],
 			]
 		);
 
 		$finder = $this->reader->finder('open-tilburg', 'f1', 'nl', 'anonymous');
-		$this->assertSame([['route' => '/p/a', 'title' => 'Product A']], $finder['products']);
+		// Each product carries its page's summary, the line under its name.
+		$this->assertSame([['route' => '/p/a', 'title' => 'Product A', 'summary' => '38,50 euro per jaar']], $finder['products']);
 		$this->assertCount(1, $finder['questions']);
 		$this->assertSame(['/p/a'], $finder['questions'][0]['excludesOnNo']);
 		$this->assertNull($this->reader->finder('open-tilburg', 'other', 'nl', 'anonymous'));
@@ -832,6 +833,29 @@ class CmsReaderTest extends TestCase {
 		$this->assertArrayNotHasKey('draftBody', $page);
 		$this->assertStringNotContainsString('secret', (string)json_encode($page));
 	}//end testAPageServesItsRegionsBesideItsWidgets()
+
+	/**
+	 * A grid page serves the aside column it asks for, as whole pixels, and
+	 * a page that asks for none serves no aside.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-aside-column/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
+	 */
+	public function testAGridPageServesItsAsideColumn(): void {
+		$this->withRows(
+			rows: [
+				['title' => 'Home', 'route' => '/', 'body' => ['type' => 'grid', 'aside' => ['width' => '340', 'gap' => 56], 'widgets' => []]],
+				['title' => 'Over', 'route' => '/over', 'body' => ['type' => 'grid', 'aside' => ['gap' => 56], 'widgets' => []]],
+			]
+		);
+
+		$home = $this->reader->page(portal: 'open-tilburg', route: '/', locale: 'nl', audience: 'anonymous');
+		$over = $this->reader->page(portal: 'open-tilburg', route: '/over', locale: 'nl', audience: 'anonymous');
+
+		$this->assertSame(expected: ['width' => 340, 'gap' => 56], actual: $home['body']['aside']);
+		$this->assertArrayNotHasKey(key: 'aside', array: $over['body'], message: 'an aside without a width is not served');
+	}//end testAGridPageServesItsAsideColumn()
 
 	/**
 	 * A grid page without widgets serves `regions` as an empty JSON object,

@@ -25,6 +25,24 @@ export function prefillFields(action) {
 }
 
 /**
+ * The fields the profile filled: empty before, with a value after.
+ *
+ * @param {Record<string, string>} before The values before the prefill.
+ * @param {Record<string, string>} after The values after it.
+ * @param {object} action The normalised action.
+ * @return {string[]} The fields, in the action's prefill order.
+ */
+export function filledFields(before, after, action) {
+	return prefillFields(action)
+		.map(([field]) => field)
+		.filter(
+			(field) =>
+				String(before[field] ?? '').trim() === ''
+				&& String(after[field] ?? '').trim() !== '',
+		)
+}
+
+/**
  * The values with each empty prefill field taken from the profile.
  *
  * @param {Record<string, string>} values The form's values.

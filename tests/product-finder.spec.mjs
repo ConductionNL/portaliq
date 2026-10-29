@@ -109,6 +109,40 @@ test('the page shows the position, the count, the folded list and the promise to
 	assert.deepEqual(vm.answers, {})
 })
 
+test('the finder reads like board Productzoeker', async () => {
+	const component = await loadSfc('src/site/widgets/nlProductFinder/NlProductFinder.vue', {
+		'@conduction/nextcloud-vue': 'export const cnRenderMarkdown = (s) => s\n',
+	})
+	const priced = {
+		...FINDER,
+		products: FINDER.products.map((product, i) => ({ ...product, summary: i === 0 ? '38,50 euro per jaar' : '' })),
+	}
+	const html = (await renderComponent(component, { initialFinder: priced })).replace(/<!--[\s\S]*?-->/g, '')
+	// The question is a group of two choices, answered with "Volgende vraag".
+	assert.match(html, /<fieldset class="nl-product-finder__fieldset"><legend class="nl-product-finder__legend">\s*Woont u in de binnenstad\?\s*<\/legend>/)
+	assert.match(html, /<input[^>]*type="radio"[^>]*value="yes"[^>]*data-testid="nl-finder-yes"/)
+	assert.match(html, /<input[^>]*type="radio"[^>]*value="no"[^>]*data-testid="nl-finder-no"/)
+	assert.match(html, /<button type="submit"[^>]*disabled[^>]*data-testid="nl-finder-next"/, 'nothing to send before a choice')
+	// A product is a card: its name as the link text and its price under it.
+	assert.match(html, /<a class="nl-product-finder__product"[^>]*><span class="nl-product-finder__product-text"><span class="utrecht-link nl-product-finder__product-title">Product 1<\/span><span>38,50 euro per jaar<\/span>/)
+	// The bars only draw what the words say.
+	assert.match(html, /<div class="nl-product-finder__bar" aria-hidden="true">/)
+	assert.match(html, /<div class="nl-product-finder__segments" aria-hidden="true">/)
+
+	// "Volgende vraag" records the choice; without one it does nothing.
+	const answered = []
+	const vm = { choice: '', answer: (value) => answered.push(value) }
+	component.methods.next.call(vm)
+	vm.choice = 'yes'
+	component.methods.next.call(vm)
+	assert.deepEqual(answered, ['yes'])
+
+	// A chip names what it changes and keeps the answer it shows.
+	const after = (await renderComponent({ ...component, data: () => ({ definition: priced, state: 'ready', answers: { centre: 'no' }, editingId: '', choice: '' }) }, {})).replace(/<!--[\s\S]*?-->/g, '')
+	assert.match(after, /aria-label="Antwoord wijzigen: Woont u in de binnenstad\? Nee"/)
+	assert.match(after, /<s>Product 1<\/s>/)
+})
+
 test('no request carries an answer, and nothing is stored', () => {
 	const sources = [
 		'../src/site/widgets/nlProductFinder/NlProductFinder.vue',
