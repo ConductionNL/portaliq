@@ -27,6 +27,7 @@ For a publication that does not carry `wooCategory`, the page MUST show, after t
 - GIVEN a published stackiq application whose schema is public, with an application type, a licence, a website, a hosting location and a long description, and an `externalId` the schema lets only signed-in users read
 - WHEN an anonymous visitor opens its page on the site
 - THEN the page shows the long description under the summary and a row per field, labelled with the schema's titles ("Application type", "License", "Website", "Hosting location"), the website as a link
+- AND the page shows the short description as the summary, the application having no `summary` or `description`
 - AND no `externalId` appears, because the API did not return it
 - @e2e exclude pinned by `tests/publication-documents.spec.mjs` ("the fields of another schema read in the words and order of the schema, hidden and coded ones left out (#1645)", "the publication page asks for the schema and renders the fields of the other schema as text (#1645)")
 
