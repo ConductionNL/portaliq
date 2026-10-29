@@ -470,6 +470,35 @@ test('a list of files reaches no row, with or without its schema (#1772 f1)', ()
 	)
 })
 
+test('a relation id reaches no row: without a schema as a UUID, with one by a $ref on the list (#1772 f2)', () => {
+	assert.deepEqual(
+		schemaRows(
+			{
+				provider: '5b0d1c7e-0000-0000-0000-000000000001',
+				compliancy: ['5b0d1c7e-0000-0000-0000-000000000002'],
+			},
+			{ locale: 'nl' },
+		),
+		[],
+	)
+	assert.deepEqual(
+		schemaRows(
+			{
+				'@self': {
+					schema: {
+						properties: {
+							c: { title: 'C', type: 'array', $ref: '#/x' },
+						},
+					},
+				},
+				c: ['5b0d1c7e-0000-0000-0000-000000000002'],
+			},
+			{ locale: 'nl' },
+		),
+		[],
+	)
+})
+
 test('the publication page asks for the schema and renders the fields of the other schema as text (#1645)', async () => {
 	const { instance } = await import('./support/page-instance.mjs')
 	const nl = JSON.stringify(bundle('nl'))

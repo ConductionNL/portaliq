@@ -273,17 +273,27 @@ function isRelation(property) {
 }
 
 /**
+ * An object id: without the schema the only sign of a related object.
+ */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/**
  * One value as text: a related object by its name or title, a date the
  * reader's way, an enum value by the schema's label, a yes/no in words. A
  * related object known only by its id reads as nothing: no codes on the page.
  * Nor does a file (an object with a download or access link): no file names.
+ * Without the schema a relation cannot be told apart, so a UUID reads as
+ * nothing too.
  *
  * @param {unknown} value The value.
  * @param {object} property The schema property, or `{}`.
- * @param {string} locale The site's language.
+ * @param {object} context The reader.
+ * @param {string} context.locale The site's language.
+ * @param {boolean} context.hasSchema Whether the publication carries its schema.
+ * @param {boolean} context.relation Whether the value points at another object.
  * @return {string} The text, or '' when there is nothing to show.
  */
-function valueText(value, property, locale) {
+function valueText(value, property, { locale, hasSchema, relation }) {
 	if (value === null || value === undefined) {
 		return ''
 	}
@@ -310,11 +320,15 @@ function valueText(value, property, locale) {
 		return typeof name === 'string' ? name.trim() : ''
 	}
 
-	if (isRelation(property) === true) {
+	if (relation === true) {
 		return ''
 	}
 
 	const text = String(value).trim()
+	if (hasSchema === false && UUID.test(text) === true) {
+		return ''
+	}
+
 	const labels = property['x-enum-labels']
 	if (labels && typeof labels[text] === 'string') {
 		return labels[text]
@@ -359,6 +373,7 @@ export function schemaRows(publication, { locale }) {
 	}
 
 	const properties = schemaProperties(publication)
+	const hasSchema = properties !== null
 	const rows = []
 	for (const name of fieldOrder(publication, properties)) {
 		const value = publication[name]
@@ -380,9 +395,17 @@ export function schemaRows(publication, { locale }) {
 				? property.title.trim()
 				: fieldLabel(name)
 
+		// A list holds relations when the property or its items carry `$ref`.
+		const relation = isRelation(property)
 		if (Array.isArray(value) === true) {
 			const items = value
-				.map((item) => valueText(item, property.items || {}, locale))
+				.map((item) =>
+					valueText(item, property.items || {}, {
+						locale,
+						hasSchema,
+						relation,
+					}),
+				)
 				.filter((item) => item !== '')
 			if (items.length > 0) {
 				rows.push({ name, label, value: items, kind: 'list' })
@@ -398,7 +421,7 @@ export function schemaRows(publication, { locale }) {
 			continue
 		}
 
-		const text = valueText(value, property, locale)
+		const text = valueText(value, property, { locale, hasSchema, relation })
 		if (text === '') {
 			continue
 		}
