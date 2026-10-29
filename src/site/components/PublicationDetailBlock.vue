@@ -644,6 +644,11 @@ export default {
 	margin-block-end: 16px;
 }
 
+/* The theme draws a link as a flex box; in a row it follows its label. */
+.pq-detail__value .utrecht-link {
+	display: inline-flex;
+}
+
 .pq-detail__lines {
 	display: inline-flex;
 	flex-direction: column;
