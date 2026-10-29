@@ -364,7 +364,7 @@ test('a Woo publication gets no extra rows: the page reads exactly as before (#1
 			themeNames: { [THEME]: 'Verkeer en parkeren' },
 		}).map((row) => [row.label, row.value]),
 		[
-			['Publicatiedatum', '2-9-2026'],
+			['Publicatiedatum', '2 september 2026'],
 			['Informatiecategorie', 'Woo-verzoeken en -besluiten'],
 			["Thema's", ['Verkeer en parkeren']],
 		],
@@ -373,7 +373,7 @@ test('a Woo publication gets no extra rows: the page reads exactly as before (#1
 	assert.deepEqual(longDescriptionLines(PUBLICATION), [])
 })
 
-test('the fields of another schema read in the words and order of the schema and order, hidden and coded ones left out (#1645)', () => {
+test('the fields of another schema read in the words and order of the schema, hidden and coded ones left out (#1645)', () => {
 	const rows = schemaRows(MODULE, { locale: 'nl' })
 	assert.deepEqual(
 		rows.map((row) => [row.label, row.kind, row.value]),
@@ -382,7 +382,7 @@ test('the fields of another schema read in the words and order of the schema and
 			['Supplier', 'text', 'Leverancier BV'],
 			['License', 'text', 'Apache License 2.0'],
 			['BBN level', 'text', 'Basisbeveiligingsniveau 2'],
-			['DPIA date', 'text', '1-3-2026'],
+			['DPIA date', 'text', '1 maart 2026'],
 			[
 				'Roadmap',
 				'lines',
@@ -432,7 +432,7 @@ test('without its schema a field name reads in words, and a date the way the rea
 		['Website', 'https://example.org/zaaksysteem'],
 	])
 	const labels = Object.fromEntries(rows.map((row) => [row.label, row.value]))
-	assert.equal(labels['Dpia date'], '01/03/2026')
+	assert.equal(labels['Dpia date'], '1 March 2026')
 	assert.equal(labels['True flag'], 'Yes')
 	assert.equal(labels.Type, 'Application')
 	assert.equal(fieldLabel('hosting_location'), 'Hosting location')
