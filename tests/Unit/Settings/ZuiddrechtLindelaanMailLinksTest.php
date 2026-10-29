@@ -73,4 +73,21 @@ class ZuiddrechtLindelaanMailLinksTest extends TestCase {
 		);
 		$this->assertSame(expected: '{{cast:lars.displayName}}', actual: $links['lindelaan-mail-vraag-mobiliteit']['recipientName']);
 	}//end testEachMailCarriesItsSenderNameAndDetails()
+
+	/**
+	 * Only the mail linked by the mailbox names it, as the row reads it:
+	 * "automatisch gekoppeld via het Woo-postvak".
+	 *
+	 * @return void
+	 */
+	public function testTheMailboxLinkNamesTheWooMailbox(): void {
+		$named = [];
+		foreach ($this->links() as $key => $link) {
+			if (array_key_exists('mailboxName', $link) === true) {
+				$named[$key] = $link['mailboxName'];
+			}
+		}
+
+		$this->assertSame(expected: ['lindelaan-mail-aanvulling' => 'het Woo-postvak'], actual: $named);
+	}//end testTheMailboxLinkNamesTheWooMailbox()
 }//end class
