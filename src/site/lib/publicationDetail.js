@@ -276,6 +276,7 @@ function isRelation(property) {
  * One value as text: a related object by its name or title, a date the
  * reader's way, an enum value by the schema's label, a yes/no in words. A
  * related object known only by its id reads as nothing: no codes on the page.
+ * Nor does a file (an object with a download or access link): no file names.
  *
  * @param {unknown} value The value.
  * @param {object} property The schema property, or `{}`.
@@ -295,6 +296,15 @@ function valueText(value, property, locale) {
 	}
 
 	if (typeof value === 'object') {
+		// A file (it carries a download or access link) never reads as its
+		// file name in a row.
+		if (
+			Object.hasOwn(value, 'downloadUrl')
+			|| Object.hasOwn(value, 'accessUrl')
+		) {
+			return ''
+		}
+
 		const self = value['@self'] || {}
 		const name = value.name || value.title || self.name
 		return typeof name === 'string' ? name.trim() : ''
@@ -328,9 +338,10 @@ function valueText(value, property, locale) {
  * OpenRegister's own exports. The schema names and orders the rows when the
  * publication carries it; otherwise the field name is put in words.
  *
- * Left out: an empty value, a file, a related object known only by its id,
- * and every row of a Woo publication (it carries `wooCategory`), whose
- * remaining fields are the archive's bookkeeping (see visitorRows).
+ * Left out: an empty value, a file or a list of files, a related object
+ * known only by its id, and every row of a Woo publication (it carries
+ * `wooCategory`), whose remaining fields are the archive's bookkeeping (see
+ * visitorRows).
  *
  * @param {object} publication One publication object.
  * @param {object} context The reader.
@@ -356,7 +367,11 @@ export function schemaRows(publication, { locale }) {
 			continue
 		}
 
-		if (property.visible === false || property.type === 'file') {
+		if (
+			property.visible === false
+			|| property.type === 'file'
+			|| (property.items || {}).type === 'file'
+		) {
 			continue
 		}
 

@@ -438,6 +438,38 @@ test('without its schema a field name reads in words, and a date the way the rea
 	assert.equal(fieldLabel('hosting_location'), 'Hosting location')
 })
 
+test('a list of files reaches no row, with or without its schema (#1772 f1)', () => {
+	const file = { title: 'a.pdf', downloadUrl: 'x' }
+	assert.deepEqual(
+		schemaRows(
+			{
+				'@self': {
+					schema: {
+						properties: {
+							bijlagen: {
+								title: 'Bijlagen',
+								type: 'array',
+								items: { type: 'file' },
+							},
+						},
+					},
+				},
+				bijlagen: [file],
+			},
+			{ locale: 'nl' },
+		),
+		[],
+	)
+	assert.deepEqual(
+		schemaRows(
+			{ bijlagen: [file], bijlage: { title: 'b.pdf', accessUrl: 'y' } },
+			{ locale: 'nl' },
+		),
+		[],
+		'a file-shaped object without a schema reads as no row either',
+	)
+})
+
 test('the publication page asks for the schema and renders the fields of the other schema as text (#1645)', async () => {
 	const { instance } = await import('./support/page-instance.mjs')
 	const nl = JSON.stringify(bundle('nl'))
