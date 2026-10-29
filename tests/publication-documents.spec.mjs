@@ -14,8 +14,11 @@ import { test } from 'node:test'
 import { VALUE_LISTS } from '../src/site/config/valueLists.js'
 import { labelBuckets, valueLabel } from '../src/site/lib/facetLabels.js'
 import {
+	fieldLabel,
 	humanSize,
+	longDescriptionLines,
 	publicationSummary,
+	schemaRows,
 	themeIdsOf,
 	toDocuments,
 	visitorRows,
@@ -262,6 +265,249 @@ test('a row without a value is left out, and English reads English', () => {
 		[['Information category', 'Advice']],
 	)
 	assert.deepEqual(visitorRows(null, { t, locale: 'en' }), [])
+})
+
+// publication-page-shows-the-schemas-fields (#1645): a publication of
+// another schema shows every other field the API returns, named and ordered
+// by its schema, so the schema in OpenRegister decides what is public. A Woo
+// publication reads as before.
+const MODULE_SCHEMA = {
+	slug: 'module',
+	properties: {
+		name: { title: 'Name', type: 'string', order: 1 },
+		website: { title: 'Website', type: 'string', format: 'url', order: 9 },
+		licence: { title: 'License', type: 'string', $ref: '', order: 5 },
+		applicationType: { title: 'Application type', type: 'string', order: 2 },
+		provider: {
+			title: 'Supplier',
+			type: 'object',
+			$ref: '#/components/schemas/organization',
+			order: 3,
+		},
+		compliancy: {
+			title: 'Compliance',
+			type: 'array',
+			items: { $ref: '#/components/schemas/compliancy' },
+			order: 4,
+		},
+		bbnLevel: {
+			title: 'BBN level',
+			type: 'string',
+			'x-enum-labels': { BBN2: 'Basisbeveiligingsniveau 2' },
+			order: 6,
+		},
+		dpiaDate: { title: 'DPIA date', type: 'string', format: 'date', order: 7 },
+		roadmapStatement: {
+			title: 'Roadmap',
+			type: 'string',
+			format: 'markdown',
+			order: 8,
+		},
+		logo: { title: 'Logo', type: 'file', order: 10 },
+		type: { title: 'Type', type: 'string', visible: false, order: 11 },
+		standards: {
+			title: 'AMEF standards',
+			type: 'array',
+			items: { type: 'string' },
+		},
+		koppelingen: { title: 'Connections', type: 'array' },
+	},
+}
+const MODULE = {
+	'@self': { id: 'm-1', register: '25', schema: MODULE_SCHEMA },
+	id: 'm-1',
+	name: 'Voorbeeld Zaaksysteem',
+	shortDescription: 'Demo: zaaksysteem van de gemeente.',
+	longDescription:
+		'## Wat het doet\nRegistreert en volgt zaken.\n\n<b>Geen opmaak</b>',
+	applicationType: 'Zaaksysteem',
+	licence: 'Apache License 2.0',
+	website: 'https://example.org/zaaksysteem',
+	provider: { id: 'org-9', name: 'Leverancier BV' },
+	compliancy: ['5b0d1c7e-0000-0000-0000-000000000001'],
+	bbnLevel: 'BBN2',
+	dpiaDate: '2026-03-01',
+	roadmapStatement: '# Plan\nNieuwe versie in 2027.',
+	logo: { downloadUrl: 'https://example.org/logo.png' },
+	type: 'Application',
+	standards: ['ZGW API', ''],
+	koppelingen: null,
+	hostingLocation: 'NL',
+	publicationDate: '2026-10-26T00:00:00+00:00',
+}
+
+test('a Woo publication gets no extra rows: the page reads exactly as before (#1645)', () => {
+	const t = createTranslator('nl')
+	assert.deepEqual(schemaRows(PUBLICATION, { locale: 'nl' }), [])
+	assert.deepEqual(
+		schemaRows(
+			{
+				...PUBLICATION,
+				'@self': {
+					id: 'p-1',
+					schema: { properties: { status: { title: 'Status' } } },
+				},
+			},
+			{ locale: 'nl' },
+		),
+		[],
+		'the schema coming along changes nothing for a Woo publication',
+	)
+	assert.deepEqual(
+		schemaRows({ wooCategory: null, status: 'x' }, { locale: 'nl' }),
+		[],
+	)
+	assert.deepEqual(
+		visitorRows(PUBLICATION, {
+			t,
+			locale: 'nl',
+			themeNames: { [THEME]: 'Verkeer en parkeren' },
+		}).map((row) => [row.label, row.value]),
+		[
+			['Publicatiedatum', '2-9-2026'],
+			['Informatiecategorie', 'Woo-verzoeken en -besluiten'],
+			["Thema's", ['Verkeer en parkeren']],
+		],
+	)
+	assert.equal(publicationSummary(PUBLICATION), PUBLICATION.summary)
+	assert.deepEqual(longDescriptionLines(PUBLICATION), [])
+})
+
+test('the fields of another schema read in the words and order of the schema and order, hidden and coded ones left out (#1645)', () => {
+	const rows = schemaRows(MODULE, { locale: 'nl' })
+	assert.deepEqual(
+		rows.map((row) => [row.label, row.kind, row.value]),
+		[
+			['Application type', 'text', 'Zaaksysteem'],
+			['Supplier', 'text', 'Leverancier BV'],
+			['License', 'text', 'Apache License 2.0'],
+			['BBN level', 'text', 'Basisbeveiligingsniveau 2'],
+			['DPIA date', 'text', '1-3-2026'],
+			[
+				'Roadmap',
+				'lines',
+				[
+					{ index: 0, level: 1, text: 'Plan' },
+					{ index: 1, level: 0, text: 'Nieuwe versie in 2027.' },
+				],
+			],
+			['Website', 'link', 'https://example.org/zaaksysteem'],
+			['AMEF standards', 'list', ['ZGW API']],
+			['Hosting location', 'text', 'NL'],
+		],
+	)
+	const shown = JSON.stringify(rows)
+	for (const hidden of [
+		'Application"',
+		'Compliance',
+		'5b0d1c7e',
+		'Logo',
+		'Connections',
+	]) {
+		assert.ok(!shown.includes(hidden), hidden)
+	}
+	assert.equal(publicationSummary(MODULE), MODULE.shortDescription)
+	assert.deepEqual(longDescriptionLines(MODULE), [
+		{ index: 0, level: 2, text: 'Wat het doet' },
+		{ index: 1, level: 0, text: 'Registreert en volgt zaken.' },
+		{ index: 3, level: 0, text: '<b>Geen opmaak</b>' },
+	])
+	assert.deepEqual(
+		longDescriptionLines({ summary: 'Zelfde', longDescription: 'Zelfde' }),
+		[],
+		'a long description equal to the summary is not repeated',
+	)
+	assert.deepEqual(schemaRows(null, { locale: 'nl' }), [])
+})
+
+test('without its schema a field name reads in words, and a date the way the reader writes it (#1645)', () => {
+	const { '@self': self, ...fields } = MODULE
+	const rows = schemaRows(
+		{ ...fields, '@self': { ...self, schema: '189' }, trueFlag: true },
+		{ locale: 'en' },
+	)
+	assert.deepEqual(rows.map((row) => [row.label, row.value]).slice(0, 3), [
+		['Application type', 'Zaaksysteem'],
+		['Licence', 'Apache License 2.0'],
+		['Website', 'https://example.org/zaaksysteem'],
+	])
+	const labels = Object.fromEntries(rows.map((row) => [row.label, row.value]))
+	assert.equal(labels['Dpia date'], '01/03/2026')
+	assert.equal(labels['True flag'], 'Yes')
+	assert.equal(labels.Type, 'Application')
+	assert.equal(fieldLabel('hosting_location'), 'Hosting location')
+})
+
+test('the publication page asks for the schema and renders the fields of the other schema as text (#1645)', async () => {
+	const { instance } = await import('./support/page-instance.mjs')
+	const nl = JSON.stringify(bundle('nl'))
+	const component = await loadSfc(
+		'src/site/components/PublicationDetailBlock.vue',
+		{
+			'../../shared/i18n/index.js': `const nl = ${nl}\nexport function createTranslator() { return (key) => nl[key] || key }\n`,
+		},
+	)
+	const savedFetch = globalThis.fetch
+	const savedWindow = globalThis.window
+	globalThis.window = { location: { origin: 'https://zuiddrecht.test' } }
+	const asked = []
+	try {
+		globalThis.fetch = async (url) => {
+			asked.push(url)
+			return { ok: true, status: 200, json: async () => MODULE }
+		}
+		const block = instance(component, {
+			subjectId: MODULE.id,
+			endpoint: '/index.php/apps/opencatalogi/api/federation/publications',
+			t: (key) => key,
+		})
+		let documentsUrl = ''
+		block.loadDocuments = (url) => {
+			documentsUrl = url
+		}
+		block.loadThemeNames = () => {}
+		await block.load()
+		const read = new URL(asked[0])
+		assert.equal(
+			read.pathname,
+			'/index.php/apps/opencatalogi/api/federation/publications/m-1',
+		)
+		assert.equal(read.searchParams.get('_extend'), '@self.schema')
+		assert.ok(
+			!documentsUrl.includes('_extend'),
+			'the documents are read without the extend',
+		)
+	} finally {
+		globalThis.fetch = savedFetch
+		globalThis.window = savedWindow
+	}
+
+	const data = component.data
+	const html = await renderComponent(
+		{
+			...component,
+			mounted() {},
+			data() {
+				return {
+					...data.call(this),
+					loading: false,
+					publication: MODULE,
+					documents: [],
+				}
+			},
+		},
+		{ subjectId: 'm-1' },
+	)
+	assert.match(html, /Demo: zaaksysteem van de gemeente\./)
+	assert.match(html, /<h3[^>]*>\s*Wat het doet\s*<\/h3>/)
+	assert.match(html, /&lt;b&gt;Geen opmaak&lt;\/b&gt;/)
+	assert.match(html, /Supplier:/)
+	assert.match(
+		html,
+		/<a[^>]*href="https:\/\/example\.org\/zaaksysteem"[^>]*>https:\/\/example\.org\/zaaksysteem<\/a>/,
+	)
+	assert.match(html, /Nieuwe versie in 2027\./)
+	assert.doesNotMatch(html, /Compliance|Logo|5b0d1c7e|>\s*Type:/)
 })
 
 test('the publication page renders the summary and the visitor rows, no internal field', async () => {
