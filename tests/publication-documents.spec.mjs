@@ -544,6 +544,23 @@ test('with a schema only a date format reads as a date (#1772 f5)', () => {
 		rows.map((row) => [row.label, row.value]),
 		[['Versie', '2026-01-01']],
 	)
+	const undescribed = schemaRows(
+		{
+			'@self': {
+				schema: {
+					properties: { version: { title: 'Versie', type: 'string' } },
+				},
+			},
+			releaseDate: '2026-03-01',
+			owner: '5b0d1c7e-0000-0000-0000-000000000003',
+		},
+		{ locale: 'nl' },
+	)
+	assert.deepEqual(
+		undescribed.map((row) => [row.label, row.value]),
+		[['Release date', '1 maart 2026']],
+		'a field the schema does not describe reads as without a schema',
+	)
 })
 
 test('the publication page asks for the schema and renders the fields of the other schema as text (#1645)', async () => {

@@ -314,7 +314,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
  * @param {object} property The schema property, or `{}`.
  * @param {object} context The reader.
  * @param {string} context.locale The site's language.
- * @param {boolean} context.hasSchema Whether the publication carries its schema.
+ * @param {boolean} context.hasSchema Whether the schema describes this field.
  * @param {boolean} context.relation Whether the value points at another object.
  * @return {string} The text, or '' when there is nothing to show.
  */
@@ -401,11 +401,12 @@ export function schemaRows(publication, { locale }) {
 	}
 
 	const properties = schemaProperties(publication)
-	const hasSchema = properties !== null
 	const rows = []
 	for (const name of fieldOrder(publication, properties)) {
 		const value = publication[name]
 		const property = (properties || {})[name] || {}
+		// A field the schema does not describe reads as without a schema.
+		const hasSchema = properties !== null && Object.hasOwn(properties, name)
 		if (SHOWN_ELSEWHERE.has(name) || isEmpty(value)) {
 			continue
 		}
