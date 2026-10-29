@@ -138,7 +138,8 @@ export function themeIdsOf(publication) {
  * information category by name and the themes by name. Nothing else: the
  * Plooi and retention bookkeeping, the organisation id, the status and the
  * kind are the archive's business, not the visitor's. A row without a value
- * is left out, and so is a theme whose name is unknown.
+ * is left out, and so is a theme whose name is unknown, and the publication
+ * date when the schema marks it `visible: false`.
  *
  * @param {object} publication One publication object.
  * @param {object} context The reader.
@@ -147,6 +148,7 @@ export function themeIdsOf(publication) {
  * @param {Record<string, string>} [context.themeNames] Theme id to name.
  * @return {Array<{name: string, label: string, value: string|Array<string>, kind: string}>} The rows.
  * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+ * @spec openspec/changes/publication-page-shows-the-schemas-fields/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-the-public-fields-of-any-other-schema
  */
 export function visitorRows(publication, { t, locale, themeNames = {} }) {
 	if (!publication || typeof publication !== 'object') {
@@ -154,9 +156,11 @@ export function visitorRows(publication, { t, locale, themeNames = {} }) {
 	}
 
 	const rows = []
-	const date = isEmpty(publication.publicationDate)
-		? ''
-		: readableDate(publication.publicationDate, locale)
+	const date =
+		isEmpty(publication.publicationDate)
+		|| isHidden(publication, 'publicationDate') === true
+			? ''
+			: readableDate(publication.publicationDate, locale)
 	if (date !== '') {
 		rows.push({
 			name: 'publicationDate',

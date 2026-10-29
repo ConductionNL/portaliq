@@ -526,6 +526,17 @@ test('a long description or summary field marked visible: false stays off the pa
 		'Wel zichtbaar',
 		'the summary falls through to the next field',
 	)
+	assert.deepEqual(
+		visitorRows(
+			{
+				'@self': hiding('publicationDate'),
+				publicationDate: '2026-10-26T00:00:00+00:00',
+			},
+			{ t: createTranslator('nl'), locale: 'nl' },
+		),
+		[],
+		'the publication date honours visible: false',
+	)
 })
 
 test('with a schema only a date format reads as a date (#1772 f5)', () => {
