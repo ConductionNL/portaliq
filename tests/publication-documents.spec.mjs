@@ -434,6 +434,14 @@ test('without its schema a field name reads in words, and a date the way the rea
 	const labels = Object.fromEntries(rows.map((row) => [row.label, row.value]))
 	assert.equal(labels['Dpia date'], '1 March 2026')
 	assert.equal(labels['True flag'], 'Yes')
+	assert.equal(
+		schemaRows(
+			{ '@self': { schema: '189' }, trueFlag: true },
+			{ t: createTranslator('nl'), locale: 'nl' },
+		)[0].value,
+		'Ja',
+		'a yes/no reads through the translator',
+	)
 	assert.equal(labels.Type, 'Application')
 	assert.equal(fieldLabel('hosting_location'), 'Hosting location')
 })

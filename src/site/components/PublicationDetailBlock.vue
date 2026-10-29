@@ -415,7 +415,7 @@ export default {
 					locale: this.locale,
 					themeNames: this.themeNames,
 				}),
-				...schemaRows(this.publication, { locale: this.locale }),
+				...schemaRows(this.publication, { t: this.t, locale: this.locale }),
 			]
 		},
 	},

@@ -318,20 +318,18 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
  * @param {object} property The schema property, or `{}`.
  * @param {object} context The reader.
  * @param {string} context.locale The site's language.
+ * @param {(key: string) => string} context.t The translator.
  * @param {boolean} context.hasSchema Whether the schema describes this field.
  * @param {boolean} context.relation Whether the value points at another object.
  * @return {string} The text, or '' when there is nothing to show.
  */
-function valueText(value, property, { locale, hasSchema, relation }) {
+function valueText(value, property, { t, locale, hasSchema, relation }) {
 	if (value === null || value === undefined) {
 		return ''
 	}
 
 	if (typeof value === 'boolean') {
-		if (locale === 'en') {
-			return value === true ? 'Yes' : 'No'
-		}
-		return value === true ? 'Ja' : 'Nee'
+		return value === true ? t('Yes') : t('No')
 	}
 
 	if (typeof value === 'object') {
@@ -391,11 +389,12 @@ function valueText(value, property, { locale, hasSchema, relation }) {
  *
  * @param {object} publication One publication object.
  * @param {object} context The reader.
+ * @param {(key: string) => string} [context.t] The translator; without one a key reads as itself.
  * @param {string} context.locale The site's language.
  * @return {Array<{name: string, label: string, value: string|Array<string>|Array<object>, kind: string}>} The rows; `kind` is `text`, `link`, `list` or `lines`.
  * @spec openspec/changes/publication-page-shows-the-schemas-fields/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-the-public-fields-of-any-other-schema
  */
-export function schemaRows(publication, { locale }) {
+export function schemaRows(publication, { t = (key) => key, locale }) {
 	if (!publication || typeof publication !== 'object') {
 		return []
 	}
@@ -435,6 +434,7 @@ export function schemaRows(publication, { locale }) {
 				.map((item) =>
 					valueText(item, property.items || {}, {
 						locale,
+						t,
 						hasSchema,
 						relation,
 					}),
@@ -454,7 +454,7 @@ export function schemaRows(publication, { locale }) {
 			continue
 		}
 
-		const text = valueText(value, property, { locale, hasSchema, relation })
+		const text = valueText(value, property, { t, locale, hasSchema, relation })
 		if (text === '') {
 			continue
 		}
