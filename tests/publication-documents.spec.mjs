@@ -499,6 +499,35 @@ test('a relation id reaches no row: without a schema as a UUID, with one by a $r
 	)
 })
 
+test('a long description or summary field marked visible: false stays off the page (#1772 f4)', () => {
+	const hiding = (name) => ({
+		schema: { properties: { [name]: { title: name, visible: false } } },
+	})
+	assert.deepEqual(
+		longDescriptionLines({
+			'@self': hiding('longDescription'),
+			longDescription: 'Verborgen tekst.',
+		}),
+		[],
+	)
+	assert.equal(
+		publicationSummary({
+			'@self': hiding('shortDescription'),
+			shortDescription: 'Verborgen samenvatting.',
+		}),
+		'',
+	)
+	assert.equal(
+		publicationSummary({
+			'@self': hiding('summary'),
+			summary: 'Verborgen',
+			description: 'Wel zichtbaar',
+		}),
+		'Wel zichtbaar',
+		'the summary falls through to the next field',
+	)
+})
+
 test('the publication page asks for the schema and renders the fields of the other schema as text (#1645)', async () => {
 	const { instance } = await import('./support/page-instance.mjs')
 	const nl = JSON.stringify(bundle('nl'))

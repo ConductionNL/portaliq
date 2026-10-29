@@ -59,8 +59,41 @@ function readableDate(value, locale) {
 }
 
 /**
+ * The schema the publication carries in `@self.schema` when it was asked
+ * for with `_extend=@self.schema`, or null: a peer that ignores the extend
+ * answers with the schema's id.
+ *
+ * @param {object} publication One publication object.
+ * @return {object|null} The schema's properties by name, or null.
+ */
+function schemaProperties(publication) {
+	const schema = ((publication || {})['@self'] || {}).schema
+	if (!schema || typeof schema !== 'object') {
+		return null
+	}
+
+	const properties = schema.properties
+	return properties && typeof properties === 'object' ? properties : null
+}
+
+/**
+ * Whether the schema the publication carries marks a property
+ * `visible: false`. Without the schema nothing is hidden.
+ *
+ * @param {object} publication One publication object.
+ * @param {string} name The property name.
+ * @return {boolean} True when the schema hides the property.
+ * @spec openspec/changes/publication-page-shows-the-schemas-fields/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-the-public-fields-of-any-other-schema
+ */
+function isHidden(publication, name) {
+	const property = (schemaProperties(publication) || {})[name]
+	return Boolean(property) && property.visible === false
+}
+
+/**
  * The summary a visitor reads under the title: `summary`, else `description`,
- * else `shortDescription` (the stackiq schemas name it so).
+ * else `shortDescription` (the stackiq schemas name it so). A field the
+ * schema marks `visible: false` is passed over.
  *
  * @param {object} publication One publication object.
  * @return {string} The summary, or ''.
@@ -70,6 +103,10 @@ function readableDate(value, locale) {
 export function publicationSummary(publication) {
 	const row = publication || {}
 	for (const key of ['summary', 'description', 'shortDescription']) {
+		if (isHidden(row, key) === true) {
+			continue
+		}
+
 		if (typeof row[key] === 'string' && row[key].trim() !== '') {
 			return row[key].trim()
 		}
@@ -155,14 +192,18 @@ export function visitorRows(publication, { t, locale, themeNames = {} }) {
 
 /**
  * The long description a visitor reads under the summary, as lines of text
- * (its markdown headings and paragraphs, never markup), or none when absent
- * or the same as the summary.
+ * (its markdown headings and paragraphs, never markup), or none when absent,
+ * the same as the summary, or marked `visible: false` by the schema.
  *
  * @param {object} publication One publication object.
  * @return {Array<{index: number, level: number, text: string}>} The lines.
  * @spec openspec/changes/publication-page-shows-the-schemas-fields/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-the-public-fields-of-any-other-schema
  */
 export function longDescriptionLines(publication) {
+	if (isHidden(publication, 'longDescription') === true) {
+		return []
+	}
+
 	const value = (publication || {}).longDescription
 	if (typeof value !== 'string' || value.trim() === '') {
 		return []
@@ -208,24 +249,6 @@ export function fieldLabel(name) {
 		.toLowerCase()
 
 	return words.charAt(0).toUpperCase() + words.slice(1)
-}
-
-/**
- * The schema the publication carries in `@self.schema` when it was asked
- * for with `_extend=@self.schema`, or null: a peer that ignores the extend
- * answers with the schema's id.
- *
- * @param {object} publication One publication object.
- * @return {object|null} The schema's properties by name, or null.
- */
-function schemaProperties(publication) {
-	const schema = ((publication || {})['@self'] || {}).schema
-	if (!schema || typeof schema !== 'object') {
-		return null
-	}
-
-	const properties = schema.properties
-	return properties && typeof properties === 'object' ? properties : null
 }
 
 /**
