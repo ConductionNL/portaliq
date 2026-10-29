@@ -8,7 +8,7 @@ Which fields are public is already decided in OpenRegister. Property-level RBAC 
 
 ## What changes
 
-- The page asks for the publication with `_extend=@self.schema`, so the schema comes along in `@self.schema`.
+- The page asks for the publication with `_extend=@self.schema`, so the schema comes along in `@self.schema`. The schema (about 10 kB) travels with every answer; portaliq keeps no schema cache of its own. Repeat views are cached by opencatalogi's public-API cache headers (`AnswersCacheably`: an `ETag` over the body and a 304 on a matching `If-None-Match`), which ConductionNL/opencatalogi#2061 extends to the federation route this page reads. A changed schema changes the body and so the tag, so a stale schema is not served beyond opencatalogi's configured max-age.
 - After the Woo rows the page shows every other field of the answer as a row. The schema names them (the property's `title`), orders them (`order`, then the schema's own order) and formats them: a `date`/`date-time` reads the way the site's reader writes a date, an enum value reads as its `x-enum-labels` label, a link is a link, `markdown` reads as text lines.
 - A property the schema marks `visible: false` stays off the page, the long description and the summary fields included, as it stays out of OpenRegister's own exports. So do an empty value, a file, and a related object known only by its id: no codes on the page.
 - The summary falls back to `shortDescription` after `summary` and `description`. A `longDescription` shows under the summary as headings and paragraphs, never as markup.
