@@ -4128,6 +4128,57 @@
             "violations": []
           }
         ]
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalEmailLink",
+          "slug": "portalemaillink-portalemaillink-1-1"
+        },
+        "subjectRef": "Voorbeeld Subjectref 1",
+        "tokenHash": "Voorbeeld Tokenhash 1",
+        "expiresAt": "2026-03-01T09:00:00+00:00",
+        "organisation": "Voorbeeld Organisation 1",
+        "portal": "Voorbeeld Portal 1",
+        "cookieHash": "Voorbeeld Cookiehash 1",
+        "addressHash": "Voorbeeld Addresshash 1",
+        "state": "sent",
+        "issuedAt": "2026-03-01T09:00:00+00:00",
+        "usedAt": "2026-03-01T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalEmailLink",
+          "slug": "portalemaillink-portalemaillink-2-2"
+        },
+        "subjectRef": "Voorbeeld Subjectref 2",
+        "tokenHash": "Voorbeeld Tokenhash 2",
+        "expiresAt": "2026-03-02T09:00:00+00:00",
+        "organisation": "Voorbeeld Organisation 2",
+        "portal": "Voorbeeld Portal 2",
+        "cookieHash": "Voorbeeld Cookiehash 2",
+        "addressHash": "Voorbeeld Addresshash 2",
+        "state": "used",
+        "issuedAt": "2026-03-02T09:00:00+00:00",
+        "usedAt": "2026-03-02T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "portaliq",
+          "schema": "portalEmailLink",
+          "slug": "portalemaillink-portalemaillink-3-3"
+        },
+        "subjectRef": "Voorbeeld Subjectref 3",
+        "tokenHash": "Voorbeeld Tokenhash 3",
+        "expiresAt": "2026-03-03T09:00:00+00:00",
+        "organisation": "Voorbeeld Organisation 3",
+        "portal": "Voorbeeld Portal 3",
+        "cookieHash": "Voorbeeld Cookiehash 3",
+        "addressHash": "Voorbeeld Addresshash 3",
+        "state": "void",
+        "issuedAt": "2026-03-03T09:00:00+00:00",
+        "usedAt": "2026-03-03T09:00:00+00:00"
       }
     ]
   }

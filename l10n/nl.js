@@ -3305,7 +3305,12 @@ OC.L10N.register(
         "Aside width": "Breedte zijkolom",
         "The width of the right column in pixels, 160 to 640.": "De breedte van de rechterkolom in pixels, 160 tot 640.",
         "Aside gap": "Tussenruimte zijkolom",
-        "The space between the main column and the right column in pixels, 0 to 160. The default is 48.": "De ruimte tussen de hoofdkolom en de rechterkolom in pixels, 0 tot 160. De standaard is 48."
+        "The space between the main column and the right column in pixels, 0 to 160. The default is 48.": "De ruimte tussen de hoofdkolom en de rechterkolom in pixels, 0 tot 160. De standaard is 48.",
+        "Indeling": "Indeling",
+        "Upload": "Uploaden",
+        "{name}": "{name}",
+        "{path}": "{path}",
+        "{title}": "{title}"
     },
     "nplurals=2; plural=(n != 1);"
 )

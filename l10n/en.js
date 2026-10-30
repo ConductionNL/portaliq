@@ -3150,7 +3150,12 @@ OC.L10N.register(
         "Aside width": "Aside width",
         "The width of the right column in pixels, 160 to 640.": "The width of the right column in pixels, 160 to 640.",
         "Aside gap": "Aside gap",
-        "The space between the main column and the right column in pixels, 0 to 160. The default is 48.": "The space between the main column and the right column in pixels, 0 to 160. The default is 48."
+        "The space between the main column and the right column in pixels, 0 to 160. The default is 48.": "The space between the main column and the right column in pixels, 0 to 160. The default is 48.",
+        "Indeling": "Indeling",
+        "Upload": "Upload",
+        "{name}": "{name}",
+        "{path}": "{path}",
+        "{title}": "{title}"
     },
     "nplurals=2; plural=(n != 1);"
 )
