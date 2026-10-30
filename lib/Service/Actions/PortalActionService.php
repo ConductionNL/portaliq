@@ -164,7 +164,7 @@ class PortalActionService {
 			scopeField: 'owner',
 			subjectRef: $ref,
 			organisation: (string)($subject['organisation'] ?? ''),
-			data: $this->fields->stamped(editor: (string)($subject['subjectRef'] ?? ''), data: $clean + ['assignee' => $ref, 'status' => 'todo', 'kind' => 'once'])
+			data: $this->fields->stamped(editor: $ref, data: $clean + ['assignee' => $ref, 'status' => 'todo', 'kind' => 'once'])
 		);
 		if ($row === null) {
 			return ['status' => PortalPlanService::FAILED, 'id' => ''];
