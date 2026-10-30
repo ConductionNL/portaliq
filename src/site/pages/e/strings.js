@@ -255,6 +255,13 @@ export default {
 		'Withdraw this request': 'Deze aanvraag intrekken',
 		'Withdraw this request?': 'Wilt u deze aanvraag intrekken?',
 		'Withdrawn on {date}.': 'Ingetrokken op {date}.',
+		'More actions for this case': 'Meer acties voor deze zaak',
+		'You can no longer do this on this case.':
+			'Dit kan niet meer bij deze zaak.',
+		'We have received it.': 'Wij hebben het ontvangen.',
+		'Reference {reference}.': 'Kenmerk {reference}.',
+		'You will find it as a case of its own in My cases.':
+			'U vindt het als eigen zaak in Mijn zaken.',
 		'We still need documents from you. Send them before {due}, and we will decide by {legal}.':
 			'Wij hebben nog stukken van u nodig. Stuur ze voor {due}, dan nemen wij uiterlijk {legal} een besluit.',
 		'We still need documents from you. Send them before {due}.':
@@ -538,6 +545,13 @@ export default {
 		'Withdraw this request': 'Withdraw this request',
 		'Withdraw this request?': 'Withdraw this request?',
 		'Withdrawn on {date}.': 'Withdrawn on {date}.',
+		'More actions for this case': 'More actions for this case',
+		'You can no longer do this on this case.':
+			'You can no longer do this on this case.',
+		'We have received it.': 'We have received it.',
+		'Reference {reference}.': 'Reference {reference}.',
+		'You will find it as a case of its own in My cases.':
+			'You will find it as a case of its own in My cases.',
 		'We still need documents from you. Send them before {due}, and we will decide by {legal}.':
 			'We still need documents from you. Send them before {due}, and we will decide by {legal}.',
 		'We still need documents from you. Send them before {due}.':

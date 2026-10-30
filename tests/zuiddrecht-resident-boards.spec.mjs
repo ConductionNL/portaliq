@@ -692,6 +692,60 @@ test('Mijn zaken as rows when the portal says so, folder cards otherwise', async
 	assert.doesNotMatch(folders, /denhaag-case-card|pq-case-card--row|pq-cases__list--rows/)
 })
 
+test('with onCase declared, Bezwaar maken and Klacht indienen are on the case page, before withdraw', async () => {
+	// case-page-objection-and-complaint: dossiq places both on the case page
+	// (board Zaak); the server lists them as `caseActions` and the case screen
+	// draws them in "Meer acties voor deze zaak", before Aanvraag intrekken.
+	const form = (id, label) => ({
+		id,
+		type: 'create',
+		register: 'dossiq',
+		schema: 'portaalVerzoek',
+		label,
+		fields: ['againstCaseId', 'toelichting'],
+	})
+	const html = await renderComponent(CitizenCase, {
+		collection: ZAKEN,
+		row: WOO,
+		api: {},
+		t: nl,
+		block: { type: 'citizenCase', collection: 'mijnZaken', display: 'actions' },
+		initialData: {
+			case: { id: 'c-82' },
+			writableSet: { window: { open: true }, fields: {} },
+			documents: [],
+			withdrawal: { declared: true, open: true },
+			caseActions: [
+				{
+					app: 'dossiq',
+					action: 'createBezwaar',
+					label: 'Bezwaar maken',
+					open: true,
+					crossRef: 'againstCaseId',
+					form: form('createBezwaar', 'Bezwaar maken'),
+				},
+				{
+					app: 'dossiq',
+					action: 'createKlacht',
+					label: 'Klacht indienen',
+					open: true,
+					crossRef: 'againstCaseId',
+					form: form('createKlacht', 'Klacht indienen'),
+				},
+			],
+		},
+	})
+	const group = html.slice(html.indexOf('data-testid="case-more-actions"'))
+	assert.match(html, /role="group"/)
+	assert.ok(group.indexOf('Bezwaar maken') > 0)
+	assert.ok(group.indexOf('Bezwaar maken') < group.indexOf('Klacht indienen'))
+	assert.ok(group.indexOf('Klacht indienen') < group.indexOf('Aanvraag intrekken'))
+	assert.match(
+		html,
+		/utrecht-button--secondary-action pq-case-action" aria-expanded="false"[^>]*data-testid="case-action-createBezwaar"/,
+	)
+})
+
 test('the moved controls keep their place: the two ctas on the overview, save and withdraw on the case page', () => {
 	// dossiq declares them (lib/Portal/PortalPages.php); the overview keeps
 	// its cta blocks and the case screen its buttons, which the tests above

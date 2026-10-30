@@ -182,6 +182,9 @@ export function createPortalApi(config, store = {}) {
 				status: res.status,
 				object: null,
 				error: typeof refusal?.error === 'string' ? refusal.error : '',
+				// The sentence a refusal carries, such as a closed window on a
+				// case action (case-page-objection-and-complaint).
+				message: typeof refusal?.message === 'string' ? refusal.message : '',
 				errors:
 					refusal?.errors && typeof refusal.errors === 'object'
 						? refusal.errors
@@ -1156,6 +1159,32 @@ export function createPortalApi(config, store = {}) {
 			return send(
 				'POST',
 				`${col(action.register, action.schema)}${query}`,
+				data,
+			)
+		},
+
+		/**
+		 * Create through a create action from the page of a case (`onCase`):
+		 * the server reads the case at `onCase` again, checks the action's
+		 * window, and writes the case id into the action's cross-reference
+		 * field itself.
+		 *
+		 * @param {object} action Manifest action: `{ id, register, schema }`.
+		 * @param {string} onCase The case as `<register>/<schema>/<id>`.
+		 * @param {object} data The whitelisted field values.
+		 * @return {Promise<object>} `{ ok, status, object }`, or a refusal with `error` and `message`.
+		 *
+		 * @spec openspec/changes/case-page-objection-and-complaint/tasks.md#t07
+		 */
+		async createObjectOnCase(action, onCase, data) {
+			const query = new URLSearchParams()
+			if (action && typeof action.id === 'string' && action.id !== '') {
+				query.set('actionId', action.id)
+			}
+			query.set('onCase', onCase)
+			return send(
+				'POST',
+				`${col(action.register, action.schema)}?${query.toString()}`,
 				data,
 			)
 		},

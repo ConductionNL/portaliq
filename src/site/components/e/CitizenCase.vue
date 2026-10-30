@@ -237,16 +237,60 @@
 			{{ withdrawal.reason }}
 		</p>
 
-		<button
-			v-if="withdrawal.kind === 'button'"
-			ref="withdrawButton"
-			type="button"
-			class="utrecht-button utrecht-button--secondary-action utrecht-button--danger pq-case-withdraw"
-			data-testid="case-withdraw"
-			:disabled="busy"
-			@click="openWithdraw">
-			{{ t('Withdraw request') }}
-		</button>
+		<!-- The actions on this case (board Zaak): what the case app placed
+		     here (a bezwaar, a klacht) in its order, then withdraw. A closed
+		     action shows the server's sentence instead of its button
+		     (case-page-objection-and-complaint). -->
+		<div
+			v-if="caseActions.length > 0 || withdrawal.kind === 'button'"
+			class="pq-case-more"
+			role="group"
+			:aria-label="t('More actions for this case')"
+			data-testid="case-more-actions">
+			<template
+				v-for="entry in caseActions"
+				:key="`${entry.app}/${entry.action}`">
+				<button
+					v-if="entry.open"
+					type="button"
+					class="utrecht-button utrecht-button--secondary-action pq-case-action"
+					:aria-expanded="String(openAction === entry.action)"
+					:aria-controls="`pq-case-action-${entry.action}`"
+					:data-testid="`case-action-${entry.action}`"
+					@click="toggleAction(entry)">
+					{{ entry.label || entry.action }}
+				</button>
+				<p
+					v-else
+					class="utrecht-paragraph pq-case-reason"
+					:data-testid="`case-action-closed-${entry.action}`">
+					{{
+						entry.closedText
+						|| t('You can no longer do this on this case.')
+					}}
+				</p>
+			</template>
+			<button
+				v-if="withdrawal.kind === 'button'"
+				ref="withdrawButton"
+				type="button"
+				class="utrecht-button utrecht-button--secondary-action utrecht-button--danger pq-case-withdraw"
+				data-testid="case-withdraw"
+				:disabled="busy"
+				@click="openWithdraw">
+				{{ t('Withdraw request') }}
+			</button>
+		</div>
+
+		<CaseActionForm
+			v-if="openEntry"
+			:key="`${openEntry.action}-${formRound}`"
+			:entry="openEntry"
+			:collection="collection"
+			:caseId="caseId"
+			:api="api"
+			:t="t"
+			@cancel="closeAction" />
 
 		<WithdrawCaseConfirm
 			v-if="withdrawal.kind === 'button' && confirming"
@@ -269,7 +313,9 @@
 <script>
 import WithdrawCaseConfirm from '../../modals/e/WithdrawCaseConfirm.vue'
 import FileItem from '../mijn/FileItem.vue'
+import CaseActionForm from './CaseActionForm.vue'
 import CaseField from './CaseField.vue'
+import { caseActionsOf } from '../../../shared/caseActions.js'
 import { groupDocuments } from '../../../shared/caseDocuments.js'
 import {
 	bannerSentence,
@@ -294,7 +340,7 @@ import { mijnTranslator, siteHref } from '../mijn/rows.js'
 export default {
 	name: 'CitizenCase',
 
-	components: { CaseField, FileItem, WithdrawCaseConfirm },
+	components: { CaseActionForm, CaseField, FileItem, WithdrawCaseConfirm },
 
 	props: {
 		/** The manifest collection the case lives in (`{id, register, schema, ...}`). */
@@ -339,6 +385,8 @@ export default {
 			confirming: this.initialConfirming,
 			taskReads: this.initialTaskReads || [],
 			tasksFailed: this.initialTasksFailed,
+			openAction: '',
+			formRound: 0,
 		}
 	},
 
@@ -409,6 +457,26 @@ export default {
 
 		withdrawal() {
 			return withdrawalView(this.data?.withdrawal, this.caseRow)
+		},
+
+		/**
+		 * @return {Array<object>} The actions the case app placed on this case, as the server listed them.
+		 * @spec openspec/changes/case-page-objection-and-complaint/tasks.md#t06
+		 */
+		caseActions() {
+			return caseActionsOf(this.data)
+		},
+
+		/**
+		 * @return {object|null} The open action whose form shows, while it is still open.
+		 * @spec openspec/changes/case-page-objection-and-complaint/tasks.md#t06
+		 */
+		openEntry() {
+			return (
+				this.caseActions.find(
+					(entry) => entry.open && entry.action === this.openAction,
+				) || null
+			)
 		},
 
 		/** The open tasks whose `caseField` names this case. */
@@ -760,6 +828,35 @@ export default {
 		},
 
 		/**
+		 * Open a case action's form under the group, or close it when it shows.
+		 *
+		 * @param {object} entry The case action.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/case-page-objection-and-complaint/tasks.md#t06
+		 */
+		toggleAction(entry) {
+			this.notice = ''
+			if (this.openAction === entry.action) {
+				this.openAction = ''
+				return
+			}
+			this.formRound++
+			this.openAction = entry.action
+		},
+
+		/**
+		 * Close the open case action's form without sending.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/case-page-objection-and-complaint/tasks.md#t07
+		 */
+		closeAction() {
+			this.openAction = ''
+		},
+
+		/**
 		 * Open the withdraw confirmation.
 		 *
 		 * @return {void}
@@ -856,6 +953,19 @@ export default {
 		var(--nldesign-color-error, currentcolor)
 	);
 	font-weight: var(--utrecht-typography-weight-scale-bold-font-weight, bold);
+}
+
+/* The case actions as one row of secondary buttons, wrapping on a phone. */
+.pq-case-more {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.pq-case-more .pq-case-reason {
+	flex-basis: 100%;
+	margin: 0;
 }
 
 /* The closed window as a notice in the ok tone: a tick and one sentence. */

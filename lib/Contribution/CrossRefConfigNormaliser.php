@@ -74,8 +74,30 @@ class CrossRefConfigNormaliser {
 	 * @return array<string, mixed>|null The action, or null when it must be dropped.
 	 *
 	 * @spec openspec/changes/portal-create-cross-refs/specs/portal-contribution-contract/spec.md
+	 * @spec openspec/changes/case-page-objection-and-complaint/tasks.md#t02
 	 */
 	public function normaliseAction(array $action, array $whitelist): ?array {
+		$guarded = $this->guarded(action: $action, whitelist: $whitelist);
+		if ($guarded === null) {
+			return null;
+		}
+
+		// A place on the case page (`onCase`) rides on the guard read here;
+		// a malformed one drops the key, never the action.
+		return (new OnCaseConfigNormaliser())->normaliseAction(action: $guarded);
+	}//end normaliseAction()
+
+	/**
+	 * The action with its declaration sanitised, or null when it must be dropped.
+	 *
+	 * @param array<string, mixed> $action    The action as declared.
+	 * @param array<int, string>   $whitelist The fields the action accepts.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/portal-create-cross-refs/specs/portal-contribution-contract/spec.md
+	 */
+	private function guarded(array $action, array $whitelist): ?array {
 		if (array_key_exists(self::KEY, $action) === false) {
 			return $action;
 		}
@@ -111,7 +133,7 @@ class CrossRefConfigNormaliser {
 		unset($action['anonymous']);
 
 		return $action;
-	}//end normaliseAction()
+	}//end guarded()
 
 	/**
 	 * One declared reference, or null when it is unusable.
