@@ -2397,8 +2397,7 @@
 			"feature": "acting-for-someone-else",
 			"featureConfidence": "high",
 			"screen": {
-				"board": null,
-				"reason": "school portal: designed in the school-design programme, not on the Zuiddrecht canvas"
+				"board": "MijnKind"
 			}
 		},
 		{
@@ -9081,8 +9080,7 @@
 			"feature": "setup-and-settings",
 			"featureConfidence": "high",
 			"screen": {
-				"board": null,
-				"reason": "backend: no screen of its own (Nextcloud admin settings)"
+				"board": "PtBeheerinstellingen"
 			}
 		},
 		{
@@ -11121,8 +11119,7 @@
 			"source": "spec-round-2026-10-07",
 			"feature": "conversations-with-the-organisation",
 			"screen": {
-				"board": null,
-				"reason": "school portal: designed in the school-design programme, not on the Zuiddrecht canvas"
+				"board": "OuderBerichten"
 			},
 			"evidence": {
 				"open-inwoner": "a resident can start a one-to-one conversation with an approved contact (src/open_inwoner/cms/inbox/urls.py:14 start, src/open_inwoner/accounts/views/inbox.py:196 InboxStartView); no group conversations, and the sender does not see who read it (seen is only set, :128) [reached on Mijn berichten; was unknown] [read 2026-10-08 at v2.4.5]",
@@ -11150,8 +11147,7 @@
 			"source": "spec-round-2026-10-07",
 			"feature": "conversations-with-the-organisation",
 			"screen": {
-				"board": null,
-				"reason": "school portal: designed in the school-design programme, not on the Zuiddrecht canvas"
+				"board": "OuderBerichten"
 			},
 			"evidence": {
 				"open-inwoner": "Dutch only (src/open_inwoner/conf/base.py:119 LANGUAGES = nl); no machine translation code [reached on nothing; was unknown] [read 2026-10-08 at v2.4.5]",
@@ -11179,8 +11175,7 @@
 			"source": "spec-round-2026-10-07",
 			"feature": "notifications",
 			"screen": {
-				"board": null,
-				"reason": "school portal: designed in the school-design programme, not on the Zuiddrecht canvas"
+				"board": "OuderBerichten"
 			},
 			"evidence": {
 				"open-inwoner": "no push notifications: no web manifest, service worker or push code in src/open_inwoner; notification channels are e-mail (src/open_inwoner/accounts/notifications/tasks.py:95) [reached on nothing; was unknown] [read 2026-10-08 at v2.4.5]",
@@ -11517,8 +11512,7 @@
 			"source": "spec-round-2026-10-07",
 			"feature": "website-pages-and-menus",
 			"screen": {
-				"board": null,
-				"reason": "school portal: designed in the school-design programme, not on the Zuiddrecht canvas"
+				"board": "OuderPeiling"
 			},
 			"evidence": {
 				"open-inwoner": "no poll or survey model: no match for 'poll|peiling' outside a test helper [reached on nothing; was unknown] [read 2026-10-08 at v2.4.5]",
