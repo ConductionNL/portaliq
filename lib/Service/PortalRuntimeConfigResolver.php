@@ -246,7 +246,7 @@ class PortalRuntimeConfigResolver {
 	 * @return bool
 	 *
 	 * @spec openspec/changes/portal-signin-on-its-own-address/tasks.md#T2
-	 * @spec openspec/changes/dev-login-only-when-switched-on/specs/supplier-portal/spec.md#requirement-the-test-sign-in-opens-only-on-its-own-switch
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-the-test-sign-in-opens-only-on-its-own-switch
 	 */
 	private function devLoginEnabled(): bool {
 		if ($this->config === null) {

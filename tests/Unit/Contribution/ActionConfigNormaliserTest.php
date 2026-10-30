@@ -457,7 +457,7 @@ class ActionConfigNormaliserTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/endpoint-action-forms-keep-their-field-shape/specs/site-forms/spec.md#requirement-an-endpoint-action-may-declare-a-fields-input-req-eaf-001
+	 * @spec openspec/specs/site-forms/spec.md#requirement-an-endpoint-action-may-declare-a-fields-input-req-eaf-001
 	 */
 	public function testAnEndpointActionKeepsTheInputItDeclares(): void {
 		$action = $this->wooAction(
@@ -481,7 +481,7 @@ class ActionConfigNormaliserTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/endpoint-action-forms-keep-their-field-shape/specs/site-forms/spec.md#requirement-an-endpoint-action-may-declare-a-fields-input-req-eaf-001
+	 * @spec openspec/specs/site-forms/spec.md#requirement-an-endpoint-action-may-declare-a-fields-input-req-eaf-001
 	 */
 	public function testOnACreateActionTheSchemaDecidesTheInput(): void {
 		$configs = $this->absenceConfigs(['reason' => ['input' => 'date'], 'dateFrom' => ['input' => 'number']]);
@@ -550,7 +550,7 @@ class ActionConfigNormaliserTest extends TestCase {
 	 * `prefill` survives only as `name` or `email`; any other source, or a
 	 * value that is not a string, is dropped.
 	 *
-	 * @spec openspec/changes/action-fields-prefill-from-the-residents-profile/specs/portal-contribution-contract/spec.md#requirement-an-action-field-may-start-from-the-signed-in-residents-name-or-e-mail-address
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-action-field-may-start-from-the-signed-in-residents-name-or-e-mail-address
 	 *
 	 * @return void
 	 */

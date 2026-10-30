@@ -434,7 +434,7 @@ class PortalCaseListReader {
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the parameters are
 	 * the scoping boundary itself; folding them away would hide it.
 	 *
-	 * @spec openspec/changes/mandate-reads-the-typed-party/specs/portal-mandates/spec.md#requirement-a-mandated-case-list-reads-the-party-in-its-typed-and-its-bare-form-req-mtp-001
+	 * @spec openspec/specs/portal-mandates/spec.md#requirement-a-mandated-case-list-reads-the-party-in-its-typed-and-its-bare-form-req-mtp-001
 	 */
 	private function readParty(
 		array $collection,

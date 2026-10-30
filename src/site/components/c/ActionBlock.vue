@@ -183,7 +183,7 @@ export default {
 		 * one under the other (zuiddrecht live test, 14 October 2026).
 		 *
 		 * @return {boolean}
-		 * @spec openspec/changes/endpoint-action-forms-keep-their-field-shape/specs/site-forms/spec.md#requirement-a-form-on-a-page-of-its-own-does-not-repeat-the-page-title-req-eaf-004
+		 * @spec openspec/specs/site-forms/spec.md#requirement-a-form-on-a-page-of-its-own-does-not-repeat-the-page-title-req-eaf-004
 		 */
 		headed() {
 			const title = String(this.block.pageTitle || '').trim()

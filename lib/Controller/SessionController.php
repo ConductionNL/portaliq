@@ -1074,7 +1074,7 @@ class SessionController extends Controller {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/dev-login-only-when-switched-on/specs/supplier-portal/spec.md#requirement-the-test-sign-in-opens-only-on-its-own-switch
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-the-test-sign-in-opens-only-on-its-own-switch
 	 */
 	private function isDevLoginEnabled(): bool {
 		return $this->config->getAppValue(Application::APP_ID, 'dev_login_enabled', 'no') === 'yes';

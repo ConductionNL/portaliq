@@ -63,7 +63,7 @@ export function withStrings(t, locale) {
  * @param {((key: string, vars?: object) => string)|null} t The shell's translator, or null.
  * @param {string} [locale] The page language.
  * @return {(key: string, vars?: object) => string} The translator.
- * @spec openspec/changes/acting-for-and-access-page-read-in-dutch/specs/site-portal-parity/spec.md#requirement-the-account-pages-speak-the-pages-language
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-account-pages-speak-the-pages-language
  */
 export function withBundles(bundles, t, locale) {
 	const bundle = bundles[pageLocale(locale)] || bundles.nl

@@ -64,7 +64,7 @@ export const pages = {
  *
  * @param {() => Promise<object>} load The page's own loader.
  * @return {() => Promise<{default: object}>} The loader of the wrapped page.
- * @spec openspec/changes/acting-for-and-access-page-read-in-dutch/specs/site-portal-parity/spec.md#requirement-the-account-pages-speak-the-pages-language
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-account-pages-speak-the-pages-language
  */
 function translated(load) {
 	return async () => {

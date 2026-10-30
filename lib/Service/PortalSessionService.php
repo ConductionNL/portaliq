@@ -452,7 +452,7 @@ class PortalSessionService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/idle-warning-preview/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-10-30-idle-warning-preview/tasks.md#T01
 	 */
 	private function idlePreviewEnabled(): bool {
 		return $this->config->getAppValue(Application::APP_ID, self::IDLE_PREVIEW_CONFIG_KEY, 'no') === 'yes';
@@ -486,7 +486,7 @@ class PortalSessionService {
 	 * @return array{expiresAt: int, hardExpiresAt: int, idleTimeout: int, idlePreview: bool}
 	 *
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T02
-	 * @spec openspec/changes/idle-warning-preview/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-10-30-idle-warning-preview/tasks.md#T01
 	 */
 	public function sessionTimes(array $subject): array {
 		return [

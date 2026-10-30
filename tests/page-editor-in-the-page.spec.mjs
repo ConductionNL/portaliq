@@ -9,7 +9,7 @@
 // Usage:
 //   node --test tests/page-editor-in-the-page.spec.mjs
 //
-// @spec openspec/changes/page-editor-in-the-page/specs/portal-page-designer/spec.md#requirement-the-layout-editor-is-a-tab-of-the-page
+// @spec openspec/specs/portal-page-designer/spec.md#requirement-the-layout-editor-is-a-tab-of-the-page
 
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
@@ -33,7 +33,7 @@ test('the page carries an Indeling tab holding the embedded editor, in the addre
 	assert.match(DESIGNER, /<div v-if="!embedded" class="designer__identity">/)
 })
 
-// @spec openspec/changes/page-editor-in-the-page/specs/portal-page-designer/spec.md#requirement-the-editor-toolbar-and-block-cards-read-as-the-board
+// @spec openspec/specs/portal-page-designer/spec.md#requirement-the-editor-toolbar-and-block-cards-read-as-the-board
 test('the toolbar leads with the primary Add block and says when changes are unsaved', () => {
 	const add = DESIGNER.indexOf('data-testid="designer-add-widget"')
 	assert.ok(add > 0)
@@ -42,7 +42,7 @@ test('the toolbar leads with the primary Add block and says when changes are uns
 	assert.match(DESIGNER, /v-if="state\.dirty"[\s\S]{0,120}data-testid="designer-unsaved"/)
 })
 
-// @spec openspec/changes/page-editor-in-the-page/specs/portal-page-designer/spec.md#requirement-the-editor-toolbar-and-block-cards-read-as-the-board
+// @spec openspec/specs/portal-page-designer/spec.md#requirement-the-editor-toolbar-and-block-cards-read-as-the-board
 test('every NL Design System block in the example site has a name, and a card says its width', () => {
 	const keys = new Set()
 	const walk = (node) => {
@@ -65,7 +65,7 @@ test('every NL Design System block in the example site has a name, and a card sa
 	assert.equal(widgetWidthLine(0), '')
 })
 
-// @spec openspec/changes/page-editor-in-the-page/specs/portal-page-designer/spec.md#requirement-the-example-site-seeds-the-boards-draft
+// @spec openspec/specs/portal-page-designer/spec.md#requirement-the-example-site-seeds-the-boards-draft
 test('the example site seeds the board draft and keeps the published body', () => {
 	let afval = null
 	const walk = (node) => {

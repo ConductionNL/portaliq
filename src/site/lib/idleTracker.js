@@ -144,7 +144,7 @@ export function createIdleTracker({ refresh, onTimes, onWarn, onEnd }) {
  * @param {string} search The address's query string.
  * @return {boolean}
  *
- * @spec openspec/changes/idle-warning-preview/tasks.md#T02
+ * @spec openspec/changes/archive/2026-10-30-idle-warning-preview/tasks.md#T02
  */
 export function idlePreviewWanted(session, search) {
 	if (session?.idlePreview !== true) {

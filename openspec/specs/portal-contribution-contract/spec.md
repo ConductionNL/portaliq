@@ -1862,6 +1862,51 @@ geladen." with a button "Opnieuw proberen" that reads it again, and MUST NOT dra
 - WHEN the page renders
 - THEN the block shows the sentence and the retry button, and no empty table
 
+### Requirement: An action field may start from the signed-in resident's name or e-mail address
+
+An action field config MAY declare `prefill` with the value `name` or `email`. Portaliq MUST drop any other value. For a signed-in resident the site MUST start an empty field that declares `prefill` from the resident's own details: `name` from the display name, `email` from the e-mail address. A value from a saved draft, a preset or the resident's own typing MUST NOT be replaced. Without a session or without the detail the field MUST stay empty. `prefill` MUST NOT add a field to the action's whitelist.
+
+#### Scenario: A Woo request knows who is asking
+- GIVEN Henk Bakker is signed in and his details hold his name and e-mail address
+- AND the request form's name field declares `prefill: name` and its e-mail field `prefill: email`
+- WHEN he reaches the step "Uw gegevens"
+- THEN both fields show his name and e-mail address and he can change them
+- @e2e exclude pinned by `tests/profile-prefill.spec.mjs` and `ActionConfigNormaliserTest::testAPrefillSourceIsKeptOnlyWhenKnown`; the live check needs dossiq's declaration
+
+#### Scenario: A saved draft wins
+- GIVEN a saved draft holds another e-mail address
+- WHEN the resident opens the form again
+- THEN the e-mail field shows the draft's address
+- @e2e exclude pinned by `tests/profile-prefill.spec.mjs` "an empty field starts from the profile; a filled one keeps its value"
+
+#### Scenario: Another source is refused
+- GIVEN a field declares `prefill: bsn`
+- WHEN portaliq normalises the action
+- THEN the field config carries no `prefill`
+- @e2e exclude pinned by `ActionConfigNormaliserTest::testAPrefillSourceIsKeptOnlyWhenKnown`
+
+### Requirement: A collection MAY carry an intro shown above its list
+
+A contribution collection MAY declare `intro`, a plain text shown above the collection's list. The normaliser MUST keep it, trimmed, only when it is a non-empty string, and MUST drop it otherwise. The portal MUST show a kept intro above the collection's table, and "My cases" MUST show the intros of the `kind: cases` collections under its heading, each text once. The portal MUST render the intro as text, never as HTML.
+
+#### Scenario: A cases collection's intro shows above its list
+- GIVEN dossiq's `mijnZaken` declares `intro: 'Hier ziet u al uw lopende zaken.'`
+- WHEN a resident opens "My cases", or a page that shows the collection
+- THEN the sentence shows above the list
+- @e2e exclude pinned by `tests/collection-intro.spec.mjs`
+
+#### Scenario: Markup in an intro shows as typed
+- GIVEN a collection declares `intro: '<b>Let op</b>'`
+- WHEN the portal shows the collection
+- THEN the resident reads `<b>Let op</b>` as text
+- @e2e exclude pinned by `CollectionIntroKeyTest` and `tests/collection-intro.spec.mjs`
+
+#### Scenario: An empty or non-text intro is dropped
+- GIVEN a collection declares `intro: '  '` or `intro: 42`
+- WHEN the manifest is normalised
+- THEN `intro` is dropped
+- @e2e exclude pinned by `CollectionIntroKeyTest::testAnEmptyOrNonTextIntroIsDropped`
+
 ## Non-Functional Requirements
 
 - **Performance:** trust filtering adds no OpenRegister queries; `scopeClaim`

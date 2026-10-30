@@ -255,7 +255,7 @@ export default {
 		 * Drawn inside the page's own Indeling tab (PageLayoutEditor), where the
 		 * page header already names the page: no title line of its own.
 		 *
-		 * @spec openspec/changes/page-editor-in-the-page/specs/portal-page-designer/spec.md#requirement-the-layout-editor-is-a-tab-of-the-page
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-layout-editor-is-a-tab-of-the-page
 		 */
 		embedded: {
 			type: Boolean,

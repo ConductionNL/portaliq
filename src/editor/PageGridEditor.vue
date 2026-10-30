@@ -662,7 +662,7 @@ export default {
 		 *
 		 * @param {object} item The placement.
 		 * @return {string} The line.
-		 * @spec openspec/changes/page-editor-in-the-page/specs/portal-page-designer/spec.md#requirement-the-editor-toolbar-and-block-cards-read-as-the-board
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-editor-toolbar-and-block-cards-read-as-the-board
 		 */
 		widthLineOf(item) {
 			return widgetWidthLine(item?.gridWidth)
