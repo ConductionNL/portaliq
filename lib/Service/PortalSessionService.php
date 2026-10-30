@@ -831,7 +831,11 @@ class PortalSessionService {
 		// A revoke-all (or a logout) can land between the resolve above and
 		// the mint: the new bearer must not outlive it (security review S1).
 		if ($this->isJtiActive(jti: $oldJti) === false) {
-			$this->revokeQuietly(jti: $issued['jti']);
+			if ($this->revokeQuietly(jti: $issued['jti']) === null) {
+				// Never handed out, but it stays valid in the store: say so.
+				$this->logger->warning('Portaliq: the bearer minted during a revoked rotation was not revoked', ['jti' => $issued['jti']]);
+			}
+
 			$this->logger->info('Portaliq: refresh refused, the session was revoked while it rotated', ['jti' => $oldJti]);
 			return null;
 		}
@@ -847,9 +851,14 @@ class PortalSessionService {
 			jti: $oldJti
 		);
 
-		// A quiet revoke; a failed one never signs the person out.
+		// A quiet revoke; a failed one never signs the person out. A failure
+		// comes back as null, not as an exception: try once more, and log a
+		// warning when the old bearer is still valid beside the new one.
 		try {
-			$this->revokeQuietly(jti: $oldJti);
+			$revoked = $this->revokeQuietly(jti: $oldJti) ?? $this->revokeQuietly(jti: $oldJti);
+			if ($revoked === null) {
+				$this->logger->warning('Portaliq: the old bearer was not revoked after a rotation', ['jti' => $oldJti]);
+			}
 		} catch (Throwable $exception) {
 			$this->logger->warning('Portaliq: the old bearer was not revoked after a rotation', ['exception' => get_class($exception)]);
 		}

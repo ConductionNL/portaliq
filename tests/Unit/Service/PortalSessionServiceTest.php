@@ -510,6 +510,34 @@ class PortalSessionServiceTest extends TestCase {
 		$this->assertTrue($store['uuid-2']['revoked'], 'the bearer minted during the race is revoked');
 	}//end testARefreshRacingARevokeAllLeavesNoLiveBearer()
 
+	public function testARotationWhoseOldBearerCannotBeRevokedRetriesAndWarns(): void {
+		$store = [];
+		$attempts = 0;
+		$warnings = [];
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->method('warning')->willReturnCallback(
+			function (string $message) use (&$warnings): void {
+				$warnings[] = $message;
+			}
+		);
+		$service = $this->service(
+			store: $store,
+			logger: $logger,
+			refuseUpdate: function (string $id, array $data) use (&$attempts): bool {
+				if ($id === 'uuid-1' && ($data['revoked'] ?? false) === true) {
+					$attempts++;
+					return true;
+				}
+				return false;
+			}
+		);
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1', trust: 'high');
+
+		$this->assertNotNull($service->refreshSession('Bearer ' . $issued['token']), 'a failed revoke never signs the person out');
+		$this->assertSame(2, $attempts, 'the revoke of the old bearer is tried again once');
+		$this->assertSame(['Portaliq: the old bearer was not revoked after a rotation'], $warnings);
+	}//end testARotationWhoseOldBearerCannotBeRevokedRetriesAndWarns()
+
 	public function testRevokeUnknownJtiIsANoOp(): void {
 		$service = $this->service();
 		$this->assertFalse($service->revoke('does-not-exist'));
@@ -1105,6 +1133,8 @@ class PortalSessionServiceTest extends TestCase {
 	 * @param callable|null $onCreate Called with each created session row.
 	 * @param bool $orDown Whether the store fails as if OpenRegister were down.
 	 * @param string|null $idlePreview Override `session_idle_preview_enabled`; null keeps its default.
+	 * @param LoggerInterface|null $logger Override the logger; null uses a silent mock.
+	 * @param callable|null $refuseUpdate Called with (id, data); true makes that update fail (null).
 	 *
 	 * @return PortalSessionService
 	 */
@@ -1117,6 +1147,8 @@ class PortalSessionServiceTest extends TestCase {
 		?callable $onCreate = null,
 		bool $orDown = false,
 		?string $idlePreview = null,
+		?LoggerInterface $logger = null,
+		?callable $refuseUpdate = null,
 	): PortalSessionService {
 		// The signing secret lives in IAppConfig, flagged sensitive (review S4);
 		// IConfig answers the other session settings only.
@@ -1160,8 +1192,11 @@ class PortalSessionServiceTest extends TestCase {
 			}
 		);
 		$writer->method('updateObject')->willReturnCallback(
-			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array $data) use (&$store) {
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id, array $data) use (&$store, $refuseUpdate) {
 				if (isset($store[$id]) === false) {
+					return null;
+				}
+				if ($refuseUpdate !== null && $refuseUpdate($id, $data) === true) {
 					return null;
 				}
 				$store[$id] = array_merge($store[$id], $data);
@@ -1208,7 +1243,7 @@ class PortalSessionServiceTest extends TestCase {
 		return new PortalSessionService(
 			$config,
 			$random,
-			$this->createMock(LoggerInterface::class),
+			($logger ?? $this->createMock(LoggerInterface::class)),
 			$writer,
 			$reader,
 			($auditor ?? $this->createMock(AuditTrailService::class)),
