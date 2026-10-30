@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
+use OCA\Portaliq\Service\Tenancy\PortalAdminScope;
 use OCA\Portaliq\Controller\PortalHomePageController;
 use OCA\Portaliq\Service\Cms\PortalHomePage;
 use OCP\AppFramework\Http;
@@ -47,16 +48,35 @@ class PortalHomePageControllerTest extends TestCase {
 	}//end testTheRouteNamesTheOwnersMethod()
 
 	/**
-	 * Nextcloud lets only an administrator through a method that carries no
-	 * opt-out attribute, so none may be here.
+	 * The route is open to a member of the portal's admin groups, checked per
+	 * portal in the method; it is not public and does not skip CSRF.
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t11
 	 */
-	public function testNonAdminIsRefused(): void {
+	public function testTheRouteIsOpenPerPortal(): void {
 		$method = (new ReflectionClass(PortalHomePageController::class))->getMethod('index');
 
 		$this->assertEmpty($method->getAttributes(PublicPage::class));
-		$this->assertEmpty($method->getAttributes(NoAdminRequired::class));
+		$this->assertNotEmpty($method->getAttributes(NoAdminRequired::class));
 		$this->assertEmpty($method->getAttributes(NoCSRFRequired::class));
-	}//end testNonAdminIsRefused()
+	}//end testTheRouteIsOpenPerPortal()
+
+	/**
+	 * Another organisation's portal answers 404 and says nothing about its pages.
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t11
+	 */
+	public function testAPortalTheCallerDoesNotAdministerIs404(): void {
+		$homePage = $this->getMockBuilder(PortalHomePage::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['verdict'])
+			->getMock();
+		$homePage->expects($this->never())->method('verdict');
+
+		$controller = new PortalHomePageController($this->createMock(IRequest::class), $homePage, $this->scope(allowed: false));
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->index(slug: 'utrecht')->getStatus());
+	}//end testAPortalTheCallerDoesNotAdministerIs404()
 
 	public function testTheReportAnswersTheClassification(): void {
 		$verdict = ['state' => 'draft', 'route' => '/', 'pageId' => 'page-draft', 'pageTitle' => 'Welkom'];
@@ -80,7 +100,7 @@ class PortalHomePageControllerTest extends TestCase {
 			->with('wilgenboom')
 			->willReturn(['state' => 'missing', 'route' => '/', 'pageId' => null, 'pageTitle' => null]);
 
-		$controller = new PortalHomePageController($this->createMock(IRequest::class), $homePage);
+		$controller = new PortalHomePageController($this->createMock(IRequest::class), $homePage, $this->scope());
 
 		$this->assertSame('missing', $controller->index(slug: 'wilgenboom')->getData()['homePage']['state']);
 	}//end testThePortalAskedAboutIsTheOneInTheAddress()
@@ -99,6 +119,24 @@ class PortalHomePageControllerTest extends TestCase {
 			->getMock();
 		$homePage->method('verdict')->willReturn($verdict);
 
-		return new PortalHomePageController($this->createMock(IRequest::class), $homePage);
+		return new PortalHomePageController($this->createMock(IRequest::class), $homePage, $this->scope());
 	}//end controller()
+
+	/**
+	 * A portal scope that lets the caller administer every portal, or none.
+	 *
+	 * @param bool $allowed Whether the caller administers the portal.
+	 *
+	 * @return PortalAdminScope
+	 */
+	private function scope(bool $allowed = true): PortalAdminScope {
+		$scope = $this->getMockBuilder(PortalAdminScope::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['mayAdminister', 'mayAdministerSlug'])
+			->getMock();
+		$scope->method('mayAdminister')->willReturn($allowed);
+		$scope->method('mayAdministerSlug')->willReturn($allowed);
+
+		return $scope;
+	}//end scope()
 }//end class

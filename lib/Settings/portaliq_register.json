@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.101.0"
+        "version": "0.104.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.101.0",
+                "version": "0.104.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -2628,7 +2628,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.27.0",
+                "version": "0.29.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -3139,6 +3139,18 @@
                             "published"
                         ],
                         "example": "published"
+                    },
+                    "adminGroups": {
+                        "title": "Administrators",
+                        "type": "array",
+                        "description": "Nextcloud groups whose members administer this portal: its settings, domains, theme, sign-in and case types. They are refused on every other portal as if it did not exist. Only an administrator of the installation changes this list, so a hosting party hands each organisation its own portal. Empty means only administrators of the installation.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "default": [],
+                        "example": [
+                            "zeist-beheer"
+                        ]
                     },
                     "kind": {
                         "title": "Kind",

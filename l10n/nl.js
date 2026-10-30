@@ -3290,7 +3290,14 @@ OC.L10N.register(
         "The receipt did not arrive.": "De ontvangstbevestiging kwam niet aan.",
         "The mail to the resident was refused. The submission itself did reach the case app. Contact the resident another way, for instance by the phone number in the submission.": "De mail naar de inwoner werd geweigerd. De inzending zelf is wel in de zaakapp aangekomen. Neem op een andere manier contact op, bijvoorbeeld via het telefoonnummer uit de inzending.",
         "Details": "Gegevens",
-        "Evidence log": "Bewijslog"
+        "Evidence log": "Bewijslog",
+        "Members of these groups administer {portal}: its settings, domains, house style, sign-in and case types. They see no other portal.": "Leden van deze groepen beheren {portal}: de instellingen, domeinen, huisstijl, inloggen en zaaktypen. Andere portals zien zij niet.",
+        "Administrator groups": "Beheergroepen",
+        "Only an administrator of this installation can change this list.": "Alleen een beheerder van deze installatie kan deze lijst wijzigen.",
+        "No group yet. Only administrators of this installation administer this portal.": "Nog geen groep. Alleen beheerders van deze installatie beheren deze portal.",
+        "The groups of this portal could not be loaded.": "De groepen van deze portal konden niet worden geladen.",
+        "Only an administrator of this installation can change who administers a portal.": "Alleen een beheerder van deze installatie kan wijzigen wie een portal beheert.",
+        "Nextcloud groups whose members administer this portal: its settings, domains, theme, sign-in and case types. They are refused on every other portal as if it did not exist. Only an administrator of the installation changes this list, so a hosting party hands each organisation its own portal. Empty means only administrators of the installation.": "Nextcloud-groepen waarvan de leden deze portal beheren: de instellingen, domeinen, het thema, inloggen en zaaktypen. Op elke andere portal worden zij geweigerd alsof die niet bestaat. Alleen een beheerder van de installatie wijzigt deze lijst, zodat een hostingpartij elke organisatie een eigen portal geeft. Leeg betekent alleen beheerders van de installatie."
     },
     "nplurals=2; plural=(n != 1);"
 )

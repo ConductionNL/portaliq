@@ -3149,7 +3149,14 @@
         "The receipt did not arrive.": "The receipt did not arrive.",
         "The mail to the resident was refused. The submission itself did reach the case app. Contact the resident another way, for instance by the phone number in the submission.": "The mail to the resident was refused. The submission itself did reach the case app. Contact the resident another way, for instance by the phone number in the submission.",
         "Details": "Details",
-        "Evidence log": "Evidence log"
+        "Evidence log": "Evidence log",
+        "Members of these groups administer {portal}: its settings, domains, house style, sign-in and case types. They see no other portal.": "Members of these groups administer {portal}: its settings, domains, house style, sign-in and case types. They see no other portal.",
+        "Administrator groups": "Administrator groups",
+        "Only an administrator of this installation can change this list.": "Only an administrator of this installation can change this list.",
+        "No group yet. Only administrators of this installation administer this portal.": "No group yet. Only administrators of this installation administer this portal.",
+        "The groups of this portal could not be loaded.": "The groups of this portal could not be loaded.",
+        "Only an administrator of this installation can change who administers a portal.": "Only an administrator of this installation can change who administers a portal.",
+        "Nextcloud groups whose members administer this portal: its settings, domains, theme, sign-in and case types. They are refused on every other portal as if it did not exist. Only an administrator of the installation changes this list, so a hosting party hands each organisation its own portal. Empty means only administrators of the installation.": "Nextcloud groups whose members administer this portal: its settings, domains, theme, sign-in and case types. They are refused on every other portal as if it did not exist. Only an administrator of the installation changes this list, so a hosting party hands each organisation its own portal. Empty means only administrators of the installation."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

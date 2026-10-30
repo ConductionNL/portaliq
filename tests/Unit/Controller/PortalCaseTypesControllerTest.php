@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
+use OCA\Portaliq\Service\Tenancy\PortalAdminScope;
 use OCA\Portaliq\Controller\PortalCaseTypesController;
 use OCA\Portaliq\Service\PortalCaseTypeCatalogue;
 use OCP\AppFramework\Http;
@@ -30,18 +31,35 @@ class PortalCaseTypesControllerTest extends TestCase {
 	private const PORTAL = ['uuid' => 'p-1', 'slug' => 'mijn-alkmaar', 'title' => 'Mijn Alkmaar', 'status' => 'published'];
 
 	/**
-	 * Nextcloud lets only an administrator through a method that carries no
-	 * opt-out attribute, so none may be here.
+	 * Both routes are open to a member of the portal's admin groups, checked
+	 * per portal in the method; neither is public nor skips CSRF.
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t11
 	 */
-	public function testNonAdminIsRefused(): void {
+	public function testBothRoutesAreOpenPerPortal(): void {
 		$class = new ReflectionClass(PortalCaseTypesController::class);
 		foreach (['index', 'update'] as $name) {
 			$method = $class->getMethod($name);
 			$this->assertEmpty($method->getAttributes(PublicPage::class), $name);
-			$this->assertEmpty($method->getAttributes(NoAdminRequired::class), $name);
+			$this->assertNotEmpty($method->getAttributes(NoAdminRequired::class), $name);
 			$this->assertEmpty($method->getAttributes(NoCSRFRequired::class), $name);
 		}
-	}//end testNonAdminIsRefused()
+	}//end testBothRoutesAreOpenPerPortal()
+
+	/**
+	 * Another organisation's portal answers as if it did not exist, and is not changed.
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t11
+	 */
+	public function testAPortalTheCallerDoesNotAdministerIs404(): void {
+		$catalogue = $this->catalogue();
+		$catalogue->expects($this->never())->method('save');
+		$catalogue->expects($this->never())->method('listFor');
+		$controller = new PortalCaseTypesController($this->createMock(IRequest::class), $catalogue, $this->scope(allowed: false));
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->index(slug: 'mijn-alkmaar')->getStatus());
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->update(slug: 'mijn-alkmaar', hiddenCaseTypes: [])->getStatus());
+	}//end testAPortalTheCallerDoesNotAdministerIs404()
 
 	public function testHiddenTypeStaysListed(): void {
 		$catalogue = $this->catalogue();
@@ -49,7 +67,7 @@ class PortalCaseTypesControllerTest extends TestCase {
 			['register' => 'oud', 'schema' => 'zaaktype', 'typeId' => 'afgeschaft', 'label' => 'Afgeschaft', 'shown' => false],
 		]);
 
-		$response = (new PortalCaseTypesController($this->createMock(IRequest::class), $catalogue))->index(slug: 'mijn-alkmaar');
+		$response = (new PortalCaseTypesController($this->createMock(IRequest::class), $catalogue, $this->scope()))->index(slug: 'mijn-alkmaar');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame('afgeschaft', $response->getData()['caseTypes'][0]['typeId']);
@@ -63,7 +81,7 @@ class PortalCaseTypesControllerTest extends TestCase {
 			->getMock();
 		$catalogue->method('portalBySlug')->willReturn(null);
 		$catalogue->expects($this->never())->method('save');
-		$controller = new PortalCaseTypesController($this->createMock(IRequest::class), $catalogue);
+		$controller = new PortalCaseTypesController($this->createMock(IRequest::class), $catalogue, $this->scope());
 
 		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->index(slug: 'nergens')->getStatus());
 		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->update(slug: 'nergens', hiddenCaseTypes: [])->getStatus());
@@ -78,7 +96,7 @@ class PortalCaseTypesControllerTest extends TestCase {
 			static fn (array $portal): array => [['typeId' => 'handhaving', 'shown' => ($portal['hiddenCaseTypes'] ?? []) === []]]
 		);
 
-		$response = (new PortalCaseTypesController($this->createMock(IRequest::class), $catalogue))
+		$response = (new PortalCaseTypesController($this->createMock(IRequest::class), $catalogue, $this->scope()))
 			->update(slug: 'mijn-alkmaar', hiddenCaseTypes: [['typeId' => 'handhaving']]);
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
@@ -89,7 +107,7 @@ class PortalCaseTypesControllerTest extends TestCase {
 		$catalogue = $this->catalogue();
 		$catalogue->method('save')->willReturn(null);
 
-		$response = (new PortalCaseTypesController($this->createMock(IRequest::class), $catalogue))
+		$response = (new PortalCaseTypesController($this->createMock(IRequest::class), $catalogue, $this->scope()))
 			->update(slug: 'mijn-alkmaar', hiddenCaseTypes: []);
 
 		$this->assertSame(Http::STATUS_BAD_GATEWAY, $response->getStatus());
@@ -109,4 +127,22 @@ class PortalCaseTypesControllerTest extends TestCase {
 
 		return $catalogue;
 	}//end catalogue()
+
+	/**
+	 * A portal scope that lets the caller administer every portal, or none.
+	 *
+	 * @param bool $allowed Whether the caller administers the portal.
+	 *
+	 * @return PortalAdminScope
+	 */
+	private function scope(bool $allowed = true): PortalAdminScope {
+		$scope = $this->getMockBuilder(PortalAdminScope::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['mayAdminister', 'mayAdministerSlug'])
+			->getMock();
+		$scope->method('mayAdminister')->willReturn($allowed);
+		$scope->method('mayAdministerSlug')->willReturn($allowed);
+
+		return $scope;
+	}//end scope()
 }//end class

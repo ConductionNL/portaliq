@@ -15,39 +15,57 @@
  * @spec openspec/changes/admin-menu-follows-roles/specs/admin-ui/spec.md#requirement-the-app-menu-must-show-a-user-only-the-pages-their-role-may-use
  */
 
+import { limitPortalsPage } from './portalAdminGroups.js'
+
 /** The flags the server hands, in a fixed order. */
-export const ACCESS_FLAGS = ['admin', 'pages', 'accounts', 'accessRequests']
+export const ACCESS_FLAGS = ['admin', 'pages', 'accounts', 'accessRequests', 'portals']
 
 /** The prefix a menu predicate uses to name a flag. */
 const PREFIX = 'access.'
 
 /**
  * The flags as booleans: anything but `true` is false, and a missing answer
- * gives no administration at all.
+ * gives no administration at all. `portalSlugs` is the list of portals the
+ * Portals page shows, or null for all of them; anything but a list or null
+ * shows none.
  *
  * @param {unknown} raw What the server handed, or null.
- * @return {{admin: boolean, pages: boolean, accounts: boolean, accessRequests: boolean}}
+ * @return {{admin: boolean, pages: boolean, accounts: boolean, accessRequests: boolean, portals: boolean, portalSlugs: Array<string>|null}}
  * @spec openspec/changes/admin-menu-follows-roles/specs/admin-ui/spec.md#requirement-the-app-menu-must-show-a-user-only-the-pages-their-role-may-use
+ * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t12
  */
 export function normaliseAccess(raw) {
 	const source = raw && typeof raw === 'object' ? raw : {}
-	return Object.fromEntries(
+	const flags = Object.fromEntries(
 		ACCESS_FLAGS.map((flag) => [flag, source[flag] === true]),
 	)
+	let portalSlugs = []
+	if (source.portalSlugs === null && flags.portals) {
+		portalSlugs = null
+	} else if (Array.isArray(source.portalSlugs)) {
+		portalSlugs = source.portalSlugs.filter((slug) => typeof slug === 'string' && slug !== '')
+	}
+	return { ...flags, portalSlugs }
 }
 
 /**
  * The manifest with the flags in `runtime.access`, where CnAppNav's
- * `visibleIf` predicates read them. The bundled manifest is not changed.
+ * `visibleIf` predicates read them, and the Portals page limited to the
+ * portals the user administers. The bundled manifest is not changed.
  *
  * @param {object} manifest The bundled manifest.
  * @param {object} access The normalised flags.
  * @return {object} A manifest carrying the flags.
  * @spec openspec/changes/admin-menu-follows-roles/specs/admin-ui/spec.md#requirement-the-app-menu-must-show-a-user-only-the-pages-their-role-may-use
+ * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t12
  */
 export function withAccess(manifest, access) {
+	const slugs = access.portalSlugs === undefined ? null : access.portalSlugs
 	return {
 		...manifest,
+		pages: (manifest.pages || []).map((page) =>
+			page.id === 'Portals' ? limitPortalsPage(page, slugs) : page,
+		),
 		runtime: { ...(manifest.runtime || {}), access: { ...access } },
 	}
 }

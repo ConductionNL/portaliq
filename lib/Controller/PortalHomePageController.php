@@ -30,7 +30,10 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\Cms\PortalHomePage;
+use OCA\Portaliq\Service\Tenancy\PortalAdminScope;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 
@@ -50,6 +53,7 @@ class PortalHomePageController extends Controller {
 	public function __construct(
 		IRequest $request,
 		private readonly PortalHomePage $homePage,
+		private readonly PortalAdminScope $scope,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -67,14 +71,19 @@ class PortalHomePageController extends Controller {
 	 * @return JSONResponse `homePage`: the state, the route, and the page it
 	 *                      names when there is one.
 	 *
-	 * @auth admin-only This read says whether a DRAFT page exists at a route,
-	 *       which is the existence oracle the public content API withholds.
-	 *       Nextcloud expresses admin-only as the ABSENCE of an opt-out
-	 *       attribute, so this tag is the declaration.
+	 * @auth per-portal An instance administrator, or a member of one of the
+	 *       portal's adminGroups; any other user gets 404 (REQ-OPO-005).
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t11
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-without-a-published-home-page-must-be-reported-as-a-configuration-error
 	 */
+	#[NoAdminRequired]
 	public function index(string $slug): JSONResponse {
+		if ($this->scope->mayAdministerSlug(slug: $slug) === false) {
+			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
+		}
+
 		return new JSONResponse(['homePage' => $this->homePage->verdict(slug: $slug)]);
 	}//end index()
 }//end class

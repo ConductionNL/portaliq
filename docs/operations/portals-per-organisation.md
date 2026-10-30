@@ -35,6 +35,29 @@ It refuses a slug that another portal holds, and a host that any portal lists, w
 
 The portal goes live only when the host verifies and an administrator sets the portal to published.
 
+## Let an organisation look after its own portal
+
+You run Nextcloud, its upgrades and the provisioning step. Each organisation runs its own portal.
+
+To hand a portal to an organisation:
+
+1. Create a Nextcloud group for that organisation, for example `zeist-beheer`, and add its people.
+2. Open the portal in Portaliq, go to Instellingen and pick the group under **Administrator groups**.
+
+A member of that group can then:
+
+- change the portal's house style, sign-in settings and case types,
+- see and check its domains,
+- see whether the portal has a home page.
+
+They see only their own portal on the Portals page. Every other portal answers as if it does not exist.
+
+Only an administrator of the installation picks these groups. A member who tries to change the list gets a refusal, also when they write the portal through OpenRegister's API.
+
+A portal without a group is looked after by the administrators of the installation only.
+
+Two things are not part of this yet. Page, menu and notice editing still follows the editor groups of the whole installation, not the portal's groups. And OpenRegister lets anyone in the staff group read every portal object, so give an organisation's people the portal group, not the staff group.
+
 ## What is not covered
 
 Running the hosting is yours: contracts, infrastructure, backups and billing. Portaliq does not give each organisation its own database; that is a question for OpenRegister. Before you rely on the stricter organisation check on an existing instance, count the rows of the organisation-scoped schemas that have an empty organisation, and stamp them from their portal.

@@ -47,7 +47,14 @@ function visibleMenu(raw) {
 		.map((item) => item.id)
 }
 
-const NONE = { admin: false, pages: false, accounts: false, accessRequests: false }
+const NONE = {
+	admin: false,
+	pages: false,
+	accounts: false,
+	accessRequests: false,
+	portals: false,
+	portalSlugs: [],
+}
 
 test('a teacher sees the dashboard, News and the documentation, and no administration', () => {
 	assert.deepEqual(visibleMenu(NONE), ['Dashboard', 'NewsMenu', 'Documentation'])
@@ -59,7 +66,7 @@ test('a missing answer gives no administration either', () => {
 })
 
 test('each flag opens its own pages', () => {
-	assert.deepEqual(visibleMenu({ ...NONE, pages: true }), [
+	assert.deepEqual(visibleMenu({ ...NONE, pages: true, portals: true }), [
 		'Dashboard',
 		'Portals',
 		'MediaMenu',
@@ -83,7 +90,14 @@ test('each flag opens its own pages', () => {
 })
 
 test('an administrator sees every entry', () => {
-	const all = { admin: true, pages: true, accounts: true, accessRequests: true }
+	const all = {
+		admin: true,
+		pages: true,
+		accounts: true,
+		accessRequests: true,
+		portals: true,
+		portalSlugs: null,
+	}
 	assert.equal(
 		visibleMenu(all).length,
 		MANIFEST.menu.filter((item) => item.type !== 'caption').length,
@@ -113,4 +127,28 @@ test('only access predicates are read by the guard', () => {
 		false,
 	)
 	assert.equal(entryAllowed({}, NONE), true)
+})
+
+// operate-portals-per-organisation T12: a member of a portal's admin group
+// opens the Portals page, and the page lists only the portals they administer.
+test('an admin group member sees Portals, limited to their own portals', () => {
+	const access = normaliseAccess({ portals: true, portalSlugs: ['zeist'] })
+	assert.deepEqual(visibleMenu(access), ['Dashboard', 'Portals', 'NewsMenu', 'Documentation'])
+	const page = withAccess(MANIFEST, access).pages.find((p) => p.id === 'Portals')
+	assert.deepEqual(page.config.filter, { slug: ['zeist'] })
+	assert.equal(routeAllowed(MANIFEST, 'Portals', access), true)
+	assert.equal(routeAllowed(MANIFEST, 'Media', access), false)
+})
+
+test('an editor or administrator sees every portal', () => {
+	const access = normaliseAccess({ pages: true, portals: true, portalSlugs: null })
+	assert.equal(access.portalSlugs, null)
+	const page = withAccess(MANIFEST, access).pages.find((p) => p.id === 'Portals')
+	assert.equal(page.config.filter, undefined)
+})
+
+test('a list of portals without the flag, or a malformed one, shows none', () => {
+	assert.deepEqual(normaliseAccess({ portalSlugs: null }).portalSlugs, [])
+	assert.deepEqual(normaliseAccess({ portals: true, portalSlugs: 'zeist' }).portalSlugs, [])
+	assert.deepEqual(normaliseAccess({ portals: true, portalSlugs: ['zeist', '', 3] }).portalSlugs, ['zeist'])
 })

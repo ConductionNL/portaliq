@@ -7,6 +7,7 @@ namespace OCA\Portaliq\Tests\Unit\Service;
 use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\AdminMenuAccess;
 use OCA\Portaliq\Service\PageEditorService;
+use OCA\Portaliq\Service\Tenancy\PortalAdminScope;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -27,7 +28,7 @@ class AdminMenuAccessTest extends TestCase {
 	public function testATeacherGetsNoAdministration(): void {
 		$flags = $this->access(uid: 'po-leerkracht-09', admin: false, editor: false, actions: [])->forCurrentUser();
 
-		$this->assertSame(['admin' => false, 'pages' => false, 'accounts' => false, 'accessRequests' => false], $flags);
+		$this->assertSame(['admin' => false, 'pages' => false, 'accounts' => false, 'accessRequests' => false, 'portals' => false, 'portalSlugs' => []], $flags);
 	}//end testATeacherGetsNoAdministration()
 
 	/**
@@ -38,7 +39,7 @@ class AdminMenuAccessTest extends TestCase {
 	public function testAnAdministratorGetsEverything(): void {
 		$flags = $this->access(uid: 'admin', admin: true, editor: true, actions: ['portal.provision', 'portal.answer-access-request'])->forCurrentUser();
 
-		$this->assertSame(['admin' => true, 'pages' => true, 'accounts' => true, 'accessRequests' => true], $flags);
+		$this->assertSame(['admin' => true, 'pages' => true, 'accounts' => true, 'accessRequests' => true, 'portals' => true, 'portalSlugs' => null], $flags);
 	}//end testAnAdministratorGetsEverything()
 
 	/**
@@ -49,11 +50,29 @@ class AdminMenuAccessTest extends TestCase {
 	 */
 	public function testEachFlagFollowsItsOwnRule(): void {
 		$editor = $this->access(uid: 'po-ib-01', admin: false, editor: true, actions: [])->forCurrentUser();
-		$this->assertSame(['admin' => false, 'pages' => true, 'accounts' => false, 'accessRequests' => false], $editor);
+		$this->assertSame(['admin' => false, 'pages' => true, 'accounts' => false, 'accessRequests' => false, 'portals' => true, 'portalSlugs' => null], $editor);
 
 		$office = $this->access(uid: 'po-directeur-01', admin: false, editor: false, actions: ['portal.provision'])->forCurrentUser();
-		$this->assertSame(['admin' => false, 'pages' => false, 'accounts' => true, 'accessRequests' => false], $office);
+		$this->assertSame(['admin' => false, 'pages' => false, 'accounts' => true, 'accessRequests' => false, 'portals' => false, 'portalSlugs' => []], $office);
 	}//end testEachFlagFollowsItsOwnRule()
+
+	/**
+	 * A member of a portal's admin group who is no editor opens the Portals
+	 * page for their own portal only, and counts as staff.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t12
+	 */
+	public function testAnAdminGroupMemberSeesOnlyTheirPortals(): void {
+		$access = $this->access(uid: 'zeist-01', admin: false, editor: false, actions: [], slugs: ['zeist']);
+
+		$flags = $access->forCurrentUser();
+
+		$this->assertTrue($flags['portals']);
+		$this->assertFalse($flags['pages']);
+		$this->assertSame(['zeist'], $flags['portalSlugs']);
+	}//end testAnAdminGroupMemberSeesOnlyTheirPortals()
 
 	/**
 	 * Without a signed-in user every flag is false.
@@ -70,7 +89,7 @@ class AdminMenuAccessTest extends TestCase {
 			$this->createMock(ActionAuthService::class)
 		);
 
-		$this->assertSame(['admin' => false, 'pages' => false, 'accounts' => false, 'accessRequests' => false], $access->forCurrentUser());
+		$this->assertSame(['admin' => false, 'pages' => false, 'accounts' => false, 'accessRequests' => false, 'portals' => false, 'portalSlugs' => []], $access->forCurrentUser());
 	}//end testWithoutAUserEverythingIsFalse()
 
 	/**
@@ -86,6 +105,7 @@ class AdminMenuAccessTest extends TestCase {
 		$this->assertTrue($this->staff(editor: true)->isStaff(), 'editor group');
 		$this->assertTrue($this->staff(actions: ['portal.author-news'])->isStaff(), 'action holder');
 		$this->assertFalse($this->staff()->isStaff(), 'an account in no group, or only in the resident group');
+		$this->assertTrue($this->access(uid: 'zeist-01', admin: false, editor: false, actions: [], slugs: ['zeist'])->isStaff(), 'admin group member');
 	}//end testStaffIsAdminStaffGroupEditorOrActionHolder()
 
 	/**
@@ -144,10 +164,11 @@ class AdminMenuAccessTest extends TestCase {
 	 * @param bool         $admin   Whether the user administers the instance.
 	 * @param bool         $editor  Whether the user may edit pages.
 	 * @param list<string> $actions The actions the matrix grants the user.
+	 * @param list<string>|null $slugs The portals the user administers through adminGroups.
 	 *
 	 * @return AdminMenuAccess
 	 */
-	private function access(string $uid, bool $admin, bool $editor, array $actions): AdminMenuAccess {
+	private function access(string $uid, bool $admin, bool $editor, array $actions, ?array $slugs=[]): AdminMenuAccess {
 		$user = $this->createMock(IUser::class);
 		$user->method('getUID')->willReturn($uid);
 		$session = $this->createMock(IUserSession::class);
@@ -158,7 +179,9 @@ class AdminMenuAccessTest extends TestCase {
 		$pages->method('mayEdit')->with($user)->willReturn($editor);
 		$matrix = $this->createMock(ActionAuthService::class);
 		$matrix->method('can')->willReturnCallback(fn (IUser $who, string $action): bool => in_array($action, $actions, true));
+		$scope = $this->getMockBuilder(PortalAdminScope::class)->disableOriginalConstructor()->onlyMethods(['administeredSlugs'])->getMock();
+		$scope->method('administeredSlugs')->willReturn($admin === true ? null : $slugs);
 
-		return new AdminMenuAccess($session, $groups, $pages, $matrix);
+		return new AdminMenuAccess($session, $groups, $pages, $matrix, $scope);
 	}//end access()
 }//end class

@@ -491,7 +491,13 @@
         "Your plan is nearly ending": "Your plan is nearly ending",
         "The plan %1$s ends on %2$s": "The plan %1$s ends on %2$s",
         "The plan \"%1$s\" ends on %2$s. %3$s actions are still open. Extend the plan with your caseworker, or complete the actions.": "The plan \"%1$s\" ends on %2$s. %3$s actions are still open. Extend the plan with your caseworker, or complete the actions.",
-        "Go to %1$s": "Go to %1$s"
+        "Go to %1$s": "Go to %1$s",
+        "Members of these groups administer {portal}: its settings, domains, house style, sign-in and case types. They see no other portal.": "Members of these groups administer {portal}: its settings, domains, house style, sign-in and case types. They see no other portal.",
+        "Administrator groups": "Administrator groups",
+        "Only an administrator of this installation can change this list.": "Only an administrator of this installation can change this list.",
+        "No group yet. Only administrators of this installation administer this portal.": "No group yet. Only administrators of this installation administer this portal.",
+        "The groups of this portal could not be loaded.": "The groups of this portal could not be loaded.",
+        "Only an administrator of this installation can change who administers a portal.": "Only an administrator of this installation can change who administers a portal."
     },
     "pluralForm": "nplurals=2; plural=(n != 1);"
 }

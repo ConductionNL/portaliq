@@ -20,8 +20,10 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\Signin\PortalSigninSettings;
+use OCA\Portaliq\Service\Tenancy\PortalAdminScope;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 
@@ -45,6 +47,7 @@ class PortalSigninController extends Controller {
 	public function __construct(
 		IRequest $request,
 		private readonly PortalSigninSettings $settings,
+		private readonly PortalAdminScope $scope,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -57,16 +60,18 @@ class PortalSigninController extends Controller {
 	 *
 	 * @return JSONResponse 200; 404 for an unknown portal or one without an organisation.
 	 *
-	 * @auth admin-only How residents sign in is an administrator's choice.
-	 *       Nextcloud expresses admin-only as the ABSENCE of an opt-out
-	 *       attribute, so this tag is the declaration.
+	 * @auth per-portal An instance administrator, or a member of one of the
+	 *       portal's adminGroups; any other user gets 404 (REQ-OPO-005).
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t11
 	 *
 	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 	 */
+	#[NoAdminRequired]
 	public function index(string $slug): JSONResponse {
 		$portal = $this->settings->portalBySlug(slug: $slug);
 		$view = null;
-		if ($portal !== null) {
+		if ($portal !== null && $this->scope->mayAdminister(portal: $portal) === true) {
 			$view = $this->settings->view(portal: $portal);
 		}
 
@@ -89,13 +94,17 @@ class PortalSigninController extends Controller {
 	 *
 	 * @return JSONResponse 200 with the settings; 404; 422 `broker_incomplete`; 502 `save_failed`.
 	 *
-	 * @auth admin-only How residents sign in is an administrator's choice.
+	 * @auth per-portal An instance administrator, or a member of one of the
+	 *       portal's adminGroups; any other user gets 404 (REQ-OPO-005).
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t11
 	 *
 	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 	 */
+	#[NoAdminRequired]
 	public function update(string $slug, array $routes = [], array $broker = [], string $secret = ''): JSONResponse {
 		$portal = $this->settings->portalBySlug(slug: $slug);
-		if ($portal === null) {
+		if ($portal === null || $this->scope->mayAdminister(portal: $portal) === false) {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}
 

@@ -27,8 +27,10 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Service\Cms\PortalDomainVerifier;
+use OCA\Portaliq\Service\Tenancy\PortalAdminScope;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
@@ -53,6 +55,7 @@ class CmsDomainController extends Controller {
 		IRequest $request,
 		private readonly PortalDomainVerifier $verifier,
 		private readonly IL10N $l10n,
+		private readonly PortalAdminScope $scope,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -64,10 +67,20 @@ class CmsDomainController extends Controller {
 	 *
 	 * @return JSONResponse `{domains: [{hostname, name, value, verified}]}`, or 404.
 	 *
+	 * @auth per-portal An instance administrator, or a member of one of the
+	 *       portal's adminGroups; any other user gets 404 (REQ-OPO-005).
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t11
+	 *
 	 * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-3
 	 */
 	#[NoCSRFRequired]
+	#[NoAdminRequired]
 	public function records(string $portal = ''): JSONResponse {
+		if ($this->scope->mayAdministerSlug(slug: $portal) === false) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
 		$records = $this->verifier->records(slug: $portal);
 		if ($records === null) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
@@ -86,11 +99,19 @@ class CmsDomainController extends Controller {
 	 * @return JSONResponse `{status: verified|pending, message}`, or 404 for an unknown portal or domain.
 	 *                      The message is the sentence the Domeinen list shows after "Check again".
 	 *
-	 * @auth admin-only because a domain decides which hostname serves whose content, so only an administrator may run the check
+	 * @auth per-portal An instance administrator, or a member of one of the
+	 *       portal's adminGroups; any other user gets 404 (REQ-OPO-005).
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t11
 	 *
 	 * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-3
 	 */
+	#[NoAdminRequired]
 	public function verify(string $portal = '', string $hostname = ''): JSONResponse {
+		if ($this->scope->mayAdministerSlug(slug: $portal) === false) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
 		$status = $this->verifier->verify(slug: $portal, hostname: $hostname);
 		if ($status === null || $status === PortalDomainVerifier::NOT_FOUND) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);

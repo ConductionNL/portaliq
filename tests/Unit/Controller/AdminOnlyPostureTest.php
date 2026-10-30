@@ -24,7 +24,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\ActionSettingsController;
 use OCA\Portaliq\Controller\MetricsController;
-use OCA\Portaliq\Controller\PortalHomePageController;
+use OCA\Portaliq\Controller\PortalAdminGroupsController;
 use OCA\Portaliq\Controller\SessionAdminController;
 use OCA\Portaliq\Controller\SettingsController;
 use PHPUnit\Framework\TestCase;
@@ -79,7 +79,7 @@ class AdminOnlyPostureTest extends TestCase {
 			'actionsettings#update' => [ActionSettingsController::class, 'update'],
 			'settings#update' => [SettingsController::class, 'update'],
 			'settings#create' => [SettingsController::class, 'create'],
-			'portalhomepage#index' => [PortalHomePageController::class, 'index'],
+			'portaladmingroups#update' => [PortalAdminGroupsController::class, 'update'],
 		];
 	}//end adminOnlyMethodProvider()
 
