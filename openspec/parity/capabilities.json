@@ -3573,7 +3573,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "Not a user-visible feature by itself, but a real, invoked guard rather than a declaration.",
 				"origin": "code",
-				"change": "2026-09-28-what-the-citizen-may-write-on-their-own-case"
+				"change": "2026-09-28-what-the-citizen-may-write-on-their-own-case",
+				"requirement": "openspec/changes/citizen-case-write-limit/specs/citizen-writes-on-their-own-case/spec.md REQ-CWL-001 A resident's writes on her own case are limited per case and per identity"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3885,7 +3886,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "Best-effort/thin trigger from the shell's side; the browser never talks to the target app directly. See cmp-cas-pay for a concrete example (shillinq payments).",
 				"origin": "code",
-				"change": "2026-09-07-contract-v2"
+				"change": "2026-09-07-contract-v2",
+				"requirement": "openspec/specs/portal-contribution-contract/spec.md Requirement: Endpoint bearer-forward actions"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
