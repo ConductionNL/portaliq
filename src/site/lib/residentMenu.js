@@ -24,7 +24,7 @@ import {
 const CASE_SECTIONS = ['cases', 'tasks', 'access']
 
 /** The own-area pages for working with others, when the portal switches them on. */
-const COLLABORATE_SECTIONS = ['samenwerken', 'contacts']
+const COLLABORATE_SECTIONS = ['samenwerken', 'acties', 'contacts']
 
 /** Shell sections about messages, in the group after the apps. */
 const MESSAGE_SECTIONS = ['inbox', 'messages', 'news']

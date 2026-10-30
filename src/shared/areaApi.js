@@ -252,6 +252,122 @@ export function plansApi(api) {
 }
 
 /**
+ * The calls of Mijn acties and the action dialog (personal-action-list). An
+ * action read through a plan names the plan in `plan`.
+ *
+ * @param {{request: Function}} api The portal api.
+ * @return {object} The calls.
+ *
+ * @spec openspec/changes/personal-action-list/tasks.md#t03
+ */
+export function actionsApi(api) {
+	const path = (id, rest = '', plan = '') => {
+		const query = plan ? `?plan=${encodeURIComponent(plan)}` : ''
+		return `/my-actions${id ? `/${encodeURIComponent(id)}` : ''}${rest}${query}`
+	}
+	const outcome = (answer) => ({
+		ok: answer.ok,
+		status: answer.status,
+		error: String(answer.json?.error || ''),
+		id: String(answer.json?.id || ''),
+	})
+	return {
+		/**
+		 * The resident's actions, or null when refused.
+		 *
+		 * @return {Promise<{actions: Array<object>, done: number, total: number, assignees: Array<object>}|null>} The list.
+		 */
+		async fetchActions() {
+			const answer = await api.request('GET', path())
+			return answer.ok ? answer.json : null
+		},
+
+		/**
+		 * Add an action to the resident's own list.
+		 *
+		 * @param {object} data The fields.
+		 * @return {Promise<{ok: boolean, status: number, error: string, id: string}>} The outcome.
+		 */
+		async createAction(data) {
+			return outcome(await api.request('POST', path(), data))
+		},
+
+		/**
+		 * Change an action.
+		 *
+		 * @param {string} id The action.
+		 * @param {object} data The fields to change.
+		 * @param {string} [plan] The plan it is in.
+		 * @return {Promise<{ok: boolean, status: number, error: string}>} The outcome.
+		 */
+		async updateAction(id, data, plan = '') {
+			return outcome(await api.request('PATCH', path(id, '', plan), data))
+		},
+
+		/**
+		 * Delete an action.
+		 *
+		 * @param {string} id The action.
+		 * @param {string} [plan] The plan it is in.
+		 * @return {Promise<{ok: boolean, status: number, error: string}>} The outcome.
+		 */
+		async deleteAction(id, plan = '') {
+			return outcome(await api.request('DELETE', path(id, '', plan), null))
+		},
+
+		/**
+		 * The history of an action, newest first, or null when refused.
+		 *
+		 * @param {string} id The action.
+		 * @param {string} [plan] The plan it is in.
+		 * @return {Promise<Array<object>|null>} The lines.
+		 */
+		async fetchHistory(id, plan = '') {
+			const answer = await api.request('GET', path(id, '/history', plan))
+			return answer.ok && Array.isArray(answer.json?.history)
+				? answer.json.history
+				: null
+		},
+
+		/**
+		 * Keep one file with an action, replacing the one it had.
+		 *
+		 * @param {string} id The action.
+		 * @param {File} file The file.
+		 * @param {string} [plan] The plan it is in.
+		 * @return {Promise<{ok: boolean, status: number, error: string}>} The outcome.
+		 */
+		async attachActionFile(id, file, plan = '') {
+			const form = new FormData()
+			form.append('file', file)
+			return outcome(await api.request('POST', path(id, '/file', plan), form))
+		},
+
+		/**
+		 * Save the action's file.
+		 *
+		 * @param {string} id The action.
+		 * @param {string} name The file's name.
+		 * @param {string} [plan] The plan it is in.
+		 * @return {Promise<{ok: boolean, status: number}>} The outcome.
+		 */
+		async downloadActionFile(id, name, plan = '') {
+			const answer = await api.request(
+				'GET',
+				path(id, '/file', plan),
+				null,
+				true,
+			)
+			if (!answer.ok) {
+				return { ok: false, status: answer.status }
+			}
+			await saveBlob(answer.res, name || 'bestand')
+			return { ok: true, status: answer.status }
+		},
+	}
+}
+
+/**
  * Hand a response's body to the browser as a download.
  *
  * @param {Response} res The response.

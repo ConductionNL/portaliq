@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.102.0"
+        "version": "0.103.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.102.0",
+                "version": "0.103.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -4543,6 +4543,12 @@
                         "title": "Shared plans enabled",
                         "type": "boolean",
                         "description": "Whether signed-in residents of this portal get the page where they work on plans with their contacts. Off by default. It needs contacts to be on.",
+                        "default": false
+                    },
+                    "actionsEnabled": {
+                        "title": "Personal actions enabled",
+                        "type": "boolean",
+                        "description": "Whether signed-in residents of this portal get Mijn acties, their own list of steps with a status, an end date and a file. Off by default.",
                         "default": false
                     },
                     "contactsEnabled": {
@@ -11719,7 +11725,7 @@
             "portalAction": {
                 "slug": "portalAction",
                 "icon": "Check",
-                "version": "0.2.0",
+                "version": "0.3.0",
                 "title": "Personal action",
                 "authorization": {
                     "read": [
@@ -11732,7 +11738,7 @@
                         "admin"
                     ]
                 },
-                "description": "One step a resident keeps on their own list, optionally given to an approved contact (personal-action-list). Read and written only through portaliq's own contribution, scoped on the owner and the assignee; the history is OpenRegister's audit trail of the object. An assignee who is not the owner may change status, file and description, never the assignee, and never delete.",
+                "description": "One step a resident keeps on their own list, optionally given to an approved contact (personal-action-list), or one action of a shared plan. Read and written through portaliq's action service, scoped on the owner and the assignee; an action in a plan also by the plan's participants. The history is OpenRegister's audit trail of the object, with editedBy naming who made each change. An assignee who is not the owner may change status, file and description, never the assignee, and never delete.",
                 "type": "object",
                 "required": [
                     "owner",
@@ -11825,6 +11831,26 @@
                         "format": "date",
                         "example": "2026-10-14",
                         "description": "The end date the reminder was sent for. A changed end date earns a new reminder."
+                    },
+                    "fileName": {
+                        "title": "File name",
+                        "type": "string",
+                        "maxLength": 255,
+                        "example": "bankafschrift-juli.pdf",
+                        "description": "The name of the file kept with the step, as the resident uploaded it."
+                    },
+                    "editedBy": {
+                        "title": "Last changed by",
+                        "type": "string",
+                        "example": "subject-1",
+                        "description": "The subject reference of whoever saved the last change. Stamped by portaliq on every write, so the audit trail names who changed what."
+                    },
+                    "editedAt": {
+                        "title": "Last changed at",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-10-06T14:02:00+02:00",
+                        "description": "When the last change was saved. Stamped by portaliq on every write."
                     }
                 }
             },

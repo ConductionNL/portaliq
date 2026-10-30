@@ -83,13 +83,24 @@ class PortalPlanServiceTest extends TestCase {
 	 */
 	private function service(): PortalPlanService {
 		$reader = $this->createMock(PortalObjectReader::class);
-		$reader->method('readCollection')->willReturnCallback(
-			fn (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation='', int $limit=200): array => array_values(
-				array_filter(
-					$this->rows[$schema],
-					static fn (array $row): bool => self::scoped($row[$scopeField] ?? null, $subjectRef) && (($row['organisation'] ?? '') === '' || $row['organisation'] === $organisation || $organisation === '')
-				)
+		$read   = fn (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation='', int $limit=200): array => array_values(
+			array_filter(
+				$this->rows[$schema],
+				static fn (array $row): bool => self::scoped($row[$scopeField] ?? null, $subjectRef) && (($row['organisation'] ?? '') === '' || $row['organisation'] === $organisation || $organisation === '')
 			)
+		);
+		$reader->method('readCollection')->willReturnCallback($read);
+		$reader->method('readCollectionByAnyScope')->willReturnCallback(
+			static function (string $register, string $schema, array $scopeFields, string $subjectRef, string $organisation='') use ($read): array {
+				$rows = [];
+				foreach ($scopeFields as $field) {
+					foreach ($read($register, $schema, $field, $subjectRef, $organisation) as $row) {
+						$rows[$row['id']] = $row;
+					}
+				}
+
+				return array_values($rows);
+			}
 		);
 		$writer = $this->createMock(PortalObjectWriter::class);
 		$writer->method('createObject')->willReturnCallback(
