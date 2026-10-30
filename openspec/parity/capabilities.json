@@ -6837,7 +6837,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "Each `portal` OpenRegister object is independent: its own domains, theme, locales and authentication modes.",
 				"origin": "competitor",
-				"spec": "openspec/specs/portaliq-cms"
+				"spec": "openspec/specs/portaliq-cms",
+				"requirement": "openspec/specs/portaliq-cms/spec.md Requirement: A request MUST resolve to exactly one portal, or to none"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7812,7 +7813,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "One of the fleet's four frontends here (the portal SPA) has real i18n; the CMS site renderer and its editor-authored content do not.",
 				"origin": "competitor",
-				"change": "portal-spa-i18n-locale-support"
+				"change": "portal-spa-i18n-locale-support",
+				"requirement": "openspec/specs/supplier-portal/spec.md Requirement: The public site MUST render its own words through a locale-aware translation layer; openspec/specs/portaliq-cms/spec.md Requirement: The language switch offers the portal's locales and the choice reaches the content (editor content translation is decided-no, thm-content-i18n)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7957,7 +7959,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "Automated axe + a keyboard test cover three page states and the phone breakpoint. The federated-search and publication-detail block templates are not named in the axe test list, so their own controls (facet checkboxes, sort select) are unverified by this suite. Matches source rating (opencatalogi matrix, id pub-wcag): evidence of AA work, not a conformance claim.",
 				"origin": "sibling",
-				"spec": "openspec/specs/portaliq-cms"
+				"spec": "openspec/specs/portaliq-cms",
+				"requirement": "openspec/changes/public-site-meets-wcag-aa/specs/portaliq-cms/spec.md REQ-PWA-001 The public site meets WCAG 2.1 AA on every page state it serves"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
