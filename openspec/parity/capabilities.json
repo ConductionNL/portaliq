@@ -5589,7 +5589,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "Duplicate of int-applicant-prefill-unreached, kept as its own row because it is a named competitor capability. Moved building to built on 2026-09-28: the public site now reaches the intake endpoints (portal-intake-form-as-an-object T09). T03, the admin view of which form a binding resolves to, landed on 2026-09-28 as the admin app's Request forms page and its Check form action.",
 				"origin": "competitor",
-				"change": "2026-09-28-portal-intake-form-as-an-object"
+				"change": "2026-09-28-portal-intake-form-as-an-object",
+				"requirement": "openspec/specs/portal-intake-form/spec.md REQ-PIFO-003 The applicant block is prefilled from the signed-in identity only"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5824,7 +5825,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "Kept as its own row because it is a named competitor capability distinct from starting one specific form. Moved building to built on 2026-09-28: the public site now reaches the intake endpoints (portal-intake-form-as-an-object T09). T03, the admin view of which form a binding resolves to, landed on 2026-09-28 as the admin app's Request forms page and its Check form action.",
 				"origin": "competitor",
-				"change": "2026-09-28-portal-intake-form-as-an-object"
+				"change": "2026-09-28-portal-intake-form-as-an-object",
+				"requirement": "openspec/changes/catalogue-entry-shows-costs-and-conditions/specs/portal-intake-form/spec.md REQ-CSC-001 A catalogue entry shows what it costs and what it asks of you; browsing itself: openspec/specs/portal-intake-form/spec.md REQ-PIFO-006"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
