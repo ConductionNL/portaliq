@@ -47,6 +47,8 @@ const WORDS = {
 		fileRule: 'Eén bestand per actie. PDF, JPG of PNG, maximaal 10 MB.',
 		fileAfterSave: 'Een bestand voegt u toe nadat de actie is opgeslagen.',
 		history: 'Historie',
+		when: 'Wanneer',
+		change: 'Wijziging',
 		noHistory: 'Nog geen wijzigingen.',
 		created: 'Actie gemaakt',
 		createdDue: 'Actie gemaakt, uiterlijk {date}',
@@ -109,6 +111,8 @@ const WORDS = {
 		fileRule: 'One file per action. PDF, JPG or PNG, at most 10 MB.',
 		fileAfterSave: 'You can add a file once the action is saved.',
 		history: 'History',
+		when: 'When',
+		change: 'Change',
 		noHistory: 'No changes yet.',
 		created: 'Action created',
 		createdDue: 'Action created, due {date}',
@@ -192,11 +196,12 @@ export function fileAllowed(file) {
  *
  * @param {string} day `YYYY-MM-DD`, or ''.
  * @param {string} locale The locale.
+ * @param {boolean} [withYear] Whether to name the year: a table row leaves it out, as the board does.
  * @return {string} The day in words, or ''.
  *
  * @spec openspec/changes/personal-action-list/tasks.md#t03
  */
-export function dayText(day, locale) {
+export function dayText(day, locale, withYear = true) {
 	if (!/^\d{4}-\d{2}-\d{2}/.test(String(day || ''))) {
 		return ''
 	}
@@ -207,7 +212,12 @@ export function dayText(day, locale) {
 			.startsWith('en')
 			? 'en-GB'
 			: 'nl-NL',
-		{ day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' },
+		{
+			day: 'numeric',
+			month: 'long',
+			...(withYear ? { year: 'numeric' } : {}),
+			timeZone: 'UTC',
+		},
 	)
 }
 

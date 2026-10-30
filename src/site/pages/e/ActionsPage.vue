@@ -90,9 +90,21 @@
 						:key="action.id"
 						data-testid="actions-row">
 						<td>
-							<span class="pq-actions__title">{{ action.title }}</span>
+							<span
+								class="pq-actions__title"
+								:data-done="
+									action.status === 'done' ? 'true' : undefined
+								">
+								{{ action.title }}
+							</span>
 							<span class="pq-actions__sub">
-								{{ words[action.kind] || action.kind }}
+								{{ words[action.kind] || action.kind
+								}}<template v-if="daysLeft(action)"
+									>,
+									<strong class="pq-actions__left">{{
+										daysLeft(action)
+									}}</strong></template
+								>
 								<template v-if="action.planTitle">
 									·
 									{{
@@ -109,10 +121,9 @@
 							</span>
 						</td>
 						<td>
-							{{ dayText(action.endDate, locale || pageLocale) }}
-							<span v-if="daysLeft(action)" class="pq-actions__sub">
-								{{ daysLeft(action) }}
-							</span>
+							{{
+								dayText(action.endDate, locale || pageLocale, false)
+							}}
 						</td>
 						<td>
 							<span class="pq-actions__who">
@@ -304,6 +315,14 @@ export default {
 .pq-actions__title {
 	display: block;
 	font-weight: var(--utrecht-typography-weight-scale-bold-font-weight, bold);
+}
+
+.pq-actions__title[data-done] {
+	text-decoration: line-through;
+}
+
+.pq-actions__left {
+	color: var(--utrecht-feedback-warning-color, currentcolor);
 }
 
 .pq-actions__sub {

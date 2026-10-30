@@ -216,6 +216,16 @@
 							words.history
 						}}
 					</caption>
+					<thead class="pq-action-edit__sr">
+						<tr>
+							<th scope="col">
+								{{ words.when }}
+							</th>
+							<th scope="col">
+								{{ words.change }}
+							</th>
+						</tr>
+					</thead>
 					<tbody>
 						<tr v-for="(line, index) in history" :key="index">
 							<td class="pq-action-edit__when">
