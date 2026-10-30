@@ -1,6 +1,6 @@
 # Screens
 
-- Kop https://identity.conduction.nl/screens/board?id=portaliq/Kop
+- PtOpdrachtnemerProjecten https://identity.conduction.nl/screens/board?id=portaliq/PtOpdrachtnemerProjecten
 - MijnTaken https://identity.conduction.nl/screens/board?id=portaliq/MijnTaken
 - MeldingIndienen https://identity.conduction.nl/screens/board?id=portaliq/MeldingIndienen
 - FormulierStart https://identity.conduction.nl/screens/board?id=portaliq/FormulierStart
