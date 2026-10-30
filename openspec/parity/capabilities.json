@@ -1138,7 +1138,8 @@
 				"note": "Re-read 2026-10-07. Portaliq's half is built (archived signin-integriq-broker-login, 13 of 13 tasks): lib/Controller/BrokerSessionController.php start and callback, lib/Service/Signin/*, the sign-in widget's route per provider. Integriq's browser half has since landed too: appinfo/routes.php:397-404 idpBroker#start, #callback, #exchange (lib/Controller/IdpBrokerController.php, lib/Auth/Idp/IdpLoginService.php). Still missing: the vendor SAML Service Provider or OIDC Relying Party behind integriq's GovernmentIdpAdapterInterface; a start on a live instance ends on integriq's error page. That waits on Open Decision D1 (broker vendor and contract), ConductionNL/integriq#1495. Stays building. Missing half specified in integriq/portal-idp-broker-config (spec round part 3, 2026-10-07); delivered half: 2026-09-29-signin-integriq-broker-login.",
 				"origin": "code",
 				"change": "integriq/portal-idp-broker-config",
-				"readOn": "2026-10-07"
+				"readOn": "2026-10-07",
+				"requirement": "openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md REQ-SEE-001 An eHerkenning sign-in is a business sign-in"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1444,7 +1445,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "A code comment in authApi.js records that this WAS broken once (fragment redirected but nothing read it), now fixed and covered on both frontends.",
 				"origin": "code",
-				"change": "2026-07-24-portal-oidc-broker-login"
+				"change": "2026-07-24-portal-oidc-broker-login",
+				"requirement": "openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md REQ-SEE-003 The bearer reaches the browser in the fragment and leaves the address"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1708,7 +1710,8 @@
 				"note": "Re-read 2026-10-07. Portaliq's half is built (archived signin-integriq-broker-login, 13 of 13 tasks): lib/Controller/BrokerSessionController.php start and callback, lib/Service/Signin/*, the sign-in widget's route per provider. Integriq's browser half has since landed too: appinfo/routes.php:397-404 idpBroker#start, #callback, #exchange (lib/Controller/IdpBrokerController.php, lib/Auth/Idp/IdpLoginService.php). Still missing: the vendor SAML Service Provider or OIDC Relying Party behind integriq's GovernmentIdpAdapterInterface; a start on a live instance ends on integriq's error page. That waits on Open Decision D1 (broker vendor and contract), ConductionNL/integriq#1495. Stays building. Missing half specified in integriq/portal-idp-broker-config (spec round part 3, 2026-10-07); delivered half: 2026-09-29-signin-integriq-broker-login.",
 				"origin": "competitor",
 				"change": "integriq/portal-idp-broker-config",
-				"readOn": "2026-10-07"
+				"readOn": "2026-10-07",
+				"requirement": "openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md REQ-SEE-002 An eIDAS sign-in is a visitor from another EU country"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
