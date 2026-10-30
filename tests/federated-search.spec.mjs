@@ -36,11 +36,17 @@ import {
 	formatDutchDate,
 	KIND_FIELD,
 	lockedFiltersOf,
+	matchDescription,
 	pageWindow,
 	paginationItems,
 	readSearchState,
+	RELEVANCE_SORT,
+	relevanceApplied,
+	relevanceOf,
 	resultKind,
 	searchQuery,
+	sortForNewSearch,
+	sortOptionsFor,
 	subjectSlug,
 	toBuckets,
 	toResult,
@@ -791,6 +797,71 @@ console.log('a link with q (search-reads-q-from-the-address, REQ-SRQ-001)')
 
 	const cleared = writeSearchState(new URL('https://portal.example/site?route=/zoeken&q=Lindelaan'), { ...state, query: '' }, fields)
 	assertEqual('clearing the term removes q', cleared.searchParams.has('q'), false)
+}
+
+console.log('relevance (search-sort-by-relevance REQ-SSR-001 to REQ-SSR-004)')
+
+{
+	const fuzzy = new URL(buildRequestUrl({ ...BASE, query: 'parkeervergunnig' })).searchParams
+	assertEqual('a term always asks for fuzzy matching', fuzzy.get('_fuzzy'), 'true')
+	assertEqual('no term sends no fuzzy flag', new URL(buildRequestUrl(BASE)).searchParams.has('_fuzzy'), false)
+	const ranked = new URL(buildRequestUrl({ ...BASE, query: 'parkeren', sort: RELEVANCE_SORT })).searchParams
+	assertEqual('the relevance order asks for _order[_relevance]=DESC with _fuzzy', [ranked.get('_order[_relevance]'), ranked.get('_fuzzy')], ['DESC', 'true'])
+
+	assertEqual('"Meest relevant" comes first with a term', sortOptionsFor('parkeren', false)[0], { value: RELEVANCE_SORT, label: 'Meest relevant' })
+	assertTrue('no relevance without a term', !sortOptionsFor('  ', false).some((o) => o.value === RELEVANCE_SORT))
+	assertTrue('no relevance once the backend showed it does not rank', !sortOptionsFor('parkeren', true).some((o) => o.value === RELEVANCE_SORT))
+
+	assertEqual('a new search with a term starts on relevance', sortForNewSearch('parkeren', '', false), RELEVANCE_SORT)
+	assertEqual('a chosen date order is kept', sortForNewSearch('parkeren', 'publicationDate:DESC', false), 'publicationDate:DESC')
+	assertEqual('clearing the term leaves relevance', sortForNewSearch('', RELEVANCE_SORT, false), '')
+	assertEqual('an unranking backend gets the default order', sortForNewSearch('parkeren', '', true), '')
+
+	assertEqual('a score is read from @self.relevance', relevanceOf({ '@self': { relevance: 87.5 } }), 87.5)
+	assertEqual('no score is null', relevanceOf({ '@self': {} }), null)
+	assertEqual('a ranked first row proves the order was applied', relevanceApplied([{ '@self': { relevance: 40 } }, {}]), true)
+	assertEqual('a response lacking @self.relevance did not rank', relevanceApplied([{ '@self': { id: 'a' } }]), false)
+	assertEqual('an empty answer proves nothing', relevanceApplied([]), true)
+	assertEqual('the match reads in whole percent', matchDescription(87.5), 'Overeenkomst: 88 procent')
+	assertEqual('no score, no words', matchDescription(null), '')
+	assertEqual('the result carries its score', toResult({ name: 'A', '@self': { relevance: 12 } }).relevance, 12)
+	assertEqual('a result without one has no key for it', 'relevance' in toResult({ name: 'A' }), false)
+
+	const { loadSfc } = await import('./support/render-sfc.mjs')
+	const block = await loadSfc('src/site/components/FederatedSearchBlock.vue', {
+		'@conduction/nextcloud-vue/public': 'export const CnSiteSearch = {}',
+	})
+	const requested = []
+	globalThis.window = { location: { origin: 'https://portal.example.org', search: '' } }
+	globalThis.fetch = async (url) => {
+		requested.push(url)
+		return { ok: true, json: async () => ({ results: [{ name: 'Oud', '@self': { id: 'a' } }], total: 1, pages: 1 }) }
+	}
+	const vm = {
+		...BASE,
+		fields: [],
+		facets: {},
+		locked: {},
+		facetLabels: {},
+		facetNames: {},
+		sort: RELEVANCE_SORT,
+		query: 'parkeren',
+		sequence: 0,
+		relevanceUnavailable: false,
+		relevanceNotice: '',
+		written: 0,
+		writeLocation() {
+			this.written++
+		},
+		reportSearch() {},
+		requestUrl: block.methods.requestUrl,
+	}
+	vm.search = block.methods.search
+	await vm.search()
+	await new Promise((resolve) => setTimeout(resolve, 0))
+	assertEqual('an unranked answer drops relevance and searches again in the default order', [vm.relevanceUnavailable, vm.sort, requested.length, vm.written], [true, '', 2, 1])
+	assertTrue('the second request asks no relevance order', !requested[1].includes('_relevance'))
+	assertEqual('and says so once in the live region', block.computed.status.call({ ...vm, loading: false, error: false, total: 1, countSentence: 'Zoekresultaten geladen. 1 resultaat gevonden.' }), 'Sorteren op relevantie kan hier niet. Zoekresultaten geladen. 1 resultaat gevonden.')
 }
 
 if (failures > 0) {
