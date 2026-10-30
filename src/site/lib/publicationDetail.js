@@ -110,16 +110,17 @@ function isWooPublication(publication) {
 
 /**
  * A markdown text's inline syntax as plain text: a link or image reads as
- * its text, emphasis and code as the words inside.
+ * its text (a URL may hold one pair of parentheses), emphasis and code as
+ * the words inside. A `*` or `_` inside a word is not emphasis.
  *
  * @param {string} text One line of markdown.
  * @return {string} The line without its inline syntax.
  */
 function plainInline(text) {
 	return text
-		.replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
+		.replace(/!?\[([^\]]*)\]\((?:[^()\s]|\([^()\s]*\))*\)/g, '$1')
 		.replace(/(\*\*|__)(\S(?:.*?\S)?)\1/g, '$2')
-		.replace(/\*(\S(?:.*?\S)?)\*/g, '$1')
+		.replace(/(^|[^\w*])\*(\S(?:.*?\S)?)\*(?=[^\w*]|$)/g, '$1$2')
 		.replace(/(^|\W)_(\S(?:.*?\S)?)_(?=\W|$)/g, '$1$2')
 		.replace(/`([^`]+)`/g, '$1')
 }

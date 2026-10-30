@@ -633,6 +633,16 @@ test('markdown reads as text: a bullet as a bullet, links, emphasis and code as 
 	)
 })
 
+test('a link whose URL holds parentheses and a star inside a word read as written (#1772 review r2)', () => {
+	assert.deepEqual(
+		longDescriptionLines({
+			longDescription:
+				'Zie [de pagina](https://example.org/a_(b)) en a*b*c, maar *dit* wel.',
+		}).map((line) => line.text),
+		['Zie de pagina en a*b*c, maar dit wel.'],
+	)
+})
+
 test('with a schema only a date format reads as a date (#1772 f5)', () => {
 	const rows = schemaRows(
 		{
