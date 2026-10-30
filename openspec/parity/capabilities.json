@@ -2393,7 +2393,8 @@
 				"note": "Kept learniq's selfRating (partial): portaliq supplies the generic list-scope and mandate seam, not a guardian-specific concept. Moved building to built on 2026-09-28: the portaliq half shipped in portal-scope-list-membership.",
 				"sourceId": "gua-guardian-sees-the-child",
 				"origin": "sibling",
-				"change": "portal-scope-list-membership"
+				"change": "portal-scope-list-membership",
+				"requirement": "openspec/specs/portal-contribution-contract/spec.md Requirement: A direct scope field MUST match a single value or strict list membership"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -10017,7 +10018,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "The mechanism for a co-applicant signing in with their own DigiD and seeing a shared case is in portaliq (role-join scoping), but dossiq, the case app, scopes cases on one portalSubject value, so in the fleet as shipped the partner sees nothing. Portaliq's half is built (openspec/changes/archive/2026-09-07-contract-v2, the via join, and 2026-09-07-reverse-scope-join). The missing half is dossiq's: declare a via over the case roles on mijnZaken so a co-applicant's own subjectRef reaches the shared case (OpenSpec pass 2026-09-27).",
 				"origin": "code",
-				"change": "via-read-scoped-query"
+				"change": "via-read-scoped-query",
+				"requirement": "openspec/specs/portal-contribution-contract/spec.md Requirement: One-hop via join scoping"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -11923,7 +11925,8 @@
 				"evidence": "an NL DS Accordion widget an editor can fill by hand (src/site/widgets/nlAccordion/meta.js:14); no FAQ content type, no FAQ list on a topic page and no FAQ page",
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/portaliq",
-				"change": "public-faq-and-product-finder"
+				"change": "public-faq-and-product-finder",
+				"requirement": "openspec/changes/public-faq-and-product-finder/specs/site-faq-and-product-finder/spec.md REQ-FPF-001 A FAQ entry is written once and shown on every page it belongs to"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -11961,7 +11964,8 @@
 				"evidence": "no finder widget or question model in src/site/widgets or lib/Settings/portaliq_register.json",
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/portaliq",
-				"change": "public-faq-and-product-finder"
+				"change": "public-faq-and-product-finder",
+				"requirement": "openspec/changes/public-faq-and-product-finder/specs/site-faq-and-product-finder/spec.md REQ-FPF-002 A product finder narrows the products with yes or no questions; REQ-FPF-003 The finder keeps no answers"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
