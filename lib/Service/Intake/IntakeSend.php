@@ -32,6 +32,9 @@ use OCP\AppFramework\Http\JSONResponse;
  * Delivers a prepared submission and shapes the answer the page reads.
  *
  * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-the-case-is-created-in-the-request-and-the-citizen-gets-its-reference-at-once-req-pifo-005
+ *
+ * @SuppressWarnings(PHPMD.StaticAccess) -- DestinationIntake::refusal, the one
+ * mapping from a refused submit to its answer that both submits share.
  */
 class IntakeSend {
 	/**

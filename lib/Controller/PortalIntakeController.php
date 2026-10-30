@@ -538,7 +538,15 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		}
 
 		if ($subject === null) {
-			return new JSONResponse(['error' => 'sign_in_required', 'minTrust' => $required, 'fee' => ($render['fee'] ?? null), 'staffMayFill' => (($render['settings']['staffMayFill'] ?? false) === true)], Http::STATUS_UNAUTHORIZED);
+			return new JSONResponse(
+				[
+					'error' => 'sign_in_required',
+					'minTrust' => $required,
+					'fee' => ($render['fee'] ?? null),
+					'staffMayFill' => (($render['settings']['staffMayFill'] ?? false) === true),
+				],
+				Http::STATUS_UNAUTHORIZED
+			);
 		}
 
 		if (PortalSessionService::trustSatisfies(subjectTrust: ($subject['trust'] ?? ''), minTrust: $required) === false) {

@@ -51,6 +51,14 @@ class StaffFill {
 	public const AUDIT_VERB = 'staff-lookup';
 
 	/**
+	 * The register and schema an audit line names, per applicant kind.
+	 */
+	private const LOOKUP_TARGETS = [
+		'bsn' => ['register' => 'brp', 'schema' => 'person'],
+		'kvk' => ['register' => 'kvk', 'schema' => 'company'],
+	];
+
+	/**
 	 * The longest applicant name an employee may note.
 	 */
 	private const NAME_MAX = 200;
@@ -168,26 +176,36 @@ class StaffFill {
 			verb: self::AUDIT_VERB,
 			subjectRef: $employee['uid'],
 			organisation: (string)($site['organisation'] ?? ''),
-			register: $applicant['kind'] === 'bsn' ? 'brp' : 'kvk',
-			schema: $applicant['kind'] === 'bsn' ? 'person' : 'company',
+			register: self::LOOKUP_TARGETS[$applicant['kind']]['register'],
+			schema: self::LOOKUP_TARGETS[$applicant['kind']]['schema'],
 			id: '',
 			detail: ['employee' => $employee['uid'], 'kind' => $applicant['kind'], 'value' => $applicant['value']]
 		);
 
-		if ($applicant['kind'] === 'bsn') {
-			$found = $this->registers->forPerson(bsn: $applicant['value']);
-			$name  = (string)(($found['person'] ?? [])['name'] ?? '');
-		} else {
-			$found = $this->registers->forCompany(kvkNumber: $applicant['value']);
-			$name  = (string)(($found['company'] ?? [])['tradeName'] ?? '');
-		}
-
+		$name = $this->registeredName(applicant: $applicant);
 		if ($name === '') {
 			return [];
 		}
 
 		return ['applicantName' => $name];
 	}//end prefill()
+
+	/**
+	 * The applicant's name as the BRP or the KvK holds it, or ''.
+	 *
+	 * @param array{kind: string, value: string} $applicant A BSN or KvK applicant.
+	 *
+	 * @return string
+	 */
+	private function registeredName(array $applicant): string {
+		if ($applicant['kind'] === 'bsn') {
+			$found = $this->registers->forPerson(bsn: $applicant['value']);
+			return (string)(($found['person'] ?? [])['name'] ?? '');
+		}
+
+		$found = $this->registers->forCompany(kvkNumber: $applicant['value']);
+		return (string)(($found['company'] ?? [])['tradeName'] ?? '');
+	}//end registeredName()
 
 	/**
 	 * The subject reference the request is filed under: the resident's own

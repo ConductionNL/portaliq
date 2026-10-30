@@ -1577,7 +1577,6 @@ OC.L10N.register(
         "Address of the external form": "Address of the external form",
         "Algemeen": "Algemeen",
         "An address starts with https://.": "An address starts with https://.",
-        "An employee may fill it in for a resident": "An employee may fill it in for a resident",
         "Anyone may fill it in": "Anyone may fill it in",
         "Bevestiging": "Bevestiging",
         "Confirmation": "Confirmation",
@@ -3137,7 +3136,9 @@ OC.L10N.register(
         "Details": "Details",
         "Evidence log": "Evidence log",
         "Desk group": "Desk group",
-        "The Nextcloud group whose members may fill a form in for a resident or a company, at the desk or on the phone. Only forms that allow employees offer it. Empty means nobody may.": "The Nextcloud group whose members may fill a form in for a resident or a company, at the desk or on the phone. Only forms that allow employees offer it. Empty means nobody may."
+        "The Nextcloud group whose members may fill a form in for a resident or a company, at the desk or on the phone. Only forms that allow employees offer it. Empty means nobody may.": "The Nextcloud group whose members may fill a form in for a resident or a company, at the desk or on the phone. Only forms that allow employees offer it. Empty means nobody may.",
+        "An employee fills it in for a resident": "An employee fills it in for a resident",
+        "The resident is the applicant on the case.": "The resident is the applicant on the case."
     },
     "nplurals=2; plural=(n != 1);"
 )

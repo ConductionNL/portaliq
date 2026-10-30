@@ -242,10 +242,15 @@ class PortalStaffFillController extends Controller {
 	 * @param string $route  The form's binding route.
 	 * @param string $portal The portal's slug, or '' for the host.
 	 *
-	 * @return array{site: array<string, mixed>, binding: array<string, mixed>, render: array<string, mixed>, employee: array{uid: string, displayName: string}}|JSONResponse
+	 * @return array<string, array<string, mixed>>|JSONResponse `site`, `binding`, `render` and `employee`, or the refusal.
 	 */
 	private function allowed(string $route, string $portal): array|JSONResponse {
-		$site = $this->portals->resolve(request: $this->request, portalSlug: $portal === '' ? null : $portal);
+		$slug = null;
+		if ($portal !== '') {
+			$slug = $portal;
+		}
+
+		$site = $this->portals->resolve(request: $this->request, portalSlug: $slug);
 		if ($site === null) {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}

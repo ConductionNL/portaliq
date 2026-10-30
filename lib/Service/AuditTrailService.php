@@ -70,7 +70,20 @@ class AuditTrailService {
 	 * looking a resident up in the BRP or a company in the KvK to fill a form
 	 * in for them (resident-identity-in-forms).
 	 */
-	public const VERBS = ['create', 'update', 'forward', 'download', 'login', 'logout', 'refresh', 'complete', 'claim', 'audience', 'admin-revoke', 'staff-lookup'];
+	public const VERBS = [
+		'create',
+		'update',
+		'forward',
+		'download',
+		'login',
+		'logout',
+		'refresh',
+		'complete',
+		'claim',
+		'audience',
+		'admin-revoke',
+		'staff-lookup',
+	];
 
 	/**
 	 * A uuid, so a target that is an object is linked to that object's history.
