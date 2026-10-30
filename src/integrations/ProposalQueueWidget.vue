@@ -222,6 +222,7 @@ export default {
 					'portaliq',
 					'No proposals are waiting on this record.',
 				),
+
 				noun: t('portaliq', 'change proposals'),
 				rows: this.proposals.map((proposal) => ({
 					label:
