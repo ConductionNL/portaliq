@@ -9637,7 +9637,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "Content editing genuinely separates 'editor group' from 'admin'. Settings/action rights are mechanically group-based but every shipped action is admin-only, so out of the box there is no non-admin role over settings. Specified in openspec/changes/operate-roles-for-content-and-actions (OpenSpec pass 2026-09-27).",
 				"origin": "competitor",
-				"change": "operate-roles-for-content-and-actions"
+				"change": "operate-roles-for-content-and-actions",
+				"requirement": "openspec/changes/operate-roles-for-content-and-actions/specs/portal-admin-roles/spec.md REQ-ORA-007 Content rights and settings rights stay apart (with REQ-ORA-001, REQ-ORA-005)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -9715,7 +9716,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "A hosting company could offer managed Nextcloud+portaliq as a service, but that would be an external arrangement, not a capability this codebase provides. Specified in openspec/changes/operate-portals-per-organisation (OpenSpec pass 2026-09-27).",
 				"origin": "competitor",
-				"change": "operate-portals-per-organisation"
+				"change": "operate-portals-per-organisation",
+				"requirement": "openspec/changes/operate-portals-per-organisation/specs/portal-tenancy/spec.md REQ-OPO-005 Each organisation looks after its own portal on a shared installation (with REQ-OPO-004)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
