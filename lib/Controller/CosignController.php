@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/resident-identity-in-forms/specs/resident-identity-in-forms/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+ * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
  */
 
 declare(strict_types=1);
@@ -51,7 +51,7 @@ use OCP\IRequest;
  * 401 without a session, 403 below the form's level or for the applicant
  * themselves, 410 after the last day.
  *
- * @spec openspec/changes/resident-identity-in-forms/specs/resident-identity-in-forms/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+ * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
  *
  * @SuppressWarnings(PHPMD.StaticAccess) -- PortalSessionService::trustSatisfies, the one trust ordering every portal gate shares.
  */
@@ -86,7 +86,7 @@ class CosignController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{reference, formName, title, holderName, dueAt}` or a refusal.
 	 *
-	 * @spec openspec/changes/resident-identity-in-forms/specs/resident-identity-in-forms/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -119,7 +119,7 @@ class CosignController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The case app's answer, or a refusal.
 	 *
-	 * @spec openspec/changes/resident-identity-in-forms/specs/resident-identity-in-forms/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

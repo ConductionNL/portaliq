@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/resident-identity-in-forms/specs/resident-identity-in-forms/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+ * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ use OCP\Security\ICrypto;
 /**
  * The co-sign entry on the case, and the signed link to it.
  *
- * @spec openspec/changes/resident-identity-in-forms/specs/resident-identity-in-forms/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+ * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
  */
 class CosignInvitation {
 	/**
@@ -76,7 +76,7 @@ class CosignInvitation {
 	 *
 	 * @return array{kind: string, title: string, days: int, nameField: string, emailField: string, endpoint: string}|null
 	 *
-	 * @spec openspec/changes/resident-identity-in-forms/specs/resident-identity-in-forms/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
 	 */
 	public function settings(array $binding): ?array {
 		$cosign = $binding['cosign'] ?? null;
@@ -109,7 +109,7 @@ class CosignInvitation {
 	 *
 	 * @return array<string, string>|string The entry, or the field name to refuse.
 	 *
-	 * @spec openspec/changes/resident-identity-in-forms/specs/resident-identity-in-forms/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
 	 */
 	public function entry(array $settings, array $answers, ?int $now = null): array|string {
 		$name  = trim((string)($answers[$settings['nameField']] ?? ''));
@@ -141,7 +141,7 @@ class CosignInvitation {
 	 *
 	 * @return string `<payload>.<signature>`, URL safe.
 	 *
-	 * @spec openspec/changes/resident-identity-in-forms/specs/resident-identity-in-forms/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
 	 */
 	public function token(array $claims): string {
 		$claims['applicant'] = $this->subjectHash(subjectRef: (string)($claims['applicant'] ?? ''));
@@ -157,7 +157,7 @@ class CosignInvitation {
 	 *
 	 * @return array<string, string>|null
 	 *
-	 * @spec openspec/changes/resident-identity-in-forms/specs/resident-identity-in-forms/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
 	 */
 	public function read(string $token): ?array {
 		$parts = explode('.', $token);
@@ -185,7 +185,7 @@ class CosignInvitation {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/resident-identity-in-forms/specs/resident-identity-in-forms/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
 	 */
 	public function isPast(array $claims, ?int $now = null): bool {
 		$today = (new DateTimeImmutable('@'.($now ?? time())))->setTimezone(new DateTimeZone(self::ZONE))->format('Y-m-d');
@@ -201,7 +201,7 @@ class CosignInvitation {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/resident-identity-in-forms/specs/resident-identity-in-forms/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
 	 */
 	public function isApplicant(array $claims, string $subjectRef): bool {
 		return hash_equals((string)($claims['applicant'] ?? ''), $this->subjectHash(subjectRef: $subjectRef));

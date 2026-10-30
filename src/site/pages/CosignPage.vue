@@ -88,7 +88,7 @@ import { cosignRefusal } from '../../shared/cosignLink.js'
  * tick, "Co-sign" and "Decline". The case already exists and waits; the
  * answer goes to the case app through the portal.
  *
- * @spec openspec/changes/resident-identity-in-forms/specs/resident-identity-in-forms/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+ * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
  */
 export default {
 	name: 'CosignPage',

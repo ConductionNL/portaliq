@@ -4,7 +4,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/resident-identity-in-forms/specs/resident-identity-in-forms/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+ * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
  */
 
 declare(strict_types=1);
@@ -23,7 +23,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Portaliq\Service\Intake\CosignInvitation
  * @covers \OCA\Portaliq\Service\Intake\CosignOnSubmit
  *
- * @spec openspec/changes/resident-identity-in-forms/specs/resident-identity-in-forms/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+ * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
  */
 class CosignInvitationTest extends TestCase {
 	/**

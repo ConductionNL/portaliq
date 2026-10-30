@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/resident-identity-in-forms/specs/resident-identity-in-forms/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+ * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use OCP\IL10N;
 /**
  * Builds the co-sign entry for a submit, and invites the co-signer after it.
  *
- * @spec openspec/changes/resident-identity-in-forms/specs/resident-identity-in-forms/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+ * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
  */
 class CosignOnSubmit {
 	/**
@@ -60,7 +60,7 @@ class CosignOnSubmit {
 	 * @return array{server: array<string, mixed>, errors: array<string, string>}
 	 *         `server` is empty for a form without a co-signer.
 	 *
-	 * @spec openspec/changes/resident-identity-in-forms/specs/resident-identity-in-forms/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
 	 */
 	public function prepare(array $binding, array $answers): array {
 		$settings = $this->invitation->settings(binding: $binding);
@@ -87,7 +87,7 @@ class CosignOnSubmit {
 	 *
 	 * @return array{holderName: string, dueAt: string, state: string, invited: bool}|null Null for a form without a co-signer.
 	 *
-	 * @spec openspec/changes/resident-identity-in-forms/specs/resident-identity-in-forms/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
+	 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-a-form-can-require-a-second-person-to-co-sign-req-rif-003
 	 */
 	public function invite(array $site, array $binding, array $server, array $answer, string $subjectRef): ?array {
 		$entry = ($server[CosignInvitation::SERVER_FIELD][0] ?? null);
