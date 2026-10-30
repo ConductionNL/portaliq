@@ -5068,11 +5068,15 @@
                                 "description": "For a grid body: a run with a main column at the left edge and a column ending at the right edge draws that right column at this fixed width in pixels (160 to 640), with this gap (0 to 160, default 48), the main column taking the rest. Unset, the run keeps the 12-column grid.",
                                 "properties": {
                                     "width": {
+                                        "title": "Aside width",
+                                        "description": "The width of the right column in pixels, 160 to 640.",
                                         "type": "integer",
                                         "minimum": 160,
                                         "maximum": 640
                                     },
                                     "gap": {
+                                        "title": "Aside gap",
+                                        "description": "The space between the main column and the right column in pixels, 0 to 160. The default is 48.",
                                         "type": "integer",
                                         "minimum": 0,
                                         "maximum": 160
@@ -5198,11 +5202,15 @@
                                 "description": "For a grid body: a run with a main column at the left edge and a column ending at the right edge draws that right column at this fixed width in pixels (160 to 640), with this gap (0 to 160, default 48), the main column taking the rest. Unset, the run keeps the 12-column grid.",
                                 "properties": {
                                     "width": {
+                                        "title": "Aside width",
+                                        "description": "The width of the right column in pixels, 160 to 640.",
                                         "type": "integer",
                                         "minimum": 160,
                                         "maximum": 640
                                     },
                                     "gap": {
+                                        "title": "Aside gap",
+                                        "description": "The space between the main column and the right column in pixels, 0 to 160. The default is 48.",
                                         "type": "integer",
                                         "minimum": 0,
                                         "maximum": 160

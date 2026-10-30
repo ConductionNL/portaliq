@@ -46,9 +46,7 @@
 				:class="`utrecht-alert--${statusKind}`"
 				aria-labelledby="pq-accessibility-status">
 				<div class="utrecht-alert__content">
-					<h2
-						id="pq-accessibility-status"
-						class="utrecht-heading-3">
+					<h2 id="pq-accessibility-status" class="utrecht-heading-3">
 						{{ t('Status') }}
 					</h2>
 					<p

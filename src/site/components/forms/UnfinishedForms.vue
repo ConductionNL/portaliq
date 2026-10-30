@@ -17,12 +17,21 @@
 			class="pq-unfinished__card"
 			data-testid="unfinished-form">
 			<span class="pq-unfinished__kind">
-				<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M8,12V14H16V12H8M8,16V18H13V16H8Z" /></svg>
+				<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+					<path
+						d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M8,12V14H16V12H8M8,16V18H13V16H8Z" />
+				</svg>
 				{{ t('Unfinished form') }}
 			</span>
-			<span class="pq-unfinished__name">{{ draft.label || draft.action }}</span>
+			<span class="pq-unfinished__name">{{
+				draft.label || draft.action
+			}}</span>
 			<span class="pq-unfinished__when">
-				{{ t('Saved on {date}. Not sent yet.', { date: day(draft.updatedAt) }) }}
+				{{
+					t('Saved on {date}. Not sent yet.', {
+						date: day(draft.updatedAt),
+					})
+				}}
 			</span>
 			<a
 				class="utrecht-link pq-unfinished__open"
@@ -59,7 +68,10 @@ export default {
 	},
 
 	async mounted() {
-		if (this.initialDrafts !== null || typeof this.api.listDrafts !== 'function') {
+		if (
+			this.initialDrafts !== null
+			|| typeof this.api.listDrafts !== 'function'
+		) {
 			return
 		}
 		this.drafts = await this.api.listDrafts()
@@ -83,7 +95,11 @@ export default {
 		hrefFor(draft) {
 			const route = formRoute(draft)
 			try {
-				return addressOfRoute(route, window.location.href, runtimeConfig()).toString()
+				return addressOfRoute(
+					route,
+					window.location.href,
+					runtimeConfig(),
+				).toString()
 			} catch {
 				return `?route=${encodeURIComponent(route)}`
 			}
@@ -106,7 +122,11 @@ export default {
 	flex-direction: column;
 	gap: 0.25rem;
 	padding: 1rem 1.25rem;
-	border: 1px solid var(--nldesign-website-attention-border-color, var(--nldesign-color-border, currentcolor));
+	border: 1px solid
+		var(
+			--nldesign-website-attention-border-color,
+			var(--nldesign-color-border, currentcolor)
+		);
 	border-radius: var(--nldesign-website-border-radius-large, 6px);
 	background: var(--nldesign-website-attention-background-color, transparent);
 }
@@ -131,7 +151,10 @@ export default {
 }
 
 .pq-unfinished__when {
-	color: var(--thematiq-website-text-muted, var(--nldesign-color-text-muted, inherit));
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, inherit)
+	);
 	font-size: 0.9375rem;
 }
 
