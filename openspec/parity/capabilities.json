@@ -5984,7 +5984,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "opencatalogi is a deliberate exception, not a gap: it integrates by exposing its own @PublicPage federation/search endpoints that portaliq's site renderer calls directly (FederatedSearchBlock.vue, PublicationDetailBlock.vue), bypassing the contribution registry entirely, a second, parallel integration pattern this area's brief does not mention. The other 8 missing apps (openregister, integriq, thematiq, launchpad, buildiq, keepiq, hermiq, versioniq) have no portal presence of any kind.",
 				"origin": "code",
-				"spec": "openspec/specs/portaliq-leaf-integrations"
+				"spec": "openspec/specs/portaliq-leaf-integrations",
+				"requirement": "openspec/changes/contributing-apps-census/specs/portal-contribution-contract/spec.md REQ-CAC-001 An administrator can see which apps contribute to the portal"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
