@@ -36,6 +36,7 @@ use DateTimeZone;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\Security\ISecureRandom;
+use Psr\Log\LoggerInterface;
 
 /**
  * Lists, gives, accepts, ends and stops mandates for one party.
@@ -54,6 +55,11 @@ class PortalMandateAdminService {
 	public const OWN_INVITATION = 'own_invitation';
 
 	public const GONE = 'gone';
+
+	/**
+	 * The accept could not finish now; the invitation is still good.
+	 */
+	public const TRY_LATER = 'try_later';
 
 	private const REGISTER = MandateStore::REGISTER;
 
@@ -98,12 +104,14 @@ class PortalMandateAdminService {
 	 * @param PortalObjectWriter $writer The scoped writer.
 	 * @param ISecureRandom      $random Mints the invitation secret.
 	 * @param ClaimLock          $lock   Serialises two accepts of one invitation.
+	 * @param LoggerInterface    $logger Records a mandate that could not be taken back.
 	 */
 	public function __construct(
 		PortalObjectReader $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly ISecureRandom $random,
 		private readonly ClaimLock $lock,
+		private readonly LoggerInterface $logger,
 	) {
 		$this->parties = new MandateParties();
 		$this->days    = new MandateDays();
@@ -196,7 +204,7 @@ class PortalMandateAdminService {
 	 * @param array<string, mixed>   $subject The accepting session.
 	 * @param DateTimeImmutable|null $now     The moment.
 	 *
-	 * @return array{id: string, holder: string}|string The mandate, or OWN_INVITATION, GONE, REFUSED.
+	 * @return array{id: string, holder: string}|string The mandate, or OWN_INVITATION, GONE, REFUSED, TRY_LATER.
 	 *
 	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md#requirement-a-party-must-invite-never-look-up-the-person-it-authorises-req-smr-003
 	 */
@@ -209,7 +217,7 @@ class PortalMandateAdminService {
 		// both read the invitation open and both create a mandate.
 		$key = 'mandate-invitation/' . hash('sha256', $token);
 		if ($this->lock->acquire(accountId: $key) === false) {
-			return self::REFUSED;
+			return self::TRY_LATER;
 		}
 
 		try {
@@ -228,7 +236,7 @@ class PortalMandateAdminService {
 	 * @param array<string, mixed> $subject The accepting session.
 	 * @param DateTimeImmutable    $moment  The moment.
 	 *
-	 * @return array{id: string, holder: string}|string The mandate, or GONE / OWN_INVITATION / REFUSED.
+	 * @return array{id: string, holder: string}|string The mandate, or GONE / OWN_INVITATION / REFUSED / TRY_LATER.
 	 *
 	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md
 	 */
@@ -251,6 +259,18 @@ class PortalMandateAdminService {
 		$holders = $this->parties->holdersOf(subject: $subject);
 		$holder  = (string)end($holders);
 		$terms   = (array)($row['mandate'] ?? []);
+
+		// An earlier accept made the mandate but could not spend the
+		// invitation nor take the mandate back: finish that one, never a second.
+		$left = $this->store->mandateForInvitation(invitationId: $this->store->idOf(row: $row), organisation: (string)($row['organisation'] ?? ''));
+		if ($left !== null) {
+			if ((string)($left['subjectRef'] ?? '') !== $ref) {
+				return self::GONE;
+			}
+
+			return $this->spend(row: $row, mandate: $left, ref: $ref, holder: (string)($left['holder'] ?? $holder));
+		}
+
 		$mandate = $this->writer->createObject(
 			register: self::REGISTER,
 			schema: self::MANDATES,
@@ -276,32 +296,57 @@ class PortalMandateAdminService {
 			return self::REFUSED;
 		}
 
-		// Spent only after the mandate exists, and spent once: an invitation
-		// that could not be marked accepted would stay open for another
-		// accept, so the mandate is taken back and the accept refused.
-		$spent = $this->writer->updateObject(
+		return $this->spend(row: $row, mandate: $mandate, ref: $ref, holder: $holder);
+	}//end acceptLocked()
+
+	/**
+	 * Spend the invitation once its mandate exists. An invitation that could
+	 * not be marked accepted would stay open for another accept, so the
+	 * mandate is taken back and the accept is to be tried later; a mandate
+	 * that cannot be taken back is logged, and the next accept finishes it.
+	 *
+	 * @param array<string, mixed> $row     The invitation.
+	 * @param array<string, mixed> $mandate The mandate it made.
+	 * @param string               $ref     The accepting subject.
+	 * @param string               $holder  The mandate's holder.
+	 *
+	 * @return array{id: string, holder: string}|string The mandate, or TRY_LATER.
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md
+	 */
+	private function spend(array $row, array $mandate, string $ref, string $holder): array|string {
+		$organisation = (string)($row['organisation'] ?? '');
+		$mandateId    = $this->store->idOf(row: $mandate);
+		$spent        = $this->writer->updateObject(
 			register: self::REGISTER,
 			schema: self::INVITATIONS,
 			scopeField: 'organisation',
-			subjectRef: (string)($row['organisation'] ?? ''),
-			organisation: (string)($row['organisation'] ?? ''),
+			subjectRef: $organisation,
+			organisation: $organisation,
 			id: $this->store->idOf(row: $row),
 			data: ['state' => 'accepted', 'subjectRef' => $ref]
 		);
-		if ($spent === null) {
-			$this->writer->deleteObject(
-				register: self::REGISTER,
-				schema: self::MANDATES,
-				scopeField: 'subjectRef',
-				subjectRef: $ref,
-				organisation: (string)($row['organisation'] ?? ''),
-				id: $this->store->idOf(row: $mandate)
-			);
-			return self::REFUSED;
+		if ($spent !== null) {
+			return ['id' => $mandateId, 'holder' => $holder];
 		}
 
-		return ['id' => $this->store->idOf(row: $mandate), 'holder' => $holder];
-	}//end acceptLocked()
+		$takenBack = $this->writer->deleteObject(
+			register: self::REGISTER,
+			schema: self::MANDATES,
+			scopeField: 'subjectRef',
+			subjectRef: $ref,
+			organisation: $organisation,
+			id: $mandateId
+		);
+		if ($takenBack === false) {
+			$this->logger->error(
+				'Portaliq: a mandate stays while its invitation is still open; the next accept finishes it',
+				['mandate' => $mandateId, 'invitation' => $this->store->idOf(row: $row)]
+			);
+		}
+
+		return self::TRY_LATER;
+	}//end spend()
 
 	/**
 	 * Revoke a mandate given on the party's behalf.

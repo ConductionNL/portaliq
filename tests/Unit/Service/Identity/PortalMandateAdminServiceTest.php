@@ -27,6 +27,7 @@ use OCP\Lock\ILockingProvider;
 use OCP\Lock\LockedException;
 use Opis\JsonSchema\Validator;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 
 class PortalMandateAdminServiceTest extends TestCase {
 	use PortalIdentityStoreTrait;
@@ -47,8 +48,8 @@ class PortalMandateAdminServiceTest extends TestCase {
 		$this->beforeLock = null;
 	}//end setUp()
 
-	private function service(?\OCA\Portaliq\Service\PortalObjectWriter $writer = null): PortalMandateAdminService {
-		return new PortalMandateAdminService($this->fakeReader(), ($writer ?? $this->fakeWriter()), $this->fakeRandom(), new ClaimLock($this->fakeLocks(), 0));
+	private function service(?\OCA\Portaliq\Service\PortalObjectWriter $writer = null, ?LoggerInterface $logger = null): PortalMandateAdminService {
+		return new PortalMandateAdminService($this->fakeReader(), ($writer ?? $this->fakeWriter()), $this->fakeRandom(), new ClaimLock($this->fakeLocks(), 0), ($logger ?? $this->createMock(LoggerInterface::class)));
 	}//end service()
 
 	/**
@@ -115,8 +116,48 @@ class PortalMandateAdminServiceTest extends TestCase {
 		$service = $this->service($writer);
 		$invited = $service->invite(self::COMPANY, 'gemeente-x', 'jan-willem', ['email' => 'tom@example.nl'], $this->now());
 
-		$this->assertSame('refused', $service->accept($invited['token'], ['subjectRef' => 'tom', 'provider' => 'digid', 'organisation' => 'gemeente-x'], $this->now()));
+		$this->assertSame('try_later', $service->accept($invited['token'], ['subjectRef' => 'tom', 'provider' => 'digid', 'organisation' => 'gemeente-x'], $this->now()));
 		$this->assertSame([], $this->storedRows('portalMandate'), 'the mandate is taken back');
+	}
+
+	public function testAMandateThatCannotBeTakenBackIsLoggedAndFinishedByTheRetry(): void {
+		$base     = $this->fakeWriter();
+		$failing  = true;
+		$writer   = $this->getMockBuilder(\OCA\Portaliq\Service\PortalObjectWriter::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['createObject', 'updateObject', 'deleteObject'])
+			->getMock();
+		$writer->method('createObject')->willReturnCallback(fn (...$args) => $base->createObject(...$args));
+		// By reference: the store recovers before the retry.
+		$writer->method('deleteObject')->willReturnCallback(
+			function (...$args) use ($base, &$failing): bool {
+				return ($failing === true ? false : $base->deleteObject(...$args));
+			}
+		);
+		$writer->method('updateObject')->willReturnCallback(
+			function (string $register, string $schema, ...$rest) use ($base, &$failing): ?array {
+				return (($failing === true && $schema === 'portalInvitation') ? null : $base->updateObject($register, $schema, ...$rest));
+			}
+		);
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('error')->with($this->anything(), $this->callback(fn (array $context): bool => ($context['mandate'] ?? '') !== ''));
+
+		$service = $this->service($writer, $logger);
+		$invited = $service->invite(self::COMPANY, 'gemeente-x', 'jan-willem', ['email' => 'tom@example.nl'], $this->now());
+		$tom     = ['subjectRef' => 'tom', 'provider' => 'digid', 'organisation' => 'gemeente-x'];
+
+		$this->assertSame('try_later', $service->accept($invited['token'], $tom, $this->now()));
+		$this->assertCount(1, $this->storedRows('portalMandate'), 'the mandate could not be taken back');
+		$left = $this->storedRows('portalMandate')[0];
+
+		$this->assertSame('gone', $service->accept($invited['token'], ['subjectRef' => 'anna', 'provider' => 'digid', 'organisation' => 'gemeente-x'], $this->now()), 'another account cannot take the half-made mandate');
+
+		$failing = false;
+		$retried = $service->accept($invited['token'], $tom, $this->now());
+		$this->assertIsArray($retried);
+		$this->assertSame($left['uuid'], $retried['id'], 'the retry finishes the mandate already made');
+		$this->assertCount(1, $this->storedRows('portalMandate'), 'one invitation, one mandate');
+		$this->assertSame('accepted', $this->storedRows('portalInvitation')[0]['state']);
 	}
 
 	private static function company(array $extra = []): array {
