@@ -117,7 +117,13 @@
 				class="utrecht-paragraph"
 				role="status"
 				data-testid="intake-form-cosign">
-				{{ text.cosignWaiting.split('{name}').join(cosign.holderName).split('{date}').join(cosign.dueAt) }}
+				{{
+					text.cosignWaiting
+						.split('{name}')
+						.join(cosign.holderName)
+						.split('{date}')
+						.join(cosign.dueAt)
+				}}
 			</p>
 			<p
 				v-if="mailedTo"

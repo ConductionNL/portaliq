@@ -34,7 +34,11 @@ export function keepCosignToken(location, history, storage) {
 		token = ''
 	}
 	try {
-		history?.replaceState(null, '', `${location.pathname || ''}${location.search || ''}`)
+		history?.replaceState(
+			null,
+			'',
+			`${location.pathname || ''}${location.search || ''}`,
+		)
 	} catch {
 		// An address bar that cannot be rewritten still keeps the token.
 	}

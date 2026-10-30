@@ -670,9 +670,7 @@ const SharedDossierPage = defineAsyncComponent(
 // loaded only when the address carries one.
 const PageHelp = defineAsyncComponent(() => import('./components/PageHelp.vue'))
 
-const CosignPage = defineAsyncComponent(
-	() => import('./pages/CosignPage.vue'),
-)
+const CosignPage = defineAsyncComponent(() => import('./pages/CosignPage.vue'))
 const GuestActionPage = defineAsyncComponent(
 	() => import('./pages/GuestActionPage.vue'),
 )
@@ -1576,7 +1574,11 @@ export default {
 		// An invitation's secret (`#claim=<secret>`) is kept the same way,
 		// and handed back once the visitor is signed in.
 		keepClaimSecret(window.location, window.history, this.claimStorage())
-		this.cosignToken = keepCosignToken(window.location, window.history, this.claimStorage())
+		this.cosignToken = keepCosignToken(
+			window.location,
+			window.history,
+			this.claimStorage(),
+		)
 		if (window.location.hash.includes('#mandate-invitation=')) {
 			const { keepMandateInvitation } =
 				await import('../shared/mandateInvitation.js')

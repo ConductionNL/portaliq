@@ -9,12 +9,18 @@
 		data-testid="cosign-page"
 		:aria-busy="phase === 'loading' ? 'true' : 'false'">
 		<h1 class="utrecht-heading-1">
-			{{ session && request ? t('Check and co-sign') : t('Co-sign a request') }}
+			{{
+				session && request ? t('Check and co-sign') : t('Co-sign a request')
+			}}
 		</h1>
 
 		<template v-if="!session">
 			<p class="utrecht-paragraph">
-				{{ t('You were asked to co-sign a request. Sign in with your own DigiD to see it.') }}
+				{{
+					t(
+						'You were asked to co-sign a request. Sign in with your own DigiD to see it.',
+					)
+				}}
 			</p>
 			<button
 				type="button"
@@ -25,7 +31,10 @@
 			</button>
 		</template>
 
-		<p v-else-if="phase === 'loading'" role="status" data-testid="cosign-loading">
+		<p
+			v-else-if="phase === 'loading'"
+			role="status"
+			data-testid="cosign-loading">
 			{{ t('Loading…') }}
 		</p>
 
@@ -35,7 +44,10 @@
 			</p>
 		</div>
 
-		<form v-else-if="request" data-testid="cosign-form" @submit.prevent="answer('sign')">
+		<form
+			v-else-if="request"
+			data-testid="cosign-form"
+			@submit.prevent="answer('sign')">
 			<dl class="pq-cosign__summary" data-testid="cosign-summary">
 				<dt>{{ t('Request') }}</dt>
 				<dd>{{ request.formName }}</dd>
@@ -53,7 +65,7 @@
 					v-model="confirmed"
 					type="checkbox"
 					class="utrecht-checkbox"
-					data-testid="cosign-confirm">
+					data-testid="cosign-confirm" />
 				<label class="utrecht-form-label" for="pq-cosign-read">
 					{{ t('I have read the request and co-sign it.') }}
 				</label>
@@ -153,11 +165,17 @@ export default {
 				return
 			}
 			this.phase = 'loading'
-			const res = await this.api.request('GET', `/cosign?token=${encodeURIComponent(this.token)}`)
+			const res = await this.api.request(
+				'GET',
+				`/cosign?token=${encodeURIComponent(this.token)}`,
+			)
 			if (res.ok) {
 				this.request = res.json
 			} else {
-				this.outcome = { role: 'alert', text: this.t(cosignRefusal(res.status, res.json?.error)) }
+				this.outcome = {
+					role: 'alert',
+					text: this.t(cosignRefusal(res.status, res.json?.error)),
+				}
 			}
 			this.phase = 'ready'
 		},
@@ -180,14 +198,19 @@ export default {
 			if (res.ok) {
 				this.outcome = {
 					role: 'status',
-					text: this.t(answer === 'sign'
-						? 'Thank you. You co-signed the request.'
-						: 'You declined to co-sign. The applicant will be told.'),
+					text: this.t(
+						answer === 'sign'
+							? 'Thank you. You co-signed the request.'
+							: 'You declined to co-sign. The applicant will be told.',
+					),
 				}
 				this.$emit('done')
 				return
 			}
-			this.outcome = { role: 'alert', text: this.t(cosignRefusal(res.status, res.json?.error)) }
+			this.outcome = {
+				role: 'alert',
+				text: this.t(cosignRefusal(res.status, res.json?.error)),
+			}
 			if (res.status >= 400 && res.status < 500 && res.status !== 401) {
 				this.$emit('done')
 			}
