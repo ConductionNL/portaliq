@@ -38,3 +38,4 @@
 - Artikel https://identity.conduction.nl/screens/board?id=esdoornveen/Artikel
 - Contentpagina https://identity.conduction.nl/screens/board?id=esdoornveen/Contentpagina
 - Contentpagina https://identity.conduction.nl/screens/board?id=warmtepompacademie/Contentpagina
+- opencatalogi/pub-house-style: no opencatalogi screen; the reading room's house style is set in portaliq
