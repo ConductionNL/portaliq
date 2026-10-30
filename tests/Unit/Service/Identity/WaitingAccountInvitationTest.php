@@ -22,6 +22,7 @@ use OCP\Lock\ILockingProvider;
 use OCP\Lock\LockedException;
 use OCP\Security\ISecureRandom;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 
 /**
  * invitation-secret-joins-the-signed-in-account REQ-PIS-007 and REQ-PIS-008:
@@ -450,6 +451,21 @@ class WaitingAccountInvitationTest extends TestCase {
 	 *
 	 * @return void
 	 */
+	public function testAFailedOverrideLookupAllowsNoAudience(): void {
+		$organisations = $this->getMockBuilder(PortalOrganisationConfigService::class)->disableOriginalConstructor()->onlyMethods(['presentationFor'])->getMock();
+		$organisations->method('presentationFor')->willThrowException(new \RuntimeException('OpenRegister is down'));
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('warning');
+		$moves = new AudienceMove(
+			$organisations,
+			$this->getMockBuilder(PortalIdentityMailer::class)->disableOriginalConstructor()->getMock(),
+			$this->createMock(AuditTrailService::class),
+			$logger
+		);
+
+		$this->assertSame([], $moves->audiences(organisation: 'school-x'), 'a narrowed list must not widen to the default during an outage');
+	}//end testAFailedOverrideLookupAllowsNoAudience()
+
 	public function testTheAudiencesAnUnboundAccountMayTakeOnAreTheOrganisations(): void {
 		$cases = [
 			'another audience by default' => [[], 'participant', false],
@@ -967,7 +983,7 @@ class WaitingAccountInvitationTest extends TestCase {
 				return true;
 			}
 		);
-		$moves = new AudienceMove($organisations, $mailer, $auditor);
+		$moves = new AudienceMove($organisations, $mailer, $auditor, $this->createMock(LoggerInterface::class));
 
 		return new WaitingAccountInvitation($this->fakeReader(), $writer, ($random ?? $this->codeAwareRandom()), new ClaimAttempts($writer, $factory), $auditor, new ClaimLock($this->fakeLocks(), 0), new WaitingAccountSecret($this->fakeReader(), $this->fakeConfig()), new WaitingAccountClaim($writer, new WaitingAccountSecret($this->fakeReader(), $this->fakeConfig()), $moves));
 	}//end service()
