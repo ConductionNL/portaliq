@@ -12,3 +12,13 @@
 - WooVerzoek https://identity.conduction.nl/screens/board?id=portaliq/WooVerzoek
 - WooVerzoekControleren https://identity.conduction.nl/screens/board?id=portaliq/WooVerzoekControleren
 - PtFormulierInstellingen https://identity.conduction.nl/screens/board?id=portaliq/PtFormulierInstellingen
+- Kop https://identity.conduction.nl/screens/board?id=huisstijl/Kop
+- Publicatie https://identity.conduction.nl/screens/board?id=portaliq/Publicatie
+- Contentpagina https://identity.conduction.nl/screens/board?id=portaliq/Contentpagina
+- Berichten https://identity.conduction.nl/screens/board?id=portaliq/Berichten
+- BerichtDetail https://identity.conduction.nl/screens/board?id=portaliq/BerichtDetail
+- WooVerzoekVerstuurd https://identity.conduction.nl/screens/board?id=portaliq/WooVerzoekVerstuurd
+- Dossiers https://identity.conduction.nl/screens/board?id=portaliq/Dossiers
+- PtDashboard https://identity.conduction.nl/screens/board?id=portaliq/PtDashboard
+- PtInzending https://identity.conduction.nl/screens/board?id=portaliq/PtInzending
+- PtInzendingen https://identity.conduction.nl/screens/board?id=portaliq/PtInzendingen
