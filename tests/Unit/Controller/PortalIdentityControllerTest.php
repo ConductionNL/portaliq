@@ -529,6 +529,22 @@ class PortalIdentityControllerTest extends TestCase {
 	}//end testAnInvitationThatIsNotValidCreatesNoAccount()
 
 	/**
+	 * An accept that could not finish now is temporary, not an invalid
+	 * invitation: 503, so the browser keeps the secret and says try later.
+	 *
+	 * @return void
+	 */
+	public function testAnAcceptThatCouldNotFinishIsTemporary(): void {
+		$controller = $this->controller(site: ['organisation' => 'gemeente-x']);
+		$this->doubles['invitations']->method('accept')->willReturn(PortalInvitationService::TRY_LATER);
+
+		$response = $controller->acceptInvitation(token: 'secret-1');
+
+		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
+		$this->assertSame(['error' => 'try_later'], $response->getData());
+	}//end testAnAcceptThatCouldNotFinishIsTemporary()
+
+	/**
 	 * gate-25, the accepting side. The answer says only that it landed: the
 	 * account the service created is not handed to the browser, because the
 	 * caller still has no session at this point.

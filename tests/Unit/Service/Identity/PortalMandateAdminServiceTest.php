@@ -16,14 +16,18 @@ namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 
 use DateTimeImmutable;
 use OCA\Portaliq\Controller\MandateController;
+use OCA\Portaliq\Service\Identity\ClaimLock;
 use OCA\Portaliq\Service\Identity\MandateParties;
 use OCA\Portaliq\Service\Identity\PortalMandateAdminService;
 use OCA\Portaliq\Service\Identity\PortalMandateService;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
+use OCP\Lock\ILockingProvider;
+use OCP\Lock\LockedException;
 use Opis\JsonSchema\Validator;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 
 class PortalMandateAdminServiceTest extends TestCase {
 	use PortalIdentityStoreTrait;
@@ -32,13 +36,129 @@ class PortalMandateAdminServiceTest extends TestCase {
 
 	private const NOW = '2026-10-02T10:00:00+02:00';
 
+	/** @var array<string, bool> The locks held right now. */
+	private array $held = [];
+
+	/** @var callable|null Runs once, just before the next lock is taken. */
+	private $beforeLock = null;
+
 	protected function setUp(): void {
-		$this->rows = [];
+		$this->rows       = [];
+		$this->held       = [];
+		$this->beforeLock = null;
 	}//end setUp()
 
-	private function service(): PortalMandateAdminService {
-		return new PortalMandateAdminService($this->fakeReader(), $this->fakeWriter(), $this->fakeRandom());
+	private function service(?\OCA\Portaliq\Service\PortalObjectWriter $writer = null, ?LoggerInterface $logger = null): PortalMandateAdminService {
+		return new PortalMandateAdminService($this->fakeReader(), ($writer ?? $this->fakeWriter()), $this->fakeRandom(), new ClaimLock($this->fakeLocks(), 0), ($logger ?? $this->createMock(LoggerInterface::class)));
 	}//end service()
+
+	/**
+	 * A locking provider that holds exclusive locks in memory and refuses a
+	 * taken one, the way Nextcloud's does.
+	 *
+	 * @return ILockingProvider
+	 */
+	private function fakeLocks(): ILockingProvider {
+		$locks = $this->createMock(ILockingProvider::class);
+		$locks->method('acquireLock')->willReturnCallback(
+			function (string $path): void {
+				$hook = $this->beforeLock;
+				if ($hook !== null) {
+					$this->beforeLock = null;
+					$hook($path);
+				}
+
+				if (isset($this->held[$path]) === true) {
+					throw new LockedException($path);
+				}
+
+				$this->held[$path] = true;
+			}
+		);
+		$locks->method('releaseLock')->willReturnCallback(
+			function (string $path): void {
+				unset($this->held[$path]);
+			}
+		);
+
+		return $locks;
+	}//end fakeLocks()
+
+	public function testTwoAcceptsOfOneInvitationMakeOneMandate(): void {
+		$service = $this->service();
+		$invited = $service->invite(self::COMPANY, 'gemeente-x', 'jan-willem', ['email' => 'tom@example.nl'], $this->now());
+
+		// A second accept (another account) lands between the first one's
+		// arrival and its lock: the first must read the invitation again.
+		$raced = null;
+		$this->beforeLock = function () use ($service, $invited, &$raced): void {
+			$raced = $service->accept($invited['token'], ['subjectRef' => 'anna', 'provider' => 'digid'], $this->now());
+		};
+
+		$first = $service->accept($invited['token'], ['subjectRef' => 'tom', 'provider' => 'digid'], $this->now());
+
+		$this->assertIsArray($raced, 'the accept that took the lock first wins');
+		$this->assertSame('gone', $first, 'the invitation is spent once the lock is free');
+		$this->assertCount(1, $this->storedRows('portalMandate'), 'one invitation, one mandate');
+	}
+
+	public function testAnAcceptWhoseInvitationCannotBeSpentIsRefusedAndLeavesNoMandate(): void {
+		$base   = $this->fakeWriter();
+		$writer = $this->getMockBuilder(\OCA\Portaliq\Service\PortalObjectWriter::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['createObject', 'updateObject', 'deleteObject'])
+			->getMock();
+		$writer->method('createObject')->willReturnCallback(fn (...$args) => $base->createObject(...$args));
+		$writer->method('deleteObject')->willReturnCallback(fn (...$args) => $base->deleteObject(...$args));
+		// The invitation store refuses the "accepted" update.
+		$writer->method('updateObject')->willReturnCallback(fn (string $register, string $schema, ...$rest) => ($schema === 'portalInvitation' ? null : $base->updateObject($register, $schema, ...$rest)));
+
+		$service = $this->service($writer);
+		$invited = $service->invite(self::COMPANY, 'gemeente-x', 'jan-willem', ['email' => 'tom@example.nl'], $this->now());
+
+		$this->assertSame('try_later', $service->accept($invited['token'], ['subjectRef' => 'tom', 'provider' => 'digid', 'organisation' => 'gemeente-x'], $this->now()));
+		$this->assertSame([], $this->storedRows('portalMandate'), 'the mandate is taken back');
+	}
+
+	public function testAMandateThatCannotBeTakenBackIsLoggedAndFinishedByTheRetry(): void {
+		$base     = $this->fakeWriter();
+		$failing  = true;
+		$writer   = $this->getMockBuilder(\OCA\Portaliq\Service\PortalObjectWriter::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['createObject', 'updateObject', 'deleteObject'])
+			->getMock();
+		$writer->method('createObject')->willReturnCallback(fn (...$args) => $base->createObject(...$args));
+		// By reference: the store recovers before the retry.
+		$writer->method('deleteObject')->willReturnCallback(
+			function (...$args) use ($base, &$failing): bool {
+				return ($failing === true ? false : $base->deleteObject(...$args));
+			}
+		);
+		$writer->method('updateObject')->willReturnCallback(
+			function (string $register, string $schema, ...$rest) use ($base, &$failing): ?array {
+				return (($failing === true && $schema === 'portalInvitation') ? null : $base->updateObject($register, $schema, ...$rest));
+			}
+		);
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('error')->with($this->anything(), $this->callback(fn (array $context): bool => ($context['mandate'] ?? '') !== ''));
+
+		$service = $this->service($writer, $logger);
+		$invited = $service->invite(self::COMPANY, 'gemeente-x', 'jan-willem', ['email' => 'tom@example.nl'], $this->now());
+		$tom     = ['subjectRef' => 'tom', 'provider' => 'digid', 'organisation' => 'gemeente-x'];
+
+		$this->assertSame('try_later', $service->accept($invited['token'], $tom, $this->now()));
+		$this->assertCount(1, $this->storedRows('portalMandate'), 'the mandate could not be taken back');
+		$left = $this->storedRows('portalMandate')[0];
+
+		$this->assertSame('gone', $service->accept($invited['token'], ['subjectRef' => 'anna', 'provider' => 'digid', 'organisation' => 'gemeente-x'], $this->now()), 'another account cannot take the half-made mandate');
+
+		$failing = false;
+		$retried = $service->accept($invited['token'], $tom, $this->now());
+		$this->assertIsArray($retried);
+		$this->assertSame($left['uuid'], $retried['id'], 'the retry finishes the mandate already made');
+		$this->assertCount(1, $this->storedRows('portalMandate'), 'one invitation, one mandate');
+		$this->assertSame('accepted', $this->storedRows('portalInvitation')[0]['state']);
+	}
 
 	private static function company(array $extra = []): array {
 		return $extra + ['subjectRef' => 'jan-willem', 'provider' => 'eherkenning', 'kvk' => '12345678', 'organisation' => 'gemeente-x'];

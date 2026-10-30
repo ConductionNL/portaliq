@@ -31,6 +31,7 @@ namespace OCA\Portaliq\Service\Identity;
 use DateTimeImmutable;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
+use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
@@ -61,11 +62,13 @@ class AudienceMove {
 	 * @param PortalOrganisationConfigService $organisations The organisation's overrides.
 	 * @param PortalIdentityMailer            $mailer        Sends the notice.
 	 * @param AuditTrailService               $auditor       Records the move.
+	 * @param LoggerInterface                 $logger        Records a failed override lookup.
 	 */
 	public function __construct(
 		private readonly PortalOrganisationConfigService $organisations,
 		private readonly PortalIdentityMailer $mailer,
 		private readonly AuditTrailService $auditor,
+		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
 
@@ -88,7 +91,9 @@ class AudienceMove {
 	 * The audiences an unbound account of this organisation may take on
 	 * (security review L1): the organisation's `unboundAudiences` override,
 	 * else `parent`. The company audience is never one of them, and an
-	 * override that names nothing usable allows nothing.
+	 * override that names nothing usable allows nothing. When the overrides
+	 * cannot be read, nothing is allowed: the organisation may have narrowed
+	 * the list, so the default is no safe stand-in.
 	 *
 	 * @param string $organisation The tenant slug.
 	 *
@@ -98,9 +103,13 @@ class AudienceMove {
 	 */
 	public function audiences(string $organisation): array {
 		try {
-			$overrides = ($this->organisations->presentationFor(orgSlug: $organisation)['overrides'] ?? []);
-		} catch (Throwable) {
-			$overrides = [];
+			$overrides = ($this->organisations->presentationOrFail(orgSlug: $organisation)['overrides'] ?? []);
+		} catch (Throwable $exception) {
+			$this->logger->warning(
+				'Portaliq: the unbound audiences could not be read; no audience move is allowed',
+				['organisation' => $organisation, 'exception' => get_class($exception)]
+			);
+			return [];
 		}
 
 		$declared = ($overrides[self::CONFIG_KEY] ?? null);
