@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.101.0"
+        "version": "0.102.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.101.0",
+                "version": "0.102.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -2628,7 +2628,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.27.0",
+                "version": "0.28.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -3416,6 +3416,13 @@
                                 "type": "boolean",
                                 "description": "Whether every form on this portal needs a signed-in visitor. An embedded form is then not shown and not accepted: the visitor is sent to the portal's own page to sign in.",
                                 "example": false
+                            },
+                            "deskGroup": {
+                                "title": "Desk group",
+                                "type": "string",
+                                "description": "The Nextcloud group whose members may fill a form in for a resident or a company, at the desk or on the phone. Only forms that allow employees offer it. Empty means nobody may.",
+                                "maxLength": 64,
+                                "example": "balie"
                             },
                             "oidc": {
                                 "title": "OIDC configuration",

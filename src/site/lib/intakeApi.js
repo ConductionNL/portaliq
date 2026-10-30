@@ -291,6 +291,22 @@ export async function submitIntake(
 		headers: headersFor(token, true),
 		body: JSON.stringify(body),
 	})
+
+	return submitOutcome(response)
+}
+
+/**
+ * The outcome of a submit response: the reference, or the per-field errors.
+ *
+ * A 400 carries the portal's own checks and a 422 the destination's refusal;
+ * both are answers, not faults. Anything else that is not a success throws.
+ *
+ * @param {Response} response The submit response.
+ * @return {Promise<{reference: string, confirmationText: string, errors: object, moments?: object}>} The outcome.
+ *
+ * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-the-case-is-created-in-the-request-and-the-citizen-gets-its-reference-at-once-req-pifo-005
+ */
+export async function submitOutcome(response) {
 	const parsed = await response.json().catch(() => ({}))
 
 	// 400: the portal's own checks. 422: the destination refused an answer

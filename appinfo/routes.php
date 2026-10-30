@@ -396,6 +396,10 @@ return [
         // The code that proves a form's e-mail address is the resident's (resident-identity-in-forms).
         ['name' => 'portalFormEmailCode#send', 'url' => '/portal/api/intake/email-code', 'verb' => 'POST'],
         ['name' => 'portalFormEmailCode#check', 'url' => '/portal/api/intake/email-code/check', 'verb' => 'POST'],
+        // An employee fills a form in for a resident or a company (resident-identity-in-forms REQ-RIF-005).
+        ['name' => 'portalStaffFill#employee', 'url' => '/portal/api/intake/staff', 'verb' => 'GET'],
+        ['name' => 'portalStaffFill#start', 'url' => '/portal/api/intake/staff/start', 'verb' => 'POST'],
+        ['name' => 'portalStaffFill#submit', 'url' => '/portal/api/intake/staff/submit', 'verb' => 'POST'],
         ['name' => 'portalIntake#status', 'url' => '/portal/api/intake/status', 'verb' => 'GET'],
 
         // The citizen's own identity (portal-identity-and-the-organisations-cases):

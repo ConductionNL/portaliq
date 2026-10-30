@@ -305,6 +305,7 @@ class PortalFormBindingResolver {
 			'statementsDeclared' => $this->arrayOrNull(value: ($binding['statements'] ?? null)),
 			'confirmation' => $this->arrayOrNull(value: ($binding['confirmation'] ?? null)),
 			'confirmationMail' => ((($binding['confirmationMail']['enabled'] ?? false)) === true),
+			'staffMayFill' => (($binding['staffMayFill'] ?? false) === true),
 		];
 
 		if ($this->caseTypes?->hidesBinding(binding: $binding) === true) {
