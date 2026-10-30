@@ -26,8 +26,6 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Actions;
 
-use DateTimeImmutable;
-use DateTimeInterface;
 use OCA\Portaliq\Contribution\CitizenDocumentUpload;
 use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use OCA\Portaliq\Service\Identity\PortalContactService;
@@ -166,7 +164,7 @@ class PortalActionService {
 			scopeField: 'owner',
 			subjectRef: $ref,
 			organisation: (string)($subject['organisation'] ?? ''),
-			data: $this->stamped(subject: $subject, data: $clean + ['assignee' => $ref, 'status' => 'todo', 'kind' => 'once'])
+			data: $this->fields->stamped(editor: (string)($subject['subjectRef'] ?? ''), data: $clean + ['assignee' => $ref, 'status' => 'todo', 'kind' => 'once'])
 		);
 		if ($row === null) {
 			return ['status' => PortalPlanService::FAILED, 'id' => ''];
@@ -424,7 +422,7 @@ class PortalActionService {
 			subjectRef: $access['scopeValue'],
 			organisation: (string)($subject['organisation'] ?? ''),
 			id: $id,
-			data: $this->stamped(subject: $subject, data: $data)
+			data: $this->fields->stamped(editor: (string)($subject['subjectRef'] ?? ''), data: $data)
 		);
 
 		if ($written === null) {
@@ -433,21 +431,6 @@ class PortalActionService {
 
 		return PortalPlanService::OK;
 	}//end write()
-
-	/**
-	 * The fields with who wrote them and when.
-	 *
-	 * @param array<string, mixed> $subject The session subject.
-	 * @param array<string, mixed> $data The fields.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function stamped(array $subject, array $data): array {
-		return $data + [
-			'editedBy' => (string)($subject['subjectRef'] ?? ''),
-			'editedAt' => (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
-		];
-	}//end stamped()
 
 	/**
 	 * Taking the file off: `file` sent as '' clears the file and its name.

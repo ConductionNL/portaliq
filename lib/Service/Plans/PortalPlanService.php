@@ -495,7 +495,7 @@ class PortalPlanService {
 			subjectRef: $id,
 			organisation: $organisation,
 			id: $actionId,
-			data: $clean
+			data: $this->actionFields->stamped(editor: (string)$subject['subjectRef'], data: $clean)
 		);
 		if ($written === null) {
 			return self::FAILED;
@@ -757,7 +757,7 @@ class PortalPlanService {
 			scopeField: 'owner',
 			subjectRef: (string)$subject['subjectRef'],
 			organisation: (string)($subject['organisation'] ?? ''),
-			data: $data + ['plan' => $planId, 'status' => 'todo', 'kind' => 'once']
+			data: $this->actionFields->stamped(editor: (string)$subject['subjectRef'], data: $data + ['plan' => $planId, 'status' => 'todo', 'kind' => 'once'])
 		);
 
 		return $row !== null;

@@ -201,7 +201,6 @@ test('the plan page offers what the viewer may do and sends each change to the r
 		editing: '',
 		draft: '',
 		endDraft: '2026-10-27',
-		newAction: { title: '', endDate: '', assignee: 'sanne' },
 		newPerson: '',
 		session: { subjectRef: 'sanne' },
 		$emit: () => {},
@@ -210,25 +209,16 @@ test('the plan page offers what the viewer may do and sends each change to the r
 	}
 	const vm = { ...base, run: page.methods.run }
 	await page.methods.saveField.call({ ...vm, draft: 'Nieuw doel', run: page.methods.run }, 'goal')
-	await page.methods.setStatus.call(vm, { id: 'a1' }, 'done')
 	await page.methods.saveEnd.call(vm)
 	await page.methods.finish.call(vm)
 	await page.methods.removePerson.call(vm, { ref: 'mark' })
-	await page.methods.addAction.call({ ...vm, newAction: { title: ' Brieven ', endDate: '2026-09-20', assignee: 'mark' } })
 	await page.methods.addPerson.call({ ...vm, newPerson: 'c-mark' })
-	assert.deepEqual(calls.map(([action]) => action), ['update', 'updateAction', 'update', 'update', 'removeParticipant', 'addAction', 'addParticipants'])
+	assert.deepEqual(calls.map(([action]) => action), ['update', 'update', 'update', 'removeParticipant', 'addParticipants'])
 	assert.deepEqual(calls[0][1], { id: 'p1', data: { goal: 'Nieuw doel' } })
-	assert.deepEqual(calls[1][1], { id: 'p1', actionId: 'a1', data: { status: 'done' } })
-	assert.deepEqual(calls[2][1].data, { endDate: '2026-10-27' })
-	assert.deepEqual(calls[3][1].data, { status: 'done' })
-	assert.deepEqual(calls[4][1], { id: 'p1', ref: 'mark' })
-	assert.deepEqual(calls[5][1].data, { title: 'Brieven', assignee: 'mark', endDate: '2026-09-20' })
-	assert.deepEqual(calls[6][1].data, { contactIds: ['c-mark'] })
-
-	const empty = { ...vm, newAction: { title: '  ', endDate: '', assignee: 'sanne' } }
-	await page.methods.addAction.call(empty)
-	assert.equal(calls.length, 7, 'an action without a title sends nothing')
-	assert.equal(empty.problem, planWords('nl').failed)
+	assert.deepEqual(calls[1][1].data, { endDate: '2026-10-27' })
+	assert.deepEqual(calls[2][1].data, { status: 'done' })
+	assert.deepEqual(calls[3][1], { id: 'p1', ref: 'mark' })
+	assert.deepEqual(calls[4][1].data, { contactIds: ['c-mark'] })
 
 	const refused = { ...vm, api: apiFor(() => ({ ok: false, status: 403, error: 'forbidden', id: '' })) }
 	assert.equal(await page.methods.run.call(refused, 'update', { data: { endDate: '2026-12-01' } }), false)
@@ -247,7 +237,7 @@ test('the owner-only controls show for the owner of a running plan only', () => 
 		assert.match(around, /plan\.isOwner && plan\.canEdit/, `${control} is for the owner of a plan that is not done`)
 		assert.ok(block.length > 0)
 	}
-	assert.match(source, /:disabled="!plan\.canEdit"/, 'a done plan\'s statuses are read-only')
+	assert.match(source, /v-if="plan\.canEdit"[\s\S]{0,200}data-testid="plan-add-action"/, 'a done plan takes no new action')
 	assert.match(source, /plan\.state === 'action'[\s\S]*data-testid="plan-alert"/, 'the alert shows when the plan asks for action')
 })
 
@@ -312,4 +302,29 @@ test('the plan page sends a picked file as a new version of the file it was aske
 		const around = source.slice(Math.max(0, source.indexOf(`data-testid="${id}"`) - 400), source.indexOf(`data-testid="${id}"`))
 		assert.match(around, /plan\.canEdit/, `${id} is offered only on a plan that is not done`)
 	}
+})
+
+test('an action of the plan opens the ActieBewerken dialog with the plan, its participants and who may delete it', async () => {
+	const page = await loadSfc(PLAN)
+	const plan = {
+		title: 'Schuldhulp op orde',
+		isOwner: false,
+		canEdit: true,
+		participants: [{ ref: 'sanne', displayName: 'Sanne de Vries', isOwner: true }, { ref: 'mark', displayName: 'Mark Jansen', isOwner: false }],
+	}
+	const vm = { planId: 'p1', plan, notice: 'x', actionOpen: null, viewer: 'mark' }
+	vm.assignees = page.computed.assignees.call(vm)
+	page.methods.openAction.call(vm, { id: 'a1', title: 'Budgetcoach bellen', owner: 'mark' })
+	const opened = vm.actionOpen.action
+	assert.deepEqual([opened.plan, opened.planTitle, opened.role, opened.mayDelete, opened.readOnly], ['p1', 'Schuldhulp op orde', 'member', true, false])
+	assert.deepEqual(opened.assignees.map((p) => p.ref), ['sanne', 'mark'])
+	page.methods.openAction.call(vm, { id: 'a2', title: 'Ander', owner: 'sanne' })
+	assert.equal(vm.actionOpen.action.mayDelete, false, 'a participant deletes only an action they added')
+	page.methods.openAction.call(vm, null)
+	assert.equal(vm.actionOpen.action, null, 'Actie toevoegen opens the dialog empty')
+	assert.equal(vm.notice, '')
+
+	const words = { you: 'u', once: 'Eenmalig', recurring: 'Elke maand', overdue: 'verlopen', today: 'vandaag', dayLeft: 'nog 1 dag', daysLeft: 'nog {days} dagen' }
+	assert.equal(page.methods.actionLine.call({ actionWords: words }, { kind: 'recurring', status: 'done', endDate: '2026-10-31' }), 'Elke maand')
+	assert.equal(page.methods.whoName.call({ actionWords: words, viewer: 'sanne' }, { assignee: 'sanne', assigneeName: 'Sanne' }), 'Sanne (u)')
 })

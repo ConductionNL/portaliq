@@ -279,10 +279,15 @@ class PortalActionServiceTest extends TestCase {
 		$planId = $plans->start($this->as('sanne'), 'zuid', '', 'Schuldhulp op orde', ['c-mark'], '2026-09-01')['id'];
 		$this->assertSame('ok', $plans->addAction($this->as('mark'), $planId, ['title' => 'Budgetcoach bellen']));
 		$id = array_key_last($this->rows['portalAction']);
+		$this->assertSame('mark', $this->rows['portalAction'][$id]['editedBy'], 'a plan writes who added the action');
 
 		$this->assertSame('ok', $actions->update($this->as('sanne'), $id, ['title' => 'Budgetcoach bellen en afspraak maken', 'assignee' => 'sanne'], $planId));
 		$this->assertSame('invalid', $actions->update($this->as('sanne'), $id, ['assignee' => 'eva'], $planId));
 		$this->assertSame('not_found', $actions->update($this->as('eva'), $id, ['status' => 'done'], $planId));
+
+		$this->assertSame('sanne', $this->rows['portalAction'][$id]['editedBy']);
+		$this->assertSame('ok', $plans->updateAction($this->as('mark'), $planId, $id, ['status' => 'doing']));
+		$this->assertSame('Mark Jansen', $actions->history($this->as('sanne'), $id, $planId)[0]['who'], 'a change through the plan names its editor');
 
 		$listed = $actions->overview($this->as('sanne'))['actions'][0];
 		$this->assertSame(['member', 'Schuldhulp op orde'], [$listed['role'], $listed['planTitle']]);
