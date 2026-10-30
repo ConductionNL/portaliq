@@ -20,6 +20,7 @@ import AccountLock from 'vue-material-design-icons/AccountLock.vue'
 import AccountMultiple from 'vue-material-design-icons/AccountMultiple.vue'
 import AccountMultipleOutline from 'vue-material-design-icons/AccountMultipleOutline.vue'
 import AccountPlus from 'vue-material-design-icons/AccountPlus.vue'
+import AccountPlusOutline from 'vue-material-design-icons/AccountPlusOutline.vue'
 import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
 import BellOutline from 'vue-material-design-icons/BellOutline.vue'
 import BookAlphabet from 'vue-material-design-icons/BookAlphabet.vue'
@@ -103,6 +104,7 @@ export default {
 	AccountLock,
 	AccountMultiple,
 	AccountPlus,
+	AccountPlusOutline,
 	AlertCircleOutline,
 	BellOutline,
 	BookAlphabet,
