@@ -1854,6 +1854,7 @@
 				"case": "{{object:woo-fietspad.id}}",
 				"actionType": "termijn-controleren",
 				"label": "Termijn controleren",
+				"owner": "",
 				"ownerGroup": "{{cast:woo-en-informatie.gid}}",
 				"plannedBy": "{{cast:pieter.uid}}",
 				"plannedFor": "{{date:8}}",

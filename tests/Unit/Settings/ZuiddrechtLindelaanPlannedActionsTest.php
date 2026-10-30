@@ -37,6 +37,7 @@ class ZuiddrechtLindelaanPlannedActionsTest extends TestCase {
 
 		$termijn = $objects['woo-fietspad-gepland-termijn'];
 		$this->assertSame(['{{cast:woo-en-informatie.gid}}', '{{cast:pieter.uid}}'], [$termijn['ownerGroup'], $termijn['plannedBy']]);
-		$this->assertArrayNotHasKey('owner', $termijn);
+		// An empty owner, not an absent one: a refresh writes it over an owner an earlier install left.
+		$this->assertSame(expected: '', actual: ($termijn['owner'] ?? null));
 	}//end testThePlannedActionsSayWhoPlannedThem()
 }//end class
