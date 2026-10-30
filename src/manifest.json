@@ -4787,11 +4787,6 @@
                   "type": "switch"
                 },
                 {
-                  "key": "staffMayFill",
-                  "label": "An employee may fill it in for a resident",
-                  "type": "switch"
-                },
-                {
                   "key": "challenge",
                   "label": "Run the portal's check against automated sending",
                   "type": "switch"
@@ -4827,6 +4822,12 @@
                     }
                   ],
                   "default": "low"
+                },
+                {
+                  "key": "staffMayFill",
+                  "label": "An employee fills it in for a resident",
+                  "hint": "The resident is the applicant on the case.",
+                  "type": "switch"
                 }
               ]
             }

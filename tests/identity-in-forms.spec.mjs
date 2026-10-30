@@ -14,12 +14,14 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
-import { emailCodeProblem, identityWords, typedSignatureName } from '../src/site/components/forms/identityWords.js'
+import { emailCodeProblem, identityWords, staffFillingFor, typedSignatureName } from '../src/site/components/forms/identityWords.js'
 import { checkEmailCode, requestEmailCode, submitIntake } from '../src/site/lib/intakeApi.js'
+import { rememberStaffChoice, staffRequestToken, startAsStaff, submitAsStaff, takeStaffChoice, workAccountLoginUrl } from '../src/site/lib/staffFillApi.js'
 import { loadSfc, renderSfc } from './support/render-sfc.mjs'
 
 const SIGNATURE = 'src/site/components/forms/SignatureField.vue'
 const EMAIL = 'src/site/components/forms/EmailCodeField.vue'
+const STAFF = 'src/site/components/forms/StaffFillChoice.vue'
 
 test('the words exist in both languages with the same keys and no em-dash', () => {
 	const nl = identityWords('nl')
@@ -207,4 +209,89 @@ test('the form block shows a signature, a verified address and neither as a long
 	assert.match(block, /this\.verifiedEmails,\s*\)/, 'the proofs go with the submit')
 	assert.match(block, /!this\.verifiedEmails\[address\]/, 'an unverified address stops the step')
 	assert.match(block, /identityWords\([^)]*\)\.signatureSet/, 'the review never prints the picture')
+})
+
+// REQ-RIF-005: an employee fills a form in for a resident or a company.
+
+test('"Voor medewerkers" offers the three ways on, with the board words', async () => {
+	const html = await renderSfc(STAFF, { locale: 'nl' })
+	assert.match(html, /Voor medewerkers/)
+	assert.match(html, /Verder als/)
+	assert.match(html, /Inwoner/)
+	assert.match(html, /Bedrijf/)
+	assert.match(html, /Uzelf, met de inwoner als aanvrager/)
+	assert.match(html, /BSN van de inwoner/)
+	assert.match(html, /Inloggen met werkaccount/)
+	assert.match(html, /<legend[^>]*>\s*Verder als/, 'the choice is a fieldset with a legend')
+})
+
+test('the choice hands on the applicant and refuses an empty value', async () => {
+	const choice = await loadSfc(STAFF)
+	const emitted = []
+	const vm = { ...choice.data(), $emit: (...args) => emitted.push(args) }
+	choice.methods.start.call(vm)
+	assert.equal(vm.empty, true)
+	assert.deepEqual(emitted, [])
+
+	vm.kind = 'kvk'
+	vm.value = ' 12345678 '
+	choice.methods.start.call(vm)
+	assert.deepEqual(emitted, [['start', { kind: 'kvk', value: '12345678' }]])
+})
+
+test('the staff line names the applicant, and nothing outside staff mode', () => {
+	const nl = identityWords('nl')
+	assert.equal(staffFillingFor(nl, { kind: 'bsn', value: '111222333' }), 'U vult dit formulier in voor de inwoner met BSN 111222333. U staat als medewerker in de zaak.')
+	assert.match(staffFillingFor(identityWords('en'), { kind: 'named', value: 'Henk' }), /for Henk\./)
+	assert.equal(staffFillingFor(nl, null), '')
+})
+
+test('the work account sign-in comes back to the form, never to another site', () => {
+	assert.equal(workAccountLoginUrl('/index.php', '/apps/portaliq/site/woo?x=1'), '/index.php/login?redirect_url=%2Fapps%2Fportaliq%2Fsite%2Fwoo%3Fx%3D1')
+	assert.equal(workAccountLoginUrl('', '//evil.example'), '/login?redirect_url=%2F')
+	assert.equal(workAccountLoginUrl('', 'https://evil.example'), '/login?redirect_url=%2F')
+})
+
+test('the chosen applicant waits through the sign-in once, for this form only', () => {
+	const store = new Map()
+	const storage = { setItem: (k, v) => store.set(k, v), getItem: (k) => store.get(k) ?? null, removeItem: (k) => store.delete(k) }
+	rememberStaffChoice('woo', { kind: 'bsn', value: '111222333' }, storage)
+	assert.deepEqual(takeStaffChoice('woo', storage), { kind: 'bsn', value: '111222333' })
+	assert.equal(takeStaffChoice('woo', storage), null, 'taken once')
+
+	rememberStaffChoice('woo', { kind: 'bsn', value: '111222333' }, storage)
+	assert.equal(takeStaffChoice('other-form', storage), null)
+})
+
+test('the staff calls carry the request token and read every refusal', async () => {
+	const seen = []
+	const answer = (status, body) => async (url, init = {}) => {
+		seen.push({ url, init })
+		return { ok: status < 300, status, json: async () => body }
+	}
+	assert.equal(await staffRequestToken('/index.php', answer(200, { token: 'tok' })), 'tok')
+	assert.equal(seen[0].url, '/index.php/csrftoken')
+
+	const started = await startAsStaff('/p', 'woo', 'zuiddrecht', { kind: 'bsn', value: '111222333' }, 'tok', answer(200, { fields: [], prefill: { applicantName: 'Sanne' } }))
+	assert.equal(started.state, 'form')
+	assert.equal(seen[1].url, '/p/intake/staff/start')
+	assert.equal(seen[1].init.headers.requesttoken, 'tok')
+	assert.deepEqual(JSON.parse(seen[1].init.body), { route: 'woo', applicant: { kind: 'bsn', value: '111222333' }, portal: 'zuiddrecht' })
+
+	assert.equal((await startAsStaff('/p', 'woo', '', {}, '', answer(401, {}))).state, 'signIn')
+	assert.equal((await startAsStaff('/p', 'woo', '', {}, '', answer(400, {}))).state, 'invalid')
+	assert.equal((await startAsStaff('/p', 'woo', '', {}, '', answer(403, { error: 'staff_not_allowed' }))).state, 'notAllowed')
+
+	const sent = await submitAsStaff('/p', { route: 'woo', applicant: { kind: 'named', value: 'Henk' }, answers: { naam: 'Henk' } }, 'tok', answer(200, { reference: '2026-0077' }))
+	assert.equal(sent.reference, '2026-0077')
+	assert.equal(seen.at(-1).url, '/p/intake/staff/submit')
+	assert.deepEqual(JSON.parse(seen.at(-1).init.body), { route: 'woo', applicant: { kind: 'named', value: 'Henk' }, answers: { naam: 'Henk' } })
+})
+
+test('the form block offers staff mode, resumes it after the sign-in and sends as the employee', () => {
+	const block = readFileSync('src/site/components/IntakeFormBlock.vue', 'utf8')
+	assert.match(block, /<StaffFillChoice\s+v-if="offersStaffFill"/)
+	assert.match(block, /takeStaffChoice\(this\.bindingRoute\)/, 'the choice kept before the sign-in is taken on the way back')
+	assert.match(block, /this\.staffApplicant\s*\?\s*await submitAsStaff\(/)
+	assert.match(block, /data-testid="intake-form-staff"/)
 })

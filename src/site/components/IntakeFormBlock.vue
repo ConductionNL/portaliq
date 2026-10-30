@@ -145,6 +145,13 @@
 			class="pq-intake-form__form"
 			novalidate
 			@submit.prevent="onSubmit">
+			<p
+				v-if="staffApplicant"
+				class="utrecht-paragraph pq-intake-form__staff"
+				role="status"
+				data-testid="intake-form-staff">
+				{{ staffLine }}
+			</p>
 			<!-- The form's title with "Hulp nodig?" to its right (board FormulierHulp). -->
 			<div
 				v-if="(render.formName && !hideFormName) || offersHelp"
@@ -384,6 +391,13 @@
 				{{ formError }}
 			</p>
 		</form>
+
+		<StaffFillChoice
+			v-if="offersStaffFill"
+			:locale="pageLang"
+			:busy="staffBusy"
+			:failure="staffFailure"
+			@start="startAsEmployee" />
 	</section>
 </template>
 
@@ -401,10 +415,12 @@ import FormProgress from './forms/FormProgress.vue'
 import RepeatingGroup from './forms/RepeatingGroup.vue'
 import ReviewList from './forms/ReviewList.vue'
 import SignatureField from './forms/SignatureField.vue'
+import StaffFillChoice from './forms/StaffFillChoice.vue'
 import StatementsBlock from './forms/StatementsBlock.vue'
 import { adoptSessionToken, authBaseFrom } from '../lib/authApi.js'
 import { resolveApiBase } from '../lib/contentApi.js'
 import { hasHelp, mergeHelp } from '../lib/help.js'
+import { instanceRootFrom } from '../lib/instanceRoot.js'
 import {
 	bindingRouteFrom,
 	decideStep as decideStepOnServer,
@@ -414,6 +430,14 @@ import {
 	payIntake,
 	submitIntake,
 } from '../lib/intakeApi.js'
+import {
+	rememberStaffChoice,
+	staffRequestToken,
+	startAsStaff,
+	submitAsStaff,
+	takeStaffChoice,
+	workAccountLoginUrl,
+} from '../lib/staffFillApi.js'
 import { addressLine, addressProblem } from './forms/address.js'
 import { calculatedValues } from './forms/calculate.js'
 import {
@@ -430,7 +454,7 @@ import {
 	summaryEntries,
 } from './forms/fields.js'
 import { groupCountErrors, itemLines } from './forms/group.js'
-import { identityWords } from './forms/identityWords.js'
+import { identityWords, staffFillingFor } from './forms/identityWords.js'
 import { feeAmount, paymentView, returnedReference } from './forms/payment.js'
 import stepFlow from './forms/stepFlow.js'
 import { stepHeading } from './forms/steps.js'
@@ -473,6 +497,7 @@ export default {
 		RepeatingGroup,
 		ReviewList,
 		SignatureField,
+		StaffFillChoice,
 		EmailCodeField,
 		FormHelp: defineAsyncComponent(() => import('./FormHelp.vue')),
 	},
@@ -615,6 +640,12 @@ export default {
 			payment: null,
 			paying: false,
 			payFailed: false,
+			/** Whom an employee fills the form in for, or null (resident-identity-in-forms REQ-RIF-005). */
+			staffApplicant: null,
+			/** Nextcloud's request token for the employee's writes. */
+			staffToken: '',
+			staffBusy: false,
+			staffFailure: '',
 		}
 	},
 
@@ -848,6 +879,55 @@ export default {
 		},
 
 		/**
+		 * The page's language, for the words that come in Dutch and English.
+		 *
+		 * @return {string} The language tag, or ''.
+		 *
+		 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-an-employee-can-fill-in-a-form-for-a-resident-or-company-req-rif-005
+		 */
+		pageLang() {
+			return typeof document === 'undefined'
+				? ''
+				: String(document.documentElement?.lang || '')
+		},
+
+		/**
+		 * Whether "Voor medewerkers" shows: on a form that allows employees,
+		 * to a visitor who is neither a signed-in resident nor already
+		 * filling in as an employee.
+		 *
+		 * @return {boolean} True to show it.
+		 *
+		 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-an-employee-can-fill-in-a-form-for-a-resident-or-company-req-rif-005
+		 */
+		offersStaffFill() {
+			if (this.staffApplicant) {
+				return false
+			}
+
+			if (this.state === 'signIn') {
+				return this.render.staffMayFill === true
+			}
+
+			return (
+				['form', 'intro'].includes(this.state)
+				&& this.render.settings?.staffMayFill === true
+				&& adoptSessionToken() === ''
+			)
+		},
+
+		/**
+		 * The line that tells the employee for whom they fill the form in.
+		 *
+		 * @return {string} The line.
+		 *
+		 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-an-employee-can-fill-in-a-form-for-a-resident-or-company-req-rif-005
+		 */
+		staffLine() {
+			return staffFillingFor(identityWords(this.pageLang), this.staffApplicant)
+		},
+
+		/**
 		 * The lines under the case number: received, term start, deadline.
 		 *
 		 * @return {string[]} The lines.
@@ -945,6 +1025,11 @@ export default {
 				return
 			}
 
+			const kept = takeStaffChoice(this.bindingRoute)
+			if (kept && (await this.openAsEmployee(kept, false))) {
+				return
+			}
+
 			try {
 				const view = await loadForm(
 					authBaseFrom(resolveApiBase()),
@@ -994,16 +1079,29 @@ export default {
 
 			this.submitting = true
 			try {
-				const outcome = await submitIntake(
-					authBaseFrom(resolveApiBase()),
-					this.bindingRoute,
-					this.values,
-					this.portal,
-					adoptSessionToken(),
-					null,
-					this.accepted,
-					this.verifiedEmails,
-				)
+				const outcome = this.staffApplicant
+					? await submitAsStaff(
+							authBaseFrom(resolveApiBase()),
+							{
+								route: this.bindingRoute,
+								portal: this.portal,
+								applicant: this.staffApplicant,
+								answers: this.values,
+								statements: this.accepted,
+								verifiedEmails: this.verifiedEmails,
+							},
+							this.staffToken,
+						)
+					: await submitIntake(
+							authBaseFrom(resolveApiBase()),
+							this.bindingRoute,
+							this.values,
+							this.portal,
+							adoptSessionToken(),
+							null,
+							this.accepted,
+							this.verifiedEmails,
+						)
 				if (outcome.reference === '') {
 					const { _form: formLevel, ...fieldErrors } = outcome.errors || {}
 					this.formError = String(formLevel || '')
@@ -1035,6 +1133,78 @@ export default {
 			} finally {
 				this.submitting = false
 			}
+		},
+
+		/**
+		 * The employee chose an applicant: open the form for them on the work
+		 * account session, or send the employee to sign in first and come back.
+		 *
+		 * @param {{kind: string, value: string}} applicant The applicant.
+		 * @return {Promise<void>} Resolves when the form is open or the page leaves.
+		 *
+		 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-an-employee-can-fill-in-a-form-for-a-resident-or-company-req-rif-005
+		 */
+		async startAsEmployee(applicant) {
+			await this.openAsEmployee(applicant, true)
+		},
+
+		/**
+		 * Open the form for an applicant as an employee.
+		 *
+		 * @param {{kind: string, value: string}} applicant The applicant.
+		 * @param {boolean} mayLeave Whether to send the employee to sign in when there is no work session.
+		 * @return {Promise<boolean>} True when the form is open for the applicant.
+		 *
+		 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-an-employee-can-fill-in-a-form-for-a-resident-or-company-req-rif-005
+		 */
+		async openAsEmployee(applicant, mayLeave) {
+			const words = identityWords(this.pageLang)
+			this.staffBusy = true
+			this.staffFailure = ''
+			try {
+				const root = instanceRootFrom(resolveApiBase())
+				const token = await staffRequestToken(root)
+				const view = await startAsStaff(
+					authBaseFrom(resolveApiBase()),
+					this.bindingRoute,
+					this.portal,
+					applicant,
+					token,
+				)
+				if (view.state === 'form') {
+					this.staffToken = token
+					this.staffApplicant = view.render.applicant || applicant
+					this.render = view.render
+					this.values = initialValues(
+						view.render.fields,
+						view.render.prefill,
+					)
+					this.state = 'form'
+					return true
+				}
+
+				if (view.state === 'signIn' && mayLeave) {
+					rememberStaffChoice(this.bindingRoute, applicant)
+					window.location.assign(
+						workAccountLoginUrl(
+							root,
+							`${window.location.pathname}${window.location.search}`,
+						),
+					)
+					return false
+				}
+
+				this.staffFailure =
+					view.state === 'invalid'
+						? words.staffInvalid
+						: words.staffNotAllowed
+			} catch {
+				this.staffFailure = words.staffFailed
+			} finally {
+				this.staffBusy = false
+			}
+
+			return false
 		},
 
 		/**

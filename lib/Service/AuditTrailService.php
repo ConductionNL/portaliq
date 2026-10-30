@@ -66,9 +66,24 @@ class AuditTrailService {
 	 * claims of a waiting account (confirmed-address-joins-the-waiting-account).
 	 * `audience` is an account taking on the audience of the invitation it
 	 * redeemed, with the old and the new audience as its detail
-	 * (invitation-joins-an-unbound-account).
+	 * (invitation-joins-an-unbound-account). `staff-lookup` is an employee
+	 * looking a resident up in the BRP or a company in the KvK to fill a form
+	 * in for them (resident-identity-in-forms).
 	 */
-	public const VERBS = ['create', 'update', 'forward', 'download', 'login', 'logout', 'refresh', 'complete', 'claim', 'audience', 'admin-revoke'];
+	public const VERBS = [
+		'create',
+		'update',
+		'forward',
+		'download',
+		'login',
+		'logout',
+		'refresh',
+		'complete',
+		'claim',
+		'audience',
+		'admin-revoke',
+		'staff-lookup',
+	];
 
 	/**
 	 * A uuid, so a target that is an object is linked to that object's history.

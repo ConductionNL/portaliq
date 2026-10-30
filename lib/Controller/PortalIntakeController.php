@@ -35,9 +35,9 @@ use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Service\Identity\PortalChallengeService;
 use OCA\Portaliq\Service\Intake\DestinationIntake;
 use OCA\Portaliq\Service\Intake\DestinationLookup;
-use OCA\Portaliq\Service\Intake\DestinationMapping;
 use OCA\Portaliq\Service\Intake\FormConfirmationMailer;
 use OCA\Portaliq\Service\Intake\FormStatements;
+use OCA\Portaliq\Service\Intake\IntakeSend;
 use OCA\Portaliq\Service\Intake\PortalAddressLookup;
 use OCA\Portaliq\Service\Intake\PortalApplicantPrefill;
 use OCA\Portaliq\Service\Intake\PortalCatalogueReader;
@@ -92,11 +92,11 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	private readonly PortalIntakePayments $payments;
 
 	/**
-	 * Mails the resident the confirmation of a submission.
+	 * Delivers a prepared submission and mails the confirmation.
 	 *
-	 * @var PortalIntakeConfirmation
+	 * @var IntakeSend
 	 */
-	private readonly PortalIntakeConfirmation $confirmation;
+	private readonly IntakeSend $sender;
 
 	/**
 	 * Constructor.
@@ -145,7 +145,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		?PortalActionForwarder $forwarder = null,
 		?PortalDeepLinkBuilder $deepLinks = null,
 		?PortalEmailVerification $emailVerification = null,
-		private readonly ?DestinationIntake $intake = null,
+		?DestinationIntake $intake = null,
 		private readonly ?DestinationLookup $lookup = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
@@ -164,7 +164,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			forwarder: $forwarder,
 			deepLinks: $deepLinks
 		);
-		$this->confirmation = new PortalIntakeConfirmation(confirmationMail: $confirmationMail);
+		$this->sender       = new IntakeSend(intake: $intake, confirmation: new PortalIntakeConfirmation(confirmationMail: $confirmationMail));
 	}//end __construct()
 
 	/**
@@ -342,44 +342,16 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return $prepared;
 		}
 
-		$submitted = $this->intake?->submit(
+		return $this->sender->send(
+			site: $site,
 			binding: $binding,
 			render: $render,
-			answers: $prepared['answers'],
+			prepared: $prepared,
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			server: [
-				'portal' => (string)($site['slug'] ?? ''),
+			request: [
 				'origin' => (string)$this->request->getHeader('Origin'),
-				'statements' => $prepared['statements'],
-				'decisions' => $prepared['decisions'],
-				'verifiedEmails' => $prepared['verified'],
-				'fieldMeta' => (new DestinationMapping())->fieldMeta(computed: $prepared['computed']),
-			],
-			idempotencyKey: (string)$this->request->getHeader('Idempotency-Key')
-		);
-		if ($submitted === null || $submitted['ok'] === false) {
-			$refusal = DestinationIntake::refusal(submitted: $submitted);
-			return new JSONResponse($refusal['body'], $refusal['status']);
-		}
-
-		$answer    = $submitted['answer'];
-		$reference = (string)($answer['reference'] ?? '');
-		$moments   = (array)($answer['confirmation'] ?? []);
-		$mailedTo  = $this->confirmation->send(site: $site, render: $render, answers: $prepared['answers'], reference: $reference, moments: $moments);
-
-		return new JSONResponse(
-			array_merge(
-				$moments,
-				[
-					'reference' => $reference,
-					'id' => (string)($answer['id'] ?? ''),
-					'receivedAt' => (string)($answer['receivedAt'] ?? ''),
-					'state' => PortalIntakeQueue::STATE_REGISTERED,
-					'confirmationText' => (string)($render['settings']['confirmationText'] ?? ''),
-					'confirmation' => ($render['settings']['confirmation'] ?? null),
-					'mailedTo' => $mailedTo,
-				]
-			)
+				'idempotencyKey' => (string)$this->request->getHeader('Idempotency-Key'),
+			]
 		);
 	}//end submit()
 
@@ -566,7 +538,15 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		}
 
 		if ($subject === null) {
-			return new JSONResponse(['error' => 'sign_in_required', 'minTrust' => $required, 'fee' => ($render['fee'] ?? null)], Http::STATUS_UNAUTHORIZED);
+			return new JSONResponse(
+				[
+					'error' => 'sign_in_required',
+					'minTrust' => $required,
+					'fee' => ($render['fee'] ?? null),
+					'staffMayFill' => (($render['settings']['staffMayFill'] ?? false) === true),
+				],
+				Http::STATUS_UNAUTHORIZED
+			);
 		}
 
 		if (PortalSessionService::trustSatisfies(subjectTrust: ($subject['trust'] ?? ''), minTrust: $required) === false) {

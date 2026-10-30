@@ -1633,7 +1633,6 @@ OC.L10N.register(
         "Address of the external form": "Adres van het externe formulier",
         "Algemeen": "Algemeen",
         "An address starts with https://.": "Een adres begint met https://.",
-        "An employee may fill it in for a resident": "Een medewerker mag het invullen voor een inwoner",
         "Anyone may fill it in": "Iedereen mag het invullen",
         "Bevestiging": "Bevestiging",
         "Confirmation": "Bevestiging",
@@ -3290,7 +3289,11 @@ OC.L10N.register(
         "The receipt did not arrive.": "De ontvangstbevestiging kwam niet aan.",
         "The mail to the resident was refused. The submission itself did reach the case app. Contact the resident another way, for instance by the phone number in the submission.": "De mail naar de inwoner werd geweigerd. De inzending zelf is wel in de zaakapp aangekomen. Neem op een andere manier contact op, bijvoorbeeld via het telefoonnummer uit de inzending.",
         "Details": "Gegevens",
-        "Evidence log": "Bewijslog"
+        "Evidence log": "Bewijslog",
+        "Desk group": "Baliegroep",
+        "The Nextcloud group whose members may fill a form in for a resident or a company, at the desk or on the phone. Only forms that allow employees offer it. Empty means nobody may.": "De Nextcloud-groep waarvan de leden een formulier mogen invullen voor een inwoner of een bedrijf, aan de balie of aan de telefoon. Alleen formulieren die medewerkers toestaan bieden dit aan. Leeg betekent dat niemand dit mag.",
+        "An employee fills it in for a resident": "Medewerker vult in voor een inwoner",
+        "The resident is the applicant on the case.": "De inwoner staat als aanvrager op de zaak."
     },
     "nplurals=2; plural=(n != 1);"
 )
