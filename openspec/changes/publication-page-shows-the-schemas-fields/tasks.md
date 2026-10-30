@@ -8,3 +8,5 @@
   - `node --test tests/publication-documents.spec.mjs`
 - [x] **T4**: a Woo publication reads as before
   - `node --test tests/publication-documents.spec.mjs`, `node --test tests/site-woo-pages.spec.mjs`
+- [x] **T5**: a publication whose schema describes `wooCategory` counts as Woo without the key; a markdown value reads list items, links, emphasis and code as text
+  - `node --test tests/publication-documents.spec.mjs`

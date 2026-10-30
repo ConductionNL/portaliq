@@ -91,13 +91,64 @@ function isHidden(publication, name) {
 }
 
 /**
+ * Whether the publication is a Woo publication: it carries `wooCategory`, or
+ * its schema describes one. opencatalogi's `publication` schema requires only
+ * a title, so a Woo publication saved without a category is known by its
+ * schema.
+ *
+ * @param {object} publication One publication object.
+ * @return {boolean} True for a Woo publication.
+ * @spec openspec/changes/publication-page-shows-the-schemas-fields/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+ */
+function isWooPublication(publication) {
+	if (Object.hasOwn(publication, 'wooCategory') === true) {
+		return true
+	}
+
+	return Object.hasOwn(schemaProperties(publication) || {}, 'wooCategory')
+}
+
+/**
+ * A markdown text's inline syntax as plain text: a link or image reads as
+ * its text, emphasis and code as the words inside.
+ *
+ * @param {string} text One line of markdown.
+ * @return {string} The line without its inline syntax.
+ */
+function plainInline(text) {
+	return text
+		.replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
+		.replace(/(\*\*|__)(\S(?:.*?\S)?)\1/g, '$2')
+		.replace(/\*(\S(?:.*?\S)?)\*/g, '$1')
+		.replace(/(^|\W)_(\S(?:.*?\S)?)_(?=\W|$)/g, '$1$2')
+		.replace(/`([^`]+)`/g, '$1')
+}
+
+/**
+ * A markdown field as lines of text: the richText block's headings and
+ * paragraphs, a bullet list item marked with a bullet, and inline syntax read
+ * as plain text. Nothing becomes markup.
+ *
+ * @param {string} markdown The field's markdown.
+ * @return {Array<{index: number, level: number, text: string}>} The lines.
+ * @spec openspec/changes/publication-page-shows-the-schemas-fields/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-the-public-fields-of-any-other-schema
+ */
+function markdownLines(markdown) {
+	return richTextLines(markdown).map((line) => {
+		const item = line.level === 0 ? /^[-*+] +(.*)$/.exec(line.text) : null
+		const text = item ? `• ${item[1]}` : line.text
+		return { ...line, text: plainInline(text) }
+	})
+}
+
+/**
  * The summary a visitor reads under the title: `summary`, else `description`,
  * else `shortDescription` (the stackiq schemas name it so). A field the
  * schema marks `visible: false` is passed over.
  *
  * @param {object} publication One publication object.
  * @return {string} The summary, or ''.
- * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
  * @spec openspec/changes/publication-page-shows-the-schemas-fields/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-the-public-fields-of-any-other-schema
  */
 export function publicationSummary(publication) {
@@ -147,7 +198,7 @@ export function themeIdsOf(publication) {
  * @param {string} context.locale The site's language.
  * @param {Record<string, string>} [context.themeNames] Theme id to name.
  * @return {Array<{name: string, label: string, value: string|Array<string>, kind: string}>} The rows.
- * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
  * @spec openspec/changes/publication-page-shows-the-schemas-fields/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-the-public-fields-of-any-other-schema
  */
 export function visitorRows(publication, { t, locale, themeNames = {} }) {
@@ -196,8 +247,9 @@ export function visitorRows(publication, { t, locale, themeNames = {} }) {
 
 /**
  * The long description a visitor reads under the summary, as lines of text
- * (its markdown headings and paragraphs, never markup), or none when absent,
- * the same as the summary, or marked `visible: false` by the schema.
+ * (its markdown headings, paragraphs and list items, never markup), or none
+ * when absent, the same as the summary, or marked `visible: false` by the
+ * schema.
  *
  * @param {object} publication One publication object.
  * @return {Array<{index: number, level: number, text: string}>} The lines.
@@ -217,7 +269,7 @@ export function longDescriptionLines(publication) {
 		return []
 	}
 
-	return richTextLines(value)
+	return markdownLines(value)
 }
 
 /**
@@ -383,9 +435,9 @@ function valueText(value, property, { t, locale, hasSchema, relation }) {
  * publication carries it; otherwise the field name is put in words.
  *
  * Left out: an empty value, a file or a list of files, a related object
- * known only by its id, and every row of a Woo publication (it carries
- * `wooCategory`), whose remaining fields are the archive's bookkeeping (see
- * visitorRows).
+ * known only by its id, and every row of a Woo publication (see
+ * isWooPublication), whose remaining fields are the archive's bookkeeping
+ * (see visitorRows).
  *
  * @param {object} publication One publication object.
  * @param {object} context The reader.
@@ -399,7 +451,7 @@ export function schemaRows(publication, { t = (key) => key, locale }) {
 		return []
 	}
 
-	if (Object.hasOwn(publication, 'wooCategory')) {
+	if (isWooPublication(publication) === true) {
 		return []
 	}
 
@@ -447,7 +499,7 @@ export function schemaRows(publication, { t = (key) => key, locale }) {
 		}
 
 		if (property.format === 'markdown' && typeof value === 'string') {
-			const lines = richTextLines(value)
+			const lines = markdownLines(value)
 			if (lines.length > 0) {
 				rows.push({ name, label, value: lines, kind: 'lines' })
 			}

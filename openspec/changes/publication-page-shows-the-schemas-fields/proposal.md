@@ -17,6 +17,6 @@ Which fields are public is already decided in OpenRegister. Property-level RBAC 
 
 ## Not changed
 
-- A Woo publication (it carries `wooCategory`) reads exactly as before: its other fields are the archive's bookkeeping.
+- A Woo publication (it carries `wooCategory`, or its schema describes one) reads exactly as before: its other fields are the archive's bookkeeping.
 - Which fields are public: that stays with the schema's RBAC in OpenRegister. Portaliq adds no visibility rule of its own.
 - The documents and the search results.

@@ -405,7 +405,7 @@ export default {
 		 * @return {Array<object>} The rendered field rows: the Woo rows, then
 		 * the other schema's public fields.
 		 *
-		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
 		 * @spec openspec/changes/publication-page-shows-the-schemas-fields/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-the-public-fields-of-any-other-schema
 		 */
 		fields() {

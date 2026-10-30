@@ -547,6 +547,92 @@ test('a long description or summary field marked visible: false stays off the pa
 	)
 })
 
+test('a Woo publication without a category is known by its schema and gets no extra rows (#1772 review)', () => {
+	// pub-overeenkomst-vandam in opencatalogi's Zuiddrecht example set: the
+	// `publication` schema requires only a title, so this one has no
+	// wooCategory key.
+	const vandam = {
+		'@self': {
+			id: 'p-vandam',
+			schema: {
+				slug: 'publication',
+				properties: {
+					title: { title: 'Title', type: 'string' },
+					wooCategory: {
+						title: 'Woo information category',
+						type: 'string',
+					},
+					status: { title: 'Status', type: 'string' },
+					publicationKind: {
+						title: 'Kind of publication',
+						type: 'string',
+					},
+					soortHandeling: { title: 'Document handling', type: 'string' },
+					retentionCategory: {
+						title: 'Retention Category',
+						type: 'string',
+					},
+					plooiReason: { title: 'PLOOI failure reason', type: 'string' },
+				},
+			},
+		},
+		title: 'Overeenkomst levering en plaatsing verlichting fietspad Lindelaan',
+		summary: 'De opdracht aan Installatiebedrijf Van Dam.',
+		publicationKind: 'actief',
+		soortHandeling: 'ondertekening',
+		status: 'published',
+		retentionCategory: 'B1',
+		plooiReason: 'timeout',
+		publicationDate: '2026-10-20T10:00:00+00:00',
+	}
+	assert.deepEqual(schemaRows(vandam, { locale: 'nl' }), [])
+	assert.deepEqual(
+		visitorRows(vandam, { t: createTranslator('nl'), locale: 'nl' }).map(
+			(row) => row.label,
+		),
+		['Publicatiedatum'],
+	)
+})
+
+test('markdown reads as text: a bullet as a bullet, links, emphasis and code as their words (#1772 review)', () => {
+	const markdown =
+		'## Wat het doet\n- Registreert **zaken**\n* volgt [de status](https://example.org/s)\n'
+		+ 'Werkt met `ZGW API` en _koppelingen_; snake_case_naam blijft.'
+	assert.deepEqual(
+		longDescriptionLines({ longDescription: markdown }).map((line) => [
+			line.level,
+			line.text,
+		]),
+		[
+			[2, 'Wat het doet'],
+			[0, '• Registreert zaken'],
+			[0, '• volgt de status'],
+			[0, 'Werkt met ZGW API en koppelingen; snake_case_naam blijft.'],
+		],
+	)
+	const rows = schemaRows(
+		{
+			'@self': {
+				schema: {
+					properties: {
+						roadmap: {
+							title: 'Roadmap',
+							type: 'string',
+							format: 'markdown',
+						},
+					},
+				},
+			},
+			roadmap: '- *Nieuwe* versie',
+		},
+		{ locale: 'nl' },
+	)
+	assert.deepEqual(
+		rows.map((row) => row.value.map((line) => line.text)),
+		[['• Nieuwe versie']],
+	)
+})
+
 test('with a schema only a date format reads as a date (#1772 f5)', () => {
 	const rows = schemaRows(
 		{
