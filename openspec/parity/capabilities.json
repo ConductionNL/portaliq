@@ -2819,7 +2819,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "The status label is whatever the case-owning app's case type declares; portaliq only renders it, never invents one.",
 				"origin": "code",
-				"change": "2026-09-28-what-the-citizen-may-write-on-their-own-case"
+				"change": "2026-09-28-what-the-citizen-may-write-on-their-own-case",
+				"requirement": "openspec/specs/citizen-writes-on-their-own-case/spec.md REQ-CWOC-006 The citizen reads the status vocabulary the case app supplied"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -10723,7 +10724,8 @@
 				"owner": "ConductionNL/dossiq",
 				"note": "The final status's public label and description are shown, which can carry the decision in words, but the result itself renders as a raw uuid and there is no field for the organisation's explanation of the decision (code reading, needs a live check). The dossiq half shipped in 9489ca2c6 (dossiq lane: existing): the outcome reads in words, with the organisation's explanation, and no uuid is shown. Before: ConductionNL/dossiq@971735b03e (development) lib/Portal/PortalContributionProvider.php:121 projects 'result' (a uuid $ref to the result record in dossiq_register.json) and statusPublicLabel/statusPublicDescription; src/portal/components/CollectionTable.jsx:42 deriveColumns shows every projected field as text (OpenSpec pass 2026-09-27, corrected 2026-09-28).",
 				"origin": "code",
-				"change": "2026-09-29-contribution-manifest-v3"
+				"change": "2026-09-29-contribution-manifest-v3",
+				"requirement": "openspec/changes/case-outcome-on-the-case-page/specs/citizen-writes-on-their-own-case/spec.md REQ-COC-001 An ended case shows its outcome with the organisation's explanation"
 			},
 			"provider": "dossiq",
 			"providerHow": "read-from-code",
