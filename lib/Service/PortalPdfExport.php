@@ -59,6 +59,13 @@ class PortalPdfExport {
 	public const RENDER_METHOD = 'renderRowsToPdf';
 
 	/**
+	 * OpenRegister's method that says whether an office server can convert to PDF.
+	 *
+	 * @var string
+	 */
+	public const AVAILABILITY_METHOD = 'isPdfAvailable';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container For resolving OpenRegister's ExportService.
@@ -73,14 +80,27 @@ class PortalPdfExport {
 	}//end __construct()
 
 	/**
-	 * Whether OpenRegister's rows renderer is there.
+	 * Whether OpenRegister can render a PDF now.
 	 *
-	 * @return bool True when the service resolves and has the render method.
+	 * OpenRegister converts PDFs through an office server (Collabora or
+	 * Euro-Office) and reports through `isPdfAvailable()` whether one is
+	 * installed. An OpenRegister without that method renders by itself.
+	 *
+	 * @return bool True when the service resolves, has the render method, and can convert.
 	 *
 	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t01
 	 */
 	public function available(): bool {
-		return $this->service() !== null;
+		$service = $this->service();
+		if ($service === null) {
+			return false;
+		}
+
+		if (method_exists($service, self::AVAILABILITY_METHOD) === false) {
+			return true;
+		}
+
+		return $service->{self::AVAILABILITY_METHOD}() === true;
 	}//end available()
 
 	/**
