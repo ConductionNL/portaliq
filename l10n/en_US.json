@@ -491,7 +491,12 @@
         "Your plan is nearly ending": "Your plan is nearly ending",
         "The plan %1$s ends on %2$s": "The plan %1$s ends on %2$s",
         "The plan \"%1$s\" ends on %2$s. %3$s actions are still open. Extend the plan with your caseworker, or complete the actions.": "The plan \"%1$s\" ends on %2$s. %3$s actions are still open. Extend the plan with your caseworker, or complete the actions.",
-        "Go to %1$s": "Go to %1$s"
+        "Go to %1$s": "Go to %1$s",
+        "Fill in the name and e-mail address of the person who co-signs.": "Fill in the name and e-mail address of the person who co-signs.",
+        "Will you co-sign a request?": "Will you co-sign a request?",
+        "%1$s, you are asked to co-sign the request \"%2$s\". Sign in with your own DigiD, check the request and co-sign or decline. Do this before %3$s.": "%1$s, you are asked to co-sign the request \"%2$s\". Sign in with your own DigiD, check the request and co-sign or decline. Do this before %3$s.",
+        "Co-sign a request": "Co-sign a request",
+        "Sign in and check": "Sign in and check"
     },
     "pluralForm": "nplurals=2; plural=(n != 1);"
 }

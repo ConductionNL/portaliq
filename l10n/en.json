@@ -3149,7 +3149,12 @@
         "The receipt did not arrive.": "The receipt did not arrive.",
         "The mail to the resident was refused. The submission itself did reach the case app. Contact the resident another way, for instance by the phone number in the submission.": "The mail to the resident was refused. The submission itself did reach the case app. Contact the resident another way, for instance by the phone number in the submission.",
         "Details": "Details",
-        "Evidence log": "Evidence log"
+        "Evidence log": "Evidence log",
+        "Fill in the name and e-mail address of the person who co-signs.": "Fill in the name and e-mail address of the person who co-signs.",
+        "Will you co-sign a request?": "Will you co-sign a request?",
+        "%1$s, you are asked to co-sign the request \"%2$s\". Sign in with your own DigiD, check the request and co-sign or decline. Do this before %3$s.": "%1$s, you are asked to co-sign the request \"%2$s\". Sign in with your own DigiD, check the request and co-sign or decline. Do this before %3$s.",
+        "Co-sign a request": "Co-sign a request",
+        "Sign in and check": "Sign in and check"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

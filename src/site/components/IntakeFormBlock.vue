@@ -113,6 +113,13 @@
 				</button>
 			</p>
 			<p
+				v-if="cosign"
+				class="utrecht-paragraph"
+				role="status"
+				data-testid="intake-form-cosign">
+				{{ text.cosignWaiting.split('{name}').join(cosign.holderName).split('{date}').join(cosign.dueAt) }}
+			</p>
+			<p
 				v-if="mailedTo"
 				class="utrecht-paragraph"
 				data-testid="intake-form-mailed">
@@ -612,6 +619,7 @@ export default {
 			statementErrors: {},
 			confirmation: null,
 			mailedTo: '',
+			cosign: null,
 			payment: null,
 			paying: false,
 			payFailed: false,
@@ -1023,6 +1031,7 @@ export default {
 				this.confirmationText = outcome.confirmationText
 				this.confirmation = outcome.confirmation
 				this.mailedTo = outcome.mailedTo
+				this.cosign = outcome.cosign || null
 				this.moments = outcome.moments || {}
 				this.state = 'done'
 				this.$nextTick(() => {

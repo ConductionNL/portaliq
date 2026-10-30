@@ -3304,7 +3304,12 @@
         "The receipt did not arrive.": "De ontvangstbevestiging kwam niet aan.",
         "The mail to the resident was refused. The submission itself did reach the case app. Contact the resident another way, for instance by the phone number in the submission.": "De mail naar de inwoner werd geweigerd. De inzending zelf is wel in de zaakapp aangekomen. Neem op een andere manier contact op, bijvoorbeeld via het telefoonnummer uit de inzending.",
         "Details": "Gegevens",
-        "Evidence log": "Bewijslog"
+        "Evidence log": "Bewijslog",
+        "Fill in the name and e-mail address of the person who co-signs.": "Vul de naam en het e-mailadres in van wie mee ondertekent.",
+        "Will you co-sign a request?": "Wilt u een aanvraag mede-ondertekenen?",
+        "%1$s, you are asked to co-sign the request \"%2$s\". Sign in with your own DigiD, check the request and co-sign or decline. Do this before %3$s.": "%1$s, u wordt gevraagd de aanvraag \"%2$s\" mede te ondertekenen. Log in met uw eigen DigiD, controleer de aanvraag en onderteken mee of weiger. Doe dit voor %3$s.",
+        "Co-sign a request": "Aanvraag mede-ondertekenen",
+        "Sign in and check": "Inloggen met DigiD en controleren"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

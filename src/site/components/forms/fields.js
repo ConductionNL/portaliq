@@ -214,6 +214,7 @@ export const DUTCH = Object.freeze({
 	notAnswered: 'Niet ingevuld',
 	mailedTo:
 		'Wij hebben een bevestiging gestuurd naar {email}, met een samenvatting van uw aanvraag. Geen mail gezien? Kijk ook bij uw ongewenste e-mail.',
+	cosignWaiting: 'Wacht op mede-ondertekening door {name}. Dat kan tot en met {date}.',
 	whatNow: 'Wat gebeurt er nu?',
 	print: 'Deze pagina printen',
 	statementRequired: 'Vink deze verklaring aan voordat u verstuurt.',
