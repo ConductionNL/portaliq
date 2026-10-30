@@ -193,19 +193,82 @@ export function plansApi(api) {
 			if (!answer.ok) {
 				return { ok: false, status: answer.status }
 			}
-			const objectUrl = window.URL.createObjectURL(await answer.res.blob())
-			const link = document.createElement('a')
-			link.href = objectUrl
-			link.download = `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'plan'}.pdf`
-			document.body.appendChild(link)
-			link.click()
-			setTimeout(() => {
-				link.remove()
-				window.URL.revokeObjectURL(objectUrl)
-			}, 10000)
+			await saveBlob(
+				answer.res,
+				`${name.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'plan'}.pdf`,
+			)
+			return { ok: true, status: answer.status }
+		},
+
+		/**
+		 * Add a file to a plan, or a new version of a file it holds.
+		 *
+		 * @param {string} id The plan.
+		 * @param {File} file The file.
+		 * @param {string} [previousVersion] The file this one is a new version of.
+		 * @return {Promise<{ok: boolean, status: number, error: string}>} The outcome.
+		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+		 */
+		async addPlanFile(id, file, previousVersion = '') {
+			const form = new FormData()
+			form.append('file', file)
+			if (previousVersion) {
+				form.append('previousVersion', previousVersion)
+			}
+			const answer = await api.request(
+				'POST',
+				`/plans/${encodeURIComponent(id)}/files`,
+				form,
+			)
+			return {
+				ok: answer.ok,
+				status: answer.status,
+				error: String(answer.json?.error || ''),
+			}
+		},
+
+		/**
+		 * Save one file of a plan.
+		 *
+		 * @param {string} id The plan.
+		 * @param {{id: string, name: string}} file The file.
+		 * @return {Promise<{ok: boolean, status: number}>} The outcome.
+		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+		 */
+		async downloadPlanFile(id, file) {
+			const answer = await api.request(
+				'GET',
+				`/plans/${encodeURIComponent(id)}/files/${encodeURIComponent(file.id)}`,
+				null,
+				true,
+			)
+			if (!answer.ok) {
+				return { ok: false, status: answer.status }
+			}
+			await saveBlob(answer.res, file.name || 'bestand')
 			return { ok: true, status: answer.status }
 		},
 	}
+}
+
+/**
+ * Hand a response's body to the browser as a download.
+ *
+ * @param {Response} res The response.
+ * @param {string} name The file's name.
+ * @return {Promise<void>} Resolves when the download started.
+ */
+async function saveBlob(res, name) {
+	const objectUrl = window.URL.createObjectURL(await res.blob())
+	const link = document.createElement('a')
+	link.href = objectUrl
+	link.download = name
+	document.body.appendChild(link)
+	link.click()
+	setTimeout(() => {
+		link.remove()
+		window.URL.revokeObjectURL(objectUrl)
+	}, 10000)
 }
 
 /**

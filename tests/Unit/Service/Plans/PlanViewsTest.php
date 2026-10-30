@@ -84,4 +84,24 @@ class PlanViewsTest extends TestCase {
 		$this->assertSame('', $v->nameOf(''));
 		$this->assertSame('', $v->nameOf('stranger'));
 	}//end testNoteAndAction()
+	/**
+	 * Each file shows its newest version, with the earlier ones under it.
+	 *
+	 * @return void
+	 */
+	public function testFilesGroupVersions(): void {
+		$files = [
+			['id' => 'f1', 'name' => 'Budget.pdf', 'series' => 'f1', 'version' => 1, 'addedBy' => 'owner', 'addedAt' => 'a'],
+			['id' => 'f2', 'name' => 'Brief.pdf', 'series' => 'f2', 'version' => 1, 'addedBy' => 'p1', 'addedAt' => 'b'],
+			['id' => 'f3', 'name' => 'Budget.pdf', 'series' => 'f1', 'version' => 2, 'addedBy' => 'p1', 'addedAt' => 'c'],
+		];
+
+		$view = $this->views()->files($files);
+
+		$this->assertSame(['f1', 'f2'], array_column($view, 'series'));
+		$this->assertSame(['id' => 'f3', 'name' => 'Budget.pdf', 'version' => 2, 'addedBy' => 'Piet', 'addedAt' => 'c'], $view[0]['current']);
+		$this->assertSame(['f1'], array_column($view[0]['earlier'], 'id'));
+		$this->assertSame([], $view[1]['earlier']);
+		$this->assertSame([], $this->views()->files([]));
+	}//end testFilesGroupVersions()
 }//end class

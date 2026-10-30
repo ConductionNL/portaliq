@@ -22,11 +22,16 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Plans;
 
+use OCA\Portaliq\Contribution\CitizenDocumentUpload;
 use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use OCA\Portaliq\Service\Identity\PortalContactService;
+use OCA\Portaliq\Service\Plans\PlanFiles;
 use OCA\Portaliq\Service\Plans\PortalPlanService;
+use OCA\Portaliq\Service\PortalFileReader;
+use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCP\AppFramework\Http\StreamResponse;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 
@@ -47,6 +52,13 @@ class PortalPlanServiceTest extends TestCase {
 	private array $rows = ['portalPlan' => [], 'portalAction' => [], 'portalPlanTemplate' => []];
 
 	private int $seq = 0;
+
+	/**
+	 * The files OpenRegister holds on the plan object, by name.
+	 *
+	 * @var array<string, string>
+	 */
+	private array $stored = [];
 
 	/**
 	 * Whether a stored scope value matches: equal, or a list holding it.
@@ -421,4 +433,114 @@ class PortalPlanServiceTest extends TestCase {
 		$this->assertCount(5, array_filter($pdf['rows'], static fn (array $row): bool => $row['part'] === 'Action'));
 		$this->assertSame('A (todo, 2026-09-08)', array_values(array_filter($pdf['rows'], static fn (array $row): bool => $row['part'] === 'Action'))[0]['content']);
 	}//end testThePdfHoldsThePlan()
+
+	/**
+	 * The files of the plans over the same store, with a file store that
+	 * hands out ids in order.
+	 *
+	 * @param PortalPlanService $service The plan service.
+	 * @param array<int, string> $streamed Collects the file ids streamed.
+	 *
+	 * @return PlanFiles
+	 */
+	private function planFiles(PortalPlanService $service, array &$streamed=[]): PlanFiles {
+		$reader = $this->createMock(PortalFileReader::class);
+		$reader->method('listFiles')->willReturnCallback(
+			fn (): array => array_map(static fn (string $name): array => ['name' => $name], array_values($this->stored))
+		);
+		$reader->method('streamFile')->willReturnCallback(
+			function (string $register, string $schema, string $id, string $fileId) use (&$streamed): StreamResponse {
+				$streamed[] = $fileId;
+				return new StreamResponse('php://memory');
+			}
+		);
+		$writer = $this->createMock(PortalFileWriter::class);
+		$writer->method('attachFile')->willReturnCallback(
+			function (string $register, string $schema, string $id, string $fileName): array {
+				$fileId = 'f'.(count($this->stored) + 1);
+				$this->stored[$fileId] = $fileName;
+				return ['id' => $fileId, 'name' => $fileName];
+			}
+		);
+
+		return new PlanFiles($service, $reader, $writer, new CitizenDocumentUpload());
+	}//end planFiles()
+
+	/**
+	 * An upload entry as IRequest::getUploadedFile() gives it.
+	 *
+	 * @param string $name The file name.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function upload(string $name): array {
+		$path = tempnam(sys_get_temp_dir(), 'plan');
+		file_put_contents($path, 'bytes of '.$name);
+
+		return ['name' => $name, 'tmp_name' => $path, 'error' => 0];
+	}//end upload()
+
+	/**
+	 * Mark uploads a new budget plan: version 2 is the newest and version 1
+	 * stays under the earlier versions, stored under its own name.
+	 *
+	 * @return void
+	 */
+	public function testMarkUploadsANewBudgetPlan(): void {
+		$service = $this->service();
+		$files   = $this->planFiles($service);
+		$id      = $this->startedPlan($service);
+
+		$this->assertSame('ok', $files->add(subject: $this->as('sanne'), id: $id, uploaded: $this->upload('Budgetplan.pdf'), now: '2026-09-02T10:00:00+02:00'));
+		$this->assertSame('ok', $files->add(subject: $this->as('mark'), id: $id, uploaded: $this->upload('Budgetplan.pdf'), previousVersion: 'f1', now: '2026-10-06T10:00:00+02:00'));
+
+		$plan = $service->detail(subject: $this->as('sanne'), id: $id, today: '2026-10-08');
+		$this->assertCount(1, $plan['files'], 'one file with two versions');
+		$file = $plan['files'][0];
+		$this->assertSame(['id' => 'f2', 'name' => 'Budgetplan.pdf', 'version' => 2, 'addedBy' => 'Mark', 'addedAt' => '2026-10-06T10:00:00+02:00'], $file['current']);
+		$this->assertSame(['f1'], array_column($file['earlier'], 'id'));
+		$this->assertSame(1, $file['earlier'][0]['version']);
+		$this->assertSame(['f1' => 'Budgetplan.pdf', 'f2' => 'Budgetplan-2.pdf'], $this->stored, 'a new version never overwrites the stored file');
+	}//end testMarkUploadsANewBudgetPlan()
+
+	/**
+	 * A new version follows only the newest version, and a done plan, a
+	 * missing file or a stranger add nothing.
+	 *
+	 * @return void
+	 */
+	public function testWhatAFileUploadRefuses(): void {
+		$service = $this->service();
+		$files   = $this->planFiles($service);
+		$id      = $this->startedPlan($service);
+		$files->add(subject: $this->as('sanne'), id: $id, uploaded: $this->upload('Budgetplan.pdf'));
+		$files->add(subject: $this->as('sanne'), id: $id, uploaded: $this->upload('Budgetplan.pdf'), previousVersion: 'f1');
+
+		$this->assertSame('invalid', $files->add(subject: $this->as('mark'), id: $id, uploaded: $this->upload('Oud.pdf'), previousVersion: 'f1'), 'f1 already has a newer version');
+		$this->assertSame('invalid', $files->add(subject: $this->as('mark'), id: $id, uploaded: $this->upload('X.pdf'), previousVersion: 'unknown'));
+		$this->assertSame('invalid', $files->add(subject: $this->as('mark'), id: $id, uploaded: ['error' => 4]));
+		$this->assertSame('not_found', $files->add(subject: $this->as('lars'), id: $id, uploaded: $this->upload('X.pdf')));
+		$service->update(subject: $this->as('sanne'), id: $id, changes: ['status' => 'done'], today: '2026-09-03');
+		$this->assertSame('forbidden', $files->add(subject: $this->as('mark'), id: $id, uploaded: $this->upload('X.pdf')));
+		$this->assertCount(2, $this->stored, 'nothing was stored for a refusal');
+	}//end testWhatAFileUploadRefuses()
+
+	/**
+	 * A participant opens a file the plan lists; a stranger and an unlisted
+	 * file id get nothing and never reach the file store.
+	 *
+	 * @return void
+	 */
+	public function testOpeningAPlanFile(): void {
+		$service  = $this->service();
+		$streamed = [];
+		$files    = $this->planFiles($service, $streamed);
+		$id       = $this->startedPlan($service);
+		$files->add(subject: $this->as('sanne'), id: $id, uploaded: $this->upload('Budgetplan.pdf'));
+
+		$this->assertInstanceOf(StreamResponse::class, $files->open(subject: $this->as('mark'), id: $id, fileId: 'f1'));
+		$this->assertNull($files->open(subject: $this->as('lars'), id: $id, fileId: 'f1'));
+		$this->assertNull($files->open(subject: $this->as('mark'), id: $id, fileId: 'f99'));
+		$this->assertSame(['f1'], $streamed);
+	}//end testOpeningAPlanFile()
 }//end class

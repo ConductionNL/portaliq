@@ -144,6 +144,38 @@ class PlanViews {
 	}//end action()
 
 	/**
+	 * The files of a plan as the page shows them: one entry per file, its
+	 * newest version first and the earlier versions under it, newest first.
+	 *
+	 * @param array<int, array<string, mixed>> $files The plan's files (PlanRules::filesOf).
+	 *
+	 * @return array<int, array<string, mixed>> `{series, current, earlier}` each.
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md#requirement-participants-share-the-goal-actions-note-and-file-versions-req-spl-003
+	 */
+	public function files(array $files): array {
+		$series = [];
+		foreach ($files as $file) {
+			$version = [
+				'id'          => (string)$file['id'],
+				'name'        => (string)$file['name'],
+				'version'     => (int)$file['version'],
+				'addedBy'     => $this->nameOf(ref: (string)$file['addedBy']),
+				'addedAt'     => (string)$file['addedAt'],
+			];
+			$series[(string)$file['series']][] = $version;
+		}
+
+		$out = [];
+		foreach ($series as $key => $versions) {
+			usort($versions, static fn (array $left, array $right): int => ($right['version'] <=> $left['version']));
+			$out[] = ['series' => (string)$key, 'current' => array_shift($versions), 'earlier' => $versions];
+		}
+
+		return $out;
+	}//end files()
+
+	/**
 	 * A person's name, or '' when the account is unknown.
 	 *
 	 * @param string $ref The subject reference.
