@@ -70,9 +70,10 @@ class PortalAdminScopeTest extends TestCase {
 	}//end testWithoutASessionNothingIsAdministered()
 
 	public function testGroupsOfKeepsOnlyNamedGroups(): void {
-		$this->assertSame(['a', 'b'], PortalAdminScope::groupsOf(portal: ['adminGroups' => [' a ', '', 'b', 'a', 7, null]]));
-		$this->assertSame([], PortalAdminScope::groupsOf(portal: ['adminGroups' => 'a']));
-		$this->assertSame([], PortalAdminScope::groupsOf(portal: []));
+		$scope = $this->scope(admin: false, groups: []);
+		$this->assertSame(['a', 'b'], $scope->groupsOf(portal: ['adminGroups' => [' a ', '', 'b', 'a', 7, null]]));
+		$this->assertSame([], $scope->groupsOf(portal: ['adminGroups' => 'a']));
+		$this->assertSame([], $scope->groupsOf(portal: []));
 	}//end testGroupsOfKeepsOnlyNamedGroups()
 
 	/**

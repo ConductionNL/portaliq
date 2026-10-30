@@ -125,10 +125,10 @@ class PortalAdminGroupsGuardListener implements IEventListener {
 
 		$before = [];
 		if ($old !== null) {
-			$before = PortalAdminScope::groupsOf(portal: (array)($old->getObject() ?? []));
+			$before = $this->scope->groupsOf(portal: (array)($old->getObject() ?? []));
 		}
 
-		$after = PortalAdminScope::groupsOf(portal: (array)($entity->getObject() ?? []));
+		$after = $this->scope->groupsOf(portal: (array)($entity->getObject() ?? []));
 		if (self::sameGroups(before: $before, after: $after) === true) {
 			return;
 		}

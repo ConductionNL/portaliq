@@ -9,6 +9,7 @@ namespace OCA\Portaliq\Tests\Unit\Tenancy;
 
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\Tenancy\PortalAdminGroups;
+use OCA\Portaliq\Service\Tenancy\PortalAdminScope;
 use OCP\IGroup;
 use OCP\IGroupManager;
 use PHPUnit\Framework\TestCase;
@@ -28,13 +29,13 @@ class PortalAdminGroupsTest extends TestCase {
 			->with('portaliq', 'portal', 'slug', 'zeist', '', 'p-1', ['adminGroups' => ['zeist-beheer', 'zeist-web']])
 			->willReturn(['slug' => 'zeist']);
 
-		$service = new PortalAdminGroups($this->manager(), $writer);
+		$service = new PortalAdminGroups($this->manager(), $writer, $this->scope());
 
 		$this->assertSame(['slug' => 'zeist'], $service->save(portal: ['id' => 'p-1', 'slug' => 'zeist'], groups: ['zeist-beheer', ['id' => 'zeist-web'], 'typo', 'zeist-beheer', '', 3]));
 	}//end testASaveKeepsOnlyExistingGroupsOnce()
 
 	public function testAGoneGroupIsListedByItsId(): void {
-		$service = new PortalAdminGroups($this->manager(), $this->createMock(PortalObjectWriter::class));
+		$service = new PortalAdminGroups($this->manager(), $this->createMock(PortalObjectWriter::class), $this->scope());
 
 		$this->assertSame(
 			[['id' => 'zeist-beheer', 'label' => 'Zeist beheer'], ['id' => 'gone', 'label' => 'gone']],
@@ -64,4 +65,13 @@ class PortalAdminGroupsTest extends TestCase {
 
 		return $manager;
 	}//end manager()
+
+	/**
+	 * A scope that reads the groups with its own rule.
+	 *
+	 * @return PortalAdminScope
+	 */
+	private function scope(): PortalAdminScope {
+		return $this->getMockBuilder(PortalAdminScope::class)->disableOriginalConstructor()->onlyMethods([])->getMock();
+	}//end scope()
 }//end class

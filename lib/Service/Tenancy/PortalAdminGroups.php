@@ -41,10 +41,12 @@ class PortalAdminGroups {
 	 *
 	 * @param IGroupManager      $groups Resolves group ids and names.
 	 * @param PortalObjectWriter $writer Writes the portal.
+	 * @param PortalAdminScope   $scope  Reads the portal's groups.
 	 */
 	public function __construct(
 		private readonly IGroupManager $groups,
 		private readonly PortalObjectWriter $writer,
+		private readonly PortalAdminScope $scope,
 	) {
 	}//end __construct()
 
@@ -60,7 +62,7 @@ class PortalAdminGroups {
 	 */
 	public function listFor(array $portal): array {
 		$rows = [];
-		foreach (PortalAdminScope::groupsOf(portal: $portal) as $gid) {
+		foreach ($this->scope->groupsOf(portal: $portal) as $gid) {
 			$group  = $this->groups->get($gid);
 			$rows[] = [
 				'id'    => $gid,

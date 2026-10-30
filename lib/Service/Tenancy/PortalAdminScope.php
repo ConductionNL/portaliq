@@ -81,7 +81,7 @@ class PortalAdminScope {
 			return true;
 		}
 
-		foreach (self::groupsOf(portal: $portal) as $gid) {
+		foreach ($this->groupsOf(portal: $portal) as $gid) {
 			if ($this->groups->isInGroup($uid, $gid) === true) {
 				return true;
 			}
@@ -193,7 +193,7 @@ class PortalAdminScope {
 	 *
 	 * @spec openspec/changes/operate-portals-per-organisation/specs/operate-portals-per-organisation/spec.md#requirement-each-organisation-looks-after-its-own-portal-on-a-shared-installation-req-opo-005
 	 */
-	public static function groupsOf(array $portal): array {
+	public function groupsOf(array $portal): array {
 		$ids = [];
 		$raw = ($portal[self::FIELD] ?? []);
 		if (is_array($raw) === false) {
