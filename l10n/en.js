@@ -3135,7 +3135,15 @@ OC.L10N.register(
         "The receipt did not arrive.": "The receipt did not arrive.",
         "The mail to the resident was refused. The submission itself did reach the case app. Contact the resident another way, for instance by the phone number in the submission.": "The mail to the resident was refused. The submission itself did reach the case app. Contact the resident another way, for instance by the phone number in the submission.",
         "Details": "Details",
-        "Evidence log": "Evidence log"
+        "Evidence log": "Evidence log",
+        "All recipients of this sending": "All recipients of this sending",
+        "not yet": "not yet",
+        "yes": "yes",
+        "asked for": "asked for",
+        "Read receipt": "Read receipt",
+        "Legal effect": "Legal effect",
+        "Deadline": "Deadline",
+        "Read by {object.subjectRef}": "Read by {object.subjectRef}"
     },
     "nplurals=2; plural=(n != 1);"
 )

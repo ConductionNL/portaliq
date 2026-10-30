@@ -3304,7 +3304,15 @@
         "The receipt did not arrive.": "De ontvangstbevestiging kwam niet aan.",
         "The mail to the resident was refused. The submission itself did reach the case app. Contact the resident another way, for instance by the phone number in the submission.": "De mail naar de inwoner werd geweigerd. De inzending zelf is wel in de zaakapp aangekomen. Neem op een andere manier contact op, bijvoorbeeld via het telefoonnummer uit de inzending.",
         "Details": "Gegevens",
-        "Evidence log": "Bewijslog"
+        "Evidence log": "Bewijslog",
+        "All recipients of this sending": "Alle ontvangers van deze verzending",
+        "not yet": "nog niet",
+        "yes": "ja",
+        "asked for": "gevraagd",
+        "Read receipt": "Leesbevestiging",
+        "Legal effect": "Rechtsgevolg",
+        "Deadline": "Termijn",
+        "Read by {object.subjectRef}": "Gelezen door {object.subjectRef}"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

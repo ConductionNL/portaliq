@@ -2452,20 +2452,99 @@
         "widgets": [
           {
             "id": "message-data",
-            "type": "data",
+            "type": "facts",
             "title": "Message",
             "icon": "Email",
             "content": {
-              "columns": 3,
-              "include": [
-                "body",
-                "subjectRef",
-                "receivedAt",
-                "read",
-                "nature",
-                "rechtsgevolg",
-                "term",
-                "referenceId"
+              "fields": [
+                {
+                  "as": "text",
+                  "path": "body"
+                },
+                {
+                  "label": "Recipient",
+                  "path": "subjectRef"
+                },
+                {
+                  "key": "sending",
+                  "label": "Sending",
+                  "parts": [
+                    {
+                      "text": "All recipients of this sending"
+                    }
+                  ],
+                  "when": {
+                    "field": "sendingRef",
+                    "op": "notEmpty"
+                  },
+                  "route": {
+                    "name": "PortalMessages",
+                    "query": {
+                      "sendingRef": "@source.sendingRef"
+                    }
+                  }
+                },
+                {
+                  "label": "Received on",
+                  "path": "receivedAt",
+                  "format": "today-time"
+                },
+                {
+                  "label": "Read",
+                  "path": "readAt",
+                  "format": "today-time",
+                  "emptyValue": "not yet",
+                  "when": {
+                    "field": "readReceiptRequested",
+                    "op": "eq",
+                    "value": true
+                  }
+                },
+                {
+                  "label": "Read",
+                  "path": "read",
+                  "map": {
+                    "true": "yes",
+                    "false": "not yet"
+                  },
+                  "emptyValue": "not yet",
+                  "when": {
+                    "field": "readReceiptRequested",
+                    "op": "neq",
+                    "value": true
+                  }
+                },
+                {
+                  "key": "readReceipt",
+                  "label": "Read receipt",
+                  "parts": [
+                    {
+                      "text": "asked for"
+                    }
+                  ],
+                  "when": {
+                    "field": "readReceiptRequested",
+                    "op": "eq",
+                    "value": true
+                  }
+                },
+                {
+                  "label": "Kind",
+                  "path": "nature"
+                },
+                {
+                  "label": "Legal effect",
+                  "path": "rechtsgevolg"
+                },
+                {
+                  "label": "Deadline",
+                  "path": "term",
+                  "format": "date-long"
+                },
+                {
+                  "label": "Reference",
+                  "path": "referenceId"
+                }
               ]
             }
           },
@@ -2480,7 +2559,15 @@
             "id": "message-history",
             "type": "audit-trail",
             "title": "Historie",
-            "icon": "History"
+            "icon": "History",
+            "content": {
+              "changeLabels": [
+                {
+                  "field": "readAt",
+                  "label": "Read by {object.subjectRef}"
+                }
+              ]
+            }
           }
         ],
         "layout": [
