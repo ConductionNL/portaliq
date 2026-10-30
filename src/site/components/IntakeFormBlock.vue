@@ -882,6 +882,8 @@ export default {
 		 * The page's language, for the words that come in Dutch and English.
 		 *
 		 * @return {string} The language tag, or ''.
+		 *
+		 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-an-employee-can-fill-in-a-form-for-a-resident-or-company-req-rif-005
 		 */
 		pageLang() {
 			return typeof document === 'undefined'
@@ -918,6 +920,8 @@ export default {
 		 * The line that tells the employee for whom they fill the form in.
 		 *
 		 * @return {string} The line.
+		 *
+		 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-an-employee-can-fill-in-a-form-for-a-resident-or-company-req-rif-005
 		 */
 		staffLine() {
 			return staffFillingFor(identityWords(this.pageLang), this.staffApplicant)

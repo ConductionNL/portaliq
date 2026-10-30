@@ -106,10 +106,24 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The words in the reader's language.
+		 *
+		 * @return {Record<string, string>} The words.
+		 *
+		 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-an-employee-can-fill-in-a-form-for-a-resident-or-company-req-rif-005
+		 */
 		words() {
 			return identityWords(this.locale)
 		},
 
+		/**
+		 * The three ways on the board offers, with their hints.
+		 *
+		 * @return {Array<{kind: string, label: string, hint: string}>} The options.
+		 *
+		 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-an-employee-can-fill-in-a-form-for-a-resident-or-company-req-rif-005
+		 */
 		options() {
 			return [
 				{
@@ -130,6 +144,13 @@ export default {
 			]
 		},
 
+		/**
+		 * The label of the input for the chosen way on.
+		 *
+		 * @return {string} The label.
+		 *
+		 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-an-employee-can-fill-in-a-form-for-a-resident-or-company-req-rif-005
+		 */
 		valueLabel() {
 			return {
 				bsn: this.words.staffBsnLabel,
@@ -138,6 +159,13 @@ export default {
 			}[this.kind]
 		},
 
+		/**
+		 * What to tell the employee under the input, or ''.
+		 *
+		 * @return {string} The sentence.
+		 *
+		 * @spec openspec/changes/resident-identity-in-forms/specs/portal-form-identity/spec.md#requirement-an-employee-can-fill-in-a-form-for-a-resident-or-company-req-rif-005
+		 */
 		problem() {
 			return this.empty ? this.words.staffEmpty : this.failure
 		},
