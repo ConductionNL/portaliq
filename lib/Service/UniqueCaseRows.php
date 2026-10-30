@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/mandate-reads-the-typed-party/specs/portal-mandates/spec.md#requirement-a-mandated-case-list-reads-the-party-in-its-typed-and-its-bare-form-req-mtp-001
+ * @spec openspec/specs/portal-mandates/spec.md#requirement-a-mandated-case-list-reads-the-party-in-its-typed-and-its-bare-form-req-mtp-001
  */
 
 declare(strict_types=1);
@@ -29,7 +29,7 @@ namespace OCA\Portaliq\Service;
 /**
  * Merges row lists, keeping the first row of each case.
  *
- * @spec openspec/changes/mandate-reads-the-typed-party/specs/portal-mandates/spec.md#requirement-a-mandated-case-list-reads-the-party-in-its-typed-and-its-bare-form-req-mtp-001
+ * @spec openspec/specs/portal-mandates/spec.md#requirement-a-mandated-case-list-reads-the-party-in-its-typed-and-its-bare-form-req-mtp-001
  */
 class UniqueCaseRows {
 	/**
@@ -39,7 +39,7 @@ class UniqueCaseRows {
 	 *
 	 * @return array<int, mixed>
 	 *
-	 * @spec openspec/changes/mandate-reads-the-typed-party/specs/portal-mandates/spec.md#requirement-a-mandated-case-list-reads-the-party-in-its-typed-and-its-bare-form-req-mtp-001
+	 * @spec openspec/specs/portal-mandates/spec.md#requirement-a-mandated-case-list-reads-the-party-in-its-typed-and-its-bare-form-req-mtp-001
 	 */
 	public function merged(array $lists): array {
 		$rows = [];
@@ -60,7 +60,7 @@ class UniqueCaseRows {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/mandate-reads-the-typed-party/specs/portal-mandates/spec.md#requirement-a-mandated-case-list-reads-the-party-in-its-typed-and-its-bare-form-req-mtp-001
+	 * @spec openspec/specs/portal-mandates/spec.md#requirement-a-mandated-case-list-reads-the-party-in-its-typed-and-its-bare-form-req-mtp-001
 	 */
 	private function keyOf(mixed $row): string {
 		if (is_array($row) === false) {

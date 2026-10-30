@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/collection-intro/tasks.md#t1
+ * @spec openspec/changes/archive/2026-10-30-collection-intro/tasks.md#t1
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Keeps a collection's `intro` when it is a non-empty string.
  *
- * @spec openspec/changes/collection-intro/tasks.md#t1
+ * @spec openspec/changes/archive/2026-10-30-collection-intro/tasks.md#t1
  */
 class CollectionIntroKey {
 	/**
@@ -41,7 +41,7 @@ class CollectionIntroKey {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/collection-intro/tasks.md#t1
+	 * @spec openspec/changes/archive/2026-10-30-collection-intro/tasks.md#t1
 	 */
 	public function normalise(array $collection): array {
 		if (array_key_exists('intro', $collection) === false) {

@@ -170,7 +170,7 @@ class ExampleSiteInstaller {
 	 *
 	 * @return array<string, mixed> The declaration to go on with.
 	 *
-	 * @spec openspec/changes/site-organisation-registration-form/specs/example-site/spec.md#requirement-an-example-site-can-ship-a-form-with-the-page-that-shows-it
+	 * @spec openspec/specs/example-site/spec.md#requirement-an-example-site-can-ship-a-form-with-the-page-that-shows-it
 	 */
 	private function withInstalledForms(string $schema, array $site, string $slug): array {
 		if ($schema !== 'form') {
@@ -193,7 +193,7 @@ class ExampleSiteInstaller {
 	 *
 	 * @return array<int, array<string, mixed>> The pages to install.
 	 *
-	 * @spec openspec/changes/site-organisation-registration-form/specs/example-site/spec.md#requirement-an-example-site-can-ship-a-form-with-the-page-that-shows-it
+	 * @spec openspec/specs/example-site/spec.md#requirement-an-example-site-can-ship-a-form-with-the-page-that-shows-it
 	 */
 	private function withFormIds(array $pages, array $forms): array {
 		foreach ($pages as $p => $page) {

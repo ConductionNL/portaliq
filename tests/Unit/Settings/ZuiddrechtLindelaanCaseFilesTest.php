@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-lindelaan-case-files/specs/example-set-lindelaan-case-files/spec.md#requirement-the-lindelaan-case-carries-the-seven-documents-under-review
+ * @spec openspec/specs/example-set-lindelaan-case-files/spec.md#requirement-the-lindelaan-case-carries-the-seven-documents-under-review
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The case files of woo-fietspad.
  *
- * @spec openspec/changes/example-set-lindelaan-case-files/specs/example-set-lindelaan-case-files/spec.md#requirement-the-lindelaan-case-carries-the-seven-documents-under-review
+ * @spec openspec/specs/example-set-lindelaan-case-files/spec.md#requirement-the-lindelaan-case-carries-the-seven-documents-under-review
  */
 class ZuiddrechtLindelaanCaseFilesTest extends TestCase {
 

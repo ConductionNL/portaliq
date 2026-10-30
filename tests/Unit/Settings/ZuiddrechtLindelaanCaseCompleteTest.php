@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-lindelaan-related/specs/example-set-lindelaan-related/spec.md#requirement-the-lindelaan-woo-case-has-sub-cases-a-subject-case-and-objects
+ * @spec openspec/specs/example-set-lindelaan-related/spec.md#requirement-the-lindelaan-woo-case-has-sub-cases-a-subject-case-and-objects
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * What the case boards draw on the Lindelaan case is in the fragment.
  *
- * @spec openspec/changes/example-set-lindelaan-related/specs/example-set-lindelaan-related/spec.md#requirement-the-lindelaan-woo-case-has-sub-cases-a-subject-case-and-objects
+ * @spec openspec/specs/example-set-lindelaan-related/spec.md#requirement-the-lindelaan-woo-case-has-sub-cases-a-subject-case-and-objects
  */
 class ZuiddrechtLindelaanCaseCompleteTest extends TestCase {
 
@@ -126,11 +126,26 @@ class ZuiddrechtLindelaanCaseCompleteTest extends TestCase {
 				['besluit-opstellen', 'Besluit opstellen', '{{cast:pieter.uid}}', 'planned'],
 				['termijn-controleren', 'Termijn controleren', '{{cast:woo-en-informatie.gid}}', 'planned'],
 			],
-			actual: array_map(static fn (array $row): array => [$row['actionType'], $row['label'], $row['owner'] ?? $row['ownerGroup'], $row['state']], $planned)
+			actual: array_map(static fn (array $row): array => [$row['actionType'], $row['label'], self::ownerOf(row: $row), $row['state']], $planned)
 		);
 		$this->assertGreaterThan(expected: 0, actual: $this->offsetOf(value: $planned[0]['plannedFor']));
 		$this->assertGreaterThan(expected: $this->offsetOf(value: $planned[0]['plannedFor']), actual: $this->offsetOf(value: $planned[1]['plannedFor']));
 	}//end testTwoActionsArePlannedNext()
+
+	/**
+	 * Who a planned action is for, as its row reads it: the person, else the team.
+	 *
+	 * @param array<string, mixed> $row The planned action's data.
+	 *
+	 * @return string
+	 */
+	private static function ownerOf(array $row): string {
+		if (($row['owner'] ?? '') !== '') {
+			return $row['owner'];
+		}
+
+		return $row['ownerGroup'];
+	}//end ownerOf()
 
 	/**
 	 * The case waits on Lars's advice case, which is written before it.

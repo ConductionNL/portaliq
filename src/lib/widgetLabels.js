@@ -130,7 +130,7 @@ export function widgetLabel(key, registry) {
  *
  * @param {number} columns The block's width in grid columns.
  * @return {string} The line, or '' for a width that is not a positive number.
- * @spec openspec/changes/page-editor-in-the-page/specs/portal-page-designer/spec.md#requirement-the-editor-toolbar-and-block-cards-read-as-the-board
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-editor-toolbar-and-block-cards-read-as-the-board
  */
 export function widgetWidthLine(columns) {
 	const width = Number(columns)

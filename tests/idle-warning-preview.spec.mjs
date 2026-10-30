@@ -8,7 +8,7 @@
 // Usage:
 //   node --test tests/idle-warning-preview.spec.mjs
 //
-// @spec openspec/changes/idle-warning-preview/specs/portal-session-idle-and-sso/spec.md
+// @spec openspec/specs/portal-session-idle-and-sso/spec.md
 
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'

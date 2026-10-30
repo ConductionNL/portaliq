@@ -5,7 +5,7 @@
 // shows. Everyone the resident acts for, themself, or one party a mandate
 // names. No Vue, so tests/my-cases-parties.spec.mjs runs it as node.
 //
-// @spec openspec/changes/mijn-zaken-chooses-whose-cases/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+// @spec openspec/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
 
 import { ACTING_FOR_SELF, caseTarget } from '../../../shared/myCases.js'
 
@@ -19,7 +19,7 @@ export const EVERYONE = 'everyone'
  * @param {(key: string, vars?: object) => string} tr The translator.
  * @param {string} name The resident's name, '' when unknown.
  * @return {Array<{id: string, label: string, own: boolean}>} The options; `own` marks a label of our own words.
- * @spec openspec/changes/mijn-zaken-chooses-whose-cases/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+ * @spec openspec/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
  */
 export function partyOptions(mandates, tr, name) {
 	const held = (Array.isArray(mandates) ? mandates : [])
@@ -46,7 +46,7 @@ export function partyOptions(mandates, tr, name) {
  * @param {string} choice The choice.
  * @param {Array<{id: string}>} mandates The mandates held.
  * @return {Array<string>} The ids, `self` for the resident's own cases.
- * @spec openspec/changes/mijn-zaken-chooses-whose-cases/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+ * @spec openspec/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
  */
 export function readsFor(choice, mandates) {
 	if (choice !== EVERYONE) {
@@ -64,7 +64,7 @@ export function readsFor(choice, mandates) {
  *
  * @param {Array<object|null>} answers The answers, the resident's own first.
  * @return {object|null} The answer.
- * @spec openspec/changes/mijn-zaken-chooses-whose-cases/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+ * @spec openspec/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
  */
 export function mergedAnswer(answers) {
 	const first = answers[0] ?? null

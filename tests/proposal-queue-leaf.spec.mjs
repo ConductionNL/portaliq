@@ -206,7 +206,7 @@ test("the leaf reaches other apps' pages and portaliq's own", () => {
 
 // leaves-library-card: the queue reports to a host that draws its card
 // (`onHeader`) and to a "linked" card (`onSummary`).
-// @spec openspec/changes/leaves-library-card/specs/leaves-library-card/spec.md#requirement-the-proposal-queue-reports-to-the-library-card-and-the-linked-card
+// @spec openspec/specs/leaves-library-card/spec.md#requirement-the-proposal-queue-reports-to-the-library-card-and-the-linked-card
 
 test('the queue reports its count and empty state to a carding host', async () => {
 	const { leafHeader } = await import('../src/integrations/leafReport.js')

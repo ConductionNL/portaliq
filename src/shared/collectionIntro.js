@@ -9,7 +9,7 @@
  * Pure functions, no imports, so `tests/collection-intro.spec.mjs` runs them
  * as a plain node script.
  *
- * @spec openspec/changes/collection-intro/tasks.md#t2
+ * @spec openspec/changes/archive/2026-10-30-collection-intro/tasks.md#t2
  */
 
 /**
@@ -18,7 +18,7 @@
  * @param {object|null|undefined} collection The contributed collection.
  * @return {string} The intro text.
  *
- * @spec openspec/changes/collection-intro/tasks.md#t2
+ * @spec openspec/changes/archive/2026-10-30-collection-intro/tasks.md#t2
  */
 export function introOf(collection) {
 	const intro = collection?.intro
@@ -32,7 +32,7 @@ export function introOf(collection) {
  * @param {object|Array|null|undefined} contributions The contributions aggregate, or its list.
  * @return {Array<string>} The intro texts.
  *
- * @spec openspec/changes/collection-intro/tasks.md#t2
+ * @spec openspec/changes/archive/2026-10-30-collection-intro/tasks.md#t2
  */
 export function casesIntros(contributions) {
 	const list = Array.isArray(contributions)

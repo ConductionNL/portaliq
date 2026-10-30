@@ -12,7 +12,7 @@ use PHPUnit\Framework\TestCase;
  * when it holds text and dropped otherwise, through the real manifest
  * normaliser.
  *
- * @spec openspec/changes/collection-intro/tasks.md#t1
+ * @spec openspec/changes/archive/2026-10-30-collection-intro/tasks.md#t1
  */
 class CollectionIntroKeyTest extends TestCase {
 	/**

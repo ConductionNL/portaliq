@@ -1526,7 +1526,7 @@ export default {
 		 * @return {string} The href.
 		 *
 		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-every-result-must-name-the-catalogue-it-came-from
-		 * @spec openspec/changes/record-and-search-links-keep-their-portal/specs/site-navigation/spec.md#requirement-a-link-to-a-record-or-a-search-result-keeps-the-portal-and-the-route-req-rsl-001
+		 * @spec openspec/specs/site-navigation/spec.md#requirement-a-link-to-a-record-or-a-search-result-keeps-the-portal-and-the-route-req-rsl-001
 		 */
 		detailHref(result) {
 			if (!result.id && !(result.kind === 'subject' && result.slug)) {

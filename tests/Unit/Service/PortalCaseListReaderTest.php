@@ -524,7 +524,7 @@ class PortalCaseListReaderTest extends TestCase {
 	 * lists the case for the representative: Linda acting for Henk
 	 * (mandate-reads-the-typed-party REQ-MTP-001).
 	 *
-	 * @spec openspec/changes/mandate-reads-the-typed-party/specs/portal-mandates/spec.md#requirement-a-mandated-case-list-reads-the-party-in-its-typed-and-its-bare-form-req-mtp-001
+	 * @spec openspec/specs/portal-mandates/spec.md#requirement-a-mandated-case-list-reads-the-party-in-its-typed-and-its-bare-form-req-mtp-001
 	 */
 	public function testAPartyStoredTypedOpensTheCasesOfItsMandate(): void {
 		$cases = new PortalCaseListReader($this->readerByParty(['subject:henk' => [['id' => 'case-1', 'reference' => 'ZAAK-1']]]), $this->mandateService());
@@ -537,7 +537,7 @@ class PortalCaseListReaderTest extends TestCase {
 	/**
 	 * A case written before the typed form, with the party bare, still opens.
 	 *
-	 * @spec openspec/changes/mandate-reads-the-typed-party/specs/portal-mandates/spec.md#requirement-a-mandated-case-list-reads-the-party-in-its-typed-and-its-bare-form-req-mtp-001
+	 * @spec openspec/specs/portal-mandates/spec.md#requirement-a-mandated-case-list-reads-the-party-in-its-typed-and-its-bare-form-req-mtp-001
 	 */
 	public function testAPartyStoredBareStillOpensTheCasesOfItsMandate(): void {
 		$cases = new PortalCaseListReader($this->readerByParty(['henk' => [['id' => 'case-2', 'reference' => 'ZAAK-2']]]), $this->mandateService());
@@ -551,7 +551,7 @@ class PortalCaseListReaderTest extends TestCase {
 	 * A case both reads find is listed once; cases found one way each are
 	 * both listed.
 	 *
-	 * @spec openspec/changes/mandate-reads-the-typed-party/specs/portal-mandates/spec.md#requirement-a-mandated-case-list-reads-the-party-in-its-typed-and-its-bare-form-req-mtp-001
+	 * @spec openspec/specs/portal-mandates/spec.md#requirement-a-mandated-case-list-reads-the-party-in-its-typed-and-its-bare-form-req-mtp-001
 	 */
 	public function testACaseFoundByBothFormsIsListedOnce(): void {
 		$shared = ['id' => 'case-1', 'reference' => 'ZAAK-1'];

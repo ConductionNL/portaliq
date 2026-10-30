@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/themes-contrast-column/specs/portal-themes/spec.md#requirement-the-themes-overview-says-per-portal-whether-its-theme-is-readable
+ * @spec openspec/specs/portal-themes/spec.md#requirement-the-themes-overview-says-per-portal-whether-its-theme-is-readable
  */
 
 declare(strict_types=1);
@@ -55,7 +55,7 @@ class ThemeOverviewController extends Controller {
 	 *       Nextcloud expresses admin-only as the ABSENCE of an opt-out
 	 *       attribute, so this tag is the declaration.
 	 *
-	 * @spec openspec/changes/themes-contrast-column/specs/portal-themes/spec.md#requirement-the-themes-overview-says-per-portal-whether-its-theme-is-readable
+	 * @spec openspec/specs/portal-themes/spec.md#requirement-the-themes-overview-says-per-portal-whether-its-theme-is-readable
 	 */
 	public function portals(): JSONResponse {
 		return new JSONResponse($this->overview->rows());

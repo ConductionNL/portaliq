@@ -125,7 +125,7 @@ class SessionControllerTest extends TestCase {
 	 * Debug mode does not open the test sign-in: only its own switch does
 	 * (dev-login-only-when-switched-on).
 	 *
-	 * @spec openspec/changes/dev-login-only-when-switched-on/specs/supplier-portal/spec.md#requirement-the-test-sign-in-opens-only-on-its-own-switch
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-the-test-sign-in-opens-only-on-its-own-switch
 	 */
 	public function testDevLoginStaysClosedInDebugModeWithoutItsSwitch(): void {
 		$config = $this->createMock(IConfig::class);

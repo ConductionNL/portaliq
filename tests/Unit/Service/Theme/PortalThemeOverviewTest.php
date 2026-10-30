@@ -23,7 +23,7 @@ use Psr\Log\LoggerInterface;
  * Built over the real resolver on a fixture theme app and the theme app's
  * real ContrastService.
  *
- * @spec openspec/changes/themes-contrast-column/specs/portal-themes/spec.md#requirement-the-themes-overview-says-per-portal-whether-its-theme-is-readable
+ * @spec openspec/specs/portal-themes/spec.md#requirement-the-themes-overview-says-per-portal-whether-its-theme-is-readable
  */
 class PortalThemeOverviewTest extends TestCase {
 

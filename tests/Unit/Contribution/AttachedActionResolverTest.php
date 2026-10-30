@@ -112,7 +112,7 @@ class AttachedActionResolverTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/endpoint-action-forms-keep-their-field-shape/specs/site-forms/spec.md#requirement-a-form-attached-to-a-record-asks-and-sends-what-its-action-declares-req-eaf-002
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-form-attached-to-a-record-asks-and-sends-what-its-action-declares-req-eaf-002
 	 */
 	public function testTheListingCarriesTheOptionsOfAChoiceField(): void {
 		$providers = [

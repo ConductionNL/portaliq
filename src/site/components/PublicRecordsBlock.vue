@@ -474,7 +474,7 @@ export default {
 		 * The search field's label: the page's, or the block's own words.
 		 *
 		 * @return {string} The label.
-		 * @spec openspec/changes/site-council-pages-read-decidiq/specs/site-council-records/spec.md#requirement-the-council-pages-show-decidiqs-published-meetings-and-decisions-req-scp-001
+		 * @spec openspec/specs/site-council-records/spec.md#requirement-the-council-pages-show-decidiqs-published-meetings-and-decisions-req-scp-001
 		 */
 		searchText() {
 			return this.searchLabel || this.words.search
@@ -624,7 +624,7 @@ export default {
 		 * @param {object} entry A list entry.
 		 * @return {string} The href.
 		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
-		 * @spec openspec/changes/record-and-search-links-keep-their-portal/specs/site-navigation/spec.md#requirement-a-link-to-a-record-or-a-search-result-keeps-the-portal-and-the-route-req-rsl-001
+		 * @spec openspec/specs/site-navigation/spec.md#requirement-a-link-to-a-record-or-a-search-result-keeps-the-portal-and-the-route-req-rsl-001
 		 */
 		hrefFor(entry) {
 			// The page's route and the portal stay on the link: a bare

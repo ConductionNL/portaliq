@@ -182,7 +182,7 @@ export function addressOfRoute(route, href, config) {
  * @param {string} href The address in the address bar.
  * @param {object} config The runtime config.
  * @return {URL} The address.
- * @spec openspec/changes/record-and-search-links-keep-their-portal/specs/site-navigation/spec.md#requirement-a-link-to-a-record-or-a-search-result-keeps-the-portal-and-the-route-req-rsl-001
+ * @spec openspec/specs/site-navigation/spec.md#requirement-a-link-to-a-record-or-a-search-result-keeps-the-portal-and-the-route-req-rsl-001
  */
 export function addressOfRecord(id, href, config) {
 	const url = addressOfRoute(routeOfLocation(new URL(href), config), href, config)

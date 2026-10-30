@@ -112,7 +112,7 @@ class ExampleSiteCatalogueTest extends TestCase {
 	 * With decidiq the meetings page lists decidiq's published meetings and the
 	 * decisions page its published decisions, one block per page (site-council-pages-read-decidiq).
 	 *
-	 * @spec openspec/changes/site-council-pages-read-decidiq/specs/site-council-records/spec.md#requirement-the-council-pages-show-decidiqs-published-meetings-and-decisions-req-scp-001
+	 * @spec openspec/specs/site-council-records/spec.md#requirement-the-council-pages-show-decidiqs-published-meetings-and-decisions-req-scp-001
 	 */
 	public function testTheCouncilPagesReadDecidiqsPublishedRecords(): void {
 		$apps = $this->createMock(IAppManager::class);
@@ -129,7 +129,7 @@ class ExampleSiteCatalogueTest extends TestCase {
 	 * Without decidiq the meetings page keeps its text but loses the block, and
 	 * the decisions page and every link to it are not installed.
 	 *
-	 * @spec openspec/changes/site-council-pages-read-decidiq/specs/site-council-records/spec.md#requirement-the-council-pages-show-decidiqs-published-meetings-and-decisions-req-scp-001
+	 * @spec openspec/specs/site-council-records/spec.md#requirement-the-council-pages-show-decidiqs-published-meetings-and-decisions-req-scp-001
 	 */
 	public function testWithoutDecidiqTheCouncilPagesKeepTheirText(): void {
 		$apps = $this->createMock(IAppManager::class);

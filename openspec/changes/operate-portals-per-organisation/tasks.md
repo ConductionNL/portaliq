@@ -19,3 +19,11 @@
 
 - [x] **T08**: English and Dutch strings ("New portal", "This web address is already used by another portal."); a docs page for hosting parties: provisioning, DNS verification, what is and is not isolated. Verification: `npm run lint`, `test:l10n`. The command speaks English; the docs page is `docs/operations/portals-per-organisation.md`.
 - [ ] **T09**: `openspec validate operate-portals-per-organisation --strict`. — not run: the openspec CLI is not installed here.
+
+## Each organisation looks after its own portal
+
+- [ ] **T10**: `lib/Settings/portaliq_register.json`: `portal.adminGroups` (array of group ids, title and description); register version bump; import and grep the log for `PARTIAL IMPORT` (REQ-OPO-005).
+- [ ] **T11**: `lib/Service/Tenancy/PortalAdminScope.php`: `mayAdminister(IUser, portal)` (instance admin, or member of one of the portal's `adminGroups`); the portal settings, domain, theme and sign-in controllers and `PageEditorService` ask it per portal, and answer 404 for a portal the user may not administer. A change to `adminGroups` stays instance-admin only. Verification: `PortalAdminScopeTest` (own portal, other portal 404, `adminGroups` change 403, instance admin everywhere) (REQ-OPO-005).
+- [ ] **T12**: The Portals admin page lists only the portals the user may administer; an "Administrators" group picker (`NcSelect` with `inputLabel`) shows on a portal for instance administrators only. Board PtBeheerdersrechten (REQ-OPO-005).
+- [ ] **T13**: Docs page `docs/operations/portals-per-organisation.md`: what the hosting party runs (Nextcloud, upgrades, provisioning, `adminGroups`) and what each organisation runs (its portal), in English and Dutch strings for the new labels.
+- [ ] **T14**: The two-tenant Playwright spec gains a member of each organisation's group (REQ-OPO-005).
