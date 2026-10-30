@@ -7,3 +7,4 @@
 - PtBericht https://identity.conduction.nl/screens/board?id=portaliq/PtBericht
 - PtDashboard https://identity.conduction.nl/screens/board?id=portaliq/PtDashboard
 - PtPortalInstellingen https://identity.conduction.nl/screens/board?id=portaliq/PtPortalInstellingen
+- planninq/col-read-receipts: no planninq page; messages belong to portaliq; planninq has no message page (planninq adopts this)
