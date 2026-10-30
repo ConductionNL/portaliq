@@ -162,7 +162,7 @@ export default {
 		 * @return {string} The href.
 		 *
 		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
-		 * @spec openspec/changes/record-and-search-links-keep-their-portal/specs/site-navigation/spec.md#requirement-a-link-to-a-record-or-a-search-result-keeps-the-portal-and-the-route-req-rsl-001
+		 * @spec openspec/specs/site-navigation/spec.md#requirement-a-link-to-a-record-or-a-search-result-keeps-the-portal-and-the-route-req-rsl-001
 		 */
 		hrefFor(entry) {
 			return addressOfRoute(

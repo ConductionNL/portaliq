@@ -1054,7 +1054,7 @@ class PortalSessionServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/idle-warning-preview/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-10-30-idle-warning-preview/tasks.md#T01
 	 */
 	public function testIdlePreviewFollowsItsOwnFlag(): void {
 		foreach (['yes' => true, 'no' => false, '1' => false, 'true' => false] as $value => $expected) {

@@ -67,7 +67,7 @@ export function attachedActionsOf(collection, row) {
  * @param {object} action The attached action.
  * @param {object} values What the resident typed.
  * @return {object} The body.
- * @spec openspec/changes/endpoint-action-forms-keep-their-field-shape/specs/site-forms/spec.md#requirement-a-form-attached-to-a-record-asks-and-sends-what-its-action-declares-req-eaf-002
+ * @spec openspec/specs/site-forms/spec.md#requirement-a-form-attached-to-a-record-asks-and-sends-what-its-action-declares-req-eaf-002
  */
 export function attachedBody(action, values) {
 	const body = {}

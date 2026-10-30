@@ -10,7 +10,7 @@
 // Usage:
 //   node --test tests/themes-contrast-column.spec.mjs
 //
-// @spec openspec/changes/themes-contrast-column/specs/portal-themes/spec.md#requirement-the-themes-page-shows-the-contrast-a-link-and-the-note
+// @spec openspec/specs/portal-themes/spec.md#requirement-the-themes-page-shows-the-contrast-a-link-and-the-note
 
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'

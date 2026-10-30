@@ -273,7 +273,7 @@ export default {
 		 * @param {string} link The authored link.
 		 * @return {string} The href.
 		 *
-		 * @spec openspec/changes/site-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-menu-link-to-a-site-page-carries-the-sites-own-address
+		 * @spec openspec/specs/site-navigation/spec.md#requirement-a-menu-link-to-a-site-page-carries-the-sites-own-address
 		 */
 		addressFor(link) {
 			return linkAddress(link, this.addressOf)

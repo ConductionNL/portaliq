@@ -52,7 +52,7 @@ export function headerMenusOf(menus) {
  * @param {string} link The authored link.
  * @return {boolean} True for a path on this site.
  *
- * @spec openspec/changes/site-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-menu-link-to-a-site-page-carries-the-sites-own-address
+ * @spec openspec/specs/site-navigation/spec.md#requirement-a-menu-link-to-a-site-page-carries-the-sites-own-address
  */
 export function isSiteRoute(link) {
 	return /^\/(?!\/)/.test(String(link || ''))
@@ -67,7 +67,7 @@ export function isSiteRoute(link) {
  * @param {function(string): string|null} addressOf A route to the address that opens it.
  * @return {string} The href.
  *
- * @spec openspec/changes/site-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-menu-link-to-a-site-page-carries-the-sites-own-address
+ * @spec openspec/specs/site-navigation/spec.md#requirement-a-menu-link-to-a-site-page-carries-the-sites-own-address
  * @spec openspec/changes/hero-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-block-link-to-a-site-page-carries-the-sites-own-address
  */
 export function linkAddress(link, addressOf) {
@@ -86,7 +86,7 @@ export function linkAddress(link, addressOf) {
  * @param {function(string): string} addressOf A route to the address that opens it.
  * @return {Array} New menus; the input is not changed.
  *
- * @spec openspec/changes/site-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-menu-link-to-a-site-page-carries-the-sites-own-address
+ * @spec openspec/specs/site-navigation/spec.md#requirement-a-menu-link-to-a-site-page-carries-the-sites-own-address
  */
 export function menusWithAddresses(menus, addressOf) {
 	const withAddress = (item) => {

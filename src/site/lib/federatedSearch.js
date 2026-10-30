@@ -464,7 +464,7 @@ export function validDate(value) {
  * @param {URLSearchParams} params The address's parameters.
  * @return {string} `q` or `_search`.
  *
- * @spec openspec/changes/search-reads-q-from-the-address/specs/portal-federated-search/spec.md#requirement-a-link-with-q-opens-the-search-for-that-term-req-srq-001
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-a-link-with-q-opens-the-search-for-that-term-req-srq-001
  */
 export function termParameter(params) {
 	return params.has('q') && !params.has('_search') ? 'q' : '_search'
@@ -485,7 +485,7 @@ export function termParameter(params) {
  * @return {object} `{query, page, sort, facets, periodFrom, periodTo}`.
  *
  * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-every-filter-must-survive-a-shared-link-req-wsd-003
- * @spec openspec/changes/search-reads-q-from-the-address/specs/portal-federated-search/spec.md#requirement-a-link-with-q-opens-the-search-for-that-term-req-srq-001
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-a-link-with-q-opens-the-search-for-that-term-req-srq-001
  */
 export function readSearchState(search, facetFields) {
 	const params = new URLSearchParams(search || '')
@@ -528,7 +528,7 @@ export function readSearchState(search, facetFields) {
  * @return {URL} The same address.
  *
  * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-every-filter-must-survive-a-shared-link-req-wsd-003
- * @spec openspec/changes/search-reads-q-from-the-address/specs/portal-federated-search/spec.md#requirement-a-link-with-q-opens-the-search-for-that-term-req-srq-001
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-a-link-with-q-opens-the-search-for-that-term-req-srq-001
  */
 export function writeSearchState(url, state, facetFields) {
 	const assign = (key, value) => {

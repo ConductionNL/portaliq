@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/themes-contrast-column/specs/portal-themes/spec.md#requirement-the-themes-overview-says-per-portal-whether-its-theme-is-readable
+ * @spec openspec/specs/portal-themes/spec.md#requirement-the-themes-overview-says-per-portal-whether-its-theme-is-readable
  */
 
 declare(strict_types=1);
@@ -53,7 +53,7 @@ class PortalThemeOverview {
 	 *
 	 * @return array{portals: array<int, array<string, string>>, poorCount: int}
 	 *
-	 * @spec openspec/changes/themes-contrast-column/specs/portal-themes/spec.md#requirement-the-themes-overview-says-per-portal-whether-its-theme-is-readable
+	 * @spec openspec/specs/portal-themes/spec.md#requirement-the-themes-overview-says-per-portal-whether-its-theme-is-readable
 	 */
 	public function rows(): array {
 		$names = [];

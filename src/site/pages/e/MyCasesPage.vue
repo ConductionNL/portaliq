@@ -281,7 +281,7 @@ export default {
 		 * The intros of the contributed cases collections, once each.
 		 *
 		 * @return {Array<string>}
-		 * @spec openspec/changes/collection-intro/tasks.md#t2
+		 * @spec openspec/changes/archive/2026-10-30-collection-intro/tasks.md#t2
 		 */
 		intros() {
 			return casesIntros(this.contributions)
@@ -302,7 +302,7 @@ export default {
 		 * and the page is not fixed to one.
 		 *
 		 * @return {boolean}
-		 * @spec openspec/changes/mijn-zaken-chooses-whose-cases/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+		 * @spec openspec/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
 		 */
 		choosesParty() {
 			return this.mandateId === '' && actingFor.mandates.length > 0
@@ -312,7 +312,7 @@ export default {
 		 * The "Zaken van" choices.
 		 *
 		 * @return {Array<{id: string, label: string, own: boolean}>}
-		 * @spec openspec/changes/mijn-zaken-chooses-whose-cases/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+		 * @spec openspec/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
 		 */
 		parties() {
 			return partyOptions(
@@ -326,7 +326,7 @@ export default {
 		 * The choice on screen: everyone, else the mandate acted under.
 		 *
 		 * @return {string}
-		 * @spec openspec/changes/mijn-zaken-chooses-whose-cases/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+		 * @spec openspec/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
 		 */
 		choice() {
 			return this.everyone ? EVERYONE : this.actingUnder
@@ -336,7 +336,7 @@ export default {
 		 * Where a resident arranges who may act for them, when the portal names it.
 		 *
 		 * @return {string}
-		 * @spec openspec/changes/mijn-zaken-chooses-whose-cases/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+		 * @spec openspec/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
 		 */
 		mandatesHref() {
 			return String(this.portal?.myCases?.mandatesHref || '')
@@ -557,7 +557,7 @@ export default {
 		 *
 		 * @param {string} id The choice.
 		 * @return {void}
-		 * @spec openspec/changes/mijn-zaken-chooses-whose-cases/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+		 * @spec openspec/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
 		 */
 		chooseParty(id) {
 			const wasEveryone = this.everyone

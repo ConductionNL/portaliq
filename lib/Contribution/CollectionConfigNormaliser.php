@@ -73,7 +73,7 @@ class CollectionConfigNormaliser {
 	 *
 	 * @spec openspec/specs/supplier-portal/spec.md#download-is-opt-in-per-collection-fail-closed
 	 * @spec openspec/changes/inbox-reads-each-apps-message-fields/specs/supplier-portal/spec.md#requirement-an-inbox-collection-names-its-own-message-fields-req-imf-001
-	 * @spec openspec/changes/collection-intro/tasks.md#t1
+	 * @spec openspec/changes/archive/2026-10-30-collection-intro/tasks.md#t1
 	 */
 	public function normaliseCollections(array $collections): array {
 		$out = [];
