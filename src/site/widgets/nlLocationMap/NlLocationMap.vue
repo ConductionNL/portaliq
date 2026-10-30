@@ -12,11 +12,18 @@
 	service. "Route" opens a route planner in a new window.
 -->
 <template>
-	<section class="nl-location-map" :aria-labelledby="headingId" data-testid="nl-location-map">
+	<section
+		class="nl-location-map"
+		:aria-labelledby="headingId"
+		data-testid="nl-location-map">
 		<p v-if="intro" class="utrecht-paragraph nl-location-map__intro">
 			{{ intro }}
 		</p>
-		<div v-if="chips.length > 0" class="nl-location-map__chips" role="group" :aria-label="filterLabel">
+		<div
+			v-if="chips.length > 0"
+			class="nl-location-map__chips"
+			role="group"
+			:aria-label="filterLabel">
 			<button
 				v-for="chip in chips"
 				:key="chip.value"
@@ -36,19 +43,38 @@
 					:aria-label="mapLabel"
 					class="nl-location-map__sketch"
 					focusable="false">
-					<rect :width="box.width" :height="box.height" class="nl-location-map__ground" />
-					<g v-for="marker in markers" :key="marker.number" :transform="`translate(${marker.x} ${marker.y})`">
+					<rect
+						:width="box.width"
+						:height="box.height"
+						class="nl-location-map__ground" />
+					<g
+						v-for="marker in markers"
+						:key="marker.number"
+						:transform="`translate(${marker.x} ${marker.y})`">
 						<circle r="16" class="nl-location-map__marker" />
-						<text text-anchor="middle" dominant-baseline="central" class="nl-location-map__marker-number">
+						<text
+							text-anchor="middle"
+							dominant-baseline="central"
+							class="nl-location-map__marker-number">
 							{{ marker.number }}
 						</text>
 					</g>
 				</svg>
 				<div class="nl-location-map__zoom">
-					<button type="button" class="utrecht-button" :aria-label="zoomInLabel" :disabled="zoom >= 3" @click="zoom += 1">
+					<button
+						type="button"
+						class="utrecht-button"
+						:aria-label="zoomInLabel"
+						:disabled="zoom >= 3"
+						@click="zoom += 1">
 						+
 					</button>
-					<button type="button" class="utrecht-button" :aria-label="zoomOutLabel" :disabled="zoom <= 1" @click="zoom -= 1">
+					<button
+						type="button"
+						class="utrecht-button"
+						:aria-label="zoomOutLabel"
+						:disabled="zoom <= 1"
+						@click="zoom -= 1">
 						−
 					</button>
 				</div>
@@ -58,8 +84,13 @@
 					{{ headingText }}
 				</h2>
 				<ol class="nl-location-map__places">
-					<li v-for="place in shown" :key="place.number" class="nl-location-map__place">
-						<span class="nl-location-map__number" aria-hidden="true">{{ place.number }}</span>
+					<li
+						v-for="place in shown"
+						:key="place.number"
+						class="nl-location-map__place">
+						<span class="nl-location-map__number" aria-hidden="true">{{
+							place.number
+						}}</span>
 						<div>
 							<h3 class="utrecht-heading-3">
 								{{ place.name }}
@@ -67,19 +98,34 @@
 							<p v-if="place.address" class="utrecht-paragraph">
 								{{ place.address }}
 							</p>
-							<p v-if="place.opening" class="utrecht-paragraph nl-location-map__opening">
+							<p
+								v-if="place.opening"
+								class="utrecht-paragraph nl-location-map__opening">
 								{{ place.opening }}
 							</p>
 							<ul class="utrecht-link-list nl-location-map__links">
-								<li v-if="route(place)" class="utrecht-link-list__item">
+								<li
+									v-if="route(place)"
+									class="utrecht-link-list__item">
 									<a
 										class="utrecht-link"
 										:href="route(place)"
 										target="_blank"
-										rel="noopener noreferrer">{{ routeLabel }}<span class="nl-location-map__hidden">, {{ place.name }}, {{ newWindowLabel }}</span></a>
+										rel="noopener noreferrer"
+										>{{ routeLabel
+										}}<span class="nl-location-map__hidden"
+											>, {{ place.name }},
+											{{ newWindowLabel }}</span
+										></a
+									>
 								</li>
-								<li v-for="link in place.links" :key="link.href" class="utrecht-link-list__item">
-									<a class="utrecht-link" :href="link.href">{{ link.label }}</a>
+								<li
+									v-for="link in place.links"
+									:key="link.href"
+									class="utrecht-link-list__item">
+									<a class="utrecht-link" :href="link.href">{{
+										link.label
+									}}</a>
 								</li>
 							</ul>
 						</div>
@@ -94,7 +140,13 @@
 </template>
 
 <script>
-import { categoryChips, MAP_BOX, markerPositions, normaliseLocations, routeHref } from './locationMap.js'
+import {
+	categoryChips,
+	MAP_BOX,
+	markerPositions,
+	normaliseLocations,
+	routeHref,
+} from './locationMap.js'
 
 import '@utrecht/button-css/dist/index.css'
 import '@utrecht/heading-2-css/dist/index.css'
@@ -120,12 +172,18 @@ export default {
 		allLabel: { type: String, default: 'Alle locaties' },
 		/** The words the block reads out, for a portal in another language. */
 		filterLabel: { type: String, default: 'Soort locatie' },
-		mapLabel: { type: String, default: 'Kaart met de genummerde locaties uit de lijst' },
+		mapLabel: {
+			type: String,
+			default: 'Kaart met de genummerde locaties uit de lijst',
+		},
 		zoomInLabel: { type: String, default: 'Inzoomen' },
 		zoomOutLabel: { type: String, default: 'Uitzoomen' },
 		routeLabel: { type: String, default: 'Route' },
 		newWindowLabel: { type: String, default: 'opent in een nieuw venster' },
-		routeNote: { type: String, default: 'Route opent een routeplanner in een nieuw venster.' },
+		routeNote: {
+			type: String,
+			default: 'Route opent een routeplanner in een nieuw venster.',
+		},
 	},
 
 	/**
@@ -151,7 +209,9 @@ export default {
 		 * @spec openspec/changes/site-location-map/specs/portaliq-cms/spec.md#requirement-a-page-can-show-the-organisations-locations-on-a-map-req-slm-001
 		 */
 		shown() {
-			return this.chosen === '' ? this.places : this.places.filter((place) => place.category === this.chosen)
+			return this.chosen === ''
+				? this.places
+				: this.places.filter((place) => place.category === this.chosen)
 		},
 
 		/**
@@ -168,7 +228,9 @@ export default {
 		 */
 		markers() {
 			const shown = new Set(this.shown.map((place) => place.number))
-			return markerPositions(this.places).filter((marker) => shown.has(marker.number))
+			return markerPositions(this.places).filter((marker) =>
+				shown.has(marker.number),
+			)
 		},
 
 		/**
@@ -265,7 +327,10 @@ export default {
 	display: block;
 	inline-size: 100%;
 	block-size: auto;
-	border-radius: var(--nldesign-website-border-radius-large, var(--utrecht-border-radius-md, 0.75rem));
+	border-radius: var(
+		--nldesign-website-border-radius-large,
+		var(--utrecht-border-radius-md, 0.75rem)
+	);
 }
 
 .nl-location-map__ground {
@@ -313,7 +378,11 @@ export default {
 	grid-template-columns: 2rem minmax(0, 1fr);
 	gap: 0.75rem;
 	padding-block: 1rem;
-	border-block-end: 1px solid var(--nldesign-color-border-light, var(--utrecht-color-grey-80, currentcolor));
+	border-block-end: 1px solid
+		var(
+			--nldesign-color-border-light,
+			var(--utrecht-color-grey-80, currentcolor)
+		);
 }
 
 .nl-location-map__number {
