@@ -41,6 +41,7 @@ class PortalSigninController extends Controller {
 	 *
 	 * @param IRequest             $request  The request.
 	 * @param PortalSigninSettings $settings The sign-in settings.
+	 * @param PortalAdminScope     $scope    Who may administer which portal.
 	 *
 	 * @return void
 	 */

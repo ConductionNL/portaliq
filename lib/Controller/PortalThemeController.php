@@ -41,6 +41,7 @@ class PortalThemeController extends Controller {
 	 *
 	 * @param IRequest          $request The request.
 	 * @param PortalThemeChoice $choice  The sets and the choice.
+	 * @param PortalAdminScope  $scope   Who may administer which portal.
 	 */
 	public function __construct(
 		IRequest $request,

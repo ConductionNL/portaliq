@@ -49,6 +49,7 @@ class PortalHomePageController extends Controller {
 	 *
 	 * @param IRequest $request The request.
 	 * @param PortalHomePage $homePage The portal's root-route state.
+	 * @param PortalAdminScope $scope Who may administer which portal.
 	 */
 	public function __construct(
 		IRequest $request,

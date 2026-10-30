@@ -49,6 +49,7 @@ class CmsDomainController extends Controller {
 	 * @param IRequest             $request  The request.
 	 * @param PortalDomainVerifier $verifier Shows and checks the records.
 	 * @param IL10N                $l10n     Words the outcome of a check.
+	 * @param PortalAdminScope     $scope    Who may administer which portal.
 	 */
 	public function __construct(
 		string $appName,

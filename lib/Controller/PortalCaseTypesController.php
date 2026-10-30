@@ -47,6 +47,7 @@ class PortalCaseTypesController extends Controller {
 	 *
 	 * @param IRequest $request The request.
 	 * @param PortalCaseTypeCatalogue $catalogue The portal's case types.
+	 * @param PortalAdminScope $scope Who may administer which portal.
 	 */
 	public function __construct(
 		IRequest $request,
