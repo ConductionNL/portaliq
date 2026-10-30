@@ -460,6 +460,8 @@ return [
         ['name' => 'portalPlans#update', 'url' => '/portal/api/plans/{id}', 'verb' => 'PATCH'],
         ['name' => 'portalPlans#destroy', 'url' => '/portal/api/plans/{id}', 'verb' => 'DELETE'],
         ['name' => 'portalPlans#pdf', 'url' => '/portal/api/plans/{id}/pdf', 'verb' => 'GET'],
+        ['name' => 'portalPlans#addFile', 'url' => '/portal/api/plans/{id}/files', 'verb' => 'POST'],
+        ['name' => 'portalPlans#file', 'url' => '/portal/api/plans/{id}/files/{fileId}', 'verb' => 'GET'],
         ['name' => 'portalPlans#addParticipants', 'url' => '/portal/api/plans/{id}/participants', 'verb' => 'POST'],
         ['name' => 'portalPlans#removeParticipant', 'url' => '/portal/api/plans/{id}/participants/{ref}', 'verb' => 'DELETE'],
         ['name' => 'portalPlans#addAction', 'url' => '/portal/api/plans/{id}/actions', 'verb' => 'POST'],

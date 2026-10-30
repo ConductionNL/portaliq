@@ -29,6 +29,7 @@ use DateTimeZone;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Http\PdfDownloadResponse;
+use OCA\Portaliq\Service\Plans\PlanFiles;
 use OCA\Portaliq\Service\Plans\PortalPlanService;
 use OCA\Portaliq\Service\PortalPdfExport;
 use OCA\Portaliq\Service\PortalResolver;
@@ -47,6 +48,7 @@ use OCP\IRequest;
  * unknown plan and someone else's plan answer the same 404.
  *
  * @SuppressWarnings(PHPMD.TooManyPublicMethods) -- one route per thing a resident does with a plan.
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the session, the plans, their files, the portal and the PDF renderer.
  *
  * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md
  */
@@ -74,6 +76,7 @@ class PortalPlansController extends Controller implements PortalProtected {
 	 * @param PortalPlanService $plans The plan rules.
 	 * @param PortalResolver $portals Finds the serving portal, for its templates.
 	 * @param PortalPdfExport|null $pdf Renders the plan as a PDF through OpenRegister.
+	 * @param PlanFiles|null $files Adds and opens the plan's files.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -81,6 +84,7 @@ class PortalPlansController extends Controller implements PortalProtected {
 		private readonly PortalPlanService $plans,
 		private readonly PortalResolver $portals,
 		private readonly ?PortalPdfExport $pdf = null,
+		private readonly ?PlanFiles $files = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -351,6 +355,67 @@ class PortalPlansController extends Controller implements PortalProtected {
 
 		return new PdfDownloadResponse(bytes: $bytes, name: $document['title']);
 	}//end pdf()
+
+	/**
+	 * Add a file to the plan, or a new version of one: multipart field `file`,
+	 * and `previousVersion` naming the file it follows.
+	 *
+	 * @param string $id The plan.
+	 * @param string $previousVersion The file this one is a new version of, or ''.
+	 *
+	 * @return JSONResponse `{ok: true}`, or 400 (no file, or not the newest version), 403 (a done plan), 404, 401, 500.
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md#requirement-participants-share-the-goal-actions-note-and-file-versions-req-spl-003
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 20, period: 60)]
+	public function addFile(string $id, string $previousVersion=''): JSONResponse {
+		$subject = $this->subject();
+		if ($subject === null) {
+			return $this->unauthenticated();
+		}
+
+		if ($this->files === null) {
+			return $this->answer(result: PortalPlanService::FAILED);
+		}
+
+		return $this->answer(
+			result: $this->files->add(
+				subject: $subject,
+				id: $id,
+				uploaded: $this->request->getUploadedFile('file'),
+				previousVersion: $previousVersion
+			)
+		);
+	}//end addFile()
+
+	/**
+	 * Open one file of the plan, for a participant.
+	 *
+	 * @param string $id The plan.
+	 * @param string $fileId The file.
+	 *
+	 * @return Response The file, or 404 for a stranger or a file the plan does not list, or 401.
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md#requirement-participants-share-the-goal-actions-note-and-file-versions-req-spl-003
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
+	public function file(string $id, string $fileId): Response {
+		$subject = $this->subject();
+		if ($subject === null) {
+			return $this->unauthenticated();
+		}
+
+		$stream = $this->files?->open(subject: $subject, id: $id, fileId: $fileId);
+		if ($stream === null) {
+			return $this->answer(result: PortalPlanService::NOT_FOUND);
+		}
+
+		return $stream;
+	}//end file()
 
 	/**
 	 * The answer for a service outcome.

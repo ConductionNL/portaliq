@@ -193,6 +193,7 @@ class PortalPlanService {
 		$view['goalDetail'] = (string)($plan['goalDetail'] ?? '');
 		$view['note']       = $this->views->note(plan: $plan);
 		$view['actions']    = array_map(fn (array $action): array => $this->views->action(action: $action), $actions);
+		$view['files']      = $this->views->files(files: $this->rules->filesOf(plan: $plan));
 		$view['canEdit']    = ($view['state'] !== 'done');
 		$view['isOwner']    = ($view['role'] === 'owner');
 		if ($view['isOwner'] === true) {
@@ -545,6 +546,42 @@ class PortalPlanService {
 			'rows'    => $rows,
 		];
 	}//end pdfRows()
+
+	/**
+	 * The plan for a viewer who owns it or takes part in it, with whether
+	 * they made it.
+	 *
+	 * @param array<string, mixed> $subject The session subject.
+	 * @param string $id The plan.
+	 *
+	 * @return array{plan: array<string, mixed>, isOwner: bool}|null Null for a plan the viewer is not part of.
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+	 */
+	public function membership(array $subject, string $id): ?array {
+		$plan = $this->planFor(subject: $subject, id: $id);
+		if ($plan === null) {
+			return null;
+		}
+
+		return ['plan' => $plan, 'isOwner' => $this->isOwner(plan: $plan, subject: $subject)];
+	}//end membership()
+
+	/**
+	 * Save a plan's file list as the viewer. Every participant may add files.
+	 *
+	 * @param array<string, mixed> $subject The session subject.
+	 * @param array<string, mixed> $plan The plan row, read through membership().
+	 * @param bool $isOwner Whether the viewer made the plan.
+	 * @param array<int, array<string, mixed>> $files The whole list.
+	 *
+	 * @return string OK or FAILED.
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+	 */
+	public function saveFiles(array $subject, array $plan, bool $isOwner, array $files): string {
+		return $this->write(subject: $subject, plan: $plan, isOwner: $isOwner, data: ['files' => array_values($files)]);
+	}//end saveFiles()
 
 	/**
 	 * The plans a resident owns or takes part in, once each.
