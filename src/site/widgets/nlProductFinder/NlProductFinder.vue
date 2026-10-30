@@ -93,7 +93,10 @@
 									v-for="option in ['yes', 'no']"
 									:key="option"
 									class="nl-product-finder__option"
-									:class="{ 'nl-product-finder__option--chosen': choice === option }">
+									:class="{
+										'nl-product-finder__option--chosen':
+											choice === option,
+									}">
 									<input
 										v-model="choice"
 										type="radio"
@@ -181,7 +184,10 @@
 						<span
 							v-for="(product, index) in allProducts"
 							:key="product.route"
-							:class="{ 'nl-product-finder__segment--left': index < plan.remaining.length }" />
+							:class="{
+								'nl-product-finder__segment--left':
+									index < plan.remaining.length,
+							}" />
 					</div>
 					<p
 						v-if="plan.remaining.length === 0"
@@ -199,10 +205,13 @@
 								:href="linkOf(product).href"
 								@click="open($event, linkOf(product))">
 								<span class="nl-product-finder__product-text">
-									<span class="utrecht-link nl-product-finder__product-title">{{
-										product.title
+									<span
+										class="utrecht-link nl-product-finder__product-title"
+										>{{ product.title }}</span
+									>
+									<span v-if="product.summary">{{
+										product.summary
 									}}</span>
-									<span v-if="product.summary">{{ product.summary }}</span>
 								</span>
 								<svg
 									class="nl-product-finder__glyph"

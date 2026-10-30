@@ -130,7 +130,7 @@ test('a token fallback is another token or a system colour, never a literal', ()
 			}
 
 			const sound =
-				fallback.startsWith('var(--')
+				/^var\(\s*--/.test(fallback)
 				|| /^(Canvas|CanvasText|LinkText|currentcolor|transparent|inherit|none)$/i.test(
 					fallback,
 				)
@@ -173,7 +173,7 @@ test('the check can fail, on both halves', () => {
 			.filter(
 				(fallback) =>
 					!(
-						fallback.startsWith('var(--')
+						/^var\(\s*--/.test(fallback)
 						|| /^(Canvas|CanvasText|LinkText|currentcolor|transparent)$/i.test(
 							fallback,
 						)

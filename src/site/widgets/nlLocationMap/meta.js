@@ -16,9 +16,21 @@ export const metaOf = {
 	group: 'content',
 	label: 'Locaties op een kaart',
 	nlds: 'Heading, Link List',
-	synonyms: ['kaart', 'locaties', 'adressen', 'vestigingen', 'gebouwen', 'openingstijden', 'route'],
+	synonyms: [
+		'kaart',
+		'locaties',
+		'adressen',
+		'vestigingen',
+		'gebouwen',
+		'openingstijden',
+		'route',
+	],
 	fields: [
-		{ name: 'heading', kind: 'string', label: 'Kop boven de lijst, {count} wordt het aantal' },
+		{
+			name: 'heading',
+			kind: 'string',
+			label: 'Kop boven de lijst, {count} wordt het aantal',
+		},
 		{ name: 'intro', kind: 'text', label: 'Regel boven de kaart' },
 		{
 			name: 'locations',
