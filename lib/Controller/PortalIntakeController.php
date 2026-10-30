@@ -33,6 +33,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Service\Identity\PortalChallengeService;
+use OCA\Portaliq\Service\Intake\CosignOnSubmit;
 use OCA\Portaliq\Service\Intake\DestinationIntake;
 use OCA\Portaliq\Service\Intake\DestinationLookup;
 use OCA\Portaliq\Service\Intake\DestinationMapping;
@@ -123,6 +124,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param PortalEmailVerification|null $emailVerification Checks the proof that an e-mail address was verified.
 	 * @param DestinationIntake|null $intake Submits the answers into the binding's destination (decision 179).
 	 * @param DestinationLookup|null $lookup Finds the object a reference belongs to.
+	 * @param CosignOnSubmit|null $cosign Creates the case waiting for a co-signer and invites them (decision 271).
 	 */
 	public function __construct(
 		IRequest $request,
@@ -147,6 +149,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		?PortalEmailVerification $emailVerification = null,
 		private readonly ?DestinationIntake $intake = null,
 		private readonly ?DestinationLookup $lookup = null,
+		private readonly ?CosignOnSubmit $cosign = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 		$this->checks       = new PortalSubmissionChecks(
@@ -342,12 +345,17 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return $prepared;
 		}
 
+		$cosign = ($this->cosign?->prepare(binding: $binding, answers: $prepared['answers']) ?? ['server' => [], 'errors' => []]);
+		if ($cosign['errors'] !== []) {
+			return new JSONResponse(['errors' => $cosign['errors']], Http::STATUS_BAD_REQUEST);
+		}
+
 		$submitted = $this->intake?->submit(
 			binding: $binding,
 			render: $render,
 			answers: $prepared['answers'],
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			server: [
+			server: $cosign['server'] + [
 				'portal' => (string)($site['slug'] ?? ''),
 				'origin' => (string)$this->request->getHeader('Origin'),
 				'statements' => $prepared['statements'],
@@ -366,6 +374,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		$reference = (string)($answer['reference'] ?? '');
 		$moments   = (array)($answer['confirmation'] ?? []);
 		$mailedTo  = $this->confirmation->send(site: $site, render: $render, answers: $prepared['answers'], reference: $reference, moments: $moments);
+		$cosigner  = $this->cosign?->invite(site: $site, binding: $binding, server: $cosign['server'], answer: $answer, subjectRef: (string)($subject['subjectRef'] ?? ''));
 
 		return new JSONResponse(
 			array_merge(
@@ -378,6 +387,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 					'confirmationText' => (string)($render['settings']['confirmationText'] ?? ''),
 					'confirmation' => ($render['settings']['confirmation'] ?? null),
 					'mailedTo' => $mailedTo,
+					'cosign' => $cosigner,
 				]
 			)
 		);

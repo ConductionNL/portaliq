@@ -108,6 +108,17 @@ class MailTemplateRenderer {
 				'code' => '482915',
 			],
 		],
+		'form-cosign-invite' => [
+			'label' => 'Invitation to co-sign a request',
+			'variables' => ['portal', 'name', 'formName', 'link', 'dueAt'],
+			'sample' => [
+				'portal' => 'Gemeente Voorbeeld',
+				'name' => 'Henk de Vries',
+				'formName' => 'Woo-verzoek',
+				'link' => 'https://voorbeeld.nl/#cosign=voorbeeld',
+				'dueAt' => '2026-10-22',
+			],
+		],
 		'form-confirmation' => [
 			'label' => 'Confirmation of a request',
 			'variables' => ['portal', 'reference', 'formName'],

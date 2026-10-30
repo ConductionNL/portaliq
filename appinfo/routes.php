@@ -397,6 +397,9 @@ return [
         ['name' => 'portalFormEmailCode#send', 'url' => '/portal/api/intake/email-code', 'verb' => 'POST'],
         ['name' => 'portalFormEmailCode#check', 'url' => '/portal/api/intake/email-code/check', 'verb' => 'POST'],
         ['name' => 'portalIntake#status', 'url' => '/portal/api/intake/status', 'verb' => 'GET'],
+        // The co-signer's link (resident-identity-in-forms T04, decision 271).
+        ['name' => 'cosign#show', 'url' => '/portal/api/cosign', 'verb' => 'GET'],
+        ['name' => 'cosign#answer', 'url' => '/portal/api/cosign', 'verb' => 'POST'],
 
         // The citizen's own identity (portal-identity-and-the-organisations-cases):
         // the challenge this portal runs itself, the one-time reference link
