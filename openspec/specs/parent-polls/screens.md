@@ -17,4 +17,4 @@
 - Publicatie https://identity.conduction.nl/screens/board?id=portaliq/Publicatie
 - Voet https://identity.conduction.nl/screens/board?id=huisstijl/Voet
 - Zoeken https://identity.conduction.nl/screens/board?id=portaliq/Zoeken
-- pending: portaliq/OuderPeiling (board lane)
+- OuderPeiling https://identity.conduction.nl/screens/board?id=portaliq/OuderPeiling
