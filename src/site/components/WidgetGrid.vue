@@ -787,7 +787,7 @@ export default {
 		 *
 		 * @param {object} run A run of ordinary widgets.
 		 * @return {boolean}
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
+		 * @spec openspec/changes/site-aside-column/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
 		 */
 		asideRun(run) {
 			return this.aside !== null && isAsideRun(run.widgets)
@@ -798,7 +798,7 @@ export default {
 		 *
 		 * @param {object} run A run of ordinary widgets.
 		 * @return {object|null} The style bindings.
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
+		 * @spec openspec/changes/site-aside-column/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
 		 */
 		gridStyle(run) {
 			if (!this.asideRun(run)) {
@@ -816,7 +816,7 @@ export default {
 		 * @param {object} widget The placement.
 		 * @param {object} run    Its run.
 		 * @return {object} The style bindings.
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
+		 * @spec openspec/changes/site-aside-column/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
 		 */
 		placeCell(widget, run) {
 			return this.asideRun(run)

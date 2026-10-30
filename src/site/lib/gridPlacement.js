@@ -112,7 +112,7 @@ export function ownBand(key, widget) {
  * @param {object|null} body The page body.
  * @return {{width: number, gap: number}|null} The aside, or null.
  *
- * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
+ * @spec openspec/changes/site-aside-column/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
  */
 export function asideOf(body) {
 	const aside = body && typeof body === 'object' ? body.aside : null
@@ -135,7 +135,7 @@ export function asideOf(body) {
  * @param {Array<object>} widgets The run's placements.
  * @return {boolean}
  *
- * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
+ * @spec openspec/changes/site-aside-column/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
  */
 export function isAsideRun(widgets) {
 	const cells = (widgets || []).map((widget) => cellOf(widget))
@@ -161,7 +161,7 @@ export function isAsideRun(widgets) {
  * @param {number} rowOffset The run's first authored row.
  * @return {object} `{gridColumn, gridRow}` style bindings.
  *
- * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
+ * @spec openspec/changes/site-aside-column/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
  */
 export function asideCellStyle(widget, rowOffset = 0) {
 	const cell = cellOf(widget)
