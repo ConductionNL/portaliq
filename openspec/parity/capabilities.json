@@ -3661,7 +3661,8 @@
 				"note": "Re-read 2026-10-07. Portaliq's half is built (archived change-proposal-queue, 9 of 9 tasks). dossiq still does not place portaliq-change-proposal-queue on its case page nor declare propose-change (git grep on dossiq development finds neither); ConductionNL/dossiq#3215 is open. No page shows the queue, so the row stays building.",
 				"origin": "code",
 				"change": "2026-09-29-change-proposal-queue",
-				"readOn": "2026-10-07"
+				"readOn": "2026-10-07",
+				"requirement": "openspec/specs/change-proposal-queue/spec.md REQ-CPQ-002; build plan openspec/changes/change-proposals-reach-the-case-page REQ-CPC-001, REQ-CPC-003"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3743,7 +3744,8 @@
 				"note": "Re-read 2026-10-07. Portaliq's half is built (archived change-proposal-queue, 9 of 9 tasks). dossiq still does not place portaliq-change-proposal-queue on its case page nor declare propose-change (git grep on dossiq development finds neither); ConductionNL/dossiq#3215 is open. No page shows the queue, so the row stays building.",
 				"origin": "code",
 				"change": "2026-09-29-change-proposal-queue",
-				"readOn": "2026-10-07"
+				"readOn": "2026-10-07",
+				"requirement": "openspec/specs/change-proposal-queue/spec.md REQ-CPQ-003, REQ-CPQ-004; build plan openspec/changes/change-proposals-reach-the-case-page REQ-CPC-001"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3931,7 +3933,8 @@
 				"sourceId": "sib-2.21",
 				"origin": "sibling",
 				"change": "2026-09-29-change-proposal-queue",
-				"readOn": "2026-10-07"
+				"readOn": "2026-10-07",
+				"requirement": "openspec/specs/change-proposal-queue/spec.md REQ-CPQ-001..006; build plan openspec/changes/change-proposals-reach-the-case-page REQ-CPC-001..003"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
