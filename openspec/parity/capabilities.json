@@ -4709,7 +4709,7 @@
 				"origin": "sibling",
 				"defectCandidate": "src/portal/components/InboxPage.jsx:86-148 never reads message.attachments or message.content; a dossiq portaalBericht row carrying attachments renders with no way to see or download them (code reading, needs a live check)",
 				"readOn": "2026-09-26",
-				"change": "dossiq/communication-portal-conversation-on-the-case"
+				"change": "dossiq/portal-conversation-live-pass"
 			},
 			"provider": "dossiq",
 			"providerHow": "read-from-code",
@@ -8046,7 +8046,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "Endpoint exists, is routed and rate-limited, but no in-repo caller embeds an <img> pointing at it; likely meant for external embedding (e.g. e-mail opens) similar to the recorder script.",
 				"origin": "code",
-				"change": "portal-traffic-analytics"
+				"change": "portal-traffic-analytics",
+				"requirement": "openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics :: The collector MUST survive being a public endpoint (scenario: A pixel counts one event)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -9845,7 +9846,7 @@
 				"owner": "ConductionNL/dossiq",
 				"note": "Messages both ways carry the case on dossiq's schema, so they are filed on the case. Not automatic from the resident's side: the reply form shows caseId as a free text field (no optionsProvider declared), so the resident must type the case uuid, and there is no reply-from-this-message or reply-from-the-case-page control. Note: the existing row cmp-inb-reply ('no compose control') predates this dossiq action and may be stale. Specified in ConductionNL/dossiq openspec/changes/communication-portal-conversation-on-the-case (dossiq lane, OpenSpec pass 2026-09-27).",
 				"origin": "code",
-				"change": "dossiq/communication-portal-conversation-on-the-case"
+				"change": "dossiq/portal-conversation-live-pass"
 			},
 			"provider": "dossiq",
 			"providerHow": "read-from-code",
