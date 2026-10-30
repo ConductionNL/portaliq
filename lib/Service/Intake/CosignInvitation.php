@@ -86,9 +86,12 @@ class CosignInvitation {
 
 		$days = (int)($cosign['deadlineDays'] ?? self::DEFAULT_DAYS);
 		$kind = trim((string)($cosign['kind'] ?? ''));
+		if ($kind === '') {
+			$kind = self::DEFAULT_KIND;
+		}
 
 		return [
-			'kind' => ($kind !== '' ? $kind : self::DEFAULT_KIND),
+			'kind' => $kind,
 			'title' => trim((string)($cosign['title'] ?? '')),
 			'days' => max(1, $days),
 			'nameField' => trim((string)($cosign['nameField'] ?? '')),
@@ -111,12 +114,12 @@ class CosignInvitation {
 	public function entry(array $settings, array $answers, ?int $now = null): array|string {
 		$name  = trim((string)($answers[$settings['nameField']] ?? ''));
 		$email = trim((string)($answers[$settings['emailField']] ?? ''));
-		if ($settings['nameField'] === '' || $name === '') {
-			return ($settings['nameField'] !== '' ? $settings['nameField'] : '_form');
+		if ($name === '') {
+			return $this->fieldOrForm(field: $settings['nameField']);
 		}
 
-		if ($settings['emailField'] === '' || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
-			return ($settings['emailField'] !== '' ? $settings['emailField'] : '_form');
+		if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+			return $this->fieldOrForm(field: $settings['emailField']);
 		}
 
 		$today = (new DateTimeImmutable('@'.($now ?? time())))->setTimezone(new DateTimeZone(self::ZONE));
@@ -203,6 +206,21 @@ class CosignInvitation {
 	public function isApplicant(array $claims, string $subjectRef): bool {
 		return hash_equals((string)($claims['applicant'] ?? ''), $this->subjectHash(subjectRef: $subjectRef));
 	}//end isApplicant()
+
+	/**
+	 * The field a refusal is filed under: the field, or the form when the binding names none.
+	 *
+	 * @param string $field The field name, or ''.
+	 *
+	 * @return string
+	 */
+	private function fieldOrForm(string $field): string {
+		if ($field === '') {
+			return DestinationMapping::FORM_LEVEL;
+		}
+
+		return $field;
+	}//end fieldOrForm()
 
 	/**
 	 * A one-way hash of a subject, so the link carries no subject reference.

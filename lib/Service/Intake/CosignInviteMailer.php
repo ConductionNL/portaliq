@@ -78,7 +78,10 @@ class CosignInviteMailer {
 			];
 			$text   = [
 				'subject' => $l10n->t('Will you co-sign a request?'),
-				'body'    => $l10n->t('%1$s, you are asked to co-sign the request "%2$s". Sign in with your own DigiD, check the request and co-sign or decline. Do this before %3$s.', [$values['name'], $values['formName'], $values['dueAt']]),
+				'body'    => $l10n->t(
+					'%1$s, you are asked to co-sign the request "%2$s". Sign in with your own DigiD, check the request and co-sign or decline. Do this before %3$s.',
+					[$values['name'], $values['formName'], $values['dueAt']]
+				),
 			];
 			if ($this->renderer !== null) {
 				$text = $this->renderer->render(

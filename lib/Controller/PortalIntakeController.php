@@ -374,7 +374,13 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		$reference = (string)($answer['reference'] ?? '');
 		$moments   = (array)($answer['confirmation'] ?? []);
 		$mailedTo  = $this->confirmation->send(site: $site, render: $render, answers: $prepared['answers'], reference: $reference, moments: $moments);
-		$cosigner  = $this->cosign?->invite(site: $site, binding: $binding, server: $cosign['server'], answer: $answer, subjectRef: (string)($subject['subjectRef'] ?? ''));
+		$cosigner  = $this->cosign?->invite(
+			site: $site,
+			binding: $binding,
+			server: $cosign['server'],
+			answer: $answer,
+			subjectRef: (string)($subject['subjectRef'] ?? '')
+		);
 
 		return new JSONResponse(
 			array_merge(

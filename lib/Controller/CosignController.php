@@ -115,7 +115,7 @@ class CosignController extends Controller implements PortalProtected {
 	 *
 	 * @param string $token The token from the link.
 	 * @param string $answer `sign` or `refuse`.
-	 * @param bool $confirmed The co-signer ticked that they read the request (required to sign).
+	 * @param string $confirmed `true` when the co-signer ticked that they read the request (required to sign).
 	 *
 	 * @return JSONResponse The case app's answer, or a refusal.
 	 *
@@ -124,8 +124,8 @@ class CosignController extends Controller implements PortalProtected {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 10, period: 60)]
-	public function answer(string $token = '', string $answer = '', bool $confirmed = false): JSONResponse {
-		if (in_array($answer, ['sign', 'refuse'], true) === false || ($answer === 'sign' && $confirmed === false)) {
+	public function answer(string $token = '', string $answer = '', string $confirmed = ''): JSONResponse {
+		if (in_array($answer, ['sign', 'refuse'], true) === false || ($answer === 'sign' && in_array($confirmed, ['true', '1'], true) === false)) {
 			return new JSONResponse(['error' => 'invalid'], Http::STATUS_BAD_REQUEST);
 		}
 
@@ -174,7 +174,12 @@ class CosignController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'invalid_link'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$site    = $this->portals->resolve(request: $this->request, portalSlug: ($claims['portal'] ?? '') !== '' ? $claims['portal'] : null);
+		$slug = null;
+		if (($claims['portal'] ?? '') !== '') {
+			$slug = $claims['portal'];
+		}
+
+		$site    = $this->portals->resolve(request: $this->request, portalSlug: $slug);
 		$binding = null;
 		if ($site !== null) {
 			$binding = $this->bindings->bindingFor(portal: (string)($site['slug'] ?? ''), route: (string)($claims['route'] ?? ''));
