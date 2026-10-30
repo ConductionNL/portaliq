@@ -68,7 +68,12 @@
 				</tr>
 				<tr v-if="summary.notFound.length === 0">
 					<td colspan="2" class="traffic-table__muted">
-						{{ t('portaliq', 'No missing page requested in this period.') }}
+						{{
+							t(
+								'portaliq',
+								'No missing page requested in this period.',
+							)
+						}}
 					</td>
 				</tr>
 			</tbody>
@@ -120,7 +125,9 @@ export default {
 		 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-missing-pages-must-be-reported-by-the-renderer-and-listed
 		 */
 		part() {
-			return ['pages', 'missing'].includes(this.content?.part) ? this.content.part : 'all'
+			return ['pages', 'missing'].includes(this.content?.part)
+				? this.content.part
+				: 'all'
 		},
 
 		/**

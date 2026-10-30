@@ -30,7 +30,10 @@ const REFUSALS = {
  * @spec openspec/changes/intake-report-pages/specs/report-pages/spec.md#requirement-the-custodian-decides-a-reveal-on-a-screen-of-their-own-req-irp-006
  */
 export function decisionFailure(error) {
-	return REFUSALS[String(error?.response?.data?.error || '')] || 'The change could not be saved. Try again.'
+	return (
+		REFUSALS[String(error?.response?.data?.error || '')]
+		|| 'The change could not be saved. Try again.'
+	)
 }
 
 /**
@@ -48,7 +51,16 @@ export function decisionFailure(error) {
  * @return {{allowReveal: Function, refuseReveal: Function}}
  * @spec openspec/changes/intake-report-pages/specs/report-pages/spec.md#requirement-the-custodian-decides-a-reveal-on-a-screen-of-their-own-req-irp-006
  */
-export function createRevealHandlers({ post, generateUrl, askReason, showContact, notify, notifyError, translate, reload }) {
+export function createRevealHandlers({
+	post,
+	generateUrl,
+	askReason,
+	showContact,
+	notify,
+	notifyError,
+	translate,
+	reload,
+}) {
 	/**
 	 * Ask the reason and post one decision.
 	 *
@@ -67,7 +79,13 @@ export function createRevealHandlers({ post, generateUrl, askReason, showContact
 		}
 		let answer
 		try {
-			answer = (await post(generateUrl(DECIDE_PATH, { id }), { allow, reason: reason.trim() }))?.data || {}
+			answer =
+				(
+					await post(generateUrl(DECIDE_PATH, { id }), {
+						allow,
+						reason: reason.trim(),
+					})
+				)?.data || {}
 		} catch (error) {
 			notifyError(translate(decisionFailure(error)))
 			return false
@@ -75,7 +93,13 @@ export function createRevealHandlers({ post, generateUrl, askReason, showContact
 		if (allow && answer.contact) {
 			await showContact(answer.contact)
 		}
-		notify(translate(allow ? 'The reveal is allowed and recorded.' : 'The reveal is refused and recorded.'))
+		notify(
+			translate(
+				allow
+					? 'The reveal is allowed and recorded.'
+					: 'The reveal is refused and recorded.',
+			),
+		)
 		reload()
 		return true
 	}

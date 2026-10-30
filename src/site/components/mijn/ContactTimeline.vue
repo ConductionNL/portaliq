@@ -35,7 +35,9 @@
 								class="pq-contact-timeline__channel-icon"
 								viewBox="0 0 24 24"
 								aria-hidden="true"
-								focusable="false"><path :d="channelIcon(entry.channel)" /></svg>
+								focusable="false">
+								<path :d="channelIcon(entry.channel)" />
+							</svg>
 							{{ entry.channel }}
 						</span>
 					</p>
@@ -150,7 +152,11 @@ export default {
 	gap: 6px;
 	margin-inline-start: 8px;
 	padding: 1px 8px;
-	border: 1px solid var(--nldesign-website-card-border-color, var(--nldesign-color-border, currentcolor));
+	border: 1px solid
+		var(
+			--nldesign-website-card-border-color,
+			var(--nldesign-color-border, currentcolor)
+		);
 	border-radius: var(--nldesign-website-badge-border-radius, 12px);
 	font-size: 0.8125rem;
 	font-weight: 400;
