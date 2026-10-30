@@ -395,7 +395,7 @@ export function countLine(value, unit, priceLabel) {
  * @param {object} field One declared form field.
  * @param {string} option One of its options.
  * @return {string} The words to show.
- * @spec openspec/changes/site-organisation-registration-form/specs/landing-page-provisioning/spec.md#requirement-a-select-field-shows-words-for-its-stored-values
+ * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-select-field-shows-words-for-its-stored-values
  */
 export function optionLabel(field, option) {
 	const labels = field && field.optionLabels

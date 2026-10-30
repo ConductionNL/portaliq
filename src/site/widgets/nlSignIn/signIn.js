@@ -95,7 +95,7 @@ export function cardButton({
  * @param {string} options.signedInIntro The authored text for a signed-in visitor.
  * @param {boolean} options.signedIn Whether a session is held.
  * @return {string} The text, or ''.
- * @spec openspec/changes/zuiddrecht-site-details/specs/portaliq-cms/spec.md#requirement-the-sign-in-card-does-not-invite-a-signed-in-visitor-to-sign-in
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-sign-in-card-does-not-invite-a-signed-in-visitor-to-sign-in
  */
 export function cardIntro({ intro, signedInIntro, signedIn }) {
 	return String((signedIn ? signedInIntro : intro) ?? '').trim()

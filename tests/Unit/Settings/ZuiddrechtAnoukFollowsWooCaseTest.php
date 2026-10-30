@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-anouk-follows-woo/specs/example-set-anouk-follows-woo/spec.md#requirement-anouk-bakker-follows-the-lindelaan-woo-case
+ * @spec openspec/specs/example-set-anouk-follows-woo/spec.md#requirement-anouk-bakker-follows-the-lindelaan-woo-case
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Anouk follows the Woo case the DqZaak boards open.
  *
- * @spec openspec/changes/example-set-anouk-follows-woo/specs/example-set-anouk-follows-woo/spec.md#requirement-anouk-bakker-follows-the-lindelaan-woo-case
+ * @spec openspec/specs/example-set-anouk-follows-woo/spec.md#requirement-anouk-bakker-follows-the-lindelaan-woo-case
  */
 class ZuiddrechtAnoukFollowsWooCaseTest extends TestCase {
 

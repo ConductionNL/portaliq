@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-set-woo-case-parties/specs/example-set-woo-case-parties/spec.md#requirement-the-lindelaan-woo-case-carries-its-parties
+ * @spec openspec/specs/example-set-woo-case-parties/spec.md#requirement-the-lindelaan-woo-case-carries-its-parties
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The parties on woo-fietspad.
  *
- * @spec openspec/changes/example-set-woo-case-parties/specs/example-set-woo-case-parties/spec.md#requirement-the-lindelaan-woo-case-carries-its-parties
+ * @spec openspec/specs/example-set-woo-case-parties/spec.md#requirement-the-lindelaan-woo-case-carries-its-parties
  */
 class ZuiddrechtWooCasePartiesTest extends TestCase {
 

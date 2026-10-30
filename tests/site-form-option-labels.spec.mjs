@@ -8,7 +8,7 @@
 // Usage:
 //   node --test tests/site-form-option-labels.spec.mjs
 //
-// @spec openspec/changes/site-organisation-registration-form/specs/landing-page-provisioning/spec.md#requirement-a-select-field-shows-words-for-its-stored-values
+// @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-select-field-shows-words-for-its-stored-values
 
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'

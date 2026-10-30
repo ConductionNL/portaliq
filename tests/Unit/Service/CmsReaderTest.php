@@ -840,7 +840,7 @@ class CmsReaderTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/site-aside-column/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
 	 */
 	public function testAGridPageServesItsAsideColumn(): void {
 		$this->withRows(

@@ -129,7 +129,7 @@ export default {
 
 		/**
 		 * @return {string} The card's text: the invitation, or once signed in what the page wrote for that.
-		 * @spec openspec/changes/zuiddrecht-site-details/specs/portaliq-cms/spec.md#requirement-the-sign-in-card-does-not-invite-a-signed-in-visitor-to-sign-in
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-sign-in-card-does-not-invite-a-signed-in-visitor-to-sign-in
 		 */
 		introText() {
 			return cardIntro({
