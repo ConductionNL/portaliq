@@ -138,6 +138,10 @@ const IntakeCatalogueBlock = defineAsyncComponent(
 )
 const ContactForm = defineAsyncComponent(() => import('./ContactForm.vue'))
 const IntakeFormBlock = defineAsyncComponent(() => import('./IntakeFormBlock.vue'))
+const ReportBlock = defineAsyncComponent(() => import('./ReportBlock.vue'))
+const ReportThreadBlock = defineAsyncComponent(
+	() => import('./ReportThreadBlock.vue'),
+)
 const PublicRecordsBlock = defineAsyncComponent(
 	() => import('./PublicRecordsBlock.vue'),
 )
@@ -257,6 +261,11 @@ const PUBLIC_WIDGETS = {
 	assistant: AssistantBlock,
 	// site-member-voting-record-and-confidential-papers: a contributed public record list.
 	publicRecords: PublicRecordsBlock,
+	// intake-report-pages: a report without an account and its follow-up with
+	// the receipt code. They call this app's own anonymous report routes and
+	// send no traffic event.
+	report: ReportBlock,
+	reportThread: ReportThreadBlock,
 	intakeStatus: IntakeStatusBlock,
 	...nldsWidgets,
 	...siteBlockRegistry,
@@ -751,6 +760,14 @@ export default {
 			}
 
 			// The assistant asks THIS portal's route; the portal comes from the host.
+			// The report blocks file and read on THIS portal's report routes.
+			if (
+				widget.widgetKey === 'report'
+				|| widget.widgetKey === 'reportThread'
+			) {
+				return { ...props, portal: this.portal }
+			}
+
 			if (widget.widgetKey === 'assistant') {
 				return { ...props, portal: this.portal }
 			}
