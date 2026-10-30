@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.101.0"
+        "version": "0.105.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.101.0",
+                "version": "0.105.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -8451,7 +8451,7 @@
                     ]
                 },
                 "icon": "FormSelect",
-                "version": "0.5.0",
+                "version": "0.6.0",
                 "title": "Portal Form Binding",
                 "description": "What a portal form page is bound to (portal-intake-form-as-an-object REQ-PIFO-001): a case type tuple, an audience, an optional form name, and the intake settings. The page keeps no field list of its own; the fields, their order and their presets come from the published form at render time, so a form edited in buildiq reaches the portal with no portal change.",
                 "type": "object",
@@ -8762,20 +8762,46 @@
                         "title": "Co-signing",
                         "type": "object",
                         "widget": "json",
-                        "description": "Whether a second person must co-sign after the form is sent: required (boolean) and deadlineDays. Off when empty.",
+                        "description": "Whether a second person must co-sign after the form is sent. The submit creates the case at once with what it waits on, and mails the person the form names a sign link; the case app holds the wait (decision 271). Off when empty.",
                         "additionalProperties": false,
                         "properties": {
                             "required": {
                                 "title": "Co-signing required",
                                 "type": "boolean",
-                                "description": "Whether the request waits for a co-signer before it is delivered.",
+                                "description": "Whether the case waits for a co-signer after it is created.",
                                 "default": false
                             },
                             "deadlineDays": {
                                 "title": "Days to co-sign",
                                 "type": "integer",
-                                "description": "How many days the co-signer has before the request lapses.",
+                                "description": "How many days the co-signer has. After that the case app's rule for the kind applies.",
                                 "default": 14
+                            },
+                            "nameField": {
+                                "title": "Co-signer name field",
+                                "type": "string",
+                                "description": "The form field that holds the co-signer's name."
+                            },
+                            "emailField": {
+                                "title": "Co-signer e-mail field",
+                                "type": "string",
+                                "description": "The form field that holds the address the sign link goes to."
+                            },
+                            "kind": {
+                                "title": "Obligation kind",
+                                "type": "string",
+                                "default": "cosign",
+                                "description": "The obligation kind the case waits on, as the destination case type declares it."
+                            },
+                            "title": {
+                                "title": "What is awaited",
+                                "type": "string",
+                                "description": "What the case waits on, in the words the resident reads, such as \"mede-ondertekening\". Empty uses the case type's title for the kind."
+                            },
+                            "endpoint": {
+                                "title": "Sign endpoint",
+                                "type": "string",
+                                "description": "The case app's endpoint, on this instance, that takes the co-signer's answer with the portal's signed assertion, such as /apps/<case app>/api/portal/obligations/settle."
                             }
                         }
                     },
