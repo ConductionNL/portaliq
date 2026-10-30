@@ -47,15 +47,15 @@ const TOKEN = '--nldesign-website-card-border-color'
 test('every outlined site card reads the card line token, with its old line as fallback', () => {
 	assert.match(
 		rule(read('src/site/widgets/nlLinkList/NlLinkList.vue'), '.nl-link-list--card'),
-		new RegExp(`border: 1px solid var\\( ${TOKEN}, var\\(--nldesign-color-border-dark,`),
+		new RegExp(`border: 1px solid var\\( ${TOKEN}, var\\( ?--nldesign-color-border-dark,`),
 	)
 	assert.match(
 		rule(read('src/site/widgets/nlSignIn/NlSignIn.vue'), '.nl-signin-card--outline'),
-		new RegExp(`border: 1px solid var\\( ${TOKEN}, var\\(--nldesign-color-border-dark,`),
+		new RegExp(`border: 1px solid var\\( ${TOKEN}, var\\( ?--nldesign-color-border-dark,`),
 	)
 	assert.match(
 		rule(read('css/site-theme.css'), '.pq-signin__card'),
-		new RegExp(`border: 1px solid var\\( ${TOKEN}, var\\(--nldesign-color-border,`),
+		new RegExp(`border: 1px solid var\\( ${TOKEN}, var\\( ?--nldesign-color-border,`),
 	)
 })
 

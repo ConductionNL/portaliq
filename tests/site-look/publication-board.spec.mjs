@@ -30,7 +30,7 @@ test('the date is written out, as the search results write it', () => {
 test('the cards variant names its labels without a colon; the plain one keeps it', () => {
 	assert.match(
 		source,
-		/<dt class="pq-detail__label">\s*<strong>\{\{ cards \? field\.label : `\$\{field\.label\}:` \}\}<\/strong>/,
+		/<dt class="pq-detail__label">\s*<strong>\{\{\s*cards \? field\.label : `\$\{field\.label\}:`\s*\}\}<\/strong>/,
 	)
 })
 
