@@ -103,7 +103,7 @@ class AudienceMove {
 	 */
 	public function audiences(string $organisation): array {
 		try {
-			$overrides = ($this->organisations->presentationFor(orgSlug: $organisation)['overrides'] ?? []);
+			$overrides = ($this->organisations->presentationOrFail(orgSlug: $organisation)['overrides'] ?? []);
 		} catch (Throwable $exception) {
 			$this->logger->warning(
 				'Portaliq: the unbound audiences could not be read; no audience move is allowed',

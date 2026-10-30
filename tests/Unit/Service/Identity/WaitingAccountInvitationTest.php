@@ -451,20 +451,59 @@ class WaitingAccountInvitationTest extends TestCase {
 	 *
 	 * @return void
 	 */
+	/**
+	 * Through the real organisation lookup: an OpenRegister that fails is
+	 * not an unknown organisation, so it allows nothing, while a slug that
+	 * names no organisation keeps the default.
+	 *
+	 * @return void
+	 */
 	public function testAFailedOverrideLookupAllowsNoAudience(): void {
-		$organisations = $this->getMockBuilder(PortalOrganisationConfigService::class)->disableOriginalConstructor()->onlyMethods(['presentationFor'])->getMock();
-		$organisations->method('presentationFor')->willThrowException(new \RuntimeException('OpenRegister is down'));
+		$failing = new class {
+			public function findBySlug(string $slug) {
+				throw new \RuntimeException('OpenRegister is down');
+			}
+		};
+		$unknown = new class {
+			public function findBySlug(string $slug) {
+				throw new \OCP\AppFramework\Db\DoesNotExistException('no such organisation');
+			}
+		};
+
 		$logger = $this->createMock(LoggerInterface::class);
 		$logger->expects($this->once())->method('warning');
-		$moves = new AudienceMove(
+		$this->assertSame([], $this->audienceMove($failing, $logger)->audiences(organisation: 'school-x'), 'a narrowed list must not widen to the default during an outage');
+		$this->assertSame([], $this->audienceMove(null, $this->createMock(LoggerInterface::class))->audiences(organisation: 'school-x'), 'nor when OpenRegister cannot be reached at all');
+		$this->assertSame(AudienceMove::DEFAULT_AUDIENCES, $this->audienceMove($unknown, $this->createMock(LoggerInterface::class))->audiences(organisation: 'school-x'), 'an unknown organisation keeps the default');
+	}//end testAFailedOverrideLookupAllowsNoAudience()
+
+	/**
+	 * An audience move over the real organisation config service.
+	 *
+	 * @param object|null     $mapper The OpenRegister mapper, or null when it cannot be had.
+	 * @param LoggerInterface $logger The move's logger.
+	 *
+	 * @return AudienceMove
+	 */
+	private function audienceMove(?object $mapper, LoggerInterface $logger): AudienceMove {
+		$container = $this->createMock(\Psr\Container\ContainerInterface::class);
+		if ($mapper === null) {
+			$container->method('get')->willThrowException(new \RuntimeException('unavailable'));
+		} else {
+			$container->method('get')->willReturn($mapper);
+		}
+
+		$appConfig = $this->createMock(\OCP\IAppConfig::class);
+		$appConfig->method('getValueString')->willReturn('{}');
+		$organisations = new PortalOrganisationConfigService($container, $appConfig, $this->createMock(LoggerInterface::class), new \OCA\Portaliq\Service\OidcClaimMapperService());
+
+		return new AudienceMove(
 			$organisations,
 			$this->getMockBuilder(PortalIdentityMailer::class)->disableOriginalConstructor()->getMock(),
 			$this->createMock(AuditTrailService::class),
 			$logger
 		);
-
-		$this->assertSame([], $moves->audiences(organisation: 'school-x'), 'a narrowed list must not widen to the default during an outage');
-	}//end testAFailedOverrideLookupAllowsNoAudience()
+	}//end audienceMove()
 
 	public function testTheAudiencesAnUnboundAccountMayTakeOnAreTheOrganisations(): void {
 		$cases = [
@@ -974,8 +1013,8 @@ class WaitingAccountInvitationTest extends TestCase {
 
 		$writer = $this->fakeWriter();
 
-		$organisations = $this->getMockBuilder(PortalOrganisationConfigService::class)->disableOriginalConstructor()->onlyMethods(['presentationFor'])->getMock();
-		$organisations->method('presentationFor')->willReturnCallback(fn (string $orgSlug): ?array => ['uuid' => 'org-' . $orgSlug, 'overrides' => $this->overrides]);
+		$organisations = $this->getMockBuilder(PortalOrganisationConfigService::class)->disableOriginalConstructor()->onlyMethods(['presentationOrFail'])->getMock();
+		$organisations->method('presentationOrFail')->willReturnCallback(fn (string $orgSlug): ?array => ['uuid' => 'org-' . $orgSlug, 'overrides' => $this->overrides]);
 		$mailer = $this->getMockBuilder(PortalIdentityMailer::class)->disableOriginalConstructor()->onlyMethods(['sendClaimNotice'])->getMock();
 		$mailer->method('sendClaimNotice')->willReturnCallback(
 			function (string $email, string $organisation, \DateTimeInterface $moment): bool {
