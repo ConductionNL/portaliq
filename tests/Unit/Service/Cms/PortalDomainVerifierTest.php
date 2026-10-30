@@ -18,6 +18,7 @@ use OCA\Portaliq\Controller\CmsDomainController;
 use OCA\Portaliq\Service\Cms\PortalDomainVerifier;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\Tenancy\PortalAdminScope;
 use OCP\AppFramework\Http;
 use OCP\IL10N;
 use OCP\IRequest;
@@ -112,7 +113,9 @@ class PortalDomainVerifierTest extends TestCase {
 		$row   = self::portal([['hostname' => 'portal.example.com', 'verificationToken' => 'tok']]);
 		$l10n       = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnCallback(static fn (string $text, array $parameters=[]): string => vsprintf($text, $parameters));
-		$controller = new CmsDomainController('portaliq', $this->createMock(IRequest::class), $this->verifier([], $row, $saved), $l10n);
+		$scope = $this->getMockBuilder(PortalAdminScope::class)->disableOriginalConstructor()->onlyMethods(['mayAdministerSlug'])->getMock();
+		$scope->method('mayAdministerSlug')->willReturn(true);
+		$controller = new CmsDomainController('portaliq', $this->createMock(IRequest::class), $this->verifier([], $row, $saved), $l10n, $scope);
 
 		$this->assertSame('_portaliq-verify.portal.example.com', $controller->records('open-tilburg')->getData()['domains'][0]['name']);
 		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->records('nergens-x')->getStatus());

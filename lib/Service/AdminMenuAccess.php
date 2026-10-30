@@ -31,7 +31,9 @@ namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Controller\AccessRequestAdminController;
 use OCA\Portaliq\Controller\PortalAccountAdminController;
+use OCA\Portaliq\Service\Tenancy\PortalAdminScope;
 use OCP\IGroupManager;
+use OCP\IUser;
 use OCP\IUserSession;
 
 /**
@@ -59,12 +61,14 @@ class AdminMenuAccess {
 	 * @param IGroupManager      $groups      Tells whether the user administers the instance.
 	 * @param PageEditorService  $pageEditor  Who may edit portal pages (the editor groups).
 	 * @param ActionAuthService  $actions     The action matrix (who may provision, answer access requests).
+	 * @param PortalAdminScope|null $portalScope Which portals the user administers through `adminGroups`.
 	 */
 	public function __construct(
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groups,
 		private readonly PageEditorService $pageEditor,
 		private readonly ActionAuthService $actions,
+		private readonly ?PortalAdminScope $portalScope=null,
 	) {
 	}//end __construct()
 
@@ -80,24 +84,37 @@ class AdminMenuAccess {
 	 * - `accessRequests`: may answer access requests
 	 *   (`portal.answer-access-request`).
 	 *
+	 * - `portals`: may open the Portals page: an editor, or a member of a
+	 *   portal's `adminGroups`.
+	 * - `portalSlugs`: the portals that page lists, or null for all of them.
+	 *   A member of an admin group who is no editor sees only their own.
+	 *
 	 * News is not gated here: every signed-in Nextcloud user may author news
 	 * (staff-news-screen), so its menu entry shows for everyone.
 	 *
-	 * @return array{admin: bool, pages: bool, accounts: bool, accessRequests: bool}
+	 * @return array{admin: bool, pages: bool, accounts: bool, accessRequests: bool, portals: bool, portalSlugs: array<int, string>|null}
 	 *
 	 * @spec openspec/changes/admin-menu-follows-roles/specs/admin-ui/spec.md#requirement-the-app-menu-must-show-a-user-only-the-pages-their-role-may-use
 	 */
 	public function forCurrentUser(): array {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
-			return ['admin' => false, 'pages' => false, 'accounts' => false, 'accessRequests' => false];
+			return ['admin' => false, 'pages' => false, 'accounts' => false, 'accessRequests' => false, 'portals' => false, 'portalSlugs' => []];
+		}
+
+		$pages = $this->pageEditor->mayEdit(user: $user);
+		$slugs = null;
+		if ($pages === false) {
+			$slugs = $this->administeredSlugs(user: $user);
 		}
 
 		return [
 			'admin'          => $this->groups->isAdmin($user->getUID()),
-			'pages'          => $this->pageEditor->mayEdit(user: $user),
+			'pages'          => $pages,
 			'accounts'       => $this->actions->can(user: $user, action: PortalAccountAdminController::ACTION_PROVISION),
 			'accessRequests' => $this->actions->can(user: $user, action: AccessRequestAdminController::ACTION_ANSWER),
+			'portals'        => $pages === true || $slugs === null || $slugs !== [],
+			'portalSlugs'    => $slugs,
 		];
 	}//end forCurrentUser()
 
@@ -130,6 +147,10 @@ class AdminMenuAccess {
 			return true;
 		}
 
+		if ($this->administeredSlugs(user: $user) !== []) {
+			return true;
+		}
+
 		foreach (array_keys($this->actions->getMatrix()) as $action) {
 			if ($this->actions->can(user: $user, action: (string)$action) === true) {
 				return true;
@@ -138,4 +159,26 @@ class AdminMenuAccess {
 
 		return false;
 	}//end isStaff()
+
+	/**
+	 * The portals the user administers through `adminGroups`; null for an
+	 * instance administrator, who administers all of them.
+	 *
+	 * @param IUser $user The signed-in user.
+	 *
+	 * @return array<int, string>|null The slugs, possibly empty.
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t12
+	 */
+	private function administeredSlugs(IUser $user): ?array {
+		if ($this->portalScope === null) {
+			if ($this->groups->isAdmin($user->getUID()) === true) {
+				return null;
+			}
+
+			return [];
+		}
+
+		return $this->portalScope->administeredSlugs(user: $user);
+	}//end administeredSlugs()
 }//end class

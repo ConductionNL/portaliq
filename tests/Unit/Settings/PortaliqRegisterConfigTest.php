@@ -393,8 +393,11 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.99.0 (media 0.2.0): `usedOn`, how many records of its portal use the item (media-usage-count). Additive.
 		// 0.100.0 (portal 0.27.0): `myCases.display` takes `folders`, the board folders (mijn-case-folder-card). Additive.
 		// 0.101.0 (form 0.4.0): a form field's `optionLabels`, the words shown per option (site-organisation-registration-form). Additive.
-		$this->assertSame(expected: '0.101.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.101.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		// 0.104.0 (portal 0.29.0): `adminGroups`, the Nextcloud groups that administer one portal (operate-portals-per-organisation REQ-OPO-005). Additive.
+		$this->assertSame(expected: '0.104.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.104.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame(expected: '0.29.0', actual: self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame(expected: 'array', actual: self::$register['components']['schemas']['portal']['properties']['adminGroups']['type']);
 		$this->assertSame(expected: '0.2.0', actual: self::$register['components']['schemas']['media']['version']);
 		$this->assertSame(expected: 'integer', actual: self::$register['components']['schemas']['media']['properties']['usedOn']['type']);
 		$this->assertSame('0.4.0', self::$register['components']['schemas']['form']['version']);
@@ -461,7 +464,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.7.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.27.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.29.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portal']['properties']['authentication']['properties']['registration']['properties']['businessGroup']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portal']['properties']['tokens']['additionalProperties']['type']);
 		$this->assertTrue(self::$register['components']['schemas']['portal']['properties']['searchInsideDocuments']['default']);

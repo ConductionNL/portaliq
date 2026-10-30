@@ -79,6 +79,9 @@ return [
         // contrast verdict per set (nldesign-theme-integration). Admin-only.
         ['name' => 'portalTheme#index', 'url' => '/api/portals/{slug}/theme', 'verb' => 'GET'],
         ['name' => 'portalTheme#update', 'url' => '/api/portals/{slug}/theme', 'verb' => 'PUT'],
+        // Which groups administer one portal (operate-portals-per-organisation REQ-OPO-005). Read per portal, write admin-only.
+        ['name' => 'portalAdminGroups#index', 'url' => '/api/portals/{slug}/admin-groups', 'verb' => 'GET'],
+        ['name' => 'portalAdminGroups#update', 'url' => '/api/portals/{slug}/admin-groups', 'verb' => 'PUT'],
         // Every portal with its theme and contrast, for the Themes page (themes-contrast-column). Admin only.
         ['name' => 'themeOverview#portals', 'url' => '/api/themes/portals', 'verb' => 'GET'],
         // Whether the portal has a published page at its root, for the "Home

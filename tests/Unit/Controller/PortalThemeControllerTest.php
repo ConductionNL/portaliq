@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
+use OCA\Portaliq\Service\Tenancy\PortalAdminScope;
 use OCA\Portaliq\Controller\PortalThemeController;
 use OCA\Portaliq\Service\Theme\PortalThemeChoice;
 use OCP\AppFramework\Http;
@@ -77,25 +78,44 @@ class PortalThemeControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_BAD_GATEWAY, $controller->update(slug: 'gemeente', theme: 'vng')->getStatus());
 	}//end testAFailedWriteIs502()
 
-	public function testBothRoutesStayAdminOnly(): void {
+	/**
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t11
+	 */
+	public function testBothRoutesAreOpenPerPortal(): void {
 		foreach (['index', 'update'] as $method) {
 			$attributes = array_map(
 				static fn ($attribute): string => $attribute->getName(),
 				(new ReflectionMethod(PortalThemeController::class, $method))->getAttributes()
 			);
-			$this->assertSame([], array_values(array_filter($attributes, static fn (string $name): bool => str_contains($name, 'NoAdminRequired') || str_contains($name, 'PublicPage'))));
+			$this->assertContains(\OCP\AppFramework\Http\Attribute\NoAdminRequired::class, $attributes);
+			$this->assertSame([], array_values(array_filter($attributes, static fn (string $name): bool => str_contains($name, 'PublicPage'))));
 		}
-	}//end testBothRoutesStayAdminOnly()
+	}//end testBothRoutesAreOpenPerPortal()
+
+	/**
+	 * Another organisation's portal answers as if it did not exist, and is not changed.
+	 *
+	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t11
+	 */
+	public function testAPortalTheCallerDoesNotAdministerIs404(): void {
+		$controller = $this->controller(portal: ['slug' => 'utrecht'], allowed: false);
+		$this->choice->expects($this->never())->method('choose');
+		$this->choice->expects($this->never())->method('listFor');
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->index(slug: 'utrecht')->getStatus());
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->update(slug: 'utrecht', theme: 'vng')->getStatus());
+	}//end testAPortalTheCallerDoesNotAdministerIs404()
 
 	/**
 	 * The controller over a choice double.
 	 *
 	 * @param array<string, mixed>|null $portal         The portal the slug finds.
 	 * @param bool                      $acceptFindings What the request says about confirming.
+	 * @param bool                      $allowed        Whether the caller administers the portal.
 	 *
 	 * @return PortalThemeController
 	 */
-	private function controller(?array $portal, bool $acceptFindings = false): PortalThemeController {
+	private function controller(?array $portal, bool $acceptFindings = false, bool $allowed = true): PortalThemeController {
 		$this->choice = $this->getMockBuilder(PortalThemeChoice::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['portalBySlug', 'listFor', 'choose', 'chooseConfirmingFindings'])
@@ -107,7 +127,24 @@ class PortalThemeControllerTest extends TestCase {
 			static fn (string $key, mixed $default = null): mixed => ($key === 'acceptFindings' ? $acceptFindings : $default)
 		);
 
-		return new PortalThemeController($request, $this->choice);
+		return new PortalThemeController($request, $this->choice, $this->scope(allowed: $allowed));
 	}//end controller()
 
+	/**
+	 * A portal scope that lets the caller administer every portal, or none.
+	 *
+	 * @param bool $allowed Whether the caller administers the portal.
+	 *
+	 * @return PortalAdminScope
+	 */
+	private function scope(bool $allowed = true): PortalAdminScope {
+		$scope = $this->getMockBuilder(PortalAdminScope::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['mayAdminister', 'mayAdministerSlug'])
+			->getMock();
+		$scope->method('mayAdminister')->willReturn($allowed);
+		$scope->method('mayAdministerSlug')->willReturn($allowed);
+
+		return $scope;
+	}//end scope()
 }//end class

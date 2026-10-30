@@ -62,7 +62,7 @@
       "route": "Portals",
       "order": 20,
       "visibleIf": {
-        "access.pages": true
+        "access.portals": true
       }
     },
     {
@@ -3542,6 +3542,11 @@
                   "key": "editors",
                   "title": "Administrators",
                   "widgetId": "portal-editors"
+                },
+                {
+                  "key": "admin-groups",
+                  "title": "Administrator groups",
+                  "widgetId": "portal-settings-admin-groups"
                 }
               ]
             }
@@ -3770,6 +3775,12 @@
               "hint": "A domain only works once it is verified.",
               "emptyText": "No domain yet."
             }
+          },
+          {
+            "id": "portal-settings-admin-groups",
+            "type": "PortalAdminGroups",
+            "title": "Administrator groups",
+            "content": {}
           },
           {
             "id": "portal-editors",

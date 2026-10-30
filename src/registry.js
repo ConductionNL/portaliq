@@ -46,6 +46,7 @@ import PageLayoutEditor from './widgets/PageLayoutEditor.vue'
 import PageTrafficFlow from './widgets/PageTrafficFlow.vue'
 import PortalAccessibility from './widgets/PortalAccessibility.vue'
 import PortalAccountWithdraw from './widgets/PortalAccountWithdraw.vue'
+import PortalAdminGroups from './widgets/PortalAdminGroups.vue'
 import PortalCaseTypes from './widgets/PortalCaseTypes.vue'
 import PortalHomePage from './widgets/PortalHomePage.vue'
 import PortalRegistration from './widgets/PortalRegistration.vue'
@@ -294,6 +295,17 @@ export default {
 		allowedSlots: ['body'],
 		propsSchema: null,
 		_note: 'Whether this portal has a published page at its root, and what to do when it has not (portaliq-cms). Custom because the three states come from PortalHomePageController, because an absent page and a draft at the root are different errors with different remedies, and because an object-list over the pages shows rows rather than a verdict about one route.',
+	},
+	// @custom-widget-ratchet exclude the group picker reads and writes through a per-portal controller whose write is admin-only, and a member of an admin group must see the list without the picker, which no built-in widget does
+	PortalAdminGroups: {
+		kind: 'widget',
+		component: PortalAdminGroups,
+		defaultSize: { w: 12, h: 3 },
+		minSize: { w: 6, h: 2 },
+		maxSize: { w: 12, h: 6 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: 'The Nextcloud groups that administer one portal (operate-portals-per-organisation REQ-OPO-005). Custom because the list comes from PortalAdminGroupsController, an instance administrator gets a group picker and everyone else reads the list.',
 	},
 	// @custom-widget-ratchet exclude the radio list reads the theme app's catalogue and a contrast verdict per set through an admin controller, and a failing set must show its findings and ask again before it saves, which no built-in widget does
 	PortalTheme: {
