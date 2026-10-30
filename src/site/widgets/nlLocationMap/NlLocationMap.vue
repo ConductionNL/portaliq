@@ -176,6 +176,7 @@ export default {
 			type: String,
 			default: 'Kaart met de genummerde locaties uit de lijst',
 		},
+
 		zoomInLabel: { type: String, default: 'Inzoomen' },
 		zoomOutLabel: { type: String, default: 'Uitzoomen' },
 		routeLabel: { type: String, default: 'Route' },
