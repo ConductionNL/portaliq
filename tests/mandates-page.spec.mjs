@@ -361,6 +361,45 @@ test('a mailed link is kept across sign-in, handed back once, and forgotten when
 		'an answer forgets the secret',
 	)
 
+	for (const status of [0, 503]) {
+		kept.set(MANDATE_INVITATION_KEY, 's')
+		const failing = fakeApi({
+			'POST /mandates/invitations/accept': { ok: false, status, json: {} },
+		})
+		const answer = await redeemKeptMandateInvitation({
+			api: failing.api,
+			session: {},
+			t,
+			storage,
+		})
+		assert.match(
+			answer.text,
+			/Try again later/,
+			`status ${status} is not an invalid invitation`,
+		)
+		assert.doesNotMatch(answer.text, /no longer valid/)
+		assert.equal(
+			kept.has(MANDATE_INVITATION_KEY),
+			true,
+			'a failing server keeps the secret',
+		)
+	}
+
+	const gone = fakeApi({
+		'POST /mandates/invitations/accept': { ok: false, status: 404, json: {} },
+	})
+	assert.match(
+		(
+			await redeemKeptMandateInvitation({
+				api: gone.api,
+				session: {},
+				t,
+				storage,
+			})
+		).text,
+		/no longer valid/,
+	)
+
 	kept.set(MANDATE_INVITATION_KEY, 's')
 	const { api, calls } = fakeApi({
 		'POST /mandates/invitations/accept': {
