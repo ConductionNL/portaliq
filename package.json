@@ -296,7 +296,7 @@
     "axios": "^1.20.0",
     "babel-loader": "^10.1.1",
     "dexie": "^4.4.6",
-    "dompurify": "^3.4.15",
+    "dompurify": "^3.4.17",
     "gridstack": "^13.3.0",
     "marked": "^18.0.12",
     "node-polyfill-webpack-plugin": "4.0.0",
@@ -308,7 +308,8 @@
   "overrides": {
     "libxmljs2": "^0.37.0",
     "@nextcloud/axios": "$@nextcloud/axios",
-    "@nextcloud/vue": "$@nextcloud/vue"
+    "@nextcloud/vue": "$@nextcloud/vue",
+    "dompurify": "$dompurify"
   },
   "devDependencies": {
     "@cyclonedx/cyclonedx-npm": "^6.0.0",
