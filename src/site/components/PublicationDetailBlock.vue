@@ -71,7 +71,9 @@
 					<!-- The cards variant sets the labels in a column of their
 					     own, without the colon (board Publicatie). -->
 					<dt class="pq-detail__label">
-						<strong>{{ cards ? field.label : `${field.label}:` }}</strong>
+						<strong>{{
+							cards ? field.label : `${field.label}:`
+						}}</strong>
 					</dt>
 					<dd class="pq-detail__value">
 						<ul v-if="field.kind === 'list'" class="pq-detail__list">

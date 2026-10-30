@@ -55,7 +55,10 @@
 				class="pq-inbox-block__plain-row"
 				data-testid="mijn-inbox-plain-row">
 				<span class="pq-inbox-block__plain-mark" aria-hidden="true">
-					<svg viewBox="0 0 24 24" focusable="false"><path d="M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z" /></svg>
+					<svg viewBox="0 0 24 24" focusable="false">
+						<path
+							d="M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z" />
+					</svg>
 				</span>
 				<a
 					class="utrecht-link pq-inbox-block__plain-title"
@@ -431,7 +434,10 @@ export default {
 	block-size: 36px;
 	border-radius: 50%;
 	background: var(--nldesign-color-primary-light, transparent);
-	color: var(--nldesign-color-primary-light-text, var(--nldesign-color-primary, currentcolor));
+	color: var(
+		--nldesign-color-primary-light-text,
+		var(--nldesign-color-primary, currentcolor)
+	);
 }
 
 .pq-inbox-block__plain-mark svg {

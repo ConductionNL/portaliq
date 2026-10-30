@@ -58,7 +58,8 @@ export function mount(el, props) {
 		schema: String(context.schema || ''),
 		objectId: String(context.objectId || ''),
 		onHeader: typeof context.onHeader === 'function' ? context.onHeader : null,
-		onSummary: typeof context.onSummary === 'function' ? context.onSummary : null,
+		onSummary:
+			typeof context.onSummary === 'function' ? context.onSummary : null,
 	})
 	app.mount(el)
 	mountedApps.set(el, app)

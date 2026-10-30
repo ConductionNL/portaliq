@@ -115,7 +115,11 @@
 			</tbody>
 		</table>
 		<p
-			v-if="emptyState === '' && part !== 'channels' && summary.searchesWithoutCount > 0"
+			v-if="
+				emptyState === ''
+				&& part !== 'channels'
+				&& summary.searchesWithoutCount > 0
+			"
 			class="traffic-table__muted"
 			data-testid="traffic-searches-without-count">
 			{{
@@ -176,7 +180,9 @@ export default {
 		 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-site-search-must-be-reported-by-the-built-in-search-box
 		 */
 		part() {
-			return ['channels', 'searches'].includes(this.content?.part) ? this.content.part : 'all'
+			return ['channels', 'searches'].includes(this.content?.part)
+				? this.content.part
+				: 'all'
 		},
 
 		/**

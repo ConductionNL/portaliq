@@ -28,7 +28,11 @@
 .traffic-table__table th {
 	padding: 10px 12px;
 	border-top: 0;
-	background: color-mix(in srgb, var(--color-background-hover) 40%, var(--color-main-background));
+	background: color-mix(
+		in srgb,
+		var(--color-background-hover) 40%,
+		var(--color-main-background)
+	);
 	color: var(--color-text-maxcontrast);
 	font-weight: 600;
 }

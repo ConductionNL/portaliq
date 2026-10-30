@@ -160,7 +160,10 @@ export default {
 	border: 1px solid
 		var(
 			--nldesign-website-card-border-color,
-			var(--nldesign-color-border-dark, var(--utrecht-color-grey-80, currentcolor))
+			var(
+				--nldesign-color-border-dark,
+				var(--utrecht-color-grey-80, currentcolor)
+			)
 		);
 	border-radius: var(
 		--nldesign-website-border-radius-large,

@@ -49,7 +49,16 @@ export function revokeFailure(error) {
  * @return {{revokeSession: Function, openSessionAccount: Function}}
  * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
  */
-export function createSessionHandlers({ post, generateUrl, confirmRevoke, notify, notifyError, translate, reload, open }) {
+export function createSessionHandlers({
+	post,
+	generateUrl,
+	confirmRevoke,
+	notify,
+	notifyError,
+	translate,
+	reload,
+	open,
+}) {
 	return {
 		/**
 		 * `Sessie intrekken` on a Sessions row.
