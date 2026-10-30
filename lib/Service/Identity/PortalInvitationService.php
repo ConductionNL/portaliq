@@ -68,12 +68,14 @@ class PortalInvitationService {
 	 * @param PortalObjectWriter $writer Records and updates the invitation.
 	 * @param PortalAccountService $accounts Provisions the account on acceptance.
 	 * @param ISecureRandom $random Mints the one-time secret.
+	 * @param ClaimLock $lock Serialises two accepts of one invitation.
 	 */
 	public function __construct(
 		private readonly PortalObjectReader $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly PortalAccountService $accounts,
 		private readonly ISecureRandom $random,
+		private readonly ClaimLock $lock,
 	) {
 	}//end __construct()
 
@@ -224,12 +226,42 @@ class PortalInvitationService {
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function accept(string $token, ?DateTimeImmutable $now = null): ?array {
+		if ($token === '') {
+			return null;
+		}
+
+		// One accept per invitation at a time: without the lock two accepts
+		// both read the invitation open and both provision.
+		$key = 'invitation/' . hash('sha256', $token);
+		if ($this->lock->acquire(accountId: $key) === false) {
+			return null;
+		}
+
+		try {
+			return $this->acceptLocked(token: $token, moment: ($now ?? new DateTimeImmutable()));
+		} finally {
+			$this->lock->release(accountId: $key);
+		}
+	}//end accept()
+
+	/**
+	 * The accept itself, under the lock: read the invitation again,
+	 * provision, and spend it; refused when it could not be spent.
+	 *
+	 * @param string            $token  The secret from the mail.
+	 * @param DateTimeImmutable $moment The moment to judge expiry against.
+	 *
+	 * @return array{subjectRef: string}|null Null when the invitation admits nobody.
+	 *
+	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	private function acceptLocked(string $token, DateTimeImmutable $moment): ?array {
 		$row = $this->findByToken(token: $token);
 		if ($row === null) {
 			return null;
 		}
 
-		$state = $this->stateAsOf(row: $row, now: ($now ?? new DateTimeImmutable()));
+		$state = $this->stateAsOf(row: $row, now: $moment);
 		if ($state !== 'sent' && $state !== 'opened') {
 			return null;
 		}
@@ -245,10 +277,14 @@ class PortalInvitationService {
 			return null;
 		}
 
-		$this->markState(row: $row, state: 'accepted', extra: ['subjectRef' => $account['subjectRef']]);
+		// An invitation that could not be marked accepted stays open for
+		// another accept: refuse instead of reporting success.
+		if ($this->markState(row: $row, state: 'accepted', extra: ['subjectRef' => $account['subjectRef']]) === false) {
+			return null;
+		}
 
 		return ['subjectRef' => $account['subjectRef']];
-	}//end accept()
+	}//end acceptLocked()
 
 	/**
 	 * Withdraw an invitation that was not accepted (REQ-ISA-002). The link in

@@ -97,11 +97,13 @@ class PortalMandateAdminService {
 	 * @param PortalObjectReader $reader The scoped reader.
 	 * @param PortalObjectWriter $writer The scoped writer.
 	 * @param ISecureRandom      $random Mints the invitation secret.
+	 * @param ClaimLock          $lock   Serialises two accepts of one invitation.
 	 */
 	public function __construct(
 		PortalObjectReader $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly ISecureRandom $random,
+		private readonly ClaimLock $lock,
 	) {
 		$this->parties = new MandateParties();
 		$this->days    = new MandateDays();
@@ -199,9 +201,40 @@ class PortalMandateAdminService {
 	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md#requirement-a-party-must-invite-never-look-up-the-person-it-authorises-req-smr-003
 	 */
 	public function accept(string $token, array $subject, ?DateTimeImmutable $now = null): array|string {
-		$moment = ($now ?? new DateTimeImmutable());
-		$ref    = (string)($subject['subjectRef'] ?? '');
-		$row    = $this->store->invitationByToken(token: $token);
+		if ($token === '') {
+			return self::GONE;
+		}
+
+		// One accept per invitation at a time: without the lock two accepts
+		// both read the invitation open and both create a mandate.
+		$key = 'mandate-invitation/' . hash('sha256', $token);
+		if ($this->lock->acquire(accountId: $key) === false) {
+			return self::REFUSED;
+		}
+
+		try {
+			return $this->acceptLocked(token: $token, subject: $subject, moment: ($now ?? new DateTimeImmutable()));
+		} finally {
+			$this->lock->release(accountId: $key);
+		}
+	}//end accept()
+
+	/**
+	 * The accept itself, under the lock: read the invitation again, create
+	 * the mandate, spend the invitation, and take the mandate back when the
+	 * invitation could not be spent.
+	 *
+	 * @param string               $token   The invitation secret.
+	 * @param array<string, mixed> $subject The accepting session.
+	 * @param DateTimeImmutable    $moment  The moment.
+	 *
+	 * @return array{id: string, holder: string}|string The mandate, or GONE / OWN_INVITATION / REFUSED.
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md
+	 */
+	private function acceptLocked(string $token, array $subject, DateTimeImmutable $moment): array|string {
+		$ref = (string)($subject['subjectRef'] ?? '');
+		$row = $this->store->invitationByToken(token: $token);
 		if ($row === null || $ref === '') {
 			return self::GONE;
 		}
@@ -243,8 +276,10 @@ class PortalMandateAdminService {
 			return self::REFUSED;
 		}
 
-		// Spent only after the mandate exists, and spent once.
-		$this->writer->updateObject(
+		// Spent only after the mandate exists, and spent once: an invitation
+		// that could not be marked accepted would stay open for another
+		// accept, so the mandate is taken back and the accept refused.
+		$spent = $this->writer->updateObject(
 			register: self::REGISTER,
 			schema: self::INVITATIONS,
 			scopeField: 'organisation',
@@ -253,9 +288,20 @@ class PortalMandateAdminService {
 			id: $this->store->idOf(row: $row),
 			data: ['state' => 'accepted', 'subjectRef' => $ref]
 		);
+		if ($spent === null) {
+			$this->writer->deleteObject(
+				register: self::REGISTER,
+				schema: self::MANDATES,
+				scopeField: 'subjectRef',
+				subjectRef: $ref,
+				organisation: (string)($row['organisation'] ?? ''),
+				id: $this->store->idOf(row: $mandate)
+			);
+			return self::REFUSED;
+		}
 
 		return ['id' => $this->store->idOf(row: $mandate), 'holder' => $holder];
-	}//end accept()
+	}//end acceptLocked()
 
 	/**
 	 * Revoke a mandate given on the party's behalf.
