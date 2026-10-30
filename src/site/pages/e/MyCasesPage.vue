@@ -32,11 +32,7 @@
 		</h1>
 
 		<!-- Forms the resident saved to finish later (REQ-FSR-003). -->
-		<UnfinishedForms
-			v-if="session"
-			:api="api"
-			:t="t"
-			:locale="locale || 'nl'" />
+		<UnfinishedForms v-if="session" :api="api" :t="t" :locale="locale || 'nl'" />
 
 		<!-- What the case apps say above the list, as plain text (collection-intro). -->
 		<p
