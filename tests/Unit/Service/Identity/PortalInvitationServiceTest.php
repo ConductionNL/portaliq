@@ -305,7 +305,7 @@ class PortalInvitationServiceTest extends TestCase {
 		$service = $this->service(null, $writer);
 		$invited = $service->invite(email: 'tom@example.nl', organisation: 'gemeente-x', audience: 'client', invitedBy: 'admin');
 
-		$this->assertNull($service->accept(token: $invited['token']));
+		$this->assertSame(PortalInvitationService::TRY_LATER, $service->accept(token: $invited['token']), 'temporary, not an invalid invitation');
 	}
 
 	/**

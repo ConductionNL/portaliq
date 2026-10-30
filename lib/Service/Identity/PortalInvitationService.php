@@ -62,6 +62,11 @@ class PortalInvitationService {
 	private const DEFAULT_TTL = 'P7D';
 
 	/**
+	 * The accept could not finish now; the invitation is still good.
+	 */
+	public const TRY_LATER = 'try_later';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param PortalObjectReader $reader Looks the invitation up by hash.
@@ -220,12 +225,13 @@ class PortalInvitationService {
 	 * @param string $token The secret from the mail.
 	 * @param DateTimeImmutable|null $now The moment to judge expiry against.
 	 *
-	 * @return array{subjectRef: string}|null Null when the invitation admits
-	 *         nobody: unknown, expired, revoked or already accepted.
+	 * @return array{subjectRef: string}|string|null Null when the invitation admits
+	 *         nobody: unknown, expired, revoked or already accepted; TRY_LATER
+	 *         when another accept holds it or it could not be marked accepted.
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
-	public function accept(string $token, ?DateTimeImmutable $now = null): ?array {
+	public function accept(string $token, ?DateTimeImmutable $now = null): array|string|null {
 		if ($token === '') {
 			return null;
 		}
@@ -234,7 +240,7 @@ class PortalInvitationService {
 		// both read the invitation open and both provision.
 		$key = 'invitation/' . hash('sha256', $token);
 		if ($this->lock->acquire(accountId: $key) === false) {
-			return null;
+			return self::TRY_LATER;
 		}
 
 		try {
@@ -251,11 +257,11 @@ class PortalInvitationService {
 	 * @param string            $token  The secret from the mail.
 	 * @param DateTimeImmutable $moment The moment to judge expiry against.
 	 *
-	 * @return array{subjectRef: string}|null Null when the invitation admits nobody.
+	 * @return array{subjectRef: string}|string|null Null when the invitation admits nobody, else TRY_LATER on a failed spend.
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
-	private function acceptLocked(string $token, DateTimeImmutable $moment): ?array {
+	private function acceptLocked(string $token, DateTimeImmutable $moment): array|string|null {
 		$row = $this->findByToken(token: $token);
 		if ($row === null) {
 			return null;
@@ -280,7 +286,7 @@ class PortalInvitationService {
 		// An invitation that could not be marked accepted stays open for
 		// another accept: refuse instead of reporting success.
 		if ($this->markState(row: $row, state: 'accepted', extra: ['subjectRef' => $account['subjectRef']]) === false) {
-			return null;
+			return self::TRY_LATER;
 		}
 
 		return ['subjectRef' => $account['subjectRef']];
