@@ -146,7 +146,7 @@ export function isAsideRun(widgets) {
 	const rest = cells.every(
 		(cell) =>
 			cell.gridWidth >= 12
-			|| (cell.gridX === 0)
+			|| cell.gridX === 0
 			|| cell.gridX + cell.gridWidth === 12,
 	)
 	return main && side && rest

@@ -33,8 +33,7 @@ const REFUSALS = {
 	reason_required: 'Give a reason.',
 	mail_not_sent:
 		'The invitation mail could not be sent, so nobody was invited. Try again.',
-	withdrawn:
-		'This invitation was withdrawn. Invite the address again instead.',
+	withdrawn: 'This invitation was withdrawn. Invite the address again instead.',
 }
 
 /**

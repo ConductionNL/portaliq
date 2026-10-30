@@ -3135,7 +3135,27 @@ OC.L10N.register(
         "The receipt did not arrive.": "The receipt did not arrive.",
         "The mail to the resident was refused. The submission itself did reach the case app. Contact the resident another way, for instance by the phone number in the submission.": "The mail to the resident was refused. The submission itself did reach the case app. Contact the resident another way, for instance by the phone number in the submission.",
         "Details": "Details",
-        "Evidence log": "Evidence log"
+        "Evidence log": "Evidence log",
+        "Aside column": "Aside column",
+        "Business audience": "Business audience",
+        "Business group": "Business group",
+        "For a grid body: a run with a main column at the left edge and a column ending at the right edge draws that right column at this fixed width in pixels (160 to 640), with this gap (0 to 160, default 48), the main column taking the rest. Unset, the run keeps the 12-column grid.": "For a grid body: a run with a main column at the left edge and a column ending at the right edge draws that right column at this fixed width in pixels (160 to 640), with this gap (0 to 160, default 48), the main column taking the rest. Unset, the run keeps the 12-column grid.",
+        "How many records of this portal refer to the item (pages, news, the portal itself), counted hourly by portaliq. 0 means nothing uses it.": "How many records of this portal refer to the item (pages, news, the portal itself), counted hourly by portaliq. 0 means nothing uses it.",
+        "Option labels": "Option labels",
+        "Plain text shown above the collection's list, for example an admin-set sentence above Mijn zaken. Kept only when it holds text; never rendered as HTML.": "Plain text shown above the collection's list, for example an admin-set sentence above Mijn zaken. Kept only when it holds text; never rendered as HTML.",
+        "The Nextcloud group whose members act for a company on this portal. A member signing in with their Nextcloud account starts on the portal and gets a portal account with the business audience on the first sign-in. The registration app never fills it, so it opens no Create an account link. Only means something when the portal offers the Nextcloud way in.": "The Nextcloud group whose members act for a company on this portal. A member signing in with their Nextcloud account starts on the portal and gets a portal account with the business audience on the first sign-in. The registration app never fills it, so it opens no Create an account link. Only means something when the portal offers the Nextcloud way in.",
+        "The audience a business contact's first portal account gets. Empty means supplier.": "The audience a business contact's first portal account gets. Empty means supplier.",
+        "The words a visitor sees for each option, keyed by the option that is sent. An option without words shows as itself.": "The words a visitor sees for each option, keyed by the option that is sent. An option without words shows as itself.",
+        "cards draws the folder cards; rows draws one line per case with its number, title, tag and the day it is due by; folders draws the board folders with the case number, title, tag and the day it is due by.": "cards draws the folder cards; rows draws one line per case with its number, title, tag and the day it is due by; folders draws the board folders with the case number, title, tag and the day it is due by.",
+        "Aside width": "Aside width",
+        "The width of the right column in pixels, 160 to 640.": "The width of the right column in pixels, 160 to 640.",
+        "Aside gap": "Aside gap",
+        "The space between the main column and the right column in pixels, 0 to 160. The default is 48.": "The space between the main column and the right column in pixels, 0 to 160. The default is 48.",
+        "Indeling": "Indeling",
+        "Upload": "Upload",
+        "{name}": "{name}",
+        "{path}": "{path}",
+        "{title}": "{title}"
     },
     "nplurals=2; plural=(n != 1);"
 )

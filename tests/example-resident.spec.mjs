@@ -54,6 +54,9 @@ const FORMS = [
 	/^object:[a-z0-9-]+\.[A-Za-z]+$/,
 	/^date:[+-]?\d{1,4}$/,
 	/^datetime:[+-]?\d{1,4} ([01]\d|2[0-3]):[0-5]\d$/,
+	// OpenRegister's example-set loader fills it with overwrite.cli.url
+	// (ExampleSetValues); the case objects link the public-space register.
+	/^instance:baseUrl$/,
 ]
 
 /**
@@ -136,7 +139,10 @@ for (const { file, fragment } of fragments) {
 				}
 			}
 			assert.equal(account.data.subjectRef, `{{cast:${resident.cast}.uid}}`)
-			assert.equal(account.data.identityRef, 'example-resident')
+			// Sanne signs in with DigiD (#1730): her account names her BSN, and
+			// the demo sign-in still finds her by her account id.
+			const identityRef = account.data.identityType === 'digid' ? `{{cast:${resident.cast}.bsn}}` : 'example-resident'
+			assert.equal(account.data.identityRef, identityRef)
 			assert.ok(!('email' in account.data), 'no e-mail address, so the resident meets the prompt for one')
 		}
 	})
@@ -229,7 +235,7 @@ test('zuiddrecht.json: every portal account and mandate fits its schema, and the
 		assert.match(mandate.data.onBehalfOf, /^(subject|kvk):\{\{cast:[a-z]+\.(uid|kvk)\}\}$/, `${mandate.key} names a typed party`)
 	}
 	assert.deepEqual(
-		accounts.filter((object) => object.data.identityRef === 'example-resident').map((object) => object.key),
+		accounts.filter((object) => object.data.identityRef !== 'example-set').map((object) => object.key),
 		zuiddrecht.exampleResident.map((resident) => resident.account),
 		'exactly the residents are one click away',
 	)
@@ -314,15 +320,20 @@ test('zuiddrecht.json puts the business contacts in the business group the porta
 	assert.equal(registration.businessAudience.type, 'string', 'the schema declares the business audience')
 })
 
-test('zuiddrecht.json keeps the six cases of the Woo journey and the resident boards', () => {
+test('zuiddrecht.json keeps the cases of the Woo journey and the resident boards', () => {
 	const zuiddrecht = fragments.find(({ file }) => file === 'zuiddrecht.json').fragment
 	const cases = zuiddrecht.objects.filter((object) => object.schema === 'case').map((object) => object.data.title)
 	assert.deepEqual(cases, [
+		'Aanleg fietspad Lindelaan',
+		'Advies verlichting fietspad',
 		'Verlichting fietspad Lindelaan',
 		'Dakkapel Lindelaan 14',
 		'Losse stoeptegel bij de bushalte Lindelaan',
 		'Kapotte lantaarnpaal Kerkplein',
+		'Kapotte lantaarnpaal Lindelaan',
 		'Subsidie buurtfeest Lindelaan',
+		'Zienswijze Aannemersbedrijf Van Wijk',
+		'Lakken offerte lantaarnpalen',
 		'Parkeervergunning Lindelaan',
 	])
 	assert.deepEqual(zuiddrecht.after, ['dossiq'])
