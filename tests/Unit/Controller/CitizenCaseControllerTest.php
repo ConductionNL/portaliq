@@ -446,6 +446,31 @@ class CitizenCaseControllerTest extends TestCase {
 	}//end testTheCitizenSeesTheWritableSetBeforeTouchingAnything()
 
 	/**
+	 * Without a placement the case screen offers no case action; with one on
+	 * this collection, the klacht is listed open, its form without `onCase`.
+	 *
+	 * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-case-page-offers-the-actions-the-server-lists-req-coc-002
+	 */
+	public function testTheCaseScreenListsTheActionsPlacedOnIt(): void {
+		$this->assertSame([], $this->controller()->show('zaken', 'zaak', self::CASE_ID)->getData()['caseActions']);
+
+		$klacht = [
+			'id' => 'createKlacht',
+			'type' => 'create',
+			'label' => 'Klacht indienen',
+			'fields' => ['tegenZaakId', 'tekst'],
+			'crossRefs' => ['tegenZaakId' => ['register' => 'zaken', 'schema' => 'zaak', 'scopeField' => 'indiener', 'required' => true, 'scopeClaim' => '']],
+			'onCase' => ['crossRef' => 'tegenZaakId', 'order' => 0],
+		];
+
+		$listed = $this->controller(moreActions: [$klacht])->show('zaken', 'zaak', self::CASE_ID)->getData()['caseActions'];
+
+		$this->assertCount(1, $listed);
+		$this->assertSame(['dossiq', 'createKlacht', 'Klacht indienen', true], [$listed[0]['app'], $listed[0]['action'], $listed[0]['label'], $listed[0]['open']]);
+		$this->assertArrayNotHasKey('onCase', $listed[0]['form']);
+	}//end testTheCaseScreenListsTheActionsPlacedOnIt()
+
+	/**
 	 * A case whose collection never opted into downloads lists no file at all,
 	 * even when the case folder holds one: the folder also holds what staff
 	 * added and never released (portaliq#798).
@@ -618,6 +643,7 @@ class CitizenCaseControllerTest extends TestCase {
 		array $published = [],
 		?MandatedCaseReader $mandatedCases = null,
 		?array $actingMandate = null,
+		array $moreActions = [],
 	): CitizenCaseController {
 		$action = ($action ?? $this->action());
 		$cases = $this->cases();
@@ -644,7 +670,7 @@ class CitizenCaseControllerTest extends TestCase {
 
 		$registry = $this->createMock(PortalContributionRegistry::class);
 		$registry->method('aggregateFor')->willReturn([
-			'contributions' => [['app' => 'dossiq', 'actions' => [$action], 'collections' => $collections]],
+			'contributions' => [['app' => 'dossiq', 'actions' => array_merge([$action], $moreActions), 'collections' => $collections]],
 		]);
 
 		$reader = $this->createMock(PortalObjectReader::class);

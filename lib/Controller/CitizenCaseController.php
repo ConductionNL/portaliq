@@ -44,6 +44,7 @@ use OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Event\PortalClientWriteEvent;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
+use OCA\Portaliq\Service\CaseActionsResolver;
 use OCA\Portaliq\Service\CitizenCaseDocuments;
 use OCA\Portaliq\Service\CitizenCaseProjection;
 use OCA\Portaliq\Service\CitizenWritableSetResolver;
@@ -148,6 +149,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 * @return JSONResponse The case and its writable set, or a refusal.
 	 *
 	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/changes/case-page-objection-and-complaint/tasks.md#t04
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -182,6 +184,15 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			),
 			'documents' => $this->documents->listFor(context: $context, register: $register, schema: $schema, id: $id),
 			'documentsLabel' => (string)($context['documents']['label'] ?? ''),
+			// The create actions the case app placed on this case's page, a
+			// bezwaar or a klacht, each open or closed with its sentence
+			// (case-page-objection-and-complaint REQ-COC-002).
+			'caseActions' => (new CaseActionsResolver())->resolve(
+				aggregate: $this->registry->aggregateFor($context['subject']),
+				register: $register,
+				schema: $schema,
+				case: $context['case']
+			),
 		]);
 	}//end show()
 

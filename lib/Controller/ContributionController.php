@@ -61,6 +61,7 @@ use OCA\Portaliq\Service\Intake\DestinationDraft;
 use OCA\Portaliq\Service\Intake\DestinationIntake;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
 use OCA\Portaliq\Service\AuditTrailService;
+use OCA\Portaliq\Service\CaseActionGuard;
 use OCA\Portaliq\Service\CaseRowMarker;
 use OCA\Portaliq\Service\CaseTypeNames;
 use OCA\Portaliq\Service\CaseTypeVisibility;
@@ -1485,6 +1486,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
 	 * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
 	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+	 * @spec openspec/changes/case-page-objection-and-complaint/tasks.md#t05
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -1512,6 +1514,24 @@ class ContributionController extends Controller implements PortalProtected {
 		// minTrust — 403 before any OpenRegister write.
 		if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		// Sent from a case page: the case is read again, its window asked
+		// again, and its id written over the body's cross-reference field.
+		// The cross-reference guard in createFrom() still runs on it.
+		$onCase = (string)$this->request->getParam('onCase', '');
+		if ($onCase !== '') {
+			$carried = (new CaseActionGuard(reader: $this->reader))->carried(
+				action: $action,
+				onCase: $onCase,
+				subject: $subject,
+				app: $match['app']
+			);
+			if ($carried instanceof JSONResponse) {
+				return $carried;
+			}
+
+			return $this->createFrom(subject: $subject, match: $match, register: $register, schema: $schema, carried: $carried);
 		}
 
 		return $this->createFrom(subject: $subject, match: $match, register: $register, schema: $schema);

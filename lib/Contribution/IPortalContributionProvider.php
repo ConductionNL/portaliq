@@ -94,6 +94,14 @@
  *   with the object id, the document id and the session's subject (subjectRef, trust,
  *   identityType, audience). Anything but `true` streams nothing (fail-closed, 503).
  *
+ * case-page-objection-and-complaint adds one optional key on a create action:
+ *
+ * - `onCase` (`{crossRef, order?, window?: {from, days}, closedText?}`) — offers the action
+ *   on the page of the case its `crossRefs[crossRef]` points at. `window.from` names a date
+ *   field on the case; the action is open from the day after it through `days` days, ending
+ *   23:59 Europe/Amsterdam, and closed when the date is missing. The server fills in the case
+ *   id and still runs the cross-reference guard. A malformed `onCase` is dropped, the action kept.
+ *
  * @category Contribution
  * @package  OCA\Portaliq\Contribution
  *
