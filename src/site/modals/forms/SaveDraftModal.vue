@@ -33,7 +33,9 @@
 				)
 			}}
 		</p>
-		<p class="utrecht-paragraph pq-draft-dialog__keep" data-testid="form-save-draft-keep">
+		<p
+			class="utrecht-paragraph pq-draft-dialog__keep"
+			data-testid="form-save-draft-keep">
 			{{
 				t(
 					'We keep your answers for {days} days, until {date}. Open this form again to continue.',

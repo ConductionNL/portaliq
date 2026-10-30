@@ -314,9 +314,7 @@
 							class="utrecht-unordered-list__item">
 							{{ fewerWordsTip }}
 						</li>
-						<li
-							v-if="filtersOn"
-							class="utrecht-unordered-list__item">
+						<li v-if="filtersOn" class="utrecht-unordered-list__item">
 							{{ emptyFewerFilters }}
 						</li>
 					</ul>
@@ -913,10 +911,7 @@ export default {
 		 */
 		nothingFound() {
 			return (
-				!this.loading
-				&& !this.error
-				&& this.sequence > 0
-				&& this.total === 0
+				!this.loading && !this.error && this.sequence > 0 && this.total === 0
 			)
 		},
 
@@ -941,10 +936,18 @@ export default {
 		 */
 		emptyActionAddress() {
 			const href = this.emptyActionHref
-			if (!href.startsWith('/') || href.startsWith('//') || typeof window === 'undefined') {
+			if (
+				!href.startsWith('/')
+				|| href.startsWith('//')
+				|| typeof window === 'undefined'
+			) {
 				return href
 			}
-			return addressOfRoute(href, window.location.href, runtimeConfig()).toString()
+			return addressOfRoute(
+				href,
+				window.location.href,
+				runtimeConfig(),
+			).toString()
 		},
 
 		/**
@@ -953,7 +956,10 @@ export default {
 		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md
 		 */
 		fewerWordsTip() {
-			const words = String(this.query || '').trim().split(/\s+/).filter(Boolean)
+			const words = String(this.query || '')
+				.trim()
+				.split(/\s+/)
+				.filter(Boolean)
 			return words.length > 1
 				? this.emptyFewerWords.replace('{word}', words[words.length - 1])
 				: ''
