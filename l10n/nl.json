@@ -3315,7 +3315,16 @@
         "The Nextcloud group whose members act for a company on this portal. A member signing in with their Nextcloud account starts on the portal and gets a portal account with the business audience on the first sign-in. The registration app never fills it, so it opens no Create an account link. Only means something when the portal offers the Nextcloud way in.": "De Nextcloud-groep waarvan de leden namens een bedrijf op deze portal handelen. Een lid dat inlogt met een Nextcloud-account begint op de portal en krijgt bij de eerste keer een portalaccount met de doelgroep van bedrijven. De registratie-app vult deze groep nooit, dus ze toont geen link Account aanmaken. Heeft alleen betekenis als de portal inloggen met een Nextcloud-account aanbiedt.",
         "The audience a business contact's first portal account gets. Empty means supplier.": "De doelgroep die het eerste portalaccount van een contactpersoon van een bedrijf krijgt. Leeg betekent supplier.",
         "The words a visitor sees for each option, keyed by the option that is sent. An option without words shows as itself.": "De woorden die een bezoeker bij elke optie ziet, per optie die wordt verstuurd. Een optie zonder woorden wordt getoond zoals hij is.",
-        "cards draws the folder cards; rows draws one line per case with its number, title, tag and the day it is due by; folders draws the board folders with the case number, title, tag and the day it is due by.": "cards tekent de mapkaarten; rows tekent een regel per zaak met het nummer, de titel, het label en de dag waarop hij uiterlijk klaar is; folders tekent de mappen van het bord met het zaaknummer, de titel, het label en de dag waarop hij uiterlijk klaar is."
+        "cards draws the folder cards; rows draws one line per case with its number, title, tag and the day it is due by; folders draws the board folders with the case number, title, tag and the day it is due by.": "cards tekent de mapkaarten; rows tekent een regel per zaak met het nummer, de titel, het label en de dag waarop hij uiterlijk klaar is; folders tekent de mappen van het bord met het zaaknummer, de titel, het label en de dag waarop hij uiterlijk klaar is.",
+        "Indeling": "Indeling",
+        "Upload": "Uploaden",
+        "{name}": "{name}",
+        "{path}": "{path}",
+        "{title}": "{title}",
+        "Aside width": "Breedte van de zijkolom",
+        "Aside gap": "Ruimte voor de zijkolom",
+        "The aside column's fixed width in pixels, 160 to 640.": "De vaste breedte van de zijkolom in pixels, 160 tot 640.",
+        "The space between the main column and the aside column in pixels, 0 to 160. Unset, the gap is 48.": "De ruimte tussen de hoofdkolom en de zijkolom in pixels, 0 tot 160. Niet ingesteld is de ruimte 48."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"
