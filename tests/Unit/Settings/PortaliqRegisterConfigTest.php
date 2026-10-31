@@ -331,9 +331,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// a submission keeps the `externalReference` and `dueAt` that intake
 		// armed (woo-request-intake-through-opencatalogi). Additive.
 		// 0.5.0: `destination` replaces caseRegister/caseSchema/deliverTo (decision 179); those stay, deprecated.
-		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalFormBinding']['version']);
+		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalFormBinding']['version']);
 		$this->assertSame(['case', 'wooRequest'], self::$register['components']['schemas']['portalFormBinding']['properties']['deliverTo']['enum']);
-		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalIntakeSubmission']['version']);
+		$this->assertSame('0.7.0', self::$register['components']['schemas']['portalIntakeSubmission']['version']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalIntakeSubmission']['properties']['dueAt']['format']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalIntakeSubmission']['properties']['externalReference']['type']);
 		// 0.60.0 (portalAccount 0.15.0): `claimTokenHash` and `claimExpiresAt`,
@@ -395,8 +395,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.101.0 (form 0.4.0): a form field's `optionLabels`, the words shown per option (site-organisation-registration-form). Additive.
 		// 0.102.0 (portalPlan 0.2.0): a plan's `files`, each file with its series and version (shared-plans-with-a-caseworker T04). Additive.
 		// 0.103.0 (portalAction 0.3.0, portal: actionsEnabled): an action's `fileName`, `editedBy` and `editedAt`, and the portal's switch for Mijn acties (personal-action-list T02, T03, T05). Additive.
-		$this->assertSame(expected: '0.103.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.103.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		// 0.105.0 (portalFormBinding 0.6.0, portalIntakeSubmission 0.7.0): `availability`, `retention`, `delivery` on a binding; `expiresAt`, `attempts` on a submission (form-governance-availability-retention-and-routing T01). Additive.
+		$this->assertSame(expected: '0.105.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.105.0', actual: self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalAction']['properties']['editedBy']['type']);
 		$this->assertSame(expected: 'boolean', actual: self::$register['components']['schemas']['portal']['properties']['actionsEnabled']['type']);
 		$this->assertSame(expected: '0.2.0', actual: self::$register['components']['schemas']['media']['version']);

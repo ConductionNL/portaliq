@@ -47,6 +47,7 @@ use OCA\Portaliq\Service\Intake\PortalFee;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\Intake\PortalEmailVerification;
+use OCA\Portaliq\Service\Intake\PortalFormAvailability;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\Intake\PortalFormCalculator;
 use OCA\Portaliq\Service\Intake\PortalFormDecision;
@@ -123,6 +124,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param PortalEmailVerification|null $emailVerification Checks the proof that an e-mail address was verified.
 	 * @param DestinationIntake|null $intake Submits the answers into the binding's destination (decision 179).
 	 * @param DestinationLookup|null $lookup Finds the object a reference belongs to.
+	 * @param PortalFormAvailability|null $availability Says whether the form takes submissions now.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -147,6 +149,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		?PortalEmailVerification $emailVerification = null,
 		private readonly ?DestinationIntake $intake = null,
 		private readonly ?DestinationLookup $lookup = null,
+		private readonly ?PortalFormAvailability $availability = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 		$this->checks       = new PortalSubmissionChecks(
@@ -229,6 +232,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @return JSONResponse The render payload, or a refusal.
 	 *
 	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-form-opens-and-closes-on-set-dates-and-after-a-set-number-of-submissions-req-fgv-001
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -242,6 +246,11 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		$binding = $this->bindings->bindingFor(portal: (string)($site['slug'] ?? ''), route: $route);
 		if ($binding === null) {
 			return new JSONResponse(['error' => 'form_not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$unavailable = $this->availability?->situation(binding: $binding);
+		if ($unavailable !== null) {
+			return new JSONResponse(['unavailable' => $unavailable, 'formName' => (string)($binding['formName'] ?? '')]);
 		}
 
 		$render = $this->bindings->render(binding: $binding);
@@ -282,6 +291,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @return JSONResponse The reference, the per-field errors, or a refusal.
 	 *
 	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-form-opens-and-closes-on-set-dates-and-after-a-set-number-of-submissions-req-fgv-001
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -533,8 +543,15 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param array<string, mixed>|null $subject The subject, or null.
 	 *
 	 * @return JSONResponse|null
+	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-form-opens-and-closes-on-set-dates-and-after-a-set-number-of-submissions-req-fgv-001
 	 */
 	private function submitRefusal(array $site, array $binding, array $render, ?array $subject): ?JSONResponse {
+		// A closed form takes nothing; the resident's saved draft is not touched.
+		$unavailable = $this->availability?->situation(binding: $binding);
+		if ($unavailable !== null) {
+			return new JSONResponse(['error' => 'form_unavailable', 'unavailable' => $unavailable], Http::STATUS_CONFLICT);
+		}
+
 		if (($render['resolvesToNoForm'] ?? false) === true || ($render['kind'] ?? '') === PortalFormBindingResolver::KIND_EXTERNAL) {
 			// An external intake is filled in at its own host; the portal has
 			// nothing to accept here.

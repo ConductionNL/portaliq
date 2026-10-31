@@ -115,6 +115,44 @@ class PortalIntakeControllerTest extends TestCase {
 
 	}//end testABindingThatResolvesToNoFormAcceptsNothing()
 
+	/**
+	 * A closed form answers its situation instead of the form, and takes no submission.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-form-opens-and-closes-on-set-dates-and-after-a-set-number-of-submissions-req-fgv-001
+	 */
+	public function testAClosedFormShowsItsSituationAndTakesNothing(): void {
+		$closed = ['situation' => 'limitReached', 'count' => 150, 'per' => 'total', 'reopensOn' => '2027-01-05'];
+		$availability = $this->double(\OCA\Portaliq\Service\Intake\PortalFormAvailability::class, ['situation']);
+		$availability->method('situation')->willReturn($closed);
+		$controller = $this->controller(render: $this->hostedForm(), availability: $availability);
+		$this->forbidSubmit = true;
+
+		$form = $controller->form(route: 'aanvragen/verhuizing')->getData();
+		$this->assertSame($closed, $form['unavailable']);
+		$this->assertArrayNotHasKey('fields', $form);
+
+		$response = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB']);
+		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
+		$this->assertSame('form_unavailable', $response->getData()['error']);
+	}//end testAClosedFormShowsItsSituationAndTakesNothing()
+
+	/**
+	 * An open form is served and submitted as before.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-form-opens-and-closes-on-set-dates-and-after-a-set-number-of-submissions-req-fgv-001
+	 */
+	public function testAnOpenFormIsSubmittedAsBefore(): void {
+		$availability = $this->double(\OCA\Portaliq\Service\Intake\PortalFormAvailability::class, ['situation']);
+		$availability->method('situation')->willReturn(null);
+		$controller = $this->controller(render: $this->hostedForm(), availability: $availability);
+
+		$this->assertSame('2026-0042', $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'])->getData()['reference']);
+	}//end testAnOpenFormIsSubmittedAsBefore()
+
 	public function testAnUnsolvedChallengeStopsTheSubmissionBeforeValidation(): void {
 		$render = $this->hostedForm();
 		$render['settings']['challenge'] = true;
@@ -362,6 +400,7 @@ class PortalIntakeControllerTest extends TestCase {
 		?\OCA\Portaliq\Service\Intake\PortalFormCalculator $calculator = null,
 		?\OCA\Portaliq\Service\Intake\PortalFormDecision $decision = null,
 		array $pay = [],
+		?\OCA\Portaliq\Service\Intake\PortalFormAvailability $availability = null,
 	): PortalIntakeController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('');
@@ -425,7 +464,8 @@ class PortalIntakeControllerTest extends TestCase {
 			deepLinks: null,
 			emailVerification: $pay['verification'] ?? null,
 			intake: $intake,
-			lookup: $this->doubles['lookup']
+			lookup: $this->doubles['lookup'],
+			availability: $availability
 		);
 	}//end controller()
 
