@@ -331,7 +331,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// a submission keeps the `externalReference` and `dueAt` that intake
 		// armed (woo-request-intake-through-opencatalogi). Additive.
 		// 0.5.0: `destination` replaces caseRegister/caseSchema/deliverTo (decision 179); those stay, deprecated.
-		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalFormBinding']['version']);
+		// 0.6.0: `cosign` names the co-signer's fields, the obligation kind and the case app's sign endpoint (decision 271).
+		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalFormBinding']['version']);
+		$this->assertSame('string', self::$register['components']['schemas']['portalFormBinding']['properties']['cosign']['properties']['endpoint']['type']);
 		$this->assertSame(['case', 'wooRequest'], self::$register['components']['schemas']['portalFormBinding']['properties']['deliverTo']['enum']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalIntakeSubmission']['version']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalIntakeSubmission']['properties']['dueAt']['format']);
@@ -393,6 +395,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.99.0 (media 0.2.0): `usedOn`, how many records of its portal use the item (media-usage-count). Additive.
 		// 0.100.0 (portal 0.27.0): `myCases.display` takes `folders`, the board folders (mijn-case-folder-card). Additive.
 		// 0.101.0 (form 0.4.0): a form field's `optionLabels`, the words shown per option (site-organisation-registration-form). Additive.
+		// 0.105.0 (portalFormBinding 0.6.0): `cosign.nameField`, `emailField`, `kind`, `title`, `endpoint`; the submit creates the case waiting for the co-signer (resident-identity-in-forms T04, decision 271). Additive.
 		$this->assertSame(expected: '0.105.0', actual: self::$register['info']['version']);
 		$this->assertSame(expected: '0.105.0', actual: self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame(expected: '0.2.0', actual: self::$register['components']['schemas']['media']['version']);

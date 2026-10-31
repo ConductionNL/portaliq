@@ -312,24 +312,15 @@ class PortalIntakeController extends Controller implements PortalProtected {
 
 		$render = $this->bindings->render(binding: $binding);
 		$subject = $this->subject();
-		$refusal = $this->submitRefusal(site: $site, binding: $binding, render: $render, subject: $subject);
+		$refusal = $this->submitRefusal(site: $site, binding: $binding, render: $render, subject: $subject)
+			?? $this->challengeRefusal(
+				site: $site,
+				render: $render,
+				answers: $answers,
+				proof: ['nonce' => $nonce, 'solution' => $solution, 'expiresAt' => $expiresAt, 'signature' => $signature]
+			);
 		if ($refusal !== null) {
 			return $refusal;
-		}
-
-		if (($render['settings']['challenge'] ?? false) === true) {
-			$accepted = $this->challenge->accepts(
-				site: $site,
-				surface: 'form',
-				submission: $answers,
-				nonce: $nonce,
-				solution: $solution,
-				expiresAt: $expiresAt,
-				signature: $signature
-			);
-			if ($accepted === false) {
-				return new JSONResponse(['error' => 'challenge_failed'], Http::STATUS_FORBIDDEN);
-			}
 		}
 
 		$prepared = $this->checks->prepare(
@@ -345,7 +336,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return $prepared;
 		}
 
-		$cosign = ($this->cosign?->prepare(binding: $binding, answers: $prepared['answers']) ?? ['server' => [], 'errors' => []]);
+		$subjectRef = (string)($subject['subjectRef'] ?? '');
+		$cosign     = ($this->cosign?->prepare(binding: $binding, answers: $prepared['answers']) ?? ['server' => [], 'errors' => []]);
 		if ($cosign['errors'] !== []) {
 			return new JSONResponse(['errors' => $cosign['errors']], Http::STATUS_BAD_REQUEST);
 		}
@@ -354,7 +346,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			binding: $binding,
 			render: $render,
 			answers: $prepared['answers'],
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			subjectRef: $subjectRef,
 			server: $cosign['server'] + [
 				'portal' => (string)($site['slug'] ?? ''),
 				'origin' => (string)$this->request->getHeader('Origin'),
@@ -374,13 +366,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		$reference = (string)($answer['reference'] ?? '');
 		$moments   = (array)($answer['confirmation'] ?? []);
 		$mailedTo  = $this->confirmation->send(site: $site, render: $render, answers: $prepared['answers'], reference: $reference, moments: $moments);
-		$cosigner  = $this->cosign?->invite(
-			site: $site,
-			binding: $binding,
-			server: $cosign['server'],
-			answer: $answer,
-			subjectRef: (string)($subject['subjectRef'] ?? '')
-		);
+		$cosigner  = $this->cosign?->invite(site: $site, binding: $binding, server: $cosign['server'], answer: $answer, subjectRef: $subjectRef);
 
 		return new JSONResponse(
 			array_merge(
@@ -539,6 +525,37 @@ class PortalIntakeController extends Controller implements PortalProtected {
 
 		return $this->payments->start(subject: $subject, site: $this->site(portal: $portal), reference: $reference);
 	}//end pay()
+
+	/**
+	 * The refusal when the form asks the portal's challenge and it was not solved, or null.
+	 *
+	 * @param array<string, mixed> $site The portal.
+	 * @param array<string, mixed> $render What the binding renders to.
+	 * @param array<string, mixed> $answers What the citizen answered.
+	 * @param array{nonce: string, solution: string, expiresAt: int, signature: string} $proof The challenge and its solution.
+	 *
+	 * @return JSONResponse|null
+	 */
+	private function challengeRefusal(array $site, array $render, array $answers, array $proof): ?JSONResponse {
+		if (($render['settings']['challenge'] ?? false) !== true) {
+			return null;
+		}
+
+		$accepted = $this->challenge->accepts(
+			site: $site,
+			surface: 'form',
+			submission: $answers,
+			nonce: $proof['nonce'],
+			solution: $proof['solution'],
+			expiresAt: $proof['expiresAt'],
+			signature: $proof['signature']
+		);
+		if ($accepted === false) {
+			return new JSONResponse(['error' => 'challenge_failed'], Http::STATUS_FORBIDDEN);
+		}
+
+		return null;
+	}//end challengeRefusal()
 
 	/**
 	 * Why this form accepts no submission from this visitor, or null.
