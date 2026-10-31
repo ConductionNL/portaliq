@@ -2604,7 +2604,8 @@
 			},
 			"set": {
 				"contactsEnabled": true,
-				"plansEnabled": true
+				"plansEnabled": true,
+				"actionsEnabled": true
 			}
 		}
 	],

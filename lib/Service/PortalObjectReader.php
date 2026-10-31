@@ -263,6 +263,61 @@ class PortalObjectReader {
 	}//end readCollection()
 
 	/**
+	 * The rows the subject holds in any of several scope fields, once each:
+	 * the rows they own and the rows they are assigned to or take part in.
+	 * Each field is one scoped read with its own per-row verification, so a
+	 * row returns only when the subject is in the field it was read by.
+	 *
+	 * @param string $register The OpenRegister register slug/id.
+	 * @param string $schema The schema slug.
+	 * @param array<int, string> $scopeFields The row fields, each a single value or a list.
+	 * @param string $subjectRef The server-derived subject reference.
+	 * @param string $organisation The tenant to constrain to (may be empty).
+	 * @param int $limit Maximum rows per field.
+	 *
+	 * @return array<int, array<string, mixed>> The rows, in the order first read.
+	 *
+	 * @spec openspec/changes/personal-action-list/tasks.md#t02
+	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-a-resident-keeps-a-list-of-own-actions-req-ral-001
+	 */
+	public function readCollectionByAnyScope(
+		string $register,
+		string $schema,
+		array $scopeFields,
+		string $subjectRef,
+		string $organisation = '',
+		int $limit = 200,
+	): array {
+		if ($subjectRef === '') {
+			return [];
+		}
+
+		$rows = [];
+		foreach (array_unique($scopeFields) as $scopeField) {
+			if (is_string($scopeField) === false || $scopeField === '') {
+				continue;
+			}
+
+			$read = $this->readCollection(
+				register: $register,
+				schema: $schema,
+				scopeField: $scopeField,
+				subjectRef: $subjectRef,
+				organisation: $organisation,
+				limit: $limit
+			);
+			foreach ($read as $row) {
+				$key = (string)($row['id'] ?? $row['uuid'] ?? ($row['@self']['id'] ?? ''));
+				if ($key !== '' && isset($rows[$key]) === false) {
+					$rows[$key] = $row;
+				}
+			}
+		}
+
+		return array_values($rows);
+	}//end readCollectionByAnyScope()
+
+	/**
 	 * The rows of a collection its app declares `anonymous`: what the public
 	 * may read of the schema, not what the subject owns. OpenRegister's own
 	 * read rules decide, with RBAC ON for the caller as it is (a resident has

@@ -598,18 +598,14 @@ class PortalPlanService {
 		}
 
 		$plans = [];
-		foreach (['owner', 'participants'] as $scopeField) {
-			$rows = $this->reader->readCollection(
-				register: self::REGISTER,
-				schema: 'portalPlan',
-				scopeField: $scopeField,
-				subjectRef: $ref,
-				organisation: $organisation,
-				limit: 200
-			);
-			foreach ($rows as $row) {
-				$plans[$this->idOf(row: $row)] = $row;
-			}
+		foreach ($this->reader->readCollectionByAnyScope(
+			register: self::REGISTER,
+			schema: 'portalPlan',
+			scopeFields: ['owner', 'participants'],
+			subjectRef: $ref,
+			organisation: $organisation
+		) as $row) {
+			$plans[$this->idOf(row: $row)] = $row;
 		}
 
 		unset($plans['']);
