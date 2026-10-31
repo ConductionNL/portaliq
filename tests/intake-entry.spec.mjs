@@ -241,6 +241,7 @@ test('a valid submission answers with a reference, an invalid one with the field
 		confirmationText: 'Bedankt.',
 		confirmation: null,
 		mailedTo: '',
+		cosign: null,
 		moments: { receivedAt: '', termStartsAt: '', deadline: '' },
 		errors: {},
 	})

@@ -128,7 +128,9 @@ test('English and Dutch carry the same strings, without em-dashes', () => {
 test('the site mounts the guest page on demand, before any other page', () => {
 	const app = readFileSync(join(ROOT, 'src/site/App.vue'), 'utf8')
 	assert.match(app, /import\('\.\/pages\/GuestActionPage\.vue'\)/)
-	assert.match(app, /<GuestActionPage\s[^>]*v-if="guestLink"/)
+	// Only the co-signer's link (resident-identity-in-forms T04) comes before it.
+	assert.match(app, /<CosignPage\s[^>]*v-if="cosignToken/)
+	assert.match(app, /<GuestActionPage\s[^>]*v-else-if="guestLink"/)
 	assert.match(app, /v-else-if="loading"/)
 	assert.doesNotMatch(app, /from '\.\/lib\/guestAction\.js'/, 'the library stays out of the entry bundle')
 
