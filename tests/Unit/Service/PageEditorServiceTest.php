@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\PageEditorService;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
@@ -45,6 +46,13 @@ class PageEditorServiceTest extends TestCase {
 	 * @var string
 	 */
 	private string $stored = '';
+
+	/**
+	 * Config values by key; a key listed here wins over `$stored`.
+	 *
+	 * @var array<string, string>
+	 */
+	private array $storedByKey = [];
 
 	/**
 	 * A read rule the schema doubles start with instead of the shipped one.
@@ -86,7 +94,7 @@ class PageEditorServiceTest extends TestCase {
 	): PageEditorService {
 		$appConfig = $this->createMock(IAppConfig::class);
 		$appConfig->method('getValueString')->willReturnCallback(
-			fn (string $app, string $key, string $default = '') => ($this->stored !== '' ? $this->stored : $default)
+			fn (string $app, string $key, string $default = '') => ($this->storedByKey[$key] ?? ($this->stored !== '' ? $this->stored : $default))
 		);
 		$appConfig->method('setValueString')->willReturnCallback(
 			function (string $app, string $key, string $value): bool {
@@ -260,6 +268,7 @@ class PageEditorServiceTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		$this->stored = '';
+		$this->storedByKey = [];
 		$this->seedRead = null;
 		$this->written = null;
 		$this->writtenBySlug = [];
@@ -598,4 +607,105 @@ class PageEditorServiceTest extends TestCase {
 		$this->assertFalse($service->applyToSchema(['redacteuren']));
 		$this->assertNull($this->written);
 	}//end testTheSchemaWriteReportsFailureWhenOpenRegisterIsAbsent()
+
+
+	/**
+	 * The action grants and the editor groups, as two config keys.
+	 *
+	 * @return void
+	 */
+	private function storeEditorsAndGrants(): void {
+		$this->storedByKey = [
+			PageEditorService::CONFIG_KEY => json_encode(['communicatie']),
+			'actions' => json_encode(['portal.provision' => ['servicedesk']]),
+		];
+	}//end storeEditorsAndGrants()
+
+
+	/**
+	 * An action check over the same config doubles.
+	 *
+	 * @param bool          $isAdmin     Whether the user is an admin.
+	 * @param array<string> $memberships The user's groups.
+	 *
+	 * @return array{0: ActionAuthService, 1: IUser} The service and the user.
+	 */
+	private function actions(bool $isAdmin, array $memberships): array {
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->method('getValueString')->willReturnCallback(
+			fn (string $app, string $key, string $default = '') => ($this->storedByKey[$key] ?? $default)
+		);
+
+		$groupManager = $this->createMock(IGroupManager::class);
+		$groupManager->method('isAdmin')->willReturn($isAdmin);
+		$groupManager->method('getUserGroupIds')->willReturn($memberships);
+
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('someone');
+
+		return [new ActionAuthService($appConfig, $groupManager), $user];
+	}//end actions()
+
+
+	/**
+	 * A group granted an action gets that action only: its members are no
+	 * page editors, and saving the editor groups leaves it out of every
+	 * content schema's write rules.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/operate-roles-for-content-and-actions/specs/portal-admin-roles/spec.md#requirement-content-rights-and-settings-rights-stay-apart-req-ora-007
+	 */
+	public function testAnActionGrantMakesNoPageEditor(): void {
+		$this->storeEditorsAndGrants();
+
+		[$actions, $user] = $this->actions(isAdmin: false, memberships: ['servicedesk']);
+		$this->assertTrue($actions->can(user: $user, action: 'portal.provision'), 'The grant itself must work, or the refusal below proves nothing.');
+		$this->assertFalse($this->service(memberships: ['servicedesk'])->mayEdit());
+
+		$this->service(isAdmin: true)->setEditorGroups(['communicatie']);
+		$this->assertSame(['communicatie'], $this->written['update']);
+		foreach (['menu', 'media', 'portalNotice'] as $slug) {
+			$this->assertNotContains('servicedesk', ($this->writtenBySlug[$slug]['update'] ?? []), $slug . ' must not be writable through an action grant.');
+		}
+	}//end testAnActionGrantMakesNoPageEditor()
+
+
+	/**
+	 * A page editor who is not an administrator may write content and holds
+	 * no action, so the action-guarded settings refuse them.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/operate-roles-for-content-and-actions/specs/portal-admin-roles/spec.md#requirement-content-rights-and-settings-rights-stay-apart-req-ora-007
+	 */
+	public function testAPageEditorHoldsNoAction(): void {
+		$this->storeEditorsAndGrants();
+
+		$this->assertTrue($this->service(memberships: ['communicatie'])->mayEdit());
+		$this->service(isAdmin: true)->setEditorGroups(['communicatie']);
+		foreach (['menu', 'media', 'portalNotice'] as $slug) {
+			$this->assertSame(['communicatie'], ($this->writtenBySlug[$slug]['update'] ?? null), 'An editor writes ' . $slug . '.');
+		}
+
+		[$actions, $user] = $this->actions(isAdmin: false, memberships: ['communicatie']);
+		$this->assertFalse($actions->can(user: $user, action: 'portal.provision'));
+		$this->assertFalse($actions->can(user: $user, action: 'portal.measure-accessibility'));
+	}//end testAPageEditorHoldsNoAction()
+
+
+	/**
+	 * An instance administrator keeps both rights.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/operate-roles-for-content-and-actions/specs/portal-admin-roles/spec.md#requirement-content-rights-and-settings-rights-stay-apart-req-ora-007
+	 */
+	public function testAnAdministratorKeepsBothRights(): void {
+		$this->storeEditorsAndGrants();
+
+		$this->assertTrue($this->service(isAdmin: true)->mayEdit());
+		[$actions, $user] = $this->actions(isAdmin: true, memberships: []);
+		$this->assertTrue($actions->can(user: $user, action: 'portal.provision'));
+	}//end testAnAdministratorKeepsBothRights()
 }//end class

@@ -24,10 +24,12 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Controller\PortalPlansController;
+use OCA\Portaliq\Service\Plans\PlanFiles;
 use OCA\Portaliq\Service\Plans\PortalPlanService;
 use OCA\Portaliq\Service\PortalPdfExport;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCP\AppFramework\Http\StreamResponse;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 
@@ -49,15 +51,16 @@ class PortalPlansControllerTest extends TestCase {
 	 *
 	 * @return PortalPlansController
 	 */
-	private function controller(?array $subject, PortalPlanService $plans, array $params=[], ?PortalPdfExport $pdf=null): PortalPlansController {
+	private function controller(?array $subject, PortalPlanService $plans, array $params=[], ?PortalPdfExport $pdf=null, ?PlanFiles $files=null): PortalPlansController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParams')->willReturn($params);
+		$request->method('getUploadedFile')->willReturn(['name' => 'Budgetplan.pdf', 'tmp_name' => '/tmp/x', 'error' => 0]);
 		$session = $this->createMock(PortalSessionService::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 		$portals = $this->createMock(PortalResolver::class);
 		$portals->method('resolve')->willReturn(['slug' => 'zuid']);
 
-		return new PortalPlansController($request, $session, $plans, $portals, $pdf);
+		return new PortalPlansController($request, $session, $plans, $portals, $pdf, $files);
 	}//end controller()
 
 	/**
@@ -73,6 +76,7 @@ class PortalPlansControllerTest extends TestCase {
 		$responses = [
 			$controller->index(), $controller->templates(), $controller->start('t'), $controller->show('1'), $controller->update('1'), $controller->destroy('1'),
 			$controller->addParticipants('1'), $controller->removeParticipant('1', 'x'), $controller->addAction('1'), $controller->updateAction('1', 'a'), $controller->pdf('1'),
+			$controller->addFile('1'), $controller->file('1', 'f1'),
 		];
 		foreach ($responses as $response) {
 			$this->assertSame(401, $response->getStatus());
@@ -141,4 +145,27 @@ class PortalPlansControllerTest extends TestCase {
 		$this->assertInstanceOf(\OCA\Portaliq\Http\PdfDownloadResponse::class, $response);
 		$this->assertSame('plan.pdf', $response->fileName());
 	}//end testThePdf()
+	/**
+	 * A file upload hands the upload and the version it follows to the plan
+	 * files, and a file the plan does not list reads as not found.
+	 *
+	 * @return void
+	 */
+	public function testPlanFiles(): void {
+		$plans = $this->createMock(PortalPlanService::class);
+		$files = $this->createMock(PlanFiles::class);
+		$seen  = [];
+		$files->method('add')->willReturnCallback(function (array $subject, string $id, ?array $uploaded, string $previousVersion) use (&$seen): string {
+			$seen = [$id, $uploaded['name'], $previousVersion];
+			return 'invalid';
+		});
+		$files->method('open')->willReturnOnConsecutiveCalls(null, new StreamResponse('php://memory'));
+		$controller = $this->controller(subject: ['subjectRef' => 'mark', 'organisation' => 'o'], plans: $plans, files: $files);
+
+		$this->assertSame(400, $controller->addFile('p1', 'f1')->getStatus());
+		$this->assertSame(['p1', 'Budgetplan.pdf', 'f1'], $seen);
+		$this->assertSame(404, $controller->file('p1', 'f9')->getStatus());
+		$this->assertInstanceOf(StreamResponse::class, $controller->file('p1', 'f1'));
+		$this->assertSame(500, $this->controller(subject: ['subjectRef' => 'mark'], plans: $plans)->addFile('p1')->getStatus(), 'no file service');
+	}//end testPlanFiles()
 }//end class

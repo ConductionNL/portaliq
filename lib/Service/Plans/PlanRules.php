@@ -232,4 +232,39 @@ class PlanRules {
 	public function idOf(array $row): string {
 		return (string)($row['id'] ?? $row['uuid'] ?? ($row['@self']['id'] ?? ''));
 	}//end idOf()
+
+	/**
+	 * The plan's file list, each entry with string keys and a version number.
+	 *
+	 * @param array<string, mixed> $plan The plan row.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md#requirement-participants-share-the-goal-actions-note-and-file-versions-req-spl-003
+	 */
+	public function filesOf(array $plan): array {
+		$list = $plan['files'] ?? [];
+		if (is_array($list) === false) {
+			return [];
+		}
+
+		$files = [];
+		foreach ($list as $file) {
+			if (is_array($file) === false || (string)($file['id'] ?? '') === '') {
+				continue;
+			}
+
+			$files[] = [
+				'id'              => (string)$file['id'],
+				'name'            => (string)($file['name'] ?? ''),
+				'series'          => (string)($file['series'] ?? $file['id']),
+				'version'         => max(1, (int)($file['version'] ?? 1)),
+				'previousVersion' => (string)($file['previousVersion'] ?? ''),
+				'addedBy'         => (string)($file['addedBy'] ?? ''),
+				'addedAt'         => (string)($file['addedAt'] ?? ''),
+			];
+		}
+
+		return $files;
+	}//end filesOf()
 }//end class
