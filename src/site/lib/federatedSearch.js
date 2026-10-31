@@ -55,6 +55,10 @@ export function buildRequestUrl(state) {
 		if (state.searchInsideDocuments !== false) {
 			url.searchParams.set('_content', 'true')
 		}
+
+		// A misspelt title is still found, and the relevance order has a
+		// score to sort on (search-sort-by-relevance REQ-SSR-001, REQ-SSR-004).
+		url.searchParams.set('_fuzzy', 'true')
 	}
 
 	// ONE FACET PER FIELD, IN THE SAME REQUEST (woo-search-and-detail D1).
@@ -97,12 +101,9 @@ export function buildRequestUrl(state) {
 
 	// `_order[<field>]=ASC|DESC`. Verified against the live endpoint on
 	// 2026-08-20: title ASC/DESC and publicationDate ASC/DESC each return a
-	// different first row, so the control changes something.
-	//
-	// NO "most relevant" OPTION. The reference portal offers one; nothing in
-	// this API implements relevance ordering, and a sort option that silently
-	// does nothing is the same class of defect as the directory filter that
-	// answers `total: 0`.
+	// different first row, so the control changes something. `_relevance`
+	// is OpenRegister's trigram score, present only with a term; the block
+	// checks every relevance answer for it (relevanceApplied).
 	if (state.sort) {
 		const [field, direction] = String(state.sort).split(':')
 		if (field && direction) {
@@ -126,6 +127,12 @@ export function buildRequestUrl(state) {
  */
 export function toResult(row) {
 	const result = baseResult(row)
+	// The relevance score, for assistive technology only
+	// (search-sort-by-relevance REQ-SSR-003). Absent when the row has none.
+	const relevance = relevanceOf(row)
+	if (relevance !== null) {
+		result.relevance = relevance
+	}
 	// A subject's own page and how many publications it holds
 	// (search-filter-by-kind REQ-SFK-002). No other kind carries them.
 	if (result.kind === 'subject') {
@@ -625,4 +632,105 @@ export function lockedFiltersOf(state) {
  */
 export function withoutLocked(fields, locked) {
 	return (fields || []).filter((field) => !Object.hasOwn(locked || {}, field))
+}
+
+/**
+ * The relevance order: OpenRegister's `_relevance` score, best first.
+ *
+ * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md
+ */
+export const RELEVANCE_SORT = '_relevance:DESC'
+
+/**
+ * The orderings the block offers. "Meest relevant" only with a term, and
+ * not once the backend showed it does not rank.
+ *
+ * @param {string} query The search term.
+ * @param {boolean} relevanceUnavailable Whether an answer came back unranked.
+ * @return {Array<{value: string, label: string}>} The options.
+ *
+ * @spec openspec/changes/search-sort-by-relevance/tasks.md#t01
+ */
+export function sortOptionsFor(query, relevanceUnavailable) {
+	const options = [
+		{ value: '', label: 'Standaardvolgorde' },
+		{ value: 'publicationDate:DESC', label: 'Datum - nieuw naar oud' },
+		{ value: 'publicationDate:ASC', label: 'Datum - oud naar nieuw' },
+		{ value: 'title:ASC', label: 'Naam - A naar Z' },
+		{ value: 'title:DESC', label: 'Naam - Z naar A' },
+	]
+	if (String(query || '').trim() === '' || relevanceUnavailable === true) {
+		return options
+	}
+	return [{ value: RELEVANCE_SORT, label: 'Meest relevant' }, ...options]
+}
+
+/**
+ * The order a new search starts on: relevance with a term, unless the
+ * backend does not rank; the default order without one. A chosen
+ * non-relevance order is kept.
+ *
+ * @param {string} query The new term.
+ * @param {string} current The order now chosen.
+ * @param {boolean} relevanceUnavailable Whether an answer came back unranked.
+ * @return {string} The order.
+ *
+ * @spec openspec/changes/search-sort-by-relevance/tasks.md#t01
+ */
+export function sortForNewSearch(query, current, relevanceUnavailable) {
+	const hasTerm = String(query || '').trim() !== ''
+	if (hasTerm && relevanceUnavailable !== true && (current || '') === '') {
+		return RELEVANCE_SORT
+	}
+	if ((!hasTerm || relevanceUnavailable === true) && current === RELEVANCE_SORT) {
+		return ''
+	}
+	return current || ''
+}
+
+/**
+ * A row's relevance score, or null when it carries none.
+ *
+ * @param {object} row One API result.
+ * @return {number|null} The score.
+ *
+ * @spec openspec/changes/search-sort-by-relevance/tasks.md#t03
+ */
+export function relevanceOf(row) {
+	const value = ((row || {})['@self'] || {}).relevance
+	const score =
+		typeof value === 'string' && value.trim() !== '' ? Number(value) : value
+	return typeof score === 'number' && Number.isFinite(score) ? score : null
+}
+
+/**
+ * Whether the backend applied the relevance order: the first row carries a
+ * score. An empty answer proves nothing either way, so it counts as applied.
+ *
+ * @param {Array<object>} rows The API results.
+ * @return {boolean}
+ *
+ * @spec openspec/changes/search-sort-by-relevance/tasks.md#t02
+ */
+export function relevanceApplied(rows) {
+	if (!Array.isArray(rows) || rows.length === 0) {
+		return true
+	}
+	return relevanceOf(rows[0]) !== null
+}
+
+/**
+ * The words a screen reader hears for a row's score, or '' without one.
+ *
+ * @param {number|null} score The relevance score, 0 to 100.
+ * @return {string} "Overeenkomst: {n} procent".
+ *
+ * @spec openspec/changes/search-sort-by-relevance/tasks.md#t03
+ */
+export function matchDescription(score) {
+	if (typeof score !== 'number' || !Number.isFinite(score)) {
+		return ''
+	}
+	const percent = Math.max(0, Math.min(100, Math.round(score)))
+	return `Overeenkomst: ${percent} procent`
 }

@@ -208,7 +208,10 @@ class SettingsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
+	 * @auth admin-only Re-imports the register and rewrites every schema binding, so only an instance administrator may run it.
+	 *
 	 * @spec openspec/specs/settings-management/spec.md#REQ-CFG-003
+	 * @spec openspec/changes/operate-roles-for-content-and-actions/specs/portal-admin-roles/spec.md#requirement-content-rights-and-settings-rights-stay-apart-req-ora-007
 	 */
 	public function load(): JSONResponse {
 		$result = $this->settingsService->loadConfiguration(force: true);

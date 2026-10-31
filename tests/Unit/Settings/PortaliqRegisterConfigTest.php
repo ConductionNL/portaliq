@@ -393,9 +393,13 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.99.0 (media 0.2.0): `usedOn`, how many records of its portal use the item (media-usage-count). Additive.
 		// 0.100.0 (portal 0.27.0): `myCases.display` takes `folders`, the board folders (mijn-case-folder-card). Additive.
 		// 0.101.0 (form 0.4.0): a form field's `optionLabels`, the words shown per option (site-organisation-registration-form). Additive.
+		// 0.102.0 (portalPlan 0.2.0): a plan's `files`, each file with its series and version (shared-plans-with-a-caseworker T04). Additive.
+		// 0.103.0 (portalAction 0.3.0, portal: actionsEnabled): an action's `fileName`, `editedBy` and `editedAt`, and the portal's switch for Mijn acties (personal-action-list T02, T03, T05). Additive.
 		// 0.105.0 (portalFormBinding 0.6.0, portalIntakeSubmission 0.7.0): `availability`, `retention`, `delivery` on a binding; `expiresAt`, `attempts` on a submission (form-governance-availability-retention-and-routing T01). Additive.
 		$this->assertSame(expected: '0.105.0', actual: self::$register['info']['version']);
 		$this->assertSame(expected: '0.105.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalAction']['properties']['editedBy']['type']);
+		$this->assertSame(expected: 'boolean', actual: self::$register['components']['schemas']['portal']['properties']['actionsEnabled']['type']);
 		$this->assertSame(expected: '0.2.0', actual: self::$register['components']['schemas']['media']['version']);
 		$this->assertSame(expected: 'integer', actual: self::$register['components']['schemas']['media']['properties']['usedOn']['type']);
 		$this->assertSame('0.4.0', self::$register['components']['schemas']['form']['version']);

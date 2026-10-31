@@ -426,6 +426,7 @@ test('site: the slice exports its pages by the React section keys, each a lazy c
 	assert.deepEqual(Object.keys(siteE.pages).sort(), [
 		'__access__',
 		'__account__',
+		'__actions__',
 		'__cases__',
 		'__contacts__',
 		'__details__',

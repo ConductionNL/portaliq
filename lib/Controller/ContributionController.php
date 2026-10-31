@@ -425,6 +425,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
 	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t08
+	 * @spec openspec/changes/personal-action-list/tasks.md#t05
 	 */
 	private function areaPages(): array {
 		if ($this->portals === null) {
@@ -444,6 +445,10 @@ class ContributionController extends Controller implements PortalProtected {
 
 		if (($portal['plansEnabled'] ?? false) === true) {
 			$pages[] = ['special' => 'samenwerken', 'label' => 'Collaborate', 'icon' => 'ClipboardCheckOutline'];
+		}
+
+		if (($portal['actionsEnabled'] ?? false) === true) {
+			$pages[] = ['special' => 'acties', 'label' => 'My actions', 'icon' => 'CheckboxMarkedOutline'];
 		}
 
 		return $pages;
