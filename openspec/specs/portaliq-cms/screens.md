@@ -39,3 +39,5 @@
 - Contentpagina https://identity.conduction.nl/screens/board?id=esdoornveen/Contentpagina
 - Contentpagina https://identity.conduction.nl/screens/board?id=warmtepompacademie/Contentpagina
 - opencatalogi/pub-house-style: no opencatalogi screen; the reading room's house style is set in portaliq
+- No screen: caching happens on the server; editors and visitors only notice faster pages (site-content-cache)
+- No screen: a portal whose theme does not resolve renders with the base look; there is no page for the fallback itself (thm-theme-fail-closed)

@@ -22,3 +22,4 @@
 - PtDashboard https://identity.conduction.nl/screens/board?id=portaliq/PtDashboard
 - PtInzending https://identity.conduction.nl/screens/board?id=portaliq/PtInzending
 - PtInzendingen https://identity.conduction.nl/screens/board?id=portaliq/PtInzendingen
+- No screen: a development-only sign-in shortcut, never shown to residents (sig-dev-login)
