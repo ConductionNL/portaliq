@@ -50,6 +50,7 @@ use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\ActionScopeResolver;
 use OCA\Portaliq\Contribution\CreateBody;
 use OCA\Portaliq\Contribution\CreateActionMatcher;
+use OCA\Portaliq\Contribution\FieldMap;
 use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
 use OCA\Portaliq\Contribution\InboxMessageFields;
 use OCA\Portaliq\Contribution\PageChoice;
@@ -1558,6 +1559,10 @@ class ContributionController extends Controller implements PortalProtected {
 			return $refused;
 		}
 
+		// Each answer moves to where the action says it lands, after the
+		// checks that read it by its own name (create-action-field-map).
+		$data = (new FieldMap())->apply(action: $action, body: $data);
+
 		// The scope field carries the declared `scopeClaim` resolved server
 		// side, else the subjectRef; an absent claim refuses the write
 		// (claim-scoped-create-stamps-the-claim).
@@ -1761,6 +1766,8 @@ class ContributionController extends Controller implements PortalProtected {
 		if ($missing !== null) {
 			return $missing;
 		}
+
+		$data = (new FieldMap())->apply(action: $action, body: $data);
 
 		if (is_array($action['destination'] ?? null) === true) {
 			return $this->submitIntoDestination(action: $action, answers: $whitelisted);

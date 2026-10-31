@@ -7,6 +7,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\PortalDraftController;
 use OCA\Portaliq\Service\Intake\ActionDraft;
+use OCA\Portaliq\Service\Intake\LiveDrafts;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -32,6 +33,7 @@ use Psr\Log\LoggerInterface;
  */
 #[CoversClass(PortalDraftController::class)]
 #[UsesClass(ActionDraft::class)]
+#[UsesClass(LiveDrafts::class)]
 #[UsesClass(\OCA\Portaliq\Service\Intake\DestinationDraft::class)]
 #[UsesClass(\OCA\Portaliq\Service\Intake\DestinationSubmit::class)]
 #[UsesClass(\OCA\Portaliq\Contribution\ActionScopeResolver::class)]
@@ -75,6 +77,26 @@ class PortalDraftControllerTest extends TestCase {
 		$this->assertSame('portal:sanne', $save['owner']->value);
 		$this->assertSame('dossiq/request', $save['scope']);
 	}//end testSavingStartsADraftOfTheDestinationOwnedByThePortalSubject()
+
+	/**
+	 * A draft is saved where the action's fieldMap puts each answer, and reads
+	 * back under the answers' own names (create-action-field-map).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/create-action-field-map/specs/portal-contribution-contract/spec.md#requirement-a-create-action-may-say-where-each-answer-lands
+	 */
+	public function testAMappedDraftIsSavedAtItsPathsAndReadsBackByName(): void {
+		$action     = ['fields' => ['onderwerp', 'periodeVan'], 'fieldMap' => ['onderwerp' => 'title', 'periodeVan' => 'wooRequest.periodeVan']] + self::ACTION;
+		$controller = $this->controller(subjectRef: 'sanne', outcome: ['id' => 'd-1', 'status' => 'draft'], action: $action);
+		$data       = $controller->save('dossiq', 'request', ['onderwerp' => 'Half', 'periodeVan' => '2025-01-01'])->getData();
+		$payload    = $this->call(kind: 'saveDraft')['payload'];
+
+		$this->assertSame(expected: 'Half', actual: $payload['title']);
+		$this->assertSame(expected: ['periodeVan' => '2025-01-01'], actual: $payload['wooRequest']);
+		$this->assertArrayNotHasKey(key: 'onderwerp', array: $payload);
+		$this->assertSame(expected: ['onderwerp' => 'Half', 'periodeVan' => '2025-01-01'], actual: $data['answers']);
+	}//end testAMappedDraftIsSavedAtItsPathsAndReadsBackByName()
 
 	public function testSavingAgainUpdatesTheLiveDraft(): void {
 		$controller = $this->controller(subjectRef: 'sanne', outcome: ['id' => 'd-1'], found: $this->live());
@@ -261,11 +283,14 @@ class PortalDraftControllerTest extends TestCase {
 		};
 		$drafts = new PortalOwnerDraft($this->fake->container(['OCA\\OpenRegister\\Service\\Object\\DraftDiscard' => $discard]), $this->createMock(LoggerInterface::class), new DestinationSubmit($this->fake->container(['OCA\\OpenRegister\\Service\\Object\\DraftDiscard' => $discard]), $this->createMock(LoggerInterface::class)));
 
+		$actions = new ActionDraft(registry: $registry, reader: $reader, writer: $writer, drafts: $drafts);
+
 		return new PortalDraftController(
 			$this->createMock(IRequest::class),
 			$session,
-			new ActionDraft(registry: $registry, reader: $reader, writer: $writer, drafts: $drafts),
-			$drafts
+			$actions,
+			$drafts,
+			new LiveDrafts(registry: $registry, actions: $actions)
 		);
 	}//end controller()
 }//end class

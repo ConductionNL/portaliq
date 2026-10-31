@@ -34,6 +34,7 @@ use DateTimeImmutable;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\Intake\ActionDraft;
 use OCA\Portaliq\Service\Intake\DestinationDraft;
+use OCA\Portaliq\Service\Intake\LiveDrafts;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -59,12 +60,14 @@ class PortalDraftController extends Controller {
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
 	 * @param ActionDraft          $actions Resolves the action, its draft body and its retention.
 	 * @param DestinationDraft     $drafts  Saves and discards drafts in OpenRegister.
+	 * @param LiveDrafts           $live    Lists the subject's live drafts.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalSessionService $session,
 		private readonly ActionDraft $actions,
 		private readonly DestinationDraft $drafts,
+		private readonly LiveDrafts $live,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -86,7 +89,7 @@ class PortalDraftController extends Controller {
 		}
 
 		try {
-			return new JSONResponse(['drafts' => $this->actions->liveDrafts(subject: $subject)]);
+			return new JSONResponse(['drafts' => $this->live->forSubject(subject: $subject)]);
 		} catch (Throwable) {
 			// A destination could not be reached: the page lists nothing and says nothing went wrong.
 			return new JSONResponse(['error' => 'try_again_later'], Http::STATUS_SERVICE_UNAVAILABLE);

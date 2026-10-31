@@ -1,0 +1,3 @@
+- [x] T01 FieldMap applies an action's `fieldMap` to a create body and reverses it on a stored object
+- [x] T02 ContributionController create paths apply it after the body checks; ActionDraft saves mapped and reads back unmapped
+- [x] T03 PHPUnit for FieldMap and the draft round trip
