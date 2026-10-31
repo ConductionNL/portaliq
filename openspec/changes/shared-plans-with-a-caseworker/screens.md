@@ -7,4 +7,5 @@
 - MijnTakenTabel https://identity.conduction.nl/screens/board?id=portaliq/MijnTakenTabel
 - Plan https://identity.conduction.nl/screens/board?id=portaliq/Plan
 - Plannen https://identity.conduction.nl/screens/board?id=portaliq/Plannen
+- PtPlansjablonen https://identity.conduction.nl/screens/board?id=portaliq/PtPlansjablonen
 - TaakAfronden https://identity.conduction.nl/screens/board?id=portaliq/TaakAfronden
