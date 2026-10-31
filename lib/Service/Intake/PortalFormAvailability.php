@@ -81,7 +81,7 @@ class PortalFormAvailability {
 			return null;
 		}
 
-		$now   = DateTimeImmutable::createFromInterface($this->clock->now());
+		$now   = $this->clock->now();
 		$today = $now->format('Y-m-d');
 
 		$replacedBy = $this->localRoute(value: ($availability['replacedBy'] ?? null));
@@ -231,12 +231,7 @@ class PortalFormAvailability {
 			return null;
 		}
 
-		$moment = DateTimeImmutable::createFromFormat('Y-m-d\TH:i', substr($value, 0, 16), $now->getTimezone());
-		if ($moment === false) {
-			return null;
-		}
-
-		return $moment;
+		return new DateTimeImmutable(substr($value, 0, 16), $now->getTimezone());
 	}//end moment()
 
 	/**

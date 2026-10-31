@@ -202,18 +202,10 @@ class PortalEmbedController extends Controller {
 			return new JSONResponse(['error' => 'too_many_requests'], Http::STATUS_TOO_MANY_REQUESTS);
 		}
 
-		if ($this->availability?->situation(binding: $binding) !== null) {
-			return new JSONResponse(['error' => 'form_unavailable'], Http::STATUS_CONFLICT);
-		}
-
-		$render = $this->bindings->render(binding: $binding);
-		if ($this->bindings->requiredTrust(site: $site, binding: $binding, render: $render) !== null) {
-			// The frame refuses a form that needs a sign-in, and so must its
-			// submit: the refusal may not depend on the frame being used,
-			// because anybody can POST here directly with an allowed Origin
-			// (portaliq#725). This route reads no session, so no submission
-			// to such a form is ever accepted here.
-			return new JSONResponse(['error' => 'identified_intake'], Http::STATUS_FORBIDDEN);
+		$render  = $this->bindings->render(binding: $binding);
+		$refusal = $this->submitRefusal(site: $site, binding: $binding, render: $render);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$validated = $this->validator->validate(fields: (array)($render['fields'] ?? []), answers: $answers);
@@ -303,6 +295,35 @@ class PortalEmbedController extends Controller {
 
 		return $response;
 	}//end framed()
+
+	/**
+	 * Why a submit through the frame is refused, or null to go on: a form
+	 * that is closed now, or one that needs a sign-in.
+	 *
+	 * @param array<string, mixed> $site    The portal.
+	 * @param array<string, mixed> $binding The binding.
+	 * @param array<string, mixed> $render  What the binding renders to.
+	 *
+	 * @return JSONResponse|null
+	 *
+	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-form-opens-and-closes-on-set-dates-and-after-a-set-number-of-submissions-req-fgv-001
+	 */
+	private function submitRefusal(array $site, array $binding, array $render): ?JSONResponse {
+		if ($this->availability?->situation(binding: $binding) !== null) {
+			return new JSONResponse(['error' => 'form_unavailable'], Http::STATUS_CONFLICT);
+		}
+
+		if ($this->bindings->requiredTrust(site: $site, binding: $binding, render: $render) !== null) {
+			// The frame refuses a form that needs a sign-in, and so must its
+			// submit: the refusal may not depend on the frame being used,
+			// because anybody can POST here directly with an allowed Origin
+			// (portaliq#725). This route reads no session, so no submission
+			// to such a form is ever accepted here.
+			return new JSONResponse(['error' => 'identified_intake'], Http::STATUS_FORBIDDEN);
+		}
+
+		return null;
+	}//end submitRefusal()
 
 	/**
 	 * A frame that renders a message and no form.

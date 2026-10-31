@@ -317,12 +317,6 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'form_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		// A closed form takes nothing; the resident's saved draft is not touched.
-		$unavailable = $this->availability?->situation(binding: $binding);
-		if ($unavailable !== null) {
-			return new JSONResponse(['error' => 'form_unavailable', 'unavailable' => $unavailable], Http::STATUS_CONFLICT);
-		}
-
 		$render = $this->bindings->render(binding: $binding);
 		$subject = $this->subject();
 		$refusal = $this->submitRefusal(site: $site, binding: $binding, render: $render, subject: $subject);
@@ -549,8 +543,15 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param array<string, mixed>|null $subject The subject, or null.
 	 *
 	 * @return JSONResponse|null
+	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-form-opens-and-closes-on-set-dates-and-after-a-set-number-of-submissions-req-fgv-001
 	 */
 	private function submitRefusal(array $site, array $binding, array $render, ?array $subject): ?JSONResponse {
+		// A closed form takes nothing; the resident's saved draft is not touched.
+		$unavailable = $this->availability?->situation(binding: $binding);
+		if ($unavailable !== null) {
+			return new JSONResponse(['error' => 'form_unavailable', 'unavailable' => $unavailable], Http::STATUS_CONFLICT);
+		}
+
 		if (($render['resolvesToNoForm'] ?? false) === true || ($render['kind'] ?? '') === PortalFormBindingResolver::KIND_EXTERNAL) {
 			// An external intake is filled in at its own host; the portal has
 			// nothing to accept here.
