@@ -26,6 +26,6 @@
 
 ## Separate rights
 
-- [ ] **T09**: `tests/Unit/Controller/AdminOnlyPostureTest.php` lists every admin settings route, and a test signs in as a page editor who is not an administrator: page, menu, media and notice writes pass, each admin settings route answers 403 (REQ-ORA-007).
-- [ ] **T10**: `PageEditorServiceTest`: a group granted an action but not listed as an editor group is no editor (REQ-ORA-007).
-- [ ] **T11**: `openspec validate operate-roles-for-content-and-actions --strict` after REQ-ORA-007.
+- [x] **T09**: `tests/Unit/Controller/AdminOnlyPostureTest.php` lists every admin settings route, and a test signs in as a page editor who is not an administrator: page, menu, media and notice writes pass, each admin settings route answers 403 (REQ-ORA-007). Built: `testEveryAdminSettingsRouteRefusesAPageEditor` reads `appinfo/routes.php` and checks every route under `/api/settings`, `/api/session-admin/` and `/api/portals/{slug}/`: admin-only (no opt-out), or an opt-out whose method checks an action grant, an administrator or the per-portal admin scope; `settings#index` is the one shared read. The provider gains `settings#load` (now tagged `@auth admin-only`), `actionsettings#byGroup` and the two other session revocations. `PageEditorServiceTest::testAPageEditorHoldsNoAction`: an editor writes menu, media and notices and holds no action.
+- [x] **T10**: `PageEditorServiceTest`: a group granted an action but not listed as an editor group is no editor (REQ-ORA-007). Built: `testAnActionGrantMakesNoPageEditor` (the grant works, `mayEdit()` is false, the group reaches no content schema's write rules) and `testAnAdministratorKeepsBothRights`.
+- [x] **T11**: `openspec validate operate-roles-for-content-and-actions --strict` after REQ-ORA-007 (valid, openspec 1.12.0, 2026-10-30).
