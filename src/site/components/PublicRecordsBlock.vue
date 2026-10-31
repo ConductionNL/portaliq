@@ -731,6 +731,7 @@ export default {
 
 .pq-records__main :deep(th) {
 	padding: 12px 16px;
+	font-size: 1rem;
 	background: var(--nldesign-color-surface, #f4f6f9);
 	border: 0;
 	text-align: start;

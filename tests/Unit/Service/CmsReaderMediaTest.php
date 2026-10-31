@@ -42,6 +42,24 @@ class CmsReaderMediaTest extends TestCase {
 		);
 	}//end testTheHeroImageFromTheLibraryCarriesItsAddressAndAlternativeText()
 
+	/**
+	 * page-answer-carries-help: the single page answer carries the page's
+	 * help text, so the site can draw "Hulp bij deze pagina".
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-answer-carries-help/specs/portaliq-cms/spec.md#requirement-the-page-answer-carries-the-pages-help-text
+	 */
+	public function testThePageAnswerCarriesItsHelpText(): void {
+		$page = $this->reader(pages: [$this->page(['helpText' => '  Hier ziet u hoe een raadslid stemde.  '])])
+			->page(portal: 'gemeente', route: '/contact', locale: 'nl', audience: 'anonymous');
+		$bare = $this->reader(pages: [$this->page([])])
+			->page(portal: 'gemeente', route: '/contact', locale: 'nl', audience: 'anonymous');
+
+		$this->assertSame('Hier ziet u hoe een raadslid stemde.', $page['helpText']);
+		$this->assertSame('', $bare['helpText']);
+	}//end testThePageAnswerCarriesItsHelpText()
+
 	public function testAnAddressHeroImageIsServedAsIs(): void {
 		$page = $this->reader(pages: [$this->page(['heroImage' => 'https://example.nl/a.jpg'])])
 			->page(portal: 'gemeente', route: '/contact', locale: 'nl', audience: 'anonymous');

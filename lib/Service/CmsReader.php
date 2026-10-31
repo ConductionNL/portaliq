@@ -164,7 +164,7 @@ class CmsReader {
 				'title'   => (string)($row['title'] ?? ''),
 				'route'   => (string)($row['route'] ?? ''),
 				'summary' => (string)($row['summary'] ?? ''),
-			'helpText' => (new PortalHelp())->pageText(value: ($row['helpText'] ?? null)),
+				'helpText' => (new PortalHelp())->pageText(value: ($row['helpText'] ?? null)),
 				'locale'  => (string)($row['locale'] ?? ''),
 				'bodyType' => (string)($row['body']['type'] ?? ''),
 			];
@@ -434,6 +434,7 @@ class CmsReader {
 			'title'   => (string)($row['title'] ?? ''),
 			'route'   => (string)($row['route'] ?? ''),
 			'summary' => (string)($row['summary'] ?? ''),
+			'helpText' => (new PortalHelp())->pageText(value: ($row['helpText'] ?? null)),
 			'locale'  => (string)($row['locale'] ?? ''),
 			'seo'     => $this->shapeSeo(row: $row),
 			'hero'    => $this->media->hero(portal: $portal, value: ($row['heroImage'] ?? null)),
