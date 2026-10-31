@@ -144,7 +144,7 @@ Each is built on existing `--utrecht-*` tokens (document, border, focus, link, b
 
 ## D6. Start tiles from actions
 
-A create or endpoint action MAY declare `summary` (one sentence, at most 200 characters) and `audiences` (a subset of its provider's audiences). `nlStartTiles` shows, for the serving portal, every action that declares a `summary`, as a tile with the action's label and summary. A signed-out visitor who picks a tile signs in first, with the audiences as the hint for the way in. The tile list comes from a public endpoint that returns only label, summary, audiences and route. It never returns fields, endpoints or data.
+A create or endpoint action MAY declare `summary` (one sentence, at most 200 characters) and `audiences` (a subset of its provider's audiences). `nlStartTiles` shows, for the serving portal, every action that declares a `summary` and that a page offers, as the Home board's "Direct regelen" tiles: the action's label, linking to that page (amended 9 Oct to the board, decision 130: the board draws no summary under a tile; `DossiqHome.dc.html` does not exist). A signed-out visitor who picks a tile signs in first, with the audiences as the hint for the way in. The tile list comes from a public endpoint that returns only label, summary, audiences and route. It never returns fields, endpoints or data.
 
 ## D7. Waves
 

@@ -13,8 +13,8 @@
   - ONLY the active theme's tokens are transferred — phase one moved 527 KiB out of exactly this path
   - The `--pq-*` fallbacks in component styles are removed; where a fallback is unavoidable it is visibly neutral, never a plausible brand colour
   - An unresolvable theme names itself and the page presents as unstyled rather than defaulting to something reasonable
-- [ ] Implement
-- [ ] Test
+- [x] Implement (already built: `templates/site.php` links the one resolved set and its parents render-blocking, with the bridge; the `--pq-*` variables are chains over `--nldesign-*` with neutral fallbacks in `src/site/App.vue`; an unresolvable theme is now logged by name in `PortalThemeResolver::stylesheetFor` and renders unthemed)
+- [x] Test (`tests/site-theme-bridge.spec.mjs` for the order and the single set; `PortalThemeResolverTest::testAThemeThatDoesNotResolveIsReportedByName`)
 
 ### Task 2: Emit NL Design component markup
 - **spec_ref**: `openspec/changes/portal-theme-application/specs/portaliq-cms/spec.md#requirement-markup-must-carry-nl-design-component-classes`
@@ -23,8 +23,8 @@
   - Heading, links, paragraphs and table carry NL Design component classes; the count is currently ZERO, so any non-zero result is a change in behaviour rather than a restatement
   - No `*-react` design-system package is added (ADR-086 §7; `@utrecht` ships 95 CSS packages to 17 React ones)
   - `appinfo/info.xml` declares the theming dependency, and a missing install is reported
-- [ ] Implement
-- [ ] Test
+- [ ] Implement — partial: the site components carry the `utrecht-*` classes (118 files) and no React design-system package is used; `appinfo/info.xml` does not declare the theme app because the resolver treats a missing install as a normal, unthemed deployment: not run, that needs a decision
+- [ ] Test — not run: counting the NL Design classes in the rendered DOM needs a browser
 
 ### Task 3: The assertion that would have caught this
 - **spec_ref**: `openspec/changes/portal-theme-application/specs/portaliq-cms/spec.md#requirement-a-sites-theme-must-change-its-rendered-appearance`
@@ -34,5 +34,5 @@
   - Explicitly does NOT assert on the class name, the token file's presence, or the API's theme string: all three pass right now while both sites render `rgb(26,26,26)`
   - Asserts a theme token resolves to a value that is not the component's hard-coded fallback
   - Run FIRST against the current build and observed FAILING, before the implementation lands — a theming test written after the fix proves only that the fix is present today
-- [ ] Implement
-- [ ] Test
+- [ ] Implement — not run: needs a live instance and a browser
+- [ ] Test — not run: needs a live instance and a browser

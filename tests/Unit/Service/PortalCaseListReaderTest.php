@@ -519,6 +519,92 @@ class PortalCaseListReaderTest extends TestCase {
 		return $container;
 	}//end container()
 
+	/**
+	 * A case app that stores the represented party typed (`subject:<uid>`)
+	 * lists the case for the representative: Linda acting for Henk
+	 * (mandate-reads-the-typed-party REQ-MTP-001).
+	 *
+	 * @spec openspec/specs/portal-mandates/spec.md#requirement-a-mandated-case-list-reads-the-party-in-its-typed-and-its-bare-form-req-mtp-001
+	 */
+	public function testAPartyStoredTypedOpensTheCasesOfItsMandate(): void {
+		$cases = new PortalCaseListReader($this->readerByParty(['subject:henk' => [['id' => 'case-1', 'reference' => 'ZAAK-1']]]), $this->mandateService());
+
+		$rows = $cases->listMandatedCases(subject: $this->subject(), aggregate: $this->aggregate(collection: $this->mandatedCollection()), mandates: [$this->henksMandate()]);
+
+		$this->assertSame(['ZAAK-1'], array_column($rows, 'reference'));
+	}//end testAPartyStoredTypedOpensTheCasesOfItsMandate()
+
+	/**
+	 * A case written before the typed form, with the party bare, still opens.
+	 *
+	 * @spec openspec/specs/portal-mandates/spec.md#requirement-a-mandated-case-list-reads-the-party-in-its-typed-and-its-bare-form-req-mtp-001
+	 */
+	public function testAPartyStoredBareStillOpensTheCasesOfItsMandate(): void {
+		$cases = new PortalCaseListReader($this->readerByParty(['henk' => [['id' => 'case-2', 'reference' => 'ZAAK-2']]]), $this->mandateService());
+
+		$rows = $cases->listMandatedCases(subject: $this->subject(), aggregate: $this->aggregate(collection: $this->mandatedCollection()), mandates: [$this->henksMandate()]);
+
+		$this->assertSame(['ZAAK-2'], array_column($rows, 'reference'));
+	}//end testAPartyStoredBareStillOpensTheCasesOfItsMandate()
+
+	/**
+	 * A case both reads find is listed once; cases found one way each are
+	 * both listed.
+	 *
+	 * @spec openspec/specs/portal-mandates/spec.md#requirement-a-mandated-case-list-reads-the-party-in-its-typed-and-its-bare-form-req-mtp-001
+	 */
+	public function testACaseFoundByBothFormsIsListedOnce(): void {
+		$shared = ['id' => 'case-1', 'reference' => 'ZAAK-1'];
+		$reader = $this->readerByParty([
+			'subject:henk' => [$shared, ['@self' => ['id' => 'case-3'], 'reference' => 'ZAAK-3']],
+			'henk'         => [$shared, ['@self' => ['id' => 'case-3'], 'reference' => 'ZAAK-3'], ['id' => 'case-2', 'reference' => 'ZAAK-2']],
+		]);
+		$cases  = new PortalCaseListReader($reader, $this->mandateService());
+
+		$rows = $cases->listMandatedCases(subject: $this->subject(), aggregate: $this->aggregate(collection: $this->mandatedCollection()), mandates: [$this->henksMandate()]);
+		$references = array_column($rows, 'reference');
+		sort($references);
+
+		$this->assertSame(['ZAAK-1', 'ZAAK-2', 'ZAAK-3'], $references);
+	}//end testACaseFoundByBothFormsIsListedOnce()
+
+	/**
+	 * Henk's mandate to Linda, typed as portaliq writes it.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function henksMandate(): array {
+		return [
+			'uuid' => 'mandate-henk',
+			'subjectRef' => 'subject-1',
+			'organisation' => 'gemeente-x',
+			'onBehalfOf' => 'subject:henk',
+			'label' => 'Henk',
+			'caseTypes' => [],
+			'status' => 'active',
+		];
+	}//end henksMandate()
+
+	/**
+	 * A reader double that answers by the party it is asked for, as a case
+	 * app's store does.
+	 *
+	 * @param array<string, array<int, array<string, mixed>>> $byParty The rows per stored party value.
+	 *
+	 * @return PortalObjectReader
+	 */
+	private function readerByParty(array $byParty): PortalObjectReader {
+		$reader = $this->getMockBuilder(PortalObjectReader::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['readCollection'])
+			->getMock();
+		$reader->method('readCollection')->willReturnCallback(
+			static fn (string $register, string $schema, string $scopeField, string $subjectRef): array => ($byParty[$subjectRef] ?? [])
+		);
+
+		return $reader;
+	}//end readerByParty()
+
 	private function mandateService(): PortalMandateService {
 		$reader = $this->getMockBuilder(PortalObjectReader::class)
 			->disableOriginalConstructor()

@@ -74,6 +74,12 @@ class PortalFormTrustLevel {
 			$levels[] = 'low';
 		}
 
+		// A request with a fee ties a payment to a person: it needs a session
+		// at substantial (intake-pay-on-submit REQ-IPS-002).
+		if (is_array($render['fee'] ?? null) === true) {
+			$levels[] = 'substantial';
+		}
+
 		foreach ([($binding['minTrust'] ?? null), ($render['minTrust'] ?? null)] as $declared) {
 			$level = $this->declaredLevel(declared: $declared);
 			if ($level !== null) {

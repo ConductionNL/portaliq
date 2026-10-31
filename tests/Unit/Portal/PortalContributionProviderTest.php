@@ -248,6 +248,37 @@ class PortalContributionProviderTest extends TestCase {
 	}//end readerReturning()
 
 	/**
+	 * submit-creates-the-case-directly 3.2: an active form submits into the
+	 * destination it names, with its tracking values as server values; a form
+	 * naming no destination is not submittable and is logged.
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/specs/landing-page-provisioning/spec.md#requirement-a-landing-pages-form-is-submittable-with-no-portal-session
+	 */
+	public function testALandingFormSubmitsIntoTheDestinationItNames(): void {
+		$forms = [
+			['id' => 'form-a', 'portal' => 'open-tilburg', 'pageRoute' => '/webinar', 'pageId' => 'p-1', 'sourceApp' => 'pipelinq', 'submitLabel' => 'Aanmelden', 'fields' => [['id' => 'email'], ['id' => 'name']], 'destination' => ['register' => 'pipelinq', 'schema' => 'lead', 'fixed' => ['source' => 'landing']]],
+			['id' => 'form-b', 'portal' => 'open-tilburg', 'fields' => [['id' => 'email']]],
+		];
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')->with($this->stringContains('names no destination'), ['form' => 'form-b']);
+
+		$provider     = new PortalContributionProvider($this->readerReturning([], $forms), $this->randomStub(), $logger);
+		$contribution = $provider->getContribution(['audience' => 'anonymous']);
+
+		$this->assertCount(1, $contribution['actions']);
+		$action = $contribution['actions'][0];
+		$this->assertSame('submit-form-a', $action['id']);
+		$this->assertSame('portaliq', $action['register'], 'the address the public form posts to');
+		$this->assertSame('landingPageSubmission', $action['schema']);
+		$this->assertSame(['register' => 'pipelinq', 'schema' => 'lead', 'fixed' => ['source' => 'landing']], $action['destination']);
+		$this->assertSame('open-tilburg//webinar', $action['intakeScope']);
+		$this->assertSame(['email', 'name', 'utmFirstTouch', 'utmLastTouch', 'referrer'], $action['fields']);
+		$this->assertSame('form-a', $action['server']['formId']);
+		$this->assertSame('pipelinq', $action['server']['sourceApp']);
+		$this->assertArrayNotHasKey('defaults', $action);
+	}//end testALandingFormSubmitsIntoTheDestinationItNames()
+
+	/**
 	 * A deterministic ISecureRandom stub for constructing the provider.
 	 */
 	private function randomStub(): ISecureRandom {

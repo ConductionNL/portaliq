@@ -75,7 +75,7 @@ class ExampleSiteRemover {
 			return $report;
 		}
 
-		$left = ['portal' => $record['portal'], 'menu' => [], 'page' => [], 'newsItem' => []];
+		$left = ['portal' => $record['portal'], 'menu' => [], 'page' => [], 'newsItem' => [], 'glossaryTerm' => [], 'form' => []];
 		foreach (ExampleSiteRecord::SCHEMAS as $schema) {
 			$outcome = $this->removeRows(schema: $schema, slug: $slug, ids: $record[$schema]);
 			$report['deleted'][$schema] = $outcome['deleted'];

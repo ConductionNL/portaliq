@@ -129,6 +129,31 @@ class PortalCustomThemeSets {
 
 
 	/**
+	 * The shipped sets with the custom sets added after them; a custom set
+	 * does not replace a shipped set of the same id.
+	 *
+	 * @param array<int, array<string, mixed>> $sets The shipped sets.
+	 *
+	 * @return array<int, array<string, mixed>> The shipped and the custom sets.
+	 *
+	 * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
+	 */
+	public function mergedInto(array $sets): array {
+		$ids = [];
+		foreach ($sets as $entry) {
+			$ids[(string)$entry['id']] = true;
+		}
+
+		foreach ($this->all() as $entry) {
+			if (isset($ids[$entry['id']]) === false) {
+				$sets[] = $entry;
+			}
+		}
+
+		return $sets;
+	}//end mergedInto()
+
+	/**
 	 * Whether an id names a custom set.
 	 *
 	 * @param string $id The set id.

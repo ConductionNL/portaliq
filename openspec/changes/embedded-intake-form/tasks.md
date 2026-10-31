@@ -3,13 +3,13 @@
 ## The form and its origins
 
 - [x] **T01**: `portalForm.allowedOrigins[]` on the portal page, edited in the CMS admin, with an empty list meaning the form serves to nobody (REQ-EIF-001)
-- [ ] **T02**: The snippet, shown on the page beside the origin list, with the origins named in plain language (REQ-EIF-001)
+- [ ] **T02**: The snippet, shown on the page beside the origin list, with the origins named in plain language (REQ-EIF-001) — not run: the CMS admin has no surface for the snippet yet
 
 ## The frame
 
 - [x] **T03**: The frame route, running the public boot mode of the shared runtime, with `frame-ancestors` built from that form's origin list and no cookie set or read (REQ-EIF-002, REQ-EIF-005)
 - [x] **T04**: Refuse a disallowed origin before any schema is read, rendering a plain message (REQ-EIF-002)
-- [ ] **T05**: Height negotiation over `postMessage` with a declared minimum when no message arrives (D2, D6)
+- [x] **T05**: Height negotiation over `postMessage` with a declared minimum when no message arrives (D2, D6) (frame side: `src/embed/main.js` calls `startHeightReporting()` from `src/shared/embedHeight.js`, minimum 480 when no message arrives; covered by `tests/embed-height.spec.mjs` and `PortalEmbedHeightTest`)
 
 ## The submission
 

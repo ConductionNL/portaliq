@@ -57,9 +57,9 @@
 
 ### Task 6: Delete the bundle, the controller and the routes
 - **spec_ref**: `openspec/changes/retire-the-vendored-woo-bundle/specs/portaliq-cms/spec.md#requirement-the-vendored-bundle-must-leave-the-repository`
-- **files**: `woo/`, `lib/Controller/WooController.php`, `appinfo/routes.php`, `tests/Unit/Controller/WooControllerTest.php`
+- **files**: `woo/`, `lib/Controller/BundledSiteController.php`, `appinfo/routes.php`, `tests/Unit/Controller/BundledSiteControllerTest.php`
 - **acceptance_criteria**:
-  - `woo/` (28 MB), `WooController` and the `woo#serve` / `woo#servePath` routes are gone, and no test asserts the old surface: the retired-surface tests are inverted rather than deleted, so a silent return of the bundle is caught
+  - `woo/` (28 MB), `BundledSiteController` and the `bundledSite#serve` / `bundledSite#servePath` routes are gone, and no test asserts the old surface: the retired-surface tests are inverted rather than deleted, so a silent return of the bundle is caught
   - Requires explicit sign-off from the municipality recorded on the PR, because restoring the directory means finding the build again, not reverting a commit
   - Repository size is measured before and after, so the claimed saving is a number rather than an adjective
 - [ ] Implement

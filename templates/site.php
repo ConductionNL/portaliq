@@ -128,6 +128,12 @@ if ($themeStylesheet !== '' && $themeApp !== null) {
         $tokenStylesheets[] = $asset($themeApp, 'css/' . $themeBridgeStylesheet . '.css');
     }
 
+    // A set that extends another loads its parent first, so the child wins
+    // on order (REQ-PTB-003).
+    foreach ((array)($_['themeParents'] ?? []) as $parentSheet) {
+        $tokenStylesheets[] = $asset($themeApp, 'css/' . (string)$parentSheet . '.css');
+    }
+
     $tokenStylesheets[] = $asset($themeApp, 'css/' . $themeStylesheet . '.css');
 }
 
@@ -341,6 +347,11 @@ if ($favicon === '') {
     <link rel="manifest" href="<?php p($url->linkToRoute('portaliq.portalManifest.manifest', $manifestParams)); ?>">
     <?php foreach ($stylesheets as $href) { ?>
     <link rel="stylesheet" href="<?php p($href); ?>">
+    <?php } ?>
+    <?php $themeTokenCss = (string)($_['themeTokenCss'] ?? ''); ?>
+    <?php if ($themeTokenCss !== '') { ?>
+    <!-- The portal's own token overrides, after its theme (REQ-PTB-002). Already filtered by PortalTokenCss. -->
+    <style><?php print_unescaped($themeTokenCss); ?></style>
     <?php } ?>
     <?php if ($themeLogoUrl !== '') { ?>
     <!--

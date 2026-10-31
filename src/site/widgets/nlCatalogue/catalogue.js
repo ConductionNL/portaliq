@@ -37,6 +37,7 @@ export const strings = {
 		next: 'Volgende',
 		page: 'Pagina {page}',
 		pages: "Pagina's",
+		all: 'Alles',
 	},
 	en: {
 		search: 'Search',
@@ -60,6 +61,7 @@ export const strings = {
 		next: 'Next',
 		page: 'Page {page}',
 		pages: 'Pages',
+		all: 'All',
 	},
 }
 
@@ -200,4 +202,149 @@ export function eventItemsOf(items) {
 			note: item.note || '',
 			noteTone: item.noteTone || 'neutral',
 		}))
+}
+
+/**
+ * The catalogue query a page block's `source` stands for: `{app, kind,
+ * categories[], limit | range}` for a dated list, plus `filters{}` for a
+ * table. The kind is the index's `type`. Anything that is not text is left out.
+ *
+ * @param {object|null} source The block's declared source.
+ * @return {object|null} The query, or null without an app and a kind.
+ * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-2
+ */
+export function sourceQuery(source) {
+	const app = typeof source?.app === 'string' ? source.app.trim() : ''
+	const kind = typeof source?.kind === 'string' ? source.kind.trim() : ''
+	if (app === '' || kind === '') {
+		return null
+	}
+	const query = { app, types: [kind], sort: 'date' }
+	const categories = Array.isArray(source.categories)
+		? source.categories.filter((c) => typeof c === 'string' && c !== '')
+		: []
+	if (categories.length > 0) {
+		query.categories = categories
+	}
+	if (source.range === 'schoolYear') {
+		query.range = 'schoolYear'
+	}
+	const limit = Math.trunc(Number(source.limit))
+	query.limit = limit >= 1 ? Math.min(limit, 50) : 20
+	const filters = {}
+	for (const [label, values] of Object.entries(source.filters || {})) {
+		const list = (Array.isArray(values) ? values : [values]).filter(
+			(value) => typeof value === 'string' && value !== '',
+		)
+		if (list.length > 0) {
+			filters[label] = list
+		}
+	}
+	if (Object.keys(filters).length > 0) {
+		query.filters = filters
+	}
+	return query
+}
+
+/**
+ * A table's header and rows from catalogue items: one column per declared
+ * column (`{key, label}`), each cell the item's cell of that key.
+ *
+ * @param {Array<object>} items The catalogue items.
+ * @param {Array<{key: string, label: string}>} columns The columns the block chose.
+ * @return {{columns: Array<string>, rows: Array<Array<string>>}} The table.
+ * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-3
+ */
+export function tableOf(items, columns) {
+	const chosen = (Array.isArray(columns) ? columns : [])
+		.map((column) =>
+			typeof column === 'string'
+				? { key: column, label: column }
+				: {
+						key: String(column?.key ?? ''),
+						label: String(column?.label ?? column?.key ?? ''),
+					},
+		)
+		.filter((column) => column.key !== '')
+	return {
+		columns: chosen.map((column) => column.label),
+		rows: (Array.isArray(items) ? items : []).map((item) =>
+			chosen.map((column) => String(item?.cells?.[column.key] ?? '')),
+		),
+	}
+}
+
+/** How a facet may be chosen from: several values, one value, or a menu. */
+export const FACET_CONTROLS = ['checkbox', 'radio', 'select']
+
+/**
+ * The facets the block asks the server to add besides the ones the items
+ * declare: one by kind ("Soort": Nieuws, Nieuwsbrief, ...) and one by a news
+ * item's audience ("Voor wie"). The word for a news item is the page's own.
+ *
+ * @param {object} options The block's choices.
+ * @param {string} [options.kindFacet] The label of the kind facet; '' for none.
+ * @param {string} [options.audienceFacet] The label of the audience facet; '' for none.
+ * @param {string} options.lang The page language.
+ * @return {{kind?: string, news?: string, audience?: string}} Empty when nothing is asked.
+ * @spec openspec/changes/site-catalogue-follows-the-school-boards/specs/portal-public-catalogue/spec.md#requirement-a-catalogue-may-filter-by-kind-and-by-audience
+ */
+export function facetsByOf({ kindFacet = '', audienceFacet = '', lang }) {
+	const out = {}
+	if (String(kindFacet).trim() !== '') {
+		out.kind = String(kindFacet).trim()
+		out.news = word(lang, 'news')
+	}
+	if (String(audienceFacet).trim() !== '') {
+		out.audience = String(audienceFacet).trim()
+	}
+	return out
+}
+
+/**
+ * How one facet is chosen from: the block's `facetDisplay` for its label,
+ * else checkboxes.
+ *
+ * @param {Record<string, string>} display Facet label to `checkbox`, `radio` or `select`.
+ * @param {string} label The facet.
+ * @return {string} One of FACET_CONTROLS.
+ * @spec openspec/changes/site-catalogue-follows-the-school-boards/specs/portaliq-cms/spec.md#requirement-the-catalogue-block-reads-like-the-search-boards
+ */
+export function facetControl(display, label) {
+	const chosen = display && typeof display === 'object' ? display[label] : ''
+	return FACET_CONTROLS.includes(chosen) ? chosen : 'checkbox'
+}
+
+/**
+ * The facet choices with one facet set to a single value (a radio or a
+ * menu); an empty value clears that facet.
+ *
+ * @param {Record<string, Array<string>>} filters The choices.
+ * @param {string} label The facet.
+ * @param {string} value The value, or '' for all.
+ * @return {Record<string, Array<string>>}
+ * @spec openspec/changes/site-catalogue-follows-the-school-boards/specs/portaliq-cms/spec.md#requirement-the-catalogue-block-reads-like-the-search-boards
+ */
+export function chooseOne(filters, label, value) {
+	const next = { ...(filters || {}) }
+	if (String(value || '') === '') {
+		delete next[label]
+	} else {
+		next[label] = [String(value)]
+	}
+	return next
+}
+
+/**
+ * The lines of a card in the `meta` style (boards Opleidingen and
+ * Cursusaanbod): no kind label above the title; under the summary the first
+ * meta part as a label ("Niveau 4", "Basis"), then the rest.
+ *
+ * @param {{meta: Array<string>}} card The card.
+ * @return {{pill: string, rest: Array<string>}}
+ * @spec openspec/changes/site-catalogue-follows-the-school-boards/specs/portaliq-cms/spec.md#requirement-the-catalogue-block-reads-like-the-search-boards
+ */
+export function metaLine(card) {
+	const meta = Array.isArray(card?.meta) ? card.meta.filter(Boolean) : []
+	return { pill: meta[0] || '', rest: meta.slice(1) }
 }

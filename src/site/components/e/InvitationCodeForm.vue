@@ -16,9 +16,9 @@
 		class="pq-account__code"
 		aria-labelledby="pq-account-code"
 		data-testid="invitation-code">
-		<h3 id="pq-account-code" class="utrecht-heading-3">
+		<h2 id="pq-account-code" class="utrecht-heading-4">
 			{{ t('Code from a letter') }}
-		</h3>
+		</h2>
 		<p class="utrecht-paragraph">
 			{{
 				t(
@@ -122,8 +122,31 @@ export default {
 </script>
 
 <style scoped>
+/* The code from a letter stands apart on the grey surface. */
+.pq-account__code {
+	background: var(--nldesign-color-surface, #f4f6f9);
+	border-radius: var(--nldesign-website-border-radius-large, 6px);
+	padding: var(--utrecht-space-block-lg, 1.25rem)
+		var(--utrecht-space-inline-lg, 1.5rem);
+}
+
 .pq-account__code > * + * {
 	margin-block-start: var(--utrecht-space-block-sm, 0.5rem);
+}
+
+.pq-account__code .utrecht-heading-4 {
+	margin-block: 0;
+}
+
+.pq-account__add {
+	align-items: end;
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--utrecht-space-inline-sm, 0.5rem);
+}
+
+.pq-account__add .utrecht-form-label {
+	flex-basis: 100%;
 }
 
 .pq-e-error {

@@ -11,17 +11,17 @@
 ## 2. Generation — dark variants and fonts
 
 - [x] 2.1 ~~Link `css/tokens/dark/<id>.css`~~ **Withdrawn on measurement, and the withdrawal is the deliverable.** Implemented, rendered and measured twice: the artefact as generated changed **0 of 1,152,000 pixels**; after `nldesign` was fixed (see 2.5) it changed 53% and left **10 of 11 text nodes below 4.5:1**. This site has no token-driven surface layer. Backed out, with the numbers recorded in `templates/site.php` and pinned by a test so re-adding the line is deliberate.
-- [ ] 2.2 Respect the instance's dark-mode toggle the same way `CssInjectionService` does; a portal must not invent a second switch. **Blocked on 2.6.**
+- [ ] 2.2 Respect the instance's dark-mode toggle the same way `CssInjectionService` does; a portal must not invent a second switch. **Blocked on 2.6.** — not run: waits on the token-driven surface layer
 - [x] 2.3 Consume `FontService` for the theme's declared fonts instead of `portaliq/css/nlds/nlds-fonts.css`, which currently re-declares faces by hand because the vendored CSS carried root-relative urls. Built 2026-09-29: `templates/site.php` links the theme app's public `font#css` route (`PortalThemeResolver::fontStylesheetRoute()`, only when the installed build has `FontController`). It does NOT replace `nlds-fonts.css`: that file serves the vendored design system's own faces, a different set (see the reference commit 19fbcd6).
-- [ ] 2.4 Test: with a generated dark variant present, a `prefers-color-scheme: dark` visitor gets it. **Blocked on 2.6.**
+- [ ] 2.4 Test: with a generated dark variant present, a `prefers-color-scheme: dark` visitor gets it. **Blocked on 2.6.** — not run: waits on the token-driven surface layer
 - [x] 2.5 Fix the generator in `nldesign` — three defects found by chasing the 0-pixel result, each of which produced output that reads as a successful run (ConductionNL/nldesign#353): `var()` aliases were never darkened (an alias declared on `:root` resolves there, and the dark block scopes to `body`, a descendant — so only 13 of 600 `--utrecht-*` tokens survived); text was classified as surface outside the `--nldesign-*` naming convention; and `GENERATOR_VERSION` was stamped into every header and read by nothing, so an algorithm fix regenerated **0 of 41 sets**.
-- [ ] 2.6 Give the site a token-driven surface layer — bands, cards and the page itself. Painting `body` from `--utrecht-document-*` is verified harmless (0 pixels changed in light mode) and insufficient alone: the inner bands stayed white. This is the real prerequisite for dark mode, and it is a change to the site's own CSS, not to the theme app.
+- [ ] 2.6 Give the site a token-driven surface layer — bands, cards and the page itself. Painting `body` from `--utrecht-document-*` is verified harmless (0 pixels changed in light mode) and insufficient alone: the inner bands stayed white. This is the real prerequisite for dark mode, and it is a change to the site's own CSS, not to the theme app. Tracked as task 2 of `portal-theme-blocks-and-contributed-pages` (`css/site-theme.css` exists and is now held token-only by stylelint); the dark-mode measurement is not run: needs a browser.
 
 ## 3. Contrast and compliance — at adoption time, not after a review
 
 - [x] 3.1 Call `ContrastController` for the adopted theme and record the verdict against the portal. Built as `lib/Service/Theme/PortalThemeContrast.php`, which calls thematiq's `ContrastService` in process (the controller needs a session) over `PortalThemeResolver::tokenValuesFor()`; the verdict is shown per set and returned with every save rather than stored.
 - [x] 3.2 Refuse — or loudly warn on — a theme whose own tokens fail AA for the surfaces a portal actually paints (bands, cards, footer). The save is refused with the failing tokens until the administrator confirms ("Use it anyway"). Surfaces judged: page and footer, the two painted from a token; bands and cards have no token of their own until task 2.6.
-- [ ] 3.3 Add the portal's own rendered surfaces to the check, walking to the first ancestor that PAINTS a background. Comparing against the nearest NAMED band produced a false failure in this codebase once already, and the "fix" for it made a working form invisible.
+- [ ] 3.3 Add the portal's own rendered surfaces to the check, walking to the first ancestor that PAINTS a background. Comparing against the nearest NAMED band produced a false failure in this codebase once already, and the "fix" for it made a working form invisible. — not run: needs a browser (the rendered-page check)
 - [x] 3.4 Test: a deliberately low-contrast token set is rejected/flagged; a compliant one passes. `tests/Unit/Service/Theme/PortalThemeContrastTest.php` and `PortalThemeChoiceTest.php` over thematiq's real `ContrastService` (verbatim copy in `tests/Stubs/Thematiq`), `tests/portal-theme-choice.spec.mjs`.
 
 ## 4. Sharing — adopt a theme that came from elsewhere
@@ -33,8 +33,8 @@
 
 ## 5. Documentation
 
-- [ ] 5.1 Record in `nldesign` that portals are a consumer of the catalogue, the dark variants and the shareable config type — the docs currently describe the Nextcloud UI only.
-- [ ] 5.2 Update ADR-086 §6 ("Portaliq ships NO theming mechanism of its own") to state what it now consumes instead.
+- [ ] 5.1 Record in `nldesign` that portals are a consumer of the catalogue, the dark variants and the shareable config type — the docs currently describe the Nextcloud UI only. — not run: needs the theme app repo (the reference note says thematiq#357 merged it)
+- [ ] 5.2 Update ADR-086 §6 ("Portaliq ships NO theming mechanism of its own") to state what it now consumes instead. — not run: ADR-086 has no file here; the statement goes in `openspec/specs/portaliq-cms/spec.md` when this change is archived, and archiving is not part of this batch
 
 ## Reference implementation, not merged
 

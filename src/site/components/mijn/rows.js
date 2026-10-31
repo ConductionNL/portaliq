@@ -154,6 +154,34 @@ function limitOf(block) {
 }
 
 /**
+ * A sentence with `{field}` places filled from a row, or '' when a place
+ * stays empty, so a half sentence never shows (lookup-by-row-field).
+ *
+ * @param {string|undefined} template The block's `titleTemplate`.
+ * @param {object} row The row, with its looked-up values.
+ * @return {string} The sentence, or ''.
+ * @spec openspec/changes/lookup-by-row-field/specs/portal-contribution-contract/spec.md#requirement-a-task-may-be-titled-by-a-sentence-with-fields
+ */
+export function filledTemplate(template, row) {
+	if (typeof template !== 'string' || template === '') {
+		return ''
+	}
+	let empty = false
+	const out = template.replace(/\{([A-Za-z_][A-Za-z0-9_]*)\}/g, (match, name) => {
+		const value = row?.[name]
+		const text =
+			typeof value === 'string' || typeof value === 'number'
+				? String(value).trim()
+				: ''
+		if (text === '') {
+			empty = true
+		}
+		return text
+	})
+	return empty ? '' : out
+}
+
+/**
  * The rows of a `tasks` block: titled by its title fields, soonest deadline
  * first, rows without a deadline after them, at most its limit.
  *
@@ -185,7 +213,8 @@ export function taskRows(rows, block, collection) {
 		.map((row) => ({
 			id: idOf(row),
 			title:
-				titleFields
+				filledTemplate(block?.titleTemplate, row)
+				|| titleFields
 					.map((field) => row[field])
 					.filter(
 						(value) => typeof value === 'string' && value.trim() !== '',

@@ -138,6 +138,50 @@ class SchemaInputHintNormaliserTest extends TestCase {
 	}//end testOneOfTitlesLabelTheOptions()
 
 	/**
+	 * A number, an integer and a yes/no property name their value type, so
+	 * the site sends `8` and not `"8"` (site-action-forms). A string or a
+	 * date names none, and a field outside the whitelist gets nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-form-must-send-each-value-in-the-type-its-field-declares
+	 */
+	public function testANumberAnIntegerAndABooleanNameTheirValueType(): void {
+		$schemaReader = $this->createMock(PortalSchemaReader::class);
+		$schemaReader->method('readSchema')->with('bpv-hour-week')->willReturn(
+			[
+				'properties' => [
+					'hoursSubmitted' => ['type' => 'number'],
+					'weekCount'      => ['type' => 'integer'],
+					'final'          => ['type' => 'boolean'],
+					'isoWeek'        => ['type' => 'string'],
+					'workedOn'       => ['type' => 'string', 'format' => 'date'],
+					'hoursApproved'  => ['type' => 'number'],
+				],
+			]
+		);
+		$action = [
+			'id'           => 'submitHourWeek',
+			'type'         => 'create',
+			'schema'       => 'bpv-hour-week',
+			'fields'       => ['hoursSubmitted', 'weekCount', 'final', 'isoWeek', 'workedOn'],
+			'fieldConfigs' => ['hoursSubmitted' => ['label' => 'Hours you worked']],
+		];
+
+		$out = (new PortalManifestNormaliser($schemaReader))->normalise(['collections' => [], 'actions' => [$action]]);
+		$configs = $out['actions'][0]['fieldConfigs'];
+
+		$this->assertSame('number', $configs['hoursSubmitted']['valueType']);
+		$this->assertSame('number', $configs['hoursSubmitted']['input']);
+		$this->assertSame('Hours you worked', $configs['hoursSubmitted']['label']);
+		$this->assertSame('integer', $configs['weekCount']['valueType']);
+		$this->assertSame('boolean', $configs['final']['valueType']);
+		$this->assertArrayNotHasKey('isoWeek', $configs);
+		$this->assertArrayNotHasKey('valueType', $configs['workedOn']);
+		$this->assertArrayNotHasKey('hoursApproved', $configs);
+	}//end testANumberAnIntegerAndABooleanNameTheirValueType()
+
+	/**
 	 * Without a readable schema the action is unchanged.
 	 *
 	 * @return void

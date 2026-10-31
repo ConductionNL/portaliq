@@ -55,13 +55,13 @@
       /portal/api/contributions` lists the demo contribution. — DEFERRED:
       needs a running Nextcloud + OpenRegister instance with the dev-login
       gate open; not run as part of this apply pass (isolated worktree, no
-      live instance available). Left as an explicit gap, not faked.
+      live instance available). Left as an explicit gap, not faked. — not run: needs a live instance
 - [ ] 4.2 Load an entitled collection → assert 200 + rendered rows in the DOM.
-      — DEFERRED, same reason as 4.1.
+      — DEFERRED, same reason as 4.1. — not run: needs a live instance
 - [ ] 4.3 Attempt a non-entitled `(register, schema)` combination directly
-      against the API → assert 403. — DEFERRED, same reason as 4.1.
+      against the API → assert 403. — DEFERRED, same reason as 4.1. — not run: needs a live instance
 - [ ] 4.4 Perform a `type: create` action → assert the new row appears after
-      the collection reload. — DEFERRED, same reason as 4.1.
+      the collection reload. — DEFERRED, same reason as 4.1. — not run: needs a live instance
 
 ## 5. Gates
 
@@ -71,5 +71,5 @@
       not run standalone in this pass (time-boxed).
 - [ ] 5.2 Run Hydra gates (spec-coverage, e2e-coverage, spdx-headers) before
       push. — not run as part of this apply pass (process/review step); flag
-      for the PR review stage. Note: e2e-coverage will legitimately flag the
+      for the PR review stage. — not run: hydra gates need a base ref and the full vendor tree; the gate scripts are not available in this build session. Note: e2e-coverage will legitimately flag the
       deferred Playwright spec above.

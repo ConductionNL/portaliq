@@ -32,9 +32,10 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Contribution;
 
 /**
- * Adds `input` hints and enum options from the action's schema.
+ * Adds `input` hints, value types and enum options from the action's schema.
  *
  * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
+ * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-form-must-send-each-value-in-the-type-its-field-declares
  */
 class SchemaInputHintNormaliser {
 	/**
@@ -61,6 +62,12 @@ class SchemaInputHintNormaliser {
 	];
 
 	/**
+	 * The JSON-schema types the site sends as something other than a string
+	 * (site-action-forms): their `valueType`.
+	 */
+	private const VALUE_TYPES = ['integer', 'number', 'boolean'];
+
+	/**
 	 * Add the schema's hints to an action's field configs and options.
 	 *
 	 * @param array<string, mixed>      $action     The action, after its field configs and providers were normalised.
@@ -84,6 +91,7 @@ class SchemaInputHintNormaliser {
 			}
 
 			$action = $this->withInput(action: $action, field: $field, property: $property);
+			$action = $this->withValueType(action: $action, field: $field, property: $property);
 			$action = $this->withEnumOptions(action: $action, field: $field, property: $property);
 		}
 
@@ -130,6 +138,31 @@ class SchemaInputHintNormaliser {
 		$action['fieldConfigs'] = $configs;
 		return $action;
 	}//end withInput()
+
+	/**
+	 * Set the field's `valueType` from its schema type, so the site sends an
+	 * integer, a number or a boolean as one and not as a string. A string
+	 * field gets none: the site sends text by default.
+	 *
+	 * @param array<string, mixed> $action   The action.
+	 * @param string               $field    The field.
+	 * @param array<string, mixed> $property The schema property.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-form-must-send-each-value-in-the-type-its-field-declares
+	 */
+	private function withValueType(array $action, string $field, array $property): array {
+		$type = ($property['type'] ?? null);
+		if (is_string($type) === false || in_array($type, self::VALUE_TYPES, true) === false) {
+			return $action;
+		}
+
+		$configs = $this->configs(action: $action);
+		$configs[$field] = array_merge(($configs[$field] ?? ['size' => 'medium']), ['valueType' => $type]);
+		$action['fieldConfigs'] = $configs;
+		return $action;
+	}//end withValueType()
 
 	/**
 	 * Offer the property's enum as static options, unless the manifest already

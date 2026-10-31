@@ -30,6 +30,8 @@
 				v-for="item in upcoming"
 				:key="item.key"
 				class="pq-calendar-tiles__row"
+				:class="{ 'pq-calendar-tiles__row--today': isToday(item) }"
+				:aria-current="isToday(item) ? 'date' : undefined"
 				data-testid="mijn-calendar-tile">
 				<DateTile :date="dayOf(item.start)" :locale="locale" />
 				<span class="pq-calendar-tiles__text">
@@ -76,6 +78,11 @@ export default {
 		level: { type: Number, default: 2 },
 		/** Today; a test passes a fixed day. */
 		today: { type: Date, default: () => new Date() },
+		/**
+		 * The block's range: with `month`, the tiles start at this week's
+		 * Monday, not at today (month-keeps-this-week).
+		 */
+		range: { type: String, default: '' },
 		/** The site translator. */
 		t: { type: Function, default: null },
 		/** The page language. */
@@ -97,11 +104,33 @@ export default {
 		},
 
 		/**
+		 * The first day the tiles show: today, or with the month range this
+		 * week's Monday, so a Thursday visitor still sees Monday to Wednesday
+		 * (month-keeps-this-week). The block's range has already kept the
+		 * items inside this month.
+		 *
+		 * @return {Date} The day.
+		 * @spec openspec/changes/month-keeps-this-week/specs/site-mijn-omgeving/spec.md#requirement-this-month-keeps-this-weeks-past-days
+		 */
+		fromDay() {
+			const day = new Date(
+				this.today.getFullYear(),
+				this.today.getMonth(),
+				this.today.getDate(),
+			)
+			if (this.range !== 'month') {
+				return day
+			}
+			const back = (day.getDay() + 6) % 7
+			return new Date(day.getFullYear(), day.getMonth(), day.getDate() - back)
+		},
+
+		/**
 		 * @return {Array<object>} What is coming, at most the limit.
 		 * @spec openspec/changes/site-school-blocks/specs/portal-contribution-contract/spec.md#requirement-the-overview-blocks-may-take-the-school-displays
 		 */
 		upcoming() {
-			return upcomingItems(this.items, this.today).slice(
+			return upcomingItems(this.items, this.fromDay).slice(
 				0,
 				Math.min(MAX_TILES, Math.max(1, this.limit)),
 			)
@@ -109,6 +138,18 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * Whether an item runs today: its tile is marked as today.
+		 *
+		 * @param {{start: Date, end: Date}} item An item.
+		 * @return {boolean} True on today.
+		 * @spec openspec/changes/month-keeps-this-week/specs/site-mijn-omgeving/spec.md#requirement-this-month-keeps-this-weeks-past-days
+		 */
+		isToday(item) {
+			const key = this.dayOf(this.today)
+			return this.dayOf(item.start) <= key && this.dayOf(item.end) >= key
+		},
+
 		/**
 		 * @param {Date} date A day.
 		 * @return {string} It as `YYYY-MM-DD`, in local time.
@@ -125,6 +166,13 @@ export default {
 <style scoped>
 .pq-calendar-tiles {
 	margin-block-end: var(--utrecht-space-block-lg, 1.5rem);
+}
+
+/* Today's tile: the set's accent line at its start (month-keeps-this-week). */
+.pq-calendar-tiles__row--today {
+	box-shadow: inset 4px 0 0
+		var(--thematiq-accent-color, var(--nldesign-color-primary, currentcolor));
+	padding-inline-start: 0.75rem;
 }
 
 .pq-calendar-tiles__list {

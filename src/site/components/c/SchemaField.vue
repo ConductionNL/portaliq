@@ -118,6 +118,7 @@
 			:id="id"
 			class="utrecht-textarea utrecht-textarea--html-textarea"
 			:class="{ 'utrecht-textarea--invalid': error !== '' }"
+			:rows="rows"
 			:value="modelValue"
 			:placeholder="config.placeholder || undefined"
 			:disabled="config.disabled === true"
@@ -186,7 +187,7 @@ export default {
 		field: { type: String, required: true },
 		/** The visible label. */
 		label: { type: String, required: true },
-		/** The field config (`required`, `size`, `placeholder`, `help`, `disabled`, file keys). */
+		/** The field config (`required`, `size`, `rows`, `placeholder`, `help`, `disabled`, file keys). */
 		config: { type: Object, default: () => ({}) },
 		/** The input kind, from `fieldInput()`. */
 		input: { type: String, default: 'text' },
@@ -230,6 +231,19 @@ export default {
 			return ['small', 'medium', 'large', 'full'].includes(this.config.size)
 				? this.config.size
 				: 'medium'
+		},
+
+		/**
+		 * A textarea's height in lines: the config's `rows`, else seven, so a
+		 * long answer has room before it scrolls.
+		 *
+		 * @return {number} The rows.
+		 *
+		 * @spec exclude presentation default of a textarea, no behavioural requirement
+		 */
+		rows() {
+			const rows = Number(this.config.rows)
+			return Number.isInteger(rows) && rows > 0 ? rows : 7
 		},
 
 		/**

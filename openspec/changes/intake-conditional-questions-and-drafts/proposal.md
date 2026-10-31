@@ -106,3 +106,7 @@ of two or more competitors rated `yes`.
 - **ConductionNL/nextcloud-vue** re-exports `evaluateVisibleWhenLocal` from
   its package root. Today it is exported from `src/utils/index.js` but not
   from `src/index.js`, so the React embed would import it by deep path.
+
+## Amended by submit-creates-the-case-directly (decision 179)
+
+Amended by `submit-creates-the-case-directly` (decisions 179, 180): REQ-ICQ-005's draft is the destination object itself in OpenRegister status `draft`, not a `portalDraft` row. It may miss required answers, never hold a type-invalid one, and leaves draft only through the submit. Open PR #1152 follows the same rule. Building it waits on question Q-portaliq-d179-1 (a portal resident is not a Nextcloud user, and OpenRegister's draft belongs to a user).

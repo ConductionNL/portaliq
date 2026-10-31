@@ -56,7 +56,7 @@
 				<a
 					class="ac-c-navigation__link-container pq-menu__link"
 					:href="item.href || item.link"
-					:aria-current="isCurrent(item.link) ? 'page' : undefined"
+					:aria-current="currentOf(item.link)"
 					:aria-expanded="
 						hasChildren(item) ? String(open === item.name) : undefined
 					"
@@ -104,6 +104,8 @@
 </template>
 
 <script>
+import { menuCurrent } from '../lib/menuCurrent.js'
+
 export default {
 	name: 'SiteMenu',
 
@@ -216,6 +218,19 @@ export default {
 		 */
 		isCurrent(link) {
 			return link === this.currentRoute
+		},
+
+		/**
+		 * The `aria-current` of a top-level item: `page` for the page itself,
+		 * `true` for the section the page sits in, so "Praktisch" is marked on
+		 * "Uw kind afwezig melden" as the design draws it.
+		 *
+		 * @param {string} link The item's link.
+		 * @return {'page'|'true'|undefined} The value.
+		 * @spec openspec/changes/site-page-layout/specs/site-look/spec.md#requirement-the-menu-must-mark-the-section-of-the-page-on-screen
+		 */
+		currentOf(link) {
+			return menuCurrent(link, this.currentRoute)
 		},
 	},
 }

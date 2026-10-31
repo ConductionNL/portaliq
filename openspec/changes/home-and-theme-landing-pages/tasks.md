@@ -12,14 +12,14 @@ say so in the PR body. Write in the PR body the exact keys the merged routes ans
 
 ## 1. The locked facet
 
-- [ ] 1.1 `lockedFilters` on the block and in `buildRequestUrl()`; chips without remove; field left out of
+- [x] 1.1 `lockedFilters` on the block and in `buildRequestUrl()`; chips without remove; field left out of — done. The red run on `origin/development` was not made; the helpers do not exist there
   the facets and of `writeSearchState()` (REQ-HTL-001).
   - **fails today**: node test `tests/federated-search.spec.mjs` `a locked filter is always sent`,
     `a locked field is not offered as a facet`, `a locked filter is not written to the address`.
 
 ## 2. The subject page
 
-- [ ] 2.1 Route `/onderwerp/{slug}` in the site router and a `SubjectLandingPage` component reading the
+- [x] 2.1 Route `/onderwerp/{slug}` in the site router and a `SubjectLandingPage` component reading the — the subject page is the widget `nlSubjectLanding` on a CMS page `/onderwerp` (the same way `/publicatie/<id>` works), not a router change, because the site entry has no room for one. A missing subject renders a not-found message in the widget; the HTTP status is the CMS page's. The e2e test is not run: needs the dev rig and opencatalogi's merged routes. The contract fixture is built from the proposal, not copied from a merged opencatalogi
   subject route and mounting the search block locked to it; 404 through the not-found page when the
   read answers 404 or no public subject (REQ-HTL-002).
   - node test `tests/subject-landing.spec.mjs` (wire into `check:specs`): `the subject's image, title
@@ -31,7 +31,7 @@ say so in the PR body. Write in the PR body the exact keys the merged routes ans
 
 ## 3. Featured subjects
 
-- [ ] 3.1 Widget `featuredSubjects` (label "Uitgelichte onderwerpen") with an author field for the count;
+- [x] 3.1 Widget `featuredSubjects` (label "Uitgelichte onderwerpen") with an author field for the count; — the key is `nlFeaturedSubjects`: the registry requires an `nl` prefix
   filters rows on `featured === true` client-side as well, so an older opencatalogi that ignores the
   query parameter shows nothing rather than everything (REQ-HTL-003).
   - **fails today** (widget absent): node test `tests/widget-registry.spec.mjs`
@@ -40,7 +40,7 @@ say so in the PR body. Write in the PR body the exact keys the merged routes ans
 
 ## 4. Live counts
 
-- [ ] 4.1 Widget `portalCounts` (label "Wat we publiceren, in aantallen"), author picks category, subject
+- [x] 4.1 Widget `portalCounts` (label "Wat we publiceren, in aantallen"), author picks category, subject — the key is `nlPortalCounts`. The per-year count uses a `date_histogram` facet that is not checked against a running opencatalogi. The e2e test is not run: needs the dev rig
   or year. One search request with `_limit=0` and the facet, made with `credentials: 'omit'`; each
   bucket links to the search page with the filter set; a missing bucket is left out (REQ-HTL-004).
   - **fails today** (widget absent): node test `tests/portal-counts.spec.mjs` (wire into

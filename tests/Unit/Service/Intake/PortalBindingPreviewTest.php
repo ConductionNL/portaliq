@@ -41,6 +41,25 @@ class PortalBindingPreviewTest extends TestCase {
 	}//end previewAnswering()
 
 	/**
+	 * submit-creates-the-case-directly REQ-PIFO-007: the preview shows the
+	 * findings the publish check would refuse on, from the same check.
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-form-binding-names-its-destination-and-is-valid-against-it-req-pifo-007
+	 */
+	public function testAResolvedBindingShowsWhatStopsItBeingPublished(): void {
+		$resolver = $this->getMockBuilder(PortalFormBindingResolver::class)->disableOriginalConstructor()->onlyMethods(['render'])->getMock();
+		$resolver->method('render')->willReturn(['kind' => 'hosted', 'resolvesToNoForm' => false, 'formName' => 'Bezwaar']);
+		$finding = ['property' => 'communicationChannel', 'code' => 'required-unmapped', 'message' => 'Nobody asks for it.'];
+		$intake  = $this->createMock(\OCA\Portaliq\Service\Intake\DestinationIntake::class);
+		$intake->expects($this->once())->method('check')->willReturn([$finding]);
+
+		$described = (new PortalBindingPreview(resolver: $resolver, intake: $intake))->describe(binding: ['status' => 'draft']);
+
+		$this->assertSame([$finding], $described['findings']);
+		$this->assertSame([], $this->previewAnswering(render: ['kind' => 'hosted', 'resolvesToNoForm' => false, 'formName' => 'X'])->describe(binding: [])['findings']);
+	}//end testAResolvedBindingShowsWhatStopsItBeingPublished()
+
+	/**
 	 * A healthy binding names the form it opens.
 	 *
 	 * @return void

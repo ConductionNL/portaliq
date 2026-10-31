@@ -21,8 +21,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\CaseTypeReader;
-use OCA\Portaliq\Service\ExampleResident\ExampleResidentCatalogue;
-use OCA\Portaliq\Service\ExampleResident\ExampleResidentRecord;
+use OCA\Portaliq\Service\ExampleResident\ExampleSetResidents;
 use OCA\Portaliq\Service\Identity\PortalReferenceLinkService;
 use OCA\Portaliq\Service\Identity\PortalRegistrationPolicyService;
 use OCA\Portaliq\Service\Identity\PortalWaysInResolver;
@@ -493,23 +492,26 @@ class PortalRuntimeConfigResolverTest extends TestCase {
 
 
 	/**
-	 * With the switch off the site learns which way in the resident's install
-	 * added, so it can leave that demo card out; with the switch on, or on
-	 * another portal, it learns nothing.
+	 * The cards the site may draw: per resident its key, name and card, never
+	 * an account id; none while the switch is off or on another portal.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+	 * @spec openspec/changes/demo-sign-in-beside-the-account/specs/example-resident/spec.md#requirement-a-demo-may-sign-in-each-example-resident-with-one-click
 	 */
-	public function testTheResidentsWayInIsNamedWhileTheSwitchIsOff(): void {
+	public function testTheResidentsCardsAreOfferedOnlyWithTheSwitch(): void {
 		$zuiddrecht = ['slug' => 'zuiddrecht', 'organisation' => ''];
 		$off        = $this->demoResolver(switch: 'no');
 		$on         = $this->demoResolver(switch: 'yes');
 
-		$this->assertSame(expected: 'nextcloud', actual: $off->runtimeConfigFor(portal: $zuiddrecht, orgValue: '', locale: 'nl')['exampleResidentWayIn']);
-		$this->assertSame(expected: '', actual: $on->runtimeConfigFor(portal: $zuiddrecht, orgValue: '', locale: 'nl')['exampleResidentWayIn']);
-		$this->assertSame(expected: '', actual: $off->runtimeConfigFor(portal: ['slug' => 'other'], orgValue: '', locale: 'nl')['exampleResidentWayIn']);
-	}//end testTheResidentsWayInIsNamedWhileTheSwitchIsOff()
+		$this->assertSame(
+			expected: [['set' => 'zuiddrecht', 'key' => 'sanne', 'name' => 'Sanne de Vries', 'card' => []]],
+			actual: $on->runtimeConfigFor(portal: $zuiddrecht, orgValue: '', locale: 'nl')['exampleResidents']
+		);
+		$this->assertSame(expected: [], actual: $off->runtimeConfigFor(portal: $zuiddrecht, orgValue: '', locale: 'nl')['exampleResidents']);
+		$this->assertSame(expected: [], actual: $on->runtimeConfigFor(portal: ['slug' => 'other'], orgValue: '', locale: 'nl')['exampleResidents']);
+		$this->assertArrayNotHasKey(key: 'exampleResidentWayIn', array: $off->runtimeConfigFor(portal: $zuiddrecht, orgValue: '', locale: 'nl'));
+	}//end testTheResidentsCardsAreOfferedOnlyWithTheSwitch()
 
 
 	/**
@@ -532,13 +534,13 @@ class PortalRuntimeConfigResolverTest extends TestCase {
 				return (string)$default;
 			}
 		);
-		$record = $this->createMock(originalClassName: ExampleResidentRecord::class);
-		$record->method('read')->willReturn(
-			['userId' => 'sanne.devries', 'userCreated' => true, 'account' => 'a', 'signIn' => ['mode' => 'nextcloud', 'label' => true], 'objects' => []]
+		$residents = $this->createMock(originalClassName: ExampleSetResidents::class);
+		$residents->method('available')->willReturn(true);
+		$residents->method('residentsOf')->willReturnCallback(
+			static fn (string $portal): array => (
+				$portal === 'zuiddrecht' ? [['set' => 'zuiddrecht', 'key' => 'sanne', 'uid' => 'sanne.devries', 'name' => 'Sanne de Vries', 'card' => []]] : []
+			)
 		);
-		$catalogue = $this->createMock(originalClassName: ExampleResidentCatalogue::class);
-		$catalogue->method('ids')->willReturn(['zuiddrecht']);
-		$catalogue->method('find')->willReturn(['id' => 'zuiddrecht', 'portal' => 'zuiddrecht']);
 
 		return new PortalRuntimeConfigResolver(
 			portalResolver: $this->createMock(originalClassName: PortalResolver::class),
@@ -546,8 +548,7 @@ class PortalRuntimeConfigResolverTest extends TestCase {
 			themeResolver: $this->createMock(originalClassName: PortalThemeResolver::class),
 			config: $config,
 			waysIn: null,
-			exampleResidents: $record,
-			exampleCatalogue: $catalogue
+			exampleResidents: $residents
 		);
 	}//end demoResolver()
 
@@ -561,6 +562,18 @@ class PortalRuntimeConfigResolverTest extends TestCase {
 	public function testTheDevLoginIsOfferedOnlyWhereItIsEnabled(): void {
 		$closed = $this->resolver()->runtimeConfigFor(portal: null, orgValue: '', locale: 'nl');
 		$this->assertFalse($closed['devLogin']);
+
+		// Debug mode alone does not offer it (dev-login-only-when-switched-on).
+		$debug = $this->createMock(IConfig::class);
+		$debug->method('getSystemValueBool')->willReturn(true);
+		$debug->method('getAppValue')->willReturnCallback(static fn (string $app, string $key, mixed $default = ''): string => (string)$default);
+		$debugOnly = new PortalRuntimeConfigResolver(
+			$this->createMock(PortalResolver::class),
+			$this->orgResolverDouble(),
+			$this->createMock(PortalThemeResolver::class),
+			$debug
+		);
+		$this->assertFalse($debugOnly->runtimeConfigFor(portal: null, orgValue: '', locale: 'nl')['devLogin']);
 
 		$config = $this->createMock(IConfig::class);
 		$config->method('getSystemValueBool')->willReturn(false);
@@ -635,7 +648,7 @@ class PortalRuntimeConfigResolverTest extends TestCase {
 		$config = $this->waysInResolver(providers: [['provider' => 'generic', 'label' => 'E-mail']])
 			->runtimeConfigFor(portal: null, orgValue: 'gemeente-x', locale: 'nl');
 
-		$this->assertSame(['register' => false, 'reference' => false, 'emailSignIn' => '', 'referenceCaseTypes' => []], $config['waysIn']);
+		$this->assertSame(['register' => false, 'reference' => false, 'emailSignIn' => '', 'referenceCaseTypes' => [], 'emailLink' => false], $config['waysIn']);
 	}//end testNoPortalNoDoors()
 
 

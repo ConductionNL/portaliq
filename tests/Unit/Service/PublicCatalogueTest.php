@@ -149,6 +149,37 @@ class PublicCatalogueTest extends TestCase {
 		$this->assertSame(1, $catalogue->run($items, ['q' => 'één dag', 'types' => ['course']])['total'], 'accents do not matter');
 	}
 
+	/**
+	 * site-catalogue-follows-the-school-boards: "Soort" and "Voor wie" on
+	 * De Wilgenboom's news, asked for by the block.
+	 *
+	 * @spec openspec/changes/site-catalogue-follows-the-school-boards/specs/portal-public-catalogue/spec.md#requirement-a-catalogue-may-filter-by-kind-and-by-audience
+	 */
+	public function testABlockMayAskForAFacetByKindAndByAudience(): void {
+		$items = $this->catalogue(
+			answer: self::courses(),
+			news: [
+				['id' => 'n1', 'title' => 'Ouderavond', 'publishedAt' => '2026-10-01T09:00:00+00:00', 'audienceLabel' => 'hele school'],
+				['id' => 'n2', 'title' => 'Kinderboerderij', 'publishedAt' => '2026-09-30T09:00:00+00:00', 'audienceLabel' => 'groep 7'],
+			]
+		)->itemsFor('warmtepompacademie');
+		$query = new PublicCatalogueQuery();
+
+		$asked = $query->run($items, ['kindFacet' => ' Soort ', 'kindNews' => 'Nieuws', 'audienceFacet' => 'Voor wie']);
+		$byLabel = array_column($asked['facets'], 'values', 'label');
+		$this->assertSame([['value' => 'Nieuws', 'count' => 2, 'selected' => false], ['value' => 'Cursus', 'count' => 3, 'selected' => false], ['value' => 'Agenda', 'count' => 1, 'selected' => false]], $byLabel['Soort']);
+		$this->assertSame(['hele school', 'groep 7'], array_column($byLabel['Voor wie'], 'value'));
+
+		$news = $query->run($items, ['kindFacet' => 'Soort', 'kindNews' => 'Nieuws', 'filters' => ['Soort' => ['Nieuws']]]);
+		$this->assertSame(['news:n1', 'news:n2'], array_column($news['items'], 'id'));
+
+		$this->assertSame(['Plaats', 'Start in'], array_column($query->run($items, [])['facets'], 'label'), 'nothing asked, nothing added');
+		$this->assertSame(['Praktijkhal Zuiddrecht', 'Bij u op de zaak'], array_column(array_column($query->run($items, ['kindFacet' => 'Plaats', 'types' => ['course']])['facets'], 'values', 'label')['Plaats'], 'value'), 'a declared facet is not overwritten by the kind');
+
+		$endpoint = $this->controller(modes: ['public'])->index('warmtepompacademie', facetsBy: '{"kind":"Soort"}');
+		$this->assertContains('Soort', array_column($endpoint->getData()['facets'], 'label'));
+	}
+
 	public function testUpcomingSortAndPages(): void {
 		$catalogue = new PublicCatalogueQuery();
 		$items     = (new PublicIndexItems())->items('learniq', self::courses());

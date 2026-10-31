@@ -253,6 +253,40 @@ class LandingPageProvisioningServiceTest extends TestCase {
 		$this->assertSame('draft', $writes[1]['data']['status']);
 	}//end testAValidRequestCreatesAFormThenADraftPageAndFillsTheResultSlot()
 
+	/**
+	 * submit-creates-the-case-directly 3.2: the requesting app's destination
+	 * travels onto the form; without one the form carries none.
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/specs/landing-page-provisioning/spec.md#requirement-a-landing-pages-form-is-submittable-with-no-portal-session
+	 */
+	public function testTheRequestingAppsDestinationTravelsOntoTheForm(): void {
+		$this->willResolvePortal(['slug' => 'open-tilburg', 'status' => 'published', 'domains' => []]);
+		$forms = [];
+		$this->writer->method('createAnonymousObject')->willReturnCallback(
+			function (string $register, string $schema, array $data) use (&$forms): array {
+				if ($schema === 'form') {
+					$forms[] = $data;
+				}
+
+				return array_merge($data, ['id' => $schema . '-1']);
+			}
+		);
+
+		$form = [
+			'fields' => [['id' => 'email', 'label' => 'E-mail', 'type' => 'email']],
+			'submitLabel' => 'Aanmelden',
+			'destination' => ['register' => 'pipelinq', 'schema' => 'lead', 'fields' => ['email' => 'emailAddress', 'bad' => 3], 'fixed' => ['source' => 'landing'], 'other' => 'x'],
+		];
+		$this->service->provision(event: $this->event(['form' => $form]));
+		$this->service->provision(event: $this->event(['form' => ['destination' => ['register' => 'pipelinq']] + $form, 'route' => '/campagne/two']));
+
+		$this->assertSame(
+			['register' => 'pipelinq', 'schema' => 'lead', 'fields' => ['email' => 'emailAddress'], 'fixed' => ['source' => 'landing']],
+			$forms[0]['destination']
+		);
+		$this->assertArrayNotHasKey('destination', $forms[1]);
+	}//end testTheRequestingAppsDestinationTravelsOntoTheForm()
+
 	public function testCreatedPageIsAlwaysDraft(): void {
 		$this->willResolvePortal(['slug' => 'open-tilburg', 'status' => 'published', 'domains' => []]);
 

@@ -53,8 +53,24 @@ class AttachedActionResolver {
 	 * The action keys the target collection lists; never the endpoint.
 	 * `rowWhen` is listed so a renderer can leave the action off a row it does
 	 * not apply to; the forward checks it again on the row it read.
+	 * `optionsProviders` is listed because a choice field's options live
+	 * there and nowhere else: without it the form on the record asked every
+	 * choice as free text (zuiddrecht live test, 14 October 2026).
 	 */
-	private const LISTED = ['label', 'fields', 'fieldConfigs', 'submitLabel', 'successMessage', 'rowWhen', 'steps', 'confirmation', 'draft', 'summary'];
+	private const LISTED = [
+		'label',
+		'fields',
+		'fieldConfigs',
+		'optionsProviders',
+		'submitLabel',
+		'successMessage',
+		'rowWhen',
+		'steps',
+		'confirmation',
+		'draft',
+		'summary',
+		'answerSummary',
+	];
 
 	/**
 	 * Add each attaching action to the collections it names.
@@ -244,6 +260,8 @@ class AttachedActionResolver {
 	 * @param array<string, mixed> $action The action.
 	 *
 	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-form-attached-to-a-record-asks-and-sends-what-its-action-declares-req-eaf-002
 	 */
 	private function listedFor(string $app, array $action): array {
 		$listed = ['app' => $app, 'id' => $action['id']];

@@ -33,11 +33,16 @@
 				:t="t"
 				:send="sendOpen"
 				@submitted="afterSteps" />
+			<!-- Once sent, nothing is left to cancel: the form shows its
+			     confirmation and this closes it. -->
 			<button
 				type="button"
 				class="utrecht-button utrecht-button--subtle"
-				@click="open = null">
-				{{ translate('Cancel') }}
+				:data-testid="
+					sent ? 'attached-action-close' : 'attached-action-cancel'
+				"
+				@click="close">
+				{{ sent ? translate('Close') : translate('Cancel') }}
 			</button>
 		</div>
 
@@ -111,6 +116,7 @@ import {
 	fieldConfig,
 	fieldErrors,
 	formFields,
+	forwardResult,
 	serverFieldErrors,
 	translatorOr,
 } from './forms.js'
@@ -150,6 +156,7 @@ export default {
 			errors: {},
 			busy: false,
 			message: '',
+			sent: false,
 		}
 	},
 
@@ -223,23 +230,31 @@ export default {
 		 * result shape the action form reads.
 		 *
 		 * @param {object} body What the resident answered.
-		 * @return {Promise<{ok: boolean, object: object, errors: object}>} The result.
+		 * @param {{submissionKey?: string}} [options] The form's submission key (REQ-AFS-001).
+		 * @return {Promise<{ok: boolean, status: number, object: object, errors: object, invalid: object}>} The result.
 		 *
 		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
+		 * @spec openspec/specs/site-forms/spec.md#requirement-a-refusal-of-a-form-attached-to-a-record-lands-on-its-field-req-eaf-003
+		 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
 		 */
-		async sendOpen(body) {
+		async sendOpen(body, options = {}) {
 			const result = await runAttachedAction(
 				this.api,
 				this.collection,
 				this.row,
 				this.open,
 				body,
+				options,
 			)
-			return {
+			// The status and the app's per-field refusal (`errors`,
+			// `invalid`) go to the form as an endpoint form gets them
+			// (forwardResult), so a refused answer lands on its field instead
+			// of reading "Opslaan is niet gelukt".
+			return forwardResult({
 				ok: result.ok,
-				object: result.body,
-				errors: (result.body && result.body.errors) || {},
-			}
+				status: result.status,
+				body: result.body,
+			})
 		},
 
 		/**
@@ -252,6 +267,7 @@ export default {
 		 */
 		afterSteps() {
 			if (this.open && this.open.confirmation) {
+				this.sent = true
 				return
 			}
 			const success = this.open ? this.open.successMessage : ''
@@ -260,6 +276,19 @@ export default {
 					? success
 					: this.translate('Done.')
 			this.open = null
+		},
+
+		/**
+		 * Close the stepped form: before the send it is cancelled, after it the
+		 * confirmation is put away.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/attached-form-confirmation-drops-cancel/specs/site-forms/spec.md#requirement-a-sent-stepped-form-offers-no-cancel
+		 */
+		close() {
+			this.open = null
+			this.sent = false
 		},
 
 		/**
@@ -282,6 +311,7 @@ export default {
 		 */
 		choose(entry) {
 			this.open = entry
+			this.sent = false
 			this.values = Object.fromEntries(
 				formFields(entry).map((field) => [field, '']),
 			)

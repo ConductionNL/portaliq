@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use OCA\Portaliq\Service\CaseTypeReader;
+use OCA\Portaliq\Service\Identity\EmailLink\EmailLinkSetting;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 
 /**
@@ -52,12 +53,14 @@ class PortalWaysInResolver {
 	 * @param PortalFormBindingResolver $bindings The case types the portal binds.
 	 * @param CaseTypeReader $caseTypes Reads a bound case type.
 	 * @param PortalReferenceLinkService $references Whether a case type admits the reference kind.
+	 * @param EmailLinkSetting|null $emailLinks Whether the portal offers the e-mail link (sign-in-with-an-email-link).
 	 */
 	public function __construct(
 		private readonly PortalRegistrationPolicyService $policy,
 		private readonly PortalFormBindingResolver $bindings,
 		private readonly CaseTypeReader $caseTypes,
 		private readonly PortalReferenceLinkService $references,
+		private readonly ?EmailLinkSetting $emailLinks = null,
 	) {
 	}//end __construct()
 
@@ -67,10 +70,11 @@ class PortalWaysInResolver {
 	 * @param array<string, mixed> $portal The portal's own configuration row.
 	 * @param array<int, array<string, mixed>> $oidcProviders The sign-in buttons it offers.
 	 *
-	 * @return array{register: bool, reference: bool, emailSignIn: string, referenceCaseTypes: array<int, array<string, string>>}
+	 * @return array{register: bool, reference: bool, emailSignIn: string, referenceCaseTypes: array<int, array<string, string>>, emailLink: bool}
 	 *         `referenceCaseTypes` holds `register`, `schema`, `caseType` and `label` per case type.
 	 *
 	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T07
+	 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-an-e-mail-link-does-not-open-registration-req-iwi-014
 	 */
 	public function waysIn(array $portal, array $oidcProviders): array {
 		$emailSignIn = '';
@@ -88,6 +92,11 @@ class PortalWaysInResolver {
 			'reference' => $caseTypes !== [],
 			'emailSignIn' => $emailSignIn,
 			'referenceCaseTypes' => $caseTypes,
+			// The e-mail link (sign-in-with-an-email-link): only behind the
+			// instance switch AND the portal's own mode. It never counts as
+			// the e-mail sign-in above, so it never opens "Create an
+			// account" (REQ-IWI-014).
+			'emailLink' => $this->emailLinks?->offeredBy(portal: $portal) === true,
 		];
 	}//end waysIn()
 

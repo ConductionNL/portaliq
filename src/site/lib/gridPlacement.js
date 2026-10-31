@@ -102,3 +102,75 @@ export function ownBand(key, widget) {
 	}
 	return key === 'nlBanner' && widget?.props?.band === true
 }
+
+/**
+ * The page's aside column, when its body asks for one (`aside: {width, gap}`,
+ * in pixels): the right-hand column of a run is then that wide and the left
+ * one takes the rest, as the Zuiddrecht Home board draws its "Mijn
+ * Zuiddrecht" card beside the news. A width outside 160 to 640 is ignored.
+ *
+ * @param {object|null} body The page body.
+ * @return {{width: number, gap: number}|null} The aside, or null.
+ *
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
+ */
+export function asideOf(body) {
+	const aside = body && typeof body === 'object' ? body.aside : null
+	const width = Number(aside?.width)
+	if (!Number.isFinite(width) || width < 160 || width > 640) {
+		return null
+	}
+	const gap = Number(aside.gap)
+	return {
+		width,
+		gap: Number.isFinite(gap) && gap >= 0 && gap <= 160 ? gap : 48,
+	}
+}
+
+/**
+ * Whether a run is a main column beside an aside: something starts at the
+ * left edge narrower than the page, something ends at the right edge
+ * starting further in, and every other widget is full width.
+ *
+ * @param {Array<object>} widgets The run's placements.
+ * @return {boolean}
+ *
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
+ */
+export function isAsideRun(widgets) {
+	const cells = (widgets || []).map((widget) => cellOf(widget))
+	const main = cells.some((cell) => cell.gridX === 0 && cell.gridWidth < 12)
+	const side = cells.some(
+		(cell) => cell.gridX > 0 && cell.gridX + cell.gridWidth === 12,
+	)
+	const rest = cells.every(
+		(cell) =>
+			cell.gridWidth >= 12
+			|| (cell.gridX === 0)
+			|| cell.gridX + cell.gridWidth === 12,
+	)
+	return main && side && rest
+}
+
+/**
+ * Place one widget in a run laid out as main column and aside: a full-width
+ * widget spans both, one at the left edge takes the main column, the rest
+ * the aside. Rows are placed as `cellStyle` places them.
+ *
+ * @param {object} widget    The placement.
+ * @param {number} rowOffset The run's first authored row.
+ * @return {object} `{gridColumn, gridRow}` style bindings.
+ *
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
+ */
+export function asideCellStyle(widget, rowOffset = 0) {
+	const cell = cellOf(widget)
+	const { gridRow } = cellStyle(widget, rowOffset)
+	let gridColumn = '2'
+	if (cell.gridWidth >= 12) {
+		gridColumn = '1 / -1'
+	} else if (cell.gridX === 0) {
+		gridColumn = '1'
+	}
+	return { gridColumn, gridRow }
+}

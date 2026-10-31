@@ -29,6 +29,7 @@ import {
 	createStaffAccountActions,
 	createStaffAccountHandlers,
 } from '../src/lib/staffAccountActions.js'
+import { pageDraws } from './lib/placement.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -377,10 +378,9 @@ test('the account page and the portal page carry the withdraw and registration w
 	const registry = readFileSync(join(ROOT, 'src/registry.js'), 'utf8')
 	const account = page('PortalAccountDetail').config
 	assert.ok(account.widgets.some((w) => w.type === 'PortalAccountWithdraw'))
-	assert.ok(account.layout.some((l) => l.widgetId === account.widgets.find((w) => w.type === 'PortalAccountWithdraw').id))
+	assert.ok(pageDraws(account, 'PortalAccountWithdraw'))
 	const portal = page('PortalDetail').config
-	assert.ok(portal.widgets.some((w) => w.type === 'PortalRegistration'))
-	assert.ok(portal.layout.some((l) => l.widgetId === portal.widgets.find((w) => w.type === 'PortalRegistration').id))
+	assert.ok(pageDraws(portal, 'PortalRegistration'))
 	assert.match(registry, /PortalAccountWithdraw: \{/)
 	assert.match(registry, /PortalRegistration: \{/)
 })

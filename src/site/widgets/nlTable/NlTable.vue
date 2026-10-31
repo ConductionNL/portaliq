@@ -40,12 +40,21 @@
 				v-for="(row, index) in safeRows"
 				:key="index"
 				class="utrecht-table__row">
-				<td
+				<template
 					v-for="(cell, cellIndex) in row"
-					:key="`${index}-${cellIndex}`"
-					class="utrecht-table__cell">
-					{{ cell }}
-				</td>
+					:key="`${index}-${cellIndex}`">
+					<!-- The first cell names its row (boards Contentpagina): a
+					     row header, bold, read before each cell of the row. -->
+					<th
+						v-if="rowHeaders && cellIndex === 0"
+						class="utrecht-table__header-cell nl-table__row-header"
+						scope="row">
+						{{ cell }}
+					</th>
+					<td v-else class="utrecht-table__cell">
+						{{ cell }}
+					</td>
+				</template>
 			</tr>
 		</tbody>
 	</table>
@@ -68,6 +77,8 @@ export default {
 		display: { type: String, default: 'plain' },
 		/** Show the caption; off keeps it for screen readers only. */
 		captionVisible: { type: Boolean, default: true },
+		/** The first cell of each row names the row, in bold. */
+		rowHeaders: { type: Boolean, default: false },
 	},
 
 	computed: {
@@ -131,6 +142,20 @@ export default {
 }
 
 .nl-table--boxed .utrecht-table__body .utrecht-table__cell {
+	border-block-start: 1px solid
+		var(--nldesign-color-border-dark, var(--utrecht-color-grey-80, currentcolor));
+}
+
+/* A row header reads as a cell of its row, bold, on the row's own ground. */
+.nl-table__row-header {
+	background: none;
+	font-weight: 700;
+	text-align: start;
+}
+
+.nl-table--boxed .utrecht-table__body .nl-table__row-header {
+	padding: 0.75rem 1rem;
+	background: none;
 	border-block-start: 1px solid
 		var(--nldesign-color-border-dark, var(--utrecht-color-grey-80, currentcolor));
 }

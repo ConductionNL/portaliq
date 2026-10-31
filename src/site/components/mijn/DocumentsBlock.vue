@@ -19,7 +19,9 @@
 		<!-- With `upload` an outlined button beside the heading adds a
 		     document through the case screen's route
 		     (zuiddrecht-resident-pages-match-the-boards). -->
-		<div v-if="block.upload === true && api" class="pq-documents-block__head">
+		<div
+			v-if="block.upload === true && api && isCase"
+			class="pq-documents-block__head">
 			<component :is="`h${level}`" :id="headingId" class="utrecht-heading-3">
 				{{ heading }}
 			</component>
@@ -62,15 +64,39 @@
 			v-else-if="documents.length === 0"
 			:text="tr('There are no documents on this case yet.')" />
 		<template v-else>
-			<ul class="pq-documents-block__list">
-				<FileItem
-					v-for="entry in documents"
-					:key="entry.id"
-					:name="entry.title || entry.id"
-					:line="lineOf(entry)"
-					:busy="busyId === entry.id"
-					@open="openDocument(entry)" />
-			</ul>
+			<section
+				v-for="(group, g) in groups"
+				:key="`group-${g}`"
+				class="pq-documents-block__group"
+				data-testid="mijn-documents-group">
+				<component
+					:is="`h${Math.min(level + 1, 6)}`"
+					v-if="group.heading"
+					class="utrecht-heading-4 pq-documents-block__group-heading">
+					{{ group.heading }}
+				</component>
+				<ul class="pq-documents-block__list">
+					<FileItem
+						v-for="entry in group.entries"
+						:key="entry.id"
+						:name="entry.title || entry.id"
+						:line="lineOf(entry)"
+						:busy="busyId === entry.id"
+						:isNew="entry.isNew === true"
+						:newLabel="tr('New')"
+						:status="
+							typeof entry.status === 'string' ? entry.status : ''
+						"
+						:statusState="stateOf(entry)"
+						@open="openDocument(entry)" />
+				</ul>
+			</section>
+			<p
+				v-if="block.note"
+				class="utrecht-paragraph pq-documents-block__note"
+				data-testid="mijn-documents-note">
+				{{ block.note }}
+			</p>
 			<p v-if="openFailed" class="utrecht-paragraph" role="alert">
 				{{ tr('The document could not be opened. Try again.') }}
 			</p>
@@ -83,7 +109,7 @@ import EmptyState from './EmptyState.vue'
 import FileItem from './FileItem.vue'
 import LoadError from './LoadError.vue'
 import Skeleton from './Skeleton.vue'
-import { fileLine } from './documents.js'
+import { fileLine, groupDocuments, statusState } from './documents.js'
 import { mijnTranslator } from './rows.js'
 
 /**
@@ -126,6 +152,17 @@ export default {
 
 	computed: {
 		/**
+		 * Whether the collection is a case collection, read through the case
+		 * screen's route; any other collection with `documents` reads its own.
+		 *
+		 * @return {boolean}
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t4
+		 */
+		isCase() {
+			return this.collection?.kind === 'cases'
+		},
+
+		/**
 		 * @return {(key: string, vars?: object) => string} The translator.
 		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
@@ -167,6 +204,10 @@ export default {
 		 * @return {Array<object>} The listed documents.
 		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
+		groups() {
+			return groupDocuments(this.documents, this.block?.groupBy)
+		},
+
 		documents() {
 			return Array.isArray(this.answer?.documents) ? this.answer.documents : []
 		},
@@ -211,7 +252,16 @@ export default {
 			this.failed = false
 			let answer
 			try {
-				answer = await this.api?.fetchCitizenCase?.(this.collection, id)
+				// A case reads its documents through the case screen's route;
+				// any other collection that declares `documents` through its own
+				// (site-member-voting-record-and-confidential-papers, T4).
+				answer = this.isCase
+					? await this.api?.fetchCitizenCase?.(
+							this.collection,
+							id,
+							this.record?._mandate?.id || '',
+						)
+					: await this.api?.fetchCollectionDocuments?.(this.collection, id)
 			} catch {
 				answer = null
 			}
@@ -228,7 +278,19 @@ export default {
 		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
 		lineOf(entry) {
-			return fileLine(entry, this.tr, this.locale)
+			// The provider's own line is shown as written.
+			return typeof entry?.meta === 'string' && entry.meta !== ''
+				? entry.meta
+				: fileLine(entry, this.tr, this.locale)
+		},
+
+		/**
+		 * @param {object} entry A document.
+		 * @return {string} The state of its status pill.
+		 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-2
+		 */
+		stateOf(entry) {
+			return statusState(entry)
 		},
 
 		/**
@@ -243,11 +305,10 @@ export default {
 			this.openFailed = false
 			let result
 			try {
-				result = await this.api?.downloadCitizenDocument?.(
-					this.collection,
-					this.recordId,
-					entry,
-				)
+				const download = this.isCase
+					? this.api?.downloadCitizenDocument
+					: this.api?.downloadCollectionDocument
+				result = await download?.(this.collection, this.recordId, entry)
 			} catch {
 				result = null
 			}

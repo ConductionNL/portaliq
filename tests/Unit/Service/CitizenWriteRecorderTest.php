@@ -310,12 +310,13 @@ class CitizenWriteRecorderTest extends TestCase {
 			$this->createMock(\OCA\Portaliq\Service\AuditTrailService::class),
 			$this->createMock(\OCP\EventDispatcher\IEventDispatcher::class)
 		);
-		$subject = array_merge(self::SUBJECT, ['actingForEntity' => 'kvk-subsidiary', 'actingUnderMandate' => 'mandate-1']);
+		$subject = array_merge(self::SUBJECT, ['actingForEntity' => 'kvk-subsidiary', 'actingUnderMandate' => 'mandate-1', 'actingForLabel' => 'Kramer voor Slagerij Van der Berg']);
 
 		$mandate = $recorder->mandate(action: self::ACTION, subject: $subject);
 
 		$this->assertSame('kvk-subsidiary', $mandate['actingFor']);
 		$this->assertSame('mandate-1', $mandate['mandate']);
+		$this->assertSame('Kramer voor Slagerij Van der Berg', $mandate['actingForLabel'], 'the case app names the party in words');
 
 	}//end testAWriteForAnEntityBelowTheMandateRecordsBoth()
 
@@ -329,6 +330,7 @@ class CitizenWriteRecorderTest extends TestCase {
 
 		$this->assertArrayNotHasKey('actingFor', $mandate);
 		$this->assertArrayNotHasKey('mandate', $mandate);
+		$this->assertArrayNotHasKey('actingForLabel', $mandate);
 
 	}//end testAnOrdinaryWriteNamesNoEntityAndNoMandate()
 }//end class

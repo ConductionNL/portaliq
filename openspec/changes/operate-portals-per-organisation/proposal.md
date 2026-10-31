@@ -82,6 +82,11 @@ The lane recorded all three as `build` on two or more competitors rated
   for a new organisation: the `portal` object, its host, its default menu
   and pages, and its authentication set to `public` until configured. It
   refuses a slug or host that another organisation already holds.
+- **Each organisation looks after its own portal** (REQ-OPO-005). A portal
+  names its `adminGroups`. Their members change that portal's settings,
+  look and pages, and see no other portal. The hosting party alone hands
+  out those groups, so an organisation gets the portal as a service without
+  running Nextcloud itself.
 
 ## Rows this closes
 
@@ -89,7 +94,7 @@ The lane recorded all three as `build` on two or more competitors rated
 |---|---|---|---|---|
 | portaliq | `ops-multitenancy-organisation` | Scope a portal session and its data to one organisation. | partial | A declared tenant scope for every schema, a fail-closed organisation check, and an end-to-end proof. |
 | portaliq | `cmp-ops-multitenant` | Run portals for several organisations on one installation, each with its own data. | partial | The same proof, across two portals on two hosts on one installation. |
-| portaliq | `cmp-ops-saas` | Get the portal as a hosted service rather than running it yourself. | no | A provisioning step a hosting party can script for each new organisation. |
+| portaliq | `cmp-ops-saas` | Get the portal as a hosted service rather than running it yourself. | no | A provisioning step a hosting party can script for each new organisation, and an organisation that runs its own portal without instance rights (REQ-OPO-005). |
 
 ## Existing work it builds on
 

@@ -23,6 +23,22 @@
 		<p class="utrecht-paragraph">
 			{{
 				t(
+					'Who may arrange matters for you, and for whom you arrange matters.',
+				)
+			}}
+		</p>
+
+		<!-- Board Machtigingen (site-mandates-the-represented-manage T4): who
+		     may act for you, and on whose behalf you work. -->
+		<MandatesGiven :api="api" :t="t" :portal="portal" :locale="locale" />
+		<MandatesHeld :api="api" :t="t" :portal="portal" :locale="locale" />
+
+		<h2 class="utrecht-heading-3">
+			{{ t('Ask for access') }}
+		</h2>
+		<p class="utrecht-paragraph">
+			{{
+				t(
 					'Ask for access to the cases of a company or person you act for. The organisation answers your request.',
 				)
 			}}
@@ -33,11 +49,17 @@
 				<label for="access-request-party" class="utrecht-form-label">
 					{{ t('Whose cases do you need access to?') }}
 				</label>
+				<div
+					id="access-request-party-help"
+					class="utrecht-form-field-description">
+					{{ t('For example the name or the KvK number of a company') }}
+				</div>
 				<input
 					id="access-request-party"
 					v-model="draft.onBehalfOf"
 					class="utrecht-textbox"
 					name="onBehalfOf"
+					aria-describedby="access-request-party-help"
 					data-testid="access-request-party" />
 			</div>
 			<div class="utrecht-form-field">
@@ -49,6 +71,7 @@
 					v-model="draft.reason"
 					class="utrecht-textarea"
 					name="reason"
+					rows="3"
 					data-testid="access-request-reason" />
 			</div>
 
@@ -76,7 +99,7 @@
 			</button>
 		</form>
 
-		<h3 class="utrecht-heading-3">
+		<h3 class="utrecht-heading-4">
 			{{ t('Your requests') }}
 		</h3>
 		<p v-if="loading" class="utrecht-paragraph" role="status">
@@ -88,21 +111,23 @@
 			data-testid="access-requests-empty">
 			{{ t('You have not asked for access yet.') }}
 		</p>
-		<ul
-			v-else
-			class="utrecht-unordered-list pq-access__list"
-			data-testid="access-requests-list">
+		<ul v-else class="pq-access__list" data-testid="access-requests-list">
 			<li
 				v-for="(request, index) in sorted"
 				:key="request.id || request.uuid || `request-${index}`"
-				class="utrecht-unordered-list__item"
+				class="pq-access__request"
 				data-testid="access-request-row"
 				:data-state="request.state || 'pending'">
-				<strong>{{
+				<strong class="pq-access__party">{{
 					t('For {party}', { party: request.onBehalfOf || '' })
 				}}</strong>
-				<span>{{ t(stateLabel(request.state)) }}</span>
-				<span v-if="askedOn(request)">{{
+				<span
+					class="pq-access__pill"
+					:class="`pq-access__pill--${request.state || 'pending'}`"
+					data-testid="access-request-state"
+					>{{ t(stateLabel(request.state)) }}</span
+				>
+				<span v-if="askedOn(request)" class="pq-access__asked">{{
 					t('Asked on {date}', { date: askedOn(request) })
 				}}</span>
 				<p
@@ -112,10 +137,48 @@
 				</p>
 			</li>
 		</ul>
+
+		<section
+			class="utrecht-alert utrecht-alert--info pq-access__digid"
+			aria-labelledby="pq-access-digid"
+			data-testid="access-digid-machtigen">
+			<svg
+				class="pq-access__info"
+				viewBox="0 0 20 20"
+				aria-hidden="true"
+				focusable="false">
+				<circle
+					cx="10"
+					cy="10"
+					r="8"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.5" />
+				<path
+					d="M10 9v5M10 6v.5"
+					stroke="currentColor"
+					stroke-width="1.75"
+					stroke-linecap="round" />
+			</svg>
+			<div class="utrecht-alert__content">
+				<h2 id="pq-access-digid" class="pq-access__digid-title">
+					{{ t('Mandates through DigiD Machtigen') }}
+				</h2>
+				<p class="utrecht-paragraph">
+					{{
+						t(
+							'Did you authorise someone through DigiD Machtigen? You do not see that mandate here. You arrange and view it on digid.nl.',
+						)
+					}}
+				</p>
+			</div>
+		</section>
 	</section>
 </template>
 
 <script>
+import MandatesGiven from '../../components/e/MandatesGiven.vue'
+import MandatesHeld from '../../components/e/MandatesHeld.vue'
 import {
 	newestFirst,
 	requestProblem,
@@ -124,8 +187,13 @@ import {
 } from './accessRequests.js'
 import { longDate, readerLocale } from './format.js'
 
+import '@utrecht/alert-css/dist/index.css'
+import '@utrecht/form-field-description-css/dist/index.css'
+
 export default {
 	name: 'AccessRequestsPage',
+
+	components: { MandatesGiven, MandatesHeld },
 
 	props: {
 		/** The session as `/portal/api/session` returns it. */
@@ -237,6 +305,102 @@ export default {
 .pq-access > * + *,
 .pq-access__form > * + * {
 	margin-block-start: var(--utrecht-space-block-md, 1rem);
+}
+
+.pq-access__form .utrecht-textbox,
+.pq-access__form .utrecht-textarea {
+	inline-size: 100%;
+	max-inline-size: 32.5rem;
+}
+
+/* Each request a card: who it is for and its state as a pill on the first
+   line, the day it was asked under it. */
+.pq-access__list {
+	display: grid;
+	gap: var(--utrecht-space-block-xs, 0.5rem);
+	list-style: none;
+	padding: 0;
+}
+
+.pq-access__request {
+	align-items: center;
+	border: 1px solid
+		var(
+			--nldesign-website-card-border-color,
+			var(--nldesign-color-border, #d3d8df)
+		);
+	border-radius: var(--nldesign-website-border-radius, 4px);
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--utrecht-space-block-3xs, 0.25rem) var(--utrecht-space-inline-md, 1rem);
+	padding: 1rem 1.25rem;
+}
+
+.pq-access__party {
+	flex: 1 1 auto;
+}
+
+.pq-access__asked,
+.pq-access__request > .utrecht-paragraph {
+	flex-basis: 100%;
+	margin: 0;
+}
+
+.pq-access__pill {
+	border-radius: var(--nldesign-website-badge-border-radius, 14px);
+	font-size: 0.9375rem;
+	font-weight: var(--utrecht-typography-weight-scale-bold, 600);
+	line-height: 1.75rem;
+	padding-inline: 0.75rem;
+	white-space: nowrap;
+}
+
+.pq-access__pill--pending {
+	background: var(
+		--nldesign-component-status-badge-warning-background-color,
+		#fff4de
+	);
+	color: var(--nldesign-component-status-badge-warning-color, #7a4f00);
+}
+
+.pq-access__pill--granted {
+	background: var(
+		--nldesign-component-status-badge-success-background-color,
+		#e7f3ea
+	);
+	color: var(--nldesign-component-status-badge-success-color, #1e6b2a);
+}
+
+.pq-access__pill--refused {
+	background: var(
+		--nldesign-component-status-badge-error-background-color,
+		#fcedec
+	);
+	color: var(--nldesign-component-status-badge-error-color, #a30000);
+}
+
+/* The note about DigiD Machtigen: an info alert with its icon, the title in
+   the body size. */
+.pq-access__digid {
+	border: var(--nldesign-website-notice-border-width, 1px) solid
+		var(--nldesign-website-notice-border-color, #b9cbe2);
+	border-radius: var(--nldesign-website-border-radius, 4px);
+	display: flex;
+	gap: var(--utrecht-space-inline-sm, 0.75rem);
+	margin-block-start: var(--utrecht-space-block-xl, 2rem);
+}
+
+.pq-access__info {
+	block-size: 1.25rem;
+	flex: none;
+	inline-size: 1.25rem;
+	margin-block-start: 0.125rem;
+}
+
+.pq-access__digid-title {
+	font-size: 1rem;
+	font-weight: var(--utrecht-typography-weight-scale-bold, 600);
+	margin: 0;
 }
 
 .pq-e-error {

@@ -1,0 +1,3 @@
+- [x] T01 PortalSessionService::sessionTimes reports `idlePreview` from app flag `session_idle_preview_enabled` (default `no`)
+- [x] T02 The site opens the idle warning at once when `idlePreview` is true and the address holds `idleWarning=now` (`idlePreviewWanted` in src/site/lib/idleTracker.js)
+- [x] T03 Unit tests: PHPUnit for the flag, node for the site decision

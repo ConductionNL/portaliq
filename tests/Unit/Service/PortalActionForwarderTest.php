@@ -94,6 +94,113 @@ class PortalActionForwarderTest extends TestCase {
 	 *
 	 * @return void
 	 */
+	/**
+	 * A row action that declares `files` forwards its uploads multipart beside the fields (REQ-RAF-001).
+	 *
+	 * @return void
+	 */
+	public function testFilesGoMultipartBesideTheFields(): void {
+		$tmp = tempnam(sys_get_temp_dir(), 'raf');
+		file_put_contents($tmp, 'scan bytes');
+		$session = $this->createMock(PortalSessionService::class);
+		$session->method('issueAssertion')->willReturn('minted-assertion');
+		$seen = [];
+
+		$loopback = $this->getMockBuilder(InstanceLoopback::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['request'])
+			->getMock();
+		$loopback->expects($this->once())->method('request')->willReturnCallback(
+			function (string $method, string $path, array $options) use (&$seen): IResponse {
+				$seen = $options;
+				return $this->createMock(IResponse::class);
+			}
+		);
+
+		$forwarder = new PortalActionForwarder($this->createMock(IRequest::class), $loopback, $session);
+		$forwarder->forward(
+			action: ['endpoint' => '/apps/dossiq/api/portal/woo/answer', 'files' => ['field' => 'attachments', 'max' => 5, 'maxBytes' => 1000]],
+			subject: ['subjectRef' => 's-1'],
+			whitelisted: ['answer' => 'Zie bijlage', 'requestId' => 'r-1', 'extra' => ['a' => 1]],
+			files: [['name' => 'scan.pdf', 'type' => 'application/pdf', 'tmp_name' => $tmp, 'size' => 10]]
+		);
+		unlink($tmp);
+
+		$this->assertArrayNotHasKey('body', $seen);
+		$this->assertArrayNotHasKey('Content-Type', $seen['headers']);
+		$this->assertSame('minted-assertion', $seen['headers']['X-Portal-Subject']);
+		$this->assertSame(['answer', 'requestId', 'extra', 'attachments[]'], array_column($seen['multipart'], 'name'));
+		$this->assertSame('{"a":1}', $seen['multipart'][2]['contents']);
+		$this->assertSame('scan.pdf', $seen['multipart'][3]['filename']);
+		$this->assertSame('application/pdf', $seen['multipart'][3]['headers']['Content-Type']);
+		$this->assertIsResource($seen['multipart'][3]['contents']);
+	}//end testFilesGoMultipartBesideTheFields()
+
+	/**
+	 * A file that cannot be opened is left out of the multipart body instead of being sent empty (REQ-RAF-001).
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableFileIsLeftOutOfTheMultipartBody(): void {
+		$tmp = tempnam(sys_get_temp_dir(), 'raf');
+		file_put_contents($tmp, 'scan bytes');
+		$seen = [];
+		$loopback = $this->getMockBuilder(InstanceLoopback::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['request'])
+			->getMock();
+		$loopback->method('request')->willReturnCallback(
+			function (string $method, string $path, array $options) use (&$seen): IResponse {
+				$seen = $options;
+				return $this->createMock(IResponse::class);
+			}
+		);
+
+		$forwarder = new PortalActionForwarder($this->createMock(IRequest::class), $loopback, $this->createMock(PortalSessionService::class));
+		$forwarder->forward(
+			action: ['endpoint' => '/apps/dossiq/api/portal/woo/answer', 'files' => ['field' => 'attachments', 'max' => 5, 'maxBytes' => 1000]],
+			subject: [],
+			whitelisted: ['answer' => 'Zie bijlage'],
+			files: [
+				['name' => 'gone.pdf', 'type' => 'application/pdf', 'tmp_name' => '/nonexistent/raf-upload', 'size' => 10],
+				['name' => 'blank.pdf', 'type' => 'application/pdf', 'tmp_name' => '', 'size' => 10],
+				['name' => 'scan.pdf', 'type' => 'application/pdf', 'tmp_name' => $tmp, 'size' => 10],
+			]
+		);
+		unlink($tmp);
+
+		$this->assertSame(['answer', 'attachments[]'], array_column($seen['multipart'], 'name'));
+		$this->assertSame('scan.pdf', $seen['multipart'][1]['filename']);
+	}//end testAnUnreadableFileIsLeftOutOfTheMultipartBody()
+
+	/**
+	 * Without files, or on an action without `files`, the forward stays JSON.
+	 *
+	 * @return void
+	 */
+	public function testWithoutFilesTheForwardStaysJson(): void {
+		$seen = [];
+		$loopback = $this->getMockBuilder(InstanceLoopback::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['request'])
+			->getMock();
+		$loopback->method('request')->willReturnCallback(
+			function (string $method, string $path, array $options) use (&$seen): IResponse {
+				$seen[] = $options;
+				return $this->createMock(IResponse::class);
+			}
+		);
+		$forwarder = new PortalActionForwarder($this->createMock(IRequest::class), $loopback, $this->createMock(PortalSessionService::class));
+
+		$forwarder->forward(action: ['endpoint' => '/apps/x/api/y', 'files' => ['field' => 'attachments']], subject: [], whitelisted: ['a' => 1]);
+		$forwarder->forward(action: ['endpoint' => '/apps/x/api/y'], subject: [], whitelisted: ['a' => 1], files: [['name' => 'n', 'type' => 't', 'tmp_name' => '/nonexistent', 'size' => 1]]);
+
+		foreach ($seen as $options) {
+			$this->assertSame('{"a":1}', $options['body']);
+			$this->assertArrayNotHasKey('multipart', $options);
+		}
+	}//end testWithoutFilesTheForwardStaysJson()
+
 	public function testAForwardThatReachesNoAddressDegradesToNull(): void {
 		$loopback = $this->getMockBuilder(InstanceLoopback::class)
 			->disableOriginalConstructor()
@@ -105,6 +212,66 @@ class PortalActionForwarderTest extends TestCase {
 
 		$this->assertNull($forwarder->forward(action: ['endpoint' => '/apps/x/api/y'], subject: [], whitelisted: []));
 	}//end testAForwardThatReachesNoAddressDegradesToNull()
+
+	/**
+	 * The submission key the browser made rides along to the domain app; a
+	 * value that is not a plain token is left out (REQ-AFS-001).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
+	 */
+	public function testTheSubmissionKeyIsRelayedAndAMalformedOneIsDropped(): void {
+		foreach (['0f8fad5b-d9cb-469f-a165-70867728950e' => true, 'not a key; drop table' => false] as $key => $relayed) {
+			$request = $this->createMock(IRequest::class);
+			$request->method('getHeader')->willReturnCallback(
+				static fn (string $name): string => $name === PortalActionForwarder::SUBMISSION_HEADER ? $key : ''
+			);
+			$seen = [];
+			$loopback = $this->getMockBuilder(InstanceLoopback::class)
+				->disableOriginalConstructor()
+				->onlyMethods(['request'])
+				->getMock();
+			$loopback->method('request')->willReturnCallback(
+				function (string $method, string $path, array $options) use (&$seen): IResponse {
+					$seen = $options['headers'];
+					return $this->createMock(IResponse::class);
+				}
+			);
+
+			$forwarder = new PortalActionForwarder($request, $loopback, $this->createMock(PortalSessionService::class));
+			$forwarder->forward(action: ['endpoint' => '/apps/x/api/y'], subject: [], whitelisted: []);
+
+			if ($relayed === true) {
+				$this->assertSame($key, $seen[PortalActionForwarder::SUBMISSION_HEADER] ?? null);
+			} else {
+				$this->assertArrayNotHasKey(PortalActionForwarder::SUBMISSION_HEADER, $seen);
+			}
+		}
+	}//end testTheSubmissionKeyIsRelayedAndAMalformedOneIsDropped()
+
+	/**
+	 * A timeout answers 504 `forward_timeout`; any other transport failure 502.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
+	 */
+	public function testATimeoutIsToldApartFromAFailure(): void {
+		foreach (['cURL error 28: Operation timed out' => 504, 'cURL error 7: refused' => 502] as $message => $status) {
+			$loopback = $this->getMockBuilder(InstanceLoopback::class)
+				->disableOriginalConstructor()
+				->onlyMethods(['request'])
+				->getMock();
+			$loopback->method('request')->willThrowException(new RuntimeException($message));
+
+			$forwarder = new PortalActionForwarder($this->createMock(IRequest::class), $loopback, $this->createMock(PortalSessionService::class));
+
+			$this->assertNull($forwarder->forward(action: ['endpoint' => '/apps/x/api/y'], subject: [], whitelisted: []));
+			$this->assertSame($status === 504, $forwarder->lastForwardTimedOut());
+			$this->assertSame($status, $forwarder->failureResponse()->getStatus());
+		}
+	}//end testATimeoutIsToldApartFromAFailure()
 
 	/**
 	 * The body a resident sends must reach the domain endpoint. Nextcloud's

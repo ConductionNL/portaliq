@@ -48,15 +48,17 @@ export function landingPageActionId(formId) {
  * endpoint. A non-2xx is thrown as an Error carrying `.status`, mirroring
  * `contentApi.js`'s `get()` convention.
  *
- * Every active form is its own anonymous create action on
- * `landingPageSubmission` (`submit-{formId}`, PortalContributionProvider), so
+ * Every active form is its own anonymous create action at the address
+ * `portaliq/landingPageSubmission` (`submit-{formId}`, PortalContributionProvider), so
  * the submission names its form's action: without it the server filed every
- * form's answers under the first form's whitelist and `formId`.
+ * form's answers under the first form's whitelist and `formId`. The address is
+ * only an address: the server creates the object the form's destination names
+ * (a lead), in this request, and stores nothing in between (decision 179).
  *
  * @param {object} values The visitor's field values, keyed by the form's own field ids.
  * @param {object} [tracking] `{utmFirstTouch, utmLastTouch, referrer}` captured client-side.
  * @param {string} [formId] The bound form's id, which names its create action.
- * @return {Promise<object>} The created `landingPageSubmission` object.
+ * @return {Promise<object>} The destination's answer: `reference`, `id`, `receivedAt`.
  *
  * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-landing-pages-form-is-submittable-with-no-portal-session
  * @spec openspec/changes/create-names-its-action/tasks.md#T3

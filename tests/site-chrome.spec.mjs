@@ -33,6 +33,7 @@ test('the header search is off until a portal switches it on, and opens an in-si
 		enabled: false,
 		label: '',
 		placeholder: '',
+		suggest: true,
 		route: '/zoeken',
 	})
 	assert.deepEqual(
@@ -47,6 +48,7 @@ test('the header search is off until a portal switches it on, and opens an in-si
 			enabled: true,
 			label: '',
 			placeholder: 'Zoek een cursus',
+			suggest: true,
 			route: '/cursussen',
 		},
 	)

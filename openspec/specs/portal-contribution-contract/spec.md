@@ -422,9 +422,13 @@ and the claim set `sub`, `audience`, `organisation`, `trust`, `jti`, `use`
 `exp - iat` equal to the 60-second assertion TTL. When the forwarded action
 declares a `scopeClaim`, the assertion MUST carry exactly one additional
 claim, named after that claim and holding the value resolved server-side
-from the subject's portal account; it MUST NOT carry any other claim. A unit
-test MUST pin every element of that shape so any drift fails loudly before it
-can break domain-app verifiers templated against it.
+from the subject's portal account. When the originating session acts for a
+company branch, the assertion MUST carry one optional `branch` claim holding
+that branch number, after the nine frozen claims and before a scope claim; a
+session without a branch MUST NOT carry it, and no action may declare
+`branch` as its `scopeClaim`. The assertion MUST NOT carry any other claim. A
+unit test MUST pin every element of that shape so any drift fails loudly
+before it can break domain-app verifiers templated against it.
 
 #### Scenario: The assertion shape is pinned
 
@@ -439,6 +443,21 @@ can break domain-app verifiers templated against it.
 - WHEN the assertion for that forward is decoded
 - THEN the claim keys are the nine frozen keys plus `signerEmail`, and nothing else
 - @e2e exclude wire-format pin; PHPUnit
+
+#### Scenario: A branch session adds the optional branch claim
+
+- GIVEN a session acting for branch `000012345678`
+- WHEN an assertion for one of its forwards is decoded
+- THEN the claim keys are the nine frozen keys plus `branch` holding `000012345678`, and a declared scope claim follows after it
+- AND an assertion for a session without a branch carries the nine frozen keys only
+- @e2e exclude wire-format pin; PHPUnit `PortalJwtServiceTest::testABranchSessionAddsExactlyTheOptionalBranchClaim` and `PortalSessionServiceTest::testAssertionCarriesTheSessionBranchOnlyWhenThereIsOne`
+
+#### Scenario: An action cannot declare branch as its scope claim
+
+- GIVEN an action declaring `scopeClaim: "branch"`
+- WHEN the manifest is normalised or an assertion is minted for it
+- THEN the scope claim is refused as reserved and no forged `branch` value reaches the assertion
+- @e2e exclude wire-format pin; PHPUnit `PortalJwtServiceTest::testAnEmptyBranchAddsNothingAndBranchIsNoScopeClaim`
 
 ### Requirement: Manifest UI configuration is presentation-only
 
@@ -1782,6 +1801,111 @@ and from pipelinq alike" (the portal half of each).
 - **WHEN** a resident opens their dossier
 - **THEN** "Start een Woo-verzoek" does not show
 - test: PHPUnit `tests/Unit/Contribution/AttachedActionResolverTest.php` ("no declaring app, no attachment")
+
+### Requirement: A news block on an account page shows rows, not bodies
+
+A contributed page's `news` block MUST show each item as a row: who it is for (when the item names
+an audience), its date in the page language, and its title, which opens the news screen. It MUST
+NOT show the item's body.
+
+#### Scenario: The guardian overview
+@e2e exclude Rendered in node: tests/site-look/account-news-rows.spec.mjs
+- GIVEN an item "De Kinderboekenweek is begonnen" for "hele school" of 2 October 2026 whose body holds markdown
+- WHEN the overview renders its news block
+- THEN the row reads "hele school", "2 oktober 2026" and the title, and no part of the body shows
+
+### Requirement: A collection block keeps its own heading
+
+A collection block MAY declare `label`. Portaliq MUST keep it when it is a non-blank string of at
+most 120 characters, and the site MUST head the block's rows with it, before the collection's own
+label. A heading equal to the page's title MUST still be left out.
+
+#### Scenario: The grades on the pupil's overview
+@e2e exclude Source and method checks in node: tests/site-look/collection-label.spec.mjs; PHPUnit tests/Unit/Contribution/CollectionBlockLabelTest.php
+- GIVEN the overview's grades block with `label` "Laatste cijfers" over the collection "Mijn cijfers"
+- WHEN the page renders
+- THEN the table is headed "Laatste cijfers"
+
+#### Scenario: No label of its own
+@e2e exclude Method check in node: tests/site-look/collection-label.spec.mjs
+- GIVEN a collection block without `label`
+- WHEN the page renders
+- THEN the table is headed with the collection's label, as before
+
+### Requirement: A signed-in portal session must be rate limited per subject
+
+A collection read with a portal session MUST count against a limit per subject, with room for
+the blocks of several pages a minute, and never against a limit shared by everyone behind the
+same IP address. A read without a session MUST count against a tight limit per IP address. Over
+either limit the portal MUST answer 429.
+
+#### Scenario: A guardian opens four pages in a minute
+@e2e exclude PHPUnit PortalRateLimitTest; checked live on the proof instance
+- GIVEN a guardian signed in to the portal
+- WHEN she opens four pages of twenty blocks within one minute
+- THEN every collection read is answered, none with 429
+
+#### Scenario: Calls without a session
+@e2e exclude PHPUnit PortalRateLimitTest
+- GIVEN calls without a portal session from one IP address
+- WHEN more than 60 arrive within a minute
+- THEN the portal answers 429
+
+### Requirement: A collection that could not be read must say so
+
+A table or figure block whose collection read failed MUST say "De inhoud kon niet worden
+geladen." with a button "Opnieuw proberen" that reads it again, and MUST NOT draw an empty list.
+
+#### Scenario: A read answered 429
+@e2e exclude Node: tests/portal-subject-rate-limit.spec.mjs
+- GIVEN the homework collection read failed
+- WHEN the page renders
+- THEN the block shows the sentence and the retry button, and no empty table
+
+### Requirement: An action field may start from the signed-in resident's name or e-mail address
+
+An action field config MAY declare `prefill` with the value `name` or `email`. Portaliq MUST drop any other value. For a signed-in resident the site MUST start an empty field that declares `prefill` from the resident's own details: `name` from the display name, `email` from the e-mail address. A value from a saved draft, a preset or the resident's own typing MUST NOT be replaced. Without a session or without the detail the field MUST stay empty. `prefill` MUST NOT add a field to the action's whitelist.
+
+#### Scenario: A Woo request knows who is asking
+- GIVEN Henk Bakker is signed in and his details hold his name and e-mail address
+- AND the request form's name field declares `prefill: name` and its e-mail field `prefill: email`
+- WHEN he reaches the step "Uw gegevens"
+- THEN both fields show his name and e-mail address and he can change them
+- @e2e exclude pinned by `tests/profile-prefill.spec.mjs` and `ActionConfigNormaliserTest::testAPrefillSourceIsKeptOnlyWhenKnown`; the live check needs dossiq's declaration
+
+#### Scenario: A saved draft wins
+- GIVEN a saved draft holds another e-mail address
+- WHEN the resident opens the form again
+- THEN the e-mail field shows the draft's address
+- @e2e exclude pinned by `tests/profile-prefill.spec.mjs` "an empty field starts from the profile; a filled one keeps its value"
+
+#### Scenario: Another source is refused
+- GIVEN a field declares `prefill: bsn`
+- WHEN portaliq normalises the action
+- THEN the field config carries no `prefill`
+- @e2e exclude pinned by `ActionConfigNormaliserTest::testAPrefillSourceIsKeptOnlyWhenKnown`
+
+### Requirement: A collection MAY carry an intro shown above its list
+
+A contribution collection MAY declare `intro`, a plain text shown above the collection's list. The normaliser MUST keep it, trimmed, only when it is a non-empty string, and MUST drop it otherwise. The portal MUST show a kept intro above the collection's table, and "My cases" MUST show the intros of the `kind: cases` collections under its heading, each text once. The portal MUST render the intro as text, never as HTML.
+
+#### Scenario: A cases collection's intro shows above its list
+- GIVEN dossiq's `mijnZaken` declares `intro: 'Hier ziet u al uw lopende zaken.'`
+- WHEN a resident opens "My cases", or a page that shows the collection
+- THEN the sentence shows above the list
+- @e2e exclude pinned by `tests/collection-intro.spec.mjs`
+
+#### Scenario: Markup in an intro shows as typed
+- GIVEN a collection declares `intro: '<b>Let op</b>'`
+- WHEN the portal shows the collection
+- THEN the resident reads `<b>Let op</b>` as text
+- @e2e exclude pinned by `CollectionIntroKeyTest` and `tests/collection-intro.spec.mjs`
+
+#### Scenario: An empty or non-text intro is dropped
+- GIVEN a collection declares `intro: '  '` or `intro: 42`
+- WHEN the manifest is normalised
+- THEN `intro` is dropped
+- @e2e exclude pinned by `CollectionIntroKeyTest::testAnEmptyOrNonTextIntroIsDropped`
 
 ## Non-Functional Requirements
 

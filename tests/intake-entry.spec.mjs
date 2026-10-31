@@ -239,6 +239,9 @@ test('a valid submission answers with a reference, an invalid one with the field
 	assert.deepEqual(accepted, {
 		reference: 'AANVRAAG-7',
 		confirmationText: 'Bedankt.',
+		confirmation: null,
+		mailedTo: '',
+		moments: { receivedAt: '', termStartsAt: '', deadline: '' },
 		errors: {},
 	})
 	assert.equal(calls[0].init.method, 'POST')
@@ -264,6 +267,39 @@ test('a valid submission answers with a reference, an invalid one with the field
 		submitIntake(BASE, 'aanvragen/verhuizing', {}, '', '', fetchImpl),
 		/503/,
 	)
+})
+
+test('a submit creates the case: the moments come back, and a destination refusal lands on its field (decision 179)', async () => {
+	const { fetchImpl } = recorder([
+		{
+			status: 200,
+			body: {
+				reference: '2026-0042',
+				state: 'registered',
+				receivedAt: '2026-10-11T09:00:00+00:00',
+				termStartsAt: '2026-10-13T09:00:00+02:00',
+				deadline: '2026-11-24',
+			},
+		},
+		{
+			status: 422,
+			body: {
+				error: 'refused_by_destination',
+				errors: { postcode: 'Dit is geen postcode.', _form: 'Er ontbreekt een zaaktype.' },
+			},
+		},
+	])
+	const created = await submitIntake(BASE, 'bezwaar', { postcode: '1234 AB' }, '', '', fetchImpl)
+	assert.equal(created.reference, '2026-0042')
+	assert.deepEqual(created.moments, {
+		receivedAt: '2026-10-11T09:00:00+00:00',
+		termStartsAt: '2026-10-13T09:00:00+02:00',
+		deadline: '2026-11-24',
+	})
+
+	const refused = await submitIntake(BASE, 'bezwaar', { postcode: 'x' }, '', '', fetchImpl)
+	assert.equal(refused.reference, '')
+	assert.deepEqual(refused.errors, { postcode: 'Dit is geen postcode.', _form: 'Er ontbreekt een zaaktype.' })
 })
 
 test('the status of a reference is the real state, and a failed create names what to do', async () => {
@@ -372,7 +408,7 @@ test('the public renderer mounts the three intake blocks and hands them the port
 	}
 	assert.match(
 		grid,
-		/widgetKey === 'intakeForm'\) \{\s*return \{ \.\.\.props, portal: this\.portal, routeParam: this\.routeParam \}/,
+		/widgetKey === 'intakeForm'\) \{\s*return \{\s*\.\.\.props,\s*portal: this\.portal,\s*routeParam: this\.routeParam,\s*portalHelp: this\.portalHelp,\s*\}/,
 	)
 	assert.match(
 		grid,
@@ -385,7 +421,7 @@ test('the public renderer mounts the three intake blocks and hands them the port
 	)
 	assert.match(
 		catalogue,
-		/intakeForm: \['portal', 'routeParam'\]/,
+		/intakeForm: \['portal', 'routeParam', 'portalHelp'\]/,
 		'the designer must not offer host-supplied props',
 	)
 	// The palette's names live in one module the editor shares

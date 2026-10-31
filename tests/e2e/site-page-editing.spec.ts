@@ -319,7 +319,7 @@ test.describe('portal page editing', () => {
 		await item.focus()
 		await page.keyboard.press('ArrowRight')
 		await expect(item).toHaveAttribute('gs-x', '1')
-		await expect(page.getByTestId('designer-dirty')).toBeVisible()
+		await expect(page.getByTestId('designer-unsaved')).toBeVisible()
 
 		await page.getByTestId('designer-save-draft').click()
 		await expect(page.getByTestId('designer-notice')).toBeVisible()

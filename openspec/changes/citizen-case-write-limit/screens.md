@@ -1,0 +1,1 @@
+- No screen: a server-side guard on the resident's writes; its refusal sentence shows on the case page (board Zaak) like any other notice.

@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Listener;
 
 use OCA\Portaliq\Event\PortalAccountProvisionRequestedEvent;
+use OCA\Portaliq\Service\Identity\NextcloudAccountProvisioner;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -48,10 +49,13 @@ class PortalAccountProvisionListener implements IEventListener {
 	 *
 	 * @param PortalAccountService $accounts Provisions the account.
 	 * @param LoggerInterface $logger Records a refusal's cause.
+	 * @param NextcloudAccountProvisioner|null $nextcloud Writes an active
+	 *        `nextcloud`-mode account (an-app-provisions-a-nextcloud-account).
 	 */
 	public function __construct(
 		private readonly PortalAccountService $accounts,
 		private readonly LoggerInterface $logger,
+		private readonly ?NextcloudAccountProvisioner $nextcloud = null,
 	) {
 	}//end __construct()
 
@@ -73,6 +77,11 @@ class PortalAccountProvisionListener implements IEventListener {
 			// The app id is the dispatcher's own context. Without it nothing
 			// can be attributed, so nothing is written.
 			$event->refuse('unknown_app');
+			return;
+		}
+
+		if ($event->getNextcloudUid() !== '') {
+			$this->provisionNextcloud(event: $event);
 			return;
 		}
 
@@ -100,4 +109,43 @@ class PortalAccountProvisionListener implements IEventListener {
 
 		$event->answer($account['subjectRef'], $account['status']);
 	}//end handle()
+
+	/**
+	 * Answer a request for an active `nextcloud`-mode account.
+	 *
+	 * @param PortalAccountProvisionRequestedEvent $event The request.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
+	 */
+	private function provisionNextcloud(PortalAccountProvisionRequestedEvent $event): void {
+		if ($this->nextcloud === null) {
+			$event->refuse('unavailable');
+			return;
+		}
+
+		try {
+			$answer = $this->nextcloud->provision(
+				appId: $event->getAppId(),
+				uid: $event->getNextcloudUid(),
+				portal: $event->getPortal(),
+				audience: $event->getAudience(),
+				organisation: $event->getOrganisation(),
+				email: $event->getEmail(),
+				displayName: $event->getDisplayName()
+			);
+		} catch (Throwable $exception) {
+			$this->logger->error('Portal account provisioning failed', ['exception' => $exception]);
+			$event->refuse('unavailable');
+			return;
+		}
+
+		if (is_string($answer) === true) {
+			$event->refuse($answer);
+			return;
+		}
+
+		$event->answer($answer['subjectRef'], $answer['status']);
+	}//end provisionNextcloud()
 }//end class

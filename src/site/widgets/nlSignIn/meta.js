@@ -21,6 +21,11 @@ export const metaOf = {
 		{ name: 'heading', kind: 'string', label: 'Kop boven de knoppen' },
 		{ name: 'display', kind: 'string', label: 'Weergave: buttons of card' },
 		{ name: 'intro', kind: 'text', label: 'Tekst op de kaart' },
+		{
+			name: 'signedInIntro',
+			kind: 'text',
+			label: 'Tekst op de kaart als de bezoeker is ingelogd',
+		},
 		{ name: 'points', kind: 'json', label: 'Punten op de kaart' },
 		{ name: 'buttonLabel', kind: 'string', label: 'Tekst op de knop' },
 		{ name: 'note', kind: 'string', label: 'Regel onder de knop' },

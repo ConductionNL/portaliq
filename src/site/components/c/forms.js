@@ -16,6 +16,8 @@
 import { fileFields } from '../../../shared/fileFieldSubmit.js'
 import { dateProblem } from '../forms/fields.js'
 
+export { asksInput, inputFields } from '../../../shared/actionInput.js'
+
 /**
  * Interpolate `{name}` placeholders.
  *
@@ -218,28 +220,131 @@ export function sentValue(input, value) {
 }
 
 /**
- * The body a form creates its record with: every whitelisted field that is
- * not a file field, '' when empty.
+ * The JSON type a field's value is sent in: the `valueType` the server read
+ * from the schema (integer, number, boolean), else a number for a number input
+ * or a count stepper, else a string.
+ *
+ * @param {object} action The action.
+ * @param {string} field The field.
+ * @return {'integer'|'number'|'boolean'|'string'} The type.
+ *
+ * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-form-must-send-each-value-in-the-type-its-field-declares
+ */
+export function valueTypeOf(action, field) {
+	const config = fieldConfig(action, field)
+	if (['integer', 'number', 'boolean'].includes(config.valueType)) {
+		return config.valueType
+	}
+	if (config.widget === 'count') {
+		return 'integer'
+	}
+	return config.input === 'number' ? 'number' : 'string'
+}
+
+/**
+ * A typed answer as a number, with a decimal comma read as a point; null when
+ * it is no number.
+ *
+ * @param {string} text The answer.
+ * @return {number|null} The number.
+ */
+function numberOf(text) {
+	const normal = String(text).trim().replace(',', '.')
+	if (!/^-?\d+(\.\d+)?$/.test(normal)) {
+		return null
+	}
+	return Number(normal)
+}
+
+/**
+ * A typed answer as a boolean; null when it is neither yes nor no.
+ *
+ * @param {string} text The answer.
+ * @return {boolean|null} The boolean.
+ */
+function booleanOf(text) {
+	const normal = String(text).trim().toLowerCase()
+	if (['true', '1', 'yes', 'ja'].includes(normal)) {
+		return true
+	}
+	if (['false', '0', 'no', 'nee'].includes(normal)) {
+		return false
+	}
+	return null
+}
+
+/**
+ * One answer in the type its field declares. An answer that does not fit the
+ * type is sent as typed, so the server's refusal names the field; the form's
+ * own check catches it first.
+ *
+ * @param {string} type The value type.
+ * @param {string} text The answer as typed.
+ * @return {string|number|boolean} The value.
+ *
+ * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-form-must-send-each-value-in-the-type-its-field-declares
+ */
+export function typedValue(type, text) {
+	if (type === 'integer' || type === 'number') {
+		const number = numberOf(text)
+		return number === null ? text : number
+	}
+	if (type === 'boolean') {
+		const yes = booleanOf(text)
+		return yes === null ? text : yes
+	}
+	return text
+}
+
+/**
+ * The body a form sends: every whitelisted field that is not a file field,
+ * each in the type its field declares. An empty text field sends ''; an empty
+ * number or yes/no field is left out, since '' is no number.
  *
  * @param {object} action The action.
  * @param {Record<string, string>} values The typed values.
  * @param {Record<string, Array>} [options] The resolved options per field.
- * @return {Record<string, string>} The body.
+ * @return {Record<string, string|number|boolean>} The body.
  *
  * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
+ * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-form-must-send-each-value-in-the-type-its-field-declares
  */
 export function formBody(action, values, options = {}) {
 	const files = fileFields(action)
 	const body = {}
 	for (const field of formFields(action)) {
-		if (!files.includes(field)) {
-			body[field] = sentValue(
-				fieldInput(action, field, options[field]),
-				(values || {})[field],
-			)
+		if (files.includes(field)) {
+			continue
+		}
+		const text = sentValue(
+			fieldInput(action, field, options[field]),
+			(values || {})[field],
+		)
+		const type = valueTypeOf(action, field)
+		if (type === 'string') {
+			body[field] = text
+		} else if (text.trim() !== '') {
+			body[field] = typedValue(type, text)
 		}
 	}
 	return body
+}
+
+/**
+ * Whether an action is forwarded to its app's own endpoint rather than
+ * written as a record.
+ *
+ * @param {object} action The action.
+ * @return {boolean} True for an endpoint action.
+ */
+export function isEndpointAction(action) {
+	return (
+		Boolean(action)
+		&& action.type !== 'create'
+		&& action.type !== 'update'
+		&& typeof action.endpoint === 'string'
+		&& action.endpoint !== ''
+	)
 }
 
 /**
@@ -295,9 +400,112 @@ export function fieldErrors(action, values, files, t) {
 				'{field}: enter a real date, for example 1 3 2026.',
 				{ field: label },
 			)
+			continue
+		}
+		const wrongType = typeProblem(valueTypeOf(action, field), String(value))
+		if (wrongType !== '') {
+			errors[field] = translate(wrongType, { field: label })
 		}
 	}
 	return errors
+}
+
+/**
+ * The message key for an answer that does not fit its type, or ''.
+ *
+ * @param {string} type The value type.
+ * @param {string} text The answer.
+ * @return {string} The English source string.
+ *
+ * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-form-must-send-each-value-in-the-type-its-field-declares
+ */
+function typeProblem(type, text) {
+	if (type === 'number' && numberOf(text) === null) {
+		return '{field}: enter a number, for example 8 or 7.5.'
+	}
+	if (type === 'integer' && !Number.isInteger(numberOf(text))) {
+		return '{field}: enter a whole number, for example 8.'
+	}
+	return ''
+}
+
+/**
+ * The words for each kind of value the server refused (`invalid`), by kind.
+ */
+const INVALID_KEYS = Object.freeze({
+	number: '{field}: enter a number, for example 8 or 7.5.',
+	integer: '{field}: enter a whole number, for example 8.',
+	date: '{field}: enter a real date, for example 1 3 2026.',
+	required: '{field} is required.',
+})
+
+/**
+ * The server's refusal of a value per field (`invalid`, `{field: kind}`) as
+ * the form's own errors, in plain words, only for fields the form shows.
+ *
+ * @param {object} action The action.
+ * @param {Record<string, string>|undefined} invalid The answer's `invalid`.
+ * @param {(key: string, vars?: object) => string} t The translator.
+ * @return {Record<string, string>} The message per field.
+ *
+ * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+ */
+export function invalidFieldErrors(action, invalid, t) {
+	const translate = translatorOr(t)
+	const out = {}
+	for (const field of formFields(action)) {
+		const kind = (invalid || {})[field]
+		if (typeof kind !== 'string') {
+			continue
+		}
+		out[field] = translate(
+			INVALID_KEYS[kind] || '{field} is not filled in correctly. Check it.',
+			{ field: fieldLabel(action, field) },
+		)
+	}
+	return out
+}
+
+/**
+ * The message for a refused form that names no field, by status: a refusal of
+ * the answers (400, 422), an item that can no longer take it (403, 404, 409),
+ * else a failure on the way.
+ *
+ * @param {number} status The answer's status; 0 for a network failure.
+ * @return {string} The English source string.
+ *
+ * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+ */
+export function refusalKey(status) {
+	if (status === 400 || status === 422) {
+		return 'Not everything is filled in correctly. Check your answers.'
+	}
+	if (status === 403 || status === 404 || status === 409) {
+		return 'This can no longer be done for this item.'
+	}
+	return 'Saving did not work.'
+}
+
+/**
+ * An endpoint forward's answer (`{ok, status, body}`) in the shape a form's
+ * `send` returns: the leaf app's `errors` and `invalid` kept, so a refusal
+ * that names a field lands on that field.
+ *
+ * @param {{ok: boolean, status: number, body: object}} result The forward's answer.
+ * @return {{ok: boolean, status: number, object: object, errors: object, invalid: object}} The send result.
+ *
+ * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
+ */
+export function forwardResult(result) {
+	const body = (result && result.body) || {}
+	const map = (value) => (value && typeof value === 'object' ? value : {})
+	return {
+		ok: Boolean(result && result.ok),
+		status: (result && result.status) || 0,
+		object: body,
+		errors: map(body.errors),
+		invalid: map(body.invalid),
+	}
 }
 
 /**

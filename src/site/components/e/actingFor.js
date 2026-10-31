@@ -39,7 +39,25 @@ function sessionStore() {
 export const actingFor = reactive({
 	id: readActingFor(sessionStore()),
 	mandates: [],
+	// Whether a party was chosen this session; without a choice Mijn zaken
+	// lists everyone (resident-pages-live-round-3 REQ-RR3-002).
+	chosen: hasChosenActingFor(sessionStore()),
 })
+
+/**
+ * Whether the session keeps a choice of whom to act for.
+ *
+ * @param {Storage|null} store sessionStorage.
+ * @return {boolean}
+ * @spec openspec/changes/resident-pages-live-round-3/specs/portal-my-cases/spec.md#requirement-everyone-is-the-default-and-reads-every-active-mandate-req-rr3-002
+ */
+export function hasChosenActingFor(store) {
+	try {
+		return Boolean(store?.getItem(ACTING_FOR_KEY))
+	} catch {
+		return false
+	}
+}
 
 /**
  * Act for yourself or under a mandate, for the rest of the session.
@@ -53,6 +71,24 @@ export const actingFor = reactive({
 export function chooseActingFor(id, store = sessionStore()) {
 	keepActingFor(store, id)
 	actingFor.id = id
+	actingFor.chosen = true
+}
+
+/**
+ * Forget the party chosen on Mijn zaken, so it opens on everyone again; the
+ * mandate acted under stays for this page's life.
+ *
+ * @param {object} [store] The store the choice is kept in (test seam).
+ * @return {void}
+ * @spec openspec/changes/resident-pages-live-round-3/specs/portal-my-cases/spec.md#requirement-everyone-is-the-default-and-reads-every-active-mandate-req-rr3-002
+ */
+export function forgetChosenParty(store = sessionStore()) {
+	try {
+		store?.removeItem(ACTING_FOR_KEY)
+	} catch {
+		// Without storage nothing was kept.
+	}
+	actingFor.chosen = false
 }
 
 /**
@@ -90,4 +126,5 @@ export function forgetActingFor(store = sessionStore()) {
 	}
 	actingFor.id = ACTING_FOR_SELF
 	actingFor.mandates = []
+	actingFor.chosen = false
 }

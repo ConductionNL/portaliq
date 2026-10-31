@@ -22,6 +22,11 @@ export const metaOf = {
 		{ name: 'rows', kind: 'json', label: 'Rijen' },
 		{ name: 'display', kind: 'string', label: 'Weergave: plain of boxed' },
 		{ name: 'captionVisible', kind: 'boolean', label: 'Onderschrift tonen' },
+		{
+			name: 'rowHeaders',
+			kind: 'boolean',
+			label: 'Eerste kolom als rijkop (vet)',
+		},
 	],
 	defaultSize: { gridWidth: 12, gridHeight: 4 },
 	scope: 'public',

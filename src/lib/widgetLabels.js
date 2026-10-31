@@ -29,6 +29,64 @@ const PUBLIC_LABELS = {
 	intakeCatalogue: 'Aanvragen per onderwerp',
 	intakeForm: 'Aanvraagformulier',
 	intakeStatus: 'Status van een aanvraag',
+	contactForm: 'Vraagformulier',
+	assistant: 'Vraag het de assistent',
+	publicRecords: 'Openbare overzichten',
+	report: 'Misstand melden',
+	reportThread: 'Uw melding met meldcode',
+	sharedBlock: 'Gedeeld blok',
+	// The NL Design System blocks, named as the boards name them (PtPagina).
+	nlAccordion: 'Uitklapblokken',
+	nlActionGroup: 'Knoppengroep',
+	nlAlert: 'Meldingsbalk',
+	nlBanner: 'Banner',
+	nlButtonLink: 'Knoplink',
+	nlCalendar: 'Kalender',
+	nlCases: 'Zaken',
+	nlCatalogue: 'Catalogus',
+	nlCodeBlock: 'Codeblok',
+	nlDescriptionList: 'Gegevenslijst',
+	nlDialog: 'Dialoog',
+	nlDrawer: 'Uitschuifpaneel',
+	nlEventList: 'Agenda',
+	nlFaqList: 'Veelgestelde vragen',
+	nlFeaturedSubjects: 'Uitgelichte onderwerpen',
+	nlFigures: 'Cijfers',
+	nlFileList: 'Bestanden',
+	nlHeading: 'Kop',
+	nlImage: 'Afbeelding',
+	nlLanguageNav: 'Taalkeuze',
+	nlLink: 'Link',
+	nlLinkColumns: 'Linkkolommen',
+	nlLinkList: 'Lijst met links',
+	nlList: 'Lijst',
+	nlLocationMap: 'Kaart met locatie',
+	nlLookupForm: 'Opzoekformulier',
+	nlNewsArticle: 'Nieuwsbericht',
+	nlNewsList: 'Nieuwslijst',
+	nlNote: 'Notitie',
+	nlParagraph: 'Alinea',
+	nlPortalCounts: 'Aantallen',
+	nlProductFinder: 'Productzoeker',
+	nlProgressBar: 'Voortgangsbalk',
+	nlProgressCircle: 'Voortgangscirkel',
+	nlPublicDetail: 'Openbaar detail',
+	nlPublicTable: 'Openbare tabel',
+	nlQuickTasks: 'Snelle taken',
+	nlQuote: 'Citaat',
+	nlSeparator: 'Scheidingslijn',
+	nlSignIn: 'Inloggen',
+	nlStartTiles: 'Starttegels',
+	nlSteps: 'Stappen',
+	nlSubjectLanding: 'Onderwerppagina',
+	nlTable: 'Tabel',
+	nlTabs: 'Tabbladen',
+	nlTaskNav: 'Takenmenu',
+	nlTasks: 'Taken',
+	nlTimeline: 'Tijdlijn',
+	nlToggletip: 'Uitleg',
+	nlVideo: 'Video',
+	nlYouTube: 'YouTube-video',
 }
 
 /**
@@ -66,4 +124,23 @@ export function widgetLabel(key, registry) {
 		return name
 	}
 	return humanise(key)
+}
+
+/**
+ * The width line under a block's name on its editor card: "over de hele
+ * breedte" at the grid's full 12 columns, else "{n} kolommen" (PtPagina).
+ *
+ * @param {number} columns The block's width in grid columns.
+ * @return {string} The line, or '' for a width that is not a positive number.
+ * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-editor-toolbar-and-block-cards-read-as-the-board
+ */
+export function widgetWidthLine(columns) {
+	const width = Number(columns)
+	if (!Number.isFinite(width) || width <= 0) {
+		return ''
+	}
+	if (width >= 12) {
+		return 'over de hele breedte'
+	}
+	return width === 1 ? '1 kolom' : `${width} kolommen`
 }

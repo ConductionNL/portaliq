@@ -17,7 +17,14 @@
 		:aria-label="tr('On whose behalf you act')"
 		data-testid="mijn-acting-for-bar">
 		<p class="utrecht-paragraph pq-acting-for-bar__text">
-			{{ tr('You are now acting for {party}', { party }) }}
+			<template v-if="marked"
+				>{{ marked.before }}<NoTranslate :value="marked.value" />{{
+					marked.after
+				}}</template
+			>
+			<template v-else>{{
+				tr('You are now acting for {party}', { party })
+			}}</template>
 		</p>
 		<button
 			type="button"
@@ -30,7 +37,9 @@
 </template>
 
 <script>
+import NoTranslate from '../NoTranslate.vue'
 import { ACTING_FOR_SELF } from '../../../shared/myCases.js'
+import { markAround } from '../../lib/markAround.js'
 import { actingFor, chooseActingFor } from '../e/actingFor.js'
 import { mijnTranslator } from './rows.js'
 
@@ -39,6 +48,8 @@ import { mijnTranslator } from './rows.js'
  */
 export default {
 	name: 'ActingForBar',
+
+	components: { NoTranslate },
 
 	props: {
 		/** The site translator. */
@@ -79,6 +90,19 @@ export default {
 				(m) => m?.id === id,
 			)
 			return mandate ? String(mandate.label || mandate.id) : ''
+		},
+
+		/**
+		 * The sentence split around the party's name, so the name stays untranslated.
+		 *
+		 * @return {{before: string, value: string, after: string}|null}
+		 * @spec openspec/changes/personal-data-left-untranslated/specs/site-chrome/spec.md#requirement-browser-translation-leaves-names-and-personal-data-alone-req-pdu-001
+		 */
+		marked() {
+			return markAround(
+				this.tr('You are now acting for {party}', { party: this.party }),
+				this.party,
+			)
 		},
 	},
 

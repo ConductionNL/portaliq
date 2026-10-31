@@ -36,6 +36,7 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\CaseTypeReader;
 use OCA\Portaliq\Service\Identity\PortalAccountActivationService;
 use OCA\Portaliq\Service\Identity\PortalChallengeService;
+use OCA\Portaliq\Service\Identity\PortalContactService;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\Identity\PortalReferenceCaseService;
 use OCA\Portaliq\Service\Identity\PortalInvitationService;
@@ -80,6 +81,7 @@ class PortalIdentityController extends Controller {
 	 * @param PortalReferenceCaseService $referenceCases The case behind a reference link.
 	 * @param PortalSessionService $sessions Mints and resolves the reference session.
 	 * @param PortalAccountActivationService $activation Mints and spends the activation link (identity-ways-in-screens T03).
+	 * @param PortalContactService|null $contacts Joins a contact invitation the registration followed (own-contacts-and-invitations T05).
 	 */
 	public function __construct(
 		IRequest $request,
@@ -95,6 +97,7 @@ class PortalIdentityController extends Controller {
 		private readonly PortalReferenceCaseService $referenceCases,
 		private readonly PortalSessionService $sessions,
 		private readonly PortalAccountActivationService $activation,
+		private readonly ?PortalContactService $contacts = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -301,10 +304,12 @@ class PortalIdentityController extends Controller {
 	 * @param string $solution Their solution to it.
 	 * @param int $expiresAt The expiry issued with the nonce.
 	 * @param string $signature This instance's signature over the nonce.
+	 * @param string $contactInvitation The secret of a contact invitation the visitor followed, or ''.
 	 *
 	 * @return JSONResponse What became of the registration.
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -316,6 +321,7 @@ class PortalIdentityController extends Controller {
 		string $solution = '',
 		int $expiresAt = 0,
 		string $signature = '',
+		string $contactInvitation = '',
 	): JSONResponse {
 		$site = $this->site();
 		if ($site === null) {
@@ -362,6 +368,16 @@ class PortalIdentityController extends Controller {
 			return new JSONResponse(['error' => 'refused'], Http::STATUS_BAD_REQUEST);
 		}
 
+		// An invitation from a resident is held for the new account, so its
+		// activation joins both sides, in whichever tab the link opens.
+		if ($contactInvitation !== '') {
+			$this->contacts?->holdForRegistration(
+				token: $contactInvitation,
+				newRef: (string)$account['subjectRef'],
+				organisation: (string)($site['organisation'] ?? '')
+			);
+		}
+
 		if ($decision['reason'] === PortalRegistrationPolicyService::POLICY_ACTIVATION) {
 			$this->mailActivation(subjectRef: $account['subjectRef'], email: $email, site: $site);
 		}
@@ -380,18 +396,52 @@ class PortalIdentityController extends Controller {
 	 * @return JSONResponse Whether the account is ready.
 	 *
 	 * @spec openspec/specs/portal-ways-in/spec.md#requirement-you-can-create-an-account-where-the-portal-allows-it-req-iwi-002
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 20, period: 60)]
 	public function activate(string $token): JSONResponse {
-		if ($this->activation->activate(token: $token) === null) {
+		$account = $this->activation->activate(token: $token);
+		if ($account === null) {
 			// Used, expired and unknown are one answer.
 			return new JSONResponse(['error' => 'activation_not_valid'], Http::STATUS_FORBIDDEN);
 		}
 
+		// A contact invitation the registration followed joins both sides now,
+		// without a second approval (REQ-ROC-003).
+		$this->contacts?->joinOnActivation(account: $account);
+
 		return new JSONResponse(['activated' => true]);
 	}//end activate()
+
+	/**
+	 * The address a contact invitation went to, so "Create an account" shows
+	 * it filled in. Only an open invitation of this portal's tenant answers;
+	 * unknown, expired and used are one answer.
+	 *
+	 * @param string $token The secret from the invitation mail.
+	 *
+	 * @return JSONResponse `{email}`, or 404.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 10, period: 60)]
+	public function contactInvitation(string $token = ''): JSONResponse {
+		$site  = $this->site();
+		$email = '';
+		if ($site !== null && $this->contacts !== null) {
+			$email = $this->contacts->invitationEmail(token: $token, organisation: (string)($site['organisation'] ?? ''));
+		}
+
+		if ($email === '') {
+			return new JSONResponse(['error' => 'invitation_not_valid'], Http::STATUS_NOT_FOUND);
+		}
+
+		return new JSONResponse(['email' => $email]);
+	}//end contactInvitation()
 
 	/**
 	 * Mail the activation link of a new self-registration. The secret goes

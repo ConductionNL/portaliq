@@ -28,12 +28,15 @@
  *
  * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
  * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+ * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\JSONResponse;
 use OCP\Http\Client\IResponse;
 use OCP\IRequest;
 use Throwable;
@@ -46,8 +49,31 @@ use Throwable;
 class PortalActionForwarder {
 	/**
 	 * Timeout (seconds) for the server-to-server action forward.
+	 *
+	 * Thirty, like the task gateway: a request started from a dossier writes
+	 * the case and links the dossier before it answers, and at ten seconds
+	 * the forward gave up while the case was still being written, so the
+	 * resident read a failure for a case that existed (action-forward-survives-a-slow-answer).
 	 */
-	private const FORWARD_TIMEOUT = 10;
+	private const FORWARD_TIMEOUT = 30;
+
+	/**
+	 * The header that names one submission, relayed to the domain app so a
+	 * repeated send answers the first one's result instead of a second record.
+	 */
+	public const SUBMISSION_HEADER = 'Idempotency-Key';
+
+	/**
+	 * What a submission key may look like: a client-made uuid or token.
+	 */
+	private const SUBMISSION_KEY = '/^[A-Za-z0-9_-]{16,128}$/';
+
+	/**
+	 * Whether the last forward failed because the domain app did not answer in time.
+	 *
+	 * @var boolean
+	 */
+	private bool $timedOut = false;
 
 	/**
 	 * HTTP methods an endpoint action may declare (contract v2, A6).
@@ -84,14 +110,17 @@ class PortalActionForwarder {
 	 * @param array<string, mixed>|null $whitelisted The rebuilt whitelisted body, or null to relay raw.
 	 * @param string $scopeValue The server-resolved value of the action's declared `scopeClaim`,
 	 *                           signed into the assertion; '' when the action declares none.
+	 * @param list<array{name: string, type: string, tmp_name: string, size: int}> $files Checked uploads of a row action
+	 *                                                                           that declares `files`; sent multipart.
 	 *
 	 * @return IResponse|null The domain app's response, or null on transport failure.
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
 	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
 	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-every-call-to-this-instance-goes-through-one-loopback-service
+	 * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
 	 */
-	public function forward(array $action, array $subject, ?array $whitelisted = null, string $scopeValue = ''): ?IResponse {
+	public function forward(array $action, array $subject, ?array $whitelisted = null, string $scopeValue = '', array $files = []): ?IResponse {
 		$scopeClaim = '';
 		if (is_string($action['scopeClaim'] ?? null) === true) {
 			$scopeClaim = $action['scopeClaim'];
@@ -121,6 +150,24 @@ class PortalActionForwarder {
 			'nextcloud' => ['allow_local_address' => true],
 		];
 
+		// The submission key the browser made when the form opened rides
+		// along, so the domain app can answer a repeated send with the record
+		// the first one made (action-forward-survives-a-slow-answer).
+		$key = $this->submissionKey();
+		if ($key !== '') {
+			$options['headers'][self::SUBMISSION_HEADER] = $key;
+		}
+
+		// Files the action lets the resident add go multipart beside the
+		// fields; without files the forward stays JSON, exactly as before
+		// (row-action-carries-files REQ-RAF-001).
+		$multipart = $this->multipart(action: $action, whitelisted: ($whitelisted ?? []), files: $files);
+		if ($multipart !== null) {
+			unset($options['body'], $options['headers']['Content-Type']);
+			$options['multipart'] = $multipart;
+		}
+
+		$this->timedOut = false;
 		try {
 			// InstanceLoopback picks the address that answers from inside the
 			// server (configured, absolute, or the loopback after a transport
@@ -130,12 +177,152 @@ class PortalActionForwarder {
 				path: (string)$action['endpoint'],
 				options: $options
 			);
-		} catch (Throwable) {
-			// Transport failure. The caller mirrors the writer's 502 posture;
-			// transport internals never leak to the portal client.
+		} catch (Throwable $failure) {
+			// Transport failure. The caller mirrors the writer's 502 posture,
+			// or 504 when the app did not answer in time; transport internals
+			// never leak to the portal client.
+			$this->timedOut = $this->isTimeout(failure: $failure);
 			return null;
 		}//end try
 	}//end forward()
+
+	/**
+	 * Whether the last forward failed because the domain app did not answer
+	 * in time. The app may still finish the work, so the caller says so
+	 * instead of reporting a failure.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
+	 */
+	public function lastForwardTimedOut(): bool {
+		return $this->timedOut;
+	}//end lastForwardTimedOut()
+
+	/**
+	 * The answer to the portal client when the forward failed on the way:
+	 * 504 `forward_timeout` when the app did not answer in time (it may
+	 * still finish, so the page says the request may still be processing),
+	 * else 502 `forward_failed`. Transport internals never leak.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
+	 */
+	public function failureResponse(): JSONResponse {
+		if ($this->timedOut === true) {
+			return new JSONResponse(['error' => 'forward_timeout'], Http::STATUS_GATEWAY_TIMEOUT);
+		}
+
+		return new JSONResponse(['error' => 'forward_failed'], Http::STATUS_BAD_GATEWAY);
+	}//end failureResponse()
+
+	/**
+	 * Whether a transport failure is a timeout: cURL error 28, or a message
+	 * that says so anywhere in its chain.
+	 *
+	 * @param Throwable $failure The failure.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
+	 */
+	private function isTimeout(Throwable $failure): bool {
+		for ($current = $failure; $current !== null; $current = $current->getPrevious()) {
+			if (preg_match('/cURL error 28\b|timed out|timeout/i', $current->getMessage()) === 1) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end isTimeout()
+
+	/**
+	 * The submission key the browser sent, or '' when it sent none or one
+	 * that is not a plain token.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
+	 */
+	private function submissionKey(): string {
+		$key = trim((string)$this->request->getHeader(self::SUBMISSION_HEADER));
+		if (preg_match(self::SUBMISSION_KEY, $key) !== 1) {
+			return '';
+		}
+
+		return $key;
+	}//end submissionKey()
+
+	/**
+	 * The multipart parts of a forward that carries files, or null when it carries none.
+	 *
+	 * Each whitelisted field is one part (an array as its JSON), each file one
+	 * part named `<files.field>[]` with its own name and type. A file that
+	 * cannot be opened is left out rather than sent empty.
+	 *
+	 * @param array<string, mixed>                                                      $action      The normalised action.
+	 * @param array<string, mixed>                                                      $whitelisted The forwarded fields.
+	 * @param list<array{name: string, type: string, tmp_name: string, size: int}> $files       The checked uploads.
+	 *
+	 * @return list<array<string, mixed>>|null
+	 *
+	 * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+	 */
+	private function multipart(array $action, array $whitelisted, array $files): ?array {
+		$field = ($action['files']['field'] ?? null);
+		if ($files === [] || is_string($field) === false) {
+			return null;
+		}
+
+		$parts = [];
+		foreach ($whitelisted as $name => $value) {
+			$contents = $value;
+			if (is_string($value) === false) {
+				$contents = (string)json_encode($value);
+			}
+
+			$parts[] = ['name' => (string)$name, 'contents' => $contents];
+		}
+
+		foreach ($files as $file) {
+			$handle = $this->open(path: $file['tmp_name']);
+			if ($handle === null) {
+				continue;
+			}
+
+			$parts[] = [
+				'name' => $field . '[]',
+				'contents' => $handle,
+				'filename' => $file['name'],
+				'headers' => ['Content-Type' => $file['type']],
+			];
+		}
+
+		return $parts;
+	}//end multipart()
+
+	/**
+	 * Open an uploaded file for reading, or null when it cannot be read.
+	 *
+	 * @param string $path The upload's temporary path.
+	 *
+	 * @return resource|null
+	 *
+	 * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+	 */
+	protected function open(string $path) {
+		if ($path === '' || is_readable($path) === false) {
+			return null;
+		}
+
+		$handle = fopen($path, 'rb');
+		if ($handle === false) {
+			return null;
+		}
+
+		return $handle;
+	}//end open()
 
 	/**
 	 * Whether an action may be forwarded at all: a non-empty INSTANCE-LOCAL

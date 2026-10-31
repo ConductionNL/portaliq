@@ -34,6 +34,25 @@ import strings, {
 import { EMBED_REFUSALS, refusalSentence } from '../src/shared/embedCopy.js'
 import { loadSfc, renderSfc } from './support/render-sfc.mjs'
 
+// The embed form imports nextcloud-vue's condition check, which loads
+// @nextcloud/auth, which reads browser storage when it loads. A plain node has
+// no window, so a storage stub stands in (the build swaps those packages for a
+// stub; see webpack.site.js).
+function memory() {
+	const items = new Map()
+	return {
+		getItem: (key) => (items.has(key) ? items.get(key) : null),
+		setItem: (key, value) => items.set(key, String(value)),
+		removeItem: (key) => items.delete(key),
+		clear: () => items.clear(),
+		key: (index) => [...items.keys()][index] ?? null,
+		get length() {
+			return items.size
+		},
+	}
+}
+globalThis.window ??= { localStorage: memory(), sessionStorage: memory(), OC: {} }
+
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const nl = createEmbedTranslator('nl')
 const en = createEmbedTranslator('en-GB')
@@ -208,6 +227,22 @@ test('the answers go to the submit route with their form page', async () => {
 		route: 'a/b',
 		answers: { postcode: '5038AB' },
 	})
+})
+
+// submit-creates-the-case-directly 2.2: a filled honeypot travels as `_hp`;
+// an empty one is not sent at all.
+test('a filled honeypot is sent as _hp, an empty one is not', async () => {
+	const bodies = []
+	const fetchImpl = async (url, options) => {
+		bodies.push(JSON.parse(options.body))
+		return { json: async () => ({ state: 'accepted' }) }
+	}
+
+	await submitAnswers({ submitUrl: '/submit', route: 'a/b', answers: {}, honeypot: 'https://spam.example', fetchImpl })
+	await submitAnswers({ submitUrl: '/submit', route: 'a/b', answers: {}, fetchImpl })
+
+	assert.equal(bodies[0]._hp, 'https://spam.example')
+	assert.equal('_hp' in bodies[1], false)
 })
 
 // The server sends a map; the React frame mapped over it as a list and threw.

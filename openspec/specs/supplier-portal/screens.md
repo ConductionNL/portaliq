@@ -1,0 +1,25 @@
+# Screens
+
+- PtOpdrachtnemerProjecten https://identity.conduction.nl/screens/board?id=portaliq/PtOpdrachtnemerProjecten
+- MijnTaken https://identity.conduction.nl/screens/board?id=portaliq/MijnTaken
+- MeldingIndienen https://identity.conduction.nl/screens/board?id=portaliq/MeldingIndienen
+- FormulierStart https://identity.conduction.nl/screens/board?id=portaliq/FormulierStart
+- FormulierVelden https://identity.conduction.nl/screens/board?id=portaliq/FormulierVelden
+- FormulierFouten https://identity.conduction.nl/screens/board?id=portaliq/FormulierFouten
+- FormulierVerwerken https://identity.conduction.nl/screens/board?id=portaliq/FormulierVerwerken
+- FormulierNietBeschikbaar https://identity.conduction.nl/screens/board?id=portaliq/FormulierNietBeschikbaar
+- FormulierGezinsleden https://identity.conduction.nl/screens/board?id=portaliq/FormulierGezinsleden
+- WooVerzoek https://identity.conduction.nl/screens/board?id=portaliq/WooVerzoek
+- WooVerzoekControleren https://identity.conduction.nl/screens/board?id=portaliq/WooVerzoekControleren
+- PtFormulierInstellingen https://identity.conduction.nl/screens/board?id=portaliq/PtFormulierInstellingen
+- Kop https://identity.conduction.nl/screens/board?id=huisstijl/Kop
+- Publicatie https://identity.conduction.nl/screens/board?id=portaliq/Publicatie
+- Contentpagina https://identity.conduction.nl/screens/board?id=portaliq/Contentpagina
+- Berichten https://identity.conduction.nl/screens/board?id=portaliq/Berichten
+- BerichtDetail https://identity.conduction.nl/screens/board?id=portaliq/BerichtDetail
+- WooVerzoekVerstuurd https://identity.conduction.nl/screens/board?id=portaliq/WooVerzoekVerstuurd
+- Dossiers https://identity.conduction.nl/screens/board?id=portaliq/Dossiers
+- PtDashboard https://identity.conduction.nl/screens/board?id=portaliq/PtDashboard
+- PtInzending https://identity.conduction.nl/screens/board?id=portaliq/PtInzending
+- PtInzendingen https://identity.conduction.nl/screens/board?id=portaliq/PtInzendingen
+- No screen: a development-only sign-in shortcut, never shown to residents (sig-dev-login)

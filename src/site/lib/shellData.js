@@ -46,6 +46,67 @@ export function headerMenusOf(menus) {
 }
 
 /**
+ * Whether a link names a page of this site (`/afval`), not another site
+ * (`https://...`, `//host`) or a mail or phone address.
+ *
+ * @param {string} link The authored link.
+ * @return {boolean} True for a path on this site.
+ *
+ * @spec openspec/specs/site-navigation/spec.md#requirement-a-menu-link-to-a-site-page-carries-the-sites-own-address
+ */
+export function isSiteRoute(link) {
+	return /^\/(?!\/)/.test(String(link || ''))
+}
+
+/**
+ * The href of an authored link: a site route in the site's own addressing,
+ * so it opens where the site is served under the app path as well as on a
+ * portal domain; anything else as it is.
+ *
+ * @param {string} link The authored link.
+ * @param {function(string): string|null} addressOf A route to the address that opens it.
+ * @return {string} The href.
+ *
+ * @spec openspec/specs/site-navigation/spec.md#requirement-a-menu-link-to-a-site-page-carries-the-sites-own-address
+ * @spec openspec/changes/hero-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-block-link-to-a-site-page-carries-the-sites-own-address
+ */
+export function linkAddress(link, addressOf) {
+	return typeof addressOf === 'function' && isSiteRoute(link)
+		? addressOf(link)
+		: link
+}
+
+/**
+ * The menus with each item's `href` written in the site's own addressing, so
+ * a menu works where the site is served under the app path as well as on a
+ * portal domain. The item's `link` stays the route a click moves to; an item
+ * that already carries an `href`, or links elsewhere, is left as it is.
+ *
+ * @param {Array} menus The menus.
+ * @param {function(string): string} addressOf A route to the address that opens it.
+ * @return {Array} New menus; the input is not changed.
+ *
+ * @spec openspec/specs/site-navigation/spec.md#requirement-a-menu-link-to-a-site-page-carries-the-sites-own-address
+ */
+export function menusWithAddresses(menus, addressOf) {
+	const withAddress = (item) => {
+		const out = { ...item }
+		if (!out.href && isSiteRoute(out.link)) {
+			out.href = addressOf(out.link)
+		}
+		if (Array.isArray(item.items)) {
+			out.items = item.items.map(withAddress)
+		}
+		return out
+	}
+
+	return (menus || []).map((menu) => ({
+		...menu,
+		items: (menu.items || []).map(withAddress),
+	}))
+}
+
+/**
  * The legal strip's menu: the highest position of 2 or more, or null.
  *
  * Position is a contract: 0 is the header, 1 a footer column, 2 or higher
@@ -183,6 +244,9 @@ export function headerSearchOf(site) {
 		enabled: search.enabled === true,
 		label: String(search.label || ''),
 		placeholder: String(search.placeholder || ''),
+		// Suggestions while typing, unless the portal switches them off
+		// (search-suggestions-while-typing).
+		suggest: search.suggest !== false,
 		route: /^\/(?!\/)/.test(route) ? route : '/zoeken',
 	}
 }

@@ -254,7 +254,8 @@ test('site: "My account" shows the name, both kinds of address with the preferre
 	assert.match(html, /Waiting for confirmation/)
 	assert.match(html, /\+31612345678/)
 	assert.equal(
-		(html.match(/\(Preferred\)/g) || []).length,
+		(html.match(/pq-address__pill--preferred[^>]*>\s*Preferred\s*</g) || [])
+			.length,
 		2,
 		'one preferred e-mail and one preferred phone',
 	)
@@ -262,11 +263,12 @@ test('site: "My account" shows the name, both kinds of address with the preferre
 	assert.match(html, /Send the link again/)
 	assert.equal((html.match(/Make preferred/g) || []).length, 0)
 	assert.match(html, /<label for="pq-account-name"/)
-	assert.doesNotMatch(
+	assert.match(
 		html,
-		/Your cases stay with the organisation\./,
-		'the removal text shows in the confirmation step only',
+		/Your cases stay with the organisation\.[\s\S]*data-testid="account-remove"/,
+		'the removal says what it does before the button, as the MijnAccount board draws it',
 	)
+	assert.doesNotMatch(html, /Yes, remove my account/, 'no confirmation yet')
 })
 
 test('site: the removal step says the cases stay, and a failed read says so', async () => {
@@ -424,8 +426,12 @@ test('site: the slice exports its pages by the React section keys, each a lazy c
 	assert.deepEqual(Object.keys(siteE.pages).sort(), [
 		'__access__',
 		'__account__',
+		'__actions__',
 		'__cases__',
+		'__contacts__',
 		'__details__',
+		'__plans__',
+		'__theme__',
 	])
 	const index = readFileSync(
 		join(ROOT, 'src', 'site', 'pages', 'e', 'index.js'),
@@ -479,11 +485,13 @@ test('site: every string slice e uses is in strings.js in both languages, withou
 	for (const locale of ['nl', 'en']) {
 		for (const [key, text] of Object.entries(siteStrings[locale])) {
 			assert.doesNotMatch(text, /—/, `${locale} "${key}" has an em-dash`)
-			assert.equal(
-				text,
-				(locale === 'nl' ? nl : en)[key],
-				`${locale} "${key}" is the React text`,
-			)
+			// Strings added after the React portal retired live only in strings.js,
+			// so the shared catalogue, which is bundled into the first-load entry,
+			// does not grow with them.
+			const react = (locale === 'nl' ? nl : en)[key]
+			if (react !== undefined) {
+				assert.equal(text, react, `${locale} "${key}" is the React text`)
+			}
 		}
 	}
 })

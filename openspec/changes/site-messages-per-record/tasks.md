@@ -6,6 +6,6 @@
   - PHPUnit `MessageContactReaderTest` (7: per-row contacts, trust, proof, refusal, stored contact, 400s, summary), `InAppMessagingLeafTest` (2 new)
 - [x] **T3**: the site: `messaging()` on the portal API; `conversations.js`; `MessagesPage.vue` with tabs, cards, reply and the form
   - node `tests/site-messages-per-record.spec.mjs` (`check:site-messages-per-record`, in `check:specs`); `tests/site-inbox-pages.spec.mjs` updated (cards instead of action rows; a thread opens on its button)
-- [ ] **T4**: live check next to the Wilgenboom and Vaartveld `Berichten` boards, once learniq declares `contacts` (learniq `portal-message-contacts`)
-- [ ] **T5** (follow-up): a staff screen for these threads (today staff reply through `/api/staff/messages/*` only)
+- [ ] **T4**: live check next to the Wilgenboom and Vaartveld `Berichten` boards, once learniq declares `contacts` (learniq `portal-message-contacts`) — not run: needs a live instance and learniq
+- [ ] **T5** (follow-up): a staff screen for these threads (today staff reply through `/api/staff/messages/*` only) — not run: follow-up, needs a staff screen design
 - [x] **T6**: `openspec validate site-messages-per-record --strict`

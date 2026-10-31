@@ -24,9 +24,15 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\DashboardController;
 use OCA\Portaliq\Service\AdminMenuAccess;
+use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
+use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\RedirectResponse;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Services\IInitialState;
 use OCP\IRequest;
+use OCP\IURLGenerator;
+use OCP\IUser;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -62,8 +68,23 @@ class DashboardControllerTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 
-		$this->controller = new DashboardController($this->createMock(IRequest::class));
+		$this->controller = new DashboardController($this->createMock(IRequest::class), $this->access(staff: true));
 	}//end setUp()
+
+	/**
+	 * An access double that answers whether the user is staff.
+	 *
+	 * @param bool $staff Whether the signed-in user is staff.
+	 *
+	 * @return AdminMenuAccess
+	 */
+	private function access(bool $staff): AdminMenuAccess {
+		$access = $this->createMock(AdminMenuAccess::class);
+		$access->method('isStaff')->willReturn($staff);
+		$access->method('forCurrentUser')->willReturn(['admin' => false, 'pages' => false, 'accounts' => false, 'accessRequests' => false]);
+
+		return $access;
+	}//end access()
 
 	/**
 	 * `GET /` renders portaliq's own `index` template.
@@ -102,10 +123,71 @@ class DashboardControllerTest extends TestCase {
 	public function testThePageHandsTheAppTheAccessFlags(): void {
 		$flags = ['admin' => false, 'pages' => false, 'accounts' => false, 'accessRequests' => false];
 		$access = $this->createMock(AdminMenuAccess::class);
+		$access->method('isStaff')->willReturn(true);
 		$access->method('forCurrentUser')->willReturn($flags);
 		$state = $this->createMock(IInitialState::class);
 		$state->expects($this->once())->method('provideInitialState')->with('access', $flags);
 
 		(new DashboardController($this->createMock(IRequest::class), $access, $state))->page();
 	}//end testThePageHandsTheAppTheAccessFlags()
+
+	/**
+	 * A signed-in account that is not staff is refused, and gets no access flags.
+	 *
+	 * Found live on 2026-10-14: an account in no group opened /apps/portaliq/
+	 * and was shown the staff dashboard.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/close-portaliq-register-to-staff/specs/admin-ui/spec.md#requirement-only-staff-may-open-portaliqs-nextcloud-app-and-read-its-register
+	 */
+	public function testAnAccountThatIsNotStaffIsRefused(): void {
+		$state = $this->createMock(IInitialState::class);
+		$state->expects($this->never())->method('provideInitialState');
+
+		$controller = new DashboardController($this->createMock(IRequest::class), $this->access(staff: false), $state);
+
+		foreach ([$controller->page(), $controller->catchAll()] as $response) {
+			$this->assertInstanceOf(TemplateResponse::class, $response);
+			$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+			$this->assertSame('core', $response->getApp());
+			$this->assertSame('403', $response->getTemplateName());
+		}
+	}//end testAnAccountThatIsNotStaffIsRefused()
+
+	/**
+	 * Without the access service nobody can be shown to be staff: the page fails closed.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/close-portaliq-register-to-staff/specs/admin-ui/spec.md#requirement-only-staff-may-open-portaliqs-nextcloud-app-and-read-its-register
+	 */
+	public function testWithoutTheAccessServiceThePageFailsClosed(): void {
+		$response = (new DashboardController($this->createMock(IRequest::class)))->page();
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+	}//end testWithoutTheAccessServiceThePageFailsClosed()
+
+	/**
+	 * A resident is still sent to their portal before the staff check runs.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/close-portaliq-register-to-staff/specs/admin-ui/spec.md#requirement-only-staff-may-open-portaliqs-nextcloud-app-and-read-its-register
+	 */
+	public function testAResidentIsStillSentToTheirPortal(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('inwoner-1');
+		$session = $this->createMock(IUserSession::class);
+		$session->method('getUser')->willReturn($user);
+		$residents = $this->createMock(NextcloudRegistrationDoor::class);
+		$residents->method('residentPortalOf')->with('inwoner-1')->willReturn(['slug' => 'zuiddrecht']);
+		$urls = $this->createMock(IURLGenerator::class);
+		$urls->method('linkToRoute')->willReturn('/apps/portaliq/portal/api/session/nextcloud?portal=zuiddrecht');
+
+		$response = (new DashboardController($this->createMock(IRequest::class), $this->access(staff: false), null, $residents, $session, $urls))->page();
+
+		$this->assertInstanceOf(RedirectResponse::class, $response);
+		$this->assertSame('/apps/portaliq/portal/api/session/nextcloud?portal=zuiddrecht', $response->getRedirectURL());
+	}//end testAResidentIsStillSentToTheirPortal()
 }//end class

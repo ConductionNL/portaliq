@@ -29,7 +29,26 @@
 		</component>
 		<!-- The fields as a description list (site-mijn-omgeving-components
 		     REQ-SMO-005, design D2). -->
-		<DescriptionList :items="facts" itemTestid="detail-card-field" />
+		<DescriptionList :items="facts" itemTestid="detail-card-field">
+			<!-- A `qr` field draws its code in full (link-field-qr-code). -->
+			<template
+				v-for="field in qrFields"
+				:key="field.field"
+				#[`value-${field.field}`]>
+				<QrValue
+					:value="String(detailRow[field.field] ?? '')"
+					:column="field"
+					:locale="locale" />
+			</template>
+		</DescriptionList>
+
+		<!-- The record as a PDF, when its collection opted in (cases-export-own-data-pdf). -->
+		<PdfDownloadButton
+			v-if="collection.exportPdf === true"
+			:id="rowId"
+			:collection="collection"
+			:api="api"
+			:locale="locale" />
 
 		<div
 			v-if="collection.filesUpload === true && api"
@@ -114,8 +133,10 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
 import DescriptionList from '../mijn/DescriptionList.vue'
 import ItemList from './ItemList.vue'
+import QrValue from './QrValue.vue'
 import SlotHost from './SlotHost.vue'
 import TimelineList from './TimelineList.vue'
 import { rowNotice } from '../../../shared/rowAction.js'
@@ -142,7 +163,18 @@ let uploadCounter = 0
 export default {
 	name: 'DetailCard',
 
-	components: { DescriptionList, ItemList, SlotHost, TimelineList },
+	components: {
+		DescriptionList,
+		ItemList,
+		// On demand: only a collection that opted in with `exportPdf` loads it.
+		PdfDownloadButton: defineAsyncComponent(
+			() => import('./PdfDownloadButton.vue'),
+		),
+
+		QrValue,
+		SlotHost,
+		TimelineList,
+	},
 
 	props: {
 		/** The collection: `detail`, `columns`, `filesUpload`, `filesDownload`, `itemList`, `timeline`. */
@@ -230,7 +262,16 @@ export default {
 				key: field.field,
 				label: field.label,
 				value: field.text,
+				slot: field.render === 'qr',
 			}))
+		},
+
+		/**
+		 * @return {Array<object>} The fields that render as a QR code.
+		 * @spec openspec/changes/link-field-qr-code/tasks.md#t5
+		 */
+		qrFields() {
+			return this.fields.filter((field) => field.render === 'qr')
 		},
 
 		files() {

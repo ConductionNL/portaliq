@@ -9,6 +9,123 @@
 
 export default {
 	nl: {
+		'How you are signed in, how we reach you and what we let you know about.':
+			'Hoe u bent ingelogd, hoe wij u bereiken en waarover wij u laten weten.',
+		'Contact preferences': 'Contactvoorkeuren',
+		'For example the name or the KvK number of a company':
+			'Bijvoorbeeld de naam of het KvK-nummer van een bedrijf',
+		'Send the invitation': 'Uitnodiging sturen',
+		'Who may arrange matters for you, and for whom you arrange matters.':
+			'Wie zaken voor u mag regelen, en voor wie u zaken regelt.',
+		'Who may arrange matters for you?': 'Wie mag zaken regelen voor u?',
+		'Authorise someone': 'Iemand machtigen',
+		'Nobody may arrange matters for you yet.':
+			'Nog niemand mag zaken voor u regelen.',
+		Who: 'Wie',
+		'What may this person arrange': 'Wat mag deze persoon',
+		'Until when': 'Tot wanneer',
+		Status: 'Status',
+		Action: 'Actie',
+		'A mandate counts only once the other person signs in and accepts the invitation.':
+			'Een machtiging geldt pas als de ander inlogt en de uitnodiging accepteert.',
+		Active: 'Actief',
+		Revoke: 'Intrekken',
+		'Withdraw invitation': 'Uitnodiging intrekken',
+		'All cases': 'Alle zaken',
+		'No end date': 'Geen einddatum',
+		'On whose behalf you work': 'Namens wie u werkt',
+		'Do you choose a company or person? Then My cases shows their cases.':
+			'Kiest u een bedrijf of persoon? Dan ziet u bij Mijn zaken hun zaken.',
+		'Your mandate for {party}': 'Uw machtiging voor {party}',
+		'given by {party} on {date}': 'gegeven door {party} op {date}',
+		'given by the municipality on {date}': 'gegeven door de gemeente op {date}',
+		'given by {party}': 'gegeven door {party}',
+		'given by the municipality': 'gegeven door de gemeente',
+		'Stop mandate': 'Machtiging stoppen',
+		'Stop this mandate? You can no longer act for them.':
+			'Deze machtiging stoppen? U kunt dan niet meer namens hen handelen.',
+		'We send an invitation by e-mail. The mandate counts only once this person signs in and accepts the invitation.':
+			'Wij sturen een uitnodiging per e-mail. De machtiging geldt pas als deze persoon inlogt en de uitnodiging accepteert.',
+		'What may this person arrange?': 'Wat mag deze persoon regelen?',
+		'Only these kinds of case': 'Alleen deze soorten zaken',
+		'Until when?': 'Tot wanneer?',
+		'(optional)': '(niet verplicht)',
+		'For example 31 12 2026': 'Bijvoorbeeld 31 12 2026',
+		Day: 'Dag',
+		Month: 'Maand',
+		Year: 'Jaar',
+		'Fill in an end date after today, or leave it empty.':
+			'Vul een einddatum na vandaag in, of laat het leeg.',
+		'Choose at least one kind of case.': 'Kies minstens één soort zaak.',
+		'The invitation could not be sent. Try again later.':
+			'De uitnodiging kon niet worden verstuurd. Probeer het later opnieuw.',
+		'Mandates through DigiD Machtigen': 'Machtigen via DigiD Machtigen',
+		'Did you authorise someone through DigiD Machtigen? You do not see that mandate here. You arrange and view it on digid.nl.':
+			'Heeft u iemand gemachtigd via DigiD Machtigen? Die machtiging ziet u hier niet. U regelt en bekijkt haar op digid.nl.',
+		'What do I need to arrange': 'Wat moet ik regelen',
+		'View all tasks ({count})': 'Bekijk alle taken ({count})',
+		'What can I arrange': 'Wat kan ik regelen',
+		'My {products}': 'Mijn {products}',
+		products: 'producten',
+		'Nothing for you at {theme} right now.':
+			'Er is nu niets voor u bij {theme}.',
+		Valid: 'Geldig',
+		Expired: 'Verlopen',
+		'Starts on {date}': 'Gaat in op {date}',
+		'Valid until {date}': 'Geldig tot en met {date}',
+		'in effect since {date}': 'ingegaan op {date}',
+		'View all {products}': 'Bekijk alle {products}',
+		'Back to {theme}': 'Terug naar {theme}',
+		'Due {date}': 'Voor {date}',
+		'{count} in total': '{count} in totaal',
+		'Your change is saved.': 'Uw wijziging is opgeslagen.',
+		Save: 'Opslaan',
+		Themes: "Thema's",
+		'My contacts': 'Mijn contacten',
+		'Invite someone': 'Iemand uitnodigen',
+		'People and organisations you work with. With a contact you can send messages and make a plan together.':
+			'Mensen en organisaties met wie u samenwerkt. Met een contact kunt u berichten sturen en samen een plan maken.',
+		'Waiting for approval': 'Wacht op goedkeuring',
+		'Not accepted': 'Niet geaccepteerd',
+		'Sent on {date}': 'Verstuurd op {date}',
+		Accept: 'Accepteren',
+		Decline: 'Weigeren',
+		'Send again': 'Opnieuw versturen',
+		Withdraw: 'Intrekken',
+		'Your contacts': 'Uw contacten',
+		'Send message': 'Bericht sturen',
+		'Message to {name}': 'Bericht aan {name}',
+		'Your message': 'Uw bericht',
+		'You find the conversation under Messages.':
+			'U vindt het gesprek terug onder Berichten.',
+		'Your message has been sent. You find the conversation under Messages.':
+			'Uw bericht is verstuurd. U vindt het gesprek terug onder Berichten.',
+		'Your message could not be sent. Try again.':
+			'Uw bericht kon niet worden verstuurd. Probeer het opnieuw.',
+		'Write a message first.': 'Schrijf eerst een bericht.',
+		All: 'Alles',
+		Guide: 'Begeleider',
+		Contact: 'Contact',
+		Organisation: 'Organisatie',
+		'You have no contacts yet.': 'U heeft nog geen contacten.',
+		'What does a contact see of you?': 'Wat ziet een contact van u?',
+		'A contact sees your name and the messages you send them. A contact never sees your cases.':
+			'Een contact ziet uw naam en de berichten die u hen stuurt. Een contact ziet nooit uw zaken.',
+		'The invitation is sent.': 'De uitnodiging is verstuurd.',
+		'E-mail address': 'E-mailadres',
+		'Message (optional)': 'Bericht (niet verplicht)',
+		'What happens after you send it?': 'Wat gebeurt er na het versturen?',
+		'The person receives your invitation.': 'De ander ontvangt uw uitnodiging.',
+		'If they have no account yet, they can create one with the link. It works for 14 days.':
+			'Heeft de ander nog geen account, dan kan die er met de link een aanmaken. De link werkt 14 dagen.',
+		'You become contacts once they accept.':
+			'U bent contacten zodra de ander accepteert.',
+		'Send invitation': 'Uitnodiging versturen',
+		'Fill in a valid e-mail address.': 'Vul een geldig e-mailadres in.',
+		'You have already invited this person, or you are already connected.':
+			'U heeft deze persoon al uitgenodigd, of u bent al met elkaar verbonden.',
+		'You sent the most invitations for today. Try again tomorrow.':
+			'U heeft het maximale aantal uitnodigingen voor vandaag verstuurd. Probeer het morgen opnieuw.',
 		'Code from a letter': 'Code uit een brief',
 		'Did you get a letter with a code? Fill it in here. After that you see what is shared with you.':
 			'Heeft u een brief met een code gekregen? Vul de code hier in. Daarna ziet u wat met u is gedeeld.',
@@ -132,13 +249,21 @@ export default {
 		'We sent a link to {address}. Follow it to confirm the address.':
 			'We hebben een link gestuurd naar {address}. Open de link om het adres te bevestigen.',
 		'Whose cases do you need access to?': 'Voor wiens zaken wilt u toegang?',
-		'Why are you withdrawing? (optional)':
-			'Waarom trekt u de aanvraag in? (niet verplicht)',
+		'Why are you withdrawing? (optional)': 'Waarom trekt u in? (niet verplicht)',
 		'Why do you need access?': 'Waarom hebt u toegang nodig?',
 		'Withdraw request': 'Aanvraag intrekken',
 		'Withdraw this request': 'Deze aanvraag intrekken',
-		'Withdraw this request?': 'Deze aanvraag intrekken?',
+		'Withdraw this request?': 'Wilt u deze aanvraag intrekken?',
 		'Withdrawn on {date}.': 'Ingetrokken op {date}.',
+		'We still need documents from you. Send them before {due}, and we will decide by {legal}.':
+			'Wij hebben nog stukken van u nodig. Stuur ze voor {due}, dan nemen wij uiterlijk {legal} een besluit.',
+		'We still need documents from you. Send them before {due}.':
+			'Wij hebben nog stukken van u nodig. Stuur ze voor {due}.',
+		'We still need documents from you.': 'Wij hebben nog stukken van u nodig.',
+		'Your tasks could not be loaded.': 'Uw taken konden niet worden geladen.',
+		'Expected decision': 'Verwacht besluit',
+		'Ready by': 'Uiterlijk klaar op',
+		'Next step: {step}': 'Volgende stap: {step}',
 		'Yes, remove my account': 'Ja, verwijder mijn account',
 		'You have no e-mail address on your account.':
 			'Er staat geen e-mailadres bij uw account.',
@@ -169,6 +294,124 @@ export default {
 		'{name} has been added to your case.': '{name} is aan uw zaak toegevoegd.',
 	},
 	en: {
+		'How you are signed in, how we reach you and what we let you know about.':
+			'How you are signed in, how we reach you and what we let you know about.',
+		'Contact preferences': 'Contact preferences',
+		'For example the name or the KvK number of a company':
+			'For example the name or the KvK number of a company',
+		'Send the invitation': 'Send the invitation',
+		'Who may arrange matters for you, and for whom you arrange matters.':
+			'Who may arrange matters for you, and for whom you arrange matters.',
+		'Who may arrange matters for you?': 'Who may arrange matters for you?',
+		'Authorise someone': 'Authorise someone',
+		'Nobody may arrange matters for you yet.':
+			'Nobody may arrange matters for you yet.',
+		Who: 'Who',
+		'What may this person arrange': 'What may this person arrange',
+		'Until when': 'Until when',
+		Status: 'Status',
+		Action: 'Action',
+		'A mandate counts only once the other person signs in and accepts the invitation.':
+			'A mandate counts only once the other person signs in and accepts the invitation.',
+		Active: 'Active',
+		Revoke: 'Revoke',
+		'Withdraw invitation': 'Withdraw invitation',
+		'All cases': 'All cases',
+		'No end date': 'No end date',
+		'On whose behalf you work': 'On whose behalf you work',
+		'Do you choose a company or person? Then My cases shows their cases.':
+			'Do you choose a company or person? Then My cases shows their cases.',
+		'Your mandate for {party}': 'Your mandate for {party}',
+		'given by {party} on {date}': 'given by {party} on {date}',
+		'given by the municipality on {date}': 'given by the municipality on {date}',
+		'given by {party}': 'given by {party}',
+		'given by the municipality': 'given by the municipality',
+		'Stop mandate': 'Stop mandate',
+		'Stop this mandate? You can no longer act for them.':
+			'Stop this mandate? You can no longer act for them.',
+		'We send an invitation by e-mail. The mandate counts only once this person signs in and accepts the invitation.':
+			'We send an invitation by e-mail. The mandate counts only once this person signs in and accepts the invitation.',
+		'What may this person arrange?': 'What may this person arrange?',
+		'Only these kinds of case': 'Only these kinds of case',
+		'Until when?': 'Until when?',
+		'(optional)': '(optional)',
+		'For example 31 12 2026': 'For example 31 12 2026',
+		Day: 'Day',
+		Month: 'Month',
+		Year: 'Year',
+		'Fill in an end date after today, or leave it empty.':
+			'Fill in an end date after today, or leave it empty.',
+		'Choose at least one kind of case.': 'Choose at least one kind of case.',
+		'The invitation could not be sent. Try again later.':
+			'The invitation could not be sent. Try again later.',
+		'Mandates through DigiD Machtigen': 'Mandates through DigiD Machtigen',
+		'Did you authorise someone through DigiD Machtigen? You do not see that mandate here. You arrange and view it on digid.nl.':
+			'Did you authorise someone through DigiD Machtigen? You do not see that mandate here. You arrange and view it on digid.nl.',
+		'What do I need to arrange': 'What do I need to arrange',
+		'View all tasks ({count})': 'View all tasks ({count})',
+		'What can I arrange': 'What can I arrange',
+		'My {products}': 'My {products}',
+		products: 'products',
+		'Nothing for you at {theme} right now.':
+			'Nothing for you at {theme} right now.',
+		Valid: 'Valid',
+		Expired: 'Expired',
+		'Starts on {date}': 'Starts on {date}',
+		'Valid until {date}': 'Valid until {date}',
+		'in effect since {date}': 'in effect since {date}',
+		'View all {products}': 'View all {products}',
+		'Back to {theme}': 'Back to {theme}',
+		'Due {date}': 'Due {date}',
+		'{count} in total': '{count} in total',
+		'Your change is saved.': 'Your change is saved.',
+		Save: 'Save',
+		Themes: 'Themes',
+		'My contacts': 'My contacts',
+		'Invite someone': 'Invite someone',
+		'People and organisations you work with. With a contact you can send messages and make a plan together.':
+			'People and organisations you work with. With a contact you can send messages and make a plan together.',
+		'Waiting for approval': 'Waiting for approval',
+		'Not accepted': 'Not accepted',
+		'Sent on {date}': 'Sent on {date}',
+		Accept: 'Accept',
+		Decline: 'Decline',
+		'Send again': 'Send again',
+		Withdraw: 'Withdraw',
+		'Your contacts': 'Your contacts',
+		'Send message': 'Send message',
+		'Message to {name}': 'Message to {name}',
+		'Your message': 'Your message',
+		'You find the conversation under Messages.':
+			'You find the conversation under Messages.',
+		'Your message has been sent. You find the conversation under Messages.':
+			'Your message has been sent. You find the conversation under Messages.',
+		'Your message could not be sent. Try again.':
+			'Your message could not be sent. Try again.',
+		'Write a message first.': 'Write a message first.',
+		All: 'All',
+		Guide: 'Guide',
+		Contact: 'Contact',
+		Organisation: 'Organisation',
+		'You have no contacts yet.': 'You have no contacts yet.',
+		'What does a contact see of you?': 'What does a contact see of you?',
+		'A contact sees your name and the messages you send them. A contact never sees your cases.':
+			'A contact sees your name and the messages you send them. A contact never sees your cases.',
+		'The invitation is sent.': 'The invitation is sent.',
+		'E-mail address': 'E-mail address',
+		'Message (optional)': 'Message (optional)',
+		'What happens after you send it?': 'What happens after you send it?',
+		'The person receives your invitation.':
+			'The person receives your invitation.',
+		'If they have no account yet, they can create one with the link. It works for 14 days.':
+			'If they have no account yet, they can create one with the link. It works for 14 days.',
+		'You become contacts once they accept.':
+			'You become contacts once they accept.',
+		'Send invitation': 'Send invitation',
+		'Fill in a valid e-mail address.': 'Fill in a valid e-mail address.',
+		'You have already invited this person, or you are already connected.':
+			'You have already invited this person, or you are already connected.',
+		'You sent the most invitations for today. Try again tomorrow.':
+			'You sent the most invitations for today. Try again tomorrow.',
 		'Code from a letter': 'Code from a letter',
 		'Did you get a letter with a code? Fill it in here. After that you see what is shared with you.':
 			'Did you get a letter with a code? Fill it in here. After that you see what is shared with you.',
@@ -295,6 +538,15 @@ export default {
 		'Withdraw this request': 'Withdraw this request',
 		'Withdraw this request?': 'Withdraw this request?',
 		'Withdrawn on {date}.': 'Withdrawn on {date}.',
+		'We still need documents from you. Send them before {due}, and we will decide by {legal}.':
+			'We still need documents from you. Send them before {due}, and we will decide by {legal}.',
+		'We still need documents from you. Send them before {due}.':
+			'We still need documents from you. Send them before {due}.',
+		'We still need documents from you.': 'We still need documents from you.',
+		'Your tasks could not be loaded.': 'Your tasks could not be loaded.',
+		'Expected decision': 'Expected decision',
+		'Ready by': 'Ready by',
+		'Next step: {step}': 'Next step: {step}',
 		'Yes, remove my account': 'Yes, remove my account',
 		'You have no e-mail address on your account.':
 			'You have no e-mail address on your account.',

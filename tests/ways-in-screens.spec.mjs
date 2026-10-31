@@ -51,10 +51,10 @@ test('the site translator goes first, the ways-in strings fill its gaps', () => 
 })
 
 test('the doors stay closed unless the site config opens them (REQ-IWI-005)', () => {
-	assert.deepEqual(lib.waysInFrom({}), { register: false, reference: false, emailSignIn: '', referenceCaseTypes: [] })
+	assert.deepEqual(lib.waysInFrom({}), { register: false, reference: false, emailSignIn: '', referenceCaseTypes: [], emailLink: false })
 	const type = { register: 'cases', schema: 'case', caseType: 'parking', label: 'Parking permit' }
 	const open = lib.waysInFrom({ waysIn: { register: true, reference: true, emailSignIn: 'E-mail', referenceCaseTypes: [type, { label: 'broken' }] } })
-	assert.deepEqual(open, { register: true, reference: true, emailSignIn: 'E-mail', referenceCaseTypes: [type] })
+	assert.deepEqual(open, { register: true, reference: true, emailSignIn: 'E-mail', referenceCaseTypes: [type], emailLink: false })
 	assert.equal(lib.waysInFrom({ waysIn: { reference: true, referenceCaseTypes: [] } }).reference, false)
 })
 
@@ -85,9 +85,32 @@ test('registration sends the portal, the challenge, the solution and the honeypo
 	const challenge = await api.challenge('registration')
 	assert.match(calls[0].url, /\/identity\/challenge\?surface=registration&portal=wilgenboom$/)
 	const answer = await api.registerAccount({ email: 'a@example.org', displayName: 'A', challenge, solution: '7', honeypot: { field: 'website', value: '' } })
-	assert.deepEqual(calls[1].body, { portal: 'wilgenboom', email: 'a@example.org', displayName: 'A', nonce: 'n', expiresAt: 9, signature: 's', solution: '7', website: '' })
+	assert.deepEqual(calls[1].body, { portal: 'wilgenboom', email: 'a@example.org', displayName: 'A', nonce: 'n', expiresAt: 9, signature: 's', solution: '7', contactInvitation: '', website: '' })
 	assert.equal(answer.ok, true)
 	assert.equal(lib.registrationOutcomeText(answer.data.awaiting), 'We sent you an e-mail. Follow the link in it to activate your account.')
+})
+
+test('a contact invitation fills the address and rides along with the registration (own-contacts T05)', async () => {
+	const { fetchImpl, calls } = fakeFetch({
+		'/identity/contact-invitation': { body: { email: 'new@example.nl' } },
+		'/identity/register': { body: { status: 'pending', awaiting: 'activation' } },
+	})
+	const api = lib.waysInApi('/b', 'p', fetchImpl)
+	assert.equal(await api.contactInvitationEmail('secret'), 'new@example.nl')
+	assert.deepEqual(calls[0].body, { portal: 'p', token: 'secret' })
+	await api.registerAccount({ email: 'new@example.nl', contactInvitation: 'secret' })
+	assert.equal(calls[1].body.contactInvitation, 'secret')
+
+	const refused = fakeFetch({ '/identity/contact-invitation': { status: 404, body: { error: 'invitation_not_valid' } } })
+	assert.equal(await lib.waysInApi('/b', 'p', refused.fetchImpl).contactInvitationEmail('spent'), '')
+
+	const kept = new Map([['portaliq.contactInvitation', 'secret']])
+	const storage = { getItem: (key) => kept.get(key) ?? null }
+	assert.equal(lib.keptContactInvitation(storage), 'secret')
+	assert.equal(lib.keptContactInvitation(null), '')
+	assert.equal(lib.keptContactInvitation({ getItem: () => { throw new Error('blocked') } }), '')
+	const { CONTACT_INVITATION_KEY } = await import('../src/shared/contactInvitation.js')
+	assert.equal(CONTACT_INVITATION_KEY, 'portaliq.contactInvitation', 'the sign-in screen reads the key the link keeps')
 })
 
 test('the other ways in call their own routes and keep the refusal', async () => {
@@ -118,7 +141,10 @@ test('the screens: a labelled form, a trap out of sight, a read-only case, an ac
 	assert.match(ways, /v-if="ways\.referenceCaseTypes\.length > 1"/)
 	const link = read('src/site/components/WayInLink.vue')
 	assert.match(link, /data-testid="reference-case"/)
-	assert.doesNotMatch(link, /<input|<textarea/)
+	// The case a reference link opens is read only. (The e-mail link page
+	// asks for an address in another browser: sign-in-with-an-email-link.)
+	const caseView = link.slice(link.indexOf('data-testid="reference-case"'), link.indexOf('</section>'))
+	assert.doesNotMatch(caseView, /<input|<textarea/)
 	assert.match(link, /data-testid="way-in-accept"/)
 })
 
@@ -165,11 +191,14 @@ test('a button link ships its stylesheet, so a sign-in link never falls back to 
 	)
 	const users = [
 		'src/site/components/AccountArea.vue',
+		'src/site/components/FederatedSearchBlock.vue',
 		'src/site/components/FooterColumns.vue',
 		'src/site/components/IntakeFormBlock.vue',
 		'src/site/components/chrome/HeaderTools.vue',
 		'src/site/components/chrome/SignInPage.vue',
+		'src/site/components/mijn/StepUpPrompt.vue',
 		'src/site/pages/inbox/InboxPage.vue',
+		'src/site/widgets/nlAlert/NlAlert.vue',
 	]
 	for (const file of users) {
 		const source = read(file)

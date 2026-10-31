@@ -63,8 +63,9 @@
 
 <script>
 import { authBaseFrom } from '../lib/authApi.js'
-import { resolveApiBase } from '../lib/contentApi.js'
+import { resolveApiBase, runtimeConfig } from '../lib/contentApi.js'
 import { fetchCatalogue, formRouteFor } from '../lib/intakeApi.js'
+import { addressOfRoute } from '../lib/siteAddress.js'
 
 /**
  * The requests a visitor can start, by topic, as the published catalogue
@@ -161,12 +162,14 @@ export default {
 		 * @return {string} The href.
 		 *
 		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+		 * @spec openspec/specs/site-navigation/spec.md#requirement-a-link-to-a-record-or-a-search-result-keeps-the-portal-and-the-route-req-rsl-001
 		 */
 		hrefFor(entry) {
-			const url = new URL(window.location.href)
-			url.search = ''
-			url.searchParams.set('route', formRouteFor(this.formPage, entry.route))
-			return url.toString()
+			return addressOfRoute(
+				formRouteFor(this.formPage, entry.route),
+				window.location.href,
+				runtimeConfig(),
+			).toString()
 		},
 
 		/**

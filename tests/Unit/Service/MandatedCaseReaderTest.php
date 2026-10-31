@@ -41,8 +41,9 @@ class MandatedCaseReaderTest extends TestCase {
 		$this->assertNotNull($case);
 		$this->assertSame('ZAAK-9', $case['reference']);
 		$this->assertSame('Bakkerij Jansen BV', $case['_mandate']['label']);
-		// Read by the party field, for the company, never by the employee.
-		$this->assertSame(['kvk-1'], $this->readBy);
+		// Read by the party field, for the company, never by the employee:
+		// in its typed and its bare form (mandate-reads-the-typed-party).
+		$this->assertSame(['subject:kvk-1', 'kvk-1'], $this->readBy);
 	}//end testTheCaseOpensUnderTheMandateThatListedIt()
 
 	public function testNothingOpensWithoutAMandateTheIdentityHolds(): void {

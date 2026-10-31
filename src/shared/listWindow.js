@@ -80,8 +80,22 @@ export function listOrder(block, collection) {
 }
 
 /**
- * The rows a collection block shows: sorted, at most its limit, and
- * whether there are more.
+ * The rows without the first `skip` of them (collection-skip): a list that
+ * a highlight above already opens with its first row.
+ *
+ * @param {Array<object>} rows The ordered rows.
+ * @param {object} block The block (`skip`).
+ * @return {Array<object>}
+ * @spec openspec/changes/collection-skip/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-may-leave-out-its-first-rows
+ */
+export function skipRows(rows, block) {
+	const skip = Number.isInteger(block?.skip) && block.skip >= 1 ? block.skip : 0
+	return skip === 0 ? rows : rows.slice(skip)
+}
+
+/**
+ * The rows a collection block shows: sorted, without the first `skip`
+ * (collection-skip), at most its limit, and whether there are more.
  *
  * @param {Array<object>} rows The rows.
  * @param {object} block The block (`sort`, `limit`).
@@ -89,7 +103,7 @@ export function listOrder(block, collection) {
  * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
  */
 export function windowRows(rows, block) {
-	const sorted = sortRows(rows, block?.sort)
+	const sorted = skipRows(sortRows(rows, block?.sort), block)
 	const limit =
 		Number.isInteger(block?.limit) && block.limit >= 1 ? block.limit : 0
 	if (limit === 0) {

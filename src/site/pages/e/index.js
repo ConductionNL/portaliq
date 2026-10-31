@@ -49,10 +49,32 @@
  * @type {Record<string, () => Promise<object>>}
  */
 export const pages = {
-	__cases__: () => import('./MyCasesPage.vue'),
-	__access__: () => import('./AccessRequestsPage.vue'),
-	__details__: () => import('./RegisteredDetailsPage.vue'),
-	__account__: () => import('./AccountPage.vue'),
+	__cases__: translated(() => import('./MyCasesPage.vue')),
+	__access__: translated(() => import('./AccessRequestsPage.vue')),
+	__details__: translated(() => import('./RegisteredDetailsPage.vue')),
+	__account__: translated(() => import('./AccountPage.vue')),
+	__contacts__: translated(() => import('./ContactsPage.vue')),
+	__theme__: translated(() => import('./ThemePage.vue')),
+	__plans__: translated(() => import('./PlansPage.vue')),
+	__actions__: translated(() => import('./ActionsPage.vue')),
+}
+
+/**
+ * A page loader whose page speaks the page's language: its `t` falls back
+ * to this folder's strings (./translate.js), loaded with the page.
+ *
+ * @param {() => Promise<object>} load The page's own loader.
+ * @return {() => Promise<{default: object}>} The loader of the wrapped page.
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-account-pages-speak-the-pages-language
+ */
+function translated(load) {
+	return async () => {
+		const [module, { withAccountStrings }] = await Promise.all([
+			load(),
+			import('./translate.js'),
+		])
+		return { default: withAccountStrings(module.default || module) }
+	}
 }
 
 /**

@@ -168,23 +168,39 @@ test('the Zuiddrecht declaration stacks the side cards and leaves no empty rows'
 	)
 })
 
-test('the example resident way in is left out while the demo switch is off', async () => {
+// demo-sign-in-beside-the-account: the account way in is a real one, also on
+// a demo, so it is never left out; the one-click cards come on top of it.
+test('the account way in stays, and the demo cards follow it only while the demo switch is on', async () => {
 	const { signInRoutes } = await import('../src/site/lib/authApi.js')
 	const site = {
 		authentication: {
 			modes: ['digid', 'nextcloud'],
-			modeLabels: { nextcloud: { title: 'Voorbeeldinwoner' } },
+			modeLabels: { nextcloud: { title: 'Met een account' } },
 		},
 	}
 	const modes = (routes) => routes.map((route) => route.mode)
-	// Off: the server names the way in its install added, and it stays out.
-	assert.deepEqual(modes(signInRoutes(site, '/a', undefined, '', 'nextcloud')), [
+	// Off: the server offers no resident, every way in stays.
+	assert.deepEqual(modes(signInRoutes(site, '/a', undefined, '', [])), [
 		'digid',
+		'nextcloud',
 	])
-	// On: the one-click card is there, marked as the demo.
-	const on = signInRoutes(site, '/a', undefined, 'zuiddrecht', '')
-	assert.deepEqual(modes(on), ['digid', 'nextcloud'])
-	assert.equal(on[1].demo, true)
+	// On: the account way in keeps its own route, a card per resident follows.
+	const on = signInRoutes(site, '/a', undefined, 'zuiddrecht', [
+		{ key: 'sanne', name: 'Sanne de Vries' },
+		{ key: 'linda', name: 'Linda Bakker' },
+	])
+	assert.deepEqual(modes(on), [
+		'digid',
+		'nextcloud',
+		'example-resident',
+		'example-resident',
+	])
+	assert.equal(on[1].demo, undefined)
+	assert.equal(on[1].href, '/a/session/nextcloud')
+	assert.deepEqual(
+		on.slice(2).map((route) => route.demo),
+		[true, true],
+	)
 	// A portal without an example resident keeps every way in.
 	assert.deepEqual(modes(signInRoutes(site, '/a')), ['digid', 'nextcloud'])
 })

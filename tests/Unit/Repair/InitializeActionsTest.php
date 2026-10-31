@@ -161,6 +161,9 @@ class InitializeActionsTest extends TestCase {
 	 */
 	private function seedActions(): array {
 		$seed = json_decode((string)file_get_contents(__DIR__ . '/../../../lib/actions.seed.json'), true, 512, JSON_THROW_ON_ERROR);
-		return $seed['actions'];
+		return array_map(
+			static fn (mixed $entry): mixed => (is_array($entry) === true && isset($entry['groups']) === true ? $entry['groups'] : $entry),
+			$seed['actions']
+		);
 	}//end seedActions()
 }//end class

@@ -82,3 +82,21 @@ export function cardButton({
 		route: page,
 	}
 }
+
+/**
+ * The card's text under the heading.
+ *
+ * The authored intro invites a visitor to sign in ("Log in om deze publicatie
+ * te bewaren"). Signed in, that invitation is wrong, so the card says what the
+ * page wrote for a signed-in visitor, or nothing.
+ *
+ * @param {object} options What the card knows.
+ * @param {string} options.intro The authored intro.
+ * @param {string} options.signedInIntro The authored text for a signed-in visitor.
+ * @param {boolean} options.signedIn Whether a session is held.
+ * @return {string} The text, or ''.
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-sign-in-card-does-not-invite-a-signed-in-visitor-to-sign-in
+ */
+export function cardIntro({ intro, signedInIntro, signedIn }) {
+	return String((signedIn ? signedInIntro : intro) ?? '').trim()
+}

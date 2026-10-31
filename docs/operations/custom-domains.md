@@ -142,6 +142,81 @@ theming or asset problem and is actually a routing one.
 
 ---
 
+## 6. Serve the site at the root of the domain (optional)
+
+**The bare address works without this step.** On a verified domain of a published portal, Portaliq answers `https://portal.example.com/` (and `/index.php`) with a redirect to the site's long address, on the domain's `landingRoute` when it has one, else the home page. It does so for guests and signed-in users, before Nextcloud would show its login page or default app. `/login` and every other path are left alone, so an employee can still sign in on the portal host. A host that is not a verified domain of a published portal, the workplace host among them, keeps Nextcloud's own root.
+
+Without the rest of this step the site lives at `https://portal.example.com/index.php/apps/portaliq/site`. To serve its pages at short addresses such as `https://portal.example.com/afval`, a proxy in front of Nextcloud rewrites the short addresses of that host to the site's path route. Only Nextcloud's root can be answered from the app; every other short address needs the proxy.
+
+If you prefer the proxy to answer the bare address as well (so Nextcloud is not reached for it), nginx can redirect it per host:
+
+```nginx
+# In the server block of the portal host only.
+location = / {
+    return 302 /index.php/apps/portaliq/site;   # or .../site/mijn on the host of the signed-in area
+}
+```
+
+That rule names the portal's page in proxy configuration, outside the portal's settings, and must be kept in step with `landingRoute` by hand.
+
+1. Add the rewrite for the portal host only. Leave Nextcloud's own prefixes alone and rewrite everything else to `/index.php/apps/portaliq/site/` followed by the path.
+2. Set `servedAtRoot` to true on that domain of the portal. The site then writes its links and its canonical address as short addresses. Leave it false without the rewrite: short links would land on Nextcloud's own root.
+3. Optional: set `landingRoute` on a domain to open another page at its bare address, for example `/mijn` on a host for the signed-in area.
+
+Both settings count only on a verified domain. An unknown or unverified host still gets 404.
+
+**Envoy Gateway (`HTTPRoute`)**, on the portal host:
+
+```yaml
+rules:
+  - matches:   # Nextcloud's own paths, unchanged
+      - path: { type: PathPrefix, value: /index.php/ }
+      - path: { type: PathPrefix, value: /apps/ }
+      - path: { type: PathPrefix, value: /custom_apps/ }
+      - path: { type: PathPrefix, value: /core/ }
+      - path: { type: PathPrefix, value: /dist/ }
+      - path: { type: PathPrefix, value: /js/ }
+      - path: { type: PathPrefix, value: /css/ }
+      - path: { type: PathPrefix, value: /themes/ }
+      - path: { type: PathPrefix, value: /ocs/ }
+      - path: { type: PathPrefix, value: /remote.php }
+      - path: { type: PathPrefix, value: /public.php }
+      - path: { type: PathPrefix, value: /status.php }
+      - path: { type: PathPrefix, value: /.well-known/ }
+    backendRefs: [{ name: nextcloud, port: 80 }]
+  - matches:
+      - path: { type: Exact, value: / }
+    filters:
+      - type: URLRewrite
+        urlRewrite: { path: { type: ReplaceFullPath, replaceFullPath: /index.php/apps/portaliq/site/ } }
+    backendRefs: [{ name: nextcloud, port: 80 }]
+  - matches:
+      - path: { type: PathPrefix, value: / }
+    filters:
+      - type: URLRewrite
+        urlRewrite: { path: { type: ReplacePrefixMatch, replacePrefixMatch: /index.php/apps/portaliq/site/ } }
+    backendRefs: [{ name: nextcloud, port: 80 }]
+```
+
+Add the path your instance serves extra apps from (`/apps-extra/` and the like) to the first rule.
+
+**nginx**, in the `server` block of the portal host:
+
+```nginx
+location ~ ^/(index\.php|apps|custom_apps|core|dist|js|css|themes|ocs|remote\.php|public\.php|status\.php|\.well-known)(/|$) {
+    # Nextcloud's own paths: the usual Nextcloud configuration
+}
+location / {
+    rewrite ^/(.*)$ /index.php/apps/portaliq/site/$1 last;
+}
+```
+
+**Signed in on two hosts.** A resident's session is kept per browser tab and per host. A resident who signs in on `mijn.example.com` is signed out on `example.com/mijn`. Keep residents on one host: let the proxy answer the second host with a redirect to `https://example.com/mijn`, or let the second host serve the whole site with a `landingRoute`, so the resident stays on it.
+
+**Do not set `overwritehost` for the whole instance** when one instance answers on several hosts. It makes every absolute address, sign-in callbacks included, point at that one host. Set `trusted_domains` for each host and `trusted_proxies` for the proxy instead.
+
+---
+
 ## Caching, when a CDN is in front
 
 Portaliq caches public content keyed by **portal + route + locale + audience**
@@ -194,6 +269,8 @@ would mean showing some tenant's content to a visitor who asked for another's.
 | 404 on the custom domain, TXT present | DNS not propagated to Portaliq's resolver yet; check with `dig … @1.1.1.1`. |
 | Certificate warning | Proxied with SSL/TLS mode set to Flexible, or ACME has not completed. |
 | Page loads, links point at the platform host | `trusted_domains` / `overwrite*` not set. |
+| Links on the root of the domain lead to the Nextcloud login | `servedAtRoot` is true but the proxy has no rewrite for that host. |
+| The bare address of the domain shows the Nextcloud login | The domain is not verified, the portal is not published, or Nextcloud resolves another host for the request (check `trusted_proxies` and that `overwritehost` is not set). |
 | Signed-in content shown to anonymous visitors | A CDN cache rule caching by URL alone. Remove it. |
 | Portal will not load in a customer's iframe | The origin is not in the portal's `frame-ancestors` configuration. |
 | Redirect loop | Proxied with SSL/TLS mode Flexible while the origin redirects HTTP → HTTPS. Use Full (strict). |

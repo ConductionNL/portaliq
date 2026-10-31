@@ -308,7 +308,7 @@ test('Linda acts for her father: a named bar with the way back to herself', asyn
 		html,
 		/^<section class="pq-acting-for-bar" aria-label="Namens wie u werkt"/,
 	)
-	assert.match(html, /U regelt nu zaken voor uw vader, H\. Bakker/)
+	assert.match(html, /U regelt nu zaken voor <span translate="no"[^>]*>(<!--\[-->)?uw vader, H\. Bakker/)
 	assert.match(html, /<button type="button"[^>]*>Wissel naar uzelf<\/button>/)
 
 	assert.doesNotMatch(

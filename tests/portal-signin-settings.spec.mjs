@@ -19,6 +19,7 @@ import {
 	createPortalSigninSettings,
 	saveBody,
 } from '../src/lib/portalSigninSettings.js'
+import { pageDraws } from './lib/placement.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -93,13 +94,9 @@ test('the Sign-in widget sits on the portal page and warns that accounts do not 
 		readFileSync(join(ROOT, 'src', 'manifest.json'), 'utf8'),
 	)
 	const page = manifest.pages.find((candidate) => candidate.id === 'PortalDetail')
-	const widget = page.config.widgets.find(
-		(candidate) => candidate.type === 'PortalSignin',
-	)
-	assert.ok(widget, 'PortalDetail declares a PortalSignin widget')
 	assert.ok(
-		page.config.layout.some((cell) => cell.widgetId === widget.id),
-		'and places it in the layout',
+		pageDraws(page.config, 'PortalSignin'),
+		'PortalDetail draws the Sign-in widget, on the Instellingen tab',
 	)
 	assert.match(
 		readFileSync(join(ROOT, 'src', 'registry.js'), 'utf8'),

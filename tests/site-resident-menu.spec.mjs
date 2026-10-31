@@ -18,6 +18,7 @@ import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { buildNav, shellSections } from '../src/shared/portalNav.js'
 import {
+	menuCurrentRoute,
 	ownAreaLink,
 	residentMenuGroups,
 	showsResidentMenu,
@@ -91,7 +92,7 @@ const names = (groups) => groups.map((group) => [group.title, group.items.map((i
 test('the blue bar holds the website menus only, never the resident items', () => {
 	const app = read('src', 'site', 'App.vue')
 	const headerMenus = app.slice(app.indexOf('\t\theaderMenus() {'), app.indexOf('\t\tresidentMenu() {'))
-	assert.match(headerMenus, /return headerMenusOf\(this\.menus\)/)
+	assert.match(headerMenus, /menusWithAddresses\(headerMenusOf\(this\.menus\), this\.hrefForRoute\)/)
 	assert.doesNotMatch(headerMenus, /this\.nav|accountMenu|residentMenu/)
 	assert.doesNotMatch(read('src', 'site', 'lib', 'accountArea.js'), /export function accountMenu/)
 
@@ -114,6 +115,66 @@ test('the resident items go into groups: cases, one per app, messages, then deta
 	const dossiers = groups[2].items[0]
 	assert.equal(dossiers.link, '/mijn/opencatalogi/dossiers')
 	assert.equal(dossiers.href, href('/mijn/opencatalogi/dossiers'))
+})
+
+test('plans and contacts, once the portal switches them on, sit in a group of their own', () => {
+	const areaPages = [
+		{ special: 'contacts', label: 'My contacts', icon: 'AccountMultiple' },
+		{ special: 'samenwerken', label: 'Collaborate', icon: 'ClipboardCheckOutline' },
+	]
+	const groups = residentMenuGroups(navFor(nl, { pages: areaPages }), nl, 0, href)
+	const collaborate = groups.find((group) => group.key === 'collaborate')
+	assert.ok(collaborate, 'a Samenwerken group')
+	assert.equal(collaborate.title, 'Samenwerken')
+	assert.deepEqual(
+		collaborate.items.map((item) => item.link),
+		['/mijn/samenwerken', '/mijn/contacts'],
+	)
+	// The portal's layout places them by name.
+	const laid = residentMenuGroups(navFor(nl, { pages: areaPages }), nl, 0, href, {}, [
+		{ title: 'Samenwerken', items: ['samenwerken', 'contacts'] },
+	])
+	assert.deepEqual(laid[0].items.map((item) => item.link), ['/mijn/samenwerken', '/mijn/contacts'])
+	// Switched off, no group.
+	assert.equal(
+		residentMenuGroups(navFor(nl), nl, 0, href).find((group) => group.key === 'collaborate'),
+		undefined,
+	)
+})
+
+test('Mijn Zuiddrecht lays out Samenwerken, and its example set switches plans and contacts on with something in them', () => {
+	const site = JSON.parse(read('lib', 'Settings', 'sites', 'zuiddrecht.json'))
+	const layout = site.portal.residentMenu.groups
+	assert.deepEqual(
+		layout.find((group) => group.title === 'Samenwerken')?.items,
+		['samenwerken', 'contacts'],
+	)
+	assert.ok(layout.find((group) => group.title === 'Zaken en taken').items.includes('access'))
+	const set = JSON.parse(read('lib', 'Settings', 'example-sets', 'zuiddrecht.json'))
+	const change = set.changes.find((entry) => entry.schema === 'portal' && entry.set?.plansEnabled === true)
+	assert.ok(change, 'a change that switches plans on')
+	assert.equal(change.set.contactsEnabled, true)
+	assert.deepEqual(change.where, { slug: 'zuiddrecht' })
+	const sanne = '{{cast:sanne.uid}}'
+	const of = (schema) => set.objects.filter((object) => object.schema === schema && object.data.owner === sanne)
+	const contacts = of('portalContact')
+	const approved = contacts.filter((row) => row.data.state === 'approved').map((row) => row.data.contactRef)
+	assert.ok(approved.length >= 2)
+	assert.ok(contacts.some((row) => row.data.role === 'begeleider'))
+	assert.ok(contacts.some((row) => row.data.state === 'invited' && row.data.email))
+	const [plan] = of('portalPlan')
+	assert.equal(plan.data.status, 'running')
+	// Everyone in the plan is an approved contact of its owner.
+	for (const participant of plan.data.participants) {
+		assert.ok(approved.includes(participant), participant)
+	}
+	const actions = of('portalAction')
+	assert.equal(actions.length, 5)
+	for (const action of actions) {
+		assert.equal(action.data.plan, `{{object:${plan.key}.id}}`)
+		assert.ok([sanne, ...approved].includes(action.data.assignee))
+		assert.ok(['todo', 'doing', 'done'].includes(action.data.status))
+	}
 })
 
 test('no two items read the same, in either language', () => {
@@ -225,7 +286,7 @@ test('the header links to the own area when signed in, and keeps the sign-in lin
 		accountLink: link,
 		signOutLabel: 'Uitloggen',
 	})
-	assert.match(signedIn, /data-testid="site-auth-subject"[^>]*>Ingelogd als Suzanne Moulin</)
+	assert.match(signedIn, /data-testid="site-auth-subject"[^>]*>(<!--\[-->)?Ingelogd als <span translate="no"[^>]*>(<!--\[-->)?Suzanne Moulin</)
 	assert.match(signedIn, /data-testid="site-own-area"[^>]*>\s*Mijn omgeving\s*</)
 	assert.match(signedIn, /href="\/apps\/portaliq\/site\?route=%2Fmijn"/)
 	assert.match(signedIn, /data-testid="site-signout"[^>]*>\s*Uitloggen\s*</)
@@ -262,6 +323,79 @@ test('the menu is a named landmark with labelled groups and marks the current it
 
 	// The unread count is read out in words.
 	assert.match(html, /data-testid="site-resident-menu-badge"[\s\S]*?2 ongelezen/)
+})
+
+test('on a case opened from "Mijn zaken" the menu marks "Mijn zaken"; a route of its own item stays its own', () => {
+	const groups = [
+		{ items: [{ link: '/mijn' }, { link: '/mijn/inbox' }] },
+		{ items: [{ link: '/mijn/cases' }, { link: '/mijn/tasks' }] },
+		{ items: [{ link: '/mijn/opencatalogi/dossiers' }] },
+	]
+	const nav = [
+		{ key: 'cases', special: 'cases' },
+		{
+			key: 'dossiq:mijnZaken',
+			contribution: { app: 'dossiq' },
+			page: { id: 'mijnZaken', record: { collection: 'mijnZaken' } },
+		},
+		{
+			key: 'dossiq:mijnMeldingen',
+			contribution: { app: 'dossiq' },
+			page: { id: 'mijnMeldingen', blocks: [{ collection: 'meldingen' }] },
+		},
+	]
+	const contributions = {
+		contributions: [
+			{
+				app: 'dossiq',
+				collections: [
+					{ id: 'mijnZaken', kind: 'cases' },
+					{ id: 'meldingen', kind: 'list' },
+				],
+			},
+		],
+	}
+	// The case page is no item of the menu: the cases section is marked.
+	assert.equal(
+		menuCurrentRoute('/mijn/dossiq/mijnZaken/c-82', groups, nav, contributions),
+		'/mijn/cases',
+	)
+	// A case opened on the cases collection's own page marks it too (Zaak board).
+	assert.equal(
+		menuCurrentRoute('/mijn/dossiq/mijnZaken', groups, nav, contributions),
+		'/mijn/cases',
+	)
+	// A page with an item of its own keeps it.
+	assert.equal(menuCurrentRoute('/mijn/inbox', groups, nav, contributions), '/mijn/inbox')
+	// A page one level under an item marks that item, never the overview.
+	assert.equal(
+		menuCurrentRoute('/mijn/opencatalogi/dossiers/d-1', groups, nav, contributions),
+		'/mijn/opencatalogi/dossiers',
+	)
+	// A record of a collection that is no cases collection marks nothing.
+	assert.equal(
+		menuCurrentRoute('/mijn/dossiq/mijnMeldingen/m-1', groups, nav, contributions),
+		'/mijn/dossiq/mijnMeldingen/m-1',
+	)
+	// Without the cases section in the menu, nothing either.
+	assert.equal(
+		menuCurrentRoute('/mijn/dossiq/mijnZaken/c-82', groups.slice(0, 1), nav, contributions),
+		'/mijn/dossiq/mijnZaken/c-82',
+	)
+})
+
+test('the signed-in area hands the menu the item a deeper page belongs to', () => {
+	const area = read('src', 'site', 'components', 'AccountArea.vue')
+	assert.match(area, /:currentRoute="menuRoute"/)
+	assert.match(area, /menuCurrentRoute\(\s*this\.currentRoute,\s*this\.menuGroups,\s*this\.nav,\s*this\.contributions,?\s*\)/)
+})
+
+test('on the board look the menu links are square, as the boards draw them', () => {
+	const css = read('css', 'site-theme.css')
+	assert.match(
+		css,
+		/\.pq-site:has\(\.pq-site__header--designed\) \.pq-account \.pq-resident-menu__link \{[^}]*border-radius: 0;/,
+	)
 })
 
 test('on a phone the menu folds behind one button that says whether it is open', async () => {

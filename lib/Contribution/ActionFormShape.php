@@ -38,7 +38,13 @@ namespace OCA\Portaliq\Contribution;
  */
 class ActionFormShape {
 	/**
-	 * The widget hint on ONE field config, copied from what the app declared.
+	 * The input hints an action may declare on a field itself.
+	 */
+	private const FIELD_INPUTS = ['date', 'datetime', 'number', 'email'];
+
+	/**
+	 * The widget hint and the profile prefill source on ONE field config,
+	 * copied from what the app declared.
 	 *
 	 * @param array<string, mixed> $entry The sanitised field config so far.
 	 * @param array<string, mixed> $config The declared field config.
@@ -46,10 +52,35 @@ class ActionFormShape {
 	 * @return array<string, mixed> The entry.
 	 *
 	 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-action-field-may-start-from-the-signed-in-residents-name-or-e-mail-address
 	 */
 	public function fieldWidget(array $entry, array $config): array {
+		$entry = (new ProfilePrefillKey())->apply(entry: $entry, source: $config);
+
 		return (new FieldWidgetNormaliser())->apply(entry: $entry, source: $config);
 	}//end fieldWidget()
+
+	/**
+	 * The input hint ONE field config declares itself, kept when it is one the
+	 * site knows. A create action gets its hint from the schema's format
+	 * (SchemaInputHintNormaliser), which runs later and wins; an endpoint
+	 * action writes no schema here, so its own declaration is the only place
+	 * a date field can say it is a date.
+	 *
+	 * @param array<string, mixed> $entry  The sanitised field config so far.
+	 * @param array<string, mixed> $config The declared field config.
+	 *
+	 * @return array<string, mixed> The entry.
+	 *
+	 * @spec openspec/specs/site-forms/spec.md#requirement-an-endpoint-action-may-declare-a-fields-input-req-eaf-001
+	 */
+	public function declaredInput(array $entry, array $config): array {
+		if (in_array(($config['input'] ?? null), self::FIELD_INPUTS, true) === true) {
+			$entry['input'] = $config['input'];
+		}
+
+		return $entry;
+	}//end declaredInput()
 
 	/**
 	 * Mark the fields the resident must fill in: the action's own
@@ -95,4 +126,34 @@ class ActionFormShape {
 	public function flow(array $action, array $whitelist): array {
 		return (new FormStepsNormaliser())->applyToAction(action: $action, whitelist: $whitelist);
 	}//end flow()
+
+	/**
+	 * Normalise the confirmation-mail keys and the row-action inputs of an
+	 * action.
+	 *
+	 * @param array<string, mixed> $action The action.
+	 * @param array<int, string> $whitelist The action's `fields`.
+	 *
+	 * @return array<string, mixed> The action.
+	 *
+	 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
+	 */
+	public function mailAndRowInputs(array $action, array $whitelist): array {
+		$action = (new ConfirmationMailKeys())->normalise(action: $action, whitelist: $whitelist);
+
+		return (new RowActionInputs())->normaliseAction(action: $action);
+	}//end mailAndRowInputs()
+
+	/**
+	 * Normalise the life-domain keys of an action.
+	 *
+	 * @param array<string, mixed> $action The action.
+	 *
+	 * @return array<string, mixed> The action.
+	 *
+	 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
+	 */
+	public function themeTags(array $action): array {
+		return (new ThemeTagKeys())->action(action: $action);
+	}//end themeTags()
 }//end class

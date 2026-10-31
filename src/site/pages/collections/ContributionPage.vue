@@ -139,6 +139,18 @@
 				</template>
 			</GreetingBlock>
 
+			<!-- A list or a figure whose read failed (a 429, a 5xx) says so in
+			     one sentence with a retry, never an empty block
+			     (portal-subject-rate-limit). -->
+			<LoadError
+				v-else-if="
+					(item.kind === 'table' || item.kind === 'kpi')
+					&& loadedOf(item.collection).failed === true
+				"
+				:text="tr('The items could not be loaded.')"
+				:retryLabel="tr('Try again')"
+				@retry="reload(item.collection)" />
+
 			<!-- Rows as cards with a progress figure (REQ-SMO-028), and the
 			     status, note and coming-up parts (site-school-blocks). -->
 			<ProgressCards
@@ -147,6 +159,12 @@
 				:block="item.block"
 				:collection="item.collection"
 				:titleFields="item.collection.titleFields || []"
+				:statusRows="
+					item.block.status
+						? loadedOf({ id: item.block.status.collection })
+						: null
+				"
+				:today="today || undefined"
 				:t="tr"
 				:locale="lang" />
 
@@ -178,8 +196,21 @@
 					v-if="showsHeading(item)"
 					:id="headingId(item)"
 					class="utrecht-heading-3">
-					{{ item.collection.label }}
+					{{ headingOf(item) }}
 				</component>
+				<!-- The collection's own intro, as plain text (collection-intro). -->
+				<p
+					v-if="introOf(item.collection)"
+					class="utrecht-paragraph pq-contribution-page__intro"
+					data-testid="contribution-page-collection-intro">
+					{{ introOf(item.collection) }}
+				</p>
+				<!-- The list as a PDF, when its collection opted in (cases-export-own-data-pdf). -->
+				<PdfDownloadButton
+					v-if="item.collection.exportPdf === true"
+					:collection="item.collection"
+					:api="api"
+					:locale="lang" />
 				<!-- A collection that declares groupByField shows one table per
 				     child, each named by its own heading
 				     (collection-group-by-field). -->
@@ -320,6 +351,7 @@
 					item.kind === 'calendar' && item.block.display === 'tiles'
 				"
 				:items="calendarOf(item)"
+				:range="item.block.range || ''"
 				:loading="calendarLoading(item)"
 				:label="item.block.label || ''"
 				:level="sectionLevel"
@@ -393,9 +425,11 @@
 				:record="activeRecord"
 				:api="api"
 				:level="sectionLevel"
+				:route="item.block.page ? tileTarget(item.block).route || '' : ''"
 				:t="tr"
 				:locale="lang"
-				:today="today || undefined" />
+				:today="today || undefined"
+				@navigate="$emit('navigate', $event)" />
 
 			<DocumentsBlock
 				v-else-if="item.kind === 'documents'"
@@ -439,7 +473,11 @@
 				:row="selected[item.collection.id] || null"
 				:api="api"
 				:t="tr"
-				:locale="lang" />
+				:locale="lang"
+				:taskCollections="caseTaskCollections"
+				:nav="nav"
+				:app="currentContribution ? currentContribution.app || '' : ''"
+				@navigate="$emit('navigate', $event)" />
 
 			<SlotHost
 				v-else-if="item.kind === 'timedTask'"
@@ -462,6 +500,7 @@
 				:api="api"
 				:t="tr"
 				:locale="lang"
+				:portalHelp="(portal && portal.help) || null"
 				@created="(object, written) => afterWrite(written || item.action)" />
 		</template>
 	</section>
@@ -476,15 +515,19 @@ import KpiCards from '../../components/collections/KpiCards.vue'
 import NewsBlock from '../../components/collections/NewsBlock.vue'
 import RichTextBlock from '../../components/collections/RichTextBlock.vue'
 import SlotHost from '../../components/collections/SlotHost.vue'
+import LoadError from '../../components/mijn/LoadError.vue'
+import { asksInput } from '../../../shared/actionInput.js'
 import {
 	anyGrouped,
 	groupFieldOf,
 	groupLabelCollection,
 	groupRows,
 } from '../../../shared/collectionGroups.js'
+import { introOf } from '../../../shared/collectionIntro.js'
 import {
 	itemsInRange,
 	listOrder,
+	skipRows,
 	sortRows,
 	windowRows,
 } from '../../../shared/listWindow.js'
@@ -510,8 +553,13 @@ import { blocks as mijnBlocks } from '../../components/mijn/index.js'
 import { mijnTranslator, siteHref } from '../../components/mijn/rows.js'
 import { ctaLabel, fillTemplate } from '../../components/mijn/template.js'
 import { keepRecordToOpen, sessionStore as tabStore } from '../inbox/inbox.js'
-import { createCollectionLoader, openRecordState } from './collectionLoader.js'
-import { resolveBlocks } from './pageBlocks.js'
+import {
+	createCollectionLoader,
+	openRecordState,
+	pickedRecord,
+	readUnderMandate,
+} from './collectionLoader.js'
+import { resolveBlocks, withoutRecordWrites } from './pageBlocks.js'
 import { collectionsTranslator, pageLocale } from './translate.js'
 
 /**
@@ -554,8 +602,14 @@ export default {
 	components: {
 		CalendarBlock,
 		CollectionTable,
+		// On demand: only a collection that opted in with `exportPdf` loads it.
+		PdfDownloadButton: defineAsyncComponent(
+			() => import('../../components/collections/PdfDownloadButton.vue'),
+		),
+
 		DetailCard,
 		KpiCards,
+		LoadError,
 		NewsBlock,
 		RichTextBlock,
 		SlotHost,
@@ -595,6 +649,8 @@ export default {
 		page: { type: Object, default: null },
 		/** The contribution, when no entry carries it. */
 		contribution: { type: Object, default: null },
+		/** The portal record, for its `help` on a form. */
+		portal: { type: Object, default: null },
 		/** The shared portal api, bound to the resident's bearer. */
 		api: { type: Object, default: null },
 		/** The contributions aggregate, or its list. */
@@ -653,6 +709,16 @@ export default {
 
 		currentContribution() {
 			return this.entry?.contribution || this.contribution || null
+		},
+
+		/** The collections whose rows are tasks of a case (they declare `caseField`). */
+		/**
+		 * @spec openspec/changes/case-page-tasks-decision-dates-and-next-step/tasks.md#t03
+		 */
+		caseTaskCollections() {
+			return (this.currentContribution?.collections || []).filter(
+				(collection) => typeof collection?.caseField === 'string',
+			)
 		},
 
 		lang() {
@@ -730,8 +796,8 @@ export default {
 		},
 
 		/**
-		 * The open record: the row picked from the subject's own list, or the
-		 * only row there is. A row outside that list never opens.
+		 * The open record: the row picked from the subject's own list, a row
+		 * picked under a mandate (pickedRecord), or the only row there is.
 		 *
 		 * @return {object|null}
 		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-page-may-be-the-record-page-of-a-collection
@@ -742,9 +808,8 @@ export default {
 			}
 			const rows = this.recordRows
 			const picked = this.selected[this.recordPage.collection]
-			const id = rowIdOf(picked)
-			if (id) {
-				return rows.find((row) => rowIdOf(row) === id) || null
+			if (rowIdOf(picked)) {
+				return pickedRecord(rows, picked)
 			}
 			const loading = this.store[this.recordPage.collection]?.loading
 			if (this.switching && !loading && !this.target) {
@@ -803,10 +868,12 @@ export default {
 
 		/**
 		 * The blocks on screen: on a record page the list until a record is
-		 * open, then every other block.
+		 * open, then every other block, without its writes when the record
+		 * was read under a mandate.
 		 *
 		 * @return {Array<object>}
 		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-page-may-be-the-record-page-of-a-collection
+		 * @spec openspec/changes/mandated-case-offers-no-writes/specs/portal-my-cases/spec.md#requirement-a-case-read-under-a-mandate-offers-no-writes
 		 */
 		visibleBlocks() {
 			const record = this.recordPage
@@ -820,7 +887,10 @@ export default {
 					(item) => isList(item) || item.kind === 'richText',
 				)
 			}
-			return this.blocks.filter((item) => !isList(item))
+			const open = this.blocks.filter((item) => !isList(item))
+			return readUnderMandate(this.activeRecord)
+				? withoutRecordWrites(open)
+				: open
 		},
 
 		openRecordGroups() {
@@ -914,11 +984,19 @@ export default {
 	mounted() {
 		this.loader = createCollectionLoader({ api: this.api, store: this.store })
 		if (!this.target && this.routeRecordId && this.recordPage) {
-			// The route chooses the record (`/mijn/<app>/<page>/<id>`).
+			// The route chooses the record (`/mijn/<app>/<page>/<id>`). A link
+			// kept for the same record still brings its row, so a case opened
+			// under a mandate opens on its route too.
+			const kept = consumeOpenTarget(
+				window.location,
+				window.history,
+				sessionStore(),
+			)
 			this.target = {
 				app: this.currentContribution?.app || '',
 				collection: this.recordPage.collection,
 				id: this.routeRecordId,
+				row: kept?.id === this.routeRecordId ? kept.row || null : null,
 			}
 		}
 		if (!this.target) {
@@ -1083,13 +1161,21 @@ export default {
 
 		/**
 		 * A cta block with `{title}` in its label filled with the open
-		 * record's title.
+		 * record's title; an action block with the page's own title, so the
+		 * form does not print the heading the page already printed.
 		 *
 		 * @param {object} block The block.
 		 * @return {object}
 		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+		 * @spec openspec/specs/site-forms/spec.md#requirement-a-form-on-a-page-of-its-own-does-not-repeat-the-page-title-req-eaf-004
 		 */
 		withTitle(block) {
+			if (block?.type === 'action') {
+				return {
+					...block,
+					pageTitle: (this.entry && this.entry.label) || '',
+				}
+			}
 			if (block?.type !== 'cta') {
 				return block
 			}
@@ -1228,7 +1314,8 @@ export default {
 			const sort = listOrder(item.block, item.collection)
 			if (this.expanded[item.index]) {
 				return {
-					rows: sortRows(this.rowsOf(item), sort),
+					// Without the rows a highlight already shows (collection-skip).
+					rows: skipRows(sortRows(this.rowsOf(item), sort), item.block),
 					more: false,
 				}
 			}
@@ -1316,6 +1403,18 @@ export default {
 		},
 
 		/**
+		 * A collection's intro, or '' when it has none.
+		 *
+		 * @param {object} collection The contributed collection.
+		 * @return {string}
+		 *
+		 * @spec openspec/changes/archive/2026-10-30-collection-intro/tasks.md#t2
+		 */
+		introOf(collection) {
+			return introOf(collection)
+		},
+
+		/**
 		 * A table block's rows in groups, or [] to render it as one table.
 		 *
 		 * @param {object} item The page block.
@@ -1386,8 +1485,20 @@ export default {
 		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
 		 */
 		showsHeading(item) {
-			const label = item.collection.label || ''
+			const label = this.headingOf(item)
 			return label !== '' && label !== (this.entry && this.entry.label)
+		},
+
+		/**
+		 * A collection block's heading: the block's own `label` ("Laatste
+		 * cijfers"), else the collection's (collection-block-label).
+		 *
+		 * @param {object} item The page item.
+		 * @return {string} The heading, or ''.
+		 * @spec openspec/changes/collection-block-label/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-keeps-its-own-heading
+		 */
+		headingOf(item) {
+			return String(item.block?.label || item.collection?.label || '')
 		},
 
 		/**
@@ -1466,14 +1577,26 @@ export default {
 
 		/**
 		 * A row button: an endpoint action opens its step below the table, a
-		 * `type: update` transition runs at once with no field data.
+		 * `type: update` action with fields to fill in opens its form there
+		 * (site-action-forms), and a transition without fields runs at once
+		 * with no field data.
 		 *
 		 * @param {object} item The resolved table block.
 		 * @param {object} action The action.
 		 * @param {object} row The row.
 		 * @return {Promise<void>}
+		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-update-row-action-that-needs-input-must-open-its-form-on-the-row
 		 */
 		async onRowAction(item, action, row) {
+			if (action.type === 'update' && asksInput(action)) {
+				this.pending = {
+					collectionId: item.collection.id,
+					action,
+					row,
+					dialog: 'form',
+				}
+				return
+			}
 			if (isEndpointRowAction(action)) {
 				this.pending = {
 					collectionId: item.collection.id,

@@ -63,22 +63,30 @@ class PublicCatalogueQuery {
 	 * (end) date is today or later, with the day given as `today`.
 	 *
 	 * @param array<int, array<string, mixed>> $items  The portal's items.
-	 * @param array<string, mixed>             $params `q`, `types`, `filters`, `sort`, `page`, `limit`, `upcoming`, `today`.
+	 * @param array<string, mixed>             $params `q`, `types`, `filters`, `sort`, `page`, `limit`, `upcoming`, `today`,
+	 *                                                 `kindFacet`, `kindNews`, `audienceFacet`.
 	 *
 	 * @return array{items: array<int, array<string, mixed>>, total: int, page: int, pages: int, facets: array<int, array<string, mixed>>}
 	 *
 	 * @spec openspec/changes/portal-public-catalogue/specs/portal-public-catalogue/spec.md#requirement-a-visitor-may-search-and-filter-a-portals-public-catalogue
+	 * @spec openspec/changes/site-catalogue-follows-the-school-boards/specs/portal-public-catalogue/spec.md#requirement-a-catalogue-may-filter-by-kind-and-by-audience
 	 */
 	public function run(array $items, array $params): array {
+		$items   = (new DerivedCatalogueFacets())->apply(items: $items, params: $params);
 		$types   = array_values(array_filter((array)($params['types'] ?? []), 'is_string'));
 		$words   = $this->words(text: (string)($params['q'] ?? ''));
 		$filters = $this->filters(declared: ($params['filters'] ?? []));
 		$today   = (string)($params['today'] ?? gmdate('Y-m-d'));
 
-		$base = array_values(
+		$app        = (string)($params['app'] ?? '');
+		$categories = array_values(array_filter((array)($params['categories'] ?? []), 'is_string'));
+		$range      = (string)($params['range'] ?? '');
+
+		$scope = ['types' => $types, 'app' => $app, 'categories' => $categories, 'range' => $range, 'today' => $today];
+		$base  = array_values(
 			array_filter(
 				$items,
-				fn (array $item): bool => ($types === [] || in_array($item['type'] ?? '', $types, true) === true)
+				fn (array $item): bool => $this->inScope(item: $item, scope: $scope)
 					&& $this->matches(item: $item, words: $words)
 					&& (($params['upcoming'] ?? false) !== true || $this->isUpcoming(item: $item, today: $today))
 			)
@@ -98,6 +106,21 @@ class PublicCatalogueQuery {
 			'facets' => $this->facets(items: $base, filters: $filters),
 		];
 	}//end query()
+
+	/**
+	 * Whether an item is of a wanted type, app and category, and in the wanted range.
+	 *
+	 * @param array<string, mixed> $item  The item.
+	 * @param array<string, mixed> $scope The `types`, `app`, `categories`, `range` and `today` the query asks for.
+	 *
+	 * @return bool
+	 */
+	private function inScope(array $item, array $scope): bool {
+		return ($scope['types'] === [] || in_array($item['type'] ?? '', $scope['types'], true) === true)
+			&& ($scope['app'] === '' || str_starts_with((string)($item['id'] ?? ''), $scope['app'] . ':') === true)
+			&& ($scope['categories'] === [] || in_array((string)($item['category'] ?? ''), $scope['categories'], true) === true)
+			&& ($scope['range'] !== 'schoolYear' || $this->inSchoolYear(item: $item, today: $scope['today']) === true);
+	}//end inScope()
 
 	/**
 	 * The words of a text, lower case and without accents.
@@ -149,6 +172,32 @@ class PublicCatalogueQuery {
 
 		return true;
 	}//end matches()
+
+	/**
+	 * Whether the item's day falls in the school year that holds today
+	 * (1 August to 31 July).
+	 *
+	 * @param array<string, mixed> $item  The item.
+	 * @param string               $today Today, `Y-m-d`.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-2
+	 */
+	private function inSchoolYear(array $item, string $today): bool {
+		$day = substr((string)($item['date'] ?? ''), 0, 10);
+		if ($day === '' || preg_match('/^\d{4}-\d{2}-\d{2}$/', $today) !== 1) {
+			return false;
+		}
+
+		$year  = (int)substr($today, 0, 4);
+		$start = ($year - 1);
+		if ((int)substr($today, 5, 2) >= 8) {
+			$start = $year;
+		}
+
+		return $day >= sprintf('%04d-08-01', $start) && $day <= sprintf('%04d-07-31', ($start + 1));
+	}//end inSchoolYear()
 
 	/**
 	 * Whether an item's (end) date is today or later; an item without a date

@@ -31,7 +31,8 @@
 			<p
 				class="utrecht-paragraph pq-case-value"
 				:data-testid="`case-value-${field}`">
-				{{ text }}
+				{{ untranslated ? '' : text
+				}}<NoTranslate v-if="untranslated" :value="text" />
 			</p>
 			<p
 				v-if="!quiet"
@@ -47,8 +48,15 @@
 </template>
 
 <script>
+import NoTranslate from '../NoTranslate.vue'
+
+// Formats whose values are personal data (REQ-PDU-001).
+const PERSONAL_FORMATS = ['email', 'uri', 'url', 'telephone', 'tel', 'phone']
+
 export default {
 	name: 'CaseField',
+
+	components: { NoTranslate },
 
 	props: {
 		/** The field name. */
@@ -59,6 +67,10 @@ export default {
 		value: { type: [Boolean, String, Number, Object, Array], default: null },
 		/** The translator `t(key, vars)`. */
 		t: { type: Function, required: true },
+		/** The field's schema format (`email`, `telephone`, `uri`), when known. */
+		format: { type: String, default: '' },
+		/** The contribution marked the field `personal: true`. */
+		personal: { type: Boolean, default: false },
 		/** Say nothing about why it cannot change: the case is over. */
 		quiet: { type: Boolean, default: false },
 	},
@@ -68,6 +80,19 @@ export default {
 	computed: {
 		writable() {
 			return this.state?.writable === true
+		},
+
+		/**
+		 * Whether the value is personal data the browser must not translate.
+		 *
+		 * @return {boolean}
+		 * @spec openspec/changes/personal-data-left-untranslated/specs/site-chrome/spec.md#requirement-browser-translation-leaves-names-and-personal-data-alone-req-pdu-001
+		 */
+		untranslated() {
+			return (
+				this.personal === true
+				|| PERSONAL_FORMATS.includes(String(this.format).toLowerCase())
+			)
 		},
 
 		text() {

@@ -23,8 +23,8 @@
 		<h2 v-if="heading" class="utrecht-heading-3 nl-signin-card__heading">
 			{{ heading }}
 		</h2>
-		<p v-if="intro" class="utrecht-paragraph nl-signin-card__intro">
-			{{ intro }}
+		<p v-if="introText" class="utrecht-paragraph nl-signin-card__intro">
+			{{ introText }}
 		</p>
 		<ul v-if="pointList.length > 0" class="nl-signin-card__points">
 			<li
@@ -77,7 +77,7 @@
 <script>
 import { authoredLink, staysInSite } from '../../components/mijn/links.js'
 import { interpolate, pageLocale } from '../../pages/inbox/translate.js'
-import { cardButton, safeWays } from './signIn.js'
+import { cardButton, cardIntro, safeWays } from './signIn.js'
 import strings from './strings.js'
 
 import '@utrecht/digid-button-css/dist/index.css'
@@ -99,6 +99,8 @@ export default {
 		display: { type: String, default: 'buttons' },
 		/** The card's text under the heading. */
 		intro: { type: String, default: '' },
+		/** The card's text for a visitor who is signed in; none when empty. */
+		signedInIntro: { type: String, default: '' },
 		/** The card's check list. */
 		points: { type: Array, default: () => [] },
 		/** The card button's words. */
@@ -123,6 +125,18 @@ export default {
 		 */
 		waysIn() {
 			return safeWays(this.ways)
+		},
+
+		/**
+		 * @return {string} The card's text: the invitation, or once signed in what the page wrote for that.
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-sign-in-card-does-not-invite-a-signed-in-visitor-to-sign-in
+		 */
+		introText() {
+			return cardIntro({
+				intro: this.intro,
+				signedInIntro: this.signedInIntro,
+				signedIn: this.signedIn,
+			})
 		},
 
 		/**
@@ -230,7 +244,10 @@ export default {
 .nl-signin-card--outline {
 	padding: 1.5rem;
 	border: 1px solid
-		var(--nldesign-color-border-dark, var(--utrecht-color-grey-80, currentcolor));
+		var(
+			--nldesign-website-card-border-color,
+			var(--nldesign-color-border-dark, var(--utrecht-color-grey-80, currentcolor))
+		);
 	background: transparent;
 }
 

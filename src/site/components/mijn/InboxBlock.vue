@@ -54,6 +54,9 @@
 				:key="entry.key"
 				class="pq-inbox-block__plain-row"
 				data-testid="mijn-inbox-plain-row">
+				<span class="pq-inbox-block__plain-mark" aria-hidden="true">
+					<svg viewBox="0 0 24 24" focusable="false"><path d="M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z" /></svg>
+				</span>
 				<a
 					class="utrecht-link pq-inbox-block__plain-title"
 					:class="{ 'pq-inbox-block__plain-title--unread': entry.unread }"
@@ -385,7 +388,7 @@ export default {
 }
 
 /* The plain list (zuiddrecht-resident-pages-match-the-boards): hairlines
-   between the rows, the title as a link, the day at the end. */
+   between the rows, a round mark, the title as a link, the day at the end. */
 .pq-inbox-block__head {
 	display: flex;
 	flex-wrap: wrap;
@@ -412,13 +415,33 @@ export default {
 .pq-inbox-block__plain-row {
 	display: flex;
 	flex-wrap: wrap;
+	align-items: flex-start;
 	justify-content: space-between;
-	gap: 0.5rem 1rem;
+	gap: 0.5rem 0.875rem;
 	padding-block: 1rem;
 	border-block-end: 1px solid var(--nldesign-color-border, currentcolor);
 }
 
+.pq-inbox-block__plain-mark {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	inline-size: 36px;
+	block-size: 36px;
+	border-radius: 50%;
+	background: var(--nldesign-color-primary-light, transparent);
+	color: var(--nldesign-color-primary-light-text, var(--nldesign-color-primary, currentcolor));
+}
+
+.pq-inbox-block__plain-mark svg {
+	inline-size: 20px;
+	block-size: 20px;
+	fill: currentcolor;
+}
+
 .pq-inbox-block__plain-title {
+	flex: 1 1 auto;
 	font-size: 1.125rem;
 	font-weight: 600;
 }

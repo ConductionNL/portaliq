@@ -9,7 +9,7 @@ kind: mixed
 Stop serving one municipality's pre-built React application out of the fleet's
 generic portal app, and author the same public surface as Portaliq content: a
 `portal` with its own domain and theme, `menu` and `page` rows, and the public
-block vocabulary the site renderer already ships. `WooController`, the
+block vocabulary the site renderer already ships. `BundledSiteController`, the
 `/woo` routes and the 28 MB `woo/` directory all go once the content exists.
 
 ## Motivation

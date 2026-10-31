@@ -28,7 +28,8 @@
 				v-for="option in options"
 				:key="option.id"
 				:value="option.id"
-				:selected="option.id === current">
+				:selected="option.id === current"
+				:translate="option.id === 'self' ? null : 'no'">
 				{{ option.label }}
 			</option>
 		</select>

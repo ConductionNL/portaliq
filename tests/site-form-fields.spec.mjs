@@ -402,3 +402,72 @@ test('the landing page form marks optional fields and summarises a missed requir
 	)
 	assert.ok(form.find('form-status-success') === null, 'nothing was sent')
 })
+
+test('a whole date typed or pasted into Dag fills the three boxes, and two digits move on', async () => {
+	const { typedDate } = await import('../src/site/components/forms/fields.js')
+	assert.deepEqual(typedDate('01-01-2026'), {
+		day: '01',
+		month: '01',
+		year: '2026',
+	})
+	assert.deepEqual(typedDate('1/3/2026'), { day: '1', month: '3', year: '2026' })
+	assert.deepEqual(typedDate('2026-03-01'), {
+		day: '01',
+		month: '03',
+		year: '2026',
+	})
+	assert.deepEqual(typedDate('01032026'), { day: '01', month: '03', year: '2026' })
+	assert.equal(typedDate('01'), null)
+
+	const group = await mountSfc(DATE, { id: 'van' })
+	const box = (suffix) => group.findAll((n) => n.props.id === `van${suffix}`)[0]
+	const sent = () => group.emitted['update:modelValue'].at(-1)[0]
+
+	// Pasted: the box's maxlength would keep "01", so the paste is read whole.
+	let prevented = false
+	group.vm.paste({
+		clipboardData: { getData: () => '01-01-2026' },
+		preventDefault: () => {
+			prevented = true
+		},
+	})
+	await group.flush()
+	assert.equal(prevented, true)
+	assert.equal(sent(), '2026-01-01')
+	assert.deepEqual(
+		['', '-month', '-year'].map((s) => box(s).props.value),
+		['01', '01', '2026'],
+	)
+	assert.equal(group.focused(), box('-year'), 'lands on Jaar')
+
+	// Typed: two digits in Dag move on to Maand, then to Jaar.
+	group.vm.update('day', '15', { target: box(''), inputType: 'insertText' })
+	await group.flush()
+	assert.equal(group.focused(), box('-month'))
+	group.vm.update('month', '7', { target: box('-month'), inputType: 'insertText' })
+	await group.flush()
+	assert.equal(group.focused(), box('-month'), 'one digit stays')
+	group.vm.update('month', '7-', {
+		target: box('-month'),
+		inputType: 'insertText',
+	})
+	await group.flush()
+	assert.equal(group.focused(), box('-year'), 'a separator after a digit moves on')
+	assert.equal(sent(), '2026-07-15')
+
+	// Deleting never moves focus.
+	group.vm.update('day', '1', {
+		target: box(''),
+		inputType: 'deleteContentBackward',
+	})
+	await group.flush()
+	assert.equal(group.focused(), box('-year'))
+
+	// A whole date typed into Dag (no maxlength in the way) splits too.
+	group.vm.update('day', '02-03-2026', {
+		target: box(''),
+		inputType: 'insertText',
+	})
+	await group.flush()
+	assert.equal(sent(), '2026-03-02')
+})

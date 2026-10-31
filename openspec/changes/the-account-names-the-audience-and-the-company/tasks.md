@@ -6,4 +6,4 @@
   - PHPUnit `BrokerLoginTest::testAnInvitedAccountKeepsItsAudience`, `SessionControllerTest::testOidcCallbackKeepsTheAccountsOwnAudience`
 - [x] 3. The session answer carries `organisationName` from an app's claim.
   - PHPUnit `SessionControllerTest::testIndexNamesTheCompanyFromAClaim`
-- [ ] 4. learniq writes `organisationName` and the employer audience when it invites an employer (learniq `employer-portal-audience`).
+- [ ] 4. learniq writes `organisationName` and the employer audience when it invites an employer (learniq `employer-portal-audience`). — not run: needs learniq (cross-repo)

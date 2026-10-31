@@ -29,7 +29,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\ExampleResident;
 
 /**
- * Writes and withdraws the portal account and the portal's sign-in mode.
+ * Reads and withdraws the portal account and the portal's sign-in mode. The
+ * example set writes them (ExampleSetResidents); the remover takes them back.
  *
  * @spec openspec/changes/example-resident-zuiddrecht/specs/example-resident/spec.md#requirement-the-resident-must-sign-in-without-a-test-door
  */
@@ -71,64 +72,6 @@ class ExampleResidentWayIn {
 	}//end portal()
 
 	/**
-	 * The id of the portal account with this subject reference, or ''.
-	 *
-	 * @param string $subject The subject reference.
-	 *
-	 * @return string
-	 *
-	 * @spec openspec/changes/example-resident-zuiddrecht/specs/example-resident/spec.md#requirement-the-resident-must-sign-in-without-a-test-door
-	 */
-	public function accountOf(string $subject): string {
-		foreach ($this->store->find(register: self::REGISTER, schema: 'portalAccount', filters: ['subjectRef' => $subject]) as $row) {
-			if (($row['subjectRef'] ?? null) === $subject) {
-				return $this->store->idOf(row: $row);
-			}
-		}
-
-		return '';
-	}//end accountOf()
-
-	/**
-	 * The portal account the declaration describes, for this subject.
-	 *
-	 * No e-mail address on purpose: the resident then meets the prompt that
-	 * asks for one, as the design shows it.
-	 *
-	 * @param array<string, mixed> $resident The declaration's `resident`.
-	 * @param string               $subject  The subject reference, which is the Nextcloud account's id.
-	 *
-	 * @return array<string, mixed>
-	 *
-	 * @spec openspec/changes/example-resident-zuiddrecht/specs/example-resident/spec.md#requirement-the-resident-must-sign-in-without-a-test-door
-	 */
-	public function accountFor(array $resident, string $subject): array {
-		return [
-			'subjectRef'     => $subject,
-			'audience'       => (string)$resident['audience'],
-			'organisation'   => (string)$resident['organisation'],
-			'displayName'    => (string)$resident['displayName'],
-			'identityType'   => 'dev',
-			'identityRef'    => 'example-resident',
-			'status'         => 'active',
-			'contactChannel' => 'portal',
-		];
-	}//end accountFor()
-
-	/**
-	 * Write the portal account and return its id, or '' when the write failed.
-	 *
-	 * @param array<string, mixed> $account The account, from accountFor().
-	 *
-	 * @return string
-	 *
-	 * @spec openspec/changes/example-resident-zuiddrecht/specs/example-resident/spec.md#requirement-the-resident-must-sign-in-without-a-test-door
-	 */
-	public function createAccount(array $account): string {
-		return (string)$this->store->create(register: self::REGISTER, schema: 'portalAccount', data: $account);
-	}//end createAccount()
-
-	/**
 	 * One portal account by its id, or null.
 	 *
 	 * @param string $id The account's id.
@@ -167,43 +110,6 @@ class ExampleResidentWayIn {
 	public function offered(array $portal, string $mode): bool {
 		return in_array($mode, (array)($portal['authentication']['modes'] ?? []), true);
 	}//end offered()
-
-	/**
-	 * Add the sign-in mode to the portal, with its card when the portal has none for it.
-	 *
-	 * Everything else on the portal stays as it is.
-	 *
-	 * @param array<string, mixed> $portal The portal row.
-	 * @param array<string, mixed> $signIn The declaration's `signIn`: `mode` and `label`.
-	 *
-	 * @return array{saved: bool, label: bool} Whether the portal was saved, and whether this call wrote the card.
-	 *
-	 * @spec openspec/changes/example-resident-zuiddrecht/specs/example-resident/spec.md#requirement-the-resident-must-sign-in-without-a-test-door
-	 */
-	public function offer(array $portal, array $signIn): array {
-		$mode    = (string)$signIn['mode'];
-		$auth    = (array)($portal['authentication'] ?? []);
-		$labels  = (array)($auth['modeLabels'] ?? []);
-		$written = false;
-		if (is_array($signIn['label'] ?? null) === true && $signIn['label'] !== [] && isset($labels[$mode]) === false) {
-			$labels[$mode] = $signIn['label'];
-			$written       = true;
-		}
-
-		$auth['modes'] = array_values(array_unique(array_merge((array)($auth['modes'] ?? []), [$mode])));
-		if ($labels !== []) {
-			$auth['modeLabels'] = $labels;
-		}
-
-		$saved = $this->store->update(
-			register: self::REGISTER,
-			schema: 'portal',
-			id: $this->store->idOf(row: $portal),
-			changes: ['authentication' => $auth]
-		);
-
-		return ['saved' => $saved, 'label' => ($saved === true && $written === true)];
-	}//end offer()
 
 	/**
 	 * Take the sign-in mode off the portal again, and its card when the install wrote it.

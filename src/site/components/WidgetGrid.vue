@@ -28,27 +28,29 @@
 				:data-testid="`widget-${run.widget.id || run.widget.widgetKey}`"
 				:data-widget-key="run.widget.widgetKey"
 				v-bind="propsFor(run.widget)"
+				@subject="$emit('subject', $event)"
 				@navigate="$emit('navigate', $event)"
-				@search="$emit('search', $event)" />
+				@search="forwardSearch" />
 
 			<!-- A RUN of ordinary widgets: one grid, inside one container. The
 			     container is here rather than around the whole component so a
 			     band between two runs still reaches the viewport edge. -->
 			<div v-else-if="!run.band" class="container">
-				<div class="pq-grid">
+				<div class="pq-grid" :style="gridStyle(run)">
 					<div
 						v-for="widget in run.widgets"
 						:key="widget.id || `${widget.gridX}-${widget.gridY}`"
 						class="pq-grid__cell"
 						:data-testid="`widget-${widget.id || widget.widgetKey}`"
 						:data-widget-key="widget.widgetKey"
-						:style="cellStyle(widget, run.rowOffset)">
+						:style="placeCell(widget, run)">
 						<component
 							:is="componentFor(widget.widgetKey)"
 							v-if="componentFor(widget.widgetKey)"
 							v-bind="propsFor(widget)"
+							@subject="$emit('subject', $event)"
 							@navigate="$emit('navigate', $event)"
-							@search="$emit('search', $event)" />
+							@search="forwardSearch" />
 
 						<!-- Anything not public, or not known, degrades to an inert
 						     placeholder. It does NOT throw: a public page with one bad
@@ -72,8 +74,15 @@ import { siteBlockIsBand, siteBlockRegistry } from '@conduction/nextcloud-vue/pu
 import { defineAsyncComponent } from 'vue'
 import HeroBlock from './HeroBlock.vue'
 import MarkdownBlock from './MarkdownBlock.vue'
+import { assistantAvailable } from '../lib/assistantAvailable.js'
 import { withoutStyling } from '../lib/blockProps.js'
-import { cellStyle, ownBand, runsFor } from '../lib/gridPlacement.js'
+import {
+	asideCellStyle,
+	cellStyle,
+	isAsideRun,
+	ownBand,
+	runsFor,
+} from '../lib/gridPlacement.js'
 import { loaders as siteWidgetLoaders } from '../widgets/loaders.js'
 
 /**
@@ -127,7 +136,16 @@ const ContributionsBlock = defineAsyncComponent(
 const IntakeCatalogueBlock = defineAsyncComponent(
 	() => import('./IntakeCatalogueBlock.vue'),
 )
+const ContactForm = defineAsyncComponent(() => import('./ContactForm.vue'))
 const IntakeFormBlock = defineAsyncComponent(() => import('./IntakeFormBlock.vue'))
+const ReportBlock = defineAsyncComponent(() => import('./ReportBlock.vue'))
+const ReportThreadBlock = defineAsyncComponent(
+	() => import('./ReportThreadBlock.vue'),
+)
+const PublicRecordsBlock = defineAsyncComponent(
+	() => import('./PublicRecordsBlock.vue'),
+)
+const AssistantBlock = defineAsyncComponent(() => import('./AssistantBlock.vue'))
 const IntakeStatusBlock = defineAsyncComponent(
 	() => import('./IntakeStatusBlock.vue'),
 )
@@ -181,6 +199,11 @@ const SiteNavigationBlock = defineAsyncComponent(
 )
 
 /**
+ * On demand too (site-shared-page-blocks): the nested grid of a shared block.
+ */
+const SharedBlock = defineAsyncComponent(() => import('./SharedBlock.vue'))
+
+/**
  * THE NL DESIGN SYSTEM WIDGETS, one chunk each
  * (site-nlds-widget-palette REQ-SNW-011).
  *
@@ -205,6 +228,9 @@ const PUBLIC_WIDGETS = {
 	// derives from the public menus and the signed-in navigation and hands
 	// over as `navigation`; the block fetches nothing.
 	siteNavigation: SiteNavigationBlock,
+	// site-shared-page-blocks: the content API puts the block's widgets in the
+	// placement; the block draws them as a nested grid. Lazy, like the menu.
+	sharedBlock: SharedBlock,
 	contributions: ContributionsBlock,
 	// `federatedSearch` stays owned here rather than coming from the shared
 	// registry, because what it is allowed to query is this app's decision.
@@ -228,6 +254,18 @@ const PUBLIC_WIDGETS = {
 	// and validate before anything is recorded; nothing here decides access.
 	intakeCatalogue: IntakeCatalogueBlock,
 	intakeForm: IntakeFormBlock,
+	// A resident's question without a case (contact-page-question-form-and-not-found).
+	contactForm: ContactForm,
+	// search-assistant-from-public-content: only while the portal offers it, see
+	// publicWidgetFor() and assistantAvailable().
+	assistant: AssistantBlock,
+	// site-member-voting-record-and-confidential-papers: a contributed public record list.
+	publicRecords: PublicRecordsBlock,
+	// intake-report-pages: a report without an account and its follow-up with
+	// the receipt code. They call this app's own anonymous report routes and
+	// send no traffic event.
+	report: ReportBlock,
+	reportThread: ReportThreadBlock,
 	intakeStatus: IntakeStatusBlock,
 	...nldsWidgets,
 	...siteBlockRegistry,
@@ -253,7 +291,9 @@ const PUBLIC_WIDGETS = {
  * @return {Array<string>} The widget keys that render at a public origin.
  */
 export function publicWidgetKeys() {
-	return Object.keys(PUBLIC_WIDGETS)
+	return Object.keys(PUBLIC_WIDGETS).filter(
+		(key) => key !== 'assistant' || assistantAvailable(),
+	)
 }
 
 /**
@@ -263,6 +303,10 @@ export function publicWidgetKeys() {
  * @return {object|null} The component, or null when the key is not public.
  */
 export function publicWidgetFor(key) {
+	if (key === 'assistant' && !assistantAvailable()) {
+		return null
+	}
+
 	return Object.hasOwn(PUBLIC_WIDGETS, key) ? PUBLIC_WIDGETS[key] : null
 }
 
@@ -276,6 +320,15 @@ export default {
 	},
 
 	props: {
+		/**
+		 * The page's aside column (`asideOf(page.body)`): a run of a main
+		 * column beside an aside then gives the aside this fixed width.
+		 */
+		aside: {
+			type: Object,
+			default: null,
+		},
+
 		/** Widget placements in the canonical manifest-v2 widgetEntry shape. */
 		widgets: {
 			type: Array,
@@ -335,6 +388,31 @@ export default {
 			default: false,
 		},
 
+		/** The portal's help details, offered as "Hulp nodig?" on a form. */
+		portalHelp: {
+			type: Object,
+			default: null,
+		},
+
+		/**
+		 * Whether the portal lets a search read inside public documents. Handed
+		 * to the search block AFTER its authored props, so a page cannot
+		 * switch it back on (portal-federated-search REQ-PFS-CONTENT-001).
+		 */
+		searchInsideDocuments: {
+			type: Boolean,
+			default: true,
+		},
+
+		/**
+		 * The portal's organisation, `{id, name}`, from the site record.
+		 * Handed to the search block AFTER its authored props.
+		 */
+		organisation: {
+			type: Object,
+			default: null,
+		},
+
 		/**
 		 * The menu block's data: `{groups, currentRoute, label, toggleLabel}`,
 		 * derived by the host from the menus and the signed-in navigation
@@ -342,6 +420,18 @@ export default {
 		 * reason the glossary rows are.
 		 */
 		navigation: {
+			type: Object,
+			default: () => ({}),
+		},
+
+		/**
+		 * The language switch's data: `{locales, current}`, where `locales`
+		 * are the portal's own, as `{locale, label, href}` entries
+		 * (src/site/lib/languageNav.js). Supplied by the host for the same
+		 * reason the glossary rows are: a placement must not offer a
+		 * language the portal does not have.
+		 */
+		languages: {
 			type: Object,
 			default: () => ({}),
 		},
@@ -363,7 +453,7 @@ export default {
 	// emits the term. Without this forward the box is INERT — it submits, the
 	// event reaches this component, and nothing above ever hears it. Which route
 	// a search goes to is the host's decision, not a block's.
-	emits: ['navigate', 'search'],
+	emits: ['navigate', 'search', 'subject'],
 
 	computed: {
 		/**
@@ -391,6 +481,23 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * Hand a widget's search to the host, only when it is the typed
+		 * words. A widget that does not declare `search` among its emits gets
+		 * this listener on its root element, where the browser's own `search`
+		 * event of an `<input type="search">` (fired on Enter) reached it and
+		 * the site searched for "[object Event]".
+		 *
+		 * @param {*} query The words, or a browser event.
+		 * @return {void}
+		 * @spec openspec/changes/portal-subject-rate-limit/specs/site-search/spec.md#requirement-enter-in-a-search-field-must-search-for-the-typed-words
+		 */
+		forwardSearch(query) {
+			if (typeof query === 'string') {
+				this.$emit('search', query)
+			}
+		},
+
 		/**
 		 * Whether a block is a full-bleed band that owns its own container.
 		 *
@@ -435,6 +542,7 @@ export default {
 		 * @return {object} The component props.
 		 *
 		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-blocks-must-take-their-data-as-props-and-nothing-else-req-ptb-007
+		 * @spec openspec/changes/language-switch-reaches-the-content/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
 		 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-the-sign-in-card-offers-the-portals-own-ways-in
 		 */
 		propsFor(widget) {
@@ -504,7 +612,20 @@ export default {
 			// The search block learns the signed-in state the same way
 			// (woo-journey-entry-points D1).
 			if (widget.widgetKey === 'federatedSearch') {
-				return { ...props, signedIn: this.signedIn === true }
+				return {
+					...props,
+					signedIn: this.signedIn === true,
+					searchInsideDocuments: this.searchInsideDocuments !== false,
+					// The organisation filter reads the portal's organisation
+					// by name, not by id (woo-search-names-the-organisation).
+					facetNames: this.organisation?.id
+						? {
+								organization: {
+									[this.organisation.id]: this.organisation.name,
+								},
+							}
+						: {},
+				}
 			}
 
 			// SAME RULE, FOURTH SUBJECT. Which portal a form's UTM capture is
@@ -513,7 +634,7 @@ export default {
 			// (fields/submitLabel/consentText, embedded at creation time —
 			// see LandingPageProvisioningService::buildBody()).
 			if (widget.widgetKey === 'form') {
-				return { ...props, portal: this.portal }
+				return { ...props, portal: this.portal, portalHelp: this.portalHelp }
 			}
 
 			// SAME RULE, FIFTH SUBJECT. The intake blocks ask this portal's
@@ -521,7 +642,12 @@ export default {
 			// takes the catalogue link's segment from the route. Both come
 			// after the authored props so a placement cannot point elsewhere.
 			if (widget.widgetKey === 'intakeForm') {
-				return { ...props, portal: this.portal, routeParam: this.routeParam }
+				return {
+					...props,
+					portal: this.portal,
+					routeParam: this.routeParam,
+					portalHelp: this.portalHelp,
+				}
 			}
 
 			if (
@@ -531,14 +657,50 @@ export default {
 				return { ...props, portal: this.portal }
 			}
 
+			// SAME RULE, SIXTH SUBJECT. The languages on offer are the
+			// PORTAL's, so the host supplies them after the authored props: a
+			// placement can rename the landmark but cannot add a language
+			// (design D1 row 52). Without this branch the switch kept its
+			// empty default and never rendered.
+			if (widget.widgetKey === 'nlLanguageNav') {
+				const languages = this.languages || {}
+				return {
+					...props,
+					locales: Array.isArray(languages.locales)
+						? languages.locales
+						: [],
+
+					current: languages.current || '',
+				}
+			}
+
 			// site-school-blocks: the news widgets read this portal's public
 			// news, and the article takes its item from the route; the sign-in
 			// card gets the portal's own ways in. All after the authored props.
 			if (
 				widget.widgetKey === 'nlNewsList'
 				|| widget.widgetKey === 'nlNewsArticle'
+				|| widget.widgetKey === 'nlPublicDetail'
 			) {
-				return { ...props, portal: this.portal, routeParam: this.routeParam }
+				const news = {
+					...props,
+					portal: this.portal,
+					routeParam: this.routeParam,
+				}
+				if (widget.widgetKey === 'nlNewsList') {
+					return news
+				}
+				// The article's event card asks a visitor who is not signed in to
+				// sign in first, and sends them back to the article.
+				return {
+					...news,
+					signedIn: this.signedIn === true,
+					ways: this.signInRoutes.map((r) => ({
+						id: r.key || r.mode,
+						label: r.label,
+						href: r.href,
+					})),
+				}
 			}
 
 			// portal-public-catalogue: the catalogue and a dated list that
@@ -546,7 +708,67 @@ export default {
 			if (
 				widget.widgetKey === 'nlCatalogue'
 				|| widget.widgetKey === 'nlEventList'
+				|| widget.widgetKey === 'nlPublicTable'
 			) {
+				return { ...props, portal: this.portal }
+			}
+
+			// site-shared-page-blocks: the nested grid gets the page's own props.
+			if (widget.widgetKey === 'sharedBlock') {
+				return { ...props, host: { ...this.$props, widgets: undefined } }
+			}
+
+			// public-faq-and-product-finder: the FAQ reads this portal's entries
+			// for the page on screen; the finder reads this portal's finder.
+			if (widget.widgetKey === 'nlFaqList') {
+				const navigation = this.navigation || {}
+				return {
+					...props,
+					portal: this.portal,
+					currentRoute: navigation.currentRoute || '',
+				}
+			}
+
+			// site-nlds-widget-palette T10: the start tiles of THIS portal.
+			if (widget.widgetKey === 'nlStartTiles') {
+				return { ...props, portal: this.portal }
+			}
+
+			if (widget.widgetKey === 'nlProductFinder') {
+				return { ...props, portal: this.portal }
+			}
+
+			// The hero hands the portal on to the list beside it, which reads
+			// this portal's catalogue or news (hero-on-the-school-boards).
+			if (widget.widgetKey === 'hero') {
+				return { ...props, portal: this.portal }
+			}
+
+			// The host names the portal, the session and the ways in; the
+			// author names the action and the wording (contactForm).
+			if (widget.widgetKey === 'contactForm') {
+				return {
+					...props,
+					portal: this.portal,
+					signedIn: this.signedIn === true,
+					ways: this.signInRoutes.map((r) => ({
+						id: r.key || r.mode,
+						label: r.label,
+						href: r.href,
+					})),
+				}
+			}
+
+			// The assistant asks THIS portal's route; the portal comes from the host.
+			// The report blocks file and read on THIS portal's report routes.
+			if (
+				widget.widgetKey === 'report'
+				|| widget.widgetKey === 'reportThread'
+			) {
+				return { ...props, portal: this.portal }
+			}
+
+			if (widget.widgetKey === 'assistant') {
 				return { ...props, portal: this.portal }
 			}
 
@@ -555,7 +777,7 @@ export default {
 					...props,
 					signedIn: this.signedIn === true,
 					ways: this.signInRoutes.map((r) => ({
-						id: r.mode,
+						id: r.key || r.mode,
 						label: r.label,
 						href: r.href,
 					})),
@@ -578,16 +800,45 @@ export default {
 		},
 
 		/**
-		 * Place one widget on the 12-column grid, re-based onto its run.
+		 * Whether this run draws as main column and fixed aside.
 		 *
-		 * @param {object} widget    The placement.
-		 * @param {number} rowOffset The run's first authored row.
-		 * @return {object} The style bindings.
-		 *
-		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-hero-must-cap-its-calls-to-action-and-keep-one-outline-entry-req-ptb-006
+		 * @param {object} run A run of ordinary widgets.
+		 * @return {boolean}
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
 		 */
-		cellStyle(widget, rowOffset) {
-			return cellStyle(widget, rowOffset)
+		asideRun(run) {
+			return this.aside !== null && isAsideRun(run.widgets)
+		},
+
+		/**
+		 * The run's grid columns: twelve, or the main column and the aside.
+		 *
+		 * @param {object} run A run of ordinary widgets.
+		 * @return {object|null} The style bindings.
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
+		 */
+		gridStyle(run) {
+			if (!this.asideRun(run)) {
+				return null
+			}
+			return {
+				gridTemplateColumns: `minmax(0, 1fr) ${this.aside.width}px`,
+				columnGap: `${this.aside.gap}px`,
+			}
+		},
+
+		/**
+		 * One widget's place in its run.
+		 *
+		 * @param {object} widget The placement.
+		 * @param {object} run    Its run.
+		 * @return {object} The style bindings.
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
+		 */
+		placeCell(widget, run) {
+			return this.asideRun(run)
+				? asideCellStyle(widget, run.rowOffset)
+				: cellStyle(widget, run.rowOffset)
 		},
 	},
 }

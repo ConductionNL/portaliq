@@ -271,7 +271,7 @@ test('a filled form sends only the whitelisted fields and shows the success mess
 })
 
 test('a refused save says so in words', async () => {
-	const api = fakeApi({ created: { ok: false, status: 400 } })
+	const api = fakeApi({ created: { ok: false, status: 502 } })
 	const action = { id: 'a', type: 'create', fields: ['title'], fieldConfigs: {} }
 	const form = await mountSfc(FORM, {
 		action,
@@ -418,4 +418,45 @@ test('the shell registry runs slice c, and every slice c string is in both share
 			assert.doesNotMatch(text, /—/, 'no em-dash')
 		}
 	}
+})
+
+test('a send that times out says the request may still be processing, and a resend carries the same key', async () => {
+	const keys = []
+	const answers = [
+		{ ok: false, status: 504, object: { error: 'forward_timeout' } },
+		{ ok: true, status: 201, object: { caseId: 'c-1' } },
+		{ ok: true, status: 201, object: { caseId: 'c-2' } },
+	]
+	const action = {
+		id: 'startRequest',
+		type: 'endpoint',
+		fields: ['title'],
+		fieldConfigs: {},
+		successMessage: 'Received.',
+	}
+	const form = await mountSfc(FORM, {
+		action,
+		api: fakeApi(),
+		send: async (body, options) => {
+			keys.push(options && options.submissionKey)
+			return answers.shift()
+		},
+	})
+	await form.fire(form.find('schema-form'), 'submit')
+	assert.match(
+		form.textOf(form.find('schema-form-still-processing')),
+		/may still be processing/,
+	)
+	assert.equal(form.find('schema-form-error'), null, 'not "saving did not work"')
+
+	await form.fire(form.find('schema-form'), 'submit')
+	assert.equal(keys[0], keys[1], 'the resend is the same submission')
+	assert.match(keys[0], /^[A-Za-z0-9_-]{16,128}$/)
+
+	await form.fire(form.find('schema-form'), 'submit')
+	assert.notEqual(
+		keys[2],
+		keys[1],
+		'after a success the form starts a new submission',
+	)
 })

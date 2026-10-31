@@ -15,7 +15,13 @@ import {
 	collectionIdsFor,
 	createCollectionLoader,
 	openRecordState,
+	pickedRecord,
+	readUnderMandate,
 } from '../src/site/pages/collections/collectionLoader.js'
+import {
+	resolveBlocks,
+	withoutRecordWrites,
+} from '../src/site/pages/collections/pageBlocks.js'
 
 /**
  * A portal api stand-in that answers each collection read from `rows`.
@@ -205,5 +211,79 @@ test("a record link selects the row from the resident's own list, or says it is 
 			state: 'found',
 			row: { id: 'a2', mandate: true },
 		},
+	)
+})
+
+// mandated-case-opens-on-its-record-page: Linda opens Henk's case from "My
+// cases"; it is not in her own rows, and the record page showed an empty
+// "Uw zaak" because only her own rows could open.
+test('a record page opens a row picked under a mandate, and nothing else outside the list', () => {
+	const own = [{ id: 'c1', title: 'Mine' }]
+	const mandated = {
+		id: 'c9',
+		title: 'Henk',
+		_mandate: { id: 'm1', label: 'Henk Bakker' },
+	}
+
+	assert.deepEqual(pickedRecord(own, { id: 'c1' }), own[0], 'an own row opens from the list')
+	assert.equal(pickedRecord(own, mandated), mandated, 'a mandated row opens as read')
+	assert.equal(pickedRecord(own, { id: 'c9' }), null, 'a foreign row without a mandate opens nothing')
+	assert.equal(
+		pickedRecord(own, { id: 'c9', _mandate: { id: '' } }),
+		null,
+		'an empty mandate id is no mandate',
+	)
+	assert.equal(pickedRecord(own, null), null)
+	assert.equal(
+		pickedRecord([{ id: 'c9', title: 'Fresh' }], mandated).title,
+		'Fresh',
+		'the loaded row wins over the carried one',
+	)
+})
+
+// mandated-case-offers-no-writes: a case read under a mandate offers no write.
+test('a record read under a mandate is read-only', () => {
+	assert.equal(readUnderMandate({ id: 'c9', _mandate: { id: 'm1' } }), true)
+	assert.equal(readUnderMandate({ id: 'c9', _mandate: { id: '' } }), false)
+	assert.equal(readUnderMandate({ id: 'c1' }), false)
+	assert.equal(readUnderMandate(null), false)
+})
+
+test('the case page under a mandate drops its writes and keeps what it reads', () => {
+	const contribution = {
+		collections: [{ id: 'mijnZaken', register: 'r', schema: 'zaak', rowActions: ['propose'] }],
+		actions: [
+			{ id: 'replyToMessage', type: 'create' },
+			{ id: 'createKlacht', type: 'create' },
+			{ id: 'propose', type: 'propose-change' },
+		],
+	}
+	const page = {
+		blocks: [
+			{ type: 'steps', collection: 'mijnZaken' },
+			{ type: 'detail', collection: 'mijnZaken', label: 'Gegevens' },
+			{ type: 'documents', collection: 'mijnZaken', label: 'Stukken', upload: true },
+			{ type: 'timeline', collection: 'mijnZaken' },
+			{ type: 'cta', action: 'replyToMessage', label: 'Bericht sturen', withRecord: true },
+			{ type: 'cta', action: 'createKlacht', label: 'Klacht indienen', withRecord: true },
+			{ type: 'action', action: 'createKlacht' },
+			{ type: 'citizenCase', collection: 'mijnZaken', display: 'actions' },
+		],
+	}
+	const items = resolveBlocks(page, contribution)
+	const read = withoutRecordWrites(items)
+
+	assert.deepEqual(
+		read.map((item) => item.kind),
+		['steps', 'detail', 'documents', 'timeline', 'action', 'citizenCase'],
+		'the record-bound forms go; a form not bound to the record stays',
+	)
+	assert.equal(read.find((item) => item.kind === 'documents').block.upload, false)
+	assert.equal(items.find((item) => item.kind === 'detail').proposeAction.id, 'propose')
+	assert.equal(read.find((item) => item.kind === 'detail').proposeAction, null)
+	assert.equal(
+		items.find((item) => item.kind === 'documents').block.upload,
+		true,
+		'the resolved blocks themselves are not changed',
 	)
 })

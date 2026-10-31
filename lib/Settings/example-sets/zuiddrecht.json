@@ -1,0 +1,2855 @@
+{
+	"set": "zuiddrecht",
+	"$comment": "portaliq's part of the Zuiddrecht example set: portal accounts for the residents Sanne de Vries (a phone number and an e-mail address still waiting for confirmation, as the MijnAccount board lists them; no confirmed `email`, so she still meets the prompt for one on the MijnOverzicht board), Henk Bakker, Linda Bakker and Fatima El-Amrani and the business contacts Jan-Willem and Mark, the mandates that let Linda act for her father Henk, Sanne for the butcher's shop and Jan-Willem and Mark for their companies, Sanne's two access requests (one granted, one waiting) of the Machtigingen board, Sanne's six cases, one question and four messages, the portal task on her parking permit that asks for a copy of her ID (an external task for `party:<her uid>`, at most two files: board TaakAfronden), the parking product finder over the twelve parking product pages of the site, the residents' group `inwoners`, the business contacts' group `ondernemers`, and on the portal the `nextcloud` way in with the account card of the Inloggen board, the resident group the Nextcloud registration app fills and the business group. Installed by `occ openregister:example-set:install zuiddrecht` after `occ portaliq:example-site:install zuiddrecht`; dossiq goes first because the cases are dossiq's. `exampleResident` lists the residents portaliq's one-click demo sign-in offers, each with its portal account object and its card; the cards show beside the account card only while `example_resident_demo_login` is `yes`. Business contacts get no one-click card and stay out of `inwoners`: they act for a company, which is eHerkenning, and the group is the portal's statement of who its residents are. They are in `ondernemers`, the portal's business group, so a direct Nextcloud sign-in lands them on the portal with the business audience. Every date is a number of days from the install day. `waitingOnApplicant` is written beside the open question on purpose: dossiq sets that flag in the act that sends a question, and a seed is not that act.",
+	"after": [
+		"dossiq"
+	],
+	"exampleResident": [
+		{
+			"portal": "zuiddrecht",
+			"cast": "sanne",
+			"account": "portaalaccount-sanne",
+			"card": {
+				"title": "Sanne de Vries",
+				"text": "Voorbeeldinwoner met zes zaken, een taak, een open vraag en berichten."
+			}
+		},
+		{
+			"portal": "zuiddrecht",
+			"cast": "henk",
+			"account": "portaalaccount-henk",
+			"card": {
+				"title": "Henk Bakker",
+				"text": "Voorbeeldinwoner. Zijn dochter Linda regelt zaken voor hem."
+			}
+		},
+		{
+			"portal": "zuiddrecht",
+			"cast": "linda",
+			"account": "portaalaccount-linda",
+			"card": {
+				"title": "Linda Bakker",
+				"text": "Voorbeeldinwoner. Zij regelt met een machtiging zaken voor haar vader Henk."
+			}
+		},
+		{
+			"portal": "zuiddrecht",
+			"cast": "fatima",
+			"account": "portaalaccount-fatima",
+			"card": {
+				"title": "Fatima El-Amrani",
+				"text": "Voorbeeldinwoner van Zuiddrecht."
+			}
+		}
+	],
+	"groups": [
+		{
+			"group": "inwoners",
+			"displayName": "Inwoners",
+			"members": [
+				"sanne",
+				"henk",
+				"linda",
+				"fatima"
+			]
+		},
+		{
+			"group": "ondernemers",
+			"displayName": "Ondernemers",
+			"members": [
+				"janwillem",
+				"mark",
+				"karin"
+			]
+		}
+	],
+	"objects": [
+		{
+			"key": "portaalaccount-sanne",
+			"register": "portaliq",
+			"schema": "portalAccount",
+			"data": {
+				"subjectRef": "{{cast:sanne.uid}}",
+				"audience": "citizen",
+				"organisation": "zuiddrecht",
+				"displayName": "{{cast:sanne.displayName}}",
+				"identityType": "digid",
+				"identityRef": "{{cast:sanne.bsn}}",
+				"status": "active",
+				"contactChannel": "portal",
+				"contactAddresses": [
+					{
+						"kind": "email",
+						"value": "s.devries@werk.example.nl",
+						"confirmed": false,
+						"preferred": false
+					},
+					{
+						"kind": "phone",
+						"value": "+31612345678",
+						"confirmed": false,
+						"preferred": true
+					}
+				]
+			}
+		},
+		{
+			"key": "portaalaccount-henk",
+			"register": "portaliq",
+			"schema": "portalAccount",
+			"data": {
+				"subjectRef": "{{cast:henk.uid}}",
+				"audience": "citizen",
+				"organisation": "zuiddrecht",
+				"displayName": "{{cast:henk.displayName}}",
+				"identityType": "dev",
+				"identityRef": "example-resident",
+				"status": "active",
+				"contactChannel": "portal"
+			}
+		},
+		{
+			"key": "portaalaccount-linda",
+			"register": "portaliq",
+			"schema": "portalAccount",
+			"data": {
+				"subjectRef": "{{cast:linda.uid}}",
+				"audience": "citizen",
+				"organisation": "zuiddrecht",
+				"displayName": "{{cast:linda.displayName}}",
+				"identityType": "dev",
+				"identityRef": "example-resident",
+				"status": "active",
+				"contactChannel": "portal"
+			}
+		},
+		{
+			"key": "portaalaccount-fatima",
+			"register": "portaliq",
+			"schema": "portalAccount",
+			"data": {
+				"subjectRef": "{{cast:fatima.uid}}",
+				"audience": "citizen",
+				"organisation": "zuiddrecht",
+				"displayName": "{{cast:fatima.displayName}}",
+				"identityType": "dev",
+				"identityRef": "example-resident",
+				"status": "active",
+				"contactChannel": "portal"
+			}
+		},
+		{
+			"key": "portaalaccount-janwillem",
+			"register": "portaliq",
+			"schema": "portalAccount",
+			"data": {
+				"subjectRef": "{{cast:janwillem.uid}}",
+				"audience": "supplier",
+				"organisation": "zuiddrecht",
+				"displayName": "{{cast:janwillem.displayName}}",
+				"identityType": "dev",
+				"identityRef": "example-set",
+				"status": "active",
+				"contactChannel": "portal"
+			}
+		},
+		{
+			"key": "portaalaccount-mark",
+			"register": "portaliq",
+			"schema": "portalAccount",
+			"data": {
+				"subjectRef": "{{cast:mark.uid}}",
+				"audience": "supplier",
+				"organisation": "zuiddrecht",
+				"displayName": "{{cast:mark.displayName}}",
+				"identityType": "dev",
+				"identityRef": "example-set",
+				"status": "active",
+				"contactChannel": "portal"
+			}
+		},
+		{
+			"key": "machtiging-linda-henk",
+			"register": "portaliq",
+			"schema": "portalMandate",
+			"data": {
+				"subjectRef": "{{cast:linda.uid}}",
+				"organisation": "zuiddrecht",
+				"onBehalfOf": "subject:{{cast:henk.uid}}",
+				"label": "{{cast:henk.displayName}}",
+				"reach": "organisation",
+				"status": "active",
+				"grantedBy": "example-set",
+				"grantedAt": "{{datetime:-60 09:00}}"
+			}
+		},
+		{
+			"key": "machtiging-janwillem-slagerij",
+			"register": "portaliq",
+			"schema": "portalMandate",
+			"data": {
+				"subjectRef": "{{cast:janwillem.uid}}",
+				"organisation": "zuiddrecht",
+				"onBehalfOf": "kvk:{{cast:slagerij.kvk}}",
+				"label": "{{cast:slagerij.name}}",
+				"reach": "organisation",
+				"status": "active",
+				"grantedBy": "example-set",
+				"grantedAt": "{{datetime:-400 09:00}}"
+			}
+		},
+		{
+			"key": "machtiging-mark-cloudgemeente",
+			"register": "portaliq",
+			"schema": "portalMandate",
+			"data": {
+				"subjectRef": "{{cast:mark.uid}}",
+				"organisation": "zuiddrecht",
+				"onBehalfOf": "kvk:{{cast:cloudgemeente.kvk}}",
+				"label": "{{cast:cloudgemeente.name}}",
+				"reach": "organisation",
+				"status": "active",
+				"grantedBy": "example-set",
+				"grantedAt": "{{datetime:-300 09:00}}"
+			}
+		},
+		{
+			"key": "machtiging-sanne-slagerij",
+			"register": "portaliq",
+			"schema": "portalMandate",
+			"data": {
+				"subjectRef": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"onBehalfOf": "kvk:{{cast:slagerij.kvk}}",
+				"label": "{{cast:slagerij.name}}",
+				"reach": "organisation",
+				"status": "active",
+				"grantedBy": "example-set",
+				"grantedAt": "{{datetime:-39 09:00}}"
+			}
+		},
+		{
+			"key": "toegangsaanvraag-sanne-slagerij",
+			"register": "portaliq",
+			"schema": "portalAccessRequest",
+			"data": {
+				"subjectRef": "{{cast:sanne.uid}}",
+				"displayName": "{{cast:sanne.displayName}}",
+				"organisation": "zuiddrecht",
+				"onBehalfOf": "{{cast:slagerij.name}} (KvK {{cast:slagerij.kvk}})",
+				"reason": "Ik doe de administratie van de zaak.",
+				"state": "granted",
+				"decidedBy": "example-set",
+				"decidedAt": "{{datetime:-39 09:00}}",
+				"requestedAt": "{{datetime:-40 10:00}}"
+			}
+		},
+		{
+			"key": "toegangsaanvraag-sanne-henk",
+			"register": "portaliq",
+			"schema": "portalAccessRequest",
+			"data": {
+				"subjectRef": "{{cast:sanne.uid}}",
+				"displayName": "{{cast:sanne.displayName}}",
+				"organisation": "zuiddrecht",
+				"onBehalfOf": "{{cast:henk.displayName}}",
+				"reason": "Ik help mijn buurman met zijn post van de gemeente.",
+				"state": "pending",
+				"requestedAt": "{{datetime:-19 10:00}}"
+			}
+		},
+		{
+			"key": "omgevingsvergunning-fietspad",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Aanleg fietspad Lindelaan",
+				"description": "Omgevingsvergunning voor de aanleg van het fietspad langs de Lindelaan, met verlichting langs het hele tracé.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"initiatorDisplayName": "Gemeente Zuiddrecht, Openbare ruimte",
+				"intakeChannel": "email",
+				"confidentiality": "openbaar",
+				"assignee": "{{cast:pieter.uid}}",
+				"startDate": "{{date:-420}}",
+				"receivedAt": "{{datetime:-420 10:00}}",
+				"endDate": "{{date:-314}}",
+				"currentStatusEnteredAt": "{{datetime:-314 16:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-420 10:00}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-314 16:00}}"
+					}
+				]
+			}
+		},
+		{
+			"key": "woo-fietspad-adviescase",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "adviesaanvraag"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Advies verlichting fietspad",
+				"description": "Mobiliteit en verkeer geeft advies over de stukken over de verlichting: wat openbaar kan en hoe de planning met de aannemer weegt.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"initiatorDisplayName": "Gemeente Zuiddrecht, Woo en informatie",
+				"intakeChannel": "manual",
+				"confidentiality": "intern",
+				"assignee": "{{cast:lars.uid}}",
+				"assignedGroup": "{{cast:mobiliteit-en-verkeer.gid}}",
+				"startDate": "{{date:-4}}",
+				"receivedAt": "{{datetime:-4 09:30}}",
+				"currentStatusEnteredAt": "{{datetime:-4 10:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-4 10:00}}"
+					}
+				]
+			}
+		},
+		{
+			"key": "woo-fietspad",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				},
+				"sanne": {
+					"schema": "brpPerson",
+					"where": {
+						"citizenServiceNumber": "{{cast:sanne.bsn}}"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory",
+				"relatedCases"
+			],
+			"files": [
+				{
+					"path": "zuiddrecht/woo-fietspad/02-advies-verlichting-fietspad.pdf",
+					"title": "Advies verlichting fietspad"
+				},
+				{
+					"path": "zuiddrecht/woo-fietspad/06-mail-aannemer-planning.eml",
+					"title": "Mail aannemer over planning"
+				},
+				{
+					"path": "zuiddrecht/woo-fietspad/03-raadsvoorstel-fietspad-lindelaan.pdf",
+					"title": "Raadsvoorstel fietspad Lindelaan"
+				},
+				{
+					"path": "zuiddrecht/woo-fietspad/07-klachtenlijst-bewoners-lindelaan.csv",
+					"title": "Klachtenlijst bewoners Lindelaan"
+				},
+				{
+					"path": "zuiddrecht/woo-fietspad/05-interne-notitie-budget.pdf",
+					"title": "Interne notitie budget"
+				},
+				{
+					"path": "zuiddrecht/woo-fietspad/04-offerte-verlichting.pdf",
+					"title": "Offerte verlichting"
+				},
+				{
+					"path": "zuiddrecht/woo-fietspad/08-plattegrond-lichtmasten.pdf",
+					"title": "Plattegrond lichtmasten"
+				}
+			],
+			"data": {
+				"intakeIdentification": "digid",
+				"intakeSourceName": "Mijn Zuiddrecht",
+				"acknowledgementDuty": {
+					"required": true,
+					"status": "met",
+					"channel": "email",
+					"recipient": "{{cast:sanne.email}}",
+					"sentAt": "{{datetime:-14 14:32}}",
+					"attempts": 1,
+					"lastError": ""
+				},
+				"title": "Verlichting fietspad Lindelaan",
+				"geometry": "{\"type\":\"Point\",\"coordinates\":[4.6541,51.8113]}",
+				"description": "Ik wil de documenten over de nieuwe verlichting langs het fietspad aan de Lindelaan.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{lookup:sanne}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:sanne.displayName}}",
+				"initiatorSourceId": "{{cast:sanne.bsn}}",
+				"portalSubject": "{{cast:sanne.uid}}",
+				"intakeChannel": "website",
+				"communicationChannel": "portal",
+				"confidentiality": "intern",
+				"urgency": "high",
+				"legalBasis": "Woo art 4.4",
+				"assignee": "{{cast:pieter.uid}}",
+				"assignedGroup": "zuiddrecht-woo-en-informatie",
+				"externalReference": "MZ-ZDR-2026-0412",
+				"startDate": "{{date:-14}}",
+				"receivedAt": "{{datetime:-14 09:12}}",
+				"currentStatusEnteredAt": "{{datetime:-13 10:05}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-14 09:12}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-13 10:05}}"
+					}
+				],
+				"wooRequest": {
+					"onderwerp": "Verlichting fietspad Lindelaan",
+					"omschrijving": "Alle adviezen en mails over de verlichting van het fietspad aan de Lindelaan, uit 2025 en 2026.",
+					"periodeVan": "{{date:-400}}",
+					"periodeTot": "{{date:-15}}",
+					"origin": "portal",
+					"documentSoorten": [
+						"correspondentie",
+						"rapporten"
+					],
+					"verzoekerNaam": "{{cast:sanne.displayName}}",
+					"verzoekerEmail": "{{cast:sanne.email}}",
+					"verzoekerType": "burger"
+				},
+				"tags": [
+					"woo",
+					"openbare-ruimte"
+				],
+				"archiveStatus": "nog_te_archiveren",
+				"subjectCases": [
+					"{{object:omgevingsvergunning-fietspad.id}}"
+				],
+				"relatedCases": [
+					{
+						"caseId": "{{object:omgevingsvergunning-fietspad.id}}",
+						"aardRelatie": "subject"
+					}
+				],
+				"conversations": [
+					{
+						"kind": "conversation",
+						"subject": "Gesprek met Sanne de Vries over de stukken",
+						"startedAt": "{{datetime:-13 10:30}}",
+						"endedAt": "{{datetime:-13 10:42}}",
+						"startedBy": "{{cast:pieter.uid}}",
+						"participants": [
+							"{{cast:pieter.displayName}}",
+							"{{cast:sanne.displayName}}"
+						],
+						"durationSeconds": 720
+					}
+				],
+				"blockingCases": [
+					"{{object:woo-fietspad-adviescase.id}}"
+				],
+				"besluitDocument": "Concept\n\nBesluit op uw verzoek om informatie over de verlichting van het fietspad aan de Lindelaan\n\nGeachte mevrouw De Vries,\n\nU heeft ons gevraagd om de stukken over de aanleg van de verlichting langs het fietspad aan de Lindelaan. Wij hebben zeven documenten gevonden en beoordeeld. Wij maken de informatie deels openbaar.\n\n- Het advies over de verlichting en het raadsvoorstel maken wij openbaar.\n- De mail van de aannemer over de planning maken wij deels openbaar. Wij lakken de persoonsgegevens van medewerkers van de aannemer, omdat hun privacy zwaarder weegt dan het belang van openbaarheid (artikel 5.1.2e Woo).\n- De klachtenlijst van bewoners maken wij niet openbaar. Openbaarmaking zou de bewoners die een klacht indienden onevenredig benadelen (artikel 5.2.1 Woo).\n- Over de drie overige documenten beslissen wij nog; zij volgen in een aanvullend besluit.\n\nBent u het niet eens met dit besluit? Dan kunt u binnen zes weken na de dag van bekendmaking bezwaar maken bij het college van burgemeester en wethouders van Zuiddrecht.\n\nMet vriendelijke groet,\n\nnamens het college van burgemeester en wethouders van Zuiddrecht,\n\nPieter Jansen\nWoo-coördinator"
+			}
+		},
+		{
+			"key": "collega-lars",
+			"register": "dossiq",
+			"schema": "colleague",
+			"data": {
+				"userId": "{{cast:lars.uid}}",
+				"displayName": "{{cast:lars.displayName}}",
+				"email": "{{cast:lars.email}}",
+				"jobTitle": "{{cast:lars.function}}",
+				"department": "Mobiliteit en verkeer"
+			}
+		},
+		{
+			"key": "woo-fietspad-bij-kcc",
+			"register": "dossiq",
+			"schema": "caseCustody",
+			"data": {
+				"caseId": "{{object:woo-fietspad.id}}",
+				"organisationUnit": "{{cast:kcc.gid}}",
+				"handler": "{{cast:daan.uid}}",
+				"from": "{{datetime:-14 09:12}}",
+				"until": "{{datetime:-14 09:20}}",
+				"open": false,
+				"reason": "Telefonisch binnengekomen bij het KCC",
+				"movedBy": "{{cast:daan.uid}}",
+				"sequence": 1
+			}
+		},
+		{
+			"key": "woo-fietspad-bij-woo",
+			"register": "dossiq",
+			"schema": "caseCustody",
+			"data": {
+				"caseId": "{{object:woo-fietspad.id}}",
+				"organisationUnit": "{{cast:woo-en-informatie.gid}}",
+				"handler": "{{cast:pieter.uid}}",
+				"from": "{{datetime:-14 09:20}}",
+				"open": true,
+				"reason": "Doorgezet na het telefoongesprek",
+				"movedBy": "{{cast:daan.uid}}",
+				"sequence": 2
+			}
+		},
+		{
+			"key": "woo-fietspad-overname-juridisch",
+			"register": "dossiq",
+			"schema": "caseTakeover",
+			"data": {
+				"caseId": "{{object:woo-fietspad.id}}",
+				"requestedBy": "{{cast:marloes.uid}}",
+				"holder": "{{cast:pieter.uid}}",
+				"holdingUnit": "{{cast:woo-en-informatie.gid}}",
+				"reason": "Lopend geschil met de aannemer; juridische zaken neemt de zaak over.",
+				"status": "pending",
+				"requestedAt": "{{datetime:-11 10:05}}"
+			}
+		},
+		{
+			"key": "rol-woo-fietspad-verzoeker",
+			"register": "dossiq",
+			"schema": "role",
+			"lookups": {
+				"roleType": {
+					"schema": "roleType",
+					"where": {
+						"name": "Verzoeker",
+						"caseType": "3c0f5a00-0000-4000-a000-00000000a001"
+					}
+				},
+				"sanne": {
+					"schema": "brpPerson",
+					"where": {
+						"citizenServiceNumber": "{{cast:sanne.bsn}}"
+					}
+				}
+			},
+			"data": {
+				"name": "{{cast:sanne.displayName}}",
+				"roleType": "{{lookup:roleType}}",
+				"case": "{{object:woo-fietspad.id}}",
+				"participant": "{{lookup:sanne}}",
+				"description": "Deed het Woo-verzoek via Mijn Zuiddrecht, ingelogd met DigiD."
+			}
+		},
+		{
+			"key": "rol-woo-fietspad-belanghebbende",
+			"register": "dossiq",
+			"schema": "role",
+			"lookups": {
+				"roleType": {
+					"schema": "roleType",
+					"where": {
+						"name": "Belanghebbende",
+						"caseType": "3c0f5a00-0000-4000-a000-00000000a001"
+					}
+				},
+				"vanwijk": {
+					"schema": "kvkCompany",
+					"where": {
+						"kvkNumber": "{{cast:vanwijk.kvk}}"
+					}
+				}
+			},
+			"data": {
+				"name": "{{cast:vanwijk.name}}",
+				"roleType": "{{lookup:roleType}}",
+				"case": "{{object:woo-fietspad.id}}",
+				"participant": "{{lookup:vanwijk}}",
+				"description": "Aannemer van de verlichting; staat in de offerte en de mail die openbaar kunnen worden."
+			}
+		},
+		{
+			"key": "vergunning-dakkapel",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "omgevingsvergunning"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				},
+				"sanne": {
+					"schema": "brpPerson",
+					"where": {
+						"citizenServiceNumber": "{{cast:sanne.bsn}}"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Dakkapel Lindelaan 14",
+				"description": "Ik wil een dakkapel plaatsen aan de achterkant van mijn huis.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{lookup:sanne}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:sanne.displayName}}",
+				"portalSubject": "{{cast:sanne.uid}}",
+				"intakeChannel": "website",
+				"startDate": "{{date:-12}}",
+				"receivedAt": "{{datetime:-12 14:30}}",
+				"currentStatusEnteredAt": "{{datetime:-9 11:20}}",
+				"waitingOnApplicant": true,
+				"waitingOnApplicantSince": "{{datetime:-1 15:40}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-12 14:30}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-9 11:20}}"
+					}
+				]
+			}
+		},
+		{
+			"key": "melding-stoeptegel",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "melding-openbare-ruimte"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"sanne": {
+					"schema": "brpPerson",
+					"where": {
+						"citizenServiceNumber": "{{cast:sanne.bsn}}"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Losse stoeptegel bij de bushalte Lindelaan",
+				"description": "Bij de bushalte ligt een stoeptegel los. Mensen struikelen erover.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{lookup:sanne}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:sanne.displayName}}",
+				"portalSubject": "{{cast:sanne.uid}}",
+				"intakeChannel": "website",
+				"startDate": "{{date:-1}}",
+				"receivedAt": "{{datetime:-1 08:15}}",
+				"currentStatusEnteredAt": "{{datetime:-1 08:15}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-1 08:15}}"
+					}
+				]
+			}
+		},
+		{
+			"key": "melding-lantaarnpaal",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "melding-openbare-ruimte"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"bezig": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				},
+				"sanne": {
+					"schema": "brpPerson",
+					"where": {
+						"citizenServiceNumber": "{{cast:sanne.bsn}}"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Kapotte lantaarnpaal Kerkplein",
+				"description": "De lantaarnpaal bij de ingang van het Kerkplein brandt niet meer.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{lookup:sanne}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:sanne.displayName}}",
+				"portalSubject": "{{cast:sanne.uid}}",
+				"intakeChannel": "website",
+				"startDate": "{{date:-40}}",
+				"endDate": "{{date:-33}}",
+				"receivedAt": "{{datetime:-40 19:45}}",
+				"currentStatusEnteredAt": "{{datetime:-33 16:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-40 19:45}}"
+					},
+					{
+						"status": "{{lookup:bezig}}",
+						"enteredAt": "{{datetime:-38 09:00}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-33 16:00}}"
+					}
+				]
+			}
+		},
+		{
+			"key": "melding-lantaarnpaal-lindelaan",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "melding-openbare-ruimte"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"bezig": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				},
+				"sanne": {
+					"schema": "brpPerson",
+					"where": {
+						"citizenServiceNumber": "{{cast:sanne.bsn}}"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Kapotte lantaarnpaal Lindelaan",
+				"description": "De lantaarnpaal voor Lindelaan 14 knippert en gaat 's avonds uit.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{lookup:sanne}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:sanne.displayName}}",
+				"portalSubject": "{{cast:sanne.uid}}",
+				"intakeChannel": "website",
+				"startDate": "{{date:-210}}",
+				"endDate": "{{date:-202}}",
+				"receivedAt": "{{datetime:-210 20:10}}",
+				"currentStatusEnteredAt": "{{datetime:-202 15:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-210 20:10}}"
+					},
+					{
+						"status": "{{lookup:bezig}}",
+						"enteredAt": "{{datetime:-208 09:00}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-202 15:00}}"
+					}
+				],
+				"assignee": "{{cast:anouk.uid}}"
+			}
+		},
+		{
+			"key": "subsidie-buurtfeest",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "subsidieaanvraag"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"beoordeling": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Beoordeling"
+					}
+				},
+				"besluit": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Besluitvorming"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				},
+				"sanne": {
+					"schema": "brpPerson",
+					"where": {
+						"citizenServiceNumber": "{{cast:sanne.bsn}}"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Subsidie buurtfeest Lindelaan",
+				"description": "Wij vragen een bijdrage voor het jaarlijkse buurtfeest in de Lindelaan.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{lookup:sanne}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:sanne.displayName}}",
+				"portalSubject": "{{cast:sanne.uid}}",
+				"intakeChannel": "website",
+				"startDate": "{{date:-120}}",
+				"endDate": "{{date:-88}}",
+				"receivedAt": "{{datetime:-120 10:30}}",
+				"currentStatusEnteredAt": "{{datetime:-88 13:15}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-120 10:30}}"
+					},
+					{
+						"status": "{{lookup:beoordeling}}",
+						"enteredAt": "{{datetime:-116 09:00}}"
+					},
+					{
+						"status": "{{lookup:besluit}}",
+						"enteredAt": "{{datetime:-95 14:00}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-88 13:15}}"
+					}
+				]
+			}
+		},
+		{
+			"key": "vraag-bouwtekening",
+			"register": "dossiq",
+			"schema": "aanvullingsverzoek",
+			"data": {
+				"case": "{{object:vergunning-dakkapel.id}}",
+				"portalSubject": "{{cast:sanne.uid}}",
+				"summary": "Stuur de bouwtekening van uw dakkapel",
+				"missingItems": [
+					{
+						"item": "Bouwtekening van de dakkapel met maten",
+						"received": false
+					}
+				],
+				"requestedAt": "{{datetime:-1 15:40}}",
+				"hersteltermijn": "{{date:13}}",
+				"state": "open"
+			}
+		},
+		{
+			"key": "bericht-woo-ontvangen",
+			"register": "dossiq",
+			"schema": "portaalBericht",
+			"data": {
+				"caseId": "{{object:woo-fietspad.id}}",
+				"caseReference": "{{object:woo-fietspad.identifier}}",
+				"senderRef": "gemeente-zuiddrecht",
+				"senderName": "Gemeente Zuiddrecht",
+				"recipientRef": "{{cast:sanne.uid}}",
+				"direction": "handler_to_citizen",
+				"subject": "Wij hebben uw Woo-verzoek ontvangen",
+				"content": "Uw verzoek heeft zaaknummer {{object:woo-fietspad.identifier}}. U krijgt binnen vier weken antwoord.",
+				"sentAt": "{{datetime:-14 09:20}}",
+				"readByRecipientAt": "{{datetime:-14 12:05}}"
+			}
+		},
+		{
+			"key": "bericht-dakkapel-vraag",
+			"register": "dossiq",
+			"schema": "portaalBericht",
+			"data": {
+				"caseId": "{{object:vergunning-dakkapel.id}}",
+				"caseReference": "{{object:vergunning-dakkapel.identifier}}",
+				"senderRef": "gemeente-zuiddrecht",
+				"senderName": "Gemeente Zuiddrecht",
+				"recipientRef": "{{cast:sanne.uid}}",
+				"direction": "handler_to_citizen",
+				"subject": "Wij hebben nog een bouwtekening van u nodig",
+				"content": "Voor uw aanvraag {{object:vergunning-dakkapel.identifier}} missen wij de bouwtekening van de dakkapel. Voeg de tekening toe bij uw zaak. Daarna gaan wij verder met uw aanvraag.",
+				"sentAt": "{{datetime:-1 15:40}}"
+			}
+		},
+		{
+			"key": "bericht-melding-ontvangen",
+			"register": "dossiq",
+			"schema": "portaalBericht",
+			"data": {
+				"caseId": "{{object:melding-stoeptegel.id}}",
+				"caseReference": "{{object:melding-stoeptegel.identifier}}",
+				"senderRef": "gemeente-zuiddrecht",
+				"senderName": "Gemeente Zuiddrecht",
+				"recipientRef": "{{cast:sanne.uid}}",
+				"direction": "handler_to_citizen",
+				"subject": "Wij hebben uw melding ontvangen",
+				"content": "Bedankt voor uw melding over de losse stoeptegel. Uw melding heeft nummer {{object:melding-stoeptegel.identifier}}. Wij sturen die naar de juiste dienst.",
+				"sentAt": "{{datetime:-1 08:20}}"
+			}
+		},
+		{
+			"key": "bericht-lantaarnpaal-klaar",
+			"register": "dossiq",
+			"schema": "portaalBericht",
+			"data": {
+				"caseId": "{{object:melding-lantaarnpaal.id}}",
+				"caseReference": "{{object:melding-lantaarnpaal.identifier}}",
+				"senderRef": "gemeente-zuiddrecht",
+				"senderName": "Gemeente Zuiddrecht",
+				"recipientRef": "{{cast:sanne.uid}}",
+				"direction": "handler_to_citizen",
+				"subject": "De lantaarnpaal op het Kerkplein brandt weer",
+				"content": "Wij hebben de lantaarnpaal gerepareerd. Uw melding {{object:melding-lantaarnpaal.identifier}} is afgehandeld.",
+				"sentAt": "{{datetime:-33 16:10}}",
+				"readByRecipientAt": "{{datetime:-32 08:40}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-telefoon",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "phone",
+				"direction": "inbound",
+				"startTime": "{{datetime:-14 14:10}}",
+				"endTime": "{{datetime:-14 14:22}}",
+				"durationSeconds": 720,
+				"identificationMethod": "identificatievragen",
+				"geidentificeerdeBurgerId": "{{cast:sanne.bsn}}",
+				"kccEmployeeId": "{{cast:pieter.uid}}",
+				"case": "{{object:woo-fietspad.id}}",
+				"nature": "new_request",
+				"summary": "Vraag over stukken fietspad, Woo-verzoek samen opgenomen.",
+				"message": "Hoe vraag ik de stukken over de verlichting van het fietspad op?",
+				"note": "Samengevat door Pieter Jansen, verzoek samen opgenomen",
+				"firstTimeFix": false,
+				"visibleToApplicant": true,
+				"contact": "{{lookup:sanne}}"
+			},
+			"lookups": {
+				"sanne": {
+					"schema": "brpPerson",
+					"where": {
+						"citizenServiceNumber": "{{cast:sanne.bsn}}"
+					}
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-ontvangstbevestiging",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "webformulier",
+				"direction": "outbound",
+				"startTime": "{{datetime:-14 14:32}}",
+				"endTime": "{{datetime:-14 14:33}}",
+				"durationSeconds": 60,
+				"identificationMethod": "digid",
+				"kccEmployeeId": "{{cast:pieter.uid}}",
+				"case": "{{object:woo-fietspad.id}}",
+				"nature": "informatieverzoek",
+				"summary": "Uw Woo-verzoek is ontvangen onder nummer {{object:woo-fietspad.identifier}}. U hoort binnen vier weken van ons.",
+				"note": "Ontvangstbevestiging, automatisch verstuurd",
+				"automatic": true,
+				"firstTimeFix": false,
+				"visibleToApplicant": true,
+				"geidentificeerdeBurgerId": "{{cast:sanne.bsn}}",
+				"contact": "{{lookup:sanne}}"
+			},
+			"lookups": {
+				"sanne": {
+					"schema": "brpPerson",
+					"where": {
+						"citizenServiceNumber": "{{cast:sanne.bsn}}"
+					}
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-uitleg",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "webformulier",
+				"direction": "outbound",
+				"startTime": "{{datetime:-13 10:24}}",
+				"endTime": "{{datetime:-13 10:26}}",
+				"durationSeconds": 120,
+				"identificationMethod": "digid",
+				"kccEmployeeId": "{{cast:pieter.uid}}",
+				"case": "{{object:woo-fietspad.id}}",
+				"nature": "informatieverzoek",
+				"summary": "Uitgelegd dat de aanleg in maart begint.",
+				"message": "De aanleg begint in maart. Er komt verlichting langs het hele fietspad.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true,
+				"geidentificeerdeBurgerId": "{{cast:sanne.bsn}}",
+				"contact": "{{lookup:sanne}}"
+			},
+			"lookups": {
+				"sanne": {
+					"schema": "brpPerson",
+					"where": {
+						"citizenServiceNumber": "{{cast:sanne.bsn}}"
+					}
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-reactie",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "webformulier",
+				"direction": "inbound",
+				"startTime": "{{datetime:-13 10:52}}",
+				"endTime": "{{datetime:-13 10:54}}",
+				"durationSeconds": 120,
+				"identificationMethod": "digid",
+				"geidentificeerdeBurgerId": "{{cast:sanne.bsn}}",
+				"kccEmployeeId": "{{cast:pieter.uid}}",
+				"case": "{{object:woo-fietspad.id}}",
+				"nature": "informatieverzoek",
+				"summary": "Wil graag alle stukken over de verlichting zien.",
+				"message": "Dank u wel. Ik wil graag alle stukken over de verlichting zien.",
+				"firstTimeFix": false,
+				"visibleToApplicant": true,
+				"contact": "{{lookup:sanne}}"
+			},
+			"lookups": {
+				"sanne": {
+					"schema": "brpPerson",
+					"where": {
+						"citizenServiceNumber": "{{cast:sanne.bsn}}"
+					}
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-aanvulling",
+			"register": "dossiq",
+			"schema": "contactmoment",
+			"data": {
+				"notificationChannel": "email",
+				"direction": "inbound",
+				"startTime": "{{datetime:-12 09:15}}",
+				"endTime": "{{datetime:-12 09:17}}",
+				"durationSeconds": 120,
+				"identificationMethod": "identificatievragen",
+				"geidentificeerdeBurgerId": "{{cast:sanne.bsn}}",
+				"kccEmployeeId": "{{cast:pieter.uid}}",
+				"case": "{{object:woo-fietspad.id}}",
+				"nature": "informatieverzoek",
+				"summary": "Vult het verzoek aan met de offertes voor de lantaarnpalen.",
+				"message": "Goedemorgen, ik wil mijn verzoek aanvullen. Kunt u ook de offertes voor de lantaarnpalen meenemen? Met vriendelijke groet, Sanne de Vries",
+				"subject": "Aanvulling op Woo-verzoek {{object:woo-fietspad.identifier}}",
+				"note": "Binnengekomen op het Woo-postvak",
+				"attachmentCount": 1,
+				"firstTimeFix": false,
+				"visibleToApplicant": true,
+				"contact": "{{lookup:sanne}}"
+			},
+			"lookups": {
+				"sanne": {
+					"schema": "brpPerson",
+					"where": {
+						"citizenServiceNumber": "{{cast:sanne.bsn}}"
+					}
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-advies-verlichting",
+			"register": "dossiq",
+			"schema": "adviesAanvraag",
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"advisor": "Mobiliteit en verkeer",
+				"type": "intern",
+				"subject": "Advies verlichting",
+				"questions": "Welke adviezen over de verlichting kunnen openbaar, en wat weegt de afdeling over de planning met de aannemer?",
+				"deadline": "{{date:7}}",
+				"status": "requested",
+				"requestedAt": "{{datetime:-4 09:30}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-advies-juridisch",
+			"register": "dossiq",
+			"schema": "adviesAanvraag",
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"advisor": "Juridische zaken",
+				"type": "intern",
+				"subject": "Juridische toets weigeringsgronden",
+				"questions": "Houdt grond 5.1.2e stand voor de klachtenlijst en de mail van de aannemer?",
+				"deadline": "{{date:-9}}",
+				"status": "received",
+				"requestedAt": "{{datetime:-13 11:00}}",
+				"receivedAt": "{{datetime:-10 15:20}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-advies",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"lookups": {
+				"iot": {
+					"schema": "informatieobjecttype",
+					"where": {
+						"description": "Document bij een Woo-verzoek"
+					}
+				}
+			},
+			"files": [
+				{
+					"path": "zuiddrecht/woo-fietspad/02-advies-verlichting-fietspad.pdf",
+					"title": "Advies verlichting fietspad"
+				}
+			],
+			"data": {
+				"title": "Advies verlichting fietspad",
+				"fileName": "02-advies-verlichting-fietspad.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{lookup:iot}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-30}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-zio-advies",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"informatieobject": "{{object:woo-fietspad-advies.id}}",
+				"registrationDate": "{{datetime:-12 15:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-mail",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"lookups": {
+				"iot": {
+					"schema": "informatieobjecttype",
+					"where": {
+						"description": "Document bij een Woo-verzoek"
+					}
+				}
+			},
+			"files": [
+				{
+					"path": "zuiddrecht/woo-fietspad/06-mail-aannemer-planning.eml",
+					"title": "Mail aannemer over planning"
+				}
+			],
+			"data": {
+				"title": "Mail aannemer over planning",
+				"fileName": "06-mail-aannemer-planning.eml",
+				"format": "message/rfc822",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{lookup:iot}}",
+				"direction": "incoming",
+				"creatiedatum": "{{date:-222}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-zio-mail",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"informatieobject": "{{object:woo-fietspad-mail.id}}",
+				"registrationDate": "{{datetime:-12 15:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-raadsvoorstel",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"lookups": {
+				"iot": {
+					"schema": "informatieobjecttype",
+					"where": {
+						"description": "Document bij een Woo-verzoek"
+					}
+				}
+			},
+			"files": [
+				{
+					"path": "zuiddrecht/woo-fietspad/03-raadsvoorstel-fietspad-lindelaan.pdf",
+					"title": "Raadsvoorstel fietspad Lindelaan"
+				}
+			],
+			"data": {
+				"title": "Raadsvoorstel fietspad Lindelaan",
+				"fileName": "03-raadsvoorstel-fietspad-lindelaan.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{lookup:iot}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-30}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-zio-raadsvoorstel",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"informatieobject": "{{object:woo-fietspad-raadsvoorstel.id}}",
+				"registrationDate": "{{datetime:-12 15:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-klachtenlijst",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"lookups": {
+				"iot": {
+					"schema": "informatieobjecttype",
+					"where": {
+						"description": "Document bij een Woo-verzoek"
+					}
+				}
+			},
+			"files": [
+				{
+					"path": "zuiddrecht/woo-fietspad/07-klachtenlijst-bewoners-lindelaan.csv",
+					"title": "Klachtenlijst bewoners Lindelaan"
+				}
+			],
+			"data": {
+				"title": "Klachtenlijst bewoners Lindelaan",
+				"fileName": "07-klachtenlijst-bewoners-lindelaan.csv",
+				"format": "text/csv",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{lookup:iot}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-504}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-zio-klachtenlijst",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"informatieobject": "{{object:woo-fietspad-klachtenlijst.id}}",
+				"registrationDate": "{{datetime:-12 15:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-notitie",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"lookups": {
+				"iot": {
+					"schema": "informatieobjecttype",
+					"where": {
+						"description": "Document bij een Woo-verzoek"
+					}
+				}
+			},
+			"files": [
+				{
+					"path": "zuiddrecht/woo-fietspad/05-interne-notitie-budget.pdf",
+					"title": "Interne notitie budget"
+				}
+			],
+			"data": {
+				"title": "Interne notitie budget",
+				"fileName": "05-interne-notitie-budget.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{lookup:iot}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-30}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-zio-notitie",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"informatieobject": "{{object:woo-fietspad-notitie.id}}",
+				"registrationDate": "{{datetime:-12 15:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-offerte",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"lookups": {
+				"iot": {
+					"schema": "informatieobjecttype",
+					"where": {
+						"description": "Document bij een Woo-verzoek"
+					}
+				}
+			},
+			"files": [
+				{
+					"path": "zuiddrecht/woo-fietspad/04-offerte-verlichting.pdf",
+					"title": "Offerte verlichting"
+				}
+			],
+			"data": {
+				"title": "Offerte verlichting",
+				"fileName": "04-offerte-verlichting.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{lookup:iot}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-30}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-zio-offerte",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"informatieobject": "{{object:woo-fietspad-offerte.id}}",
+				"registrationDate": "{{datetime:-12 15:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-plattegrond",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"lookups": {
+				"iot": {
+					"schema": "informatieobjecttype",
+					"where": {
+						"description": "Document bij een Woo-verzoek"
+					}
+				}
+			},
+			"files": [
+				{
+					"path": "zuiddrecht/woo-fietspad/08-plattegrond-lichtmasten.pdf",
+					"title": "Plattegrond lichtmasten"
+				}
+			],
+			"data": {
+				"title": "Plattegrond lichtmasten",
+				"fileName": "08-plattegrond-lichtmasten.pdf",
+				"format": "application/pdf",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "final",
+				"informatieobjecttype": "{{lookup:iot}}",
+				"direction": "internal",
+				"creatiedatum": "{{date:-315}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-zio-plattegrond",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"informatieobject": "{{object:woo-fietspad-plattegrond.id}}",
+				"registrationDate": "{{datetime:-12 15:00}}"
+			}
+		},
+		{
+			"key": "iot-besluit",
+			"register": "dossiq",
+			"schema": "informatieobjecttype",
+			"data": {
+				"description": "Besluit",
+				"informatieobjectcategorie": "internal",
+				"vertrouwelijkheidaanduiding": "openbaar",
+				"schema": "informatieobject",
+				"startValidity": "{{date:-365}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluit-concept",
+			"register": "dossiq",
+			"schema": "informatieobject",
+			"files": [
+				{
+					"path": "zuiddrecht/woo-fietspad/09-concept-woo-besluit.docx",
+					"title": "Woo-besluit verlichting fietspad Lindelaan"
+				}
+			],
+			"data": {
+				"title": "Besluit Woo-verzoek {{object:woo-fietspad.identifier}}.pdf",
+				"fileName": "09-concept-woo-besluit.docx",
+				"format": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+				"vertrouwelijkheidaanduiding": "intern",
+				"status": "draft",
+				"informatieobjecttype": "{{object:iot-besluit.id}}",
+				"direction": "outgoing",
+				"creatiedatum": "{{date:-1}}",
+				"taal": "nld"
+			}
+		},
+		{
+			"key": "woo-fietspad-zio-besluit-concept",
+			"register": "dossiq",
+			"schema": "zaakinformatieobject",
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"informatieobject": "{{object:woo-fietspad-besluit-concept.id}}",
+				"registrationDate": "{{datetime:-1 16:30}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-advies-beoordeling",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-fietspad.id}}",
+				"documentRef": "{{object:woo-fietspad-advies.id}}",
+				"classification": "openbaar",
+				"assessedBy": "{{cast:thomas.uid}}",
+				"assessedAt": "{{datetime:-3 14:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-mail-beoordeling",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-fietspad.id}}",
+				"documentRef": "{{object:woo-fietspad-mail.id}}",
+				"classification": "deels_openbaar",
+				"assessedBy": "{{cast:thomas.uid}}",
+				"assessedAt": "{{datetime:-3 14:00}}",
+				"weigeringsgronden": [
+					"5.1.2.e"
+				]
+			}
+		},
+		{
+			"key": "woo-fietspad-raadsvoorstel-beoordeling",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-fietspad.id}}",
+				"documentRef": "{{object:woo-fietspad-raadsvoorstel.id}}",
+				"classification": "openbaar",
+				"assessedBy": "{{cast:thomas.uid}}",
+				"assessedAt": "{{datetime:-3 14:00}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-klachtenlijst-beoordeling",
+			"register": "dossiq",
+			"schema": "wooDocumentAssessment",
+			"data": {
+				"caseRef": "{{object:woo-fietspad.id}}",
+				"documentRef": "{{object:woo-fietspad-klachtenlijst.id}}",
+				"classification": "niet_openbaar",
+				"assessedBy": "{{cast:thomas.uid}}",
+				"assessedAt": "{{datetime:-3 14:00}}",
+				"weigeringsgronden": [
+					"5.1.2.e"
+				]
+			}
+		},
+		{
+			"key": "termijn-woo-fietspad",
+			"register": "dossiq",
+			"schema": "deadlineInstance",
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"kind": "statutory",
+				"startDate": "{{datetime:-14 09:12}}",
+				"endDateCalculated": "{{date:14}}",
+				"endDateCurrent": "{{date:14}}",
+				"status": "lopend"
+			}
+		},
+		{
+			"key": "woo-fietspad-deelzaak-zienswijze",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Zienswijze Aannemersbedrijf Van Wijk",
+				"description": "Het aannemersbedrijf geeft zijn zienswijze op de openbaarmaking van de offerte en de planning.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"parentCase": "{{object:woo-fietspad.id}}",
+				"initiatorDisplayName": "Gemeente Zuiddrecht",
+				"intakeChannel": "manual",
+				"confidentiality": "intern",
+				"assignee": "{{cast:lars.uid}}",
+				"startDate": "{{date:-3}}",
+				"receivedAt": "{{datetime:-3 11:00}}",
+				"currentStatusEnteredAt": "{{datetime:-2 09:30}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-2 09:30}}"
+					}
+				]
+			}
+		},
+		{
+			"key": "woo-fietspad-deelzaak-lakken",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "woo-verzoek",
+						"version": 2
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Lakken offerte lantaarnpalen",
+				"description": "De offerte wordt deels openbaar: prijzen en contactgegevens worden gelakt.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"parentCase": "{{object:woo-fietspad.id}}",
+				"initiatorDisplayName": "Gemeente Zuiddrecht",
+				"intakeChannel": "manual",
+				"confidentiality": "intern",
+				"assignee": "{{cast:pieter.uid}}",
+				"startDate": "{{date:-3}}",
+				"receivedAt": "{{datetime:-3 11:00}}",
+				"currentStatusEnteredAt": "{{datetime:-2 09:30}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-2 09:30}}"
+					}
+				],
+				"assignedGroup": "zuiddrecht-woo-en-informatie"
+			}
+		},
+		{
+			"key": "woo-fietspad-object-fietspad",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "road-section",
+					"where": {
+						"identification": "BGT wgl.0505.1234"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"objectType": "Openbare ruimte",
+				"objectIdentification": "BGT wgl.0505.1234",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/road-section/{{lookup:object}}",
+				"description": "Het fietspad zelf"
+			}
+		},
+		{
+			"key": "woo-fietspad-object-lichtmast-14",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "street-light",
+					"where": {
+						"identification": "LM-0014"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"objectType": "Lichtmast",
+				"objectIdentification": "LM-0014",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/street-light/{{lookup:object}}",
+				"description": "Nieuwe mast bij de brug"
+			}
+		},
+		{
+			"key": "woo-fietspad-object-lichtmast-15",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "street-light",
+					"where": {
+						"identification": "LM-0015"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"objectType": "Lichtmast",
+				"objectIdentification": "LM-0015",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/street-light/{{lookup:object}}",
+				"description": "Mast bij de bushalte, nog niet geplaatst"
+			}
+		},
+		{
+			"key": "melding-lantaarnpaal-object",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "street-light",
+					"where": {
+						"identification": "LP-0703"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:melding-lantaarnpaal.id}}",
+				"objectType": "Lantaarnpaal",
+				"objectIdentification": "LP-0703",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/street-light/{{lookup:object}}",
+				"description": "De lantaarnpaal die niet meer brandde"
+			}
+		},
+		{
+			"key": "melding-lantaarnpaal-lindelaan-object",
+			"register": "dossiq",
+			"schema": "caseObject",
+			"lookups": {
+				"object": {
+					"register": "public-space",
+					"schema": "street-light",
+					"where": {
+						"identification": "LP-1408"
+					}
+				}
+			},
+			"data": {
+				"case": "{{object:melding-lantaarnpaal-lindelaan.id}}",
+				"objectType": "Lantaarnpaal",
+				"objectIdentification": "LP-1408",
+				"objectUrl": "{{instance:baseUrl}}/index.php/apps/openregister/api/objects/public-space/street-light/{{lookup:object}}",
+				"description": "De lantaarnpaal die knippert"
+			}
+		},
+		{
+			"key": "woo-fietspad-locatie",
+			"register": "dossiq",
+			"schema": "case-location",
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"label": "Fietspad Lindelaan, tussen nummer 2 en 40",
+				"latitude": 51.81,
+				"longitude": 4.65,
+				"accuracyRadius": 250,
+				"source": "free"
+			}
+		},
+		{
+			"key": "woo-fietspad-gepland-besluit",
+			"register": "dossiq",
+			"schema": "plannedAction",
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"actionType": "besluit-opstellen",
+				"label": "Besluit opstellen",
+				"owner": "{{cast:pieter.uid}}",
+				"plannedByRule": "de stappen van het Woo-verzoek",
+				"plannedFor": "{{date:3}}",
+				"state": "planned"
+			}
+		},
+		{
+			"key": "woo-fietspad-gepland-termijn",
+			"register": "dossiq",
+			"schema": "plannedAction",
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"actionType": "termijn-controleren",
+				"label": "Termijn controleren",
+				"owner": "",
+				"ownerGroup": "{{cast:woo-en-informatie.gid}}",
+				"plannedBy": "{{cast:pieter.uid}}",
+				"plannedFor": "{{date:8}}",
+				"state": "planned"
+			}
+		},
+		{
+			"key": "woo-fietspad-beschikking",
+			"register": "dossiq",
+			"schema": "beschikking",
+			"data": {
+				"caseId": "{{object:woo-fietspad.id}}",
+				"caseType": "woo-verzoek",
+				"decisionType": "toekenning",
+				"templateId": "woo-besluit-deels-openbaar",
+				"templateVersion": "3.0.0",
+				"draftVersion": 1,
+				"currentStatus": "draft",
+				"rationale": "Een deel van de stukken over de verlichting van het fietspad wordt openbaar. Waar informatie niet openbaar wordt, staat per document de grond uit de Wet open overheid.",
+				"addressee": {
+					"type": "burger",
+					"bsn": "{{cast:sanne.bsn}}",
+					"name": "{{cast:sanne.displayName}}",
+					"messageBoxChannel": "mijnoverheid",
+					"messageBoxConfirmed": true
+				},
+				"decision": {
+					"kind": "deels-openbaar",
+					"subject": "Verlichting fietspad Lindelaan"
+				}
+			}
+		},
+		{
+			"key": "productzoeker-parkeren",
+			"register": "portaliq",
+			"schema": "portalFinder",
+			"data": {
+				"portal": "zuiddrecht",
+				"status": "published",
+				"title": "Welke vergunning past bij u?",
+				"intro": "Beantwoord de vragen met ja of nee. Bij elk antwoord ziet u rechts welke producten nog voor u gelden.",
+				"products": [
+					"/parkeren/parkeervergunning-bewoners",
+					"/parkeren/bezoekersvergunning",
+					"/parkeren/kenteken-wijzigen",
+					"/parkeren/laadpaal-aanvragen",
+					"/parkeren/bedrijfsvergunning",
+					"/parkeren/ontheffing-laden-en-lossen",
+					"/parkeren/fietsenkluis-huren",
+					"/parkeren/parkeerabonnement-garage",
+					"/parkeren/mantelzorgvergunning",
+					"/parkeren/ontheffing-milieuzone",
+					"/parkeren/standplaatsvergunning",
+					"/parkeren/gehandicaptenparkeerplaats"
+				],
+				"questions": [
+					{
+						"id": "woont-in-zuiddrecht",
+						"text": "Woont u in Zuiddrecht?",
+						"excludesOnYes": [
+							"/parkeren/bedrijfsvergunning",
+							"/parkeren/ontheffing-laden-en-lossen",
+							"/parkeren/standplaatsvergunning"
+						],
+						"excludesOnNo": [
+							"/parkeren/parkeervergunning-bewoners",
+							"/parkeren/bezoekersvergunning",
+							"/parkeren/mantelzorgvergunning",
+							"/parkeren/fietsenkluis-huren",
+							"/parkeren/laadpaal-aanvragen"
+						]
+					},
+					{
+						"id": "heeft-auto",
+						"text": "Heeft u een auto?",
+						"excludesOnYes": [
+							"/parkeren/fietsenkluis-huren"
+						],
+						"excludesOnNo": [
+							"/parkeren/parkeervergunning-bewoners",
+							"/parkeren/kenteken-wijzigen",
+							"/parkeren/laadpaal-aanvragen",
+							"/parkeren/parkeerabonnement-garage",
+							"/parkeren/ontheffing-milieuzone",
+							"/parkeren/gehandicaptenparkeerplaats"
+						]
+					},
+					{
+						"id": "woont-in-binnenstad",
+						"text": "Woont u in de binnenstad?",
+						"help": "De binnenstad is het gebied binnen de singels, met de straten rond het Marktplein.",
+						"excludesOnYes": [
+							"/parkeren/parkeerabonnement-garage"
+						],
+						"excludesOnNo": [
+							"/parkeren/parkeervergunning-bewoners"
+						]
+					},
+					{
+						"id": "zorgt-voor-iemand",
+						"text": "Zorgt u voor iemand die in een parkeerzone woont?",
+						"excludesOnNo": [
+							"/parkeren/mantelzorgvergunning"
+						]
+					},
+					{
+						"id": "gehandicaptenparkeerkaart",
+						"text": "Heeft u een gehandicaptenparkeerkaart?",
+						"excludesOnNo": [
+							"/parkeren/gehandicaptenparkeerplaats"
+						]
+					}
+				]
+			}
+		},
+		{
+			"key": "contact-sanne-mark",
+			"register": "portaliq",
+			"schema": "portalContact",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"role": "begeleider",
+				"displayName": "{{cast:mark.displayName}}",
+				"line": "Gemeente Zuiddrecht, schuldhulpverlening",
+				"state": "approved",
+				"contactRef": "{{cast:mark.uid}}"
+			}
+		},
+		{
+			"key": "contact-sanne-henk",
+			"register": "portaliq",
+			"schema": "portalContact",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"role": "contact",
+				"displayName": "{{cast:henk.displayName}}",
+				"line": "Uw vader",
+				"state": "approved",
+				"contactRef": "{{cast:henk.uid}}"
+			}
+		},
+		{
+			"key": "contact-sanne-uitnodiging",
+			"register": "portaliq",
+			"schema": "portalContact",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"role": "contact",
+				"displayName": "J. de Vries",
+				"line": "Nog geen account aangemaakt",
+				"state": "invited",
+				"email": "j.devries@example.nl",
+				"sentAt": "{{datetime:-16 10:00}}"
+			}
+		},
+		{
+			"key": "plan-sanne-schuldhulp",
+			"register": "portaliq",
+			"schema": "portalPlan",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"participants": [
+					"{{cast:mark.uid}}"
+				],
+				"title": "Schuldhulp op orde",
+				"goal": "Over drie maanden heb ik een overzicht van al mijn schulden en een vaste afspraak over aflossen.",
+				"goalDetail": "Samen met Mark zet ik alle rekeningen op een rij. Daarna vragen we schuldhulpverlening aan bij de gemeente, zodat ik met één afspraak per maand aflos.",
+				"endDate": "{{date:12}}",
+				"status": "running"
+			}
+		},
+		{
+			"key": "plan-sanne-schuldhulp-actie-1",
+			"register": "portaliq",
+			"schema": "portalAction",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"assignee": "{{cast:sanne.uid}}",
+				"title": "Overzicht maken van al mijn schulden",
+				"kind": "once",
+				"status": "done",
+				"endDate": "{{date:-21}}",
+				"plan": "{{object:plan-sanne-schuldhulp.id}}"
+			}
+		},
+		{
+			"key": "plan-sanne-schuldhulp-actie-2",
+			"register": "portaliq",
+			"schema": "portalAction",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"assignee": "{{cast:mark.uid}}",
+				"title": "Afspraak met de budgetcoach plannen",
+				"kind": "once",
+				"status": "done",
+				"endDate": "{{date:-14}}",
+				"plan": "{{object:plan-sanne-schuldhulp.id}}"
+			}
+		},
+		{
+			"key": "plan-sanne-schuldhulp-actie-3",
+			"register": "portaliq",
+			"schema": "portalAction",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"assignee": "{{cast:sanne.uid}}",
+				"title": "Bankafschriften van drie maanden uploaden",
+				"kind": "once",
+				"status": "doing",
+				"endDate": "{{date:6}}",
+				"plan": "{{object:plan-sanne-schuldhulp.id}}"
+			}
+		},
+		{
+			"key": "plan-sanne-schuldhulp-actie-4",
+			"register": "portaliq",
+			"schema": "portalAction",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"assignee": "{{cast:mark.uid}}",
+				"title": "Aanvraag schuldhulpverlening indienen",
+				"kind": "once",
+				"status": "todo",
+				"endDate": "{{date:12}}",
+				"plan": "{{object:plan-sanne-schuldhulp.id}}"
+			}
+		},
+		{
+			"key": "plan-sanne-schuldhulp-actie-5",
+			"register": "portaliq",
+			"schema": "portalAction",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"assignee": "{{cast:sanne.uid}}",
+				"title": "Vaste lasten bijwerken in het budgetplan",
+				"kind": "recurring",
+				"status": "todo",
+				"endDate": "{{date:23}}",
+				"plan": "{{object:plan-sanne-schuldhulp.id}}"
+			}
+		},
+		{
+			"key": "parkeervergunning-sanne",
+			"register": "dossiq",
+			"schema": "case",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "parkeervergunning-bewoners"
+					}
+				},
+				"ontvangen": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Ontvangen"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "In behandeling"
+					}
+				},
+				"sanne": {
+					"schema": "brpPerson",
+					"where": {
+						"citizenServiceNumber": "{{cast:sanne.bsn}}"
+					}
+				}
+			},
+			"jsonFields": [
+				"statusHistory"
+			],
+			"data": {
+				"title": "Parkeervergunning Lindelaan",
+				"description": "Ik vraag een bewonersvergunning aan voor mijn auto bij mijn huis aan de Lindelaan.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"requester": "{{lookup:sanne}}",
+				"initiatorType": "person",
+				"initiatorDisplayName": "{{cast:sanne.displayName}}",
+				"portalSubject": "{{cast:sanne.uid}}",
+				"intakeChannel": "website",
+				"startDate": "{{date:-6}}",
+				"receivedAt": "{{datetime:-6 09:15}}",
+				"currentStatusEnteredAt": "{{datetime:-5 10:00}}",
+				"waitingOnApplicant": true,
+				"waitingOnApplicantSince": "{{datetime:-5 10:00}}",
+				"statusHistory": [
+					{
+						"status": "{{lookup:ontvangen}}",
+						"enteredAt": "{{datetime:-6 09:15}}"
+					},
+					{
+						"status": "{{lookup:status}}",
+						"enteredAt": "{{datetime:-5 10:00}}"
+					}
+				]
+			}
+		},
+		{
+			"key": "woo-fietspad-incident-link",
+			"register": "dossiq",
+			"schema": "caseIncident",
+			"data": {
+				"case": "{{object:woo-fietspad.id}}",
+				"eventDate": "{{datetime:-9 10:00}}",
+				"recordedAt": "{{datetime:-9 10:15}}",
+				"reporter": "{{cast:sanne.displayName}}",
+				"description": "Verzoeker meldt dat de link in Mijn Zuiddrecht niet werkt",
+				"assignee": "{{cast:pieter.uid}}",
+				"state": "open"
+			}
+		}
+	],
+	"tasks": [
+		{
+			"key": "woo-fietspad-taak-beoordelen",
+			"data": {
+				"title": "Documenten beoordelen",
+				"description": "3 van 7 nog open",
+				"objectUuid": "{{object:woo-fietspad.id}}",
+				"state": "active",
+				"assignee": "{{cast:pieter.uid}}",
+				"dueAt": "{{date:1}}",
+				"priority": "high"
+			}
+		},
+		{
+			"key": "woo-fietspad-taak-stukken",
+			"data": {
+				"title": "Stukken opvragen bij Mobiliteit en verkeer",
+				"description": "Adviezen en mail 2025 en 2026",
+				"objectUuid": "{{object:woo-fietspad.id}}",
+				"state": "completed",
+				"assignee": "{{cast:lars.uid}}",
+				"dueAt": "{{date:-11}}",
+				"completedAt": "{{datetime:-11 15:40}}",
+				"completedBy": "{{cast:lars.uid}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-taak-compleet",
+			"data": {
+				"title": "Verzoek compleet maken",
+				"description": "Periode en onderwerp vastgelegd",
+				"objectUuid": "{{object:woo-fietspad.id}}",
+				"state": "completed",
+				"assignee": "{{cast:pieter.uid}}",
+				"dueAt": "{{date:-13}}",
+				"completedAt": "{{datetime:-13 11:20}}",
+				"completedBy": "{{cast:pieter.uid}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-taak-ontvangst",
+			"data": {
+				"title": "Ontvangst bevestigen",
+				"description": "Bericht via Mijn Zuiddrecht",
+				"objectUuid": "{{object:woo-fietspad.id}}",
+				"state": "completed",
+				"assignee": "{{cast:pieter.uid}}",
+				"dueAt": "{{date:-13}}",
+				"completedAt": "{{datetime:-14 09:30}}",
+				"completedBy": "{{cast:pieter.uid}}"
+			}
+		},
+		{
+			"key": "parkeervergunning-sanne-id-kopie",
+			"data": {
+				"title": "Stuur een kopie van uw ID-bewijs",
+				"description": "Om u een parkeervergunning te verlenen, moeten wij zeker weten dat u op de Lindelaan 14 woont. Stuur ons daarom een kopie van uw ID-bewijs.",
+				"objectUuid": "{{object:parkeervergunning-sanne.id}}",
+				"state": "active",
+				"performerType": "external",
+				"assignee": "party:{{cast:sanne.uid}}",
+				"dueAt": "{{date:7}}",
+				"uploadRules": {
+					"required": true,
+					"maxFiles": 2
+				}
+			}
+		}
+	],
+	"watchers": [
+		{
+			"key": "anouk-volgt-woo-fietspad",
+			"data": {
+				"user": "{{cast:anouk.uid}}",
+				"objectUuid": "{{object:woo-fietspad.id}}",
+				"register": "dossiq",
+				"schema": "case",
+				"notify": true
+			}
+		}
+	],
+	"deckCards": [
+		{
+			"key": "woo-fietspad-kaart-lakken",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"board": "Woo en informatie",
+				"list": "Deze week",
+				"title": "Lakken offerte lantaarnpalen",
+				"owner": "{{cast:pieter.uid}}",
+				"assignees": [
+					"{{cast:lars.uid}}"
+				],
+				"labels": [
+					{
+						"title": "Bezig"
+					}
+				],
+				"shareWith": [
+					"{{cast:woo-en-informatie.gid}}"
+				]
+			}
+		}
+	],
+	"appointments": [
+		{
+			"key": "woo-fietspad-afspraak-toelichting",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"owner": "{{cast:pieter.uid}}",
+				"summary": "Toelichting stukken aan de verzoeker",
+				"start": "{{datetime:3 10:00}}",
+				"end": "{{datetime:3 10:30}}",
+				"location": "Stadskantoor, balie 3",
+				"attendees": [
+					{
+						"name": "{{cast:sanne.displayName}}",
+						"email": "{{cast:sanne.email}}",
+						"status": "invited"
+					}
+				]
+			}
+		}
+	],
+	"casePlans": [
+		{
+			"key": "woo-fietspad-zaakplan",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"definition": {
+					"items": [
+						{
+							"key": "verzoek-compleet",
+							"type": "milestone",
+							"name": "Mijlpaal: verzoek compleet",
+							"description": "bereikt op 4 okt",
+							"state": "completed"
+						},
+						{
+							"key": "documenten-beoordelen",
+							"type": "humanTask",
+							"name": "Documenten beoordelen",
+							"description": "3 van 7 nog open",
+							"state": "active"
+						},
+						{
+							"key": "zienswijze-derde",
+							"type": "humanTask",
+							"name": "Zienswijze derde vragen",
+							"description": "alleen als een derde belang heeft",
+							"state": "available",
+							"discretionary": true
+						},
+						{
+							"key": "besluit-opstellen",
+							"entryCriteria": [{"id": "documenten-beoordeeld", "on": {"event": "case.item.completed", "item": "documenten-beoordelen"}}],
+							"type": "humanTask",
+							"name": "Besluit opstellen",
+							"description": "start als alle documenten beoordeeld zijn",
+							"state": "available"
+						}
+					]
+				},
+				"history": [
+					{
+						"item": "verzoek-compleet",
+						"to": "completed",
+						"at": "{{datetime:-13 10:00}}"
+					}
+				]
+			}
+		}
+	],
+	"notes": [
+		{
+			"key": "woo-fietspad-notitie-lars",
+			"data": {
+				"user": "{{cast:lars.uid}}",
+				"objectUuid": "{{object:woo-fietspad.id}}",
+				"message": "Stukken uit 2025 staan in het dossier Fietspad Lindelaan",
+				"createdAt": "{{datetime:-11 09:31}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-notitie-pieter",
+			"data": {
+				"user": "{{cast:pieter.uid}}",
+				"objectUuid": "{{object:woo-fietspad.id}}",
+				"message": "@\"{{cast:anouk.uid}}\" de offerte bevat bedragen van een derde, graag even meekijken",
+				"createdAt": "{{datetime:-11 15:52}}"
+			}
+		}
+	],
+	"talkConversations": [
+		{
+			"key": "woo-fietspad-gesprek-sanne",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"name": "Gesprek met Sanne de Vries over de stukken",
+				"owner": "{{cast:pieter.uid}}",
+				"participants": [
+					"{{cast:sanne.uid}}"
+				],
+				"call": {
+					"start": "{{datetime:-13 10:30}}",
+					"end": "{{datetime:-13 10:42}}"
+				}
+			}
+		}
+	],
+	"timelineEntries": [
+		{
+			"key": "woo-fietspad-historie-aangemaakt",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "statuswijziging",
+				"message": "Zaak aangemaakt",
+				"at": "{{datetime:-14 14:10}}",
+				"fields": {
+					"to": "Ontvangen"
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-historie-documenten-gekoppeld",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "document",
+				"message": "3 documenten gekoppeld",
+				"author": "{{cast:pieter.uid}}",
+				"at": "{{datetime:-14 14:18}}",
+				"fields": {
+					"act": "linked",
+					"count": 3
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-historie-ontvangstbevestiging",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "bericht",
+				"message": "Ontvangstbevestiging verstuurd",
+				"author": "{{cast:pieter.uid}}",
+				"at": "{{datetime:-14 14:32}}",
+				"fields": {
+					"direction": "outbound",
+					"channel": "e-mail"
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-historie-opgepakt",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "toewijzing",
+				"message": "Zaak opgepakt",
+				"author": "{{cast:pieter.uid}}",
+				"at": "{{datetime:-13 09:10}}",
+				"fields": {
+					"act": "picked-up",
+					"to": "{{cast:pieter.displayName}}"
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-historie-status-in-behandeling",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "statuswijziging",
+				"message": "Status gewijzigd",
+				"author": "{{cast:pieter.uid}}",
+				"at": "{{datetime:-13 09:12}}",
+				"fields": {
+					"from": "Ontvangen",
+					"to": "In behandeling"
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-historie-bericht-verstuurd",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "bericht",
+				"message": "Bericht verstuurd",
+				"author": "{{cast:pieter.uid}}",
+				"at": "{{datetime:-13 10:24}}",
+				"fields": {
+					"direction": "outbound",
+					"counterpart": "{{cast:sanne.displayName}}"
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-historie-bericht-ontvangen",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "bericht",
+				"message": "Bericht ontvangen",
+				"author": "{{cast:sanne.uid}}",
+				"at": "{{datetime:-13 10:52}}",
+				"fields": {
+					"direction": "inbound",
+					"counterpart": "{{cast:sanne.displayName}}"
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-historie-taak-afgerond",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "taak",
+				"message": "Taak afgerond",
+				"author": "{{cast:lars.uid}}",
+				"at": "{{datetime:-11 09:30}}",
+				"fields": {
+					"act": "completed",
+					"title": "Advies verlichting"
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-historie-document-beoordeeld-advies",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "document",
+				"message": "Document beoordeeld",
+				"author": "{{cast:pieter.uid}}",
+				"at": "{{datetime:-11 11:05}}",
+				"fields": {
+					"act": "reviewed",
+					"title": "Advies verlichting fietspad"
+				}
+			}
+		},
+		{
+			"key": "woo-fietspad-historie-document-beoordeeld-mail",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"kind": "document",
+				"message": "Document beoordeeld",
+				"author": "{{cast:pieter.uid}}",
+				"at": "{{datetime:-11 11:20}}",
+				"fields": {
+					"act": "reviewed",
+					"title": "Mail aannemer over planning"
+				}
+			}
+		}
+	],
+	"parties": [
+		{
+			"key": "partij-sanne-verzoeker",
+			"data": {
+				"objectUuid": "{{object:woo-fietspad.id}}",
+				"partyUuid": "{{object:rol-woo-fietspad-verzoeker.participant}}",
+				"role": "3c0f5a00-0000-4000-a000-0000000c0001",
+				"validFrom": "{{date:-14}}",
+				"primary": true
+			}
+		},
+		{
+			"key": "partij-vanwijk-belanghebbende",
+			"data": {
+				"objectUuid": "{{object:woo-fietspad.id}}",
+				"partyUuid": "{{object:rol-woo-fietspad-belanghebbende.participant}}",
+				"role": "3c0f5a00-0000-4000-a000-0000000c0003",
+				"validFrom": "{{date:-11}}"
+			}
+		},
+		{
+			"key": "partij-lars-adviseur",
+			"data": {
+				"objectUuid": "{{object:woo-fietspad.id}}",
+				"partyUuid": "{{object:collega-lars.id}}",
+				"role": "3c0f5a00-0000-4000-a000-0000000c0004",
+				"validFrom": "{{date:-11}}",
+				"validUntil": "{{date:14}}",
+				"note": "Advies over de verlichting vanuit Mobiliteit en verkeer"
+			}
+		}
+	],
+	"changes": [
+		{
+			"key": "inloggen-met-account",
+			"register": "portaliq",
+			"schema": "portal",
+			"where": {
+				"slug": "zuiddrecht"
+			},
+			"append": {
+				"authentication.modes": "nextcloud"
+			},
+			"set": {
+				"authentication.modeLabels.nextcloud": {
+					"title": "Met een account",
+					"text": "Voor wie publicaties volgt, dossiers bewaart of een vraag stelt. Geen DigiD nodig.",
+					"button": "Inloggen met uw account"
+				},
+				"authentication.registration.residentGroup": "inwoners"
+			}
+		},
+		{
+			"key": "ondernemers-op-het-portaal",
+			"register": "portaliq",
+			"schema": "portal",
+			"where": {
+				"slug": "zuiddrecht"
+			},
+			"set": {
+				"authentication.registration.businessGroup": "ondernemers"
+			}
+		},
+		{
+			"key": "samenwerken-en-contacten",
+			"register": "portaliq",
+			"schema": "portal",
+			"where": {
+				"slug": "zuiddrecht"
+			},
+			"set": {
+				"contactsEnabled": true,
+				"plansEnabled": true,
+				"actionsEnabled": true
+			}
+		}
+	],
+	"flows": [
+		{
+			"key": "flow-documenten-uit-dossier",
+			"data": {
+				"name": "Documenten uit dossier koppelen",
+				"description": "Koppelt de documenten die al in het dossier van de verzoeker staan aan een nieuwe zaak.",
+				"trigger": "object.created",
+				"triggerRegister": "dossiq",
+				"triggerSchema": "case",
+				"nodes": [
+					{
+						"id": "start",
+						"type": "openregister.trigger-object",
+						"name": "Gestart door de zaak",
+						"config": {
+							"event": "object.created",
+							"register": "dossiq",
+							"schema": "case"
+						},
+						"position": {
+							"x": 40,
+							"y": 40
+						}
+					},
+					{
+						"id": "stap",
+						"type": "openregister.link-object",
+						"name": "Documenten uit het dossier aan de zaak koppelen",
+						"position": {
+							"x": 40,
+							"y": 160
+						}
+					},
+					{
+						"id": "end",
+						"type": "openregister.end",
+						"position": {
+							"x": 40,
+							"y": 280
+						}
+					}
+				],
+				"edges": [
+					{
+						"from": "start",
+						"to": "stap"
+					},
+					{
+						"from": "stap",
+						"to": "end"
+					}
+				],
+				"runs": [
+					{
+						"subject": "{{object:woo-fietspad.id}}",
+						"subjectRegister": "dossiq",
+						"subjectSchema": "case",
+						"trigger": "object.created",
+						"status": "completed",
+						"created": "{{datetime:-14 09:20}}"
+					}
+				]
+			}
+		},
+		{
+			"key": "flow-ontvangstbevestiging",
+			"data": {
+				"name": "Ontvangstbevestiging versturen",
+				"description": "Stuurt de verzoeker een ontvangstbevestiging zodra de zaak is aangemaakt.",
+				"trigger": "object.created",
+				"triggerRegister": "dossiq",
+				"triggerSchema": "case",
+				"nodes": [
+					{
+						"id": "start",
+						"type": "openregister.trigger-object",
+						"name": "Gestart door de zaak",
+						"config": {
+							"event": "object.created",
+							"register": "dossiq",
+							"schema": "case"
+						},
+						"position": {
+							"x": 40,
+							"y": 40
+						}
+					},
+					{
+						"id": "stap",
+						"type": "dossiq.sendMessage",
+						"name": "Ontvangstbevestiging naar de verzoeker",
+						"position": {
+							"x": 40,
+							"y": 160
+						}
+					},
+					{
+						"id": "end",
+						"type": "openregister.end",
+						"position": {
+							"x": 40,
+							"y": 280
+						}
+					}
+				],
+				"edges": [
+					{
+						"from": "start",
+						"to": "stap"
+					},
+					{
+						"from": "stap",
+						"to": "end"
+					}
+				],
+				"runs": [
+					{
+						"subject": "{{object:woo-fietspad.id}}",
+						"subjectRegister": "dossiq",
+						"subjectSchema": "case",
+						"trigger": "object.created",
+						"status": "completed",
+						"created": "{{datetime:-14 09:34}}"
+					}
+				]
+			}
+		},
+		{
+			"key": "flow-statusbericht",
+			"data": {
+				"name": "Statusbericht naar de inwoner",
+				"description": "Laat de inwoner weten dat de status van de zaak is veranderd.",
+				"trigger": "object.updated",
+				"triggerRegister": "dossiq",
+				"triggerSchema": "case",
+				"nodes": [
+					{
+						"id": "start",
+						"type": "openregister.trigger-object",
+						"name": "Gestart door de zaak",
+						"config": {
+							"event": "object.updated",
+							"register": "dossiq",
+							"schema": "case"
+						},
+						"position": {
+							"x": 40,
+							"y": 40
+						}
+					},
+					{
+						"id": "stap",
+						"type": "dossiq.sendMessage",
+						"name": "Statusbericht naar de inwoner",
+						"position": {
+							"x": 40,
+							"y": 160
+						}
+					},
+					{
+						"id": "end",
+						"type": "openregister.end",
+						"position": {
+							"x": 40,
+							"y": 280
+						}
+					}
+				],
+				"edges": [
+					{
+						"from": "start",
+						"to": "stap"
+					},
+					{
+						"from": "stap",
+						"to": "end"
+					}
+				],
+				"runs": [
+					{
+						"subject": "{{object:woo-fietspad.id}}",
+						"subjectRegister": "dossiq",
+						"subjectSchema": "case",
+						"trigger": "object.updated",
+						"status": "failed",
+						"error": "E-mail niet bezorgd; het bericht staat wel in Mijn Zuiddrecht.",
+						"created": "{{datetime:-13 10:05}}"
+					}
+				]
+			}
+		}
+	],
+	"emailLinks": [
+		{
+			"key": "lindelaan-mail-aanvulling",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"messageId": "<aanvulling-woo-2026-0110@zuiddrecht.example>",
+				"subject": "Aanvulling op Woo-verzoek 2026-0110",
+				"sender": "{{cast:sanne.email}}",
+				"senderName": "{{cast:sanne.displayName}}",
+				"mailDate": "{{datetime:-12 09:15}}",
+				"linkedBy": "{{cast:pieter.uid}}",
+				"direction": "inbound",
+				"attachmentCount": 1,
+				"linkedVia": "mailbox",
+				"mailboxName": "het Woo-postvak",
+				"archivedAs": "pdf"
+			}
+		},
+		{
+			"key": "lindelaan-mail-vraag-mobiliteit",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"messageId": "<vraag-mobiliteit-lindelaan@zuiddrecht.example>",
+				"subject": "Vraag aan Mobiliteit en verkeer over de stukken",
+				"sender": "{{cast:pieter.email}}",
+				"senderName": "{{cast:pieter.displayName}}",
+				"mailDate": "{{datetime:-13 11:02}}",
+				"linkedBy": "{{cast:pieter.uid}}",
+				"direction": "outbound",
+				"recipientName": "{{cast:lars.displayName}}",
+				"attachmentCount": 0,
+				"linkedVia": "manual",
+				"archivedAs": "pdf"
+			}
+		},
+		{
+			"key": "lindelaan-mail-planning-aannemer",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"messageId": "<planning-aanleg-verlichting@vanwijk.zuiddrecht.example>",
+				"subject": "Planning aanleg verlichting",
+				"sender": "{{cast:vanwijk.email}}",
+				"senderName": "Aannemersbedrijf Van Wijk",
+				"mailDate": "2026-03-12T10:40:00+01:00",
+				"linkedBy": "{{cast:pieter.uid}}",
+				"direction": "inbound",
+				"attachmentCount": 2,
+				"linkedVia": "file"
+			}
+		}
+	]
+}

@@ -52,6 +52,36 @@ export const metaOf = {
 		{ name: 'placeholder', kind: 'string', label: 'Voorbeeld in het zoekveld' },
 		{ name: 'showSearch', kind: 'boolean', label: 'Zoekveld tonen' },
 		{ name: 'newsRoute', kind: 'string', label: 'Adres van de nieuwspagina' },
+		{
+			name: 'kindFacet',
+			kind: 'string',
+			label: 'Filter op soort, met deze kop',
+		},
+		{
+			name: 'audienceFacet',
+			kind: 'string',
+			label: 'Filter op voor wie (nieuws), met deze kop',
+		},
+		{
+			name: 'facetDisplay',
+			kind: 'json',
+			label: 'Per filter: checkbox, radio of select',
+		},
+		{
+			name: 'labelHidden',
+			kind: 'boolean',
+			label: 'Label van het zoekveld verbergen',
+		},
+		{
+			name: 'searchPlacement',
+			kind: 'string',
+			label: 'Zoekveld: top (boven) of rail (naast de resultaten)',
+		},
+		{
+			name: 'cardStyle',
+			kind: 'string',
+			label: 'Kaart: kind (soort boven de titel) of meta (label onder de tekst)',
+		},
 	],
 	defaultSize: { gridWidth: 12, gridHeight: 8 },
 	scope: 'public',

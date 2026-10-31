@@ -210,6 +210,94 @@
 }
 
 /*
+ * A BUTTON THAT UNDOES SOMETHING ("Aanvraag intrekken"): the danger tokens
+ * when the theme sets them, else the set's dark error colour, which reaches
+ * AA on white. Text and outline carry the meaning together with the words.
+ */
+.pq-site .utrecht-button--secondary-action.utrecht-button--danger {
+	--_utrecht-button-hint-color: var(
+		--utrecht-button-secondary-action-danger-color,
+		var(--nldesign-color-error-hover, currentcolor)
+	);
+	--_utrecht-button-hint-border-color: var(
+		--utrecht-button-secondary-action-danger-border-color,
+		var(--nldesign-color-error-hover, currentcolor)
+	);
+}
+
+.pq-site .utrecht-button--primary-action.utrecht-button--danger {
+	--_utrecht-button-hint-background-color: var(
+		--utrecht-button-primary-action-danger-background-color,
+		var(--nldesign-color-error-hover, CanvasText)
+	);
+	--_utrecht-button-hint-border-color: var(
+		--utrecht-button-primary-action-danger-border-color,
+		var(--nldesign-color-error-hover, CanvasText)
+	);
+	--_utrecht-button-hint-color: var(
+		--utrecht-button-primary-action-danger-color,
+		var(--nldesign-color-text-light, Canvas)
+	);
+}
+
+/*
+ * AN OUTLINED BUTTON TAKES ITS INK FROM THE BUTTON'S OWN TOKENS.
+ *
+ * The vendored nlds-app.css paints every secondary button in
+ * `--tilburg-color-blue-400` with !important, which the bridge maps to the
+ * primary's HOVER colour, and that also beat the danger hint: "Aanvraag
+ * intrekken" and "Mijn account verwijderen" drew #234A78 where the boards
+ * draw #3669A5 and the red #A30000. The private `--_utrecht-button-*`
+ * values already resolve hint, appearance and token in that order, so the
+ * button's own states and the danger variant win again.
+ */
+.pq-site .utrecht-button--secondary-action {
+	border-color: var(--_utrecht-button-border-color) !important;
+	color: var(--_utrecht-button-color) !important;
+}
+
+/*
+ * A SELECT IS A FORM CONTROL TOO. The vendored stylesheets style the Utrecht
+ * text box but carry no select rules, so every `utrecht-select` on the site
+ * ("Namens", "Iedereen voor wie ik werk") drew as the browser's 25px grey
+ * box. It reads the select tokens the theme gives, and keeps the browser's
+ * own arrow.
+ */
+.pq-site .utrecht-select {
+	box-sizing: border-box;
+	min-block-size: var(
+		--utrecht-select-min-block-size,
+		var(--utrecht-pointer-target-min-size, 44px)
+	);
+	padding-block: 0;
+	padding-inline: 12px;
+	border: var(--utrecht-select-border-width, 1px) solid
+		var(--utrecht-select-border-color, currentcolor);
+	border-radius: var(--utrecht-select-border-radius, 4px);
+	background-color: var(--utrecht-select-background-color, Canvas);
+	color: var(--utrecht-select-color, CanvasText);
+	font-family: var(--utrecht-select-font-family, inherit);
+	font-size: var(--utrecht-select-font-size, inherit);
+}
+
+/* A button's leading icon, as the boards draw it: 20px in the label's ink,
+   8px before the words. */
+.pq-site .utrecht-button .pq-button-icon {
+	inline-size: 20px;
+	block-size: 20px;
+	flex: none;
+	margin-inline-end: 8px;
+	vertical-align: -4px;
+	fill: currentcolor;
+}
+
+/* "Markeren als gelezen" on a message row is an underlined text button with
+   square ends (board Berichten). */
+.pq-site .pq-inbox-row .utrecht-button--subtle {
+	border-radius: 0;
+}
+
+/*
  * THE SAME FORM'S SECONDARY BUTTONS: the file picker ("Bestand of foto
  * kiezen") and the step buttons. Without a theme they had no border and no
  * padding either, so the picker read as a sentence. Scoped to the form, so the
@@ -416,11 +504,18 @@
 }
 
 /* The page on screen: bold, with a bar in the accent under it (in the
- * primary for a set without an accent). */
+ * primary for a set without an accent). The section the page sits in is
+ * marked the same way (`aria-current="true"`, site-page-layout): on
+ * "Uw kind afwezig melden" the item "Praktisch" carries the bar. */
+.pq-site .ac-header .ac-c-navigation__link-container[aria-current='true'],
 .pq-site .ac-header .ac-c-navigation__link-container[aria-current='page'] {
 	background-color: transparent;
 }
 
+.pq-site
+	.ac-header
+	.ac-c-navigation__link-container[aria-current='true']
+	.ac-c-navigation__label,
 .pq-site
 	.ac-header
 	.ac-c-navigation__link-container[aria-current='page']
@@ -428,6 +523,7 @@
 	font-weight: 700;
 }
 
+.pq-site .ac-header .ac-c-navigation__link-container[aria-current='true']::after,
 .pq-site .ac-header .ac-c-navigation__link-container[aria-current='page']::after {
 	content: '';
 	position: absolute;
@@ -482,6 +578,82 @@
 }
 
 /*
+ * A MELDING IS A CARD, AND A LINK IS A TARGET YOU CAN HIT, ON ANY SET
+ * (site-content-blocks-styled).
+ *
+ * The Utrecht alert reads its padding and every background from
+ * `--utrecht-alert-*` tokens that no shipped set declares, so the proof of
+ * 06 Oct showed every melding ("Online melden", "Liever bellen?") as text
+ * flush against a coloured line. Each value below reads the Utrecht token
+ * first, so a set that names the role keeps it, then the set's own tint for
+ * that kind, and ends in a keyword, never a literal colour.
+ *
+ * A table and a link list draw their designed shapes through the opt-in
+ * displays (`display: boxed`, `card`, `accent`; site-matches-the-zuiddrecht-
+ * boards), so nothing here changes them.
+ */
+.pq-site .utrecht-alert {
+	box-sizing: border-box;
+	padding-block: var(--utrecht-alert-padding-block-start, 24px)
+		var(--utrecht-alert-padding-block-end, 24px);
+	padding-inline: var(--utrecht-alert-padding-inline-start, 24px)
+		var(--utrecht-alert-padding-inline-end, 24px);
+}
+
+/* Two meldingen side by side in the grid are one height, as cards are. */
+.pq-site .pq-grid__cell > .utrecht-alert {
+	block-size: 100%;
+}
+
+.pq-site .utrecht-alert--info {
+	background-color: var(
+		--utrecht-alert-info-background-color,
+		var(--nldesign-color-primary-light, transparent)
+	);
+}
+
+.pq-site .utrecht-alert--ok {
+	background-color: var(
+		--utrecht-alert-ok-background-color,
+		var(--nldesign-component-status-badge-success-background-color, transparent)
+	);
+}
+
+.pq-site .utrecht-alert--warning {
+	background-color: var(
+		--utrecht-alert-warning-background-color,
+		var(--nldesign-component-status-badge-warning-background-color, transparent)
+	);
+}
+
+.pq-site .utrecht-alert--error {
+	background-color: var(
+		--utrecht-alert-error-background-color,
+		var(--nldesign-component-status-badge-error-background-color, transparent)
+	);
+}
+
+.pq-site .utrecht-alert__content {
+	display: flex;
+	flex-direction: column;
+	gap: var(--utrecht-alert-message-row-gap, 12px);
+}
+
+.pq-site .utrecht-alert__content > * {
+	margin: 0;
+}
+
+/*
+ * A link in a list is a target of at least 24px high (WCAG 2.2, 2.5.8). The
+ * proof measured 19px lines; the row gap above passes axe through its spacing
+ * rule, this keeps the target itself big enough when a set sets the gap to 0.
+ */
+.pq-site .utrecht-link-list__link {
+	align-items: center;
+	min-block-size: var(--utrecht-link-list-link-min-block-size, 24px);
+}
+
+/*
  * THE DESIGNED SITE READS IN THE SET'S OWN FAMILY (example-site-zuiddrecht).
  *
  * The vendored sheet sets the page's family on `body` as a literal, so every
@@ -494,8 +666,33 @@
  * face it has, which its tests measure on the menu.
  */
 .pq-site:has(.pq-site__header--designed),
+body:has(.pq-site__header--designed),
 body:has(.pq-site__header--designed) .pq-site__skip {
 	font-family: var(--utrecht-document-font-family, inherit);
+}
+
+/* The vendored sheet names its own face on a bulleted list with !important,
+   so only an !important rule puts the list in the set's face. */
+.pq-site:has(.pq-site__header--designed) .utrecht-unordered-list {
+	font-family: var(--utrecht-document-font-family, inherit) !important;
+}
+
+/*
+ * AND ITS HEADINGS IN THE SET'S HEADING FACE (designed-site-type).
+ *
+ * Measured on the fresh install of 08 Oct (proof run 2): a heading with an
+ * Utrecht class read the heading face (Red Hat Display, Barlow Semi
+ * Condensed), but a heading without one, such as the hero's title, inherited
+ * the body face (Red Hat Text, Barlow) from the rule above. `body` itself
+ * still computed the vendored Roboto, because the rule above named only the
+ * site root; it now names `body` too.
+ *
+ * `:where()` keeps this at no specificity: any rule that names a heading's
+ * own family (the Utrecht heading levels) still wins; it only replaces what
+ * a heading would otherwise inherit from the body.
+ */
+:where(.pq-site:has(.pq-site__header--designed)) :where(h1, h2, h3, h4, h5, h6) {
+	font-family: var(--utrecht-heading-font-family, inherit);
 }
 
 /*
@@ -527,6 +724,7 @@ body:has(.pq-site__header--designed) .pq-site__skip {
  * Without them nothing changes: no shift, four pixels, the accent. The bar
  * sits above the line (z-index 2 over the line's 1), so it covers its piece.
  */
+.pq-site .ac-header .ac-c-navigation__link-container[aria-current='true']::after,
 .pq-site .ac-header .ac-c-navigation__link-container[aria-current='page']::after {
 	--pq-nav-current-in-line: var(--nldesign-website-nav-current-in-line, 0);
 	inset-block-end: calc(
@@ -793,14 +991,22 @@ body:has(.pq-site__header--designed) .pq-site__skip {
  * THE DESIGNED FOOTER (G-04): brand column first with its button, the
  * contact column, the menus; the bottom band one step darker than the footer.
  */
+/*
+ * EVERY COLUMN ON ONE ROW (site-page-layout). The brand column, then one
+ * column per contact block and menu, however many the portal has: a fixed
+ * three put a fourth menu ("Over deze website") under the logo on desktop.
+ */
 .ac-footer section.pq-footer__band--designed.pq-footer__band .container {
-	grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr));
+	grid-template-columns: minmax(0, 2fr);
+	grid-auto-columns: minmax(0, 1fr);
+	grid-auto-flow: column;
 	column-gap: 48px;
 }
 
 @media screen and (max-width: 1024px) {
 	.ac-footer section.pq-footer__band--designed.pq-footer__band .container {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-auto-flow: row;
 	}
 }
 
@@ -934,6 +1140,51 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 }
 
 /*
+ * A HERO ACTION AS A TEXT LINK, A BUTTON WITH A CHEVRON (boards Home of
+ * Vaartveld and the academy, site-home-follows-the-school-boards): "Lees wat
+ * er speelt op school" underlined beside the button, "Kom kennismaken ›".
+ */
+.pq-site .ac-hero .pq-hero__action:has(.pq-hero__action-chevron) {
+	display: inline-flex;
+	gap: 0.375rem;
+	align-items: center;
+}
+
+.pq-site .ac-hero .pq-hero__action.pq-hero__action--link {
+	border-color: transparent;
+	background-color: transparent;
+	padding-inline: 0.25rem;
+	color: var(--utrecht-link-color, LinkText);
+	text-decoration: underline;
+}
+
+.pq-hero__action-chevron {
+	flex: none;
+	inline-size: 1.25rem;
+	block-size: 1.25rem;
+}
+
+/*
+ * THE MONTH OF A DATE TILE in the set's case: capitals on the academy's
+ * boards ("OKT"), as typed elsewhere (school-sets-type-scale in thematiq).
+ */
+.pq-site .pq-date-tile .pq-date-tile__month {
+	text-transform: var(--thematiq-date-month-text-transform, none);
+}
+
+/*
+ * ONE FRAME IN THE HERO'S ASIDE (board Home of the academy): the aside is
+ * the card, so a framed list in it loses its own line and padding.
+ */
+.pq-site .pq-hero__aside-card .nl-event-list--framed {
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	background: none;
+	box-shadow: none;
+}
+
+/*
  * THE SIGN-IN PAGE AS ROLE CARDS (G-18).
  */
 .pq-signin {
@@ -979,7 +1230,11 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	flex-direction: column;
 	gap: 16px;
 	padding: 28px;
-	border: 1px solid var(--nldesign-color-border, var(--tilburg-line-border-color));
+	border: 1px solid
+		var(
+			--nldesign-website-card-border-color,
+			var(--nldesign-color-border, var(--tilburg-line-border-color))
+		);
 	border-radius: var(--nldesign-website-border-radius-large, 8px);
 	background-color: var(--nldesign-color-background, var(--tilburg-color-white));
 }
@@ -1289,6 +1544,19 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 }
 
 /*
+ * Every other page that opens with an h1 of its own (the sign-in page, a
+ * publication, the accessibility statement, a news article) keeps the set's
+ * size but takes the page title's line height, so every title on the site
+ * sets the same. Without the token nothing changes.
+ */
+.pq-site h1.utrecht-heading-1 {
+	line-height: var(
+		--nldesign-website-page-title-line-height,
+		var(--utrecht-heading-1-line-height, revert)
+	);
+}
+
+/*
  * THE PLAIN HERO (site-matches-the-zuiddrecht-boards, board Home): the
  * question large, the form on the band itself with input and button joined,
  * the popular links under it, the emblem faint at the end of the band. Only
@@ -1313,14 +1581,46 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	letter-spacing: -0.01em;
 }
 
+/*
+ * The lead under the plain hero's heading (site-hero-shows-its-heading): 20px
+ * on a line of at most 40rem, as the four school boards draw it. Before
+ * this a plain hero gave its lead the body size on one long line.
+ */
+.pq-site .ac-hero.pq-hero--plain .ac-hero__subtitle {
+	max-inline-size: 40rem;
+	margin: 0;
+	font-size: var(--nldesign-website-hero-lead-size, 1.25rem);
+	line-height: 1.6;
+}
+
 .pq-site .ac-hero.pq-hero--plain .pq-hero__search {
 	max-inline-size: 45rem;
 }
 
+/*
+ * A visible heading or lead above the search card keeps its distance
+ * (site-hero-shows-its-heading). Until the heading showed beside a search box
+ * the card was always the first thing in the band, so nothing set this gap.
+ */
+.pq-site .ac-hero .ac-hero__title:not(.sr-only) + .ac-card,
+.pq-site .ac-hero .ac-hero__subtitle:not(.sr-only) + .ac-card {
+	margin-block-start: 24px;
+}
+
+/*
+ * The plain hero's form stands on the band itself (hero-on-the-school-boards):
+ * the vendored sheet paints every search box in its light blue, which drew a
+ * lilac strip behind Esdoornveen's label on a white hero. The label's weight
+ * is the set's: Zuiddrecht draws it regular, the schools semibold.
+ */
+.pq-site .ac-hero.pq-hero--plain .ac-search-box {
+	background: transparent;
+}
+
 .pq-site .ac-hero.pq-hero--plain .ac-search-box__label {
 	margin-block-end: 0.625rem;
-	font-size: 1.125rem;
-	font-weight: 400;
+	font-size: var(--nldesign-website-hero-search-label-font-size, 1.125rem);
+	font-weight: var(--nldesign-website-hero-search-label-font-weight, 400);
 	color: var(--nldesign-hero-body-color, inherit);
 }
 
@@ -1425,6 +1725,80 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 }
 
 /*
+ * THE HERO WITH AN ASIDE (hero-aside): the text in one column and, beside
+ * it, a list in a card (the academy's next course days) or a photo
+ * (Esdoornveen), as the school boards draw their home pages. Without an
+ * aside the main column is no box at all, so every other hero is as before.
+ * Tokens only.
+ */
+.pq-site .ac-hero .pq-hero__main {
+	display: contents;
+}
+
+.pq-site .ac-hero.pq-hero--aside > .container {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 32rem);
+	gap: 2.5rem 3.5rem;
+	align-items: center;
+}
+
+.pq-site .ac-hero.pq-hero--aside .pq-hero__main {
+	display: flex;
+	flex-direction: column;
+	min-inline-size: 0;
+}
+
+.pq-site .ac-hero.pq-hero--plain.pq-hero--aside .pq-hero__main {
+	gap: 1.5rem;
+}
+
+/* The emblem would sit behind the aside; the aside is the band's picture. */
+.pq-site .ac-hero.pq-hero--aside::after {
+	display: none;
+}
+
+.pq-site .ac-hero .pq-hero__aside-card {
+	padding: 1.5rem 1.75rem 1.25rem;
+	border-radius: var(--nldesign-website-border-radius-large, 0);
+	background-color: var(--nldesign-color-background, Canvas);
+	box-shadow: 0 2px 12px
+		var(--nldesign-component-content-card-shadow-color, transparent);
+	color: var(--nldesign-color-text, CanvasText);
+}
+
+.pq-site .ac-hero .pq-hero__photo {
+	box-sizing: border-box;
+	inline-size: 100%;
+	min-block-size: 21rem;
+	margin: 0;
+	border-radius: var(--nldesign-website-border-radius-large, 0);
+	object-fit: cover;
+	clip-path: var(--nldesign-hero-image-clip-path, none);
+}
+
+/* A design that marks where a photo goes: a tinted plane with its words. */
+.pq-site .ac-hero .pq-hero__photo--label {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1.5rem;
+	background-color: var(--nldesign-color-primary-light, transparent);
+	color: var(--nldesign-color-primary, inherit);
+	font-size: 0.9375rem;
+	text-align: center;
+}
+
+@media (max-width: 768px) {
+	.pq-site .ac-hero.pq-hero--aside > .container {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.pq-site .ac-hero .pq-hero__photo {
+		min-block-size: 12rem;
+	}
+}
+
+/*
  * THE PLAIN SEARCH (site-matches-the-zuiddrecht-boards, board Zoeken): the
  * form on the page with input and button joined, the filters in a column on
  * the left, the results as bordered cards with the title as the link colour,
@@ -1449,14 +1823,16 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	white-space: nowrap;
 }
 
-.pq-site .pq-search--plain .ac-search-box__search {
+.pq-site .pq-search--plain .ac-search-box__search,
+.pq-site .pq-not-found .ac-search-box__search {
 	display: flex;
 	flex-direction: row;
 	flex-wrap: wrap;
 	gap: 0;
 }
 
-.pq-site .pq-search--plain .ac-search-box__input.utrecht-textbox {
+.pq-site .pq-search--plain .ac-search-box__input.utrecht-textbox,
+.pq-site .pq-not-found .ac-search-box__input.utrecht-textbox {
 	flex: 1 1 20rem;
 	min-inline-size: 0;
 	block-size: 3.25rem;
@@ -1469,7 +1845,8 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	font-size: 1.125rem;
 }
 
-.pq-site .pq-search--plain .ac-search-box__button.utrecht-button {
+.pq-site .pq-search--plain .ac-search-box__button.utrecht-button,
+.pq-site .pq-not-found .ac-search-box__button.utrecht-button {
 	block-size: 3.25rem;
 	padding-inline: 1.625rem;
 	border: 0;
@@ -1506,6 +1883,40 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	font-weight: 600;
 }
 
+/* Each filter a 22px box in the primary colour beside its 17px words, the
+   boxes 10px apart; the headings at the board's 24px and 26px. */
+.pq-site .pq-search--plain .pq-search__facets h2 {
+	font-size: 1.5rem;
+	line-height: 1.2;
+}
+
+.pq-site .pq-search--plain .pq-search__count {
+	font-size: 1.625rem;
+	line-height: 1.2;
+}
+
+.pq-site .pq-search--plain .pq-search__facet-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.625rem;
+}
+
+.pq-site .pq-search--plain .utrecht-form-label--checkbox {
+	display: flex;
+	align-items: center;
+	gap: 0.625rem;
+	font-size: 1.0625rem;
+	font-weight: 400;
+}
+
+.pq-site .pq-search--plain .pq-search__facet-list .utrecht-checkbox {
+	flex: none;
+	inline-size: 1.375rem;
+	block-size: 1.375rem;
+	margin: 0;
+	accent-color: var(--nldesign-color-primary, currentcolor);
+}
+
 .pq-site .pq-search--plain .pq-search__facet-group input[type='date'] {
 	block-size: 3rem;
 	box-sizing: border-box;
@@ -1533,10 +1944,21 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 .pq-site .pq-search--plain .pq-search__result.ac-card {
 	margin: 0;
 	padding: 1.25rem 1.5rem;
-	border: 1px solid var(--nldesign-color-border-dark, currentcolor);
+	border: 1px solid
+		var(
+			--nldesign-website-card-border-color,
+			var(--nldesign-color-border-dark, currentcolor)
+		);
 	border-radius: var(--nldesign-website-border-radius-large, 0);
 	background: var(--utrecht-document-background-color, Canvas);
 	box-shadow: none;
+}
+
+/* The card's own 20px and 24px are all the room a result has (board
+   Zoeken): the vendored card content adds 24px of its own. */
+.pq-site .pq-search--plain .pq-search__result .ac-card__content {
+	gap: 0.375rem;
+	padding: 0;
 }
 
 .pq-site .pq-search--plain .pq-search__result-title {
@@ -1862,16 +2284,48 @@ body:has(.pq-site__header--designed) .pq-site__skip {
  * column 380px wide and 72px from three link columns 32px apart, the
  * sentence in 17px, the button 46px in 600; the bottom line in 14px on the
  * page column.
+ *
+ * The 56px start under the motif: the stripe is drawn over the band's top
+ * edge, so the band adds the stripe's height to its own room.
  */
 .pq-site:has(.pq-site__header--designed)
 	.ac-footer
 	section.pq-footer__band--designed.pq-footer__band--content {
-	padding-block: 56px 44px;
+	padding-block: calc(56px + var(--cn-brand-stripe-height, 0px)) 44px;
+}
+
+/* A column title 14px above its list, the lines 10px apart. */
+.pq-site:has(.pq-site__header--designed)
+	.ac-footer
+	section.pq-footer__band--designed.pq-footer__band--content
+	h3.ac-footer__menu-title {
+	margin-block-end: 14px;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.ac-footer
+	section.pq-footer__band--designed.pq-footer__band--content
+	ul
+	li:not(:last-child),
+.pq-site:has(.pq-site__header--designed)
+	.ac-footer
+	.pq-footer__band--designed
+	.pq-footer__contact
+	p:not(:last-child) {
+	margin-block-end: 10px;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.ac-footer
+	.pq-footer__band--designed
+	.pq-footer__contact
+	p:last-child {
+	margin-block-end: 0;
 }
 
 @media screen and (min-width: 1025px) {
 	.ac-footer section.pq-footer__band--designed.pq-footer__band .container {
-		grid-template-columns: minmax(0, 420px) repeat(3, minmax(0, 1fr));
+		grid-template-columns: minmax(0, 420px);
 		column-gap: 32px;
 	}
 
@@ -1954,7 +2408,8 @@ body:has(.pq-site__header--designed) .pq-site__skip {
  */
 .pq-site:has(.pq-site__header--designed)
 	[data-widget-key='nlHeading']
-	:is(h2, .utrecht-heading-2) {
+	:is(h2, .utrecht-heading-2),
+.pq-site:has(.pq-site__header--designed) .pq-accessibility-statement > h2 {
 	margin-block-start: 12px;
 	font-size: 1.875rem;
 	line-height: 1.2;
@@ -1962,7 +2417,10 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 
 .pq-site:has(.pq-site__header--designed)
 	[data-widget-key='nlParagraph']
-	.utrecht-paragraph:not(.utrecht-paragraph--lead) {
+	.utrecht-paragraph:not(.utrecht-paragraph--lead),
+.pq-site:has(.pq-site__header--designed)
+	.pq-accessibility-statement
+	> .utrecht-paragraph:not(.pq-accessibility-statement__intro) {
 	font-size: 1.125rem;
 	/* The vendored sheet sets a paragraph's line height with !important. */
 	line-height: 1.6 !important;
@@ -2076,6 +2534,12 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	line-height: 1.5 !important;
 }
 
+/* The three ways in stand in one row across the page (board Inloggen). */
+.pq-site:has(.pq-site__header--designed) .pq-signin__cards {
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+	max-inline-size: none;
+}
+
 .pq-site:has(.pq-site__header--designed) .pq-signin__card-head {
 	display: grid;
 	grid-template-columns: 56px minmax(0, 1fr);
@@ -2092,6 +2556,40 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	margin: 0;
 	font-size: 1.125rem;
 	line-height: 1.5 !important;
+}
+
+/*
+ * THE LINE FOR STAFF READS AS ONE LINE (board Inloggen: "Werkt u bij De
+ * Wilgenboom? Log in op de werkplek"): the link stays in the sentence,
+ * where a bare `.utrecht-link` rule from the shared app sheet makes it a
+ * flex box on a line of its own.
+ */
+.pq-site .pq-signin__staff .utrecht-link {
+	display: inline;
+}
+
+/*
+ * ONE WAY IN READS AS ONE ROW (board Inloggen of De Wilgenboom,
+ * site-breadcrumb-follows-the-school-boards): the mark, then the title with
+ * its line under it, the button below both. Two or more cards keep the text
+ * under the mark and the title, as the other boards draw them.
+ */
+.pq-site:has(.pq-site__header--designed)
+	.pq-signin__card:only-child
+	.pq-signin__card-head
+	> div {
+	display: block;
+}
+
+.pq-site:has(.pq-site__header--designed)
+	.pq-signin__card:only-child
+	.pq-signin__card-text.utrecht-paragraph {
+	margin-block-start: 4px;
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, currentcolor)
+	);
+	font-size: 1rem;
 }
 
 .pq-site:has(.pq-site__header--designed) .pq-signin__button.utrecht-button-link {
@@ -2137,6 +2635,7 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 .pq-site:has(.pq-site__header--designed) .pq-account .pq-resident-menu__link {
 	min-block-size: 60px;
 	padding-block: 8px;
+	border-radius: 0;
 	font-weight: 500;
 }
 
@@ -2159,12 +2658,19 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	line-height: 1;
 }
 
-/* A resident page's own title (boards MijnZaken, Berichten): 44px, as the
+/* A resident page's own title (boards MijnZaken, Berichten, MijnAccount,
+   MijnGegevens, Machtigingen): 44px on the page title's line, as the
    overview's greeting; a record's name keeps the 40px of its heading. */
 .pq-site:has(.pq-site__header--designed) .pq-account__content > h1,
-.pq-site:has(.pq-site__header--designed) .pq-cases > h1 {
+.pq-site:has(.pq-site__header--designed) .pq-cases > h1,
+.pq-site:has(.pq-site__header--designed)
+	:is(#pq-account-title, #pq-details-title, #pq-access-title) {
 	margin-block-start: 0;
 	font-size: var(--utrecht-heading-1-font-size, 2.75rem);
+	line-height: var(
+		--nldesign-website-page-title-line-height,
+		var(--utrecht-heading-1-line-height, revert)
+	);
 }
 
 /*
@@ -2451,7 +2957,11 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	gap: 10px;
 	margin: 0;
 	padding: 20px 24px;
-	border: 1px solid var(--nldesign-color-border, var(--tilburg-line-border-color));
+	border: 1px solid
+		var(
+			--nldesign-website-card-border-color,
+			var(--nldesign-color-border, var(--tilburg-line-border-color))
+		);
 	border-radius: var(--nldesign-website-border-radius-large, 6px);
 }
 
@@ -3071,4 +3581,38 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 .pq-site:has(.pq-site__header--designed) .pq-action-block__form > h2 {
 	margin-block: 0 12px;
 	font-size: 1.375rem;
+}
+
+/*
+ * THE DRAFT DIALOGS (form-save-and-resume-dialogs, boards FormulierOpslaan
+ * and FormulierHervatten): the form's name small above the question, the
+ * buttons in one row at the end.
+ */
+.pq-site .pq-draft-dialog {
+	box-sizing: border-box;
+	max-inline-size: min(40rem, calc(100vw - 2rem));
+	padding: 2rem;
+	color: var(--utrecht-document-color, inherit);
+	background: var(--utrecht-document-background-color, Canvas);
+	border: 0;
+	border-radius: var(--nldesign-website-border-radius-large, 6px);
+}
+
+.pq-site .pq-draft-dialog > * + * {
+	margin-block-start: 1rem;
+}
+
+.pq-site .pq-draft-dialog__form {
+	margin: 0;
+	color: var(--thematiq-website-text-muted, var(--nldesign-color-text-muted, inherit));
+	font-size: 0.9375rem;
+	font-weight: 600;
+}
+
+.pq-site .pq-draft-dialog__buttons {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: 0.75rem;
+	margin-block-start: 1.5rem;
 }

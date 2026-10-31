@@ -26,6 +26,7 @@ A session acting under a mandate manages nothing on the represented party's beha
 - Accepting (`accept()`, signed in) writes the `portalMandate` with its holder from D7, `grantedBy` the inviter and `invitationId` set. One accept, one mandate. A second accept of the same token is refused, as today.
 - The inviter cannot accept their own invitation.
 - No BSN, name lookup or KVK lookup of the invitee takes place.
+- As built: a mandate invitation is its own kind. `PortalMandateAdminService::invite()` and `::accept()` carry it, and `PortalInvitationService`, which serves guardian and staff invitations, is unchanged. Where this design names `PortalInvitationService::invite()` or `::accept()` for a mandate, read `PortalMandateAdminService`.
 
 ## D4. Ending
 
@@ -47,8 +48,10 @@ Every route reads the party from the session and compares it with the row. A row
 
 ## D6. Screens
 
-- "Machtigingen" in the resident menu's account group, for a business session and for a person who has given at least one mandate or invitation. Each row: initials, name or email, label, "Geldig tot en met …", state badge ("Actief", "Wacht op antwoord"), and the end action.
-- "Uw machtiging" on the grantee's account page and under the acting-for bar: label, end date, given by, given on, "Machtiging stoppen".
+- As the board Machtigingen draws it: the sections live on the page "Toegang tot zaken" (intro "Wie zaken voor u mag regelen, en voor wie u zaken regelt."), in this order: "Wie mag zaken regelen voor u?" with "Iemand machtigen" and a table (Wie: name and e-mail address; Wat mag deze persoon; Tot wanneer, or "Geen einddatum"; Status "Actief" or "Wacht op antwoord"; Actie "Intrekken" or "Uitnodiging intrekken"), then "Namens wie u werkt" (the acting-for choice and one "Uw machtiging voor ..." per mandate held, with "Machtiging stoppen"), then "Toegang aanvragen" and "Uw aanvragen", then the notice "Machtigen via DigiD Machtigen". A session acting under a mandate does not see the first section; a person who holds no mandate does not see the second.
+- The invitation link is mailed (`#mandate-invitation=`), kept across the sign-in like the other mailed links, and handed back once after it; the mandate is then written for the account that accepted.
+- "Uw machtiging voor ...": what it covers, who gave it and on which day, end date, "Machtiging stoppen", which asks once more. Who gave it is read from the mandate, never from the account that recorded it: a mandate written by accepting an invitation (`invitationId` set) was given by the represented party and reads "gegeven door {party}", with the same name as the heading; any other (an answered access request, a mandate recorded by staff) reads "gegeven door de gemeente" (REQ-SMR-007).
+- The board's "Reikt tot" tree of organisations under the party is not shown yet. `PortalPartyTreeResolver` reads children from schema `organisation` (field `parent`) in register `portaliq`, which that register does not define, and no schema in the fleet records a party's parent; no writer sets `reach: tree` either. So there is no source for the names and levels the board lists (question Q-portaliq-15oct-1).
 - The grantee's display name comes from the accepted account. An invitation shows its email address until it is accepted.
 
 ## D7. Who holds a mandate (decided)

@@ -3,12 +3,12 @@
 /**
  * Portaliq Example Resident Store
  *
- * What an example resident's install does to OpenRegister: say whether a
- * register carries a schema, read rows, read one row, write one, change one
- * and delete one. Unlike the example site's store it names the register on
- * every call, because a resident's cases live in the register of the app that
- * handles them. Kept apart from the installer so the installer's rules can be
- * tested without OpenRegister.
+ * What the example resident's sign-in and removal do to OpenRegister: read
+ * rows, read one row, change one and delete one. The example set writes the
+ * rows; this store only reads them back and takes them away. Unlike the
+ * example site's store it names the register on every call, because a
+ * resident's rows live in the register of the app that handles them. Kept
+ * apart from its callers so their rules can be tested without OpenRegister.
  *
  * @category Service
  * @package  OCA\Portaliq\Service\ExampleResident
@@ -29,13 +29,12 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\ExampleResident;
 
-use OCA\Portaliq\Service\PortalObjectWriter;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * Reads, writes and deletes rows of any register for an administrator.
+ * Reads, changes and deletes rows of any register for an administrator.
  *
  * Every call runs without OpenRegister's access rules, like the example
  * site's install: the caller is `occ`, so there is no user whose rights could
@@ -64,14 +63,12 @@ class ExampleResidentStore {
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container Hands out OpenRegister's ObjectService.
-	 * @param PortalObjectWriter $writer    Writes a row inside portaliq's write context.
 	 * @param LoggerInterface    $logger    Logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly PortalObjectWriter $writer,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -86,32 +83,6 @@ class ExampleResidentStore {
 	public function available(): bool {
 		return $this->objectService() !== null;
 	}//end available()
-
-	/**
-	 * Whether this instance has the register, and the register carries the schema.
-	 *
-	 * @param string $register The register slug.
-	 * @param string $schema   The schema slug.
-	 *
-	 * @return bool
-	 *
-	 * @spec openspec/changes/example-resident-zuiddrecht/specs/example-resident/spec.md#requirement-an-administrator-must-be-able-to-install-an-example-resident-with-one-command
-	 */
-	public function offers(string $register, string $schema): bool {
-		$objectService = $this->objectService();
-		if ($objectService === null) {
-			return false;
-		}
-
-		try {
-			$objectService->setRegister(register: $register);
-			$objectService->setSchema(schema: $schema);
-		} catch (Throwable) {
-			return false;
-		}
-
-		return true;
-	}//end offers()
 
 	/**
 	 * The rows of one schema that match the filters, as plain arrays.
@@ -190,31 +161,6 @@ class ExampleResidentStore {
 
 		return (['id' => $id] + $row);
 	}//end get()
-
-	/**
-	 * Write one row and return its id, or null when the write failed.
-	 *
-	 * @param string               $register The register slug.
-	 * @param string               $schema   The schema slug.
-	 * @param array<string, mixed> $data     The row.
-	 *
-	 * @return string|null
-	 *
-	 * @spec openspec/changes/example-resident-zuiddrecht/specs/example-resident/spec.md#requirement-an-administrator-must-be-able-to-install-an-example-resident-with-one-command
-	 */
-	public function create(string $register, string $schema, array $data): ?string {
-		$saved = $this->writer->createAnonymousObject(register: $register, schema: $schema, data: $data);
-		if ($saved === null) {
-			return null;
-		}
-
-		$id = $this->idOf(row: $saved);
-		if ($id === '') {
-			return null;
-		}
-
-		return $id;
-	}//end create()
 
 	/**
 	 * Change the named keys of one row and leave the rest as it is.

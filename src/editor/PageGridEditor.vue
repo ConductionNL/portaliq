@@ -112,9 +112,17 @@
 							@keydown.enter.prevent="editor.select(item.id)"
 							@keydown.space.prevent="editor.select(item.id)">
 							<header class="page-grid-editor__cell-bar">
-								<span class="page-grid-editor__cell-key">{{
-									labelOf(item.widgetKey)
-								}}</span>
+								<span class="page-grid-editor__cell-name">
+									<span class="page-grid-editor__cell-key">{{
+										labelOf(item.widgetKey)
+									}}</span>
+									<span
+										v-if="widthLineOf(item)"
+										class="page-grid-editor__cell-width"
+										:data-testid="`designer-width-${item.id}`"
+										>{{ widthLineOf(item) }}</span
+									>
+								</span>
 								<NcButton
 									variant="tertiary"
 									:aria-label="t('portaliq', 'Remove this widget')"
@@ -211,6 +219,45 @@
 								:data-testid="`designer-field-${field.name}`"
 								:value="fieldValue(field)"
 								@input="onFieldInput(field, $event.target.value)" />
+							<select
+								v-else-if="
+									field.kind === 'block' && blocks.length > 0
+								"
+								:id="`field-${field.name}`"
+								class="page-grid-editor__input"
+								:data-testid="`designer-field-${field.name}`"
+								:value="fieldValue(field)"
+								@change="onFieldInput(field, $event.target.value)">
+								<option value="">
+									{{ t('portaliq', 'Choose a shared block') }}
+								</option>
+								<option
+									v-for="block in blocks"
+									:key="block.id"
+									:value="block.id">
+									{{ block.title }}
+								</option>
+							</select>
+							<select
+								v-else-if="
+									field.kind === 'recordList'
+									&& recordLists.length > 0
+								"
+								:id="`field-${field.name}`"
+								class="page-grid-editor__input"
+								:data-testid="`designer-field-${field.name}`"
+								:value="recordListValue()"
+								@change="onRecordListInput($event.target.value)">
+								<option value="">
+									{{ t('portaliq', 'Choose a list') }}
+								</option>
+								<option
+									v-for="recordList in recordLists"
+									:key="`${recordList.app}/${recordList.id}`"
+									:value="`${recordList.app}/${recordList.id}`">
+									{{ recordList.label }} ({{ recordList.app }})
+								</option>
+							</select>
 							<input
 								v-else-if="field.kind === 'boolean'"
 								:id="`field-${field.name}`"
@@ -264,10 +311,11 @@ import {
 	isPublicWidget,
 	previewComponentFor,
 } from '../lib/pageWidgetCatalogue.js'
-import { widgetLabel } from '../lib/widgetLabels.js'
+import { widgetLabel, widgetWidthLine } from '../lib/widgetLabels.js'
 import { historyIntent } from './editHistory.js'
 import { cellFromDrop } from './geometry.js'
 import { PALETTE_DRAG_TYPE } from './paletteDrag.js'
+import { recordListChoice } from './recordLists.js'
 import {
 	formWidgetFor,
 	inspectorModeFor,
@@ -314,6 +362,30 @@ export default {
 			type: Boolean,
 			default: false,
 		},
+
+		/**
+		 * Lists the published shared blocks an author can place:
+		 * `() => Promise<Array<{id, title}>>`. Without it the shared block
+		 * field is a text input for the block's id.
+		 *
+		 * @type {(() => Promise<Array<{id: string, title: string}>>)|null}
+		 */
+		loadBlocks: {
+			type: Function,
+			default: null,
+		},
+
+		/**
+		 * Lists the public record lists the installed apps contribute:
+		 * `() => Promise<Array<{app, id, label}>>`. Without it the list field
+		 * is a text input for the list's id.
+		 *
+		 * @type {(() => Promise<Array<{app: string, id: string, label: string}>>)|null}
+		 */
+		loadRecordLists: {
+			type: Function,
+			default: null,
+		},
 	},
 
 	emits: ['update:paletteOpen'],
@@ -330,6 +402,23 @@ export default {
 			 * @type {boolean}
 			 */
 			dropping: false,
+
+			/**
+			 * The shared blocks an author can place, as `{id, title}`; empty
+			 * until read, and when the host cannot list them (the field is then
+			 * a plain text input for the block's id).
+			 *
+			 * @type {Array<{id: string, title: string}>}
+			 */
+			blocks: [],
+
+			/**
+			 * The public record lists an author can place, as `{app, id, label}`;
+			 * empty until read, and when the host cannot list them.
+			 *
+			 * @type {Array<{app: string, id: string, label: string}>}
+			 */
+			recordLists: [],
 		}
 	},
 
@@ -417,8 +506,27 @@ export default {
 		},
 	},
 
-	mounted() {
+	/**
+	 * Listen for keys, and list the shared blocks an author can place.
+	 *
+	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t05
+	 */
+	async mounted() {
 		window.addEventListener('keydown', this.onKeydown)
+		if (this.loadBlocks) {
+			try {
+				this.blocks = await this.loadBlocks()
+			} catch {
+				this.blocks = []
+			}
+		}
+		if (this.loadRecordLists) {
+			try {
+				this.recordLists = await this.loadRecordLists()
+			} catch {
+				this.recordLists = []
+			}
+		}
 	},
 
 	beforeUnmount() {
@@ -550,6 +658,17 @@ export default {
 		},
 
 		/**
+		 * The width line under a block's name ("8 kolommen").
+		 *
+		 * @param {object} item The placement.
+		 * @return {string} The line.
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-editor-toolbar-and-block-cards-read-as-the-board
+		 */
+		widthLineOf(item) {
+			return widgetWidthLine(item?.gridWidth)
+		},
+
+		/**
 		 * The grid item's accessible name.
 		 *
 		 * @param {object} item The placement.
@@ -620,6 +739,31 @@ export default {
 				return value === undefined ? '' : JSON.stringify(value, null, 2)
 			}
 			return value === undefined ? '' : String(value)
+		},
+
+		/**
+		 * The chosen record list as `app/list`, '' when none is chosen.
+		 *
+		 * @return {string} The select's value.
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+		 */
+		recordListValue() {
+			const props = this.selected?.props || {}
+			return props.app && props.list ? `${props.app}/${props.list}` : ''
+		},
+
+		/**
+		 * Choose a record list: it sets both the app and the list, so the two
+		 * can never point at different contributions.
+		 *
+		 * @param {string} value The option's `app/list`, or ''.
+		 * @return {void}
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+		 */
+		onRecordListInput(value) {
+			const { app, list } = recordListChoice(this.recordLists, value)
+			this.editor.setProp('app', app)
+			this.editor.setProp('list', list)
 		},
 
 		/**
@@ -755,10 +899,24 @@ export default {
 	background: var(--color-background-hover);
 }
 
+/* A block card is named as the board names it: the block's name in the
+   main ink, its width in a muted line under it (PtPagina "Hero" over
+   "12 kolommen"). */
+.page-grid-editor__cell-name {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
 .page-grid-editor__cell-key {
-	font-family: monospace;
-	font-size: 0.85em;
+	color: var(--color-main-text);
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.page-grid-editor__cell-width {
 	color: var(--color-text-maxcontrast);
+	font-size: 12px;
 }
 
 .page-grid-editor__cell-body {

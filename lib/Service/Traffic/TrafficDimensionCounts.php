@@ -170,6 +170,76 @@ class TrafficDimensionCounts {
 	}
 
 	/**
+	 * The searches that found nothing (portal-traffic-zero-result-searches):
+	 * per term, how many `search` events of the day carried a result count of
+	 * the integer 0, ranked. An event with a term and no readable count is not
+	 * a zero: it is counted apart, so the gap shows. The count is read from
+	 * `results`, else `params.results`, and a string ("0") is not a count.
+	 *
+	 * @param array<int, array<string, mixed>> $sessions The sessions.
+	 *
+	 * @return array{rows: array<int, array{term: string, count: int}>, withoutCount: int} The ranked terms, and the searches with no count.
+	 *
+	 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-roll-up-counts-searches-that-found-nothing-req-pzr-001
+	 */
+	public function zeroResults(array $sessions): array {
+		$counts  = [];
+		$without = 0;
+		foreach ($sessions as $session) {
+			foreach ($session['events'] as $event) {
+				if (($event['name'] ?? '') !== 'search') {
+					continue;
+				}
+
+				$term = $this->firstOf(event: $event, keys: ['searchTerm', 'params.search_term']);
+				if ($term === '') {
+					continue;
+				}
+
+				$results = $this->resultCount(event: $event);
+				if ($results === null) {
+					$without++;
+					continue;
+				}
+
+				if ($results === 0) {
+					$counts[$term] = ($counts[$term] ?? 0) + 1;
+				}
+			}
+		}
+
+		$rows = [];
+		foreach ($counts as $term => $count) {
+			$rows[] = ['term' => (string)$term, 'count' => $count];
+		}
+
+		usort($rows, static fn (array $a, array $b): int => [$b['count'], $a['term']] <=> [$a['count'], $b['term']]);
+
+		return ['rows' => array_slice($rows, 0, self::TOP), 'withoutCount' => $without];
+	}//end zeroResults()
+
+	/**
+	 * The result count of a search event as an integer, or null when it
+	 * carries none: a whole number only, never a string.
+	 *
+	 * @param array<string, mixed> $event The event.
+	 *
+	 * @return int|null The count.
+	 */
+	private function resultCount(array $event): ?int {
+		$value = ($event['results'] ?? ($event['params']['results'] ?? null));
+		if (is_int($value) === true && $value >= 0) {
+			return $value;
+		}
+
+		if (is_float($value) === true && $value >= 0 && floor($value) === $value) {
+			return (int)$value;
+		}
+
+		return null;
+	}//end resultCount()
+
+	/**
 	 * The custom dimensions (portal-traffic-outcomes): per declared id, a
 	 * map of value to count. A session-scoped dimension counts each
 	 * session once, by the first non-empty value it carried; an

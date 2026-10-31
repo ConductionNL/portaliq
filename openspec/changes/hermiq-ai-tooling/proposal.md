@@ -42,7 +42,7 @@ controllers and services (not imagined):
 - **Traffic/analytics** — `TrafficController::summary` / `PortalTrafficService` aggregates.
 - **Audit** — `portalAuditEntry` written by `AuditTrailService` (fact-only: `jti`, `subjectRef`,
   `organisation`, `appId`, `verb`, `register`, `schema`, `targetId`, `timestamp`).
-- **WOO publication** — the WOO SPA (`WooController`) publishes what the CMS content decides;
+- **WOO publication** — the WOO SPA (`BundledSiteController`) publishes what the CMS content decides;
   toolable surface is the content lifecycle above, not the static server.
 
 An operator who wants "revoke everything for org X, their laptop was stolen" or "publish the new

@@ -12,6 +12,7 @@
 <template>
 	<section
 		class="pq-kpi"
+		:class="{ 'pq-kpi--list': variant === 'list' }"
 		:aria-labelledby="label ? headingId : undefined"
 		data-testid="kpi-block">
 		<component
@@ -90,6 +91,14 @@ export default {
 		 * unit, and a detail's label, is a string or `{one, other}`.
 		 */
 		cards: { type: Array, default: () => [] },
+		/**
+		 * `cards` (the default) draws a tile per figure; `list` draws the figures
+		 * as rows, the label then the number in bold, as a side column does
+		 * (PtStemgedrag "Voor gestemd 39").
+		 *
+		 * @spec openspec/changes/site-voting-record-board/specs/site-public-records/spec.md#requirement-a-public-record-reads-as-the-voting-record-board
+		 */
+		variant: { type: String, default: 'cards' },
 		/** The row the cards read, or null when there is none yet. */
 		row: { type: Object, default: null },
 		/** Whether the row is still loading. */
@@ -184,6 +193,41 @@ export default {
 	);
 	background: var(--utrecht-color-white, var(--color-main-background, #fff));
 	color: var(--utrecht-document-color, var(--color-main-text, #222));
+}
+
+/* The list variant: one row per figure, label left, number right in bold,
+   no tile around it. */
+.pq-kpi--list {
+	margin-block-end: 0;
+}
+
+.pq-kpi--list .pq-kpi__cards {
+	grid-template-columns: minmax(0, 1fr);
+	gap: 0.5rem;
+}
+
+.pq-kpi--list .pq-kpi__card {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) max-content;
+	column-gap: 1rem;
+	padding: 0;
+	border: 0;
+	background: none;
+}
+
+.pq-kpi--list .pq-kpi__label {
+	color: inherit;
+}
+
+.pq-kpi--list .pq-kpi__value {
+	margin: 0;
+	font-size: inherit;
+	grid-column: 2;
+	grid-row: 1;
+}
+
+.pq-kpi--list .pq-kpi__details {
+	grid-column: 1 / -1;
 }
 
 .pq-kpi__card--highlight {

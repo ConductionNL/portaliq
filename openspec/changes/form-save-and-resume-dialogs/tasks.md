@@ -1,0 +1,7 @@
+- [x] T01 `GET /portal/api/drafts` lists the subject's live drafts (PortalDraftController::index, ActionDraft::liveDrafts); the single draft answer carries `updatedAt`
+- [x] T02 portalApi `listDrafts()`
+- [x] T03 Save dialog (src/site/modals/forms/SaveDraftModal.vue) behind "Save and continue later"
+- [x] T04 Resume dialog (src/site/modals/forms/ResumeDraftModal.vue) on opening a form with a live draft
+- [x] T05 Mijn zaken lists each live draft as an "Onvoltooid formulier" card
+- [x] T06 Tests: PHPUnit PortalDraftControllerTest, node specs
+- [ ] T07 Decide (a) or (b) for dossiq's Woo endpoint action (see proposal)

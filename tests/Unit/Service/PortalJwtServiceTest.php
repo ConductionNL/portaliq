@@ -223,6 +223,96 @@ class PortalJwtServiceTest extends TestCase {
 	}//end testAReservedOrEmptyScopeClaimLeavesTheNineClaims()
 
 	/**
+	 * Decision 173 (Q-dossiq-L2-5): a session acting for a company branch puts
+	 * that branch on the assertion as ONE optional `branch` claim, after the
+	 * nine frozen ones and before a declared scope claim. A session without a
+	 * branch keeps exactly the nine (the pin above).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
+	 */
+	public function testABranchSessionAddsExactlyTheOptionalBranchClaim(): void {
+		$jwt = new PortalJwtService(self::SECRET);
+		$assertion = $jwt->createAssertion(
+			subjectRef: 's1',
+			audience: 'business',
+			organisation: 'org-1',
+			trust: 'substantial',
+			jti: 'session-jti-1',
+			branch: '000012345678'
+		);
+
+		$claims = json_decode($this->b64UrlDecode(explode('.', $assertion)[1]), true);
+		$this->assertSame(
+			['sub', 'audience', 'organisation', 'trust', 'jti', 'use', 'iat', 'exp', 'iss', 'branch'],
+			array_keys($claims)
+		);
+		$this->assertSame('000012345678', $claims['branch']);
+
+		// With a scope claim too: the nine, then branch, then the scope claim.
+		$assertion = $jwt->createAssertion(
+			subjectRef: 's1',
+			audience: 'business',
+			organisation: 'org-1',
+			trust: 'substantial',
+			jti: 'session-jti-1',
+			scopeClaim: 'signerEmail',
+			scopeValue: 'signer@example.org',
+			branch: '000012345678'
+		);
+		$claims = json_decode($this->b64UrlDecode(explode('.', $assertion)[1]), true);
+		$this->assertSame(
+			['sub', 'audience', 'organisation', 'trust', 'jti', 'use', 'iat', 'exp', 'iss', 'branch', 'signerEmail'],
+			array_keys($claims)
+		);
+
+	}//end testABranchSessionAddsExactlyTheOptionalBranchClaim()
+
+
+	/**
+	 * An empty branch adds nothing, and an action can never declare `branch`
+	 * as its scope claim: only the session's own branch may fill it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
+	 */
+	public function testAnEmptyBranchAddsNothingAndBranchIsNoScopeClaim(): void {
+		$jwt = new PortalJwtService(self::SECRET);
+		$assertion = $jwt->createAssertion(
+			subjectRef: 's1',
+			audience: 'business',
+			organisation: 'org-1',
+			trust: 'low',
+			jti: 'session-jti-1',
+			branch: ''
+		);
+		$claims = json_decode($this->b64UrlDecode(explode('.', $assertion)[1]), true);
+		$this->assertSame(
+			['sub', 'audience', 'organisation', 'trust', 'jti', 'use', 'iat', 'exp', 'iss'],
+			array_keys($claims)
+		);
+
+		foreach (['branch', 'dossiq.branch'] as $declared) {
+			$this->assertNull(PortalJwtService::scopeClaimName(scopeClaim: $declared), $declared);
+			$this->assertTrue(PortalJwtService::isReservedScopeClaim(scopeClaim: $declared), $declared);
+			$assertion = $jwt->createAssertion(
+				subjectRef: 's1',
+				audience: 'business',
+				organisation: 'org-1',
+				trust: 'low',
+				jti: 'session-jti-1',
+				scopeClaim: $declared,
+				scopeValue: 'forged-branch'
+			);
+			$claims = json_decode($this->b64UrlDecode(explode('.', $assertion)[1]), true);
+			$this->assertArrayNotHasKey('branch', $claims, $declared);
+		}
+
+	}//end testAnEmptyBranchAddsNothingAndBranchIsNoScopeClaim()
+
+	/**
 	 * Base64-url decode (test-local twin of the service's private helper, so
 	 * the pin decodes the wire bytes independently of the implementation).
 	 */

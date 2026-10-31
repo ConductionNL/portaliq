@@ -11,6 +11,8 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
+import { VALUE_LISTS } from '../src/site/config/valueLists.js'
+import { labelBuckets, valueLabel } from '../src/site/lib/facetLabels.js'
 import {
 	humanSize,
 	publicationSummary,
@@ -18,18 +20,17 @@ import {
 	toDocuments,
 	visitorRows,
 } from '../src/site/lib/publicationDetail.js'
-import { labelBuckets, wooCategoryLabel } from '../src/site/lib/wooCategories.js'
 import { loadSfc, renderComponent } from './support/render-sfc.mjs'
 
-function bundle (locale) {
-  return JSON.parse(
+function bundle(locale) {
+	return JSON.parse(
 		readFileSync(
 			new URL(`../src/shared/i18n/${locale}.json`, import.meta.url),
 			'utf8',
 		),
 	)
 }
-function createTranslator (locale) {
+function createTranslator(locale) {
 	const strings = bundle(locale)
 	return (key) => strings[key] || key
 }
@@ -129,10 +130,46 @@ const PUBLICATION = {
 }
 
 test('a Woo category reads as its name, in the site language', () => {
-	assert.equal(wooCategoryLabel('infocat014', 'nl'), 'Woo-verzoeken en -besluiten')
-	assert.equal(wooCategoryLabel('infocat014', 'en'), 'Woo requests and decisions')
-	assert.equal(wooCategoryLabel('infocat016', 'de'), 'Beschikkingen')
-	assert.equal(wooCategoryLabel('infocat999', 'nl'), 'infocat999')
+	assert.equal(
+		valueLabel('wooCategory', 'infocat014', 'nl'),
+		'Woo-verzoeken en -besluiten',
+	)
+	assert.equal(
+		valueLabel('wooCategory', 'infocat014', 'en'),
+		'Woo requests and decisions',
+	)
+	assert.equal(valueLabel('wooCategory', 'infocat016', 'de'), 'Beschikkingen')
+	assert.equal(valueLabel('wooCategory', 'infocat999', 'nl'), 'infocat999')
+})
+
+test('a field without a configured list reads as the code itself', () => {
+	assert.equal(valueLabel('organization', 'org-1', 'nl'), 'org-1')
+	assert.equal(valueLabel('toString', 'infocat014', 'nl'), 'infocat014')
+	assert.equal(valueLabel('wooCategory', 'toString', 'nl'), 'toString')
+	assert.equal(valueLabel(undefined, undefined, 'nl'), '')
+})
+
+test('every configured code has a Dutch and an English name', () => {
+	const lists = Object.entries(VALUE_LISTS)
+	assert.ok(lists.length > 0)
+	for (const [field, codes] of lists) {
+		assert.ok(Object.keys(codes).length > 0, `${field} has no codes`)
+		for (const [code, names] of Object.entries(codes)) {
+			for (const locale of ['nl', 'en']) {
+				assert.equal(
+					typeof names[locale],
+					'string',
+					`${field}.${code}.${locale}`,
+				)
+				assert.notEqual(
+					names[locale].trim(),
+					'',
+					`${field}.${code}.${locale}`,
+				)
+			}
+		}
+	}
+	assert.equal(Object.keys(VALUE_LISTS.wooCategory).length, 17)
 })
 
 test('the category filter shows names, other filters keep their labels', () => {
@@ -151,6 +188,34 @@ test('the category filter shows names, other filters keep their labels', () => {
 	)
 })
 
+// woo-search-names-the-organisation: the organisation filter read
+// "bacda7a4-b1ae-4a51-9c3e-c1b00c0bc596 (13)" on the Zuiddrecht rehearsal.
+test('the organisation filter reads the name the host knows, and keeps any other label', () => {
+	const buckets = [
+		{ value: 'bacda7a4', label: 'bacda7a4', count: 13 },
+		{ value: 'other-org', label: 'other-org', count: 1 },
+	]
+	assert.deepEqual(
+		labelBuckets(buckets, 'organization', 'nl', {
+			bacda7a4: 'Gemeente Zuiddrecht',
+		}).map((bucket) => [bucket.value, bucket.label, bucket.count]),
+		[
+			['bacda7a4', 'Gemeente Zuiddrecht', 13],
+			['other-org', 'other-org', 1],
+		],
+	)
+	assert.deepEqual(
+		labelBuckets(
+			[{ value: 'infocat014', label: 'infocat014', count: 1 }],
+			'wooCategory',
+			'nl',
+			{},
+		).map((bucket) => bucket.label),
+		['Woo-verzoeken en -besluiten'],
+		'a configured list still names its codes',
+	)
+})
+
 test('the page shows date, category and named themes only, never internal fields', () => {
 	const t = createTranslator('nl')
 	const rows = visitorRows(PUBLICATION, {
@@ -161,7 +226,7 @@ test('the page shows date, category and named themes only, never internal fields
 	assert.deepEqual(
 		rows.map((row) => [row.label, row.value]),
 		[
-			['Publicatiedatum', '2-9-2026'],
+			['Publicatiedatum', '2 september 2026'],
 			['Informatiecategorie', 'Woo-verzoeken en -besluiten'],
 			["Thema's", ['Verkeer en parkeren']],
 		],
@@ -228,4 +293,65 @@ test('the publication page renders the summary and the visitor rows, no internal
 	assert.match(html, /Woo-verzoeken en -besluiten/)
 	assert.match(html, /Verkeer en parkeren/)
 	assert.doesNotMatch(html, /Plooi|Retention|infocat014|f75bc1d0/)
+})
+
+test('the publication tells the page its title for the breadcrumb, and nothing when it is not found (REQ-RR3-004)', async () => {
+	const { instance } = await import('./support/page-instance.mjs')
+	const component = await loadSfc(
+		'src/site/components/PublicationDetailBlock.vue',
+		{
+			'../../shared/i18n/index.js':
+				'export function createTranslator() { return (key) => key }\n',
+		},
+	)
+	assert.ok(component.emits.includes('subject'))
+	const savedFetch = globalThis.fetch
+	const savedWindow = globalThis.window
+	globalThis.window = { location: { origin: 'https://zuiddrecht.test' } }
+	try {
+		for (const [answer, told] of [
+			[PUBLICATION, { title: PUBLICATION.title }],
+			[null, null],
+		]) {
+			globalThis.fetch = async () => ({
+				ok: answer !== null,
+				status: answer ? 200 : 404,
+				json: async () => answer,
+			})
+			const block = instance(component, {
+				subjectId: PUBLICATION.id,
+				endpoint: '/index.php/apps/opencatalogi/api/federation/publications',
+				t: (key) => key,
+			})
+			block.loadDocuments = () => {}
+			block.loadThemeNames = () => {}
+			await block.load()
+			assert.deepEqual(block.emitted.at(-1), ['subject', told])
+		}
+	} finally {
+		globalThis.fetch = savedFetch
+		globalThis.window = savedWindow
+	}
+})
+
+test('the host hands the search block its organisation by name, after the authored props', () => {
+	const read = (file) =>
+		readFileSync(new URL(`../${file}`, import.meta.url), 'utf8')
+	const grid = read('src/site/components/WidgetGrid.vue')
+	const branch = grid.slice(grid.indexOf("widget.widgetKey === 'federatedSearch'"))
+	const body = branch.slice(0, branch.indexOf('}\n\t\t\t}'))
+	assert.match(body, /\.\.\.props,[\s\S]*facetNames: this\.organisation\?\.id/)
+	assert.match(
+		body,
+		/organization:\s*\{\s*\[this\.organisation\.id\]: this\.organisation\.name,?\s*\}/,
+	)
+	assert.match(
+		read('src/site/App.vue'),
+		/organisation: this\.site\.organisation \|\| null,/,
+		'the site record reaches every grid',
+	)
+	assert.match(
+		read('src/site/components/FederatedSearchBlock.vue'),
+		/pageLocale\(\),\s*this\.facetNames\[field\],/,
+	)
 })

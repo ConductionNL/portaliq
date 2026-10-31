@@ -93,6 +93,15 @@ object, which is the thing with a route.
 rule as the rest of the content API: audience is part of the cache key, and a
 per-visitor result set in a shared CDN slot is a leak at the edge.
 
+## Extended on 8 October: school news and documents
+
+The school boards search the school's own news and papers, not only pages (lane T and T2 gap lists, 8 October; plan gap G-14, left out of `site-school-blocks`):
+
+- [wilgenboom/Zoeken](https://identity.conduction.nl/screens/board?id=wilgenboom/Zoeken) and [vaartveld/Zoeken](https://identity.conduction.nl/screens/board?id=vaartveld/Zoeken): "Nieuws en documenten zoeken" with facets on type (nieuws, document), audience (hele school, a group, a department and year), and year or period; each result with its date, audience pill and, for a document, its type and size.
+- learniq `portal-public-index` puts courses, programmes and school days in `nlCatalogue`; documents (PTA, the school guide, letters) were left to this change.
+
+Added to this change: published `newsItem` rows with a public audience, and `media` rows marked public, become searchable next to the CMS schemas, through the same `public` read rule; their facets are `kind` (news or document), `audienceLabel` and the publish year. File text of a public document is searched through `_content_search` as for pages. A news item or document for a group or a signed-in audience stays out, whatever its text.
+
 ## Risks
 
 - **The visibility decision is delegated, which means a wrong rule in a schema

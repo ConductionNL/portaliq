@@ -506,4 +506,29 @@ class TrafficAggregationServiceTest extends TestCase {
 		$this->assertSame(2, $result['portals'], 'both ordinary portals are walked');
 		$this->assertSame(1, $this->backfillService()->backfill(only: 'open-venray')['portals'], 'one portal on request');
 	}//end testAPartlyPurgedDayKeepsItsOldRecord()
+
+	/**
+	 * Through the job: the stored daily record, not the method's return, names the terms that found nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-roll-up-counts-searches-that-found-nothing-req-pzr-001
+	 */
+	public function testTheDailyJobStoresZeroResultSearches(): void {
+		$empty = ['name' => 'search', 'pagePath' => '/zoeken', 'searchTerm' => 'parkeren', 'params' => ['results' => 0], 'sequence' => 1];
+		$found = ['name' => 'search', 'pagePath' => '/zoeken', 'searchTerm' => 'afval', 'params' => ['results' => 5], 'sequence' => 2];
+		$unknown = ['name' => 'search', 'pagePath' => '/zoeken', 'searchTerm' => 'bouwen', 'sequence' => 3];
+		$this->events = [
+			$this->event('open-tilburg', '2026-09-04T10:00:00.000Z', '/'),
+			$empty + $this->event('open-tilburg', '2026-09-04T10:00:05.000Z', '/zoeken'),
+			$found + $this->event('open-tilburg', '2026-09-04T10:00:09.000Z', '/zoeken'),
+			$unknown + $this->event('open-tilburg', '2026-09-04T10:00:12.000Z', '/zoeken'),
+		];
+
+		$this->service()->run();
+
+		$stored = $this->rollupsFor('open-tilburg')['2026-09-04'];
+		$this->assertSame([['term' => 'parkeren', 'count' => 1]], $stored['zeroResultSearches']);
+		$this->assertSame(1, $stored['searchesWithoutCount']);
+	}//end testTheDailyJobStoresZeroResultSearches()
 }//end class

@@ -175,6 +175,10 @@ export function start(win) {
 	if (!cfg || cfg.started || cfg.consent() !== true) {
 		return
 	}
+	// The e-mail link page is never recorded (sign-in-with-an-email-link M4).
+	if (/^#email-link=/.test(String(win.location.hash || ''))) {
+		return
+	}
 	cfg.started = true
 	const doc = win.document
 	const state = {
@@ -220,6 +224,12 @@ export function start(win) {
 	 */
 	function push(event) {
 		if (state.stopped) {
+			return
+		}
+		// A page that marks itself unrecordable (the e-mail link page) ends
+		// the recording before anything of it is queued.
+		if (doc.querySelector && doc.querySelector('[data-traffic-no-recording]')) {
+			stop()
 			return
 		}
 		const size = JSON.stringify(event).length

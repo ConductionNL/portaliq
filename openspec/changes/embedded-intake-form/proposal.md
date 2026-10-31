@@ -106,3 +106,7 @@ one made on the portal's own page except for the origin recorded on it.
   are where a signed-in citizen goes.
 - Authoring the form. `portal-page-designer` and ADR-085 own that; this
   change publishes a page that already exists.
+
+## Amended by submit-creates-the-case-directly (decision 179)
+
+Amended by `submit-creates-the-case-directly` (decision 179): REQ-EIF-003 and REQ-EIF-004 no longer record a queue entry. The frame's submit creates the destination object in the request (`PortalEmbedController::submit` through `DestinationIntake`), carries the honeypot `_hp` (checked before the throttle), and answers the destination's reference and confirmation moments. A refusal comes back per field (422); an unreachable destination answers 503 and nothing is stored.

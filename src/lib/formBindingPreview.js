@@ -117,7 +117,24 @@ export function createFormBindingPreview({
 				return false
 			}
 
-			if (answer.state === 'resolved') {
+			const findings = Array.isArray(answer.findings) ? answer.findings : []
+			if (answer.state === 'resolved' && findings.length > 0) {
+				// submit-creates-the-case-directly REQ-PIFO-007: what stops it being published.
+				notifyWarning(
+					translate(
+						'This entry opens "{form}", but it cannot be published yet: {findings}',
+						{
+							form: answer.formName || '',
+							findings: findings
+								.map((finding) =>
+									String(finding?.message || finding?.code || ''),
+								)
+								.filter((text) => text !== '')
+								.join(' '),
+						},
+					),
+				)
+			} else if (answer.state === 'resolved') {
 				notify(
 					translate('This entry opens "{form}" today.', {
 						form: answer.formName || '',

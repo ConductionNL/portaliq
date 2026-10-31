@@ -81,6 +81,30 @@ class TrafficEventValidatorTest extends TestCase {
 	 *
 	 * @return void
 	 */
+	/**
+	 * The stored page view keeps no fragment: it can carry a mailed secret.
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#10
+	 */
+	public function testTheStoredPageLocationKeepsNoFragment(): void {
+		$result = $this->validator->validate(
+			event: [
+				'name' => 'page_view',
+				'clientId' => 'c-1',
+				'sessionId' => 's-1',
+				'sequence' => 0,
+				'pageLocation' => 'https://academie.example.nl/apps/portaliq/site?portal=academie#email-link=abc123secret',
+			],
+			config: $this->openConfig(),
+			hasConsent: true,
+			resolver: $this->resolver
+		);
+
+		$this->assertTrue($result['ok']);
+		$this->assertSame('https://academie.example.nl/apps/portaliq/site?portal=academie', $result['event']['pageLocation']);
+	}//end testTheStoredPageLocationKeepsNoFragment()
+
+
 	public function testAWellFormedEventIsAccepted(): void {
 		$result = $this->validator->validate(
 			event: [

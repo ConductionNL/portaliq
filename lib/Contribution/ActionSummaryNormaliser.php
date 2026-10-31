@@ -3,11 +3,15 @@
 /**
  * Portaliq Action Summary Normaliser (action-summary-sentence)
  *
- * A create or endpoint action with fields MAY declare `summary`: one sentence
- * the form shows above its send button and again on its confirmation, built
- * from the resident's own answers ("Sami is vandaag de hele dag ziek.").
+ * A create or endpoint action with fields MAY declare `answerSummary`: one
+ * sentence the form shows above its send button and again on its
+ * confirmation, built from the resident's own answers ("Sami is vandaag de
+ * hele dag ziek."). Until decision 127 (9 Oct 2026) this object lived under
+ * `summary`; that key is now the start tile's plain sentence
+ * (StartTileNormaliser), and an object still declared there is read as
+ * `answerSummary` by FormStepsNormaliser.
  *
- *     "summary": {
+ *     "answerSummary": {
  *       "label": "U meldt",
  *       "template": "{learner} is {when} {reason}.",
  *       "phrases": { "when": { "today": "vandaag de hele dag" } }
