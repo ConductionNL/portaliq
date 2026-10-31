@@ -3157,7 +3157,15 @@
         "The subject reference of whoever saved the last change. Stamped by portaliq on every write, so the audit trail names who changed what.": "The subject reference of whoever saved the last change. Stamped by portaliq on every write, so the audit trail names who changed what.",
         "When the last change was saved. Stamped by portaliq on every write.": "When the last change was saved. Stamped by portaliq on every write.",
         "Whether signed-in residents of this portal get Mijn acties, their own list of steps with a status, an end date and a file. Off by default.": "Whether signed-in residents of this portal get Mijn acties, their own list of steps with a status, an end date and a file. Off by default.",
-        "My actions": "My actions"
+        "My actions": "My actions",
+        "All recipients of this sending": "All recipients of this sending",
+        "not yet": "not yet",
+        "yes": "yes",
+        "asked for": "asked for",
+        "Read receipt": "Read receipt",
+        "Legal effect": "Legal effect",
+        "Deadline": "Deadline",
+        "Read by {object.subjectRef}": "Read by {object.subjectRef}"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

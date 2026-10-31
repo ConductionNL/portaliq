@@ -3312,7 +3312,15 @@
         "The subject reference of whoever saved the last change. Stamped by portaliq on every write, so the audit trail names who changed what.": "De verwijzing naar wie de laatste wijziging opsloeg. Portaliq zet die bij elke wijziging, zodat de audittrail laat zien wie wat veranderde.",
         "When the last change was saved. Stamped by portaliq on every write.": "Wanneer de laatste wijziging is opgeslagen. Portaliq zet dit bij elke wijziging.",
         "Whether signed-in residents of this portal get Mijn acties, their own list of steps with a status, an end date and a file. Off by default.": "Of ingelogde inwoners van dit portaal Mijn acties krijgen: hun eigen lijst met stappen, met een status, een einddatum en een bestand. Staat standaard uit.",
-        "My actions": "Mijn acties"
+        "My actions": "Mijn acties",
+        "All recipients of this sending": "Alle ontvangers van deze verzending",
+        "not yet": "nog niet",
+        "yes": "ja",
+        "asked for": "gevraagd",
+        "Read receipt": "Leesbevestiging",
+        "Legal effect": "Rechtsgevolg",
+        "Deadline": "Termijn",
+        "Read by {object.subjectRef}": "Gelezen door {object.subjectRef}"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"
