@@ -239,6 +239,7 @@
 				"onBehalfOf": "{{cast:slagerij.name}} (KvK {{cast:slagerij.kvk}})",
 				"reason": "Ik doe de administratie van de zaak.",
 				"state": "granted",
+				"stateRank": 1,
 				"decidedBy": "example-set",
 				"decidedAt": "{{datetime:-39 09:00}}",
 				"requestedAt": "{{datetime:-40 10:00}}"
@@ -255,6 +256,7 @@
 				"onBehalfOf": "{{cast:henk.displayName}}",
 				"reason": "Ik help mijn buurman met zijn post van de gemeente.",
 				"state": "pending",
+				"stateRank": 0,
 				"requestedAt": "{{datetime:-19 10:00}}"
 			}
 		},

@@ -8420,6 +8420,15 @@
                         "description": "The owner's answer, which the asker sees.",
                         "example": "pending"
                     },
+                    "stateRank": {
+                        "title": "State rank",
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 2,
+                        "default": 0,
+                        "description": "The sort rank of the state: 0 pending, 1 granted, 2 refused. Written with every change of state, so the list sorts open requests first.",
+                        "example": 0
+                    },
                     "decisionReason": {
                         "title": "Reason for the refusal",
                         "type": "string",
