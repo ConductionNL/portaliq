@@ -52,4 +52,8 @@ Residents then see "Report an error in these details" under their record, and "S
 
 ## The number of residents at an address
 
-The section shows how many people are registered at the resident's address once OpenRegister can count them without names. Until then it says "The number of residents at this address is not available."
+The section can show how many people are registered at the resident's own address. It shows a number, never a name.
+
+Turn it on with one setting on the `brp-haalcentraal` source: `configuration.residentCount: true`. Only the value `true` counts. OpenRegister then asks the BRP for the residents at the resident's address object. The call log records that the call happened, not what it carried.
+
+Without the setting, or when the BRP cannot answer, the section says "The number of residents at this address is not available."

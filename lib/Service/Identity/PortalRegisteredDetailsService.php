@@ -188,8 +188,47 @@ class PortalRegisteredDetailsService {
 			return self::refusal(reason: 'not_found');
 		}
 
-		return ['available' => true, 'kind' => 'person', 'person' => (new RegisteredDetailsShape())->person(raw: $first)];
+		$person = (new RegisteredDetailsShape())->person(raw: $first);
+		$person['residentsAtAddress'] = $this->residentsAt(raw: $first);
+
+		return ['available' => true, 'kind' => 'person', 'person' => $person];
 	}//end person()
+
+	/**
+	 * How many people the BRP registers at the person's own address object, or
+	 * null when OpenRegister cannot say (no method yet, the source does not
+	 * allow the count, or the source is down). A number only: the provider
+	 * answers no names, and the address object id is not passed on.
+	 *
+	 * @param array<string, mixed> $raw The person as the BRP answered it.
+	 *
+	 * @return int|null
+	 *
+	 * @spec openspec/changes/identity-registered-details/specs/registered-details/spec.md#requirement-a-resident-sees-how-many-people-live-at-their-address-req-ird-005
+	 */
+	private function residentsAt(array $raw): ?int {
+		$addressObject = trim((string)((($raw['verblijfplaats'] ?? [])['adresseerbaarObjectIdentificatie'] ?? '')));
+		if ($addressObject === '') {
+			return null;
+		}
+
+		try {
+			$provider = $this->container->get(self::PERSON_PROVIDER);
+			if (is_object($provider) === false || method_exists($provider, 'countResidentsAtAddressObject') === false) {
+				return null;
+			}
+
+			$answer = (array)$provider->countResidentsAtAddressObject($addressObject);
+		} catch (Throwable $failure) {
+			return null;
+		}
+
+		if (($answer['unavailable'] ?? false) === true || is_int($answer['total'] ?? null) === false) {
+			return null;
+		}
+
+		return $answer['total'];
+	}//end residentsAt()
 
 	/**
 	 * The company record for one KvK number.
