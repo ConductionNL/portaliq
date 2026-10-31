@@ -331,9 +331,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// a submission keeps the `externalReference` and `dueAt` that intake
 		// armed (woo-request-intake-through-opencatalogi). Additive.
 		// 0.5.0: `destination` replaces caseRegister/caseSchema/deliverTo (decision 179); those stay, deprecated.
-		$this->assertSame('0.5.0', self::$register['components']['schemas']['portalFormBinding']['version']);
+		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalFormBinding']['version']);
 		$this->assertSame(['case', 'wooRequest'], self::$register['components']['schemas']['portalFormBinding']['properties']['deliverTo']['enum']);
-		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalIntakeSubmission']['version']);
+		$this->assertSame('0.7.0', self::$register['components']['schemas']['portalIntakeSubmission']['version']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalIntakeSubmission']['properties']['dueAt']['format']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalIntakeSubmission']['properties']['externalReference']['type']);
 		// 0.60.0 (portalAccount 0.15.0): `claimTokenHash` and `claimExpiresAt`,
@@ -393,8 +393,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.99.0 (media 0.2.0): `usedOn`, how many records of its portal use the item (media-usage-count). Additive.
 		// 0.100.0 (portal 0.27.0): `myCases.display` takes `folders`, the board folders (mijn-case-folder-card). Additive.
 		// 0.101.0 (form 0.4.0): a form field's `optionLabels`, the words shown per option (site-organisation-registration-form). Additive.
-		$this->assertSame(expected: '0.101.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.101.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		// 0.105.0 (portalFormBinding 0.6.0, portalIntakeSubmission 0.7.0): `availability`, `retention`, `delivery` on a binding; `expiresAt`, `attempts` on a submission (form-governance-availability-retention-and-routing T01). Additive.
+		$this->assertSame(expected: '0.105.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.105.0', actual: self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame(expected: '0.2.0', actual: self::$register['components']['schemas']['media']['version']);
 		$this->assertSame(expected: 'integer', actual: self::$register['components']['schemas']['media']['properties']['usedOn']['type']);
 		$this->assertSame('0.4.0', self::$register['components']['schemas']['form']['version']);

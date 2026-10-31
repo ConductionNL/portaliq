@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.101.0"
+        "version": "0.105.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.101.0",
+                "version": "0.105.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -8451,7 +8451,7 @@
                     ]
                 },
                 "icon": "FormSelect",
-                "version": "0.5.0",
+                "version": "0.6.0",
                 "title": "Portal Form Binding",
                 "description": "What a portal form page is bound to (portal-intake-form-as-an-object REQ-PIFO-001): a case type tuple, an audience, an optional form name, and the intake settings. The page keeps no field list of its own; the fields, their order and their presets come from the published form at render time, so a form edited in buildiq reaches the portal with no portal change.",
                 "type": "object",
@@ -8825,6 +8825,139 @@
                         ],
                         "description": "Only a published binding renders.",
                         "example": "published"
+                    },
+                    "availability": {
+                        "title": "Availability",
+                        "type": "object",
+                        "description": "When the form takes submissions: its active period, a limit per period, a maintenance window and the form that replaces it.",
+                        "properties": {
+                            "activeFrom": {
+                                "title": "Active from",
+                                "type": "string",
+                                "description": "The first day the form takes submissions. Empty means it is open now.",
+                                "format": "date"
+                            },
+                            "activeUntil": {
+                                "title": "Active until",
+                                "type": "string",
+                                "description": "The last day the form takes submissions. Empty means it has no end date.",
+                                "format": "date"
+                            },
+                            "limit": {
+                                "title": "Limit",
+                                "type": "object",
+                                "description": "The most submissions the form takes in one period.",
+                                "properties": {
+                                    "count": {
+                                        "title": "Number of submissions",
+                                        "type": "integer",
+                                        "description": "The most submissions in one period.",
+                                        "minimum": 1
+                                    },
+                                    "per": {
+                                        "title": "Period",
+                                        "type": "string",
+                                        "description": "The period the limit counts over: total, month or year.",
+                                        "enum": [
+                                            "total",
+                                            "month",
+                                            "year"
+                                        ]
+                                    }
+                                }
+                            },
+                            "reopensOn": {
+                                "title": "Reopens on",
+                                "type": "string",
+                                "description": "The day the form takes submissions again after the limit is reached. Empty means the start of the next period.",
+                                "format": "date"
+                            },
+                            "maintenance": {
+                                "title": "Maintenance",
+                                "type": "object",
+                                "description": "A window in which the form is briefly unavailable. Saved answers stay.",
+                                "properties": {
+                                    "from": {
+                                        "title": "From",
+                                        "type": "string",
+                                        "description": "When the maintenance starts, as a local date and time."
+                                    },
+                                    "until": {
+                                        "title": "Until",
+                                        "type": "string",
+                                        "description": "When the maintenance ends, as a local date and time."
+                                    },
+                                    "text": {
+                                        "title": "Text",
+                                        "type": "string",
+                                        "description": "Your own words for residents during the maintenance. Empty shows the standard text."
+                                    }
+                                }
+                            },
+                            "replacedBy": {
+                                "title": "Replaced by",
+                                "type": "string",
+                                "description": "The route of the new form on the same portal. Residents get a link to it."
+                            }
+                        }
+                    },
+                    "retention": {
+                        "title": "Retention",
+                        "type": "object",
+                        "description": "How long submissions are kept per state, and what happens after.",
+                        "properties": {
+                            "completedDays": {
+                                "title": "Completed, days",
+                                "type": "integer",
+                                "description": "Days a completed submission is kept.",
+                                "default": 30,
+                                "minimum": 1
+                            },
+                            "incompleteDays": {
+                                "title": "Incomplete, days",
+                                "type": "integer",
+                                "description": "Days an unfinished draft is kept.",
+                                "default": 30,
+                                "minimum": 1
+                            },
+                            "failedDays": {
+                                "title": "Failed, days",
+                                "type": "integer",
+                                "description": "Days a submission that could not be delivered is kept.",
+                                "default": 90,
+                                "minimum": 1
+                            },
+                            "method": {
+                                "title": "Afterwards",
+                                "type": "string",
+                                "description": "Delete the submission, or anonymise it and keep the reference, dates and state.",
+                                "enum": [
+                                    "delete",
+                                    "anonymise"
+                                ],
+                                "default": "anonymise"
+                            }
+                        }
+                    },
+                    "delivery": {
+                        "title": "Delivery",
+                        "type": "object",
+                        "description": "Where submissions go: a default target and rules that send some submissions elsewhere.",
+                        "properties": {
+                            "default": {
+                                "title": "Default target",
+                                "type": "object",
+                                "description": "Where a submission goes when no rule matches."
+                            },
+                            "rules": {
+                                "title": "Rules",
+                                "type": "array",
+                                "description": "Rules in order; the first whose condition holds names the target.",
+                                "items": {
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 }
             },
@@ -8839,7 +8972,7 @@
                     ]
                 },
                 "icon": "FormSelect",
-                "version": "0.6.0",
+                "version": "0.7.0",
                 "title": "Portal Intake Submission",
                 "description": "A submitted intake form, acknowledged with a reference before the case exists (REQ-PIFO-005). The state on this row is the truth the reference page reads: `queued`, `registered` or `failed`. The page never says a case exists before one does.",
                 "type": "object",
@@ -9015,6 +9148,19 @@
                         "format": "date-time",
                         "description": "When the case was created.",
                         "example": ""
+                    },
+                    "expiresAt": {
+                        "title": "Expires at",
+                        "type": "string",
+                        "description": "When the submission is deleted or anonymised, from the binding's retention.",
+                        "format": "date-time"
+                    },
+                    "attempts": {
+                        "title": "Delivery attempts",
+                        "type": "integer",
+                        "description": "How many times the portal tried to deliver the submission.",
+                        "default": 0,
+                        "minimum": 0
                     }
                 }
             },

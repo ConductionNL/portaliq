@@ -23,6 +23,12 @@
 			{{ noFormLabel }}
 		</p>
 
+		<FormUnavailable
+			v-else-if="state === 'unavailable'"
+			:situation="render.unavailable"
+			:formName="render.formName || ''"
+			:help="unavailableHelp" />
+
 		<p
 			v-else-if="state === 'signIn'"
 			class="utrecht-paragraph"
@@ -398,6 +404,7 @@ import FamilyMembers from './forms/FamilyMembers.vue'
 import FieldShell from './forms/FieldShell.vue'
 import FormIntro from './forms/FormIntro.vue'
 import FormProgress from './forms/FormProgress.vue'
+import FormUnavailable from './forms/FormUnavailable.vue'
 import RepeatingGroup from './forms/RepeatingGroup.vue'
 import ReviewList from './forms/ReviewList.vue'
 import SignatureField from './forms/SignatureField.vue'
@@ -470,6 +477,7 @@ export default {
 		ErrorSummary,
 		FieldShell,
 		FormProgress,
+		FormUnavailable,
 		RepeatingGroup,
 		ReviewList,
 		SignatureField,
@@ -619,6 +627,14 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * @return {object} The portal's and the form's help details, for a closed form's contact line.
+		 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-form-opens-and-closes-on-set-dates-and-after-a-set-number-of-submissions-req-fgv-001
+		 */
+		unavailableHelp() {
+			return mergeHelp(this.portalHelp, this.formHelp)
+		},
+
 		/**
 		 * @return {boolean} Whether the portal or the form has help details to offer.
 		 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
@@ -1004,6 +1020,12 @@ export default {
 					this.accepted,
 					this.verifiedEmails,
 				)
+				if (outcome.unavailable) {
+					this.render = { ...this.render, unavailable: outcome.unavailable }
+					this.state = 'unavailable'
+					return
+				}
+
 				if (outcome.reference === '') {
 					const { _form: formLevel, ...fieldErrors } = outcome.errors || {}
 					this.formError = String(formLevel || '')

@@ -36,6 +36,7 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\Intake\DestinationIntake;
 use OCA\Portaliq\Service\Intake\PortalEmbedGuard;
 use OCA\Portaliq\Service\Intake\PortalEmbedThrottle;
+use OCA\Portaliq\Service\Intake\PortalFormAvailability;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\Intake\PortalFormValidator;
 use OCA\Portaliq\Service\PortalResolver;
@@ -73,6 +74,7 @@ class PortalEmbedController extends Controller {
 	 * @param PortalFormValidator $validator Validates a submission.
 	 * @param DestinationIntake $intake Submits into the binding's destination (decision 179).
 	 * @param IURLGenerator $urls Builds the follow link.
+	 * @param PortalFormAvailability|null $availability Says whether the form takes submissions now.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -83,6 +85,7 @@ class PortalEmbedController extends Controller {
 		private readonly PortalFormValidator $validator,
 		private readonly DestinationIntake $intake,
 		private readonly IURLGenerator $urls,
+		private readonly ?PortalFormAvailability $availability = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -116,6 +119,11 @@ class PortalEmbedController extends Controller {
 		// provider: it gets a message and nothing else.
 		if ($this->guard->allows(binding: $binding, origin: (string)$this->request->getHeader('Origin')) === false) {
 			return $this->refusal(binding: $binding, reason: 'origin_not_allowed');
+		}
+
+		$unavailable = $this->availability?->situation(binding: $binding);
+		if ($unavailable !== null) {
+			return $this->refusal(binding: $binding, reason: 'form_unavailable', extra: ['unavailable' => $unavailable]);
 		}
 
 		$render = $this->bindings->render(binding: $binding);
@@ -192,6 +200,10 @@ class PortalEmbedController extends Controller {
 
 		if ($this->throttle->allow(origin: $origin, address: (string)$this->request->getRemoteAddress()) === false) {
 			return new JSONResponse(['error' => 'too_many_requests'], Http::STATUS_TOO_MANY_REQUESTS);
+		}
+
+		if ($this->availability?->situation(binding: $binding) !== null) {
+			return new JSONResponse(['error' => 'form_unavailable'], Http::STATUS_CONFLICT);
 		}
 
 		$render = $this->bindings->render(binding: $binding);

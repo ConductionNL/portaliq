@@ -159,8 +159,9 @@ export function bindingRouteFrom(routeParam, fixedRoute) {
  *
  * States: `form` (render it), `external` (a start card naming the
  * destination), `noForm` (the binding resolves to no published form),
- * `signIn` (the form asks for a sign-in level the visitor does not have) and
- * `notFound` (no binding on that route).
+ * `signIn` (the form asks for a sign-in level the visitor does not have),
+ * `unavailable` (the form takes no submissions now: `render.unavailable`
+ * names the situation) and `notFound` (no binding on that route).
  *
  * @param {string} base The portal API base.
  * @param {string} route The binding route.
@@ -186,6 +187,10 @@ export async function loadForm(base, route, portal, token, fetchImpl = null) {
 
 	if (!response.ok) {
 		return { state: 'notFound', render: {} }
+	}
+
+	if (body?.unavailable && typeof body.unavailable === 'object') {
+		return { state: 'unavailable', render: body }
 	}
 
 	if (body?.kind === 'external' && body?.resolvesToNoForm !== true) {
@@ -297,6 +302,11 @@ export async function submitIntake(
 	// (decision 179); nothing was stored and the answers stay in the form.
 	if (response.status === 400 || response.status === 422) {
 		return { reference: '', confirmationText: '', errors: parsed?.errors || {} }
+	}
+
+	// 409: the form closed while it was being filled in; the answers stay.
+	if (response.status === 409 && parsed?.unavailable) {
+		return { reference: '', confirmationText: '', errors: {}, unavailable: parsed.unavailable }
 	}
 
 	if (!response.ok || !parsed?.reference) {
