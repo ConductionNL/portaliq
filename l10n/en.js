@@ -1883,6 +1883,7 @@ OC.L10N.register(
         "Publish": "Publish",
         "Discard draft": "Discard draft",
         "View on the site": "View on the site",
+        "View": "View",
         "Reload the page": "Reload the page",
         "Unsaved changes. Save the draft to keep them.": "Unsaved changes. Save the draft to keep them.",
         "The PKCE `code_verifier` presented to the token endpoint on callback, matching the `code_challenge` sent at start.": "The PKCE `code_verifier` presented to the token endpoint on callback, matching the `code_challenge` sent at start.",
