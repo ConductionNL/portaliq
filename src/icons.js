@@ -49,6 +49,7 @@ import CursorDefaultClickOutline from 'vue-material-design-icons/CursorDefaultCl
 import Download from 'vue-material-design-icons/Download.vue'
 import Email from 'vue-material-design-icons/Email.vue'
 import EmailEditOutline from 'vue-material-design-icons/EmailEditOutline.vue'
+import EmailFastOutline from 'vue-material-design-icons/EmailFastOutline.vue'
 import EmailOutline from 'vue-material-design-icons/EmailOutline.vue'
 import EmailPlusOutline from 'vue-material-design-icons/EmailPlusOutline.vue'
 import EmailSearchOutline from 'vue-material-design-icons/EmailSearchOutline.vue'
@@ -122,6 +123,7 @@ export default {
 	Close,
 	CursorDefaultClickOutline,
 	Email,
+	EmailFastOutline,
 	EmailOutline,
 	EmailPlusOutline,
 	EyeLock,
