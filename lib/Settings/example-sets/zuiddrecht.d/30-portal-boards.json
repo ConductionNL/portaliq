@@ -1,0 +1,942 @@
+{
+	"set": "zuiddrecht",
+	"$comment": "The portal boards' own records (lane PT-DATA2): the page \"Werk in uitvoering\" that the Editor and EditorMenu boards edit (a text block over the full width, a map in columns 1 to 7, the selected text block in columns 8 to 12); the 14 notices of PtMededelingenActies, of which none shows today, so no Mijn board gets a banner the boards do not draw (the drawn \"now visible\" DigiD warning runs yesterday instead); the 24 invitations of PtUitnodigingen (one of the six open ones is Sanne's own invitation to Tom Visser on the Machtigingen board) and the 8 drawn requests of PtToegangsverzoeken, sent and decided by Pieter Jansen, Anouk Bakker and Lars de Koning; Sanne's two other open tasks of MijnTaken, so the menu count reads 3 and her Woo case has an open task in its current step; and the resident menu groups every Mijn board draws (Thema's with Parkeren, Samenwerken). Every date is a day count from the install day; the admin boards were drawn on Wednesday 7 October, the Mijn boards on Thursday 8 October.",
+	"objects": [
+		{
+			"key": "pagina-werk-in-uitvoering",
+			"register": "portaliq",
+			"schema": "page",
+			"data": {
+				"portal": "zuiddrecht",
+				"route": "/werk-in-uitvoering",
+				"title": "Werk in uitvoering",
+				"status": "published",
+				"locale": "nl",
+				"summary": "Hier leest u over werkzaamheden in uw buurt.",
+				"body": {
+					"type": "grid",
+					"widgets": [
+						{
+							"id": "zd-werk-01-markdown",
+							"widgetKey": "markdown",
+							"gridX": 0,
+							"gridY": 0,
+							"gridWidth": 12,
+							"gridHeight": 2,
+							"props": {
+								"markdown": "# Werk in uitvoering\n\nHier leest u over werkzaamheden in uw buurt."
+							}
+						},
+						{
+							"id": "zd-werk-02-nllocationmap",
+							"widgetKey": "nlLocationMap",
+							"gridX": 0,
+							"gridY": 2,
+							"gridWidth": 7,
+							"gridHeight": 4,
+							"props": {
+								"intro": "Kaart met werkzaamheden",
+								"heading": "{count} werkzaamheden",
+								"allLabel": "Alle werkzaamheden",
+								"locations": [
+									{
+										"name": "Fietspad Lindelaan",
+										"address": "Lindelaan, Zuiddrecht",
+										"opening": "Werkzaamheden vanaf maart",
+										"category": "Werkzaamheden",
+										"lat": 51.8131,
+										"lon": 4.6703
+									}
+								]
+							}
+						},
+						{
+							"id": "zd-werk-03-markdown",
+							"widgetKey": "markdown",
+							"gridX": 7,
+							"gridY": 2,
+							"gridWidth": 5,
+							"gridHeight": 4,
+							"props": {
+								"markdown": "## Fietspad Lindelaan\nVanaf maart wordt het fietspad aangelegd. Er komt verlichting langs het hele pad."
+							}
+						}
+					]
+				}
+			}
+		},
+		{
+			"key": "mededeling-digid-storing",
+			"register": "portaliq",
+			"schema": "portalNotice",
+			"data": {
+				"portal": "zuiddrecht",
+				"message": "Inloggen met DigiD lukt nu niet altijd. Er wordt aan gewerkt.",
+				"level": "warning",
+				"surfaces": [
+					"portal"
+				],
+				"startsAt": "{{datetime:-1 08:10}}",
+				"endsAt": "{{datetime:-1 18:00}}",
+				"status": "published"
+			}
+		},
+		{
+			"key": "mededeling-stadskantoor-gesloten",
+			"register": "portaliq",
+			"schema": "portalNotice",
+			"data": {
+				"portal": "zuiddrecht",
+				"message": "Het Stadskantoor is maandag 12 oktober vanaf 12:00 uur gesloten.",
+				"level": "info",
+				"surfaces": [
+					"site"
+				],
+				"startsAt": "{{datetime:1 00:00}}",
+				"endsAt": "{{datetime:5 23:59}}",
+				"status": "published"
+			}
+		},
+		{
+			"key": "mededeling-ophaaldagen-feestdagen",
+			"register": "portaliq",
+			"schema": "portalNotice",
+			"data": {
+				"portal": "zuiddrecht",
+				"message": "Door Kerst en Oud en Nieuw schuiven de ophaaldagen in week 52 en 1.",
+				"level": "info",
+				"surfaces": [
+					"site",
+					"portal"
+				],
+				"startsAt": "{{datetime:55 00:00}}",
+				"endsAt": "{{datetime:89 23:59}}",
+				"status": "published"
+			}
+		},
+		{
+			"key": "mededeling-afvalkalender-2027",
+			"register": "portaliq",
+			"schema": "portalNotice",
+			"data": {
+				"portal": "zuiddrecht",
+				"message": "De afvalkalender voor 2027 staat vanaf 1 december online.",
+				"level": "info",
+				"surfaces": [
+					"site"
+				],
+				"startsAt": "{{datetime:48 00:00}}",
+				"endsAt": "{{datetime:55 09:00}}",
+				"status": "draft"
+			}
+		},
+		{
+			"key": "mededeling-parkeervergunning-telefonisch",
+			"register": "portaliq",
+			"schema": "portalNotice",
+			"data": {
+				"portal": "zuiddrecht",
+				"message": "Parkeervergunningen verlengen kan tijdelijk alleen telefonisch.",
+				"level": "warning",
+				"surfaces": [
+					"portal"
+				],
+				"startsAt": "{{datetime:-9 09:00}}",
+				"endsAt": "{{datetime:-5 17:00}}",
+				"status": "published"
+			}
+		},
+		{
+			"key": "mededeling-waterschapsverkiezingen",
+			"register": "portaliq",
+			"schema": "portalNotice",
+			"data": {
+				"portal": "zuiddrecht",
+				"message": "Stemmen voor de waterschapsverkiezingen kan in 14 stembureaus.",
+				"level": "info",
+				"surfaces": [
+					"site"
+				],
+				"startsAt": "{{datetime:-22 00:00}}",
+				"endsAt": "{{datetime:-17 21:00}}",
+				"status": "published"
+			}
+		},
+		{
+			"key": "mededeling-afvalbrengstation-zaterdag",
+			"register": "portaliq",
+			"schema": "portalNotice",
+			"data": {
+				"portal": "zuiddrecht",
+				"message": "Het afvalbrengstation is op zaterdag tot 17:00 uur open.",
+				"level": "info",
+				"surfaces": [
+					"site"
+				],
+				"startsAt": "{{datetime:20 00:00}}",
+				"endsAt": "{{datetime:48 23:59}}",
+				"status": "published"
+			}
+		},
+		{
+			"key": "mededeling-onderhoud-mijn-zuiddrecht",
+			"register": "portaliq",
+			"schema": "portalNotice",
+			"data": {
+				"portal": "zuiddrecht",
+				"message": "Mijn Zuiddrecht is zaterdagnacht van 22:00 tot 02:00 uur niet bereikbaar.",
+				"level": "warning",
+				"surfaces": [
+					"portal"
+				],
+				"startsAt": "{{datetime:-26 18:00}}",
+				"endsAt": "{{datetime:-24 02:00}}",
+				"status": "published"
+			}
+		},
+		{
+			"key": "mededeling-burgerzaken-afspraak",
+			"register": "portaliq",
+			"schema": "portalNotice",
+			"data": {
+				"portal": "zuiddrecht",
+				"message": "Voor een paspoort of ID-kaart maakt u eerst een afspraak.",
+				"level": "info",
+				"surfaces": [
+					"site"
+				],
+				"startsAt": "{{datetime:-40 00:00}}",
+				"endsAt": "{{datetime:-30 23:59}}",
+				"status": "published"
+			}
+		},
+		{
+			"key": "mededeling-wegwerkzaamheden-kerkplein",
+			"register": "portaliq",
+			"schema": "portalNotice",
+			"data": {
+				"portal": "zuiddrecht",
+				"message": "Het Kerkplein is van 7 tot en met 11 september afgesloten.",
+				"level": "info",
+				"surfaces": [
+					"site"
+				],
+				"startsAt": "{{datetime:-34 00:00}}",
+				"endsAt": "{{datetime:-26 23:59}}",
+				"status": "published"
+			}
+		},
+		{
+			"key": "mededeling-hitte",
+			"register": "portaliq",
+			"schema": "portalNotice",
+			"data": {
+				"portal": "zuiddrecht",
+				"message": "Het is warm. Kijk om naar ouderen in uw buurt.",
+				"level": "info",
+				"surfaces": [
+					"site"
+				],
+				"startsAt": "{{datetime:-60 08:00}}",
+				"endsAt": "{{datetime:-57 20:00}}",
+				"status": "published"
+			}
+		},
+		{
+			"key": "mededeling-telefoon-storing",
+			"register": "portaliq",
+			"schema": "portalNotice",
+			"data": {
+				"portal": "zuiddrecht",
+				"message": "Ons telefoonnummer 14 0999 was een uur niet bereikbaar.",
+				"level": "warning",
+				"surfaces": [
+					"site",
+					"portal"
+				],
+				"startsAt": "{{datetime:-48 10:00}}",
+				"endsAt": "{{datetime:-48 14:00}}",
+				"status": "published"
+			}
+		},
+		{
+			"key": "mededeling-zomertijden",
+			"register": "portaliq",
+			"schema": "portalNotice",
+			"data": {
+				"portal": "zuiddrecht",
+				"message": "In de zomer is het Stadskantoor op vrijdag tot 13:00 uur open.",
+				"level": "info",
+				"surfaces": [
+					"site"
+				],
+				"startsAt": "{{datetime:-95 00:00}}",
+				"endsAt": "{{datetime:-38 23:59}}",
+				"status": "published"
+			}
+		},
+		{
+			"key": "mededeling-gft-container",
+			"register": "portaliq",
+			"schema": "portalNotice",
+			"data": {
+				"portal": "zuiddrecht",
+				"message": "De gft-container wordt in de zomer elke week geleegd.",
+				"level": "info",
+				"surfaces": [
+					"site"
+				],
+				"startsAt": "{{datetime:-110 00:00}}",
+				"endsAt": "{{datetime:-40 23:59}}",
+				"status": "published"
+			}
+		},
+		{
+			"key": "uitnodiging-kbos-buurthuis",
+			"register": "portaliq",
+			"schema": "portalInvitation",
+			"data": {
+				"email": "k.bos@stichtingoost.nl",
+				"organisation": "zuiddrecht",
+				"audience": "partner",
+				"tokenHash": "d6ec6fb9e31a4603c1bbce1cb0d80ef72e580b214cbff1319ff05393c3bcee6e",
+				"state": "opened",
+				"invitedBy": "{{cast:pieter.uid}}",
+				"sentAt": "{{datetime:-2 10:12}}",
+				"expiresAt": "{{datetime:12 23:59}}",
+				"onBehalfOf": "kvk:99000101",
+				"mandate": {
+					"label": "Stichting Buurthuis Oost"
+				}
+			}
+		},
+		{
+			"key": "uitnodiging-hoveniers-groen",
+			"register": "portaliq",
+			"schema": "portalInvitation",
+			"data": {
+				"email": "info@hoveniersgroen.nl",
+				"organisation": "zuiddrecht",
+				"audience": "supplier",
+				"tokenHash": "1dc2e96436093498c04018bb3d3c1f00a9bf2b8b4c35f0c99a72daa97a5302cf",
+				"state": "sent",
+				"invitedBy": "{{cast:anouk.uid}}",
+				"sentAt": "{{datetime:-1 14:40}}",
+				"expiresAt": "{{datetime:13 23:59}}",
+				"onBehalfOf": "kvk:99000102",
+				"mandate": {
+					"label": "Hoveniersbedrijf Groen"
+				}
+			}
+		},
+		{
+			"key": "uitnodiging-akaya-installatie",
+			"register": "portaliq",
+			"schema": "portalInvitation",
+			"data": {
+				"email": "a.kaya@kaya-installatie.nl",
+				"organisation": "zuiddrecht",
+				"audience": "supplier",
+				"tokenHash": "81268a5ec2357d09c21de384f3f2e4f1b2d5b78346c96bb7df4e91794b37da01",
+				"state": "sent",
+				"invitedBy": "{{cast:pieter.uid}}",
+				"sentAt": "{{datetime:0 08:55}}",
+				"expiresAt": "{{datetime:14 23:59}}",
+				"onBehalfOf": "kvk:99000103",
+				"mandate": {
+					"label": "Kaya Installatietechniek"
+				}
+			}
+		},
+		{
+			"key": "uitnodiging-lhendriks",
+			"register": "portaliq",
+			"schema": "portalInvitation",
+			"data": {
+				"email": "l.hendriks@example.nl",
+				"organisation": "zuiddrecht",
+				"audience": "citizen",
+				"tokenHash": "cac5607902dfbf49e43bedd3279f72e3e90d62b0348190840a2aa958db08c6f5",
+				"state": "accepted",
+				"invitedBy": "{{cast:pieter.uid}}",
+				"sentAt": "{{datetime:-9 11:03}}",
+				"expiresAt": "{{datetime:5 23:59}}"
+			}
+		},
+		{
+			"key": "uitnodiging-basislijn-boekhouding",
+			"register": "portaliq",
+			"schema": "portalInvitation",
+			"data": {
+				"email": "boekhouding@debasislijn.nl",
+				"organisation": "zuiddrecht",
+				"audience": "business",
+				"tokenHash": "4b8a624fa3600866db0cf6a4de2a7e8d14047a822f42cd9875ecfe9c3ea983a3",
+				"state": "expired",
+				"invitedBy": "{{cast:lars.uid}}",
+				"sentAt": "{{datetime:-36 09:20}}",
+				"expiresAt": "{{datetime:-22 23:59}}",
+				"onBehalfOf": "kvk:99000104",
+				"mandate": {
+					"label": "Bakkerij De Basislijn BV"
+				}
+			}
+		},
+		{
+			"key": "uitnodiging-jdevries",
+			"register": "portaliq",
+			"schema": "portalInvitation",
+			"data": {
+				"email": "j.devries@example.nl",
+				"organisation": "zuiddrecht",
+				"audience": "citizen",
+				"tokenHash": "e619519d91b266cfd7a36d86973f6cfe6b3f52c591fc4fc3ff9e614d57d0c3d6",
+				"state": "revoked",
+				"invitedBy": "{{cast:anouk.uid}}",
+				"sentAt": "{{datetime:-39 16:45}}",
+				"expiresAt": "{{datetime:-25 23:59}}"
+			}
+		},
+		{
+			"key": "uitnodiging-vve-kerkplein",
+			"register": "portaliq",
+			"schema": "portalInvitation",
+			"data": {
+				"email": "bestuur@vvekerkplein.nl",
+				"organisation": "zuiddrecht",
+				"audience": "partner",
+				"tokenHash": "30e60b6c94e5dc40b3019585d8771f2c0a1c7c94382e1e4de73132fd564b2266",
+				"state": "opened",
+				"invitedBy": "{{cast:anouk.uid}}",
+				"sentAt": "{{datetime:-4 15:05}}",
+				"expiresAt": "{{datetime:10 23:59}}",
+				"onBehalfOf": "kvk:99000105",
+				"mandate": {
+					"label": "Vereniging van Eigenaars Kerkplein"
+				}
+			}
+		},
+		{
+			"key": "uitnodiging-sbos",
+			"register": "portaliq",
+			"schema": "portalInvitation",
+			"data": {
+				"email": "s.bos@example.nl",
+				"organisation": "zuiddrecht",
+				"audience": "citizen",
+				"tokenHash": "150a8a02a5ab32a528998c392b5b7220c097a40212f1749ea492a8d4352b8ea6",
+				"state": "accepted",
+				"invitedBy": "{{cast:pieter.uid}}",
+				"sentAt": "{{datetime:-12 10:20}}",
+				"expiresAt": "{{datetime:2 23:59}}"
+			}
+		},
+		{
+			"key": "uitnodiging-lumen-infra",
+			"register": "portaliq",
+			"schema": "portalInvitation",
+			"data": {
+				"email": "planning@lumeninfra.nl",
+				"organisation": "zuiddrecht",
+				"audience": "supplier",
+				"tokenHash": "69c1e8f7857a7fe6c3e7f1c679a357e8b64b176e77ce76e315bc064d3b2ddf1e",
+				"state": "accepted",
+				"invitedBy": "{{cast:lars.uid}}",
+				"sentAt": "{{datetime:-14 13:15}}",
+				"expiresAt": "{{datetime:0 23:59}}",
+				"onBehalfOf": "kvk:99000106",
+				"mandate": {
+					"label": "Lumen Infra B.V."
+				}
+			}
+		},
+		{
+			"key": "uitnodiging-groen-en-co",
+			"register": "portaliq",
+			"schema": "portalInvitation",
+			"data": {
+				"email": "info@groenenco.nl",
+				"organisation": "zuiddrecht",
+				"audience": "supplier",
+				"tokenHash": "c76e7d98f27ab1ea96e8291848399c9ddcde3374c8ad6632f57deae91e2ec477",
+				"state": "accepted",
+				"invitedBy": "{{cast:anouk.uid}}",
+				"sentAt": "{{datetime:-16 09:45}}",
+				"expiresAt": "{{datetime:-2 23:59}}",
+				"onBehalfOf": "kvk:99000107",
+				"mandate": {
+					"label": "Groen & Co B.V."
+				}
+			}
+		},
+		{
+			"key": "uitnodiging-evisser",
+			"register": "portaliq",
+			"schema": "portalInvitation",
+			"data": {
+				"email": "e.visser@example.nl",
+				"organisation": "zuiddrecht",
+				"audience": "citizen",
+				"tokenHash": "def1c3245ce7cbab69c1914a16870ecf6fd086de824fd5f60bdef996c2c96c4c",
+				"state": "accepted",
+				"invitedBy": "{{cast:pieter.uid}}",
+				"sentAt": "{{datetime:-17 11:30}}",
+				"expiresAt": "{{datetime:-3 23:59}}"
+			}
+		},
+		{
+			"key": "uitnodiging-sportclub",
+			"register": "portaliq",
+			"schema": "portalInvitation",
+			"data": {
+				"email": "secretaris@sportclubzuiddrecht.nl",
+				"organisation": "zuiddrecht",
+				"audience": "partner",
+				"tokenHash": "47478cd31e3228d40bcd36303e1326438ad7ecf27864f9c327d07a3a7c79aa47",
+				"state": "accepted",
+				"invitedBy": "{{cast:anouk.uid}}",
+				"sentAt": "{{datetime:-19 19:10}}",
+				"expiresAt": "{{datetime:-5 23:59}}",
+				"onBehalfOf": "kvk:99000108",
+				"mandate": {
+					"label": "Sportclub Zuiddrecht 1958"
+				}
+			}
+		},
+		{
+			"key": "uitnodiging-tdegroot",
+			"register": "portaliq",
+			"schema": "portalInvitation",
+			"data": {
+				"email": "t.degroot@example.nl",
+				"organisation": "zuiddrecht",
+				"audience": "citizen",
+				"tokenHash": "0a135030db4986c3c160690fa60620bcc01f66ce42687d0db01fe74913f2c9ef",
+				"state": "accepted",
+				"invitedBy": "{{cast:lars.uid}}",
+				"sentAt": "{{datetime:-20 08:40}}",
+				"expiresAt": "{{datetime:-6 23:59}}"
+			}
+		},
+		{
+			"key": "uitnodiging-voedselbank",
+			"register": "portaliq",
+			"schema": "portalInvitation",
+			"data": {
+				"email": "coordinatie@voedselbankzuiddrecht.nl",
+				"organisation": "zuiddrecht",
+				"audience": "partner",
+				"tokenHash": "72b2441aba4328e4d9a284ef681662268631a7dc87f960066f1229c089d52265",
+				"state": "accepted",
+				"invitedBy": "{{cast:pieter.uid}}",
+				"sentAt": "{{datetime:-22 14:00}}",
+				"expiresAt": "{{datetime:-8 23:59}}",
+				"onBehalfOf": "kvk:99000109",
+				"mandate": {
+					"label": "Stichting Voedselbank Zuiddrecht"
+				}
+			}
+		},
+		{
+			"key": "uitnodiging-njansen",
+			"register": "portaliq",
+			"schema": "portalInvitation",
+			"data": {
+				"email": "n.jansen@jansenhoveniers.nl",
+				"organisation": "zuiddrecht",
+				"audience": "business",
+				"tokenHash": "57e74c41b59df514edc085267b46ab9216d3a8f53c0898e02aa274beb9ad3ef8",
+				"state": "accepted",
+				"invitedBy": "{{cast:pieter.uid}}",
+				"sentAt": "{{datetime:-23 10:05}}",
+				"expiresAt": "{{datetime:-9 23:59}}",
+				"onBehalfOf": "kvk:99000110",
+				"mandate": {
+					"label": "Jansen Hoveniers VOF"
+				}
+			}
+		},
+		{
+			"key": "uitnodiging-dorpshuis",
+			"register": "portaliq",
+			"schema": "portalInvitation",
+			"data": {
+				"email": "beheer@dorpshuisdekade.nl",
+				"organisation": "zuiddrecht",
+				"audience": "partner",
+				"tokenHash": "f3220b5930c5d16b8ddabbbd46472a873dfb249b1b580f475442a1d73ff12139",
+				"state": "accepted",
+				"invitedBy": "{{cast:anouk.uid}}",
+				"sentAt": "{{datetime:-25 16:20}}",
+				"expiresAt": "{{datetime:-11 23:59}}",
+				"onBehalfOf": "kvk:99000111",
+				"mandate": {
+					"label": "Stichting Dorpshuis De Kade"
+				}
+			}
+		},
+		{
+			"key": "uitnodiging-mdijkstra",
+			"register": "portaliq",
+			"schema": "portalInvitation",
+			"data": {
+				"email": "m.dijkstra@example.nl",
+				"organisation": "zuiddrecht",
+				"audience": "citizen",
+				"tokenHash": "f170ebacbb5b2d8114a0f3abc55b2a43839bd46ba0b41e8cc59428c8855b666e",
+				"state": "accepted",
+				"invitedBy": "{{cast:lars.uid}}",
+				"sentAt": "{{datetime:-27 09:00}}",
+				"expiresAt": "{{datetime:-13 23:59}}"
+			}
+		},
+		{
+			"key": "uitnodiging-drechthof",
+			"register": "portaliq",
+			"schema": "portalInvitation",
+			"data": {
+				"email": "wijkbeheer@drechthof.nl",
+				"organisation": "zuiddrecht",
+				"audience": "partner",
+				"tokenHash": "12cf1e6b380c548f5dadc3635f8cb1405f2f2e8d9eb87dd07c2e735d408cb812",
+				"state": "accepted",
+				"invitedBy": "{{cast:pieter.uid}}",
+				"sentAt": "{{datetime:-29 11:50}}",
+				"expiresAt": "{{datetime:-15 23:59}}",
+				"onBehalfOf": "kvk:99000112",
+				"mandate": {
+					"label": "Woningstichting Drechthof"
+				}
+			}
+		},
+		{
+			"key": "uitnodiging-aboukhari",
+			"register": "portaliq",
+			"schema": "portalInvitation",
+			"data": {
+				"email": "a.boukhari@example.nl",
+				"organisation": "zuiddrecht",
+				"audience": "citizen",
+				"tokenHash": "b97dbf172b4e0dc2efb2c612dae7494b889d7c835860e9cfd4db762117ad3489",
+				"state": "accepted",
+				"invitedBy": "{{cast:anouk.uid}}",
+				"sentAt": "{{datetime:-31 13:35}}",
+				"expiresAt": "{{datetime:-17 23:59}}"
+			}
+		},
+		{
+			"key": "uitnodiging-visser-bouw",
+			"register": "portaliq",
+			"schema": "portalInvitation",
+			"data": {
+				"email": "projecten@visserbouw.nl",
+				"organisation": "zuiddrecht",
+				"audience": "supplier",
+				"tokenHash": "1811b0b117c6482e4e713e8a6ab3a6a3acea7ea783aa56ae4455c684fa77c41e",
+				"state": "opened",
+				"invitedBy": "{{cast:lars.uid}}",
+				"sentAt": "{{datetime:-5 10:10}}",
+				"expiresAt": "{{datetime:9 23:59}}",
+				"onBehalfOf": "kvk:99000113",
+				"mandate": {
+					"label": "Visser Bouw B.V."
+				}
+			}
+		},
+		{
+			"key": "uitnodiging-foudshoorn",
+			"register": "portaliq",
+			"schema": "portalInvitation",
+			"data": {
+				"email": "f.oudshoorn@example.nl",
+				"organisation": "zuiddrecht",
+				"audience": "citizen",
+				"tokenHash": "77dbf204502d8436453f6830ceb11c462f0fd283eea9de17fc1ea18205ec2bd2",
+				"state": "expired",
+				"invitedBy": "{{cast:lars.uid}}",
+				"sentAt": "{{datetime:-40 10:30}}",
+				"expiresAt": "{{datetime:-26 23:59}}"
+			}
+		},
+		{
+			"key": "uitnodiging-harmonie",
+			"register": "portaliq",
+			"schema": "portalInvitation",
+			"data": {
+				"email": "info@harmoniezuiddrecht.nl",
+				"organisation": "zuiddrecht",
+				"audience": "partner",
+				"tokenHash": "96d4a0564874e510459f231813e26869be71eb191bdcda694a8cb6f833e459c4",
+				"state": "expired",
+				"invitedBy": "{{cast:anouk.uid}}",
+				"sentAt": "{{datetime:-45 20:15}}",
+				"expiresAt": "{{datetime:-31 23:59}}",
+				"onBehalfOf": "kvk:99000114",
+				"mandate": {
+					"label": "Muziekvereniging Harmonie Zuiddrecht"
+				}
+			}
+		},
+		{
+			"key": "uitnodiging-ondernemers",
+			"register": "portaliq",
+			"schema": "portalInvitation",
+			"data": {
+				"email": "secretariaat@ondernemersbinnenstad.nl",
+				"organisation": "zuiddrecht",
+				"audience": "business",
+				"tokenHash": "afd9d1108609b7fcb411148b4b2516f5bbaa2447c56de3dd0267a1c5e1c43d53",
+				"state": "accepted",
+				"invitedBy": "{{cast:pieter.uid}}",
+				"sentAt": "{{datetime:-33 15:45}}",
+				"expiresAt": "{{datetime:-19 23:59}}",
+				"onBehalfOf": "kvk:99000115",
+				"mandate": {
+					"label": "Ondernemersvereniging Binnenstad Zuiddrecht"
+				}
+			}
+		},
+		{
+			"key": "uitnodiging-sanne-tom-visser",
+			"register": "portaliq",
+			"schema": "portalInvitation",
+			"data": {
+				"email": "t.visser@example.nl",
+				"organisation": "zuiddrecht",
+				"audience": "citizen",
+				"tokenHash": "63f7e6772d5e898ce5a946215a4ff06c1db741a13e7a755a9039d6b47af835d8",
+				"state": "sent",
+				"invitedBy": "{{cast:sanne.uid}}",
+				"sentAt": "{{datetime:-3 19:40}}",
+				"expiresAt": "{{datetime:11 23:59}}",
+				"onBehalfOf": "subject:{{cast:sanne.uid}}",
+				"mandate": {
+					"label": "Parkeervergunning"
+				}
+			}
+		},
+		{
+			"key": "toegangsverzoek-rmulder-basislijn",
+			"register": "portaliq",
+			"schema": "portalAccessRequest",
+			"data": {
+				"subjectRef": "toegang-rmulder-basislijn",
+				"displayName": "R. Mulder",
+				"organisation": "zuiddrecht",
+				"onBehalfOf": "Bakkerij De Basislijn BV",
+				"reason": "Ik ben de boekhouder van dit bedrijf.",
+				"state": "pending",
+				"requestedAt": "{{datetime:-6 10:15}}"
+			}
+		},
+		{
+			"key": "toegangsverzoek-lhendriks-jhendriks",
+			"register": "portaliq",
+			"schema": "portalAccessRequest",
+			"data": {
+				"subjectRef": "toegang-lhendriks-jhendriks",
+				"displayName": "L. Hendriks",
+				"organisation": "zuiddrecht",
+				"onBehalfOf": "J. Hendriks",
+				"reason": "Ik regel de zaken van mijn vader, hij woont in een verpleeghuis.",
+				"state": "pending",
+				"requestedAt": "{{datetime:-2 14:30}}"
+			}
+		},
+		{
+			"key": "toegangsverzoek-sbos-buurthuis",
+			"register": "portaliq",
+			"schema": "portalAccessRequest",
+			"data": {
+				"subjectRef": "toegang-sbos-buurthuis",
+				"displayName": "S. Bos",
+				"organisation": "zuiddrecht",
+				"onBehalfOf": "Stichting Buurthuis Oost",
+				"reason": "Ik ben penningmeester van de stichting.",
+				"state": "pending",
+				"requestedAt": "{{datetime:-1 09:05}}"
+			}
+		},
+		{
+			"key": "toegangsverzoek-akaya-installatie",
+			"register": "portaliq",
+			"schema": "portalAccessRequest",
+			"data": {
+				"subjectRef": "toegang-akaya-installatie",
+				"displayName": "A. Kaya",
+				"organisation": "zuiddrecht",
+				"onBehalfOf": "Kaya Installatietechniek",
+				"reason": "Ik ben eigenaar en wil de vergunningen zien.",
+				"state": "granted",
+				"requestedAt": "{{datetime:-8 11:20}}",
+				"decidedBy": "{{cast:pieter.uid}}",
+				"decidedAt": "{{datetime:-7 10:00}}"
+			}
+		},
+		{
+			"key": "toegangsverzoek-mvisser-visser-de-boer",
+			"register": "portaliq",
+			"schema": "portalAccessRequest",
+			"data": {
+				"subjectRef": "toegang-mvisser-visser-de-boer",
+				"displayName": "M. Visser",
+				"organisation": "zuiddrecht",
+				"onBehalfOf": "E. Visser-de Boer",
+				"reason": "Ik ben bewindvoerder van mevrouw.",
+				"state": "granted",
+				"requestedAt": "{{datetime:-12 15:40}}",
+				"decidedBy": "{{cast:anouk.uid}}",
+				"decidedAt": "{{datetime:-11 09:30}}"
+			}
+		},
+		{
+			"key": "toegangsverzoek-tdegroot-kerkplein",
+			"register": "portaliq",
+			"schema": "portalAccessRequest",
+			"data": {
+				"subjectRef": "toegang-tdegroot-kerkplein",
+				"displayName": "T. de Groot",
+				"organisation": "zuiddrecht",
+				"onBehalfOf": "Vereniging Kerkplein",
+				"reason": "Ik wil weten wat de buren aanvragen.",
+				"state": "refused",
+				"requestedAt": "{{datetime:-13 20:10}}",
+				"decidedBy": "{{cast:pieter.uid}}",
+				"decidedAt": "{{datetime:-12 11:15}}",
+				"decisionReason": "U heeft geen machtiging of volmacht van deze partij."
+			}
+		},
+		{
+			"key": "toegangsverzoek-njansen-hoveniers",
+			"register": "portaliq",
+			"schema": "portalAccessRequest",
+			"data": {
+				"subjectRef": "toegang-njansen-hoveniers",
+				"displayName": "N. Jansen",
+				"organisation": "zuiddrecht",
+				"onBehalfOf": "Jansen Hoveniers VOF",
+				"reason": "Ik ben vennoot.",
+				"state": "granted",
+				"requestedAt": "{{datetime:-15 08:50}}",
+				"decidedBy": "{{cast:pieter.uid}}",
+				"decidedAt": "{{datetime:-15 16:00}}"
+			}
+		},
+		{
+			"key": "toegangsverzoek-foudshoorn-vastgoed",
+			"register": "portaliq",
+			"schema": "portalAccessRequest",
+			"data": {
+				"subjectRef": "toegang-foudshoorn-vastgoed",
+				"displayName": "F. Oudshoorn",
+				"organisation": "zuiddrecht",
+				"onBehalfOf": "Oudshoorn Vastgoed BV",
+				"reason": "Ik ben de nieuwe huurder van het pand.",
+				"state": "refused",
+				"requestedAt": "{{datetime:-19 13:25}}",
+				"decidedBy": "{{cast:lars.uid}}",
+				"decidedAt": "{{datetime:-18 10:40}}",
+				"decisionReason": "U heeft geen machtiging of volmacht van deze partij."
+			}
+		}
+	],
+	"tasks": [
+		{
+			"key": "parkeervergunning-sanne-verklaring",
+			"data": {
+				"title": "Lees en onderteken de verklaring bij uw bewonersvergunning",
+				"description": "Lees de verklaring over het gebruik van uw bewonersvergunning en onderteken die.",
+				"objectUuid": "{{object:parkeervergunning-sanne.id}}",
+				"state": "active",
+				"performerType": "external",
+				"assignee": "party:{{cast:sanne.uid}}",
+				"dueAt": "{{date:12}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-besluit-per-post",
+			"data": {
+				"title": "Kies of u het besluit per post wilt ontvangen",
+				"description": "Wij sturen het besluit op uw Woo-verzoek naar Mijn Zuiddrecht. Wilt u het ook per post?",
+				"objectUuid": "{{object:woo-fietspad.id}}",
+				"state": "active",
+				"performerType": "external",
+				"assignee": "party:{{cast:sanne.uid}}",
+				"dueAt": "{{date:3}}"
+			}
+		}
+	],
+	"changes": [
+		{
+			"key": "mijn-menu-als-getekend",
+			"register": "portaliq",
+			"schema": "portal",
+			"where": {
+				"slug": "zuiddrecht"
+			},
+			"set": {
+				"residentMenu.groups": [
+					{
+						"title": "Mijn Zuiddrecht",
+						"items": [
+							"overview",
+							"inbox"
+						]
+					},
+					{
+						"title": "Thema’s",
+						"items": [
+							"__theme__:parkeren"
+						]
+					},
+					{
+						"title": "Zaken en taken",
+						"items": [
+							"cases",
+							"tasks",
+							"access"
+						]
+					},
+					{
+						"title": "Samenwerken",
+						"items": [
+							"samenwerken",
+							"contacts"
+						]
+					},
+					{
+						"title": "Vragen en meldingen",
+						"items": [
+							"portaliq:meldingen"
+						]
+					},
+					{
+						"title": "Uw gegevens",
+						"items": [
+							"details",
+							"account"
+						]
+					}
+				],
+				"residentMenu.leaveOut": [
+					"decidiq:citizenReactions",
+					"decidiq:citizenVotes",
+					"decidiq:citizenBudgetProposals",
+					"decidiq:citizenNotifications",
+					"decidiq:citizenSubscriptions",
+					"decidiq:publicCalendar",
+					"decidiq:publicBroadcasts",
+					"decidiq:motionsOpenForAdvice",
+					"opencatalogi:dossiers",
+					"opencatalogi:zoekopdrachten",
+					"pipelinq:requests",
+					"pipelinq:complaints",
+					"pipelinq:questions",
+					"zaakafhandelapp:citizenZaken",
+					"zaakafhandelapp:citizenTaken",
+					"zaakafhandelapp:citizenBerichten"
+				]
+			}
+		}
+	]
+}
