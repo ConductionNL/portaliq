@@ -1,0 +1,456 @@
+{
+	"set": "zuiddrecht",
+	"$comment": "The Samenwerken, Mijn contacten and Gesprek boards (zuiddrecht, rowMijn), drawn on Thursday 8 October 2026; every date is a day count from the install day. Sanne's caseworkers Mark Jansen (Gemeente Zuiddrecht, schuldhulpverlening) and Linda Smit (Werkplein Zuiddrecht) are no OpenRegister cast members, so they get a portal account under the reference a cast entry would give them (mark.jansen, linda.smit): that is where a plan reads a participant's name. Henk de Vries, Ahmed Bakker and Stichting Thuis in Zuiddrecht appear only as Sanne's contact rows. Added here: Linda's shared plan Terug naar werk with four actions, one done; a plan Sanne finished; the municipality's three plan templates; the contacts the board lists beyond Mark and Henk, Ahmed Bakker's request and Sanne's conversations with Mark, Linda and Henk, two of Mark's messages unread.",
+	"objects": [
+		{
+			"key": "portaalaccount-mark-jansen",
+			"register": "portaliq",
+			"schema": "portalAccount",
+			"data": {
+				"subjectRef": "mark.jansen",
+				"audience": "caseworker",
+				"organisation": "zuiddrecht",
+				"displayName": "Mark Jansen",
+				"identityType": "dev",
+				"identityRef": "example-set",
+				"status": "active",
+				"contactChannel": "portal"
+			}
+		},
+		{
+			"key": "portaalaccount-linda-smit",
+			"register": "portaliq",
+			"schema": "portalAccount",
+			"data": {
+				"subjectRef": "linda.smit",
+				"audience": "caseworker",
+				"organisation": "zuiddrecht",
+				"displayName": "Linda Smit",
+				"identityType": "dev",
+				"identityRef": "example-set",
+				"status": "active",
+				"contactChannel": "portal"
+			}
+		},
+		{
+			"key": "contact-sanne-linda-smit",
+			"register": "portaliq",
+			"schema": "portalContact",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"role": "begeleider",
+				"displayName": "Linda Smit",
+				"line": "Werkplein Zuiddrecht",
+				"state": "approved",
+				"contactRef": "linda.smit"
+			}
+		},
+		{
+			"key": "contact-sanne-stichting-thuis",
+			"register": "portaliq",
+			"schema": "portalContact",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"role": "organisatie",
+				"displayName": "Stichting Thuis in Zuiddrecht",
+				"line": "Woonbegeleiding, Kerkstraat 8",
+				"state": "approved",
+				"contactRef": "stichting-thuis-zuiddrecht"
+			}
+		},
+		{
+			"key": "contact-sanne-ahmed-verzoek",
+			"register": "portaliq",
+			"schema": "portalContact",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"role": "begeleider",
+				"displayName": "Ahmed Bakker",
+				"line": "Begeleider, Stichting Thuis in Zuiddrecht",
+				"state": "requested",
+				"contactRef": "ahmed.bakker",
+				"sentAt": "{{datetime:-1 15:30}}"
+			}
+		},
+		{
+			"key": "plan-linda-terug-naar-werk",
+			"register": "portaliq",
+			"schema": "portalPlan",
+			"data": {
+				"owner": "linda.smit",
+				"organisation": "zuiddrecht",
+				"participants": [
+					"{{cast:sanne.uid}}"
+				],
+				"title": "Terug naar werk",
+				"goal": "Voor 1 maart 2027 werk ik minstens 16 uur per week.",
+				"goalDetail": "Linda en ik zoeken samen werk dat past bij mijn ervaring in de zorg. Eerst werk ik mijn cv bij, daarna kiezen we vacatures uit.",
+				"endDate": "{{date:144}}",
+				"status": "running"
+			}
+		},
+		{
+			"key": "plan-linda-terug-naar-werk-actie-1",
+			"register": "portaliq",
+			"schema": "portalAction",
+			"data": {
+				"owner": "linda.smit",
+				"organisation": "zuiddrecht",
+				"assignee": "{{cast:sanne.uid}}",
+				"title": "Cv bijwerken",
+				"kind": "once",
+				"status": "done",
+				"endDate": "{{date:-5}}",
+				"plan": "{{object:plan-linda-terug-naar-werk.id}}"
+			}
+		},
+		{
+			"key": "plan-linda-terug-naar-werk-actie-2",
+			"register": "portaliq",
+			"schema": "portalAction",
+			"data": {
+				"owner": "linda.smit",
+				"organisation": "zuiddrecht",
+				"assignee": "linda.smit",
+				"title": "Gesprek bij het Werkplein",
+				"kind": "once",
+				"status": "todo",
+				"endDate": "{{date:7}}",
+				"plan": "{{object:plan-linda-terug-naar-werk.id}}"
+			}
+		},
+		{
+			"key": "plan-linda-terug-naar-werk-actie-3",
+			"register": "portaliq",
+			"schema": "portalAction",
+			"data": {
+				"owner": "linda.smit",
+				"organisation": "zuiddrecht",
+				"assignee": "{{cast:sanne.uid}}",
+				"title": "Drie vacatures uitkiezen",
+				"kind": "once",
+				"status": "todo",
+				"endDate": "{{date:21}}",
+				"plan": "{{object:plan-linda-terug-naar-werk.id}}"
+			}
+		},
+		{
+			"key": "plan-linda-terug-naar-werk-actie-4",
+			"register": "portaliq",
+			"schema": "portalAction",
+			"data": {
+				"owner": "linda.smit",
+				"organisation": "zuiddrecht",
+				"assignee": "{{cast:sanne.uid}}",
+				"title": "Elke week solliciteren",
+				"kind": "recurring",
+				"status": "todo",
+				"endDate": "{{date:56}}",
+				"plan": "{{object:plan-linda-terug-naar-werk.id}}"
+			}
+		},
+		{
+			"key": "plan-sanne-huurtoeslag",
+			"register": "portaliq",
+			"schema": "portalPlan",
+			"data": {
+				"owner": "{{cast:sanne.uid}}",
+				"organisation": "zuiddrecht",
+				"participants": [],
+				"title": "Huurtoeslag aanvragen",
+				"goal": "Voor 1 augustus heb ik huurtoeslag aangevraagd.",
+				"endDate": "{{date:-68}}",
+				"status": "done",
+				"doneAt": "{{datetime:-70 11:00}}"
+			}
+		},
+		{
+			"key": "plansjabloon-schuldhulp",
+			"register": "portaliq",
+			"schema": "portalPlanTemplate",
+			"data": {
+				"portal": "zuiddrecht",
+				"title": "Schuldhulp op orde",
+				"summary": "Vult het doel in en zet 5 acties klaar, zoals een overzicht van uw schulden maken. Einddatum na 8 weken.",
+				"goal": "Over drie maanden heb ik een overzicht van al mijn schulden en een vaste afspraak over aflossen.",
+				"durationDays": 56,
+				"actions": [
+					{
+						"title": "Overzicht maken van al mijn schulden",
+						"kind": "once",
+						"offsetDays": 7
+					},
+					{
+						"title": "Afspraak met de budgetcoach plannen",
+						"kind": "once",
+						"offsetDays": 14
+					},
+					{
+						"title": "Bankafschriften van drie maanden uploaden",
+						"kind": "once",
+						"offsetDays": 28
+					},
+					{
+						"title": "Aanvraag schuldhulpverlening indienen",
+						"kind": "once",
+						"offsetDays": 42
+					},
+					{
+						"title": "Vaste lasten bijwerken in het budgetplan",
+						"kind": "recurring",
+						"offsetDays": 56
+					}
+				],
+				"published": true
+			}
+		},
+		{
+			"key": "plansjabloon-terug-naar-werk",
+			"register": "portaliq",
+			"schema": "portalPlanTemplate",
+			"data": {
+				"portal": "zuiddrecht",
+				"title": "Terug naar werk",
+				"summary": "Vult het doel in en zet 4 acties klaar, zoals uw cv bijwerken en een gesprek bij het Werkplein. Einddatum na 12 weken.",
+				"goal": "Over drie maanden werk ik minstens 16 uur per week.",
+				"durationDays": 84,
+				"actions": [
+					{
+						"title": "Cv bijwerken",
+						"kind": "once",
+						"offsetDays": 7
+					},
+					{
+						"title": "Gesprek bij het Werkplein",
+						"kind": "once",
+						"offsetDays": 14
+					},
+					{
+						"title": "Drie vacatures uitkiezen",
+						"kind": "once",
+						"offsetDays": 28
+					},
+					{
+						"title": "Elke week solliciteren",
+						"kind": "recurring",
+						"offsetDays": 84
+					}
+				],
+				"published": true
+			}
+		},
+		{
+			"key": "plansjabloon-zelfstandig-wonen",
+			"register": "portaliq",
+			"schema": "portalPlanTemplate",
+			"data": {
+				"portal": "zuiddrecht",
+				"title": "Zelfstandig wonen",
+				"summary": "Vult het doel in en zet 6 acties klaar, zoals inschrijven als woningzoekende. Einddatum na 6 maanden.",
+				"goal": "Over een half jaar woon ik in een eigen huis.",
+				"durationDays": 182,
+				"actions": [
+					{
+						"title": "Inschrijven als woningzoekende",
+						"kind": "once",
+						"offsetDays": 7
+					},
+					{
+						"title": "Budget voor huur en vaste lasten maken",
+						"kind": "once",
+						"offsetDays": 21
+					},
+					{
+						"title": "Huurtoeslag uitrekenen",
+						"kind": "once",
+						"offsetDays": 28
+					},
+					{
+						"title": "Elke week reageren op woningen",
+						"kind": "recurring",
+						"offsetDays": 150
+					},
+					{
+						"title": "Inboedel regelen",
+						"kind": "once",
+						"offsetDays": 160
+					},
+					{
+						"title": "Verhuizing doorgeven",
+						"kind": "once",
+						"offsetDays": 182
+					}
+				],
+				"published": true
+			}
+		},
+		{
+			"key": "gesprek-sanne-mark",
+			"register": "portaliq",
+			"schema": "messageThread",
+			"data": {
+				"kind": "direct",
+				"participantRefs": [
+					"{{cast:sanne.uid}}",
+					"mark.jansen"
+				],
+				"createdBy": "mark.jansen",
+				"createdAt": "{{datetime:-2 10:31}}",
+				"recordRef": "{{object:plan-sanne-schuldhulp.id}}",
+				"recordLabel": "Schuldhulp op orde",
+				"title": "Schuldhulp op orde",
+				"staffName": "Mark Jansen",
+				"staffRole": "Begeleider, Gemeente Zuiddrecht"
+			}
+		},
+		{
+			"key": "gesprek-sanne-mark-1",
+			"register": "portaliq",
+			"schema": "guardianMessage",
+			"data": {
+				"threadRef": "{{object:gesprek-sanne-mark.id}}",
+				"senderRef": "mark.jansen",
+				"body": "Hoi Sanne, zoals besproken heb ik de bankafschriften nodig van juli, augustus en september. Je kunt ze bij de actie in het plan zetten.",
+				"sentAt": "{{datetime:-2 10:31}}",
+				"readBy": [
+					"mark.jansen",
+					"{{cast:sanne.uid}}"
+				]
+			}
+		},
+		{
+			"key": "gesprek-sanne-mark-2",
+			"register": "portaliq",
+			"schema": "guardianMessage",
+			"data": {
+				"threadRef": "{{object:gesprek-sanne-mark.id}}",
+				"senderRef": "{{cast:sanne.uid}}",
+				"body": "Juli staat er al bij. Augustus en september zoek ik vanavond op.",
+				"sentAt": "{{datetime:-2 14:05}}",
+				"readBy": [
+					"{{cast:sanne.uid}}",
+					"mark.jansen"
+				]
+			}
+		},
+		{
+			"key": "gesprek-sanne-mark-3",
+			"register": "portaliq",
+			"schema": "guardianMessage",
+			"data": {
+				"threadRef": "{{object:gesprek-sanne-mark.id}}",
+				"senderRef": "mark.jansen",
+				"body": "Ik heb het budgetplan bijgewerkt met jouw vaste lasten. Wil je kijken of het klopt?",
+				"sentAt": "{{datetime:0 09:10}}",
+				"readBy": [
+					"mark.jansen"
+				]
+			}
+		},
+		{
+			"key": "gesprek-sanne-mark-4",
+			"register": "portaliq",
+			"schema": "guardianMessage",
+			"data": {
+				"threadRef": "{{object:gesprek-sanne-mark.id}}",
+				"senderRef": "mark.jansen",
+				"body": "De aanvraag voor schuldhulpverlening dien ik in zodra de afschriften er zijn. Dat moet voor 20 oktober.",
+				"sentAt": "{{datetime:0 09:12}}",
+				"readBy": [
+					"mark.jansen"
+				]
+			}
+		},
+		{
+			"key": "gesprek-sanne-linda",
+			"register": "portaliq",
+			"schema": "messageThread",
+			"data": {
+				"kind": "direct",
+				"participantRefs": [
+					"{{cast:sanne.uid}}",
+					"linda.smit"
+				],
+				"createdBy": "linda.smit",
+				"createdAt": "{{datetime:-3 11:00}}"
+			}
+		},
+		{
+			"key": "gesprek-sanne-linda-1",
+			"register": "portaliq",
+			"schema": "guardianMessage",
+			"data": {
+				"threadRef": "{{object:gesprek-sanne-linda.id}}",
+				"senderRef": "{{cast:sanne.uid}}",
+				"body": "Donderdag om 10 uur kan ik bij het Werkplein zijn.",
+				"sentAt": "{{datetime:-2 09:40}}",
+				"readBy": [
+					"{{cast:sanne.uid}}",
+					"linda.smit"
+				]
+			}
+		},
+		{
+			"key": "gesprek-sanne-linda-2",
+			"register": "portaliq",
+			"schema": "guardianMessage",
+			"data": {
+				"threadRef": "{{object:gesprek-sanne-linda.id}}",
+				"senderRef": "linda.smit",
+				"body": "Fijn, tot donderdag om 10 uur.",
+				"sentAt": "{{datetime:-2 10:02}}",
+				"readBy": [
+					"linda.smit",
+					"{{cast:sanne.uid}}"
+				]
+			}
+		},
+		{
+			"key": "gesprek-sanne-henk",
+			"register": "portaliq",
+			"schema": "messageThread",
+			"data": {
+				"kind": "direct",
+				"participantRefs": [
+					"{{cast:sanne.uid}}",
+					"henk.devries"
+				],
+				"createdBy": "henk.devries",
+				"createdAt": "{{datetime:-6 19:00}}"
+			}
+		},
+		{
+			"key": "gesprek-sanne-henk-1",
+			"register": "portaliq",
+			"schema": "guardianMessage",
+			"data": {
+				"threadRef": "{{object:gesprek-sanne-henk.id}}",
+				"senderRef": "{{cast:sanne.uid}}",
+				"body": "Pap, kun je me helpen met de afspraak op het stadskantoor?",
+				"sentAt": "{{datetime:-6 19:00}}",
+				"readBy": [
+					"{{cast:sanne.uid}}",
+					"henk.devries"
+				]
+			}
+		},
+		{
+			"key": "gesprek-sanne-henk-2",
+			"register": "portaliq",
+			"schema": "guardianMessage",
+			"data": {
+				"threadRef": "{{object:gesprek-sanne-henk.id}}",
+				"senderRef": "henk.devries",
+				"body": "Ik rijd je wel naar het stadskantoor.",
+				"sentAt": "{{datetime:-6 19:24}}",
+				"readBy": [
+					"henk.devries",
+					"{{cast:sanne.uid}}"
+				]
+			}
+		}
+	]
+}

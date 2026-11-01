@@ -2051,6 +2051,8 @@ OC.L10N.register(
         "The news item is published.": "The news item is published.",
         "The news item is back to a draft. Parents no longer see it.": "The news item is back to a draft. Parents no longer see it.",
         "Change news item": "Change news item",
+        "News, published": "News, published",
+        "News, draft": "News, draft",
         "Parents read this text in the portal.": "Parents read this text in the portal.",
         "Who is this news for?": "Who is this news for?",
         "The whole school": "The whole school",

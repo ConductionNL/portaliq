@@ -1978,10 +1978,10 @@
 				"owner": "{{cast:sanne.uid}}",
 				"organisation": "zuiddrecht",
 				"role": "begeleider",
-				"displayName": "{{cast:mark.displayName}}",
+				"displayName": "Mark Jansen",
 				"line": "Gemeente Zuiddrecht, schuldhulpverlening",
 				"state": "approved",
-				"contactRef": "{{cast:mark.uid}}"
+				"contactRef": "mark.jansen"
 			}
 		},
 		{
@@ -1992,10 +1992,10 @@
 				"owner": "{{cast:sanne.uid}}",
 				"organisation": "zuiddrecht",
 				"role": "contact",
-				"displayName": "{{cast:henk.displayName}}",
+				"displayName": "Henk de Vries",
 				"line": "Uw vader",
 				"state": "approved",
-				"contactRef": "{{cast:henk.uid}}"
+				"contactRef": "henk.devries"
 			}
 		},
 		{
@@ -2010,7 +2010,7 @@
 				"line": "Nog geen account aangemaakt",
 				"state": "invited",
 				"email": "j.devries@example.nl",
-				"sentAt": "{{datetime:-16 10:00}}"
+				"sentAt": "{{datetime:-3 10:00}}"
 			}
 		},
 		{
@@ -2021,13 +2021,18 @@
 				"owner": "{{cast:sanne.uid}}",
 				"organisation": "zuiddrecht",
 				"participants": [
-					"{{cast:mark.uid}}"
+					"mark.jansen"
 				],
 				"title": "Schuldhulp op orde",
 				"goal": "Over drie maanden heb ik een overzicht van al mijn schulden en een vaste afspraak over aflossen.",
 				"goalDetail": "Samen met Mark zet ik alle rekeningen op een rij. Daarna vragen we schuldhulpverlening aan bij de gemeente, zodat ik met één afspraak per maand aflos.",
 				"endDate": "{{date:12}}",
-				"status": "running"
+				"status": "running",
+				"note": {
+					"text": "De energierekening loopt via automatische incasso, die hoeft niet in de aanvraag. Voor de aanvraag zijn de bankafschriften van juli, augustus en september nodig.",
+					"editedBy": "mark.jansen",
+					"editedAt": "{{datetime:-2 16:20}}"
+				}
 			}
 		},
 		{
@@ -2041,7 +2046,7 @@
 				"title": "Overzicht maken van al mijn schulden",
 				"kind": "once",
 				"status": "done",
-				"endDate": "{{date:-21}}",
+				"endDate": "{{date:-23}}",
 				"plan": "{{object:plan-sanne-schuldhulp.id}}"
 			}
 		},
@@ -2052,11 +2057,11 @@
 			"data": {
 				"owner": "{{cast:sanne.uid}}",
 				"organisation": "zuiddrecht",
-				"assignee": "{{cast:mark.uid}}",
+				"assignee": "mark.jansen",
 				"title": "Afspraak met de budgetcoach plannen",
 				"kind": "once",
 				"status": "done",
-				"endDate": "{{date:-14}}",
+				"endDate": "{{date:-16}}",
 				"plan": "{{object:plan-sanne-schuldhulp.id}}"
 			}
 		},
@@ -2082,7 +2087,7 @@
 			"data": {
 				"owner": "{{cast:sanne.uid}}",
 				"organisation": "zuiddrecht",
-				"assignee": "{{cast:mark.uid}}",
+				"assignee": "mark.jansen",
 				"title": "Aanvraag schuldhulpverlening indienen",
 				"kind": "once",
 				"status": "todo",
