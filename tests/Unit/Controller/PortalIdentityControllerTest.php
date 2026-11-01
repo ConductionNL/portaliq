@@ -51,6 +51,26 @@ class PortalIdentityControllerTest extends TestCase {
 
 	private ?string $resolvedSlug = null;
 
+	/**
+	 * The portal the site names in its header alone is the one the challenge is for.
+	 *
+	 * @return void
+	 */
+	public function testTheSiteHeaderNamesThePortal(): void {
+		$this->headers = ['X-Portaliq-Portal' => 'zuid'];
+
+		$this->controller(site: ['slug' => 'zuid', 'organisation' => 'gemeente-x'])->challenge();
+
+		$this->assertSame(expected: 'zuid', actual: $this->resolvedSlug);
+	}//end testTheSiteHeaderNamesThePortal()
+
+	/**
+	 * The request headers, by name.
+	 *
+	 * @var array<string, string>
+	 */
+	private array $headers = [];
+
 	public function testRegistrationSwitchedOffCreatesNoAccount(): void {
 		$controller = $this->controller(site: ['organisation' => 'gemeente-x']);
 		$this->doubles['policy']->method('isOffered')->willReturn(false);
@@ -694,6 +714,7 @@ class PortalIdentityControllerTest extends TestCase {
 	private function controller(?array $site, bool $inScope = true): PortalIdentityController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParams')->willReturn([]);
+		$request->method('getHeader')->willReturnCallback(fn (string $name): string => ($this->headers[$name] ?? ''));
 		$request->method('getParam')->willReturnCallback(
 			fn (string $key, mixed $default = null): mixed => ($this->params[$key] ?? $default)
 		);

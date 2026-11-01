@@ -201,7 +201,7 @@ class SiteShell {
 			return $this->requestedSlug;
 		}
 
-		$slug = trim((string)$this->request->getParam('portal', ''));
+		$slug = (string)(new RequestedPortal())->slug(request: $this->request);
 		$org = trim((string)$this->request->getParam('org', ''));
 		if ($slug === '' && $org !== '') {
 			try {

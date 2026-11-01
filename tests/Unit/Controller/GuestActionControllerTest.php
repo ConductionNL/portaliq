@@ -62,6 +62,34 @@ class GuestActionControllerTest extends TestCase {
 	];
 
 	/**
+	 * The portal the site names in its header.
+	 *
+	 * @var string
+	 */
+	private string $portalHeader = '';
+
+	/**
+	 * The slug the resolver was asked for.
+	 *
+	 * @var string|null
+	 */
+	private ?string $resolvedSlug = null;
+
+	/**
+	 * The portal the site names in its header alone is the guest's serving portal.
+	 *
+	 * @return void
+	 */
+	public function testTheSiteHeaderNamesTheServingPortal(): void {
+		$calls = [];
+		$this->portalHeader = 'knip';
+
+		$this->controller(['token' => 'A', 'reason' => 'changed my mind'], $calls)->act('portaliq', 'withdraw');
+
+		$this->assertSame(expected: 'knip', actual: $this->resolvedSlug);
+	}//end testTheSiteHeaderNamesTheServingPortal()
+
+	/**
 	 * A hand-crafted post carrying token A and the token field set to B: the
 	 * receiver gets A (REQ-GST-002, scenario "The token cannot be swapped").
 	 *
@@ -220,6 +248,7 @@ class GuestActionControllerTest extends TestCase {
 	private function controller(array $params, array &$calls, ?AuditTrailService $auditor = null, string $answerBody = '{"ok":true}', array $actions = self::ACTIONS): GuestActionController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParam')->willReturnCallback(fn (string $key, $default = null) => ($params[$key] ?? $default));
+		$request->method('getHeader')->willReturnCallback(fn (string $name): string => ($name === 'X-Portaliq-Portal' ? $this->portalHeader : ''));
 
 		$provider = new class($actions) {
 			public function __construct(private array $actions) {
@@ -289,7 +318,12 @@ class GuestActionControllerTest extends TestCase {
 		$urls->method('getAbsoluteURL')->willReturnCallback(fn (string $path) => 'https://cloud.example' . $path);
 
 		$portals = $this->createMock(PortalResolver::class);
-		$portals->method('resolve')->willReturn(['slug' => 'knip', 'organisation' => 'org-knip']);
+		$portals->method('resolve')->willReturnCallback(
+			function (IRequest $request, ?string $portalSlug = null): array {
+				$this->resolvedSlug = $portalSlug;
+				return ['slug' => 'knip', 'organisation' => 'org-knip'];
+			}
+		);
 
 		return new GuestActionController(
 			$request,
