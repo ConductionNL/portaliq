@@ -79,7 +79,10 @@ class ZuiddrechtWooCaseAccessTest extends TestCase {
 
 		$this->assertArrayHasKey(key: 'woo-fietspad-link-sanne-names-its-link', array: $changes);
 		$change = $changes['woo-fietspad-link-sanne-names-its-link'];
-		$this->assertSame(expected: ['dossiq', 'caseShare', 'woo-fietspad-link-sanne'], actual: [$change['register'], $change['schema'], $change['object']]);
+		$this->assertSame(
+			expected: ['dossiq', 'caseShare', 'woo-fietspad-link-sanne'],
+			actual: [$change['register'], $change['schema'], $change['object']]
+		);
 		$this->assertSame(
 			expected: [
 				'accessLinkId'   => '{{accessLink:woo-fietspad-link-sanne.id}}',
