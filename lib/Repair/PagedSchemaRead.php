@@ -44,28 +44,27 @@ trait PagedSchemaRead {
 	 */
 	private function page(object $objectService, int $offset): array {
 		try {
-			if ($this->context->apply(objectService: $objectService, schemaSlug: self::SCHEMA) === false) {
-				return [];
+			$rows = [];
+			if ($this->context->apply(objectService: $objectService, schemaSlug: self::SCHEMA) === true) {
+				$rows = $objectService->findAll(config: ['limit' => self::PAGE, 'offset' => $offset], _rbac: false, _multitenancy: false);
 			}
-
-			$rows = $objectService->findAll(config: ['limit' => self::PAGE, 'offset' => $offset], _rbac: false, _multitenancy: false);
 		} catch (Throwable $e) {
 			$this->logger->info(self::EMPTY_PAGE_LOG, ['reason' => $e->getMessage()]);
 
 			return [];
 		}
 
-		$out = [];
-		foreach ((array)$rows as $row) {
-			if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-				$row = $row->jsonSerialize();
-			}
+		$serialised = array_map(
+			static function (mixed $row): mixed {
+				if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
+					return $row->jsonSerialize();
+				}
 
-			if (is_array($row) === true) {
-				$out[] = $row;
-			}
-		}
+				return $row;
+			},
+			(array)$rows
+		);
 
-		return $out;
+		return array_values(array_filter($serialised, 'is_array'));
 	}//end page()
 }//end trait
