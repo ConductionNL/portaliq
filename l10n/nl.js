@@ -2107,6 +2107,8 @@ OC.L10N.register(
         "The news item is published.": "Het nieuwsbericht is gepubliceerd.",
         "The news item is back to a draft. Parents no longer see it.": "Het nieuwsbericht is weer een concept. Ouders zien het niet meer.",
         "Change news item": "Nieuwsbericht wijzigen",
+        "News, published": "Nieuws, gepubliceerd",
+        "News, draft": "Nieuws, concept",
         "Parents read this text in the portal.": "Ouders lezen deze tekst in het portaal.",
         "Who is this news for?": "Voor wie is dit nieuws?",
         "The whole school": "De hele school",

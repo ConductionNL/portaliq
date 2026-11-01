@@ -22,6 +22,7 @@
 		:name="
 			item ? t('portaliq', 'Change news item') : t('portaliq', 'New news item')
 		"
+		:eyebrow="eyebrow"
 		size="normal"
 		data-testid="news-item-dialog"
 		@closing="$emit('close', null)">
@@ -200,6 +201,22 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The line above the title: the list, and for an item that exists its
+		 * state (PtNieuwsbericht "Nieuws, concept").
+		 *
+		 * @return {string}
+		 * @spec openspec/changes/news-dialog-eyebrow/specs/staff-news/spec.md#requirement-the-news-dialog-names-the-list-and-the-items-state-above-its-title
+		 */
+		eyebrow() {
+			if (!this.item) {
+				return t('portaliq', 'News')
+			}
+			return this.item.status === 'published'
+				? t('portaliq', 'News, published')
+				: t('portaliq', 'News, draft')
+		},
+
 		/** The chosen school as an option, read and written through the form. */
 		school: {
 			/**
