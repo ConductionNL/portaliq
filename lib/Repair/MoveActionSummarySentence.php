@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Repair;
 
+use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -43,6 +44,8 @@ use Throwable;
  * @spec openspec/changes/action-summary-sentence/specs/portal-contribution-contract/spec.md#requirement-an-action-may-sum-up-the-answers-in-one-sentence
  */
 class MoveActionSummarySentence implements IRepairStep {
+	use ObjectServiceLookup;
+
 	/**
 	 * The schema of a data-provisioned contribution.
 	 */
@@ -230,23 +233,4 @@ class MoveActionSummarySentence implements IRepairStep {
 
 		return $out;
 	}//end page()
-
-	/**
-	 * OpenRegister's object service, or null when it is not installed.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 }//end class

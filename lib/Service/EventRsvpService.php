@@ -37,6 +37,7 @@ use Throwable;
  * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
  */
 class EventRsvpService {
+	use ObjectServiceLookup;
 	use PagedObjectReads;
 
 	/**
@@ -363,23 +364,4 @@ class EventRsvpService {
 
 		return null;
 	}//end normalise()
-
-	/**
-	 * Resolve OpenRegister's ObjectService, or null when unavailable.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 }//end class

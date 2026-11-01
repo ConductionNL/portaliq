@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
+use OCA\Portaliq\Service\ObjectServiceLookup;
 use DateInterval;
 use DateTimeImmutable;
 use DateTimeZone;
@@ -44,6 +45,8 @@ use Throwable;
  * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-a-non-emergency-push-during-quiet-hours-is-deferred-not-dropped
  */
 class QuietHoursPolicy {
+	use ObjectServiceLookup;
+
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	private const REGISTER = 'portaliq';
@@ -350,23 +353,4 @@ class QuietHoursPolicy {
 
 		return null;
 	}//end normalise()
-
-	/**
-	 * Resolve OpenRegister's ObjectService, or null when unavailable.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 }//end class

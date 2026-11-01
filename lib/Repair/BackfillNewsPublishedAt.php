@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Repair;
 
+use OCA\Portaliq\Service\ObjectServiceLookup;
 use DateTimeImmutable;
 use DateTimeZone;
 use OCA\Portaliq\Service\PortalRegisterContext;
@@ -44,6 +45,8 @@ use Throwable;
  * @spec openspec/changes/news-publish-date/tasks.md#T3
  */
 class BackfillNewsPublishedAt implements IRepairStep {
+	use ObjectServiceLookup;
+
 	/**
 	 * The news item schema.
 	 */
@@ -197,23 +200,4 @@ class BackfillNewsPublishedAt implements IRepairStep {
 
 		return $out;
 	}//end page()
-
-	/**
-	 * OpenRegister's object service, or null when it is not installed.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 }//end class
