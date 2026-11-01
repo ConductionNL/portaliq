@@ -1,0 +1,285 @@
+
+> portaliq@0.1.0 lint
+> eslint src tests scripts
+
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/editor/PageGridEditor.vue
+  342:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/editor/SiteMenuPanel.vue
+   46:21  warning  Variable 'menu' is already declared in the upper scope  vue/no-template-shadow
+  264:1   warning  Prefer a more specific type to `Function`               jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/editor/SitePagesPanel.vue
+  308:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/editor/gridModel.js
+  231:1  warning  Prefer a more specific type to `*`  jsdoc/reject-any-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/editor/pageEditor.js
+   47:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+   48:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+   49:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+   97:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  116:1  warning  Prefer a more specific type to `*`         jsdoc/reject-any-type
+  269:1  warning  Prefer a more specific type to `*`         jsdoc/reject-any-type
+  302:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/editor/pageSaver.js
+  42:1  warning  Prefer a more specific type to `*`         jsdoc/reject-any-type
+  54:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  55:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  56:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/editor/portalObjects.js
+  21:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  22:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  23:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  24:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  25:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/editor/widgetForms.js
+  46:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/embed/frame.js
+  92:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/integrations/ProposalQueueWidget.vue
+  302:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/integrations/proposalQueue.js
+  44:1  warning  Prefer a more specific type to `*`         jsdoc/reject-any-type
+  61:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  62:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  63:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/lib/actionGrants.js
+  58:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  72:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/lib/mediaLibrary.js
+  25:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/lib/newsAuthoring.js
+  213:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  214:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  215:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  216:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  295:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  296:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  297:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  298:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  299:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  300:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  421:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/lib/pageHistory.js
+  24:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  25:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/lib/portalThemeChoice.js
+  55:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  56:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  57:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/lib/staffAccountActions.js
+  277:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  278:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  283:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  283:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  283:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/shared/areaApi.js
+  12:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  13:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  13:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  76:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/shared/embedHeight.js
+  84:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  85:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/shared/messageBox.js
+  16:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/shared/openRecord.js
+  50:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  51:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  51:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  51:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  92:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/shared/portalApi.js
+    40:1  warning  Missing JSDoc @param "token" description   jsdoc/require-param-description
+    40:1  warning  Missing JSDoc @param "token" type          jsdoc/require-param-type
+   128:1  warning  Missing JSDoc @param "path" description    jsdoc/require-param-description
+   128:1  warning  Missing JSDoc @param "path" type           jsdoc/require-param-type
+   146:1  warning  Missing JSDoc @param "method" description  jsdoc/require-param-description
+   146:1  warning  Missing JSDoc @param "method" type         jsdoc/require-param-type
+   147:1  warning  Missing JSDoc @param "path" description    jsdoc/require-param-description
+   147:1  warning  Missing JSDoc @param "path" type           jsdoc/require-param-type
+   148:1  warning  Missing JSDoc @param "body" description    jsdoc/require-param-description
+   148:1  warning  Missing JSDoc @param "body" type           jsdoc/require-param-type
+   520:1  warning  Prefer a more specific type to `any`       jsdoc/reject-any-type
+  1107:1  warning  Prefer a more specific type to `*`         jsdoc/reject-any-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/App.vue
+  1460:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/components/BrandHeader.vue
+  232:45  warning  Boolean prop should only be defaulted to false  vue/no-boolean-default
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/components/ContactForm.vue
+  113:3  warning  'topicField' of property found, but never used  vue/no-unused-properties
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/components/FederatedSearchBlock.vue
+  597:13  warning  Boolean prop should only be defaulted to false  vue/no-boolean-default
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/components/HeroBlock.vue
+  187:45  warning  Boolean prop should only be defaulted to false  vue/no-boolean-default
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/components/IntakeFormBlock.vue
+  178:10  warning  'stepHeading' is defined as ref, but never used  vue/no-unused-refs
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/components/WidgetGrid.vue
+  380:13  warning  Boolean prop should only be defaulted to false  vue/no-boolean-default
+  458:1   warning  Prefer a more specific type to `*`              jsdoc/reject-any-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/components/c/SchemaForm.vue
+  72:9  warning  'stepHeading' is defined as ref, but never used  vue/no-unused-refs
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/components/collections/DetailCard.vue
+  199:43  warning  Boolean prop should only be defaulted to false  vue/no-boolean-default
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/components/forms/FamilyMembers.vue
+  96:46  warning  Boolean prop should only be defaulted to false  vue/no-boolean-default
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/components/forms/SignatureField.vue
+  88:3  warning  'modelValue' of property found, but never used  vue/no-unused-properties
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/components/forms/calculate.js
+   28:1  warning  Prefer a more specific type to `*`    jsdoc/reject-any-type
+   43:1  warning  Prefer a more specific type to `*`    jsdoc/reject-any-type
+   44:1  warning  Prefer a more specific type to `any`  jsdoc/reject-any-type
+   45:1  warning  Prefer a more specific type to `any`  jsdoc/reject-any-type
+   79:1  warning  Prefer a more specific type to `*`    jsdoc/reject-any-type
+  112:1  warning  Prefer a more specific type to `*`    jsdoc/reject-any-type
+  113:1  warning  Prefer a more specific type to `any`  jsdoc/reject-any-type
+  124:1  warning  Prefer a more specific type to `*`    jsdoc/reject-any-type
+  125:1  warning  Prefer a more specific type to `any`  jsdoc/reject-any-type
+  185:1  warning  Prefer a more specific type to `any`  jsdoc/reject-any-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/components/forms/group.js
+  177:1  warning  Prefer a more specific type to `any`  jsdoc/reject-any-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/components/mijn/CalendarTiles.vue
+  99:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/components/mijn/DateRows.vue
+  107:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/components/mijn/GradeBars.vue
+  93:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/components/mijn/GreetingBlock.vue
+  91:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/components/mijn/MarkChips.vue
+  102:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/components/mijn/SegmentedFigure.vue
+  101:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/components/mijn/TimetableDay.vue
+  180:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/lib/assistantApi.js
+  30:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/lib/guestAction.js
+  110:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  170:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  190:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  206:1  warning  Prefer a more specific type to `*`         jsdoc/reject-any-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/lib/intakeApi.js
+  435:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  470:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  503:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  548:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/lib/loadSiteEditor.js
+  33:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/lib/publicRecordsApi.js
+  25:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  51:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  70:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/lib/residentActions.js
+  182:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  240:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/lib/searchSuggestions.js
+  152:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  153:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  154:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  155:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  155:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/lib/startTiles.js
+  19:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/lib/subjects.js
+  39:1  warning  Prefer a more specific type to `*`  jsdoc/reject-any-type
+  50:1  warning  Prefer a more specific type to `*`  jsdoc/reject-any-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/lib/waysIn.js
+   25:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+   27:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  254:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  290:1  warning  Prefer a more specific type to `*`         jsdoc/reject-any-type
+  311:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+  341:1  warning  Prefer a more specific type to `Function`  jsdoc/reject-function-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/pages/e/AccessRequestsPage.vue
+  132:3  warning  'session' of property found, but never used   vue/no-unused-properties
+  134:3  warning  'portal' of property found, but never used    vue/no-unused-properties
+  140:3  warning  'navigate' of property found, but never used  vue/no-unused-properties
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/pages/e/AccountPage.vue
+  145:3  warning  'session' of property found, but never used   vue/no-unused-properties
+  147:3  warning  'portal' of property found, but never used    vue/no-unused-properties
+  153:3  warning  'navigate' of property found, but never used  vue/no-unused-properties
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/pages/e/MyCasesPage.vue
+  221:3  warning  'navigate' of property found, but never used  vue/no-unused-properties
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/pages/e/RegisteredDetailsPage.vue
+  134:3  warning  'session' of property found, but never used   vue/no-unused-properties
+  136:3  warning  'portal' of property found, but never used    vue/no-unused-properties
+  142:3  warning  'navigate' of property found, but never used  vue/no-unused-properties
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/pages/e/ThemePage.vue
+  82:14  warning  Variable 'entry' is already declared in the upper scope  vue/no-template-shadow
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/pages/e/themes.js
+   50:1  warning  Prefer a more specific type to `*`  jsdoc/reject-any-type
+  179:1  warning  Prefer a more specific type to `*`  jsdoc/reject-any-type
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/widgets/nlCatalogue/NlCatalogue.vue
+  385:41  warning  Boolean prop should only be defaulted to false  vue/no-boolean-default
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/widgets/nlEventList/NlEventList.vue
+  120:43  warning  Boolean prop should only be defaulted to false  vue/no-boolean-default
+  128:37  warning  Boolean prop should only be defaulted to false  vue/no-boolean-default
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/widgets/nlNewsList/NlNewsList.vue
+  144:39  warning  Boolean prop should only be defaulted to false  vue/no-boolean-default
+  150:43  warning  Boolean prop should only be defaulted to false  vue/no-boolean-default
+
+/home/rubenlinde/zuiddrecht-demo/m1567/src/site/widgets/nlTable/NlTable.vue
+  79:45  warning  Boolean prop should only be defaulted to false  vue/no-boolean-default
+
+✖ 154 problems (0 errors, 154 warnings)
+
