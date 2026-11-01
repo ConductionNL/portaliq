@@ -363,22 +363,23 @@ export default {
 
 <style scoped>
 .pq-site-editor {
-	padding: 16px;
+	padding: 24px 24px 64px;
 	margin: 0 auto;
 	max-width: 1280px;
 }
 
+/* The bar as the editor boards draw it: one tinted row in the portal's deep
+   primary, the label first, outlined 40px buttons, "Stop editing" at the end. */
 .pq-site-editor__bar {
 	display: flex;
-	justify-content: space-between;
 	align-items: center;
 	flex-wrap: wrap;
-	gap: 12px;
-	margin-bottom: 12px;
-	padding: 8px 12px;
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius-large);
-	background: var(--color-main-background);
+	gap: 8px;
+	margin-bottom: 16px;
+	padding: 12px 16px;
+	border: 2px solid var(--nldesign-color-primary-hover, #234a78);
+	border-radius: 6px;
+	background: var(--nldesign-color-primary-light, #eaf0f7);
 	position: sticky;
 	top: 0;
 	z-index: 10;
@@ -386,14 +387,57 @@ export default {
 
 .pq-site-editor__status {
 	display: flex;
+	align-items: center;
 	gap: 8px;
 	margin: 0;
+	color: var(--nldesign-color-primary-hover, #234a78);
 }
 
+.pq-site-editor__status strong {
+	margin-inline-end: 8px;
+	font-size: 17px;
+}
+
+/* The buttons are items of the bar itself, so the last one can sit at its end. */
 .pq-site-editor__actions {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 8px;
+	display: contents;
+}
+
+.pq-site-editor__bar .button-vue {
+	height: 40px;
+	min-height: 40px;
+	padding: 0 14px;
+	border: 1px solid var(--nldesign-color-primary, #3669a5);
+	border-radius: 4px;
+	background: var(--color-main-background);
+	color: var(--nldesign-color-primary-hover, #234a78);
+}
+
+.pq-site-editor__bar .button-vue :deep(.button-vue__wrapper),
+.pq-site-editor__bar .button-vue :deep(.button-vue__text) {
+	margin: 0;
+	padding: 0;
+	font-weight: 600;
+}
+
+.pq-site-editor__bar .button-vue--primary {
+	padding: 0 16px;
+	border-color: transparent;
+	background: var(--nldesign-color-primary, #3669a5);
+	color: var(--color-primary-element-text);
+}
+
+.pq-site-editor__bar .button-vue[aria-pressed='true'] {
+	border-color: var(--nldesign-color-primary-hover, #234a78);
+	background: var(--nldesign-color-primary-hover, #234a78);
+	color: var(--color-primary-element-text);
+}
+
+.pq-site-editor__bar .button-vue[data-testid='site-edit-leave'] {
+	margin-inline-start: auto;
+	border-color: transparent;
+	background: transparent;
+	text-decoration: underline;
 }
 
 .pq-site-editor__loading {
