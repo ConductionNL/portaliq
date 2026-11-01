@@ -29,7 +29,7 @@
 // @spec openspec/changes/resident-on-example-set/specs/example-resident/spec.md
 
 import assert from 'node:assert/strict'
-import { readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { test } from 'node:test'
 
 const root = new URL('../', import.meta.url)
@@ -40,12 +40,34 @@ const schemas = register.components.schemas
 const siteIds = readdirSync(new URL('lib/Settings/sites/', root))
 	.filter((f) => f.endsWith('.json'))
 	.map((f) => f.replace(/\.json$/, ''))
+/**
+ * A fragment with the lists of its `<set>.d/` parts appended in file-name
+ * order, as OpenRegister's ExampleSetCatalogue gathers it.
+ *
+ * @param {string} file The fragment's file name.
+ * @return {object} The gathered fragment.
+ */
+function gathered(file) {
+	const fragment = JSON.parse(read(`lib/Settings/example-sets/${file}`))
+	const folder = `lib/Settings/example-sets/${file.replace(/\.json$/, '')}.d/`
+	if (!existsSync(new URL(folder, root))) {
+		return fragment
+	}
+	for (const part of readdirSync(new URL(folder, root)).filter((f) => f.endsWith('.json')).sort()) {
+		for (const [key, value] of Object.entries(JSON.parse(read(folder + part)))) {
+			if (key === 'set' || key.startsWith('$') || key.startsWith('@')) {
+				continue
+			}
+			assert.ok(Array.isArray(value), `${folder}${part}: a part may only add lists, not "${key}"`)
+			fragment[key] = [...(fragment[key] || []), ...value]
+		}
+	}
+	return fragment
+}
+
 const fragments = readdirSync(new URL('lib/Settings/example-sets/', root))
 	.filter((f) => f.endsWith('.json'))
-	.map((file) => ({
-		file,
-		fragment: JSON.parse(read(`lib/Settings/example-sets/${file}`)),
-	}))
+	.map((file) => ({ file, fragment: gathered(file) }))
 
 const PLACEHOLDER = /\{\{([^{}]+)\}\}/g
 const FORMS = [
@@ -221,7 +243,12 @@ test('zuiddrecht.json: every portal account and mandate fits its schema, and the
 	const mandates = zuiddrecht.objects.filter((object) => object.schema === 'portalMandate')
 	assert.deepEqual(
 		accounts.map((object) => object.data.subjectRef),
-		['sanne', 'henk', 'linda', 'fatima', 'janwillem', 'mark'].map((key) => `{{cast:${key}.uid}}`),
+		[
+			...['sanne', 'henk', 'linda', 'fatima', 'janwillem', 'mark'].map((key) => `{{cast:${key}.uid}}`),
+			// Sanne's caseworkers, named where a plan reads its participants (zuiddrecht.d/20-samenwerken.json).
+			'mark.jansen',
+			'linda.smit',
+		],
 	)
 	accounts.forEach(fits)
 	mandates.forEach(fits)
@@ -338,4 +365,109 @@ test('Sanne has an open portal task on her parking permit: a copy of her ID, at 
 	assert.equal(task.objectUuid, '{{object:parkeervergunning-sanne.id}}')
 	assert.deepEqual(task.uploadRules, { required: true, maxFiles: 2 })
 	assert.match(task.description, /Lindelaan 14/)
+})
+
+// The Samenwerken, Contacten and Gesprek boards (zuiddrecht, rowMijn): what
+// Sanne's own area needs to draw them, from the gathered set (main file and
+// its zuiddrecht.d parts). The boards were drawn on Thursday 8 October 2026,
+// so a board date is a day count from the install day.
+const zuiddrechtSet = () => fragments.find(({ file }) => file === 'zuiddrecht.json').fragment
+const SANNE = '{{cast:sanne.uid}}'
+const objectsOf = (schema) => zuiddrechtSet().objects.filter((object) => object.schema === schema)
+const days = (value) => Number(String(value).match(/\{\{date(?:time)?:([+-]?\d+)/)?.[1])
+const accountNamed = (ref) => objectsOf('portalAccount').find((object) => object.data.subjectRef === ref)?.data.displayName
+
+test('Plannen: the portal switches on plans, contacts and actions, and Sanne has two running plans and one done', () => {
+	const change = zuiddrechtSet().changes.find((entry) => entry.schema === 'portal' && entry.set?.plansEnabled !== undefined)
+	assert.deepEqual(change.set, { contactsEnabled: true, plansEnabled: true, actionsEnabled: true })
+	const plans = objectsOf('portalPlan').filter((plan) => plan.data.owner === SANNE || plan.data.participants?.includes(SANNE))
+	const running = plans.filter((plan) => plan.data.status === 'running')
+	assert.deepEqual(running.map((plan) => plan.data.title).sort(), ['Schuldhulp op orde', 'Terug naar werk'])
+	assert.equal(running.filter((plan) => plan.data.owner === SANNE).length, 1, 'U maakte er 1 zelf, 1 is met u gedeeld')
+	const shared = running.find((plan) => plan.data.owner !== SANNE)
+	assert.equal(accountNamed(shared.data.owner), 'Linda Smit')
+	assert.equal(shared.data.goal, 'Voor 1 maart 2027 werk ik minstens 16 uur per week.')
+	assert.equal(plans.filter((plan) => plan.data.status === 'done').length, 1)
+	const actionsOf = (plan) => objectsOf('portalAction').filter((action) => action.data.plan === `{{object:${plan.key}.id}}`)
+	assert.deepEqual(
+		[actionsOf(shared).length, actionsOf(shared).filter((action) => action.data.status === 'done').length],
+		[4, 1],
+		'1 van 4 acties klaar',
+	)
+})
+
+test('Plannen: the municipality offers three plan templates', () => {
+	const templates = objectsOf('portalPlanTemplate').filter((template) => template.data.portal === 'zuiddrecht')
+	assert.deepEqual(
+		templates.map((template) => [template.data.title, template.data.actions.length, template.data.published]),
+		[['Schuldhulp op orde', 5, true], ['Terug naar werk', 4, true], ['Zelfstandig wonen', 6, true]],
+	)
+	for (const template of templates) {
+		assert.match(template.data.summary, new RegExp(`zet ${template.data.actions.length} acties klaar`))
+		for (const action of template.data.actions) {
+			assert.ok(['once', 'recurring'].includes(action.kind))
+			assert.ok(Number.isInteger(action.offsetDays) && action.offsetDays <= template.data.durationDays)
+		}
+	}
+})
+
+test('Plan and ActieBewerken: Schuldhulp op orde with Mark Jansen, five actions, two done, and his note', () => {
+	const plan = objectsOf('portalPlan').find((entry) => entry.data.title === 'Schuldhulp op orde')
+	assert.equal(days(plan.data.endDate), 12, 'loopt over 12 dagen af')
+	assert.deepEqual(plan.data.participants.map(accountNamed), ['Mark Jansen'])
+	assert.equal(accountNamed(plan.data.note.editedBy), 'Mark Jansen')
+	assert.match(plan.data.note.text, /^De energierekening loopt via automatische incasso/)
+	const actions = objectsOf('portalAction').filter((action) => action.data.plan === `{{object:${plan.key}.id}}`)
+	assert.deepEqual(
+		actions.map((action) => [action.data.title, action.data.status, days(action.data.endDate), accountNamed(action.data.assignee)]),
+		[
+			['Overzicht maken van al mijn schulden', 'done', -23, '{{cast:sanne.displayName}}'],
+			['Afspraak met de budgetcoach plannen', 'done', -16, 'Mark Jansen'],
+			['Bankafschriften van drie maanden uploaden', 'doing', 6, '{{cast:sanne.displayName}}'],
+			['Aanvraag schuldhulpverlening indienen', 'todo', 12, 'Mark Jansen'],
+			['Vaste lasten bijwerken in het budgetplan', 'todo', 23, '{{cast:sanne.displayName}}'],
+		],
+	)
+})
+
+test('Contacten and ContactUitnodigen: four contacts, a request from Ahmed Bakker and an open invitation', () => {
+	const mine = objectsOf('portalContact').filter((contact) => contact.data.owner === SANNE)
+	const approved = mine.filter((contact) => contact.data.state === 'approved')
+	assert.deepEqual(
+		approved.map((contact) => [contact.data.displayName, contact.data.role, contact.data.line]),
+		[
+			['Mark Jansen', 'begeleider', 'Gemeente Zuiddrecht, schuldhulpverlening'],
+			['Henk de Vries', 'contact', 'Uw vader'],
+			['Linda Smit', 'begeleider', 'Werkplein Zuiddrecht'],
+			['Stichting Thuis in Zuiddrecht', 'organisatie', 'Woonbegeleiding, Kerkstraat 8'],
+		],
+	)
+	const requested = mine.filter((contact) => contact.data.state === 'requested')
+	assert.deepEqual(requested.map((contact) => [contact.data.displayName, contact.data.line, days(contact.data.sentAt)]), [
+		['Ahmed Bakker', 'Begeleider, Stichting Thuis in Zuiddrecht', -1],
+	])
+	const invited = mine.filter((contact) => contact.data.state === 'invited')
+	assert.deepEqual(invited.map((contact) => [contact.data.email, days(contact.data.sentAt)]), [['j.devries@example.nl', -3]])
+})
+
+test('Gesprek: conversations with Mark Jansen, Linda Smit and Henk de Vries; two new messages from Mark today', () => {
+	const contacts = new Map(
+		objectsOf('portalContact')
+			.filter((contact) => contact.data.owner === SANNE && contact.data.state === 'approved')
+			.map((contact) => [contact.data.contactRef, contact.data.displayName]),
+	)
+	const threads = objectsOf('messageThread').filter((thread) => thread.data.participantRefs?.includes(SANNE))
+	const other = (thread) => thread.data.participantRefs.find((ref) => ref !== SANNE)
+	assert.deepEqual(threads.map((thread) => contacts.get(other(thread))), ['Mark Jansen', 'Linda Smit', 'Henk de Vries'])
+	for (const thread of threads) {
+		assert.equal(thread.data.kind, 'direct')
+		assert.equal(thread.data.participantRefs.length, 2)
+	}
+	const mark = threads[0]
+	assert.equal(mark.data.recordLabel, 'Schuldhulp op orde')
+	const messages = objectsOf('guardianMessage').filter((message) => message.data.threadRef === `{{object:${mark.key}.id}}`)
+	assert.equal(messages.length, 4)
+	const unread = messages.filter((message) => message.data.senderRef !== SANNE && !message.data.readBy.includes(SANNE))
+	assert.deepEqual(unread.map((message) => days(message.data.sentAt)), [0, 0], '2 nieuwe berichten, vandaag')
+	assert.ok(unread.every((message) => message.data.senderRef === other(mark)))
 })
