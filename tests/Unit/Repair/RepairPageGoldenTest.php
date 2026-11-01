@@ -57,7 +57,7 @@ class RepairPageGoldenTest extends TestCase {
 	public function testEveryStepReadsItsPageAsRecorded(): void {
 		$actual = [];
 		foreach ([MoveBindingDestination::class, MoveActionSummarySentence::class, BackfillNewsPublishedAt::class] as $class) {
-			foreach (['contextRefuses', 'findAllThrows', 'mixedRows', 'notAList', 'nothing'] as $situation) {
+			foreach (['contextRefuses', 'findAllThrows', 'mixedRows', 'junkFirst', 'notAList', 'nothing'] as $situation) {
 				$this->log = [];
 				$step = new $class($this->createMock(ContainerInterface::class), $this->context(situation: $situation), $this->logger());
 				$answer = (new ReflectionMethod($step, 'page'))->invoke($step, $this->objects(situation: $situation), 200);
@@ -124,6 +124,7 @@ class RepairPageGoldenTest extends TestCase {
 					'findAllThrows' => throw new RuntimeException('schema not found'),
 					'notAList' => 'one row',
 					'nothing' => null,
+					'junkFirst' => [7, RepairPageGoldenTest::entity(data: 'scalar'), ['id' => 'c']],
 					default => [
 						['id' => 'a'],
 						RepairPageGoldenTest::entity(data: ['id' => 'b']),
