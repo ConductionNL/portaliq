@@ -2029,6 +2029,8 @@
               "filter": {
                 "subjectRef": "@object.subjectRef"
               },
+              "sortable": true,
+              "filterable": true,
               "sort": {
                 "field": "issuedAt",
                 "dir": "desc"
@@ -2072,6 +2074,8 @@
               "filter": {
                 "subjectRef": "@object.subjectRef"
               },
+              "sortable": true,
+              "filterable": true,
               "sort": {
                 "field": "receivedAt",
                 "dir": "desc"
