@@ -625,6 +625,82 @@
 			}
 		},
 		{
+			"key": "rol-woo-fietspad-gemachtigde",
+			"register": "dossiq",
+			"schema": "role",
+			"lookups": {
+				"roleType": {
+					"schema": "roleType",
+					"where": {
+						"name": "Gemachtigde",
+						"caseType": "3c0f5a00-0000-4000-a000-00000000a001"
+					}
+				},
+				"jvanwijk": {
+					"schema": "brpPerson",
+					"where": {
+						"citizenServiceNumber": "{{cast:jvanwijk.bsn}}"
+					}
+				},
+				"vanwijk": {
+					"schema": "kvkCompany",
+					"where": {
+						"kvkNumber": "{{cast:vanwijk.kvk}}"
+					}
+				}
+			},
+			"data": {
+				"name": "{{cast:jvanwijk.displayName}}",
+				"roleType": "{{lookup:roleType}}",
+				"case": "{{object:woo-fietspad.id}}",
+				"participant": "{{lookup:jvanwijk}}",
+				"representedParty": "{{lookup:vanwijk}}",
+				"description": "Gemachtigde namens {{cast:vanwijk.name}}, Awb 2:1."
+			}
+		},
+		{
+			"key": "rol-woo-fietspad-melder",
+			"register": "dossiq",
+			"schema": "role",
+			"lookups": {
+				"roleType": {
+					"schema": "roleType",
+					"where": {
+						"name": "Melder",
+						"caseType": "3c0f5a00-0000-4000-a000-00000000a001"
+					}
+				},
+				"bewoners": {
+					"schema": "kvkCompany",
+					"where": {
+						"kvkNumber": "{{cast:bewonerslindelaan.kvk}}"
+					}
+				}
+			},
+			"data": {
+				"name": "{{cast:bewonerslindelaan.name}}",
+				"roleType": "{{lookup:roleType}}",
+				"case": "{{object:woo-fietspad.id}}",
+				"participant": "{{lookup:bewoners}}",
+				"description": "Meldde het donkere fietspad aan de balie, zonder account."
+			}
+		},
+		{
+			"key": "woo-fietspad-link-sanne",
+			"register": "dossiq",
+			"schema": "caseShare",
+			"data": {
+				"caseId": "{{object:woo-fietspad.id}}",
+				"shareType": "link",
+				"permissionLevel": "bekijken",
+				"label": "{{cast:sanne.displayName}}",
+				"capabilities": "read",
+				"status": "active",
+				"createdBy": "{{cast:pieter.uid}}",
+				"expiresAt": "{{datetime:29 23:59}}"
+			}
+		},
+		{
 			"key": "vergunning-dakkapel",
 			"register": "dossiq",
 			"schema": "case",
@@ -2545,6 +2621,7 @@
 				"partyUuid": "{{object:rol-woo-fietspad-verzoeker.participant}}",
 				"role": "3c0f5a00-0000-4000-a000-0000000c0001",
 				"validFrom": "{{date:-14}}",
+				"note": "{{cast:sanne.address.street}} {{cast:sanne.address.number}} · ingelogd met DigiD",
 				"primary": true
 			}
 		},
@@ -2554,7 +2631,29 @@
 				"objectUuid": "{{object:woo-fietspad.id}}",
 				"partyUuid": "{{object:rol-woo-fietspad-belanghebbende.participant}}",
 				"role": "3c0f5a00-0000-4000-a000-0000000c0003",
-				"validFrom": "{{date:-11}}"
+				"validFrom": "{{date:-11}}",
+				"note": "KvK {{cast:vanwijk.kvk}} · contactpersoon {{cast:jvanwijk.displayName}}"
+			}
+		},
+		{
+			"key": "partij-jvanwijk-gemachtigde",
+			"data": {
+				"objectUuid": "{{object:woo-fietspad.id}}",
+				"partyUuid": "{{object:rol-woo-fietspad-gemachtigde.participant}}",
+				"role": "3c0f5a00-0000-4000-a000-0000000c0002",
+				"validFrom": null,
+				"validUntil": "{{date:75}}",
+				"note": "Machtiging namens {{cast:vanwijk.name}} · Awb 2:1"
+			}
+		},
+		{
+			"key": "partij-bewonerslindelaan-melder",
+			"data": {
+				"objectUuid": "{{object:woo-fietspad.id}}",
+				"partyUuid": "{{object:rol-woo-fietspad-melder.participant}}",
+				"role": "3c0f5a00-0000-4000-a000-0000000c0005",
+				"validFrom": "{{date:-14}}",
+				"note": "Melder zonder account · via de balie"
 			}
 		},
 		{
@@ -2563,9 +2662,9 @@
 				"objectUuid": "{{object:woo-fietspad.id}}",
 				"partyUuid": "{{object:collega-lars.id}}",
 				"role": "3c0f5a00-0000-4000-a000-0000000c0004",
-				"validFrom": "{{date:-11}}",
+				"validFrom": null,
 				"validUntil": "{{date:14}}",
-				"note": "Advies over de verlichting vanuit Mobiliteit en verkeer"
+				"note": "{{cast:lars.department}} · {{cast:lars.email}}"
 			}
 		}
 	],
