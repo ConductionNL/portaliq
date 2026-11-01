@@ -31,7 +31,6 @@ namespace OCA\Portaliq\Listener;
 use DateTimeImmutable;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\PortalNoticeReader;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -49,12 +48,17 @@ use Throwable;
  */
 class NoticeWriteGuardListener implements IEventListener {
 
+	use SchemaWriteGuard;
+
 	/**
-	 * OpenRegister's schema mapper, resolved lazily.
-	 *
-	 * @var string
+	 * The slug of the schema this guard checks.
 	 */
-	private const SCHEMA_MAPPER = 'OCA\\OpenRegister\\Db\\SchemaMapper';
+	private const GUARDED_SCHEMA = PortalNoticeReader::SCHEMA;
+
+	/**
+	 * How this guard names itself in the log.
+	 */
+	private const GUARD_NAME = 'notice write guard';
 
 
 	/**
@@ -75,27 +79,6 @@ class NoticeWriteGuardListener implements IEventListener {
 
 
 	/**
-	 * Check a notice being created or updated.
-	 *
-	 * @param Event $event The OpenRegister event.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/portal-notices/spec.md#requirement-page-editors-manage-notices-req-omn-003
-	 */
-	public function handle(Event $event): void {
-		if ($event instanceof ObjectCreatingEvent) {
-			$this->check(event: $event, entity: $event->getObject());
-			return;
-		}
-
-		if ($event instanceof ObjectUpdatingEvent) {
-			$this->check(event: $event, entity: $event->getNewObject());
-		}
-	}//end handle()
-
-
-	/**
 	 * Refuse the write when the notice's window is empty or backwards.
 	 *
 	 * @param ObjectCreatingEvent|ObjectUpdatingEvent $event  The pre-write event.
@@ -103,8 +86,8 @@ class NoticeWriteGuardListener implements IEventListener {
 	 *
 	 * @return void
 	 */
-	private function check(ObjectCreatingEvent|ObjectUpdatingEvent $event, object $entity): void {
-		if ($this->isNotice(schema: (string)$entity->getSchema()) === false) {
+	protected function check(ObjectCreatingEvent|ObjectUpdatingEvent $event, object $entity): void {
+		if ($this->guardsSchema(schema: (string)$entity->getSchema()) === false) {
 			return;
 		}
 
@@ -135,23 +118,4 @@ class NoticeWriteGuardListener implements IEventListener {
 			return false;
 		}
 	}//end windowIsValid()
-
-
-	/**
-	 * Whether the object belongs to portaliq's own notice schema.
-	 *
-	 * @param string $schema The object's schema id.
-	 *
-	 * @return bool True for a portal notice.
-	 */
-	private function isNotice(string $schema): bool {
-		try {
-			$notice = $this->container->get(self::SCHEMA_MAPPER)->findByApplicationAndSlug(slug: PortalNoticeReader::SCHEMA, application: Application::APP_ID);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: notice write guard could not read the schema', ['reason' => $e->getMessage()]);
-			return false;
-		}
-
-		return $notice !== null && $schema !== '' && $schema === (string)$notice->getId();
-	}//end isNotice()
 }//end class

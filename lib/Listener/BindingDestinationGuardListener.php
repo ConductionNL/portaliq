@@ -30,7 +30,6 @@ namespace OCA\Portaliq\Listener;
 
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\Intake\DestinationIntake;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCP\EventDispatcher\Event;
@@ -38,7 +37,6 @@ use OCP\EventDispatcher\IEventListener;
 use OCP\IL10N;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Refuses publishing a form binding that its destination would refuse.
@@ -48,15 +46,17 @@ use Throwable;
  * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-form-binding-names-its-destination-and-is-valid-against-it-req-pifo-007
  */
 class BindingDestinationGuardListener implements IEventListener {
-	/**
-	 * OpenRegister's schema mapper, to recognise the binding schema.
-	 */
-	private const SCHEMA_MAPPER = 'OCA\\OpenRegister\\Db\\SchemaMapper';
+	use SchemaWriteGuard;
 
 	/**
-	 * The binding schema's slug.
+	 * The slug of the schema this guard checks.
 	 */
-	private const SCHEMA = 'portalFormBinding';
+	private const GUARDED_SCHEMA = 'portalFormBinding';
+
+	/**
+	 * How this guard names itself in the log.
+	 */
+	private const GUARD_NAME = 'binding guard';
 
 	/**
 	 * Constructor.
@@ -77,26 +77,6 @@ class BindingDestinationGuardListener implements IEventListener {
 	}//end __construct()
 
 	/**
-	 * Check one pre-write event.
-	 *
-	 * @param Event $event The event.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-form-binding-names-its-destination-and-is-valid-against-it-req-pifo-007
-	 */
-	public function handle(Event $event): void {
-		if ($event instanceof ObjectCreatingEvent) {
-			$this->check(event: $event, entity: $event->getObject());
-			return;
-		}
-
-		if ($event instanceof ObjectUpdatingEvent) {
-			$this->check(event: $event, entity: $event->getNewObject());
-		}
-	}//end handle()
-
-	/**
 	 * Refuse the write when a published binding has findings.
 	 *
 	 * @param ObjectCreatingEvent|ObjectUpdatingEvent $event  The pre-write event.
@@ -104,7 +84,7 @@ class BindingDestinationGuardListener implements IEventListener {
 	 *
 	 * @return void
 	 */
-	private function check(ObjectCreatingEvent|ObjectUpdatingEvent $event, object $entity): void {
+	protected function check(ObjectCreatingEvent|ObjectUpdatingEvent $event, object $entity): void {
 		$errors = $this->refusalFor(schema: (string)$entity->getSchema(), binding: (array)($entity->getObject() ?? []));
 		if ($errors === null) {
 			return;
@@ -126,7 +106,7 @@ class BindingDestinationGuardListener implements IEventListener {
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-form-binding-names-its-destination-and-is-valid-against-it-req-pifo-007
 	 */
 	public function refusalFor(string $schema, array $binding): ?array {
-		if ((string)($binding['status'] ?? '') !== 'published' || $this->isBinding(schema: $schema) === false) {
+		if ((string)($binding['status'] ?? '') !== 'published' || $this->guardsSchema(schema: $schema) === false) {
 			return null;
 		}
 
@@ -140,22 +120,4 @@ class BindingDestinationGuardListener implements IEventListener {
 			'findings' => $findings,
 		];
 	}//end refusalFor()
-
-	/**
-	 * Whether an object's schema is portaliq's form binding schema.
-	 *
-	 * @param string $schema The object's schema id.
-	 *
-	 * @return bool
-	 */
-	private function isBinding(string $schema): bool {
-		try {
-			$binding = $this->container->get(self::SCHEMA_MAPPER)->findByApplicationAndSlug(slug: self::SCHEMA, application: Application::APP_ID);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: binding guard could not read the schema', ['reason' => $e->getMessage()]);
-			return false;
-		}
-
-		return $binding !== null && $schema !== '' && $schema === (string)$binding->getId();
-	}//end isBinding()
 }//end class
