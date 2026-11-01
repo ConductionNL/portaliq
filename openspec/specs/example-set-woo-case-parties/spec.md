@@ -7,7 +7,7 @@ The Zuiddrecht example set: the parties of the Lindelaan Woo case, and who else 
 
 ### Requirement: The Lindelaan Woo case carries its parties
 
-The Zuiddrecht fragment SHALL put five parties on `woo-fietspad`, as board DqZaakBetrokkenen draws them. Each is a party link in the Woo case type's role, with the details line and the period the board draws, and every party except the colleague is also a dossiq role record:
+The Zuiddrecht fragment SHALL put five parties on `woo-fietspad`, as board DqZaakBetrokkenen draws them. Each is a party link in the Woo case type's role, with the details line and the period the board draws, and a dossiq role record whose description is the line Rollen draws after the role word (Sanne none, Van Wijk "KvK 00001005", J. van Wijk "namens Aannemersbedrijf Van Wijk B.V. · Awb 2:1", the association "zonder account · via de balie", Lars "Mobiliteit en verkeer"):
 - Lars de Koning as Adviseur, a colleague: "Mobiliteit en verkeer · lars.dekoning@zuiddrecht.example", ending 14 days after the board's day;
 - Sanne de Vries as primary Verzoeker: "Lindelaan 14 · ingelogd met DigiD", from the case's start;
 - Aannemersbedrijf Van Wijk B.V. as Belanghebbende: "KvK 00001005 · contactpersoon J. van Wijk", from 11 days before the board's day;
@@ -21,6 +21,7 @@ The board's day is the case's start plus 14 days. A link that ends shows only it
 - **WHEN** a handler opens the Lindelaan case's people
 - **THEN** Partijen SHALL list the five parties by role, each with its details line and its period ("Tot", "Vanaf")
 - **AND** Rollen SHALL list them with Sanne first as primary, J. van Wijk with his mandate's end date and the residents' association with its indicator
+- **AND** each Rollen row SHALL read its role record's description after the role word, not the Partijen details line
 
 ### Requirement: The Lindelaan Woo case has a read-only link for Sanne
 

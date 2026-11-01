@@ -594,7 +594,7 @@
 				"roleType": "{{lookup:roleType}}",
 				"case": "{{object:woo-fietspad.id}}",
 				"participant": "{{lookup:sanne}}",
-				"description": "Deed het Woo-verzoek via Mijn Zuiddrecht, ingelogd met DigiD."
+				"description": ""
 			}
 		},
 		{
@@ -621,7 +621,7 @@
 				"roleType": "{{lookup:roleType}}",
 				"case": "{{object:woo-fietspad.id}}",
 				"participant": "{{lookup:vanwijk}}",
-				"description": "Aannemer van de verlichting; staat in de offerte en de mail die openbaar kunnen worden."
+				"description": "KvK {{cast:vanwijk.kvk}}"
 			}
 		},
 		{
@@ -655,7 +655,7 @@
 				"case": "{{object:woo-fietspad.id}}",
 				"participant": "{{lookup:jvanwijk}}",
 				"representedParty": "{{lookup:vanwijk}}",
-				"description": "Gemachtigde namens {{cast:vanwijk.name}}, Awb 2:1."
+				"description": "namens {{cast:vanwijk.name}} · Awb 2:1"
 			}
 		},
 		{
@@ -682,7 +682,28 @@
 				"roleType": "{{lookup:roleType}}",
 				"case": "{{object:woo-fietspad.id}}",
 				"participant": "{{lookup:bewoners}}",
-				"description": "Meldde het donkere fietspad aan de balie, zonder account."
+				"description": "zonder account · via de balie"
+			}
+		},
+		{
+			"key": "rol-woo-fietspad-adviseur",
+			"register": "dossiq",
+			"schema": "role",
+			"lookups": {
+				"roleType": {
+					"schema": "roleType",
+					"where": {
+						"name": "Adviseur",
+						"caseType": "3c0f5a00-0000-4000-a000-00000000a001"
+					}
+				}
+			},
+			"data": {
+				"name": "{{cast:lars.displayName}}",
+				"roleType": "{{lookup:roleType}}",
+				"case": "{{object:woo-fietspad.id}}",
+				"participant": "{{object:collega-lars.id}}",
+				"description": "{{cast:lars.department}}"
 			}
 		},
 		{

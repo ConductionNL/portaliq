@@ -95,6 +95,33 @@ class ZuiddrechtWooCasePartiesTest extends TestCase {
 	}//end testEachPartyRowHasTheBoardsDetailsAndPeriod()
 
 	/**
+	 * Rollen prints each party's role line from its role record's description, while Partijen prints the link note:
+	 * "Primaire partij · verzoeker", "Gemachtigde namens Aannemersbedrijf Van Wijk B.V. · Awb 2:1", "Melder zonder
+	 * account · via de balie", "Adviseur · Mobiliteit en verkeer", "Belanghebbende · KvK 00001005". A description in
+	 * lower case continues the role word; Lars has a role record too, so his line has its department.
+	 *
+	 * @return void
+	 */
+	public function testEachRoleRecordCarriesTheRollenLine(): void {
+		$roles = array_column(array_filter($this->set()['objects'], static fn (array $o): bool => $o['schema'] === 'role'), null, 'key');
+
+		$expected = [
+			'rol-woo-fietspad-verzoeker'      => '',
+			'rol-woo-fietspad-belanghebbende' => 'KvK {{cast:vanwijk.kvk}}',
+			'rol-woo-fietspad-gemachtigde'    => 'namens {{cast:vanwijk.name}} · Awb 2:1',
+			'rol-woo-fietspad-melder'         => 'zonder account · via de balie',
+			'rol-woo-fietspad-adviseur'       => '{{cast:lars.department}}',
+		];
+		foreach ($expected as $key => $description) {
+			$this->assertSame(expected: $description, actual: ($roles[$key]['data']['description'] ?? null), message: $key);
+			$this->assertSame(expected: '{{object:woo-fietspad.id}}', actual: $roles[$key]['data']['case'], message: $key);
+		}
+
+		$this->assertSame(expected: '{{object:collega-lars.id}}', actual: $roles['rol-woo-fietspad-adviseur']['data']['participant']);
+		$this->assertSame(expected: 'Adviseur', actual: $roles['rol-woo-fietspad-adviseur']['lookups']['roleType']['where']['name']);
+	}//end testEachRoleRecordCarriesTheRollenLine()
+
+	/**
 	 * The Toegang card lists one read-only link for Sanne de Vries, made by Pieter, that ends 29 days after the
 	 * board's day ("Verloopt 15 nov"): dossiq reads a case's links as its caseShare records of type link.
 	 *
