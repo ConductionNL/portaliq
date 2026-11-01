@@ -187,6 +187,7 @@
     "check:registered-details": "node --test tests/registered-details.spec.mjs",
     "check:branch-choice": "node --test tests/branch-choice.spec.mjs",
     "check:account-page": "node --test tests/account-page.spec.mjs",
+    "check:account-page-one-inset": "node --test tests/account-page-one-inset.spec.mjs",
     "check:signing-dialog": "node --test tests/signing-dialog.spec.mjs",
     "check:case-type-visibility": "node --test tests/case-type-portal-header.spec.mjs tests/case-type-visibility-page.spec.mjs",
     "check:availability-report": "node --test tests/availability-report.spec.mjs",
