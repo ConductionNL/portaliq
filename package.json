@@ -218,6 +218,7 @@
     "check:site-chrome": "node --test tests/site-chrome.spec.mjs",
     "check:site-look": "node --test tests/site-look/*.spec.mjs",
     "check:resident-menu-badges": "node --test tests/resident-menu-badges.spec.mjs",
+    "check:resident-menu-label-leading": "node --test tests/resident-menu-label-leading.spec.mjs",
     "check:example-site": "node --test tests/example-site.spec.mjs",
     "check:example-resident": "node --test tests/example-resident.spec.mjs",
     "check:resident-boards": "node --test tests/zuiddrecht-resident-boards.spec.mjs",
