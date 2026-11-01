@@ -66,6 +66,8 @@ class StaffAuthoringGoldenTest extends TestCase {
 		EventController::class => [
 			'create' => ['title' => 'Sports day', 'start' => '2026-11-10T09:00', 'target' => ['schoolRef' => 's-1'], 'description' => 'd', 'end' => '2026-11-10T12:00', 'rsvpEnabled' => true, 'signupRoles' => [['role' => 'help']]],
 			'create-untargeted' => ['title' => 'Sports day', 'start' => '2026-11-10T09:00', 'target' => ['groupRefs' => []]],
+			'create-blank-school' => ['title' => 'Sports day', 'start' => '2026-11-10T09:00', 'target' => ['schoolRef' => '']],
+			'create-arrayrow' => ['title' => 'array-row', 'start' => '2026-11-10T09:00', 'target' => ['schoolRef' => 's-1']],
 			'create-groups' => ['title' => 'Trip', 'start' => '2026-11-11', 'target' => ['groupRefs' => ['g-1']]],
 			'create-children' => ['title' => 'Trip', 'start' => '2026-11-11', 'target' => ['childRefs' => ['c-1'], 'schoolRef' => '']],
 			'publish' => ['id' => 'e-1'],
@@ -76,6 +78,8 @@ class StaffAuthoringGoldenTest extends TestCase {
 			'create' => ['title' => 'News', 'body' => 'b', 'target' => ['schoolRef' => 's-1'], 'photoRefs' => ['p-1'], 'public' => true, 'portal' => 'p', 'audienceLabel' => 'All', 'eventRef' => 'e-1'],
 			'create-untargeted' => ['title' => 'News', 'body' => 'b', 'target' => []],
 			'create-children' => ['title' => 'News', 'body' => 'b', 'target' => ['childRefs' => ['c-1']]],
+			'create-blank-school' => ['title' => 'News', 'body' => 'b', 'target' => ['schoolRef' => '']],
+			'create-arrayrow' => ['title' => 'array-row', 'body' => 'b', 'target' => ['groupRefs' => ['g-1']]],
 			'update' => ['id' => 'n-1', 'title' => 'News 2', 'body' => 'b2', 'target' => ['groupRefs' => ['g-1']], 'public' => false, 'eventRef' => ''],
 			'update-missing' => ['id' => 'missing', 'title' => 'News 2', 'body' => 'b2', 'target' => ['groupRefs' => ['g-1']]],
 			'audiences' => [],
@@ -86,6 +90,7 @@ class StaffAuthoringGoldenTest extends TestCase {
 		NewsletterController::class => [
 			'create' => ['title' => 'Letter', 'itemRefs' => ['n-1'], 'target' => ['schoolRef' => 's-1']],
 			'create-empty' => ['title' => '', 'itemRefs' => [], 'target' => []],
+			'create-arrayrow' => ['title' => 'array-row', 'itemRefs' => ['n-1'], 'target' => ['schoolRef' => 's-1']],
 			'preflight' => ['id' => 'l-1'],
 			'preflight-missing' => ['id' => 'missing'],
 			'send' => ['id' => 'l-1'],
@@ -225,6 +230,10 @@ class StaffAuthoringGoldenTest extends TestCase {
 
 				if (in_array($name, ['findAll', 'searchObjects'], true) === true) {
 					return [];
+				}
+
+				if (str_contains((string)json_encode($args), 'array-row') === true) {
+					return ['id' => 'x-2', 'called' => $name, 'shape' => 'array'];
 				}
 
 				return new class (['id' => 'x-1', 'called' => $name, 'args' => $args]) implements \JsonSerializable {
