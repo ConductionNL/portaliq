@@ -39,6 +39,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 
 /**
@@ -107,15 +108,9 @@ class PortalAccountAdminController extends Controller {
 		bool $verifiedEmail = false,
 		string $displayName = '',
 	): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		try {
-			$this->actionAuth->requireAction(user: $user, action: self::ACTION_PROVISION);
-		} catch (OCSForbiddenException $exception) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		$user = $this->provisioningClerk();
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		$account = $this->accounts->provision(
@@ -147,15 +142,9 @@ class PortalAccountAdminController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function void(string $subjectRef, string $reason = ''): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		try {
-			$this->actionAuth->requireAction(user: $user, action: self::ACTION_PROVISION);
-		} catch (OCSForbiddenException $exception) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		$user = $this->provisioningClerk();
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		if ($reason === '') {
@@ -185,15 +174,9 @@ class PortalAccountAdminController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function invite(string $email, string $organisation, string $audience = 'client'): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		try {
-			$this->actionAuth->requireAction(user: $user, action: self::ACTION_PROVISION);
-		} catch (OCSForbiddenException $exception) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		$user = $this->provisioningClerk();
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		$invited = $this->invitations->invite(
@@ -235,15 +218,9 @@ class PortalAccountAdminController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function invitations(string $organisation = ''): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		try {
-			$this->actionAuth->requireAction(user: $user, action: self::ACTION_PROVISION);
-		} catch (OCSForbiddenException $exception) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		$user = $this->provisioningClerk();
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		// The sender sees their own invitations, never another clerk's: the
@@ -263,15 +240,9 @@ class PortalAccountAdminController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function revokeInvitation(string $id, string $organisation = ''): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		try {
-			$this->actionAuth->requireAction(user: $user, action: self::ACTION_PROVISION);
-		} catch (OCSForbiddenException $exception) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		$user = $this->provisioningClerk();
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		$outcome = $this->invitations->revoke(id: $id, organisation: $organisation);
@@ -295,15 +266,9 @@ class PortalAccountAdminController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function resendInvitation(string $id, string $organisation = ''): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		try {
-			$this->actionAuth->requireAction(user: $user, action: self::ACTION_PROVISION);
-		} catch (OCSForbiddenException $exception) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		$user = $this->provisioningClerk();
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		$resent = $this->invitations->resend(id: $id, organisation: $organisation);
@@ -337,15 +302,9 @@ class PortalAccountAdminController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function approve(string $subjectRef): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		try {
-			$this->actionAuth->requireAction(user: $user, action: self::ACTION_PROVISION);
-		} catch (OCSForbiddenException $exception) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		$user = $this->provisioningClerk();
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		if ($this->accounts->approvePending(subjectRef: $subjectRef) === false) {
@@ -367,15 +326,9 @@ class PortalAccountAdminController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function refuse(string $subjectRef, string $reason = ''): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		try {
-			$this->actionAuth->requireAction(user: $user, action: self::ACTION_PROVISION);
-		} catch (OCSForbiddenException $exception) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		$user = $this->provisioningClerk();
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		if ($reason === '') {
@@ -402,15 +355,9 @@ class PortalAccountAdminController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function signInAddress(string $subjectRef, string $address = ''): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		try {
-			$this->actionAuth->requireAction(user: $user, action: self::ACTION_PROVISION);
-		} catch (OCSForbiddenException $exception) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		$user = $this->provisioningClerk();
+		if ($user instanceof JSONResponse) {
+			return $user;
 		}
 
 		$account = $this->accounts->findBySubjectRef(subjectRef: $subjectRef);
@@ -429,4 +376,25 @@ class PortalAccountAdminController extends Controller {
 
 		return new JSONResponse(['signInAddress' => strtolower(trim($address))]);
 	}//end signInAddress()
+
+	/**
+	 * The signed-in user, once the provision action is confirmed for them.
+	 *
+	 * @return IUser|JSONResponse The user, or 401 without a session and 403
+	 *                            without the action.
+	 */
+	private function provisioningClerk(): IUser|JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		try {
+			$this->actionAuth->requireAction(user: $user, action: self::ACTION_PROVISION);
+		} catch (OCSForbiddenException $exception) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		return $user;
+	}//end provisioningClerk()
 }//end class
