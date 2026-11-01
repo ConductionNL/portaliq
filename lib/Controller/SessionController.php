@@ -45,6 +45,7 @@ use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\RequestedPortal;
 use OCA\Portaliq\Service\Signin\OrganisationLoginConfig;
 use OCA\Portaliq\Service\Signin\SiteReturnAddress;
 use OCP\AppFramework\Controller;
@@ -214,7 +215,7 @@ class SessionController extends Controller {
 	 * @spec openspec/changes/portal-signin-on-its-own-address/tasks.md#T3
 	 */
 	private function siteFor(string $portal): ?array {
-		if ($portal === '') {
+		if (((new RequestedPortal())->slug(request: $this->request) ?? $portal) === '') {
 			return null;
 		}
 
@@ -937,7 +938,8 @@ class SessionController extends Controller {
 	}//end currentNextcloudUid()
 
 	/**
-	 * Resolve the portal being signed in to, by slug or by host.
+	 * Resolve the portal being signed in to, by slug or by host. The site's
+	 * X-Portaliq-Portal header names it first, as for every other portal read.
 	 *
 	 * @param string $slug The requested slug, or ''.
 	 *
@@ -946,7 +948,7 @@ class SessionController extends Controller {
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
 	 */
 	private function portalFor(string $slug): ?array {
-		return $this->portals->resolve(request: $this->request, portalSlug: $slug);
+		return $this->portals->resolve(request: $this->request, portalSlug: (new RequestedPortal())->slug(request: $this->request) ?? $slug);
 	}//end portalFor()
 
 	/**
