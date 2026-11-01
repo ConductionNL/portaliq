@@ -40,6 +40,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Portaliq\Controller\PublicContentGate
  * @uses   \OCA\Portaliq\Service\PortalSessionService
  * @uses   \OCA\Portaliq\Service\PublicCatalogueQuery
+ * @uses   \OCA\Portaliq\Service\DerivedCatalogueFacets
  */
 class ContentNewsCatalogueGoldenTest extends TestCase {
 
