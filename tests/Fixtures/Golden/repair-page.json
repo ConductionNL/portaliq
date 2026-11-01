@@ -1,0 +1,287 @@
+{
+    "MoveBindingDestination": {
+        "contextRefuses": {
+            "answer": [],
+            "log": [
+                {
+                    "apply": "portalFormBinding"
+                }
+            ]
+        },
+        "findAllThrows": {
+            "answer": [],
+            "log": [
+                {
+                    "apply": "portalFormBinding"
+                },
+                {
+                    "findAll": {
+                        "config": {
+                            "limit": 100,
+                            "offset": 200
+                        },
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                },
+                {
+                    "info": "Portaliq: no form bindings to repair",
+                    "context": {
+                        "reason": "schema not found"
+                    }
+                }
+            ]
+        },
+        "mixedRows": {
+            "answer": [
+                {
+                    "id": "a"
+                },
+                {
+                    "id": "b"
+                }
+            ],
+            "log": [
+                {
+                    "apply": "portalFormBinding"
+                },
+                {
+                    "findAll": {
+                        "config": {
+                            "limit": 100,
+                            "offset": 200
+                        },
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                }
+            ]
+        },
+        "notAList": {
+            "answer": [],
+            "log": [
+                {
+                    "apply": "portalFormBinding"
+                },
+                {
+                    "findAll": {
+                        "config": {
+                            "limit": 100,
+                            "offset": 200
+                        },
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                }
+            ]
+        },
+        "nothing": {
+            "answer": [],
+            "log": [
+                {
+                    "apply": "portalFormBinding"
+                },
+                {
+                    "findAll": {
+                        "config": {
+                            "limit": 100,
+                            "offset": 200
+                        },
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                }
+            ]
+        }
+    },
+    "MoveActionSummarySentence": {
+        "contextRefuses": {
+            "answer": [],
+            "log": [
+                {
+                    "apply": "portalPage"
+                }
+            ]
+        },
+        "findAllThrows": {
+            "answer": [],
+            "log": [
+                {
+                    "apply": "portalPage"
+                },
+                {
+                    "findAll": {
+                        "config": {
+                            "limit": 100,
+                            "offset": 200
+                        },
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                },
+                {
+                    "info": "Portaliq: no portal pages to repair",
+                    "context": {
+                        "reason": "schema not found"
+                    }
+                }
+            ]
+        },
+        "mixedRows": {
+            "answer": [
+                {
+                    "id": "a"
+                },
+                {
+                    "id": "b"
+                }
+            ],
+            "log": [
+                {
+                    "apply": "portalPage"
+                },
+                {
+                    "findAll": {
+                        "config": {
+                            "limit": 100,
+                            "offset": 200
+                        },
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                }
+            ]
+        },
+        "notAList": {
+            "answer": [],
+            "log": [
+                {
+                    "apply": "portalPage"
+                },
+                {
+                    "findAll": {
+                        "config": {
+                            "limit": 100,
+                            "offset": 200
+                        },
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                }
+            ]
+        },
+        "nothing": {
+            "answer": [],
+            "log": [
+                {
+                    "apply": "portalPage"
+                },
+                {
+                    "findAll": {
+                        "config": {
+                            "limit": 100,
+                            "offset": 200
+                        },
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                }
+            ]
+        }
+    },
+    "BackfillNewsPublishedAt": {
+        "contextRefuses": {
+            "answer": [],
+            "log": [
+                {
+                    "apply": "newsItem"
+                }
+            ]
+        },
+        "findAllThrows": {
+            "answer": [],
+            "log": [
+                {
+                    "apply": "newsItem"
+                },
+                {
+                    "findAll": {
+                        "config": {
+                            "limit": 100,
+                            "offset": 200
+                        },
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                },
+                {
+                    "info": "Portaliq: no news items to stamp",
+                    "context": {
+                        "reason": "schema not found"
+                    }
+                }
+            ]
+        },
+        "mixedRows": {
+            "answer": [
+                {
+                    "id": "a"
+                },
+                {
+                    "id": "b"
+                }
+            ],
+            "log": [
+                {
+                    "apply": "newsItem"
+                },
+                {
+                    "findAll": {
+                        "config": {
+                            "limit": 100,
+                            "offset": 200
+                        },
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                }
+            ]
+        },
+        "notAList": {
+            "answer": [],
+            "log": [
+                {
+                    "apply": "newsItem"
+                },
+                {
+                    "findAll": {
+                        "config": {
+                            "limit": 100,
+                            "offset": 200
+                        },
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                }
+            ]
+        },
+        "nothing": {
+            "answer": [],
+            "log": [
+                {
+                    "apply": "newsItem"
+                },
+                {
+                    "findAll": {
+                        "config": {
+                            "limit": 100,
+                            "offset": 200
+                        },
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                }
+            ]
+        }
+    }
+}
