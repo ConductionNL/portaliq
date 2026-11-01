@@ -1,6 +1,6 @@
 {
 	"set": "zuiddrecht",
-	"$comment": "The portal boards' own records (lane PT-DATA2): the page \"Werk in uitvoering\" that the Editor and EditorMenu boards edit (a text block over the full width, a map in columns 1 to 7, the selected text block in columns 8 to 12); the 14 notices of PtMededelingenActies, of which none shows today, so no Mijn board gets a banner the boards do not draw (the drawn \"now visible\" DigiD warning runs yesterday instead); the 24 invitations of PtUitnodigingen (one of the six open ones is Sanne's own invitation to Tom Visser on the Machtigingen board) and the 8 drawn requests of PtToegangsverzoeken, sent and decided by Pieter Jansen, Anouk Bakker and Lars de Koning; Sanne's two other open tasks of MijnTaken, so the menu count reads 3 and her Woo case has an open task in its current step; and the resident menu groups every Mijn board draws (Thema's with Parkeren, Samenwerken). Every date is a day count from the install day; the admin boards were drawn on Wednesday 7 October, the Mijn boards on Thursday 8 October.",
+	"$comment": "The portal boards' own records (lane PT-DATA2): the page \"Werk in uitvoering\" that the Editor and EditorMenu boards edit (a text block over the full width, a map in columns 1 to 7, the selected text block in columns 8 to 12); the 14 notices of PtMededelingenActies, of which none shows today, so no Mijn board gets a banner the boards do not draw (the drawn \"now visible\" DigiD warning runs yesterday instead); the 24 invitations of PtUitnodigingen (one of the six open ones is Sanne's own invitation to Tom Visser on the Machtigingen board) and the 8 drawn requests of PtToegangsverzoeken, sent and decided by Pieter Jansen, Anouk Bakker and Lars de Koning; Sanne's two other open tasks of MijnTaken, so the menu count reads 3 (the third sits on her dakkapel case: the Woo case 710d44a4 keeps the staff tasks DqZaakTaken draws, so the Zaak board's task in the current step is not built here); and the resident menu groups every Mijn board draws (Thema's with Parkeren, Samenwerken). Every date is a day count from the install day; the admin boards were drawn on Wednesday 7 October, the Mijn boards on Thursday 8 October.",
 	"objects": [
 		{
 			"key": "pagina-werk-in-uitvoering",
@@ -854,11 +854,11 @@
 			}
 		},
 		{
-			"key": "woo-fietspad-besluit-per-post",
+			"key": "dakkapel-besluit-per-post",
 			"data": {
 				"title": "Kies of u het besluit per post wilt ontvangen",
-				"description": "Wij sturen het besluit op uw Woo-verzoek naar Mijn Zuiddrecht. Wilt u het ook per post?",
-				"objectUuid": "{{object:woo-fietspad.id}}",
+				"description": "Wij sturen het besluit op uw aanvraag naar Mijn Zuiddrecht. Wilt u het ook per post?",
+				"objectUuid": "{{object:vergunning-dakkapel.id}}",
 				"state": "active",
 				"performerType": "external",
 				"assignee": "party:{{cast:sanne.uid}}",

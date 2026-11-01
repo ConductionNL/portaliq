@@ -647,7 +647,7 @@ test('PtToegangsverzoeken: the eight drawn requests, three open, decided by Piet
 	}
 })
 
-test('MijnTaken: Sanne has three open tasks, one on her Woo case, so the menu counts 3 and the case has a task in its current step', () => {
+test('MijnTaken: Sanne has three open tasks, none on the Woo case DqZaakTaken measures, so the menu counts 3', () => {
 	const open = zuiddrechtSet().tasks.filter(
 		(task) => task.data.assignee === `party:${SANNE}` && task.data.state === 'active' && task.data.performerType === 'external',
 	)
@@ -656,9 +656,14 @@ test('MijnTaken: Sanne has three open tasks, one on her Woo case, so the menu co
 		[
 			['Stuur een kopie van uw ID-bewijs', '{{object:parkeervergunning-sanne.id}}', 10],
 			['Lees en onderteken de verklaring bij uw bewonersvergunning', '{{object:parkeervergunning-sanne.id}}', 12],
-			['Kies of u het besluit per post wilt ontvangen', '{{object:woo-fietspad.id}}', 3],
+			['Kies of u het besluit per post wilt ontvangen', '{{object:vergunning-dakkapel.id}}', 3],
 		],
 		'Voor 18 oktober, Voor 20 oktober, Nog 3 dagen',
+	)
+	assert.deepEqual(
+		zuiddrechtSet().tasks.filter((task) => task.data.objectUuid === '{{object:woo-fietspad.id}}' && task.data.state === 'active').map((task) => task.key),
+		['woo-fietspad-taak-beoordelen'],
+		'DqZaakTaken: the Woo case keeps one open task',
 	)
 })
 
