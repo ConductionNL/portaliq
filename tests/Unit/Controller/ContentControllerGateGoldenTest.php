@@ -89,6 +89,7 @@ class ContentControllerGateGoldenTest extends TestCase {
 					'glossary' => $this->answer(response: fn (): JSONResponse => $make()->glossary(portal: 'asked')),
 					'faq' => $this->answer(response: fn (): JSONResponse => $make()->faq(portal: 'asked')),
 					'finder' => $this->answer(response: fn (): JSONResponse => $make()->finder(portal: 'asked', finder: 'f')),
+					'contributions' => $this->answer(response: fn (): JSONResponse => $make()->contributions(portal: 'asked')),
 				];
 			}
 		}
@@ -143,6 +144,18 @@ class ContentControllerGateGoldenTest extends TestCase {
 		$reader->method('menus')->willReturn([['id' => 'm']]);
 		$reader->method('pages')->willReturn([['id' => 'p']]);
 		$reader->method('page')->willReturn(['route' => '/over']);
+		$registry = $this->createMock(PortalContributionRegistry::class);
+		$registry->method('aggregateAnonymous')->willReturnCallback(function (): array {
+			$this->log[] = 'aggregateAnonymous';
+
+			return ['contributions' => [['id' => 'c-1']]];
+		});
+		$filter = $this->createMock(PortalContributionFilter::class);
+		$filter->method('forPortal')->willReturnCallback(function (array $contributions, string $portalSlug): array {
+			$this->log[] = ['forPortal' => $portalSlug];
+
+			return $contributions;
+		});
 		$users = $this->createMock(IUserSession::class);
 		$users->method('getUser')->willReturn($editor ? $this->createMock(IUser::class) : null);
 
@@ -151,8 +164,8 @@ class ContentControllerGateGoldenTest extends TestCase {
 			$request,
 			$resolver,
 			$reader,
-			$this->createMock(PortalContributionRegistry::class),
-			$this->createMock(PortalContributionFilter::class),
+			$registry,
+			$filter,
 			$this->createMock(LoggerInterface::class),
 			$session,
 			$this->createMock(TrafficConfigResolver::class),

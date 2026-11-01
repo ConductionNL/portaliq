@@ -48,6 +48,14 @@
                 },
                 "cache": "private, no-store",
                 "log": []
+            },
+            "contributions": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
             }
         },
         "bearer": {
@@ -98,6 +106,14 @@
                 },
                 "cache": "private, no-store",
                 "log": []
+            },
+            "contributions": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
             }
         },
         "editor": {
@@ -142,6 +158,14 @@
                 "log": []
             },
             "finder": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "contributions": {
                 "status": 404,
                 "data": {
                     "error": "not_found"
@@ -208,6 +232,23 @@
                 },
                 "cache": "private, no-store",
                 "log": []
+            },
+            "contributions": {
+                "status": 200,
+                "data": {
+                    "contributions": [
+                        {
+                            "id": "c-1"
+                        }
+                    ]
+                },
+                "cache": "public, max-age=300, must-revalidate",
+                "log": [
+                    "aggregateAnonymous",
+                    {
+                        "forPortal": "p-open"
+                    }
+                ]
             }
         },
         "bearer": {
@@ -266,6 +307,23 @@
                 },
                 "cache": "private, no-store",
                 "log": []
+            },
+            "contributions": {
+                "status": 200,
+                "data": {
+                    "contributions": [
+                        {
+                            "id": "c-1"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": [
+                    "aggregateAnonymous",
+                    {
+                        "forPortal": "p-open"
+                    }
+                ]
             }
         },
         "editor": {
@@ -324,6 +382,23 @@
                 },
                 "cache": "private, no-store",
                 "log": []
+            },
+            "contributions": {
+                "status": 200,
+                "data": {
+                    "contributions": [
+                        {
+                            "id": "c-1"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": [
+                    "aggregateAnonymous",
+                    {
+                        "forPortal": "p-open"
+                    }
+                ]
             }
         }
     },
@@ -384,6 +459,23 @@
                 },
                 "cache": "private, no-store",
                 "log": []
+            },
+            "contributions": {
+                "status": 200,
+                "data": {
+                    "contributions": [
+                        {
+                            "id": "c-1"
+                        }
+                    ]
+                },
+                "cache": "public, max-age=300, must-revalidate",
+                "log": [
+                    "aggregateAnonymous",
+                    {
+                        "forPortal": "p-pub"
+                    }
+                ]
             }
         },
         "bearer": {
@@ -442,6 +534,23 @@
                 },
                 "cache": "private, no-store",
                 "log": []
+            },
+            "contributions": {
+                "status": 200,
+                "data": {
+                    "contributions": [
+                        {
+                            "id": "c-1"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": [
+                    "aggregateAnonymous",
+                    {
+                        "forPortal": "p-pub"
+                    }
+                ]
             }
         },
         "editor": {
@@ -500,6 +609,23 @@
                 },
                 "cache": "private, no-store",
                 "log": []
+            },
+            "contributions": {
+                "status": 200,
+                "data": {
+                    "contributions": [
+                        {
+                            "id": "c-1"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": [
+                    "aggregateAnonymous",
+                    {
+                        "forPortal": "p-pub"
+                    }
+                ]
             }
         }
     },
@@ -606,6 +732,23 @@
                         "resolveFromBearer": ""
                     }
                 ]
+            },
+            "contributions": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
             }
         },
         "bearer": {
@@ -710,6 +853,23 @@
                         "resolveFromBearer": "Bearer t-1"
                     }
                 ]
+            },
+            "contributions": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
             }
         },
         "editor": {
@@ -799,6 +959,23 @@
                 ]
             },
             "finder": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "contributions": {
                 "status": 401,
                 "data": {
                     "error": "authentication_required",
@@ -920,6 +1097,23 @@
                         "resolveFromBearer": ""
                     }
                 ]
+            },
+            "contributions": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
             }
         },
         "bearer": {
@@ -1024,6 +1218,23 @@
                         "resolveFromBearer": "Bearer t-1"
                     }
                 ]
+            },
+            "contributions": {
+                "status": 403,
+                "data": {
+                    "error": "insufficient_trust",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
             }
         },
         "editor": {
@@ -1113,6 +1324,23 @@
                 ]
             },
             "finder": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "contributions": {
                 "status": 401,
                 "data": {
                     "error": "authentication_required",
@@ -1234,6 +1462,23 @@
                         "resolveFromBearer": ""
                     }
                 ]
+            },
+            "contributions": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
             }
         },
         "bearer": {
@@ -1314,6 +1559,26 @@
                 "log": [
                     {
                         "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "contributions": {
+                "status": 200,
+                "data": {
+                    "contributions": [
+                        {
+                            "id": "c-1"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    },
+                    "aggregateAnonymous",
+                    {
+                        "forPortal": "p-in"
                     }
                 ]
             }
@@ -1405,6 +1670,23 @@
                 ]
             },
             "finder": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "contributions": {
                 "status": 401,
                 "data": {
                     "error": "authentication_required",
@@ -1526,6 +1808,23 @@
                         "resolveFromBearer": ""
                     }
                 ]
+            },
+            "contributions": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "eherkenning"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
             }
         },
         "bearer": {
@@ -1606,6 +1905,26 @@
                 "log": [
                     {
                         "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "contributions": {
+                "status": 200,
+                "data": {
+                    "contributions": [
+                        {
+                            "id": "c-1"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    },
+                    "aggregateAnonymous",
+                    {
+                        "forPortal": "p-in"
                     }
                 ]
             }
@@ -1697,6 +2016,23 @@
                 ]
             },
             "finder": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "eherkenning"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "contributions": {
                 "status": 401,
                 "data": {
                     "error": "authentication_required",
