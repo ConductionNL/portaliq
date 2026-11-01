@@ -1,0 +1,3213 @@
+{
+    "org-portal": {
+        "send": {
+            "answer": true,
+            "log": [
+                {
+                    "mailer.validateMailAddress": {
+                        "email": "a@example.org"
+                    }
+                },
+                {
+                    "resolveByOrganisation": "org-portal"
+                },
+                {
+                    "deepLinks.forSite": {
+                        "portalSlug": "p",
+                        "organisation": "org-portal"
+                    }
+                },
+                {
+                    "l10nFactory.get": {
+                        "app": "portaliq",
+                        "lang": "de",
+                        "locale": null
+                    }
+                },
+                {
+                    "mailer.createEMailTemplate": {
+                        "emailId": "portaliq.identity.invitation",
+                        "data": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "You are invited to the portal of %1$s",
+                        "parameters": [
+                            "Portal title"
+                        ]
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Accept the invitation to create your account at %1$s.",
+                        "parameters": [
+                            "Portal title"
+                        ]
+                    }
+                },
+                {
+                    "template.setSubject": {
+                        "subject": "You are invited to the portal of %1$s [\"Portal title\"]"
+                    }
+                },
+                {
+                    "template.addHeader": []
+                },
+                {
+                    "l10n.t": {
+                        "text": "You are invited",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addHeading": {
+                        "title": "You are invited []",
+                        "plainTitle": ""
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Accept the invitation to create your account at %1$s. [\"Portal title\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Accept the invitation",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addBodyButton": {
+                        "text": "Accept the invitation []",
+                        "url": "https://site/p/org-portal#invitation=s-1",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "The link works once and for a limited time.",
+                        "parameters": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Did you not ask for this? Then you can ignore this mail.",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "The link works once and for a limited time. [] Did you not ask for this? Then you can ignore this mail. []",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "template.addFooter": {
+                        "text": "",
+                        "lang": null
+                    }
+                },
+                {
+                    "mailer.createMessage": []
+                },
+                {
+                    "message.setTo": {
+                        "recipients": [
+                            "a@example.org"
+                        ]
+                    }
+                },
+                {
+                    "message.useTemplate": {
+                        "emailTemplate": "double"
+                    }
+                },
+                {
+                    "mailer.send": {
+                        "message": "double"
+                    }
+                }
+            ]
+        },
+        "sendWithPortal": {
+            "answer": true,
+            "log": [
+                {
+                    "mailer.validateMailAddress": {
+                        "email": "a@example.org"
+                    }
+                },
+                {
+                    "organisations.resolve": [
+                        "org-portal",
+                        "nl"
+                    ]
+                },
+                {
+                    "deepLinks.forSite": {
+                        "portalSlug": "given",
+                        "organisation": "org-portal"
+                    }
+                },
+                {
+                    "l10nFactory.get": {
+                        "app": "portaliq",
+                        "lang": "fr",
+                        "locale": null
+                    }
+                },
+                {
+                    "mailer.createEMailTemplate": {
+                        "emailId": "portaliq.identity.email-link",
+                        "data": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your sign-in link for %1$s",
+                        "parameters": [
+                            "Gemeente X"
+                        ]
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "You asked for a link to sign in to %1$s. The link works for 15 minutes.",
+                        "parameters": [
+                            "Gemeente X"
+                        ]
+                    }
+                },
+                {
+                    "template.setSubject": {
+                        "subject": "Your sign-in link for %1$s [\"Gemeente X\"]"
+                    }
+                },
+                {
+                    "template.addHeader": []
+                },
+                {
+                    "l10n.t": {
+                        "text": "Sign in",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addHeading": {
+                        "title": "Sign in []",
+                        "plainTitle": ""
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "You asked for a link to sign in to %1$s. The link works for 15 minutes. [\"Gemeente X\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Sign in",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addBodyButton": {
+                        "text": "Sign in []",
+                        "url": "https://site/given/org-portal#email-link=s-2",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "The link works once and for a limited time.",
+                        "parameters": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Did you not ask for this? Then you can ignore this mail.",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "The link works once and for a limited time. [] Did you not ask for this? Then you can ignore this mail. []",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "template.addFooter": {
+                        "text": "",
+                        "lang": null
+                    }
+                },
+                {
+                    "mailer.createMessage": []
+                },
+                {
+                    "message.setTo": {
+                        "recipients": [
+                            "a@example.org"
+                        ]
+                    }
+                },
+                {
+                    "message.useTemplate": {
+                        "emailTemplate": "double"
+                    }
+                },
+                {
+                    "mailer.send": {
+                        "message": "double"
+                    }
+                }
+            ]
+        },
+        "claimNotice": {
+            "answer": true,
+            "log": [
+                {
+                    "mailer.validateMailAddress": {
+                        "email": "a@example.org"
+                    }
+                },
+                {
+                    "resolveByOrganisation": "org-portal"
+                },
+                {
+                    "l10nFactory.get": {
+                        "app": "portaliq",
+                        "lang": "de",
+                        "locale": null
+                    }
+                },
+                {
+                    "l10n.l": {
+                        "type": "date",
+                        "data": "DateTimeImmutable",
+                        "options": {
+                            "width": "long"
+                        }
+                    }
+                },
+                {
+                    "mailer.createEMailTemplate": {
+                        "emailId": "portaliq.identity.invitation-accepted",
+                        "data": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your invitation to %1$s was accepted",
+                        "parameters": [
+                            "Portal title"
+                        ]
+                    }
+                },
+                {
+                    "template.setSubject": {
+                        "subject": "Your invitation to %1$s was accepted [\"Portal title\"]"
+                    }
+                },
+                {
+                    "template.addHeader": []
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your invitation was accepted",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addHeading": {
+                        "title": "Your invitation was accepted []",
+                        "plainTitle": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your invitation to the portal of %1$s was accepted on %2$s.",
+                        "parameters": [
+                            "Portal title",
+                            "date:2026-11-02"
+                        ]
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Your invitation to the portal of %1$s was accepted on %2$s. [\"Portal title\",\"date:2026-11-02\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Was this not you? Then contact %1$s.",
+                        "parameters": [
+                            "Portal title"
+                        ]
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Was this not you? Then contact %1$s. [\"Portal title\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "template.addFooter": {
+                        "text": "",
+                        "lang": null
+                    }
+                },
+                {
+                    "mailer.createMessage": []
+                },
+                {
+                    "message.setTo": {
+                        "recipients": [
+                            "a@example.org"
+                        ]
+                    }
+                },
+                {
+                    "message.useTemplate": {
+                        "emailTemplate": "double"
+                    }
+                },
+                {
+                    "mailer.send": {
+                        "message": "double"
+                    }
+                }
+            ]
+        },
+        "signedInNotice": {
+            "answer": true,
+            "log": [
+                {
+                    "mailer.validateMailAddress": {
+                        "email": "a@example.org"
+                    }
+                },
+                {
+                    "resolveByOrganisation": "org-portal"
+                },
+                {
+                    "l10nFactory.get": {
+                        "app": "portaliq",
+                        "lang": "de",
+                        "locale": null
+                    }
+                },
+                {
+                    "l10n.l": {
+                        "type": "datetime",
+                        "data": "DateTimeImmutable",
+                        "options": {
+                            "width": "long"
+                        }
+                    }
+                },
+                {
+                    "mailer.createEMailTemplate": {
+                        "emailId": "portaliq.identity.email-link-signed-in",
+                        "data": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "You signed in to %1$s",
+                        "parameters": [
+                            "Portal title"
+                        ]
+                    }
+                },
+                {
+                    "template.setSubject": {
+                        "subject": "You signed in to %1$s [\"Portal title\"]"
+                    }
+                },
+                {
+                    "template.addHeader": []
+                },
+                {
+                    "l10n.t": {
+                        "text": "You signed in",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addHeading": {
+                        "title": "You signed in []",
+                        "plainTitle": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your account at %1$s was signed in to with an e-mail link on %2$s.",
+                        "parameters": [
+                            "Portal title",
+                            "datetime:2026-11-02"
+                        ]
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Your account at %1$s was signed in to with an e-mail link on %2$s. [\"Portal title\",\"datetime:2026-11-02\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Was this not you? Then contact %1$s.",
+                        "parameters": [
+                            "Portal title"
+                        ]
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Was this not you? Then contact %1$s. [\"Portal title\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "template.addFooter": {
+                        "text": "",
+                        "lang": null
+                    }
+                },
+                {
+                    "mailer.createMessage": []
+                },
+                {
+                    "message.setTo": {
+                        "recipients": [
+                            "a@example.org"
+                        ]
+                    }
+                },
+                {
+                    "message.useTemplate": {
+                        "emailTemplate": "double"
+                    }
+                },
+                {
+                    "mailer.send": {
+                        "message": "double"
+                    }
+                }
+            ]
+        },
+        "contactConfirmation": {
+            "answer": true,
+            "log": [
+                {
+                    "mailer.validateMailAddress": {
+                        "email": "b@example.org"
+                    }
+                },
+                {
+                    "resolveByOrganisation": "org-portal"
+                },
+                {
+                    "deepLinks.forSite": {
+                        "portalSlug": "p",
+                        "organisation": "org-portal"
+                    }
+                },
+                {
+                    "l10nFactory.get": {
+                        "app": "portaliq",
+                        "lang": "de",
+                        "locale": null
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "We have received your question",
+                        "parameters": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your question has reached %1$s. You find it back under My questions.",
+                        "parameters": [
+                            "Portal title"
+                        ]
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your question about %1$s has reached %2$s. You find it back under My questions.",
+                        "parameters": [
+                            "Parking",
+                            "Portal title"
+                        ]
+                    }
+                },
+                {
+                    "mailer.createEMailTemplate": {
+                        "emailId": "portaliq.contact.confirmation",
+                        "data": []
+                    }
+                },
+                {
+                    "template.setSubject": {
+                        "subject": "We have received your question []"
+                    }
+                },
+                {
+                    "template.addHeader": []
+                },
+                {
+                    "l10n.t": {
+                        "text": "We have received your question",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addHeading": {
+                        "title": "We have received your question []",
+                        "plainTitle": ""
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Your question about %1$s has reached %2$s. You find it back under My questions. [\"Parking\",\"Portal title\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Open My questions",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addBodyButton": {
+                        "text": "Open My questions []",
+                        "url": "https://site/p/org-portal",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "template.addFooter": {
+                        "text": "",
+                        "lang": null
+                    }
+                },
+                {
+                    "mailer.createMessage": []
+                },
+                {
+                    "message.setTo": {
+                        "recipients": [
+                            "b@example.org"
+                        ]
+                    }
+                },
+                {
+                    "message.useTemplate": {
+                        "emailTemplate": "double"
+                    }
+                },
+                {
+                    "mailer.send": {
+                        "message": "double"
+                    }
+                }
+            ]
+        }
+    },
+    "org-untitled": {
+        "send": {
+            "answer": true,
+            "log": [
+                {
+                    "mailer.validateMailAddress": {
+                        "email": "a@example.org"
+                    }
+                },
+                {
+                    "resolveByOrganisation": "org-untitled"
+                },
+                {
+                    "organisations.resolve": [
+                        "org-untitled",
+                        "nl"
+                    ]
+                },
+                {
+                    "deepLinks.forSite": {
+                        "portalSlug": "q",
+                        "organisation": "org-untitled"
+                    }
+                },
+                {
+                    "l10nFactory.get": {
+                        "app": "portaliq",
+                        "lang": "nl",
+                        "locale": null
+                    }
+                },
+                {
+                    "mailer.createEMailTemplate": {
+                        "emailId": "portaliq.identity.invitation",
+                        "data": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "You are invited to the portal of %1$s",
+                        "parameters": [
+                            "Untitled org"
+                        ]
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Accept the invitation to create your account at %1$s.",
+                        "parameters": [
+                            "Untitled org"
+                        ]
+                    }
+                },
+                {
+                    "template.setSubject": {
+                        "subject": "You are invited to the portal of %1$s [\"Untitled org\"]"
+                    }
+                },
+                {
+                    "template.addHeader": []
+                },
+                {
+                    "l10n.t": {
+                        "text": "You are invited",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addHeading": {
+                        "title": "You are invited []",
+                        "plainTitle": ""
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Accept the invitation to create your account at %1$s. [\"Untitled org\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Accept the invitation",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addBodyButton": {
+                        "text": "Accept the invitation []",
+                        "url": "https://site/q/org-untitled#invitation=s-1",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "The link works once and for a limited time.",
+                        "parameters": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Did you not ask for this? Then you can ignore this mail.",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "The link works once and for a limited time. [] Did you not ask for this? Then you can ignore this mail. []",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "template.addFooter": {
+                        "text": "",
+                        "lang": null
+                    }
+                },
+                {
+                    "mailer.createMessage": []
+                },
+                {
+                    "message.setTo": {
+                        "recipients": [
+                            "a@example.org"
+                        ]
+                    }
+                },
+                {
+                    "message.useTemplate": {
+                        "emailTemplate": "double"
+                    }
+                },
+                {
+                    "mailer.send": {
+                        "message": "double"
+                    }
+                }
+            ]
+        },
+        "sendWithPortal": {
+            "answer": true,
+            "log": [
+                {
+                    "mailer.validateMailAddress": {
+                        "email": "a@example.org"
+                    }
+                },
+                {
+                    "organisations.resolve": [
+                        "org-untitled",
+                        "nl"
+                    ]
+                },
+                {
+                    "deepLinks.forSite": {
+                        "portalSlug": "given",
+                        "organisation": "org-untitled"
+                    }
+                },
+                {
+                    "l10nFactory.get": {
+                        "app": "portaliq",
+                        "lang": "fr",
+                        "locale": null
+                    }
+                },
+                {
+                    "mailer.createEMailTemplate": {
+                        "emailId": "portaliq.identity.email-link",
+                        "data": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your sign-in link for %1$s",
+                        "parameters": [
+                            "Untitled org"
+                        ]
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "You asked for a link to sign in to %1$s. The link works for 15 minutes.",
+                        "parameters": [
+                            "Untitled org"
+                        ]
+                    }
+                },
+                {
+                    "template.setSubject": {
+                        "subject": "Your sign-in link for %1$s [\"Untitled org\"]"
+                    }
+                },
+                {
+                    "template.addHeader": []
+                },
+                {
+                    "l10n.t": {
+                        "text": "Sign in",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addHeading": {
+                        "title": "Sign in []",
+                        "plainTitle": ""
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "You asked for a link to sign in to %1$s. The link works for 15 minutes. [\"Untitled org\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Sign in",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addBodyButton": {
+                        "text": "Sign in []",
+                        "url": "https://site/given/org-untitled#email-link=s-2",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "The link works once and for a limited time.",
+                        "parameters": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Did you not ask for this? Then you can ignore this mail.",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "The link works once and for a limited time. [] Did you not ask for this? Then you can ignore this mail. []",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "template.addFooter": {
+                        "text": "",
+                        "lang": null
+                    }
+                },
+                {
+                    "mailer.createMessage": []
+                },
+                {
+                    "message.setTo": {
+                        "recipients": [
+                            "a@example.org"
+                        ]
+                    }
+                },
+                {
+                    "message.useTemplate": {
+                        "emailTemplate": "double"
+                    }
+                },
+                {
+                    "mailer.send": {
+                        "message": "double"
+                    }
+                }
+            ]
+        },
+        "claimNotice": {
+            "answer": true,
+            "log": [
+                {
+                    "mailer.validateMailAddress": {
+                        "email": "a@example.org"
+                    }
+                },
+                {
+                    "resolveByOrganisation": "org-untitled"
+                },
+                {
+                    "organisations.resolve": [
+                        "org-untitled",
+                        "nl"
+                    ]
+                },
+                {
+                    "l10nFactory.get": {
+                        "app": "portaliq",
+                        "lang": "nl",
+                        "locale": null
+                    }
+                },
+                {
+                    "l10n.l": {
+                        "type": "date",
+                        "data": "DateTimeImmutable",
+                        "options": {
+                            "width": "long"
+                        }
+                    }
+                },
+                {
+                    "mailer.createEMailTemplate": {
+                        "emailId": "portaliq.identity.invitation-accepted",
+                        "data": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your invitation to %1$s was accepted",
+                        "parameters": [
+                            "Untitled org"
+                        ]
+                    }
+                },
+                {
+                    "template.setSubject": {
+                        "subject": "Your invitation to %1$s was accepted [\"Untitled org\"]"
+                    }
+                },
+                {
+                    "template.addHeader": []
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your invitation was accepted",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addHeading": {
+                        "title": "Your invitation was accepted []",
+                        "plainTitle": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your invitation to the portal of %1$s was accepted on %2$s.",
+                        "parameters": [
+                            "Untitled org",
+                            "date:2026-11-02"
+                        ]
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Your invitation to the portal of %1$s was accepted on %2$s. [\"Untitled org\",\"date:2026-11-02\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Was this not you? Then contact %1$s.",
+                        "parameters": [
+                            "Untitled org"
+                        ]
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Was this not you? Then contact %1$s. [\"Untitled org\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "template.addFooter": {
+                        "text": "",
+                        "lang": null
+                    }
+                },
+                {
+                    "mailer.createMessage": []
+                },
+                {
+                    "message.setTo": {
+                        "recipients": [
+                            "a@example.org"
+                        ]
+                    }
+                },
+                {
+                    "message.useTemplate": {
+                        "emailTemplate": "double"
+                    }
+                },
+                {
+                    "mailer.send": {
+                        "message": "double"
+                    }
+                }
+            ]
+        },
+        "signedInNotice": {
+            "answer": true,
+            "log": [
+                {
+                    "mailer.validateMailAddress": {
+                        "email": "a@example.org"
+                    }
+                },
+                {
+                    "resolveByOrganisation": "org-untitled"
+                },
+                {
+                    "organisations.resolve": [
+                        "org-untitled",
+                        "nl"
+                    ]
+                },
+                {
+                    "l10nFactory.get": {
+                        "app": "portaliq",
+                        "lang": "nl",
+                        "locale": null
+                    }
+                },
+                {
+                    "l10n.l": {
+                        "type": "datetime",
+                        "data": "DateTimeImmutable",
+                        "options": {
+                            "width": "long"
+                        }
+                    }
+                },
+                {
+                    "mailer.createEMailTemplate": {
+                        "emailId": "portaliq.identity.email-link-signed-in",
+                        "data": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "You signed in to %1$s",
+                        "parameters": [
+                            "Untitled org"
+                        ]
+                    }
+                },
+                {
+                    "template.setSubject": {
+                        "subject": "You signed in to %1$s [\"Untitled org\"]"
+                    }
+                },
+                {
+                    "template.addHeader": []
+                },
+                {
+                    "l10n.t": {
+                        "text": "You signed in",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addHeading": {
+                        "title": "You signed in []",
+                        "plainTitle": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your account at %1$s was signed in to with an e-mail link on %2$s.",
+                        "parameters": [
+                            "Untitled org",
+                            "datetime:2026-11-02"
+                        ]
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Your account at %1$s was signed in to with an e-mail link on %2$s. [\"Untitled org\",\"datetime:2026-11-02\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Was this not you? Then contact %1$s.",
+                        "parameters": [
+                            "Untitled org"
+                        ]
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Was this not you? Then contact %1$s. [\"Untitled org\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "template.addFooter": {
+                        "text": "",
+                        "lang": null
+                    }
+                },
+                {
+                    "mailer.createMessage": []
+                },
+                {
+                    "message.setTo": {
+                        "recipients": [
+                            "a@example.org"
+                        ]
+                    }
+                },
+                {
+                    "message.useTemplate": {
+                        "emailTemplate": "double"
+                    }
+                },
+                {
+                    "mailer.send": {
+                        "message": "double"
+                    }
+                }
+            ]
+        },
+        "contactConfirmation": {
+            "answer": true,
+            "log": [
+                {
+                    "mailer.validateMailAddress": {
+                        "email": "b@example.org"
+                    }
+                },
+                {
+                    "resolveByOrganisation": "org-untitled"
+                },
+                {
+                    "organisations.resolve": [
+                        "org-untitled",
+                        "nl"
+                    ]
+                },
+                {
+                    "deepLinks.forSite": {
+                        "portalSlug": "q",
+                        "organisation": "org-untitled"
+                    }
+                },
+                {
+                    "l10nFactory.get": {
+                        "app": "portaliq",
+                        "lang": "nl",
+                        "locale": null
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "We have received your question",
+                        "parameters": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your question has reached %1$s. You find it back under My questions.",
+                        "parameters": [
+                            "Untitled org"
+                        ]
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your question about %1$s has reached %2$s. You find it back under My questions.",
+                        "parameters": [
+                            "Parking",
+                            "Untitled org"
+                        ]
+                    }
+                },
+                {
+                    "mailer.createEMailTemplate": {
+                        "emailId": "portaliq.contact.confirmation",
+                        "data": []
+                    }
+                },
+                {
+                    "template.setSubject": {
+                        "subject": "We have received your question []"
+                    }
+                },
+                {
+                    "template.addHeader": []
+                },
+                {
+                    "l10n.t": {
+                        "text": "We have received your question",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addHeading": {
+                        "title": "We have received your question []",
+                        "plainTitle": ""
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Your question about %1$s has reached %2$s. You find it back under My questions. [\"Parking\",\"Untitled org\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Open My questions",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addBodyButton": {
+                        "text": "Open My questions []",
+                        "url": "https://site/q/org-untitled",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "template.addFooter": {
+                        "text": "",
+                        "lang": null
+                    }
+                },
+                {
+                    "mailer.createMessage": []
+                },
+                {
+                    "message.setTo": {
+                        "recipients": [
+                            "b@example.org"
+                        ]
+                    }
+                },
+                {
+                    "message.useTemplate": {
+                        "emailTemplate": "double"
+                    }
+                },
+                {
+                    "mailer.send": {
+                        "message": "double"
+                    }
+                }
+            ]
+        }
+    },
+    "org-none": {
+        "send": {
+            "answer": true,
+            "log": [
+                {
+                    "mailer.validateMailAddress": {
+                        "email": "a@example.org"
+                    }
+                },
+                {
+                    "resolveByOrganisation": "org-none"
+                },
+                {
+                    "organisations.resolve": [
+                        "org-none",
+                        "nl"
+                    ]
+                },
+                {
+                    "deepLinks.forSite": {
+                        "portalSlug": "",
+                        "organisation": "org-none"
+                    }
+                },
+                {
+                    "l10nFactory.get": {
+                        "app": "portaliq",
+                        "lang": "nl",
+                        "locale": null
+                    }
+                },
+                {
+                    "mailer.createEMailTemplate": {
+                        "emailId": "portaliq.identity.invitation",
+                        "data": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "You are invited to the portal of %1$s",
+                        "parameters": [
+                            "Named org"
+                        ]
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Accept the invitation to create your account at %1$s.",
+                        "parameters": [
+                            "Named org"
+                        ]
+                    }
+                },
+                {
+                    "template.setSubject": {
+                        "subject": "You are invited to the portal of %1$s [\"Named org\"]"
+                    }
+                },
+                {
+                    "template.addHeader": []
+                },
+                {
+                    "l10n.t": {
+                        "text": "You are invited",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addHeading": {
+                        "title": "You are invited []",
+                        "plainTitle": ""
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Accept the invitation to create your account at %1$s. [\"Named org\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Accept the invitation",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addBodyButton": {
+                        "text": "Accept the invitation []",
+                        "url": "https://site//org-none#invitation=s-1",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "The link works once and for a limited time.",
+                        "parameters": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Did you not ask for this? Then you can ignore this mail.",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "The link works once and for a limited time. [] Did you not ask for this? Then you can ignore this mail. []",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "template.addFooter": {
+                        "text": "",
+                        "lang": null
+                    }
+                },
+                {
+                    "mailer.createMessage": []
+                },
+                {
+                    "message.setTo": {
+                        "recipients": [
+                            "a@example.org"
+                        ]
+                    }
+                },
+                {
+                    "message.useTemplate": {
+                        "emailTemplate": "double"
+                    }
+                },
+                {
+                    "mailer.send": {
+                        "message": "double"
+                    }
+                }
+            ]
+        },
+        "sendWithPortal": {
+            "answer": true,
+            "log": [
+                {
+                    "mailer.validateMailAddress": {
+                        "email": "a@example.org"
+                    }
+                },
+                {
+                    "organisations.resolve": [
+                        "org-none",
+                        "nl"
+                    ]
+                },
+                {
+                    "deepLinks.forSite": {
+                        "portalSlug": "given",
+                        "organisation": "org-none"
+                    }
+                },
+                {
+                    "l10nFactory.get": {
+                        "app": "portaliq",
+                        "lang": "fr",
+                        "locale": null
+                    }
+                },
+                {
+                    "mailer.createEMailTemplate": {
+                        "emailId": "portaliq.identity.email-link",
+                        "data": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your sign-in link for %1$s",
+                        "parameters": [
+                            "Named org"
+                        ]
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "You asked for a link to sign in to %1$s. The link works for 15 minutes.",
+                        "parameters": [
+                            "Named org"
+                        ]
+                    }
+                },
+                {
+                    "template.setSubject": {
+                        "subject": "Your sign-in link for %1$s [\"Named org\"]"
+                    }
+                },
+                {
+                    "template.addHeader": []
+                },
+                {
+                    "l10n.t": {
+                        "text": "Sign in",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addHeading": {
+                        "title": "Sign in []",
+                        "plainTitle": ""
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "You asked for a link to sign in to %1$s. The link works for 15 minutes. [\"Named org\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Sign in",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addBodyButton": {
+                        "text": "Sign in []",
+                        "url": "https://site/given/org-none#email-link=s-2",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "The link works once and for a limited time.",
+                        "parameters": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Did you not ask for this? Then you can ignore this mail.",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "The link works once and for a limited time. [] Did you not ask for this? Then you can ignore this mail. []",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "template.addFooter": {
+                        "text": "",
+                        "lang": null
+                    }
+                },
+                {
+                    "mailer.createMessage": []
+                },
+                {
+                    "message.setTo": {
+                        "recipients": [
+                            "a@example.org"
+                        ]
+                    }
+                },
+                {
+                    "message.useTemplate": {
+                        "emailTemplate": "double"
+                    }
+                },
+                {
+                    "mailer.send": {
+                        "message": "double"
+                    }
+                }
+            ]
+        },
+        "claimNotice": {
+            "answer": true,
+            "log": [
+                {
+                    "mailer.validateMailAddress": {
+                        "email": "a@example.org"
+                    }
+                },
+                {
+                    "resolveByOrganisation": "org-none"
+                },
+                {
+                    "organisations.resolve": [
+                        "org-none",
+                        "nl"
+                    ]
+                },
+                {
+                    "l10nFactory.get": {
+                        "app": "portaliq",
+                        "lang": "nl",
+                        "locale": null
+                    }
+                },
+                {
+                    "l10n.l": {
+                        "type": "date",
+                        "data": "DateTimeImmutable",
+                        "options": {
+                            "width": "long"
+                        }
+                    }
+                },
+                {
+                    "mailer.createEMailTemplate": {
+                        "emailId": "portaliq.identity.invitation-accepted",
+                        "data": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your invitation to %1$s was accepted",
+                        "parameters": [
+                            "Named org"
+                        ]
+                    }
+                },
+                {
+                    "template.setSubject": {
+                        "subject": "Your invitation to %1$s was accepted [\"Named org\"]"
+                    }
+                },
+                {
+                    "template.addHeader": []
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your invitation was accepted",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addHeading": {
+                        "title": "Your invitation was accepted []",
+                        "plainTitle": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your invitation to the portal of %1$s was accepted on %2$s.",
+                        "parameters": [
+                            "Named org",
+                            "date:2026-11-02"
+                        ]
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Your invitation to the portal of %1$s was accepted on %2$s. [\"Named org\",\"date:2026-11-02\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Was this not you? Then contact %1$s.",
+                        "parameters": [
+                            "Named org"
+                        ]
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Was this not you? Then contact %1$s. [\"Named org\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "template.addFooter": {
+                        "text": "",
+                        "lang": null
+                    }
+                },
+                {
+                    "mailer.createMessage": []
+                },
+                {
+                    "message.setTo": {
+                        "recipients": [
+                            "a@example.org"
+                        ]
+                    }
+                },
+                {
+                    "message.useTemplate": {
+                        "emailTemplate": "double"
+                    }
+                },
+                {
+                    "mailer.send": {
+                        "message": "double"
+                    }
+                }
+            ]
+        },
+        "signedInNotice": {
+            "answer": true,
+            "log": [
+                {
+                    "mailer.validateMailAddress": {
+                        "email": "a@example.org"
+                    }
+                },
+                {
+                    "resolveByOrganisation": "org-none"
+                },
+                {
+                    "organisations.resolve": [
+                        "org-none",
+                        "nl"
+                    ]
+                },
+                {
+                    "l10nFactory.get": {
+                        "app": "portaliq",
+                        "lang": "nl",
+                        "locale": null
+                    }
+                },
+                {
+                    "l10n.l": {
+                        "type": "datetime",
+                        "data": "DateTimeImmutable",
+                        "options": {
+                            "width": "long"
+                        }
+                    }
+                },
+                {
+                    "mailer.createEMailTemplate": {
+                        "emailId": "portaliq.identity.email-link-signed-in",
+                        "data": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "You signed in to %1$s",
+                        "parameters": [
+                            "Named org"
+                        ]
+                    }
+                },
+                {
+                    "template.setSubject": {
+                        "subject": "You signed in to %1$s [\"Named org\"]"
+                    }
+                },
+                {
+                    "template.addHeader": []
+                },
+                {
+                    "l10n.t": {
+                        "text": "You signed in",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addHeading": {
+                        "title": "You signed in []",
+                        "plainTitle": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your account at %1$s was signed in to with an e-mail link on %2$s.",
+                        "parameters": [
+                            "Named org",
+                            "datetime:2026-11-02"
+                        ]
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Your account at %1$s was signed in to with an e-mail link on %2$s. [\"Named org\",\"datetime:2026-11-02\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Was this not you? Then contact %1$s.",
+                        "parameters": [
+                            "Named org"
+                        ]
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Was this not you? Then contact %1$s. [\"Named org\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "template.addFooter": {
+                        "text": "",
+                        "lang": null
+                    }
+                },
+                {
+                    "mailer.createMessage": []
+                },
+                {
+                    "message.setTo": {
+                        "recipients": [
+                            "a@example.org"
+                        ]
+                    }
+                },
+                {
+                    "message.useTemplate": {
+                        "emailTemplate": "double"
+                    }
+                },
+                {
+                    "mailer.send": {
+                        "message": "double"
+                    }
+                }
+            ]
+        },
+        "contactConfirmation": {
+            "answer": true,
+            "log": [
+                {
+                    "mailer.validateMailAddress": {
+                        "email": "b@example.org"
+                    }
+                },
+                {
+                    "resolveByOrganisation": "org-none"
+                },
+                {
+                    "organisations.resolve": [
+                        "org-none",
+                        "nl"
+                    ]
+                },
+                {
+                    "deepLinks.forSite": {
+                        "portalSlug": "",
+                        "organisation": "org-none"
+                    }
+                },
+                {
+                    "l10nFactory.get": {
+                        "app": "portaliq",
+                        "lang": "nl",
+                        "locale": null
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "We have received your question",
+                        "parameters": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your question has reached %1$s. You find it back under My questions.",
+                        "parameters": [
+                            "Named org"
+                        ]
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your question about %1$s has reached %2$s. You find it back under My questions.",
+                        "parameters": [
+                            "Parking",
+                            "Named org"
+                        ]
+                    }
+                },
+                {
+                    "mailer.createEMailTemplate": {
+                        "emailId": "portaliq.contact.confirmation",
+                        "data": []
+                    }
+                },
+                {
+                    "template.setSubject": {
+                        "subject": "We have received your question []"
+                    }
+                },
+                {
+                    "template.addHeader": []
+                },
+                {
+                    "l10n.t": {
+                        "text": "We have received your question",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addHeading": {
+                        "title": "We have received your question []",
+                        "plainTitle": ""
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Your question about %1$s has reached %2$s. You find it back under My questions. [\"Parking\",\"Named org\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Open My questions",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addBodyButton": {
+                        "text": "Open My questions []",
+                        "url": "https://site//org-none",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "template.addFooter": {
+                        "text": "",
+                        "lang": null
+                    }
+                },
+                {
+                    "mailer.createMessage": []
+                },
+                {
+                    "message.setTo": {
+                        "recipients": [
+                            "b@example.org"
+                        ]
+                    }
+                },
+                {
+                    "message.useTemplate": {
+                        "emailTemplate": "double"
+                    }
+                },
+                {
+                    "mailer.send": {
+                        "message": "double"
+                    }
+                }
+            ]
+        }
+    },
+    "org-unnamed": {
+        "send": {
+            "answer": true,
+            "log": [
+                {
+                    "mailer.validateMailAddress": {
+                        "email": "a@example.org"
+                    }
+                },
+                {
+                    "resolveByOrganisation": "org-unnamed"
+                },
+                {
+                    "organisations.resolve": [
+                        "org-unnamed",
+                        "nl"
+                    ]
+                },
+                {
+                    "deepLinks.forSite": {
+                        "portalSlug": "",
+                        "organisation": "org-unnamed"
+                    }
+                },
+                {
+                    "l10nFactory.get": {
+                        "app": "portaliq",
+                        "lang": "nl",
+                        "locale": null
+                    }
+                },
+                {
+                    "mailer.createEMailTemplate": {
+                        "emailId": "portaliq.identity.invitation",
+                        "data": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "You are invited to the portal of %1$s",
+                        "parameters": [
+                            "Portaliq"
+                        ]
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Accept the invitation to create your account at %1$s.",
+                        "parameters": [
+                            "Portaliq"
+                        ]
+                    }
+                },
+                {
+                    "template.setSubject": {
+                        "subject": "You are invited to the portal of %1$s [\"Portaliq\"]"
+                    }
+                },
+                {
+                    "template.addHeader": []
+                },
+                {
+                    "l10n.t": {
+                        "text": "You are invited",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addHeading": {
+                        "title": "You are invited []",
+                        "plainTitle": ""
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Accept the invitation to create your account at %1$s. [\"Portaliq\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Accept the invitation",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addBodyButton": {
+                        "text": "Accept the invitation []",
+                        "url": "https://site//org-unnamed#invitation=s-1",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "The link works once and for a limited time.",
+                        "parameters": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Did you not ask for this? Then you can ignore this mail.",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "The link works once and for a limited time. [] Did you not ask for this? Then you can ignore this mail. []",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "template.addFooter": {
+                        "text": "",
+                        "lang": null
+                    }
+                },
+                {
+                    "mailer.createMessage": []
+                },
+                {
+                    "message.setTo": {
+                        "recipients": [
+                            "a@example.org"
+                        ]
+                    }
+                },
+                {
+                    "message.useTemplate": {
+                        "emailTemplate": "double"
+                    }
+                },
+                {
+                    "mailer.send": {
+                        "message": "double"
+                    }
+                }
+            ]
+        },
+        "sendWithPortal": {
+            "answer": true,
+            "log": [
+                {
+                    "mailer.validateMailAddress": {
+                        "email": "a@example.org"
+                    }
+                },
+                {
+                    "organisations.resolve": [
+                        "org-unnamed",
+                        "nl"
+                    ]
+                },
+                {
+                    "deepLinks.forSite": {
+                        "portalSlug": "given",
+                        "organisation": "org-unnamed"
+                    }
+                },
+                {
+                    "l10nFactory.get": {
+                        "app": "portaliq",
+                        "lang": "fr",
+                        "locale": null
+                    }
+                },
+                {
+                    "mailer.createEMailTemplate": {
+                        "emailId": "portaliq.identity.email-link",
+                        "data": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your sign-in link for %1$s",
+                        "parameters": [
+                            "Portaliq"
+                        ]
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "You asked for a link to sign in to %1$s. The link works for 15 minutes.",
+                        "parameters": [
+                            "Portaliq"
+                        ]
+                    }
+                },
+                {
+                    "template.setSubject": {
+                        "subject": "Your sign-in link for %1$s [\"Portaliq\"]"
+                    }
+                },
+                {
+                    "template.addHeader": []
+                },
+                {
+                    "l10n.t": {
+                        "text": "Sign in",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addHeading": {
+                        "title": "Sign in []",
+                        "plainTitle": ""
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "You asked for a link to sign in to %1$s. The link works for 15 minutes. [\"Portaliq\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Sign in",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addBodyButton": {
+                        "text": "Sign in []",
+                        "url": "https://site/given/org-unnamed#email-link=s-2",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "The link works once and for a limited time.",
+                        "parameters": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Did you not ask for this? Then you can ignore this mail.",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "The link works once and for a limited time. [] Did you not ask for this? Then you can ignore this mail. []",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "template.addFooter": {
+                        "text": "",
+                        "lang": null
+                    }
+                },
+                {
+                    "mailer.createMessage": []
+                },
+                {
+                    "message.setTo": {
+                        "recipients": [
+                            "a@example.org"
+                        ]
+                    }
+                },
+                {
+                    "message.useTemplate": {
+                        "emailTemplate": "double"
+                    }
+                },
+                {
+                    "mailer.send": {
+                        "message": "double"
+                    }
+                }
+            ]
+        },
+        "claimNotice": {
+            "answer": true,
+            "log": [
+                {
+                    "mailer.validateMailAddress": {
+                        "email": "a@example.org"
+                    }
+                },
+                {
+                    "resolveByOrganisation": "org-unnamed"
+                },
+                {
+                    "organisations.resolve": [
+                        "org-unnamed",
+                        "nl"
+                    ]
+                },
+                {
+                    "l10nFactory.get": {
+                        "app": "portaliq",
+                        "lang": "nl",
+                        "locale": null
+                    }
+                },
+                {
+                    "l10n.l": {
+                        "type": "date",
+                        "data": "DateTimeImmutable",
+                        "options": {
+                            "width": "long"
+                        }
+                    }
+                },
+                {
+                    "mailer.createEMailTemplate": {
+                        "emailId": "portaliq.identity.invitation-accepted",
+                        "data": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your invitation to %1$s was accepted",
+                        "parameters": [
+                            "Portaliq"
+                        ]
+                    }
+                },
+                {
+                    "template.setSubject": {
+                        "subject": "Your invitation to %1$s was accepted [\"Portaliq\"]"
+                    }
+                },
+                {
+                    "template.addHeader": []
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your invitation was accepted",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addHeading": {
+                        "title": "Your invitation was accepted []",
+                        "plainTitle": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your invitation to the portal of %1$s was accepted on %2$s.",
+                        "parameters": [
+                            "Portaliq",
+                            "date:2026-11-02"
+                        ]
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Your invitation to the portal of %1$s was accepted on %2$s. [\"Portaliq\",\"date:2026-11-02\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Was this not you? Then contact %1$s.",
+                        "parameters": [
+                            "Portaliq"
+                        ]
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Was this not you? Then contact %1$s. [\"Portaliq\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "template.addFooter": {
+                        "text": "",
+                        "lang": null
+                    }
+                },
+                {
+                    "mailer.createMessage": []
+                },
+                {
+                    "message.setTo": {
+                        "recipients": [
+                            "a@example.org"
+                        ]
+                    }
+                },
+                {
+                    "message.useTemplate": {
+                        "emailTemplate": "double"
+                    }
+                },
+                {
+                    "mailer.send": {
+                        "message": "double"
+                    }
+                }
+            ]
+        },
+        "signedInNotice": {
+            "answer": true,
+            "log": [
+                {
+                    "mailer.validateMailAddress": {
+                        "email": "a@example.org"
+                    }
+                },
+                {
+                    "resolveByOrganisation": "org-unnamed"
+                },
+                {
+                    "organisations.resolve": [
+                        "org-unnamed",
+                        "nl"
+                    ]
+                },
+                {
+                    "l10nFactory.get": {
+                        "app": "portaliq",
+                        "lang": "nl",
+                        "locale": null
+                    }
+                },
+                {
+                    "l10n.l": {
+                        "type": "datetime",
+                        "data": "DateTimeImmutable",
+                        "options": {
+                            "width": "long"
+                        }
+                    }
+                },
+                {
+                    "mailer.createEMailTemplate": {
+                        "emailId": "portaliq.identity.email-link-signed-in",
+                        "data": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "You signed in to %1$s",
+                        "parameters": [
+                            "Portaliq"
+                        ]
+                    }
+                },
+                {
+                    "template.setSubject": {
+                        "subject": "You signed in to %1$s [\"Portaliq\"]"
+                    }
+                },
+                {
+                    "template.addHeader": []
+                },
+                {
+                    "l10n.t": {
+                        "text": "You signed in",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addHeading": {
+                        "title": "You signed in []",
+                        "plainTitle": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your account at %1$s was signed in to with an e-mail link on %2$s.",
+                        "parameters": [
+                            "Portaliq",
+                            "datetime:2026-11-02"
+                        ]
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Your account at %1$s was signed in to with an e-mail link on %2$s. [\"Portaliq\",\"datetime:2026-11-02\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Was this not you? Then contact %1$s.",
+                        "parameters": [
+                            "Portaliq"
+                        ]
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Was this not you? Then contact %1$s. [\"Portaliq\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "template.addFooter": {
+                        "text": "",
+                        "lang": null
+                    }
+                },
+                {
+                    "mailer.createMessage": []
+                },
+                {
+                    "message.setTo": {
+                        "recipients": [
+                            "a@example.org"
+                        ]
+                    }
+                },
+                {
+                    "message.useTemplate": {
+                        "emailTemplate": "double"
+                    }
+                },
+                {
+                    "mailer.send": {
+                        "message": "double"
+                    }
+                }
+            ]
+        },
+        "contactConfirmation": {
+            "answer": true,
+            "log": [
+                {
+                    "mailer.validateMailAddress": {
+                        "email": "b@example.org"
+                    }
+                },
+                {
+                    "resolveByOrganisation": "org-unnamed"
+                },
+                {
+                    "organisations.resolve": [
+                        "org-unnamed",
+                        "nl"
+                    ]
+                },
+                {
+                    "deepLinks.forSite": {
+                        "portalSlug": "",
+                        "organisation": "org-unnamed"
+                    }
+                },
+                {
+                    "l10nFactory.get": {
+                        "app": "portaliq",
+                        "lang": "nl",
+                        "locale": null
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "We have received your question",
+                        "parameters": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your question has reached %1$s. You find it back under My questions.",
+                        "parameters": [
+                            "Portaliq"
+                        ]
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your question about %1$s has reached %2$s. You find it back under My questions.",
+                        "parameters": [
+                            "Parking",
+                            "Portaliq"
+                        ]
+                    }
+                },
+                {
+                    "mailer.createEMailTemplate": {
+                        "emailId": "portaliq.contact.confirmation",
+                        "data": []
+                    }
+                },
+                {
+                    "template.setSubject": {
+                        "subject": "We have received your question []"
+                    }
+                },
+                {
+                    "template.addHeader": []
+                },
+                {
+                    "l10n.t": {
+                        "text": "We have received your question",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addHeading": {
+                        "title": "We have received your question []",
+                        "plainTitle": ""
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Your question about %1$s has reached %2$s. You find it back under My questions. [\"Parking\",\"Portaliq\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Open My questions",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addBodyButton": {
+                        "text": "Open My questions []",
+                        "url": "https://site//org-unnamed",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "template.addFooter": {
+                        "text": "",
+                        "lang": null
+                    }
+                },
+                {
+                    "mailer.createMessage": []
+                },
+                {
+                    "message.setTo": {
+                        "recipients": [
+                            "b@example.org"
+                        ]
+                    }
+                },
+                {
+                    "message.useTemplate": {
+                        "emailTemplate": "double"
+                    }
+                },
+                {
+                    "mailer.send": {
+                        "message": "double"
+                    }
+                }
+            ]
+        }
+    },
+    "org-throws": {
+        "send": {
+            "answer": true,
+            "log": [
+                {
+                    "mailer.validateMailAddress": {
+                        "email": "a@example.org"
+                    }
+                },
+                {
+                    "resolveByOrganisation": "org-throws"
+                },
+                {
+                    "organisations.resolve": [
+                        "org-throws",
+                        "nl"
+                    ]
+                },
+                {
+                    "deepLinks.forSite": {
+                        "portalSlug": "",
+                        "organisation": "org-throws"
+                    }
+                },
+                {
+                    "l10nFactory.get": {
+                        "app": "portaliq",
+                        "lang": "nl",
+                        "locale": null
+                    }
+                },
+                {
+                    "mailer.createEMailTemplate": {
+                        "emailId": "portaliq.identity.invitation",
+                        "data": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "You are invited to the portal of %1$s",
+                        "parameters": [
+                            "Portaliq"
+                        ]
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Accept the invitation to create your account at %1$s.",
+                        "parameters": [
+                            "Portaliq"
+                        ]
+                    }
+                },
+                {
+                    "template.setSubject": {
+                        "subject": "You are invited to the portal of %1$s [\"Portaliq\"]"
+                    }
+                },
+                {
+                    "template.addHeader": []
+                },
+                {
+                    "l10n.t": {
+                        "text": "You are invited",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addHeading": {
+                        "title": "You are invited []",
+                        "plainTitle": ""
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Accept the invitation to create your account at %1$s. [\"Portaliq\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Accept the invitation",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addBodyButton": {
+                        "text": "Accept the invitation []",
+                        "url": "https://site//org-throws#invitation=s-1",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "The link works once and for a limited time.",
+                        "parameters": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Did you not ask for this? Then you can ignore this mail.",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "The link works once and for a limited time. [] Did you not ask for this? Then you can ignore this mail. []",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "template.addFooter": {
+                        "text": "",
+                        "lang": null
+                    }
+                },
+                {
+                    "mailer.createMessage": []
+                },
+                {
+                    "message.setTo": {
+                        "recipients": [
+                            "a@example.org"
+                        ]
+                    }
+                },
+                {
+                    "message.useTemplate": {
+                        "emailTemplate": "double"
+                    }
+                },
+                {
+                    "mailer.send": {
+                        "message": "double"
+                    }
+                }
+            ]
+        },
+        "sendWithPortal": {
+            "answer": true,
+            "log": [
+                {
+                    "mailer.validateMailAddress": {
+                        "email": "a@example.org"
+                    }
+                },
+                {
+                    "organisations.resolve": [
+                        "org-throws",
+                        "nl"
+                    ]
+                },
+                {
+                    "deepLinks.forSite": {
+                        "portalSlug": "given",
+                        "organisation": "org-throws"
+                    }
+                },
+                {
+                    "l10nFactory.get": {
+                        "app": "portaliq",
+                        "lang": "fr",
+                        "locale": null
+                    }
+                },
+                {
+                    "mailer.createEMailTemplate": {
+                        "emailId": "portaliq.identity.email-link",
+                        "data": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your sign-in link for %1$s",
+                        "parameters": [
+                            "Portaliq"
+                        ]
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "You asked for a link to sign in to %1$s. The link works for 15 minutes.",
+                        "parameters": [
+                            "Portaliq"
+                        ]
+                    }
+                },
+                {
+                    "template.setSubject": {
+                        "subject": "Your sign-in link for %1$s [\"Portaliq\"]"
+                    }
+                },
+                {
+                    "template.addHeader": []
+                },
+                {
+                    "l10n.t": {
+                        "text": "Sign in",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addHeading": {
+                        "title": "Sign in []",
+                        "plainTitle": ""
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "You asked for a link to sign in to %1$s. The link works for 15 minutes. [\"Portaliq\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Sign in",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addBodyButton": {
+                        "text": "Sign in []",
+                        "url": "https://site/given/org-throws#email-link=s-2",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "The link works once and for a limited time.",
+                        "parameters": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Did you not ask for this? Then you can ignore this mail.",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "The link works once and for a limited time. [] Did you not ask for this? Then you can ignore this mail. []",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "template.addFooter": {
+                        "text": "",
+                        "lang": null
+                    }
+                },
+                {
+                    "mailer.createMessage": []
+                },
+                {
+                    "message.setTo": {
+                        "recipients": [
+                            "a@example.org"
+                        ]
+                    }
+                },
+                {
+                    "message.useTemplate": {
+                        "emailTemplate": "double"
+                    }
+                },
+                {
+                    "mailer.send": {
+                        "message": "double"
+                    }
+                }
+            ]
+        },
+        "claimNotice": {
+            "answer": true,
+            "log": [
+                {
+                    "mailer.validateMailAddress": {
+                        "email": "a@example.org"
+                    }
+                },
+                {
+                    "resolveByOrganisation": "org-throws"
+                },
+                {
+                    "organisations.resolve": [
+                        "org-throws",
+                        "nl"
+                    ]
+                },
+                {
+                    "l10nFactory.get": {
+                        "app": "portaliq",
+                        "lang": "nl",
+                        "locale": null
+                    }
+                },
+                {
+                    "l10n.l": {
+                        "type": "date",
+                        "data": "DateTimeImmutable",
+                        "options": {
+                            "width": "long"
+                        }
+                    }
+                },
+                {
+                    "mailer.createEMailTemplate": {
+                        "emailId": "portaliq.identity.invitation-accepted",
+                        "data": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your invitation to %1$s was accepted",
+                        "parameters": [
+                            "Portaliq"
+                        ]
+                    }
+                },
+                {
+                    "template.setSubject": {
+                        "subject": "Your invitation to %1$s was accepted [\"Portaliq\"]"
+                    }
+                },
+                {
+                    "template.addHeader": []
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your invitation was accepted",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addHeading": {
+                        "title": "Your invitation was accepted []",
+                        "plainTitle": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your invitation to the portal of %1$s was accepted on %2$s.",
+                        "parameters": [
+                            "Portaliq",
+                            "date:2026-11-02"
+                        ]
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Your invitation to the portal of %1$s was accepted on %2$s. [\"Portaliq\",\"date:2026-11-02\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Was this not you? Then contact %1$s.",
+                        "parameters": [
+                            "Portaliq"
+                        ]
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Was this not you? Then contact %1$s. [\"Portaliq\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "template.addFooter": {
+                        "text": "",
+                        "lang": null
+                    }
+                },
+                {
+                    "mailer.createMessage": []
+                },
+                {
+                    "message.setTo": {
+                        "recipients": [
+                            "a@example.org"
+                        ]
+                    }
+                },
+                {
+                    "message.useTemplate": {
+                        "emailTemplate": "double"
+                    }
+                },
+                {
+                    "mailer.send": {
+                        "message": "double"
+                    }
+                }
+            ]
+        },
+        "signedInNotice": {
+            "answer": true,
+            "log": [
+                {
+                    "mailer.validateMailAddress": {
+                        "email": "a@example.org"
+                    }
+                },
+                {
+                    "resolveByOrganisation": "org-throws"
+                },
+                {
+                    "organisations.resolve": [
+                        "org-throws",
+                        "nl"
+                    ]
+                },
+                {
+                    "l10nFactory.get": {
+                        "app": "portaliq",
+                        "lang": "nl",
+                        "locale": null
+                    }
+                },
+                {
+                    "l10n.l": {
+                        "type": "datetime",
+                        "data": "DateTimeImmutable",
+                        "options": {
+                            "width": "long"
+                        }
+                    }
+                },
+                {
+                    "mailer.createEMailTemplate": {
+                        "emailId": "portaliq.identity.email-link-signed-in",
+                        "data": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "You signed in to %1$s",
+                        "parameters": [
+                            "Portaliq"
+                        ]
+                    }
+                },
+                {
+                    "template.setSubject": {
+                        "subject": "You signed in to %1$s [\"Portaliq\"]"
+                    }
+                },
+                {
+                    "template.addHeader": []
+                },
+                {
+                    "l10n.t": {
+                        "text": "You signed in",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addHeading": {
+                        "title": "You signed in []",
+                        "plainTitle": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your account at %1$s was signed in to with an e-mail link on %2$s.",
+                        "parameters": [
+                            "Portaliq",
+                            "datetime:2026-11-02"
+                        ]
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Your account at %1$s was signed in to with an e-mail link on %2$s. [\"Portaliq\",\"datetime:2026-11-02\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Was this not you? Then contact %1$s.",
+                        "parameters": [
+                            "Portaliq"
+                        ]
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Was this not you? Then contact %1$s. [\"Portaliq\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "template.addFooter": {
+                        "text": "",
+                        "lang": null
+                    }
+                },
+                {
+                    "mailer.createMessage": []
+                },
+                {
+                    "message.setTo": {
+                        "recipients": [
+                            "a@example.org"
+                        ]
+                    }
+                },
+                {
+                    "message.useTemplate": {
+                        "emailTemplate": "double"
+                    }
+                },
+                {
+                    "mailer.send": {
+                        "message": "double"
+                    }
+                }
+            ]
+        },
+        "contactConfirmation": {
+            "answer": true,
+            "log": [
+                {
+                    "mailer.validateMailAddress": {
+                        "email": "b@example.org"
+                    }
+                },
+                {
+                    "resolveByOrganisation": "org-throws"
+                },
+                {
+                    "organisations.resolve": [
+                        "org-throws",
+                        "nl"
+                    ]
+                },
+                {
+                    "deepLinks.forSite": {
+                        "portalSlug": "",
+                        "organisation": "org-throws"
+                    }
+                },
+                {
+                    "l10nFactory.get": {
+                        "app": "portaliq",
+                        "lang": "nl",
+                        "locale": null
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "We have received your question",
+                        "parameters": []
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your question has reached %1$s. You find it back under My questions.",
+                        "parameters": [
+                            "Portaliq"
+                        ]
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Your question about %1$s has reached %2$s. You find it back under My questions.",
+                        "parameters": [
+                            "Parking",
+                            "Portaliq"
+                        ]
+                    }
+                },
+                {
+                    "mailer.createEMailTemplate": {
+                        "emailId": "portaliq.contact.confirmation",
+                        "data": []
+                    }
+                },
+                {
+                    "template.setSubject": {
+                        "subject": "We have received your question []"
+                    }
+                },
+                {
+                    "template.addHeader": []
+                },
+                {
+                    "l10n.t": {
+                        "text": "We have received your question",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addHeading": {
+                        "title": "We have received your question []",
+                        "plainTitle": ""
+                    }
+                },
+                {
+                    "template.addBodyText": {
+                        "text": "Your question about %1$s has reached %2$s. You find it back under My questions. [\"Parking\",\"Portaliq\"]",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "l10n.t": {
+                        "text": "Open My questions",
+                        "parameters": []
+                    }
+                },
+                {
+                    "template.addBodyButton": {
+                        "text": "Open My questions []",
+                        "url": "https://site//org-throws",
+                        "plainText": ""
+                    }
+                },
+                {
+                    "template.addFooter": {
+                        "text": "",
+                        "lang": null
+                    }
+                },
+                {
+                    "mailer.createMessage": []
+                },
+                {
+                    "message.setTo": {
+                        "recipients": [
+                            "b@example.org"
+                        ]
+                    }
+                },
+                {
+                    "message.useTemplate": {
+                        "emailTemplate": "double"
+                    }
+                },
+                {
+                    "mailer.send": {
+                        "message": "double"
+                    }
+                }
+            ]
+        }
+    }
+}

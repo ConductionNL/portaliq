@@ -6,6 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 
 use OCA\Portaliq\Service\Identity\ContactConfirmationMailer;
 use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\Mail\MailSite;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
@@ -196,8 +197,7 @@ class ContactConfirmationMailerTest extends TestCase {
 			mailer: $imailer,
 			l10nFactory: $factory,
 			deepLinks: new PortalDeepLinkBuilder($urls),
-			portals: $portals,
-			organisations: $organisations,
+			site: new MailSite(portals: $portals, organisations: $organisations),
 			accounts: $accounts,
 			logger: $logger
 		);
