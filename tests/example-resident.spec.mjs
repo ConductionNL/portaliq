@@ -498,11 +498,23 @@ test('Gesprek: conversations with Mark Jansen, Linda Smit and Henk de Vries; two
 // admin boards were drawn on Wednesday 7 October 2026, the Mijn boards on
 // Thursday 8 October, so a board date is a day count from the install day.
 const portalBoardsPart = () => JSON.parse(read('lib/Settings/example-sets/zuiddrecht.d/30-portal-boards.json'))
-const minutes = (value) => {
+/**
+ * The minutes from the install day's midnight of a `{{datetime:n hh:mm}}` placeholder.
+ *
+ * @param {string} value The placeholder.
+ * @return {number} The minutes.
+ */
+function minutes(value) {
 	const [, day, hour, minute] = String(value).match(/\{\{datetime:([+-]?\d+) (\d\d):(\d\d)\}\}/) || []
 	return Number(day) * 1440 + Number(hour) * 60 + Number(minute)
 }
-const fitsSchema = (object) => {
+
+/**
+ * Assert that a declared object fits the schema portaliq ships for it.
+ *
+ * @param {object} object The declared object.
+ */
+function fitsSchema(object) {
 	const schema = schemas[object.schema]
 	assert.ok(schema, `${object.key}: portaliq ships the ${object.schema} schema`)
 	for (const key of schema.required || []) {
