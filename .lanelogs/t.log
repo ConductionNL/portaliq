@@ -1,0 +1,42 @@
+PHPUnit 10.5.63 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.3.6
+Configuration: /home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/phpunit.xml
+
+.........................F.......................                 49 / 49 (100%)
+
+Time: 00:01.581, Memory: 68.00 MB
+
+There was 1 failure:
+
+1) OCA\Portaliq\Tests\Unit\Settings\ZuiddrechtLindelaanConversationTest::testTheConversationReadsAsTheBoard
+Failed asserting that two arrays are identical.
+--- Expected
++++ Actual
+@@ @@
+ Array &0 [
+     0 => Array &1 [
+         0 => '{{datetime:-14 14:10}}',
+-        1 => 'Hoe vraag ik de stukken over de verlichting van het fietspad op?',
++        1 => 'Vraag over stukken fietspad, Woo-verzoek samen opgenomen.',
+     ],
+     1 => Array &2 [
+         0 => '{{datetime:-14 14:32}}',
+@@ @@
+     ],
+     3 => Array &4 [
+         0 => '{{datetime:-13 10:52}}',
+-        1 => 'Dank u wel. Ik wil graag alle stukken over de verlichting zien.',
++        1 => 'Wil graag alle stukken over de verlichting zien.',
+     ],
+     4 => Array &5 [
+         0 => '{{datetime:-12 09:15}}',
+-        1 => 'Goedemorgen, ik wil mijn verzoek aanvullen. Kunt u ook de offertes voor de lantaarnpalen meenemen? Met vriendelijke groet, Sanne de Vries',
++        1 => 'Vult het verzoek aan met de offertes voor de lantaarnpalen.',
+     ],
+ ]
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Settings/ZuiddrechtLindelaanConversationTest.php:38
+
+FAILURES!
+Tests: 49, Assertions: 360, Failures: 1.

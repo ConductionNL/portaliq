@@ -1,0 +1,2143 @@
+
+=== lint ===
+No syntax errors detected in ./tests/bootstrap.php
+No syntax errors detected in ./tests/Stubs/Mcp/AbstractToolHandler.php
+No syntax errors detected in ./tests/Stubs/Mcp/IMcpToolProvider.php
+No syntax errors detected in ./tests/Stubs/Pqtestconsumer/Event/LandingPageFormSubmittedEvent.php
+No syntax errors detected in ./tests/Stubs/Thematiq/Service/TokenSetConverterService.php
+No syntax errors detected in ./tests/Stubs/Thematiq/Service/CustomTokenSetValidator.php
+No syntax errors detected in ./tests/Stubs/Thematiq/Service/ContrastService.php
+No syntax errors detected in ./tests/Stubs/OpenRegister/Event/RegisterLeafProvidersEvent.php
+No syntax errors detected in ./tests/Stubs/OpenRegister/Service/Integration/IntegrationProvider.php
+No syntax errors detected in ./tests/Stubs/OpenRegister/Service/Integration/LeafDescriptor.php
+No syntax errors detected in ./tests/Stubs/OpenRegister/Exception/NotImplementedException.php
+No syntax errors detected in ./tests/Stubs/Integriq/Event/DigitalPostSendRequestedEvent.php
+No syntax errors detected in ./tests/Stubs/Integriq/Event/ConnectionRefreshRequestedEvent.php
+No syntax errors detected in ./tests/Stubs/Integriq/Event/DigitalPostDeliveredEvent.php
+No syntax errors detected in ./tests/Stubs/Integriq/Event/ConnectionStatusReportedEvent.php
+No syntax errors detected in ./tests/unit/Controller/SettingsControllerTest.php
+No syntax errors detected in ./tests/unit/RenameDutchColumnsTest.php
+No syntax errors detected in ./tests/unit/Settings/PortaliqAdminTest.php
+No syntax errors detected in ./tests/bootstrap-unit.php
+No syntax errors detected in ./tests/Doubles/OpenRegisterObjectService.php
+No syntax errors detected in ./tests/Doubles/OpenRegisterObjectEntity.php
+No syntax errors detected in ./tests/Doubles/UrlParameterRequest.php
+No syntax errors detected in ./tests/Doubles/ServerVariablesRequest.php
+No syntax errors detected in ./tests/Unit/BackgroundJob/TrafficGeoJobsTest.php
+No syntax errors detected in ./tests/Unit/BackgroundJob/TrafficReportJobTest.php
+No syntax errors detected in ./tests/Unit/BackgroundJob/PortalDraftPurgeJobTest.php
+No syntax errors detected in ./tests/Unit/BackgroundJob/EmailLinkRequestJobTest.php
+No syntax errors detected in ./tests/Unit/BackgroundJob/MessageBoxDispatchJobTest.php
+No syntax errors detected in ./tests/Unit/BackgroundJob/AvailabilityProbeJobTest.php
+No syntax errors detected in ./tests/Unit/BackgroundJob/NotificationDispatchJobTest.php
+No syntax errors detected in ./tests/Unit/BackgroundJob/PendingPushDeliveryJobTest.php
+No syntax errors detected in ./tests/Unit/BackgroundJob/PortalTaskDeliveryJobTest.php
+No syntax errors detected in ./tests/Unit/BackgroundJob/TrafficAggregationJobTest.php
+No syntax errors detected in ./tests/Unit/Controller/GuestActionControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/EmergencyPushControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/CitizenCaseControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/StaffActionDoubleTrait.php
+No syntax errors detected in ./tests/Unit/Controller/MyCasesControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/ContributionTenantGuardTest.php
+No syntax errors detected in ./tests/Unit/Controller/AccessRequestAdminControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/PublicAssistantControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/PortalThemeControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/MessageGuardianControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/QuietHoursStaffControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/ExampleResidentControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/ContributionControllerUserNamesTest.php
+No syntax errors detected in ./tests/Unit/Controller/EventGuardianControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/ReportControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/PortalTaskProxyControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/TrafficReportControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/HealthControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/DashboardControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/ContentMediaControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/SettingsControllerWriteTest.php
+No syntax errors detected in ./tests/Unit/Controller/CmsEditorControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/MessageStaffControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/TrafficControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/ContentStartTilesControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/ActivityGuardianControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/TrafficPageControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/ContentCatalogueControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/PortalDraftControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/MandateControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/ContributionExportPdfTest.php
+No syntax errors detected in ./tests/Unit/Controller/BundledSiteControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/PortalContactAddressControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/PortalPageControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/ActionSettingsControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/EmailLinkControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/SessionAdminControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/ContributionControllerFileFieldTest.php
+No syntax errors detected in ./tests/Unit/Controller/PreferencesControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/PartnerTaskControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/RateLimitAttributesTest.php
+No syntax errors detected in ./tests/Unit/Controller/PortalPlansControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/PortalRegisteredDetailsControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/ContributionControllerLandingDestinationTest.php
+No syntax errors detected in ./tests/Unit/Controller/PublicRecordControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/PortalContactsControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/PortalCollectionDocumentsControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/PortalRowActionControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/PortalHomePageControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/EventControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/PortalAccountClaimControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/PortalManifestControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/ContributionControllerCaseTypeNamesTest.php
+No syntax errors detected in ./tests/Unit/Controller/PortalIntakeControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/TrafficPathControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/ContributionControllerSubjectFieldTest.php
+No syntax errors detected in ./tests/Unit/Controller/ContributionControllerDraftSendTest.php
+No syntax errors detected in ./tests/Unit/Controller/AccessibilityControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/CmsDomainControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/PortalPageControllerHostRootTest.php
+No syntax errors detected in ./tests/Unit/Controller/PortalFieldFileControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/PortalOverviewControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/PortalFormEmailCodeControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/PageHistoryControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/SessionControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/ProposalControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/ContributionControllerRequiredFieldsTest.php
+No syntax errors detected in ./tests/Unit/Controller/PushSubscriptionControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/MetricsControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/BrokerSessionControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/QuietHoursGuardianControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/ContentControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/MailTemplateAdminControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/ContentNewsControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/FormBindingAdminControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/PortalAccountAdminControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/ReportListsControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/NewsControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/ActivityControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/HeadlessConformanceTest.php
+No syntax errors detected in ./tests/Unit/Controller/PortalEmbedControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/ContributionControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/SetupControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/AvailabilityControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/PortalIdentityControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/InboxReplyTest.php
+No syntax errors detected in ./tests/Unit/Controller/PortalCaseTypesControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/PortalItemListControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/SessionBranchControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/ActionGroupsControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/PortalTimelineControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/PortalAccountSelfControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/AdminOnlyPostureTest.php
+No syntax errors detected in ./tests/Unit/Controller/NewsGuardianControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/NewsletterControllerTest.php
+No syntax errors detected in ./tests/Unit/Controller/PollControllerTest.php
+No syntax errors detected in ./tests/Unit/Middleware/PublicApiCorsMiddlewareTest.php
+No syntax errors detected in ./tests/Unit/Middleware/PortalAuthMiddlewareTest.php
+No syntax errors detected in ./tests/Unit/AppInfoDependenciesTest.php
+No syntax errors detected in ./tests/Unit/Repair/InitializeSettingsTest.php
+No syntax errors detected in ./tests/Unit/Repair/MoveActionSummarySentenceTest.php
+No syntax errors detected in ./tests/Unit/Repair/BackfillCmsPortalReferenceTest.php
+No syntax errors detected in ./tests/Unit/Repair/BackfillNewsPublishedAtTest.php
+No syntax errors detected in ./tests/Unit/Repair/SeedStaffGroupTest.php
+No syntax errors detected in ./tests/Unit/Repair/ActionSeedCensusTest.php
+No syntax errors detected in ./tests/Unit/Repair/InitializeDemoPortalTest.php
+No syntax errors detected in ./tests/Unit/Repair/MovePortalAuditEntriesTest.php
+No syntax errors detected in ./tests/Unit/Repair/InitializeActionsTest.php
+No syntax errors detected in ./tests/Unit/Repair/MoveBindingDestinationTest.php
+No syntax errors detected in ./tests/Unit/PortaliqTest.php
+No syntax errors detected in ./tests/Unit/AppInfo/HostRootRedirectBootTest.php
+No syntax errors detected in ./tests/Unit/AppInfo/CanonicalSettingsWriteRouteTest.php
+No syntax errors detected in ./tests/Unit/AppInfo/StoreRouteWiringTest.php
+No syntax errors detected in ./tests/Unit/AppInfo/StorePlaneRegistrarTest.php
+No syntax errors detected in ./tests/Unit/AppInfo/FormDependentsRegistrarTest.php
+No syntax errors detected in ./tests/Unit/AppInfo/OpenRegisterAutoloaderTest.php
+No syntax errors detected in ./tests/Unit/Service/CmsContentCacheTest.php
+No syntax errors detected in ./tests/Unit/Service/WriteRefusalTest.php
+No syntax errors detected in ./tests/Unit/Service/Notifications/PendingPushServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/Notifications/PushDeliveryServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/Notifications/QuietHoursPolicyTest.php
+No syntax errors detected in ./tests/Unit/Service/CitizenWriteRecorderTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalRegionResolverTest.php
+No syntax errors detected in ./tests/Unit/Service/CmsReaderMediaTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalTimelineReaderTest.php
+No syntax errors detected in ./tests/Unit/Service/Plans/PlanEndReminderServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/Plans/PortalPlanServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/Plans/PlanEndingMailerTest.php
+No syntax errors detected in ./tests/Unit/Service/Plans/PlanActionFieldsTest.php
+No syntax errors detected in ./tests/Unit/Service/Plans/PlanViewsTest.php
+No syntax errors detected in ./tests/Unit/Service/Plans/PlanFieldChangesTest.php
+No syntax errors detected in ./tests/Unit/Service/Plans/PlanRulesTest.php
+No syntax errors detected in ./tests/Unit/Service/TrafficEventValidatorTest.php
+No syntax errors detected in ./tests/Unit/Service/InternalBaseUrlTest.php
+No syntax errors detected in ./tests/Unit/Service/EventRulesTest.php
+No syntax errors detected in ./tests/Unit/Service/Overview/PortalOverviewTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalTaskGatewayTest.php
+No syntax errors detected in ./tests/Unit/Service/InMemoryActivityStore.php
+No syntax errors detected in ./tests/Unit/Service/SubmissionReceiptServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/CmsReaderTest.php
+No syntax errors detected in ./tests/Unit/Service/LeafGuardianAudienceReaderTest.php
+No syntax errors detected in ./tests/Unit/Service/PublicCatalogueTest.php
+No syntax errors detected in ./tests/Unit/Service/OidcClaimMapperServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/MandatedCaseReaderTest.php
+No syntax errors detected in ./tests/Unit/Service/PageEditorServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/EventSignupServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/PublicNewsReaderTest.php
+No syntax errors detected in ./tests/Unit/Service/InstanceLoopbackTest.php
+No syntax errors detected in ./tests/Unit/Service/GuardianAudienceFixtureReaderTest.php
+No syntax errors detected in ./tests/Unit/Service/ActionAuthServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalRegisterContextTest.php
+No syntax errors detected in ./tests/Unit/Service/FakeAuditTrailMapper.php
+No syntax errors detected in ./tests/Unit/Service/TrafficAggregationServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalTokenCssTest.php
+No syntax errors detected in ./tests/Unit/Service/NewsFeedReaderTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalObjectWriterOrganisationTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalAccountServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/TrafficReportServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/ActivitySignupServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalSessionRevokerTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalOrganisationConfigServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/SiteShellTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalFileReaderTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalItemReaderTest.php
+No syntax errors detected in ./tests/Unit/Service/CitizenWriteThrottleTest.php
+No syntax errors detected in ./tests/Unit/Service/CitizenWithdrawalResolutionTest.php
+No syntax errors detected in ./tests/Unit/Service/ActivityRosterTest.php
+No syntax errors detected in ./tests/Unit/Service/EventFeedReaderTest.php
+No syntax errors detected in ./tests/Unit/Service/PublicRecordShapeTest.php
+No syntax errors detected in ./tests/Unit/Service/PagedObjectReadsTest.php
+No syntax errors detected in ./tests/Unit/Service/CmsSharedBlocksTest.php
+No syntax errors detected in ./tests/Unit/Service/NewsletterPreflightServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/PublicRecordReaderTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalSessionServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/ActivityAttendanceServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalThemeResolverTest.php
+No syntax errors detected in ./tests/Unit/Service/EventRsvpServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/PortalAccountActivationServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/PortalRegisteredDetailsServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/NextcloudAccountProvisionerTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/MandateDaysTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/PortalMandateServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/PortalReferenceLinkServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/PortalIdentityStoreTrait.php
+No syntax errors detected in ./tests/Unit/Service/Identity/PortalContactServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/PortalIdentityMailerTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/PortalSelfServiceServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/PortalRegisteredDetailsLinksTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/EmailLink/EmailLinkSenderTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/EmailLink/EmailLinkEligibilityTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/EmailLink/EmailLinkAddressTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/EmailLink/EmailLinkTokensTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/EmailLink/EmailLinkLimitsTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/EmailLink/SignInAddressChangeTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/EmailLink/EmailLinkSettingTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/PortalChallengeServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/InvitationCodeTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/MandateRowsTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/PortalInvitationServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/PortalContactAddressServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/NextcloudAccountRegistrationTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/PortalReferenceCaseServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/PortalRegistrationPolicyServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/WaitingAccountJoinTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/ContactInvitationLinkTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/ContactAddressBookTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/PortalAccountPresenceTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/PortalWaysInResolverTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/ContactConfirmationMailerTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/PortalPartyTreeResolverTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/PortalMandateAdminServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/PortalAccessRequestServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/Identity/WaitingAccountInvitationTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalRateLimitTest.php
+No syntax errors detected in ./tests/Unit/Service/CaseTypeVisibilityTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalFileWriterTest.php
+No syntax errors detected in ./tests/Unit/Service/Reports/ReportWithoutAnAccountTest.php
+No syntax errors detected in ./tests/Unit/Service/DemoDataServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/GuardianAccountDirectoryTest.php
+No syntax errors detected in ./tests/Unit/Service/NotificationDispatchServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/Cms/SiteHeadTest.php
+No syntax errors detected in ./tests/Unit/Service/Cms/AccessibilityEdgesTest.php
+No syntax errors detected in ./tests/Unit/Service/Cms/MediaFileTest.php
+No syntax errors detected in ./tests/Unit/Service/Cms/PortalDomainVerifierTest.php
+No syntax errors detected in ./tests/Unit/Service/Cms/PageHistoryTest.php
+No syntax errors detected in ./tests/Unit/Service/Cms/AccessibilityFramingTest.php
+No syntax errors detected in ./tests/Unit/Service/Cms/MediaUsageTest.php
+No syntax errors detected in ./tests/Unit/Service/Cms/CmsPublishValidatorTest.php
+No syntax errors detected in ./tests/Unit/Service/Cms/PortalShellTest.php
+No syntax errors detected in ./tests/Unit/Service/Cms/GlossaryRelationsTest.php
+No syntax errors detected in ./tests/Unit/Service/Cms/SharedBlockPortalsTest.php
+No syntax errors detected in ./tests/Unit/Service/Cms/PortalHelpTest.php
+No syntax errors detected in ./tests/Unit/Service/Cms/FormPlacementHelpTest.php
+No syntax errors detected in ./tests/Unit/Service/Cms/AccessibilityStatementTest.php
+No syntax errors detected in ./tests/Unit/Service/Cms/PortalHomePageTest.php
+No syntax errors detected in ./tests/Unit/Service/Cms/PortalResidentMenuTest.php
+No syntax errors detected in ./tests/Unit/Service/Mail/MailSiteTest.php
+No syntax errors detected in ./tests/Unit/Service/Mail/MailTemplateRendererTest.php
+No syntax errors detected in ./tests/Unit/Service/Mail/MailLogTest.php
+No syntax errors detected in ./tests/Unit/Service/NewsAudienceMatcherTest.php
+No syntax errors detected in ./tests/Unit/Service/PublicDetailTest.php
+No syntax errors detected in ./tests/Unit/Service/TrafficConfigResolverTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalObjectWriterDeleteTest.php
+No syntax errors detected in ./tests/Unit/Service/ExampleResident/ExampleResidentSignInTest.php
+No syntax errors detected in ./tests/Unit/Service/ExampleResident/ExampleSetResidentsTest.php
+No syntax errors detected in ./tests/Unit/Service/ShillinqContributionRaiserTest.php
+No syntax errors detected in ./tests/Unit/Service/Messaging/GuardianMessageTranslatorTest.php
+No syntax errors detected in ./tests/Unit/Service/Messaging/MessageStoreTest.php
+No syntax errors detected in ./tests/Unit/Service/Messaging/MessageThreadAccessGuardTest.php
+No syntax errors detected in ./tests/Unit/Service/Messaging/MessageTranslationClientTest.php
+No syntax errors detected in ./tests/Unit/Service/Messaging/InAppMessagingLeafTest.php
+No syntax errors detected in ./tests/Unit/Service/Messaging/MessageContactReaderTest.php
+No syntax errors detected in ./tests/Unit/Service/Connection/ConnectionReporterTest.php
+No syntax errors detected in ./tests/Unit/Service/Connection/ConnectionObservationsTest.php
+No syntax errors detected in ./tests/Unit/Service/Connection/ConnectionReportCallersTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/PortalDraftStoreTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/ActionDraftTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/PortalFormOperandsTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/PortalBindingPreviewTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/FormConfirmationMailerTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/PortalEmbedThrottleTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/VisibleWhenLocalTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/DestinationSubmitTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/PortalFormValidatorTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/PortalFamilyMembersTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/PortalCaseTypeChoicesTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/PortalDraftDrainTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/DutchFormatsTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/PortalEmailVerificationTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/PortalAddressLookupTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/PortalSubmissionChecksTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/LandingSubmissionDrainTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/PortalFeeTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/PortalApplicantPrefillTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/PortalEmbedSnippetDescriptionTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/PortalIntakePaymentsTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/DestinationDraftTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/DestinationMappingTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/FormConfirmationSummaryTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/PortalReferenceListsTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/DestinationLookupTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/PortalFormFieldsTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/PortalFormBindingResolverTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/PortalFormDecisionTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/PortalFieldChecksTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/PortalEmbedHeightTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/Fakes/FormSubmitFake.php
+No syntax errors detected in ./tests/Unit/Service/Intake/Fakes/PortalOwnerDraft.php
+No syntax errors detected in ./tests/Unit/Service/Intake/PortalFormCalculatorTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/PortalEmbedGuardTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/PortalIntakeQueueTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/FormStatementsTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/PortalEntryPointContentTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/IntakeQueueDrainTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/PortalCatalogueReaderTest.php
+No syntax errors detected in ./tests/Unit/Service/Intake/DestinationIntakeTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalUserDisplayNamesTest.php
+No syntax errors detected in ./tests/Unit/Service/Assistant/PublicAssistantChannelTest.php
+No syntax errors detected in ./tests/Unit/Service/Assistant/PublicSourceScopeTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalResolverTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalObjectReaderScopedPageTest.php
+No syntax errors detected in ./tests/Unit/Service/Theme/PortalThemeContrastTest.php
+No syntax errors detected in ./tests/Unit/Service/Theme/PortalCustomThemeSetsTest.php
+No syntax errors detected in ./tests/Unit/Service/Theme/PortalThemeOverviewTest.php
+No syntax errors detected in ./tests/Unit/Service/Theme/PortalThemeChoiceTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalCaseDocumentReaderTest.php
+No syntax errors detected in ./tests/Unit/Service/ExampleSite/ExampleSiteInstallerTest.php
+No syntax errors detected in ./tests/Unit/Service/ExampleSite/ExampleSiteStoreTest.php
+No syntax errors detected in ./tests/Unit/Service/ExampleSite/ExampleSiteCatalogueTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalActionForwarderTest.php
+No syntax errors detected in ./tests/Unit/Service/NewsPhotoConsentGateTest.php
+No syntax errors detected in ./tests/Unit/Service/Proposals/ProposalServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/Proposals/ChangeProposalsProviderTest.php
+No syntax errors detected in ./tests/Unit/Service/LandingPageProvisioningServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalPdfExportTest.php
+No syntax errors detected in ./tests/Unit/Service/ActivityStoreTest.php
+No syntax errors detected in ./tests/Unit/Service/TrafficIngestServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/DerivedCatalogueFacetsTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalAccountProvisionTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalFileFieldPolicyTest.php
+No syntax errors detected in ./tests/Unit/Service/ActivityDraftTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalCrossRefGuardTest.php
+No syntax errors detected in ./tests/Unit/Service/OidcClientServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/Fixtures/FakeConnectException.php
+No syntax errors detected in ./tests/Unit/Service/Fixtures/FakeResponseException.php
+No syntax errors detected in ./tests/Unit/Service/PortalNoticeReaderTest.php
+No syntax errors detected in ./tests/Unit/Service/LoopbackOriginsTest.php
+No syntax errors detected in ./tests/Unit/Service/Signin/BrokerLoginTest.php
+No syntax errors detected in ./tests/Unit/Service/Signin/BrokerEnvelopeCheckTest.php
+No syntax errors detected in ./tests/Unit/Service/Signin/SiteReturnAddressTest.php
+No syntax errors detected in ./tests/Unit/Service/Signin/PortalSigninSettingsTest.php
+No syntax errors detected in ./tests/Unit/Service/AuditTrailServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/CitizenWritableSetResolverTest.php
+No syntax errors detected in ./tests/Unit/Service/RequiredFieldsGuardTest.php
+No syntax errors detected in ./tests/Unit/Service/Availability/AvailabilityRollupTest.php
+No syntax errors detected in ./tests/Unit/Service/Availability/AvailabilityReportTest.php
+No syntax errors detected in ./tests/Unit/Service/Availability/AvailabilityProbeTest.php
+No syntax errors detected in ./tests/Unit/Service/Availability/AvailabilityStoreTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalCaseListReaderTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalAuditHookTest.php
+No syntax errors detected in ./tests/Unit/Service/TeacherInboxServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/CmsRowsTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalRuntimeConfigResolverTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/TrafficPathServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/TrafficDimensionCountsTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/UserAgentClassifierTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/TrafficReportDeliveryTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/ReferrerClassifierTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/TrafficRollupSumTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/TrafficPageRowsTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/FakeAppConfig.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/TrafficRecordingServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/TrafficReportMailTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/TrafficLogImporterTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/TrafficSegmentsTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/TrafficExperimentsTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/TrafficPagePathTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/TrafficServerTokenTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/TrafficFormStatsTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/TrafficPathsTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/TrafficReportDefinitionsTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/TrafficRecordingMaskTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/TrafficGoalsTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/TrafficLogParserTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/Geo/GzipExtractorTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/Geo/GeoSettingsTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/Geo/GeoRefreshServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/Geo/MmdbGeoResolverTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/Geo/MaxMindProviderTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/Geo/DbIpLiteProviderTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/TrafficOutcomeParamsTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/TrafficEventStoreTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/TrafficRollupTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/TrafficMetricsTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/TrafficFunnelsTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/TrafficSessioniserTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/TrafficHeatmapStatsTest.php
+No syntax errors detected in ./tests/Unit/Service/Traffic/VisitorHasherTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalJwtServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalObjectWriterTest.php
+No syntax errors detected in ./tests/Unit/Service/GroupStaffFixtureReaderTest.php
+No syntax errors detected in ./tests/Unit/Service/NewsReadReceiptServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/PollServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/ActivityFeedReaderTest.php
+No syntax errors detected in ./tests/Unit/Service/ActionReminderServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalInboxReaderTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalObjectReaderTest.php
+No syntax errors detected in ./tests/Unit/Service/AdminMenuAccessTest.php
+No syntax errors detected in ./tests/Unit/Service/ActivityContributionServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/VisibleFromGateTest.php
+No syntax errors detected in ./tests/Unit/Service/SiteAddressingTest.php
+No syntax errors detected in ./tests/Unit/Service/SettingsServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/Branch/BranchChoiceTest.php
+No syntax errors detected in ./tests/Unit/Service/Tasks/PortalCaseAccessGuardTest.php
+No syntax errors detected in ./tests/Unit/Service/Tasks/PartnerAskServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalDeepLinkBuilderTest.php
+No syntax errors detected in ./tests/Unit/Service/NewsAudienceOptionsTest.php
+No syntax errors detected in ./tests/Unit/Service/ViaJoinRowFilterTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalObjectReaderViaQueryTest.php
+No syntax errors detected in ./tests/Unit/Service/NewsRowSourceTest.php
+No syntax errors detected in ./tests/Unit/Service/PortalCaseTypeCatalogueTest.php
+No syntax errors detected in ./tests/Unit/Service/OidcStateStoreServiceTest.php
+No syntax errors detected in ./tests/Unit/Service/ActivityPlacesTest.php
+No syntax errors detected in ./tests/Unit/Service/PublicIndexSourceTest.php
+No syntax errors detected in ./tests/Unit/Service/CollectionDocumentsTest.php
+No syntax errors detected in ./tests/Unit/Listener/CmsCacheInvalidationListenerTest.php
+No syntax errors detected in ./tests/Unit/Listener/FormDestinationDependentsListenerTest.php
+No syntax errors detected in ./tests/Unit/Listener/BindingDestinationGuardListenerTest.php
+No syntax errors detected in ./tests/Unit/Listener/PortalAccountInvitationListenerTest.php
+No syntax errors detected in ./tests/Unit/Listener/NoticeWriteGuardListenerTest.php
+No syntax errors detected in ./tests/Unit/Listener/LandingPageSubmissionDispatchListenerTest.php
+No syntax errors detected in ./tests/Unit/Listener/ClaimAddressedChangeNoticeTest.php
+No syntax errors detected in ./tests/Unit/Listener/MediaWriteGuardListenerTest.php
+No syntax errors detected in ./tests/Unit/Listener/GlossaryRelationGuardListenerTest.php
+No syntax errors detected in ./tests/Unit/Listener/ResidentLandingListenerTest.php
+No syntax errors detected in ./tests/Unit/Listener/PortalRecordChangeListenerTest.php
+No syntax errors detected in ./tests/Unit/Listener/PortalAccountEventListenerTest.php
+No syntax errors detected in ./tests/Unit/Listener/RegisterProposalLeavesListenerTest.php
+No syntax errors detected in ./tests/Unit/Listener/PortalDigitalPostDeliveredListenerTest.php
+No syntax errors detected in ./tests/Unit/Listener/LandingPageRequestedEventListenerTest.php
+No syntax errors detected in ./tests/Unit/Command/TrafficReportingCommandsTest.php
+No syntax errors detected in ./tests/Unit/Command/TrafficGeoRefreshTest.php
+No syntax errors detected in ./tests/Unit/Command/ExampleSiteCommandsTest.php
+No syntax errors detected in ./tests/Unit/Command/IntakeDrainTest.php
+No syntax errors detected in ./tests/Unit/Command/TrafficReaggregateTest.php
+No syntax errors detected in ./tests/Unit/Command/ExampleResidentCommandsTest.php
+No syntax errors detected in ./tests/Unit/Contribution/SchoolBlockKeysTest.php
+No syntax errors detected in ./tests/Unit/Contribution/FormStepsDecisionTest.php
+No syntax errors detected in ./tests/Unit/Contribution/StartTileCollectorTest.php
+No syntax errors detected in ./tests/Unit/Contribution/PortalBlockResolverTest.php
+No syntax errors detected in ./tests/Unit/Contribution/CardStatusKeysTest.php
+No syntax errors detected in ./tests/Unit/Contribution/CitizenDocumentUploadTest.php
+No syntax errors detected in ./tests/Unit/Contribution/ActionConfigNormaliserFileFieldTest.php
+No syntax errors detected in ./tests/Unit/Contribution/MessageContactsKeysTest.php
+No syntax errors detected in ./tests/Unit/Contribution/ThemeTagKeysTest.php
+No syntax errors detected in ./tests/Unit/Contribution/DocumentsProviderMethodTest.php
+No syntax errors detected in ./tests/Unit/Contribution/AttachedActionResolverTest.php
+No syntax errors detected in ./tests/Unit/Contribution/ConfirmationMailKeysTest.php
+No syntax errors detected in ./tests/Unit/Contribution/TimedTaskConfigNormaliserTest.php
+No syntax errors detected in ./tests/Unit/Contribution/CollectionSkipTest.php
+No syntax errors detected in ./tests/Unit/Contribution/PageChoiceTest.php
+No syntax errors detected in ./tests/Unit/Contribution/RowActionInputsTest.php
+No syntax errors detected in ./tests/Unit/Contribution/SchemaInputHintNormaliserTest.php
+No syntax errors detected in ./tests/Unit/Contribution/TimetableKeysTest.php
+No syntax errors detected in ./tests/Unit/Contribution/CitizenWriteConfigNormaliserTest.php
+No syntax errors detected in ./tests/Unit/Contribution/PublicRecordsNormaliserTest.php
+No syntax errors detected in ./tests/Unit/Contribution/MessageBoxConfigNormaliserTest.php
+No syntax errors detected in ./tests/Unit/Contribution/PortalPageGroupTest.php
+No syntax errors detected in ./tests/Unit/Contribution/InboxMessageFieldsTest.php
+No syntax errors detected in ./tests/Unit/Contribution/NotificationRuleNormaliserTest.php
+No syntax errors detected in ./tests/Unit/Contribution/CollectionBlockLabelTest.php
+No syntax errors detected in ./tests/Unit/Contribution/ValueLabelsNormaliserTest.php
+No syntax errors detected in ./tests/Unit/Contribution/RowActionFilesTest.php
+No syntax errors detected in ./tests/Unit/Contribution/BoardKeysTest.php
+No syntax errors detected in ./tests/Unit/Contribution/ActionConfigNormaliserTest.php
+No syntax errors detected in ./tests/Unit/Contribution/CrossRefConfigNormaliserTest.php
+No syntax errors detected in ./tests/Unit/Contribution/CollectionIntroKeyTest.php
+No syntax errors detected in ./tests/Unit/Contribution/PublicIndexTextTest.php
+No syntax errors detected in ./tests/Unit/Contribution/RequiredFieldsNormaliserTest.php
+No syntax errors detected in ./tests/Unit/Contribution/PortalContributionRegistryTest.php
+No syntax errors detected in ./tests/Unit/Contribution/PortalContributionFilterTest.php
+No syntax errors detected in ./tests/Unit/Contribution/ItemListConfigNormaliserTest.php
+No syntax errors detected in ./tests/Unit/Contribution/CollectionSchemaLabelsTest.php
+No syntax errors detected in ./tests/Unit/Contribution/ContributionLanguageTest.php
+No syntax errors detected in ./tests/Unit/Contribution/RowWhenNormaliserTest.php
+No syntax errors detected in ./tests/Unit/Contribution/InboxReplyConfigNormaliserTest.php
+No syntax errors detected in ./tests/Unit/Contribution/FormStepDecisionTest.php
+No syntax errors detected in ./tests/Unit/Contribution/CreateBodyTest.php
+No syntax errors detected in ./tests/Unit/Contribution/RecordPageNormaliserTest.php
+No syntax errors detected in ./tests/Unit/Contribution/SmallContributionHelpersTest.php
+No syntax errors detected in ./tests/Unit/Contribution/LookupByRowFieldTest.php
+No syntax errors detected in ./tests/Unit/Contribution/AnonymousColumnsTest.php
+No syntax errors detected in ./tests/Unit/Contribution/ThemeTest.php
+No syntax errors detected in ./tests/Unit/Contribution/RowActionResolverTest.php
+No syntax errors detected in ./tests/Unit/Contribution/PortalManifestNormaliserTest.php
+No syntax errors detected in ./tests/Unit/Contribution/PortalProviderLocatorTest.php
+No syntax errors detected in ./tests/Unit/Contribution/CollectionFieldConfigsTest.php
+No syntax errors detected in ./tests/Unit/Contribution/GuestActionRegistryTest.php
+No syntax errors detected in ./tests/Unit/Contribution/CaseFieldKeyTest.php
+No syntax errors detected in ./tests/Unit/Contribution/PageMenuKeysTest.php
+No syntax errors detected in ./tests/Unit/Contribution/CollectionConfigNormaliserTest.php
+No syntax errors detected in ./tests/Unit/Contribution/FormStepsApplyTest.php
+No syntax errors detected in ./tests/Unit/Tenancy/PortalProvisioningServiceTest.php
+No syntax errors detected in ./tests/Unit/Tenancy/SchemaTenancyCensusTest.php
+No syntax errors detected in ./tests/Unit/Sections/SettingsSectionTest.php
+No syntax errors detected in ./tests/Unit/Portal/PortalContributionProviderTest.php
+No syntax errors detected in ./tests/Unit/Notification/NotifierTest.php
+No syntax errors detected in ./tests/Unit/Settings/ZuiddrechtLindelaanCaseFilesTest.php
+No syntax errors detected in ./tests/Unit/Settings/ZuiddrechtLindelaanRelatedTest.php
+No syntax errors detected in ./tests/Unit/Settings/ZuiddrechtLindelaanOpenIncidentTest.php
+No syntax errors detected in ./tests/Unit/Settings/ZuiddrechtFragmentKeysTest.php
+No syntax errors detected in ./tests/Unit/Settings/RegisterAccessDeclaredTest.php
+No syntax errors detected in ./tests/Unit/Settings/ZuiddrechtLindelaanCardsAppointmentsPlanTest.php
+No syntax errors detected in ./tests/Unit/Settings/PortaliqRegisterConfigTest.php
+No syntax errors detected in ./tests/Unit/Settings/ZuiddrechtSanneLindelaanCaseTest.php
+No syntax errors detected in ./tests/Unit/Settings/RegistrationSavePayloadTest.php
+No syntax errors detected in ./tests/Unit/Settings/CmsContentModelTest.php
+No syntax errors detected in ./tests/Unit/Settings/ZuiddrechtLindelaanConversationTest.php
+No syntax errors detected in ./tests/Unit/Settings/ZuiddrechtLindelaanHandlerTest.php
+No syntax errors detected in ./tests/Unit/Settings/ZuiddrechtAnoukFollowsWooCaseTest.php
+No syntax errors detected in ./tests/Unit/Settings/ZuiddrechtLarsColleaguePartyTest.php
+No syntax errors detected in ./tests/Unit/Settings/ZuiddrechtSanneDigidAccountTest.php
+No syntax errors detected in ./tests/Unit/Settings/RegisterAuthorizationTest.php
+No syntax errors detected in ./tests/Unit/Settings/ZuiddrechtWooFiveStepsTest.php
+No syntax errors detected in ./tests/Unit/Settings/PortalPageSchemaTest.php
+No syntax errors detected in ./tests/Unit/Settings/ZuiddrechtLindelaanTalkCallTest.php
+No syntax errors detected in ./tests/Unit/Settings/ZuiddrechtSanneLantaarnpaalLindelaanTest.php
+No syntax errors detected in ./tests/Unit/Settings/RegisterMcpAnnotationTest.php
+No syntax errors detected in ./tests/Unit/Settings/ZuiddrechtWooCasePartiesTest.php
+No syntax errors detected in ./tests/Unit/Settings/ConnectionsDeclarationTest.php
+No syntax errors detected in ./tests/Unit/Settings/ZuiddrechtLarsGathersDocumentsTest.php
+No syntax errors detected in ./tests/Unit/Settings/ZuiddrechtLindelaanUserNotesTest.php
+No syntax errors detected in ./tests/Unit/Settings/ZuiddrechtLindelaanCaseCompleteTest.php
+No syntax errors detected in ./tests/Unit/Settings/EveryRegisterPropertyFitsTheImporterTest.php
+No syntax errors detected in ./templates/embed.php
+No syntax errors detected in ./templates/settings/admin.php
+No syntax errors detected in ./templates/site.php
+No syntax errors detected in ./templates/index.php
+No syntax errors detected in ./scripts/coverage-guard.php
+No syntax errors detected in ./appinfo/routes.php
+No syntax errors detected in ./lib/BackgroundJob/ActionReminderJob.php
+No syntax errors detected in ./lib/BackgroundJob/MailLogRetentionJob.php
+No syntax errors detected in ./lib/BackgroundJob/TrafficGeoFirstDownloadJob.php
+No syntax errors detected in ./lib/BackgroundJob/PortalDraftPurgeJob.php
+No syntax errors detected in ./lib/BackgroundJob/PendingPushDeliveryJob.php
+No syntax errors detected in ./lib/BackgroundJob/TrafficGeoRefreshJob.php
+No syntax errors detected in ./lib/BackgroundJob/PortalTaskDeliveryJob.php
+No syntax errors detected in ./lib/BackgroundJob/NotificationDispatchJob.php
+No syntax errors detected in ./lib/BackgroundJob/TrafficAggregationJob.php
+No syntax errors detected in ./lib/BackgroundJob/MessageBoxDispatchJob.php
+No syntax errors detected in ./lib/BackgroundJob/MediaUsageJob.php
+No syntax errors detected in ./lib/BackgroundJob/TrafficReportJob.php
+No syntax errors detected in ./lib/BackgroundJob/EmailLinkRequestJob.php
+No syntax errors detected in ./lib/BackgroundJob/AvailabilityProbeJob.php
+No syntax errors detected in ./lib/Controller/HealthController.php
+No syntax errors detected in ./lib/Controller/ActionSettingsController.php
+No syntax errors detected in ./lib/Controller/MessageGuardianController.php
+No syntax errors detected in ./lib/Controller/PushSubscriptionController.php
+No syntax errors detected in ./lib/Controller/PortalOverviewController.php
+No syntax errors detected in ./lib/Controller/PortalTimelineController.php
+No syntax errors detected in ./lib/Controller/SettingsController.php
+No syntax errors detected in ./lib/Controller/BrokerSessionController.php
+No syntax errors detected in ./lib/Controller/SessionBranchController.php
+No syntax errors detected in ./lib/Controller/ContributionController.php
+No syntax errors detected in ./lib/Controller/PortalAccountAdminController.php
+No syntax errors detected in ./lib/Controller/ActivityGuardianController.php
+No syntax errors detected in ./lib/Controller/GuestActionController.php
+No syntax errors detected in ./lib/Controller/ContentStartTilesController.php
+No syntax errors detected in ./lib/Controller/DashboardController.php
+No syntax errors detected in ./lib/Controller/PortalIntakeController.php
+No syntax errors detected in ./lib/Controller/AccessibilityController.php
+No syntax errors detected in ./lib/Controller/PollController.php
+No syntax errors detected in ./lib/Controller/PortalFieldFileController.php
+No syntax errors detected in ./lib/Controller/SessionController.php
+No syntax errors detected in ./lib/Controller/PortalManifestController.php
+No syntax errors detected in ./lib/Controller/ThemeOverviewController.php
+No syntax errors detected in ./lib/Controller/ReportController.php
+No syntax errors detected in ./lib/Controller/PortalPageController.php
+No syntax errors detected in ./lib/Controller/PortalCaseTypesController.php
+No syntax errors detected in ./lib/Controller/ContentMediaController.php
+No syntax errors detected in ./lib/Controller/ContentAccessibilityController.php
+No syntax errors detected in ./lib/Controller/ContentCatalogueController.php
+No syntax errors detected in ./lib/Controller/PortalEmbedController.php
+No syntax errors detected in ./lib/Controller/NewsController.php
+No syntax errors detected in ./lib/Controller/PreferencesController.php
+No syntax errors detected in ./lib/Controller/EmergencyPushController.php
+No syntax errors detected in ./lib/Controller/PortalPlansController.php
+No syntax errors detected in ./lib/Controller/ProposalController.php
+No syntax errors detected in ./lib/Controller/TrafficReportController.php
+No syntax errors detected in ./lib/Controller/EmailLinkController.php
+No syntax errors detected in ./lib/Controller/PortalCollectionDocumentsController.php
+No syntax errors detected in ./lib/Controller/MyCasesController.php
+No syntax errors detected in ./lib/Controller/CmsEditorController.php
+No syntax errors detected in ./lib/Controller/PublicAssistantController.php
+No syntax errors detected in ./lib/Controller/PortalAccountClaimController.php
+No syntax errors detected in ./lib/Controller/PortalTaskProxyController.php
+No syntax errors detected in ./lib/Controller/TrafficController.php
+No syntax errors detected in ./lib/Controller/CitizenCaseController.php
+No syntax errors detected in ./lib/Controller/CmsDomainController.php
+No syntax errors detected in ./lib/Controller/FormBindingAdminController.php
+No syntax errors detected in ./lib/Controller/SessionAdminController.php
+No syntax errors detected in ./lib/Controller/NewsGuardianController.php
+No syntax errors detected in ./lib/Controller/PortalAccountSelfController.php
+No syntax errors detected in ./lib/Controller/QuietHoursStaffController.php
+No syntax errors detected in ./lib/Controller/PortalContactAddressController.php
+No syntax errors detected in ./lib/Controller/AvailabilityController.php
+No syntax errors detected in ./lib/Controller/ActivityController.php
+No syntax errors detected in ./lib/Controller/ContentNewsController.php
+No syntax errors detected in ./lib/Controller/PageHistoryController.php
+No syntax errors detected in ./lib/Controller/PortalThemeController.php
+No syntax errors detected in ./lib/Controller/EventGuardianController.php
+No syntax errors detected in ./lib/Controller/MandateController.php
+No syntax errors detected in ./lib/Controller/TrafficPageController.php
+No syntax errors detected in ./lib/Controller/PartnerTaskController.php
+No syntax errors detected in ./lib/Controller/TrafficPathController.php
+No syntax errors detected in ./lib/Controller/PortalRowActionController.php
+No syntax errors detected in ./lib/Controller/PortalSigninController.php
+No syntax errors detected in ./lib/Controller/PublicRecordController.php
+No syntax errors detected in ./lib/Controller/MetricsController.php
+No syntax errors detected in ./lib/Controller/PortalContactsController.php
+No syntax errors detected in ./lib/Controller/EventController.php
+No syntax errors detected in ./lib/Controller/NewsletterController.php
+No syntax errors detected in ./lib/Controller/SetupController.php
+No syntax errors detected in ./lib/Controller/ExampleResidentController.php
+No syntax errors detected in ./lib/Controller/PortalRegisteredDetailsController.php
+No syntax errors detected in ./lib/Controller/MailTemplateAdminController.php
+No syntax errors detected in ./lib/Controller/MessageStaffController.php
+No syntax errors detected in ./lib/Controller/PortalDraftController.php
+No syntax errors detected in ./lib/Controller/QuietHoursGuardianController.php
+No syntax errors detected in ./lib/Controller/PortalFormEmailCodeController.php
+No syntax errors detected in ./lib/Controller/ContentController.php
+No syntax errors detected in ./lib/Controller/PortalHomePageController.php
+No syntax errors detected in ./lib/Controller/PortalIdentityController.php
+No syntax errors detected in ./lib/Controller/BundledSiteController.php
+No syntax errors detected in ./lib/Controller/AccessRequestAdminController.php
+No syntax errors detected in ./lib/Middleware/PortalAuthMiddleware.php
+No syntax errors detected in ./lib/Middleware/PublicApiCorsMiddleware.php
+No syntax errors detected in ./lib/Repair/InitializeActions.php
+No syntax errors detected in ./lib/Repair/InitializeSettings.php
+No syntax errors detected in ./lib/Repair/RenameDutchColumns.php
+No syntax errors detected in ./lib/Repair/MovePortalAuditEntries.php
+No syntax errors detected in ./lib/Repair/BackfillNewsPublishedAt.php
+No syntax errors detected in ./lib/Repair/BackfillCmsPortalReference.php
+No syntax errors detected in ./lib/Repair/MoveBindingDestination.php
+No syntax errors detected in ./lib/Repair/MoveActionSummarySentence.php
+No syntax errors detected in ./lib/Repair/InitializeDemoPortal.php
+No syntax errors detected in ./lib/Repair/SeedStaffGroup.php
+No syntax errors detected in ./lib/Event/PortalReportRevealedEvent.php
+No syntax errors detected in ./lib/Event/PortalAccountProvisionRequestedEvent.php
+No syntax errors detected in ./lib/Event/LandingPageFormSubmittedEvent.php
+No syntax errors detected in ./lib/Event/PortalContactDetailsChangedEvent.php
+No syntax errors detected in ./lib/Event/PortalClientWriteEvent.php
+No syntax errors detected in ./lib/Event/PortalClientWithdrawalEvent.php
+No syntax errors detected in ./lib/Event/PortalAccountClaimRequestedEvent.php
+No syntax errors detected in ./lib/Event/LandingPageRequestedEvent.php
+No syntax errors detected in ./lib/Event/PortalAccountInvitationRequestedEvent.php
+No syntax errors detected in ./lib/AppInfo/OpenRegisterAutoloader.php
+No syntax errors detected in ./lib/AppInfo/StorePlaneRegistrar.php
+No syntax errors detected in ./lib/AppInfo/Application.php
+No syntax errors detected in ./lib/AppInfo/FormDependentsRegistrar.php
+No syntax errors detected in ./lib/Service/VisibleFromGate.php
+No syntax errors detected in ./lib/Service/PortalFieldProjector.php
+No syntax errors detected in ./lib/Service/ActionAuthService.php
+No syntax errors detected in ./lib/Service/PortalItemReader.php
+No syntax errors detected in ./lib/Service/Notifications/ChangeNoticeText.php
+No syntax errors detected in ./lib/Service/Notifications/NotificationChannels.php
+No syntax errors detected in ./lib/Service/Notifications/PushSenderInterface.php
+No syntax errors detected in ./lib/Service/Notifications/MessageBoxOffer.php
+No syntax errors detected in ./lib/Service/Notifications/PushDeliveryService.php
+No syntax errors detected in ./lib/Service/Notifications/QuietHoursPolicy.php
+No syntax errors detected in ./lib/Service/Notifications/ChangeRuleNotices.php
+No syntax errors detected in ./lib/Service/Notifications/MessageBoxDeliveries.php
+No syntax errors detected in ./lib/Service/Notifications/LoggingPushSender.php
+No syntax errors detected in ./lib/Service/Notifications/PortalNoticeLanguage.php
+No syntax errors detected in ./lib/Service/Notifications/PortalChangeRuleIndex.php
+No syntax errors detected in ./lib/Service/Notifications/MessageBoxChannel.php
+No syntax errors detected in ./lib/Service/Notifications/MessageBoxStatus.php
+No syntax errors detected in ./lib/Service/Notifications/PendingPushService.php
+No syntax errors detected in ./lib/Service/Notifications/MessageBoxSender.php
+No syntax errors detected in ./lib/Service/Plans/PlanActionFields.php
+No syntax errors detected in ./lib/Service/Plans/PlanTemplates.php
+No syntax errors detected in ./lib/Service/Plans/PlanRules.php
+No syntax errors detected in ./lib/Service/Plans/PlanViews.php
+No syntax errors detected in ./lib/Service/Plans/PlanEndingMailer.php
+No syntax errors detected in ./lib/Service/Plans/PortalPlanService.php
+No syntax errors detected in ./lib/Service/Plans/PlanEndReminderService.php
+No syntax errors detected in ./lib/Service/Plans/PlanFieldChanges.php
+No syntax errors detected in ./lib/Service/SiteAddressing.php
+No syntax errors detected in ./lib/Service/PortalCaseTypeCatalogue.php
+No syntax errors detected in ./lib/Service/NewsRowSource.php
+No syntax errors detected in ./lib/Service/ActivityDraft.php
+No syntax errors detected in ./lib/Service/ActivitySignupService.php
+No syntax errors detected in ./lib/Service/Overview/PortalOverview.php
+No syntax errors detected in ./lib/Service/PortalScopeMatch.php
+No syntax errors detected in ./lib/Service/EventSeatRules.php
+No syntax errors detected in ./lib/Service/PortalAccountService.php
+No syntax errors detected in ./lib/Service/PortalDeepLinkBuilder.php
+No syntax errors detected in ./lib/Service/InternalBaseUrl.php
+No syntax errors detected in ./lib/Service/NewsPhotoConsentGate.php
+No syntax errors detected in ./lib/Service/ViaJoinRowFilter.php
+No syntax errors detected in ./lib/Service/TeacherInboxService.php
+No syntax errors detected in ./lib/Service/PortalRateLimit.php
+No syntax errors detected in ./lib/Service/CmsContentCache.php
+No syntax errors detected in ./lib/Service/DerivedCatalogueFacets.php
+No syntax errors detected in ./lib/Service/PortalWriteContext.php
+No syntax errors detected in ./lib/Service/PortalNoticeReader.php
+No syntax errors detected in ./lib/Service/PublicCatalogue.php
+No syntax errors detected in ./lib/Service/PortalInboxReader.php
+No syntax errors detected in ./lib/Service/CmsReader.php
+No syntax errors detected in ./lib/Service/LoopbackOrigins.php
+No syntax errors detected in ./lib/Service/PortalObjectWriter.php
+No syntax errors detected in ./lib/Service/OidcClaimMapperService.php
+No syntax errors detected in ./lib/Service/PortalFileWriter.php
+No syntax errors detected in ./lib/Service/GuardianAudienceFixtureReader.php
+No syntax errors detected in ./lib/Service/CollectionDocuments.php
+No syntax errors detected in ./lib/Service/PortalRegisterContext.php
+No syntax errors detected in ./lib/Service/PublicNewsReader.php
+No syntax errors detected in ./lib/Service/PortalNameSetting.php
+No syntax errors detected in ./lib/Service/CmsSharedBlocks.php
+No syntax errors detected in ./lib/Service/CmsFaq.php
+No syntax errors detected in ./lib/Service/HostRootRedirectSend.php
+No syntax errors detected in ./lib/Service/PublicRecordReader.php
+No syntax errors detected in ./lib/Service/NewsAudienceOptions.php
+No syntax errors detected in ./lib/Service/DemoDataService.php
+No syntax errors detected in ./lib/Service/TrafficAggregationService.php
+No syntax errors detected in ./lib/Service/PortalTokenCss.php
+No syntax errors detected in ./lib/Service/CaseTypeReader.php
+No syntax errors detected in ./lib/Service/CmsRows.php
+No syntax errors detected in ./lib/Service/PortalUserDisplayNames.php
+No syntax errors detected in ./lib/Service/PortalPdfExport.php
+No syntax errors detected in ./lib/Service/OidcClientService.php
+No syntax errors detected in ./lib/Service/ActivityRoster.php
+No syntax errors detected in ./lib/Service/CaseTypeNames.php
+No syntax errors detected in ./lib/Service/Identity/NextcloudRegistrationDoor.php
+No syntax errors detected in ./lib/Service/Identity/UnboundAccount.php
+No syntax errors detected in ./lib/Service/Identity/PortalChallengeService.php
+No syntax errors detected in ./lib/Service/Identity/MandateStore.php
+No syntax errors detected in ./lib/Service/Identity/MandateParties.php
+No syntax errors detected in ./lib/Service/Identity/ContactConfirmationMailer.php
+No syntax errors detected in ./lib/Service/Identity/PortalAccessRequestService.php
+No syntax errors detected in ./lib/Service/Identity/AudienceMove.php
+No syntax errors detected in ./lib/Service/Identity/PortalMandateAdminService.php
+No syntax errors detected in ./lib/Service/Identity/ContactInvitationLink.php
+No syntax errors detected in ./lib/Service/Identity/ContactAddressBook.php
+No syntax errors detected in ./lib/Service/Identity/PortalPartyTreeResolver.php
+No syntax errors detected in ./lib/Service/Identity/PortalAccountActivationService.php
+No syntax errors detected in ./lib/Service/Identity/NextcloudAccountProvisioner.php
+No syntax errors detected in ./lib/Service/Identity/PortalRegistrationPolicyService.php
+No syntax errors detected in ./lib/Service/Identity/EmailLink/EmailLinkEligibility.php
+No syntax errors detected in ./lib/Service/Identity/EmailLink/EmailLinkSender.php
+No syntax errors detected in ./lib/Service/Identity/EmailLink/SignInAddressChange.php
+No syntax errors detected in ./lib/Service/Identity/EmailLink/EmailLinkSetting.php
+No syntax errors detected in ./lib/Service/Identity/EmailLink/EmailLinkTokens.php
+No syntax errors detected in ./lib/Service/Identity/EmailLink/EmailLinkLimits.php
+No syntax errors detected in ./lib/Service/Identity/EmailLink/EmailLinkAddress.php
+No syntax errors detected in ./lib/Service/Identity/ClaimLock.php
+No syntax errors detected in ./lib/Service/Identity/WaitingAccountJoin.php
+No syntax errors detected in ./lib/Service/Identity/PortalAccountLookup.php
+No syntax errors detected in ./lib/Service/Identity/ClaimAttempts.php
+No syntax errors detected in ./lib/Service/Identity/PortalContactAddressService.php
+No syntax errors detected in ./lib/Service/Identity/MandateDays.php
+No syntax errors detected in ./lib/Service/Identity/PortalContactService.php
+No syntax errors detected in ./lib/Service/Identity/ContactOverview.php
+No syntax errors detected in ./lib/Service/Identity/PortalInvitationService.php
+No syntax errors detected in ./lib/Service/Identity/ContactRows.php
+No syntax errors detected in ./lib/Service/Identity/PortalAccountPresence.php
+No syntax errors detected in ./lib/Service/Identity/PortalRegisteredDetailsService.php
+No syntax errors detected in ./lib/Service/Identity/PortalWaysInResolver.php
+No syntax errors detected in ./lib/Service/Identity/PortalMandateService.php
+No syntax errors detected in ./lib/Service/Identity/WaitingAccountSecret.php
+No syntax errors detected in ./lib/Service/Identity/ContactAddressValues.php
+No syntax errors detected in ./lib/Service/Identity/PortalSelfServiceService.php
+No syntax errors detected in ./lib/Service/Identity/WaitingAccountInvitation.php
+No syntax errors detected in ./lib/Service/Identity/ContactAddressChange.php
+No syntax errors detected in ./lib/Service/Identity/PortalReferenceLinkService.php
+No syntax errors detected in ./lib/Service/Identity/PortalAccountsByClaim.php
+No syntax errors detected in ./lib/Service/Identity/PortalReferenceCaseService.php
+No syntax errors detected in ./lib/Service/Identity/MandateListing.php
+No syntax errors detected in ./lib/Service/Identity/PortalIdentityMailer.php
+No syntax errors detected in ./lib/Service/Identity/RegisteredDetailsShape.php
+No syntax errors detected in ./lib/Service/Identity/WaitingAccountClaim.php
+No syntax errors detected in ./lib/Service/Identity/PortalRegisteredDetailsLinks.php
+No syntax errors detected in ./lib/Service/Identity/ConfirmedAddressJoin.php
+No syntax errors detected in ./lib/Service/Identity/InvitationCode.php
+No syntax errors detected in ./lib/Service/EventSignupService.php
+No syntax errors detected in ./lib/Service/NewsReadReceiptService.php
+No syntax errors detected in ./lib/Service/TrafficReportService.php
+No syntax errors detected in ./lib/Service/EventRsvpEligibility.php
+No syntax errors detected in ./lib/Service/CaseStatusView.php
+No syntax errors detected in ./lib/Service/PortalRegionResolver.php
+No syntax errors detected in ./lib/Service/Reports/ReportThreadService.php
+No syntax errors detected in ./lib/Service/Reports/ReportIntakeService.php
+No syntax errors detected in ./lib/Service/Reports/ReportProjection.php
+No syntax errors detected in ./lib/Service/Reports/RevealService.php
+No syntax errors detected in ./lib/Service/Reports/ReportTermsService.php
+No syntax errors detected in ./lib/Service/WriteRefusal.php
+No syntax errors detected in ./lib/Service/Cms/MediaFile.php
+No syntax errors detected in ./lib/Service/Cms/SharedBlockPortals.php
+No syntax errors detected in ./lib/Service/Cms/AccessibilityRuleSentences.php
+No syntax errors detected in ./lib/Service/Cms/AccessibilityRun.php
+No syntax errors detected in ./lib/Service/Cms/PortalDomainVerifier.php
+No syntax errors detected in ./lib/Service/Cms/FormPlacementHelp.php
+No syntax errors detected in ./lib/Service/Cms/PortalShell.php
+No syntax errors detected in ./lib/Service/Cms/AccessibilityFraming.php
+No syntax errors detected in ./lib/Service/Cms/MediaLibraryReader.php
+No syntax errors detected in ./lib/Service/Cms/PortalResidentMenu.php
+No syntax errors detected in ./lib/Service/Cms/PageHistory.php
+No syntax errors detected in ./lib/Service/Cms/AccessibilityMeasurements.php
+No syntax errors detected in ./lib/Service/Cms/MediaUsage.php
+No syntax errors detected in ./lib/Service/Cms/PortalSignInText.php
+No syntax errors detected in ./lib/Service/Cms/MediaReferences.php
+No syntax errors detected in ./lib/Service/Cms/GlossaryRelations.php
+No syntax errors detected in ./lib/Service/Cms/AccessibilityStatement.php
+No syntax errors detected in ./lib/Service/Cms/CmsPublishValidator.php
+No syntax errors detected in ./lib/Service/Cms/SiteHead.php
+No syntax errors detected in ./lib/Service/Cms/PortalHomePage.php
+No syntax errors detected in ./lib/Service/Cms/PortalHelp.php
+No syntax errors detected in ./lib/Service/Mail/RecipientMask.php
+No syntax errors detected in ./lib/Service/Mail/MailTemplateRenderer.php
+No syntax errors detected in ./lib/Service/Mail/MailLog.php
+No syntax errors detected in ./lib/Service/Mail/MailSite.php
+No syntax errors detected in ./lib/Service/NewsletterPreflightService.php
+No syntax errors detected in ./lib/Service/PollService.php
+No syntax errors detected in ./lib/Service/SiteShell.php
+No syntax errors detected in ./lib/Service/TrafficIngestService.php
+No syntax errors detected in ./lib/Service/LeafGuardianAudienceReader.php
+No syntax errors detected in ./lib/Service/PortalCaseListReader.php
+No syntax errors detected in ./lib/Service/ExampleResident/ExampleResidentRemover.php
+No syntax errors detected in ./lib/Service/ExampleResident/ExampleResidentWayIn.php
+No syntax errors detected in ./lib/Service/ExampleResident/ExampleResidentSignIn.php
+No syntax errors detected in ./lib/Service/ExampleResident/ExampleResidentStore.php
+No syntax errors detected in ./lib/Service/ExampleResident/ExampleResidentUser.php
+No syntax errors detected in ./lib/Service/ExampleResident/ExampleResidentRecord.php
+No syntax errors detected in ./lib/Service/ExampleResident/ExampleSetResidents.php
+No syntax errors detected in ./lib/Service/Messaging/GuardianMessageTranslator.php
+No syntax errors detected in ./lib/Service/Messaging/MessageTranslationClient.php
+No syntax errors detected in ./lib/Service/Messaging/GuardianMessagingLeafInterface.php
+No syntax errors detected in ./lib/Service/Messaging/MessageContactReader.php
+No syntax errors detected in ./lib/Service/Messaging/MessageStore.php
+No syntax errors detected in ./lib/Service/Messaging/MessageThreadAccessGuard.php
+No syntax errors detected in ./lib/Service/Messaging/InAppMessagingLeaf.php
+No syntax errors detected in ./lib/Service/UniqueCaseRows.php
+No syntax errors detected in ./lib/Service/Connection/ConnectionObservations.php
+No syntax errors detected in ./lib/Service/Connection/ConnectionReporter.php
+No syntax errors detected in ./lib/Service/CitizenWritableSetResolver.php
+No syntax errors detected in ./lib/Service/Intake/VisibleWhenComparison.php
+No syntax errors detected in ./lib/Service/Intake/IntakeQueueDrain.php
+No syntax errors detected in ./lib/Service/Intake/PortalFormTrustLevel.php
+No syntax errors detected in ./lib/Service/Intake/VisibleWhenLocal.php
+No syntax errors detected in ./lib/Service/Intake/PortalFormValidator.php
+No syntax errors detected in ./lib/Service/Intake/PortalFieldChecks.php
+No syntax errors detected in ./lib/Service/Intake/FormConfirmationMailer.php
+No syntax errors detected in ./lib/Service/Intake/DestinationLookup.php
+No syntax errors detected in ./lib/Service/Intake/DestinationDraft.php
+No syntax errors detected in ./lib/Service/Intake/PortalFormOperands.php
+No syntax errors detected in ./lib/Service/Intake/PortalEmbedHeight.php
+No syntax errors detected in ./lib/Service/Intake/PortalReferenceLists.php
+No syntax errors detected in ./lib/Service/Intake/PortalIntakePayments.php
+No syntax errors detected in ./lib/Service/Intake/PortalFee.php
+No syntax errors detected in ./lib/Service/Intake/PortalAddressLookup.php
+No syntax errors detected in ./lib/Service/Intake/FormStatements.php
+No syntax errors detected in ./lib/Service/Intake/PortalFormBindingResolver.php
+No syntax errors detected in ./lib/Service/Intake/LandingSubmissionDrain.php
+No syntax errors detected in ./lib/Service/Intake/PortalFormDecision.php
+No syntax errors detected in ./lib/Service/Intake/DutchFormats.php
+No syntax errors detected in ./lib/Service/Intake/ActionDraft.php
+No syntax errors detected in ./lib/Service/Intake/PortalFormCalculator.php
+No syntax errors detected in ./lib/Service/Intake/PortalCatalogueReader.php
+No syntax errors detected in ./lib/Service/Intake/PortalIntakeQueue.php
+No syntax errors detected in ./lib/Service/Intake/PortalEmailVerification.php
+No syntax errors detected in ./lib/Service/Intake/PortalBindingPreview.php
+No syntax errors detected in ./lib/Service/Intake/PortalSubmissionChecks.php
+No syntax errors detected in ./lib/Service/Intake/PortalFamilyMembers.php
+No syntax errors detected in ./lib/Service/Intake/PortalCaseTypeChoices.php
+No syntax errors detected in ./lib/Service/Intake/PortalDraftStore.php
+No syntax errors detected in ./lib/Service/Intake/PortalPaymentIntents.php
+No syntax errors detected in ./lib/Service/Intake/DestinationMapping.php
+No syntax errors detected in ./lib/Service/Intake/PortalDraftDrain.php
+No syntax errors detected in ./lib/Service/Intake/PortalApplicantPrefill.php
+No syntax errors detected in ./lib/Service/Intake/FormConfirmationSummary.php
+No syntax errors detected in ./lib/Service/Intake/PortalFieldLimits.php
+No syntax errors detected in ./lib/Service/Intake/PortalEmbedSnippetDescription.php
+No syntax errors detected in ./lib/Service/Intake/DestinationSubmit.php
+No syntax errors detected in ./lib/Service/Intake/PortalIntakeConfirmation.php
+No syntax errors detected in ./lib/Service/Intake/DestinationIntake.php
+No syntax errors detected in ./lib/Service/Intake/FormEmailCodeMailer.php
+No syntax errors detected in ./lib/Service/Intake/PortalFormFields.php
+No syntax errors detected in ./lib/Service/Intake/PortalEmbedThrottle.php
+No syntax errors detected in ./lib/Service/Intake/PortalEmbedGuard.php
+No syntax errors detected in ./lib/Service/Intake/PortalEntryPointContent.php
+No syntax errors detected in ./lib/Service/Intake/JsValue.php
+No syntax errors detected in ./lib/Service/AdminMenuAccess.php
+No syntax errors detected in ./lib/Service/GuardianAccountDirectory.php
+No syntax errors detected in ./lib/Service/Assistant/PublicAssistantChannel.php
+No syntax errors detected in ./lib/Service/Assistant/PersonalDetailsFilter.php
+No syntax errors detected in ./lib/Service/Assistant/PublicSourceScope.php
+No syntax errors detected in ./lib/Service/EventRsvpService.php
+No syntax errors detected in ./lib/Service/PublicCatalogueQuery.php
+No syntax errors detected in ./lib/Service/NewsAudienceMatcher.php
+No syntax errors detected in ./lib/Service/PortalActionForwarder.php
+No syntax errors detected in ./lib/Service/PortalCaseDocumentReader.php
+No syntax errors detected in ./lib/Service/ActivityContributionService.php
+No syntax errors detected in ./lib/Service/SubmissionReceiptService.php
+No syntax errors detected in ./lib/Service/TrafficConfigResolver.php
+No syntax errors detected in ./lib/Service/LandingPageProvisioningService.php
+No syntax errors detected in ./lib/Service/Theme/PortalThemeContrast.php
+No syntax errors detected in ./lib/Service/Theme/PortalCustomThemeSets.php
+No syntax errors detected in ./lib/Service/Theme/PortalThemeChoice.php
+No syntax errors detected in ./lib/Service/Theme/PortalThemeParents.php
+No syntax errors detected in ./lib/Service/Theme/PortalThemeOverview.php
+No syntax errors detected in ./lib/Service/SiteShellTheme.php
+No syntax errors detected in ./lib/Service/ExampleSite/ExampleSiteRemover.php
+No syntax errors detected in ./lib/Service/ExampleSite/ExampleSiteProof.php
+No syntax errors detected in ./lib/Service/ExampleSite/ExampleSiteStore.php
+No syntax errors detected in ./lib/Service/ExampleSite/ExampleSiteRecord.php
+No syntax errors detected in ./lib/Service/ExampleSite/ExampleSiteInstaller.php
+No syntax errors detected in ./lib/Service/ExampleSite/ExampleSiteCatalogue.php
+No syntax errors detected in ./lib/Service/ExampleSite/ExampleSiteRows.php
+No syntax errors detected in ./lib/Service/CitizenCaseDocuments.php
+No syntax errors detected in ./lib/Service/Proposals/ProposalService.php
+No syntax errors detected in ./lib/Service/Proposals/ChangeProposalsProvider.php
+No syntax errors detected in ./lib/Service/Proposals/ReviewerObjectWriter.php
+No syntax errors detected in ./lib/Service/Proposals/ProposalQueueReader.php
+No syntax errors detected in ./lib/Service/PortalDomainMatch.php
+No syntax errors detected in ./lib/Service/SettingsService.php
+No syntax errors detected in ./lib/Service/ActivityFeedReader.php
+No syntax errors detected in ./lib/Service/NewsFeedReader.php
+No syntax errors detected in ./lib/Service/CaseTypeVisibility.php
+No syntax errors detected in ./lib/Service/ActionReminderService.php
+No syntax errors detected in ./lib/Service/PortalSessionService.php
+No syntax errors detected in ./lib/Service/NotificationDispatchService.php
+No syntax errors detected in ./lib/Service/PortalTaskGateway.php
+No syntax errors detected in ./lib/Service/EventDeadline.php
+No syntax errors detected in ./lib/Service/PortalResolver.php
+No syntax errors detected in ./lib/Service/OidcStateStoreService.php
+No syntax errors detected in ./lib/Service/CitizenCaseProjection.php
+No syntax errors detected in ./lib/Service/PortalAuditHook.php
+No syntax errors detected in ./lib/Service/SiteOrganisation.php
+No syntax errors detected in ./lib/Service/PortalOrganisationConfigService.php
+No syntax errors detected in ./lib/Service/GroupStaffFixtureReader.php
+No syntax errors detected in ./lib/Service/ActivityStore.php
+No syntax errors detected in ./lib/Service/Signin/OrganisationLoginConfig.php
+No syntax errors detected in ./lib/Service/Signin/BrokerLogin.php
+No syntax errors detected in ./lib/Service/Signin/LoginProviders.php
+No syntax errors detected in ./lib/Service/Signin/PortalSigninSettings.php
+No syntax errors detected in ./lib/Service/Signin/SiteReturnAddress.php
+No syntax errors detected in ./lib/Service/Signin/BrokerExchangeClient.php
+No syntax errors detected in ./lib/Service/Signin/BrokerLoginRoute.php
+No syntax errors detected in ./lib/Service/Signin/BrokerEnvelopeCheck.php
+No syntax errors detected in ./lib/Service/InstanceLoopback.php
+No syntax errors detected in ./lib/Service/PortalFileReader.php
+No syntax errors detected in ./lib/Service/CaseRowMarker.php
+No syntax errors detected in ./lib/Service/EventFeedReader.php
+No syntax errors detected in ./lib/Service/PageEditorService.php
+No syntax errors detected in ./lib/Service/PortalFilteredRows.php
+No syntax errors detected in ./lib/Service/Tenancy/PortalProvisioningService.php
+No syntax errors detected in ./lib/Service/Tenancy/SchemaTenancy.php
+No syntax errors detected in ./lib/Service/PortalObjectReader.php
+No syntax errors detected in ./lib/Service/Availability/AvailabilityStore.php
+No syntax errors detected in ./lib/Service/Availability/AvailabilityRollup.php
+No syntax errors detected in ./lib/Service/Availability/AvailabilityReport.php
+No syntax errors detected in ./lib/Service/Availability/AvailabilityProbe.php
+No syntax errors detected in ./lib/Service/AuditTrailService.php
+No syntax errors detected in ./lib/Service/PortalCrossRefGuard.php
+No syntax errors detected in ./lib/Service/PortalTimelineReader.php
+No syntax errors detected in ./lib/Service/CitizenWriteRecorder.php
+No syntax errors detected in ./lib/Service/ActivityAttendanceService.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficRollup.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficReportDefinitions.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficExport.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficRollupSum.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficJourneyStats.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficPaths.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficLogImporter.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficHeatmapStats.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficDayGuard.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficReportMail.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficLogParser.php
+No syntax errors detected in ./lib/Service/Traffic/UserAgentClassifier.php
+No syntax errors detected in ./lib/Service/Traffic/NullGeoResolver.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficMetrics.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficEventStore.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficServerToken.php
+No syntax errors detected in ./lib/Service/Traffic/RawRequestBody.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficSessioniser.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficFormStats.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficExperimentDefinitions.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficOutcomeDefinitions.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficGoals.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficRecordingMask.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficOutcomeParams.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficDimensionCounts.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficPagePath.php
+No syntax errors detected in ./lib/Service/Traffic/VisitorHasher.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficReportNumbers.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficRecordingService.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficReportPeriods.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficErrorStats.php
+No syntax errors detected in ./lib/Service/Traffic/ReferrerClassifier.php
+No syntax errors detected in ./lib/Service/Traffic/Geo/MmdbGeoResolver.php
+No syntax errors detected in ./lib/Service/Traffic/Geo/GeoDatabaseProvider.php
+No syntax errors detected in ./lib/Service/Traffic/Geo/GeoSettings.php
+No syntax errors detected in ./lib/Service/Traffic/Geo/GeoRefreshService.php
+No syntax errors detected in ./lib/Service/Traffic/Geo/GzipExtractor.php
+No syntax errors detected in ./lib/Service/Traffic/Geo/MaxMindProvider.php
+No syntax errors detected in ./lib/Service/Traffic/Geo/DbIpLiteProvider.php
+No syntax errors detected in ./lib/Service/Traffic/Geo/GeoDatabaseStore.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficMatch.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficServerBatch.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficPageReport.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficReportDelivery.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficRecordingStore.php
+No syntax errors detected in ./lib/Service/Traffic/GeoResolverInterface.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficExperiments.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficSegments.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficPathService.php
+No syntax errors detected in ./lib/Service/Traffic/TrafficFunnels.php
+No syntax errors detected in ./lib/Service/ActivityPlaces.php
+No syntax errors detected in ./lib/Service/PortalSchemaReader.php
+No syntax errors detected in ./lib/Service/ShillinqContributionRaiser.php
+No syntax errors detected in ./lib/Service/PortalThemeResolver.php
+No syntax errors detected in ./lib/Service/PortalSessionRevoker.php
+No syntax errors detected in ./lib/Service/RequiredFieldsGuard.php
+No syntax errors detected in ./lib/Service/MandatedCaseReader.php
+No syntax errors detected in ./lib/Service/TrafficBackfillService.php
+No syntax errors detected in ./lib/Service/CitizenWriteThrottle.php
+No syntax errors detected in ./lib/Service/PortalFileFieldPolicy.php
+No syntax errors detected in ./lib/Service/TrafficEventValidator.php
+No syntax errors detected in ./lib/Service/Branch/BranchChoice.php
+No syntax errors detected in ./lib/Service/Branch/BranchNumber.php
+No syntax errors detected in ./lib/Service/Branch/PortalBranchScope.php
+No syntax errors detected in ./lib/Service/PublicRecordShape.php
+No syntax errors detected in ./lib/Service/Tasks/PortalCaseAccessGuard.php
+No syntax errors detected in ./lib/Service/Tasks/PartnerAskService.php
+No syntax errors detected in ./lib/Service/PortalJwtService.php
+No syntax errors detected in ./lib/Service/PagedObjectReads.php
+No syntax errors detected in ./lib/Service/PortalRuntimeConfigResolver.php
+No syntax errors detected in ./lib/Service/HostRootRedirect.php
+No syntax errors detected in ./lib/Service/ThemeAppAsset.php
+No syntax errors detected in ./lib/Auth/PortalProtected.php
+No syntax errors detected in ./lib/Auth/PortalReadOnlySessionException.php
+No syntax errors detected in ./lib/Auth/PortalUnauthorizedException.php
+No syntax errors detected in ./lib/Listener/MediaWriteGuardListener.php
+No syntax errors detected in ./lib/Listener/PortalRecordChangeListener.php
+No syntax errors detected in ./lib/Listener/FormDestinationDependentsListener.php
+No syntax errors detected in ./lib/Listener/CmsCacheInvalidationListener.php
+No syntax errors detected in ./lib/Listener/LandingPageRequestedEventListener.php
+No syntax errors detected in ./lib/Listener/ResidentLandingListener.php
+No syntax errors detected in ./lib/Listener/BindingDestinationGuardListener.php
+No syntax errors detected in ./lib/Listener/LandingPageSubmissionDispatchListener.php
+No syntax errors detected in ./lib/Listener/GlossaryRelationGuardListener.php
+No syntax errors detected in ./lib/Listener/PortalDigitalPostDeliveredListener.php
+No syntax errors detected in ./lib/Listener/PortalAccountClaimListener.php
+No syntax errors detected in ./lib/Listener/RegisterProposalLeavesListener.php
+No syntax errors detected in ./lib/Listener/PortalAccountProvisionListener.php
+No syntax errors detected in ./lib/Listener/NoticeWriteGuardListener.php
+No syntax errors detected in ./lib/Listener/PortalAccountInvitationListener.php
+No syntax errors detected in ./lib/Command/ExampleResidentRemove.php
+No syntax errors detected in ./lib/Command/IntakeDrain.php
+No syntax errors detected in ./lib/Command/TrafficReaggregate.php
+No syntax errors detected in ./lib/Command/ExampleSiteRemove.php
+No syntax errors detected in ./lib/Command/TrafficImportLog.php
+No syntax errors detected in ./lib/Command/TrafficGeoRefresh.php
+No syntax errors detected in ./lib/Command/TrafficToken.php
+No syntax errors detected in ./lib/Command/ExampleSiteInstall.php
+No syntax errors detected in ./lib/Command/PortalProvision.php
+No syntax errors detected in ./lib/Http/PdfDownloadResponse.php
+No syntax errors detected in ./lib/Contribution/ThemeChoice.php
+No syntax errors detected in ./lib/Contribution/CollectionListKeys.php
+No syntax errors detected in ./lib/Contribution/CollectionIntroKey.php
+No syntax errors detected in ./lib/Contribution/TimetableKeys.php
+No syntax errors detected in ./lib/Contribution/GuestActionRegistry.php
+No syntax errors detected in ./lib/Contribution/PortalProviderLocator.php
+No syntax errors detected in ./lib/Contribution/CaseFieldKey.php
+No syntax errors detected in ./lib/Contribution/PortalManifestNormaliser.php
+No syntax errors detected in ./lib/Contribution/RequiredFieldsNormaliser.php
+No syntax errors detected in ./lib/Contribution/StepsProviderMethod.php
+No syntax errors detected in ./lib/Contribution/CalendarSourceNormaliser.php
+No syntax errors detected in ./lib/Contribution/ListBlockNormaliser.php
+No syntax errors detected in ./lib/Contribution/PortalPageResolver.php
+No syntax errors detected in ./lib/Contribution/IPortalContributionProvider.php
+No syntax errors detected in ./lib/Contribution/ContributionLanguage.php
+No syntax errors detected in ./lib/Contribution/RecordBlockNormaliser.php
+No syntax errors detected in ./lib/Contribution/AttachedActionResolver.php
+No syntax errors detected in ./lib/Contribution/StartTileCollector.php
+No syntax errors detected in ./lib/Contribution/CreateBody.php
+No syntax errors detected in ./lib/Contribution/PublicIndexItems.php
+No syntax errors detected in ./lib/Contribution/CountWidgetKeys.php
+No syntax errors detected in ./lib/Contribution/BoardKeys.php
+No syntax errors detected in ./lib/Contribution/RecordScopeNormaliser.php
+No syntax errors detected in ./lib/Contribution/CrossRefConfigNormaliser.php
+No syntax errors detected in ./lib/Contribution/ActionFormShape.php
+No syntax errors detected in ./lib/Contribution/CitizenDocumentUpload.php
+No syntax errors detected in ./lib/Contribution/CardStatusKeys.php
+No syntax errors detected in ./lib/Contribution/FormStepsNormaliser.php
+No syntax errors detected in ./lib/Contribution/MessageBoxConfigNormaliser.php
+No syntax errors detected in ./lib/Contribution/TaskTitleTemplate.php
+No syntax errors detected in ./lib/Contribution/RowActionInputs.php
+No syntax errors detected in ./lib/Contribution/TimedTaskConfigNormaliser.php
+No syntax errors detected in ./lib/Contribution/SchemaInputHintNormaliser.php
+No syntax errors detected in ./lib/Contribution/CtaBlockNormaliser.php
+No syntax errors detected in ./lib/Contribution/ItemListConfigNormaliser.php
+No syntax errors detected in ./lib/Contribution/GuestActionConfigNormaliser.php
+No syntax errors detected in ./lib/Contribution/CollectionConfigNormaliser.php
+No syntax errors detected in ./lib/Contribution/PageMenuKeys.php
+No syntax errors detected in ./lib/Contribution/ActionConfigNormaliser.php
+No syntax errors detected in ./lib/Contribution/CreateActionMatcher.php
+No syntax errors detected in ./lib/Contribution/ActionOptionsNormaliser.php
+No syntax errors detected in ./lib/Contribution/PortalContributionFilter.php
+No syntax errors detected in ./lib/Contribution/FormStepDecision.php
+No syntax errors detected in ./lib/Contribution/PublicRecordsNormaliser.php
+No syntax errors detected in ./lib/Contribution/FileFieldConfigNormaliser.php
+No syntax errors detected in ./lib/Contribution/CollectionSchemaLabels.php
+No syntax errors detected in ./lib/Contribution/CollectionColumnsNormaliser.php
+No syntax errors detected in ./lib/Contribution/PublicDetailShape.php
+No syntax errors detected in ./lib/Contribution/CollectionFieldConfigNormaliser.php
+No syntax errors detected in ./lib/Contribution/RowActionFiles.php
+No syntax errors detected in ./lib/Contribution/PortalBlockResolver.php
+No syntax errors detected in ./lib/Contribution/PortalContributionRegistry.php
+No syntax errors detected in ./lib/Contribution/ProfilePrefillKey.php
+No syntax errors detected in ./lib/Contribution/CitizenWriteActionFinder.php
+No syntax errors detected in ./lib/Contribution/ThemeTagKeys.php
+No syntax errors detected in ./lib/Contribution/MessageContactsKeys.php
+No syntax errors detected in ./lib/Contribution/PublicIndexKinds.php
+No syntax errors detected in ./lib/Contribution/ValueLabelsNormaliser.php
+No syntax errors detected in ./lib/Contribution/InboxReplyConfigNormaliser.php
+No syntax errors detected in ./lib/Contribution/NotificationRuleNormaliser.php
+No syntax errors detected in ./lib/Contribution/CaseStatusLabelField.php
+No syntax errors detected in ./lib/Contribution/FieldWidgetNormaliser.php
+No syntax errors detected in ./lib/Contribution/NoticeRecipientNormaliser.php
+No syntax errors detected in ./lib/Contribution/StepsHighlightKeys.php
+No syntax errors detected in ./lib/Contribution/AnonymousContributions.php
+No syntax errors detected in ./lib/Contribution/VisibleFromField.php
+No syntax errors detected in ./lib/Contribution/ManifestValueNormaliser.php
+No syntax errors detected in ./lib/Contribution/PageChoice.php
+No syntax errors detected in ./lib/Contribution/InboxMessageFields.php
+No syntax errors detected in ./lib/Contribution/RowIdentifier.php
+No syntax errors detected in ./lib/Contribution/RowActionResolver.php
+No syntax errors detected in ./lib/Contribution/PublicIndexText.php
+No syntax errors detected in ./lib/Contribution/ActionSummaryNormaliser.php
+No syntax errors detected in ./lib/Contribution/SchoolBlockKeys.php
+No syntax errors detected in ./lib/Contribution/HiddenPagesReader.php
+No syntax errors detected in ./lib/Contribution/DisplayKeys.php
+No syntax errors detected in ./lib/Contribution/ConfirmationMailKeys.php
+No syntax errors detected in ./lib/Contribution/DocumentsProviderMethod.php
+No syntax errors detected in ./lib/Contribution/RowWhenNormaliser.php
+No syntax errors detected in ./lib/Contribution/CitizenWriteConfigNormaliser.php
+No syntax errors detected in ./lib/Contribution/ActionScopeResolver.php
+No syntax errors detected in ./lib/Contribution/TimelineProviderMethod.php
+No syntax errors detected in ./lib/Contribution/StartTileNormaliser.php
+No syntax errors detected in ./lib/Sections/SettingsSection.php
+No syntax errors detected in ./lib/Portal/PortalContributionProvider.php
+No syntax errors detected in ./lib/Notification/Notifier.php
+No syntax errors detected in ./lib/Settings/PortaliqAdmin.php
+No syntax errors detected in ./lib/Settings/AdminSettings.php
+No syntax errors detected in ./.php-cs-fixer.dist.php
+No syntax errors detected in ./phpstan-bootstrap.php
+
+=== phpcs ===
+.[33mW[0m.[33mW[0m[33mW[0m..[33mW[0m[33mW[0m[33mW[0m[33mW[0m.[33mW[0m....[33mW[0m[33mW[0m.[33mW[0m....[33mW[0m..[33mW[0m.....[33mW[0m...[33mW[0m..[33mW[0m.[33mW[0m[33mW[0m.[33mW[0m.[33mW[0m[33mW[0m[33mW[0m.....[33mW[0m..[33mW[0m 60 / 69 (87%)
+...[33mW[0m....[33mW[0m                                                    69 / 69 (100%)
+
+
+
+[1mFILE: .../screens/round6/DQ-DATA3/portaliq/lib/Service/Intake/PortalEmbedHeight.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 50 | [33mWARNING[0m | Class PortalEmbedHeight is missing @spec PHPDoc tag — link
+    |         | back to openspec/specs/{capability}/spec.md#requirement-{slug},
+    |         | not a change dir
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...s/round6/DQ-DATA3/portaliq/lib/Listener/RegisterProposalLeavesListener.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 52 | [33mWARNING[0m | Class RegisterProposalLeavesListener is missing @spec PHPDoc
+    |         | tag — link back to
+    |         | openspec/specs/{capability}/spec.md#requirement-{slug}, not a
+    |         | change dir
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...ork/screens/round6/DQ-DATA3/portaliq/lib/Controller/SettingsController.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 39 | [33mWARNING[0m | Class SettingsController is missing @spec PHPDoc tag — link
+    |         | back to openspec/specs/{capability}/spec.md#requirement-{slug},
+    |         | not a change dir
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...-work/screens/round6/DQ-DATA3/portaliq/lib/AppInfo/StorePlaneRegistrar.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 141 | [33mWARNING[0m | Inline comments must end in full-stops, exclamation marks, or
+     |         | question marks
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...ap-work/screens/round6/DQ-DATA3/portaliq/lib/Service/ActionAuthService.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 2 WARNINGS AFFECTING 2 LINES[0m
+--------------------------------------------------------------------------------
+  57 | [33mWARNING[0m | Class ActionAuthService is missing @spec PHPDoc tag — link
+     |         | back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}, not a
+     |         | change dir
+ 237 | [33mWARNING[0m | Public method ActionAuthService::getActions() is missing @spec
+     |         | PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...ork/screens/round6/DQ-DATA3/portaliq/lib/Repair/MovePortalAuditEntries.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 97 | [33mWARNING[0m | Public method MovePortalAuditEntries::getName() is missing
+    |         | @spec PHPDoc tag — link back to
+    |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...-work/screens/round6/DQ-DATA3/portaliq/lib/Service/Cms/MediaReferences.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 40 | [33mWARNING[0m | Class MediaReferences is missing @spec PHPDoc tag — link back
+    |         | to openspec/specs/{capability}/spec.md#requirement-{slug}, not
+    |         | a change dir
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...memcap-work/screens/round6/DQ-DATA3/portaliq/lib/Service/Cms/MediaFile.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 45 | [33mWARNING[0m | Class MediaFile is missing @spec PHPDoc tag — link back to
+    |         | openspec/specs/{capability}/spec.md#requirement-{slug}, not a
+    |         | change dir
+--------------------------------------------------------------------------------
+
+
+[1mFILE: .../screens/round6/DQ-DATA3/portaliq/lib/Controller/PageHistoryController.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 45 | [33mWARNING[0m | Class PageHistoryController is missing @spec PHPDoc tag —
+    |         | link back to
+    |         | openspec/specs/{capability}/spec.md#requirement-{slug}, not a
+    |         | change dir
+--------------------------------------------------------------------------------
+
+
+[1mFILE: .../screens/round6/DQ-DATA3/portaliq/lib/Controller/PortalThemeController.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 35 | [33mWARNING[0m | Class PortalThemeController is missing @spec PHPDoc tag —
+    |         | link back to
+    |         | openspec/specs/{capability}/spec.md#requirement-{slug}, not a
+    |         | change dir
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...-work/screens/round6/DQ-DATA3/portaliq/lib/Controller/HealthController.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 51 | [33mWARNING[0m | Class HealthController is missing @spec PHPDoc tag — link
+    |         | back to openspec/specs/{capability}/spec.md#requirement-{slug},
+    |         | not a change dir
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...ound6/DQ-DATA3/portaliq/lib/Event/PortalAccountProvisionRequestedEvent.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 13 WARNINGS AFFECTING 13 LINES[0m
+--------------------------------------------------------------------------------
+ 108 | [33mWARNING[0m | Public method PortalAccountProvisionRequestedEvent::getAppId()
+     |         | is missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 117 | [33mWARNING[0m | Public method
+     |         | PortalAccountProvisionRequestedEvent::getAudience() is missing
+     |         | @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 126 | [33mWARNING[0m | Public method
+     |         | PortalAccountProvisionRequestedEvent::getOrganisation() is
+     |         | missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 135 | [33mWARNING[0m | Public method
+     |         | PortalAccountProvisionRequestedEvent::getIdentityType() is
+     |         | missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 144 | [33mWARNING[0m | Public method
+     |         | PortalAccountProvisionRequestedEvent::getIdentityRef() is
+     |         | missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 153 | [33mWARNING[0m | Public method PortalAccountProvisionRequestedEvent::getEmail()
+     |         | is missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 162 | [33mWARNING[0m | Public method
+     |         | PortalAccountProvisionRequestedEvent::isVerifiedEmail() is
+     |         | missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 171 | [33mWARNING[0m | Public method
+     |         | PortalAccountProvisionRequestedEvent::getDisplayName() is
+     |         | missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 183 | [33mWARNING[0m | Public method PortalAccountProvisionRequestedEvent::answer()
+     |         | is missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 196 | [33mWARNING[0m | Public method PortalAccountProvisionRequestedEvent::refuse()
+     |         | is missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 207 | [33mWARNING[0m | Public method
+     |         | PortalAccountProvisionRequestedEvent::getSubjectRef() is
+     |         | missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 216 | [33mWARNING[0m | Public method
+     |         | PortalAccountProvisionRequestedEvent::getStatus() is missing
+     |         | @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 225 | [33mWARNING[0m | Public method
+     |         | PortalAccountProvisionRequestedEvent::getRefusal() is missing
+     |         | @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...screens/round6/DQ-DATA3/portaliq/lib/Service/Theme/PortalThemeContrast.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 38 | [33mWARNING[0m | Class PortalThemeContrast is missing @spec PHPDoc tag — link
+    |         | back to openspec/specs/{capability}/spec.md#requirement-{slug},
+    |         | not a change dir
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...mcap-work/screens/round6/DQ-DATA3/portaliq/lib/Service/Cms/PortalShell.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 35 | [33mWARNING[0m | Class PortalShell is missing @spec PHPDoc tag — link back to
+    |         | openspec/specs/{capability}/spec.md#requirement-{slug}, not a
+    |         | change dir
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...memcap-work/screens/round6/DQ-DATA3/portaliq/lib/Repair/SeedStaffGroup.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 80 | [33mWARNING[0m | Public method SeedStaffGroup::getName() is missing @spec PHPDoc
+    |         | tag — link back to
+    |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...k/screens/round6/DQ-DATA3/portaliq/lib/Event/PortalReportRevealedEvent.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 6 WARNINGS AFFECTING 6 LINES[0m
+--------------------------------------------------------------------------------
+  73 | [33mWARNING[0m | Public method PortalReportRevealedEvent::getReportId() is
+     |         | missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+  82 | [33mWARNING[0m | Public method PortalReportRevealedEvent::getRequestedBy() is
+     |         | missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+  91 | [33mWARNING[0m | Public method PortalReportRevealedEvent::getCustodian() is
+     |         | missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 100 | [33mWARNING[0m | Public method PortalReportRevealedEvent::getMotivation() is
+     |         | missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 109 | [33mWARNING[0m | Public method PortalReportRevealedEvent::getRevealedFields()
+     |         | is missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 118 | [33mWARNING[0m | Public method PortalReportRevealedEvent::getOccurredAt() is
+     |         | missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...rk/screens/round6/DQ-DATA3/portaliq/lib/Service/Cms/MediaLibraryReader.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 45 | [33mWARNING[0m | Class MediaLibraryReader is missing @spec PHPDoc tag — link
+    |         | back to openspec/specs/{capability}/spec.md#requirement-{slug},
+    |         | not a change dir
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...k/screens/round6/DQ-DATA3/portaliq/lib/Service/Theme/PortalThemeChoice.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 36 | [33mWARNING[0m | Class PortalThemeChoice is missing @spec PHPDoc tag — link
+    |         | back to openspec/specs/{capability}/spec.md#requirement-{slug},
+    |         | not a change dir
+--------------------------------------------------------------------------------
+
+
+[1mFILE: .../memcap-work/screens/round6/DQ-DATA3/portaliq/lib/Service/Cms/SiteHead.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 35 | [33mWARNING[0m | Class SiteHead is missing @spec PHPDoc tag — link back to
+    |         | openspec/specs/{capability}/spec.md#requirement-{slug}, not a
+    |         | change dir
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...screens/round6/DQ-DATA3/portaliq/lib/Service/Theme/PortalThemeOverview.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 35 | [33mWARNING[0m | Class PortalThemeOverview is missing @spec PHPDoc tag — link
+    |         | back to openspec/specs/{capability}/spec.md#requirement-{slug},
+    |         | not a change dir
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...mcap-work/screens/round6/DQ-DATA3/portaliq/lib/Service/Cms/PageHistory.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 52 | [33mWARNING[0m | Class PageHistory is missing @spec PHPDoc tag — link back to
+    |         | openspec/specs/{capability}/spec.md#requirement-{slug}, not a
+    |         | change dir
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...ns/round6/DQ-DATA3/portaliq/lib/Event/PortalContactDetailsChangedEvent.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 5 WARNINGS AFFECTING 5 LINES[0m
+--------------------------------------------------------------------------------
+  67 | [33mWARNING[0m | Public method
+     |         | PortalContactDetailsChangedEvent::getSubjectRef() is missing
+     |         | @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+  76 | [33mWARNING[0m | Public method
+     |         | PortalContactDetailsChangedEvent::getOrganisation() is missing
+     |         | @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+  85 | [33mWARNING[0m | Public method PortalContactDetailsChangedEvent::getChannel()
+     |         | is missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+  94 | [33mWARNING[0m | Public method
+     |         | PortalContactDetailsChangedEvent::hasPreferredEmail() is
+     |         | missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 103 | [33mWARNING[0m | Public method
+     |         | PortalContactDetailsChangedEvent::hasPreferredPhone() is
+     |         | missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...creens/round6/DQ-DATA3/portaliq/lib/Controller/ThemeOverviewController.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 34 | [33mWARNING[0m | Class ThemeOverviewController is missing @spec PHPDoc tag —
+    |         | link back to
+    |         | openspec/specs/{capability}/spec.md#requirement-{slug}, not a
+    |         | change dir
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...ns/round6/DQ-DATA3/portaliq/lib/Service/Intake/PortalEntryPointContent.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 44 | [33mWARNING[0m | Class PortalEntryPointContent is missing @spec PHPDoc tag —
+    |         | link back to
+    |         | openspec/specs/{capability}/spec.md#requirement-{slug}, not a
+    |         | change dir
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...screens/round6/DQ-DATA3/portaliq/lib/Event/PortalClientWithdrawalEvent.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 8 WARNINGS AFFECTING 8 LINES[0m
+--------------------------------------------------------------------------------
+  77 | [33mWARNING[0m | Public method PortalClientWithdrawalEvent::getRegister() is
+     |         | missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+  86 | [33mWARNING[0m | Public method PortalClientWithdrawalEvent::getSchema() is
+     |         | missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+  95 | [33mWARNING[0m | Public method PortalClientWithdrawalEvent::getCaseId() is
+     |         | missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 104 | [33mWARNING[0m | Public method PortalClientWithdrawalEvent::getStatus() is
+     |         | missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 113 | [33mWARNING[0m | Public method PortalClientWithdrawalEvent::getReason() is
+     |         | missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 122 | [33mWARNING[0m | Public method PortalClientWithdrawalEvent::getIdentity() is
+     |         | missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 131 | [33mWARNING[0m | Public method PortalClientWithdrawalEvent::getMandate() is
+     |         | missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 140 | [33mWARNING[0m | Public method PortalClientWithdrawalEvent::getOccurredAt() is
+     |         | missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+--------------------------------------------------------------------------------
+
+
+[1mFILE: .../screens/round6/DQ-DATA3/portaliq/lib/Contribution/StartTileNormaliser.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 40 | [33mWARNING[0m | Class StartTileNormaliser is missing @spec PHPDoc tag — link
+    |         | back to openspec/specs/{capability}/spec.md#requirement-{slug},
+    |         | not a change dir
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...ens/round6/DQ-DATA3/portaliq/lib/Service/Identity/PortalMandateService.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 298 | [33mWARNING[0m | Public method PortalMandateService::mandateId() is missing
+     |         | @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...screens/round6/DQ-DATA3/portaliq/lib/Controller/ContentMediaController.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 48 | [33mWARNING[0m | Class ContentMediaController is missing @spec PHPDoc tag —
+    |         | link back to
+    |         | openspec/specs/{capability}/spec.md#requirement-{slug}, not a
+    |         | change dir
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...cap-work/screens/round6/DQ-DATA3/portaliq/lib/Sections/SettingsSection.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 5 WARNINGS AFFECTING 5 LINES[0m
+--------------------------------------------------------------------------------
+ 34 | [33mWARNING[0m | Class SettingsSection is missing @spec PHPDoc tag — link back
+    |         | to openspec/specs/{capability}/spec.md#requirement-{slug}, not
+    |         | a change dir
+ 54 | [33mWARNING[0m | Public method SettingsSection::getID() is missing @spec PHPDoc
+    |         | tag — link back to
+    |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 63 | [33mWARNING[0m | Public method SettingsSection::getName() is missing @spec
+    |         | PHPDoc tag — link back to
+    |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 77 | [33mWARNING[0m | Public method SettingsSection::getPriority() is missing @spec
+    |         | PHPDoc tag — link back to
+    |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 86 | [33mWARNING[0m | Public method SettingsSection::getIcon() is missing @spec
+    |         | PHPDoc tag — link back to
+    |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...work/screens/round6/DQ-DATA3/portaliq/lib/Service/PortalRegionResolver.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 39 | [33mWARNING[0m | Class PortalRegionResolver is missing @spec PHPDoc tag — link
+    |         | back to openspec/specs/{capability}/spec.md#requirement-{slug},
+    |         | not a change dir
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...ns/round6/DQ-DATA3/portaliq/lib/Event/PortalAccountClaimRequestedEvent.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 6 WARNINGS AFFECTING 6 LINES[0m
+--------------------------------------------------------------------------------
+  67 | [33mWARNING[0m | Public method PortalAccountClaimRequestedEvent::getAppId() is
+     |         | missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+  76 | [33mWARNING[0m | Public method
+     |         | PortalAccountClaimRequestedEvent::getSubjectRef() is missing
+     |         | @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+  85 | [33mWARNING[0m | Public method PortalAccountClaimRequestedEvent::getClaimName()
+     |         | is missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+  94 | [33mWARNING[0m | Public method PortalAccountClaimRequestedEvent::getValue() is
+     |         | missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 105 | [33mWARNING[0m | Public method PortalAccountClaimRequestedEvent::answer() is
+     |         | missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 114 | [33mWARNING[0m | Public method PortalAccountClaimRequestedEvent::getResult() is
+     |         | missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+--------------------------------------------------------------------------------
+
+
+[1mFILE: .../screens/round6/DQ-DATA3/portaliq/lib/Listener/MediaWriteGuardListener.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 53 | [33mWARNING[0m | Class MediaWriteGuardListener is missing @spec PHPDoc tag —
+    |         | link back to
+    |         | openspec/specs/{capability}/spec.md#requirement-{slug}, not a
+    |         | change dir
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...ap-work/screens/round6/DQ-DATA3/portaliq/lib/Repair/InitializeSettings.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 2 WARNINGS AFFECTING 2 LINES[0m
+--------------------------------------------------------------------------------
+ 43 | [33mWARNING[0m | Class InitializeSettings is missing @spec PHPDoc tag — link
+    |         | back to openspec/specs/{capability}/spec.md#requirement-{slug},
+    |         | not a change dir
+ 74 | [33mWARNING[0m | Public method InitializeSettings::getName() is missing @spec
+    |         | PHPDoc tag — link back to
+    |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...mcap-work/screens/round6/DQ-DATA3/portaliq/lib/Service/InternalBaseUrl.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 4 WARNINGS AFFECTING 4 LINES[0m
+--------------------------------------------------------------------------------
+  75 | [33mWARNING[0m | Public method InternalBaseUrl::stored() is missing @spec
+     |         | PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+  86 | [33mWARNING[0m | Public method InternalBaseUrl::configured() is missing @spec
+     |         | PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 116 | [33mWARNING[0m | Public method InternalBaseUrl::store() is missing @spec PHPDoc
+     |         | tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 139 | [33mWARNING[0m | Public method InternalBaseUrl::normalise() is missing @spec
+     |         | PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...round6/DQ-DATA3/portaliq/lib/Service/Proposals/ChangeProposalsProvider.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 44 | [33mWARNING[0m | Class ChangeProposalsProvider is missing @spec PHPDoc tag —
+    |         | link back to
+    |         | openspec/specs/{capability}/spec.md#requirement-{slug}, not a
+    |         | change dir
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...nd6/DQ-DATA3/portaliq/lib/Service/Intake/PortalEmbedSnippetDescription.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 46 | [33mWARNING[0m | Class PortalEmbedSnippetDescription is missing @spec PHPDoc tag
+    |         | — link back to
+    |         | openspec/specs/{capability}/spec.md#requirement-{slug}, not a
+    |         | change dir
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...rk/screens/round6/DQ-DATA3/portaliq/lib/Service/PortalUserDisplayNames.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 41 | [33mWARNING[0m | Class PortalUserDisplayNames is missing @spec PHPDoc tag —
+    |         | link back to
+    |         | openspec/specs/{capability}/spec.md#requirement-{slug}, not a
+    |         | change dir
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...rk/screens/round6/DQ-DATA3/portaliq/lib/AppInfo/OpenRegisterAutoloader.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 3 WARNINGS AFFECTING 3 LINES[0m
+--------------------------------------------------------------------------------
+  45 | [33mWARNING[0m | Class OpenRegisterAutoloader is missing @spec PHPDoc tag —
+     |         | link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}, not a
+     |         | change dir
+ 153 | [33mWARNING[0m | Public method OpenRegisterAutoloader::unregister() is missing
+     |         | @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+ 172 | [33mWARNING[0m | Public method OpenRegisterAutoloader::classFile() is missing
+     |         | @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+--------------------------------------------------------------------------------
+
+
+[1mFILE: ...s/round6/DQ-DATA3/portaliq/lib/Service/Identity/PortalChallengeService.php[0m
+--------------------------------------------------------------------------------
+[1mFOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE[0m
+--------------------------------------------------------------------------------
+ 255 | [33mWARNING[0m | Public method PortalChallengeService::honeypotIsClean() is
+     |         | missing @spec PHPDoc tag — link back to
+     |         | openspec/specs/{capability}/spec.md#requirement-{slug}
+--------------------------------------------------------------------------------
+
+Time: 3.44 secs; Memory: 8MB
+
+=== phpmd ===
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/lib/Service/Intake/ActionDraft.php:53  ExcessiveClassComplexity  The class ActionDraft has an overall complexity of 55 which is very high. The configured complexity threshold is 50.
+Script E=0; php -d memory_limit=2G ./vendor/bin/phpmd lib text phpmd.xml || E=$?; php -d memory_limit=2G ./vendor/bin/phpmd lib text vendor/conduction/hydra-gates/quality-config/phpmd-unusedparams.xml || E=$?; exit $E handling the phpmd event returned with error code 2
+
+=== psalm ===
+Target PHP version: 8.3 (inferred from composer.json).
+Scanning files...
+Analyzing files...
+
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  60 / 615 (9%)
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 120 / 615 (19%)
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 180 / 615 (29%)
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 240 / 615 (39%)
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 300 / 615 (48%)
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 360 / 615 (58%)
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 420 / 615 (68%)
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 480 / 615 (78%)
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 540 / 615 (87%)
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 600 / 615 (97%)
+░░░░░░░░░░░░░░░
+
+------------------------------
+[42;2m                              [0m
+[42;30;2m       No errors found!       [0m
+[42;2m                              [0m
+------------------------------
+1605 other issues found.
+You can display them with [30;48;5;195m--show-info=true[0m
+------------------------------
+
+Checks took 98.37 seconds and used 284.939MB of memory
+Psalm was able to infer types for 95.3179% of the codebase
+
+=== phpstan ===
+Note: Using configuration file /home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/phpstan.neon.
+   0/615 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   0%
+  80/615 [▓▓▓░░░░░░░░░░░░░░░░░░░░░░░░░]  13%
+ 615/615 [▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓] 100%
+
+
+ [OK] No errors                                                                 
+
+
+=== test:all ===
+PHPUnit 10.5.63 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.3.6
+Configuration: /home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/phpunit.xml
+
+.......[36;1mS[0m.............[36;1mS[0m.......................................   61 / 4023 (  1%)
+.................[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m.[36;1mS[0m....................[33;1mW[0m...............  122 / 4023 (  3%)
+.............................................................  183 / 4023 (  4%)
+.............................................................  244 / 4023 (  6%)
+.............................................................  305 / 4023 (  7%)
+.............................................................  366 / 4023 (  9%)
+.............................................................  427 / 4023 ( 10%)
+.............................................................  488 / 4023 ( 12%)
+.......................................................[36;1mS[0m.....  549 / 4023 ( 13%)
+..........................................[31;1mE[0m.................[31;1mE[0m  610 / 4023 ( 15%)
+[31;1mE[0m[31;1mE[0m[31;1mE[0m........[31;1mE[0m..[31;1mE[0m...[31;1mE[0m..........................................  671 / 4023 ( 16%)
+.............................................................  732 / 4023 ( 18%)
+.............................................................  793 / 4023 ( 19%)
+.............................................................  854 / 4023 ( 21%)
+.............................................................  915 / 4023 ( 22%)
+.............................................................  976 / 4023 ( 24%)
+............................................................. 1037 / 4023 ( 25%)
+............................................................. 1098 / 4023 ( 27%)
+............................................................. 1159 / 4023 ( 28%)
+............................................................. 1220 / 4023 ( 30%)
+............................................................. 1281 / 4023 ( 31%)
+............................................................. 1342 / 4023 ( 33%)
+............................................................. 1403 / 4023 ( 34%)
+............................................................. 1464 / 4023 ( 36%)
+....[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[31;1mE[0m[31;1mE[0m[31;1mE[0m[36;1mS[0m[31;1mE[0m[31;1mE[0m.[31;1mE[0m.[31;1mE[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m....[31;1mE[0m[31;1mE[0m[31;1mE[0m[31;1mE[0m.[31;1mE[0m[31;1mE[0m[31;1mE[0m[31;1mE[0m[31;1mE[0m[31;1mE[0m[31;1mE[0m[31;1mE[0m[31;1mE[0m................. 1525 / 4023 ( 37%)
+..[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m.............................................. 1586 / 4023 ( 39%)
+.............................................[36;1mS[0m[36;1mS[0m[36;1mS[0m............. 1647 / 4023 ( 40%)
+.......................................................[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m 1708 / 4023 ( 42%)
+........[36;1mS[0m[36;1mS[0m[36;1mS[0m[36;1mS[0m................................................. 1769 / 4023 ( 43%)
+.................................[31;1mE[0m[31;1mE[0m[31;1mE[0m[31;1mE[0m.[31;1mE[0m...................... 1830 / 4023 ( 45%)
+............................................................. 1891 / 4023 ( 47%)
+............................................................. 1952 / 4023 ( 48%)
+............................................................. 2013 / 4023 ( 50%)
+............................................................. 2074 / 4023 ( 51%)
+............................................................. 2135 / 4023 ( 53%)
+............................................................. 2196 / 4023 ( 54%)
+............................................[36;1mS[0m[36;1mS[0m.....[36;1mS[0m[36;1mS[0m[36;1mS[0m.[36;1mS[0m[36;1mS[0m.... 2257 / 4023 ( 56%)
+............................................................. 2318 / 4023 ( 57%)
+..............................................[36;1mS[0m[36;1mS[0m............. 2379 / 4023 ( 59%)
+............................................................. 2440 / 4023 ( 60%)
+............................................................. 2501 / 4023 ( 62%)
+............................................................. 2562 / 4023 ( 63%)
+............................................................. 2623 / 4023 ( 65%)
+............................................................. 2684 / 4023 ( 66%)
+............................................................. 2745 / 4023 ( 68%)
+............................................................. 2806 / 4023 ( 69%)
+............................................................. 2867 / 4023 ( 71%)
+............................................................. 2928 / 4023 ( 72%)
+............................................................. 2989 / 4023 ( 74%)
+............................................................. 3050 / 4023 ( 75%)
+............................................................. 3111 / 4023 ( 77%)
+............................................................. 3172 / 4023 ( 78%)
+............................................................. 3233 / 4023 ( 80%)
+............................................................. 3294 / 4023 ( 81%)
+............................................................. 3355 / 4023 ( 83%)
+............................................................. 3416 / 4023 ( 84%)
+............................................................. 3477 / 4023 ( 86%)
+............................................................. 3538 / 4023 ( 87%)
+............................................................. 3599 / 4023 ( 89%)
+............................................................. 3660 / 4023 ( 90%)
+............................................................. 3721 / 4023 ( 92%)
+............................................................. 3782 / 4023 ( 94%)
+............................................................. 3843 / 4023 ( 95%)
+............................................................. 3904 / 4023 ( 97%)
+.......................................[36;1mS[0m..................... 3965 / 4023 ( 98%)
+.........................................[31;1mE[0m[31;1mE[0m[31;1mE[0m[31;1mE[0m[31;1mE[0m[31;1mE[0m[31;1mE[0m[31;1mE[0m[31;1mE[0m[31;1mE[0m[31;1mE[0m[31;1mE[0m[31;1mE[0m....    4023 / 4023 (100%)
+
+Time: 00:28.200, Memory: 106.50 MB
+
+There was 1 PHPUnit test runner warning:
+
+1) No code coverage driver available
+
+--
+
+There were 46 errors:
+
+1) OCA\Portaliq\Tests\Unit\Controller\CmsEditorControllerTest::testTheAnswerIsNeverCacheable
+Error: Class "OC" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/Server.php:38
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/AppFramework/Http/Response.php:227
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Controller/CmsEditorControllerTest.php:162
+
+2) OCA\Portaliq\Tests\Unit\Controller\ContentControllerTest::testAnAnonymousResponseIsPubliclyCacheable
+Error: Class "OC" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/Server.php:38
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/AppFramework/Http/Response.php:227
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Controller/ContentControllerTest.php:435
+
+3) OCA\Portaliq\Tests\Unit\Controller\ContentControllerTest::testAnAuthenticatedResponseIsNeverShared
+Error: Class "OC" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/Server.php:38
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/AppFramework/Http/Response.php:227
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Controller/ContentControllerTest.php:454
+
+4) OCA\Portaliq\Tests\Unit\Controller\ContentControllerTest::testAPageReadBySignedInNextcloudUserIsNeverCached
+Error: Class "OC" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/Server.php:38
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/AppFramework/Http/Response.php:227
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Controller/ContentControllerTest.php:477
+
+5) OCA\Portaliq\Tests\Unit\Controller\ContentControllerTest::testAPageReadByAnonymousVisitorStaysCacheable
+Error: Class "OC" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/Server.php:38
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/AppFramework/Http/Response.php:227
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Controller/ContentControllerTest.php:494
+
+6) OCA\Portaliq\Tests\Unit\Controller\ContentControllerTest::testTheSubjectScopedAggregateIsNeverServedPublicly
+Error: Class "OC" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/Server.php:38
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/AppFramework/Http/Response.php:227
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Controller/ContentControllerTest.php:673
+
+7) OCA\Portaliq\Tests\Unit\Controller\ContentControllerTest::testAPrivatePortalServesNoContentAnonymously
+Error: Class "OC" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/Server.php:38
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/AppFramework/Http/Response.php:227
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Controller/ContentControllerTest.php:773
+
+8) OCA\Portaliq\Tests\Unit\Controller\ContentControllerTest::testASessionMeetingTheTrustFloorIsServed
+Error: Class "OC" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/Server.php:38
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/AppFramework/Http/Response.php:227
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Controller/ContentControllerTest.php:868
+
+9) OCA\Portaliq\Tests\Unit\Listener\CmsCacheInvalidationListenerTest::testACreatedContentObjectInvalidatesItsPortal
+Error: Class "OCA\OpenRegister\Event\ObjectCreatedEvent" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Listener/CmsCacheInvalidationListenerTest.php:102
+
+10) OCA\Portaliq\Tests\Unit\Listener\CmsCacheInvalidationListenerTest::testAnUpdatedContentObjectInvalidatesItsPortal
+Error: Class "OCA\OpenRegister\Event\ObjectUpdatedEvent" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Listener/CmsCacheInvalidationListenerTest.php:114
+
+11) OCA\Portaliq\Tests\Unit\Listener\CmsCacheInvalidationListenerTest::testADeletedContentObjectInvalidatesItsPortal
+Error: Class "OCA\OpenRegister\Event\ObjectDeletedEvent" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Listener/CmsCacheInvalidationListenerTest.php:129
+
+12) OCA\Portaliq\Tests\Unit\Listener\CmsCacheInvalidationListenerTest::testAPortalObjectInvalidatesItselfByItsSlug
+Error: Class "OCA\OpenRegister\Event\ObjectUpdatedEvent" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Listener/CmsCacheInvalidationListenerTest.php:179
+
+13) OCA\Portaliq\Tests\Unit\Listener\CmsCacheInvalidationListenerTest::testAnUnrelatedObjectInvalidatesNothing
+Error: Class "OCA\OpenRegister\Event\ObjectUpdatedEvent" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Listener/CmsCacheInvalidationListenerTest.php:195
+
+14) OCA\Portaliq\Tests\Unit\Listener\CmsCacheInvalidationListenerTest::testAnInvalidationFailureDoesNotBreakTheWrite
+Error: Class "OCA\OpenRegister\Event\ObjectCreatedEvent" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Listener/CmsCacheInvalidationListenerTest.php:223
+
+15) OCA\Portaliq\Tests\Unit\Listener\CmsCacheInvalidationListenerTest::testAMediaWriteInvalidatesItsPortal
+Error: Class "OCA\OpenRegister\Event\ObjectUpdatedEvent" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Listener/CmsCacheInvalidationListenerTest.php:258
+
+16) OCA\Portaliq\Tests\Unit\Listener\LandingPageSubmissionDispatchListenerTest::testDispatchesTheConsumersOwnEventWhenItExists
+Error: Class "OCA\OpenRegister\Event\ObjectCreatedEvent" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Listener/LandingPageSubmissionDispatchListenerTest.php:87
+
+17) OCA\Portaliq\Tests\Unit\Listener\LandingPageSubmissionDispatchListenerTest::testNeverThrowsWhenTheConsumersEventClassDoesNotExistYet
+Error: Class "OCA\OpenRegister\Event\ObjectCreatedEvent" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Listener/LandingPageSubmissionDispatchListenerTest.php:117
+
+18) OCA\Portaliq\Tests\Unit\Listener\LandingPageSubmissionDispatchListenerTest::testASubmissionWithNoSourceAppIsNeverDispatched
+Error: Class "OCA\OpenRegister\Event\ObjectCreatedEvent" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Listener/LandingPageSubmissionDispatchListenerTest.php:131
+
+19) OCA\Portaliq\Tests\Unit\Listener\LandingPageSubmissionDispatchListenerTest::testAWriteToAnUnrelatedSchemaIsIgnored
+Error: Class "OCA\OpenRegister\Event\ObjectCreatedEvent" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Listener/LandingPageSubmissionDispatchListenerTest.php:138
+
+20) OCA\Portaliq\Tests\Unit\Listener\MediaWriteGuardListenerTest::testAnImageWithoutAlternativeTextIsRefused
+Error: Class "OCA\OpenRegister\Event\ObjectCreatingEvent" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Listener/MediaWriteGuardListenerTest.php:37
+
+21) OCA\Portaliq\Tests\Unit\Listener\MediaWriteGuardListenerTest::testAnImageWithAlternativeTextAndAFileWithoutOnePass
+Error: Class "OCA\OpenRegister\Event\ObjectUpdatingEvent" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Listener/MediaWriteGuardListenerTest.php:46
+
+22) OCA\Portaliq\Tests\Unit\Listener\MediaWriteGuardListenerTest::testAUsedItemIsNotDeletedAndThePagesAreNamed
+Error: Class "OCA\OpenRegister\Event\ObjectDeletingEvent" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Listener/MediaWriteGuardListenerTest.php:57
+
+23) OCA\Portaliq\Tests\Unit\Listener\MediaWriteGuardListenerTest::testAnUnusedItemIsDeleted
+Error: Class "OCA\OpenRegister\Event\ObjectDeletingEvent" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Listener/MediaWriteGuardListenerTest.php:66
+
+24) OCA\Portaliq\Tests\Unit\Listener\MediaWriteGuardListenerTest::testAnotherSchemasObjectIsLeftAlone
+Error: Class "OCA\OpenRegister\Db\ObjectEntity" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Listener/MediaWriteGuardListenerTest.php:91
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Listener/MediaWriteGuardListenerTest.php:74
+
+25) OCA\Portaliq\Tests\Unit\Listener\NoticeWriteGuardListenerTest::testAnEndBeforeTheStartIsRefused
+Error: Class "OCA\OpenRegister\Event\ObjectCreatingEvent" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Listener/NoticeWriteGuardListenerTest.php:38
+
+26) OCA\Portaliq\Tests\Unit\Listener\NoticeWriteGuardListenerTest::testAnEmptyWindowIsRefusedOnUpdate
+Error: Class "OCA\OpenRegister\Event\ObjectUpdatingEvent" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Listener/NoticeWriteGuardListenerTest.php:53
+
+27) OCA\Portaliq\Tests\Unit\Listener\NoticeWriteGuardListenerTest::testAWindowPasses
+Error: Class "OCA\OpenRegister\Event\ObjectCreatingEvent" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Listener/NoticeWriteGuardListenerTest.php:70
+
+28) OCA\Portaliq\Tests\Unit\Listener\NoticeWriteGuardListenerTest::testAnotherSchemasObjectIsLeftAlone
+Error: Class "OCA\OpenRegister\Db\ObjectEntity" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Listener/NoticeWriteGuardListenerTest.php:102
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Listener/NoticeWriteGuardListenerTest.php:84
+
+29) OCA\Portaliq\Tests\Unit\Service\Cms\PageHistoryTest::testEveryPublishedBodyIsAVersionNewestFirst
+Error: Class "OCA\OpenRegister\Db\AuditTrail" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Service/Cms/PageHistoryTest.php:146
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Service/Cms/PageHistoryTest.php:39
+
+30) OCA\Portaliq\Tests\Unit\Service\Cms\PageHistoryTest::testADraftSaveIsNotAVersion
+Error: Class "OCA\OpenRegister\Db\AuditTrail" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Service/Cms/PageHistoryTest.php:146
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Service/Cms/PageHistoryTest.php:54
+
+31) OCA\Portaliq\Tests\Unit\Service\Cms\PageHistoryTest::testAPublicationWithoutItsBodyShowsWithoutARestore
+Error: Class "OCA\OpenRegister\Db\AuditTrail" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Service/Cms/PageHistoryTest.php:146
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Service/Cms/PageHistoryTest.php:62
+
+32) OCA\Portaliq\Tests\Unit\Service\Cms\PageHistoryTest::testAnotherSchemasObjectLendsNoHistory
+Error: Class "OCA\OpenRegister\Db\AuditTrail" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Service/Cms/PageHistoryTest.php:146
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Service/Cms/PageHistoryTest.php:72
+
+33) OCA\Portaliq\Tests\Unit\Service\Cms\PageHistoryTest::testOnlyThePagesCreatesAndUpdatesAreRead
+PHPUnit\Framework\MockObject\Generator\ReflectionException: Class "OCA\OpenRegister\Db\AuditTrailMapper" does not exist
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Service/Cms/PageHistoryTest.php:86
+
+Caused by
+ReflectionException: Class "OCA\OpenRegister\Db\AuditTrailMapper" does not exist
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/Unit/Service/Cms/PageHistoryTest.php:86
+
+34) OCA\Portaliq\Tests\Unit\RenameDutchColumnsTest::testGetNameDescribesTheMigration
+Error: Class "Doctrine\DBAL\ParameterType" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/DB/QueryBuilder/IQueryBuilder.php:41
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/unit/RenameDutchColumnsTest.php:308
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/unit/RenameDutchColumnsTest.php:402
+
+35) OCA\Portaliq\Tests\Unit\RenameDutchColumnsTest::testNoShardTablesDoesNothing
+Error: Class "Doctrine\DBAL\ParameterType" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/DB/QueryBuilder/IQueryBuilder.php:41
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/unit/RenameDutchColumnsTest.php:308
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/unit/RenameDutchColumnsTest.php:412
+
+36) OCA\Portaliq\Tests\Unit\RenameDutchColumnsTest::testRenamesWhenOnlyTheDutchColumnExists
+Error: Class "Doctrine\DBAL\ParameterType" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/DB/QueryBuilder/IQueryBuilder.php:41
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/unit/RenameDutchColumnsTest.php:308
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/unit/RenameDutchColumnsTest.php:425
+
+37) OCA\Portaliq\Tests\Unit\RenameDutchColumnsTest::testAllMappedColumnsInATableAreMigrated
+Error: Class "Doctrine\DBAL\ParameterType" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/DB/QueryBuilder/IQueryBuilder.php:41
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/unit/RenameDutchColumnsTest.php:308
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/unit/RenameDutchColumnsTest.php:438
+
+38) OCA\Portaliq\Tests\Unit\RenameDutchColumnsTest::testBackfillsWhenBothColumnsExist
+Error: Class "Doctrine\DBAL\ParameterType" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/DB/QueryBuilder/IQueryBuilder.php:41
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/unit/RenameDutchColumnsTest.php:308
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/unit/RenameDutchColumnsTest.php:457
+
+39) OCA\Portaliq\Tests\Unit\RenameDutchColumnsTest::testTableWithoutTheDutchColumnIsUntouched
+Error: Class "Doctrine\DBAL\ParameterType" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/DB/QueryBuilder/IQueryBuilder.php:41
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/unit/RenameDutchColumnsTest.php:308
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/unit/RenameDutchColumnsTest.php:473
+
+40) OCA\Portaliq\Tests\Unit\RenameDutchColumnsTest::testForeignRegisterShardIsNotMigrated
+Error: Class "Doctrine\DBAL\ParameterType" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/DB/QueryBuilder/IQueryBuilder.php:41
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/unit/RenameDutchColumnsTest.php:308
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/unit/RenameDutchColumnsTest.php:490
+
+41) OCA\Portaliq\Tests\Unit\RenameDutchColumnsTest::testNonNumericSuffixIsNotAShard
+Error: Class "Doctrine\DBAL\ParameterType" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/DB/QueryBuilder/IQueryBuilder.php:41
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/unit/RenameDutchColumnsTest.php:308
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/unit/RenameDutchColumnsTest.php:509
+
+42) OCA\Portaliq\Tests\Unit\RenameDutchColumnsTest::testFailedStatementIsLoggedAndDoesNotThrow
+Error: Class "Doctrine\DBAL\ParameterType" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/DB/QueryBuilder/IQueryBuilder.php:41
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/unit/RenameDutchColumnsTest.php:308
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/unit/RenameDutchColumnsTest.php:523
+
+43) OCA\Portaliq\Tests\Unit\RenameDutchColumnsTest::testUnreadableRegistersSkipsQuietly
+Error: Class "Doctrine\DBAL\ParameterType" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/DB/QueryBuilder/IQueryBuilder.php:41
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/unit/RenameDutchColumnsTest.php:308
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/unit/RenameDutchColumnsTest.php:535
+
+44) OCA\Portaliq\Tests\Unit\RenameDutchColumnsTest::testUnreadableTableListSkipsQuietly
+Error: Class "Doctrine\DBAL\ParameterType" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/DB/QueryBuilder/IQueryBuilder.php:41
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/unit/RenameDutchColumnsTest.php:308
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/unit/RenameDutchColumnsTest.php:547
+
+45) OCA\Portaliq\Tests\Unit\RenameDutchColumnsTest::testAllShardsOfTheRegisterAreMigrated
+Error: Class "Doctrine\DBAL\ParameterType" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/DB/QueryBuilder/IQueryBuilder.php:41
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/unit/RenameDutchColumnsTest.php:308
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/unit/RenameDutchColumnsTest.php:561
+
+46) OCA\Portaliq\Tests\Unit\RenameDutchColumnsTest::testSummaryReportsCounts
+Error: Class "Doctrine\DBAL\ParameterType" not found
+
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/vendor/nextcloud/ocp/OCP/DB/QueryBuilder/IQueryBuilder.php:41
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/unit/RenameDutchColumnsTest.php:308
+/home/rubenlinde/memcap-work/screens/round6/DQ-DATA3/portaliq/tests/unit/RenameDutchColumnsTest.php:574
+
+[37;41mERRORS![0m
+[37;41mTests: 4023[0m[37;41m, Assertions: 17165[0m[37;41m, Errors: 46[0m[37;41m, PHPUnit Warnings: 1[0m[37;41m, Warnings: 1[0m[37;41m, Skipped: 59[0m[37;41m.[0m
+Script ./vendor/bin/phpunit --colors=always handling the test:all event returned with error code 2
+
+SOME CHECKS FAILED (see above)
+Script E=0; for CMD in lint phpcs phpmd psalm phpstan test:all; do echo; echo "=== $CMD ==="; composer $CMD || E=1; done; echo; if [ $E -eq 0 ]; then echo "ALL CHECKS PASSED"; else echo "SOME CHECKS FAILED (see above)"; fi; exit $E handling the check:strict event returned with error code 1
+exit=1
