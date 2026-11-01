@@ -6,11 +6,11 @@ A form binding SHALL accept `availability` with `activeFrom`, `activeUntil`, `li
 
 #### Scenario: The 150 places are taken
 - **WHEN** the front garden subsidy has `limit: {count: 150, per: "total"}`, `reopensOn: 2027-01-05` and 150 submissions
-- **THEN** the route shows "Er kunnen nu geen aanvragen meer bij" and "Vanaf maandag 5 januari 2027 kunt u weer een aanvraag doen."
+- **THEN** the route shows "Er kunnen nu geen aanvragen meer bij" and "Vanaf dinsdag 5 januari 2027 kunt u weer een aanvraag doen.", with the weekday worked out from the date
 
 #### Scenario: Maintenance keeps the draft
-- **WHEN** a resident with a saved Woo draft opens the form during the maintenance window
-- **THEN** the route shows "Dit formulier is even niet beschikbaar" with the window and says the saved answers stay
+- **WHEN** a resident with a saved Woo draft opens the form during the maintenance window of 9 October 2026, 18:00 to 22:00
+- **THEN** the route shows "Dit formulier is even niet beschikbaar" with the window "vrijdag 9 oktober 2026 van 18:00 tot 22:00 uur" and says the saved answers stay
 
 #### Scenario: A replaced form points to its successor
 - **WHEN** the binding has `replacedBy: "/aanvragen/woo-verzoek-2027"`
