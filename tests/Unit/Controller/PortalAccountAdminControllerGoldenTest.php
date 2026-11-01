@@ -74,21 +74,17 @@ class PortalAccountAdminControllerGoldenTest extends TestCase {
 	private array $log = [];
 
 	/**
+	 * Identity values a caller could forge as request parameters.
+	 */
+	private const FORGED = ['userId' => 'mallory', 'uid' => 'mallory', 'actor' => 'mallory', 'owner' => 'mallory'];
+
+	/**
 	 * Each route answers and delegates as recorded.
 	 *
 	 * @return void
 	 */
 	public function testEveryRouteAnswersAsRecorded(): void {
-		$actual = [];
-		foreach (self::CALLS as $key => $args) {
-			$method = explode('-', $key)[0];
-			foreach (['anonymous' => null, 'ordinary' => 'resident-bob', 'clerk' => self::CLERK] as $who => $uid) {
-				$this->log = [];
-				$response = $this->controller(uid: $uid)->{$method}(...$args);
-				$actual[$key][$who] = ['status' => $response->getStatus(), 'data' => $response->getData(), 'calls' => $this->log];
-			}
-		}
-
+		$actual = $this->answers(forged: false);
 		if (getenv('GOLDEN_RECORD') === '1') {
 			file_put_contents(self::GOLDEN, json_encode($actual, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
 		}
@@ -97,13 +93,53 @@ class PortalAccountAdminControllerGoldenTest extends TestCase {
 	}//end testEveryRouteAnswersAsRecorded()
 
 	/**
+	 * A request carrying forged identity parameters answers and delegates
+	 * exactly as one without: the uid handed on is the session's.
+	 *
+	 * @return void
+	 */
+	public function testForgedIdentityParametersChangeNothing(): void {
+		$actual = $this->answers(forged: true);
+
+		$this->assertSame(json_decode((string)file_get_contents(self::GOLDEN), true), json_decode((string)json_encode($actual), true));
+	}//end testForgedIdentityParametersChangeNothing()
+
+	/**
+	 * Every route for every principal: status, body and collaborator calls.
+	 *
+	 * @param bool $forged Whether the request carries forged identity parameters.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function answers(bool $forged): array {
+		$actual = [];
+		foreach (self::CALLS as $key => $args) {
+			$method = explode('-', $key)[0];
+			foreach (['anonymous' => null, 'ordinary' => 'resident-bob', 'clerk' => self::CLERK] as $who => $uid) {
+				$this->log = [];
+				$response = $this->controller(uid: $uid, forged: $forged)->{$method}(...$args);
+				$actual[$key][$who] = ['status' => $response->getStatus(), 'data' => $response->getData(), 'calls' => $this->log];
+			}
+		}
+
+		return $actual;
+	}//end answers()
+
+	/**
 	 * A controller whose session holds the given uid, or nobody.
 	 *
-	 * @param string|null $uid The signed-in uid, or null for anonymous.
+	 * @param string|null $uid    The signed-in uid, or null for anonymous.
+	 * @param bool        $forged Whether the request carries forged identity parameters.
 	 *
 	 * @return PortalAccountAdminController
 	 */
-	private function controller(?string $uid): PortalAccountAdminController {
+	private function controller(?string $uid, bool $forged): PortalAccountAdminController {
+		$request = $this->createMock(IRequest::class);
+		if ($forged === true) {
+			$request->method('getParam')->willReturnCallback(static fn (string $key, mixed $default = null): mixed => (self::FORGED[$key] ?? $default));
+			$request->method('getParams')->willReturn(self::FORGED);
+		}
+
 		$session = $this->createMock(IUserSession::class);
 		$user = null;
 		if ($uid !== null) {
@@ -142,7 +178,7 @@ class PortalAccountAdminControllerGoldenTest extends TestCase {
 		$this->answer($change, 'change', SignInAddressChange::CHANGED);
 
 		return new PortalAccountAdminController(
-			$this->createMock(IRequest::class),
+			$request,
 			$accounts,
 			$auth,
 			$session,
