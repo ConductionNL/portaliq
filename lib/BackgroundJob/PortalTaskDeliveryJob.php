@@ -46,7 +46,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -171,7 +171,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 	 *
 	 * @param ITimeFactory $time Testable clock (job base class).
 	 * @param ContainerInterface $container Resolves the ledger seam by name.
-	 * @param PortalObjectReader $reader The idempotency probe + account lookup.
+	 * @param ScopedCollectionReaderInterface $reader The idempotency probe + account lookup.
 	 * @param PortalObjectWriter $writer Writes the inbox message (scope stamped server-side).
 	 * @param PortalOrganisationConfigService $orgConfig Resolves the tenant display name.
 	 * @param IMailer $mailer Sends the privacy-minimal mail.
@@ -182,7 +182,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 	public function __construct(
 		ITimeFactory $time,
 		private readonly ContainerInterface $container,
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly PortalOrganisationConfigService $orgConfig,
 		private readonly IMailer $mailer,

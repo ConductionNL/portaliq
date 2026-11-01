@@ -62,7 +62,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Portal;
 
 use OCA\Portaliq\Contribution\IPortalContributionProvider;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\Security\ISecureRandom;
 use Psr\Log\LoggerInterface;
 
@@ -106,14 +106,14 @@ class PortalContributionProvider implements IPortalContributionProvider {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $objectReader Reads `portalPage`/`form`
+	 * @param ScopedCollectionReaderInterface $objectReader Reads `portalPage`/`form`
 	 *                                         objects (ADR-022 — no direct OR
 	 *                                         client call in this class).
 	 * @param ISecureRandom $random Mints each submission action's per-request nonce.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $objectReader,
+		private readonly ScopedCollectionReaderInterface $objectReader,
 		private readonly ISecureRandom $random,
 		private readonly LoggerInterface $logger,
 	) {

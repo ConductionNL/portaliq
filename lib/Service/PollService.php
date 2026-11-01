@@ -56,11 +56,11 @@ class PollService {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Reads polls and responses.
+	 * @param ScopedCollectionReaderInterface $reader Reads polls and responses.
 	 * @param PortalObjectWriter $writer Writes polls and responses.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 	) {
 	}//end __construct()

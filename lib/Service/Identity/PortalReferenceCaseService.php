@@ -33,7 +33,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
  * Finds the one case a reference link or a reference session may open.
@@ -61,11 +61,11 @@ class PortalReferenceCaseService {
 	 * Constructor.
 	 *
 	 * @param PortalContributionRegistry $registry The case apps' collection declarations.
-	 * @param PortalObjectReader $reader Reads the binding and the one case.
+	 * @param ScopedCollectionReaderInterface $reader Reads the binding and the one case.
 	 */
 	public function __construct(
 		private readonly PortalContributionRegistry $registry,
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 	) {
 	}//end __construct()
 

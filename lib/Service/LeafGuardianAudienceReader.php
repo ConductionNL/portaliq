@@ -68,12 +68,12 @@ class LeafGuardianAudienceReader {
 	 * Constructor.
 	 *
 	 * @param PortalContributionRegistry $registry The contributions for the parent audience.
-	 * @param PortalObjectReader $reader The subject-scoped collection reader.
+	 * @param ScopedCollectionReaderInterface $reader The subject-scoped collection reader.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
 		private readonly PortalContributionRegistry $registry,
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
