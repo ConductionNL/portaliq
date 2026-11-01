@@ -49,6 +49,7 @@ use OCP\IRequest;
  */
 class ContentCatalogueController extends Controller {
 	use PublicContentGate;
+	use BearerCachedJson;
 
 	/**
 	 * The longest query.

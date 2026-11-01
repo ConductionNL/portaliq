@@ -49,6 +49,7 @@ use OCP\IRequest;
  */
 class ContentNewsController extends Controller {
 	use PublicContentGate;
+	use BearerCachedJson;
 
 	/**
 	 * Constructor.

@@ -38,6 +38,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Portaliq\Controller\ContentNewsController
  * @covers \OCA\Portaliq\Controller\ContentCatalogueController
  * @covers \OCA\Portaliq\Controller\PublicContentGate
+ * @covers \OCA\Portaliq\Controller\BearerCachedJson
  * @uses   \OCA\Portaliq\Service\PortalSessionService
  * @uses   \OCA\Portaliq\Service\PublicCatalogueQuery
  * @uses   \OCA\Portaliq\Service\DerivedCatalogueFacets
