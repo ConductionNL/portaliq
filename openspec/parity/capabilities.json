@@ -9351,9 +9351,10 @@
 				"evidence": "src/manifest.json:143-153 Store page, type 'store', app: portaliq; appinfo/routes.php:27-46 registers store#search (GET /api/store/items) and store#install (POST /api/store/items/{slug}/install) verbatim from OpenRegister's Routes::standard(), aliased by lib/AppInfo/StorePlaneRegistrar.php to OpenRegister's GenericStoreController; portaliq ships NO StoreController of its own",
 				"reachedOn": "confirmed via the shared component's own source: nextcloud-vue src/components/CnStorePage/CnStorePage.vue:562,604 fetches /apps/{app}/api/store/items and POSTs .../install. The Store page's manifest type resolves to this shared component, which resolves the endpoint itself using the app id from its own config, exactly the pattern the lane brief asked to check before concluding 'no caller'.",
 				"owner": "ConductionNL/openregister",
-				"note": "routes.php's own comments record the FAILURE MODE this shipped to fix: without these two route entries, the SPA catch-all answered 200 HTML and the page read 'The store registry did not answer' (WOO-559) with nothing erroring. Search is reachable by any signed-in user (one tier below the rest of this app's admin-only /api/), accepted not chosen, because OpenRegister's store-plane engine has no searchAuth key to narrow it further. Stays spec none (7 Oct 2026, decision 81): the store backend is OpenRegister's GenericStoreController and the page is nextcloud-vue's CnStorePage; portaliq only aliases the two routes.",
+				"note": "routes.php's own comments record the FAILURE MODE this shipped to fix: without these two route entries, the SPA catch-all answered 200 HTML and the page read 'The store registry did not answer' (WOO-559) with nothing erroring. Search is reachable by any signed-in user (one tier below the rest of this app's admin-only /api/), accepted not chosen, because OpenRegister's store-plane engine has no searchAuth key to narrow it further. Stays spec none (7 Oct 2026, decision 81): the store backend is OpenRegister's GenericStoreController and the page is nextcloud-vue's CnStorePage; portaliq only aliases the two routes. Spec added 1 Nov 2026: openspec/specs/portal-store-page records the page and the two aliased routes as built.",
 				"origin": "code",
-				"spec": "none"
+				"spec": "openspec/specs/portal-store-page",
+				"requirement": "openspec/specs/portal-store-page/spec.md The store page lists and installs published portal configurations"
 			},
 			"provider": "openregister",
 			"providerHow": "read-from-code",
@@ -13299,6 +13300,11 @@
 		"configuration-initialization": {
 			"board": null,
 			"reason": "Example spec of the app template: a repair step that writes default settings, with no screen."
+		},
+		"portal-store-page": {
+			"board": [
+				"PtStore"
+			]
 		}
 	}
 }
