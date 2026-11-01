@@ -452,6 +452,7 @@ export default {
 	overflow: hidden;
 	border-radius: 4px;
 	background: var(--color-background-hover);
+	color: var(--utrecht-code-color, #3d4047);
 	font-size: 13px;
 	text-overflow: ellipsis;
 	white-space: nowrap;
