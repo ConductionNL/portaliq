@@ -399,5 +399,7 @@ export function countLine(value, unit, priceLabel) {
  */
 export function optionLabel(field, option) {
 	const labels = field && field.optionLabels
-	return labels && typeof labels[option] === 'string' && labels[option] !== '' ? labels[option] : option
+	return labels && typeof labels[option] === 'string' && labels[option] !== ''
+		? labels[option]
+		: option
 }

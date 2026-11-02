@@ -17,7 +17,12 @@
 		data-testid="revealed-contact"
 		@closing="$emit('close')">
 		<NcNoteCard type="warning">
-			{{ t('portaliq', 'You see this once. Write down only what you need, where it belongs.') }}
+			{{
+				t(
+					'portaliq',
+					'You see this once. Write down only what you need, where it belongs.',
+				)
+			}}
 		</NcNoteCard>
 		<dl class="revealed-contact">
 			<template v-for="row in rows" :key="row.key">
@@ -71,10 +76,18 @@ export default {
 		 * @spec openspec/changes/intake-report-pages/specs/report-pages/spec.md#requirement-the-custodian-decides-a-reveal-on-a-screen-of-their-own-req-irp-006
 		 */
 		rows() {
-			const labels = { name: t('portaliq', 'Name'), email: t('portaliq', 'E-mail address'), phone: t('portaliq', 'Phone number') }
+			const labels = {
+				name: t('portaliq', 'Name'),
+				email: t('portaliq', 'E-mail address'),
+				phone: t('portaliq', 'Phone number'),
+			}
 			return Object.keys(labels)
 				.filter((key) => String(this.contact?.[key] || '').trim() !== '')
-				.map((key) => ({ key, label: labels[key], value: String(this.contact[key]).trim() }))
+				.map((key) => ({
+					key,
+					label: labels[key],
+					value: String(this.contact[key]).trim(),
+				}))
 		},
 	},
 

@@ -172,7 +172,10 @@ const sessionHandlers = createSessionHandlers({
 	confirmRevoke: () =>
 		showConfirmation({
 			name: t('portaliq', 'Revoke this session?'),
-			text: t('portaliq', 'The device signed in with it is signed out at once.'),
+			text: t(
+				'portaliq',
+				'The device signed in with it is signed out at once.',
+			),
 			labelConfirm: t('portaliq', 'Revoke session'),
 			labelReject: t('portaliq', 'Cancel'),
 		}),

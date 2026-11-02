@@ -214,6 +214,10 @@ const RENDERABLE_WIDGET_TYPES = new Set([
 	// nextcloud-vue 2.80 registers it for the detail-page and app-dashboard
 	// surfaces; a filter without @objectId tokens needs no current object.
 	'record-list',
+	// nextcloud-vue registers it as a dashboard widget
+	// (CnWidgetObjectTable/dashboardRegistration.js); `table` is now its
+	// legacy alias, so the Themes page's portal table mounts with either.
+	'object-table',
 	...registryWidgetKeys(),
 ])
 
@@ -252,7 +256,7 @@ const TILE_LINK_TYPES = new Set(['app', 'url'])
  *                      layout renders its empty state — "No widgets
  *                      configured" — which reads as "nothing was configured
  *                      yet" rather than "your configuration is unreachable".
- *   unrenderable type  `text` and `object-table` are not in the renderer's
+ *   unrenderable type  `text` is not in the renderer's
  *                      vocabulary. They validate, they round-trip, and they
  *                      mount nothing.
  *

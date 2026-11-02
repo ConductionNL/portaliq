@@ -66,7 +66,9 @@
 			<span
 				v-if="display === 'compact' && (stepLine || card.position)"
 				class="pq-case-card__steps">
-				<span v-if="stepLine" class="pq-case-card__line">{{ stepLine }}</span>
+				<span v-if="stepLine" class="pq-case-card__line">{{
+					stepLine
+				}}</span>
 				<span
 					v-if="card.position"
 					class="pq-case-card__bar pq-case-card__bar--board"
