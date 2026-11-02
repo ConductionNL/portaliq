@@ -328,6 +328,33 @@ class PortalTaskProxyControllerTest extends TestCase {
 	}//end testASuccessfulCompletionIsAuditedAndReceipted()
 
 	/**
+	 * A completion is recorded by the task's title as "Mijn taken" showed it.
+	 *
+	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 */
+	public function testACompletionIsRecordedByTheTasksTitle(): void {
+		$gateway = $this->createMock(PortalTaskGateway::class);
+		$gateway->method('getTask')->willReturn(['status' => 200, 'body' => ['uuid' => 't-9']]);
+		$gateway->method('completeTask')->willReturn(
+			['status' => 200, 'body' => ['uuid' => 't-9', 'title' => 'verklaring', 'displayTitle' => 'Stuur uw bewijsstuk', 'state' => 'completed']]
+		);
+
+		$received = [];
+		$receiptService = $this->receiptMock();
+		$receiptService->expects($this->once())->method('record')->willReturnCallback(
+			function (string $subjectRef, string $organisation, string $appId, string $actionId, array $whitelistedData, string $audience = '', mixed $actionTitle = '') use (&$received) {
+				$received = compact('actionId', 'actionTitle');
+			}
+		);
+
+		$this->controller(subject: self::SUBJECT, gateway: $gateway, auditor: $this->createMock(AuditTrailService::class), receiptService: $receiptService)
+			->complete('t-9', 'submitted');
+
+		$this->assertSame('task.complete', $received['actionId']);
+		$this->assertSame('Stuur uw bewijsstuk', $received['actionTitle']);
+	}//end testACompletionIsRecordedByTheTasksTitle()
+
+	/**
 	 * A seam row without an outcome (or uuid) falls back to what the resident
 	 * requested and addressed, and no upload means an empty file list — the
 	 * copy is always well-formed.

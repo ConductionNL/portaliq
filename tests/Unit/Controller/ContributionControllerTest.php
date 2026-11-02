@@ -1005,6 +1005,36 @@ class ContributionControllerTest extends TestCase {
 	}//end testSuccessfulCreateTriggersReceiptRecordWithWhitelistedMap()
 
 	/**
+	 * A successful create passes the matched action's declared `label` as the
+	 * title the proof log names the submission by.
+	 *
+	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 */
+	public function testSuccessfulCreatePassesTheActionsLabelAsItsTitle(): void {
+		$aggregate = $this->aggregate(
+			actions: [
+				['id' => 'c1', 'type' => 'create', 'label' => 'Melding openbare ruimte', 'register' => 'r1', 'schema' => 'a', 'fields' => ['title']],
+			]
+		);
+
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturn(['id' => 'new']);
+
+		$title = null;
+		$receiptService = $this->createMock(SubmissionReceiptService::class);
+		$receiptService->expects($this->once())->method('record')->willReturnCallback(
+			function (string $subjectRef, string $organisation, string $appId, string $actionId, array $whitelistedData, string $audience = '', mixed $actionTitle = '') use (&$title) {
+				$title = $actionTitle;
+			}
+		);
+
+		$response = $this->controller(aggregate: $aggregate, writer: $writer, receiptService: $receiptService)->create('r1', 'a');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('Melding openbare ruimte', $title);
+	}//end testSuccessfulCreatePassesTheActionsLabelAsItsTitle()
+
+	/**
 	 * WMEBV: a create that never reaches the domain write (403 IDOR, 403
 	 * trust) never fires the receipt — no receipt/log for a submission the
 	 * subject was never entitled to make.
@@ -1272,7 +1302,7 @@ class ContributionControllerTest extends TestCase {
 	public function testActionWithTypeCreateAndSuccessfulForwardTriggersReceiptRecord(): void {
 		$aggregate = $this->aggregate(
 			actions: [
-				['id' => 'submitAccreditation', 'type' => 'create', 'endpoint' => '/apps/demo/api/portal/accreditations', 'method' => 'POST', 'fields' => ['title']],
+				['id' => 'submitAccreditation', 'type' => 'create', 'endpoint' => '/apps/demo/api/portal/accreditations', 'method' => 'POST', 'label' => 'Grof afval laten ophalen', 'fields' => ['title']],
 			]
 		);
 
@@ -1289,8 +1319,8 @@ class ContributionControllerTest extends TestCase {
 		$received = [];
 		$receiptService = $this->createMock(SubmissionReceiptService::class);
 		$receiptService->expects($this->once())->method('record')->willReturnCallback(
-			function (string $subjectRef, string $organisation, string $appId, string $actionId, array $whitelistedData) use (&$received) {
-				$received = compact('subjectRef', 'organisation', 'appId', 'actionId', 'whitelistedData');
+			function (string $subjectRef, string $organisation, string $appId, string $actionId, array $whitelistedData, string $audience = '', mixed $actionTitle = '') use (&$received) {
+				$received = compact('subjectRef', 'organisation', 'appId', 'actionId', 'whitelistedData', 'actionTitle');
 			}
 		);
 
@@ -1303,6 +1333,7 @@ class ContributionControllerTest extends TestCase {
 		$this->assertSame('portaliq', $received['appId']);
 		$this->assertSame('submitAccreditation', $received['actionId']);
 		$this->assertSame(['title' => 'X'], $received['whitelistedData']);
+		$this->assertSame('Grof afval laten ophalen', $received['actionTitle']);
 
 	}//end testActionWithTypeCreateAndSuccessfulForwardTriggersReceiptRecord()
 
