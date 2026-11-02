@@ -29,6 +29,7 @@ use DateTimeImmutable;
 use DateTimeZone;
 use OCA\Portaliq\Service\PagedObjectReads;
 use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\RowAsArray;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -42,6 +43,7 @@ use Throwable;
  * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md#requirement-a-plan-near-its-end-date-asks-for-action-req-spl-004
  */
 class PlanEndReminderService {
+	use RowAsArray;
 	use PagedObjectReads;
 
 	public const RULE_KEY = 'plan-ending';
@@ -153,24 +155,6 @@ class PlanEndReminderService {
 		return $open;
 	}//end openActions()
 
-	/**
-	 * A stored row as an array.
-	 *
-	 * @param mixed $row The row, an array or an entity.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function asArray(mixed $row): array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			return (array)$row->jsonSerialize();
-		}
-
-		return [];
-	}//end asArray()
 
 	/**
 	 * A row's identifier.
