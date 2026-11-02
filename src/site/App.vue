@@ -1519,17 +1519,16 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
 		 */
 		signInRoutes() {
-			return signInRoutes(
-				this.site,
-				authBaseFrom(resolveApiBase()),
-				this.t,
+			return signInRoutes(this.site, {
+				authBase: authBaseFrom(resolveApiBase()),
+				t: this.t,
 				// One click on a demo per example resident, beside the portal's
 				// own ways in (demo-sign-in-beside-the-account).
-				this.signinConfig.exampleResident || '',
-				this.signinConfig.exampleResidents || [],
+				exampleResident: this.signinConfig.exampleResident || '',
+				demoResidents: this.signinConfig.exampleResidents || [],
 				// The e-mail link, behind the instance switch (sign-in-with-an-email-link).
-				this.waysIn.emailLink === true,
-			)
+				emailLink: this.waysIn.emailLink === true,
+			})
 		},
 
 		/**

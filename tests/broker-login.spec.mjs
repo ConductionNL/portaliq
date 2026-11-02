@@ -59,13 +59,10 @@ test('a failed login is read once from the fragment and stripped', () => {
 })
 
 test('site: the login screen starts each button at the edge for its portal and shows the failure', () => {
-	const routes = signInRoutes(
-		{
+	const routes = signInRoutes({
 			slug: 'wilgenboom',
 			authentication: { modes: ['public', 'digid', 'oidc'] },
-		},
-		'/apps/portaliq/portal/api',
-	)
+		}, { authBase: '/apps/portaliq/portal/api' })
 	assert.deepEqual(
 		routes.map((route) => route.mode),
 		['digid', 'oidc'],

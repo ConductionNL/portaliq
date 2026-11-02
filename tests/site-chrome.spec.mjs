@@ -104,8 +104,7 @@ test('the footer carries its button and contact column only when they say someth
 })
 
 test('a sign-in route carries the card the portal wrote, and its button text', () => {
-	const routes = signInRoutes(
-		{
+	const routes = signInRoutes({
 			slug: 'vaartveld',
 			authentication: {
 				modes: ['nextcloud', 'digid'],
@@ -116,9 +115,7 @@ test('a sign-in route carries the card the portal wrote, and its button text', (
 					},
 				},
 			},
-		},
-		'/auth',
-	)
+		}, { authBase: '/auth' })
 	assert.equal(routes[0].label, 'Inloggen met je schoolaccount')
 	assert.equal(routes[0].card.title, 'Ik ben leerling')
 	assert.equal(routes[1].label, 'Inloggen met DigiD')
