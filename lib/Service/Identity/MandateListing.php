@@ -146,7 +146,8 @@ class MandateListing {
 
 	/**
 	 * The name and address of the account a mandate names: the holder when a
-	 * person holds it, else the account that accepted it for its company.
+	 * person holds it, else the account that accepted it for its company. A
+	 * withdrawn account names nobody.
 	 *
 	 * @param array<string, mixed> $row The mandate.
 	 *
@@ -166,6 +167,9 @@ class MandateListing {
 		}
 
 		$account = $this->accounts->bySubjectRef(subjectRef: $ref);
+		if (($account['status'] ?? '') === PortalAccountLookup::STATUS_VOID) {
+			$account = null;
+		}
 
 		return ['name' => (string)($account['displayName'] ?? ''), 'email' => (string)($account['email'] ?? '')];
 	}//end named()
