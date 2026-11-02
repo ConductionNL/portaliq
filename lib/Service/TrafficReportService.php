@@ -52,6 +52,7 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
  */
 class TrafficReportService {
+	use PublishedPortalWalk;
 
 	/**
 	 * The app config key prefix of a sent report: `traffic_report_<portal>_<id>`.
@@ -103,12 +104,7 @@ class TrafficReportService {
 		$now = $this->now();
 		$reports = 0;
 		$alerts = 0;
-		foreach ($this->portals->allPublishedPortals() as $portal) {
-			$slug = trim((string)($portal['slug'] ?? ''));
-			if ($slug === '') {
-				continue;
-			}
-
+		foreach ($this->sluggedPortals() as [$slug, $portal]) {
 			$config = $this->config->resolve(portal: $portal);
 			foreach ($config['reports'] as $report) {
 				$reports += (int)$this->report(portal: $portal, slug: $slug, report: $report, now: $now);

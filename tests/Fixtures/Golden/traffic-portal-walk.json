@@ -1,0 +1,87 @@
+{
+    "run": {
+        "result": {
+            "portals": 5,
+            "days": 7,
+            "purged": 3,
+            "recordingsPurged": 2
+        },
+        "days": [
+            "uuid-1 open-tilburg 2026-09-03  1",
+            "uuid-2 open-tilburg 2026-09-04  1",
+            "uuid-3 open-venray 2026-09-04  1",
+            "uuid-4 regio 2026-09-03  1",
+            "uuid-5 regio 2026-09-04  1",
+            "uuid-6 heel 2026-09-04  1"
+        ],
+        "watermarks": {
+            "portaliq/traffic_aggregated_open-tilburg": "2026-09-04T23:30:00Z",
+            "portaliq/traffic_aggregated_open-venray": "2026-09-04T23:30:00Z"
+        }
+    },
+    "backfill all": {
+        "result": {
+            "portals": 2,
+            "days": 3,
+            "kept": 3,
+            "rollupDays": 3
+        },
+        "days": [
+            "uuid-1 open-tilburg 2026-09-03  1",
+            "uuid-2 open-tilburg 2026-09-04  1",
+            "uuid-3 open-venray 2026-09-04  1",
+            "uuid-4 regio 2026-09-03  1",
+            "uuid-5 regio 2026-09-04  1",
+            "uuid-6 heel 2026-09-04  1"
+        ],
+        "watermarks": []
+    },
+    "backfill tilburg": {
+        "result": {
+            "portals": 1,
+            "days": 2,
+            "kept": 1,
+            "rollupDays": 2
+        },
+        "days": [
+            "uuid-1 open-tilburg 2026-09-03  1",
+            "uuid-2 open-tilburg 2026-09-04  1",
+            "uuid-3 regio 2026-09-03  1",
+            "uuid-4 regio 2026-09-04  1"
+        ],
+        "watermarks": []
+    },
+    "backfill venray": {
+        "result": {
+            "portals": 1,
+            "days": 1,
+            "kept": 2,
+            "rollupDays": 1
+        },
+        "days": [
+            "uuid-1 open-venray 2026-09-04  1",
+            "uuid-2 heel 2026-09-04  1"
+        ],
+        "watermarks": []
+    },
+    "backfill rollup": {
+        "result": {
+            "portals": 0,
+            "days": 0,
+            "kept": 0,
+            "rollupDays": 0
+        },
+        "days": [],
+        "watermarks": []
+    },
+    "backfill unknown": {
+        "result": {
+            "portals": 0,
+            "days": 0,
+            "kept": 0,
+            "rollupDays": 0
+        },
+        "days": [],
+        "watermarks": []
+    }
+}
