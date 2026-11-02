@@ -278,7 +278,10 @@ test('the completion form labels every control and ties the rules to the file fi
 		}),
 		{ api: fakeApi(), t, locale: 'en' },
 	)
-	assert.match(html, /<h2 class="utrecht-heading-2">Lever het formulier in<\/h2>/)
+	assert.match(
+		html,
+		/<h1 class="utrecht-heading-2 pq-task-detail__title">Lever het formulier in<\/h1>/,
+	)
 	assert.match(html, /Finish before 15\/10\/2026/)
 	assert.match(
 		html,

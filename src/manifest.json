@@ -2029,6 +2029,8 @@
               "filter": {
                 "subjectRef": "@object.subjectRef"
               },
+              "sortable": true,
+              "filterable": true,
               "sort": {
                 "field": "issuedAt",
                 "dir": "desc"
@@ -2072,6 +2074,8 @@
               "filter": {
                 "subjectRef": "@object.subjectRef"
               },
+              "sortable": true,
+              "filterable": true,
               "sort": {
                 "field": "receivedAt",
                 "dir": "desc"
@@ -2639,7 +2643,8 @@
         "columns": [
           {
             "key": "actionId",
-            "label": "Submitted action"
+            "label": "Submitted action",
+            "widget": "action-title"
           },
           {
             "key": "appId",
@@ -4228,12 +4233,22 @@
         ],
         "headerActions": [
           {
+            "id": "view-page",
+            "label": "View",
+            "icon": "EyeOutline",
+            "href": "/apps/portaliq/site?route=@object.route&portal=@object.portal",
+            "target": "_blank"
+          },
+          {
             "id": "edit-layout",
             "label": "Edit layout",
             "icon": "ViewDashboardOutline",
             "type": "open-page",
             "target": "PageLayout"
           }
+        ],
+        "quickActions": [
+          "view-page"
         ],
         "sidebar": {
           "enabled": true,

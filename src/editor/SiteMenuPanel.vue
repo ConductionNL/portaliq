@@ -385,50 +385,125 @@ export default {
 </script>
 
 <style scoped>
+/* The panel as the EditorMenu board draws it: one row per item (name field,
+   link, up, down, remove) between hairlines, the add form on a tinted ground. */
 .pq-site-panel {
+	--pq-site-panel-field-border: var(--color-border-maxcontrast, #828a95);
+	--pq-site-panel-rule: var(--nldesign-color-border, #e4e6ea);
+	--pq-site-panel-ground: var(--nldesign-color-background-subtle, #f4f6f9);
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
 	margin: 0 0 16px;
-	padding: 12px 16px;
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius-large);
+	padding: 20px;
+	border: 2px solid var(--nldesign-color-primary-hover, #234a78);
+	border-radius: 6px;
 	background: var(--color-main-background);
 }
 
+.pq-site-panel > * {
+	margin: 0;
+}
+
 .pq-site-panel__title {
-	margin-top: 0;
-	font-size: 1.2em;
+	font-size: 22px;
+	font-weight: 700;
+}
+
+.pq-site-panel input,
+.pq-site-panel select {
+	box-sizing: border-box;
+	height: 40px;
+	padding: 0 10px;
+	border: 1px solid var(--pq-site-panel-field-border);
+	border-radius: 4px;
+	background: var(--color-main-background);
+	color: inherit;
+	font: inherit;
+	font-size: 15px;
 }
 
 .pq-site-panel__list {
-	margin: 0 0 16px;
-	padding-inline-start: 24px;
+	display: flex;
+	flex-direction: column;
+	padding: 0;
+	list-style: none;
+	border-top: 1px solid var(--pq-site-panel-rule);
 }
 
 .pq-site-panel__row {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
-	gap: 8px;
-	padding-block: 4px;
+	gap: 6px 8px;
+	padding: 8px 0;
+	border-bottom: 1px solid var(--pq-site-panel-rule);
+}
+
+.pq-site-panel__row input {
+	flex: 0 1 320px;
+	min-width: 160px;
+}
+
+.pq-site-panel__row code {
+	flex: 1 1 200px;
+	min-width: 0;
+	padding: 3px 6px;
+	overflow: hidden;
+	border-radius: 4px;
+	background: var(--color-background-hover);
+	color: var(--utrecht-code-color, #3d4047);
+	font-size: 13px;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .pq-site-panel__actions {
 	display: flex;
-	gap: 4px;
+	flex: none;
+	gap: 2px;
+}
+
+.pq-site-panel__actions .button-vue {
+	height: 36px;
+	min-height: 36px;
+	min-width: 36px;
+	padding: 0;
+	border-radius: 4px;
+}
+
+.pq-site-panel__actions .button-vue[data-testid='site-menu-remove'] {
+	padding: 0 8px;
+	color: var(--color-error-text);
+	font-size: 14px;
+	font-weight: 600;
+	text-decoration: underline;
 }
 
 .pq-site-panel__form {
-	display: grid;
-	grid-template-columns: max-content minmax(0, 1fr);
-	gap: 8px 12px;
-	align-items: center;
-	max-width: 640px;
-	margin-bottom: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	max-width: 520px;
+	padding: 14px;
+	border-radius: 6px;
+	background: var(--pq-site-panel-ground);
 }
 
-.pq-site-panel__form h3,
-.pq-site-panel__form button {
-	grid-column: 1 / -1;
-	margin: 0;
+.pq-site-panel__form h3 {
+	margin: 0 0 4px;
+	font-size: 17px;
+	font-weight: 700;
+}
+
+.pq-site-panel__form label {
+	font-size: 15px;
+	font-weight: 600;
+}
+
+.pq-site-panel__form .button-vue {
+	align-self: flex-start;
+	margin-top: 4px;
 }
 
 .pq-site-panel__hidden {
