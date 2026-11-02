@@ -31,6 +31,7 @@ use stdClass;
  *
  * @covers \OCA\Portaliq\Service\ActionReminderService
  * @covers \OCA\Portaliq\Service\Plans\PlanEndReminderService
+ * @uses   \OCA\Portaliq\Service\RowAsArray
  */
 class ReminderRowGoldenTest extends TestCase {
 
