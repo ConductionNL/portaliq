@@ -856,6 +856,10 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 		 */
 		breadcrumbs() {
+			// A missing page is no place on the site to trail to (NietGevonden).
+			if (this.error && this.error.status === 404) {
+				return []
+			}
 			if (this.accountRoute) {
 				// Signed out, the own area is the sign-in page.
 				if (!this.session) {
