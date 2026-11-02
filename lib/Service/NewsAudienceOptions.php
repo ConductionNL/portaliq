@@ -53,6 +53,8 @@ use Throwable;
  * @spec openspec/changes/staff-news-screen/tasks.md#T2
  */
 class NewsAudienceOptions {
+	use ObjectServiceLookup;
+
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	/**
@@ -335,23 +337,4 @@ class NewsAudienceOptions {
 
 		return $list;
 	}//end sorted()
-
-	/**
-	 * Resolve OpenRegister's ObjectService, or null when unavailable.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 }//end class

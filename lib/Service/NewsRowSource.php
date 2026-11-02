@@ -38,6 +38,7 @@ use Throwable;
  * @spec openspec/changes/news-and-newsletter-authoring/design.md#architecture-overview
  */
 class NewsRowSource {
+	use ObjectServiceLookup;
 	use PagedObjectReads;
 
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
@@ -142,23 +143,4 @@ class NewsRowSource {
 
 		return null;
 	}//end normalise()
-
-	/**
-	 * Resolve OpenRegister's ObjectService, or null when unavailable.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 }//end class

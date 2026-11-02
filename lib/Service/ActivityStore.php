@@ -43,6 +43,8 @@ use Throwable;
  * @spec openspec/changes/extracurricular-activity-offer/design.md#d6-a-store-class-instead-of-openregister-calls-in-every-service
  */
 class ActivityStore {
+	use ObjectServiceLookup;
+
 	/**
 	 * The activity schema.
 	 */
@@ -265,23 +267,4 @@ class ActivityStore {
 
 		return null;
 	}//end normalise()
-
-	/**
-	 * OpenRegister's ObjectService, or null when it is not available.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 }//end class

@@ -50,6 +50,7 @@ use Throwable;
  * (inbox-delete-own-messages added the delete).
  */
 class PortalObjectWriter {
+	use ObjectServiceLookup;
 	use PortalScopeMatch;
 
 	/**
@@ -597,25 +598,6 @@ class PortalObjectWriter {
 
 		return null;
 	}//end normalise()
-
-	/**
-	 * Resolve OpenRegister's ObjectService, or null when unavailable.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 
 	/**
 	 * Run an OpenRegister write inside the write context, so the change
