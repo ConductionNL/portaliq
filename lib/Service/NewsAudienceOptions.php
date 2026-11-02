@@ -53,6 +53,9 @@ use Throwable;
  * @spec openspec/changes/staff-news-screen/tasks.md#T2
  */
 class NewsAudienceOptions {
+	use ObjectRowNormaliser;
+	use ObjectServiceLookup;
+
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	/**
@@ -294,11 +297,8 @@ class NewsAudienceOptions {
 	 * @return array{id: string, label: string}|null
 	 */
 	private function option(mixed $row): ?array {
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$row = $row->jsonSerialize();
-		}
-
-		if (is_array($row) === false) {
+		$row = $this->normalise(row: $row);
+		if ($row === null) {
 			return null;
 		}
 
@@ -335,23 +335,4 @@ class NewsAudienceOptions {
 
 		return $list;
 	}//end sorted()
-
-	/**
-	 * Resolve OpenRegister's ObjectService, or null when unavailable.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 }//end class

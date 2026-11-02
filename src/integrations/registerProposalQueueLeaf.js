@@ -57,6 +57,8 @@ export function mount(el, props) {
 		register: String(context.register || ''),
 		schema: String(context.schema || ''),
 		objectId: String(context.objectId || ''),
+		onHeader: typeof context.onHeader === 'function' ? context.onHeader : null,
+		onSummary: typeof context.onSummary === 'function' ? context.onSummary : null,
 	})
 	app.mount(el)
 	mountedApps.set(el, app)
@@ -91,6 +93,9 @@ export const proposalQueueLeafDescriptor = {
 	group: 'workflow',
 	surfaces: SURFACES,
 	renderMode: 'mount',
+	// No card of its own: a detail page hosts it in the library card and hands
+	// it `onHeader`; a "linked" card hands it `onSummary`.
+	chrome: 'card',
 	mount,
 	unmount,
 	defaultSize: { w: 6, h: 4 },

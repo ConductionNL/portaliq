@@ -31,7 +31,7 @@ namespace OCA\Portaliq\Service\Identity;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Portaliq\Service\PortalAccountService;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\Security\ISecureRandom;
 
@@ -60,12 +60,12 @@ class PortalAccountActivationService {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Finds the account a secret belongs to.
+	 * @param ScopedCollectionReaderInterface $reader Finds the account a secret belongs to.
 	 * @param PortalObjectWriter $writer Stores the hash and the activation.
 	 * @param ISecureRandom $random Mints the secret.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly ISecureRandom $random,
 	) {
@@ -123,7 +123,7 @@ class PortalAccountActivationService {
 	 * @param string $token The secret from the mail.
 	 * @param DateTimeImmutable|null $now The moment to judge expiry against.
 	 *
-	 * @return array{organisation: string}|null
+	 * @return array{organisation: string, subjectRef: string, displayName: string}|null
 	 *
 	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T03
 	 */
@@ -156,7 +156,11 @@ class PortalAccountActivationService {
 			return null;
 		}
 
-		return ['organisation' => (string)($account['organisation'] ?? '')];
+		return [
+			'organisation' => (string)($account['organisation'] ?? ''),
+			'subjectRef' => (string)($account['subjectRef'] ?? ''),
+			'displayName' => (string)($account['displayName'] ?? ''),
+		];
 	}//end activate()
 
 	/**

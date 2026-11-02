@@ -152,11 +152,12 @@ export default {
 		 * believing they have applied.
 		 *
 		 * @param {object} answers The answers.
+		 * @param {string} honeypot The honeypot's value.
 		 * @return {Promise<void>}
 		 *
 		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-embed-frame-must-render-its-form-from-a-small-entry-req-srp-047
 		 */
-		async send(answers) {
+		async send(answers, honeypot = '') {
 			this.busy = true
 			this.messages = []
 			this.fieldErrors = {}
@@ -167,6 +168,7 @@ export default {
 							submitUrl: this.submitUrl,
 							route: this.payload?.route,
 							answers,
+							honeypot,
 						})
 				if (result?.reference) {
 					this.reference = String(result.reference)
@@ -175,10 +177,18 @@ export default {
 
 				const errors = submissionErrors(result)
 				this.fieldErrors = errors.fields
+				// 503: the destination could not be reached; nothing was stored and
+				// the answers stay in the form (decision 179).
 				this.messages =
 					errors.messages.length > 0
 						? errors.messages
-						: [this.t('Your application could not be sent.')]
+						: [
+								result?.error === 'try_again_later'
+									? this.t(
+											'Your application could not be sent. Please try again later.',
+										)
+									: this.t('Your application could not be sent.'),
+							]
 			} catch {
 				this.messages = [
 					this.t(

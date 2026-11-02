@@ -484,3 +484,44 @@ test('a page renders its cases and steps blocks and loads the cases collection',
 	assert.equal(typeof blocks.cases, 'function')
 	assert.equal(typeof blocks.steps, 'function')
 })
+
+// mandated-case-opens-on-its-record-page: a case opened under a mandate reads
+// where it stands under that mandate; the API names it on the route.
+test('a case read under a mandate asks its steps under that mandate', async () => {
+	const asked = []
+	const ctx = instance(StepsBlock, {
+		block: { type: 'steps', collection: 'mijnZaken' },
+		collection: ZAKEN,
+		record: { id: 'z-henk', _mandate: { id: 'm-henk', label: 'Henk Bakker' } },
+		api: {
+			fetchSteps: async (collection, id, mandateId) => {
+				asked.push([id, mandateId])
+				return { label: '', steps: STEPS }
+			},
+		},
+	})
+	await ctx.load()
+	assert.deepEqual(asked, [['z-henk', 'm-henk']])
+
+	const calls = []
+	globalThis.window = {
+		localStorage: { getItem: () => 'token-1', setItem() {}, removeItem() {} },
+	}
+	const savedFetch = globalThis.fetch
+	globalThis.fetch = async (url) => {
+		calls.push(url)
+		return { ok: true, json: async () => ({ steps: [], entries: [] }) }
+	}
+	try {
+		const api = createPortalApi({ apiBase: '/apps/portaliq/portal/api' })
+		await api.fetchSteps(ZAKEN, 'z-henk', 'm-henk')
+		await api.fetchTimeline(ZAKEN, 'z-henk', 'm-henk')
+		await api.fetchSteps(ZAKEN, 'z-own')
+	} finally {
+		globalThis.fetch = savedFetch
+		delete globalThis.window
+	}
+	assert.match(calls[0], /\/z-henk\/steps\?collection=mijnZaken&mandate=m-henk$/)
+	assert.match(calls[1], /\/z-henk\/timeline\?collection=mijnZaken&mandate=m-henk$/)
+	assert.match(calls[2], /\/z-own\/steps\?collection=mijnZaken$/, 'an own case names no mandate')
+})

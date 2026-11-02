@@ -53,4 +53,69 @@ class AvailabilityReportTest extends TestCase {
 		$this->assertStringContainsString("2026-02,,0,0,0,0,0\n", $csv);
 		$this->assertStringContainsString("outage_started,outage_ended,duration_minutes,cause\n2026-08-01T03:00:00+00:00,2026-08-01T04:00:00+00:00,60,no-check\n", $csv);
 	}//end testMonthlyPercentage()
+
+	/**
+	 * The figures over the whole period that the PtBeschikbaarheid board shows
+	 * above the tables: twelve months together, the outages, the longest.
+	 *
+	 * @return void
+	 */
+	public function testSummaryOverThePeriod(): void {
+		$store = $this->getMockBuilder(className: AvailabilityStore::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['dailyBetween', 'outagesBetween'])
+			->getMock();
+		$store->method('dailyBetween')->willReturn([
+			'2026-08-01' => ['intervals' => 300, 'available' => 297, 'degraded' => 0, 'down' => 3, 'noCheck' => 0],
+			'2025-09-15' => ['intervals' => 100, 'available' => 100, 'degraded' => 0, 'down' => 0, 'noCheck' => 0],
+		]);
+		$store->method('outagesBetween')->willReturn([
+			[
+				'startedAt' => '2026-03-17T11:40:00+00:00',
+				'endedAt' => '2026-03-17T12:20:00+00:00',
+				'durationMinutes' => 40,
+				'cause' => 'site-error',
+			],
+			[
+				'startedAt' => '2026-08-01T03:00:00+00:00',
+				'endedAt' => '2026-08-01T03:15:00+00:00',
+				'durationMinutes' => 15,
+				'cause' => 'no-check',
+			],
+		]);
+
+		$report = (new AvailabilityReport(store: $store))->forPortal(portal: 'open-tilburg', now: new DateTimeImmutable('2026-09-29T10:00:00+00:00'));
+
+		$this->assertSame(
+			expected: [
+				'percentage' => 99.25,
+				'outageCount' => 2,
+				'outageMinutes' => 55,
+				'longestMinutes' => 40,
+				'longestStartedAt' => '2026-03-17T11:40:00+00:00',
+			],
+			actual: $report['summary']
+		);
+	}//end testSummaryOverThePeriod()
+
+	/**
+	 * A period with nothing measured and no outage says so: no percentage.
+	 *
+	 * @return void
+	 */
+	public function testSummaryOfAnUnmeasuredPeriod(): void {
+		$store = $this->getMockBuilder(className: AvailabilityStore::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['dailyBetween', 'outagesBetween'])
+			->getMock();
+		$store->method('dailyBetween')->willReturn([]);
+		$store->method('outagesBetween')->willReturn([]);
+
+		$report = (new AvailabilityReport(store: $store))->forPortal(portal: 'open-tilburg', now: new DateTimeImmutable('2026-09-29T10:00:00+00:00'));
+
+		$this->assertSame(
+			expected: ['percentage' => null, 'outageCount' => 0, 'outageMinutes' => 0, 'longestMinutes' => 0, 'longestStartedAt' => ''],
+			actual: $report['summary']
+		);
+	}//end testSummaryOfAnUnmeasuredPeriod()
 }//end class

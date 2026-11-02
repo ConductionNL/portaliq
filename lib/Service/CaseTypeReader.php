@@ -43,6 +43,8 @@ use Throwable;
  * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
  */
 class CaseTypeReader {
+	use ObjectServiceLookup;
+
 	/**
 	 * OpenRegister's object service.
 	 */
@@ -172,23 +174,4 @@ class CaseTypeReader {
 
 		return null;
 	}//end asArray()
-
-	/**
-	 * Resolve OpenRegister's ObjectService, or null when unavailable.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 }//end class

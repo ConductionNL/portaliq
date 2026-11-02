@@ -75,6 +75,15 @@ class ListBlockNormaliser {
 
 		$entry = ['type' => 'tasks', 'collection' => $collection['id']];
 
+		// The record scope and lookups a collection block takes, plus
+		// excludeWhen over a declared lookup (REQ-SMO-025). First, so a
+		// looked-up value may name a task (lookup-by-row-field).
+		$scopes = new RecordScopeNormaliser();
+		$entry = $scopes->scope(declared: $block, entry: $entry);
+		$entry = $scopes->lookups(declared: $block, entry: $entry, collectionIds: $this->ids(collections: $collections));
+		$entry += $this->excludeWhen(declared: ($block['excludeWhen'] ?? null), lookups: ($entry['lookups'] ?? []));
+		$collection = ($scopes->withLookupFields(collection: $collection, entry: $entry) ?? $collection);
+
 		$due = ($block['dueField'] ?? null);
 		if (is_string($due) === true && $this->projects(collection: $collection, field: $due) === true) {
 			$entry['dueField'] = $due;
@@ -85,12 +94,7 @@ class ListBlockNormaliser {
 			$entry['titleFields'] = $titles;
 		}
 
-		// The record scope and lookups a collection block takes, plus
-		// excludeWhen over a declared lookup (REQ-SMO-025).
-		$scopes = new RecordScopeNormaliser();
-		$entry = $scopes->scope(declared: $block, entry: $entry);
-		$entry = $scopes->lookups(declared: $block, entry: $entry, collectionIds: $this->ids(collections: $collections));
-		$entry += $this->excludeWhen(declared: ($block['excludeWhen'] ?? null), lookups: ($entry['lookups'] ?? []));
+		$entry += (new TaskTitleTemplate())->keys(declared: ($block['titleTemplate'] ?? null), collection: $collection);
 
 		// The highlight card (site-school-blocks).
 		return $entry + $this->common(block: $block) + (new SchoolBlockKeys())->tasksKeys(block: $block, collection: $collection)
@@ -194,6 +198,7 @@ class ListBlockNormaliser {
 		return $entry + $this->common(block: $block) + (new BoardKeys())->casesKeys(block: $block);
 	}//end casesBlock()
 
+
 	/**
 	 * A block that reads one open record through its collection's provider:
 	 * `steps`, `documents` or `timeline`, or null when the collection declares
@@ -207,6 +212,7 @@ class ListBlockNormaliser {
 	 * @return array<string, mixed>|null
 	 *
 	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 * @spec openspec/changes/steps-as-bars/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-as-a-row-of-bars
 	 */
 	public function recordBlock(string $type, array $block, array $collections): ?array {
 		$collection = $this->collection(id: ($block['collection'] ?? null), collections: $collections);
@@ -221,6 +227,11 @@ class ListBlockNormaliser {
 		if ($type === 'documents') {
 			// The upload button beside the heading (zuiddrecht-resident-pages-match-the-boards).
 			$entry += (new BoardKeys())->documentsKeys(block: $block);
+		}
+
+		// The steps as a row of bars, as the school boards draw them (steps-as-bars).
+		if ($type === 'steps' && ($block['display'] ?? null) === 'bars') {
+			$entry['display'] = 'bars';
 		}
 
 		return $entry;

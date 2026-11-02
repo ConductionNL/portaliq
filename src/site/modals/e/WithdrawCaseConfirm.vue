@@ -47,18 +47,18 @@
 				data-testid="case-withdraw-reason" />
 			<div class="pq-withdraw-confirm__buttons">
 				<button
-					type="submit"
-					class="utrecht-button utrecht-button--primary-action"
-					data-testid="case-withdraw-submit"
-					:disabled="busy">
-					{{ t('Withdraw request') }}
-				</button>
-				<button
 					type="button"
 					class="utrecht-button utrecht-button--secondary-action"
 					data-testid="case-withdraw-cancel"
 					@click="$emit('cancel')">
 					{{ t('Keep my request') }}
+				</button>
+				<button
+					type="submit"
+					class="utrecht-button utrecht-button--primary-action utrecht-button--danger"
+					data-testid="case-withdraw-submit"
+					:disabled="busy">
+					{{ t('Withdraw request') }}
 				</button>
 			</div>
 		</form>

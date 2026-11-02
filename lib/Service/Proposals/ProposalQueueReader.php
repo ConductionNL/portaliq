@@ -31,7 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Proposals;
 
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
  * Scoped reads over the `changeProposal` collection.
@@ -52,10 +52,10 @@ class ProposalQueueReader {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Reads the `changeProposal` collection.
+	 * @param ScopedCollectionReaderInterface $reader Reads the `changeProposal` collection.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 	) {
 	}//end __construct()
 

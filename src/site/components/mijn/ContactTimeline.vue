@@ -27,6 +27,17 @@
 					<p
 						class="denhaag-process-steps__step-heading pq-contact-timeline__text">
 						{{ textOf(entry) }}
+						<span
+							v-if="entry.channel"
+							class="pq-contact-timeline__channel"
+							data-testid="timeline-channel">
+							<svg
+								class="pq-contact-timeline__channel-icon"
+								viewBox="0 0 24 24"
+								aria-hidden="true"
+								focusable="false"><path :d="channelIcon(entry.channel)" /></svg>
+							{{ entry.channel }}
+						</span>
 					</p>
 					<time
 						v-if="stamp(entry)"
@@ -41,7 +52,7 @@
 </template>
 
 <script>
-import { newestFirst, textOf } from '../collections/timeline.js'
+import { channelIcon, newestFirst, textOf } from '../collections/timeline.js'
 import { momentInWords } from './documents.js'
 
 /**
@@ -71,6 +82,7 @@ export default {
 
 	methods: {
 		textOf,
+		channelIcon,
 
 		/**
 		 * @param {object} entry An entry.
@@ -124,7 +136,40 @@ export default {
 	margin: 0;
 }
 
+.pq-contact-timeline__text {
+	font-size: 1.0625rem;
+	font-weight: 600;
+}
+
+/* The channel a contact came in by, as a small pill with its icon
+   (board Zaak "Eerdere contactmomenten": Telefoon, Bericht via het portaal,
+   Balie). */
+.pq-contact-timeline__channel {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin-inline-start: 8px;
+	padding: 1px 8px;
+	border: 1px solid var(--nldesign-website-card-border-color, var(--nldesign-color-border, currentcolor));
+	border-radius: var(--nldesign-website-badge-border-radius, 12px);
+	font-size: 0.8125rem;
+	font-weight: 400;
+	vertical-align: 2px;
+}
+
+.pq-contact-timeline__channel-icon {
+	inline-size: 14px;
+	block-size: 14px;
+	fill: currentcolor;
+}
+
+/* The moment sits under the text at its full width, on a phone too; the
+   package gives it a narrow column of its own and hides it below 1024px. */
 .denhaag-contact-timeline__step-header__date {
-	font-size: 0.875em;
+	display: block;
+	min-width: 0;
+	max-width: none;
+	color: var(--nldesign-color-text-muted, inherit);
+	font-size: 0.8125rem;
 }
 </style>

@@ -17,6 +17,9 @@
 -->
 <template>
 	<div class="account-withdraw" data-testid="portal-account-withdraw">
+		<h3 class="account-withdraw__title">
+			{{ t('portaliq', 'Withdraw account') }}
+		</h3>
 		<template v-if="pending">
 			<p>
 				{{
@@ -53,8 +56,8 @@ import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcNoteCard } from '@nextcloud/vue'
-import { spawnDialog } from '@nextcloud/vue/functions/dialog'
 import VoidAccountDialog from '../dialogs/VoidAccountDialog.vue'
+import { spawnLookDialog } from '../lib/dialogLook.js'
 import {
 	canWithdrawAccount,
 	createStaffAccountActions,
@@ -118,7 +121,7 @@ export default {
 		 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-issue-and-withdraw-accounts-through-the-validated-actions-req-isa-003
 		 */
 		async withdraw() {
-			const reason = await spawnDialog(VoidAccountDialog)
+			const reason = await spawnLookDialog(VoidAccountDialog)
 			if (typeof reason !== 'string' || reason === '') {
 				return
 			}
@@ -137,10 +140,19 @@ export default {
 
 <style scoped>
 .account-withdraw {
+	padding: 20px;
+	background: var(--color-main-background);
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-large);
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
 	align-items: flex-start;
+}
+
+.account-withdraw__title {
+	margin: 0;
+	font-size: 1.1rem;
 }
 
 .account-withdraw__in-use {

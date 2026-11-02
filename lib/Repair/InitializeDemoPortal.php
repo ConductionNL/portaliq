@@ -27,7 +27,7 @@ namespace OCA\Portaliq\Repair;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PortalRegisterContext;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -159,7 +159,7 @@ class InitializeDemoPortal implements IRepairStep {
 		}
 
 		$existing = $this->writer->countObjects(
-			register: PortalResolver::REGISTER,
+			register: PortalRegisterContext::REGISTER,
 			schema: 'portal'
 		);
 
@@ -218,7 +218,7 @@ class InitializeDemoPortal implements IRepairStep {
 	 */
 	private function createPortal(): ?array {
 		return $this->writer->createAnonymousObject(
-			register: PortalResolver::REGISTER,
+			register: PortalRegisterContext::REGISTER,
 			schema: 'portal',
 			data: [
 				'title' => 'Open Catalogi',
@@ -263,7 +263,7 @@ class InitializeDemoPortal implements IRepairStep {
 	 */
 	private function createHomePage(): ?array {
 		return $this->writer->createAnonymousObject(
-			register: PortalResolver::REGISTER,
+			register: PortalRegisterContext::REGISTER,
 			schema: 'page',
 			data: [
 				'title' => 'Home',
@@ -317,7 +317,7 @@ class InitializeDemoPortal implements IRepairStep {
 	 */
 	private function createDetailPage(): ?array {
 		return $this->writer->createAnonymousObject(
-			register: PortalResolver::REGISTER,
+			register: PortalRegisterContext::REGISTER,
 			schema: 'page',
 			data: [
 				'title' => 'Publicatie',
@@ -359,7 +359,7 @@ class InitializeDemoPortal implements IRepairStep {
 	 */
 	private function createLegalMenu(): ?array {
 		return $this->writer->createAnonymousObject(
-			register: PortalResolver::REGISTER,
+			register: PortalRegisterContext::REGISTER,
 			schema: 'menu',
 			data: [
 				'title' => 'Sub footer menu 1',
@@ -383,7 +383,7 @@ class InitializeDemoPortal implements IRepairStep {
 	 */
 	private function createSearchPage(): ?array {
 		return $this->writer->createAnonymousObject(
-			register: PortalResolver::REGISTER,
+			register: PortalRegisterContext::REGISTER,
 			schema: 'page',
 			data: [
 				'title' => 'Zoeken',

@@ -109,8 +109,12 @@ class PortalBindingPreview {
 	 * Wire the preview.
 	 *
 	 * @param PortalFormBindingResolver $resolver The resolution the render uses.
+	 * @param DestinationIntake|null    $intake   Checks the binding against its destination.
 	 */
-	public function __construct(private readonly PortalFormBindingResolver $resolver) {
+	public function __construct(
+		private readonly PortalFormBindingResolver $resolver,
+		private readonly ?DestinationIntake $intake = null,
+	) {
 	}//end __construct()
 
 	/**
@@ -148,6 +152,7 @@ class PortalBindingPreview {
 
 		if ($resolvesToNone === false) {
 			return [
+				'findings' => $this->findings(binding: $binding, render: $render),
 				'state' => self::RESOLVED,
 				'formName' => (string)($render['formName'] ?? ''),
 				'reason' => null,
@@ -180,6 +185,25 @@ class PortalBindingPreview {
 			'message' => $this->reasonFor(render: $render, binding: $binding),
 		];
 	}//end describe()
+
+	/**
+	 * What stops the binding from being published, from the same check the
+	 * save runs (REQ-PIFO-007). Empty when it may be published.
+	 *
+	 * @param array<string, mixed> $binding The binding.
+	 * @param array<string, mixed> $render  The resolution.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-form-binding-names-its-destination-and-is-valid-against-it-req-pifo-007
+	 */
+	private function findings(array $binding, array $render): array {
+		if ($this->intake === null) {
+			return [];
+		}
+
+		return $this->intake->check(binding: $binding, render: $render);
+	}//end findings()
 
 	/**
 	 * Why the binding resolves to nothing, as a code the admin screen translates.

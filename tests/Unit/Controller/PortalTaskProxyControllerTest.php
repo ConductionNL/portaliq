@@ -70,6 +70,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Portaliq\Service\SubmissionReceiptService
  * @uses   \OCA\Portaliq\Service\CaseRowMarker
  * @uses   \OCA\Portaliq\Service\PortalUserDisplayNames
+ * @uses   \OCA\Portaliq\Contribution\ThemeChoice
  *
  * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
  * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
@@ -325,6 +326,33 @@ class PortalTaskProxyControllerTest extends TestCase {
 		// Privacy: the copy names the upload, never its temp path or content.
 		$this->assertStringNotContainsString('/tmp/', (string)json_encode($received['whitelistedData']));
 	}//end testASuccessfulCompletionIsAuditedAndReceipted()
+
+	/**
+	 * A completion is recorded by the task's title as "Mijn taken" showed it.
+	 *
+	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 */
+	public function testACompletionIsRecordedByTheTasksTitle(): void {
+		$gateway = $this->createMock(PortalTaskGateway::class);
+		$gateway->method('getTask')->willReturn(['status' => 200, 'body' => ['uuid' => 't-9']]);
+		$gateway->method('completeTask')->willReturn(
+			['status' => 200, 'body' => ['uuid' => 't-9', 'title' => 'verklaring', 'displayTitle' => 'Stuur uw bewijsstuk', 'state' => 'completed']]
+		);
+
+		$received = [];
+		$receiptService = $this->receiptMock();
+		$receiptService->expects($this->once())->method('record')->willReturnCallback(
+			function (string $subjectRef, string $organisation, string $appId, string $actionId, array $whitelistedData, string $audience = '', mixed $actionTitle = '') use (&$received) {
+				$received = compact('actionId', 'actionTitle');
+			}
+		);
+
+		$this->controller(subject: self::SUBJECT, gateway: $gateway, auditor: $this->createMock(AuditTrailService::class), receiptService: $receiptService)
+			->complete('t-9', 'submitted');
+
+		$this->assertSame('task.complete', $received['actionId']);
+		$this->assertSame('Stuur uw bewijsstuk', $received['actionTitle']);
+	}//end testACompletionIsRecordedByTheTasksTitle()
 
 	/**
 	 * A seam row without an outcome (or uuid) falls back to what the resident

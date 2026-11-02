@@ -59,7 +59,7 @@
       run as part of this apply pass.
 - [ ] 4.3 Run Hydra gates (spdx-headers, forbidden-patterns,
       route-reachability, spec-coverage) before push — not run as part of
-      this apply pass (process/review step); flag for the PR review stage.
+      this apply pass (process/review step); flag for the PR review stage. — not run: the conduction/hydra-gates package is not available in this environment; run in CI/review
 
 ## Notes on scope taken
 

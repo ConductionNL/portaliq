@@ -24,11 +24,17 @@ import {
 	dashboardWidgetRegistry,
 	registerBuiltinDashboardWidgets,
 } from '@conduction/nextcloud-vue'
+import AssistantBlock from '../site/components/AssistantBlock.vue'
+import ContactForm from '../site/components/ContactForm.vue'
 import FederatedSearchBlock from '../site/components/FederatedSearchBlock.vue'
 import IntakeCatalogueBlock from '../site/components/IntakeCatalogueBlock.vue'
 import IntakeFormBlock from '../site/components/IntakeFormBlock.vue'
 import IntakeStatusBlock from '../site/components/IntakeStatusBlock.vue'
 import PublicationDetailBlock from '../site/components/PublicationDetailBlock.vue'
+import PublicRecordsBlock from '../site/components/PublicRecordsBlock.vue'
+import ReportBlock from '../site/components/ReportBlock.vue'
+import ReportThreadBlock from '../site/components/ReportThreadBlock.vue'
+import SharedBlock from '../site/components/SharedBlock.vue'
 import { publicWidgetFor, publicWidgetKeys } from '../site/components/WidgetGrid.vue'
 import { metas as siteWidgetMetas } from '../site/widgets/index.js'
 import { humanise, widgetLabel } from './widgetLabels.js'
@@ -69,6 +75,12 @@ const DEFAULT_SIZES = {
 	intakeCatalogue: { gridWidth: 12, gridHeight: 5 },
 	intakeForm: { gridWidth: 8, gridHeight: 6 },
 	intakeStatus: { gridWidth: 6, gridHeight: 3 },
+	contactForm: { gridWidth: 8, gridHeight: 6 },
+	assistant: { gridWidth: 8, gridHeight: 6 },
+	publicRecords: { gridWidth: 12, gridHeight: 6 },
+	report: { gridWidth: 12, gridHeight: 8 },
+	reportThread: { gridWidth: 12, gridHeight: 8 },
+	sharedBlock: { gridWidth: 12, gridHeight: 3 },
 	card: { gridWidth: 4, gridHeight: 3 },
 	emptyState: { gridWidth: 6, gridHeight: 3 },
 	markdown: { gridWidth: 6, gridHeight: 4 },
@@ -90,8 +102,15 @@ const HOST_SUPPLIED = {
 	contributions: ['contributions'],
 	publicationDetail: ['subjectId'],
 	intakeCatalogue: ['portal'],
-	intakeForm: ['portal', 'routeParam'],
+	intakeForm: ['portal', 'routeParam', 'portalHelp'],
 	intakeStatus: ['portal'],
+	contactForm: ['portal', 'signedIn', 'ways', 'apiOverride'],
+	assistant: ['portal', 'askOverride'],
+	publicRecords: ['recordParam', 'apiOverride'],
+	report: ['portal', 'apiOverride'],
+	reportThread: ['portal', 'apiOverride'],
+	// The content API fills these; an author chooses only which block.
+	sharedBlock: ['widgets', 'unavailable', 'host'],
 }
 
 /**
@@ -105,6 +124,9 @@ const HOST_SUPPLIED = {
  * @type {Record<string, Array<object>>}
  */
 const FIELD_OVERRIDES = {
+	// The one thing an author sets on a shared block placement is which block
+	// (site-shared-page-blocks); the designer draws a picker for the kind.
+	sharedBlock: [{ name: 'block', kind: 'block', label: 'Shared block' }],
 	markdown: [
 		{
 			name: 'markdown',
@@ -115,6 +137,18 @@ const FIELD_OVERRIDES = {
 			label: 'Text',
 		},
 	],
+}
+
+/**
+ * Fields that keep their place among a widget's own props but get a picker
+ * instead of a text input. `recordList` lists the public record lists the
+ * installed apps contribute; choosing one sets both `list` and `app`
+ * (site-member-voting-record-and-confidential-papers, design.md D2).
+ *
+ * @type {Record<string, Record<string, string>>}
+ */
+const KIND_OVERRIDES = {
+	publicRecords: { list: 'recordList' },
 }
 
 /**
@@ -134,6 +168,12 @@ const LAZY_ON_THE_SITE = {
 	intakeCatalogue: IntakeCatalogueBlock,
 	intakeForm: IntakeFormBlock,
 	intakeStatus: IntakeStatusBlock,
+	contactForm: ContactForm,
+	assistant: AssistantBlock,
+	publicRecords: PublicRecordsBlock,
+	report: ReportBlock,
+	reportThread: ReportThreadBlock,
+	sharedBlock: SharedBlock,
 }
 
 /**
@@ -286,7 +326,8 @@ export function fieldsFor(key) {
 		.filter((name) => !hidden.includes(name) && !NEVER_EDITABLE.includes(name))
 		.map((name) => ({
 			name,
-			kind: kindFor(name, component.props[name]),
+			kind:
+				KIND_OVERRIDES[key]?.[name] || kindFor(name, component.props[name]),
 			label: humanise(name),
 		}))
 }

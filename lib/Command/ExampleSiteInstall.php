@@ -45,7 +45,7 @@ class ExampleSiteInstall extends Command {
 	/**
 	 * The word the output uses for each schema.
 	 */
-	private const WORDS = ['portal' => 'Portal', 'menu' => 'Menus', 'page' => 'Pages', 'newsItem' => 'News items'];
+	private const WORDS = ['portal' => 'Portal', 'menu' => 'Menus', 'page' => 'Pages', 'newsItem' => 'News items', 'glossaryTerm' => 'Glossary terms'];
 
 	/**
 	 * Constructor.

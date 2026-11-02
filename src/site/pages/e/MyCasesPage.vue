@@ -31,6 +31,55 @@
 			{{ t('My cases') }}
 		</h1>
 
+		<!-- Forms the resident saved to finish later (REQ-FSR-003). -->
+		<UnfinishedForms
+			v-if="session"
+			:api="api"
+			:t="t"
+			:locale="locale || 'nl'" />
+
+		<!-- What the case apps say above the list, as plain text (collection-intro). -->
+		<p
+			v-for="(intro, i) in intros"
+			:key="i"
+			class="utrecht-paragraph"
+			data-testid="my-cases-intro">
+			{{ intro }}
+		</p>
+
+		<!-- "Zaken van" (board MijnZakenTabel): whose cases the list shows,
+		     for a resident who acts for someone else (mijn-zaken-chooses-whose-cases). -->
+		<div
+			v-if="choosesParty"
+			class="pq-cases__parties"
+			data-testid="my-cases-parties">
+			<label for="pq-cases-parties" class="utrecht-form-label">{{
+				mt('Cases of')
+			}}</label>
+			<select
+				id="pq-cases-parties"
+				class="utrecht-select pq-cases__parties-select"
+				:value="choice"
+				data-testid="my-cases-parties-select"
+				@change="chooseParty($event.target.value)">
+				<option
+					v-for="option in parties"
+					:key="option.id"
+					:value="option.id"
+					:selected="option.id === choice"
+					:translate="option.own ? null : 'no'">
+					{{ option.label }}
+				</option>
+			</select>
+			<a
+				v-if="mandatesHref"
+				class="utrecht-link"
+				:href="mandatesHref"
+				data-testid="my-cases-parties-manage">
+				{{ mt('Arrange access to cases') }}
+			</a>
+		</div>
+
 		<p
 			v-if="data === null"
 			class="utrecht-paragraph"
@@ -122,11 +171,15 @@
 				<!-- Each case a Den Haag case card (site-mijn-omgeving-components
 				     REQ-SMO-002), naming its type (REQ-SMO-030). -->
 				<!-- Or, when the portal says `myCases.display: rows`, one row per
+				     case; with `folders`, one board folder per
 				     case (zuiddrecht-resident-pages-match-the-boards). -->
 				<ul
 					v-else
 					class="pq-cases__list"
-					:class="{ 'pq-cases__list--rows': asRows }"
+					:class="{
+						'pq-cases__list--rows': asRows,
+						'pq-cases__list--folders': asFolders,
+					}"
 					data-testid="my-cases-list">
 					<CaseCard
 						v-for="(item, index) in rows"
@@ -138,10 +191,10 @@
 						data-testid="my-cases-row"
 						:card="item.card"
 						:mandate="item.mandate"
-						:meta="asRows ? '' : item.meta"
+						:meta="boardDisplay ? '' : item.meta"
 						:route="item.route"
 						:button="item.openable && !item.route"
-						:display="asRows ? 'row' : ''"
+						:display="boardDisplay"
 						:dueLabel="t('Due by')"
 						@open="openCase(item.target, item.row)" />
 				</ul>
@@ -151,23 +204,33 @@
 </template>
 
 <script>
+import UnfinishedForms from '../../components/forms/UnfinishedForms.vue'
 import CaseCard from '../../components/mijn/CaseCard.vue'
 import LoadError from '../../components/mijn/LoadError.vue'
+import { casesIntros } from '../../../shared/collectionIntro.js'
 import {
+	ACTING_FOR_SELF,
 	caseStatus,
 	caseTarget,
 	caseTitle,
 	splitCases,
 } from '../../../shared/myCases.js'
-import { actingFor, learnMandates } from '../../components/e/actingFor.js'
+import { personOf } from '../../components/chrome/person.js'
+import {
+	actingFor,
+	chooseActingFor,
+	forgetChosenParty,
+	learnMandates,
+} from '../../components/e/actingFor.js'
 import { caseCard } from '../../components/mijn/cases.js'
 import { mijnTranslator } from '../../components/mijn/rows.js'
+import { EVERYONE, mergedAnswer, partyOptions, readsFor } from './caseParties.js'
 import { longDate, readerLocale } from './format.js'
 
 export default {
 	name: 'MyCasesPage',
 
-	components: { CaseCard, LoadError },
+	components: { CaseCard, LoadError, UnfinishedForms },
 
 	props: {
 		/** The session as `/portal/api/session` returns it. */
@@ -203,10 +266,27 @@ export default {
 	emits: ['loaded'],
 
 	data() {
-		return { data: this.initialData, tab: this.initialTab, request: 0 }
+		return {
+			data: this.initialData,
+			tab: this.initialTab,
+			request: 0,
+			// Everyone, unless the page is fixed to a mandate or a party was
+			// chosen this session (resident-pages-live-round-3 REQ-RR3-002).
+			everyone: this.mandateId === '' && !actingFor.chosen,
+		}
 	},
 
 	computed: {
+		/**
+		 * The intros of the contributed cases collections, once each.
+		 *
+		 * @return {Array<string>}
+		 * @spec openspec/changes/archive/2026-10-30-collection-intro/tasks.md#t2
+		 */
+		intros() {
+			return casesIntros(this.contributions)
+		},
+
 		/**
 		 * The mandate the list is read under: the page's own, else the session's choice.
 		 *
@@ -215,6 +295,51 @@ export default {
 		 */
 		actingUnder() {
 			return this.mandateId || actingFor.id
+		},
+
+		/**
+		 * Whether the page offers "Zaken van": the resident holds a mandate
+		 * and the page is not fixed to one.
+		 *
+		 * @return {boolean}
+		 * @spec openspec/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+		 */
+		choosesParty() {
+			return this.mandateId === '' && actingFor.mandates.length > 0
+		},
+
+		/**
+		 * The "Zaken van" choices.
+		 *
+		 * @return {Array<{id: string, label: string, own: boolean}>}
+		 * @spec openspec/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+		 */
+		parties() {
+			return partyOptions(
+				actingFor.mandates,
+				this.mt,
+				personOf(this.session)?.name || '',
+			)
+		},
+
+		/**
+		 * The choice on screen: everyone, else the mandate acted under.
+		 *
+		 * @return {string}
+		 * @spec openspec/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+		 */
+		choice() {
+			return this.everyone ? EVERYONE : this.actingUnder
+		},
+
+		/**
+		 * Where a resident arranges who may act for them, when the portal names it.
+		 *
+		 * @return {string}
+		 * @spec openspec/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+		 */
+		mandatesHref() {
+			return String(this.portal?.myCases?.mandatesHref || '')
 		},
 
 		/**
@@ -231,6 +356,25 @@ export default {
 		 */
 		asRows() {
 			return this.portal?.myCases?.display === 'rows'
+		},
+
+		/**
+		 * @return {boolean} Whether the portal draws the list as board folders.
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
+		 */
+		asFolders() {
+			return this.portal?.myCases?.display === 'folders'
+		},
+
+		/**
+		 * @return {string} The case card display the portal asks for: row, folder or '' (the Den Haag card).
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
+		 */
+		boardDisplay() {
+			if (this.asRows) {
+				return 'row'
+			}
+			return this.asFolders ? 'folder' : ''
 		},
 
 		/**
@@ -280,7 +424,7 @@ export default {
 					// folder card stays as it was.
 					card: caseCard(
 						row,
-						this.asRows ? this.collectionOf(row) : null,
+						this.boardDisplay ? this.collectionOf(row) : null,
 						{
 							tr: this.mt,
 							locale,
@@ -367,13 +511,70 @@ export default {
 		async load() {
 			const ticket = ++this.request
 			this.data = null
-			const answer = await this.api.fetchMyCases(this.actingUnder)
+			// Everyone: the resident's own list and each mandate's, as one.
+			const answer = this.everyone
+				? await this.readEveryone(ticket)
+				: await this.api.fetchMyCases(this.actingUnder)
 			if (ticket !== this.request) {
 				return
 			}
 			this.data = answer
 			learnMandates(answer)
 			this.$emit('loaded', answer)
+		},
+
+		/**
+		 * Everyone's cases: the resident's own first, which names the
+		 * mandates held, then each of those. On a first visit nothing knows
+		 * the mandates yet, so reading them from the store alone read only
+		 * the resident's own list (live round 3, 14 Oct).
+		 *
+		 * @param {number} ticket The read this belongs to.
+		 * @return {Promise<object|null>} The merged answer.
+		 * @spec openspec/changes/resident-pages-live-round-3/specs/portal-my-cases/spec.md#requirement-everyone-is-the-default-and-reads-every-active-mandate-req-rr3-002
+		 */
+		async readEveryone(ticket) {
+			const own = await this.api
+				.fetchMyCases(ACTING_FOR_SELF)
+				.catch(() => null)
+			if (ticket !== this.request) {
+				return own
+			}
+			learnMandates(own)
+			const others = readsFor(EVERYONE, actingFor.mandates).filter(
+				(id) => id !== ACTING_FOR_SELF,
+			)
+			const rest = await Promise.all(
+				others.map((id) => this.api.fetchMyCases(id).catch(() => null)),
+			)
+			return mergedAnswer([own, ...rest])
+		},
+
+		/**
+		 * Show the cases of everyone, of the resident, or of one party. A
+		 * party is acted for for the rest of the session, as the header
+		 * choice does; everyone is this page's view only.
+		 *
+		 * @param {string} id The choice.
+		 * @return {void}
+		 * @spec openspec/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+		 */
+		chooseParty(id) {
+			const wasEveryone = this.everyone
+			const wasUnder = this.actingUnder
+			this.everyone = id === EVERYONE
+			if (this.everyone) {
+				// Everyone again on the next visit; the header keeps acting
+				// under whom it acts.
+				forgetChosenParty()
+			} else {
+				chooseActingFor(id)
+			}
+			// Another mandate reloads through the actingUnder watcher; to or
+			// from everyone under the same mandate, nothing would.
+			if (this.everyone !== wasEveryone && this.actingUnder === wasUnder) {
+				this.load()
+			}
 		},
 
 		/**
@@ -398,6 +599,21 @@ export default {
 
 /* The tab list reads the set's tab roles when it names them
    (thematiq zuiddrecht-website-type-and-controls); else as it was. */
+.pq-cases__parties {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--utrecht-space-block-sm, 0.5rem) var(--utrecht-space-inline-md, 1rem);
+	padding: var(--utrecht-space-block-sm, 0.75rem)
+		var(--utrecht-space-inline-md, 1rem);
+	border-radius: var(--utrecht-border-radius-md, 6px);
+	background-color: var(--utrecht-color-grey-90, #f4f6f9);
+}
+
+.pq-cases__parties-select {
+	min-inline-size: min(100%, 16rem);
+}
+
 .pq-cases__tabs {
 	display: flex;
 	gap: var(--utrecht-space-inline-sm, 0.5rem);
@@ -418,6 +634,12 @@ export default {
 	gap: var(--utrecht-space-block-lg, 1.5rem) var(--utrecht-space-inline-md, 1rem);
 	margin: 0;
 	padding: 0;
+}
+
+/* The folders: as many 16rem columns as fit, 20px apart. */
+.pq-cases__list--folders {
+	grid-template-columns: repeat(auto-fill, minmax(min(100%, 16.25rem), 1fr));
+	gap: 1.25rem;
 }
 
 /* The rows: one under the other, 12px apart. */

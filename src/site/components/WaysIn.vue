@@ -143,11 +143,25 @@
 
 <script>
 import {
+	keptContactInvitation,
 	registrationOutcomeText,
 	solveChallenge,
 	wayInRefusalText,
 	waysInApi,
 } from '../lib/waysIn.js'
+
+/**
+ * The tab's sessionStorage, or null where the browser refuses it.
+ *
+ * @return {Storage|null}
+ */
+function sessionStore() {
+	try {
+		return globalThis.window?.sessionStorage || null
+	} catch {
+		return null
+	}
+}
 
 /**
  * The doors on the site's sign-in screen besides the sign-in buttons
@@ -172,6 +186,8 @@ export default {
 
 	data() {
 		return {
+			// The secret of a contact invitation followed here, or ''.
+			contactInvitation: '',
 			registration: {
 				email: '',
 				name: '',
@@ -203,6 +219,25 @@ export default {
 		},
 	},
 
+	/**
+	 * A visitor who came from a contact invitation finds the address it was
+	 * sent to filled in (own-contacts-and-invitations T05).
+	 *
+	 * @return {Promise<void>}
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 */
+	async mounted() {
+		this.contactInvitation = keptContactInvitation(sessionStore())
+		if (!this.ways.register || this.contactInvitation === '') {
+			return
+		}
+		const email = await this.api.contactInvitationEmail(this.contactInvitation)
+		if (email !== '' && this.registration.email === '') {
+			this.registration.email = email
+		}
+	},
+
 	methods: {
 		/**
 		 * Solve the challenge and register; show the policy's outcome.
@@ -223,6 +258,7 @@ export default {
 				displayName: this.registration.name,
 				challenge,
 				solution,
+				contactInvitation: this.contactInvitation,
 				honeypot: challenge.honeypotField
 					? {
 							field: challenge.honeypotField,

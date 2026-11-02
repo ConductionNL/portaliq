@@ -15,7 +15,7 @@
   `portaliq-leaves` bundle, which carries no component library.
 -->
 <template>
-	<div class="portaliq-proposal-queue">
+	<div v-if="!summarised" class="portaliq-proposal-queue">
 		<p
 			v-if="state === 'loading'"
 			class="portaliq-proposal-queue__state"
@@ -31,10 +31,10 @@
 			role="alert">
 			{{ t('portaliq', 'The proposals could not be loaded.') }}
 		</p>
-		<p v-else-if="proposals.length === 0" class="portaliq-proposal-queue__state">
+		<p v-else-if="proposals.length === 0 && !carded" class="portaliq-proposal-queue__state">
 			{{ t('portaliq', 'No proposals are waiting on this record.') }}
 		</p>
-		<ul v-else class="portaliq-proposal-queue__list">
+		<ul v-else-if="proposals.length > 0" class="portaliq-proposal-queue__list">
 			<li
 				v-for="proposal in proposals"
 				:key="proposal.uuid || proposal.id"
@@ -164,10 +164,13 @@
 import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
+import { leafReportMixin } from './leafReport.js'
 import { createProposalQueue, formatValue } from './proposalQueue.js'
 
 export default {
 	name: 'ProposalQueueWidget',
+
+	mixins: [leafReportMixin],
 
 	props: {
 		/** The host record's register. */
@@ -189,6 +192,37 @@ export default {
 			notice: '',
 			noticeIsError: false,
 		}
+	},
+
+	computed: {
+		/** @return {boolean} Whether the queue is still being read. */
+		loading() {
+			return this.state === 'loading'
+		},
+
+		/** @return {string} Why the queue could not be read, or ''. */
+		error() {
+			return this.state === 'forbidden' || this.state === 'error' ? this.state : ''
+		},
+
+		/**
+		 * What this leaf reports to a carding host or a "linked" card.
+		 *
+		 * @return {object} The report.
+		 * @spec openspec/specs/leaves-library-card/spec.md#requirement-the-proposal-queue-reports-to-the-library-card-and-the-linked-card
+		 */
+		leafReport() {
+			return {
+				count: this.proposals.length,
+				emptyLabel: t('portaliq', 'No proposals are waiting on this record.'),
+				noun: t('portaliq', 'change proposals'),
+				rows: this.proposals.map((proposal) => ({
+					label: (proposal.channel === 'portal' ? t('portaliq', 'From the portal') : t('portaliq', 'From a colleague'))
+						+ (proposal.proposedAt ? ` · ${this.dateOf(proposal.proposedAt)}` : ''),
+					icon: 'FileDocumentEditOutline',
+				})),
+			}
+		},
 	},
 
 	/**

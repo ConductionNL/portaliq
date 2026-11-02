@@ -19,7 +19,13 @@ import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { heroActions } from '../src/site/lib/blockProps.js'
-import { cellStyle, runsFor } from '../src/site/lib/gridPlacement.js'
+import {
+	asideCellStyle,
+	asideOf,
+	cellStyle,
+	isAsideRun,
+	runsFor,
+} from '../src/site/lib/gridPlacement.js'
 import { renderSfc } from './support/render-sfc.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -142,4 +148,43 @@ test('HeroBlock is registered under the library key, after the spread, so hero s
 	)
 	assert.match(library, /SITE_BAND_BLOCKS = \[[^\]]*'hero'/)
 	assert.match(grid, /siteBlockIsBand\(key\)/)
+})
+
+test('a page aside is a fixed width only in a range, with a default gap', () => {
+	assert.deepEqual(asideOf({ aside: { width: 340, gap: 56 } }), { width: 340, gap: 56 })
+	assert.deepEqual(asideOf({ aside: { width: 300 } }), { width: 300, gap: 48 })
+	assert.equal(asideOf({ aside: { width: 40 } }), null)
+	assert.equal(asideOf({}), null)
+	assert.equal(asideOf(null), null)
+})
+
+test('a run with a main column and a right column draws as main and aside', () => {
+	const run = [
+		{ gridX: 0, gridY: 0, gridWidth: 12, gridHeight: 1 },
+		{ gridX: 0, gridY: 1, gridWidth: 7, gridHeight: 3 },
+		{ gridX: 8, gridY: 1, gridWidth: 4, gridHeight: 1 },
+	]
+	assert.equal(isAsideRun(run), true)
+	assert.equal(asideCellStyle(run[0], 0).gridColumn, '1 / -1')
+	assert.equal(asideCellStyle(run[1], 0).gridColumn, '1')
+	assert.equal(asideCellStyle(run[2], 0).gridColumn, '2')
+	assert.equal(asideCellStyle(run[2], 0).gridRow, '2 / span 1')
+	// Three equal columns are no main column beside an aside.
+	assert.equal(
+		isAsideRun([
+			{ gridX: 0, gridWidth: 4 },
+			{ gridX: 4, gridWidth: 4 },
+			{ gridX: 8, gridWidth: 4 },
+		]),
+		false,
+	)
+})
+
+test('the Zuiddrecht Home asks for the board aside of 340px', () => {
+	const site = JSON.parse(
+		readFileSync(new URL('../lib/Settings/sites/zuiddrecht.json', import.meta.url), 'utf8'),
+	)
+	const home = site.pages.find((entry) => entry.route === '/')
+	assert.deepEqual(asideOf(home.body), { width: 340, gap: 56 })
+	assert.equal(isAsideRun(home.body.widgets.filter((w) => w.gridY >= 9 && w.gridY < 18)), true)
 })

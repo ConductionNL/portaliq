@@ -37,15 +37,31 @@
 				</span>
 			</span>
 		</button>
+		<DataBadge
+			v-if="isNew"
+			class="pq-file-item__badge"
+			:text="newLabel"
+			state="warning"
+			data-testid="mijn-file-new" />
+		<DataBadge
+			v-if="status"
+			class="pq-file-item__badge"
+			:text="status"
+			:state="statusState"
+			data-testid="mijn-file-status" />
 	</li>
 </template>
 
 <script>
+import DataBadge from './DataBadge.vue'
+
 /**
  * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
  */
 export default {
 	name: 'FileItem',
+
+	components: { DataBadge },
 
 	props: {
 		/** The document's name, which is also the control's name. */
@@ -54,6 +70,14 @@ export default {
 		line: { type: String, default: '' },
 		/** Whether its download is under way. */
 		busy: { type: Boolean, default: false },
+		/** Whether the document is new to the resident (a "New" badge). */
+		isNew: { type: Boolean, default: false },
+		/** The words of the status pill ("Signed"); '' for none. */
+		status: { type: String, default: '' },
+		/** The pill's state: success, warning, error or neutral. */
+		statusState: { type: String, default: 'neutral' },
+		/** The words of the new badge, in the page language. */
+		newLabel: { type: String, default: 'New' },
 	},
 
 	emits: ['open'],
@@ -68,6 +92,10 @@ export default {
 <style scoped>
 .pq-file-item {
 	list-style: none;
+}
+
+.pq-file-item__badge {
+	margin-inline-start: 0.5rem;
 }
 
 .pq-file-item__control {

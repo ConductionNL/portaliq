@@ -35,7 +35,7 @@ namespace OCA\Portaliq\Service\Reports;
 
 use DateTimeImmutable;
 use OCA\Portaliq\Event\PortalReportRevealedEvent;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IGroupManager;
@@ -65,13 +65,13 @@ class RevealService {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Reads the request and the contact.
+	 * @param ScopedCollectionReaderInterface $reader Reads the request and the contact.
 	 * @param PortalObjectWriter $writer Records the request and its answer.
 	 * @param IGroupManager $groupManager Decides who is a custodian.
 	 * @param IEventDispatcher $dispatcher Raises the reveal event.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly IGroupManager $groupManager,
 		private readonly IEventDispatcher $dispatcher,

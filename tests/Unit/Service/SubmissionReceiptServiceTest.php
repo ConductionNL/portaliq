@@ -9,7 +9,10 @@ use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\SubmissionReceiptService;
+use DateTimeInterface;
+use DateTimeZone;
 use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\IDateTimeZone;
 use OCP\IL10N;
 use OCP\L10N\IFactory;
 use PHPUnit\Framework\TestCase;
@@ -130,6 +133,76 @@ class SubmissionReceiptServiceTest extends TestCase {
 	 * rule key, the contributing appId, and a subject carrying subjectRef +
 	 * organisation + the passed-through audience.
 	 */
+	/**
+	 * The receipt names the moment in words of the portal's language, in the
+	 * instance's time zone and to the minute; the stored moment stays ISO.
+	 *
+	 * @spec openspec/changes/receipt-date-reads-in-the-portals-language/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-names-the-moment-in-words-of-the-portals-language
+	 */
+	public function testTheReceiptNamesTheMomentInTheReadersWords(): void {
+		$widths = [];
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnCallback(static fn (string $text, $parameters = []) => vsprintf($text, $parameters));
+		$l10n->method('l')->willReturnCallback(
+			static function (string $type, $data, array $options = []) use (&$widths) {
+				$widths[] = $type . ':' . ($options['width'] ?? '');
+				return $data instanceof DateTimeInterface ? $data->format('j-n-Y H:i e') : false;
+			}
+		);
+		$factory = $this->createMock(IFactory::class);
+		$factory->method('get')->willReturn($l10n);
+		$portals = $this->createMock(PortalResolver::class);
+		$zone = $this->createMock(IDateTimeZone::class);
+		$zone->method('getTimeZone')->willReturn(new DateTimeZone('Europe/Amsterdam'));
+
+		$writes = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use (&$writes) {
+				$writes[] = $data;
+				return (['@self' => ['id' => $schema . '-id']] + $data);
+			}
+		);
+
+		$service = new SubmissionReceiptService($writer, new PortalNoticeLanguage($factory, $portals), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class), $zone);
+		$service->record('s1', 'org-1', 'pipelinq', 'askQuestion', ['title' => 'Afval']);
+
+		$receipt = $writes[0];
+		$this->assertStringContainsString('We received your submission on 14-11-2023 23:13 Europe/Amsterdam (reference', $receipt['body']);
+		$this->assertStringNotContainsString('2023-11-14T', $receipt['body']);
+		$this->assertSame(['datetime:long|short'], $widths);
+		$this->assertSame('2023-11-14T22:13:20+00:00', $receipt['receivedAt']);
+	}//end testTheReceiptNamesTheMomentInTheReadersWords()
+
+	/**
+	 * A moment the language cannot write, or one it fails on, is named as stored.
+	 *
+	 * @spec openspec/changes/receipt-date-reads-in-the-portals-language/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-names-the-moment-in-words-of-the-portals-language
+	 */
+	public function testAMomentTheLanguageCannotWriteIsNamedAsStored(): void {
+		foreach ([static fn () => false, static fn () => throw new RuntimeException('no calendar data')] as $answer) {
+			$l10n = $this->createMock(IL10N::class);
+			$l10n->method('t')->willReturnCallback(static fn (string $text, $parameters = []) => vsprintf($text, $parameters));
+			$l10n->method('l')->willReturnCallback($answer);
+			$factory = $this->createMock(IFactory::class);
+			$factory->method('get')->willReturn($l10n);
+
+			$writes = [];
+			$writer = $this->createMock(PortalObjectWriter::class);
+			$writer->method('createObject')->willReturnCallback(
+				function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use (&$writes) {
+					$writes[] = $data;
+					return (['@self' => ['id' => $schema . '-id']] + $data);
+				}
+			);
+
+			$service = new SubmissionReceiptService($writer, new PortalNoticeLanguage($factory, $this->createMock(PortalResolver::class)), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+			$service->record('s1', 'org-1', 'pipelinq', 'askQuestion', ['title' => 'Afval']);
+
+			$this->assertStringContainsString('We received your submission on 2023-11-14T22:13:20+00:00 (reference', $writes[0]['body']);
+		}
+	}//end testAMomentTheLanguageCannotWriteIsNamedAsStored()
+
 	/**
 	 * The receipt is written once, in the language of the resident's portal.
 	 *
@@ -339,6 +412,110 @@ class SubmissionReceiptServiceTest extends TestCase {
 		$this->addToAssertionCount(1);
 
 	}//end testAFallbackWriteThatAlsoThrowsIsSwallowed()
+
+	/**
+	 * The proof-log writes a recording writer captured, by schema.
+	 *
+	 * @param array<int, array{schema: string, data: array<string, mixed>}> $writes The captured writes.
+	 *
+	 * @return array<int, array<string, mixed>> The data of each portalSubmission write.
+	 */
+	private function submissionData(array $writes): array {
+		return array_values(array_map(static fn (array $w): array => $w['data'], array_filter($writes, static fn (array $w): bool => $w['schema'] === 'portalSubmission')));
+	}//end submissionData()
+
+	/**
+	 * A writer that records every write and answers each one.
+	 *
+	 * @param array<int, array{schema: string, data: array<string, mixed>}> $writes Receives the writes.
+	 * @param bool $failFirstSubmission Whether the first portalSubmission write answers null.
+	 *
+	 * @return PortalObjectWriter
+	 */
+	private function recordingWriter(array &$writes, bool $failFirstSubmission = false): PortalObjectWriter {
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use (&$writes, $failFirstSubmission) {
+				$writes[] = ['schema' => $schema, 'data' => $data];
+				if ($failFirstSubmission === true && $schema === 'portalSubmission' && count($this->submissionData($writes)) === 1) {
+					return null;
+				}
+
+				return ['id' => $schema . '-id'];
+			}
+		);
+
+		return $writer;
+	}//end recordingWriter()
+
+	/**
+	 * The proof log names the action by the title the resident read; the
+	 * receipt message itself does not carry it.
+	 *
+	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 */
+	public function testTheProofLogNamesTheActionByItsTitle(): void {
+		$writes = [];
+		$service = new SubmissionReceiptService($this->recordingWriter($writes), $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+		$service->record('s1', 'org-1', 'dossiq', 'meldingOpenbareRuimte', ['title' => 'X'], actionTitle: 'Melding openbare ruimte');
+
+		$submissions = $this->submissionData($writes);
+		$this->assertCount(1, $submissions);
+		$this->assertSame('meldingOpenbareRuimte', $submissions[0]['actionId']);
+		$this->assertSame('Melding openbare ruimte', $submissions[0]['actionTitle']);
+		$this->assertArrayNotHasKey('actionTitle', $writes[0]['data']);
+	}//end testTheProofLogNamesTheActionByItsTitle()
+
+	/**
+	 * A blank title, a title that is no string, and no title at all write no
+	 * `actionTitle` key, so the list falls back to the action id.
+	 *
+	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 */
+	public function testABlankTitleIsNotWritten(): void {
+		foreach (['   ', ['nl' => 'Melding'], null] as $title) {
+			$writes = [];
+			$service = new SubmissionReceiptService($this->recordingWriter($writes), $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+			$service->record('s1', 'org-1', 'dossiq', 'meldingOpenbareRuimte', [], actionTitle: $title);
+
+			$this->assertArrayNotHasKey('actionTitle', $this->submissionData($writes)[0]);
+		}
+
+		$writes = [];
+		$service = new SubmissionReceiptService($this->recordingWriter($writes), $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+		$service->record('s1', 'org-1', 'dossiq', 'meldingOpenbareRuimte', []);
+		$this->assertArrayNotHasKey('actionTitle', $this->submissionData($writes)[0]);
+	}//end testABlankTitleIsNotWritten()
+
+	/**
+	 * A title is trimmed and kept to 200 characters.
+	 *
+	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 */
+	public function testATitleIsTrimmedAndKeptShort(): void {
+		$writes = [];
+		$service = new SubmissionReceiptService($this->recordingWriter($writes), $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+		$service->record('s1', 'org-1', 'dossiq', 'lang', [], actionTitle: '  ' . str_repeat('é', 250) . '  ');
+
+		$this->assertSame(str_repeat('é', 200), $this->submissionData($writes)[0]['actionTitle']);
+	}//end testATitleIsTrimmedAndKeptShort()
+
+	/**
+	 * The minimal fallback record keeps the title, so the failed row is named
+	 * in the list too.
+	 *
+	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 */
+	public function testTheFallbackRecordKeepsTheTitle(): void {
+		$writes = [];
+		$service = new SubmissionReceiptService($this->recordingWriter($writes, failFirstSubmission: true), $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+		$service->record('s1', 'org-1', 'dossiq', 'grofAfval', ['title' => 'X'], actionTitle: 'Grof afval laten ophalen');
+
+		$submissions = $this->submissionData($writes);
+		$this->assertCount(2, $submissions);
+		$this->assertSame('failed', $submissions[1]['deliveryStatus']);
+		$this->assertSame('Grof afval laten ophalen', $submissions[1]['actionTitle']);
+	}//end testTheFallbackRecordKeepsTheTitle()
 
 	/**
 	 * A service with every collaborator stubbed.

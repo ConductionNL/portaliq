@@ -23,6 +23,9 @@ import {
 /** Shell sections about cases, in the first group. */
 const CASE_SECTIONS = ['cases', 'tasks', 'access']
 
+/** The own-area pages for working with others, when the portal switches them on. */
+const COLLABORATE_SECTIONS = ['samenwerken', 'acties', 'contacts']
+
 /** Shell sections about messages, in the group after the apps. */
 const MESSAGE_SECTIONS = ['inbox', 'messages', 'news']
 
@@ -97,10 +100,11 @@ export function ownAreaLink(session, t, hrefFor) {
  * @param {number} unread The inbox's unread count.
  * @param {(route: string) => string} hrefFor A real address for a route.
  * @param {Record<string, Array<object>>} [recordRows] Known rows, for a `badge` count.
+ * @param {number} [openTasks] The resident's open tasks, for the tasks section's count.
  * @return {object} `{key, name, link, href, icon?, badge?, badgeLabel?}`.
  * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-menu-must-show-icons-and-counts-in-groups-req-smo-006
  */
-function itemFor(entry, t, unread, hrefFor, recordRows = {}) {
+function itemFor(entry, t, unread, hrefFor, recordRows = {}, openTasks = 0) {
 	const link = routeForNav(entry)
 	const item = {
 		key: entry.key,
@@ -115,6 +119,10 @@ function itemFor(entry, t, unread, hrefFor, recordRows = {}) {
 	if (entry.special === 'inbox' && Number(unread) > 0) {
 		item.badge = String(unread)
 		item.badgeLabel = t('{count} unread', { count: unread })
+	}
+	if (entry.special === 'tasks' && Number(openTasks) > 0) {
+		item.badge = String(openTasks)
+		item.badgeLabel = t('{count} open', { count: openTasks })
 	}
 	// A page that counts the rows of one of its collections (`badge`,
 	// resident-menu-badges-and-cards): the count, once those rows are known.
@@ -146,6 +154,21 @@ export function badgeRows(entry, recordRows) {
 	return Array.isArray(rows) ? rows : null
 }
 
+/**
+ * How many open tasks a "My tasks" read holds: none when the read failed, so
+ * the menu never shows a count it could not ask for.
+ *
+ * @param {{results?: Array<object>, failed?: boolean}|null} page The answer of the portal api's `fetchTasks()`.
+ * @return {number} The count.
+ * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-a-menu-entry-may-show-the-count-of-a-collection
+ */
+export function openTaskCount(page) {
+	if (!page || page.failed === true || !Array.isArray(page.results)) {
+		return 0
+	}
+	return page.results.length
+}
+
 /** The name a portal's layout calls each item by: a section, or `app:page`. */
 const NAMES = new WeakMap()
 
@@ -175,10 +198,14 @@ const NAMES = new WeakMap()
  *   `perRecord` collection, by `<app>:<collection>`.
  * @param {Array<{title: string, items: Array<string>}>|null} [layout] The
  *   portal's own groups (`residentMenu.groups`), or none.
+ * @param {Array<string>|null} [leaveOut] Items the portal leaves out of the
+ *   menu by name (`residentMenu.leaveOut`, resident-menu-leave-out).
+ * @param {number} [openTasks] The resident's open tasks, counted beside "My tasks".
  * @return {Array<{key: string, title: string, items: Array<object>}>} The groups.
  * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
  * @spec openspec/changes/resident-sees-words-not-codes/specs/site-resident-menu/spec.md#requirement-a-contributed-page-may-name-the-menu-group-it-belongs-to-req-srm-005
  * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
+ * @spec openspec/changes/resident-menu-leave-out/specs/site-resident-menu/spec.md#requirement-a-portal-may-leave-items-out-of-the-resident-menu
  */
 export function residentMenuGroups(
 	nav,
@@ -187,6 +214,8 @@ export function residentMenuGroups(
 	hrefFor,
 	recordRows = {},
 	layout = null,
+	leaveOut = null,
+	openTasks = 0,
 ) {
 	const entries = Array.isArray(nav) ? nav : []
 	const named = (item, name) => {
@@ -200,7 +229,10 @@ export function residentMenuGroups(
 			.map((special) => entries.find((entry) => entry.special === special))
 			.filter(Boolean)
 			.map((entry) =>
-				named(itemFor(entry, t, unread, hrefFor, recordRows), entry.special),
+				named(
+					itemFor(entry, t, unread, hrefFor, recordRows, openTasks),
+					entry.special,
+				),
 			),
 	})
 
@@ -246,8 +278,21 @@ export function residentMenuGroups(
 		)
 	}
 
+	// The life domains the portal groups the resident's items by (life-domain-theme-pages).
+	const themeGroup = {
+		key: 'themes',
+		title: t('Themes'),
+		items: entries
+			.filter((entry) => entry.theme)
+			.map((entry) =>
+				named(itemFor(entry, t, unread, hrefFor, recordRows), entry.key),
+			),
+	}
+
 	const groups = [
 		sectionGroup('cases', t('Cases and tasks'), CASE_SECTIONS),
+		themeGroup,
+		sectionGroup('collaborate', t('Collaborate'), COLLABORATE_SECTIONS),
 		...appGroups,
 		...recordGroups,
 		sectionGroup('messages', t('Messages and news'), MESSAGE_SECTIONS),
@@ -274,7 +319,108 @@ export function residentMenuGroups(
 			}
 		}
 	}
-	return laidOut(groups, layout, t, hrefFor)
+	return laidOut(withoutLeftOut(groups, leaveOut), layout, t, hrefFor)
+}
+
+/**
+ * The menu item a route belongs to, so the menu marks where the resident is
+ * on a page one level deeper too: the route itself when an item links to it,
+ * else the deepest item the route lies under, else, for a cases collection's
+ * page or a record of it (a case opened from "Mijn zaken"), the cases section. A route
+ * that belongs to no item is handed back, and nothing is marked.
+ *
+ * @param {string} route The route on screen.
+ * @param {Array<{items: Array<{link: string}>}>} groups The menu's groups.
+ * @param {Array<object>} [nav] The signed-in navigation.
+ * @param {object|null} [contributions] The contributions aggregate (`{contributions: [{app, collections}]}`).
+ * @return {string} The route of the item to mark, or the route itself.
+ * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
+ */
+export function menuCurrentRoute(route, groups, nav = [], contributions = null) {
+	const links = (Array.isArray(groups) ? groups : [])
+		.flatMap((group) => (Array.isArray(group?.items) ? group.items : []))
+		.map((item) => item?.link)
+		.filter((link) => typeof link === 'string' && link !== '')
+	if (typeof route !== 'string' || route === '' || links.includes(route)) {
+		return route || ''
+	}
+	const under = links
+		.filter((link) => link !== ACCOUNT_ROUTE && route.startsWith(`${link}/`))
+		.sort((a, b) => b.length - a.length)[0]
+	if (under) {
+		return under
+	}
+	const entries = Array.isArray(nav) ? nav : []
+	const entry = entries.find((candidate) => {
+		if (candidate.special) {
+			return false
+		}
+		const own = routeForNav(candidate)
+		return route === own || route.startsWith(`${own}/`)
+	})
+	const cases = entries.find((candidate) => candidate.special === 'cases')
+	if (entry && cases && isCasesPage(entry, contributions)) {
+		const link = routeForNav(cases)
+		if (links.includes(link)) {
+			return link
+		}
+	}
+	return route
+}
+
+/**
+ * Whether a navigation entry's page shows a `cases` collection.
+ *
+ * @param {object} entry A navigation entry.
+ * @param {object|null} contributions The contributions aggregate.
+ * @return {boolean}
+ * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
+ */
+function isCasesPage(entry, contributions) {
+	const app = entry.contribution?.app || ''
+	const page = entry.page || {}
+	const names = [
+		page.record?.collection,
+		...(Array.isArray(page.blocks) ? page.blocks : []).map(
+			(block) => block?.collection,
+		),
+	].filter((name) => typeof name === 'string' && name !== '')
+	const list = Array.isArray(contributions?.contributions)
+		? contributions.contributions
+		: []
+	return list.some(
+		(contribution) =>
+			contribution?.app === app
+			&& (Array.isArray(contribution.collections)
+				? contribution.collections
+				: []
+			).some(
+				(collection) =>
+					collection?.kind === 'cases' && names.includes(collection.id),
+			),
+	)
+}
+
+/**
+ * The groups without the items the portal leaves out by name, and without a
+ * group that is empty then (resident-menu-leave-out).
+ *
+ * @param {Array<{key: string, title: string, items: Array<object>}>} groups The groups.
+ * @param {Array<string>|null} leaveOut The names to leave out.
+ * @return {Array<{key: string, title: string, items: Array<object>}>}
+ * @spec openspec/changes/resident-menu-leave-out/specs/site-resident-menu/spec.md#requirement-a-portal-may-leave-items-out-of-the-resident-menu
+ */
+export function withoutLeftOut(groups, leaveOut) {
+	const names = new Set(Array.isArray(leaveOut) ? leaveOut : [])
+	if (names.size === 0) {
+		return groups
+	}
+	return groups
+		.map((group) => ({
+			...group,
+			items: group.items.filter((item) => !names.has(NAMES.get(item))),
+		}))
+		.filter((group) => group.items.length > 0)
 }
 
 /**

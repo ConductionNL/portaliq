@@ -14,7 +14,7 @@
 // script tag tells the client about where to post.
 
 import assert from 'node:assert/strict'
-import { existsSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import {
@@ -551,5 +551,159 @@ describe('the built files (when built)', () => {
 			statSync(recorder).size <= 30 * 1024,
 			'recorder is ' + statSync(recorder).size + ' bytes',
 		)
+	})
+})
+
+// Golden record of the recording player's `apply`: the player's state after
+// every event of one stream, the frame scrolls it asked for and the timers it
+// set. PORTALIQ_GOLDEN_RECORD=1 rewrites the record.
+describe('the recording player applies a stream as recorded', () => {
+	const playerFile = fileURLToPath(
+		new URL('../src/modals/TrafficRecordingPlayer.vue', import.meta.url),
+	)
+	const goldenFile = fileURLToPath(
+		new URL('./fixtures/recording-player-golden.json', import.meta.url),
+	)
+
+	/**
+	 * The player's component options, loaded from the SFC with its UI
+	 * library import stubbed out.
+	 *
+	 * @return {Promise<object>} The component options.
+	 */
+	async function loadPlayer() {
+		const sfc = readFileSync(playerFile, 'utf8')
+		const script = sfc
+			.slice(
+				sfc.indexOf('<script>') + '<script>'.length,
+				sfc.indexOf('</script>'),
+			)
+			.replace(
+				"import { NcButton, NcModal } from '@nextcloud/vue'",
+				'const NcButton = {}\nconst NcModal = {}',
+			)
+		const module = await import(
+			'data:text/javascript,' + encodeURIComponent(script)
+		)
+		return module.default
+	}
+
+	/**
+	 * A player instance on plain objects: its data, its methods bound to it,
+	 * a frame that records scrolls and a stage of a fixed width.
+	 *
+	 * @param {object} options The component options.
+	 * @param {Array} log The scroll and timer log.
+	 * @return {object} The instance.
+	 */
+	function playerOn(options, log) {
+		const self = { ...options.data() }
+		for (const [name, method] of Object.entries(options.methods)) {
+			self[name] = method.bind(self)
+		}
+		self.$refs = {
+			stage: { clientWidth: 640 },
+			frame: {
+				contentWindow: {
+					scrollTo: (x, y) => log.push({ scrollTo: [x, y] }),
+				},
+			},
+		}
+		return self
+	}
+
+	const STREAM = [
+		{ k: 'y', h: 'sheet-1', s: 'body{color:red}' },
+		{ k: 'y', h: '', s: 'ignored' },
+		{ k: 'y', h: 7, s: 'ignored' },
+		{ k: 'y', h: 'sheet-2' },
+		{
+			k: 's',
+			w: 1024,
+			h: 700,
+			n: {
+				n: 'div',
+				a: { class: 'x', onclick: 'no' },
+				c: [
+					{ l: 3 },
+					{ n: 'style', h: 'sheet-1' },
+					{ n: 'img', a: { src: 'a' } },
+				],
+			},
+		},
+		{ k: 's', w: 0, h: 'x', n: null },
+		{ k: 'v', w: 320, h: 0 },
+		{ k: 'v', w: 'x', h: 900 },
+		{ k: 'm', x: 10, y: '20' },
+		{ k: 'm', x: 'a' },
+		{ k: 'c', x: 5, y: 6 },
+		{ k: 'r', x: 0, y: 300 },
+		{ k: 'r', x: 'z', y: null },
+		{ k: 'n', p: '/page/one' },
+		{ k: 'n' },
+		{ k: 'q', x: 1 },
+		{ k: 'constructor' },
+		{ k: 'toString' },
+		{ k: '__proto__' },
+		{},
+	]
+
+	it('matches the golden record', async () => {
+		const options = await loadPlayer()
+		const log = []
+		const timers = []
+		const savedWindow = globalThis.window
+		globalThis.window = {
+			setTimeout: (callback, delay) => {
+				timers.push(callback)
+				log.push({ setTimeout: delay })
+				return timers.length
+			},
+			clearTimeout: () => {},
+		}
+		try {
+			const player = playerOn(options, log)
+			const states = []
+			for (const event of STREAM) {
+				player.apply(event)
+				states.push({
+					event,
+					viewport: { ...player.viewport },
+					scale: player.scale,
+					stageWidth: player.stageWidth,
+					srcdoc: player.srcdoc,
+					page: player.page,
+					cursor: { ...player.cursor },
+					clicked: player.clicked,
+					styles: { ...player.styles },
+				})
+			}
+			timers.forEach((callback) => callback())
+			states.push({ afterTimers: { clicked: player.clicked } })
+
+			const noFrame = playerOn(options, log)
+			noFrame.$refs.frame = null
+			noFrame.apply({ k: 'r', x: 1, y: 2 })
+			const throwing = playerOn(options, log)
+			throwing.$refs.frame = {
+				contentWindow: {
+					scrollTo: () => {
+						throw new Error('loading')
+					},
+				},
+			}
+			throwing.apply({ k: 'r', x: 1, y: 2 })
+
+			const recorded = JSON.parse(JSON.stringify({ states, log }))
+			if (process.env.PORTALIQ_GOLDEN_RECORD === '1') {
+				writeFileSync(
+					goldenFile,
+					JSON.stringify(recorded, null, '\t') + '\n',
+				)
+			}
+			assert.deepEqual(recorded, JSON.parse(readFileSync(goldenFile, 'utf8')))
+		} finally {
+			globalThis.window = savedWindow
+		}
 	})
 })

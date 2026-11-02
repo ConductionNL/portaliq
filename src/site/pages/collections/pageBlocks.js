@@ -112,6 +112,36 @@ export function resolveBlocks(page, contribution) {
 }
 
 /**
+ * The blocks of a record page without the writes on the open record: the
+ * forms and buttons bound to it (`withRecord`), the documents block's add
+ * button and the detail card's propose-change action. Used for a record read
+ * under a mandate, where the server accepts no write.
+ *
+ * @param {Array<object>} items The resolved blocks.
+ * @return {Array<object>} The same blocks, read-only.
+ * @spec openspec/changes/mandated-case-offers-no-writes/specs/portal-my-cases/spec.md#requirement-a-case-read-under-a-mandate-offers-no-writes
+ */
+export function withoutRecordWrites(items) {
+	return items
+		.filter(
+			(item) =>
+				!(
+					(item.kind === 'action' || item.kind === 'cta')
+					&& item.block?.withRecord === true
+				),
+		)
+		.map((item) => {
+			if (item.kind === 'documents' && item.block?.upload === true) {
+				return { ...item, block: { ...item.block, upload: false } }
+			}
+			if (item.kind === 'detail' && item.proposeAction) {
+				return { ...item, proposeAction: null }
+			}
+			return item
+		})
+}
+
+/**
  * Consecutive `cta` blocks that open a page or a route become one list of
  * quick tiles (`kind: tiles`, the blocks in `tiles`), as the mockups draw
  * them (site-mijn-omgeving-components REQ-SMO-024).

@@ -34,6 +34,45 @@
 		<p v-if="busy" class="utrecht-paragraph" role="status">
 			{{ t('Loading…') }}
 		</p>
+		<!-- The e-mail link page (sign-in-with-an-email-link T07): the portal
+		     and the masked address, one button; in another browser the address
+		     first. Never recorded (data-traffic-no-recording). -->
+		<div
+			v-if="link && link.kind === 'email-link' && emailLink"
+			data-traffic-no-recording
+			data-testid="way-in-email-link">
+			<h1 class="utrecht-heading-2">
+				{{
+					t('Sign in to {portal}', {
+						portal: emailLink.portal || portalName,
+					})
+				}}
+			</h1>
+			<p class="utrecht-paragraph">
+				{{ t('You sign in as {address}.', { address: emailLink.address }) }}
+			</p>
+			<form @submit.prevent="signInWithLink">
+				<div v-if="!emailLink.sameBrowser" class="utrecht-form-field">
+					<label class="utrecht-form-label" for="pq-email-link-confirm">{{
+						t('The e-mail address this link was sent to')
+					}}</label>
+					<input
+						id="pq-email-link-confirm"
+						v-model="typedAddress"
+						class="utrecht-textbox"
+						type="email"
+						autocomplete="email"
+						required />
+				</div>
+				<button
+					type="submit"
+					class="utrecht-button utrecht-button--primary-action"
+					:disabled="busy"
+					data-testid="way-in-email-link-sign-in">
+					{{ t('Sign in') }}
+				</button>
+			</form>
+		</div>
 		<template v-if="link && link.kind === 'invitation' && !result">
 			<h1 class="utrecht-heading-2">
 				{{ t('You are invited to {portal}', { portal: portalName }) }}
@@ -58,6 +97,7 @@
 </template>
 
 <script>
+import { storeSessionToken } from '../lib/authApi.js'
 import {
 	readyText,
 	referenceCaseFields,
@@ -89,7 +129,14 @@ export default {
 	},
 
 	data() {
-		return { link: null, busy: false, result: null, opened: null }
+		return {
+			link: null,
+			busy: false,
+			result: null,
+			opened: null,
+			emailLink: null,
+			typedAddress: '',
+		}
 	},
 
 	computed: {
@@ -131,6 +178,9 @@ export default {
 		if (this.link.kind === 'reference') {
 			await this.openReference()
 		}
+		if (this.link.kind === 'email-link') {
+			await this.describeEmailLink()
+		}
 	},
 
 	methods: {
@@ -162,6 +212,63 @@ export default {
 				role: 'alert',
 				text: this.t('This link is no longer valid.'),
 			}
+		},
+
+		/**
+		 * Read what the e-mail link is, without spending it.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-a-link-opened-in-another-browser-asks-for-the-address-first-req-iwi-010
+		 */
+		async describeEmailLink() {
+			this.busy = true
+			const answer = await this.api.describeEmailLink(this.link.token)
+			this.busy = false
+			if (answer.ok && answer.data.nonce) {
+				this.emailLink = answer.data
+				return
+			}
+			this.result = {
+				role: 'alert',
+				text: this.t(wayInRefusalText(answer.error || 'link_not_valid')),
+			}
+		},
+
+		/**
+		 * Press "Inloggen": spend the link, keep the bearer for this tab and
+		 * open the site signed in.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-an-e-mail-link-session-is-a-fresh-low-session-that-cannot-raise-itself-req-iwi-011
+		 */
+		async signInWithLink() {
+			this.busy = true
+			const answer = await this.api.redeemEmailLink({
+				token: this.link.token,
+				nonce: this.emailLink.nonce,
+				email: this.emailLink.sameBrowser ? '' : this.typedAddress,
+			})
+			this.busy = false
+			if (answer.ok && answer.data.bearer) {
+				storeSessionToken(answer.data.bearer)
+				window.location.reload()
+				return
+			}
+			const text = this.t(wayInRefusalText(answer.error || 'link_not_valid'))
+			if (
+				answer.error === 'address_needed'
+				|| answer.error === 'address_wrong'
+			) {
+				// The link is not spent: ask for the address it was sent to.
+				this.emailLink = { ...this.emailLink, sameBrowser: false }
+				this.result =
+					answer.error === 'address_wrong' ? { role: 'alert', text } : null
+				return
+			}
+			this.emailLink = null
+			this.result = { role: 'alert', text }
 		},
 
 		/**

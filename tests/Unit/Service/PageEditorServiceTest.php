@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\PageEditorService;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
@@ -45,6 +46,20 @@ class PageEditorServiceTest extends TestCase {
 	 * @var string
 	 */
 	private string $stored = '';
+
+	/**
+	 * Config values by key; a key listed here wins over `$stored`.
+	 *
+	 * @var array<string, string>
+	 */
+	private array $storedByKey = [];
+
+	/**
+	 * A read rule the schema doubles start with instead of the shipped one.
+	 *
+	 * @var array|null
+	 */
+	public ?array $seedRead = null;
 
 	/**
 	 * The authorization block the schema double was last given.
@@ -79,7 +94,7 @@ class PageEditorServiceTest extends TestCase {
 	): PageEditorService {
 		$appConfig = $this->createMock(IAppConfig::class);
 		$appConfig->method('getValueString')->willReturnCallback(
-			fn (string $app, string $key, string $default = '') => ($this->stored !== '' ? $this->stored : $default)
+			fn (string $app, string $key, string $default = '') => ($this->storedByKey[$key] ?? ($this->stored !== '' ? $this->stored : $default))
 		);
 		$appConfig->method('setValueString')->willReturnCallback(
 			function (string $app, string $key, string $value): bool {
@@ -157,11 +172,11 @@ class PageEditorServiceTest extends TestCase {
 			 * @return object|null The schema double.
 			 */
 			public function findByApplicationAndSlug(string $slug, string $application): ?object {
-				if (in_array($slug, ['page', 'media', 'menu', 'portalNotice'], true) === false || $application !== 'portaliq') {
+				if (in_array($slug, ['page', 'media', 'menu', 'portalNotice', 'sharedBlock'], true) === false || $application !== 'portaliq') {
 					return null;
 				}
 
-				return new class($slug) {
+				$double = new class($slug) {
 
 					/**
 					 * Constructor.
@@ -180,7 +195,7 @@ class PageEditorServiceTest extends TestCase {
 					public array $authorization = [
 						'read' => [
 							['group' => 'public', 'match' => ['status' => 'published']],
-							'authenticated',
+							'portaliq-medewerkers',
 						],
 					];
 
@@ -206,6 +221,12 @@ class PageEditorServiceTest extends TestCase {
 						$this->authorization = ($authorization ?? []);
 					}
 				};
+
+				if ($this->test->seedRead !== null) {
+					$double->authorization['read'] = $this->test->seedRead;
+				}
+
+				return $double;
 			}
 
 
@@ -247,6 +268,8 @@ class PageEditorServiceTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		$this->stored = '';
+		$this->storedByKey = [];
+		$this->seedRead = null;
 		$this->written = null;
 		$this->writtenBySlug = [];
 	}//end setUp()
@@ -358,8 +381,8 @@ class PageEditorServiceTest extends TestCase {
 
 	/**
 	 * The editor groups also govern the portal's menus, so an editor may
-	 * edit the menu from the portal and nobody else may, and the menu's read
-	 * rules are left as they were.
+	 * edit the menu from the portal and nobody else may. The menu's read
+	 * rules keep what they had and gain the editor groups.
 	 *
 	 * @return void
 	 *
@@ -374,7 +397,8 @@ class PageEditorServiceTest extends TestCase {
 		$this->assertSame(
 			[
 				['group' => 'public', 'match' => ['status' => 'published']],
-				'authenticated',
+				'portaliq-medewerkers',
+				'redactie',
 			],
 			$this->writtenBySlug['menu']['read'] ?? null
 		);
@@ -398,6 +422,22 @@ class PageEditorServiceTest extends TestCase {
 
 
 	/**
+	 * The groups that may edit pages may edit shared blocks, and nobody else.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t07
+	 */
+	public function testEditorGroupsGovernSharedBlocks(): void {
+		$this->service(isAdmin: true)->setEditorGroups(['communicatie']);
+
+		foreach (['create', 'update', 'delete'] as $action) {
+			$this->assertSame(['communicatie'], $this->writtenBySlug['sharedBlock'][$action] ?? null);
+		}
+	}//end testEditorGroupsGovernSharedBlocks()
+
+
+	/**
 	 * The public read rule survives a write of the editor groups.
 	 *
 	 * Rewriting `read` here would take every published page off the air for
@@ -414,11 +454,47 @@ class PageEditorServiceTest extends TestCase {
 		$this->assertSame(
 			[
 				['group' => 'public', 'match' => ['status' => 'published']],
-				'authenticated',
+				'portaliq-medewerkers',
+				'redacteuren',
 			],
 			$this->written['read']
 		);
 	}//end testThePublicReadRuleSurvives()
+
+
+	/**
+	 * A group the setting no longer names leaves the read rule; the others stay.
+	 *
+	 * The register reads only the staff group since close-portaliq-register-to-staff,
+	 * so the editor groups are added to `read` as well as to the writes. A
+	 * group taken out of the setting must lose that read, while the public
+	 * rule and the staff group stay.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/close-portaliq-register-to-staff/specs/admin-ui/spec.md#requirement-only-staff-may-open-portaliqs-nextcloud-app-and-read-its-register
+	 */
+	public function testARemovedEditorGroupLosesTheRead(): void {
+		$this->stored   = json_encode(['oude-redactie']);
+		$this->seedRead = [
+			['group' => 'public', 'match' => ['status' => 'published']],
+			'portaliq-medewerkers',
+			'oude-redactie',
+		];
+
+		$this->service(isAdmin: true)->setEditorGroups(['nieuwe-redactie']);
+
+		$this->assertSame(
+			[
+				['group' => 'public', 'match' => ['status' => 'published']],
+				'portaliq-medewerkers',
+				'nieuwe-redactie',
+			],
+			$this->written['read']
+		);
+		$this->assertNotContains('oude-redactie', $this->writtenBySlug['menu']['read']);
+		$this->assertNotContains('authenticated', $this->writtenBySlug['media']['read']);
+	}//end testARemovedEditorGroupLosesTheRead()
 
 
 	/**
@@ -531,4 +607,105 @@ class PageEditorServiceTest extends TestCase {
 		$this->assertFalse($service->applyToSchema(['redacteuren']));
 		$this->assertNull($this->written);
 	}//end testTheSchemaWriteReportsFailureWhenOpenRegisterIsAbsent()
+
+
+	/**
+	 * The action grants and the editor groups, as two config keys.
+	 *
+	 * @return void
+	 */
+	private function storeEditorsAndGrants(): void {
+		$this->storedByKey = [
+			PageEditorService::CONFIG_KEY => json_encode(['communicatie']),
+			'actions' => json_encode(['portal.provision' => ['servicedesk']]),
+		];
+	}//end storeEditorsAndGrants()
+
+
+	/**
+	 * An action check over the same config doubles.
+	 *
+	 * @param bool          $isAdmin     Whether the user is an admin.
+	 * @param array<string> $memberships The user's groups.
+	 *
+	 * @return array{0: ActionAuthService, 1: IUser} The service and the user.
+	 */
+	private function actions(bool $isAdmin, array $memberships): array {
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->method('getValueString')->willReturnCallback(
+			fn (string $app, string $key, string $default = '') => ($this->storedByKey[$key] ?? $default)
+		);
+
+		$groupManager = $this->createMock(IGroupManager::class);
+		$groupManager->method('isAdmin')->willReturn($isAdmin);
+		$groupManager->method('getUserGroupIds')->willReturn($memberships);
+
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('someone');
+
+		return [new ActionAuthService($appConfig, $groupManager), $user];
+	}//end actions()
+
+
+	/**
+	 * A group granted an action gets that action only: its members are no
+	 * page editors, and saving the editor groups leaves it out of every
+	 * content schema's write rules.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/operate-roles-for-content-and-actions/specs/portal-admin-roles/spec.md#requirement-content-rights-and-settings-rights-stay-apart-req-ora-007
+	 */
+	public function testAnActionGrantMakesNoPageEditor(): void {
+		$this->storeEditorsAndGrants();
+
+		[$actions, $user] = $this->actions(isAdmin: false, memberships: ['servicedesk']);
+		$this->assertTrue($actions->can(user: $user, action: 'portal.provision'), 'The grant itself must work, or the refusal below proves nothing.');
+		$this->assertFalse($this->service(memberships: ['servicedesk'])->mayEdit());
+
+		$this->service(isAdmin: true)->setEditorGroups(['communicatie']);
+		$this->assertSame(['communicatie'], $this->written['update']);
+		foreach (['menu', 'media', 'portalNotice'] as $slug) {
+			$this->assertNotContains('servicedesk', ($this->writtenBySlug[$slug]['update'] ?? []), $slug . ' must not be writable through an action grant.');
+		}
+	}//end testAnActionGrantMakesNoPageEditor()
+
+
+	/**
+	 * A page editor who is not an administrator may write content and holds
+	 * no action, so the action-guarded settings refuse them.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/operate-roles-for-content-and-actions/specs/portal-admin-roles/spec.md#requirement-content-rights-and-settings-rights-stay-apart-req-ora-007
+	 */
+	public function testAPageEditorHoldsNoAction(): void {
+		$this->storeEditorsAndGrants();
+
+		$this->assertTrue($this->service(memberships: ['communicatie'])->mayEdit());
+		$this->service(isAdmin: true)->setEditorGroups(['communicatie']);
+		foreach (['menu', 'media', 'portalNotice'] as $slug) {
+			$this->assertSame(['communicatie'], ($this->writtenBySlug[$slug]['update'] ?? null), 'An editor writes ' . $slug . '.');
+		}
+
+		[$actions, $user] = $this->actions(isAdmin: false, memberships: ['communicatie']);
+		$this->assertFalse($actions->can(user: $user, action: 'portal.provision'));
+		$this->assertFalse($actions->can(user: $user, action: 'portal.measure-accessibility'));
+	}//end testAPageEditorHoldsNoAction()
+
+
+	/**
+	 * An instance administrator keeps both rights.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/operate-roles-for-content-and-actions/specs/portal-admin-roles/spec.md#requirement-content-rights-and-settings-rights-stay-apart-req-ora-007
+	 */
+	public function testAnAdministratorKeepsBothRights(): void {
+		$this->storeEditorsAndGrants();
+
+		$this->assertTrue($this->service(isAdmin: true)->mayEdit());
+		[$actions, $user] = $this->actions(isAdmin: true, memberships: []);
+		$this->assertTrue($actions->can(user: $user, action: 'portal.provision'));
+	}//end testAnAdministratorKeepsBothRights()
 }//end class

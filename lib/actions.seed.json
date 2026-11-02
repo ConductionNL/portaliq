@@ -1,35 +1,81 @@
 {
-  "$comment": "ADR-023 action-authorization matrix seed. Each entry maps an action name that a controller passes to ActionAuthService::requireAction() to the Nextcloud group IDs allowed to invoke it. Nextcloud admins always pass; ['admin'] or [] means admin-only, and an action missing from the matrix is admin-only too. The repair step InitializeActions copies this file into the JSON app-config value `actions` (app portaliq) on install and adds any seed action the stored value lacks on every upgrade, never changing an action already stored, so an admin's grants survive upgrades. To grant an action to a group, write the whole matrix back, e.g. `occ config:app:set portaliq actions --value='{\"portal.author-news\":[\"admin\",\"communicatie\"], ...}'`; read the current value first with `occ config:app:get portaliq actions`. Every new requireAction() call site needs an entry here, defaulting to [\"admin\"].",
   "actions": {
-    "portal.provision": [
-      "admin"
-    ],
-    "portal.ask-partner": [
-      "admin"
-    ],
-    "portal.review-proposal": [
-      "admin"
-    ],
-    "portal.answer-access-request": [
-      "admin"
-    ],
-    "portal.send-emergency-push": [
-      "admin"
-    ],
-    "portal.author-news": [
-      "admin"
-    ],
-    "portal.send-newsletter": [
-      "admin"
-    ],
-    "portal.manage-activity": [
-      "admin"
-    ],
-    "portal.manage-event": [
-      "admin"
-    ],
-    "portal.create-poll": [
-      "admin"
-    ]
+    "portal.provision": {
+      "groups": [
+        "admin"
+      ],
+      "label": "Create and manage portal accounts",
+      "description": "Invite residents and organisations, claim and revoke accounts, and manage portal sign-ins."
+    },
+    "portal.ask-partner": {
+      "groups": [
+        "admin"
+      ],
+      "label": "Ask a partner organisation for input",
+      "description": "Send a case task to a partner organisation through the portal."
+    },
+    "portal.review-proposal": {
+      "groups": [
+        "admin"
+      ],
+      "label": "Review proposed changes",
+      "description": "Accept or refuse changes that residents propose to their own details."
+    },
+    "portal.answer-access-request": {
+      "groups": [
+        "admin"
+      ],
+      "label": "Answer access requests",
+      "description": "Grant or refuse a request for access to a record."
+    },
+    "portal.send-emergency-push": {
+      "groups": [
+        "admin"
+      ],
+      "label": "Send emergency messages",
+      "description": "Push an urgent message to guardians on their phones."
+    },
+    "portal.author-news": {
+      "groups": [
+        "admin"
+      ],
+      "label": "Write news items",
+      "description": "Create, change and publish news items for guardians."
+    },
+    "portal.send-newsletter": {
+      "groups": [
+        "admin"
+      ],
+      "label": "Send newsletters",
+      "description": "Compose and send newsletters to a group of guardians."
+    },
+    "portal.manage-activity": {
+      "groups": [
+        "admin"
+      ],
+      "label": "Manage activities",
+      "description": "Create and change activities that guardians can sign up for."
+    },
+    "portal.manage-event": {
+      "groups": [
+        "admin"
+      ],
+      "label": "Manage events",
+      "description": "Create and change school events."
+    },
+    "portal.create-poll": {
+      "groups": [
+        "admin"
+      ],
+      "label": "Create polls",
+      "description": "Ask guardians a question and collect their answers."
+    },
+    "portal.measure-accessibility": {
+      "groups": [
+        "admin"
+      ],
+      "label": "Measure accessibility",
+      "description": "Run the accessibility measurement on a portal and record the audit its statement rests on."
+    }
   }
 }

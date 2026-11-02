@@ -49,6 +49,7 @@ use OCA\Portaliq\Service\CitizenCaseProjection;
 use OCA\Portaliq\Service\CitizenWritableSetResolver;
 use OCA\Portaliq\Service\CitizenWriteRecorder;
 use OCA\Portaliq\Service\CitizenWriteThrottle;
+use OCA\Portaliq\Service\Identity\MandateParties;
 use OCA\Portaliq\Service\Identity\PortalMandateService;
 use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
 use OCA\Portaliq\Service\MandatedCaseReader;
@@ -748,7 +749,8 @@ class CitizenCaseController extends Controller implements PortalProtected {
 
 		$held = $this->mandates->mandatesFor(
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			organisation: (string)($subject['organisation'] ?? '')
+			organisation: (string)($subject['organisation'] ?? ''),
+			holders: (new MandateParties())->holdersOf(subject: $subject)
 		);
 		$active = $this->mandates->activeMandate(mandates: $held, mandateId: (string)$this->request->getParam('mandate', ''));
 		if ($active === null) {
@@ -771,6 +773,9 @@ class CitizenCaseController extends Controller implements PortalProtected {
 
 		$subject['actingForEntity'] = $entity;
 		$subject['actingUnderMandate'] = $described['id'];
+		// The name the mandate holder and the represented person know it by,
+		// so the case app can say "namens" in words (write-record-names-the-mandate).
+		$subject['actingForLabel'] = (string)($described['label'] ?? '');
 
 		return $subject;
 	}//end actingAs()

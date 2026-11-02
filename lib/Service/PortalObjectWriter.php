@@ -50,12 +50,22 @@ use Throwable;
  * (inbox-delete-own-messages added the delete).
  */
 class PortalObjectWriter {
+	use ObjectRowNormaliser;
+	use ObjectServiceLookup;
 	use PortalScopeMatch;
 
 	/**
 	 * OpenRegister's object service.
 	 */
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
+
+	/**
+	 * Why the last create or update was refused, as the store said it; ''
+	 * when it was not (site-action-forms). Read by WriteRefusal, never sent.
+	 *
+	 * @var string
+	 */
+	private string $lastFailure = '';
 
 	/**
 	 * Constructor.
@@ -104,20 +114,13 @@ class PortalObjectWriter {
 		string $organisation,
 		array $data,
 	): ?array {
+		$this->lastFailure = '';
 		$objectService = $this->objectService();
 		if ($objectService === null) {
 			return null;
 		}
 
-		// Server-side ownership stamps ALWAYS win over any client-supplied value.
-		// An `array` scope field gets the subject's ref as a one-element list.
-		if ($scopeField !== '') {
-			$data[$scopeField] = $this->createStamp(schema: $schema, scopeField: $scopeField, subjectRef: $subjectRef);
-		}
-
-		if ($organisation !== '') {
-			$data['organisation'] = $organisation;
-		}
+		$data = $this->stamp(schema: $schema, scopeField: $scopeField, subjectRef: $subjectRef, organisation: $organisation, data: $data);
 
 		try {
 			$saved = $this->insideWriteContext(write: static fn () => $objectService->saveObject(
@@ -129,6 +132,7 @@ class PortalObjectWriter {
 			));
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: OR write failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+			$this->lastFailure = $e->getMessage();
 			return null;
 		}
 
@@ -234,7 +238,7 @@ class PortalObjectWriter {
 	 *                             ownership check (may be empty). It is never
 	 *                             written on update.
 	 * @param string $id The client-supplied object id (never trusted).
-	 * @param array<string, mixed> $data The client-supplied fields (already whitelisted).
+	 * @param array<string, mixed>|\Closure $data The client-supplied fields (already whitelisted), or a closure that returns them from the verified row.
 	 *
 	 * @return array<string, mixed>|null The updated object, or null on ownership/OR failure.
 	 *
@@ -248,8 +252,9 @@ class PortalObjectWriter {
 		string $subjectRef,
 		string $organisation,
 		string $id,
-		array $data,
+		array|\Closure $data,
 	): ?array {
+		$this->lastFailure = '';
 		if ($id === '') {
 			return null;
 		}
@@ -272,6 +277,13 @@ class PortalObjectWriter {
 		);
 		if ($existing === null) {
 			return null;
+		}
+
+		// A callable decides the fields from the row just verified as the
+		// subject's own, so a write that depends on the stored value (the
+		// first read moment) cannot race a second read.
+		if ($data instanceof \Closure) {
+			$data = (array)$data($existing);
 		}
 
 		// (2) Merge the whitelisted fields onto the existing object; drop the
@@ -313,11 +325,25 @@ class PortalObjectWriter {
 			));
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: OR update failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+			$this->lastFailure = $e->getMessage();
 			return null;
 		}
 
 		return $this->normalise(row: $saved);
 	}//end updateObject()
+
+	/**
+	 * Why the last create or update was refused, as the store said it, or ''
+	 * (site-action-forms). The text stays on the server: WriteRefusal reads
+	 * only a field name and a kind from it.
+	 *
+	 * @return string The refusal, or ''.
+	 *
+	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+	 */
+	public function lastFailure(): string {
+		return $this->lastFailure;
+	}//end lastFailure()
 
 	/**
 	 * Delete ONE row, only when it is the subject's alone: the same ownership
@@ -455,6 +481,36 @@ class PortalObjectWriter {
 	}//end fetchOwnedObject()
 
 	/**
+	 * The server-side ownership stamps a create writes over the client's data.
+	 *
+	 * The stamps ALWAYS win over any client-supplied value. An `array` scope
+	 * field gets the subject's ref as a one-element list. Shared by a create
+	 * here and by a draft saved through OpenRegister's submit service, so a
+	 * draft that is sent later carries the same owner a create would.
+	 *
+	 * @param string               $schema       The schema slug.
+	 * @param string               $scopeField   The scope field, or '' for none.
+	 * @param string               $subjectRef   The stamp value.
+	 * @param string               $organisation The organisation, or ''.
+	 * @param array<string, mixed> $data         The data.
+	 *
+	 * @return array<string, mixed> The stamped data.
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
+	 */
+	public function stamp(string $schema, string $scopeField, string $subjectRef, string $organisation, array $data): array {
+		if ($scopeField !== '') {
+			$data[$scopeField] = $this->createStamp(schema: $schema, scopeField: $scopeField, subjectRef: $subjectRef);
+		}
+
+		if ($organisation !== '') {
+			$data['organisation'] = $organisation;
+		}
+
+		return $data;
+	}//end stamp()
+
+	/**
 	 * The ownership value a create writes at the scope field: the subject's
 	 * ref as a one-element list when the target schema types the field as
 	 * `array`, else the single ref. The schema only picks the shape; both
@@ -521,47 +577,6 @@ class PortalObjectWriter {
 		$rowOrganisation = (string)($row['organisation'] ?? '');
 		return $organisation === '' || $rowOrganisation === '' || $rowOrganisation === $organisation;
 	}//end organisationMatches()
-
-	/**
-	 * Normalise an OpenRegister result (array or ObjectEntity) to an array.
-	 *
-	 * @param mixed $row The saved object.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function normalise(mixed $row): ?array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$data = $row->jsonSerialize();
-			if (is_array($data) === true) {
-				return $data;
-			}
-		}
-
-		return null;
-	}//end normalise()
-
-	/**
-	 * Resolve OpenRegister's ObjectService, or null when unavailable.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 
 	/**
 	 * Run an OpenRegister write inside the write context, so the change

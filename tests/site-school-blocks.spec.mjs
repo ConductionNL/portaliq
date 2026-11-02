@@ -25,7 +25,11 @@ import { eventRows } from '../src/site/widgets/nlEventList/events.js'
 import { listLines } from '../src/site/widgets/nlList/lines.js'
 import { splitLead } from '../src/site/widgets/nlNewsArticle/article.js'
 import icons from '../src/site/widgets/nlQuickTasks/icons.js'
-import { cardButton, safeWays } from '../src/site/widgets/nlSignIn/signIn.js'
+import {
+	cardButton,
+	cardIntro,
+	safeWays,
+} from '../src/site/widgets/nlSignIn/signIn.js'
 
 const MONDAY = new Date(2026, 9, 5, 9, 30)
 
@@ -226,11 +230,32 @@ test('the grid hands the host data to the new widgets after the authored props',
 	)
 	assert.match(
 		source,
-		/'nlNewsArticle'\s*\)\s*\{\s*return \{ \.\.\.props, portal: this\.portal, routeParam: this\.routeParam \}/,
+		/'nlPublicDetail'\s*\)\s*\{\s*const news = \{\s*\.\.\.props,\s*portal: this\.portal,\s*routeParam: this\.routeParam,?\s*\}/,
 	)
 
 	assert.match(
 		source,
 		/widgetKey === 'nlSignIn'\) \{\s*return \{\s*\.\.\.props,\s*signedIn:[^}]*ways: this\.signInRoutes/,
+	)
+})
+
+test('T7: the app hands its sign-in routes to the grid, and the grid to nlSignIn', () => {
+	const app = readFileSync('src/site/App.vue', 'utf8')
+	const context = app.slice(app.indexOf('gridContext() {'))
+	assert.match(
+		context.slice(0, context.indexOf('},')),
+		/signInRoutes: this\.signInRoutes/,
+	)
+	const grid = readFileSync('src/site/components/WidgetGrid.vue', 'utf8')
+	assert.match(grid, /ways: this\.signInRoutes\.map/)
+})
+
+test('the sign-in card does not invite a signed-in visitor to sign in', () => {
+	const intro = 'Log in om deze publicatie in uw eigen dossier te bewaren.'
+	assert.equal(cardIntro({ intro, signedInIntro: '', signedIn: false }), intro)
+	assert.equal(cardIntro({ intro, signedInIntro: '', signedIn: true }), '')
+	assert.equal(
+		cardIntro({ intro, signedInIntro: ' U bent ingelogd. ', signedIn: true }),
+		'U bent ingelogd.',
 	)
 })

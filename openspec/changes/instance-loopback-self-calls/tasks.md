@@ -10,4 +10,4 @@
 - [x] **T3**: admin settings: `SettingsController` shows the address to administrators and stores it through `InternalBaseUrl` (the write is admin-only), `AdminRoot.vue` section "Calls to this server", nl strings
   - PHPUnit `InternalBaseUrlTest::testTheAdminSettingsStoreAndShowTheAddress`
 - [x] **T4**: docs: `docs/operations/calls-to-this-server.md`
-- [ ] **T5**: live: on :8090 remove the Apache `Listen 8090` workaround and check `/portal/api/tasks` answers 200 (coordinator, after merge)
+- [ ] **T5**: live: on :8090 remove the Apache `Listen 8090` workaround and check `/portal/api/tasks` answers 200 (coordinator, after merge) — not run: needs a live instance (coordinator, after merge)

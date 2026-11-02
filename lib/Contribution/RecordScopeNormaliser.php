@@ -99,6 +99,27 @@ class RecordScopeNormaliser {
 	}//end lookups()
 
 	/**
+	 * The collection with its lookups' names added to the fields it
+	 * projects, so a block may show a looked-up value where it names a field
+	 * (lookup-by-row-field). A collection that projects nothing keeps no list.
+	 *
+	 * @param array<string, mixed>|null $collection The collection, or null.
+	 * @param array<string, mixed>      $entry      The normalised block, with its `lookups`.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/lookup-by-row-field/specs/portal-contribution-contract/spec.md#requirement-a-lookup-may-be-keyed-on-a-field-of-the-row
+	 */
+	public function withLookupFields(?array $collection, array $entry): ?array {
+		if ($collection === null || is_array($collection['fields'] ?? null) === false) {
+			return $collection;
+		}
+
+		$collection['fields'] = array_values(array_unique(array_merge($collection['fields'], array_column((array)($entry['lookups'] ?? []), 'as'))));
+		return $collection;
+	}//end withLookupFields()
+
+	/**
 	 * One lookup, or null when it misses a name or its collection does not resolve.
 	 *
 	 * @param mixed $lookup The declared lookup.
@@ -123,8 +144,25 @@ class RecordScopeNormaliser {
 			'matchField' => $lookup['matchField'],
 			'valueField' => $lookup['valueField'],
 		];
-		if ($this->isName(value: ($lookup['recordField'] ?? null)) === true) {
-			$out['recordField'] = $lookup['recordField'];
+		return $out + $this->optionalKeys(lookup: $lookup);
+	}//end lookup()
+
+	/**
+	 * A lookup's optional keys: the open record's field, the row's own field
+	 * it is keyed on instead of its id (lookup-by-row-field: a report's
+	 * `learnerRef` finds the child it is about), its value labels and its
+	 * fallback.
+	 *
+	 * @param array<string, mixed> $lookup The declared lookup.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function optionalKeys(array $lookup): array {
+		$out = [];
+		foreach (['recordField', 'rowField'] as $key) {
+			if ($this->isName(value: ($lookup[$key] ?? null)) === true) {
+				$out[$key] = $lookup[$key];
+			}
 		}
 
 		$values = array_filter(
@@ -141,7 +179,7 @@ class RecordScopeNormaliser {
 		}
 
 		return $out;
-	}//end lookup()
+	}//end optionalKeys()
 
 	/**
 	 * Whether a value is a non-empty string.

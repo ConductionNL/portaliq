@@ -32,7 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use Throwable;
 
 /**
@@ -74,11 +74,11 @@ class NotificationChannels {
 	 * Wire the channels. Without a push service or a reader, no push is sent.
 	 *
 	 * @param PushDeliveryService|null $push   Sends the web push.
-	 * @param PortalObjectReader|null  $reader Reads the resident's devices.
+	 * @param ScopedCollectionReaderInterface|null  $reader Reads the resident's devices.
 	 */
 	public function __construct(
 		private readonly ?PushDeliveryService $push = null,
-		private readonly ?PortalObjectReader $reader = null,
+		private readonly ?ScopedCollectionReaderInterface $reader = null,
 	) {
 	}//end __construct()
 

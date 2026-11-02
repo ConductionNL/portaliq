@@ -59,9 +59,10 @@ export function followable(href) {
  * destination, the first two only.
  *
  * @param {Array} actions The authored actions.
- * @return {Array} `{label, href}` entries, two at most.
+ * @return {Array} `{label, href, style?, chevron?}` entries, two at most.
  *
  * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-hero-must-cap-its-calls-to-action-and-keep-one-outline-entry-req-ptb-006
+ * @spec openspec/changes/site-home-follows-the-school-boards/specs/site-look/spec.md#requirement-a-hero-action-may-be-a-text-link-or-carry-a-chevron
  */
 export function heroActions(actions) {
 	return (Array.isArray(actions) ? actions : [])
@@ -74,6 +75,10 @@ export function heroActions(actions) {
 		.map((action) => ({
 			label: String(action.label),
 			href: String(action.href),
+			// An underlined text link instead of a button, and a chevron after
+			// a button's label (boards Home, site-home-follows-the-school-boards).
+			...(action.style === 'link' ? { style: 'link' } : {}),
+			...(action.chevron === true ? { chevron: true } : {}),
 		}))
 		.slice(0, 2)
 }

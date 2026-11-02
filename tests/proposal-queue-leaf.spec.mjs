@@ -203,3 +203,31 @@ test("the leaf reaches other apps' pages and portaliq's own", () => {
 	)
 	assert.match(code(read('src/main.js')), /registerProposalQueueLeaf\(\)/)
 })
+
+// leaves-library-card: the queue reports to a host that draws its card
+// (`onHeader`) and to a "linked" card (`onSummary`).
+// @spec openspec/specs/leaves-library-card/spec.md#requirement-the-proposal-queue-reports-to-the-library-card-and-the-linked-card
+
+test('the queue reports its count and empty state to a carding host', async () => {
+	const { leafHeader } = await import('../src/integrations/leafReport.js')
+	assert.deepEqual(leafHeader({ loading: false, error: '', count: 0, emptyLabel: 'None' }), { actions: [], note: '', count: 0, empty: { name: 'None' } })
+	assert.equal(leafHeader({ loading: true, error: '', count: 0, emptyLabel: 'None' }).count, undefined)
+	assert.equal(leafHeader({ loading: false, error: 'error', count: 0, emptyLabel: 'None' }).empty, undefined)
+})
+
+test('the queue reports a summary to a linked card, and nothing before it has read', async () => {
+	const { leafSummary } = await import('../src/integrations/leafReport.js')
+	const rows = [{ label: 'From the portal' }]
+	assert.deepEqual(leafSummary({ loading: false, error: '', count: 1, noun: 'change proposals', rows }), { count: 1, noun: 'change proposals', rows, actions: [] })
+	assert.equal(leafSummary({ loading: true, error: '', count: 0, noun: 'change proposals' }), null)
+})
+
+test('the leaf asks for the library card and forwards the report callbacks', () => {
+	const leaf = read('src/integrations/registerProposalQueueLeaf.js')
+	assert.match(leaf, /chrome: 'card'/)
+	assert.match(leaf, /onHeader: typeof context\.onHeader === 'function'/)
+	assert.match(leaf, /onSummary: typeof context\.onSummary === 'function'/)
+	const widget = read('src/integrations/ProposalQueueWidget.vue')
+	assert.match(widget, /mixins: \[leafReportMixin\]/)
+	assert.match(widget, /<div v-if="!summarised" class="portaliq-proposal-queue">/)
+})

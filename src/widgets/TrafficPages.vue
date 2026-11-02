@@ -14,7 +14,7 @@
 	<div class="traffic-table" data-testid="traffic-pages">
 		<TrafficEmptyState :state="emptyState" />
 		<table
-			v-if="emptyState === ''"
+			v-if="emptyState === '' && showPages"
 			class="traffic-table__table"
 			data-testid="traffic-pages-table">
 			<thead>
@@ -42,16 +42,15 @@
 		</table>
 
 		<!-- Missing pages (portal-traffic-outcomes): the paths the renderer
-		     answered with not found. Listed under the pages rather than in
-		     a widget of their own because a broken link is a page problem,
-		     and the person fixing pages is the one reading this table. -->
+		     answered with not found. Under the pages by default; with
+		     `content.part: "missing"` they are a card of their own. -->
 		<h3
-			v-if="emptyState === '' && summary.notFound.length > 0"
+			v-if="emptyState === '' && part === 'all' && summary.notFound.length > 0"
 			class="traffic-table__subheading">
 			{{ t('portaliq', 'Missing pages') }}
 		</h3>
 		<table
-			v-if="emptyState === '' && summary.notFound.length > 0"
+			v-if="emptyState === '' && showMissing"
 			class="traffic-table__table"
 			data-testid="traffic-missing-pages">
 			<thead>
@@ -67,8 +66,24 @@
 					<td class="traffic-table__path">{{ row.path }}</td>
 					<td class="traffic-table__number">{{ row.hits }}</td>
 				</tr>
+				<tr v-if="summary.notFound.length === 0">
+					<td colspan="2" class="traffic-table__muted">
+						{{ t('portaliq', 'No missing page requested in this period.') }}
+					</td>
+				</tr>
 			</tbody>
 		</table>
+		<p
+			v-if="emptyState === '' && part === 'missing'"
+			class="traffic-table__muted traffic-table__note"
+			data-testid="traffic-missing-pages-note">
+			{{
+				t(
+					'portaliq',
+					'Addresses where visitors looked for a page that does not exist. Make the page or a redirect.',
+				)
+			}}
+		</p>
 	</div>
 </template>
 
@@ -84,6 +99,54 @@ export default {
 	},
 
 	mixins: [trafficWidgetMixin],
+
+	props: {
+		/**
+		 * The widget's manifest content. `part` picks what it shows: "all"
+		 * (the default: pages, then the missing pages under them), "pages"
+		 * or "missing".
+		 */
+		content: {
+			type: Object,
+			default: () => ({}),
+		},
+	},
+
+	computed: {
+		/**
+		 * Which part of the pages report this card shows.
+		 *
+		 * @return {string} "all", "pages" or "missing".
+		 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-missing-pages-must-be-reported-by-the-renderer-and-listed
+		 */
+		part() {
+			return ['pages', 'missing'].includes(this.content?.part) ? this.content.part : 'all'
+		},
+
+		/**
+		 * Whether the most viewed pages are shown.
+		 *
+		 * @return {boolean} True unless the card shows only the missing pages.
+		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-session-must-be-reconstructable-into-an-ordered-journey
+		 */
+		showPages() {
+			return this.part !== 'missing'
+		},
+
+		/**
+		 * Whether the missing pages are shown: always on their own card,
+		 * under the pages only when there are any.
+		 *
+		 * @return {boolean} True when the missing pages table is drawn.
+		 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-missing-pages-must-be-reported-by-the-renderer-and-listed
+		 */
+		showMissing() {
+			if (this.part === 'missing') {
+				return true
+			}
+			return this.part === 'all' && this.summary.notFound.length > 0
+		},
+	},
 }
 </script>
 

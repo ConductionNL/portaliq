@@ -159,3 +159,19 @@ test('a date answer reads as a day in words, and a phrase still wins', () => {
 		'Op de studiedag.',
 	)
 })
+
+test('the form reads the sentence from answerSummary, never from the tile summary (decision 127)', () => {
+	const source = readFileSync(
+		new URL('../src/site/components/c/SchemaForm.vue', import.meta.url),
+		'utf8',
+	)
+	assert.match(source, /summarySentence\(\s*this\.action\?\.answerSummary/)
+	assert.match(source, /action\.answerSummary\.label/)
+	assert.doesNotMatch(
+		source,
+		/action\??\.summary\b/,
+		'action.summary is the start tile string now',
+	)
+	// A tile sentence handed over by mistake yields no answer sentence.
+	assert.equal(summarySentence('Maak bezwaar.', { learner: 'sami' }), '')
+})

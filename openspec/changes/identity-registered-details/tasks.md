@@ -23,7 +23,7 @@
 
 - [ ] **T07**: Show `residentsAtAddress` when openregister answers a count by address object; otherwise the "not available" line (REQ-IRD-005)
   - Verify: PHPUnit for both branches; blocked on the openregister half named in the proposal
-  - Portaliq half done: the service never fills the count (`testTheCountOfResidentsIsNotClaimedWhileOpenRegisterCannotAnswerIt`) and the section shows the not-available line, or a given count with no names (`tests/registered-details.spec.mjs`). The openregister ask is drafted for Ruben: `for-ruben/openregister-brp-residents-at-address-count.md`.
+  - Portaliq half done: the service never fills the count (`testTheCountOfResidentsIsNotClaimedWhileOpenRegisterCannotAnswerIt`) and the section shows the not-available line, or a given count with no names (`tests/registered-details.spec.mjs`). The openregister ask is drafted for Ruben: `for-ruben/openregister-brp-residents-at-address-count.md`. — not run: needs openregister (cross-repo)
 
 ## Close
 

@@ -1,0 +1,43 @@
+# Screens
+
+- Begrippen https://identity.conduction.nl/screens/board?id=portaliq/Begrippen
+- Contact https://identity.conduction.nl/screens/board?id=portaliq/Contact
+- Contentpagina https://identity.conduction.nl/screens/board?id=portaliq/Contentpagina
+- Cookieverklaring https://identity.conduction.nl/screens/board?id=portaliq/Cookieverklaring
+- Dossiers https://identity.conduction.nl/screens/board?id=portaliq/Dossiers
+- EditorMenu https://identity.conduction.nl/screens/board?id=portaliq/EditorMenu
+- Home https://identity.conduction.nl/screens/board?id=portaliq/Home
+- MobielHome https://identity.conduction.nl/screens/board?id=portaliq/MobielHome
+- MobielZaak https://identity.conduction.nl/screens/board?id=portaliq/MobielZaak
+- NietGevonden https://identity.conduction.nl/screens/board?id=portaliq/NietGevonden
+- PtBegrippen https://identity.conduction.nl/screens/board?id=portaliq/PtBegrippen
+- PtNieuws https://identity.conduction.nl/screens/board?id=portaliq/PtNieuws
+- PtNieuwsbericht https://identity.conduction.nl/screens/board?id=portaliq/PtNieuwsbericht
+- PtPortal https://identity.conduction.nl/screens/board?id=portaliq/PtPortal
+- PtPortalInstellingen https://identity.conduction.nl/screens/board?id=portaliq/PtPortalInstellingen
+- PtPortals https://identity.conduction.nl/screens/board?id=portaliq/PtPortals
+- PtThemas https://identity.conduction.nl/screens/board?id=portaliq/PtThemas
+- Publicatie https://identity.conduction.nl/screens/board?id=portaliq/Publicatie
+- Toegankelijkheid https://identity.conduction.nl/screens/board?id=portaliq/Toegankelijkheid
+- ZoekenGeenTreffers https://identity.conduction.nl/screens/board?id=portaliq/ZoekenGeenTreffers
+- Inloggen https://identity.conduction.nl/screens/board?id=portaliq/Inloggen
+- PtPagina https://identity.conduction.nl/screens/board?id=portaliq/PtPagina
+- Kop https://identity.conduction.nl/screens/board?id=huisstijl/Kop
+- Voet https://identity.conduction.nl/screens/board?id=huisstijl/Voet
+- Zoeken https://identity.conduction.nl/screens/board?id=portaliq/Zoeken
+- Kop https://identity.conduction.nl/screens/board?id=wilgenboom/Kop
+- Voet https://identity.conduction.nl/screens/board?id=wilgenboom/Voet
+- Home https://identity.conduction.nl/screens/board?id=wilgenboom/Home
+- Artikel https://identity.conduction.nl/screens/board?id=wilgenboom/Artikel
+- Contentpagina https://identity.conduction.nl/screens/board?id=wilgenboom/Contentpagina
+- Kop https://identity.conduction.nl/screens/board?id=vaartveld/Kop
+- Voet https://identity.conduction.nl/screens/board?id=vaartveld/Voet
+- Home https://identity.conduction.nl/screens/board?id=vaartveld/Home
+- Artikel https://identity.conduction.nl/screens/board?id=vaartveld/Artikel
+- Contentpagina https://identity.conduction.nl/screens/board?id=vaartveld/Contentpagina
+- Artikel https://identity.conduction.nl/screens/board?id=esdoornveen/Artikel
+- Contentpagina https://identity.conduction.nl/screens/board?id=esdoornveen/Contentpagina
+- Contentpagina https://identity.conduction.nl/screens/board?id=warmtepompacademie/Contentpagina
+- opencatalogi/pub-house-style: no opencatalogi screen; the reading room's house style is set in portaliq
+- No screen: caching happens on the server; editors and visitors only notice faster pages (site-content-cache)
+- No screen: a portal whose theme does not resolve renders with the base look; there is no page for the fallback itself (thm-theme-fail-closed)

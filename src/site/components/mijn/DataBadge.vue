@@ -76,6 +76,55 @@ export default {
 	white-space: nowrap;
 }
 
+/* A toned badge takes the set's status badge colours first, the solid
+   tints the boards draw ("Nog 3 dagen" #FFF4DE in #7A4F00), and the Den Haag
+   package's translucent tint only when the set names none. With the set's
+   colours the edge is the ground's, so the badge reads as one pill. */
+.pq-data-badge.nl-data-badge--success {
+	border-color: var(
+		--nldesign-component-status-badge-success-background-color,
+		var(--nl-data-badge-success-color, currentcolor)
+	);
+	background-color: var(
+		--nldesign-component-status-badge-success-background-color,
+		var(--nl-data-badge-success-background-color, transparent)
+	);
+	color: var(
+		--nldesign-component-status-badge-success-color,
+		var(--nl-data-badge-success-color, inherit)
+	);
+}
+
+.pq-data-badge.nl-data-badge--warning {
+	border-color: var(
+		--nldesign-component-status-badge-warning-background-color,
+		var(--nl-data-badge-warning-color, currentcolor)
+	);
+	background-color: var(
+		--nldesign-component-status-badge-warning-background-color,
+		var(--nl-data-badge-warning-background-color, transparent)
+	);
+	color: var(
+		--nldesign-component-status-badge-warning-color,
+		var(--nl-data-badge-warning-color, inherit)
+	);
+}
+
+.pq-data-badge.nl-data-badge--error {
+	border-color: var(
+		--nldesign-component-status-badge-error-background-color,
+		var(--nl-data-badge-error-color, currentcolor)
+	);
+	background-color: var(
+		--nldesign-component-status-badge-error-background-color,
+		var(--nl-data-badge-error-background-color, transparent)
+	);
+	color: var(
+		--nldesign-component-status-badge-error-color,
+		var(--nl-data-badge-error-color, inherit)
+	);
+}
+
 /* The info tone the Den Haag package does not have: the set's status badge
    info tint, else its primary light. */
 .pq-data-badge.nl-data-badge--info {

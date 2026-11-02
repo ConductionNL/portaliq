@@ -197,11 +197,10 @@ test('site: the case screen uses them, and both locales carry the strings', () =
 	assert.doesNotMatch(screen, /undo|reopen/i)
 	const nl = {
 		'Withdraw this request': 'Deze aanvraag intrekken',
-		'Withdraw this request?': 'Deze aanvraag intrekken?',
+		'Withdraw this request?': 'Wilt u deze aanvraag intrekken?',
 		'If you withdraw, we stop handling your request. You cannot undo this.':
 			'Als u intrekt, stoppen wij met de behandeling. U kunt dit niet terugdraaien.',
-		'Why are you withdrawing? (optional)':
-			'Waarom trekt u de aanvraag in? (niet verplicht)',
+		'Why are you withdrawing? (optional)': 'Waarom trekt u in? (niet verplicht)',
 		'Withdraw request': 'Aanvraag intrekken',
 		'Keep my request': 'Aanvraag houden',
 		'Your request has been withdrawn.': 'Uw aanvraag is ingetrokken.',
@@ -249,6 +248,9 @@ test('site: the confirmation is a modal that says what withdrawing means, asks a
 	assert.match(html, /<textarea id="pq-withdraw-reason"/)
 	assert.match(html, />Withdraw request<\/button>/)
 	assert.match(html, />Keep my request<\/button>/)
+	// Keep first, then withdraw in the danger tone (board ZaakIntrekken).
+	assert.ok(html.indexOf('Keep my request') < html.indexOf('Withdraw request<'))
+	assert.match(html, /utrecht-button--danger" data-testid="case-withdraw-submit"/)
 
 	const own = await renderSfc(SITE_CONFIRM, {
 		t,
@@ -303,7 +305,7 @@ test('site: the case offers withdrawal exactly as the server declares, and shows
 		row: { id: 'c1' },
 		initialData: { ...base, withdrawal: { declared: true, open: true } },
 	})
-	assert.match(button, /data-testid="case-withdraw"[^>]*>Withdraw this request</)
+	assert.match(button, /data-testid="case-withdraw"[^>]*>Withdraw request</)
 	assert.doesNotMatch(button, /<dialog/)
 	const closed = await renderSfc(SITE_CASE, {
 		api: {},

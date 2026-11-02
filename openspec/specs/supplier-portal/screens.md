@@ -1,0 +1,35 @@
+# Screens
+
+- PtOpdrachtnemerProjecten https://identity.conduction.nl/screens/board?id=portaliq/PtOpdrachtnemerProjecten
+- MijnTaken https://identity.conduction.nl/screens/board?id=portaliq/MijnTaken
+- MeldingIndienen https://identity.conduction.nl/screens/board?id=portaliq/MeldingIndienen
+- FormulierStart https://identity.conduction.nl/screens/board?id=portaliq/FormulierStart
+- FormulierVelden https://identity.conduction.nl/screens/board?id=portaliq/FormulierVelden
+- FormulierFouten https://identity.conduction.nl/screens/board?id=portaliq/FormulierFouten
+- FormulierVerwerken https://identity.conduction.nl/screens/board?id=portaliq/FormulierVerwerken
+- FormulierNietBeschikbaar https://identity.conduction.nl/screens/board?id=portaliq/FormulierNietBeschikbaar
+- FormulierGezinsleden https://identity.conduction.nl/screens/board?id=portaliq/FormulierGezinsleden
+- WooVerzoek https://identity.conduction.nl/screens/board?id=portaliq/WooVerzoek
+- WooVerzoekControleren https://identity.conduction.nl/screens/board?id=portaliq/WooVerzoekControleren
+- PtFormulierInstellingen https://identity.conduction.nl/screens/board?id=portaliq/PtFormulierInstellingen
+- Kop https://identity.conduction.nl/screens/board?id=huisstijl/Kop
+- Publicatie https://identity.conduction.nl/screens/board?id=portaliq/Publicatie
+- Contentpagina https://identity.conduction.nl/screens/board?id=portaliq/Contentpagina
+- Berichten https://identity.conduction.nl/screens/board?id=portaliq/Berichten
+- BerichtDetail https://identity.conduction.nl/screens/board?id=portaliq/BerichtDetail
+- WooVerzoekVerstuurd https://identity.conduction.nl/screens/board?id=portaliq/WooVerzoekVerstuurd
+- Dossiers https://identity.conduction.nl/screens/board?id=portaliq/Dossiers
+- PtDashboard https://identity.conduction.nl/screens/board?id=portaliq/PtDashboard
+- PtInzending https://identity.conduction.nl/screens/board?id=portaliq/PtInzending
+- PtInzendingen https://identity.conduction.nl/screens/board?id=portaliq/PtInzendingen
+- Inloggen https://identity.conduction.nl/screens/board?id=portaliq/Inloggen: the sign-in page with the organisation's own OIDC provider next to DigiD and eHerkenning (sig-generic-oidc, sig-oidc-validation)
+- PtPortalInstellingen https://identity.conduction.nl/screens/board?id=portaliq/PtPortalInstellingen: the per-organisation broker and OIDC settings an admin fills in (sig-generic-oidc, sig-per-org-broker-config)
+- SessieVerloopt https://identity.conduction.nl/screens/board?id=portaliq/SessieVerloopt: the warning before a session ends, with the choice to stay signed in (sig-session-refresh)
+- PtSessies https://identity.conduction.nl/screens/board?id=portaliq/PtSessies: the admin list of active portal sessions, revoked per organisation (sig-revoke-org)
+- Zaak https://identity.conduction.nl/screens/board?id=portaliq/Zaak: the resident's case page with its documents to download (cas-download-generic)
+- MijnMenu https://identity.conduction.nl/screens/board?id=huisstijl/MijnMenu: the resident menu with the unread count on messages (inb-unread-badge)
+- PtBericht https://identity.conduction.nl/screens/board?id=portaliq/PtBericht: the staff view of one portal message, with its read receipt (inb-staff-admin-list, cmp-inb-read-receipt)
+- LqVandaag https://identity.conduction.nl/screens/board?id=wilgenboom/LqVandaag: the teacher's today page, where a read receipt on a parent message shows (cmp-inb-read-receipt)
+- MobielHome https://identity.conduction.nl/screens/board?id=portaliq/MobielHome: the portal home on a phone (thm-mobile-responsive)
+- MobielZaak https://identity.conduction.nl/screens/board?id=portaliq/MobielZaak: the case page on a phone (thm-mobile-responsive)
+- Toegankelijkheid https://identity.conduction.nl/screens/board?id=portaliq/Toegankelijkheid: the accessibility statement of the portal (dem-tnd-wcag22-portal)

@@ -1,0 +1,1431 @@
+{
+    "no object service | event publish": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": []
+    },
+    "no object service | event publish no id": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": []
+    },
+    "no object service | news publish": {
+        "status": 500,
+        "data": {
+            "error": "server_error"
+        },
+        "asked": []
+    },
+    "no object service | news publish no id": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": []
+    },
+    "no object service | news unpublish": {
+        "status": 500,
+        "data": {
+            "error": "server_error"
+        },
+        "asked": []
+    },
+    "no object service | news update": {
+        "status": 500,
+        "data": {
+            "error": "server_error"
+        },
+        "asked": []
+    },
+    "no object service | newsletter send": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": []
+    },
+    "no object service | event publish x2": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": []
+    },
+    "no object service | news unpublish x2": {
+        "status": 500,
+        "data": {
+            "error": "server_error"
+        },
+        "asked": []
+    },
+    "no object service | newsletter send x2": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": []
+    },
+    "no object service | newsletter send no id": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": []
+    },
+    "found and saved | event publish": {
+        "status": 200,
+        "data": {
+            "id": "x1",
+            "title": "T",
+            "status": "published",
+            "target": {
+                "groupRefs": [
+                    "g1"
+                ]
+            },
+            "organisation": "zuid"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "schoolEvent",
+                    false,
+                    false
+                ]
+            },
+            {
+                "saveObject": [
+                    {
+                        "id": "x1",
+                        "title": "T",
+                        "status": "published",
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "organisation": "zuid"
+                    },
+                    "portaliq",
+                    "schoolEvent",
+                    "x1",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "found and saved | event publish no id": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": []
+    },
+    "found and saved | news publish": {
+        "status": 200,
+        "data": {
+            "id": "x1",
+            "title": "T",
+            "status": "published",
+            "target": {
+                "groupRefs": [
+                    "g1"
+                ]
+            },
+            "publishedAt": "(time)",
+            "organisation": "zuid"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "newsItem",
+                    false,
+                    false
+                ]
+            },
+            {
+                "saveObject": [
+                    {
+                        "id": "x1",
+                        "title": "T",
+                        "status": "published",
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "publishedAt": "(time)",
+                        "organisation": "zuid"
+                    },
+                    "portaliq",
+                    "newsItem",
+                    "x1",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "found and saved | news publish no id": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": []
+    },
+    "found and saved | news unpublish": {
+        "status": 200,
+        "data": {
+            "id": "x1",
+            "title": "T",
+            "status": "draft",
+            "target": {
+                "groupRefs": [
+                    "g1"
+                ]
+            },
+            "publishedAt": null,
+            "organisation": "zuid"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "newsItem",
+                    false,
+                    false
+                ]
+            },
+            {
+                "saveObject": [
+                    {
+                        "id": "x1",
+                        "title": "T",
+                        "status": "draft",
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "publishedAt": null,
+                        "organisation": "zuid"
+                    },
+                    "portaliq",
+                    "newsItem",
+                    "x1",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "found and saved | news update": {
+        "status": 200,
+        "data": {
+            "id": "x1",
+            "title": "Titel",
+            "status": "draft",
+            "target": {
+                "groupRefs": [
+                    "g1"
+                ]
+            },
+            "body": "Tekst",
+            "organisation": "zuid"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "newsItem",
+                    false,
+                    false
+                ]
+            },
+            {
+                "saveObject": [
+                    {
+                        "id": "x1",
+                        "title": "Titel",
+                        "status": "draft",
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "body": "Tekst",
+                        "organisation": "zuid"
+                    },
+                    "portaliq",
+                    "newsItem",
+                    "x1",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "found and saved | newsletter send": {
+        "status": 200,
+        "data": {
+            "id": "x1",
+            "title": "T",
+            "status": "draft",
+            "target": {
+                "groupRefs": [
+                    "g1"
+                ]
+            },
+            "sentAt": "(time)",
+            "organisation": "zuid"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "newsletter",
+                    false,
+                    false
+                ]
+            },
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "newsletter",
+                    false,
+                    false
+                ]
+            },
+            {
+                "saveObject": [
+                    {
+                        "id": "x1",
+                        "title": "T",
+                        "status": "draft",
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "sentAt": "(time)",
+                        "organisation": "zuid"
+                    },
+                    "portaliq",
+                    "newsletter",
+                    "x1",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "found and saved | event publish x2": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x2",
+                    "portaliq",
+                    "schoolEvent",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "found and saved | news unpublish x2": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x2",
+                    "portaliq",
+                    "newsItem",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "found and saved | newsletter send x2": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x2",
+                    "portaliq",
+                    "newsletter",
+                    false,
+                    false
+                ]
+            },
+            {
+                "find": [
+                    "x2",
+                    "portaliq",
+                    "newsletter",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "found and saved | newsletter send no id": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": []
+    },
+    "not found | event publish": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "schoolEvent",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "not found | event publish no id": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": []
+    },
+    "not found | news publish": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "newsItem",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "not found | news publish no id": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": []
+    },
+    "not found | news unpublish": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "newsItem",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "not found | news update": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "newsItem",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "not found | newsletter send": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "newsletter",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "not found | event publish x2": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x2",
+                    "portaliq",
+                    "schoolEvent",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "not found | news unpublish x2": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x2",
+                    "portaliq",
+                    "newsItem",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "not found | newsletter send x2": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x2",
+                    "portaliq",
+                    "newsletter",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "not found | newsletter send no id": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": []
+    },
+    "find throws | event publish": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "schoolEvent",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "find throws | event publish no id": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": []
+    },
+    "find throws | news publish": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "newsItem",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "find throws | news publish no id": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": []
+    },
+    "find throws | news unpublish": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "newsItem",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "find throws | news update": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "newsItem",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "find throws | newsletter send": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "newsletter",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "find throws | event publish x2": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x2",
+                    "portaliq",
+                    "schoolEvent",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "find throws | news unpublish x2": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x2",
+                    "portaliq",
+                    "newsItem",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "find throws | newsletter send x2": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x2",
+                    "portaliq",
+                    "newsletter",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "find throws | newsletter send no id": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": []
+    },
+    "save throws | event publish": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "schoolEvent",
+                    false,
+                    false
+                ]
+            },
+            {
+                "saveObject": [
+                    {
+                        "id": "x1",
+                        "title": "T",
+                        "status": "published",
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "organisation": "zuid"
+                    },
+                    "portaliq",
+                    "schoolEvent",
+                    "x1",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "save throws | event publish no id": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": []
+    },
+    "save throws | news publish": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "newsItem",
+                    false,
+                    false
+                ]
+            },
+            {
+                "saveObject": [
+                    {
+                        "id": "x1",
+                        "title": "T",
+                        "status": "published",
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "publishedAt": "(time)",
+                        "organisation": "zuid"
+                    },
+                    "portaliq",
+                    "newsItem",
+                    "x1",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "save throws | news publish no id": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": []
+    },
+    "save throws | news unpublish": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "newsItem",
+                    false,
+                    false
+                ]
+            },
+            {
+                "saveObject": [
+                    {
+                        "id": "x1",
+                        "title": "T",
+                        "status": "draft",
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "publishedAt": null,
+                        "organisation": "zuid"
+                    },
+                    "portaliq",
+                    "newsItem",
+                    "x1",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "save throws | news update": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "newsItem",
+                    false,
+                    false
+                ]
+            },
+            {
+                "saveObject": [
+                    {
+                        "id": "x1",
+                        "title": "Titel",
+                        "status": "draft",
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "body": "Tekst",
+                        "organisation": "zuid"
+                    },
+                    "portaliq",
+                    "newsItem",
+                    "x1",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "save throws | newsletter send": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "newsletter",
+                    false,
+                    false
+                ]
+            },
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "newsletter",
+                    false,
+                    false
+                ]
+            },
+            {
+                "saveObject": [
+                    {
+                        "id": "x1",
+                        "title": "T",
+                        "status": "draft",
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "sentAt": "(time)",
+                        "organisation": "zuid"
+                    },
+                    "portaliq",
+                    "newsletter",
+                    "x1",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "save throws | event publish x2": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x2",
+                    "portaliq",
+                    "schoolEvent",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "save throws | news unpublish x2": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x2",
+                    "portaliq",
+                    "newsItem",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "save throws | newsletter send x2": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x2",
+                    "portaliq",
+                    "newsletter",
+                    false,
+                    false
+                ]
+            },
+            {
+                "find": [
+                    "x2",
+                    "portaliq",
+                    "newsletter",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "save throws | newsletter send no id": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": []
+    },
+    "save answers null | event publish": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "schoolEvent",
+                    false,
+                    false
+                ]
+            },
+            {
+                "saveObject": [
+                    {
+                        "id": "x1",
+                        "title": "T",
+                        "status": "published",
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "organisation": "zuid"
+                    },
+                    "portaliq",
+                    "schoolEvent",
+                    "x1",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "save answers null | event publish no id": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": []
+    },
+    "save answers null | news publish": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "newsItem",
+                    false,
+                    false
+                ]
+            },
+            {
+                "saveObject": [
+                    {
+                        "id": "x1",
+                        "title": "T",
+                        "status": "published",
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "publishedAt": "(time)",
+                        "organisation": "zuid"
+                    },
+                    "portaliq",
+                    "newsItem",
+                    "x1",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "save answers null | news publish no id": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": []
+    },
+    "save answers null | news unpublish": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "newsItem",
+                    false,
+                    false
+                ]
+            },
+            {
+                "saveObject": [
+                    {
+                        "id": "x1",
+                        "title": "T",
+                        "status": "draft",
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "publishedAt": null,
+                        "organisation": "zuid"
+                    },
+                    "portaliq",
+                    "newsItem",
+                    "x1",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "save answers null | news update": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "newsItem",
+                    false,
+                    false
+                ]
+            },
+            {
+                "saveObject": [
+                    {
+                        "id": "x1",
+                        "title": "Titel",
+                        "status": "draft",
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "body": "Tekst",
+                        "organisation": "zuid"
+                    },
+                    "portaliq",
+                    "newsItem",
+                    "x1",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "save answers null | newsletter send": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "newsletter",
+                    false,
+                    false
+                ]
+            },
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "newsletter",
+                    false,
+                    false
+                ]
+            },
+            {
+                "saveObject": [
+                    {
+                        "id": "x1",
+                        "title": "T",
+                        "status": "draft",
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "sentAt": "(time)",
+                        "organisation": "zuid"
+                    },
+                    "portaliq",
+                    "newsletter",
+                    "x1",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "save answers null | event publish x2": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x2",
+                    "portaliq",
+                    "schoolEvent",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "save answers null | news unpublish x2": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x2",
+                    "portaliq",
+                    "newsItem",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "save answers null | newsletter send x2": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x2",
+                    "portaliq",
+                    "newsletter",
+                    false,
+                    false
+                ]
+            },
+            {
+                "find": [
+                    "x2",
+                    "portaliq",
+                    "newsletter",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "save answers null | newsletter send no id": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": []
+    },
+    "found empty | event publish": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "schoolEvent",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "found empty | event publish no id": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": []
+    },
+    "found empty | news publish": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "newsItem",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "found empty | news publish no id": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": []
+    },
+    "found empty | news unpublish": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "newsItem",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "found empty | news update": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "newsItem",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "found empty | newsletter send": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x1",
+                    "portaliq",
+                    "newsletter",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "found empty | event publish x2": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x2",
+                    "portaliq",
+                    "schoolEvent",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "found empty | news unpublish x2": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x2",
+                    "portaliq",
+                    "newsItem",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "found empty | newsletter send x2": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": [
+            {
+                "find": [
+                    "x2",
+                    "portaliq",
+                    "newsletter",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "found empty | newsletter send no id": {
+        "status": 404,
+        "data": {
+            "error": "not_found"
+        },
+        "asked": []
+    }
+}

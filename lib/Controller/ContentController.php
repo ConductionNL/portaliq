@@ -29,13 +29,16 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Contribution\PortalContributionFilter;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Service\Assistant\PublicAssistantChannel;
+use OCA\Portaliq\Service\Assistant\PublicSourceScope;
 use OCA\Portaliq\Service\CmsReader;
+use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
 use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\SiteOrganisation;
 use OCA\Portaliq\Service\TrafficConfigResolver;
 use OCP\AppFramework\Controller;
-use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
@@ -60,11 +63,6 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
  *
- * @SuppressWarnings(PHPMD.StaticAccess)             -- PortalSessionService::trustSatisfies
- * is deliberately THE single trust comparator (contract-v2 design decision);
- * every re-check calls it statically so the ordering can never fork. Same
- * reasoning, and the same suppression, as ContributionController.
- *
  * @SuppressWarnings(PHPMD.ExcessiveParameterList)   -- eleven parameters, of which
  * `$appName` and `$request` are Nextcloud's own `Controller` contract and
  * cannot be dropped or grouped. The class injects nine collaborators of its
@@ -78,6 +76,7 @@ use Psr\Log\LoggerInterface;
  * would hide the coupling, not remove it.
  */
 class ContentController extends Controller {
+	use PublicContentGate;
 
 
 	/**
@@ -95,6 +94,10 @@ class ContentController extends Controller {
 	 * @param IURLGenerator              $urlGenerator Builds the absolute collector URL.
 	 * @param PortalNoticeReader         $notices      The notices running on the site now.
 	 * @param IUserSession               $userSession  Tells a signed-in Nextcloud user (an editor) from a visitor.
+	 * @param PublicAssistantChannel|null $assistant   The public assistant's channel, when wired.
+	 * @param PublicSourceScope|null     $assistantScope What the public assistant may read.
+	 * @param NextcloudRegistrationDoor|null $registrationDoor Where "Create an account" leads (REQ-NCL-005).
+	 * @param SiteOrganisation|null      $siteOrganisation Names the portal's organisation.
 	 *
 	 * @return void
 	 */
@@ -111,101 +114,13 @@ class ContentController extends Controller {
 		private readonly IURLGenerator $urlGenerator,
 		private readonly PortalNoticeReader $notices,
 		private readonly IUserSession $userSession,
+		private readonly ?PublicAssistantChannel $assistant = null,
+		private readonly ?PublicSourceScope $assistantScope = null,
+		private readonly ?NextcloudRegistrationDoor $registrationDoor = null,
+		private readonly ?SiteOrganisation $siteOrganisation = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
-
-
-	/**
-	 * Refuse a CONTENT read the resolved portal does not allow this caller.
-	 *
-	 * `portal.authentication.modes` was declared, documented and rendered — and
-	 * enforced NOWHERE. Measured on the rig: a portal set to
-	 * `modes: ['digid'], minTrust: 'substantial'` — no public mode at all —
-	 * still served its menus, its page list and full page BODIES to an
-	 * anonymous caller, all HTTP 200. Declaring an authentication mode did
-	 * nothing whatsoever.
-	 *
-	 * THE DOOR IS PUBLIC, THE ROOMS ARE NOT. `site()` deliberately does not
-	 * call this: a visitor to a DigiD-only portal has to be able to load its
-	 * title, theme and — above all — its `authentication.modes`, or there is
-	 * nothing to render a sign-in door from. That is the same reason a login
-	 * page is anonymous. Everything that carries actual content is gated.
-	 *
-	 * Fails closed to public READ-ONLY when the block is absent or unparseable,
-	 * which is what the schema documents: a portal that never configured
-	 * authentication keeps behaving exactly as it does today, so this change
-	 * cannot silently take an existing public site off the air.
-	 *
-	 * @param array $portal The resolved portal.
-	 *
-	 * @return JSONResponse|null A refusal, or null when the read may proceed.
-	 *
-	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-portal
-	 */
-	private function refuseUnlessPermitted(array $portal): ?JSONResponse {
-		$auth  = (array)($portal['authentication'] ?? []);
-		$modes = array_values(array_filter((array)($auth['modes'] ?? []), 'is_string'));
-
-		// Absent or unparseable => public read-only (the schema's own words).
-		if ($modes === [] || in_array('public', $modes, true) === true) {
-			return null;
-		}
-
-		$subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
-		if ($subject === null) {
-			// 401, not 404. `site()` already tells an anonymous caller this
-			// portal exists and how to sign in, so hiding it here would buy no
-			// secrecy and would cost the renderer its sign-in door. The modes
-			// are echoed for exactly that purpose — they are public by design.
-			return $this->refusal(
-				error: 'authentication_required',
-				status: Http::STATUS_UNAUTHORIZED,
-				modes: $modes
-			);
-		}
-
-		if (PortalSessionService::trustSatisfies($subject['trust'] ?? null, ($auth['minTrust'] ?? null)) === false) {
-			// A real session that is not assured ENOUGH. Distinct from 401 on
-			// purpose: re-authenticating with the same means would loop, so the
-			// caller has to be told the level is the problem.
-			return $this->refusal(
-				error: 'insufficient_trust',
-				status: Http::STATUS_FORBIDDEN,
-				modes: $modes
-			);
-		}
-
-		return null;
-	}//end refuseUnlessPermitted()
-
-
-	/**
-	 * The refusal shape both gated answers share.
-	 *
-	 * `private, no-store` is load-bearing rather than tidy: a refusal for a
-	 * NON-public portal must never be poolable at a CDN, or the first
-	 * anonymous miss becomes the answer every later visitor gets — including
-	 * the ones who did sign in.
-	 *
-	 * @param string $error  The machine-readable reason.
-	 * @param int    $status The HTTP status.
-	 * @param array  $modes  The portal's declared modes, for the sign-in door.
-	 *
-	 * @return JSONResponse The refusal.
-	 */
-	private function refusal(string $error, int $status, array $modes): JSONResponse {
-		$response = new JSONResponse(
-			[
-				'error'          => $error,
-				'authentication' => ['modes' => $modes],
-			],
-			$status
-		);
-		$response->addHeader('Cache-Control', 'private, no-store');
-
-		return $response;
-	}//end refusal()
 
 
 	/**
@@ -217,6 +132,7 @@ class ContentController extends Controller {
 	 * @return JSONResponse The site, or 404.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-request-must-resolve-to-exactly-one-portal-or-to-none
+	 * @spec openspec/changes/nextcloud-account-registration/specs/portal-nextcloud-account-login/spec.md#requirement-the-sign-in-page-leads-to-nextclouds-own-registration-req-ncl-005
 	 * @spec openspec/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
 	 */
 	#[PublicPage]
@@ -258,11 +174,33 @@ class ContentController extends Controller {
 				// is exactly what the client is about to act on.
 				'traffic' => $this->traffic->resolve(portal: $portal),
 				'collector' => $this->urlGenerator->linkToRouteAbsolute('portaliq.traffic.collect'),
+				// Where "Wachtwoord vergeten" leads: Nextcloud's own login page, with a
+				// way back to the account route. '' unless the portal offers that route
+				// (password-reset-from-the-sign-in-page REQ-PWR-001).
+				'lostPasswordUrl' => $this->lostPasswordUrl(portal: $portal),
+				// Where "Create an account" leads: Nextcloud's own registration
+				// form, '' unless the portal offers the account route, names a
+				// resident group and the registration app fills that group
+				// (nextcloud-account-registration REQ-NCL-005). Built here from a
+				// route name, never from the request.
+				'registerUrl' => ($this->registrationDoor?->registerUrl(portal: $portal) ?? ''),
+				// Whether a visitor's search also reads the text inside public
+				// documents. On unless the portal switched it off
+				// (portal-federated-search REQ-PFS-CONTENT-001).
+				'searchInsideDocuments' => (($portal['searchInsideDocuments'] ?? true) !== false),
+				// Whether the "Ask a question" widget is offered: the portal turned it on
+				// AND hermiq's entry point answers. Off otherwise
+				// (search-assistant-from-public-content REQ-SAP-006).
+				'assistantEnabled' => $this->assistantEnabled(portal: $portal),
 				// Maintenance and warning notices running now
 				// (operate-maintenance-notice). This answer is cached for up
 				// to five minutes, so each carries its end and the client
 				// drops it once that has passed.
 				'notices' => $this->notices->active(portal: (string)($portal['slug'] ?? ''), surface: 'site'),
+				// The id and the name of the portal's organisation, so the
+				// search's organisation filter reads a name, not an id
+				// (woo-search-names-the-organisation). Null when unknown.
+				'organisation' => $this->siteOrganisation?->forPortal(portal: $portal),
 			]
 		);
 	}//end site()
@@ -370,7 +308,8 @@ class ContentController extends Controller {
 			portal: (string)$portal['slug'],
 			route: $normalised,
 			locale: $this->locale(portal: $portal, requested: $locale),
-			audience: $this->audience()
+			audience: $this->audience(),
+			organisation: (string)($portal['organisation'] ?? '')
 		);
 
 		if ($page === null) {
@@ -417,6 +356,83 @@ class ContentController extends Controller {
 		);
 	}//end glossary()
 
+
+	/**
+	 * The portal's published FAQ entries.
+	 *
+	 * @param string|null $portal Explicit portal slug.
+	 * @param string|null $locale Requested locale.
+	 * @param string|null $page   Only the entries shown on this page route.
+	 * @param string|null $topic  Only the entries of this topic.
+	 *
+	 * @return JSONResponse The entries, or 404.
+	 *
+	 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t02
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 240, period: 60)]
+	public function faq(?string $portal=null, ?string $locale=null, ?string $page=null, ?string $topic=null): JSONResponse {
+		$portal = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
+		if ($portal === null) {
+			return $this->notFound();
+		}
+
+		$refusal = $this->refuseUnlessPermitted(portal: $portal);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->publicJson(
+			payload: [
+				'entries' => $this->reader->faq(
+					portal: (string)$portal['slug'],
+					locale: $this->locale(portal: $portal, requested: $locale),
+					audience: $this->audience(),
+					page: trim((string)$page),
+					topic: trim((string)$topic)
+				),
+			]
+		);
+	}//end faq()
+
+	/**
+	 * One published product finder.
+	 *
+	 * @param string|null $portal Explicit portal slug.
+	 * @param string|null $locale Requested locale.
+	 * @param string|null $finder The finder's id; empty for the first published one.
+	 *
+	 * @return JSONResponse The finder, or 404.
+	 *
+	 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t02
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 240, period: 60)]
+	public function finder(?string $portal=null, ?string $locale=null, ?string $finder=null): JSONResponse {
+		$portal = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
+		if ($portal === null) {
+			return $this->notFound();
+		}
+
+		$refusal = $this->refuseUnlessPermitted(portal: $portal);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$found = $this->reader->finder(
+			portal: (string)$portal['slug'],
+			id: trim((string)$finder),
+			locale: $this->locale(portal: $portal, requested: $locale),
+			audience: $this->audience()
+		);
+		if ($found === null) {
+			return $this->notFound();
+		}
+
+		return $this->publicJson(payload: ['finder' => $found]);
+	}//end finder()
 
 	/**
 	 * The leaf apps' contributed surfaces for the resolved portal.
@@ -559,17 +575,42 @@ class ContentController extends Controller {
 	}//end publicJson()
 
 
+
 	/**
-	 * The single not-found response every miss shares.
+	 * The address behind "Wachtwoord vergeten", or '' when the portal does not
+	 * offer the Nextcloud account route. Portaliq adds no reset of its own.
 	 *
-	 * @return JSONResponse A 404.
+	 * @param array<string, mixed> $portal The portal.
+	 *
+	 * @return string The absolute address, or ''.
+	 *
+	 * @spec openspec/changes/password-reset-from-the-sign-in-page/specs/portal-ways-in/spec.md#requirement-the-sign-in-page-leads-to-nextclouds-own-password-reset-req-pwr-001
 	 */
-	private function notFound(): JSONResponse {
-		$response = new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
-		$response->addHeader('Cache-Control', 'private, no-store');
+	private function lostPasswordUrl(array $portal): string {
+		$modes = ($portal['authentication']['modes'] ?? []);
+		if (is_array($modes) === false || in_array('nextcloud', $modes, true) === false) {
+			return '';
+		}
 
-		return $response;
-	}//end notFound()
+		$back = $this->urlGenerator->linkToRoute(
+			'portaliq.session.nextcloud',
+			['portal' => (string)($portal['slug'] ?? '')]
+		);
 
+		return $this->urlGenerator->linkToRouteAbsolute('core.login.showLoginForm', ['redirect_url' => $back]);
+	}//end lostPasswordUrl()
 
+	/**
+	 * Whether the assistant widget is on for a portal.
+	 *
+	 * @param array<string, mixed> $portal The portal object.
+	 *
+	 * @return bool True when the portal enabled it and hermiq answers.
+	 *
+	 * @spec openspec/changes/search-assistant-from-public-content/tasks.md#t05
+	 */
+	private function assistantEnabled(array $portal): bool {
+		$scope = $this->assistantScope ?? new PublicSourceScope();
+		return $scope->enabledFor(portal: $portal) === true && $this->assistant !== null && $this->assistant->isAvailable() === true;
+	}//end assistantEnabled()
 }//end class

@@ -74,12 +74,21 @@ class TrafficConfigResolver {
 		'form_field',
 		'form_abandon',
 		'page_not_found',
+		'assistant_asked',
 		'js_error',
 		'heat_click',
 		'heat_scroll',
 		'email_open',
 		'email_click',
 	];
+
+	/**
+	 * Events that carry no params at all: the assistant counts a use and never
+	 * what was asked, so whatever a client sends along is dropped.
+	 *
+	 * @var string[]
+	 */
+	public const TEXTLESS_EVENTS = ['assistant_asked'];
 
 	/**
 	 * The parameters a form event may carry, and the ONLY ones. A field's

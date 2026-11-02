@@ -348,7 +348,7 @@ class ActionConfigNormaliserTest extends TestCase {
 	public function testASummaryNamesOnlyTheActionsOwnFields(): void {
 		$create = $this->absenceAction(
 			[
-				'summary' => [
+				'answerSummary' => [
 					'label'    => 'U meldt',
 					'template' => 'Uw kind is {dateFrom} {reason}.',
 					'phrases'  => [
@@ -361,14 +361,71 @@ class ActionConfigNormaliserTest extends TestCase {
 		);
 		$this->assertSame(
 			['template' => 'Uw kind is {dateFrom} {reason}.', 'label' => 'U meldt', 'phrases' => ['reason' => ['sick' => 'ziek']]],
-			$create['summary']
+			$create['answerSummary']
 		);
 
-		$this->assertArrayNotHasKey('summary', $this->absenceAction(['summary' => ['template' => '{reason} door {bsn}.']]), 'a placeholder for a field the action does not send drops the summary');
-		$this->assertArrayNotHasKey('summary', $this->absenceAction(['summary' => ['template' => 'Geen antwoord erin.']]), 'a sentence without an answer is no summary');
-		$this->assertArrayNotHasKey('summary', $this->absenceAction(['type' => 'update', 'summary' => ['template' => '{reason}.']]));
-		$this->assertSame('Over {onderwerp}.', $this->wooAction(['summary' => ['template' => 'Over {onderwerp}.']])['summary']['template']);
+		$this->assertArrayNotHasKey('answerSummary', $this->absenceAction(['answerSummary' => ['template' => '{reason} door {bsn}.']]), 'a placeholder for a field the action does not send drops the summary');
+		$this->assertArrayNotHasKey('answerSummary', $this->absenceAction(['answerSummary' => ['template' => 'Geen antwoord erin.']]), 'a sentence without an answer is no summary');
+		$this->assertArrayNotHasKey('answerSummary', $this->absenceAction(['type' => 'update', 'answerSummary' => ['template' => '{reason}.']]));
+		$this->assertSame('Over {onderwerp}.', $this->wooAction(['answerSummary' => ['template' => 'Over {onderwerp}.']])['answerSummary']['template']);
 	}//end testASummaryNamesOnlyTheActionsOwnFields()
+
+	/**
+	 * An app that still declares the sentence under `summary` (the object
+	 * shape before decision 127) keeps it, moved to `answerSummary`; the
+	 * object never stays under `summary`, which is now a string.
+	 *
+	 * @return void
+	 */
+	public function testTheOldObjectSummaryMovesToAnswerSummary(): void {
+		$create = $this->absenceAction(['summary' => ['label' => 'U meldt', 'template' => 'Uw kind is {reason}.']]);
+
+		$this->assertSame(['template' => 'Uw kind is {reason}.', 'label' => 'U meldt'], $create['answerSummary']);
+		$this->assertArrayNotHasKey('summary', $create);
+
+		$both = $this->absenceAction(
+			[
+				'summary'       => ['template' => 'Oud {reason}.'],
+				'answerSummary' => ['template' => 'Nieuw {reason}.'],
+			]
+		);
+		$this->assertSame('Nieuw {reason}.', $both['answerSummary']['template'], 'the new key wins');
+		$this->assertArrayNotHasKey('summary', $both);
+	}//end testTheOldObjectSummaryMovesToAnswerSummary()
+
+	/**
+	 * `summary` is one sentence for a start tile: a string of 1 to 200
+	 * characters on a create or endpoint action; anything else is dropped.
+	 *
+	 * @return void
+	 */
+	public function testSummaryIsKeptUpTo200Characters(): void {
+		$sentence = 'Bent u het niet eens met een besluit? Maak binnen zes weken bezwaar.';
+		$this->assertSame($sentence, $this->wooAction(['summary' => '  ' . $sentence . ' '])['summary']);
+		$this->assertSame(str_repeat('a', 200), $this->absenceAction(['summary' => str_repeat('a', 200)])['summary']);
+
+		$this->assertArrayNotHasKey('summary', $this->absenceAction(['summary' => str_repeat('a', 201)]), 'over 200 characters is dropped');
+		$this->assertArrayNotHasKey('summary', $this->absenceAction(['summary' => '   ']), 'an empty sentence is dropped');
+		$this->assertArrayNotHasKey('summary', $this->absenceAction(['summary' => 42]));
+		$this->assertArrayNotHasKey('summary', $this->absenceAction(['type' => 'update', 'summary' => 'Wijzig iets.']), 'an update action is no start tile');
+	}//end testSummaryIsKeptUpTo200Characters()
+
+	/**
+	 * `audiences` keeps only audiences the provider serves; none left, or no
+	 * served audiences known, drops the key.
+	 *
+	 * @return void
+	 */
+	public function testUnknownAudiencesAreDropped(): void {
+		$served = ['servedAudiences' => ['citizen', 'business']];
+		$this->assertSame(['citizen'], $this->wooAction(['audiences' => ['citizen', 'alien', 'citizen', 7]], $served)['audiences']);
+		$this->assertArrayNotHasKey('audiences', $this->wooAction(['audiences' => ['alien']], $served));
+		$this->assertArrayNotHasKey('audiences', $this->wooAction(['audiences' => 'citizen'], $served));
+		$this->assertArrayNotHasKey('audiences', $this->wooAction(['audiences' => ['citizen']]), 'without the served audiences nothing can be checked');
+
+		$out = (new PortalManifestNormaliser($this->schemaReader()))->normalise(['actions' => [], 'servedAudiences' => ['citizen']]);
+		$this->assertArrayNotHasKey('servedAudiences', $out, 'the served audiences are input, never output');
+	}//end testUnknownAudiencesAreDropped()
 
 	/**
 	 * Steps, draft and confirmation live on a create action and an endpoint
@@ -394,15 +451,55 @@ class ActionConfigNormaliserTest extends TestCase {
 	}//end testOnlyCreateAndEndpointActionsRunInSteps()
 
 	/**
+	 * An endpoint action writes no schema, so its own `input` is the only way
+	 * a field says it is a date; a known hint is kept, anything else dropped
+	 * (endpoint-action-forms-keep-their-field-shape REQ-EAF-001).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/site-forms/spec.md#requirement-an-endpoint-action-may-declare-a-fields-input-req-eaf-001
+	 */
+	public function testAnEndpointActionKeepsTheInputItDeclares(): void {
+		$action = $this->wooAction(
+			[
+				'fieldConfigs' => [
+					'periodeVan'   => ['label' => 'Vanaf welke datum?', 'input' => 'date'],
+					'omschrijving' => ['input' => 'colour'],
+					'onderwerp'    => ['input' => ['date']],
+				],
+			]
+		);
+
+		$this->assertSame('date', $action['fieldConfigs']['periodeVan']['input']);
+		$this->assertSame('Vanaf welke datum?', $action['fieldConfigs']['periodeVan']['label']);
+		$this->assertArrayNotHasKey('input', $action['fieldConfigs']['omschrijving'], 'an unknown hint is dropped');
+		$this->assertArrayNotHasKey('input', $action['fieldConfigs']['onderwerp'], 'a malformed hint is dropped');
+	}//end testAnEndpointActionKeepsTheInputItDeclares()
+
+	/**
+	 * On a create action the schema's format still decides the input.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/site-forms/spec.md#requirement-an-endpoint-action-may-declare-a-fields-input-req-eaf-001
+	 */
+	public function testOnACreateActionTheSchemaDecidesTheInput(): void {
+		$configs = $this->absenceConfigs(['reason' => ['input' => 'date'], 'dateFrom' => ['input' => 'number']]);
+
+		$this->assertSame('date', $configs['dateFrom']['input'], 'the schema says date');
+	}//end testOnACreateActionTheSchemaDecidesTheInput()
+
+	/**
 	 * dossiq's Woo endpoint action, normalised.
 	 *
 	 * @param array<string, mixed> $overrides Keys to declare.
+	 * @param array<string, mixed> $contribution Contribution keys beside the action.
 	 *
 	 * @return array<string, mixed> The normalised action.
 	 */
-	private function wooAction(array $overrides): array {
+	private function wooAction(array $overrides, array $contribution = []): array {
 		$out = (new PortalManifestNormaliser($this->schemaReader()))->normalise(
-			[
+			$contribution + [
 				'collections' => [],
 				'actions'     => [
 					array_merge(
@@ -448,6 +545,30 @@ class ActionConfigNormaliserTest extends TestCase {
 
 		return $out['actions'][0];
 	}//end absenceAction()
+
+	/**
+	 * `prefill` survives only as `name` or `email`; any other source, or a
+	 * value that is not a string, is dropped.
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-action-field-may-start-from-the-signed-in-residents-name-or-e-mail-address
+	 *
+	 * @return void
+	 */
+	public function testAPrefillSourceIsKeptOnlyWhenKnown(): void {
+		$configs = $this->absenceConfigs(
+			[
+				'reason'     => ['prefill' => 'name'],
+				'reasonKind' => ['prefill' => 'email'],
+				'dateFrom'   => ['prefill' => 'bsn'],
+				'dateTo'     => ['prefill' => ['name']],
+			]
+		);
+
+		$this->assertSame('name', $configs['reason']['prefill']);
+		$this->assertSame('email', $configs['reasonKind']['prefill']);
+		$this->assertArrayNotHasKey('prefill', $configs['dateFrom']);
+		$this->assertArrayNotHasKey('prefill', $configs['dateTo']);
+	}//end testAPrefillSourceIsKeptOnlyWhenKnown()
 
 	/**
 	 * The normalised field configs of learniq's absence action.

@@ -6,9 +6,12 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\FormBindingAdminController;
 use OCA\Portaliq\Service\Intake\PortalBindingPreview;
+use OCA\Portaliq\Service\Intake\PortalEmbedGuard;
+use OCA\Portaliq\Service\Intake\PortalEmbedSnippetDescription;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCP\IRequest;
+use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -41,8 +44,24 @@ class FormBindingAdminControllerTest extends TestCase {
 		return new FormBindingAdminController(
 			request: $this->createMock(IRequest::class),
 			preview: new PortalBindingPreview(resolver: $resolver),
+			embed: new PortalEmbedSnippetDescription(guard: new PortalEmbedGuard()),
+			urls: $this->urlsStub(),
 		);
 	}//end controllerWithForms()
+
+	/**
+	 * A URL generator that answers the embed frame address.
+	 *
+	 * @return IURLGenerator The generator.
+	 */
+	private function urlsStub(): IURLGenerator {
+		$urls = $this->createMock(IURLGenerator::class);
+		$urls->method('linkToRouteAbsolute')->willReturnCallback(
+			static fn (string $name, array $args = []): string => 'https://mijn.example.nl/apps/portaliq/portal/embed?route='.rawurlencode((string)($args['route'] ?? ''))
+		);
+
+		return $urls;
+	}//end urlsStub()
 
 	/**
 	 * The binding the admin opens.
@@ -142,4 +161,45 @@ class FormBindingAdminControllerTest extends TestCase {
 
 		$this->assertSame(400, $controller->preview(binding: [])->getStatus());
 	}//end testAnEmptyBodyIsRefused()
+
+	/**
+	 * A binding with allowed websites gets the code to put on them.
+	 *
+	 * @return void
+	 */
+	public function testABindingWithAllowedOriginsGetsAnEmbedSnippet(): void {
+		$controller = $this->controllerWithForms([]);
+
+		$body = $controller->embedSnippet(
+			binding: $this->binding(['allowedOrigins' => ['https://www.example.nl']])
+		)->getData();
+
+		$this->assertTrue($body['embeddable']);
+		$this->assertSame(['https://www.example.nl'], $body['origins']);
+		$this->assertStringContainsString('<iframe', $body['snippet']);
+		$this->assertStringContainsString('/portal/embed?route=', $body['snippet']);
+	}//end testABindingWithAllowedOriginsGetsAnEmbedSnippet()
+
+	/**
+	 * A binding nobody may frame says so and hands out no code.
+	 *
+	 * @return void
+	 */
+	public function testABindingWithoutOriginsIsNotEmbeddable(): void {
+		$body = $this->controllerWithForms([])->embedSnippet(binding: $this->binding())->getData();
+
+		$this->assertFalse($body['embeddable']);
+		$this->assertSame('', $body['snippet']);
+	}//end testABindingWithoutOriginsIsNotEmbeddable()
+
+	/**
+	 * An empty body is refused.
+	 *
+	 * @return void
+	 */
+	public function testAnEmptyEmbedRequestIsRefused(): void {
+		$response = $this->controllerWithForms([])->embedSnippet(binding: []);
+
+		$this->assertSame(400, $response->getStatus());
+	}//end testAnEmptyEmbedRequestIsRefused()
 }//end class

@@ -49,6 +49,8 @@ use OCA\Portaliq\Event\PortalAccountClaimRequestedEvent;
 use OCA\Portaliq\Event\PortalAccountInvitationRequestedEvent;
 use OCA\Portaliq\Event\PortalAccountProvisionRequestedEvent;
 use OCA\Portaliq\Listener\CmsCacheInvalidationListener;
+use OCA\Portaliq\Listener\BindingDestinationGuardListener;
+use OCA\Portaliq\Listener\GlossaryRelationGuardListener;
 use OCA\Portaliq\Listener\MediaWriteGuardListener;
 use OCA\Portaliq\Listener\NoticeWriteGuardListener;
 use OCA\Portaliq\Listener\LandingPageRequestedEventListener;
@@ -59,19 +61,26 @@ use OCA\Portaliq\Listener\PortalAccountProvisionListener;
 use OCA\Portaliq\Listener\PortalDigitalPostDeliveredListener;
 use OCA\Portaliq\Listener\PortalRecordChangeListener;
 use OCA\Portaliq\Listener\RegisterProposalLeavesListener;
+use OCA\Portaliq\Listener\ResidentLandingListener;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCA\Portaliq\Middleware\PublicApiCorsMiddleware;
 use OCA\Portaliq\Notification\Notifier;
+use OCA\Portaliq\Service\HostRootRedirect;
 use OCA\Portaliq\Service\Messaging\GuardianMessagingLeafInterface;
 use OCA\Portaliq\Service\Messaging\InAppMessagingLeaf;
 use OCA\Portaliq\Service\Notifications\LoggingPushSender;
 use OCA\Portaliq\Service\Notifications\PushSenderInterface;
+use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\Traffic\Geo\MmdbGeoResolver;
 use OCA\Portaliq\Service\Traffic\GeoResolverInterface;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
+use OCP\Group\Events\UserAddedEvent;
+use OCP\Group\Events\UserRemovedEvent;
+use OCP\IRequest;
 
 /**
  * Main application class for the Portaliq Nextcloud app.
@@ -163,7 +172,56 @@ class Application extends App implements IBootstrap {
 		$context->registerEventListener(PortalAccountProvisionRequestedEvent::class, PortalAccountProvisionListener::class);
 		$context->registerEventListener(PortalAccountClaimRequestedEvent::class, PortalAccountClaimListener::class);
 		$context->registerEventListener(PortalAccountInvitationRequestedEvent::class, PortalAccountInvitationListener::class);
+		$this->registerResidentLanding(context: $context);
 
+		$this->registerServiceAliases(context: $context);
+
+		// Traffic reports and alerts (portal-traffic-reporting) reach a
+		// user as an in-app notification beside the mail; this renders it.
+		$context->registerNotifierService(Notifier::class);
+
+		// The store plane (ADR-080, ADR-114 Decision 4). The manifest's
+		// `type: "store"` page calls /api/store/items; appinfo/routes.php declares
+		// the engine's two store routes, and they resolve to
+		// Controller\StoreController — a class this app does NOT ship.
+		// StorePlaneRegistrar binds that name to OpenRegister's
+		// GenericStoreController: the one AppHost binding this app takes, since
+		// it wires everything else by hand (WOO-559). Without it the SPA
+		// catch-all answered the store page's JSON call with HTML 200.
+		(new StorePlaneRegistrar())->register($context);
+
+		// OpenRegister asks which published forms write into a schema that
+		// is about to change (decision 179). Portaliq answers for its form
+		// bindings.
+		(new FormDependentsRegistrar())->register($context);
+	}//end register()
+
+	/**
+	 * A member of a portal's resident group starts on portaliq, so the
+	 * registration app's last step lands on the portal, not on the workplace
+	 * (resident-lands-on-the-portal, REQ-NCL-007).
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/resident-lands-on-the-portal/specs/portal-nextcloud-account-login/spec.md#requirement-a-residents-nextcloud-start-page-is-the-portal-req-ncl-007
+	 */
+	private function registerResidentLanding(IRegistrationContext $context): void {
+		$context->registerEventListener(UserAddedEvent::class, ResidentLandingListener::class);
+		$context->registerEventListener(UserRemovedEvent::class, ResidentLandingListener::class);
+	}//end registerResidentLanding()
+
+	/**
+	 * Bind each interface the app's services ask for to its implementation.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec exclude container wiring only: each alias belongs to the change that introduced its interface
+	 */
+	private function registerServiceAliases(IRegistrationContext $context): void {
 		// Traffic analytics (portal-traffic-visitors-and-geo): where a
 		// visitor's address turns into a region. The offline MMDB lookup is
 		// bound here and the ingest path did not change from phase 0, which
@@ -187,20 +245,9 @@ class Application extends App implements IBootstrap {
 		// with no caller change.
 		$context->registerServiceAlias(PushSenderInterface::class, LoggingPushSender::class);
 
-		// Traffic reports and alerts (portal-traffic-reporting) reach a
-		// user as an in-app notification beside the mail; this renders it.
-		$context->registerNotifierService(Notifier::class);
-
-		// The store plane (ADR-080, ADR-114 Decision 4). The manifest's
-		// `type: "store"` page calls /api/store/items; appinfo/routes.php declares
-		// the engine's two store routes, and they resolve to
-		// Controller\StoreController — a class this app does NOT ship.
-		// StorePlaneRegistrar binds that name to OpenRegister's
-		// GenericStoreController: the one AppHost binding this app takes, since
-		// it wires everything else by hand (WOO-559). Without it the SPA
-		// catch-all answered the store page's JSON call with HTML 200.
-		(new StorePlaneRegistrar())->register($context);
-	}//end register()
+		// Callers that only read scoped collections depend on the narrow read contract.
+		$context->registerServiceAlias(ScopedCollectionReaderInterface::class, PortalObjectReader::class);
+	}//end registerServiceAliases()
 
 	/**
 	 * The CMS content listeners.
@@ -228,6 +275,16 @@ class Application extends App implements IBootstrap {
 
 		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class, ObjectDeletingEvent::class] as $event) {
 			$context->registerEventListener($event, MediaWriteGuardListener::class);
+		}
+
+		// A glossary term relates only to terms of its own portal (portal-cms-content-model).
+		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
+			$context->registerEventListener($event, GlossaryRelationGuardListener::class);
+		}
+
+		// A published form binding fits its destination (submit-creates-the-case-directly REQ-PIFO-007).
+		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
+			$context->registerEventListener($event, BindingDestinationGuardListener::class);
 		}
 
 		// A notice ends after it starts (operate-maintenance-notice REQ-OMN-003).
@@ -267,14 +324,20 @@ class Application extends App implements IBootstrap {
 	/**
 	 * Boot the application.
 	 *
+	 * Core boots every app before it matches the route, and answers the bare
+	 * address of the instance (`/`) itself when no route matches. So the bare
+	 * address of a portal's verified domain is sent to the site here, and
+	 * every other request is left to core (portal-host-root-redirect).
+	 *
 	 * @param IBootContext $context The boot context
 	 *
 	 * @return void
 	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-	 *
 	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
+	 * @spec openspec/changes/portal-host-root-redirect/specs/portal-settings/spec.md#requirement-the-bare-address-of-a-portal-host-must-lead-to-its-site-req-hrr-001
 	 */
 	public function boot(IBootContext $context): void {
+		$container = $context->getAppContainer();
+		$container->get(HostRootRedirect::class)->handle(request: $container->get(IRequest::class));
 	}//end boot()
 }//end class

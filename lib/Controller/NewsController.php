@@ -30,12 +30,11 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\NewsAudienceOptions;
-use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
-use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IRequest;
 use OCP\IUserSession;
@@ -54,6 +53,12 @@ use Throwable;
  * the endpoint's purpose, not incidental coupling (see NewsletterController).
  */
 class NewsController extends Controller {
+	use ObjectServiceLookup;
+	use StaffActionGuard;
+	use ObjectArrayRow;
+	use TargetedAudience;
+	use StaffRowWrite;
+
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	private const REGISTER = 'portaliq';
@@ -89,30 +94,6 @@ class NewsController extends Controller {
 	}//end __construct()
 
 	/**
-	 * The staff authorization guard every `#[NoAdminRequired]` method calls
-	 * FIRST, before any read or write: `#[NoAdminRequired]` already opens
-	 * this endpoint to every authenticated Nextcloud user, so this makes the
-	 * requirement explicit at the call site (ADR-005) rather than relying
-	 * only on the framework attribute, and narrows it to the groups holding
-	 * the ADR-023 action `portal.author-news`.
-	 *
-	 * @return string The staff member's user id.
-	 *
-	 * @throws OCSForbiddenException When no Nextcloud user is authenticated, or the
-	 *                               user's groups do not hold self::ACTION.
-	 */
-	private function requireAuthenticatedStaff(): string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			throw new OCSForbiddenException('Authentication required');
-		}
-
-		$this->actionAuth->requireAction(user: $user, action: self::ACTION);
-
-		return $user->getUID();
-	}//end requireAuthenticatedStaff()
-
-	/**
 	 * Create a draft news item. The author is the signed-in staff member,
 	 * never a value from the request.
 	 *
@@ -123,6 +104,7 @@ class NewsController extends Controller {
 	 * @param bool $public Whether the item also shows on a portal's public website (site-school-blocks).
 	 * @param string $portal The portal whose website shows it.
 	 * @param string $audienceLabel The words that website shows for who it is for.
+	 * @param string $eventRef The event whose sign-up the article carries; empty for none.
 	 *
 	 * @return JSONResponse The created object, or a 400/500.
 	 *
@@ -140,7 +122,8 @@ class NewsController extends Controller {
 		array $photoRefs=[],
 		bool $public=false,
 		string $portal='',
-		string $audienceLabel=''
+		string $audienceLabel='',
+		string $eventRef=''
 	): JSONResponse {
 		$authorRef = $this->requireAuthenticatedStaff();
 
@@ -163,7 +146,7 @@ class NewsController extends Controller {
 					'status' => 'draft',
 					'photoRefs' => $photoRefs,
 					'readReceipts' => [],
-				] + $this->website(public: $public, portal: $portal, audienceLabel: $audienceLabel),
+				] + $this->website(public: $public, portal: $portal, audienceLabel: $audienceLabel) + ['eventRef' => $this->eventRef(value: $eventRef)],
 				register: self::REGISTER,
 				schema: self::SCHEMA,
 				_rbac: false,
@@ -189,6 +172,7 @@ class NewsController extends Controller {
 	 * @param bool|null $public Whether the item also shows on a portal's public website; null leaves it as it is.
 	 * @param string $portal The portal whose website shows it.
 	 * @param string $audienceLabel The words that website shows for who it is for.
+	 * @param string|null $eventRef The event whose sign-up the article carries; empty clears it, null leaves it.
 	 *
 	 * @return JSONResponse The updated object, a 400 or a 404.
 	 *
@@ -203,7 +187,8 @@ class NewsController extends Controller {
 		array $target,
 		?bool $public=null,
 		string $portal='',
-		string $audienceLabel=''
+		string $audienceLabel='',
+		?string $eventRef=null
 	): JSONResponse {
 		$this->requireAuthenticatedStaff();
 
@@ -215,6 +200,10 @@ class NewsController extends Controller {
 		// A screen that does not send `public` leaves the website choice as it is.
 		if ($public !== null) {
 			$data += $this->website(public: $public, portal: $portal, audienceLabel: $audienceLabel);
+		}
+
+		if ($eventRef !== null) {
+			$data['eventRef'] = $this->eventRef(value: $eventRef);
 		}
 
 		return $this->write(id: $id, data: $data);
@@ -297,22 +286,7 @@ class NewsController extends Controller {
 			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 
-		$writer = new PortalObjectWriter(container: $this->container, logger: $this->logger);
-		$updated = $writer->updateObject(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: '',
-			subjectRef: '',
-			organisation: '',
-			id: $id,
-			data: $data
-		);
-
-		if ($updated === null) {
-			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
-		}
-
-		return new JSONResponse($updated);
+		return $this->writeRow(id: $id, data: $data);
 	}//end write()
 
 	/**
@@ -339,66 +313,22 @@ class NewsController extends Controller {
 	}//end website()
 
 	/**
-	 * Whether a target names at least one dimension.
+	 * The event reference to store: a plain id, else empty. A reference to an
+	 * event that is not published shows nothing on the website, so the id is
+	 * not checked here.
 	 *
-	 * @param array<string, mixed> $target The target.
+	 * @param string $value The reference as sent.
 	 *
-	 * @return bool
+	 * @return string
+	 *
+	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md#requirement-a-news-item-may-carry-the-sign-up-of-its-event
 	 */
-	private function hasAnyTarget(array $target): bool {
-		if (is_string($target['schoolRef'] ?? null) === true && $target['schoolRef'] !== '') {
-			return true;
+	private function eventRef(string $value): string {
+		$value = trim($value);
+		if (preg_match('/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/', $value) !== 1) {
+			return '';
 		}
 
-		if (is_array($target['groupRefs'] ?? null) === true && count($target['groupRefs']) > 0) {
-			return true;
-		}
-
-		if (is_array($target['childRefs'] ?? null) === true && count($target['childRefs']) > 0) {
-			return true;
-		}
-
-		return false;
-	}//end hasAnyTarget()
-
-	/**
-	 * Normalise an OpenRegister row (array or object) to an associative array.
-	 *
-	 * @param mixed $row The row.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function normalise(mixed $row): array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$data = $row->jsonSerialize();
-			if (is_array($data) === true) {
-				return $data;
-			}
-		}
-
-		return [];
-	}//end normalise()
-
-	/**
-	 * Resolve OpenRegister's ObjectService, or null when unavailable.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
+		return $value;
+	}//end eventRef()
 }//end class

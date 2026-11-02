@@ -27,17 +27,32 @@
 //   3. An empty search term must be OMITTED, not sent as `_search=`. Those
 //      are different requests and only one of them means "everything".
 
+import { readFileSync } from 'node:fs'
+import { kindBuckets, kindLabel, labelBuckets } from '../src/site/lib/facetLabels.js'
 import {
 	buildRequestUrl,
 	facetFieldsOf,
+	foreignDirectory,
 	formatDutchDate,
+	KIND_FIELD,
+	lockedFiltersOf,
+	matchDescription,
 	pageWindow,
 	paginationItems,
 	readSearchState,
+	RELEVANCE_SORT,
+	relevanceApplied,
+	relevanceOf,
+	resultKind,
 	searchQuery,
+	sortForNewSearch,
+	sortOptionsFor,
+	subjectSlug,
 	toBuckets,
 	toResult,
 	validDate,
+	withKindField,
+	withoutLocked,
 	writeSearchState,
 } from '../src/site/lib/federatedSearch.js'
 
@@ -216,6 +231,8 @@ assertEqual(
 		'@self': { id: 'abc', directory: 'opencatalogi.nl', summary: null },
 	}),
 	{
+		kind: 'publication',
+		publication: '',
 		key: 'abc',
 		title: 'GZAC',
 		summary: 'Een zaakgericht werken component',
@@ -227,10 +244,25 @@ assertEqual(
 	},
 )
 
+// A ROW OF THIS PORTAL NAMES NO SOURCE (search-names-only-a-foreign-source
+// REQ-SNF-001). No directory, or the API's own word `local`, is this
+// instance; the card drew "Bron: local" for it.
 assertEqual(
-	'names a row with no directory `local`, rather than leaving it blank',
+	'gives a row with no directory no source, rather than the word local',
 	toResult({ name: 'x', '@self': { id: '1' } }).directory,
-	'local',
+	'',
+)
+
+assertEqual(
+	'gives a row the API calls local no source either',
+	toResult({ name: 'x', '@self': { id: '1', directory: 'local' } }).directory,
+	'',
+)
+
+assertEqual(
+	'keeps the directory of a row from another catalogue',
+	[foreignDirectory('opencatalogi.nl'), foreignDirectory(' LOCAL '), foreignDirectory(17)],
+	['opencatalogi.nl', '', ''],
 )
 
 assertEqual(
@@ -251,11 +283,13 @@ assertEqual(
 	'degrades an almost-empty row to a titled entry instead of throwing',
 	toResult({}),
 	{
+		kind: 'publication',
+		publication: '',
 		key: '',
 		title: 'Zonder titel',
 		summary: '',
 		href: '',
-		directory: 'local',
+		directory: '',
 		id: '',
 		date: '',
 		type: '',
@@ -521,6 +555,314 @@ assertEqual(
 		catalog: '',
 	},
 )
+
+// REQ-PFS-CONTENT-001: the search reaches the text inside public documents.
+{
+	const base = {
+		endpoint: '/api/federation/publications',
+		origin: 'https://portaal.example',
+		pageSize: 12,
+		page: 1,
+		facetFields: ['themes'],
+		facets: {},
+	}
+	const flag = (state) =>
+		new URL(buildRequestUrl({ ...base, ...state })).searchParams.get('_content')
+
+	assertEqual(
+		'a term sends the content flag',
+		flag({ query: 'geluidsscherm' }),
+		'true',
+	)
+	assertEqual('no term sends no content flag', flag({ query: '' }), null)
+	assertEqual(
+		'a portal that switched it off sends no content flag',
+		flag({ query: 'geluidsscherm', searchInsideDocuments: false }),
+		null,
+	)
+	assertEqual(
+		'a portal that never said sends the content flag',
+		flag({ query: 'a', searchInsideDocuments: undefined }),
+		'true',
+	)
+
+	assertEqual(
+		'a row with resultType document is a document',
+		resultKind({ resultType: 'document' }),
+		'document',
+	)
+	assertEqual(
+		'the schema word on @self marks a document too',
+		resultKind({ '@self': { schema: 'Document' } }),
+		'document',
+	)
+	assertEqual(
+		'a row with no type is a publication',
+		resultKind({ name: 'x' }),
+		'publication',
+	)
+	assertEqual(
+		'a numeric schema id is not a type',
+		resultKind({ '@self': { schema: 17 } }),
+		'publication',
+	)
+
+	const document = toResult({
+		resultType: 'document',
+		name: 'Rapport geluid.pdf',
+		'@self': { id: 'd-42' },
+		publication: { title: 'Besluit Stationsweg' },
+	})
+	assertEqual(
+		'a document row names its publication',
+		document.publication,
+		'Besluit Stationsweg',
+	)
+	assertEqual('a document row keeps its own id', document.id, 'd-42')
+	assertEqual('a document row is marked a document', document.kind, 'document')
+	assertEqual(
+		'a publication row names no publication',
+		toResult({ name: 'x', '@self': { id: 'p-1' }, publication: 'y' })
+			.publication,
+		'',
+	)
+
+	// search-filter-by-kind (REQ-SFK-001, REQ-SFK-002).
+	// The facet fixture is REQ-SUB-004's response shape: opencatalogi counts
+	// `resultType` as a terms facet beside the others.
+	const kindFacet = {
+		resultType: {
+			data: {
+				buckets: [
+					{ value: 'subject', count: 1 },
+					{ value: 'publication', count: 14 },
+					{ value: 'document', count: 3 },
+				],
+			},
+		},
+	}
+	assertEqual(
+		'the kind facet reads as Publicatie, Document, Onderwerp with their counts',
+		labelBuckets(toBuckets(kindFacet, KIND_FIELD), KIND_FIELD, 'nl').map(
+			(b) => [b.value, b.label, b.count],
+		),
+		[
+			['publication', 'Publicatie', 14],
+			['document', 'Document', 3],
+			['subject', 'Onderwerp', 1],
+		],
+	)
+	assertEqual('the kinds read in English', kindLabel('subject', 'en'), 'Subject')
+	assertEqual('an unknown kind reads as itself', kindLabel('zaak', 'nl'), 'zaak')
+	assertEqual(
+		'no resultType facet offers no filter',
+		toBuckets({ wooCategory: { buckets: [{ value: 'a', count: 1 }] } }, KIND_FIELD),
+		[],
+	)
+	assertEqual('the kind is asked first', withKindField(['wooCategory']), [
+		'resultType',
+		'wooCategory',
+	])
+	assertEqual(
+		'a placement can leave the kind out',
+		withKindField(['resultType', 'wooCategory'], true),
+		['wooCategory'],
+	)
+	assertEqual(
+		'the kind is not asked twice',
+		withKindField(['resultType', 'organization']),
+		['resultType', 'organization'],
+	)
+
+	const fields = withKindField(['wooCategory'])
+	const chosen = new URL(
+		buildRequestUrl({
+			...{ endpoint: '/api/search', origin: 'https://x.example', pageSize: 10, page: 1 },
+			query: 'parkeren',
+			facetFields: fields,
+			facets: { resultType: ['subject'], wooCategory: [] },
+		}),
+	)
+	assertEqual('a chosen kind is sent', chosen.searchParams.getAll('resultType'), [
+		'subject',
+	])
+	assertEqual(
+		'the kind facet is asked for',
+		chosen.searchParams.get('_facets[resultType][type]'),
+		'terms',
+	)
+	const none = new URL(
+		buildRequestUrl({
+			...{ endpoint: '/api/search', origin: 'https://x.example', pageSize: 10, page: 1 },
+			query: 'parkeren',
+			facetFields: fields,
+			facets: { resultType: [], wooCategory: [] },
+		}),
+	)
+	assertEqual('no kind sends no resultType', none.searchParams.has('resultType'), false)
+
+	const written = writeSearchState(
+		new URL('https://x.example/zoeken'),
+		{ query: 'parkeren', page: 1, facets: { resultType: ['subject'] } },
+		fields,
+	)
+	assertEqual('the chosen kind is written to the address', written.searchParams.get('f.resultType'), 'subject')
+	assertEqual(
+		'and read back from it',
+		readSearchState(written.search, fields).facets.resultType,
+		['subject'],
+	)
+
+	const subject = toResult({
+		resultType: 'subject',
+		slug: 'parkeren',
+		name: 'Parkeren',
+		publicationCount: 14,
+		'@self': { id: 's-1' },
+	})
+	assertEqual('a subject hit keeps its slug and its count', [subject.kind, subject.slug, subject.publicationCount], ['subject', 'parkeren', 14])
+	assertEqual('a slug that is not a path segment is dropped', subjectSlug({ slug: '../x' }), '')
+	assertEqual('a publication carries no slug', 'slug' in toResult({ name: 'x', slug: 'y', '@self': { id: 'p' } }), false)
+	assertEqual(
+		'an unknown kind renders as a publication',
+		toResult({ resultType: 'zaak', name: 'x', '@self': { id: 'p' } }).kind,
+		'publication',
+	)
+	assertEqual('the buckets keep their order', kindBuckets([{ value: 'zaak', label: '', count: 1 }, { value: 'document', label: '', count: 1 }], 'nl').map((b) => b.value), ['document', 'zaak'])
+
+	// The block links a subject to its landing page and says how many
+	// publications it holds, and asks for the kind facet.
+	const block = readFileSync(
+		new URL('../src/site/components/FederatedSearchBlock.vue', import.meta.url),
+		'utf8',
+	)
+	assertTrue('the block asks for the kind facet', /withKindField\(own, this\.hideKind\)/.test(block))
+	assertTrue(
+		'a subject links to /onderwerp/{slug}',
+		/result\.kind === 'subject' && result\.slug\) \{\s*return `\$\{this\.subjectRoute\}\/\$\{result\.slug\}`/.test(block),
+	)
+	assertTrue('the block says how many publications a subject holds', /federated-search-publication-count/.test(block))
+}
+
+console.log('a locked filter (home-and-theme-landing-pages REQ-HTL-001)')
+{
+	const base = {
+		endpoint: '/index.php/apps/opencatalogi/api/federation/publications',
+		origin: 'https://portal.example',
+		pageSize: 20,
+		page: 1,
+		query: '',
+		facetFields: ['themes', 'organization'],
+		facets: { themes: ['visitor-picked'], organization: ['org-1'] },
+		lockedFilters: { themes: 'subject-7' },
+	}
+	const url = new URL(buildRequestUrl(base))
+	assertEqual('a locked filter is always sent', url.searchParams.getAll('themes'), ['subject-7'])
+	assertEqual('a locked field is not asked for as a facet', url.searchParams.has('_facets[themes][type]'), false)
+	assertEqual('the other facets still are', url.searchParams.get('_facets[organization][type]'), 'terms')
+	assertEqual('a value the visitor picked for the locked field is not sent', url.searchParams.getAll('themes').includes('visitor-picked'), false)
+	assertEqual('the other filters the visitor picked are sent', url.searchParams.getAll('organization'), ['org-1'])
+	assertEqual('several values of one lock are all sent', new URL(buildRequestUrl({ ...base, lockedFilters: { themes: ['a', 'b'] } })).searchParams.getAll('themes'), ['a', 'b'])
+	assertEqual('without a lock the request is what it was', new URL(buildRequestUrl({ ...base, lockedFilters: undefined })).searchParams.getAll('themes'), ['visitor-picked'])
+	assertEqual('a lock that names nothing locks nothing', lockedFiltersOf({ lockedFilters: { themes: '', '': 'x', other: [] } }), {})
+	assertEqual('a lock list or string is no lock', [lockedFiltersOf({ lockedFilters: ['themes'] }), lockedFiltersOf({ lockedFilters: 'themes' })], [{}, {}])
+	assertEqual('the facet fields lose the locked field', withoutLocked(['themes', 'organization'], { themes: ['s'] }), ['organization'])
+
+	const locked = lockedFiltersOf(base)
+	const offered = withoutLocked(['themes', 'organization'], locked)
+	const written = writeSearchState(new URL('https://portal.example/zoeken'), { query: '', page: 1, sort: '', facets: base.facets }, offered)
+	assertEqual('a locked filter is not written to the address', [written.searchParams.has('f.themes'), written.searchParams.get('f.organization')], [false, 'org-1'])
+	assertEqual('a locked field is not read back from the address', Object.keys(readSearchState('?f.themes=x&f.organization=y', offered).facets), ['organization'])
+
+	const block = readFileSync(new URL('../src/site/components/FederatedSearchBlock.vue', import.meta.url), 'utf8')
+	assertTrue('the block takes the lock and shows a fixed chip without a remove control', /lockedFilters: \{/.test(block) && /federated-search-locked-chip/.test(block) && !/locked-chip[^>]*@click/.test(block))
+	assertTrue('the block sends the lock and offers no facet for it', /lockedFilters: this\.locked/.test(block) && /withoutLocked\(withKindField\(own, this\.hideKind\), this\.locked\)/.test(block))
+}
+
+console.log('a link with q (search-reads-q-from-the-address, REQ-SRQ-001)')
+
+{
+	const fields = ['wooCategory']
+	assertEqual('?q= opens the search for that term', readSearchState('?route=/zoeken&q=Lindelaan', fields).query, 'Lindelaan')
+	assertEqual('_search wins when both are there', readSearchState('?q=oud&_search=nieuw', fields).query, 'nieuw')
+	assertEqual('no term is no term', readSearchState('?route=/zoeken', fields).query, '')
+
+	const state = { query: 'fietspad', page: 1, sort: '', facets: { wooCategory: [] } }
+	const fromQ = writeSearchState(new URL('https://portal.example/site?route=/zoeken&q=Lindelaan'), state, fields)
+	assertEqual('a visitor who came with q keeps q, now with the new term', [fromQ.searchParams.get('q'), fromQ.searchParams.has('_search')], ['fietspad', false])
+	assertEqual('and that address opens the new search again', readSearchState(fromQ.search, fields).query, 'fietspad')
+
+	const plain = writeSearchState(new URL('https://portal.example/site?route=/zoeken'), state, fields)
+	assertEqual('without q the term stays _search', [plain.searchParams.get('_search'), plain.searchParams.has('q')], ['fietspad', false])
+
+	const cleared = writeSearchState(new URL('https://portal.example/site?route=/zoeken&q=Lindelaan'), { ...state, query: '' }, fields)
+	assertEqual('clearing the term removes q', cleared.searchParams.has('q'), false)
+}
+
+console.log('relevance (search-sort-by-relevance REQ-SSR-001 to REQ-SSR-004)')
+
+{
+	const fuzzy = new URL(buildRequestUrl({ ...BASE, query: 'parkeervergunnig' })).searchParams
+	assertEqual('a term always asks for fuzzy matching', fuzzy.get('_fuzzy'), 'true')
+	assertEqual('no term sends no fuzzy flag', new URL(buildRequestUrl(BASE)).searchParams.has('_fuzzy'), false)
+	const ranked = new URL(buildRequestUrl({ ...BASE, query: 'parkeren', sort: RELEVANCE_SORT })).searchParams
+	assertEqual('the relevance order asks for _order[_relevance]=DESC with _fuzzy', [ranked.get('_order[_relevance]'), ranked.get('_fuzzy')], ['DESC', 'true'])
+
+	assertEqual('"Meest relevant" comes first with a term', sortOptionsFor('parkeren', false)[0], { value: RELEVANCE_SORT, label: 'Meest relevant' })
+	assertTrue('no relevance without a term', !sortOptionsFor('  ', false).some((o) => o.value === RELEVANCE_SORT))
+	assertTrue('no relevance once the backend showed it does not rank', !sortOptionsFor('parkeren', true).some((o) => o.value === RELEVANCE_SORT))
+
+	assertEqual('a new search with a term starts on relevance', sortForNewSearch('parkeren', '', false), RELEVANCE_SORT)
+	assertEqual('a chosen date order is kept', sortForNewSearch('parkeren', 'publicationDate:DESC', false), 'publicationDate:DESC')
+	assertEqual('clearing the term leaves relevance', sortForNewSearch('', RELEVANCE_SORT, false), '')
+	assertEqual('an unranking backend gets the default order', sortForNewSearch('parkeren', '', true), '')
+
+	assertEqual('a score is read from @self.relevance', relevanceOf({ '@self': { relevance: 87.5 } }), 87.5)
+	assertEqual('no score is null', relevanceOf({ '@self': {} }), null)
+	assertEqual('a ranked first row proves the order was applied', relevanceApplied([{ '@self': { relevance: 40 } }, {}]), true)
+	assertEqual('a response lacking @self.relevance did not rank', relevanceApplied([{ '@self': { id: 'a' } }]), false)
+	assertEqual('an empty answer proves nothing', relevanceApplied([]), true)
+	assertEqual('the match reads in whole percent', matchDescription(87.5), 'Overeenkomst: 88 procent')
+	assertEqual('no score, no words', matchDescription(null), '')
+	assertEqual('the result carries its score', toResult({ name: 'A', '@self': { relevance: 12 } }).relevance, 12)
+	assertEqual('a result without one has no key for it', 'relevance' in toResult({ name: 'A' }), false)
+
+	const { loadSfc } = await import('./support/render-sfc.mjs')
+	const block = await loadSfc('src/site/components/FederatedSearchBlock.vue', {
+		'@conduction/nextcloud-vue/public': 'export const CnSiteSearch = {}',
+	})
+	const requested = []
+	globalThis.window = { location: { origin: 'https://portal.example.org', search: '' } }
+	globalThis.fetch = async (url) => {
+		requested.push(url)
+		return { ok: true, json: async () => ({ results: [{ name: 'Oud', '@self': { id: 'a' } }], total: 1, pages: 1 }) }
+	}
+	const vm = {
+		...BASE,
+		fields: [],
+		facets: {},
+		locked: {},
+		facetLabels: {},
+		facetNames: {},
+		sort: RELEVANCE_SORT,
+		query: 'parkeren',
+		sequence: 0,
+		relevanceUnavailable: false,
+		relevanceNotice: '',
+		written: 0,
+		writeLocation() {
+			this.written++
+		},
+		reportSearch() {},
+		requestUrl: block.methods.requestUrl,
+	}
+	vm.search = block.methods.search
+	await vm.search()
+	await new Promise((resolve) => setTimeout(resolve, 0))
+	assertEqual('an unranked answer drops relevance and searches again in the default order', [vm.relevanceUnavailable, vm.sort, requested.length, vm.written], [true, '', 2, 1])
+	assertTrue('the second request asks no relevance order', !requested[1].includes('_relevance'))
+	assertEqual('and says so once in the live region', block.computed.status.call({ ...vm, loading: false, error: false, total: 1, countSentence: 'Zoekresultaten geladen. 1 resultaat gevonden.' }), 'Sorteren op relevantie kan hier niet. Zoekresultaten geladen. 1 resultaat gevonden.')
+}
 
 if (failures > 0) {
 	console.error(`\n${failures} assertion(s) failed`)

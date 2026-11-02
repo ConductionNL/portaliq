@@ -37,7 +37,7 @@ class ExampleSiteRecord {
 	/**
 	 * The schemas a record lists ids for, besides the portal.
 	 */
-	public const SCHEMAS = ['menu', 'page', 'newsItem'];
+	public const SCHEMAS = ['menu', 'page', 'newsItem', 'glossaryTerm', 'form'];
 
 	/**
 	 * The prefix of the app-config key that holds a site's record.
@@ -61,12 +61,12 @@ class ExampleSiteRecord {
 	 *
 	 * @param string $site The site's id.
 	 *
-	 * @return array{portal: string, menu: array<int, string>, page: array<int, string>, newsItem: array<int, string>}
+	 * @return array{portal: string, menu: array<int, string>, page: array<int, string>, newsItem: array<int, string>, glossaryTerm: array<int, string>}
 	 *
 	 * @spec openspec/changes/example-site-zuiddrecht/specs/example-site/spec.md#requirement-an-administrator-must-be-able-to-remove-an-example-site
 	 */
 	public function read(string $site): array {
-		$record  = ['portal' => '', 'menu' => [], 'page' => [], 'newsItem' => []];
+		$record  = ['portal' => '', 'menu' => [], 'page' => [], 'newsItem' => [], 'glossaryTerm' => [], 'form' => []];
 		$decoded = json_decode($this->appConfig->getValueString(Application::APP_ID, self::PREFIX . $site, ''), true);
 		if (is_array($decoded) === false) {
 			return $record;
@@ -95,7 +95,17 @@ class ExampleSiteRecord {
 	 * @spec openspec/changes/example-site-zuiddrecht/specs/example-site/spec.md#requirement-an-administrator-must-be-able-to-remove-an-example-site
 	 */
 	public function isEmpty(array $record): bool {
-		return $record['portal'] === '' && $record['menu'] === [] && $record['page'] === [] && $record['newsItem'] === [];
+		if ($record['portal'] !== '') {
+			return false;
+		}
+
+		foreach (self::SCHEMAS as $schema) {
+			if (($record[$schema] ?? []) !== []) {
+				return false;
+			}
+		}
+
+		return true;
 	}//end isEmpty()
 
 	/**

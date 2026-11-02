@@ -35,6 +35,7 @@ use OCA\Portaliq\Contribution\GuestActionRegistry;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\RequestedPortal;
 use OCA\Portaliq\Service\RequiredFieldsGuard;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -236,7 +237,9 @@ class GuestActionController extends Controller {
 
 		$response = $this->forwarder->forward(action: $action, subject: $subject, whitelisted: $body);
 		if ($response === null) {
-			return new JSONResponse(['error' => 'forward_failed'], Http::STATUS_BAD_GATEWAY);
+			// Transport failure: 502, or 504 when the app did not answer in
+			// time (action-forward-survives-a-slow-answer).
+			return $this->forwarder->failureResponse();
 		}
 
 		$decoded = $this->forwarder->decodeBody(response: $response);
@@ -258,12 +261,7 @@ class GuestActionController extends Controller {
 	 * @return array{subjectRef: string, audience: string, organisation: string, trust: string, jti: string}
 	 */
 	private function guestSubject(string $token): array {
-		$named = $this->request->getParam('portal', '');
-		if (is_string($named) === false) {
-			$named = '';
-		}
-
-		$site = $this->portals->resolve(request: $this->request, portalSlug: trim($named));
+		$site = $this->portals->resolve(request: $this->request, portalSlug: (new RequestedPortal())->slug(request: $this->request));
 
 		return [
 			'subjectRef' => 'guest:' . hash('sha256', $token),

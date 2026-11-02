@@ -55,7 +55,7 @@ Deliberately **absent**, with the reasoning on record:
   ceremonies bound to a browser flow; an agent minting portal sessions is an impersonation
   primitive, not an action.
 - `TrafficController::collect` — the visitor beacon; agents do not fabricate traffic.
-- `WooController::serve`/`servePath` — static SPA delivery, not an action.
+- `BundledSiteController::serve`/`servePath` — static SPA delivery, not an action.
 
 ## Decisions
 

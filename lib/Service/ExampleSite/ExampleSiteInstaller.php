@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\ExampleSite;
 
+use OCA\Portaliq\Service\PortalNameSetting;
 use OCA\Portaliq\Service\PortalThemeResolver;
 
 /**
@@ -43,7 +44,7 @@ class ExampleSiteInstaller {
 	/**
 	 * The schema behind each list of a declaration.
 	 */
-	private const SCHEMAS = ['menus' => 'menu', 'pages' => 'page', 'news' => 'newsItem'];
+	private const SCHEMAS = ['forms' => 'form', 'menus' => 'menu', 'pages' => 'page', 'news' => 'newsItem', 'glossary' => 'glossaryTerm'];
 
 	/**
 	 * Constructor.
@@ -53,6 +54,7 @@ class ExampleSiteInstaller {
 	 * @param ExampleSiteRecord   $record Keeps what was created.
 	 * @param ExampleSiteProof    $proof  Compares declared with stored.
 	 * @param PortalThemeResolver $themes Says whether the theme app offers the site's set.
+	 * @param PortalNameSetting   $name   Names the portal for other apps.
 	 *
 	 * @return void
 	 */
@@ -62,6 +64,7 @@ class ExampleSiteInstaller {
 		private readonly ExampleSiteRecord $record,
 		private readonly ExampleSiteProof $proof,
 		private readonly PortalThemeResolver $themes,
+		private readonly PortalNameSetting $name,
 	) {
 	}//end __construct()
 
@@ -94,7 +97,7 @@ class ExampleSiteInstaller {
 		}
 
 		$record  = $this->record->read(site: $report['site']);
-		$created = ['portal' => [], 'menu' => [], 'page' => [], 'newsItem' => []];
+		$created = ['portal' => [], 'form' => [], 'menu' => [], 'page' => [], 'newsItem' => [], 'glossaryTerm' => []];
 
 		$report['types']['portal'] = ['declared' => 1, 'created' => 0, 'kept' => 1, 'arrived' => 0];
 		if ($this->rows->portal(slug: $slug) === null) {
@@ -107,31 +110,109 @@ class ExampleSiteInstaller {
 			}
 		}
 
+		$this->name->fillFrom(portal: $site['portal']);
+
 		foreach (self::SCHEMAS as $list => $schema) {
-			$counts   = ['declared' => count($site[$list]), 'created' => 0, 'kept' => 0, 'arrived' => 0];
-			$existing = $this->rows->keyed(schema: $schema, slug: $slug);
-			foreach ($site[$list] as $object) {
-				$key = $this->rows->keyOf(schema: $schema, object: $object);
-				if (isset($existing[$key]) === true) {
-					$counts['kept']++;
-					continue;
-				}
-
-				$id = $this->store->create(schema: $schema, data: ($object + ['portal' => $slug]));
-				if ($id !== null) {
-					$counts['created']++;
-					$record[$schema][]  = $id;
-					$created[$schema][] = $key;
-				}
-			}
-
-			$report['types'][$schema] = $counts;
+			$report['types'][$schema] = $this->installList(
+				objects: ($site[$list] ?? []),
+				schema: $schema,
+				slug: $slug,
+				record: $record,
+				created: $created
+			);
+			// The forms exist now, so a page's form block can carry the id of the form it names.
+			$site = $this->withInstalledForms(schema: $schema, site: $site, slug: $slug);
 		}
 
 		$this->record->write(site: $report['site'], record: $record);
 
 		return $this->proven(site: $site, report: $report, created: $created);
 	}//end install()
+
+	/**
+	 * Create the objects of one list that the instance lacks.
+	 *
+	 * @param array<int, array<string, mixed>>         $objects The declared objects.
+	 * @param string                                   $schema  Their schema.
+	 * @param string                                   $slug    The portal's slug.
+	 * @param array<string, mixed>                     $record  The site's install record, extended in place.
+	 * @param array<string, array<int, string>>        $created The keys created this run, extended in place.
+	 *
+	 * @return array{declared: int, created: int, kept: int, arrived: int} The counts.
+	 */
+	private function installList(array $objects, string $schema, string $slug, array &$record, array &$created): array {
+		$counts   = ['declared' => count($objects), 'created' => 0, 'kept' => 0, 'arrived' => 0];
+		$existing = $this->rows->keyed(schema: $schema, slug: $slug);
+		foreach ($objects as $object) {
+			$key = $this->rows->keyOf(schema: $schema, object: $object);
+			if (isset($existing[$key]) === true) {
+				$counts['kept']++;
+				continue;
+			}
+
+			$id = $this->store->create(schema: $schema, data: ($object + ['portal' => $slug]));
+			if ($id !== null) {
+				$counts['created']++;
+				$record[$schema][]  = $id;
+				$created[$schema][] = $key;
+			}
+		}
+
+		return $counts;
+	}//end installList()
+
+	/**
+	 * The site with its pages' form blocks pointing at the installed forms, once the forms are installed.
+	 *
+	 * @param string               $schema The list just installed.
+	 * @param array<string, mixed> $site   The declaration.
+	 * @param string               $slug   The portal's slug.
+	 *
+	 * @return array<string, mixed> The declaration to go on with.
+	 *
+	 * @spec openspec/specs/example-site/spec.md#requirement-an-example-site-can-ship-a-form-with-the-page-that-shows-it
+	 */
+	private function withInstalledForms(string $schema, array $site, string $slug): array {
+		if ($schema !== 'form') {
+			return $site;
+		}
+
+		$site['pages'] = $this->withFormIds(pages: $site['pages'], forms: $this->rows->keyed(schema: 'form', slug: $slug));
+
+		return $site;
+	}//end withInstalledForms()
+
+	/**
+	 * The pages with each `form` block's `formKey` written as the installed form's `formId`.
+	 *
+	 * A key that names no installed form leaves the block without a form id: it
+	 * then shows its fields but cannot send them, which the install proof reports.
+	 *
+	 * @param array<int, array<string, mixed>>   $pages The declared pages.
+	 * @param array<string, array<string, mixed>> $forms The installed forms, by external reference.
+	 *
+	 * @return array<int, array<string, mixed>> The pages to install.
+	 *
+	 * @spec openspec/specs/example-site/spec.md#requirement-an-example-site-can-ship-a-form-with-the-page-that-shows-it
+	 */
+	private function withFormIds(array $pages, array $forms): array {
+		foreach ($pages as $p => $page) {
+			foreach ((array)($page['body']['widgets'] ?? []) as $w => $widget) {
+				$key = $widget['props']['formKey'] ?? null;
+				if (($widget['widgetKey'] ?? '') !== 'form' || is_string($key) === false) {
+					continue;
+				}
+
+				unset($pages[$p]['body']['widgets'][$w]['props']['formKey']);
+				$form = ($forms[$key] ?? null);
+				if (is_array($form) === true) {
+					$pages[$p]['body']['widgets'][$w]['props']['formId'] = $this->store->idOf(row: $form);
+				}
+			}
+		}
+
+		return $pages;
+	}//end withFormIds()
 
 	/**
 	 * Read the instance back and fill in what arrived, what is missing and
@@ -183,7 +264,7 @@ class ExampleSiteInstaller {
 		$declared = ['portal' => [(string)$site['portal']['slug'] => $site['portal']]];
 		foreach (self::SCHEMAS as $list => $schema) {
 			$declared[$schema] = [];
-			foreach ($site[$list] as $object) {
+			foreach (($site[$list] ?? []) as $object) {
 				$declared[$schema][$this->rows->keyOf(schema: $schema, object: $object)] = $object;
 			}
 		}

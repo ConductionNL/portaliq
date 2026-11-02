@@ -1,0 +1,6 @@
+# Tasks: personal-data-left-untranslated
+
+- [x] **T01**: `src/site/components/NoTranslate.vue` (slot or `value` prop, renders `translate="no"`) (REQ-PDU-001); `src/site/lib/markAround.js` splits a translated sentence around the value
+- [x] **T02**: Wrap the values listed in design.md "Where" in the named components (REQ-PDU-001). Done in `GreetingBlock`, `BrandHeader` (the signed-in name), `ActingForBar`, `ActingForSwitcher` (the options), `AddressList` and `CaseCard` (number and reference); `MijnHome` hands its heading to `GreetingBlock`
+- [ ] **T03** (half built: `CaseField` takes `format` and `personal` props and marks the value; `CitizenCase` does not pass them yet and the contribution normaliser does not keep `personal` — not run: no source of field formats reaches `CitizenCase` in this repo yet): `CaseField.vue` wraps values of format email, telephone, uri and fields marked `personal: true`; the contribution normaliser keeps `personal` on a field (REQ-PDU-001)
+- [x] **T04**: node test `tests/no-translate.spec.mjs` per design.md "Test" (`check:no-translate`, in `check:specs`). It covers the greeting, the acting-for bar, an address list, a case field and a case card; the account menu is covered through `BrandHeader` by construction, not by a test of its own

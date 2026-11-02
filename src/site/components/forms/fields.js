@@ -13,6 +13,8 @@
  * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-date-field-must-be-asked-as-day-month-and-year-req-smf-003
  */
 
+import { formatProblem } from './formats.js'
+
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/
 
 /**
@@ -58,6 +60,33 @@ export function dateValue(day, month, year) {
 		}
 	}
 	return `${d}-${m}-${y}`
+}
+
+/**
+ * A whole date typed or pasted into one box, split into day, month and year;
+ * null when the text is not a whole date. Reads `d-m-yyyy` with `-`, `/`, `.`
+ * or a space between the parts, `yyyy-mm-dd`, and `ddmmyyyy`.
+ *
+ * @param {string} text What the box received.
+ * @return {{day: string, month: string, year: string}|null} The parts, or null.
+ *
+ * @spec openspec/changes/resident-pages-live-round-3/specs/site-forms/spec.md#requirement-a-date-typed-or-pasted-whole-fills-day-month-and-year-req-rr3-001
+ */
+export function typedDate(text) {
+	const value = String(text ?? '').trim()
+	const dutch = /^(\d{1,2})[-/.\s]+(\d{1,2})[-/.\s]+(\d{4})$/.exec(value)
+	if (dutch) {
+		return { day: dutch[1], month: dutch[2], year: dutch[3] }
+	}
+	const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(value)
+	if (iso) {
+		return { day: iso[3], month: iso[2], year: iso[1] }
+	}
+	const digits = /^(\d{2})(\d{2})(\d{4})$/.exec(value)
+	if (digits) {
+		return { day: digits[1], month: digits[2], year: digits[3] }
+	}
+	return null
 }
 
 /**
@@ -183,6 +212,26 @@ export const DUTCH = Object.freeze({
 	change: 'Wijzigen',
 	changeStep: 'Stap {n} wijzigen',
 	notAnswered: 'Niet ingevuld',
+	mailedTo:
+		'Wij hebben een bevestiging gestuurd naar {email}, met een samenvatting van uw aanvraag. Geen mail gezien? Kijk ook bij uw ongewenste e-mail.',
+	whatNow: 'Wat gebeurt er nu?',
+	print: 'Deze pagina printen',
+	statementRequired: 'Vink deze verklaring aan voordat u verstuurt.',
+	decisionDown: 'Er is een storing bij een koppeling. Uw antwoorden zijn bewaard.',
+	retry: 'Opnieuw proberen',
+	notCalculated: 'Nog niet te berekenen',
+	feeLine: 'Deze aanvraag kost {amount}.',
+	payNow: 'Betaal {amount} nu',
+	paid: 'Betaald',
+	unpaid: 'Nog niet betaald',
+	paymentFailed: 'De betaling is mislukt',
+	paymentUnknown: 'Wij kunnen de betaling nu nog niet tonen',
+	payUnavailable: 'U kunt nu niet betalen. Probeer het later opnieuw.',
+	signInFee:
+		'Log in om deze aanvraag in te dienen. Er hoort een bedrag van {amount} bij.',
+	receivedOn: 'Ontvangen op {date}.',
+	termStartsOn: 'De termijn begint op {date}.',
+	decisionBy: 'U krijgt uiterlijk {date} een besluit.',
 })
 
 /**
@@ -209,6 +258,11 @@ export function plainFieldErrors(fields, values, text = DUTCH) {
 		}
 		if (field.date === true && dateProblem(value)) {
 			errors[field.name] = text.date.split('{field}').join(field.label)
+			continue
+		}
+		const problem = formatProblem(field.format, value)
+		if (problem) {
+			errors[field.name] = problem
 		}
 	}
 	return errors
@@ -332,4 +386,18 @@ export function countLine(value, unit, priceLabel) {
 	return typeof priceLabel === 'string' && priceLabel !== ''
 		? `${line} × ${priceLabel}`
 		: line
+}
+
+/**
+ * The words a visitor sees for a select option: the field's `optionLabels`
+ * entry, or the option itself. The option is what the form sends.
+ *
+ * @param {object} field One declared form field.
+ * @param {string} option One of its options.
+ * @return {string} The words to show.
+ * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-select-field-shows-words-for-its-stored-values
+ */
+export function optionLabel(field, option) {
+	const labels = field && field.optionLabels
+	return labels && typeof labels[option] === 'string' && labels[option] !== '' ? labels[option] : option
 }
