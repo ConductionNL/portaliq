@@ -342,6 +342,7 @@ class PortalMandateAdminServiceTest extends TestCase {
 	 * rows the two real writers store, never the account that recorded it.
 	 *
 	 * @covers \OCA\Portaliq\Service\Identity\MandateListing
+	 * @uses   \OCA\Portaliq\Service\Identity\ClaimLock
 	 * @uses   \OCA\Portaliq\Service\Identity\MandateDays
 	 * @uses   \OCA\Portaliq\Service\Identity\MandateParties
 	 * @uses   \OCA\Portaliq\Service\Identity\MandateStore
