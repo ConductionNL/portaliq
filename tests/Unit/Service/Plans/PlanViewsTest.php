@@ -16,7 +16,6 @@ use PHPUnit\Framework\TestCase;
  */
 #[CoversClass(PlanViews::class)]
 #[UsesClass(PlanRules::class)]
-#[UsesClass(PortalAccountLookup::class)]
 class PlanViewsTest extends TestCase {
 	/**
 	 * Build the views over an account lookup that knows two people.

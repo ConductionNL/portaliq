@@ -113,24 +113,6 @@ class PortalAccountLookup {
 	}//end bySubjectRef()
 
 	/**
-	 * The account, or null when there is none or a clerk withdrew it (void).
-	 * A withdrawn account names nobody to anyone else.
-	 *
-	 * @param array<string, mixed>|null $account The account a finder returned.
-	 *
-	 * @return array<string, mixed>|null
-	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
-	 */
-	public static function unlessVoid(?array $account): ?array {
-		if (($account['status'] ?? '') === self::STATUS_VOID) {
-			return null;
-		}
-
-		return $account;
-	}//end unlessVoid()
-
-	/**
 	 * The account for `(identityType, identityRef, organisation)`, or null.
 	 *
 	 * Re-verified in memory against ALL three fields: the OpenRegister query

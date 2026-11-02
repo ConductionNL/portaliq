@@ -538,7 +538,10 @@ class PortalActionService {
 			return '';
 		}
 
-		$account = PortalAccountLookup::unlessVoid(account: $this->accounts->bySubjectRef(subjectRef: $ref));
+		$account = $this->accounts->bySubjectRef(subjectRef: $ref);
+		if (($account['status'] ?? '') === PortalAccountLookup::STATUS_VOID) {
+			$account = null;
+		}
 
 		return (string)($account['displayName'] ?? '');
 	}//end nameOf()
