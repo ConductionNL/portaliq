@@ -16,7 +16,7 @@ use OCA\Portaliq\Service\Availability\AvailabilityRollup;
 use OCA\Portaliq\Service\Availability\AvailabilityStore;
 use OCA\Portaliq\Service\InstanceLoopback;
 use OCA\Portaliq\Service\InternalBaseUrl;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
@@ -128,7 +128,7 @@ class AvailabilityProbeJobTest extends TestCase {
 		$time = $this->createMock(ITimeFactory::class);
 		$time->method('getDateTime')->willReturn(new DateTime('2026-09-29T10:00:00+00:00'));
 
-		$portals = $this->createMock(PortalResolver::class);
+		$portals = $this->createMock(PublishedPortals::class);
 		$portals->method('allPublishedPortals')->willReturn([['slug' => 'open-tilburg'], ['title' => 'no slug']]);
 
 		$client = $this->createMock(IClient::class);

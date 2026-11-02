@@ -22,6 +22,7 @@ namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 use PHPUnit\Framework\TestCase;
 use OCP\IRequest;
 use Psr\Container\ContainerInterface;
@@ -62,9 +63,8 @@ class PortalResolverTest extends TestCase {
 		parent::setUp();
 
 		$this->resolver = new PortalResolver(
-			$this->createMock(ContainerInterface::class),
-			$this->createMock(LoggerInterface::class),
-			$this->contextDouble()
+			new PublishedPortals($this->createMock(ContainerInterface::class), $this->createMock(LoggerInterface::class), $this->contextDouble()),
+			$this->createMock(LoggerInterface::class)
 		);
 
 		$this->sites = [
@@ -268,9 +268,8 @@ class PortalResolverTest extends TestCase {
 		}
 
 		return new PortalResolver(
-			$container,
-			$this->createMock(LoggerInterface::class),
-			$this->contextDouble()
+			new PublishedPortals($container, $this->createMock(LoggerInterface::class), $this->contextDouble()),
+			$this->createMock(LoggerInterface::class)
 		);
 	}//end resolverReturning()
 
@@ -467,9 +466,8 @@ class PortalResolverTest extends TestCase {
 		);
 
 		$resolver = new PortalResolver(
-			$container,
-			$this->createMock(LoggerInterface::class),
-			$this->contextDouble()
+			new PublishedPortals($container, $this->createMock(LoggerInterface::class), $this->contextDouble()),
+			$this->createMock(LoggerInterface::class)
 		);
 
 		$this->assertSame([], $resolver->allPublishedPortals());
@@ -567,9 +565,8 @@ class PortalResolverTest extends TestCase {
 		$container->method('get')->willReturn($reader);
 
 		return new PortalResolver(
-			$container,
-			$this->createMock(LoggerInterface::class),
-			$this->contextDouble()
+			new PublishedPortals($container, $this->createMock(LoggerInterface::class), $this->contextDouble()),
+			$this->createMock(LoggerInterface::class)
 		);
 	}//end resolverOver()
 

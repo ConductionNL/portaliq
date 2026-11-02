@@ -32,7 +32,7 @@ use DateTimeZone;
 use OCA\Portaliq\Service\Availability\AvailabilityProbe;
 use OCA\Portaliq\Service\Availability\AvailabilityRollup;
 use OCA\Portaliq\Service\Availability\AvailabilityStore;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
 use Psr\Log\LoggerInterface;
@@ -55,7 +55,7 @@ class AvailabilityProbeJob extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory $time Testable clock (job base class).
-	 * @param PortalResolver $portals Lists the published portals.
+	 * @param PublishedPortals $portals Lists the published portals.
 	 * @param AvailabilityProbe $probe Checks one portal.
 	 * @param AvailabilityStore $store Keeps the records.
 	 * @param AvailabilityRollup $rollup Folds a check into the records.
@@ -63,7 +63,7 @@ class AvailabilityProbeJob extends TimedJob {
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly PortalResolver $portals,
+		private readonly PublishedPortals $portals,
 		private readonly AvailabilityProbe $probe,
 		private readonly AvailabilityStore $store,
 		private readonly AvailabilityRollup $rollup,
