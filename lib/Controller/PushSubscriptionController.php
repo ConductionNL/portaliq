@@ -29,6 +29,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Service\ObjectRowNormaliser;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PagedObjectReads;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -47,6 +48,7 @@ use Throwable;
  * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
  */
 class PushSubscriptionController extends Controller implements PortalProtected {
+	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
 	use PagedObjectReads;
 
@@ -277,28 +279,6 @@ class PushSubscriptionController extends Controller implements PortalProtected {
 
 		return null;
 	}//end rowId()
-
-	/**
-	 * Normalise an OpenRegister row (array or object) to an associative array.
-	 *
-	 * @param mixed $row The row.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function normalise(mixed $row): ?array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$data = $row->jsonSerialize();
-			if (is_array($data) === true) {
-				return $data;
-			}
-		}
-
-		return null;
-	}//end normalise()
 
 	/**
 	 * Resolve the subject from the bearer (fail-closed).
