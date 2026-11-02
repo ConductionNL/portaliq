@@ -1,0 +1,2438 @@
+{
+    "binding": {
+        "found": {
+            "81": {
+                "creating": {
+                    "stopped": true,
+                    "errors": {
+                        "message": "This form cannot be published: its answers do not fit where they go. Fix the points below, or save it as a draft.",
+                        "findings": [
+                            {
+                                "field": "name"
+                            }
+                        ]
+                    },
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalFormBinding",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "check": {
+                                "fields": []
+                            }
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": true,
+                    "errors": {
+                        "message": "This form cannot be published: its answers do not fit where they go. Fix the points below, or save it as a draft.",
+                        "findings": [
+                            {
+                                "field": "name"
+                            }
+                        ]
+                    },
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalFormBinding",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "check": {
+                                "fields": []
+                            }
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "82": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalFormBinding",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalFormBinding",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "empty": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalFormBinding",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalFormBinding",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            }
+        },
+        "noId": {
+            "81": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalFormBinding",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalFormBinding",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "82": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalFormBinding",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalFormBinding",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "empty": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalFormBinding",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalFormBinding",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            }
+        },
+        "none": {
+            "81": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalFormBinding",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalFormBinding",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "82": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalFormBinding",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalFormBinding",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "empty": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalFormBinding",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalFormBinding",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            }
+        },
+        "throws": {
+            "81": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalFormBinding",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "warning": [
+                                "Portaliq: binding guard could not read the schema",
+                                {
+                                    "reason": "mapper down"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalFormBinding",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "warning": [
+                                "Portaliq: binding guard could not read the schema",
+                                {
+                                    "reason": "mapper down"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "82": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalFormBinding",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "warning": [
+                                "Portaliq: binding guard could not read the schema",
+                                {
+                                    "reason": "mapper down"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalFormBinding",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "warning": [
+                                "Portaliq: binding guard could not read the schema",
+                                {
+                                    "reason": "mapper down"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "empty": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalFormBinding",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "warning": [
+                                "Portaliq: binding guard could not read the schema",
+                                {
+                                    "reason": "mapper down"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalFormBinding",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "warning": [
+                                "Portaliq: binding guard could not read the schema",
+                                {
+                                    "reason": "mapper down"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            }
+        }
+    },
+    "glossary": {
+        "found": {
+            "81": {
+                "creating": {
+                    "stopped": true,
+                    "errors": {
+                        "message": "A term can only relate to terms on its own portal. Not found there: t-9."
+                    },
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "glossaryTerm",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": true,
+                    "errors": {
+                        "message": "A term can only relate to terms on its own portal. Not found there: t-9."
+                    },
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "glossaryTerm",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "82": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "glossaryTerm",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "glossaryTerm",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "empty": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "glossaryTerm",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "glossaryTerm",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            }
+        },
+        "noId": {
+            "81": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "glossaryTerm",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "glossaryTerm",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "82": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "glossaryTerm",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "glossaryTerm",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "empty": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "glossaryTerm",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "glossaryTerm",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            }
+        },
+        "none": {
+            "81": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "glossaryTerm",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "glossaryTerm",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "82": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "glossaryTerm",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "glossaryTerm",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "empty": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "glossaryTerm",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "glossaryTerm",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            }
+        },
+        "throws": {
+            "81": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "glossaryTerm",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "warning": [
+                                "Portaliq: glossary guard could not read the schema",
+                                {
+                                    "reason": "mapper down"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "glossaryTerm",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "warning": [
+                                "Portaliq: glossary guard could not read the schema",
+                                {
+                                    "reason": "mapper down"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "82": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "glossaryTerm",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "warning": [
+                                "Portaliq: glossary guard could not read the schema",
+                                {
+                                    "reason": "mapper down"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "glossaryTerm",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "warning": [
+                                "Portaliq: glossary guard could not read the schema",
+                                {
+                                    "reason": "mapper down"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "empty": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "glossaryTerm",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "warning": [
+                                "Portaliq: glossary guard could not read the schema",
+                                {
+                                    "reason": "mapper down"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "glossaryTerm",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "warning": [
+                                "Portaliq: glossary guard could not read the schema",
+                                {
+                                    "reason": "mapper down"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            }
+        }
+    },
+    "notice": {
+        "found": {
+            "81": {
+                "creating": {
+                    "stopped": true,
+                    "errors": {
+                        "message": "The end must be after the start."
+                    },
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalNotice",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": true,
+                    "errors": {
+                        "message": "The end must be after the start."
+                    },
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalNotice",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "82": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalNotice",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalNotice",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "empty": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalNotice",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalNotice",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            }
+        },
+        "noId": {
+            "81": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalNotice",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalNotice",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "82": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalNotice",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalNotice",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "empty": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalNotice",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalNotice",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            }
+        },
+        "none": {
+            "81": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalNotice",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalNotice",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "82": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalNotice",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalNotice",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "empty": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalNotice",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalNotice",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            }
+        },
+        "throws": {
+            "81": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalNotice",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "warning": [
+                                "Portaliq: notice write guard could not read the schema",
+                                {
+                                    "reason": "mapper down"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalNotice",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "warning": [
+                                "Portaliq: notice write guard could not read the schema",
+                                {
+                                    "reason": "mapper down"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "82": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalNotice",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "warning": [
+                                "Portaliq: notice write guard could not read the schema",
+                                {
+                                    "reason": "mapper down"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalNotice",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "warning": [
+                                "Portaliq: notice write guard could not read the schema",
+                                {
+                                    "reason": "mapper down"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "empty": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalNotice",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "warning": [
+                                "Portaliq: notice write guard could not read the schema",
+                                {
+                                    "reason": "mapper down"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "portalNotice",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "warning": [
+                                "Portaliq: notice write guard could not read the schema",
+                                {
+                                    "reason": "mapper down"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": []
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            }
+        }
+    },
+    "media": {
+        "found": {
+            "81": {
+                "creating": {
+                    "stopped": true,
+                    "errors": {
+                        "message": "An image in the media library needs alternative text."
+                    },
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": true,
+                    "errors": {
+                        "message": "An image in the media library needs alternative text."
+                    },
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": true,
+                    "errors": {
+                        "message": "This item is used on published pages: /over. Remove it there first."
+                    },
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "pagesUsing": [
+                                "",
+                                "m1"
+                            ]
+                        }
+                    ]
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "82": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "empty": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            }
+        },
+        "noId": {
+            "81": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "82": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "empty": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            }
+        },
+        "none": {
+            "81": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "82": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "empty": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        }
+                    ]
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            }
+        },
+        "throws": {
+            "81": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "warning": [
+                                "Portaliq: media write guard could not read the schema",
+                                {
+                                    "reason": "mapper down"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "warning": [
+                                "Portaliq: media write guard could not read the schema",
+                                {
+                                    "reason": "mapper down"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "warning": [
+                                "Portaliq: media write guard could not read the schema",
+                                {
+                                    "reason": "mapper down"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "82": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "warning": [
+                                "Portaliq: media write guard could not read the schema",
+                                {
+                                    "reason": "mapper down"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "warning": [
+                                "Portaliq: media write guard could not read the schema",
+                                {
+                                    "reason": "mapper down"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "warning": [
+                                "Portaliq: media write guard could not read the schema",
+                                {
+                                    "reason": "mapper down"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            },
+            "empty": {
+                "creating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "warning": [
+                                "Portaliq: media write guard could not read the schema",
+                                {
+                                    "reason": "mapper down"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "updating": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "warning": [
+                                "Portaliq: media write guard could not read the schema",
+                                {
+                                    "reason": "mapper down"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "deleting": {
+                    "stopped": false,
+                    "errors": [],
+                    "log": [
+                        {
+                            "get": "OCA\\OpenRegister\\Db\\SchemaMapper"
+                        },
+                        {
+                            "lookup": [
+                                "media",
+                                "portaliq"
+                            ]
+                        },
+                        {
+                            "warning": [
+                                "Portaliq: media write guard could not read the schema",
+                                {
+                                    "reason": "mapper down"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "other": {
+                    "stopped": false,
+                    "errors": null,
+                    "log": []
+                }
+            }
+        }
+    }
+}
