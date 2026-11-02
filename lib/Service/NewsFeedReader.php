@@ -44,6 +44,8 @@ use Psr\Log\LoggerInterface;
  * and this read path can never disagree.
  */
 class NewsFeedReader {
+	use PublishedMoment;
+
 	/**
 	 * The OpenRegister read of news rows.
 	 *
@@ -299,33 +301,6 @@ class NewsFeedReader {
 
 		return $items;
 	}//end newestFirst()
-
-	/**
-	 * When an item was published, as a Unix timestamp; PHP_INT_MIN when undated.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return int
-	 */
-	private function momentOf(array $row): int {
-		$self = [];
-		if (is_array($row['@self'] ?? null) === true) {
-			$self = $row['@self'];
-		}
-
-		foreach ([($row['publishedAt'] ?? null), ($self['published'] ?? null), ($self['created'] ?? null)] as $value) {
-			if (is_string($value) === false || $value === '') {
-				continue;
-			}
-
-			$time = strtotime($value);
-			if ($time !== false) {
-				return $time;
-			}
-		}
-
-		return PHP_INT_MIN;
-	}//end momentOf()
 
 	/**
 	 * The items in the reader's language, title and body in one entry. Runs on
