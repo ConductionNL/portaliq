@@ -33,10 +33,12 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\Intake\PortalBindingPreview;
+use OCA\Portaliq\Service\Intake\PortalEmbedSnippetDescription;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IURLGenerator;
 
 /**
  * Previews what a form binding resolves to, for an administrator.
@@ -50,10 +52,14 @@ class FormBindingAdminController extends Controller {
 	 *
 	 * @param IRequest             $request The request.
 	 * @param PortalBindingPreview $preview What a binding resolves to today.
+	 * @param PortalEmbedSnippetDescription $embed The code a website puts on a page to show a form.
+	 * @param IURLGenerator $urls Builds the address of the embed frame.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalBindingPreview $preview,
+		private readonly PortalEmbedSnippetDescription $embed,
+		private readonly IURLGenerator $urls,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -80,4 +86,32 @@ class FormBindingAdminController extends Controller {
 
 		return new JSONResponse($this->preview->describe(binding: $binding));
 	}//end preview()
+
+	/**
+	 * What an administrator copies to show this binding's form on another website.
+	 *
+	 * @param array<string, mixed> $binding The binding row as the admin sees it.
+	 *
+	 * @return JSONResponse The description: embeddable, origins, snippet,
+	 *                      listener, minimumHeight.
+	 *
+	 * @auth admin-only The origin list of a form is configuration an
+	 *       administrator manages. Nextcloud expresses admin-only as the ABSENCE
+	 *       of an opt-out attribute, so this tag is the declaration.
+	 *
+	 * @spec openspec/changes/embedded-intake-form/specs/embedded-intake-form/spec.md
+	 */
+	public function embedSnippet(array $binding = []): JSONResponse {
+		if ($binding === []) {
+			return new JSONResponse(['error' => 'binding_required'], Http::STATUS_BAD_REQUEST);
+		}
+
+		$route = (string)($binding['route'] ?? '');
+		$frameUrl = '';
+		if ($route !== '') {
+			$frameUrl = $this->urls->linkToRouteAbsolute('portaliq.portalEmbed.frame', ['route' => $route]);
+		}
+
+		return new JSONResponse($this->embed->describe(binding: $binding, frameUrl: $frameUrl));
+	}//end embedSnippet()
 }//end class

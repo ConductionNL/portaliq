@@ -22,16 +22,48 @@
 		class="pq-idle-warning"
 		data-testid="site-idle-warning"
 		@cancel.prevent>
-		<h2 id="pq-idle-title" class="utrecht-heading-2">
-			{{ t('You will be signed out soon') }}
-		</h2>
-		<p id="pq-idle-body" class="utrecht-paragraph">
-			{{ sentence(left) }}
-		</p>
-		<p class="pq-idle-spoken" aria-live="polite">
-			{{ sentence(Math.ceil(Math.max(0, left) / 60) * 60) }}
-		</p>
+		<div class="pq-idle-warning__body">
+			<h2 id="pq-idle-title" class="utrecht-heading-3">
+				{{ t('You will be signed out soon') }}
+			</h2>
+			<div id="pq-idle-body">
+				<p class="utrecht-paragraph">
+					{{ sentence(left) }}
+					<template v-if="extendable">
+						{{ t('What you have not sent yet is lost then.') }}
+					</template>
+				</p>
+			</div>
+			<p
+				class="pq-idle-warning__countdown"
+				aria-hidden="true"
+				data-testid="site-idle-countdown">
+				<svg
+					class="pq-idle-warning__hourglass"
+					viewBox="0 0 16 16"
+					focusable="false">
+					<path
+						d="M4 2h8M4 14h8M5 2c0 3 6 3 6 6s-6 3-6 6M11 2c0 3-6 3-6 6s6 3 6 6"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.5"
+						stroke-linecap="round" />
+				</svg>
+				{{ t('{time} left', { time: countdown(left) }) }}
+			</p>
+			<p class="pq-idle-spoken" aria-live="polite">
+				{{ sentence(Math.ceil(Math.max(0, left) / 60) * 60) }}
+			</p>
+		</div>
 		<div class="pq-idle-buttons">
+			<button
+				v-if="extendable"
+				type="button"
+				class="utrecht-button utrecht-button--secondary-action"
+				data-testid="site-idle-signout"
+				@click="$emit('signout')">
+				{{ t('Sign out') }}
+			</button>
 			<button
 				v-if="extendable"
 				ref="first"
@@ -40,13 +72,6 @@
 				data-testid="site-idle-stay"
 				@click="$emit('stay')">
 				{{ t('Stay signed in') }}
-			</button>
-			<button
-				v-if="extendable"
-				type="button"
-				class="utrecht-button utrecht-button--secondary-action"
-				@click="$emit('signout')">
-				{{ t('Sign out') }}
 			</button>
 			<button
 				v-else
@@ -62,11 +87,12 @@
 </template>
 
 <script>
-import en from '../../shared/i18n/en.json'
 import nl from '../../shared/i18n/nl.json'
-import { canExtend, remainingText } from '../../shared/idleSession.js'
+import { canExtend, countdownText, remainingText } from '../../shared/idleSession.js'
 
-const STRINGS = { en, nl }
+// English is the key itself (en.json maps every key to itself), so its bundle
+// is empty and `t()` falls back to the key; see src/shared/i18n/index.js.
+const STRINGS = { en: {}, nl }
 
 /**
  * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T06
@@ -157,6 +183,18 @@ export default {
 		},
 
 		/**
+		 * The countdown on screen, to the second.
+		 *
+		 * @param {number} seconds Seconds left.
+		 * @return {string} The time.
+		 *
+		 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T06
+		 */
+		countdown(seconds) {
+			return countdownText(seconds, this.t)
+		},
+
+		/**
 		 * The warning sentence for a number of seconds left.
 		 *
 		 * @param {number} seconds Seconds left.
@@ -182,21 +220,62 @@ export default {
 
 <style scoped>
 .pq-idle-warning {
-	max-width: min(32rem, calc(100vw - 32px));
-	padding: 24px;
-	border: none;
 	background: var(--utrecht-document-background-color, Canvas);
+	border: none;
+	border-radius: var(--nldesign-website-border-radius-large, 8px);
+	box-shadow: 0 8px 32px rgb(0 0 0 / 20%);
 	color: var(--utrecht-document-color, CanvasText);
+	max-width: min(34.375rem, calc(100vw - 32px));
+	padding: 0;
 }
 
 .pq-idle-warning::backdrop {
 	background: rgb(0 0 0 / 40%);
 }
 
+.pq-idle-warning__body {
+	display: flex;
+	flex-direction: column;
+	gap: var(--utrecht-space-block-sm, 12px);
+	padding: 24px 28px 20px;
+}
+
+.pq-idle-warning__body > * {
+	margin: 0;
+}
+
+/* The countdown as a warning chip; screen readers hear the minute-by-minute
+   sentence in the live region instead of every second. */
+.pq-idle-warning__countdown {
+	align-items: center;
+	align-self: flex-start;
+	background: var(
+		--nldesign-component-status-badge-warning-background-color,
+		#fff4de
+	);
+	border: 1px solid var(--nldesign-color-warning-border, #e8c77d);
+	border-radius: var(--nldesign-website-border-radius, 4px);
+	color: var(--nldesign-component-status-badge-warning-color, #7a4f00);
+	display: inline-flex;
+	font-weight: var(--utrecht-typography-weight-scale-bold, 600);
+	gap: 8px;
+	padding: 8px 14px;
+}
+
+.pq-idle-warning__hourglass {
+	block-size: 1em;
+	inline-size: 1em;
+}
+
+/* The actions in a footer under a rule, the one that keeps the visitor
+   signed in last. */
 .pq-idle-buttons {
+	border-block-start: 1px solid var(--nldesign-color-border, #d3d8df);
 	display: flex;
 	flex-wrap: wrap;
-	gap: 8px;
+	gap: 12px;
+	justify-content: flex-end;
+	padding: 20px 28px 24px;
 }
 
 .pq-idle-spoken {

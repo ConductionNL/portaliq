@@ -25,6 +25,22 @@
 const TOKEN_KEY = 'portaliq_token'
 
 /**
+ * The header that carries a send's submission key, or none. The same rule as
+ * `submissionKey.js`, kept here because this module imports nothing
+ * (action-forward-survives-a-slow-answer REQ-AFS-001).
+ *
+ * @param {{submissionKey?: string}|undefined} options The send's options.
+ * @return {Record<string, string>} The header to add.
+ * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
+ */
+function submissionHeaders(options) {
+	const key = options && options.submissionKey
+	return typeof key === 'string' && /^[A-Za-z0-9_-]{16,128}$/.test(key)
+		? { 'Idempotency-Key': key }
+		: {}
+}
+
+/**
  *
  */
 export function getToken() {
@@ -49,6 +65,38 @@ export function setToken(token) {
 	} catch (e) {
 		/* storage unavailable — session simply won't persist */
 	}
+}
+
+/**
+ * The multipart body of a row action that carries files, or null without files.
+ *
+ * Each answer is a form field; an object answer (the row inputs under their
+ * `into` key) becomes `key[name]` fields, which the server reads back as the
+ * same object. Each file is a part under `<field>[]`.
+ *
+ * @param {object} answers The answers.
+ * @param {{field: string, files: Array<File>}|null} upload The declared field and the chosen files.
+ * @return {FormData|null}
+ * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+ */
+export function rowActionFormData(answers, upload) {
+	if (!upload || !upload.field || !upload.files || upload.files.length === 0) {
+		return null
+	}
+	const form = new FormData()
+	for (const [key, value] of Object.entries(answers || {})) {
+		if (value !== null && typeof value === 'object') {
+			for (const [name, inner] of Object.entries(value)) {
+				form.append(`${key}[${name}]`, String(inner))
+			}
+		} else if (value !== undefined && value !== null) {
+			form.append(key, String(value))
+		}
+	}
+	for (const file of upload.files) {
+		form.append(`${upload.field}[]`, file, file.name)
+	}
+	return form
 }
 
 /**
@@ -138,6 +186,12 @@ export function createPortalApi(config, store = {}) {
 					refusal?.errors && typeof refusal.errors === 'object'
 						? refusal.errors
 						: {},
+				// A value the store refused, by field and kind
+				// (site-action-forms).
+				invalid:
+					refusal?.invalid && typeof refusal.invalid === 'object'
+						? refusal.invalid
+						: {},
 			}
 		}
 		const json = await res.json().catch(() => ({}))
@@ -182,13 +236,53 @@ export function createPortalApi(config, store = {}) {
 	// (guardian-direct-messages): `/apps/portaliq/api/messages/...`.
 	const appRoot = String(base).replace(/\/portal\/api\/?$/, '')
 
+	const draftUrl = (app, actionId) =>
+		`${base}/drafts/${encodeURIComponent(app)}/${encodeURIComponent(actionId)}`
+
 	const col = (register, schema) =>
 		`/collections/${encodeURIComponent(register)}/${encodeURIComponent(schema)}`
+
+	// A case listed under a mandate is read under that mandate
+	// (cases-my-cases-page REQ-CMC-004); '' without one.
+	const mandateQuery = (mandateId) =>
+		mandateId ? `&mandate=${encodeURIComponent(mandateId)}` : ''
 
 	// The citizen write surface has its own prefix, because the three acts are
 	// governed by the case type rather than by the collection's own opt-ins.
 	const citizenCase = (register, schema) =>
 		`/citizen/cases/${encodeURIComponent(register)}/${encodeURIComponent(schema)}`
+
+	/**
+	 * Fetch one listed document and save it client-side through a Blob URL,
+	 * as downloadFile().
+	 *
+	 * @param {string} url The document route.
+	 * @param {object} entry The listed entry: `{ id, title }`.
+	 * @return {Promise<object>} `{ ok }`, or `{ ok: false, status }`.
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
+	 */
+	async function saveDocument(url, entry) {
+		try {
+			const res = await fetch(url, { headers: { ...authHeaders() } })
+			if (!res.ok) {
+				return { ok: false, status: res.status }
+			}
+			const blob = await res.blob()
+			const objectUrl = window.URL.createObjectURL(blob)
+			const link = document.createElement('a')
+			link.href = objectUrl
+			link.download = entry.title || 'download'
+			document.body.appendChild(link)
+			link.click()
+			setTimeout(() => {
+				link.remove()
+				window.URL.revokeObjectURL(objectUrl)
+			}, 10000)
+			return { ok: true }
+		} catch {
+			return { ok: false, status: 0 }
+		}
+	}
 
 	return {
 		/**
@@ -395,6 +489,26 @@ export function createPortalApi(config, store = {}) {
 		},
 
 		/**
+		 * Answer one of the resident's inbox messages through the create action its
+		 * collection declares (inbox-reply-with-attachments). The server proves the
+		 * message is theirs and sets the carried fields (such as the case) from it.
+		 *
+		 * @param {object} message The message, with its `_source`.
+		 * @param {object} data The fields the resident filled in, files left out.
+		 * @return {Promise<object>} `{ ok, status, object, error, errors }`.
+		 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t05
+		 */
+		async replyToMessage(message, data) {
+			const source = message._source || {}
+			const id = message.id || message['@self']?.id
+			if (!id || !source.register || !source.schema) {
+				return { ok: false, status: 0, object: null, error: '', errors: {} }
+			}
+			const path = `/inbox/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}/${encodeURIComponent(id)}/reply?collection=${encodeURIComponent(source.collection || '')}`
+			return send('POST', path, data)
+		},
+
+		/**
 		 * The guardian's own message threads (guardian-direct-messages). An
 		 * answer the server refuses reads as no threads, never as an error.
 		 *
@@ -505,6 +619,46 @@ export function createPortalApi(config, store = {}) {
 				return { ok: false, error: String(json?.error || res.status) }
 			} catch {
 				return { ok: false, error: 'network' }
+			}
+		},
+
+		/**
+		 * One call to the portal api, answered as `{ok, status, json}` (or the
+		 * response itself with `raw`), never thrown. The pages of the resident's
+		 * own area (contacts, plans) build their calls on it in
+		 * src/shared/areaApi.js, which loads with them.
+		 *
+		 * @param {string} method The verb.
+		 * @param {string} path The path under the api base.
+		 * @param {object|FormData|null} [body] The JSON body, a multipart body, or none.
+		 * @param {boolean} [raw] Answer `{ok, status, res}` and leave the body unread.
+		 * @return {Promise<{ok: boolean, status: number, json?: object, res?: Response}>} The answer.
+		 */
+		async request(method, path, body = null, raw = false) {
+			const multipart =
+				typeof FormData !== 'undefined' && body instanceof FormData
+			try {
+				const res = await fetch(`${base}${path}`, {
+					method,
+					headers: {
+						...(multipart ? {} : { 'Content-Type': 'application/json' }),
+						Accept: 'application/json',
+						...authHeaders(),
+					},
+					...(body === null
+						? {}
+						: { body: multipart ? body : JSON.stringify(body) }),
+				})
+				if (raw) {
+					return { ok: res.ok, status: res.status, res }
+				}
+				return {
+					ok: res.ok,
+					status: res.status,
+					json: await res.json().catch(() => ({})),
+				}
+			} catch {
+				return { ok: false, status: 0, json: {} }
 			}
 		},
 
@@ -739,13 +893,28 @@ export function createPortalApi(config, store = {}) {
 		 * Hand back the secret of an invitation, so the waiting account
 		 * behind it joins the signed-in person's own account.
 		 *
+		 * When the claim moved the account into the invitation's audience,
+		 * the answer carries a reissued bearer; it is stored here, so every
+		 * later request runs in the new audience.
+		 *
 		 * @param {string} secret The secret from the invitation.
 		 * @return {Promise<object>} `{ ok, status, error, data }`.
 		 *
 		 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+		 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
 		 */
 		async claimInvitation(secret) {
-			return answer('POST', '/identity/invitation/redeem', { secret })
+			const result = await answer('POST', '/identity/invitation/redeem', {
+				secret,
+			})
+			if (
+				result.ok
+				&& typeof result.data?.token === 'string'
+				&& result.data.token !== ''
+			) {
+				writeToken(result.data.token)
+			}
+			return result
 		},
 
 		/**
@@ -815,11 +984,12 @@ export function createPortalApi(config, store = {}) {
 		 *
 		 * @param {object} collection Manifest collection: `{ id, register, schema }`.
 		 * @param {string} id The case id.
+		 * @param {string} [mandateId] The mandate a case listed under one is read under.
 		 * @return {Promise<object|null>} The steps, or null.
 		 */
-		async fetchSteps(collection, id) {
+		async fetchSteps(collection, id, mandateId = '') {
 			const body = await get(
-				`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/steps?collection=${encodeURIComponent(collection.id)}`,
+				`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/steps?collection=${encodeURIComponent(collection.id)}${mandateQuery(mandateId)}`,
 			).catch(() => null)
 			return body && Array.isArray(body.steps) ? body : null
 		},
@@ -832,11 +1002,12 @@ export function createPortalApi(config, store = {}) {
 		 *
 		 * @param {object} collection Manifest collection: `{ id, register, schema }`.
 		 * @param {string} id The object id.
+		 * @param {string} [mandateId] The mandate a case listed under one is read under.
 		 * @return {Promise<object|null>} The timeline, or null.
 		 */
-		async fetchTimeline(collection, id) {
+		async fetchTimeline(collection, id, mandateId = '') {
 			const body = await get(
-				`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/timeline?collection=${encodeURIComponent(collection.id)}`,
+				`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/timeline?collection=${encodeURIComponent(collection.id)}${mandateQuery(mandateId)}`,
 			)
 			return body && Array.isArray(body.entries) ? body : null
 		},
@@ -856,6 +1027,116 @@ export function createPortalApi(config, store = {}) {
 				`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/items?collection=${encodeURIComponent(collection.id)}`,
 			)
 			return body && Array.isArray(body.items) ? body : null
+		},
+
+		/**
+		 * The resident's saved draft of an action, or null (site-multi-step-forms T8).
+		 *
+		 * @param {string} app The contributing app, or the action's register.
+		 * @param {string} actionId The action id.
+		 * @return {Promise<{step: string, expiresAt: string, answers: object}|null>} The draft.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/tasks.md#T8
+		 * @spec openspec/changes/resident-pages-live-round-3/specs/site-forms/spec.md#requirement-a-form-asks-for-a-draft-only-when-its-action-can-keep-one-req-rr3-005
+		 */
+		async getDraft(app, actionId) {
+			try {
+				const res = await fetch(draftUrl(app, actionId), {
+					headers: { Accept: 'application/json', ...authHeaders() },
+				})
+				if (!res.ok) {
+					return null
+				}
+				// No draft yet answers `{found: false}` (REQ-RR3-005).
+				const draft = await res.json()
+				return draft && draft.found === false ? null : draft
+			} catch {
+				return null
+			}
+		},
+
+		/**
+		 * Save the resident's draft of an action.
+		 *
+		 * @param {string} app The contributing app, or the action's register.
+		 * @param {string} actionId The action id.
+		 * @param {{answers: object, step: string}} draft The draft.
+		 * @return {Promise<{id: string, step: string, expiresAt: string, answers: object}|{saved: false, status: number, errors: object}|null>}
+		 *         What was kept; a refusal with the message per field (a value of the wrong kind); or null when the call failed.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/tasks.md#T8
+		 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
+		 */
+		async saveDraft(app, actionId, draft) {
+			try {
+				const res = await fetch(draftUrl(app, actionId), {
+					method: 'PUT',
+					headers: {
+						'Content-Type': 'application/json',
+						Accept: 'application/json',
+						...authHeaders(),
+					},
+					body: JSON.stringify(draft),
+				})
+				if (res.ok) {
+					return await res.json()
+				}
+				const refusal = await res.json().catch(() => ({}))
+				return {
+					saved: false,
+					status: res.status,
+					errors:
+						refusal?.errors && typeof refusal.errors === 'object'
+							? refusal.errors
+							: {},
+				}
+			} catch {
+				return null
+			}
+		},
+
+		/**
+		 * The resident's live drafts, every form they can still finish; an
+		 * empty list when there is none or the list cannot be read.
+		 *
+		 * @return {Promise<Array<{app: string, action: string, label: string, updatedAt: string, expiresAt: string}>>}
+		 *
+		 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
+		 */
+		async listDrafts() {
+			try {
+				const res = await fetch(`${base}/drafts`, {
+					headers: { Accept: 'application/json', ...authHeaders() },
+				})
+				if (!res.ok) {
+					return []
+				}
+				const body = await res.json()
+				return Array.isArray(body?.drafts) ? body.drafts : []
+			} catch {
+				return []
+			}
+		},
+
+		/**
+		 * Delete the draft once the action was sent.
+		 *
+		 * @param {string} app The contributing app, or the action's register.
+		 * @param {string} actionId The action id.
+		 * @return {Promise<boolean>} True when the request went through.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/tasks.md#T8
+		 */
+		async discardDraft(app, actionId) {
+			try {
+				const res = await fetch(draftUrl(app, actionId), {
+					method: 'DELETE',
+					headers: { Accept: 'application/json', ...authHeaders() },
+				})
+				return res.ok
+			} catch {
+				return false
+			}
 		},
 
 		/**
@@ -1006,6 +1287,44 @@ export function createPortalApi(config, store = {}) {
 		},
 
 		/**
+		 * Download the resident's own list, or one record, as a PDF. The server
+		 * reads exactly what the screen reads and renders it through OpenRegister;
+		 * the file is saved client-side through a Blob URL, as downloadFile().
+		 *
+		 * @param {object} collection Manifest collection: `{ register, schema, id, label }`.
+		 * @param {string} [id] The record id; none exports the whole list.
+		 * @return {Promise<object>} `{ ok }`, or `{ ok: false, status }` (400: the list is too long).
+		 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t06
+		 */
+		async downloadPdf(collection, id) {
+			const path =
+				id === undefined
+					? 'export.pdf'
+					: `${encodeURIComponent(id)}/export.pdf`
+			const url = `${base}${col(collection.register, collection.schema)}/${path}?collection=${encodeURIComponent(collection.id)}`
+			try {
+				const res = await fetch(url, { headers: { ...authHeaders() } })
+				if (!res.ok) {
+					return { ok: false, status: res.status }
+				}
+				const blob = await res.blob()
+				const objectUrl = window.URL.createObjectURL(blob)
+				const link = document.createElement('a')
+				link.href = objectUrl
+				link.download = `${(collection.label || 'export').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`
+				document.body.appendChild(link)
+				link.click()
+				setTimeout(() => {
+					link.remove()
+					window.URL.revokeObjectURL(objectUrl)
+				}, 10000)
+				return { ok: true }
+			} catch {
+				return { ok: false, status: 0 }
+			}
+		},
+
+		/**
 		 * Open one document the case screen listed. Only the entry id travels:
 		 * the server looks it up again among what this case lists, so the
 		 * browser never learns where a file lives (cases-documents-on-the-case,
@@ -1018,27 +1337,49 @@ export function createPortalApi(config, store = {}) {
 		 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
 		 */
 		async downloadCitizenDocument(collection, caseId, entry) {
-			const url = `${base}${citizenCase(collection.register, collection.schema)}/${encodeURIComponent(caseId)}/documents/${encodeURIComponent(entry.id)}`
-			try {
-				const res = await fetch(url, { headers: { ...authHeaders() } })
-				if (!res.ok) {
-					return { ok: false, status: res.status }
-				}
-				const blob = await res.blob()
-				const objectUrl = window.URL.createObjectURL(blob)
-				const link = document.createElement('a')
-				link.href = objectUrl
-				link.download = entry.title || 'download'
-				document.body.appendChild(link)
-				link.click()
-				setTimeout(() => {
-					link.remove()
-					window.URL.revokeObjectURL(objectUrl)
-				}, 10000)
-				return { ok: true }
-			} catch {
-				return { ok: false, status: 0 }
-			}
+			return saveDocument(
+				`${base}${citizenCase(collection.register, collection.schema)}/${encodeURIComponent(caseId)}/documents/${encodeURIComponent(entry.id)}`,
+				entry,
+			)
+		},
+
+		/**
+		 * The documents one object of any collection lists, for a collection
+		 * that declares `documents` and is not a case collection. The server
+		 * finds the collection in the resident's own aggregate and reads the
+		 * object within its scope, so a collection above the session's trust,
+		 * an object outside the scope and an unknown id are all null here.
+		 *
+		 * @param {object} collection Manifest collection: `{ register, schema }`.
+		 * @param {string} id The object id.
+		 * @return {Promise<object|null>} `{ documents, documentsLabel }` or null.
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t4
+		 */
+		async fetchCollectionDocuments(collection, id) {
+			const answer = await get(
+				`${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/documents`,
+			)
+			return answer && Array.isArray(answer.documents)
+				? { documents: answer.documents, documentsLabel: answer.label || '' }
+				: null
+		},
+
+		/**
+		 * Open one document `fetchCollectionDocuments` listed. Only the entry
+		 * id travels; the server looks it up again, runs the collection's
+		 * `opened` hook when it has one, and answers 503 when that says no.
+		 *
+		 * @param {object} collection Manifest collection: `{ register, schema }`.
+		 * @param {string} id The object id.
+		 * @param {object} entry The listed entry: `{ id, title }`.
+		 * @return {Promise<object>} `{ ok }`, or `{ ok: false, status }`.
+		 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t4
+		 */
+		async downloadCollectionDocument(collection, id, entry) {
+			return saveDocument(
+				`${base}${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/documents/${encodeURIComponent(entry.id)}`,
+				entry,
+			)
 		},
 
 		/**
@@ -1124,10 +1465,11 @@ export function createPortalApi(config, store = {}) {
 		 * @param {string} app The contributing app.
 		 * @param {string} actionId The endpoint action id.
 		 * @param {object} body The request body (only the action's `fields` are forwarded).
+		 * @param {{submissionKey?: string}} [options] The form's submission key (REQ-AFS-001).
 		 * @return {Promise<{ok: boolean, status: number, body: object}>} The relayed answer.
 		 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-the-portal-must-let-a-subject-take-a-timed-task
 		 */
-		async forwardAction(app, actionId, body) {
+		async forwardAction(app, actionId, body, options = {}) {
 			try {
 				const res = await fetch(
 					`${base}/actions/${encodeURIComponent(app)}/${encodeURIComponent(actionId)}`,
@@ -1137,6 +1479,7 @@ export function createPortalApi(config, store = {}) {
 							'Content-Type': 'application/json',
 							Accept: 'application/json',
 							...authHeaders(),
+							...submissionHeaders(options),
 						},
 						body: JSON.stringify(body || {}),
 					},
@@ -1161,6 +1504,8 @@ export function createPortalApi(config, store = {}) {
 		 * @param {string} actionId The endpoint row action's id.
 		 * @param {object} [answers] The answers to send, `{}` by default.
 		 * @param {string} [actionApp] Another app whose action is attached to this collection.
+		 * @param {{field: string, files: Array<File>}|null} [upload] Files for an action that declares `files` (REQ-RAF-001).
+		 * @param {{submissionKey?: string}} [options] The form's submission key (REQ-AFS-001).
 		 * @return {Promise<object>} `{ ok, status, body }`; `status` 0 on a network error.
 		 */
 		async forwardRowAction(
@@ -1169,23 +1514,35 @@ export function createPortalApi(config, store = {}) {
 			actionId,
 			answers = {},
 			actionApp = '',
+			upload = null,
+			options = {},
 		) {
 			// `actionApp` names another app's action attached to this
 			// collection (woo-journey-entry-points D3).
 			const attached = actionApp
 				? `&actionApp=${encodeURIComponent(actionApp)}`
 				: ''
+			// Files the action lets the resident add go multipart; without
+			// them the body stays JSON (row-action-carries-files REQ-RAF-001).
+			const multipart = rowActionFormData(answers, upload)
 			try {
 				const res = await fetch(
 					`${base}${col(collection.register, collection.schema)}/${encodeURIComponent(rowId)}/actions/${encodeURIComponent(actionId)}?collection=${encodeURIComponent(collection.id)}${attached}`,
 					{
 						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-							Accept: 'application/json',
-							...authHeaders(),
-						},
-						body: JSON.stringify(answers || {}),
+						headers: multipart
+							? {
+									Accept: 'application/json',
+									...authHeaders(),
+									...submissionHeaders(options),
+								}
+							: {
+									'Content-Type': 'application/json',
+									Accept: 'application/json',
+									...authHeaders(),
+									...submissionHeaders(options),
+								},
+						body: multipart || JSON.stringify(answers || {}),
 					},
 				)
 				const json = await res.json().catch(() => ({}))

@@ -124,3 +124,20 @@ per-visitor response SHALL be `private, no-store`.
 - **THEN** it declares a volume ceiling per ADR-082 and refuses to return an
   unbounded result set
 - @e2e `tests/e2e/site-search.spec.ts` (S28)
+
+### Requirement: A school portal's public news and documents are searchable with school facets
+
+A portal's public search MUST include published `newsItem` rows whose audience is public and `media` rows marked public, each result carrying its kind (news or document), its audience in words, its publish date and, for a document, its type and size. Facets MUST offer kind, audience and publish year. A news item or document for a group, a child or a signed-in audience MUST NOT be returned to an anonymous visitor, and MUST NOT be counted in a facet.
+
+#### Scenario: Zo werkt de ouderavond dit jaar
+- **GIVEN** De Wilgenboom published the news item "Zo werkt de ouderavond dit jaar" for the whole school and the school guide as a public PDF
+- **WHEN** a visitor searches "ouderavond"
+- **THEN** the news item is found with "Hele school" and its date, and the facet "Nieuws" counts it
+- @e2e exclude learniq's proof run asserts it on the Zoeken board (`tests/e2e/portal-design/wilgenboom.spec.ts`); the filter is asserted in `PortalSearchTest`
+
+#### Scenario: A group letter stays out
+- **GIVEN** a news item for groep 7 only, containing "ouderavond"
+- **WHEN** an anonymous visitor searches "ouderavond"
+- **THEN** it is not in the results and no facet counts it
+- @e2e exclude visibility asserted in `PortalSearchTest`
+

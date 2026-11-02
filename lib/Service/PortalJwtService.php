@@ -80,6 +80,13 @@ class PortalJwtService {
 	public const RESERVED_ASSERTION_CLAIMS = ['sub', 'audience', 'organisation', 'trust', 'jti', 'use', 'iat', 'exp', 'iss'];
 
 	/**
+	 * The optional assertion claim that names the company branch the session
+	 * acts for (decision 173). Only the session fills it, so a declared scope
+	 * claim may not take this name either.
+	 */
+	public const BRANCH_ASSERTION_CLAIM = 'branch';
+
+	/**
 	 * The `use` claim value marking a reference session (identity-ways-in-screens
 	 * D2). `resolveFromBearer()` refuses it like every special-use token.
 	 */
@@ -205,6 +212,7 @@ class PortalJwtService {
 	 * @param int|null $ttl Override the assertion TTL (seconds).
 	 * @param string $scopeClaim The action's declared scope claim (`app.claimName` or `claimName`), or ''.
 	 * @param string $scopeValue The server-resolved value of that claim, or ''.
+	 * @param string $branch The branch the originating session acts for, or '' (decision 173).
 	 *
 	 * @return string Compact JWT string.
 	 *
@@ -220,6 +228,7 @@ class PortalJwtService {
 		?int $ttl = null,
 		string $scopeClaim = '',
 		string $scopeValue = '',
+		string $branch = '',
 	): string {
 		$iat = time();
 		$exp = ($iat + ($ttl ?? self::ASSERTION_TTL));
@@ -236,6 +245,11 @@ class PortalJwtService {
 			'exp' => $exp,
 			'iss' => self::ISSUER,
 		];
+
+		// Decision 173: the one optional claim, present only for a branch session.
+		if ($branch !== '') {
+			$claims[self::BRANCH_ASSERTION_CLAIM] = $branch;
+		}
 
 		$claimName = self::scopeClaimName(scopeClaim: $scopeClaim);
 		if ($claimName !== null && $scopeValue !== '') {
@@ -267,7 +281,7 @@ class PortalJwtService {
 			return null;
 		}
 
-		if (in_array($name, self::RESERVED_ASSERTION_CLAIMS, true) === true) {
+		if (self::isReservedScopeClaim(scopeClaim: $name) === true) {
 			return null;
 		}
 
@@ -276,7 +290,8 @@ class PortalJwtService {
 
 	/**
 	 * Whether a declared scope claim names one of the nine frozen assertion
-	 * claims (case-actions-sign-a-document T03). Anything that is not a
+	 * claims (case-actions-sign-a-document T03) or the optional `branch`
+	 * claim only the session fills (decision 173). Anything that is not a
 	 * non-empty string is not a declared claim and so not reserved.
 	 *
 	 * @param mixed $scopeClaim The declared `scopeClaim` value.
@@ -290,7 +305,8 @@ class PortalJwtService {
 			return false;
 		}
 
-		return in_array(self::bareClaimName(scopeClaim: $scopeClaim), self::RESERVED_ASSERTION_CLAIMS, true);
+		$name = self::bareClaimName(scopeClaim: $scopeClaim);
+		return in_array($name, self::RESERVED_ASSERTION_CLAIMS, true) === true || $name === self::BRANCH_ASSERTION_CLAIM;
 	}//end isReservedScopeClaim()
 
 	/**

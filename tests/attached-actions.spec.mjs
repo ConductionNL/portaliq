@@ -104,6 +104,9 @@ test('the forward names the action app', async () => {
 		'askAboutDossier',
 		{ question: 'Wanneer?', title: '' },
 		'pipelinq',
+		// No files; the plain form sends no submission key (REQ-AFS-001 is the stepped form's).
+		null,
+		{},
 	])
 	assert.equal(result.ok, true)
 	assert.equal(result.messageKey, 'Done.')
@@ -182,6 +185,9 @@ test('the site shows one button per attached action and forwards with actionApp'
 		'askAboutDossier',
 		{ question: 'Wanneer?', title: '' },
 		'pipelinq',
+		// No files; the plain form sends no submission key (REQ-AFS-001 is the stepped form's).
+		null,
+		{},
 	])
 	assert.equal(block.textOf(block.find('attached-actions-status')), 'Done.')
 	assert.ok(
@@ -234,4 +240,38 @@ test('site: the detail card leaves a place for the attached actions', () => {
 		'utf8',
 	)
 	assert.match(card, /<SlotHost\s+name="attachedActions"/)
+})
+
+// endpoint-action-forms-keep-their-field-shape REQ-EAF-002/003.
+test('a field answered with several choices is forwarded as a list', () => {
+	const action = { fields: ['onderwerp', 'documentSoorten'] }
+	assert.deepEqual(
+		attachedBody(action, {
+			onderwerp: ' De brug ',
+			documentSoorten: ['besluiten', ' rapporten ', ''],
+		}),
+		{ onderwerp: 'De brug', documentSoorten: ['besluiten', 'rapporten'] },
+	)
+})
+
+test('the forward keeps the status, so a refusal is told from a failure', async () => {
+	const refused = await runAttachedAction(
+		{
+			forwardRowAction: async () => ({
+				ok: false,
+				status: 400,
+				body: {
+					errors: { periodeVan: 'Schrijf de datum als dag-maand-jaar.' },
+				},
+			}),
+		},
+		{ id: 'mijnDossiers' },
+		{ id: 'dos-1' },
+		ASK,
+		{},
+	)
+	assert.equal(refused.status, 400)
+	assert.deepEqual(refused.body.errors, {
+		periodeVan: 'Schrijf de datum als dag-maand-jaar.',
+	})
 })

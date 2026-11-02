@@ -138,6 +138,37 @@ class PortalObjectWriterTest extends TestCase {
 	}//end testUpdatePatchesTheSubjectsOwnObjectAndReStampsScope()
 
 	/**
+	 * inbox-read-receipt-on-request T03: a closure decides the fields from the
+	 * row the writer has just proven the subject's own, and a foreign row never
+	 * reaches it.
+	 *
+	 * @spec openspec/changes/inbox-read-receipt-on-request/tasks.md#t03
+	 */
+	public function testAClosureDecidesTheFieldsFromTheVerifiedRow(): void {
+		$objectService = $this->updatableObjectService(
+			['portalMessage' => [['id' => 'm-1', 'subjectRef' => 's1', 'organisation' => 'org-1', 'readAt' => '2026-10-08T09:14:00Z']]]
+		);
+		$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class));
+		$seen = null;
+
+		$writer->updateObject('portaliq', 'portalMessage', 'subjectRef', 's1', 'org-1', 'm-1', static function (array $row) use (&$seen): array {
+			$seen = $row['readAt'];
+			return ['read' => true];
+		});
+		$this->assertSame('2026-10-08T09:14:00Z', $seen);
+		$this->assertTrue($objectService->saved['read']);
+		$this->assertSame('2026-10-08T09:14:00Z', $objectService->saved['readAt']);
+
+		$called = false;
+		$foreign = $writer->updateObject('portaliq', 'portalMessage', 'subjectRef', 'someone-else', 'org-1', 'm-1', static function (array $row) use (&$called): array {
+			$called = true;
+			return [];
+		});
+		$this->assertNull($foreign);
+		$this->assertFalse($called);
+	}//end testAClosureDecidesTheFieldsFromTheVerifiedRow()
+
+	/**
 	 * ISOLATION / IDOR (closes #16): the subject supplies an id it does NOT
 	 * own. Ownership is re-verified against OpenRegister FIRST, so the write is
 	 * REFUSED — saveObject is never called — and null is returned (→ 404).

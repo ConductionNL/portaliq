@@ -44,6 +44,8 @@ export function collectionIdsFor(page) {
 		for (const lookup of block?.lookups || []) {
 			add(lookup?.collection)
 		}
+		// A cards block's status reads another collection (card-status-today).
+		add(block?.status?.collection)
 		if (block?.type === 'calendar') {
 			for (const source of block.sources || []) {
 				add(source?.collection)
@@ -214,4 +216,44 @@ export function openRecordState(loaded, target) {
 	}
 	const row = rowFor(loaded.objects, target.id) || target.row || null
 	return row ? { state: 'found', row } : { state: 'missing' }
+}
+
+/**
+ * Whether the open record was read under a mandate (`_mandate.id`). A case
+ * read under a mandate is read-only (REQ-CMC-004): the server refuses every
+ * write under it, so the page offers none.
+ *
+ * @param {object|null} record The open record.
+ * @return {boolean}
+ * @spec openspec/changes/mandated-case-offers-no-writes/specs/portal-my-cases/spec.md#requirement-a-case-read-under-a-mandate-offers-no-writes
+ */
+export function readUnderMandate(record) {
+	const id = record?._mandate?.id
+	return typeof id === 'string' && id !== ''
+}
+
+/**
+ * The record a record page opens: the picked row when it is in the resident's
+ * own list, or the picked row a mandate opened. A case opened from "My cases"
+ * under a mandate is the represented party's, so it is never in the person's
+ * own rows; its row carries the mandate (`_mandate.id`) it was read under, and
+ * the blocks on the page read it again under that mandate. Any other row
+ * outside the list opens nothing.
+ *
+ * @param {Array<object>} rows The record collection's scoped rows.
+ * @param {object|null} picked The row picked for the page.
+ * @return {object|null} The open record, or null.
+ * @spec openspec/changes/mandated-case-opens-on-its-record-page/specs/portal-my-cases/spec.md#requirement-a-case-read-under-a-mandate-opens-on-its-record-page
+ */
+export function pickedRecord(rows, picked) {
+	const id = picked?.id || picked?.uuid || picked?.['@self']?.id
+	if (!id) {
+		return null
+	}
+	return (
+		rowFor(rows, id)
+		|| (typeof picked._mandate?.id === 'string' && picked._mandate.id !== ''
+			? picked
+			: null)
+	)
 }

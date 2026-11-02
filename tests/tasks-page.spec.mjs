@@ -23,6 +23,7 @@ import {
 import { pages } from '../src/site/pages/inbox/index.js'
 import {
 	acceptAttribute,
+	completeViaAction,
 	refusalKey,
 	typeAccepted,
 	uploadRules,
@@ -369,4 +370,279 @@ test('the list shows each open task as an action row with its deadline badge, an
 	assert.match(loading, /<p class="sr-only" role="status">Bezig met laden<\/p>/)
 	assert.match(loading, /class="pq-skeleton__rows" aria-hidden="true"/)
 	assert.equal(typeof pages.tasks, 'function')
+})
+
+const VIA_TASK = {
+	...TASK,
+	uuid: 'task-9',
+	metadata: { completeVia: { app: 'dossiq', action: 'completeChecklistTask' } },
+}
+
+const CHECKLIST_ACTION = {
+	id: 'completeChecklistTask',
+	label: 'Checklist indienen',
+	endpoint: '/index.php/apps/dossiq/api/portal/checklist-tasks',
+	method: 'POST',
+	fields: ['taskId', 'remarks'],
+	requiredFields: ['taskId'],
+	fieldConfigs: { taskId: { visible: false } },
+}
+
+const AGGREGATE = {
+	unreadCount: 0,
+	contributions: [
+		{ app: 'pipelinq', actions: [{ ...CHECKLIST_ACTION, endpoint: '/other' }] },
+		{
+			app: 'dossiq',
+			actions: [{ id: 'other', endpoint: '/x' }, CHECKLIST_ACTION],
+		},
+	],
+}
+
+test("a task that names its app action resolves to that action in the subject's own aggregate", () => {
+	assert.deepEqual(completeViaAction(TASK, AGGREGATE), {
+		named: false,
+		app: '',
+		action: null,
+		taskField: 'taskId',
+	})
+	assert.deepEqual(completeViaAction(VIA_TASK, AGGREGATE), {
+		named: true,
+		app: 'dossiq',
+		action: CHECKLIST_ACTION,
+		taskField: 'taskId',
+	})
+	assert.equal(
+		completeViaAction(VIA_TASK, { contributions: [] }).action,
+		null,
+		'an action this subject may not run is not offered',
+	)
+	assert.equal(completeViaAction(VIA_TASK, null).named, true)
+	const create = {
+		contributions: [
+			{ app: 'dossiq', actions: [{ ...CHECKLIST_ACTION, type: 'create' }] },
+		],
+	}
+	assert.equal(
+		completeViaAction(VIA_TASK, create).action,
+		null,
+		'only an endpoint action completes a task',
+	)
+	const ownField = {
+		contributions: [
+			{ app: 'dossiq', actions: [{ ...CHECKLIST_ACTION, taskField: 'run' }] },
+		],
+	}
+	assert.equal(completeViaAction(VIA_TASK, ownField).taskField, 'run')
+	assert.equal(
+		completeViaAction(
+			{ metadata: { completeVia: { app: 'dossiq' } } },
+			AGGREGATE,
+		).named,
+		false,
+		'half a route names nothing',
+	)
+	assert.equal(
+		refusalKey('complete-via-app'),
+		'This task has its own form. Open the task again to fill it in.',
+	)
+})
+
+test('a task that names its app action sends the answers there with the task preset, then says thank you', async () => {
+	const calls = []
+	const api = {
+		...fakeApi(),
+		async fetchTask(uuid) {
+			return { ok: true, status: 200, code: '', task: { ...VIA_TASK, uuid } }
+		},
+		async forwardAction(app, actionId, body) {
+			calls.push([app, actionId, body])
+			return { ok: true, status: 200, body: { completed: true } }
+		},
+	}
+	const page = instance(TasksPage, {
+		api,
+		t,
+		locale: 'en',
+		contributions: AGGREGATE,
+	})
+	await page.openTask('task-9')
+	assert.equal(page.via.action, CHECKLIST_ACTION)
+
+	const answer = await page.sendVia({ taskId: 'task-9', remarks: 'ok' })
+	assert.deepEqual(calls, [
+		['dossiq', 'completeChecklistTask', { taskId: 'task-9', remarks: 'ok' }],
+	])
+	assert.equal(answer.ok, true)
+
+	page.viaDone()
+	assert.equal(page.completed, true)
+	assert.deepEqual(page.emitted, [['refresh', undefined]])
+})
+
+test('a task that names its app action shows that form, never the upload form', async () => {
+	const withAction = await renderComponent(
+		inState(TasksPage, { loading: false, detail: { task: VIA_TASK } }),
+		{ api: fakeApi(), t, locale: 'en', contributions: AGGREGATE },
+	)
+	assert.doesNotMatch(withAction, /portaliq-task-files/)
+	assert.match(
+		withAction,
+		/<form class="pq-schema-form" aria-label="Checklist indienen" data-testid="schema-form"/,
+	)
+	assert.match(withAction, /data-testid="schema-field-remarks"/)
+	assert.doesNotMatch(
+		withAction,
+		/schema-field-taskId/,
+		'the task uuid is preset, never asked',
+	)
+
+	const without = await renderComponent(
+		inState(TasksPage, { loading: false, detail: { task: VIA_TASK } }),
+		{ api: fakeApi(), t, locale: 'en', contributions: { contributions: [] } },
+	)
+	assert.doesNotMatch(without, /portaliq-task-files/)
+	assert.match(
+		without,
+		/<p class="utrecht-paragraph pq-task-refusal" role="status">The form for this task is not available to you right now\.<\/p>/,
+	)
+})
+
+// mijn-taken-lists-contributed-tasks: Sanne's "Stuur de bouwtekening" is a
+// dossiq request for more information, shown on the overview as "Wat u nog
+// moet doen", while "Mijn taken" read the portal tasks only and said there
+// were none.
+const DOSSIQ = {
+	app: 'dossiq',
+	collections: [
+		{
+			id: 'vragenAanU',
+			register: 'dossiq',
+			schema: 'aanvullingsverzoek',
+			label: 'Wat wij nog van u nodig hebben',
+			defaultFilters: { state: 'open' },
+		},
+		{ id: 'mijnZaken', register: 'dossiq', schema: 'case' },
+	],
+	pages: [
+		{
+			id: 'overzicht',
+			blocks: [
+				{
+					type: 'tasks',
+					collection: 'vragenAanU',
+					dueField: 'hersteltermijn',
+					titleFields: ['summary'],
+				},
+			],
+		},
+		{
+			id: 'mijnZaken',
+			record: { collection: 'mijnZaken' },
+			blocks: [
+				{ type: 'tasks', collection: 'vragenAanU', recordField: 'case' },
+				{ type: 'steps', collection: 'mijnZaken' },
+			],
+		},
+	],
+}
+
+const ASKED = [
+	{
+		id: 'av-2',
+		summary: 'Stuur de bouwtekening van uw dakkapel',
+		hersteltermijn: '2026-10-29',
+		state: 'open',
+		case: 'zaak-9',
+	},
+	{ id: 'av-1', summary: 'Al beantwoord', state: 'answered' },
+]
+
+test('my tasks reads every collection an app shows in a tasks block, once', async () => {
+	const { contributedTaskSources, contributedTaskEntries, matchesDefaultFilters } =
+		await import('../src/site/pages/inbox/contributedTasks.js')
+
+	const sources = contributedTaskSources({ contributions: [DOSSIQ] })
+	assert.equal(sources.length, 1, 'one collection, two blocks')
+	assert.equal(sources[0].app, 'dossiq')
+	assert.equal(sources[0].block.dueField, 'hersteltermijn', 'the first block wins')
+
+	assert.equal(matchesDefaultFilters(ASKED[0], sources[0].collection), true)
+	assert.equal(matchesDefaultFilters(ASKED[1], sources[0].collection), false)
+	assert.equal(matchesDefaultFilters({ state: 'x' }, {}), true)
+
+	assert.deepEqual(sources[0].record, { field: 'case', collection: 'mijnZaken' })
+
+	const entries = contributedTaskEntries(sources[0], ASKED, [])
+	assert.deepEqual(
+		entries.map((entry) => [entry.title, entry.due]),
+		[['Stuur de bouwtekening van uw dakkapel', '2026-10-29']],
+		'only the open request, titled by the block',
+	)
+
+	// No page lists the requests, so the row opens the case it belongs to.
+	const nav = [
+		{
+			key: 'dossiq:mijnZaken',
+			label: 'Uw zaak',
+			contribution: { app: 'dossiq' },
+			page: DOSSIQ.pages[1],
+		},
+	]
+	const [opened] = contributedTaskEntries(sources[0], ASKED, nav)
+	assert.deepEqual(opened.link, {
+		app: 'dossiq',
+		collection: 'mijnZaken',
+		id: 'zaak-9',
+	})
+	assert.match(opened.route, /mijnZaken\/zaak-9$/)
+})
+
+test('my tasks lists what an app asks beside the portal tasks, and is empty only when both are', async () => {
+	const calls = []
+	const api = {
+		...fakeApi(),
+		async fetchTasks() {
+			return { results: [], total: 0 }
+		},
+		async fetchCollection(collection) {
+			calls.push(collection.id)
+			return ASKED
+		},
+	}
+	const page = instance(TasksPage, {
+		api,
+		t,
+		locale: 'nl',
+		contributions: { contributions: [DOSSIQ] },
+	})
+	await page.loadList()
+	assert.deepEqual(calls, ['vragenAanU'])
+	assert.equal(page.contributed.length, 1)
+	assert.equal(page.loading, false)
+
+	const html = await renderComponent(
+		inState(TasksPage, {
+			loading: false,
+			tasks: [],
+			contributed: page.contributed,
+		}),
+		{ api, t, locale: 'nl' },
+	)
+	assert.match(html, /Stuur de bouwtekening van uw dakkapel/)
+	assert.doesNotMatch(html, /U heeft geen open taken/)
+
+	const failedRead = instance(TasksPage, {
+		api: {
+			...api,
+			async fetchCollection() {
+				throw new Error('down')
+			},
+		},
+		t,
+		locale: 'nl',
+		contributions: { contributions: [DOSSIQ] },
+	})
+	await failedRead.loadList()
+	assert.deepEqual(failedRead.contributed, [], 'a collection that fails adds nothing')
 })

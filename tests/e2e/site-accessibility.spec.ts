@@ -322,3 +322,48 @@ test.describe('signed-in portal — accessibility', () => {
 		await expect(page.getByTestId('detail-card-upload')).toBeVisible()
 	})
 })
+
+/**
+ * site-accessibility-statement REQ-SAS-002: every portal links its statement
+ * from the footer, the statement names the date of the measurement it rests
+ * on, and the statement page itself passes the same axe check.
+ *
+ * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+ */
+test.describe('site renderer — accessibility statement', () => {
+	test('the statement is linked from the footer and lists the measurement date', async ({
+		page,
+		request,
+	}) => {
+		const answer = await request.get(
+			`${BASE}/index.php/apps/portaliq/api/content/accessibility`,
+		)
+		expect(answer.ok()).toBeTruthy()
+		const { statement } = await answer.json()
+
+		await page.goto(SITE)
+		await expect(page.getByTestId('site-title')).toBeVisible()
+		const link = page
+			.getByTestId('site-subfooter-menu')
+			.locator('a[href$="/toegankelijkheid"]')
+		await expect(link).toHaveCount(1)
+		await link.click()
+
+		await expect(page.getByTestId('accessibility-statement')).toBeVisible()
+		await expect(
+			page.getByTestId('accessibility-statement-status'),
+		).toBeVisible()
+		if (statement.measurement) {
+			await expect(
+				page.getByTestId('accessibility-statement-evidence'),
+			).toBeVisible()
+		}
+		// Without an audit the status is never A or B.
+		if (statement.audit === null) {
+			expect(['C', null]).toContain(statement.status)
+		}
+
+		const violations = await seriousViolations(page)
+		expect(violations, describe(violations)).toEqual([])
+	})
+})

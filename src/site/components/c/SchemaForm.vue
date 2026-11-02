@@ -26,8 +26,10 @@
 			v-if="confirmed.summary"
 			class="pq-schema-form__summary"
 			data-testid="schema-form-confirmation-summary">
-			<p v-if="action.summary.label" class="pq-schema-form__summary-label">
-				{{ action.summary.label }}
+			<p
+				v-if="action.answerSummary.label"
+				class="pq-schema-form__summary-label">
+				{{ action.answerSummary.label }}
 			</p>
 			<p class="utrecht-paragraph pq-schema-form__summary-text">
 				{{ confirmed.summary }}
@@ -47,13 +49,28 @@
 		data-testid="schema-form"
 		novalidate
 		@submit.prevent="onSubmit">
+		<!-- "Hulp nodig?": the portal's help, merged with the action's own;
+		     it opens a dialog and leaves the answers alone. -->
+		<FormHelp
+			v-if="portalHelp || action.help"
+			class="pq-schema-form__help"
+			:portalHelp="portalHelp"
+			:formHelp="isPlainObject(action.help) ? action.help : null"
+			:title="action.label || ''" />
+		<p
+			v-if="draftId !== ''"
+			class="utrecht-paragraph pq-schema-form__draft-status"
+			data-testid="schema-form-draft-status">
+			<span class="utrecht-badge-status">{{ translate('Provisional') }}</span>
+			{{ translate('Not sent yet. It counts once you send it.') }}
+		</p>
 		<template v-if="hasSteps">
 			<FormProgress
 				:steps="flow"
 				:current="stepIndex"
 				:idBase="`f-${action.id}-progress`"
 				:label="translate('Progress')"
-				:shortPattern="translate('Step {n} of {m}')"
+				:shortPattern="translate('Step {n} of {m}: {title}')"
 				:showLabel="translate('Show all steps')"
 				:hideLabel="translate('Hide the steps')"
 				:doneLabel="translate('Done')"
@@ -81,6 +98,24 @@
 			{{ translate('A field without "optional" must be filled in.') }}
 		</p>
 
+		<div
+			v-if="showsPrefill"
+			class="utrecht-alert utrecht-alert--info pq-schema-form__prefilled"
+			data-testid="schema-form-prefilled">
+			<div class="utrecht-alert__content">
+				<p class="utrecht-paragraph pq-schema-form__prefilled-title">
+					{{ translate('We filled in some things for you') }}
+				</p>
+				<p class="utrecht-paragraph">
+					{{
+						translate(
+							'This comes from your account. Is something wrong? Change it here for this request.',
+						)
+					}}
+				</p>
+			</div>
+		</div>
+
 		<ErrorSummary
 			ref="summary"
 			:entries="summary"
@@ -95,6 +130,25 @@
 			role="alert"
 			data-testid="schema-form-error">
 			{{ error }}
+		</p>
+
+		<!-- The answer did not come in time, but the request may still be
+		     made: say so and point to Mijn zaken instead of "Opslaan is niet
+		     gelukt", so the resident looks before sending again
+		     (action-forward-survives-a-slow-answer). -->
+		<p
+			v-if="stillProcessing"
+			class="utrecht-paragraph pq-schema-form__error"
+			role="status"
+			data-testid="schema-form-still-processing">
+			{{
+				translate(
+					'Your request may still be processing. Check My cases in a few minutes before you send it again.',
+				)
+			}}
+			<a :href="myCasesHref" class="utrecht-link">{{
+				translate('Go to My cases')
+			}}</a>
 		</p>
 
 		<ReviewList
@@ -121,6 +175,23 @@
 				:error="errors[field] || ''"
 				:t="t"
 				@pick="(picked) => pick(field, picked)" />
+			<!-- What the resident may want to know before going on, after
+			     the step's questions (the step's `note`). -->
+			<div
+				v-if="hasSteps && currentStep.note"
+				class="utrecht-alert utrecht-alert--info pq-schema-form__note"
+				data-testid="schema-form-step-note">
+				<div class="utrecht-alert__content">
+					<p
+						v-if="currentStep.note.title !== ''"
+						class="utrecht-paragraph pq-schema-form__note-title">
+						{{ currentStep.note.title }}
+					</p>
+					<p v-if="currentStep.note.text !== ''" class="utrecht-paragraph">
+						{{ currentStep.note.text }}
+					</p>
+				</div>
+			</div>
 		</template>
 
 		<!-- The answers in one sentence, as they are given
@@ -131,15 +202,19 @@
 			class="pq-schema-form__summary"
 			aria-live="polite"
 			data-testid="schema-form-summary">
-			<p v-if="action.summary.label" class="pq-schema-form__summary-label">
-				{{ action.summary.label }}
+			<p
+				v-if="action.answerSummary.label"
+				class="pq-schema-form__summary-label">
+				{{ action.answerSummary.label }}
 			</p>
 			<p class="utrecht-paragraph pq-schema-form__summary-text">
 				{{ summaryText }}
 			</p>
 		</div>
 
-		<div class="pq-schema-form__buttons">
+		<div
+			class="pq-schema-form__buttons"
+			:class="{ 'pq-schema-form__buttons--steps': hasSteps }">
 			<button
 				v-if="hasSteps && stepIndex > 0"
 				type="button"
@@ -147,22 +222,62 @@
 				:disabled="submitting"
 				data-testid="schema-form-previous"
 				@click="previousStep">
+				<svg
+					class="pq-schema-form__chevron"
+					viewBox="0 0 16 16"
+					aria-hidden="true"
+					focusable="false">
+					<path
+						d="M10 3L5 8l5 5"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2" />
+				</svg>
 				{{ translate('Previous step') }}
+			</button>
+			<button
+				v-else-if="cancellable"
+				type="button"
+				class="utrecht-button utrecht-button--secondary-action"
+				:disabled="submitting"
+				data-testid="schema-form-cancel"
+				@click="$emit('cancel')">
+				{{ translate('Cancel') }}
 			</button>
 			<button
 				v-if="hasSteps && !onReview"
 				type="submit"
-				class="utrecht-button utrecht-button--primary-action"
+				class="utrecht-button utrecht-button--primary-action pq-schema-form__forward"
 				data-testid="schema-form-next">
 				{{ translate('Next step') }}
+				<svg
+					class="pq-schema-form__chevron"
+					viewBox="0 0 16 16"
+					aria-hidden="true"
+					focusable="false">
+					<path
+						d="M6 3l5 5-5 5"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2" />
+				</svg>
 			</button>
 			<button
 				v-else
 				type="submit"
-				class="utrecht-button utrecht-button--primary-action"
+				class="utrecht-button utrecht-button--primary-action pq-schema-form__forward"
 				:disabled="submitting"
 				data-testid="schema-form-submit">
 				{{ submitting ? translate('Please wait…') : submitLabel }}
+			</button>
+			<button
+				v-if="canSaveDraft"
+				type="button"
+				class="utrecht-button utrecht-button--subtle"
+				:disabled="submitting"
+				data-testid="schema-form-save-draft"
+				@click="askingToSave = true">
+				{{ translate('Save and continue later') }}
 			</button>
 			<button
 				v-if="pending !== null"
@@ -181,10 +296,32 @@
 			data-testid="schema-form-done">
 			{{ done }}
 		</p>
+
+		<SaveDraftModal
+			v-if="askingToSave"
+			:t="translate"
+			:formTitle="action.label || ''"
+			:days="draftDays"
+			:until="keptUntil"
+			:busy="submitting"
+			@continue="askingToSave = false"
+			@leave="leaveForm"
+			@save="saveAndStop" />
+		<ResumeDraftModal
+			v-if="pendingDraft"
+			:t="translate"
+			:formTitle="action.label || ''"
+			:savedAt="pendingDraftMoment"
+			:busy="submitting"
+			@resume="continueDraft"
+			@restart="startAgain" />
 	</form>
 </template>
 
 <script>
+import ResumeDraftModal from '../../modals/forms/ResumeDraftModal.vue'
+import SaveDraftModal from '../../modals/forms/SaveDraftModal.vue'
+import FormHelp from '../FormHelp.vue'
 import ErrorSummary from '../forms/ErrorSummary.vue'
 import FormProgress from '../forms/FormProgress.vue'
 import ReviewList from '../forms/ReviewList.vue'
@@ -194,10 +331,24 @@ import {
 	submitWithFiles,
 	uploadFiles,
 } from '../../../shared/fileFieldSubmit.js'
+import { ACCOUNT_ROUTE } from '../../../shared/portalNav.js'
+import {
+	mayStillBeProcessing,
+	newSubmissionKey,
+} from '../../../shared/submissionKey.js'
+import { runtimeConfig } from '../../lib/contentApi.js'
+import { addressOfRoute } from '../../lib/siteAddress.js'
 import { explainsOptional, summaryEntries } from '../forms/fields.js'
+import { filledFields, prefillFields, withProfile } from '../forms/profilePrefill.js'
 import stepFlow from '../forms/stepFlow.js'
-import { confirmationText, stepHeading } from '../forms/steps.js'
+import {
+	confirmationText,
+	landingStep,
+	retentionDate,
+	stepHeading,
+} from '../forms/steps.js'
 import { summarySentence } from '../forms/summary.js'
+import { momentInWords } from '../mijn/documents.js'
 import {
 	collectionProviders,
 	fieldConfig,
@@ -206,11 +357,15 @@ import {
 	fieldLabel,
 	formBody,
 	formFields,
+	invalidFieldErrors,
+	refusalKey,
 	serverFieldErrors,
 	staticOptions,
 	translatorOr,
 	withSingleOptions,
 } from './forms.js'
+
+import '@utrecht/alert-css/dist/index.css'
 
 /**
  * A manifest-driven form (the Vue port of SchemaForm.jsx, which also replaces
@@ -231,7 +386,15 @@ import {
 export default {
 	name: 'SchemaForm',
 
-	components: { ErrorSummary, FormProgress, ReviewList, SchemaField },
+	components: {
+		ErrorSummary,
+		FormHelp,
+		FormProgress,
+		ResumeDraftModal,
+		ReviewList,
+		SaveDraftModal,
+		SchemaField,
+	},
 
 	mixins: [stepFlow],
 
@@ -253,9 +416,21 @@ export default {
 		 * `recordField` (case-actions-on-the-case-page).
 		 */
 		preset: { type: Object, default: () => ({}) },
+		/**
+		 * Values the form starts from and the resident may change, by field:
+		 * the row's own values on an update (site-action-forms).
+		 */
+		initial: { type: Object, default: () => ({}) },
+		/**
+		 * Offer "Annuleren" where there is no step to go back to; the form
+		 * emits `cancel` and its host decides where that leads.
+		 */
+		cancellable: { type: Boolean, default: false },
+		/** The portal's help details (`help` on the site), for "Hulp nodig?". */
+		portalHelp: { type: Object, default: null },
 	},
 
-	emits: ['submitted'],
+	emits: ['submitted', 'cancel'],
 
 	data() {
 		const options = staticOptions(this.action)
@@ -270,6 +445,14 @@ export default {
 			submitting: false,
 			pending: null,
 			confirmed: null,
+			draftId: '',
+			askingToSave: false,
+			pendingDraft: null,
+			prefilled: [],
+			// One key per opened form; every send of these answers carries it,
+			// so a repeated send gets the first one's case (REQ-AFS-001).
+			submissionKey: newSubmissionKey(),
+			stillProcessing: false,
 		}
 	},
 
@@ -289,7 +472,7 @@ export default {
 				(typeof document !== 'undefined' && document.documentElement?.lang)
 				|| 'nl'
 			return summarySentence(
-				this.action?.summary || null,
+				this.action?.answerSummary || null,
 				this.values,
 				this.options,
 				{ locale },
@@ -308,8 +491,98 @@ export default {
 			return this.summaryText !== '' && (!this.hasSteps || this.onReview)
 		},
 
+		/**
+		 * The retention the action declares for a saved draft, or 0 for none.
+		 *
+		 * @return {number} Days.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-action-must-be-the-record-itself-in-status-draft-and-only-its-residents-req-smf-021
+		 */
+		draftDays() {
+			const days = this.action.draft && this.action.draft.retentionDays
+			return Number.isInteger(days) && days > 0 ? days : 0
+		},
+
+		/**
+		 * Whether "Opslaan en later verdergaan" shows: the action declares a
+		 * draft, the form runs in steps and the api can keep one.
+		 *
+		 * @return {boolean} True to show the button.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-action-must-be-the-record-itself-in-status-draft-and-only-its-residents-req-smf-021
+		 * @spec openspec/changes/resident-pages-live-round-3/specs/site-forms/spec.md#requirement-a-form-asks-for-a-draft-only-when-its-action-can-keep-one-req-rr3-005
+		 */
+		canSaveDraft() {
+			// The server keeps a draft only of a create action that names its
+			// register and schema; an endpoint action that declares `draft`
+			// asked for one on every open and got a 404 (live round 3).
+			const draftable =
+				this.action.type === 'create'
+				&& Boolean(this.action.register)
+				&& Boolean(this.action.schema)
+			return (
+				draftable
+				&& this.draftDays > 0
+				&& this.hasSteps
+				&& !this.confirmed
+				&& typeof this.api.saveDraft === 'function'
+			)
+		},
+
+		/**
+		 * The app part of the draft's key: the action's app, else its register.
+		 *
+		 * @return {string} The app.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-action-must-be-the-record-itself-in-status-draft-and-only-its-residents-req-smf-021
+		 */
+		draftApp() {
+			return String(this.action.appId || this.action.register || 'portal')
+		},
+
 		translate() {
 			return translatorOr(this.t)
+		},
+
+		/**
+		 * The address of Mijn zaken, in this page's portal and addressing.
+		 *
+		 * @return {string} The href.
+		 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
+		 */
+		/**
+		 * The day a draft saved now is kept until, in words (REQ-FSR-001).
+		 *
+		 * @return {string}
+		 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-saving-a-form-first-says-what-saving-does-req-fsr-001
+		 */
+		keptUntil() {
+			const until = new Date(Date.now() + this.draftDays * 86400000)
+			return retentionDate(until.toISOString(), this.pageLocale())
+		},
+
+		/**
+		 * When the draft waiting to be resumed was last saved, in words.
+		 *
+		 * @return {string}
+		 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-reopening-a-form-asks-before-it-continues-req-fsr-002
+		 */
+		pendingDraftMoment() {
+			const at = this.pendingDraft && this.pendingDraft.updatedAt
+			return at ? momentInWords(at, this.translate, this.pageLocale()) : ''
+		},
+
+		myCasesHref() {
+			const route = `${ACCOUNT_ROUTE}/cases`
+			try {
+				return addressOfRoute(
+					route,
+					window.location.href,
+					runtimeConfig(),
+				).toString()
+			} catch {
+				return `?route=${encodeURIComponent(route)}`
+			}
 		},
 
 		fields() {
@@ -324,6 +597,21 @@ export default {
 		 *
 		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-site-form-must-mark-the-fields-that-are-not-required-req-smf-001
 		 */
+		/**
+		 * Whether the fields on screen hold something the resident's own
+		 * account filled in, so the form says so and invites a correction.
+		 *
+		 * @return {boolean}
+		 *
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-action-field-may-start-from-the-signed-in-residents-name-or-e-mail-address
+		 */
+		showsPrefill() {
+			return (
+				!this.onReview
+				&& this.prefilled.some((field) => this.shownFields.includes(field))
+			)
+		},
+
 		explainOptional() {
 			return (
 				!this.onReview
@@ -447,26 +735,58 @@ export default {
 			this.options = staticOptions(this.action)
 			this.values = this.startValues()
 			this.loadOptions()
+			this.prefillFromProfile()
 		},
 	},
 
+	/**
+	 * Load the options, then open a saved draft when the action keeps one.
+	 *
+	 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-save-and-resume-must-sit-in-the-step-navigation-req-smf-012
+	 */
 	mounted() {
 		this.loadOptions()
+		// After the draft, so a saved answer is never replaced.
+		this.resumeDraft().then(() => this.prefillFromProfile())
 	},
 
 	methods: {
 		/**
+		 * Whether a value is a plain object, such as an action's `help`.
+		 *
+		 * @param {unknown} value The value.
+		 * @return {boolean}
+		 *
+		 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
+		 */
+		isPlainObject(value) {
+			return (
+				Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+			)
+		},
+
+		/**
 		 * One empty string per whitelisted field, or the value the page gives
-		 * for it (`preset`).
+		 * for it (`preset`), or the value the form starts from (`initial`).
 		 *
 		 * @return {Record<string, string>} The values.
 		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-update-row-action-that-needs-input-must-open-its-form-on-the-row
 		 */
 		emptyValues() {
 			const values = {}
 			for (const field of formFields(this.action)) {
 				values[field] =
 					field in this.preset ? String(this.preset[field]) : ''
+				const start = this.initial[field]
+				if (
+					!(field in this.preset)
+					&& start !== undefined
+					&& start !== null
+					&& typeof start !== 'object'
+				) {
+					values[field] = String(start)
+				}
 			}
 			return values
 		},
@@ -611,6 +931,199 @@ export default {
 		},
 
 		/**
+		 * The page's language, for dates.
+		 *
+		 * @return {string} The language code.
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-action-must-be-the-record-itself-in-status-draft-and-only-its-residents-req-smf-021
+		 */
+		pageLocale() {
+			return (
+				(typeof document !== 'undefined' && document.documentElement?.lang)
+				|| 'nl'
+			)
+		},
+
+		/**
+		 * Keep the answers so far as a draft of the record itself: the
+		 * destination object in status draft, which the app does not treat
+		 * as received until it is sent (decision 180). A missing required
+		 * answer is fine; a wrong value is refused on its field. Picked files
+		 * are uploaded into the draft, so they are kept too.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-action-must-be-the-record-itself-in-status-draft-and-only-its-residents-req-smf-021
+		 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
+		 */
+		async saveDraft() {
+			this.error = ''
+			this.done = ''
+			const kept = await this.api.saveDraft(this.draftApp, this.action.id, {
+				answers: { ...this.values },
+				step: this.currentStep ? this.currentStep.id : '',
+			})
+			if (!kept || kept.saved === false) {
+				const refused = serverFieldErrors(
+					this.action,
+					kept && kept.errors,
+					this.t,
+				)
+				if (Object.keys(refused).length > 0) {
+					this.showErrors(refused)
+					return
+				}
+				this.error = this.translate('Your answers could not be saved.')
+				return
+			}
+			this.errors = {}
+			this.draftId = String(kept.id || '')
+			if (this.draftId !== '' && Object.keys(this.files).length > 0) {
+				this.submitting = true
+				const { failed } = await uploadFiles(
+					this.api,
+					this.action,
+					this.draftId,
+					this.files,
+				)
+				this.submitting = false
+				// An attached file lives on the draft now; only a failed one is picked again.
+				this.files = {}
+				this.fileKey++
+				if (failed.length > 0) {
+					this.reportFailed(this.draftId, failed)
+					return
+				}
+			}
+			this.done = this.translate(
+				'Your answers are saved until {date}. You can continue later.',
+				{
+					date: retentionDate(kept.expiresAt, this.pageLocale()),
+				},
+			)
+		},
+
+		/**
+		 * Open a saved draft: its answers back in the fields, on the first step
+		 * with a missing required answer, else on the review.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-save-and-resume-must-sit-in-the-step-navigation-req-smf-012
+		 */
+		/**
+		 * Start the fields that declare `prefill` from the signed-in
+		 * resident's own name or e-mail address; a field that has a value
+		 * keeps it. Without a session, or without the call, nothing changes.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-action-field-may-start-from-the-signed-in-residents-name-or-e-mail-address
+		 */
+		async prefillFromProfile() {
+			if (
+				prefillFields(this.action).length === 0
+				|| typeof this.api.getDetails !== 'function'
+			) {
+				return
+			}
+			const actionId = this.action.id
+			const profile = await this.api.getDetails().catch(() => null)
+			if (this.action.id === actionId) {
+				const before = this.values
+				this.values = withProfile(before, this.action, profile)
+				this.prefilled = filledFields(before, this.values, this.action)
+			}
+		},
+
+		async resumeDraft() {
+			if (!this.canSaveDraft || typeof this.api.getDraft !== 'function') {
+				return
+			}
+			const draft = await this.api.getDraft(this.draftApp, this.action.id)
+			if (!draft || typeof draft.answers !== 'object') {
+				return
+			}
+			this.pendingDraft = draft
+		},
+
+		/**
+		 * Continue with the saved answers: they go back in the fields, on the
+		 * first step with a missing required answer, else on the review.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-reopening-a-form-asks-before-it-continues-req-fsr-002
+		 */
+		continueDraft() {
+			const draft = this.pendingDraft
+			this.pendingDraft = null
+			if (!draft) {
+				return
+			}
+			this.draftId = String(draft.id || '')
+			const values = { ...this.values }
+			for (const field of this.fields) {
+				if (field in draft.answers && !(field in this.preset)) {
+					values[field] = draft.answers[field]
+				}
+			}
+			this.values = values
+			this.stepIndex = landingStep(
+				this.flow,
+				(fields) => this.checkFields(fields),
+				(field) => this.isShownField(field),
+			)
+			this.done = this.translate(
+				'Your answers are saved until {date}. You can continue later.',
+				{ date: retentionDate(draft.expiresAt, this.pageLocale()) },
+			)
+		},
+
+		/**
+		 * Start again: discard the saved draft and keep the fields empty.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-reopening-a-form-asks-before-it-continues-req-fsr-002
+		 */
+		async startAgain() {
+			this.submitting = true
+			if (typeof this.api.discardDraft === 'function') {
+				await this.api.discardDraft(this.draftApp, this.action.id)
+			}
+			this.submitting = false
+			this.pendingDraft = null
+			this.draftId = ''
+		},
+
+		/**
+		 * "Opslaan en stoppen": save the draft, then leave the form the way
+		 * cancelling does; Mijn zaken lists it as an unfinished form. A refused
+		 * save keeps the resident here with the refusal shown.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-saving-a-form-first-says-what-saving-does-req-fsr-001
+		 */
+		async saveAndStop() {
+			await this.saveDraft()
+			this.askingToSave = false
+			if (this.error === '' && Object.keys(this.errors).length === 0) {
+				this.$emit('cancel')
+			}
+		},
+
+		/**
+		 * "Stoppen zonder opslaan": leave the form the way cancelling does,
+		 * keeping nothing new.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-saving-a-form-first-says-what-saving-does-req-fsr-001
+		 */
+		leaveForm() {
+			this.askingToSave = false
+			this.$emit('cancel')
+		},
+
+		/**
 		 * Move focus to the error summary's heading.
 		 *
 		 * @return {void}
@@ -677,10 +1190,13 @@ export default {
 		 * @return {Promise<void>}
 		 *
 		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-file-field-must-upload-after-the-record-exists-req-srp-023
+		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+		 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
 		 */
 		async submit() {
 			this.error = ''
 			this.done = ''
+			this.stillProcessing = false
 			const wrong = this.checkFields(
 				this.fields.filter((field) => this.isShownField(field)),
 			)
@@ -706,15 +1222,30 @@ export default {
 			if (!result.ok) {
 				// A refusal that names fields (a required field left empty)
 				// lands in the summary, on its step; anything else in words.
-				const refused = serverFieldErrors(this.action, result.errors, this.t)
+				// A value the server refused (`invalid`, site-action-forms) gets
+				// plain words on its field too.
+				const refused = {
+					...invalidFieldErrors(this.action, result.invalid, this.t),
+					...serverFieldErrors(this.action, result.errors, this.t),
+				}
 				if (Object.keys(refused).length > 0) {
 					this.showErrors(refused)
 					return
 				}
-				this.error = this.translate('Saving did not work.')
+				// Too slow is not failed: the request may still be made.
+				if (mayStillBeProcessing(result)) {
+					this.stillProcessing = true
+					return
+				}
+				this.error = this.translate(refusalKey(result.status || 0))
 				return
 			}
 
+			// Sent: the next answers on this form are a new submission.
+			this.submissionKey = newSubmissionKey()
+
+			// A saved draft was the record itself: the server sent it, so there is nothing left to delete.
+			this.draftId = ''
 			this.values = this.startValues()
 			this.files = {}
 			this.fileKey++
@@ -735,18 +1266,23 @@ export default {
 		 * as a create.
 		 *
 		 * @param {object} body The body.
-		 * @return {Promise<{ok: boolean, object: object|null, id: string, failed: Array, errors: object}>} The result.
+		 * @return {Promise<{ok: boolean, status: number, object: object|null, id: string, failed: Array, errors: object, invalid: object}>} The result.
 		 *
 		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
+		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+		 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
 		 */
 		async sendBody(body) {
-			const answer = (await this.send(body)) || {}
+			const answer =
+				(await this.send(body, { submissionKey: this.submissionKey })) || {}
 			return {
 				ok: answer.ok === true,
+				status: answer.status || 0,
 				object: answer.object || null,
 				id: '',
 				failed: [],
 				errors: answer.errors || {},
+				invalid: answer.invalid || {},
 			}
 		},
 
@@ -782,11 +1318,59 @@ export default {
 	margin-block: var(--utrecht-space-block-md, 1rem);
 }
 
+/* "Hulp nodig?" at the end of the line above the form. */
+.pq-schema-form__help {
+	display: flex;
+	justify-content: flex-end;
+	margin-block-end: var(--utrecht-space-block-sm, 0.75rem);
+}
+
 .pq-schema-form__buttons {
 	display: flex;
 	flex-wrap: wrap;
 	gap: var(--utrecht-space-inline-sm, 0.5rem);
 	margin-block-start: var(--utrecht-space-block-md, 1rem);
+}
+
+/* A form in steps ends on a rule: the way back (or out) at the start, the
+   way forward at the end. */
+.pq-schema-form__buttons--steps {
+	border-block-start: 1px solid
+		var(--nldesign-color-border, var(--utrecht-color-grey-80, currentcolor));
+	margin-block-start: var(--utrecht-space-block-xl, 2rem);
+	padding-block-start: var(--utrecht-space-block-lg, 1.5rem);
+}
+
+.pq-schema-form__buttons--steps .pq-schema-form__forward {
+	margin-inline-start: auto;
+}
+
+.pq-schema-form__chevron {
+	block-size: 1em;
+	flex: none;
+	inline-size: 1em;
+}
+
+.pq-schema-form__prefilled {
+	border: var(--nldesign-website-notice-border-width, 1px) solid
+		var(--nldesign-website-notice-border-color, #b9cbe2);
+	border-radius: var(--nldesign-website-border-radius, 4px);
+	margin-block-end: var(--utrecht-space-block-md, 1rem);
+}
+
+.pq-schema-form__prefilled-title {
+	font-weight: var(--utrecht-typography-weight-scale-bold, 600);
+}
+
+.pq-schema-form__note {
+	border: var(--nldesign-website-notice-border-width, 1px) solid
+		var(--nldesign-website-notice-border-color, #b9cbe2);
+	border-radius: var(--nldesign-website-border-radius, 4px);
+	margin-block-start: var(--utrecht-space-block-lg, 1.5rem);
+}
+
+.pq-schema-form__note-title {
+	font-weight: var(--utrecht-typography-weight-scale-bold, 600);
 }
 
 .pq-schema-form__intro {

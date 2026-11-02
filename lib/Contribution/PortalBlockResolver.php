@@ -188,6 +188,7 @@ class PortalBlockResolver {
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 * @spec openspec/changes/card-status-today/specs/portal-contribution-contract/spec.md#requirement-a-card-may-say-where-its-record-stands-today
 	 */
 	private function collectionBlock(string $type, array $block, array $entry, array $collectionIds, array $collections): array {
 		// A block on a record page may narrow its rows to the open record
@@ -217,7 +218,14 @@ class PortalBlockResolver {
 			}
 		}
 
-		return $entry + (new CollectionListKeys())->collectionKeys(block: $block, collection: $collection);
+		// A looked-up value may stand where the block names a field
+		// (lookup-by-row-field).
+		$collection = $scopes->withLookupFields(collection: $collection, entry: $entry);
+
+		// Where a card's record stands today, from another collection of
+		// this contribution (card-status-today).
+		return $entry + (new CollectionListKeys())->collectionKeys(block: $block, collection: $collection)
+			+ (new CardStatusKeys())->keys(block: $block, collectionIds: $collectionIds, collections: $collections);
 	}//end collectionBlock()
 
 	/**
@@ -250,7 +258,13 @@ class PortalBlockResolver {
 		}
 
 		if (in_array($type, ListBlockNormaliser::RECORD_BLOCKS, true) === true) {
-			return $lists->recordBlock(type: $type, block: $block, collections: $collections);
+			$entry = $lists->recordBlock(type: $type, block: $block, collections: $collections);
+			// The step that matters now as a highlight (steps-highlight).
+			if ($entry !== null && $type === 'steps') {
+				$entry = (new StepsHighlightKeys())->keys(block: $block, pageIds: $this->pageIds) + $entry;
+			}
+
+			return $entry;
 		}
 
 		return $this->recordPageBlock(type: $type, block: $block, collectionIds: $collectionIds);

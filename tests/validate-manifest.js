@@ -205,6 +205,18 @@ const RENDERABLE_WIDGET_TYPES = new Set([
 	'tile',
 	'chart',
 	'stats-block',
+	// The library registers these for a legacy `config.widgets` dashboard too
+	// (CnWidgetGrid/registerDashboardWidgets.js, CnBannerWidget); the lint
+	// used to reject them, which hid the board's attention card and lists.
+	'banner',
+	'table',
+	'stat',
+	// nextcloud-vue 2.80 registers it for the detail-page and app-dashboard
+	// surfaces; a filter without @objectId tokens needs no current object.
+	'record-list',
+	// A built-in of its own (CnWidgetObjectTable in CnWidgetGrid/builtInWidgets.js),
+	// not an alias of `table`: CnDashboardPage looks the type up as written.
+	'object-table',
 	...registryWidgetKeys(),
 ])
 
@@ -243,9 +255,8 @@ const TILE_LINK_TYPES = new Set(['app', 'url'])
  *                      layout renders its empty state — "No widgets
  *                      configured" — which reads as "nothing was configured
  *                      yet" rather than "your configuration is unreachable".
- *   unrenderable type  `text` and `object-table` are not in the renderer's
- *                      vocabulary. They validate, they round-trip, and they
- *                      mount nothing.
+ *   unrenderable type  `text` is not in the renderer's vocabulary. It
+ *                      validates, it round-trips, and it mounts nothing.
  *
  * Neither is a schema violation: the schema describes the manifest's SHAPE,
  * and both of these are true statements about a component's behaviour.
@@ -354,6 +365,44 @@ function rendererContractLint(manifest) {
 		const widgets = page.config.widgets
 		const layout = Array.isArray(page.config.layout) ? page.config.layout : []
 		const placed = new Set(layout.map((l) => l && l.widgetId))
+		// A `tabs` widget holds its children as tabs and `sideColumn` draws
+		// widgets beside the body: neither needs a grid cell of its own, and a
+		// grid cell for them would draw the widget twice.
+		for (const widget of widgets) {
+			if (
+				widget
+				&& widget.type === 'tabs'
+				&& widget.content
+				&& Array.isArray(widget.content.tabs)
+			) {
+				for (const tab of widget.content.tabs) {
+					placed.add(typeof tab === 'string' ? tab : tab && tab.widgetId)
+					// A stack (`widgetIds`) draws every widget it names in the tab.
+					for (const id of (tab && tab.widgetIds) || []) {
+						placed.add(id)
+					}
+				}
+			}
+			// A `sections` widget draws its `widgetId` children under headings
+			// (the portal's Instellingen tab).
+			if (
+				widget
+				&& widget.type === 'sections'
+				&& widget.content
+				&& Array.isArray(widget.content.sections)
+			) {
+				for (const section of widget.content.sections) {
+					if (section && section.widgetId) {
+						placed.add(section.widgetId)
+					}
+				}
+			}
+		}
+		for (const entry of Array.isArray(page.config.sideColumn)
+			? page.config.sideColumn
+			: []) {
+			placed.add(typeof entry === 'string' ? entry : entry && entry.id)
+		}
 
 		for (const widget of widgets) {
 			if (!widget || typeof widget !== 'object') continue

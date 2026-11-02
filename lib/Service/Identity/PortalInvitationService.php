@@ -41,6 +41,9 @@ use OCP\Security\ISecureRandom;
  * Issues, tracks and redeems portal invitations.
  *
  * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- issue, resend, withdraw
+ * and redeem each check the invitation's state before they act.
  */
 class PortalInvitationService {
 	/**
@@ -59,18 +62,25 @@ class PortalInvitationService {
 	private const DEFAULT_TTL = 'P7D';
 
 	/**
+	 * The accept could not finish now; the invitation is still good.
+	 */
+	public const TRY_LATER = 'try_later';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param PortalObjectReader $reader Looks the invitation up by hash.
 	 * @param PortalObjectWriter $writer Records and updates the invitation.
 	 * @param PortalAccountService $accounts Provisions the account on acceptance.
 	 * @param ISecureRandom $random Mints the one-time secret.
+	 * @param ClaimLock $lock Serialises two accepts of one invitation.
 	 */
 	public function __construct(
 		private readonly PortalObjectReader $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly PortalAccountService $accounts,
 		private readonly ISecureRandom $random,
+		private readonly ClaimLock $lock,
 	) {
 	}//end __construct()
 
@@ -215,18 +225,49 @@ class PortalInvitationService {
 	 * @param string $token The secret from the mail.
 	 * @param DateTimeImmutable|null $now The moment to judge expiry against.
 	 *
-	 * @return array{subjectRef: string}|null Null when the invitation admits
-	 *         nobody: unknown, expired, revoked or already accepted.
+	 * @return array{subjectRef: string}|string|null Null when the invitation admits
+	 *         nobody: unknown, expired, revoked or already accepted; TRY_LATER
+	 *         when another accept holds it or it could not be marked accepted.
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
-	public function accept(string $token, ?DateTimeImmutable $now = null): ?array {
+	public function accept(string $token, ?DateTimeImmutable $now = null): array|string|null {
+		if ($token === '') {
+			return null;
+		}
+
+		// One accept per invitation at a time: without the lock two accepts
+		// both read the invitation open and both provision.
+		$key = 'invitation/' . hash('sha256', $token);
+		if ($this->lock->acquire(accountId: $key) === false) {
+			return self::TRY_LATER;
+		}
+
+		try {
+			return $this->acceptLocked(token: $token, moment: ($now ?? new DateTimeImmutable()));
+		} finally {
+			$this->lock->release(accountId: $key);
+		}
+	}//end accept()
+
+	/**
+	 * The accept itself, under the lock: read the invitation again,
+	 * provision, and spend it; refused when it could not be spent.
+	 *
+	 * @param string            $token  The secret from the mail.
+	 * @param DateTimeImmutable $moment The moment to judge expiry against.
+	 *
+	 * @return array{subjectRef: string}|string|null Null when the invitation admits nobody, else TRY_LATER on a failed spend.
+	 *
+	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	private function acceptLocked(string $token, DateTimeImmutable $moment): array|string|null {
 		$row = $this->findByToken(token: $token);
 		if ($row === null) {
 			return null;
 		}
 
-		$state = $this->stateAsOf(row: $row, now: ($now ?? new DateTimeImmutable()));
+		$state = $this->stateAsOf(row: $row, now: $moment);
 		if ($state !== 'sent' && $state !== 'opened') {
 			return null;
 		}
@@ -242,10 +283,14 @@ class PortalInvitationService {
 			return null;
 		}
 
-		$this->markState(row: $row, state: 'accepted', extra: ['subjectRef' => $account['subjectRef']]);
+		// An invitation that could not be marked accepted stays open for
+		// another accept: refuse instead of reporting success.
+		if ($this->markState(row: $row, state: 'accepted', extra: ['subjectRef' => $account['subjectRef']]) === false) {
+			return self::TRY_LATER;
+		}
 
 		return ['subjectRef' => $account['subjectRef']];
-	}//end accept()
+	}//end acceptLocked()
 
 	/**
 	 * Withdraw an invitation that was not accepted (REQ-ISA-002). The link in
@@ -276,6 +321,65 @@ class PortalInvitationService {
 
 		return '';
 	}//end revoke()
+
+	/**
+	 * Send an invitation that was not accepted again (REQ-ISA-011): a new
+	 * secret replaces the old one, so the earlier link admits nobody, and the
+	 * window starts again. A withdrawn or accepted invitation is not resent.
+	 *
+	 * @param string $id The invitation's id.
+	 * @param string $organisation The tenant the clerk works for.
+	 * @param string $ttl An ISO 8601 duration, or '' for the default week.
+	 *
+	 * @return array{token?: string, email?: string, expiresAt?: string, error?: string}
+	 *         The new secret to mail with its address and expiry, or an `error`
+	 *         of `not_found`, `already_accepted`, `withdrawn` or `not_saved`.
+	 *
+	 * @spec openspec/changes/staff-resend-an-invitation/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
+	 */
+	public function resend(string $id, string $organisation, string $ttl = ''): array {
+		$row = $this->findById(id: $id, organisation: $organisation);
+		if ($row === null) {
+			return ['error' => 'not_found'];
+		}
+
+		$state = (string)($row['state'] ?? 'sent');
+		if ($state === 'accepted') {
+			return ['error' => 'already_accepted'];
+		}
+
+		if ($state === 'revoked') {
+			return ['error' => 'withdrawn'];
+		}
+
+		$token = $this->random->generate(48, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS));
+		$email = (string)($row['email'] ?? '');
+		if ($token === '' || $email === '') {
+			return ['error' => 'not_saved'];
+		}
+
+		$window = self::DEFAULT_TTL;
+		if ($ttl !== '') {
+			$window = $ttl;
+		}
+
+		$now    = new DateTimeImmutable();
+		$expiry = $now->add(new DateInterval($window));
+		$saved  = $this->markState(
+			row: $row,
+			state: 'sent',
+			extra: [
+				'tokenHash' => hash('sha256', $token),
+				'sentAt' => $now->format(DATE_ATOM),
+				'expiresAt' => $expiry->format(DATE_ATOM),
+			]
+		);
+		if ($saved === false) {
+			return ['error' => 'not_saved'];
+		}
+
+		return ['token' => $token, 'email' => $email, 'expiresAt' => $expiry->format(DATE_ATOM)];
+	}//end resend()
 
 	/**
 	 * The invitation with this id in this organisation, or null.
@@ -378,9 +482,9 @@ class PortalInvitationService {
 	 * @param string $state The new state.
 	 * @param array<string, mixed> $extra Anything else to stamp.
 	 *
-	 * @return void
+	 * @return bool Whether the row was written.
 	 */
-	private function markState(array $row, string $state, array $extra = []): void {
+	private function markState(array $row, string $state, array $extra = []): bool {
 		$id = (string)($row['uuid'] ?? $row['id'] ?? '');
 		if ($id === '') {
 			$self = (array)($row['@self'] ?? []);
@@ -388,10 +492,10 @@ class PortalInvitationService {
 		}
 
 		if ($id === '') {
-			return;
+			return false;
 		}
 
-		$this->writer->updateObject(
+		$updated = $this->writer->updateObject(
 			register: self::REGISTER,
 			schema: self::SCHEMA,
 			scopeField: '',
@@ -400,5 +504,7 @@ class PortalInvitationService {
 			id: $id,
 			data: array_merge(['state' => $state], $extra)
 		);
+
+		return $updated !== null;
 	}//end markState()
 }//end class

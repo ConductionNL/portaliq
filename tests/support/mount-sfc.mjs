@@ -17,6 +17,7 @@ import { basename, dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
+
 // Inside the repository so the compiled modules resolve `vue` from node_modules.
 const OUT = join(ROOT, 'node_modules', '.cache', 'mount-sfc')
 

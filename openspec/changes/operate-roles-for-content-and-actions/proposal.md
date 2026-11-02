@@ -67,6 +67,9 @@ The lane recorded both as `build` on two or more competitors rated `yes`.
 - **Page editors can also place a page in the menu.** The editor groups that
   may edit pages also govern the `menu` schema, so the person who publishes
   a page can link it without asking an administrator.
+- **Content rights and settings rights stay apart** (REQ-ORA-007). Being a
+  page editor gives no settings right, and an action grant gives no page
+  right.
 
 ## Rows this closes
 

@@ -60,6 +60,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Portaliq\Service\CitizenWriteThrottle
  * @uses   \OCA\Portaliq\Service\PortalSessionService
  * @uses   \OCA\Portaliq\Contribution\TimelineProviderMethod
+ * @uses   \OCA\Portaliq\Service\Identity\MandateParties
  * @uses   \OCA\Portaliq\Service\Branch\BranchNumber
  * @uses   \OCA\Portaliq\Service\Branch\PortalBranchScope
  * @uses   \OCA\Portaliq\Service\CitizenCaseDocuments
@@ -68,6 +69,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Portaliq\Service\CitizenCaseProjection
  * @uses   \OCA\Portaliq\Service\PortalFieldProjector
  * @uses   \OCA\Portaliq\Service\CaseRowMarker
+ * @uses   \OCA\Portaliq\Service\CaseStatusView
  *
  * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
  */
@@ -245,6 +247,25 @@ class CitizenCaseControllerTest extends TestCase {
 		$this->assertSame(self::CASE_ID, $event->getCaseId());
 		$this->assertSame(['omschrijving'], $event->getFields());
 	}//end testACorrectionLandsWithTheIdentityRecorded()
+
+	/**
+	 * A write made under a mandate carries the mandate's label, so the case app
+	 * can say on whose behalf in words (write-record-names-the-mandate).
+	 */
+	public function testAWriteUnderAMandateRecordsTheMandatesLabel(): void {
+		$controller = $this->controller(
+			fields: ['omschrijving' => 'dakkapel aan de achterzijde'],
+			params: ['actingFor' => 'kvk-subsidiary', 'mandate' => 'mandate-1'],
+			actingMandate: ['id' => 'mandate-1', 'label' => 'Kramer voor Slagerij Van der Berg'],
+		);
+
+		$response = $controller->amend('zaken', 'zaak', self::CASE_ID);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$mandate = $this->writes[0]['data']['portalWrites'][0]['mandate'];
+		$this->assertSame('kvk-subsidiary', $mandate['actingFor']);
+		$this->assertSame('Kramer voor Slagerij Van der Berg', $mandate['actingForLabel']);
+	}//end testAWriteUnderAMandateRecordsTheMandatesLabel()
 
 	/**
 	 * The same write, with the window closed: refused with a status and the
@@ -596,6 +617,7 @@ class CitizenCaseControllerTest extends TestCase {
 		array $taggedFiles = [],
 		array $published = [],
 		?MandatedCaseReader $mandatedCases = null,
+		?array $actingMandate = null,
 	): CitizenCaseController {
 		$action = ($action ?? $this->action());
 		$cases = $this->cases();
@@ -703,8 +725,8 @@ class CitizenCaseControllerTest extends TestCase {
 			new CitizenWriteRecorder($this->createMock(AuditTrailService::class), $dispatcher),
 			$this->throttle(open: $throttleOpen),
 			new CitizenDocumentUpload(),
-			$this->mandateService(),
-			$this->treeResolver(),
+			$this->mandateService(mandate: $actingMandate),
+			$this->treeResolver(entities: ($actingMandate === null ? [] : ['kvk-subsidiary'])),
 			$l10n,
 			$this->createMock(LoggerInterface::class),
 			$this->documents(fileReader: $fileReader, published: $published),
@@ -820,13 +842,22 @@ class CitizenCaseControllerTest extends TestCase {
 	 *
 	 * @return \OCA\Portaliq\Service\Identity\PortalMandateService
 	 */
-	private function mandateService(): \OCA\Portaliq\Service\Identity\PortalMandateService {
+	private function mandateService(?array $mandate = null): \OCA\Portaliq\Service\Identity\PortalMandateService {
 		$mandates = $this->getMockBuilder(\OCA\Portaliq\Service\Identity\PortalMandateService::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['mandatesFor', 'activeMandate'])
+			->onlyMethods(['mandatesFor', 'activeMandate', 'describe', 'reachOf'])
 			->getMock();
-		$mandates->method('mandatesFor')->willReturn([]);
-		$mandates->method('activeMandate')->willReturn(null);
+		$mandates->method('mandatesFor')->willReturn($mandate === null ? [] : [$mandate]);
+		$mandates->method('activeMandate')->willReturn($mandate);
+		$mandates->method('describe')->willReturn(
+			[
+				'id'         => 'mandate-1',
+				'label'      => (string)($mandate['label'] ?? ''),
+				'onBehalfOf' => 'kvk-parent',
+				'organisation' => 'kvk-parent',
+			]
+		);
+		$mandates->method('reachOf')->willReturn('entity');
 
 		return $mandates;
 	}//end mandateService()
@@ -836,12 +867,12 @@ class CitizenCaseControllerTest extends TestCase {
 	 *
 	 * @return \OCA\Portaliq\Service\Identity\PortalPartyTreeResolver
 	 */
-	private function treeResolver(): \OCA\Portaliq\Service\Identity\PortalPartyTreeResolver {
+	private function treeResolver(array $entities = []): \OCA\Portaliq\Service\Identity\PortalPartyTreeResolver {
 		$tree = $this->getMockBuilder(\OCA\Portaliq\Service\Identity\PortalPartyTreeResolver::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['entitiesFor'])
 			->getMock();
-		$tree->method('entitiesFor')->willReturn(['entities' => [], 'refused' => false, 'bound' => []]);
+		$tree->method('entitiesFor')->willReturn(['entities' => $entities, 'refused' => false, 'bound' => []]);
 
 		return $tree;
 	}//end treeResolver()

@@ -14,6 +14,7 @@
 // because the Nextcloud admin section is the canonical place for
 // "before the app boots" config (e.g. an app's OR register binding).
 
+import { registerTranslations } from '@conduction/nextcloud-vue'
 import {
 	loadTranslations,
 	translatePlural as n,
@@ -22,6 +23,15 @@ import {
 import { createApp } from 'vue'
 import AdminRoot from './views/AdminRoot.vue'
 import pinia from './pinia.js'
+
+// Library CSS, as in main.js: webpack tree-shakes the library's own style
+// side effect from the aliased package, so without this import the admin
+// page drew the board shell with none of its grid, cards or tokens.
+import '@conduction/nextcloud-vue/css/index.css'
+
+// The library's own catalogue (shell chrome). main.js registers it for the
+// app pages; this entry is a separate bundle.
+registerTranslations()
 
 loadTranslations('portaliq', () => {
 	const app = createApp(AdminRoot)

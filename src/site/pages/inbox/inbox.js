@@ -16,6 +16,7 @@ import {
 	parseOpenFragment,
 } from '../../../shared/openRecord.js'
 import { routeForNav } from '../../../shared/portalNav.js'
+import { DAY_AND_MINUTE } from '../../lib/dayAndMinute.js'
 
 /** The site route of "My tasks" in the signed-in area, as the shell builds it. */
 export const TASKS_ROUTE = routeForNav({ special: 'tasks' })
@@ -51,7 +52,38 @@ export function formatDateTime(value, locale) {
 	if (Number.isNaN(date.getTime())) {
 		return String(value)
 	}
-	return date.toLocaleString(locale === 'en' ? 'en-GB' : 'nl-NL')
+	return date.toLocaleString(locale === 'en' ? 'en-GB' : 'nl-NL', DAY_AND_MINUTE)
+}
+
+/**
+ * A message's moment as a resident reads it in a list of messages: the day
+ * with the month in words and the time to the minute ("4 oktober 2026,
+ * 13:59"), '' when absent.
+ *
+ * @param {string} value An ISO date-time.
+ * @param {string} locale `nl` or `en`.
+ * @return {string} The formatted value.
+ * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
+ */
+export function formatMessageMoment(value, locale) {
+	if (!value) {
+		return ''
+	}
+	const date = new Date(value)
+	if (Number.isNaN(date.getTime())) {
+		return String(value)
+	}
+	const tag = locale === 'en' ? 'en-GB' : 'nl-NL'
+	const day = date.toLocaleDateString(tag, {
+		day: 'numeric',
+		month: 'long',
+		year: 'numeric',
+	})
+	const time = date.toLocaleTimeString(tag, {
+		hour: '2-digit',
+		minute: '2-digit',
+	})
+	return `${day}, ${time}`
 }
 
 /**
@@ -523,4 +555,79 @@ export function bodyParts(body, origin, labels) {
 		pushPart(parts, { text: line.slice(cursor) })
 	})
 	return parts
+}
+
+/**
+ * A message's action as a button, or null: only a label with an address that
+ * is a page of this portal (a path on this site, or an address on this
+ * origin) is drawn. Any other address is dropped.
+ *
+ * @param {object} message The message.
+ * @param {string} origin The page origin, '' where there is no window.
+ * @return {{label: string, href: string}|null} The button.
+ * @spec openspec/changes/a-message-names-its-record-and-links-its-action/tasks.md#task-2
+ */
+export function actionOf(message, origin = '') {
+	const action = message?.action
+	if (!action || typeof action.label !== 'string' || !action.label.trim()) {
+		return null
+	}
+	const href = action.href
+	if (typeof href !== 'string' || href === '') {
+		return null
+	}
+	if (/^\/(?!\/)/.test(href) && !href.includes('\\')) {
+		return { label: action.label.trim(), href }
+	}
+	if (/^#[\w/=.-]+$/.test(href)) {
+		return { label: action.label.trim(), href }
+	}
+	if (origin !== '' && href.startsWith(`${origin}/`)) {
+		return { label: action.label.trim(), href }
+	}
+	return null
+}
+
+/**
+ * The tabs of the inbox: all, unread with its count, and one per distinct
+ * `tab` value the rows carry, in the order first seen.
+ *
+ * @param {Array<object>} messages The loaded messages.
+ * @return {Array<{key: string, kind: string, value?: string}>} The tabs.
+ * @spec openspec/changes/a-message-names-its-record-and-links-its-action/tasks.md#task-2
+ */
+export function inboxTabs(messages) {
+	const tabs = [
+		{ key: 'all', kind: 'all' },
+		{ key: 'unread', kind: 'unread' },
+	]
+	const seen = new Set()
+	for (const message of messages || []) {
+		const value = typeof message?.tab === 'string' ? message.tab.trim() : ''
+		if (value !== '' && !seen.has(value)) {
+			seen.add(value)
+			tabs.push({ key: `tab:${value}`, kind: 'value', value })
+		}
+	}
+	return tabs
+}
+
+/**
+ * The messages one tab shows.
+ *
+ * @param {Array<object>} messages The loaded messages.
+ * @param {string} key The tab key from `inboxTabs`.
+ * @return {Array<object>} The messages on that tab.
+ * @spec openspec/changes/a-message-names-its-record-and-links-its-action/tasks.md#task-2
+ */
+export function messagesOnTab(messages, key) {
+	const list = messages || []
+	if (key === 'unread') {
+		return list.filter((m) => m?.read !== true)
+	}
+	if (typeof key === 'string' && key.startsWith('tab:')) {
+		const value = key.slice(4)
+		return list.filter((m) => m?.tab === value)
+	}
+	return list
 }

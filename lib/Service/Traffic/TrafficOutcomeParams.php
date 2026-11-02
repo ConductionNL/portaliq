@@ -63,6 +63,11 @@ class TrafficOutcomeParams {
 	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
 	 */
 	public function filter(string $name, array $params, array $config): array {
+		// A use is counted, never its text (search-assistant-from-public-content).
+		if (in_array($name, TrafficConfigResolver::TEXTLESS_EVENTS, true) === true) {
+			return [];
+		}
+
 		$declared = $this->declared(config: $config);
 		$formEvent = in_array($name, TrafficConfigResolver::FORM_EVENTS, true);
 		$heatEvent = in_array($name, TrafficConfigResolver::HEAT_EVENTS, true);

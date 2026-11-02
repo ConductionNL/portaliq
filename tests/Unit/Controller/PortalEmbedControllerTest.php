@@ -9,7 +9,12 @@ use OCA\Portaliq\Service\Intake\PortalEmbedGuard;
 use OCA\Portaliq\Service\Intake\PortalEmbedThrottle;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\Intake\PortalFormValidator;
-use OCA\Portaliq\Service\Intake\PortalIntakeQueue;
+use OCA\Portaliq\Service\Intake\DestinationIntake;
+use OCA\Portaliq\Service\Intake\DestinationMapping;
+use OCA\Portaliq\Service\Intake\DestinationSubmit;
+use OCA\Portaliq\Service\PortalSchemaReader;
+use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\FormSubmitFake;
+use Psr\Log\LoggerInterface;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
@@ -34,6 +39,31 @@ class PortalEmbedControllerTest extends TestCase {
 	 * @var array<string, mixed>
 	 */
 	private array $doubles = [];
+
+	/**
+	 * OpenRegister's submit service, faked: the only writer a submit reaches.
+	 *
+	 * @var FormSubmitFake
+	 */
+	private FormSubmitFake $submit;
+
+	/**
+	 * Set by a test in which nothing may reach the destination.
+	 *
+	 * @var bool
+	 */
+	private bool $forbidSubmit = false;
+
+	/**
+	 * A refused submit stores nothing: OpenRegister's submit service was never asked.
+	 *
+	 * @return void
+	 */
+	protected function assertPostConditions(): void {
+		if ($this->forbidSubmit === true) {
+			$this->assertSame([], $this->submit->calls, 'nothing may reach the destination');
+		}
+	}//end assertPostConditions()
 
 	public function testADisallowedOriginIsRefusedBeforeTheFormIsRead(): void {
 		$controller = $this->controller(origin: 'https://www.elders.nl');
@@ -109,27 +139,22 @@ class PortalEmbedControllerTest extends TestCase {
 
 	public function testASubmissionRecordsTheOriginItCameFrom(): void {
 		$controller = $this->controller(origin: 'https://www.gemeente.nl');
-		$this->doubles['queue']->expects($this->once())
-			->method('accept')
-			->with(
-				$this->equalTo('gemeente-x'),
-				$this->equalTo('aanvragen/verhuizing'),
-				$this->equalTo(['postcode' => '1234 AB']),
-				$this->equalTo(''),
-				$this->equalTo('https://www.gemeente.nl')
-			)
-			->willReturn(['reference' => 'AANVRAAG-ABC123', 'state' => 'queued']);
-
 		$data = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'])->getData();
 
-		$this->assertSame('AANVRAAG-ABC123', $data['reference']);
-		$this->assertStringContainsString('AANVRAAG-ABC123', $data['followUrl']);
+		$this->assertSame('2026-0042', $data['reference']);
+		$this->assertSame('2026-11-24', $data['deadline']);
+		$this->assertStringContainsString('2026-0042', $data['followUrl']);
+		$call = $this->submit->calls[0];
+		$this->assertSame(['postcode' => '1234 AB'], $call['payload']);
+		$this->assertSame('https://www.gemeente.nl', $call['mapping']['fixed']['origin']);
+		// The frame reads no session: nobody is stamped on the case.
+		$this->assertArrayNotHasKey('portalSubject', $call['mapping']['fixed']);
 
 	}//end testASubmissionRecordsTheOriginItCameFrom()
 
 	public function testASubmissionFromADisallowedOriginCreatesNothing(): void {
 		$controller = $this->controller(origin: 'https://www.elders.nl');
-		$this->doubles['queue']->expects($this->never())->method('accept');
+		$this->forbidSubmit = true;
 
 		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'])->getStatus());
 
@@ -137,7 +162,7 @@ class PortalEmbedControllerTest extends TestCase {
 
 	public function testABurstFromOneOriginIsThrottledAndCreatesNothing(): void {
 		$controller = $this->controller(origin: 'https://www.gemeente.nl', throttleOpen: false);
-		$this->doubles['queue']->expects($this->never())->method('accept');
+		$this->forbidSubmit = true;
 
 		$this->assertSame(Http::STATUS_TOO_MANY_REQUESTS, $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'])->getStatus());
 
@@ -145,7 +170,7 @@ class PortalEmbedControllerTest extends TestCase {
 
 	public function testValidationIsTheSchemasNotTheFrames(): void {
 		$controller = $this->controller(origin: 'https://www.gemeente.nl');
-		$this->doubles['queue']->expects($this->never())->method('accept');
+		$this->forbidSubmit = true;
 
 		$response = $controller->submit(route: 'aanvragen/verhuizing', answers: ['toelichting' => 'Ik verhuis.']);
 
@@ -162,7 +187,7 @@ class PortalEmbedControllerTest extends TestCase {
 			'slug' => 'gemeente-x',
 			'authentication' => ['requiresIdentifiedIntake' => true],
 		]);
-		$this->doubles['queue']->expects($this->never())->method('accept');
+		$this->forbidSubmit = true;
 
 		$response = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB']);
 
@@ -184,7 +209,7 @@ class PortalEmbedControllerTest extends TestCase {
 
 	public function testAFormRequiringDigidAcceptsNoSubmissionThroughTheFrame(): void {
 		$controller = $this->controller(origin: 'https://www.gemeente.nl', formMinTrust: 'high');
-		$this->doubles['queue']->expects($this->never())->method('accept');
+		$this->forbidSubmit = true;
 
 		$response = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB']);
 
@@ -228,7 +253,7 @@ class PortalEmbedControllerTest extends TestCase {
 
 	public function testAFormRequiringLevelLowAcceptsNoSubmissionThroughTheFrame(): void {
 		$controller = $this->controller(origin: 'https://www.gemeente.nl', formMinTrust: 'low');
-		$this->doubles['queue']->expects($this->never())->method('accept');
+		$this->forbidSubmit = true;
 
 		$response = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB']);
 
@@ -247,11 +272,45 @@ class PortalEmbedControllerTest extends TestCase {
 
 	public function testAnUnrecognisedSignInLevelFailsClosed(): void {
 		$controller = $this->controller(origin: 'https://www.gemeente.nl', formMinTrust: 'digid');
-		$this->doubles['queue']->expects($this->never())->method('accept');
+		$this->forbidSubmit = true;
 
 		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'])->getStatus());
 
 	}//end testAnUnrecognisedSignInLevelFailsClosed()
+
+	/**
+	 * submit-creates-the-case-directly 2.2: a filled honeypot gets a quiet 202
+	 * and nothing reaches the destination; it is checked before the throttle.
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#2.2
+	 */
+	public function testAFilledHoneypotIsAcceptedQuietlyAndSendsNothing(): void {
+		$controller = $this->controller(origin: 'https://www.gemeente.nl', throttleOpen: false);
+		$this->forbidSubmit = true;
+
+		$response = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'], _hp: 'https://spam.example');
+
+		$this->assertSame(Http::STATUS_ACCEPTED, $response->getStatus());
+		$this->assertArrayNotHasKey('reference', $response->getData());
+	}//end testAFilledHoneypotIsAcceptedQuietlyAndSendsNothing()
+
+	/**
+	 * REQ-PIFO-004: the destination's refusal comes back on its field; an
+	 * outage says try again later.
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-submission-is-validated-against-its-destinations-schema-before-anything-is-stored-req-pifo-004
+	 */
+	public function testTheDestinationsRefusalComesBackThroughTheFrame(): void {
+		$controller = $this->controller(origin: 'https://www.gemeente.nl');
+		$this->submit->outcome = FormSubmitFake::refusal(status: 422, findings: [['property' => 'postcode', 'code' => 'pattern', 'message' => 'Dit is geen postcode.']]);
+
+		$refused = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB']);
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $refused->getStatus());
+		$this->assertSame(['postcode' => 'Dit is geen postcode.'], $refused->getData()['errors']);
+
+		$this->submit->outcome = new \RuntimeException('down');
+		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'])->getStatus());
+	}//end testTheDestinationsRefusalComesBackThroughTheFrame()
 
 	/**
 	 * The controller over doubles, with the real guard and validator so the
@@ -288,6 +347,7 @@ class PortalEmbedControllerTest extends TestCase {
 			'portal' => 'gemeente-x',
 			'route' => 'aanvragen/verhuizing',
 			'allowedOrigins' => ['https://www.gemeente.nl'],
+			'destination' => ['register' => 'dossiq', 'schema' => 'case', 'subjectField' => 'portalSubject'],
 		];
 		if ($bindingMinTrust !== null) {
 			$binding['minTrust'] = $bindingMinTrust;
@@ -315,10 +375,15 @@ class PortalEmbedControllerTest extends TestCase {
 		$urls = $this->createMock(IURLGenerator::class);
 		$urls->method('linkToRouteAbsolute')->willReturn('https://portaal.example.org/site');
 
-		$this->doubles = [
-			'bindings' => $bindings,
-			'queue' => $this->double(PortalIntakeQueue::class, ['accept']),
-		];
+		$this->doubles = ['bindings' => $bindings];
+		$this->submit  = new FormSubmitFake(outcome: ['reference' => '2026-0042', 'id' => 'u-1', 'receivedAt' => '2026-10-11T09:00:00+00:00', 'confirmation' => ['deadline' => '2026-11-24']]);
+		$schemas       = $this->createMock(PortalSchemaReader::class);
+		$schemas->method('readSchema')->willReturn(['properties' => ['postcode' => ['type' => 'string'], 'origin' => ['type' => 'string'], 'portalSubject' => ['type' => 'string']]]);
+		$intake = new DestinationIntake(
+			submitter: new DestinationSubmit($this->submit->container(), $this->createMock(LoggerInterface::class)),
+			mapping: new DestinationMapping(),
+			schemas: $schemas
+		);
 
 		return new PortalEmbedController(
 			$request,
@@ -327,7 +392,7 @@ class PortalEmbedControllerTest extends TestCase {
 			new PortalEmbedGuard(),
 			$throttle,
 			new PortalFormValidator($l10n),
-			$this->doubles['queue'],
+			$intake,
 			$urls
 		);
 	}//end controller()

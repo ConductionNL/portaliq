@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 
 use OCA\Portaliq\Service\CaseTypeReader;
+use OCA\Portaliq\Service\Identity\EmailLink\EmailLinkSetting;
 use OCA\Portaliq\Service\Identity\PortalReferenceLinkService;
 use OCA\Portaliq\Service\Identity\PortalRegistrationPolicyService;
 use OCA\Portaliq\Service\Identity\PortalWaysInResolver;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCP\IAppConfig;
 use OCP\Security\ISecureRandom;
 use PHPUnit\Framework\TestCase;
 
@@ -86,6 +88,39 @@ class PortalWaysInResolverTest extends TestCase {
 	 *
 	 * @return array<string, mixed>
 	 */
+	/**
+	 * A portal declaring only the e-mail link, with registration on: the link
+	 * is offered, and there is no "Create an account" door (REQ-IWI-014).
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#1
+	 */
+	public function testTheEmailLinkAloneOpensNoRegistration(): void {
+		$portal = $this->portal('activation');
+		$portal['authentication']['modes'] = ['email-link'];
+
+		$ways = $this->resolver(emailLinkOn: true)->waysIn(portal: $portal, oidcProviders: []);
+
+		$this->assertTrue($ways['emailLink']);
+		$this->assertFalse($ways['register']);
+		$this->assertSame('', $ways['emailSignIn']);
+
+	}//end testTheEmailLinkAloneOpensNoRegistration()
+
+	/**
+	 * The switch is off by default: a portal declaring the mode does not
+	 * offer it, and a portal not declaring it never does.
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#1
+	 */
+	public function testTheEmailLinkNeedsTheSwitchAndTheMode(): void {
+		$declaring = $this->portal('off');
+		$declaring['authentication']['modes'] = ['email-link'];
+
+		$this->assertFalse($this->resolver(emailLinkOn: false)->waysIn(portal: $declaring, oidcProviders: [])['emailLink']);
+		$this->assertFalse($this->resolver(emailLinkOn: true)->waysIn(portal: $this->portal('off'), oidcProviders: [])['emailLink']);
+
+	}//end testTheEmailLinkNeedsTheSwitchAndTheMode()
+
 	private function portal(string $policy): array {
 		return ['slug' => 'gemeente-x', 'organisation' => 'gemeente-x', 'authentication' => ['registration' => ['policy' => $policy]]];
 	}//end portal()
@@ -98,7 +133,7 @@ class PortalWaysInResolverTest extends TestCase {
 	 *
 	 * @return PortalWaysInResolver
 	 */
-	private function resolver(array $declared = [], array $types = []): PortalWaysInResolver {
+	private function resolver(array $declared = [], array $types = [], bool $emailLinkOn = false): PortalWaysInResolver {
 		$bindings = $this->getMockBuilder(PortalFormBindingResolver::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['declaredCaseTypes'])
@@ -119,6 +154,9 @@ class PortalWaysInResolverTest extends TestCase {
 			$this->createMock(ISecureRandom::class)
 		);
 
-		return new PortalWaysInResolver(new PortalRegistrationPolicyService(), $bindings, $caseTypes, $references);
+		$config = $this->createMock(IAppConfig::class);
+		$config->method('getValueString')->willReturn($emailLinkOn ? '1' : '0');
+
+		return new PortalWaysInResolver(new PortalRegistrationPolicyService(), $bindings, $caseTypes, $references, new EmailLinkSetting($config));
 	}//end resolver()
 }//end class

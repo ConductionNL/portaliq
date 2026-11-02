@@ -6,6 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\PortalAccountAdminController;
 use OCA\Portaliq\Service\ActionAuthService;
+use OCA\Portaliq\Service\Identity\EmailLink\SignInAddressChange;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\Identity\PortalInvitationService;
 use OCA\Portaliq\Service\PortalAccountService;
@@ -159,7 +160,7 @@ class PortalAccountAdminControllerTest extends TestCase {
 	 *
 	 * @return PortalAccountAdminController
 	 */
-	private function controller(PortalAccountService $accounts, bool $allowed, ?IUser $user, ?PortalIdentityMailer $mailer = null): PortalAccountAdminController {
+	private function controller(PortalAccountService $accounts, bool $allowed, ?IUser $user, ?PortalIdentityMailer $mailer = null, ?SignInAddressChange $signInAddresses = null): PortalAccountAdminController {
 		$actionAuth = $this->getMockBuilder(ActionAuthService::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['requireAction'])
@@ -184,7 +185,7 @@ class PortalAccountAdminControllerTest extends TestCase {
 			$mailer->method('send')->willReturn(true);
 		}
 
-		return new PortalAccountAdminController($this->createMock(IRequest::class), $accounts, $actionAuth, $session, $invitations, $mailer);
+		return new PortalAccountAdminController($this->createMock(IRequest::class), $accounts, $actionAuth, $session, $invitations, $mailer, $signInAddresses);
 	}//end controller()
 
 	public function testAnInvitationIsOnlySentByAClerkWithTheAction(): void {
@@ -277,6 +278,118 @@ class PortalAccountAdminControllerTest extends TestCase {
 	}//end user()
 
 	/**
+	 * A controller whose invitation service answers `$resent` to a resend.
+	 *
+	 * @param bool $allowed Whether the clerk holds the provision action.
+	 * @param array<string, string> $resent What the service answers.
+	 * @param bool $mailed Whether the mail leaves.
+	 * @param int $resends How often the service may be asked.
+	 *
+	 * @return PortalAccountAdminController
+	 */
+	private function resending(bool $allowed, array $resent, bool $mailed = true, int $resends = 1): PortalAccountAdminController {
+		$actionAuth = $this->createMock(originalClassName: ActionAuthService::class);
+		if ($allowed === false) {
+			$actionAuth->method('requireAction')->willThrowException(exception: new OCSForbiddenException(message: 'nope'));
+		}
+
+		$session = $this->createMock(originalClassName: IUserSession::class);
+		$session->method('getUser')->willReturn(value: $this->user(uid: 'clerk-anna'));
+		$invitations = $this->createMock(originalClassName: PortalInvitationService::class);
+		$invitations->expects($this->exactly(count: $resends))->method('resend')->willReturn(value: $resent);
+		$mailer = $this->createMock(originalClassName: PortalIdentityMailer::class);
+		$mailer->method('send')->willReturn(value: $mailed);
+
+		return new PortalAccountAdminController(
+			request: $this->createMock(originalClassName: IRequest::class),
+			accounts: $this->createMock(originalClassName: PortalAccountService::class),
+			actionAuth: $actionAuth,
+			userSession: $session,
+			invitations: $invitations,
+			mailer: $mailer
+		);
+	}//end resending()
+
+	/**
+	 * A clerk without the provision action is refused before the invitation
+	 * is read; one with it gets the new expiry and never the secret.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/staff-resend-an-invitation/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
+	 */
+	public function testAnInvitationIsSentAgainOnlyByAClerkWithTheAction(): void {
+		$resent = ['token' => 'secret-2', 'email' => 'ans@example.org', 'expiresAt' => '2026-10-27T09:00:00+00:00'];
+
+		$refused = $this->resending(allowed: false, resent: $resent, resends: 0)->resendInvitation(id: 'inv-1', organisation: 'gemeente-x');
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $refused->getStatus());
+
+		$data = $this->resending(allowed: true, resent: $resent)->resendInvitation(id: 'inv-1', organisation: 'gemeente-x')->getData();
+		$this->assertSame(expected: ['state' => 'sent', 'expiresAt' => '2026-10-27T09:00:00+00:00'], actual: $data);
+		$this->assertStringNotContainsString(needle: 'secret-2', haystack: (string)json_encode(value: $data));
+	}//end testAnInvitationIsSentAgainOnlyByAClerkWithTheAction()
+
+	/**
+	 * A refusal of the service and a mail that did not leave are told apart.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/staff-resend-an-invitation/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
+	 */
+	public function testAResendThatCannotBeDoneSaysWhy(): void {
+		$accepted = $this->resending(allowed: true, resent: ['error' => 'already_accepted'])->resendInvitation(id: 'inv-1', organisation: 'gemeente-x');
+		$this->assertSame(expected: Http::STATUS_BAD_REQUEST, actual: $accepted->getStatus());
+		$this->assertSame(expected: ['error' => 'already_accepted'], actual: $accepted->getData());
+
+		$resent = ['token' => 'secret-2', 'email' => 'ans@example.org', 'expiresAt' => '2026-10-27T09:00:00+00:00'];
+		$unsent = $this->resending(allowed: true, resent: $resent, mailed: false)->resendInvitation(id: 'inv-1', organisation: 'gemeente-x');
+		$this->assertSame(expected: Http::STATUS_SERVICE_UNAVAILABLE, actual: $unsent->getStatus());
+		$this->assertSame(expected: ['error' => 'mail_not_sent'], actual: $unsent->getData());
+	}//end testAResendThatCannotBeDoneSaysWhy()
+
+	/**
+	 * sign-in-with-an-email-link H2: staff change an e-mail account's sign-in
+	 * address. Every refusal is told apart, and the address is only echoed
+	 * back lower case and trimmed when the change was made.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-an-e-mail-link-session-is-a-fresh-low-session-that-cannot-raise-itself-req-iwi-011
+	 */
+	public function testStaffChangeASignInAddressAndEveryRefusalIsToldApart(): void {
+		$account = ['subjectRef' => 's-1'];
+		$cases = [
+			['allowed' => true, 'user' => null, 'account' => $account, 'outcome' => SignInAddressChange::CHANGED, 'status' => Http::STATUS_UNAUTHORIZED],
+			['allowed' => false, 'user' => 'ordinary-user', 'account' => $account, 'outcome' => SignInAddressChange::CHANGED, 'status' => Http::STATUS_FORBIDDEN],
+			['allowed' => true, 'user' => 'clerk-anna', 'account' => null, 'outcome' => SignInAddressChange::CHANGED, 'status' => Http::STATUS_NOT_FOUND],
+			['allowed' => true, 'user' => 'clerk-anna', 'account' => $account, 'outcome' => SignInAddressChange::FAILED, 'status' => Http::STATUS_SERVICE_UNAVAILABLE],
+			['allowed' => true, 'user' => 'clerk-anna', 'account' => $account, 'outcome' => SignInAddressChange::REFUSED, 'status' => Http::STATUS_BAD_REQUEST],
+			['allowed' => true, 'user' => 'clerk-anna', 'account' => $account, 'outcome' => SignInAddressChange::CHANGED, 'status' => Http::STATUS_OK],
+		];
+
+		foreach ($cases as $case) {
+			$accounts = $this->accounts();
+			$accounts->method('findBySubjectRef')->willReturn($case['account']);
+			$changer = $this->createMock(SignInAddressChange::class);
+			$changer->method('change')->willReturn($case['outcome']);
+			$controller = $this->controller(
+				accounts: $accounts,
+				allowed: $case['allowed'],
+				user: ($case['user'] === null) ? null : $this->user($case['user']),
+				signInAddresses: $changer
+			);
+
+			$response = $controller->signInAddress(subjectRef: 's-1', address: '  New@Example.ORG ');
+
+			$this->assertSame($case['status'], $response->getStatus());
+			if ($case['status'] === Http::STATUS_OK) {
+				$this->assertSame(['signInAddress' => 'new@example.org'], $response->getData());
+			}
+		}
+
+	}//end testStaffChangeASignInAddressAndEveryRefusalIsToldApart()
+
+	/**
 	 * A double that can only answer methods the real service has.
 	 *
 	 * @return PortalAccountService&\PHPUnit\Framework\MockObject\MockObject
@@ -284,7 +397,7 @@ class PortalAccountAdminControllerTest extends TestCase {
 	private function accounts(): PortalAccountService {
 		return $this->getMockBuilder(PortalAccountService::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['provision', 'voidPending', 'approvePending'])
+			->onlyMethods(['provision', 'voidPending', 'approvePending', 'findBySubjectRef'])
 			->getMock();
 	}//end accounts()
 

@@ -17,6 +17,7 @@ namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\PortalThemeResolver;
 use OCA\Portaliq\Service\Theme\PortalCustomThemeSets;
+use OCA\Portaliq\Service\Theme\PortalThemeParents;
 use OCA\Thematiq\Service\CustomTokenSetValidator;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -740,4 +741,78 @@ class PortalThemeResolverTest extends TestCase {
 	}//end testALogoVariantNeedsItsFileAndAResolvedSet()
 
 
+
+	/**
+	 * REQ-PTB-003: a child loads after its parent; the theme itself is not in the list.
+	 *
+	 * @return void
+	 */
+	public function testAParentIsLinkedBeforeItsChild(): void {
+		file_put_contents($this->themeRoot . '/css/tokens/lasuite.css', ':root{}');
+		file_put_contents($this->themeRoot . '/css/tokens/frankendesk.css', ':root{}');
+		file_put_contents(
+			$this->themeRoot . '/token-sets.json',
+			(string)json_encode([
+				['id' => 'lasuite'],
+				['id' => 'frankendesk', 'extends' => 'lasuite'],
+				['id' => 'vng'],
+			])
+		);
+
+		$this->assertSame(['tokens/lasuite'], (new PortalThemeParents($this->resolver()))->stylesheetsFor('frankendesk'));
+		$this->assertSame([], (new PortalThemeParents($this->resolver()))->stylesheetsFor('vng'));
+	}//end testAParentIsLinkedBeforeItsChild()
+
+
+	/**
+	 * REQ-PTB-003: two sets that extend each other link each once, and a long
+	 * chain stops after four hops.
+	 *
+	 * @return void
+	 */
+	public function testACycleLinksEachSetOnceAndAChainStopsAtFourHops(): void {
+		foreach (['a', 'b', 'c0', 'c1', 'c2', 'c3', 'c4', 'c5'] as $id) {
+			file_put_contents($this->themeRoot . '/css/tokens/' . $id . '.css', ':root{}');
+		}
+
+		file_put_contents(
+			$this->themeRoot . '/token-sets.json',
+			(string)json_encode([
+				['id' => 'a', 'extends' => 'b'],
+				['id' => 'b', 'extends' => 'a'],
+				['id' => 'c0', 'extends' => 'c1'],
+				['id' => 'c1', 'extends' => 'c2'],
+				['id' => 'c2', 'extends' => 'c3'],
+				['id' => 'c3', 'extends' => 'c4'],
+				['id' => 'c4', 'extends' => 'c5'],
+				['id' => 'c5'],
+			])
+		);
+
+		$this->assertSame(['tokens/b'], (new PortalThemeParents($this->resolver()))->stylesheetsFor('a'));
+		$this->assertSame(['tokens/c4', 'tokens/c3', 'tokens/c2', 'tokens/c1'], (new PortalThemeParents($this->resolver()))->stylesheetsFor('c0'));
+	}//end testACycleLinksEachSetOnceAndAChainStopsAtFourHops()
+
+
+	/**
+	 * A theme that is named and does not resolve is reported by name; one that
+	 * resolves, and a portal with no theme at all, are not
+	 * (portal-theme-application, an unresolvable theme is obvious).
+	 *
+	 * @spec openspec/changes/portal-theme-application/specs/portaliq-cms/spec.md#requirement-an-unresolvable-theme-must-be-obvious-not-silently-default
+	 *
+	 * @return void
+	 */
+	public function testAThemeThatDoesNotResolveIsReportedByName(): void {
+		$this->appManager->method('isInstalled')->willReturn(true);
+		$this->appManager->method('getAppPath')->willReturn($this->themeRoot);
+		$logger = $this->createMock(\Psr\Log\LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')->with($this->stringContains('theme does not resolve'), ['theme' => 'no-such-municipality']);
+
+		$resolver = new PortalThemeResolver(appManager: $this->appManager, logger: $logger);
+
+		$this->assertNull($resolver->stylesheetFor(theme: 'no-such-municipality'));
+		$this->assertNotNull($resolver->stylesheetFor(theme: 'vng'), 'a theme that resolves says nothing');
+		$this->assertNull($resolver->stylesheetFor(theme: ''), 'a portal with no theme says nothing');
+	}//end testAThemeThatDoesNotResolveIsReportedByName()
 }//end class

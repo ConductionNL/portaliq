@@ -11,9 +11,12 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\PortalAccountSelfController;
 use OCA\Portaliq\Controller\PortalIdentityController;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
+use OCA\Portaliq\Service\PortalRateLimit;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\OCS\OCSForbiddenException;
+use OCP\IL10N;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -126,6 +129,50 @@ class PortalAuthMiddlewareTest extends TestCase {
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
 
 	}//end testAfterExceptionConvertsAuthFailureTo401()
+
+	/**
+	 * A staff controller that refuses an action (ActionAuthService::requireAction()
+	 * throws OCSForbiddenException) answers 403, not the 500 a plain Controller
+	 * would otherwise produce; the controller needs no PortalProtected marker.
+	 */
+	/**
+	 * A collection read without a session counts per IP and answers 429 over
+	 * the limit; any other method keeps its plain 401 (portal-subject-rate-limit).
+	 *
+	 * @spec openspec/changes/portal-subject-rate-limit/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
+	 */
+	public function testAnUnauthenticatedCollectionReadOverTheLimitAnswers429(): void {
+		$limit = $this->createMock(PortalRateLimit::class);
+		$limit->expects($this->once())->method('refusal')->with('collection', null)
+			->willReturn(new JSONResponse(['error' => 'rate_limited'], Http::STATUS_TOO_MANY_REQUESTS));
+		$request = $this->createMock(IRequest::class);
+		$l10n    = $this->createMock(IL10N::class);
+		$mw      = new PortalAuthMiddleware($request, $this->session(null), $this->registry([]), $l10n, $limit);
+
+		$collection = $mw->afterException($this->protectedController(), 'collection', new PortalUnauthorizedException());
+		$index      = $mw->afterException($this->protectedController(), 'index', new PortalUnauthorizedException());
+
+		$this->assertSame(429, $collection->getStatus());
+		$this->assertSame(401, $index->getStatus());
+	}//end testAnUnauthenticatedCollectionReadOverTheLimitAnswers429()
+
+	public function testAfterExceptionConvertsARefusedActionTo403(): void {
+		$mw = $this->middleware($this->session(null), $this->registry([]));
+		$staffController = new class {
+		};
+		$response = $mw->afterException($staffController, 'audiences', new OCSForbiddenException('not allowed'));
+
+		$this->assertInstanceOf(JSONResponse::class, $response);
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame(
+			[
+				'message' => 'You are not allowed to do this. Ask an administrator for access.',
+				'error' => 'forbidden',
+			],
+			$response->getData()
+		);
+
+	}//end testAfterExceptionConvertsARefusedActionTo403()
 
 	public function testAfterExceptionRethrowsOtherErrors(): void {
 		$mw = $this->middleware($this->session(null), $this->registry([]));
@@ -275,7 +322,9 @@ class PortalAuthMiddlewareTest extends TestCase {
 		$request->method('getParam')->willReturnCallback(
 			static fn (string $key, $default = null) => ($params[$key] ?? $default)
 		);
-		return new PortalAuthMiddleware($request, $session, $registry);
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnArgument(0);
+		return new PortalAuthMiddleware($request, $session, $registry, $l10n);
 	}//end middleware()
 
 	private function session(?array $subject): PortalSessionService {

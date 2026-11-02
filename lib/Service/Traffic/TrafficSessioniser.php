@@ -76,12 +76,48 @@ class TrafficSessioniser {
 		$sessions = [];
 		foreach ($groups as $group) {
 			usort($group['events'], $this->comparator(explicit: $group['explicit']));
+			$repeats = 0;
+			if ($group['explicit'] === true) {
+				$kept = $this->withoutRepeats(events: $group['events']);
+				$repeats = (count($group['events']) - count($kept));
+				$group['events'] = $kept;
+			}
+
 			foreach ($this->split(events: $group['events'], timeoutSeconds: $timeoutMinutes * 60) as $run) {
-				$sessions[] = ['visitor' => $group['visitor'], 'explicit' => $group['explicit'], 'events' => $run];
+				$sessions[] = ['visitor' => $group['visitor'], 'explicit' => $group['explicit'], 'events' => $run, 'repeats' => $repeats];
+				// Counted once per group, not once per cut run.
+				$repeats = 0;
 			}
 		}
 
 		return $sessions;
+	}
+
+	/**
+	 * Drop the events of a client-kept session whose sequence number was
+	 * already used: the first one in journey order stays. A client that
+	 * resets its counter, or a beacon delivered twice, must not add a second
+	 * step to a journey or count a page twice (task 1.4).
+	 *
+	 * @param array<int, array<string, mixed>> $events Events ordered by sequence, then clock.
+	 *
+	 * @return array<int, array<string, mixed>> The events with distinct sequences.
+	 *
+	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-session-must-be-reconstructable-into-an-ordered-journey
+	 */
+	private function withoutRepeats(array $events): array {
+		$seen = [];
+		$kept = [];
+		foreach ($events as $event) {
+			if (isset($seen[$event['_seq']]) === true) {
+				continue;
+			}
+
+			$seen[$event['_seq']] = true;
+			$kept[] = $event;
+		}
+
+		return $kept;
 	}
 
 	/**

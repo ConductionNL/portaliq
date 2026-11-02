@@ -16,6 +16,7 @@
  *
  * @spec openspec/changes/woo-journey-entry-points/specs/portal-federated-search/spec.md#requirement-the-save-actions-must-show-only-to-a-signed-in-resident-who-is-offered-them-req-wje-001
  */
+import { submissionHeaders } from '../../shared/submissionKey.js'
 
 /**
  * The defaults each block can override by prop. The opencatalogi lane names
@@ -180,6 +181,7 @@ function headersFor(token) {
  * @param {object}   body      The body.
  * @param {string}   token     The portal bearer.
  * @param {Function} fetchImpl `fetch`, replaceable in tests.
+ * @param {{submissionKey?: string}} [options] The form's submission key (REQ-AFS-001).
  * @return {Promise<object>} `{ok, status, body}`.
  *
  * @spec openspec/changes/woo-journey-entry-points/specs/portal-federated-search/spec.md#requirement-a-resident-must-be-able-to-keep-a-publication-or-one-document-in-a-dossier-req-wje-002
@@ -191,13 +193,14 @@ export async function postAction(
 	body,
 	token,
 	fetchImpl = fetch,
+	options = {},
 ) {
 	try {
 		const response = await fetchImpl(
 			`${authBase}/actions/${encodeURIComponent(appId)}/${encodeURIComponent(actionId)}`,
 			{
 				method: 'POST',
-				headers: headersFor(token),
+				headers: { ...headersFor(token), ...submissionHeaders(options) },
 				body: JSON.stringify(body || {}),
 			},
 		)
@@ -220,14 +223,22 @@ export async function postAction(
  * @param {string}   authBase  The portal API base (`.../portal/api`).
  * @param {() => string} token Returns the current portal bearer.
  * @param {typeof fetch} fetchImpl `fetch`, replaceable in tests.
- * @return {{forwardAction: (appId: string, actionId: string, body: object) => Promise<object>}} The adapter.
+ * @return {{forwardAction: (appId: string, actionId: string, body: object, options?: object) => Promise<object>}} The adapter.
  *
  * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-an-endpoint-action-must-show-its-answer-or-follow-its-redirect-req-srp-027
  */
 export function forwardApi(authBase, token, fetchImpl = fetch) {
 	return {
-		forwardAction(appId, actionId, body) {
-			return postAction(authBase, appId, actionId, body, token(), fetchImpl)
+		forwardAction(appId, actionId, body, options = {}) {
+			return postAction(
+				authBase,
+				appId,
+				actionId,
+				body,
+				token(),
+				fetchImpl,
+				options,
+			)
 		},
 	}
 }

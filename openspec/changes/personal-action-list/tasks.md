@@ -1,0 +1,9 @@
+# Tasks: personal-action-list
+
+- [x] **T01**: `lib/Settings/portaliq_register.json`: schema `portalAction` per design.md "Data"; register bump; import and grep for `PARTIAL IMPORT` (REQ-RAL-001) — the import grep is not run: needs a live instance. Register bumped to 0.75.0.
+- [ ] **T02**: (not run: the contribution of portaliq's own collections is declared as data, and a second read scope on `assignee` needs support in the scoped reader, which takes one scope field; both need a design decision first) Portaliq's contribution declares the `actions` collection with scope on `owner` and `assignee`, create, update and delete actions with the field whitelists of design.md "Access"; PHPUnit for scope and for the assignee limits (REQ-RAL-001, REQ-RAL-002)
+- [ ] **T03**: (not run: the page and dialog need the collection of T02) `src/site/pages/e/ActionsPage.vue` and `src/site/modals/ActionEditModal.vue` per the ActieBewerken board; file rules; history from the audit trail; strings in Dutch and English (REQ-RAL-001, REQ-RAL-002)
+- [ ] **T04**: `lib/BackgroundJob/ActionReminderJob.php` (daily), template `action-due`, `reminderSentAt`; registered in `appinfo/info.xml`; PHPUnit one reminder only (REQ-RAL-003) — partial: the job, `ActionReminderService` (one portal inbox message per end date, to the assignee) and `ActionReminderServiceTest` are done; the mail and the `action-due` template in the mail templates screen are not run: the mail path is driven by manifest notification rules
+- [ ] **T05**: (not run: waits on T03): Menu item "Mijn acties" under Mijn Zuiddrecht
+- [ ] **T06**: (not run: waits on T03, and Playwright needs a live instance): node test `tests/resident-actions.spec.mjs`; Playwright add, edit, share, history
+- [ ] **T07**: (not run: needs a live instance): Live check against the ActieBewerken board; screenshots in the build PR

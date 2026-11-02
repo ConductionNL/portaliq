@@ -77,6 +77,7 @@ test('site: the citizen case block reads the case through the adapter, which nam
 	const screen = await loadSfc('src/site/components/e/CitizenCase.vue')
 	await screen.methods.load.call({
 		caseId: 'case-2',
+		loadTasks() {},
 		mandateId: '',
 		collection: CASES,
 		api,

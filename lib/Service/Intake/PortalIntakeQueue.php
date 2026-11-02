@@ -88,6 +88,10 @@ class PortalIntakeQueue {
 	 * @param array<string, mixed> $answers The validated answers.
 	 * @param string $subjectRef The portal identity, or '' when anonymous.
 	 * @param string $origin The framing origin, or '' on the portal itself.
+	 * @param array<int, array<string, string>> $statements The statements accepted, with text version and time.
+	 * @param array<int, string> $computed The names of the fields the portal worked out or a decision filled.
+	 * @param array<string, string> $decisions The outcome of each decided step, by step id.
+	 * @param array<int, array<string, string>> $verifiedEmails The addresses verified with a code, each with the time.
 	 *
 	 * @return array{reference: string, state: string}|null Null when the
 	 *         submission could not be recorded, in which case nothing is
@@ -95,28 +99,56 @@ class PortalIntakeQueue {
 	 *
 	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
 	 */
-	public function accept(string $portal, string $route, array $answers, string $subjectRef = '', string $origin = ''): ?array {
+	public function accept(
+		string $portal,
+		string $route,
+		array $answers,
+		string $subjectRef = '',
+		string $origin = '',
+		array $statements = [],
+		array $computed = [],
+		array $decisions = [],
+		array $verifiedEmails = [],
+	): ?array {
 		if ($portal === '') {
 			return null;
 		}
 
 		$reference = 'AANVRAAG-' . strtoupper($this->random->generate(8, (ISecureRandom::CHAR_UPPER . ISecureRandom::CHAR_DIGITS)));
+		$data = [
+			'reference' => $reference,
+			'portal' => $portal,
+			'route' => $route,
+			'subjectRef' => $subjectRef,
+			'origin' => $origin,
+			'answers' => $answers,
+			'state' => self::STATE_QUEUED,
+			'submittedAt' => (new DateTimeImmutable())->format(DATE_ATOM),
+		];
+		if ($statements !== []) {
+			$data['statements'] = $statements;
+		}
+
+		// The fields the portal worked out or a decision filled, so delivery can say so.
+		if ($computed !== []) {
+			$data['computed'] = array_values($computed);
+		}
+
+		if ($decisions !== []) {
+			$data['decisions'] = $decisions;
+		}
+
+		if ($verifiedEmails !== []) {
+			$data['verifiedEmails'] = $verifiedEmails;
+		}
+
 		$created = $this->writer->createObject(
 			register: self::REGISTER,
 			schema: self::SCHEMA,
 			scopeField: '',
 			subjectRef: '',
 			organisation: '',
-			data: [
-				'reference' => $reference,
-				'portal' => $portal,
-				'route' => $route,
-				'subjectRef' => $subjectRef,
-				'origin' => $origin,
-				'answers' => $answers,
-				'state' => self::STATE_QUEUED,
-				'submittedAt' => (new DateTimeImmutable())->format(DATE_ATOM),
-			]
+			data: $data
 		);
 		if ($created === null) {
 			return null;
@@ -199,6 +231,36 @@ class PortalIntakeQueue {
 	}//end queued()
 
 	/**
+	 * The submissions the drain still has to send: queued, and failed.
+	 *
+	 * @param int $limit How many of each state to take.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#4.1
+	 */
+	public function pending(int $limit = 200): array {
+		$out = [];
+		foreach ([self::STATE_QUEUED, self::STATE_FAILED] as $state) {
+			$rows = $this->reader->readCollection(
+				register: self::REGISTER,
+				schema: self::SCHEMA,
+				scopeField: 'state',
+				subjectRef: $state,
+				organisation: '',
+				limit: $limit
+			);
+			foreach ($rows as $row) {
+				if (is_array($row) === true && ($row['state'] ?? '') === $state) {
+					$out[] = $row;
+				}
+			}
+		}
+
+		return $out;
+	}//end pending()
+
+	/**
 	 * Record that a submission became a case.
 	 *
 	 * @param array<string, mixed> $submission The submission row.
@@ -275,6 +337,20 @@ class PortalIntakeQueue {
 
 		return null;
 	}//end byReference()
+
+	/**
+	 * A submission by its reference, as the portal stored it.
+	 *
+	 * @param string $reference The reference.
+	 * @param string $portal    The portal, re-checked against the row.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t04
+	 */
+	public function find(string $reference, string $portal): ?array {
+		return $this->byReference(reference: $reference, portal: $portal);
+	}//end find()
 
 	/**
 	 * Write on a submission row.

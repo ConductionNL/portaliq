@@ -64,6 +64,8 @@ use OCP\IUserSession;
  * the portal, the challenge, intake, the thread, the terms, the reveal, the
  * projection, the record, the case type and the staff user.
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)  -- see above.
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- one guarded route per
+ * step of a report's life, for the reporter and for the staff lists.
  */
 class ReportController extends Controller {
 	/**
@@ -80,6 +82,16 @@ class ReportController extends Controller {
 	 * The schema recording a reveal request.
 	 */
 	private const REQUEST_SCHEMA = 'portalRevealRequest';
+
+	/**
+	 * The most rows one list reads per portal.
+	 */
+	private const LIST_LIMIT = 500;
+
+	/**
+	 * What a reveal request shows to staff: never a contact detail.
+	 */
+	private const REQUEST_FIELDS = ['reportRef', 'requestedBy', 'motivation', 'state', 'decidedBy', 'decidedAt', 'decisionReason', 'requestedAt'];
 
 	/**
 	 * Constructor.
@@ -322,8 +334,92 @@ class ReportController extends Controller {
 		return new JSONResponse([
 			'report' => $this->projection->one(report: $report),
 			'messages' => $this->threads->allMessages(reportId: $id),
+			'terms' => $this->terms->forReport(caseType: $this->declarationFor(report: $report), report: $report),
+			'revealRequests' => $this->requestsOf(reportId: $id),
 		]);
 	}//end show()
+
+	/**
+	 * The reports this user may handle, on every published portal, newest
+	 * first, each through the projection and with its terms. A report of a
+	 * case type the user does not handle is left out, so the list is no
+	 * oracle for which reports there are.
+	 *
+	 * @return JSONResponse `{results, total}`.
+	 *
+	 * @spec openspec/changes/intake-report-pages/specs/report-pages/spec.md#requirement-handlers-see-reports-through-the-projection-only-req-irp-004
+	 */
+	#[NoAdminRequired]
+	public function index(): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$results = [];
+		foreach ($this->portals->allPublishedPortals() as $portal) {
+			$slug = (string)($portal['slug'] ?? '');
+			if ($slug === '') {
+				continue;
+			}
+
+			$rows = $this->reader->readCollection(
+				register: self::REGISTER,
+				schema: self::SCHEMA,
+				scopeField: 'portal',
+				subjectRef: $slug,
+				limit: self::LIST_LIMIT
+			);
+			foreach ($rows as $row) {
+				$caseType = $this->declarationFor(report: $row);
+				if ($this->reveals->mayHandle(user: $user, caseType: $caseType) === false) {
+					continue;
+				}
+
+				$results[] = $this->projection->one(report: $row) + ['terms' => $this->terms->forReport(caseType: $caseType, report: $row)];
+			}
+		}
+
+		usort($results, static fn (array $one, array $two): int => strcmp((string)($two['receivedAt'] ?? ''), (string)($one['receivedAt'] ?? '')));
+
+		return new JSONResponse(['results' => $results, 'total' => count($results)]);
+	}//end index()
+
+	/**
+	 * The reveal requests waiting for this user's answer: those on reports of
+	 * case types whose custodian group the user is in. An administrator
+	 * outside that group gets none.
+	 *
+	 * @return JSONResponse `{results, total}`, each with the report's subject.
+	 *
+	 * @spec openspec/changes/intake-report-pages/specs/report-pages/spec.md#requirement-the-custodian-decides-a-reveal-on-a-screen-of-their-own-req-irp-006
+	 */
+	#[NoAdminRequired]
+	public function revealRequests(): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$results = [];
+		$pending = $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::REQUEST_SCHEMA,
+			scopeField: 'state',
+			subjectRef: 'pending',
+			limit: self::LIST_LIMIT
+		);
+		foreach ($pending as $request) {
+			$report = $this->report(id: (string)($request['reportRef'] ?? ''));
+			if ($report === null || $this->reveals->isCustodian(user: $user, caseType: $this->declarationFor(report: $report)) === false) {
+				continue;
+			}
+
+			$results[] = $this->requestView(request: $request) + ['subject' => (string)($report['subject'] ?? '')];
+		}
+
+		return new JSONResponse(['results' => $results, 'total' => count($results)]);
+	}//end revealRequests()
 
 	/**
 	 * Write on the thread, as a handler.
@@ -459,6 +555,44 @@ class ReportController extends Controller {
 
 		return new JSONResponse($decided);
 	}//end decideReveal()
+
+	/**
+	 * The reveal requests on one report, without anything the reporter gave.
+	 *
+	 * @param string $reportId The report.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function requestsOf(string $reportId): array {
+		$rows = $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::REQUEST_SCHEMA,
+			scopeField: 'reportRef',
+			subjectRef: $reportId,
+			limit: self::LIST_LIMIT
+		);
+
+		return array_map(fn (array $request): array => $this->requestView(request: $request), array_values(array_filter($rows, 'is_array')));
+	}//end requestsOf()
+
+	/**
+	 * A reveal request as staff see it: its id and the allowed fields.
+	 *
+	 * @param array<string, mixed> $request The stored request.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function requestView(array $request): array {
+		$self = (array)($request['@self'] ?? []);
+		$view = ['id' => (string)($request['uuid'] ?? $request['id'] ?? $self['id'] ?? '')];
+		foreach (self::REQUEST_FIELDS as $field) {
+			if (array_key_exists($field, $request) === true) {
+				$view[$field] = $request[$field];
+			}
+		}
+
+		return $view;
+	}//end requestView()
 
 	/**
 	 * One report, for a user who may handle it. A report the user may not

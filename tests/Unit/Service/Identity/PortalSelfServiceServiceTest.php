@@ -593,6 +593,33 @@ class PortalSelfServiceServiceTest extends TestCase {
 	}//end seedAccount()
 
 	/**
+	 * A clerk's hidden pages are access, so the account holder cannot change them
+	 * through any of the self-service writes (operate-pages-per-portal-and-client REQ-PGC-002).
+	 *
+	 * @spec openspec/changes/operate-pages-per-portal-and-client/tasks.md#t01
+	 *
+	 * @return void
+	 */
+	public function testTheAccountHolderCannotChangeHiddenPages(): void {
+		$this->seedRow('portalAccount', [
+			'subjectRef' => 'subject-1',
+			'organisation' => 'gemeente-x',
+			'audience' => 'client',
+			'displayName' => 'Ans',
+			'email' => 'oud@example.org',
+			'status' => 'active',
+			'hiddenPages' => ['pipelinq:invoices'],
+		]);
+		$service = $this->service();
+
+		$service->updateDetails(subjectRef: 'subject-1', displayName: 'Anna', emailNotifications: false);
+		$service->updateNotificationPreferences(subjectRef: 'subject-1', asked: ['email' => false]);
+
+		$this->assertSame(['pipelinq:invoices'], $this->account()['hiddenPages']);
+		$this->assertSame('Anna', $this->account()['displayName']);
+	}//end testTheAccountHolderCannotChangeHiddenPages()
+
+	/**
 	 * The service over the fake store, with an account service that reads it.
 	 *
 	 * @param AuditTrailService|null $auditor The audit trail, when a test watches it.

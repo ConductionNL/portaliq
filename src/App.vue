@@ -13,7 +13,9 @@
 
  The Settings menu entry uses action: "user-settings" → opens
  NcAppSettingsDialog via CnAppRoot's cnOpenUserSettings inject.
- Feed your settings sections into the #user-settings slot below.
+ No #user-settings slot is filled on purpose: CnAppRoot's default sections
+ (Meldingen, Inloggegevens, Integraties) are what the board
+ PtPersoonlijkeInstellingen draws. A slot here replaces them.
 
  Point @spec at the canonical spec under openspec/specs/, never at
  openspec/changes/<name>/ — a change directory is archived or deleted when the
@@ -52,31 +54,12 @@
 			     fallback, which is what hid the flow sidebar. -->
 			<component :is="pageSidebarComponent" v-if="pageSidebarComponent" />
 		</template>
-		<!--
-		  user-settings slot: NcAppSettingsSection children rendered inside
-		  CnAppRoot's hosted NcAppSettingsDialog. CnAppNav opens it when the
-		  user clicks the manifest menu entry with action: "user-settings".
-		  Replace the placeholder section with your app's actual settings.
-		-->
-		<template #user-settings>
-			<NcAppSettingsSection id="general" :name="t('portaliq', 'General')">
-				<p class="app-root__settings-hint">
-					{{
-						t(
-							'portaliq',
-							'Add your settings fields here. See src/views/AdminRoot.vue for the pre-boot admin panel.',
-						)
-					}}
-				</p>
-			</NcAppSettingsSection>
-		</template>
 	</CnAppRoot>
 </template>
 
 <script>
 import { CnAppRoot, CnObjectSidebar } from '@conduction/nextcloud-vue'
 import { translate as ncT } from '@nextcloud/l10n'
-import { NcAppSettingsSection } from '@nextcloud/vue'
 import { reactive } from 'vue'
 import NewsTargetCell from './cellRenderers/NewsTargetCell.vue'
 
@@ -86,7 +69,6 @@ export default {
 	components: {
 		CnAppRoot,
 		CnObjectSidebar,
-		NcAppSettingsSection,
 	},
 
 	/**

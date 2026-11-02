@@ -129,7 +129,7 @@ class LandingPageProvisioningService {
 				'submitLabel' => (string)($form['submitLabel'] ?? ''),
 				'consentText' => (string)($form['consentText'] ?? ''),
 				'status' => 'active',
-			]
+			] + self::destinationOf(form: $form)
 		);
 		$formId = $this->rowId(row: $createdForm);
 		if ($formId === '') {
@@ -261,6 +261,38 @@ class LandingPageProvisioningService {
 		return trim((string)($article['summary'] ?? '')) !== ''
 			&& trim((string)($article['body'] ?? '')) !== '';
 	}//end articleIsValid()
+
+	/**
+	 * The requesting app's destination for the form, as `['destination' => ...]`, or nothing.
+	 *
+	 * Decision 179: a submit creates the app's own object (a lead) directly.
+	 * Only `register`, `schema`, `fields` and `fixed` are carried; without a
+	 * register and schema the form is created but not submittable until an
+	 * administrator names its destination.
+	 *
+	 * @param array<string, mixed> $form The event's form.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/specs/landing-page-provisioning/spec.md#requirement-a-landing-pages-form-is-submittable-with-no-portal-session
+	 */
+	private static function destinationOf(array $form): array {
+		$destination = (array)($form['destination'] ?? []);
+		$register    = trim((string)($destination['register'] ?? ''));
+		$schema      = trim((string)($destination['schema'] ?? ''));
+		if ($register === '' || $schema === '') {
+			return [];
+		}
+
+		return [
+			'destination' => [
+				'register' => $register,
+				'schema' => $schema,
+				'fields' => array_filter((array)($destination['fields'] ?? []), 'is_string'),
+				'fixed' => (array)($destination['fixed'] ?? []),
+			],
+		];
+	}//end destinationOf()
 
 	/**
 	 * Validate the form payload: at least one well-formed field and a

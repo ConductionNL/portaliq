@@ -88,6 +88,7 @@ export function initialAnswers(fields) {
  * @param {string} args.submitUrl The submit route.
  * @param {string} args.route The form page being answered.
  * @param {object} args.answers The answers.
+ * @param {string} [args.honeypot] The honeypot's value; sent only when a bot filled it.
  * @param {Function} [args.fetchImpl] fetch (test seam).
  * @return {Promise<object>} The server's answer: `{reference, …}` or `{errors}`.
  *
@@ -97,12 +98,17 @@ export async function submitAnswers({
 	submitUrl,
 	route,
 	answers,
+	honeypot = '',
 	fetchImpl = globalThis.fetch,
 }) {
+	const body = { route, answers }
+	if (honeypot !== '') {
+		body._hp = honeypot
+	}
 	const response = await fetchImpl(submitUrl, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ route, answers }),
+		body: JSON.stringify(body),
 	})
 
 	return await response.json()

@@ -94,6 +94,7 @@ assertEqual(
 	signInRoutes({ authentication: { modes: ['digid'] } }, '/x'),
 	[
 		{
+			key: 'digid',
 			mode: 'digid',
 			label: 'Inloggen met DigiD',
 			href: '/x/session/oidc/start?provider=digid',
@@ -105,6 +106,7 @@ assertEqual(
 	signInRoutes({ authentication: { modes: ['nextcloud'] } }, '/x'),
 	[
 		{
+			key: 'nextcloud',
 			mode: 'nextcloud',
 			label: 'Inloggen met uw account',
 			href: '/x/session/nextcloud',
@@ -112,26 +114,84 @@ assertEqual(
 	],
 )
 assertEqual(
-	'with the example resident on offer, the nextcloud way is the one-click demo route and says so (example-resident-demo-login)',
+	'with example residents on offer, the nextcloud way stays the account route and one demo card per resident follows the ways in (demo-sign-in-beside-the-account)',
 	signInRoutes(
-		{ slug: 'zuiddrecht', authentication: { modes: ['nextcloud', 'digid'] } },
+		{
+			slug: 'zuiddrecht',
+			registerUrl: '/r',
+			authentication: { modes: ['nextcloud', 'digid'] },
+		},
 		'/x',
 		undefined,
 		'zuiddrecht',
+		[
+			{ key: 'sanne', name: 'Sanne de Vries', card: {} },
+			{
+				key: 'linda',
+				name: 'Linda Bakker',
+				card: { text: 'Regelt zaken voor Henk.' },
+			},
+		],
 	),
 	[
 		{
+			key: 'nextcloud',
 			mode: 'nextcloud',
 			label: 'Inloggen met uw account',
-			demo: true,
-			href: '/x/session/example-resident?id=zuiddrecht&portal=zuiddrecht',
+			registerUrl: '/r',
+			href: '/x/session/nextcloud?portal=zuiddrecht',
 		},
 		{
+			key: 'digid',
 			mode: 'digid',
 			label: 'Inloggen met DigiD',
 			href: '/x/session/oidc/start?provider=digid&portal=zuiddrecht',
 		},
+		{
+			key: 'example-resident:sanne',
+			mode: 'example-resident',
+			label: 'Inloggen als Sanne de Vries',
+			card: { title: 'Sanne de Vries' },
+			demo: true,
+			href: '/x/session/example-resident?id=zuiddrecht&resident=sanne&portal=zuiddrecht',
+		},
+		{
+			key: 'example-resident:linda',
+			mode: 'example-resident',
+			label: 'Inloggen als Linda Bakker',
+			card: { title: 'Linda Bakker', text: 'Regelt zaken voor Henk.' },
+			demo: true,
+			href: '/x/session/example-resident?id=zuiddrecht&resident=linda&portal=zuiddrecht',
+		},
 	],
+)
+assertEqual(
+	'a shell that names only the set gets one card for its first resident',
+	signInRoutes(
+		{ slug: 'zuiddrecht', authentication: { modes: ['nextcloud'] } },
+		'/x',
+		undefined,
+		'zuiddrecht',
+	).map((r) => [r.key, r.label, r.href]),
+	[
+		['nextcloud', 'Inloggen met uw account', '/x/session/nextcloud?portal=zuiddrecht'],
+		[
+			'example-resident:',
+			'Inloggen als voorbeeldinwoner',
+			'/x/session/example-resident?id=zuiddrecht&portal=zuiddrecht',
+		],
+	],
+)
+assertEqual(
+	'a portal without the nextcloud way gets no demo card, as the route would refuse it',
+	signInRoutes(
+		{ slug: 'zuiddrecht', authentication: { modes: ['digid'] } },
+		'/x',
+		undefined,
+		'zuiddrecht',
+		[{ key: 'sanne', name: 'Sanne de Vries' }],
+	).map((r) => r.mode),
+	['digid'],
 )
 assertEqual(
 	'without one the nextcloud way keeps the account path',

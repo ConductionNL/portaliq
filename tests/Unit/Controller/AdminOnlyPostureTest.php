@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
+use OCA\Portaliq\Controller\ActionSettingsController;
 use OCA\Portaliq\Controller\MetricsController;
 use OCA\Portaliq\Controller\PortalHomePageController;
 use OCA\Portaliq\Controller\SessionAdminController;
@@ -74,6 +75,8 @@ class AdminOnlyPostureTest extends TestCase {
 		return [
 			'metrics#index' => [MetricsController::class, 'index'],
 			'sessionadmin#revokeOrganisation' => [SessionAdminController::class, 'revokeOrganisation'],
+			'actionsettings#index' => [ActionSettingsController::class, 'index'],
+			'actionsettings#update' => [ActionSettingsController::class, 'update'],
 			'settings#update' => [SettingsController::class, 'update'],
 			'settings#create' => [SettingsController::class, 'create'],
 			'portalhomepage#index' => [PortalHomePageController::class, 'index'],
@@ -169,7 +172,7 @@ class AdminOnlyPostureTest extends TestCase {
 	 */
 	public function testTheCheckSeesAWideningAttributeWhenOneIsPresent(): void {
 		$names = [];
-		foreach ((new ReflectionClass(\OCA\Portaliq\Controller\WooController::class))
+		foreach ((new ReflectionClass(\OCA\Portaliq\Controller\BundledSiteController::class))
 			->getMethod('serve')->getAttributes() as $attribute) {
 			$parts = explode('\\', $attribute->getName());
 			$names[] = (string)end($parts);
@@ -178,7 +181,7 @@ class AdminOnlyPostureTest extends TestCase {
 		$this->assertContains(
 			'PublicPage',
 			$names,
-			'WooController::serve() is #[PublicPage]; if this fails the attribute reflection is broken, '
+			'BundledSiteController::serve() is #[PublicPage]; if this fails the attribute reflection is broken, '
 			. 'and every admin-only assertion in this file is vacuous.'
 		);
 	}//end testTheCheckSeesAWideningAttributeWhenOneIsPresent()

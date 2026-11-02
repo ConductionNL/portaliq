@@ -37,7 +37,7 @@ class PortalAccountActivationServiceTest extends TestCase {
 		$this->assertSame(hash('sha256', $token), $this->account()['activationTokenHash']);
 		$this->assertStringNotContainsString($token, (string)json_encode($this->account()));
 
-		$this->assertSame(['organisation' => 'gemeente-x'], $service->activate(token: $token));
+		$this->assertSame(['organisation' => 'gemeente-x', 'subjectRef' => $subjectRef, 'displayName' => 'Ans'], $service->activate(token: $token));
 		$account = $this->account();
 		$this->assertSame('active', $account['status']);
 		$this->assertTrue($account['verifiedEmail']);

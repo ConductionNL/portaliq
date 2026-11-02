@@ -1,0 +1,15 @@
+[
+	{ "name": "sum of numbers and strings", "calculate": { "op": "sum", "args": ["a", "b", 1] }, "answers": { "a": "2", "b": 3.5 }, "expected": 6.5 },
+	{ "name": "multiply", "calculate": { "op": "multiply", "args": ["a", "b"] }, "answers": { "a": 4, "b": "2.5" }, "expected": 10 },
+	{ "name": "subtract left to right", "calculate": { "op": "subtract", "args": ["a", "b", 1] }, "answers": { "a": 10, "b": 4 }, "expected": 5 },
+	{ "name": "sum over a group sub-field", "calculate": { "op": "sum", "args": ["bewoners[].aantal"] }, "answers": { "bewoners": [{ "aantal": "2" }, { "aantal": 3 }] }, "expected": 5 },
+	{ "name": "an end date one year on", "calculate": { "op": "addDays", "args": ["startdatum", 365] }, "answers": { "startdatum": "2026-11-01" }, "expected": "2027-11-01" },
+	{ "name": "days back", "calculate": { "op": "addDays", "args": ["startdatum", -7] }, "answers": { "startdatum": "2026-11-01" }, "expected": "2026-10-25" },
+	{ "name": "days between two dates", "calculate": { "op": "diffDays", "args": ["van", "tot"] }, "answers": { "van": "2026-11-01", "tot": "2026-12-01" }, "expected": 30 },
+	{ "name": "days between, backwards", "calculate": { "op": "diffDays", "args": ["tot", "van"] }, "answers": { "van": "2026-11-01", "tot": "2026-12-01" }, "expected": -30 },
+	{ "name": "count the items of a group", "calculate": { "op": "count", "args": ["bewoners"] }, "answers": { "bewoners": [{ "n": 1 }, { "n": 2 }, { "n": 3 }] }, "expected": 3 },
+	{ "name": "a missing argument", "calculate": { "op": "sum", "args": ["a", "missing"] }, "answers": { "a": 1 }, "expected": null },
+	{ "name": "not a number", "calculate": { "op": "sum", "args": ["a"] }, "answers": { "a": "abc" }, "expected": null },
+	{ "name": "not a real date", "calculate": { "op": "addDays", "args": ["d", 1] }, "answers": { "d": "2026-02-30" }, "expected": null },
+	{ "name": "an unknown operation", "calculate": { "op": "power", "args": ["a", 2] }, "answers": { "a": 2 }, "expected": null }
+]

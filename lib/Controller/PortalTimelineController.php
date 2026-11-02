@@ -37,6 +37,7 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Contribution\StepsProviderMethod;
+use OCA\Portaliq\Service\MandatedCaseReader;
 use OCA\Portaliq\Service\PortalItemReader;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -68,6 +69,7 @@ class PortalTimelineController extends Controller implements PortalProtected {
 	 * @param PortalObjectReader $reader The scoped single-object read.
 	 * @param PortalTimelineReader $timelines Calls the declared provider method.
 	 * @param PortalItemReader|null $items Calls the item-list provider method (my-dossiers).
+	 * @param MandatedCaseReader|null $mandatedCases Reads a case the person sees under a mandate.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -76,6 +78,7 @@ class PortalTimelineController extends Controller implements PortalProtected {
 		private readonly PortalObjectReader $reader,
 		private readonly PortalTimelineReader $timelines,
 		private readonly ?PortalItemReader $items = null,
+		private readonly ?MandatedCaseReader $mandatedCases = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -197,6 +200,7 @@ class PortalTimelineController extends Controller implements PortalProtected {
 	 * @return JSONResponse|array{app: string, declared: array<string, mixed>} The refusal, or the proven match.
 	 *
 	 * @spec openspec/changes/my-dossiers/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-an-item-list-read-from-its-app-req-myd-001
+	 * @spec openspec/changes/mandated-case-opens-on-its-record-page/specs/portal-my-cases/spec.md#requirement-a-case-read-under-a-mandate-opens-on-its-record-page
 	 */
 	private function provenObject(string $register, string $schema, string $id, string $key): JSONResponse|array {
 		$subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
@@ -228,6 +232,19 @@ class PortalTimelineController extends Controller implements PortalProtected {
 			audience: (string)($subject['audience'] ?? ''),
 			fields: ($collection['fields'] ?? null)
 		);
+		// A case the person sees under the mandate they name is read by the
+		// same reader that lists it on "My cases" (cases-my-cases-page
+		// REQ-CMC-004), so this never opens a case the list would not show.
+		if ($owned === null) {
+			$owned = $this->mandatedCases?->read(
+				subject: $subject,
+				mandateId: (string)$this->request->getParam('mandate', ''),
+				register: $register,
+				schema: $schema,
+				id: $id
+			);
+		}
+
 		// Not the subject's OR does not exist: one 404, no oracle, and the
 		// provider is never asked about it.
 		if ($owned === null) {

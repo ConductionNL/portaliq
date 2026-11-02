@@ -258,37 +258,66 @@ class PortalResolver {
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-custom-domain-must-be-verified-before-it-serves
 	 */
 	public function resolveByHost(string $host, array $sites): ?array {
-		if ($host === '') {
+		$match = $this->verifiedMatch(host: $host, sites: $sites);
+		if ($match === null) {
 			return null;
 		}
 
-		foreach ($sites as $site) {
-			foreach (($site['domains'] ?? []) as $domain) {
-				if (is_array($domain) === false) {
-					continue;
-				}
+		return $match['site'];
+	}//end resolveByHost()
 
-				$hostname = strtolower(trim((string)($domain['hostname'] ?? '')));
-				if ($hostname === '' || $hostname !== $host) {
-					continue;
-				}
 
-				// Unverified is treated exactly like unknown. This is the whole
-				// point of verification: DNS pointing here is not consent.
-				if (($domain['verified'] ?? false) !== true) {
-					$this->logger->info(
-						'Portaliq: host matched an UNVERIFIED domain; refusing to serve',
-						['host' => $host, 'site' => $site['slug'] ?? null]
-					);
-					continue;
-				}
-
-				return $site;
-			}
+	/**
+	 * The verified domain entry this request is served on, or null.
+	 *
+	 * A domain carries settings of its own (whether its host serves the site
+	 * at its root, and the page its root opens). Those settings belong to the
+	 * host, so they are read ONLY when the host itself decides the portal:
+	 * the request host matches a verified domain, and the caller named either
+	 * no portal or that same portal. A request that names another portal by
+	 * slug is served as that portal and gets no domain, so the settings of
+	 * one portal's host never shape another portal's pages.
+	 *
+	 * An unknown host and an unverified domain both answer null, exactly as
+	 * they resolve to no portal.
+	 *
+	 * @param IRequest    $request    The incoming request.
+	 * @param string|null $portalSlug The slug the caller named, if any.
+	 *
+	 * @return array<string, mixed>|null The domain entry, or null.
+	 *
+	 * @spec openspec/changes/site-at-the-root-of-a-portal-host/specs/portal-settings/spec.md#requirement-a-verified-domain-may-serve-the-site-at-its-root-req-srh-001
+	 */
+	public function servingDomain(IRequest $request, ?string $portalSlug = null): ?array {
+		$sites = $this->allPublishedPortals();
+		if ($sites === []) {
+			return null;
 		}
 
-		return null;
-	}//end resolveByHost()
+		$match = $this->verifiedMatch(host: $this->requestHost(request: $request), sites: $sites);
+		if ($match === null) {
+			return null;
+		}
+
+		if ($portalSlug !== null && $portalSlug !== '' && ($match['site']['slug'] ?? null) !== $portalSlug) {
+			return null;
+		}
+
+		return $match['domain'];
+	}//end servingDomain()
+
+
+	/**
+	 * The portal and the verified domain entry a host matches, or null.
+	 *
+	 * @param string $host  The request host, lower-cased, without port.
+	 * @param array  $sites The published portals.
+	 *
+	 * @return array{site: array<string, mixed>, domain: array<string, mixed>}|null
+	 */
+	private function verifiedMatch(string $host, array $sites): ?array {
+		return (new PortalDomainMatch(logger: $this->logger))->find(host: $host, sites: $sites);
+	}//end verifiedMatch()
 
 
 	/**

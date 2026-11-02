@@ -400,4 +400,59 @@ class TrafficRollupTest extends TestCase {
 		$this->assertSame(1, $on['heatmaps'][0]['scroll'][9]);
 		$this->assertSame([], $on['experiments'], 'no definitions, no rows');
 	}//end testExperimentsAndHeatmapsAreOnTheRecord()
+
+	/**
+	 * Two terms found nothing; one that found something is not listed.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-roll-up-counts-searches-that-found-nothing-req-pzr-001
+	 */
+	public function testTwoTermsFoundNothing(): void {
+		$record = $this->rollup(events: [
+			$this->event(at: '2026-09-04T10:00:00.000Z', path: '/zoeken', name: 'search', extra: ['searchTerm' => 'parkeren', 'params' => ['results' => 0]]),
+			$this->event(at: '2026-09-04T10:00:05.000Z', path: '/zoeken', name: 'search', extra: ['searchTerm' => 'parkeren', 'results' => 0]),
+			$this->event(at: '2026-09-04T10:00:09.000Z', path: '/zoeken', name: 'search', extra: ['searchTerm' => 'zwemmen', 'params' => ['results' => 0.0]]),
+			$this->event(at: '2026-09-04T10:00:12.000Z', path: '/zoeken', name: 'search', extra: ['searchTerm' => 'afval', 'params' => ['results' => 7]]),
+		]);
+
+		$this->assertSame([['term' => 'parkeren', 'count' => 2], ['term' => 'zwemmen', 'count' => 1]], $record['zeroResultSearches']);
+		$this->assertSame(0, $record['searchesWithoutCount']);
+		$this->assertCount(3, $record['searches'], 'the ordinary list still counts every term');
+	}//end testTwoTermsFoundNothing()
+
+
+	/**
+	 * A search that never said how many it found is counted apart, not as a zero.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-roll-up-counts-searches-that-found-nothing-req-pzr-001
+	 */
+	public function testAnUnknownCountIsNotAZero(): void {
+		$record = $this->rollup(events: [
+			$this->event(at: '2026-09-04T10:00:00.000Z', path: '/zoeken', name: 'search', extra: ['searchTerm' => 'parkeren']),
+			$this->event(at: '2026-09-04T10:00:05.000Z', path: '/zoeken', name: 'search', extra: ['searchTerm' => 'parkeren', 'params' => ['results' => null]]),
+		]);
+
+		$this->assertSame([], $record['zeroResultSearches']);
+		$this->assertSame(2, $record['searchesWithoutCount']);
+	}//end testAnUnknownCountIsNotAZero()
+
+
+	/**
+	 * The client sends a number, so a string "0" is unknown, never a zero.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-roll-up-counts-searches-that-found-nothing-req-pzr-001
+	 */
+	public function testAStringZeroIsNotReadAsUnknown(): void {
+		$record = $this->rollup(events: [
+			$this->event(at: '2026-09-04T10:00:00.000Z', path: '/zoeken', name: 'search', extra: ['searchTerm' => 'parkeren', 'params' => ['results' => '0']]),
+		]);
+
+		$this->assertSame([], $record['zeroResultSearches'], 'a string is not a count');
+		$this->assertSame(1, $record['searchesWithoutCount']);
+	}//end testAStringZeroIsNotReadAsUnknown()
 }//end class

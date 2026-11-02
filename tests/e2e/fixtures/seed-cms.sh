@@ -238,16 +238,41 @@ echo "    /contact (markdown)"
 
 # landing-page-provisioning fixture: a form + a bound landing page, seeded
 # directly as OpenRegister objects (the shape LandingPageProvisioningService
-# would write) rather than through the PHP event — the seeder has no way to
+# would write) rather than through the PHP event. The seeder has no way to
 # dispatch a Nextcloud event, and seeding the RESULT is exactly what this
 # suite's OTHER fixtures already do (a page/menu/portal is always seeded as
 # the object a real write would have produced, never by exercising the write
-# path itself). `sourceApp: "e2eFixture"` is a deliberately fake app name:
-# no consumer event class will ever exist for it, so a submission exercises
-# — and must survive — the dispatch listener's fail-safe skip path.
+# path itself).
+#
+# Decision 179: a submit creates the form's DESTINATION object, in the
+# visitor's request, and stores nothing in portaliq. So the form needs a
+# destination that exists on this instance. No other app is installed here,
+# so the fixture brings its own: the `e2efixture` register with one schema,
+# `signup`, which the public may create (as a CRM lets the public create a
+# lead) and only an administrator reads. It is imported through
+# OpenRegister's configuration importer, the same endpoint ci-seed.sh falls
+# back to for portaliq's own register.
+#
+# The import is checked by reading the schema back, not by its HTTP status:
+# an importer that answers 200 over a register it did not create would leave
+# a form that refuses every submit, and the spec would blame the form.
+FIXTURE_REGISTER="$(dirname "$0")/e2e-signup-register.json"
+IMPORT_CODE="$(curl -sS -o /dev/null -w '%{http_code}' -u "$AUTH" -X POST \
+	-H 'OCS-APIRequest: true' \
+	-F "file=@${FIXTURE_REGISTER}" -F 'force=true' -F 'appId=e2efixture' \
+	"${NC_URL}/index.php/apps/openregister/api/configurations/import" || echo 000)"
+SIGNUP_CODE="$(curl -sS -o /dev/null -w '%{http_code}' -u "$AUTH" -H 'OCS-APIRequest: true' \
+	"${NC_URL}/index.php/apps/openregister/api/objects/e2efixture/signup?_limit=1" || echo 000)"
+if [ "$SIGNUP_CODE" != "200" ]; then
+	echo "seed: the e2efixture/signup destination is not there (import HTTP ${IMPORT_CODE}, read-back HTTP ${SIGNUP_CODE}); the landing-page form would refuse every submit" >&2
+	exit 1
+fi
+echo "    e2efixture/signup (the form's destination) imported"
+
 FORM_ID=$(upsert form pageRoute /campagne/e2e-form-test '{
   "portal":"open-tilburg","pageRoute":"/campagne/e2e-form-test",
   "sourceApp":"e2eFixture","externalReference":"e2e-fixture-1",
+  "destination":{"register":"e2efixture","schema":"signup","fields":{},"fixed":{"source":"landing-page"}},
   "campaign":{"campaign":"e2e","source":"playwright","medium":"test"},
   "fields":[{"id":"name","label":"Naam","type":"text","required":true},
             {"id":"email","label":"E-mail","type":"email","required":true}],

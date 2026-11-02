@@ -155,6 +155,46 @@ class PortalAccountLookup {
 	}//end byIdentity()
 
 	/**
+	 * The active account a citizen signs in to with this BSN, in any tenant, or null.
+	 *
+	 * A DigiD or eIDAS account carries the citizen's number as its identity
+	 * reference (see PortalFamilyMembers::bsnOf()). Pending, suspended, void
+	 * and removed accounts are not a mailbox the citizen reads.
+	 *
+	 * @param string $bsn The citizen's BSN.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/portal-account-presence/specs/portal-identity-space/spec.md#requirement-staff-can-ask-whether-a-citizen-has-a-portal-account
+	 */
+	public function activeByCitizenNumber(string $bsn): ?array {
+		$bsn = trim($bsn);
+		if ($bsn === '') {
+			return null;
+		}
+
+		$rows = $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'identityRef',
+			subjectRef: $bsn,
+			organisation: '',
+			limit: 5
+		);
+
+		foreach ($rows as $row) {
+			if (($row['identityRef'] ?? '') === $bsn
+				&& in_array(($row['identityType'] ?? ''), ['digid', 'eidas'], true) === true
+				&& ($row['status'] ?? self::STATUS_ACTIVE) === self::STATUS_ACTIVE
+			) {
+				return $row;
+			}
+		}
+
+		return null;
+	}//end activeByCitizenNumber()
+
+	/**
 	 * The pending, email-only account for a verified address, or null.
 	 *
 	 * Only an account with no identity reference of its own is claimable this

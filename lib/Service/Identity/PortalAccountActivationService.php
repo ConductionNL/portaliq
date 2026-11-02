@@ -123,7 +123,7 @@ class PortalAccountActivationService {
 	 * @param string $token The secret from the mail.
 	 * @param DateTimeImmutable|null $now The moment to judge expiry against.
 	 *
-	 * @return array{organisation: string}|null
+	 * @return array{organisation: string, subjectRef: string, displayName: string}|null
 	 *
 	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T03
 	 */
@@ -156,7 +156,11 @@ class PortalAccountActivationService {
 			return null;
 		}
 
-		return ['organisation' => (string)($account['organisation'] ?? '')];
+		return [
+			'organisation' => (string)($account['organisation'] ?? ''),
+			'subjectRef' => (string)($account['subjectRef'] ?? ''),
+			'displayName' => (string)($account['displayName'] ?? ''),
+		];
 	}//end activate()
 
 	/**

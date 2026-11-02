@@ -8,4 +8,15 @@ module.exports = {
 			},
 		],
 	},
+	overrides: [
+		{
+			// The site's own sheet paints from theme tokens only
+			// (portal-theme-blocks-and-contributed-pages REQ-PTB-001).
+			files: ['css/site-theme.css'],
+			rules: {
+				'color-no-hex': true,
+				'color-named': 'never',
+			},
+		},
+	],
 }

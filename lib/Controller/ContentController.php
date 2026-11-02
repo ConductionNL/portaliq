@@ -29,10 +29,14 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Contribution\PortalContributionFilter;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Service\Assistant\PublicAssistantChannel;
+use OCA\Portaliq\Service\Assistant\PublicSourceScope;
 use OCA\Portaliq\Service\CmsReader;
+use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
 use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\SiteOrganisation;
 use OCA\Portaliq\Service\TrafficConfigResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -95,6 +99,10 @@ class ContentController extends Controller {
 	 * @param IURLGenerator              $urlGenerator Builds the absolute collector URL.
 	 * @param PortalNoticeReader         $notices      The notices running on the site now.
 	 * @param IUserSession               $userSession  Tells a signed-in Nextcloud user (an editor) from a visitor.
+	 * @param PublicAssistantChannel|null $assistant   The public assistant's channel, when wired.
+	 * @param PublicSourceScope|null     $assistantScope What the public assistant may read.
+	 * @param NextcloudRegistrationDoor|null $registrationDoor Where "Create an account" leads (REQ-NCL-005).
+	 * @param SiteOrganisation|null      $siteOrganisation Names the portal's organisation.
 	 *
 	 * @return void
 	 */
@@ -111,6 +119,10 @@ class ContentController extends Controller {
 		private readonly IURLGenerator $urlGenerator,
 		private readonly PortalNoticeReader $notices,
 		private readonly IUserSession $userSession,
+		private readonly ?PublicAssistantChannel $assistant = null,
+		private readonly ?PublicSourceScope $assistantScope = null,
+		private readonly ?NextcloudRegistrationDoor $registrationDoor = null,
+		private readonly ?SiteOrganisation $siteOrganisation = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -217,6 +229,7 @@ class ContentController extends Controller {
 	 * @return JSONResponse The site, or 404.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-request-must-resolve-to-exactly-one-portal-or-to-none
+	 * @spec openspec/changes/nextcloud-account-registration/specs/portal-nextcloud-account-login/spec.md#requirement-the-sign-in-page-leads-to-nextclouds-own-registration-req-ncl-005
 	 * @spec openspec/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
 	 */
 	#[PublicPage]
@@ -258,11 +271,33 @@ class ContentController extends Controller {
 				// is exactly what the client is about to act on.
 				'traffic' => $this->traffic->resolve(portal: $portal),
 				'collector' => $this->urlGenerator->linkToRouteAbsolute('portaliq.traffic.collect'),
+				// Where "Wachtwoord vergeten" leads: Nextcloud's own login page, with a
+				// way back to the account route. '' unless the portal offers that route
+				// (password-reset-from-the-sign-in-page REQ-PWR-001).
+				'lostPasswordUrl' => $this->lostPasswordUrl(portal: $portal),
+				// Where "Create an account" leads: Nextcloud's own registration
+				// form, '' unless the portal offers the account route, names a
+				// resident group and the registration app fills that group
+				// (nextcloud-account-registration REQ-NCL-005). Built here from a
+				// route name, never from the request.
+				'registerUrl' => ($this->registrationDoor?->registerUrl(portal: $portal) ?? ''),
+				// Whether a visitor's search also reads the text inside public
+				// documents. On unless the portal switched it off
+				// (portal-federated-search REQ-PFS-CONTENT-001).
+				'searchInsideDocuments' => (($portal['searchInsideDocuments'] ?? true) !== false),
+				// Whether the "Ask a question" widget is offered: the portal turned it on
+				// AND hermiq's entry point answers. Off otherwise
+				// (search-assistant-from-public-content REQ-SAP-006).
+				'assistantEnabled' => $this->assistantEnabled(portal: $portal),
 				// Maintenance and warning notices running now
 				// (operate-maintenance-notice). This answer is cached for up
 				// to five minutes, so each carries its end and the client
 				// drops it once that has passed.
 				'notices' => $this->notices->active(portal: (string)($portal['slug'] ?? ''), surface: 'site'),
+				// The id and the name of the portal's organisation, so the
+				// search's organisation filter reads a name, not an id
+				// (woo-search-names-the-organisation). Null when unknown.
+				'organisation' => $this->siteOrganisation?->forPortal(portal: $portal),
 			]
 		);
 	}//end site()
@@ -370,7 +405,8 @@ class ContentController extends Controller {
 			portal: (string)$portal['slug'],
 			route: $normalised,
 			locale: $this->locale(portal: $portal, requested: $locale),
-			audience: $this->audience()
+			audience: $this->audience(),
+			organisation: (string)($portal['organisation'] ?? '')
 		);
 
 		if ($page === null) {
@@ -417,6 +453,83 @@ class ContentController extends Controller {
 		);
 	}//end glossary()
 
+
+	/**
+	 * The portal's published FAQ entries.
+	 *
+	 * @param string|null $portal Explicit portal slug.
+	 * @param string|null $locale Requested locale.
+	 * @param string|null $page   Only the entries shown on this page route.
+	 * @param string|null $topic  Only the entries of this topic.
+	 *
+	 * @return JSONResponse The entries, or 404.
+	 *
+	 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t02
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 240, period: 60)]
+	public function faq(?string $portal=null, ?string $locale=null, ?string $page=null, ?string $topic=null): JSONResponse {
+		$portal = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
+		if ($portal === null) {
+			return $this->notFound();
+		}
+
+		$refusal = $this->refuseUnlessPermitted(portal: $portal);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->publicJson(
+			payload: [
+				'entries' => $this->reader->faq(
+					portal: (string)$portal['slug'],
+					locale: $this->locale(portal: $portal, requested: $locale),
+					audience: $this->audience(),
+					page: trim((string)$page),
+					topic: trim((string)$topic)
+				),
+			]
+		);
+	}//end faq()
+
+	/**
+	 * One published product finder.
+	 *
+	 * @param string|null $portal Explicit portal slug.
+	 * @param string|null $locale Requested locale.
+	 * @param string|null $finder The finder's id; empty for the first published one.
+	 *
+	 * @return JSONResponse The finder, or 404.
+	 *
+	 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t02
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 240, period: 60)]
+	public function finder(?string $portal=null, ?string $locale=null, ?string $finder=null): JSONResponse {
+		$portal = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
+		if ($portal === null) {
+			return $this->notFound();
+		}
+
+		$refusal = $this->refuseUnlessPermitted(portal: $portal);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		$found = $this->reader->finder(
+			portal: (string)$portal['slug'],
+			id: trim((string)$finder),
+			locale: $this->locale(portal: $portal, requested: $locale),
+			audience: $this->audience()
+		);
+		if ($found === null) {
+			return $this->notFound();
+		}
+
+		return $this->publicJson(payload: ['finder' => $found]);
+	}//end finder()
 
 	/**
 	 * The leaf apps' contributed surfaces for the resolved portal.
@@ -572,4 +685,42 @@ class ContentController extends Controller {
 	}//end notFound()
 
 
+
+	/**
+	 * The address behind "Wachtwoord vergeten", or '' when the portal does not
+	 * offer the Nextcloud account route. Portaliq adds no reset of its own.
+	 *
+	 * @param array<string, mixed> $portal The portal.
+	 *
+	 * @return string The absolute address, or ''.
+	 *
+	 * @spec openspec/changes/password-reset-from-the-sign-in-page/specs/portal-ways-in/spec.md#requirement-the-sign-in-page-leads-to-nextclouds-own-password-reset-req-pwr-001
+	 */
+	private function lostPasswordUrl(array $portal): string {
+		$modes = ($portal['authentication']['modes'] ?? []);
+		if (is_array($modes) === false || in_array('nextcloud', $modes, true) === false) {
+			return '';
+		}
+
+		$back = $this->urlGenerator->linkToRoute(
+			'portaliq.session.nextcloud',
+			['portal' => (string)($portal['slug'] ?? '')]
+		);
+
+		return $this->urlGenerator->linkToRouteAbsolute('core.login.showLoginForm', ['redirect_url' => $back]);
+	}//end lostPasswordUrl()
+
+	/**
+	 * Whether the assistant widget is on for a portal.
+	 *
+	 * @param array<string, mixed> $portal The portal object.
+	 *
+	 * @return bool True when the portal enabled it and hermiq answers.
+	 *
+	 * @spec openspec/changes/search-assistant-from-public-content/tasks.md#t05
+	 */
+	private function assistantEnabled(array $portal): bool {
+		$scope = $this->assistantScope ?? new PublicSourceScope();
+		return $scope->enabledFor(portal: $portal) === true && $this->assistant !== null && $this->assistant->isAvailable() === true;
+	}//end assistantEnabled()
 }//end class

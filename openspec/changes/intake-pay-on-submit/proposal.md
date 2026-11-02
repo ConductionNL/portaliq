@@ -106,3 +106,7 @@ and `cmp-int-pay` as its mirror in this repo.
   OpenRegister.
 - **ConductionNL/buildiq** carries the `form-payment` row in its matrix; its
   forms declare no fee, and the fee stays on the case type.
+
+## Amended by submit-creates-the-case-directly (decision 179)
+
+Amended by `submit-creates-the-case-directly` (decision 181: the case first, payment status open): REQ-IPS-003 and REQ-IPS-005 read the created object, not a queue entry. `PortalIntakePayments` finds the case by its reference (`DestinationLookup`), checks it is the subject's through the binding's `destination.subjectField`, and reads the payment state from `destination.paymentField`. The case app's pay action keeps the payment intent; portaliq stores none.

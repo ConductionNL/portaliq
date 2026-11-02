@@ -232,8 +232,8 @@ SPDX-License-Identifier = "Apache-2.0 OR MIT"
 # WHAT IT IS, established 2026-09-11 (Remko Huisman asked for the analysis).
 # woo/ is 28 MB / 650 committed files: the production build of
 # ConductionNL/tilburg-woo-ui, the Open Tilburg citizen WOO front end, which
-# lib/Controller/WooController.php serves from `__DIR__/../../woo` on the
-# public routes `woo#serve` and `woo#servePath`. It is load-bearing, not dead
+# lib/Controller/BundledSiteController.php serves from `woo/` on the
+# public routes `bundledSite#serve` and `bundledSite#servePath` (/woo). It is load-bearing, not dead
 # weight. It arrived in a single commit — 3b109c8, 2026-07-10, "wip: preserve
 # uncommitted work" — and has never been touched since; no script in this
 # repository can rebuild it.

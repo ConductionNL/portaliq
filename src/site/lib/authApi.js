@@ -294,6 +294,10 @@ function dutchLabel(key, vars = {}) {
 		'Log in with your account': 'Inloggen met uw account',
 		'Log in': 'Inloggen',
 		'Log in with {provider}': 'Inloggen met {provider}',
+		'Send me a sign-in link': 'Stuur mij een inloglink',
+		'Log in as {name}': 'Inloggen als {name}',
+		'Log in as the example resident': 'Inloggen als voorbeeldinwoner',
+		'Example resident': 'Voorbeeldinwoner',
 	}
 	return (nl[key] || key).replace(/\{(\w+)\}/g, (_, name) =>
 		String(vars[name] ?? ''),
@@ -312,24 +316,30 @@ function dutchLabel(key, vars = {}) {
  * @param {string} authBase The auth edge base.
  * @param {(key: string, vars?: object) => string} [t] The site translator;
  *        without one the labels are the Dutch the site always showed.
- * @param {string} [exampleResident] The example resident the one-click demo
- *        sign-in offers on this portal (the shell's `signin.exampleResident`),
- *        or ''. With one, the `nextcloud` way links to that route instead of
- *        the account form and is marked `demo` (example-resident-demo-login).
- * @param {string} [residentWayIn] The way in the example resident's install
- *        added while the demo switch is off (`signin.exampleResidentWayIn`),
- *        or ''. That way is left out, so a demo card shows only on a portal
- *        that switched the demo on.
- * @return {Array<{mode: string, label: string, card?: object, href: string, demo?: boolean}>} The routes.
+ * @param {string} [exampleResident] The example set whose residents the
+ *        one-click demo sign-in offers on this portal (the shell's
+ *        `signin.exampleResident`), or ''.
+ * @param {Array<{key: string, name: string, card?: object}>} [demoResidents]
+ *        The residents of that set (`signin.exampleResidents`). Each gets its
+ *        own card marked `demo`, after the portal's own ways in. The
+ *        `nextcloud` way stays the account route, with its password reset and
+ *        registration links, so a resident who made an account still signs in
+ *        with it (demo-sign-in-beside-the-account).
+ * @param {boolean} [emailLink] Whether the portal offers the e-mail link (`waysIn.emailLink`).
+ * @return {Array<{key: string, mode: string, label: string, card?: object, href: string, demo?: boolean, form?: string}>} The routes.
  * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
+ * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#1
  * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+ * @spec openspec/changes/nextcloud-account-registration/specs/portal-nextcloud-account-login/spec.md#requirement-the-sign-in-page-leads-to-nextclouds-own-registration-req-ncl-005
+ * @spec openspec/changes/demo-sign-in-beside-the-account/specs/example-resident/spec.md#requirement-a-demo-may-sign-in-each-example-resident-with-one-click
  */
 export function signInRoutes(
 	site,
 	authBase,
 	t = dutchLabel,
 	exampleResident = '',
-	residentWayIn = '',
+	demoResidents = [],
+	emailLink = false,
 ) {
 	const modes = Array.isArray(site?.authentication?.modes)
 		? site.authentication.modes
@@ -371,25 +381,87 @@ export function signInRoutes(
 	// without one keeps the standard label and no card text.
 	const cards = site?.authentication?.modeLabels || {}
 	const demo = typeof exampleResident === 'string' && exampleResident !== ''
-	const demoQuery = [`id=${encodeURIComponent(exampleResident)}`, scope, returnTo]
-		.filter(Boolean)
-		.join('&')
 
-	return modes
+	// The e-mail link is a form, not a link: only where the auth edge says
+	// the switch is on and the portal declares it (sign-in-with-an-email-link).
+	if (emailLink === true) {
+		labels['email-link'] = t('Send me a sign-in link')
+	}
+
+	const routes = modes
 		.filter((mode) => mode !== 'public' && Object.hasOwn(labels, mode))
-		.filter((mode) => residentWayIn === '' || mode !== residentWayIn)
 		.map((mode) => ({
+			key: mode,
 			mode,
 			label: cards[mode]?.button || labels[mode],
 			...(cards[mode] ? { card: cards[mode] } : {}),
-			...(mode === 'nextcloud' && demo ? { demo: true } : {}),
+			// Nextcloud's own reset, reached from the account route's card
+			// (password-reset-from-the-sign-in-page REQ-PWR-001).
+			...(mode === 'nextcloud' && site?.lostPasswordUrl
+				? { lostPasswordUrl: String(site.lostPasswordUrl) }
+				: {}),
+			// Nextcloud's own registration form, served by the site config only
+			// when the portal names a resident group the registration app fills
+			// (nextcloud-account-registration REQ-NCL-005). Also on a demo: the
+			// one-click cards sit beside this route, they do not replace it.
+			// Never on another mode: the e-mail link opens no registration.
+			...(mode === 'nextcloud' && site?.registerUrl
+				? { registerUrl: String(site.registerUrl) }
+				: {}),
+			...(mode === 'email-link'
+				? { form: 'email-link', authBase, portal: slug }
+				: {}),
 			href:
-				mode === 'nextcloud'
-					? demo
-						? `${authBase}/session/example-resident?${demoQuery}`
-						: `${authBase}/session/nextcloud${query ? `?${query}` : ''}`
-					: `${authBase}/session/oidc/start?provider=${encodeURIComponent(
-							providers[mode] || mode,
-						)}${query ? `&${query}` : ''}`,
+				mode === 'email-link'
+					? ''
+					: mode === 'nextcloud'
+						? `${authBase}/session/nextcloud${query ? `?${query}` : ''}`
+						: `${authBase}/session/oidc/start?provider=${encodeURIComponent(
+								providers[mode] || mode,
+							)}${query ? `&${query}` : ''}`,
 		}))
+
+	// The one-click demo cards (demo-sign-in-beside-the-account): one per
+	// example resident, only where the shell offers them and the portal
+	// signs residents in with their account, as the route requires.
+	if (!demo || !modes.includes('nextcloud')) {
+		return routes
+	}
+
+	const residents = Array.isArray(demoResidents)
+		? demoResidents.filter((r) => r && typeof r.key === 'string' && r.key)
+		: []
+	// A shell from before there were several names only the set: one card
+	// for its first resident.
+	const offered = residents.length ? residents : [{ key: '', name: '' }]
+
+	return routes.concat(
+		offered.map((resident) => {
+			const name = String(resident.name || '')
+			const card = resident.card || {}
+			const demoQuery = [
+				`id=${encodeURIComponent(exampleResident)}`,
+				resident.key ? `resident=${encodeURIComponent(resident.key)}` : '',
+				scope,
+				returnTo,
+			]
+				.filter(Boolean)
+				.join('&')
+			return {
+				key: `example-resident:${resident.key}`,
+				mode: 'example-resident',
+				label:
+					card.button
+					|| (name
+						? t('Log in as {name}', { name })
+						: t('Log in as the example resident')),
+				card: {
+					title: card.title || name || t('Example resident'),
+					...(card.text ? { text: card.text } : {}),
+				},
+				demo: true,
+				href: `${authBase}/session/example-resident?${demoQuery}`,
+			}
+		}),
+	)
 }

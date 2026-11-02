@@ -124,13 +124,14 @@ test('a token fallback is another token or a system colour, never a literal', ()
 		for (const match of withoutComments(styles(source)).matchAll(
 			/var\(\s*(--[a-z0-9-]+)\s*,([^)]*)\)/gi,
 		)) {
-			const fallback = match[2].trim()
+			// Prettier wraps a nested fallback over lines: `var(\n\t--x,`.
+			const fallback = match[2].replace(/\s+/g, ' ').trim()
 			if (fallback === '') {
 				continue
 			}
 
 			const sound =
-				fallback.startsWith('var(--')
+				/^var\(\s*--/.test(fallback)
 				|| /^(Canvas|CanvasText|LinkText|currentcolor|transparent|inherit|none)$/i.test(
 					fallback,
 				)
@@ -173,7 +174,7 @@ test('the check can fail, on both halves', () => {
 			.filter(
 				(fallback) =>
 					!(
-						fallback.startsWith('var(--')
+						/^var\(\s*--/.test(fallback)
 						|| /^(Canvas|CanvasText|LinkText|currentcolor|transparent)$/i.test(
 							fallback,
 						)
@@ -228,6 +229,25 @@ test('every widget with its own stylesheet is one design D5 names', () => {
 		// portal-public-catalogue: a composition too (search, facets, cards,
 		// pages); layout and theme tokens only.
 		'nlCatalogue',
+		// public-detail-page-for-a-provider-item: date cards and a facts grid.
+		'nlPublicDetail',
+		// public-faq-and-product-finder: the FAQ's group spacing and the
+		// finder's chips, layout and result panel; layout and tokens only.
+		'nlFaqList',
+		'nlProductFinder',
+		// home-and-theme-landing-pages: a card grid, a count grid and the
+		// subject page's picture; layout and tokens only.
+		'nlFeaturedSubjects',
+		'nlPortalCounts',
+		'nlSubjectLanding',
+		// site-callouts-steps-and-tables-follow-the-boards: a button and a
+		// warning mark inside the melding, and a plain white card, which
+		// Utrecht's alert does not draw. Layout and theme tokens only.
+		'nlAlert',
+		// site-location-map: chips, a sketch map with numbered markers and the
+		// numbered list beside it, which no Utrecht component draws. Layout and
+		// theme tokens only.
+		'nlLocationMap',
 	]
 
 	for (const { key, source } of components()) {

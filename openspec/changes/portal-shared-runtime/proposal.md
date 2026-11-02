@@ -70,3 +70,7 @@ Widget code and `CnJourney` are route-split, and the budget fails the build.
 - **Bundle weight regression is invisible without a failing budget.** Measured
   on transferred bytes, since the build's own emitted-size report is not what a
   visitor pays.
+
+## Amended by submit-creates-the-case-directly (decision 179)
+
+Amended by `submit-creates-the-case-directly` (decision 179): task 69's form submit renders a 422 from the destination per field (and a finding without a field as a form-level message) and a 503 as "not sent, try again later" with the answers kept. The confirmation names the case number, the received moment, the term start and the deadline.

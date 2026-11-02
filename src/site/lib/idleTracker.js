@@ -133,3 +133,22 @@ export function createIdleTracker({ refresh, onTimes, onWarn, onEnd }) {
 		extend,
 	}
 }
+
+/**
+ * Whether the page asks to open the idle warning at once: only when the
+ * session says this instance allows it (`idlePreview`, app flag
+ * `session_idle_preview_enabled`) and the address holds `idleWarning=now`.
+ * A test instance uses it to measure the warning (board SessieVerloopt).
+ *
+ * @param {object|null} session The session answer.
+ * @param {string} search The address's query string.
+ * @return {boolean}
+ *
+ * @spec openspec/changes/archive/2026-10-30-idle-warning-preview/tasks.md#T02
+ */
+export function idlePreviewWanted(session, search) {
+	if (session?.idlePreview !== true) {
+		return false
+	}
+	return new URLSearchParams(search || '').get('idleWarning') === 'now'
+}

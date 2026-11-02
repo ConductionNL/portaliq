@@ -103,7 +103,7 @@ content. It SHALL fail, never skip, when the portal content is absent.
 
 ### Requirement: The vendored bundle MUST leave the repository
 
-`woo/`, `WooController` and the `woo#serve` and `woo#servePath` routes SHALL be
+`woo/`, `BundledSiteController` and the `bundledSite#serve` and `bundledSite#servePath` routes SHALL be
 removed once parity is demonstrated. Tests asserting the retired surface SHALL
 be inverted rather than deleted, so a silent return of the bundle is caught.
 

@@ -209,4 +209,27 @@ class TrafficRollupSumTest extends TestCase {
 		$this->assertSame('b', $experiment['winner']);
 		$this->assertGreaterThan(0.95, $experiment['confidence']);
 	}//end testExperimentsAreSummedAndAHeatmapIsNot()
+
+	/**
+	 * The terms that found nothing add up across members, and so do the searches without a count.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-roll-up-counts-searches-that-found-nothing-req-pzr-001
+	 */
+	public function testARollupPortalSumsItsMembers(): void {
+		$summed = (new TrafficRollupSum())->sum(
+			portal: 'rollup',
+			date: '2026-09-04',
+			members: ['a', 'b'],
+			records: [
+				$this->record('a', ['zeroResultSearches' => [['term' => 'parkeren', 'count' => 2]], 'searchesWithoutCount' => 1]),
+				$this->record('b', ['zeroResultSearches' => [['term' => 'parkeren', 'count' => 1], ['term' => 'zwemmen', 'count' => 4]], 'searchesWithoutCount' => 2]),
+			],
+			aggregatedAt: '2026-09-04T13:00:00Z'
+		);
+
+		$this->assertSame([['term' => 'zwemmen', 'count' => 4], ['term' => 'parkeren', 'count' => 3]], $summed['zeroResultSearches']);
+		$this->assertSame(3, $summed['searchesWithoutCount']);
+	}//end testARollupPortalSumsItsMembers()
 }//end class

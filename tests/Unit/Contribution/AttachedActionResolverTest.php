@@ -106,6 +106,30 @@ class AttachedActionResolverTest extends TestCase {
 	}//end testTheListingCarriesTheStepFlow()
 
 	/**
+	 * A choice field's options travel with the attached action, so the form
+	 * on the record asks it as choices rather than as free text
+	 * (endpoint-action-forms-keep-their-field-shape REQ-EAF-002).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-form-attached-to-a-record-asks-and-sends-what-its-action-declares-req-eaf-002
+	 */
+	public function testTheListingCarriesTheOptionsOfAChoiceField(): void {
+		$providers = [
+			'verzoekerType' => [
+				'type'    => 'static',
+				'options' => [['value' => 'burger', 'label' => 'Inwoner']],
+			],
+		];
+		$out    = (new AttachedActionResolver())->resolve(
+			contributions: $this->contributions(action: $this->ask(['optionsProviders' => $providers]))
+		);
+		$listed = $out[0]['collections'][0]['attachedActions'][0];
+
+		self::assertSame($providers, $listed['optionsProviders']);
+	}//end testTheListingCarriesTheOptionsOfAChoiceField()
+
+	/**
 	 * A provider cannot declare attached actions on its own collection.
 	 *
 	 * @return void

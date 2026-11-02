@@ -65,7 +65,7 @@
 				:variant="headerVariant"
 				:menus="headerMenus"
 				:showNavigation="!menuOnPage"
-				:currentRoute="route"
+				:currentRoute="menuRoute"
 				:breadcrumbs="breadcrumbs"
 				:session="session"
 				:sessionLabel="sessionLabel"
@@ -101,7 +101,8 @@
 				:widgets="[block]"
 				v-bind="gridContext"
 				@navigate="go"
-				@search="goSearch" />
+				@search="goSearch"
+				@subject="onSubject" />
 		</template>
 
 		<!-- The warning before an inactivity sign-out (signin-session-idle-warning-and-sso T06). -->
@@ -209,7 +210,8 @@
 					:widgets="regions.hero"
 					v-bind="gridContext"
 					@navigate="go"
-					@search="goSearch" />
+					@search="goSearch"
+					@subject="onSubject" />
 
 				<!--
 					THE SIDE MENU (site-navigation-block). When the side region
@@ -230,7 +232,8 @@
 							:widgets="regions.aside"
 							v-bind="gridContext"
 							@navigate="go"
-							@search="goSearch" />
+							@search="goSearch"
+							@subject="onSubject" />
 					</aside>
 					<div class="pq-site__content">
 						<!-- A signed link opens its one act before any page (REQ-GST-002). -->
@@ -295,6 +298,15 @@
 							:t="t"
 							@loaded="onSharedDossierLoaded" />
 
+						<!-- Every portal's accessibility statement, generated from its
+				     latest measurement (site-accessibility-statement). -->
+						<AccessibilityStatementPage
+							v-else-if="statementRoute"
+							:portalSlug="site.slug || portalSlug"
+							:portalName="site.title || ''"
+							:locale="chosenLocale"
+							:t="t" />
+
 						<p
 							v-else-if="loading"
 							class="container"
@@ -306,31 +318,25 @@
 						<!-- A failed load says so. Rendering an empty page instead would
 			     make a broken deployment look exactly like an empty site — the
 			     one confusion this surface can least afford. -->
+						<NotFoundPage
+							v-else-if="error && error.status === 404"
+							:path="route"
+							:site="site"
+							:portalSlug="portalSlug"
+							:locale="chosenLocale"
+							:hasWaysIn="signInRoutes.length > 0"
+							:searchEnabled="headerSearch.enabled"
+							:hrefForRoute="hrefForRoute"
+							:t="t"
+							@navigate="go"
+							@search="goSearch" />
 						<div
 							v-else-if="error"
 							class="container"
 							role="alert"
-							data-testid="site-error"
-							:data-portaliq-status="
-								error.status === 404 ? '404' : null
-							"
-							:data-portaliq-path="
-								error.status === 404 ? route : null
-							">
-							<h2>
-								{{
-									error.status === 404
-										? t('Page not found')
-										: t('Something went wrong')
-								}}
-							</h2>
-							<p>
-								{{
-									error.status === 404
-										? t('This page does not exist (any more).')
-										: t('The content could not be loaded.')
-								}}
-							</p>
+							data-testid="site-error">
+							<h2>{{ t('Something went wrong') }}</h2>
+							<p>{{ t('The content could not be loaded.') }}</p>
 						</div>
 
 						<!--
@@ -363,6 +369,7 @@
 						<article
 							v-else-if="page"
 							:class="bodyIsGrid ? null : 'utrecht-article'"
+							:lang="contentLocale"
 							data-testid="site-page">
 							<!--
 						THE RENDERER'S OWN TITLE HEADING IS A FALLBACK, not a
@@ -386,6 +393,12 @@
 								</h1>
 							</div>
 
+							<!-- The page's help text, closed under its heading
+							     (help-texts-and-form-help). -->
+							<div v-if="page.helpText" class="container">
+								<PageHelp :text="page.helpText" />
+							</div>
+
 							<!-- The page's hero image, from the portal's media library or
 					     an address (site-page-seo-history-and-media T08). The
 					     content API resolves media:<id> and carries the item's
@@ -405,7 +418,8 @@
 								:widgets="regions.main"
 								v-bind="gridContext"
 								@navigate="go"
-								@search="goSearch" />
+								@search="goSearch"
+								@subject="onSubject" />
 
 							<div v-else class="container">
 								<MarkdownBlock
@@ -432,7 +446,8 @@
 						:widgets="regions.aside"
 						v-bind="gridContext"
 						@navigate="go"
-						@search="goSearch" />
+						@search="goSearch"
+						@subject="onSubject" />
 				</aside>
 
 				<!--
@@ -477,13 +492,15 @@
 				:menus="footerMenus"
 				:legalLinks="legalLinks"
 				:footer="site.footer || {}"
+				:addressOf="hrefForRoute"
 				@navigate="go" />
 			<WidgetGrid
 				v-else
 				:widgets="[block]"
 				v-bind="gridContext"
 				@navigate="go"
-				@search="goSearch" />
+				@search="goSearch"
+				@subject="onSubject" />
 		</template>
 
 		<!--
@@ -529,7 +546,9 @@ import {
 import { forgetActingFor, learnMandates } from './components/e/actingFor.js'
 import { ActingForSwitcher, ContactPrompt } from './components/e/index.js'
 import { InstallBanner } from './components/f/index.js'
+import { isStatementRoute, withStatementLink } from './lib/accessibilityStatement.js'
 import { accountCrumbs, accountRedirect, loggedInAs } from './lib/accountArea.js'
+import { setAssistantAvailable } from './lib/assistantAvailable.js'
 import {
 	adoptSessionToken,
 	authBaseFrom,
@@ -551,10 +570,14 @@ import {
 	fetchSite,
 	resolveApiBase,
 } from './lib/contentApi.js'
+import { crumbLabel, signInCrumbs } from './lib/crumbWords.js'
 import { editorBaseFrom, fetchEditingContext } from './lib/editorApi.js'
-import { createIdleTracker } from './lib/idleTracker.js'
+import { asideOf } from './lib/gridPlacement.js'
+import { createIdleTracker, idlePreviewWanted } from './lib/idleTracker.js'
 import { instanceRootFrom } from './lib/instanceRoot.js'
+import { languageEntries, requestedLocale } from './lib/languageNav.js'
 import { loadSiteEditor } from './lib/loadSiteEditor.js'
+import { blocksOwnHeading } from './lib/pageHeading.js'
 import { pageRegionsOf, resolveRegions } from './lib/regions.js'
 import {
 	loadPerRecordRows,
@@ -571,13 +594,20 @@ import {
 	headerVariantOf,
 	legalLinksOf,
 	menuLabelFor,
+	menusWithAddresses,
 	registerRouteOf,
 } from './lib/shellData.js'
+import {
+	addressAfterMove,
+	addressOfRoute,
+	routeOfLocation,
+} from './lib/siteAddress.js'
 import {
 	hasNavigationBlock,
 	navigationGroups,
 	sideMenuOf,
 } from './lib/siteNavigation.js'
+import { menuRouteOf, subjectCrumbs, subjectOf } from './lib/subjectTrail.js'
 import { hasWayInLink, waysInFrom, waysInTranslator } from './lib/waysIn.js'
 import { openRecordEntry } from './pages/collections/index.js'
 import { confirmEmailFromLink, contactPromptWanted } from './pages/e/index.js'
@@ -596,6 +626,9 @@ import { TASK_STORAGE_KEY } from './pages/inbox/inbox.js'
  * It is imported only once the probe has said this session may edit, so a
  * reader never downloads it at all.
  */
+const NotFoundPage = defineAsyncComponent(
+	() => import('./components/NotFoundPage.vue'),
+)
 const SiteEditButton = defineAsyncComponent(
 	() => import('./components/SiteEditButton.vue'),
 )
@@ -614,12 +647,17 @@ const SiteNotices = defineAsyncComponent(
 
 // Loaded only when somebody opens a shared dossier link, so every other
 // visitor pays nothing for it in the site bundle (site-shared-dossier).
+const AccessibilityStatementPage = defineAsyncComponent(
+	() => import('./components/AccessibilityStatementPage.vue'),
+)
 const SharedDossierPage = defineAsyncComponent(
 	() => import('./components/SharedDossierPage.vue'),
 )
 
 // The guest page for a signed link (identity-guest-page-for-signed-links),
 // loaded only when the address carries one.
+const PageHelp = defineAsyncComponent(() => import('./components/PageHelp.vue'))
+
 const GuestActionPage = defineAsyncComponent(
 	() => import('./pages/GuestActionPage.vue'),
 )
@@ -640,6 +678,7 @@ export default {
 	name: 'App',
 
 	components: {
+		PageHelp,
 		AccountArea,
 		ActingForSwitcher,
 		BranchSwitcher,
@@ -651,10 +690,24 @@ export default {
 		IdleWarningDialog,
 		InstallBanner,
 		MarkdownBlock,
+		NotFoundPage,
 		SharedDossierPage,
+		AccessibilityStatementPage,
 		SiteEditButton,
 		SiteNotices,
 		WidgetGrid,
+	},
+
+	/**
+	 * The language the page's content is written in, for the blocks that
+	 * format a date inside it (site-dates-in-content-language). A function,
+	 * so a block reads the current page's language after a navigation.
+	 *
+	 * @return {{siteContentLocale: () => string}} The provided values.
+	 * @spec openspec/changes/site-dates-in-content-language/specs/site-look/spec.md#requirement-a-date-inside-page-content-must-read-in-the-content-language
+	 */
+	provide() {
+		return { siteContentLocale: () => this.contentLocale }
 	},
 
 	props: {
@@ -706,6 +759,10 @@ export default {
 			// A mailed way in (`#activate=`, `#invitation=`, `#reference=`).
 			wayInLink: hasWayInLink(window.location),
 			site: {},
+			// The language the visitor chose with the language switch
+			// (`?lang=`), sent on every content read. '' asks for the
+			// portal's default.
+			chosenLocale: requestedLocale(window.location.search),
 			menus: [],
 			glossary: [],
 			contributions: [],
@@ -723,6 +780,8 @@ export default {
 			routeParam: '',
 			// The title of the shared dossier on screen, once it is read.
 			sharedDossierTitle: '',
+			// What a block on the page shows, told by it (site-article-page-follows-the-board).
+			subject: null,
 			loading: true,
 			error: null,
 			// The editing context for the route on screen, or null for every
@@ -795,7 +854,25 @@ export default {
 		 */
 		breadcrumbs() {
 			if (this.accountRoute) {
+				// Signed out, the own area is the sign-in page.
+				if (!this.session) {
+					return signInCrumbs(this.route, this.t, this.hrefForRoute)
+				}
 				return accountCrumbs(this.accountEntry, this.t, this.hrefForRoute)
+			}
+			if (this.statementRoute) {
+				return [
+					{
+						route: '/',
+						label: this.t('Home'),
+						href: this.hrefForRoute('/'),
+					},
+					{
+						route: this.route,
+						label: this.t('Accessibility statement'),
+						href: this.hrefForRoute(this.route),
+					},
+				]
 			}
 			// The token is not a word and no page sits at its parent.
 			if (this.sharedDossierRoute) {
@@ -825,21 +902,41 @@ export default {
 
 				// The id segment of `/publicatie/<id>` is not a word; the
 				// page's own title is what a visitor recognises.
-				let label = segment.charAt(0).toUpperCase() + segment.slice(1)
+				let fromRoute = segment.charAt(0).toUpperCase() + segment.slice(1)
 				if (isLast === true && this.page && this.page.title) {
-					label = this.page.title
+					fromRoute = this.page.title
 				}
 				// The header menu's own words for a route it names, so the trail
-				// reads like the menu ("Home › Afval"), on every crumb.
-				const fromMenu = menuLabelFor(this.menus, route)
-				if (fromMenu !== '') {
-					label = fromMenu
-				}
+				// reads like the menu ("Home › Afval"), on every crumb; a portal
+				// that chooses `breadcrumb: page` names the page on screen by its
+				// own title (site-breadcrumb-follows-the-school-boards).
+				const label = crumbLabel({
+					fromRoute,
+					fromMenu: menuLabelFor(this.menus, route),
+					isLast,
+					pageTitle: this.page?.title,
+					choice: this.site.breadcrumb,
+				})
 
 				crumbs.push({ route, label, href: this.hrefForRoute(route) })
 			})
 
-			return crumbs
+			return subjectCrumbs(crumbs, this.subject, {
+				labelFor: (route) => menuLabelFor(this.menus, route),
+				hrefFor: (route) => this.hrefForRoute(route),
+			})
+		},
+
+		/**
+		 * The route the header menu marks: inside the section of the subject
+		 * on screen when a block told one, else the route.
+		 *
+		 * @return {string} The route.
+		 *
+		 * @spec openspec/changes/site-article-page-follows-the-board/specs/site-look/spec.md#requirement-a-news-article-reads-like-the-article-board
+		 */
+		menuRoute() {
+			return menuRouteOf(this.route, this.subject)
 		},
 
 		/**
@@ -865,6 +962,7 @@ export default {
 		 * @return {boolean} True when the renderer must not add a title.
 		 *
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+		 * @spec openspec/changes/site-page-layout/specs/site-look/spec.md#requirement-a-page-must-have-one-title-heading
 		 */
 		bodyProvidesHeading() {
 			const body = this.page.body || {}
@@ -879,10 +977,9 @@ export default {
 			// the reference has one, and the generic one first.
 			//
 			// A hero in the hero region counts too, the portal's included: the
-			// page then keeps one h1 (REQ-PTB-009).
-			return [...this.regions.hero, ...main].some(
-				(w) => w.widgetKey === 'hero' || w.widgetKey === 'publicationDetail',
-			)
+			// page then keeps one h1 (REQ-PTB-009). So does an `nlHeading` at
+			// level 1 (site-page-layout).
+			return blocksOwnHeading([...this.regions.hero, ...main])
 		},
 
 		/**
@@ -914,9 +1011,37 @@ export default {
 				routeParam: this.routeParam,
 				portal: this.site.slug || '',
 				signedIn: this.session !== null,
+				searchInsideDocuments: this.site.searchInsideDocuments !== false,
+				organisation: this.site.organisation || null,
 				navigation: this.navigation,
+				languages: this.languages,
 				// The portal's sign-in ways, for the nlSignIn block (lane L2, G-13).
 				signInRoutes: this.signInRoutes,
+				// The help details every form offers (help-texts-and-form-help).
+				portalHelp: this.site.help || null,
+				// A fixed-width aside column (site-aside-column).
+				aside: asideOf(this.page && this.page.body),
+			}
+		},
+
+		/**
+		 * The language switch's data: the portal's own locales as links to
+		 * this page in each, and the one in effect. The content API answered
+		 * both on `/site` (ContentController::site), so nothing here invents
+		 * a language.
+		 *
+		 * @return {{locales: Array<object>, current: string}} The switch's props.
+		 *
+		 * @spec openspec/changes/language-switch-reaches-the-content/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
+		 */
+		languages() {
+			return {
+				locales: languageEntries(
+					this.site.locales,
+					this.hrefForRoute(this.route),
+				),
+
+				current: this.site.locale || '',
 			}
 		},
 
@@ -966,9 +1091,14 @@ export default {
 									this.hrefForRoute,
 									this.recordRows,
 									this.site?.residentMenu?.groups,
+									// Items the portal leaves out (resident-menu-leave-out).
+									this.site?.residentMenu?.leaveOut,
 								)
 							: [],
-					menus: headerMenusOf(this.menus),
+					menus: menusWithAddresses(
+						headerMenusOf(this.menus),
+						this.hrefForRoute,
+					),
 				}),
 
 				currentRoute: this.route,
@@ -1005,6 +1135,7 @@ export default {
 				&& !this.guestLink
 				&& !this.wayInLink
 				&& !this.sharedDossierRoute
+				&& !this.statementRoute
 				&& !this.error
 				&& !(this.editMode && this.editing && this.editing.pageId)
 				&& this.page !== null
@@ -1035,7 +1166,9 @@ export default {
 		 * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-blue-bar-must-carry-the-websites-pages-only-req-srm-001
 		 */
 		headerMenus() {
-			return headerMenusOf(this.menus)
+			// A menu link opens its page where the site is served under the
+			// app path as well as on a portal domain (siteAddress.js).
+			return menusWithAddresses(headerMenusOf(this.menus), this.hrefForRoute)
 		},
 
 		/**
@@ -1058,6 +1191,8 @@ export default {
 				this.recordRows,
 				// The portal's own groups (zuiddrecht-resident-pages-match-the-boards).
 				this.site?.residentMenu?.groups,
+				// Items the portal leaves out (resident-menu-leave-out).
+				this.site?.residentMenu?.leaveOut,
 			)
 		},
 
@@ -1087,6 +1222,22 @@ export default {
 				runtimeConfig().portalNotices,
 				this.session !== null,
 			)
+		},
+
+		/**
+		 * The language the page's content is written in: the page record's
+		 * own `locale`, else the site's. A Dutch page on a portal that also
+		 * serves English stays Dutch for an English browser, so its dates read
+		 * "2 oktober", not "2 October" (site-dates-in-content-language). Also
+		 * the page's `lang`, so a screen reader reads the content in its own
+		 * language (WCAG 3.1.2).
+		 *
+		 * @return {string} A two-letter language.
+		 * @spec openspec/changes/site-dates-in-content-language/specs/site-look/spec.md#requirement-a-date-inside-page-content-must-read-in-the-content-language
+		 */
+		contentLocale() {
+			const own = String(this.page?.locale || '').trim()
+			return own !== '' ? own.slice(0, 2).toLowerCase() : this.locale
 		},
 
 		/**
@@ -1194,6 +1345,15 @@ export default {
 		},
 
 		/**
+		 * @return {boolean} Whether the route on screen is the accessibility statement.
+		 *
+		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+		 */
+		statementRoute() {
+			return isStatementRoute(this.route)
+		},
+
+		/**
 		 * @return {string} The share token of the route on screen, or ''.
 		 *
 		 * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
@@ -1282,9 +1442,17 @@ export default {
 		 * @return {Array} `{label, href}` entries.
 		 *
 		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-footer-must-be-a-block-whose-bands-are-styled-by-role-req-ptb-005
+		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
 		 */
 		legalLinks() {
-			return legalLinksOf(this.site, this.menus)
+			// Every portal links its accessibility statement from the footer
+			// (site-accessibility-statement REQ-SAS-002): in the legal strip,
+			// unless a footer column already does.
+			return withStatementLink(
+				legalLinksOf(this.site, this.menus),
+				this.t('Accessibility'),
+				this.footerMenus,
+			)
 		},
 
 		/**
@@ -1336,10 +1504,12 @@ export default {
 				this.site,
 				authBaseFrom(resolveApiBase()),
 				this.t,
-				// One click on a demo for the example resident (example-resident-demo-login).
+				// One click on a demo per example resident, beside the portal's
+				// own ways in (demo-sign-in-beside-the-account).
 				this.signinConfig.exampleResident || '',
-				// Its way in stays out while the demo switch is off.
-				this.signinConfig.exampleResidentWayIn || '',
+				this.signinConfig.exampleResidents || [],
+				// The e-mail link, behind the instance switch (sign-in-with-an-email-link).
+				this.waysIn.emailLink === true,
 			)
 		},
 
@@ -1388,6 +1558,24 @@ export default {
 		// An invitation's secret (`#claim=<secret>`) is kept the same way,
 		// and handed back once the visitor is signed in.
 		keepClaimSecret(window.location, window.history, this.claimStorage())
+		if (window.location.hash.includes('#mandate-invitation=')) {
+			const { keepMandateInvitation } =
+				await import('../shared/mandateInvitation.js')
+			keepMandateInvitation(
+				window.location,
+				window.history,
+				this.claimStorage(),
+			)
+		}
+		if (window.location.hash.includes('#contact-invitation=')) {
+			const { keepContactInvitation } =
+				await import('../shared/contactInvitation.js')
+			keepContactInvitation(
+				window.location,
+				window.history,
+				this.claimStorage(),
+			)
+		}
 		this.route = this.routeFromLocation()
 		window.addEventListener('popstate', this.onPopState)
 		await this.loadSite()
@@ -1414,13 +1602,7 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-renderer-must-not-depend-on-nextcloud-globals
 		 */
 		routeFromLocation() {
-			const params = new URLSearchParams(window.location.search)
-			const explicit = params.get('route')
-			if (explicit) {
-				return explicit.startsWith('/') ? explicit : `/${explicit}`
-			}
-
-			return '/'
+			return routeOfLocation(window.location, runtimeConfig())
 		},
 
 		/**
@@ -1446,11 +1628,18 @@ export default {
 		async loadSite() {
 			try {
 				const [site, menus, glossary] = await Promise.all([
-					fetchSite(this.portalSlug),
-					this.unlessSignInNeeded(fetchMenus(this.portalSlug), []),
-					this.unlessSignInNeeded(fetchGlossary(this.portalSlug), []),
+					fetchSite(this.portalSlug, this.chosenLocale),
+					this.unlessSignInNeeded(
+						fetchMenus(this.portalSlug, this.chosenLocale),
+						[],
+					),
+					this.unlessSignInNeeded(
+						fetchGlossary(this.portalSlug, this.chosenLocale),
+						[],
+					),
 				])
 				this.site = site
+				setAssistantAvailable(site?.assistantEnabled === true)
 				this.menus = menus
 				this.glossary = glossary
 			} catch (error) {
@@ -1494,6 +1683,38 @@ export default {
 				t: this.t,
 				storage: this.claimStorage(),
 			})
+			if (this.claimMessage?.claimed) {
+				await this.reloadSession()
+			}
+
+			// A contact invitation kept from the mail is handed back the same way.
+			if (this.claimStorage()?.getItem('portaliq.contactInvitation')) {
+				const { redeemKeptContactInvitation } =
+					await import('../shared/contactInvitation.js')
+				this.claimMessage =
+					this.claimMessage
+					|| (await redeemKeptContactInvitation({
+						api: this.api,
+						session: this.session,
+						t: this.t,
+						storage: this.claimStorage(),
+					}))
+			}
+
+			// So is an invitation to act on someone's behalf
+			// (site-mandates-the-represented-manage T4).
+			if (this.claimStorage()?.getItem('portaliq.mandateInvitation')) {
+				const { redeemKeptMandateInvitation } =
+					await import('../shared/mandateInvitation.js')
+				this.claimMessage =
+					this.claimMessage
+					|| (await redeemKeptMandateInvitation({
+						api: this.api,
+						session: this.session,
+						t: this.t,
+						storage: this.claimStorage(),
+					}))
+			}
 
 			if (this.session) {
 				await this.loadAccount()
@@ -1518,7 +1739,25 @@ export default {
 				text: this.t(codeOutcome({ ok: true }).text),
 			}
 			window.scrollTo?.({ top: 0 })
+			await this.reloadSession()
 			await this.loadAccount()
+		},
+
+		/**
+		 * Read the session again after a claim. A claim can move a person's
+		 * own account into the invitation's audience and hand back a new
+		 * bearer for it; the session read here then names that audience.
+		 *
+		 * @return {Promise<void>} Resolves when the session is read again.
+		 *
+		 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+		 */
+		async reloadSession() {
+			const session = await fetchSession(authBaseFrom(resolveApiBase()))
+			if (session) {
+				this.session = session
+				this.watchIdle()
+			}
 		},
 
 		/**
@@ -1712,8 +1951,11 @@ export default {
 		 */
 		replaceRoute(route) {
 			this.route = route
-			const url = new URL(window.location.href)
-			url.searchParams.set('route', route)
+			const url = addressAfterMove(
+				route,
+				window.location.href,
+				runtimeConfig(),
+			)
 			window.history.replaceState({}, '', url)
 			this.applyDocumentTitle()
 		},
@@ -1805,6 +2047,12 @@ export default {
 				: this.page?.seo?.title || this.page?.title
 			if (this.sharedDossierRoute) {
 				pageName = this.sharedDossierTitle || this.t('Shared dossier')
+			}
+			if (this.statementRoute) {
+				pageName = this.t('Accessibility statement')
+			}
+			if (this.subject) {
+				pageName = this.subject.title
 			}
 			document.title =
 				pageName && pageName !== portalName
@@ -1899,6 +2147,9 @@ export default {
 			}
 			this.idleSignedOut = false
 			this.idleTracker.start(this.session)
+			if (idlePreviewWanted(this.session, window.location.search)) {
+				this.idleWarning = true
+			}
 		},
 
 		/**
@@ -1927,6 +2178,20 @@ export default {
 		},
 
 		/**
+		 * Take what a block on the page shows (a news article's title and
+		 * section) for the breadcrumb, the menu and the tab.
+		 *
+		 * @param {object|null} told What the block emitted.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-article-page-follows-the-board/specs/site-look/spec.md#requirement-a-news-article-reads-like-the-article-board
+		 */
+		onSubject(told) {
+			this.subject = subjectOf(told)
+			this.applyDocumentTitle()
+		},
+
+		/**
 		 * Take the shared dossier's title for the tab and the breadcrumb.
 		 *
 		 * @param {string} title The dossier's title, or ''.
@@ -1951,6 +2216,7 @@ export default {
 		 */
 		async loadRoute(route, { fresh = false } = {}) {
 			this.signInNeeded = false
+			this.subject = null
 			// The signed-in area renders from the session, not from a CMS
 			// page, so no page is read for it.
 			if (isAccountRoute(route)) {
@@ -1959,6 +2225,17 @@ export default {
 				this.routeParam = ''
 				this.loading = false
 				this.followAccountRoute()
+				this.applyDocumentTitle()
+				return
+			}
+
+			// The accessibility statement is generated, not authored, so it
+			// opens on every portal without a CMS page.
+			if (isStatementRoute(route)) {
+				this.page = null
+				this.error = null
+				this.routeParam = ''
+				this.loading = false
 				this.applyDocumentTitle()
 				return
 			}
@@ -1979,7 +2256,10 @@ export default {
 			this.error = null
 			this.routeParam = ''
 			try {
-				this.page = await fetchPage(route, this.portalSlug, { fresh })
+				this.page = await fetchPage(route, this.portalSlug, {
+					fresh,
+					locale: this.chosenLocale,
+				})
 			} catch (error) {
 				// A ROUTE CAN ADDRESS A THING RATHER THAN A PAGE.
 				//
@@ -1999,6 +2279,7 @@ export default {
 					try {
 						this.page = await fetchPage(parent, this.portalSlug, {
 							fresh,
+							locale: this.chosenLocale,
 						})
 						this.routeParam = route.slice(parent.length + 1)
 						this.loading = false
@@ -2065,6 +2346,7 @@ export default {
 			try {
 				this.page = await fetchPage(this.route, this.portalSlug, {
 					fresh: true,
+					locale: this.chosenLocale,
 				})
 			} catch {
 				// Leaving edit mode reads the page again anyway; a failed
@@ -2217,17 +2499,13 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 		 */
 		goSearch(term) {
-			const url = new URL(window.location.href)
-			// The portal the page is served as stays on the address: on an
-			// instance with several portals, an address without it opens
-			// another portal, or none, after a reload or in a new tab.
-			const portal = url.searchParams.get('portal')
-			url.search = ''
-			url.hash = ''
-			if (portal) {
-				url.searchParams.set('portal', portal)
-			}
-			url.searchParams.set('route', this.searchRoute)
+			// The portal and the chosen language stay on the address, as on
+			// every link (addressOfRoute).
+			const url = addressOfRoute(
+				this.searchRoute,
+				window.location.href,
+				runtimeConfig(),
+			)
 			if (term) {
 				url.searchParams.set('_search', term)
 			}
@@ -2263,31 +2541,31 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 		 */
 		hrefForRoute(route) {
-			const url = new URL(window.location.href)
-			// The portal the page is served as stays on the address: on an
-			// instance with several portals, an address without it opens
-			// another portal, or none, after a reload or in a new tab.
-			const portal = url.searchParams.get('portal')
-			url.search = ''
-			url.hash = ''
-			if (portal) {
-				url.searchParams.set('portal', portal)
-			}
-			if (route && route !== '/') {
-				url.searchParams.set('route', route)
-			}
-
-			return url.toString()
+			// A short address on a host that serves the site at its root, the
+			// long one anywhere else (siteAddress.js).
+			return addressOfRoute(
+				route,
+				window.location.href,
+				runtimeConfig(),
+			).toString()
 		},
 
+		/**
+		 * Move to an in-site route and add it to the history, in the
+		 * addressing of this host (siteAddress.js).
+		 *
+		 * @param {string} link The route, with a leading slash.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-at-the-root-of-a-portal-host/specs/portal-settings/spec.md#requirement-the-renderer-must-read-and-write-the-addresses-of-its-host-req-srh-004
+		 */
 		go(link) {
 			if (!link || !link.startsWith('/')) {
 				return
 			}
 
 			this.route = link
-			const url = new URL(window.location.href)
-			url.searchParams.set('route', link)
+			const url = addressAfterMove(link, window.location.href, runtimeConfig())
 			window.history.pushState({}, '', url)
 			this.loadRoute(link)
 		},

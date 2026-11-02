@@ -34,6 +34,7 @@ namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Contribution\CaseStatusLabelField;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
+use OCA\Portaliq\Service\Identity\MandateParties;
 
 /**
  * Merges every `kind: cases` collection into the subject's own case list.
@@ -432,6 +433,8 @@ class PortalCaseListReader {
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the parameters are
 	 * the scoping boundary itself; folding them away would hide it.
+	 *
+	 * @spec openspec/specs/portal-mandates/spec.md#requirement-a-mandated-case-list-reads-the-party-in-its-typed-and-its-bare-form-req-mtp-001
 	 */
 	private function readParty(
 		array $collection,
@@ -441,18 +444,28 @@ class PortalCaseListReader {
 		string $organisation,
 		string $audience,
 	): array {
-		return $this->reader->readCollection(
-			register: (string)($collection['register'] ?? ''),
-			schema: (string)($collection['schema'] ?? ''),
-			scopeField: $mandateField,
-			subjectRef: $party,
-			organisation: $organisation,
-			limit: self::ROW_LIMIT,
-			contributingApp: $contributingApp,
-			audience: $audience,
-			fields: ($collection['fields'] ?? null),
-			filter: (array)($collection['filter'] ?? [])
+		// A case app stores the party in the typed form a mandate names it in
+		// (`subject:<ref>`, `kvk:<8 digits>`); one written before the typed
+		// form stores it bare. Both are read, and a case found both ways is
+		// listed once (mandate-reads-the-typed-party REQ-MTP-001).
+		$forms = array_values(array_unique([(new MandateParties())->typed(value: $party), $party]));
+		$reads = array_map(
+			fn (string $form): array => $this->reader->readCollection(
+				register: (string)($collection['register'] ?? ''),
+				schema: (string)($collection['schema'] ?? ''),
+				scopeField: $mandateField,
+				subjectRef: $form,
+				organisation: $organisation,
+				limit: self::ROW_LIMIT,
+				contributingApp: $contributingApp,
+				audience: $audience,
+				fields: ($collection['fields'] ?? null),
+				filter: (array)($collection['filter'] ?? [])
+			),
+			$forms
 		);
+
+		return (new UniqueCaseRows())->merged(lists: $reads);
 	}//end readParty()
 
 	/**
