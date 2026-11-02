@@ -115,6 +115,7 @@
     "check:create-names-its-action": "node --test tests/create-names-its-action.spec.mjs",
     "check:staff-account-screens": "node --test tests/staff-account-screens.spec.mjs",
     "check:account-tables-sort-filter": "node --test tests/account-tables-sort-filter.spec.mjs",
+    "check:row-menus-as-drawn": "node --test tests/row-menus-as-drawn.spec.mjs",
     "check:account-dialogs-board-rhythm": "node --test tests/account-dialogs-board-form.spec.mjs tests/account-dialogs-board-rhythm.spec.mjs",
     "check:site-signed-in-shell": "node --test tests/site-signed-in-shell.spec.mjs",
     "check:site-resident-menu": "node --test tests/site-resident-menu.spec.mjs",

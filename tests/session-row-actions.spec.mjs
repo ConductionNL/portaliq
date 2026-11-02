@@ -95,7 +95,7 @@ test('the route answers at the admin controller', () => {
 })
 
 test('the Sessions list carries both row actions, revoke only on a live session', () => {
-	const byHandler = Object.fromEntries((SESSIONS.actions || []).map((a) => [a.handler, a]))
+	const byHandler = Object.fromEntries((SESSIONS.actions || []).filter((a) => typeof a === 'object').map((a) => [a.handler, a]))
 	assert.ok(byHandler.openSessionAccount, 'no account action')
 	assert.ok(byHandler.revokeSession, 'no revoke action')
 	assert.deepEqual(byHandler.revokeSession.visibleWhen, { field: 'revoked', op: 'neq', value: true })

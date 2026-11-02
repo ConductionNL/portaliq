@@ -1850,6 +1850,7 @@
           }
         ],
         "actions": [
+          "builtin:view",
           {
             "id": "resend-invitation",
             "label": "Send again",
@@ -1872,6 +1873,7 @@
             "icon": "Close",
             "type": "handler",
             "handler": "withdrawInvitation",
+            "destructive": true,
             "visibleWhen": {
               "field": "state",
               "op": "neq",
@@ -2258,6 +2260,7 @@
           }
         ],
         "actions": [
+          "builtin:view",
           {
             "id": "open-session-account",
             "label": "Go to the account",
@@ -2271,6 +2274,7 @@
             "icon": "Close",
             "type": "handler",
             "handler": "revokeSession",
+            "destructive": true,
             "visibleWhen": {
               "field": "revoked",
               "op": "neq",
@@ -4642,6 +4646,7 @@
           }
         ],
         "actions": [
+          "builtin:view",
           {
             "id": "grant",
             "label": "Approve",
@@ -4654,7 +4659,8 @@
             "label": "Refuse with a reason",
             "icon": "Close",
             "type": "handler",
-            "handler": "refuseAccessRequest"
+            "handler": "refuseAccessRequest",
+            "destructive": true
           }
         ],
         "showTitle": true,
