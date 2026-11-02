@@ -201,6 +201,7 @@ export default {
 
 .pq-form-progress__title {
 	font-weight: 500;
+	color: var(--nldesign-color-text, var(--utrecht-document-color, inherit));
 }
 
 .pq-form-progress__item--current .pq-form-progress__title {
@@ -208,7 +209,10 @@ export default {
 }
 
 .pq-form-progress__item--todo .pq-form-progress__title {
-	color: var(--nldesign-color-text-muted, inherit);
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, inherit)
+	);
 }
 
 .pq-form-progress__item--current .pq-form-progress__marker {
@@ -237,7 +241,10 @@ export default {
 }
 
 .pq-form-progress__state {
-	color: var(--nldesign-color-text-muted, inherit);
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, inherit)
+	);
 	font-size: 0.875rem;
 }
 

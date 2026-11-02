@@ -115,14 +115,10 @@ test('markers read the theme step tokens: size, current ring, done fill', () => 
 
 test('steps set as the Woo boards draw them (WooVerzoek, WooVerzoekGegevens)', () => {
 	const css = style()
-	assert.match(css, /\.pq-form-progress__title \{ font-weight: 500; \}/)
+	assert.match(css, /\.pq-form-progress__title \{ font-weight: 500;/)
 	assert.match(
 		css,
 		/\.pq-form-progress__item--current \.pq-form-progress__title \{ font-weight: var\(--utrecht-typography-weight-scale-bold, 700\); \}/,
-	)
-	assert.match(
-		css,
-		/\.pq-form-progress__item--todo \.pq-form-progress__title \{ color: var\(--nldesign-color-text-muted/,
 	)
 	assert.match(
 		css,
@@ -134,5 +130,28 @@ test('steps set as the Woo boards draw them (WooVerzoek, WooVerzoekGegevens)', (
 	assert.match(
 		band,
 		/\.pq-form-progress__item:not\(:last-child\)::after \{[^}]*block-size: 3px/,
+	)
+})
+
+test('step labels take the board ink: text for done and current, muted for the rest', () => {
+	const css = style()
+	const muted =
+		'var\\( --thematiq-website-text-muted, var\\(--nldesign-color-text-muted, inherit\\) \\)'
+	assert.match(
+		css,
+		/\.pq-form-progress__title \{[^}]*color: var\(--nldesign-color-text, var\(--utrecht-document-color, inherit\)\)/,
+		'done and current titles draw the text colour (#1a1a1a), not the inherited black',
+	)
+	assert.match(
+		css,
+		new RegExp(
+			`\\.pq-form-progress__item--todo \\.pq-form-progress__title \\{ color: ${muted}; \\}`,
+		),
+		'a step still to do draws the site muted ink (#4a4a4a) before the generic one',
+	)
+	assert.match(
+		css,
+		new RegExp(`\\.pq-form-progress__state \\{ color: ${muted};`),
+		'the state words draw the same muted ink',
 	)
 })
