@@ -77,20 +77,25 @@ export function stepPosition(steps) {
 }
 
 /**
- * A day in words: "30 oktober", with the year when it is not this year's.
+ * A day in words: "30 oktober", with the year when it is not this year's or
+ * when `withYear` asks for it.
  *
  * @param {string} value An ISO date.
  * @param {Date} today Today.
  * @param {string} locale The page language.
+ * @param {boolean} [withYear] Always name the year.
  * @return {string} The words, or '' for no date.
  */
-export function dayInWords(value, today, locale) {
+export function dayInWords(value, today, locale, withYear = false) {
 	const date = value ? new Date(value) : null
 	if (!date || Number.isNaN(date.getTime())) {
 		return ''
 	}
 	const options = { day: 'numeric', month: 'long' }
-	if (date.getFullYear() !== (today || new Date()).getFullYear()) {
+	if (
+		withYear ||
+		date.getFullYear() !== (today || new Date()).getFullYear()
+	) {
 		options.year = 'numeric'
 	}
 	return date.toLocaleDateString(

@@ -16,7 +16,9 @@ import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import {
+	authoredStatement,
 	isStatementRoute,
+	showsGeneratedStatement,
 	STATEMENT_ROUTE,
 	withStatementLink,
 } from '../src/site/lib/accessibilityStatement.js'
@@ -195,3 +197,49 @@ test('the status stands in a box of its own, coloured by how far the site is', a
 	assert.match(await statementPage({ status: null }), /utrecht-alert--info/)
 })
 
+
+test('an authored page at /toegankelijkheid takes the route; without one the statement shows', async () => {
+	const page = { title: 'Toegankelijkheidsverklaring', body: { widgets: [] } }
+	assert.equal(await authoredStatement(async () => page), page)
+	const missing = Object.assign(new Error('Not found'), { status: 404 })
+	assert.equal(
+		await authoredStatement(async () => {
+			throw missing
+		}),
+		null,
+		'no authored page: the generated statement',
+	)
+	assert.equal(await authoredStatement(async () => null), null)
+
+	assert.equal(
+		showsGeneratedStatement('/toegankelijkheid', { loading: false, authored: false }),
+		true,
+	)
+	assert.equal(
+		showsGeneratedStatement('/toegankelijkheid', { loading: false, authored: true }),
+		false,
+		'the authored page renders as any page',
+	)
+	assert.equal(
+		showsGeneratedStatement('/toegankelijkheid', { loading: true, authored: false }),
+		false,
+		'no generated statement flashes while the page is read',
+	)
+	assert.equal(
+		showsGeneratedStatement('/cookies', { loading: false, authored: false }),
+		false,
+	)
+})
+
+test('the shell reads the authored page first on the statement route', () => {
+	const app = read('src/site/App.vue')
+	assert.match(
+		app,
+		/statementRoute\(\) \{\s*return showsGeneratedStatement\(this\.route, \{\s*loading: this\.loading,\s*authored: this\.statementAuthored,\s*\}\)/,
+	)
+	const load = app.slice(app.indexOf('async loadRoute(route'))
+	assert.match(
+		load,
+		/if \(isStatementRoute\(route\)\) \{[\s\S]*?authoredStatement\(\(\) =>\s*fetchPage\(route,/,
+	)
+})
