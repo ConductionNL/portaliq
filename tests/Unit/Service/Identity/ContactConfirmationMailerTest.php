@@ -100,6 +100,21 @@ class ContactConfirmationMailerTest extends TestCase {
 		$this->assertSame(0, $this->mailed['sent']);
 	}//end testAnAccountWithoutAConfirmedAddressGetsNothing()
 
+	/**
+	 * A withdrawn (void) account gets no confirmation, also with a usable
+	 * address; the skip is logged with the account id only.
+	 *
+	 * @return void
+	 */
+	public function testAWithdrawnAccountGetsNoConfirmation(): void {
+		$account = ['id' => 'account-void', 'email' => 'anna@example.nl', 'status' => 'void'];
+		$sent = $this->mailer(account: $account)->afterCreate(subject: $this->subject(), action: $this->action(), data: ['onderwerp' => 'afval']);
+
+		$this->assertFalse(condition: $sent);
+		$this->assertSame(expected: 0, actual: $this->mailed['sent']);
+		$this->assertSame(expected: ['Portaliq: no question confirmation to a withdrawn account {"account":"account-void"}'], actual: $this->logged);
+	}//end testAWithdrawnAccountGetsNoConfirmation()
+
 	public function testAFailingMailServerNeverBreaksTheCreate(): void {
 		$sent = $this->mailer(failWith: new RuntimeException('smtp down'))->afterCreate($this->subject(), $this->action(), ['onderwerp' => 'afval']);
 

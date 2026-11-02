@@ -123,7 +123,8 @@ class PartnerAskService {
 
 	/**
 	 * The account the task will be addressed to: the one named, or a pending
-	 * one provisioned from a KvK number and an address.
+	 * one provisioned from a KvK number and an address. A withdrawn (void)
+	 * account is refused as an unknown partner is.
 	 *
 	 * @param array<string, mixed> $partner The partner as the handler named them.
 	 * @param array<string, mixed> $handler The handler's subject shape.
@@ -136,7 +137,7 @@ class PartnerAskService {
 		$subjectRef = (string)($partner['subjectRef'] ?? '');
 		if ($subjectRef !== '') {
 			$existing = $this->accounts->findBySubjectRef(subjectRef: $subjectRef);
-			if ($existing === null) {
+			if ($existing === null || $this->isVoid(account: $existing) === true) {
 				// A subjectRef nobody answers to is not a partner. It is
 				// refused rather than provisioned, because provisioning on a
 				// client-supplied reference would let a caller mint accounts.
@@ -169,10 +170,21 @@ class PartnerAskService {
 			provisionedBy: (string)($handler['uid'] ?? $handler['subjectRef'] ?? ''),
 			displayName: (string)($partner['name'] ?? '')
 		);
-		if ($provisioned === null) {
+		if ($provisioned === null || $this->isVoid(account: $provisioned) === true) {
 			return null;
 		}
 
 		return ['subjectRef' => $provisioned['subjectRef'], 'provisioned' => $provisioned['isNew']];
 	}//end resolvePartner()
+
+	/**
+	 * Whether an account was withdrawn.
+	 *
+	 * @param array<string, mixed> $account The account, or the provisioning result.
+	 *
+	 * @return bool
+	 */
+	private function isVoid(array $account): bool {
+		return ($account['status'] ?? '') === PortalAccountService::STATUS_VOID;
+	}//end isVoid()
 }//end class
