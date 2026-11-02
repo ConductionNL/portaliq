@@ -365,6 +365,7 @@
 			"key": "woo-fietspad",
 			"register": "dossiq",
 			"schema": "case",
+			"owner": "{{cast:pieter.uid}}",
 			"lookups": {
 				"caseType": {
 					"schema": "caseType",
@@ -2737,6 +2738,45 @@
 				"contactsEnabled": true,
 				"plansEnabled": true,
 				"actionsEnabled": true
+			}
+		},
+		{
+			"key": "woo-fietspad-link-sanne-names-its-link",
+			"register": "dossiq",
+			"schema": "caseShare",
+			"object": "woo-fietspad-link-sanne",
+			"set": {
+				"accessLinkId": "{{accessLink:woo-fietspad-link-sanne.id}}",
+				"accessLinkUuid": "{{accessLink:woo-fietspad-link-sanne.uuid}}",
+				"accessLinkUrl": "{{accessLink:woo-fietspad-link-sanne.url}}"
+			}
+		}
+	],
+	"accessLinks": [
+		{
+			"key": "woo-fietspad-link-sanne",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"capabilities": [
+					"read"
+				],
+				"label": "{{cast:sanne.displayName}}",
+				"createdBy": "{{cast:pieter.uid}}",
+				"expiresAt": "{{datetime:29 23:59}}"
+			}
+		}
+	],
+	"grants": [
+		{
+			"key": "woo-fietspad-juridische-zaken",
+			"data": {
+				"object": "{{object:woo-fietspad.id}}",
+				"type": "group",
+				"shareWith": "{{cast:juridische-zaken.gid}}",
+				"permissions": 1,
+				"sharedBy": "{{cast:pieter.uid}}",
+				"sharedAt": "{{datetime:-11 10:00}}",
+				"expiresAt": "{{date:14}}"
 			}
 		}
 	],

@@ -1529,6 +1529,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @return JSONResponse The created object, or the refusal.
 	 *
 	 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t02
+	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
 	 */
 	private function createFrom(array $subject, array $match, string $register, string $schema, array $carried=[]): JSONResponse {
 		$action = $match['action'];
@@ -1609,7 +1610,8 @@ class ContributionController extends Controller implements PortalProtected {
 			appId: $match['app'],
 			actionId: (string)($action['id'] ?? ''),
 			whitelistedData: $data,
-			audience: (string)($subject['audience'] ?? '')
+			audience: (string)($subject['audience'] ?? ''),
+			actionTitle: ($action['label'] ?? '')
 		);
 
 		// The question is stored; the confirmation mail is a follow-on that
@@ -2151,6 +2153,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
 	 * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
 	 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
+	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
 	 *
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) -- the audit fact-record
 	 * (portal-session-hardening-v2), the WMEBV receipt follow-on
@@ -2233,7 +2236,8 @@ class ContributionController extends Controller implements PortalProtected {
 				appId: $appId,
 				actionId: $actionId,
 				whitelistedData: $this->whitelist(fields: (array)($action['fields'] ?? [])),
-				audience: (string)($subject['audience'] ?? '')
+				audience: (string)($subject['audience'] ?? ''),
+				actionTitle: ($action['label'] ?? '')
 			);
 		}
 
