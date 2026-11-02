@@ -35,7 +35,7 @@ use Throwable;
  */
 trait PagedSchemaRead {
 	/**
-	 * One page of news items, or none when the schema is absent.
+	 * One page of the step's schema as arrays, or none when the schema is absent.
 	 *
 	 * @param object $objectService OpenRegister's object service.
 	 * @param int $offset Items to skip.
