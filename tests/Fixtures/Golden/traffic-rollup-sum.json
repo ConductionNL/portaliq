@@ -1,0 +1,168 @@
+{
+    "no records": {
+        "goals": [],
+        "experiments": [],
+        "funnels": [],
+        "forms": []
+    },
+    "not lists": {
+        "goals": [],
+        "experiments": [],
+        "funnels": [],
+        "forms": []
+    },
+    "bad rows": {
+        "goals": [
+            {
+                "id": "7",
+                "name": "7",
+                "conversions": 2,
+                "completions": 0,
+                "value": 0
+            }
+        ],
+        "experiments": [
+            {
+                "id": "e1",
+                "name": "e1",
+                "status": "running",
+                "variants": [],
+                "winner": "",
+                "confidence": 0
+            }
+        ],
+        "funnels": [
+            {
+                "id": "f1",
+                "name": "f1",
+                "steps": []
+            }
+        ],
+        "forms": [
+            {
+                "formId": "k1",
+                "starts": 0,
+                "submits": 0,
+                "abandons": 0,
+                "completionRate": 0,
+                "fields": []
+            }
+        ]
+    },
+    "two members": {
+        "goals": [
+            {
+                "id": "g1",
+                "name": "Aanvraag",
+                "conversions": 6,
+                "completions": 3,
+                "value": 1.75
+            },
+            {
+                "id": "g2",
+                "name": "g2",
+                "conversions": 1,
+                "completions": 0,
+                "value": 0
+            }
+        ],
+        "experiments": [
+            {
+                "id": "e1",
+                "name": "Knop",
+                "status": "stopped",
+                "variants": [
+                    {
+                        "id": "v1",
+                        "name": "A",
+                        "sessions": 15,
+                        "conversions": 5,
+                        "rate": 0.333
+                    },
+                    {
+                        "id": "v2",
+                        "name": "v2",
+                        "sessions": 8,
+                        "conversions": 4,
+                        "rate": 0.5
+                    }
+                ],
+                "winner": "",
+                "confidence": 0.565
+            },
+            {
+                "id": "e2",
+                "name": "e2",
+                "status": "running",
+                "variants": [
+                    {
+                        "id": "v1",
+                        "name": "v1",
+                        "sessions": 4,
+                        "conversions": 1,
+                        "rate": 0.25
+                    }
+                ],
+                "winner": "",
+                "confidence": 0
+            }
+        ],
+        "funnels": [
+            {
+                "id": "f1",
+                "name": "Formulier",
+                "steps": [
+                    {
+                        "name": "Start",
+                        "sessions": 16,
+                        "dropOff": 0
+                    },
+                    {
+                        "name": "Klaar",
+                        "sessions": 6,
+                        "dropOff": 0.625
+                    },
+                    {
+                        "name": "Midden",
+                        "sessions": 5,
+                        "dropOff": 0.167
+                    }
+                ]
+            },
+            {
+                "id": "f2",
+                "name": "f2",
+                "steps": []
+            }
+        ],
+        "forms": [
+            {
+                "formId": "k1",
+                "starts": 6,
+                "submits": 3,
+                "abandons": 6,
+                "completionRate": 0.5,
+                "fields": [
+                    {
+                        "fieldId": "naam",
+                        "avgMs": 1000,
+                        "abandonedHere": 1
+                    },
+                    {
+                        "fieldId": "mail",
+                        "avgMs": 300,
+                        "abandonedHere": 2
+                    }
+                ]
+            },
+            {
+                "formId": "k2",
+                "starts": 0,
+                "submits": 1,
+                "abandons": 0,
+                "completionRate": 0,
+                "fields": []
+            }
+        ]
+    }
+}
