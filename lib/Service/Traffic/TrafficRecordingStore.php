@@ -42,6 +42,7 @@ use Throwable;
  */
 class TrafficRecordingStore {
 	use ObjectServiceLookup;
+	use ExpiredRowPurge;
 
 	/**
 	 * OpenRegister's ObjectService FQCN, resolved lazily from the container.
@@ -145,34 +146,30 @@ class TrafficRecordingStore {
 	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 	 */
 	public function purgeExpired(): int {
-		$objectService = $this->objectService();
-		if ($objectService === null) {
-			return 0;
-		}
+		return $this->purgeExpiredOf(schema: self::SCHEMA, failure: 'Portaliq: traffic recording purge failed');
+	}
 
-		try {
-			if (method_exists($objectService, 'purgeExpiredObjectsRaw') === true) {
-				return (int)$objectService->purgeExpiredObjectsRaw(self::REGISTER, self::SCHEMA);
+	/**
+	 * Delete expired recordings one by one through the ordinary path.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 *
+	 * @return int How many were removed.
+	 */
+	protected function deleteExpired(object $objectService): int {
+		$now = gmdate('Y-m-d\TH:i:s\Z');
+		$removed = 0;
+		foreach ($this->findAll(filters: ['expires' => ['lt' => $now]], limit: self::PAGE) as $row) {
+			$uuid = $this->uuidOf(row: $row);
+			if ($uuid === '') {
+				continue;
 			}
 
-			$now = gmdate('Y-m-d\TH:i:s\Z');
-			$removed = 0;
-			foreach ($this->findAll(filters: ['expires' => ['lt' => $now]], limit: self::PAGE) as $row) {
-				$uuid = $this->uuidOf(row: $row);
-				if ($uuid === '') {
-					continue;
-				}
-
-				$objectService->deleteObject(uuid: $uuid, register: self::REGISTER, schema: self::SCHEMA, _rbac: false, _multitenancy: false);
-				$removed++;
-			}
-
-			return $removed;
-		} catch (Throwable $e) {
-			$this->logger->error('Portaliq: traffic recording purge failed', ['reason' => $e->getMessage()]);
-
-			return 0;
+			$objectService->deleteObject(uuid: $uuid, register: self::REGISTER, schema: self::SCHEMA, _rbac: false, _multitenancy: false);
+			$removed++;
 		}
+
+		return $removed;
 	}
 
 	/**
