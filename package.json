@@ -164,6 +164,7 @@
     "check:page-editor": "node --test tests/page-editor.spec.mjs",
     "check:page-editor-regions": "node --test tests/page-editor-regions.spec.mjs",
     "check:site-edit-mode": "node --test tests/site-edit-mode.spec.mjs",
+    "check:site-editor-as-drawn": "node --test tests/site-editor-as-drawn.spec.mjs",
     "check:site-page-tree": "node --test tests/site-page-tree.spec.mjs",
     "check:case-timeline": "node --test tests/case-timeline.spec.mjs",
     "check:collection-table": "node --test tests/collection-table-keyboard.spec.mjs",
