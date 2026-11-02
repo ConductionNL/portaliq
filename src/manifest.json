@@ -2734,6 +2734,7 @@
       "config": {
         "register": "portaliq",
         "schema": "portalSubmission",
+        "titleTemplate": "{actionTitle}",
         "titleField": "actionId",
         "documentationUrl": "https://portaliq.conduction.nl",
         "_note": "Detail in the v2 shape: the body is the grid below and the facts beside it are the sideColumn, History last (the board has no tab strip on this record).",
@@ -2761,6 +2762,7 @@
             "content": {
               "columns": 3,
               "include": [
+                "actionTitle",
                 "actionId",
                 "appId",
                 "submittedAt",
@@ -2768,7 +2770,23 @@
                 "subjectRef",
                 "organisation",
                 "receiptMessageRef"
-              ]
+              ],
+              "overrides": {
+                "actionTitle": {
+                  "label": "Submitted action",
+                  "visibleWhen": {
+                    "field": "actionTitle",
+                    "op": "notEmpty"
+                  }
+                },
+                "actionId": {
+                  "label": "Submitted action",
+                  "visibleWhen": {
+                    "field": "actionTitle",
+                    "op": "empty"
+                  }
+                }
+              }
             }
           },
           {
@@ -2844,8 +2862,7 @@
         "favourite": false,
         "breadcrumb": {
           "label": "Submissions",
-          "route": "PortalSubmissions",
-          "currentField": "actionId"
+          "route": "PortalSubmissions"
         },
         "statusPill": {
           "field": "deliveryStatus",
