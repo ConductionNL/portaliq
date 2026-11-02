@@ -103,6 +103,7 @@ test('the site helpers answer as pinned', () => {
 	for (const [s, site] of SITES.entries()) {
 		file.check(`signIn:${s}:plain`, signInRoutes(site, { authBase: '/auth' }))
 		file.check(`signIn:${s}:t`, signInRoutes(site, { authBase: '/auth', t }))
+		file.check(`signIn:${s}:emailLinkTruthy`, signInRoutes(site, { authBase: '/auth', t, emailLink: 'yes' }))
 		for (const [d, demos] of DEMOS.entries()) {
 			file.check(`signIn:${s}:demo:${d}`, signInRoutes(site, { authBase: '/auth', t, exampleResident: 'set-1', demoResidents: demos, emailLink: true }))
 			file.check(`signIn:${s}:noDemo:${d}`, signInRoutes(site, { authBase: '/auth', t, exampleResident: '', demoResidents: demos, emailLink: false }))

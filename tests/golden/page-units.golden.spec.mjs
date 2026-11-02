@@ -55,7 +55,7 @@ const LOCATIONS = [
 	{ hash: '#open=dossiq/cases', pathname: '/mijn' },
 	{ hash: '#open=dossiq/cases/c1' },
 ]
-const KEPT = [null, 'null', '{"app":"dossiq","collection":"cases","id":"c2"}', '{"app":"dossiq","collection":1,"id":"c2"}', 'not json']
+const KEPT = [null, 'null', '{"app":"dossiq","collection":"cases","id":"c2"}', '{"app":"dossiq","collection":1,"id":"c2"}', 'not json', '{"app":"dossiq","collection":"cases"}']
 
 const ASSISTANT = {
 	answered: [{ status: 200, body: { status: 'answered', answer: 'Ja.', sources: [{ title: 'Afval', url: '/afval' }], removed: true, conversationId: 'k1' } }],

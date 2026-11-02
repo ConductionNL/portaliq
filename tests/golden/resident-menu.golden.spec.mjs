@@ -43,6 +43,7 @@ const NAV = [
 	page('pipelinq', 'Verzoeken', 'leads', { group: 'verzoeken' }),
 	page('learniq', 'Kind', 'child', { perRecord: 'children', record: { titleFields: ['givenName'], subtitleFields: ['school'] } }),
 	page('learniq', 'Kinderen', 'kids', { perRecord: 'children', group: 'Mijn kinderen', records: { subtitleFields: ['school', 'class'] } }),
+	page('learniq', 'Rapport', 'report', { perRecord: 'children', badge: { collection: 'talks' } }),
 	page('learniq', 'Gesprekken', 'talks', { badge: { collection: 'talks', label: '{count} gepland' } }),
 	page('learniq', 'Verborgen', 'hidden', { menu: false }),
 	page('dossiq', 'Archief', 'archive', { menu: false, blocks: [{ collection: 'cases' }, null] }),

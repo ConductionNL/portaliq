@@ -90,6 +90,12 @@
 					"href": "/site/mijn/learniq/child"
 				},
 				{
+					"key": "learniq:report",
+					"name": "Rapport",
+					"link": "/mijn/learniq/report",
+					"href": "/site/mijn/learniq/report"
+				},
+				{
 					"key": "learniq:talks",
 					"name": "Gesprekken",
 					"link": "/mijn/learniq/talks",
@@ -259,6 +265,12 @@
 					"name": "Kind",
 					"link": "/mijn/learniq/child",
 					"href": "/site/mijn/learniq/child"
+				},
+				{
+					"key": "learniq:report",
+					"name": "Rapport",
+					"link": "/mijn/learniq/report",
+					"href": "/site/mijn/learniq/report"
 				},
 				{
 					"key": "learniq:talks",
@@ -484,6 +496,12 @@
 					"name": "Kind",
 					"link": "/mijn/learniq/child/c1",
 					"href": "/site/mijn/learniq/child/c1"
+				},
+				{
+					"key": "learniq:report:c1",
+					"name": "Rapport",
+					"link": "/mijn/learniq/report/c1",
+					"href": "/site/mijn/learniq/report/c1"
 				}
 			]
 		},
@@ -496,6 +514,24 @@
 					"name": "Kind",
 					"link": "/mijn/learniq/child/c%202",
 					"href": "/site/mijn/learniq/child/c%202"
+				},
+				{
+					"key": "learniq:report:c 2",
+					"name": "Rapport",
+					"link": "/mijn/learniq/report/c%202",
+					"href": "/site/mijn/learniq/report/c%202"
+				}
+			]
+		},
+		{
+			"key": "record:learniq:children:c3",
+			"title": "Derde",
+			"items": [
+				{
+					"key": "learniq:report:c3",
+					"name": "Rapport",
+					"link": "/mijn/learniq/report/c3",
+					"href": "/site/mijn/learniq/report/c3"
 				}
 			]
 		},
@@ -690,6 +726,12 @@
 					"name": "Kind",
 					"link": "/mijn/learniq/child/c1",
 					"href": "/site/mijn/learniq/child/c1"
+				},
+				{
+					"key": "learniq:report:c1",
+					"name": "Rapport",
+					"link": "/mijn/learniq/report/c1",
+					"href": "/site/mijn/learniq/report/c1"
 				}
 			]
 		},
@@ -702,6 +744,24 @@
 					"name": "Kind",
 					"link": "/mijn/learniq/child/c%202",
 					"href": "/site/mijn/learniq/child/c%202"
+				},
+				{
+					"key": "learniq:report:c 2",
+					"name": "Rapport",
+					"link": "/mijn/learniq/report/c%202",
+					"href": "/site/mijn/learniq/report/c%202"
+				}
+			]
+		},
+		{
+			"key": "record:learniq:children:c3",
+			"title": "Derde",
+			"items": [
+				{
+					"key": "learniq:report:c3",
+					"name": "Rapport",
+					"link": "/mijn/learniq/report/c3",
+					"href": "/site/mijn/learniq/report/c3"
 				}
 			]
 		},
@@ -934,6 +994,12 @@
 					"name": "Kind",
 					"link": "/mijn/learniq/child/c1",
 					"href": "/site/mijn/learniq/child/c1"
+				},
+				{
+					"key": "learniq:report:c1",
+					"name": "Rapport",
+					"link": "/mijn/learniq/report/c1",
+					"href": "/site/mijn/learniq/report/c1"
 				}
 			]
 		},
@@ -946,6 +1012,24 @@
 					"name": "Kind",
 					"link": "/mijn/learniq/child/c%202",
 					"href": "/site/mijn/learniq/child/c%202"
+				},
+				{
+					"key": "learniq:report:c 2",
+					"name": "Rapport",
+					"link": "/mijn/learniq/report/c%202",
+					"href": "/site/mijn/learniq/report/c%202"
+				}
+			]
+		},
+		{
+			"key": "record:learniq:children:c3",
+			"title": "Derde",
+			"items": [
+				{
+					"key": "learniq:report:c3",
+					"name": "Rapport",
+					"link": "/mijn/learniq/report/c3",
+					"href": "/site/mijn/learniq/report/c3"
 				}
 			]
 		},
@@ -1089,6 +1173,12 @@
 					"name": "Kind",
 					"link": "/mijn/learniq/child/c1",
 					"href": "/site/mijn/learniq/child/c1"
+				},
+				{
+					"key": "learniq:report:c1",
+					"name": "Rapport",
+					"link": "/mijn/learniq/report/c1",
+					"href": "/site/mijn/learniq/report/c1"
 				}
 			]
 		},
@@ -1101,6 +1191,24 @@
 					"name": "Kind",
 					"link": "/mijn/learniq/child/c%202",
 					"href": "/site/mijn/learniq/child/c%202"
+				},
+				{
+					"key": "learniq:report:c 2",
+					"name": "Rapport",
+					"link": "/mijn/learniq/report/c%202",
+					"href": "/site/mijn/learniq/report/c%202"
+				}
+			]
+		},
+		{
+			"key": "record:learniq:children:c3",
+			"title": "Derde",
+			"items": [
+				{
+					"key": "learniq:report:c3",
+					"name": "Rapport",
+					"link": "/mijn/learniq/report/c3",
+					"href": "/site/mijn/learniq/report/c3"
 				}
 			]
 		},
@@ -1299,6 +1407,12 @@
 					"name": "Kind",
 					"link": "/mijn/learniq/child/c1",
 					"href": "/site/mijn/learniq/child/c1"
+				},
+				{
+					"key": "learniq:report:c1",
+					"name": "Rapport",
+					"link": "/mijn/learniq/report/c1",
+					"href": "/site/mijn/learniq/report/c1"
 				}
 			]
 		},
@@ -1311,6 +1425,24 @@
 					"name": "Kind",
 					"link": "/mijn/learniq/child/c%202",
 					"href": "/site/mijn/learniq/child/c%202"
+				},
+				{
+					"key": "learniq:report:c 2",
+					"name": "Rapport",
+					"link": "/mijn/learniq/report/c%202",
+					"href": "/site/mijn/learniq/report/c%202"
+				}
+			]
+		},
+		{
+			"key": "record:learniq:children:c3",
+			"title": "Derde",
+			"items": [
+				{
+					"key": "learniq:report:c3",
+					"name": "Rapport",
+					"link": "/mijn/learniq/report/c3",
+					"href": "/site/mijn/learniq/report/c3"
 				}
 			]
 		},
@@ -1437,6 +1569,12 @@
 					"name": "Kind",
 					"link": "/mijn/learniq/child",
 					"href": "/site/mijn/learniq/child"
+				},
+				{
+					"key": "learniq:report",
+					"name": "Rapport",
+					"link": "/mijn/learniq/report",
+					"href": "/site/mijn/learniq/report"
 				},
 				{
 					"key": "learniq:talks",
@@ -1612,6 +1750,12 @@
 					"href": "/site/mijn/learniq/child"
 				},
 				{
+					"key": "learniq:report",
+					"name": "Rapport",
+					"link": "/mijn/learniq/report",
+					"href": "/site/mijn/learniq/report"
+				},
+				{
 					"key": "learniq:talks",
 					"name": "Gesprekken",
 					"link": "/mijn/learniq/talks",
@@ -1771,6 +1915,12 @@
 					"name": "Kind",
 					"link": "/mijn/learniq/child",
 					"href": "/site/mijn/learniq/child"
+				},
+				{
+					"key": "learniq:report",
+					"name": "Rapport",
+					"link": "/mijn/learniq/report",
+					"href": "/site/mijn/learniq/report"
 				},
 				{
 					"key": "learniq:talks",
@@ -1979,6 +2129,12 @@
 					"name": "Kind",
 					"link": "/mijn/learniq/child",
 					"href": "/site/mijn/learniq/child"
+				},
+				{
+					"key": "learniq:report",
+					"name": "Rapport",
+					"link": "/mijn/learniq/report",
+					"href": "/site/mijn/learniq/report"
 				}
 			]
 		},

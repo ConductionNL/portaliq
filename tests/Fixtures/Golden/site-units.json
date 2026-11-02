@@ -402,6 +402,7 @@
 	},
 	"signIn:0:plain": [],
 	"signIn:0:t": [],
+	"signIn:0:emailLinkTruthy": [],
 	"signIn:0:demo:0": [],
 	"signIn:0:noDemo:0": [],
 	"signIn:0:demo:1": [],
@@ -449,6 +450,44 @@
 		}
 	],
 	"signIn:1:t": [
+		{
+			"key": "nextcloud",
+			"mode": "nextcloud",
+			"label": "[Log in with your account]",
+			"href": "/auth/session/nextcloud"
+		},
+		{
+			"key": "local",
+			"mode": "local",
+			"label": "[Log in]",
+			"href": "/auth/session/oidc/start?provider=generic"
+		},
+		{
+			"key": "oidc",
+			"mode": "oidc",
+			"label": "[Log in]",
+			"href": "/auth/session/oidc/start?provider=generic"
+		},
+		{
+			"key": "digid",
+			"mode": "digid",
+			"label": "[Log in with {provider}]provider=DigiD",
+			"href": "/auth/session/oidc/start?provider=digid"
+		},
+		{
+			"key": "eherkenning",
+			"mode": "eherkenning",
+			"label": "[Log in with {provider}]provider=eHerkenning",
+			"href": "/auth/session/oidc/start?provider=eherkenning"
+		},
+		{
+			"key": "eidas",
+			"mode": "eidas",
+			"label": "[Log in with {provider}]provider=eIDAS",
+			"href": "/auth/session/oidc/start?provider=eidas"
+		}
+	],
+	"signIn:1:emailLinkTruthy": [
 		{
 			"key": "nextcloud",
 			"mode": "nextcloud",
@@ -923,6 +962,29 @@
 			"href": "/auth/session/oidc/start?provider=digid&portal=zuid%20drecht"
 		}
 	],
+	"signIn:2:emailLinkTruthy": [
+		{
+			"key": "nextcloud",
+			"mode": "nextcloud",
+			"label": "[Log in with your account]",
+			"card": {
+				"text": "Account"
+			},
+			"lostPasswordUrl": "/lost",
+			"registerUrl": "/register",
+			"href": "/auth/session/nextcloud?portal=zuid%20drecht"
+		},
+		{
+			"key": "digid",
+			"mode": "digid",
+			"label": "Met DigiD",
+			"card": {
+				"button": "Met DigiD",
+				"title": "Inwoners"
+			},
+			"href": "/auth/session/oidc/start?provider=digid&portal=zuid%20drecht"
+		}
+	],
 	"signIn:2:demo:0": [
 		{
 			"key": "nextcloud",
@@ -1209,6 +1271,20 @@
 		}
 	],
 	"signIn:3:t": [
+		{
+			"key": "digid",
+			"mode": "digid",
+			"label": "[Log in with {provider}]provider=DigiD",
+			"href": "/auth/session/oidc/start?provider=digid&portal=x"
+		},
+		{
+			"key": "local",
+			"mode": "local",
+			"label": "[Log in]",
+			"href": "/auth/session/oidc/start?provider=generic&portal=x"
+		}
+	],
+	"signIn:3:emailLinkTruthy": [
 		{
 			"key": "digid",
 			"mode": "digid",

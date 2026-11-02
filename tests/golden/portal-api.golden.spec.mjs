@@ -25,6 +25,7 @@ const ANSWERS = {
 	gone: [{ status: 404, body: { error: 'not_found' } }],
 	bounceThenOk: [{ status: 503, body: {} }, { status: 200, body: { file: { id: 'f2' } } }],
 	bounceTwice: [{ status: 502 }, { status: 504 }],
+	bounce504ThenOk: [{ status: 504 }, { status: 200, body: { file: { id: 'f3' } } }],
 	networkThenOk: [{ throws: true }, { status: 200, body: {} }],
 	network: [{ throws: true }],
 }

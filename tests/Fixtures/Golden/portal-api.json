@@ -229,6 +229,32 @@
 			}
 		}
 	},
+	"replyToMessage:bounce504ThenOk": {
+		"calls": [
+			{
+				"url": "/portal/api/inbox/r/s/m1/reply?collection=inbox",
+				"init": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/json",
+						"Accept": "application/json",
+						"Authorization": "Bearer tok"
+					},
+					"body": "{\"text\":\"hoi\"}"
+				}
+			}
+		],
+		"outcome": {
+			"value": {
+				"ok": false,
+				"status": 504,
+				"object": null,
+				"error": "",
+				"errors": {},
+				"invalid": {}
+			}
+		}
+	},
 	"replyToMessage:networkThenOk": {
 		"calls": [
 			{
@@ -370,6 +396,18 @@
 		}
 	},
 	"replyToMessageNoSource:bounceTwice": {
+		"calls": [],
+		"outcome": {
+			"value": {
+				"ok": false,
+				"status": 0,
+				"object": null,
+				"error": "",
+				"errors": {}
+			}
+		}
+	},
+	"replyToMessageNoSource:bounce504ThenOk": {
 		"calls": [],
 		"outcome": {
 			"value": {
@@ -628,6 +666,32 @@
 			"value": {
 				"ok": false,
 				"status": 502,
+				"object": null,
+				"error": "",
+				"errors": {},
+				"invalid": {}
+			}
+		}
+	},
+	"setMessageLanguage:bounce504ThenOk": {
+		"calls": [
+			{
+				"url": "/portal/api/identity/details",
+				"init": {
+					"method": "PATCH",
+					"headers": {
+						"Content-Type": "application/json",
+						"Accept": "application/json",
+						"Authorization": "Bearer tok"
+					},
+					"body": "{\"messageLanguage\":\"en\"}"
+				}
+			}
+		],
+		"outcome": {
+			"value": {
+				"ok": false,
+				"status": 504,
 				"object": null,
 				"error": "",
 				"errors": {},
@@ -929,6 +993,30 @@
 			}
 		}
 	},
+	"setDisplayName:bounce504ThenOk": {
+		"calls": [
+			{
+				"url": "/portal/api/identity/details",
+				"init": {
+					"method": "PATCH",
+					"headers": {
+						"Content-Type": "application/json",
+						"Accept": "application/json",
+						"Authorization": "Bearer tok"
+					},
+					"body": "{\"displayName\":\"Vera\"}"
+				}
+			}
+		],
+		"outcome": {
+			"value": {
+				"ok": false,
+				"status": 504,
+				"error": "",
+				"data": {}
+			}
+		}
+	},
 	"setDisplayName:networkThenOk": {
 		"calls": [
 			{
@@ -1214,6 +1302,29 @@
 			"value": {
 				"ok": false,
 				"status": 502,
+				"body": {}
+			}
+		}
+	},
+	"forwardRowAction:bounce504ThenOk": {
+		"calls": [
+			{
+				"url": "/portal/api/collections/dossiq/case/row%201/actions/sign?collection=cases",
+				"init": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/json",
+						"Accept": "application/json",
+						"Authorization": "Bearer tok"
+					},
+					"body": "{\"consent\":true}"
+				}
+			}
+		],
+		"outcome": {
+			"value": {
+				"ok": false,
+				"status": 504,
 				"body": {}
 			}
 		}
@@ -1505,6 +1616,29 @@
 			}
 		}
 	},
+	"forwardRowActionBare:bounce504ThenOk": {
+		"calls": [
+			{
+				"url": "/portal/api/collections/dossiq/case/row-1/actions/pay?collection=cases",
+				"init": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/json",
+						"Accept": "application/json",
+						"Authorization": "Bearer tok"
+					},
+					"body": "{}"
+				}
+			}
+		],
+		"outcome": {
+			"value": {
+				"ok": false,
+				"status": 504,
+				"body": {}
+			}
+		}
+	},
 	"forwardRowActionBare:networkThenOk": {
 		"calls": [
 			{
@@ -1788,6 +1922,29 @@
 			"value": {
 				"ok": false,
 				"status": 502,
+				"body": {}
+			}
+		}
+	},
+	"forwardRowActionNullAnswers:bounce504ThenOk": {
+		"calls": [
+			{
+				"url": "/portal/api/collections/dossiq/case/row-1/actions/pay?collection=cases",
+				"init": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/json",
+						"Accept": "application/json",
+						"Authorization": "Bearer tok"
+					},
+					"body": "{}"
+				}
+			}
+		],
+		"outcome": {
+			"value": {
+				"ok": false,
+				"status": 504,
 				"body": {}
 			}
 		}
@@ -2084,6 +2241,30 @@
 			"value": {
 				"ok": false,
 				"status": 502,
+				"body": {}
+			}
+		}
+	},
+	"forwardRowActionAttached:bounce504ThenOk": {
+		"calls": [
+			{
+				"url": "/portal/api/collections/dossiq/case/row-1/actions/ask?collection=cases&actionApp=pipelinq",
+				"init": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/json",
+						"Accept": "application/json",
+						"Authorization": "Bearer tok",
+						"Idempotency-Key": "0f8fad5b-d9cb-469f-a165"
+					},
+					"body": "{\"q\":\"w\"}"
+				}
+			}
+		],
+		"outcome": {
+			"value": {
+				"ok": false,
+				"status": 504,
 				"body": {}
 			}
 		}
@@ -2575,6 +2756,51 @@
 			}
 		}
 	},
+	"forwardRowActionUpload:bounce504ThenOk": {
+		"calls": [
+			{
+				"url": "/portal/api/collections/dossiq/case/row-1/actions/add?collection=cases",
+				"init": {
+					"method": "POST",
+					"headers": {
+						"Accept": "application/json",
+						"Authorization": "Bearer tok"
+					},
+					"body": {
+						"formData": [
+							[
+								"note",
+								"n"
+							],
+							[
+								"when[from]",
+								"1"
+							],
+							[
+								"when[to]",
+								"2"
+							],
+							[
+								"docs[]",
+								"<a.pdf>"
+							],
+							[
+								"docs[]",
+								"<b.pdf>"
+							]
+						]
+					}
+				}
+			}
+		],
+		"outcome": {
+			"value": {
+				"ok": false,
+				"status": 504,
+				"body": {}
+			}
+		}
+	},
 	"forwardRowActionUpload:networkThenOk": {
 		"calls": [
 			{
@@ -2906,6 +3132,29 @@
 			}
 		}
 	},
+	"forwardRowActionEmptyUpload:bounce504ThenOk": {
+		"calls": [
+			{
+				"url": "/portal/api/collections/dossiq/case/row-1/actions/add?collection=cases",
+				"init": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/json",
+						"Accept": "application/json",
+						"Authorization": "Bearer tok"
+					},
+					"body": "{}"
+				}
+			}
+		],
+		"outcome": {
+			"value": {
+				"ok": false,
+				"status": 504,
+				"body": {}
+			}
+		}
+	},
 	"forwardRowActionEmptyUpload:networkThenOk": {
 		"calls": [
 			{
@@ -3202,6 +3451,30 @@
 			}
 		}
 	},
+	"forwardAction:bounce504ThenOk": {
+		"calls": [
+			{
+				"url": "/portal/api/actions/dossiq/start",
+				"init": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/json",
+						"Accept": "application/json",
+						"Authorization": "Bearer tok",
+						"Idempotency-Key": "0f8fad5b-d9cb-469f-a165"
+					},
+					"body": "{\"a\":1}"
+				}
+			}
+		],
+		"outcome": {
+			"value": {
+				"ok": false,
+				"status": 504,
+				"body": {}
+			}
+		}
+	},
 	"forwardAction:networkThenOk": {
 		"calls": [
 			{
@@ -3459,6 +3732,30 @@
 			"value": {
 				"ok": false,
 				"status": 502,
+				"message": "",
+				"error": ""
+			}
+		}
+	},
+	"amendCitizenCase:bounce504ThenOk": {
+		"calls": [
+			{
+				"url": "/portal/api/citizen/cases/dossiq/case/c%201",
+				"init": {
+					"method": "PATCH",
+					"headers": {
+						"Content-Type": "application/json",
+						"Accept": "application/json",
+						"Authorization": "Bearer tok"
+					},
+					"body": "{\"fields\":{\"phone\":\"06\"}}"
+				}
+			}
+		],
+		"outcome": {
+			"value": {
+				"ok": false,
+				"status": 504,
 				"message": "",
 				"error": ""
 			}
@@ -3723,6 +4020,30 @@
 			"value": {
 				"ok": false,
 				"status": 502,
+				"message": "",
+				"error": ""
+			}
+		}
+	},
+	"withdrawCitizenCase:bounce504ThenOk": {
+		"calls": [
+			{
+				"url": "/portal/api/citizen/cases/dossiq/case/c1/withdraw",
+				"init": {
+					"method": "POST",
+					"headers": {
+						"Content-Type": "application/json",
+						"Accept": "application/json",
+						"Authorization": "Bearer tok"
+					},
+					"body": "{\"reason\":\"Niet meer nodig\"}"
+				}
+			}
+		],
+		"outcome": {
+			"value": {
+				"ok": false,
+				"status": 504,
 				"message": "",
 				"error": ""
 			}
@@ -4036,6 +4357,36 @@
 			}
 		}
 	},
+	"addCitizenDocument:bounce504ThenOk": {
+		"calls": [
+			{
+				"url": "/portal/api/citizen/cases/dossiq/case/c1/documents",
+				"init": {
+					"method": "POST",
+					"headers": {
+						"Accept": "application/json",
+						"Authorization": "Bearer tok"
+					},
+					"body": {
+						"formData": [
+							[
+								"file",
+								"<brief.pdf>"
+							]
+						]
+					}
+				}
+			}
+		],
+		"outcome": {
+			"value": {
+				"ok": false,
+				"status": 504,
+				"message": "",
+				"error": ""
+			}
+		}
+	},
 	"addCitizenDocument:networkThenOk": {
 		"calls": [
 			{
@@ -4304,6 +4655,29 @@
 			"value": {
 				"saved": false,
 				"status": 502,
+				"errors": {}
+			}
+		}
+	},
+	"saveDraft:bounce504ThenOk": {
+		"calls": [
+			{
+				"url": "/portal/api/drafts/dossiq/start%2F1",
+				"init": {
+					"method": "PUT",
+					"headers": {
+						"Content-Type": "application/json",
+						"Accept": "application/json",
+						"Authorization": "Bearer tok"
+					},
+					"body": "{\"answers\":{\"a\":1},\"step\":\"s2\"}"
+				}
+			}
+		],
+		"outcome": {
+			"value": {
+				"saved": false,
+				"status": 504,
 				"errors": {}
 			}
 		}
@@ -4637,6 +5011,54 @@
 			"value": {
 				"ok": false,
 				"status": 504
+			}
+		}
+	},
+	"uploadFile:bounce504ThenOk": {
+		"calls": [
+			{
+				"url": "/portal/api/collections/dossiq/case/o%201/files?collection=cases",
+				"init": {
+					"method": "POST",
+					"headers": {
+						"Accept": "application/json",
+						"Authorization": "Bearer tok"
+					},
+					"body": {
+						"formData": [
+							[
+								"file",
+								"<foto.jpg>"
+							]
+						]
+					}
+				}
+			},
+			{
+				"url": "/portal/api/collections/dossiq/case/o%201/files?collection=cases",
+				"init": {
+					"method": "POST",
+					"headers": {
+						"Accept": "application/json",
+						"Authorization": "Bearer tok"
+					},
+					"body": {
+						"formData": [
+							[
+								"file",
+								"<foto.jpg>"
+							]
+						]
+					}
+				}
+			}
+		],
+		"outcome": {
+			"value": {
+				"ok": true,
+				"file": {
+					"id": "f3"
+				}
 			}
 		}
 	},

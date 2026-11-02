@@ -103,6 +103,26 @@
 		],
 		"replaced": []
 	},
+	"open:0:5:false": {
+		"target": null,
+		"log": [
+			[
+				"get",
+				"portaliq.openRecord"
+			]
+		],
+		"replaced": []
+	},
+	"open:0:5:true": {
+		"target": null,
+		"log": [
+			[
+				"get",
+				"portaliq.openRecord"
+			]
+		],
+		"replaced": []
+	},
 	"open:0:noStorage": null,
 	"open:1:0:false": {
 		"target": null,
@@ -199,6 +219,26 @@
 		"replaced": []
 	},
 	"open:1:4:true": {
+		"target": null,
+		"log": [
+			[
+				"get",
+				"portaliq.openRecord"
+			]
+		],
+		"replaced": []
+	},
+	"open:1:5:false": {
+		"target": null,
+		"log": [
+			[
+				"get",
+				"portaliq.openRecord"
+			]
+		],
+		"replaced": []
+	},
+	"open:1:5:true": {
 		"target": null,
 		"log": [
 			[
@@ -419,6 +459,48 @@
 			]
 		]
 	},
+	"open:2:5:false": {
+		"target": {
+			"app": "dossiq",
+			"collection": "cases",
+			"id": "c 1"
+		},
+		"log": [
+			[
+				"set",
+				"portaliq.openRecord",
+				"{\"app\":\"dossiq\",\"collection\":\"cases\",\"id\":\"c 1\"}"
+			]
+		],
+		"replaced": [
+			[
+				null,
+				"",
+				"/mijn?a=1"
+			]
+		]
+	},
+	"open:2:5:true": {
+		"target": {
+			"app": "dossiq",
+			"collection": "cases",
+			"id": "c 1"
+		},
+		"log": [
+			[
+				"set",
+				"portaliq.openRecord",
+				"{\"app\":\"dossiq\",\"collection\":\"cases\",\"id\":\"c 1\"}"
+			]
+		],
+		"replaced": [
+			[
+				null,
+				"",
+				"/mijn?a=1"
+			]
+		]
+	},
 	"open:2:noStorage": {
 		"app": "dossiq",
 		"collection": "cases",
@@ -519,6 +601,26 @@
 		"replaced": []
 	},
 	"open:3:4:true": {
+		"target": null,
+		"log": [
+			[
+				"get",
+				"portaliq.openRecord"
+			]
+		],
+		"replaced": []
+	},
+	"open:3:5:false": {
+		"target": null,
+		"log": [
+			[
+				"get",
+				"portaliq.openRecord"
+			]
+		],
+		"replaced": []
+	},
+	"open:3:5:true": {
 		"target": null,
 		"log": [
 			[
@@ -719,6 +821,48 @@
 		]
 	},
 	"open:4:4:true": {
+		"target": {
+			"app": "dossiq",
+			"collection": "cases",
+			"id": "c1"
+		},
+		"log": [
+			[
+				"set",
+				"portaliq.openRecord",
+				"{\"app\":\"dossiq\",\"collection\":\"cases\",\"id\":\"c1\"}"
+			]
+		],
+		"replaced": [
+			[
+				null,
+				"",
+				""
+			]
+		]
+	},
+	"open:4:5:false": {
+		"target": {
+			"app": "dossiq",
+			"collection": "cases",
+			"id": "c1"
+		},
+		"log": [
+			[
+				"set",
+				"portaliq.openRecord",
+				"{\"app\":\"dossiq\",\"collection\":\"cases\",\"id\":\"c1\"}"
+			]
+		],
+		"replaced": [
+			[
+				null,
+				"",
+				""
+			]
+		]
+	},
+	"open:4:5:true": {
 		"target": {
 			"app": "dossiq",
 			"collection": "cases",
