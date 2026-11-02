@@ -41,9 +41,11 @@ namespace OCA\Portaliq\Service;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\Notifications\MessageBoxOffer;
 use OCA\Portaliq\Service\Signin\LoginProviders;
+use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -355,6 +357,28 @@ class PortalOrganisationConfigService {
 	}//end presentationFor()
 
 	/**
+	 * The same as presentationFor(), but a lookup that failed is not taken
+	 * for an unknown organisation: for a caller whose default is wider than
+	 * what the organisation may have set (fail closed on an outage).
+	 *
+	 * @param string $orgSlug The organisation slug.
+	 *
+	 * @return array{uuid: string, overrides: array<string, mixed>}|null Null only when the slug names no organisation.
+	 *
+	 * @throws RuntimeException When OpenRegister could not be asked.
+	 *
+	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 */
+	public function presentationOrFail(string $orgSlug): ?array {
+		$organisation = $this->findOrganisationBySlug(slug: $orgSlug, strict: true);
+		if ($organisation === null) {
+			return null;
+		}
+
+		return ['uuid' => $organisation['uuid'], 'overrides' => $this->presentationOverrides(organisationUuid: $organisation['uuid'])];
+	}//end presentationOrFail()
+
+	/**
 	 * Replace an organisation's presentation override. The caller has
 	 * resolved the uuid through `presentationFor()`.
 	 *
@@ -552,13 +576,23 @@ class PortalOrganisationConfigService {
 	 * throws — an unknown slug or an unreachable/absent OpenRegister both
 	 * return null (fail-closed to the neutral default upstream).
 	 *
-	 * @param string $slug The organisation slug.
+	 * With `$strict`, only an unknown slug returns null and every other
+	 * failure throws, so the caller can tell an outage from "no tenant".
+	 *
+	 * @param string $slug   The organisation slug.
+	 * @param bool   $strict Throw on a failed lookup instead of answering null.
 	 *
 	 * @return array{uuid: string, name: string}|null
+	 *
+	 * @throws RuntimeException With `$strict`, when OpenRegister could not be asked.
 	 */
-	private function findOrganisationBySlug(string $slug): ?array {
+	private function findOrganisationBySlug(string $slug, bool $strict = false): ?array {
 		$mapper = $this->organisationMapper();
 		if ($mapper === null || method_exists($mapper, 'findBySlug') === false) {
+			if ($strict === true) {
+				throw new RuntimeException('OpenRegister organisation lookup unavailable');
+			}
+
 			return null;
 		}
 
@@ -578,8 +612,13 @@ class PortalOrganisationConfigService {
 			$name = (string)($organisation->getName() ?? '');
 		} catch (Throwable $e) {
 			// Unknown slug (DoesNotExistException) or any other lookup
-			// failure — both resolve to "no tenant found" upstream.
+			// failure — both resolve to "no tenant found" upstream, unless
+			// the caller asked to hear about a failure.
 			$this->logger->debug('Portaliq: organisation slug not resolved', ['slug' => $slug, 'reason' => $e->getMessage()]);
+			if ($strict === true && ($e instanceof DoesNotExistException) === false) {
+				throw new RuntimeException('OpenRegister organisation lookup failed', 0, $e);
+			}
+
 			return null;
 		}
 

@@ -99,6 +99,23 @@ class MandateControllerTest extends TestCase {
 	}//end testNoSessionIs401()
 
 	/**
+	 * An accept that could not finish now answers 503, not "not found", so
+	 * the browser keeps the secret and says try later.
+	 *
+	 * @return void
+	 */
+	public function testAnAcceptThatCouldNotFinishIs503(): void {
+		$mandates = $this->createMock(PortalMandateAdminService::class);
+		$mandates->method('accept')->willReturnOnConsecutiveCalls(PortalMandateAdminService::TRY_LATER, PortalMandateAdminService::GONE);
+		$c = $this->controller(self::SUBJECT, $mandates);
+
+		$later = $c->accept('t');
+		$this->assertSame(503, $later->getStatus());
+		$this->assertSame(['error' => 'try_later'], $later->getData());
+		$this->assertSame(404, $c->accept('t')->getStatus(), 'a spent invitation stays 404');
+	}//end testAnAcceptThatCouldNotFinishIs503()
+
+	/**
 	 * A session that cannot manage (no organisation, or acting under a mandate) gets 403.
 	 *
 	 * @return void

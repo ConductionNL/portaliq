@@ -483,6 +483,11 @@ class PortalIdentityController extends Controller {
 	#[AnonRateLimit(limit: 20, period: 60)]
 	public function acceptInvitation(string $token): JSONResponse {
 		$accepted = $this->invitations->accept(token: $token);
+		if ($accepted === PortalInvitationService::TRY_LATER) {
+			// Temporary: the invitation is still good, try again later.
+			return new JSONResponse(['error' => 'try_later'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
 		if ($accepted === null) {
 			return new JSONResponse(['error' => 'invitation_not_valid'], Http::STATUS_FORBIDDEN);
 		}
