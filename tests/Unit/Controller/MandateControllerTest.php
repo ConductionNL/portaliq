@@ -120,25 +120,20 @@ class MandateControllerTest extends TestCase {
 	}//end testNonManagerIs403()
 
 	/**
-	 * T4: a mandate in the given list names the account that holds it;
-	 * an invitation and a company holder stay as they are.
+	 * T4: the given list answers the service's items as they are, names included.
 	 *
 	 * @return void
 	 */
-	public function testTheGivenListNamesWhoHoldsAMandate(): void {
-		$mandates = $this->createMock(PortalMandateAdminService::class);
-		$mandates->method('given')->willReturn([
-			['kind' => 'mandate', 'id' => 'm1', 'holder' => 'subject:ref-tom', 'state' => 'active'],
-			['kind' => 'mandate', 'id' => 'm2', 'holder' => 'kvk:12345678', 'state' => 'active'],
+	public function testTheGivenListAnswersTheServicesItems(): void {
+		$items    = [
+			['kind' => 'mandate', 'id' => 'm1', 'holder' => 'subject:ref-tom', 'state' => 'active', 'name' => 'Tom Visser', 'email' => 't.visser@example.nl'],
 			['kind' => 'invitation', 'id' => 'i1', 'email' => 'mark@example.nl', 'state' => 'pending'],
-		]);
+		];
+		$mandates = $this->createMock(PortalMandateAdminService::class);
+		$mandates->expects($this->once())->method('given')->with('subject:abc', 'zuid')->willReturn($items);
 
-		$items = $this->controller(self::SUBJECT, $mandates)->given()->getData()['items'];
-
-		$this->assertSame(['Tom Visser', 't.visser@example.nl'], [$items[0]['name'], $items[0]['email']]);
-		$this->assertArrayNotHasKey('name', $items[1]);
-		$this->assertSame(['kind' => 'invitation', 'id' => 'i1', 'email' => 'mark@example.nl', 'state' => 'pending'], $items[2]);
-	}//end testTheGivenListNamesWhoHoldsAMandate()
+		$this->assertSame(['party' => 'subject:abc', 'items' => $items], $this->controller(self::SUBJECT, $mandates)->given()->getData());
+	}//end testTheGivenListAnswersTheServicesItems()
 
 	/**
 	 * T4: a mail that did not leave is said, and nothing is answered as sent.
