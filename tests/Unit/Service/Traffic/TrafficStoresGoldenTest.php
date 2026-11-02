@@ -36,6 +36,7 @@ use stdClass;
  * @covers \OCA\Portaliq\Service\Traffic\TrafficEventStore
  * @covers \OCA\Portaliq\Service\Traffic\TrafficRecordingStore
  * @uses   \OCA\Portaliq\Service\ObjectServiceLookup
+ * @uses   \OCA\Portaliq\Service\RowAsArray
  */
 class TrafficStoresGoldenTest extends TestCase {
 
