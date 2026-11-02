@@ -35,12 +35,15 @@ use Throwable;
  */
 trait PagedSchemaRead {
 	/**
-	 * One page of the step's schema as arrays, or none when the schema is absent.
+	 * One page of the step's schema: how many rows OpenRegister returned
+	 * (the paging offset moves by that count) and those rows as arrays.
+	 * Rows that are not arrays are dropped from `rows` but still counted in
+	 * `read`. An absent schema reads nothing.
 	 *
 	 * @param object $objectService OpenRegister's object service.
 	 * @param int $offset Items to skip.
 	 *
-	 * @return list<array<string, mixed>>
+	 * @return array{read: int, rows: list<array<string, mixed>>}
 	 */
 	private function page(object $objectService, int $offset): array {
 		try {
@@ -51,7 +54,7 @@ trait PagedSchemaRead {
 		} catch (Throwable $e) {
 			$this->logger->info(self::EMPTY_PAGE_LOG, ['reason' => $e->getMessage()]);
 
-			return [];
+			return ['read' => 0, 'rows' => []];
 		}
 
 		$serialised = array_map(
@@ -65,6 +68,6 @@ trait PagedSchemaRead {
 			(array)$rows
 		);
 
-		return array_values(array_filter($serialised, 'is_array'));
+		return ['read' => count($serialised), 'rows' => array_values(array_filter($serialised, 'is_array'))];
 	}//end page()
 }//end trait
