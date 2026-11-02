@@ -22,7 +22,7 @@ const css = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s+/g, ' ')
 
 test('the list and its link carry their own classes', () => {
 	assert.match(source, /<ul class="pq-records__list">/)
-	assert.match(source, /<a class="utrecht-link pq-records__link" :href="hrefFor\(entry\)">/)
+	assert.match(source, /<a\s+class="utrecht-link pq-records__link"\s+:href="hrefFor\(entry\)"\s*>/)
 })
 
 test('one record per line, the subtitle under the name in the muted ink', () => {
