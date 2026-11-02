@@ -38,7 +38,7 @@
 				t('portaliq', 'Leave empty for a resident who comes for themselves.')
 			"
 			data-testid="invite-someone-organisation" />
-		<div>
+		<div class="invite__select">
 			<NcSelect
 				v-model="audience"
 				:options="audiences"
@@ -179,6 +179,18 @@ export default {
 	color: var(--color-text-maxcontrast);
 	font-size: 13px;
 	line-height: 1.3;
+}
+
+/* The board draws help lines on the font's own line. */
+.cn-dialog-board .invite__help {
+	line-height: normal;
+}
+
+/* The board draws the select across the dialog with its help line right
+   under it; NcSelect is inline at its own width with a 4px bottom margin. */
+.cn-dialog-board .invite__select :deep(.v-select.select) {
+	width: 100%;
+	margin-bottom: 0;
 }
 
 .invite__note {
