@@ -30,7 +30,6 @@ namespace OCA\Portaliq\Service;
 
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Reads news rows from OpenRegister.
@@ -41,10 +40,19 @@ class NewsRowSource {
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
 	use PagedObjectReads;
+	use NormalisedRowReads {
+		findAll as public;
+		rowId as public;
+	}
 
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	private const REGISTER = 'portaliq';
+
+	/**
+	 * The warning logged when a read fails.
+	 */
+	private const READ_FAILED = 'Portaliq: news feed read failed';
 
 	/**
 	 * Constructor.
@@ -57,69 +65,4 @@ class NewsRowSource {
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
-
-	/**
-	 * Fetch every row of a schema in this app's register that matches the
-	 * plain filters, every page of it. The audience matching happens in PHP
-	 * against the fetched rows since the OR-of-three-dimensions target shape
-	 * is not a filterable OR query (design.md "Architecture Overview").
-	 *
-	 * @param string $schema The schema slug.
-	 * @param array<string, mixed> $filters Plain equality filters, e.g. a status.
-	 *
-	 * @return array<int, array<string, mixed>>
-	 * @spec openspec/changes/news-and-newsletter-authoring/design.md#architecture-overview
-	 */
-	public function findAll(string $schema, array $filters = []): array {
-		$objectService = $this->objectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		try {
-			$rows = $this->readEveryPage(objectService: $objectService, register: self::REGISTER, schema: $schema, filters: $filters);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: news feed read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
-			return [];
-		}
-
-		if (is_array($rows) === false) {
-			return [];
-		}
-
-		$normalised = [];
-		foreach ($rows as $row) {
-			$row = $this->normalise(row: $row);
-			if ($row !== null) {
-				$normalised[] = $row;
-			}
-		}
-
-		return $normalised;
-	}//end findAll()
-
-	/**
-	 * The row's id/uuid, from a flat property or its `@self` envelope.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string
-	 * @spec openspec/changes/news-and-newsletter-authoring/design.md#architecture-overview
-	 */
-	public function rowId(array $row): string {
-		if (isset($row['id']) === true) {
-			return (string)$row['id'];
-		}
-
-		if (isset($row['uuid']) === true) {
-			return (string)$row['uuid'];
-		}
-
-		$self = $row['@self'] ?? [];
-		if (is_array($self) === true) {
-			return (string)($self['id'] ?? $self['uuid'] ?? '');
-		}
-
-		return '';
-	}//end rowId()
 }//end class

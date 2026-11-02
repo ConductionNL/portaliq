@@ -31,7 +31,6 @@ namespace OCA\Portaliq\Service;
 
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * @spec openspec/changes/events-and-signups/design.md#architecture-overview
@@ -45,10 +44,16 @@ class EventFeedReader {
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
 	use PagedObjectReads;
+	use NormalisedRowReads;
 
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	private const REGISTER = 'portaliq';
+
+	/**
+	 * The warning logged when a read fails.
+	 */
+	private const READ_FAILED = 'Portaliq: event feed read failed';
 
 	/**
 	 * Constructor.
@@ -201,65 +206,4 @@ class EventFeedReader {
 
 		return null;
 	}//end myRsvp()
-
-	/**
-	 * Fetch every row of a schema in this app's register that matches the
-	 * plain filters, every page of it.
-	 *
-	 * @param string $schema The schema slug.
-	 * @param array<string, mixed> $filters Plain equality filters, e.g. a status.
-	 *
-	 * @return array<int, array<string, mixed>>
-	 */
-	private function findAll(string $schema, array $filters = []): array {
-		$objectService = $this->objectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		try {
-			$rows = $this->readEveryPage(objectService: $objectService, register: self::REGISTER, schema: $schema, filters: $filters);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: event feed read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
-			return [];
-		}
-
-		if (is_array($rows) === false) {
-			return [];
-		}
-
-		$normalised = [];
-		foreach ($rows as $row) {
-			$row = $this->normalise(row: $row);
-			if ($row !== null) {
-				$normalised[] = $row;
-			}
-		}
-
-		return $normalised;
-	}//end findAll()
-
-	/**
-	 * The row's id/uuid, from a flat property or its `@self` envelope.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string
-	 */
-	private function rowId(array $row): string {
-		if (isset($row['id']) === true) {
-			return (string)$row['id'];
-		}
-
-		if (isset($row['uuid']) === true) {
-			return (string)$row['uuid'];
-		}
-
-		$self = $row['@self'] ?? [];
-		if (is_array($self) === true) {
-			return (string)($self['id'] ?? $self['uuid'] ?? '');
-		}
-
-		return '';
-	}//end rowId()
 }//end class
