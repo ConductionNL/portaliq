@@ -29,6 +29,7 @@ use DateTimeImmutable;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use stdClass;
+use OCA\Portaliq\Service\PortalSlugLookup;
 
 /**
  * Reads and writes through portaliq's OpenRegister reader and writer, scoped
@@ -74,25 +75,7 @@ class AccessibilityMeasurements {
 	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
 	 */
 	public function portalBySlug(string $slug): ?array {
-		if ($slug === '') {
-			return null;
-		}
-
-		$rows = $this->reader->readCollection(
-			register: self::REGISTER,
-			schema: 'portal',
-			scopeField: 'slug',
-			subjectRef: $slug,
-			organisation: '',
-			limit: 2
-		);
-		foreach ($rows as $row) {
-			if (is_array($row) === true && ($row['slug'] ?? null) === $slug) {
-				return $row;
-			}
-		}
-
-		return null;
+		return (new PortalSlugLookup(reader: $this->reader))->find(slug: $slug);
 	}//end portalBySlug()
 
 	/**

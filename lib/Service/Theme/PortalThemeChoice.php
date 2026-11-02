@@ -25,6 +25,7 @@ namespace OCA\Portaliq\Service\Theme;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalThemeResolver;
+use OCA\Portaliq\Service\PortalSlugLookup;
 
 /**
  * Lists the adoptable sets with their contrast verdict, and saves a choice.
@@ -71,25 +72,7 @@ class PortalThemeChoice {
 	 * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
 	 */
 	public function portalBySlug(string $slug): ?array {
-		if ($slug === '') {
-			return null;
-		}
-
-		$rows = $this->reader->readCollection(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: 'slug',
-			subjectRef: $slug,
-			organisation: '',
-			limit: 2
-		);
-		foreach ($rows as $row) {
-			if (is_array($row) === true && ($row['slug'] ?? null) === $slug) {
-				return $row;
-			}
-		}
-
-		return null;
+		return (new PortalSlugLookup(reader: $this->reader))->find(slug: $slug);
 	}//end portalBySlug()
 
 	/**
