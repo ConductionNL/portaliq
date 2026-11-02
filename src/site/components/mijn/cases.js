@@ -191,7 +191,7 @@ function referenceOf(row, title) {
  * (case-page-tasks-decision-dates-and-next-step).
  *
  * @param {object} row The case row.
- * @param {{collection: object|null, tr: Function, locale: string, today: Date}} context The collection, the translator, the page language and today.
+ * @param {{collection: object|null, tr: (key: string, vars?: object) => string, locale: string, today: Date}} context The collection, the translator, the page language and today.
  * @return {{due: string, dueDay: string, readyBy: string}} The words.
  */
 function dueWords(row, { collection, tr, locale, today }) {

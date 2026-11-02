@@ -198,7 +198,7 @@ export function createPortalApi(config, store = {}) {
 	 * The init of a JSON request with the bearer.
 	 *
 	 * @param {string} method The HTTP method.
-	 * @param {any} body The body, sent as JSON.
+	 * @param {object|undefined} body The body, sent as JSON.
 	 * @return {object} The init.
 	 */
 	function jsonInit(method, body) {
@@ -227,17 +227,6 @@ export function createPortalApi(config, store = {}) {
 			message: json.message || '',
 			error: json.error || '',
 		}
-	}
-
-	/**
-	 * The address of one of the resident's own cases.
-	 *
-	 * @param {object} collection Manifest collection: `{ register, schema }`.
-	 * @param {string} id The case id.
-	 * @return {string} The address.
-	 */
-	function citizenCaseUrl(collection, id) {
-		return `${base}${citizenCase(collection.register, collection.schema)}/${encodeURIComponent(id)}`
 	}
 
 	/**
@@ -298,22 +287,6 @@ export function createPortalApi(config, store = {}) {
 	// (guardian-direct-messages): `/apps/portaliq/api/messages/...`.
 	const appRoot = String(base).replace(/\/portal\/api\/?$/, '')
 
-	/**
-	 * The address of an endpoint row action on one row. `actionApp` names
-	 * another app's action attached to this collection
-	 * (woo-journey-entry-points D3).
-	 *
-	 * @param {object} collection Manifest collection: `{ id, register, schema }`.
-	 * @param {{rowId: string, actionId: string, actionApp: string}} target The row, the action and the app it belongs to, or ''.
-	 * @return {string} The address.
-	 */
-	function rowActionUrl(collection, { rowId, actionId, actionApp }) {
-		const attached = actionApp
-			? `&actionApp=${encodeURIComponent(actionApp)}`
-			: ''
-		return `${base}${col(collection.register, collection.schema)}/${encodeURIComponent(rowId)}/actions/${encodeURIComponent(actionId)}?collection=${encodeURIComponent(collection.id)}${attached}`
-	}
-
 	const draftUrl = (app, actionId) =>
 		`${base}/drafts/${encodeURIComponent(app)}/${encodeURIComponent(actionId)}`
 
@@ -329,6 +302,33 @@ export function createPortalApi(config, store = {}) {
 	// governed by the case type rather than by the collection's own opt-ins.
 	const citizenCase = (register, schema) =>
 		`/citizen/cases/${encodeURIComponent(register)}/${encodeURIComponent(schema)}`
+
+	/**
+	 * The address of one of the resident's own cases.
+	 *
+	 * @param {object} collection Manifest collection: `{ register, schema }`.
+	 * @param {string} id The case id.
+	 * @return {string} The address.
+	 */
+	function citizenCaseUrl(collection, id) {
+		return `${base}${citizenCase(collection.register, collection.schema)}/${encodeURIComponent(id)}`
+	}
+
+	/**
+	 * The address of an endpoint row action on one row. `actionApp` names
+	 * another app's action attached to this collection
+	 * (woo-journey-entry-points D3).
+	 *
+	 * @param {object} collection Manifest collection: `{ id, register, schema }`.
+	 * @param {{rowId: string, actionId: string, actionApp: string}} target The row, the action and the app it belongs to, or ''.
+	 * @return {string} The address.
+	 */
+	function rowActionUrl(collection, { rowId, actionId, actionApp }) {
+		const attached = actionApp
+			? `&actionApp=${encodeURIComponent(actionApp)}`
+			: ''
+		return `${base}${col(collection.register, collection.schema)}/${encodeURIComponent(rowId)}/actions/${encodeURIComponent(actionId)}?collection=${encodeURIComponent(collection.id)}${attached}`
+	}
 
 	/**
 	 * Fetch one listed document and save it client-side through a Blob URL,

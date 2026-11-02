@@ -397,6 +397,23 @@ function labelled(value, valueLabels, context) {
 	return valueLabel(value, valueLabels)
 }
 
+/** How a cell of each render kind is written; any other kind reads as readable() writes it. */
+const RENDERED = {
+	boolean: (value, { t }) => (value ? t('Yes') : t('No')),
+	date: (value, { locale }) => formatMoment(value, false, locale),
+	datetime: (value, { locale }) => formatMoment(value, true, locale),
+	currency: (value, { locale }) => {
+		try {
+			return new Intl.NumberFormat(locale, {
+				style: 'currency',
+				currency: 'EUR',
+			}).format(Number(value))
+		} catch {
+			return String(value)
+		}
+	},
+}
+
 /**
  * The text of one cell, following the column's `render`. A value the column
  * labels reads as its label, whatever the render kind.
@@ -419,23 +436,6 @@ export function formatCell(value, render, { locale, t, valueLabels }) {
 	}
 	const format = Object.hasOwn(RENDERED, render) ? RENDERED[render] : readable
 	return format(value, { locale, t })
-}
-
-/** How a cell of each render kind is written; any other kind reads as readable() writes it. */
-const RENDERED = {
-	boolean: (value, { t }) => (value ? t('Yes') : t('No')),
-	date: (value, { locale }) => formatMoment(value, false, locale),
-	datetime: (value, { locale }) => formatMoment(value, true, locale),
-	currency: (value, { locale }) => {
-		try {
-			return new Intl.NumberFormat(locale, {
-				style: 'currency',
-				currency: 'EUR',
-			}).format(Number(value))
-		} catch {
-			return String(value)
-		}
-	},
 }
 
 /**

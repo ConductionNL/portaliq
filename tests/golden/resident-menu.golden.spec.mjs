@@ -21,12 +21,14 @@ const t = (key, vars = {}) => `[${key}]${Object.entries(vars).map(([k, v]) => `$
 const href = (route) => `/site${route}`
 
 const special = (key, label, icon) => ({ key, special: key, label, ...(icon ? { icon } : {}) })
-const page = (app, label, id, extra = {}) => ({
+function page (app, label, id, extra = {}) {
+  return {
 	key: `${app}:${id}`,
 	label,
 	contribution: { app, label: app === 'dossiq' ? 'Dossiq' : '' },
 	page: { id, ...extra },
-})
+}
+}
 
 const NAV = [
 	special('cases', 'Mijn zaken', 'folder'),

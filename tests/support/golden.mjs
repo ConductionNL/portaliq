@@ -3,7 +3,8 @@
 //
 // A golden file for node tests: each case's value is compared, as JSON, with
 // the value pinned in tests/Fixtures/Golden/<name>.json. Run with
-// GOLDEN_RECORD=1 to (re)write the file from the code as it stands.
+// GOLDEN_RECORD=1 to (re)write the file from the code as it stands, one case
+// per line.
 
 import assert from 'node:assert/strict'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
@@ -34,7 +35,8 @@ export function golden(name) {
 		},
 		save() {
 			if (record) {
-				writeFileSync(path, `${JSON.stringify(seen, null, '\t')}\n`)
+				const lines = Object.entries(seen).map(([key, value]) => `\t${JSON.stringify(key)}: ${JSON.stringify(value)}`)
+				writeFileSync(path, `{\n${lines.join(',\n')}\n}\n`)
 			}
 		},
 	}

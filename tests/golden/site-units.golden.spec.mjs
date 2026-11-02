@@ -11,8 +11,8 @@
 
 import { test } from 'node:test'
 import { groupRows } from '../../src/shared/collectionGroups.js'
-import { readable } from '../../src/site/components/collections/cells.js'
 import { fieldErrors, fieldInput, formBody, withSingleOptions } from '../../src/site/components/c/forms.js'
+import { readable } from '../../src/site/components/collections/cells.js'
 import { signInRoutes } from '../../src/site/lib/authApi.js'
 import { encodeQr } from '../../src/site/lib/qr.js'
 import { golden } from '../support/golden.mjs'

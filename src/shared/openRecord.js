@@ -76,7 +76,7 @@ export function consumeOpenTarget(location, history, storage) {
 /**
  * The target kept before the sign-in, or null.
  *
- * @param {{getItem: Function}|null} storage sessionStorage.
+ * @param {{getItem: (key: string) => string|null}|null} storage sessionStorage.
  * @return {{app: string, collection: string, id: string}|null}
  */
 function keptOpenTarget(storage) {

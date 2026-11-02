@@ -92,6 +92,14 @@ export function fieldLabel(action, field) {
 	return typeof label === 'string' && label !== '' ? label : field
 }
 
+/** The input a field's schema `input` hint renders as; any other hint is a text box. */
+const INPUT_OF_HINT = {
+	date: 'date',
+	datetime: 'datetime-local',
+	number: 'number',
+	email: 'email',
+}
+
 /**
  * The input one field renders as. A file field is a file picker, a field with
  * options a select, a large field a textarea; otherwise the schema's `input`
@@ -119,13 +127,6 @@ export function fieldInput(action, field, options) {
 	return Object.hasOwn(INPUT_OF_HINT, config.input) ? INPUT_OF_HINT[config.input] : 'text'
 }
 
-/** The input a field's schema `input` hint renders as; any other hint is a text box. */
-const INPUT_OF_HINT = {
-	date: 'date',
-	datetime: 'datetime-local',
-	number: 'number',
-	email: 'email',
-}
 
 /**
  * The options a form knows without asking: every `static` provider.
@@ -386,7 +387,7 @@ export function fieldErrors(action, values, files, t) {
  * The inline error of one field, or null when it has none.
  *
  * @param {string} field The field.
- * @param {{action: object, values: object, files: object, translate: Function, fileNames: string[]}} ask The action, the typed values, the picked files, the translator and the file fields.
+ * @param {{action: object, values: object, files: object, translate: (key: string, vars?: object) => string, fileNames: string[]}} ask The action, the typed values, the picked files, the translator and the file fields.
  * @return {string|null} The message, or null.
  */
 function fieldError(field, { action, values, files, translate, fileNames }) {

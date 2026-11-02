@@ -472,7 +472,7 @@ function modeHref(mode, { authBase, query }) {
  * several names only the set: one card for its first resident.
  *
  * @param {Array<object>|unknown} demoResidents The residents of the example set.
- * @param {{authBase: string, t: Function, exampleResident: string, scope: string, returnTo: string}} ctx The auth edge base, the translator, the set and the query parts.
+ * @param {{authBase: string, t: (key: string, vars?: object) => string, exampleResident: string, scope: string, returnTo: string}} ctx The auth edge base, the translator, the set and the query parts.
  * @return {Array<object>} The routes.
  */
 function demoRoutes(demoResidents, ctx) {
@@ -487,7 +487,7 @@ function demoRoutes(demoResidents, ctx) {
  * The one-click card of one example resident.
  *
  * @param {{key: string, name?: string, card?: object}} resident The resident.
- * @param {{authBase: string, t: Function, exampleResident: string, scope: string, returnTo: string}} ctx The auth edge base, the translator, the set and the query parts.
+ * @param {{authBase: string, t: (key: string, vars?: object) => string, exampleResident: string, scope: string, returnTo: string}} ctx The auth edge base, the translator, the set and the query parts.
  * @return {object} The route.
  */
 function demoRoute(resident, { authBase, t, exampleResident, scope, returnTo }) {

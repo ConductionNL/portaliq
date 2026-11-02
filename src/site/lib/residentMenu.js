@@ -543,7 +543,7 @@ function plainItem(item) {
  * The items a declared group names, each placed once.
  *
  * @param {{items?: Array<string>}} group The declared group.
- * @param {{byName: Map<string, object>, placed: Set<object>, t: Function, hrefFor: Function}} found The items by name, the items placed so far (changed in place), the translator and the address of a route.
+ * @param {{byName: Map<string, object>, placed: Set<object>, t: (key: string, vars?: object) => string, hrefFor: (route: string) => string}} found The items by name, the items placed so far (changed in place), the translator and the address of a route.
  * @return {Array<object>} The items.
  * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
  */
