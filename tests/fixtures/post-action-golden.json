@@ -1,0 +1,414 @@
+{
+	"accepted with a body": {
+		"direct": {
+			"calls": [
+				{
+					"url": "/portal/api/actions/opencatalogi/saveSearch",
+					"init": {
+						"method": "POST",
+						"headers": {
+							"Accept": "application/json",
+							"Content-Type": "application/json",
+							"Authorization": "Bearer tok"
+						},
+						"body": "{\"title\":\"x\"}"
+					}
+				}
+			],
+			"result": {
+				"ok": true,
+				"status": 201,
+				"body": {
+					"id": "dos-1"
+				}
+			}
+		},
+		"forward": {
+			"calls": [
+				{
+					"url": "/portal/api/actions/opencatalogi/saveSearch",
+					"init": {
+						"method": "POST",
+						"headers": {
+							"Accept": "application/json",
+							"Content-Type": "application/json",
+							"Authorization": "Bearer tok"
+						},
+						"body": "{\"title\":\"x\"}"
+					}
+				}
+			],
+			"result": {
+				"ok": true,
+				"status": 201,
+				"body": {
+					"id": "dos-1"
+				}
+			}
+		}
+	},
+	"refused": {
+		"direct": {
+			"calls": [
+				{
+					"url": "/portal/api/actions/opencatalogi/addToDossier",
+					"init": {
+						"method": "POST",
+						"headers": {
+							"Accept": "application/json",
+							"Content-Type": "application/json",
+							"Authorization": "Bearer tok"
+						},
+						"body": "{\"a\":1}"
+					}
+				}
+			],
+			"result": {
+				"ok": false,
+				"status": 403,
+				"body": {
+					"error": "no"
+				}
+			}
+		},
+		"forward": {
+			"calls": [
+				{
+					"url": "/portal/api/actions/opencatalogi/addToDossier",
+					"init": {
+						"method": "POST",
+						"headers": {
+							"Accept": "application/json",
+							"Content-Type": "application/json",
+							"Authorization": "Bearer tok"
+						},
+						"body": "{\"a\":1}"
+					}
+				}
+			],
+			"result": {
+				"ok": false,
+				"status": 403,
+				"body": {
+					"error": "no"
+				}
+			}
+		}
+	},
+	"no token and no body": {
+		"direct": {
+			"calls": [
+				{
+					"url": "/b/actions/a/x",
+					"init": {
+						"method": "POST",
+						"headers": {
+							"Accept": "application/json",
+							"Content-Type": "application/json"
+						},
+						"body": "{}"
+					}
+				}
+			],
+			"result": {
+				"ok": true,
+				"status": 200,
+				"body": {}
+			}
+		},
+		"forward": {
+			"calls": [
+				{
+					"url": "/b/actions/a/x",
+					"init": {
+						"method": "POST",
+						"headers": {
+							"Accept": "application/json",
+							"Content-Type": "application/json"
+						},
+						"body": "{}"
+					}
+				}
+			],
+			"result": {
+				"ok": true,
+				"status": 200,
+				"body": {}
+			}
+		}
+	},
+	"names needing encoding": {
+		"direct": {
+			"calls": [
+				{
+					"url": "/b/actions/app%2Fone%20two/act%3F%23",
+					"init": {
+						"method": "POST",
+						"headers": {
+							"Accept": "application/json",
+							"Content-Type": "application/json",
+							"Authorization": "Bearer t"
+						},
+						"body": "{}"
+					}
+				}
+			],
+			"result": {
+				"ok": true,
+				"status": 200,
+				"body": {}
+			}
+		},
+		"forward": {
+			"calls": [
+				{
+					"url": "/b/actions/app%2Fone%20two/act%3F%23",
+					"init": {
+						"method": "POST",
+						"headers": {
+							"Accept": "application/json",
+							"Content-Type": "application/json",
+							"Authorization": "Bearer t"
+						},
+						"body": "{}"
+					}
+				}
+			],
+			"result": {
+				"ok": true,
+				"status": 200,
+				"body": {}
+			}
+		}
+	},
+	"an unreadable answer": {
+		"direct": {
+			"calls": [
+				{
+					"url": "/b/actions/a/x",
+					"init": {
+						"method": "POST",
+						"headers": {
+							"Accept": "application/json",
+							"Content-Type": "application/json",
+							"Authorization": "Bearer t"
+						},
+						"body": "{\"q\":\"y\"}"
+					}
+				}
+			],
+			"result": {
+				"ok": true,
+				"status": 204,
+				"body": {}
+			}
+		},
+		"forward": {
+			"calls": [
+				{
+					"url": "/b/actions/a/x",
+					"init": {
+						"method": "POST",
+						"headers": {
+							"Accept": "application/json",
+							"Content-Type": "application/json",
+							"Authorization": "Bearer t"
+						},
+						"body": "{\"q\":\"y\"}"
+					}
+				}
+			],
+			"result": {
+				"ok": true,
+				"status": 204,
+				"body": {}
+			}
+		}
+	},
+	"a network failure": {
+		"direct": {
+			"calls": [
+				{
+					"url": "/b/actions/a/x",
+					"init": {
+						"method": "POST",
+						"headers": {
+							"Accept": "application/json",
+							"Content-Type": "application/json",
+							"Authorization": "Bearer t"
+						},
+						"body": "{}"
+					}
+				}
+			],
+			"result": {
+				"ok": false,
+				"status": 0,
+				"body": {}
+			}
+		},
+		"forward": {
+			"calls": [
+				{
+					"url": "/b/actions/a/x",
+					"init": {
+						"method": "POST",
+						"headers": {
+							"Accept": "application/json",
+							"Content-Type": "application/json",
+							"Authorization": "Bearer t"
+						},
+						"body": "{}"
+					}
+				}
+			],
+			"result": {
+				"ok": false,
+				"status": 0,
+				"body": {}
+			}
+		}
+	},
+	"an answer without ok": {
+		"direct": {
+			"calls": [
+				{
+					"url": "/b/actions/a/x",
+					"init": {
+						"method": "POST",
+						"headers": {
+							"Accept": "application/json",
+							"Content-Type": "application/json",
+							"Authorization": "Bearer t"
+						},
+						"body": "{}"
+					}
+				}
+			],
+			"result": {
+				"ok": false,
+				"status": 200,
+				"body": {
+					"maybe": true
+				}
+			}
+		},
+		"forward": {
+			"calls": [
+				{
+					"url": "/b/actions/a/x",
+					"init": {
+						"method": "POST",
+						"headers": {
+							"Accept": "application/json",
+							"Content-Type": "application/json",
+							"Authorization": "Bearer t"
+						},
+						"body": "{}"
+					}
+				}
+			],
+			"result": {
+				"ok": false,
+				"status": 200,
+				"body": {
+					"maybe": true
+				}
+			}
+		}
+	},
+	"a valid submission key": {
+		"direct": {
+			"calls": [
+				{
+					"url": "/b/actions/a/x",
+					"init": {
+						"method": "POST",
+						"headers": {
+							"Accept": "application/json",
+							"Content-Type": "application/json",
+							"Authorization": "Bearer t",
+							"Idempotency-Key": "abcdefghijklmnop1234"
+						},
+						"body": "{}"
+					}
+				}
+			],
+			"result": {
+				"ok": true,
+				"status": 200,
+				"body": {
+					"done": true
+				}
+			}
+		},
+		"forward": {
+			"calls": [
+				{
+					"url": "/b/actions/a/x",
+					"init": {
+						"method": "POST",
+						"headers": {
+							"Accept": "application/json",
+							"Content-Type": "application/json",
+							"Authorization": "Bearer t",
+							"Idempotency-Key": "abcdefghijklmnop1234"
+						},
+						"body": "{}"
+					}
+				}
+			],
+			"result": {
+				"ok": true,
+				"status": 200,
+				"body": {
+					"done": true
+				}
+			}
+		}
+	},
+	"an invalid submission key": {
+		"direct": {
+			"calls": [
+				{
+					"url": "/b/actions/a/x",
+					"init": {
+						"method": "POST",
+						"headers": {
+							"Accept": "application/json",
+							"Content-Type": "application/json",
+							"Authorization": "Bearer t"
+						},
+						"body": "{}"
+					}
+				}
+			],
+			"result": {
+				"ok": true,
+				"status": 200,
+				"body": {}
+			}
+		},
+		"forward": {
+			"calls": [
+				{
+					"url": "/b/actions/a/x",
+					"init": {
+						"method": "POST",
+						"headers": {
+							"Accept": "application/json",
+							"Content-Type": "application/json",
+							"Authorization": "Bearer t"
+						},
+						"body": "{}"
+					}
+				}
+			],
+			"result": {
+				"ok": true,
+				"status": 200,
+				"body": {}
+			}
+		}
+	}
+}

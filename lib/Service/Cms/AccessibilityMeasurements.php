@@ -26,7 +26,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Cms;
 
 use DateTimeImmutable;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use stdClass;
 
@@ -53,12 +53,12 @@ class AccessibilityMeasurements {
 	public const MAX_ADDED_PAGES = 20;
 
 	/**
-	 * @param PortalObjectReader $reader The OpenRegister reader.
+	 * @param ScopedCollectionReaderInterface $reader The OpenRegister reader.
 	 * @param PortalObjectWriter     $writer    The OpenRegister writer.
 	 * @param AccessibilityStatement $statement The audit rules.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly AccessibilityStatement $statement = new AccessibilityStatement(),
 	) {

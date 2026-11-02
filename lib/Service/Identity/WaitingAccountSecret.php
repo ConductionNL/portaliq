@@ -32,7 +32,7 @@ namespace OCA\Portaliq\Service\Identity;
 
 use DateTimeImmutable;
 use OCA\Portaliq\Service\PortalAccountService;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\IConfig;
 
 /**
@@ -61,13 +61,13 @@ class WaitingAccountSecret {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Finds the account a secret belongs to.
+	 * @param ScopedCollectionReaderInterface $reader Finds the account a secret belongs to.
 	 * @param IConfig $config Holds the instance secret a code's hash is keyed with.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly IConfig $config,
 	) {
 		$this->codes = new InvitationCode();

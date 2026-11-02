@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
+use OCA\Portaliq\Service\ObjectServiceLookup;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -44,6 +45,7 @@ use Throwable;
  * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
  */
 class PortalAccountsByClaim {
+	use ObjectServiceLookup;
 
 	/**
 	 * OpenRegister's object service, resolved by name.
@@ -210,23 +212,4 @@ class PortalAccountsByClaim {
 
 		return $row;
 	}//end activeAccount()
-
-	/**
-	 * OpenRegister's ObjectService, or null when unavailable.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 }//end class

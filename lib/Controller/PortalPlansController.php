@@ -33,6 +33,7 @@ use OCA\Portaliq\Service\Plans\PlanFiles;
 use OCA\Portaliq\Service\Plans\PortalPlanService;
 use OCA\Portaliq\Service\PortalPdfExport;
 use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\RequestedPortal;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -465,10 +466,7 @@ class PortalPlansController extends Controller implements PortalProtected {
 	 * @return string
 	 */
 	private function portalSlug(): string {
-		$slug = $this->request->getParam('portal');
-		if (is_string($slug) === false) {
-			$slug = null;
-		}
+		$slug = (new RequestedPortal())->slug(request: $this->request);
 
 		return (string)($this->portals->resolve(request: $this->request, portalSlug: $slug)['slug'] ?? '');
 	}//end portalSlug()

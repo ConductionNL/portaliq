@@ -28,7 +28,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity\EmailLink;
 
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -40,7 +40,7 @@ class EmailLinkSender {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader   $reader      Reads the portal.
+	 * @param ScopedCollectionReaderInterface   $reader      Reads the portal.
 	 * @param EmailLinkSetting     $setting     The switch and the portal's modes.
 	 * @param EmailLinkEligibility $eligibility The one account behind the address.
 	 * @param EmailLinkTokens      $tokens      Issues the link.
@@ -52,7 +52,7 @@ class EmailLinkSender {
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- one dependency per check the request passes.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly EmailLinkSetting $setting,
 		private readonly EmailLinkEligibility $eligibility,
 		private readonly EmailLinkTokens $tokens,

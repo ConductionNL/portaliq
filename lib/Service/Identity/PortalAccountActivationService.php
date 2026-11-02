@@ -31,7 +31,7 @@ namespace OCA\Portaliq\Service\Identity;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Portaliq\Service\PortalAccountService;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\Security\ISecureRandom;
 
@@ -60,12 +60,12 @@ class PortalAccountActivationService {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Finds the account a secret belongs to.
+	 * @param ScopedCollectionReaderInterface $reader Finds the account a secret belongs to.
 	 * @param PortalObjectWriter $writer Stores the hash and the activation.
 	 * @param ISecureRandom $random Mints the secret.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly ISecureRandom $random,
 	) {

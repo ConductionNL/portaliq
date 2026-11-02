@@ -29,7 +29,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use OCA\Portaliq\Service\PortalNameSetting;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\IUserSession;
 
 /**
@@ -48,12 +48,12 @@ class PortalAccountPresence {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader      Reads the account rows.
+	 * @param ScopedCollectionReaderInterface $reader      Reads the account rows.
 	 * @param PortalNameSetting  $portalName  The portal's name.
 	 * @param IUserSession       $userSession The caller.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalNameSetting $portalName,
 		private readonly IUserSession $userSession,
 	) {

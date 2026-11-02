@@ -76,6 +76,7 @@ use OCA\Portaliq\Service\PortalInboxReader;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\RequestedPortal;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\Tenancy\SchemaTenancy;
@@ -406,10 +407,7 @@ class ContributionController extends Controller implements PortalProtected {
 	private function withThemes(array $aggregate): array {
 		$declared = [];
 		if ($this->portals !== null) {
-			$slug = $this->request->getParam('portal');
-			if (is_string($slug) === false) {
-				$slug = null;
-			}
+			$slug = (new RequestedPortal())->slug(request: $this->request);
 
 			$declared = ($this->portals->resolve(request: $this->request, portalSlug: $slug)['themes'] ?? []);
 		}
@@ -432,10 +430,7 @@ class ContributionController extends Controller implements PortalProtected {
 			return [];
 		}
 
-		$slug = $this->request->getParam('portal');
-		if (is_string($slug) === false) {
-			$slug = null;
-		}
+		$slug = (new RequestedPortal())->slug(request: $this->request);
 
 		$portal = $this->portals->resolve(request: $this->request, portalSlug: $slug);
 		$pages  = [];
@@ -471,10 +466,7 @@ class ContributionController extends Controller implements PortalProtected {
 			return $aggregate;
 		}
 
-		$slug = $this->request->getParam('portal');
-		if (is_string($slug) === false) {
-			$slug = null;
-		}
+		$slug = (new RequestedPortal())->slug(request: $this->request);
 
 		$portal = $this->portals->resolve(request: $this->request, portalSlug: $slug);
 		$navigation = $portal['navigation'][(string)($aggregate['audience'] ?? '')] ?? null;

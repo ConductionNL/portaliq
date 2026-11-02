@@ -1,0 +1,394 @@
+{
+    "array rows, read three times": [
+        {
+            "container": "OCA\\OpenRegister\\Service\\ObjectService"
+        },
+        {
+            "contextApply": "portal",
+            "objectService": true
+        },
+        {
+            "objectService": "findAll",
+            "args": {
+                "config": {
+                    "filters": {
+                        "status": "published"
+                    },
+                    "limit": 500,
+                    "offset": 0
+                },
+                "_rbac": false,
+                "_multitenancy": false
+            }
+        },
+        {
+            "result": [
+                {
+                    "slug": "open-tilburg",
+                    "status": "published",
+                    "domains": [
+                        {
+                            "hostname": "tilburg.example",
+                            "verified": true
+                        }
+                    ]
+                },
+                {
+                    "slug": "open-venray",
+                    "organisation": "Venray",
+                    "locales": [
+                        "nl"
+                    ]
+                }
+            ]
+        },
+        {
+            "result": [
+                {
+                    "slug": "open-tilburg",
+                    "status": "published",
+                    "domains": [
+                        {
+                            "hostname": "tilburg.example",
+                            "verified": true
+                        }
+                    ]
+                },
+                {
+                    "slug": "open-venray",
+                    "organisation": "Venray",
+                    "locales": [
+                        "nl"
+                    ]
+                }
+            ]
+        },
+        {
+            "result": [
+                {
+                    "slug": "open-tilburg",
+                    "status": "published",
+                    "domains": [
+                        {
+                            "hostname": "tilburg.example",
+                            "verified": true
+                        }
+                    ]
+                },
+                {
+                    "slug": "open-venray",
+                    "organisation": "Venray",
+                    "locales": [
+                        "nl"
+                    ]
+                }
+            ]
+        }
+    ],
+    "serialisable rows": [
+        {
+            "container": "OCA\\OpenRegister\\Service\\ObjectService"
+        },
+        {
+            "contextApply": "portal",
+            "objectService": true
+        },
+        {
+            "objectService": "findAll",
+            "args": {
+                "config": {
+                    "filters": {
+                        "status": "published"
+                    },
+                    "limit": 500,
+                    "offset": 0
+                },
+                "_rbac": false,
+                "_multitenancy": false
+            }
+        },
+        {
+            "result": [
+                {
+                    "slug": "open-tilburg",
+                    "status": "published",
+                    "domains": [
+                        {
+                            "hostname": "tilburg.example",
+                            "verified": true
+                        }
+                    ]
+                },
+                {
+                    "slug": "open-venray",
+                    "organisation": "Venray",
+                    "locales": [
+                        "nl"
+                    ]
+                }
+            ]
+        },
+        {
+            "result": [
+                {
+                    "slug": "open-tilburg",
+                    "status": "published",
+                    "domains": [
+                        {
+                            "hostname": "tilburg.example",
+                            "verified": true
+                        }
+                    ]
+                },
+                {
+                    "slug": "open-venray",
+                    "organisation": "Venray",
+                    "locales": [
+                        "nl"
+                    ]
+                }
+            ]
+        }
+    ],
+    "mixed rows": [
+        {
+            "container": "OCA\\OpenRegister\\Service\\ObjectService"
+        },
+        {
+            "contextApply": "portal",
+            "objectService": true
+        },
+        {
+            "objectService": "findAll",
+            "args": {
+                "config": {
+                    "filters": {
+                        "status": "published"
+                    },
+                    "limit": 500,
+                    "offset": 0
+                },
+                "_rbac": false,
+                "_multitenancy": false
+            }
+        },
+        {
+            "result": [
+                {
+                    "slug": "open-tilburg",
+                    "status": "published",
+                    "domains": [
+                        {
+                            "hostname": "tilburg.example",
+                            "verified": true
+                        }
+                    ]
+                },
+                {
+                    "slug": "open-venray",
+                    "organisation": "Venray",
+                    "locales": [
+                        "nl"
+                    ]
+                }
+            ]
+        }
+    ],
+    "no rows": [
+        {
+            "container": "OCA\\OpenRegister\\Service\\ObjectService"
+        },
+        {
+            "contextApply": "portal",
+            "objectService": true
+        },
+        {
+            "objectService": "findAll",
+            "args": {
+                "config": {
+                    "filters": {
+                        "status": "published"
+                    },
+                    "limit": 500,
+                    "offset": 0
+                },
+                "_rbac": false,
+                "_multitenancy": false
+            }
+        },
+        {
+            "result": []
+        },
+        {
+            "result": []
+        }
+    ],
+    "context not applied": [
+        {
+            "container": "OCA\\OpenRegister\\Service\\ObjectService"
+        },
+        {
+            "contextApply": "portal",
+            "objectService": true
+        },
+        {
+            "result": []
+        },
+        {
+            "container": "OCA\\OpenRegister\\Service\\ObjectService"
+        },
+        {
+            "contextApply": "portal",
+            "objectService": true
+        },
+        {
+            "result": []
+        }
+    ],
+    "container throws": [
+        {
+            "container": "OCA\\OpenRegister\\Service\\ObjectService"
+        },
+        {
+            "log": "error",
+            "message": "Portaliq: portal read failed",
+            "context": {
+                "app": "portaliq",
+                "reason": "container failed"
+            }
+        },
+        {
+            "result": []
+        },
+        {
+            "container": "OCA\\OpenRegister\\Service\\ObjectService"
+        },
+        {
+            "log": "error",
+            "message": "Portaliq: portal read failed",
+            "context": {
+                "app": "portaliq",
+                "reason": "container failed"
+            }
+        },
+        {
+            "result": []
+        }
+    ],
+    "read throws": [
+        {
+            "container": "OCA\\OpenRegister\\Service\\ObjectService"
+        },
+        {
+            "contextApply": "portal",
+            "objectService": true
+        },
+        {
+            "objectService": "findAll",
+            "args": {
+                "config": {
+                    "filters": {
+                        "status": "published"
+                    },
+                    "limit": 500,
+                    "offset": 0
+                },
+                "_rbac": false,
+                "_multitenancy": false
+            }
+        },
+        {
+            "log": "error",
+            "message": "Portaliq: portal read failed",
+            "context": {
+                "app": "portaliq",
+                "reason": "read failed"
+            }
+        },
+        {
+            "result": []
+        },
+        {
+            "container": "OCA\\OpenRegister\\Service\\ObjectService"
+        },
+        {
+            "contextApply": "portal",
+            "objectService": true
+        },
+        {
+            "objectService": "findAll",
+            "args": {
+                "config": {
+                    "filters": {
+                        "status": "published"
+                    },
+                    "limit": 500,
+                    "offset": 0
+                },
+                "_rbac": false,
+                "_multitenancy": false
+            }
+        },
+        {
+            "log": "error",
+            "message": "Portaliq: portal read failed",
+            "context": {
+                "app": "portaliq",
+                "reason": "read failed"
+            }
+        },
+        {
+            "result": []
+        }
+    ],
+    "read answers a non-array": [
+        {
+            "container": "OCA\\OpenRegister\\Service\\ObjectService"
+        },
+        {
+            "contextApply": "portal",
+            "objectService": true
+        },
+        {
+            "objectService": "findAll",
+            "args": {
+                "config": {
+                    "filters": {
+                        "status": "published"
+                    },
+                    "limit": 500,
+                    "offset": 0
+                },
+                "_rbac": false,
+                "_multitenancy": false
+            }
+        },
+        {
+            "result": []
+        },
+        {
+            "container": "OCA\\OpenRegister\\Service\\ObjectService"
+        },
+        {
+            "contextApply": "portal",
+            "objectService": true
+        },
+        {
+            "objectService": "findAll",
+            "args": {
+                "config": {
+                    "filters": {
+                        "status": "published"
+                    },
+                    "limit": 500,
+                    "offset": 0
+                },
+                "_rbac": false,
+                "_multitenancy": false
+            }
+        },
+        {
+            "result": []
+        }
+    ]
+}

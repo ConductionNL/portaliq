@@ -776,37 +776,71 @@ function sameValue(a, b) {
 }
 
 /**
- * Run every rule and report.
+ * Leaf fields both faces may declare statically, compared by R4.
  *
- * @return {void}
+ * @type {string[]}
  */
-function main() {
-	const failures = []
-	const counts = {}
+const COMPARED_FIELDS = [
+	'label',
+	'icon',
+	'group',
+	'requiredApp',
+	'referenceType',
+	'surfaces',
+]
+
+/**
+ * Items keyed by their statically-read id; items without one are left out.
+ *
+ * @param {Array<{id: (string|null)}>} items The faces or registrations.
+ *
+ * @return {Map<string, object>} The items by id.
+ */
+function byId(items) {
+	const map = new Map()
+	for (const item of items) {
+		if (item.id !== null) {
+			map.set(item.id, item)
+		}
+	}
+	return map
+}
+
+/**
+ * Everything the rules read, collected once, and the failure list they fill.
+ *
+ * @return {object} The run.
+ */
+function parityRun() {
 	const faces = collectServerFaces()
 	const regs = collectJsRegistrations()
 	const { schemas, files: schemaFiles } = collectOrSchemas()
-
-	const jsById = new Map()
-	for (const r of regs) {
-		if (r.id !== null) {
-			jsById.set(r.id, r)
-		}
+	return {
+		faces,
+		regs,
+		schemas,
+		schemaFiles,
+		jsById: byId(regs),
+		faceById: byId(faces),
+		failures: [],
 	}
-	const faceById = new Map()
-	for (const f of faces) {
-		if (f.id !== null) {
-			faceById.set(f.id, f)
-		}
-	}
+}
 
-	// --- R1: complete render pair for the declared renderMode ---------------
-	counts.R1 = 0
+/**
+ * R1: a registration with its own id ships the complete render pair for its renderMode.
+ *
+ * @param {object} run The faces, registrations and schemas, and the failures so far.
+ *
+ * @return {number} The assertions this rule ran.
+ */
+function checkRenderPairs(run) {
+	const { regs, failures } = run
+	let count = 0
 	for (const r of regs) {
 		if (r.id === null) {
 			continue // identity inherited from a spread — covered by R5
 		}
-		counts.R1++
+		count++
 		const mode = r.renderMode === null ? 'component' : r.renderMode
 		const required = mode === 'mount' ? ['mount', 'unmount'] : ['tab', 'widget']
 		for (const key of required) {
@@ -820,9 +854,19 @@ function main() {
 			}
 		}
 	}
+	return count
+}
 
-	// --- R2: server↔JS id correlation ---------------------------------------
-	counts.R2 = 0
+/**
+ * R2: server and JS faces correlate by id, both ways.
+ *
+ * @param {object} run The faces, registrations and schemas, and the failures so far.
+ *
+ * @return {number} The assertions this rule ran.
+ */
+function checkIdCorrelation(run) {
+	const { faces, regs, jsById, faceById, failures } = run
+	let count = 0
 	for (const f of faces) {
 		if (f.id === null) {
 			failures.push(
@@ -831,7 +875,7 @@ function main() {
 			)
 			continue
 		}
-		counts.R2++
+		count++
 		// R2 as documented above: a RENDER-SURFACE leaf needs a JS half. A
 		// data-provider-only descriptor (portaliq-change-proposals) is served by
 		// OpenRegister's integrations route and never mounts, so it has none.
@@ -850,7 +894,7 @@ function main() {
 		if (r.id === null) {
 			continue
 		}
-		counts.R2++
+		count++
 		if (faceById.has(r.id) === false) {
 			failures.push(
 				`✗ [R2 id-correlation] registerIntegration id "${r.id}" (${r.file}) has NO matching `
@@ -861,15 +905,25 @@ function main() {
 			)
 		}
 	}
+	return count
+}
 
-	// --- R3: renderMode agreement across layers -----------------------------
-	counts.R3 = 0
+/**
+ * R3: a shared id declares the same renderMode on both faces.
+ *
+ * @param {object} run The faces, registrations and schemas, and the failures so far.
+ *
+ * @return {number} The assertions this rule ran.
+ */
+function checkRenderModes(run) {
+	const { jsById, faceById, failures } = run
+	let count = 0
 	for (const [id, f] of faceById) {
 		const r = jsById.get(id)
 		if (r === undefined || f.renderMode === null || r.renderMode === null) {
 			continue
 		}
-		counts.R3++
+		count++
 		if (f.renderMode !== r.renderMode) {
 			failures.push(
 				`✗ [R3 renderMode] leaf "${id}" declares renderMode "${f.renderMode}" server-side `
@@ -878,29 +932,31 @@ function main() {
 			)
 		}
 	}
+	return count
+}
 
-	// --- R4: cross-layer metadata agreement ---------------------------------
-	const COMPARED = [
-		'label',
-		'icon',
-		'group',
-		'requiredApp',
-		'referenceType',
-		'surfaces',
-	]
-	counts.R4 = 0
+/**
+ * R4: a shared id's statically-declared metadata agrees across faces.
+ *
+ * @param {object} run The faces, registrations and schemas, and the failures so far.
+ *
+ * @return {number} The assertions this rule ran.
+ */
+function checkMetadata(run) {
+	const { jsById, faceById, failures } = run
+	let count = 0
 	for (const [id, f] of faceById) {
 		const r = jsById.get(id)
 		if (r === undefined) {
 			continue
 		}
-		for (const field of COMPARED) {
+		for (const field of COMPARED_FIELDS) {
 			const left = f.fields[field]
 			const right = r.fields[field]
 			if (left === undefined || right === undefined) {
 				continue
 			}
-			counts.R4++
+			count++
 			if (sameValue(left, right) === false) {
 				failures.push(
 					`✗ [R4 metadata] leaf "${id}" field \`${field}\` mismatch across layers: `
@@ -910,12 +966,22 @@ function main() {
 			}
 		}
 	}
+	return count
+}
 
-	// --- R5: a spread registration must spread the OWNING package's descriptor
-	counts.R5 = 0
+/**
+ * R5: a spread registration spreads the owning package's descriptor.
+ *
+ * @param {object} run The faces, registrations and schemas, and the failures so far.
+ *
+ * @return {number} The assertions this rule ran.
+ */
+function checkSpreadSources(run) {
+	const { regs, failures } = run
+	let count = 0
 	for (const r of regs) {
 		for (const symbol of r.spreads) {
-			counts.R5++
+			count++
 			const source = r.spreadSources[symbol]
 			if (source === null) {
 				failures.push(
@@ -939,58 +1005,93 @@ function main() {
 			)
 		}
 	}
+	return count
+}
 
-	// --- R6: offlineConfig names schemas/properties this repo declares -------
-	counts.R6 = 0
-	for (const r of regs) {
-		if (r.offlineConfig === undefined) {
+/**
+ * R6 for one registration that supplies an offlineConfig.
+ *
+ * @param {object} run The faces, registrations and schemas, and the failures so far.
+ * @param {object} r The registration.
+ *
+ * @return {number} The assertions run for it.
+ */
+function checkOfflineConfigOf(run, r) {
+	const { schemas, schemaFiles, failures } = run
+	let count = 0
+	if (schemaFiles === 0) {
+		failures.push(
+			`✗ [R6 offlineConfig] registerIntegration in ${r.file} supplies an \`offlineConfig\` `
+				+ `naming OpenRegister schemas, but this repo declares no register/schema JSON under `
+				+ `lib/Settings/** to check it against — the mapping cannot be verified.`,
+		)
+		return count
+	}
+	const planned = r.offlineConfig.plannedSchema
+	for (const key of OFFLINE_CONFIG_CONTRACT.schemas) {
+		const slug = r.offlineConfig[key]
+		if (slug === undefined) {
 			continue
 		}
-		if (schemaFiles === 0) {
+		count++
+		if (Object.hasOwn(schemas, slug) === false) {
 			failures.push(
-				`✗ [R6 offlineConfig] registerIntegration in ${r.file} supplies an \`offlineConfig\` `
-					+ `naming OpenRegister schemas, but this repo declares no register/schema JSON under `
-					+ `lib/Settings/** to check it against — the mapping cannot be verified.`,
+				`✗ [R6 offlineConfig] leaf offlineConfig.${key} = "${slug}" (${r.file}) names a `
+					+ `schema this repo does not declare in lib/Settings/** — the leaf would query a `
+					+ `schema that does not exist. Declared slugs: ${Object.keys(schemas).sort().join(', ')}`,
 			)
-			continue
-		}
-		const planned = r.offlineConfig.plannedSchema
-		for (const key of OFFLINE_CONFIG_CONTRACT.schemas) {
-			const slug = r.offlineConfig[key]
-			if (slug === undefined) {
-				continue
-			}
-			counts.R6++
-			if (Object.hasOwn(schemas, slug) === false) {
-				failures.push(
-					`✗ [R6 offlineConfig] leaf offlineConfig.${key} = "${slug}" (${r.file}) names a `
-						+ `schema this repo does not declare in lib/Settings/** — the leaf would query a `
-						+ `schema that does not exist. Declared slugs: ${Object.keys(schemas).sort().join(', ')}`,
-				)
-			}
-		}
-		for (const key of OFFLINE_CONFIG_CONTRACT.plannedFields) {
-			const prop = r.offlineConfig[key]
-			if (prop === undefined || planned === undefined) {
-				continue
-			}
-			const props = schemas[planned]
-			if (props === undefined) {
-				continue // already reported by the schema loop above
-			}
-			counts.R6++
-			if (props.includes(prop) === false) {
-				failures.push(
-					`✗ [R6 offlineConfig] leaf offlineConfig.${key} = "${prop}" (${r.file}) is not a `
-						+ `property of schema "${planned}" as declared in lib/Settings/** — the leaf `
-						+ `would filter/display on a property that does not exist. Declared properties: `
-						+ `${[...new Set(props)].sort().join(', ')}`,
-				)
-			}
 		}
 	}
+	for (const key of OFFLINE_CONFIG_CONTRACT.plannedFields) {
+		const prop = r.offlineConfig[key]
+		if (prop === undefined || planned === undefined) {
+			continue
+		}
+		const props = schemas[planned]
+		if (props === undefined) {
+			continue // already reported by the schema loop above
+		}
+		count++
+		if (props.includes(prop) === false) {
+			failures.push(
+				`✗ [R6 offlineConfig] leaf offlineConfig.${key} = "${prop}" (${r.file}) is not a `
+					+ `property of schema "${planned}" as declared in lib/Settings/** — the leaf `
+					+ `would filter/display on a property that does not exist. Declared properties: `
+					+ `${[...new Set(props)].sort().join(', ')}`,
+			)
+		}
+	}
+	return count
+}
 
-	// --- report --------------------------------------------------------------
+/**
+ * R6: an offlineConfig names schemas and properties this repo declares.
+ *
+ * @param {object} run The faces, registrations and schemas, and the failures so far.
+ *
+ * @return {number} The assertions this rule ran.
+ */
+function checkOfflineConfigs(run) {
+	let count = 0
+	for (const r of run.regs) {
+		if (r.offlineConfig !== undefined) {
+			count += checkOfflineConfigOf(run, r)
+		}
+	}
+	return count
+}
+
+/**
+ * Print the verdict and exit: 0 when every rule passed over real subject
+ * matter, 1 otherwise.
+ *
+ * @param {object} run The run, with its failures.
+ * @param {Object<string, number>} counts The assertions run per rule.
+ *
+ * @return {void}
+ */
+function report(run, counts) {
+	const { faces, regs, schemaFiles, failures } = run
 	const scope =
 		`${faces.length} server leaf face(s), ${regs.length} JS registration(s), `
 		+ `${schemaFiles} OpenRegister schema declaration file(s)`
@@ -1024,6 +1125,23 @@ function main() {
 
 	console.error(`\nAssertions run per rule: ${perRule}`)
 	process.exit(1)
+}
+
+/**
+ * Run every rule and report.
+ *
+ * @return {void}
+ */
+function main() {
+	const run = parityRun()
+	report(run, {
+		R1: checkRenderPairs(run),
+		R2: checkIdCorrelation(run),
+		R3: checkRenderModes(run),
+		R4: checkMetadata(run),
+		R5: checkSpreadSources(run),
+		R6: checkOfflineConfigs(run),
+	})
 }
 
 if (require.main === module) {

@@ -10,6 +10,7 @@ use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
 use OCA\Portaliq\Service\PortalThemeResolver;
 use OCA\Portaliq\Service\PortalTokenCss;
+use OCA\Portaliq\Service\RequestedPortal;
 use OCA\Portaliq\Service\SiteAddressing;
 use OCA\Portaliq\Service\SiteShell;
 use OCA\Portaliq\Service\SiteShellTheme;
@@ -28,6 +29,7 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(SiteAddressing::class)]
 #[UsesClass(PortalThemeParents::class)]
 #[UsesClass(PortalTokenCss::class)]
+#[UsesClass(RequestedPortal::class)]
 class SiteShellTest extends TestCase {
 	/**
 	 * Build the shell over doubles.
@@ -37,13 +39,14 @@ class SiteShellTest extends TestCase {
 	 * @param array|null           $portal The resolved portal.
 	 * @param bool                 $resolverThrows Whether resolve() throws.
 	 * @param bool                 $orgThrows Whether the organisation lookup throws.
+	 * @param array<string, string> $headers Other request headers, by name.
 	 *
 	 * @return array{0: SiteShell, 1: array<string, \PHPUnit\Framework\MockObject\MockObject>}
 	 */
-	private function shell(array $params, string $accept, ?array $portal, bool $resolverThrows=false, bool $orgThrows=false): array {
+	private function shell(array $params, string $accept, ?array $portal, bool $resolverThrows=false, bool $orgThrows=false, array $headers=[]): array {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParam')->willReturnCallback(static fn (string $key, $default = null) => ($params[$key] ?? $default));
-		$request->method('getHeader')->willReturn($accept);
+		$request->method('getHeader')->willReturnCallback(static fn (string $name): string => ($name === 'Accept-Language' ? $accept : ($headers[$name] ?? '')));
 
 		$resolver = $this->createMock(PortalResolver::class);
 		if ($resolverThrows === true) {
@@ -85,6 +88,19 @@ class SiteShellTest extends TestCase {
 
 		return [$shell, ['resolver' => $resolver, 'notices' => $notices]];
 	}//end shell()
+
+	/**
+	 * The portal the site names in its header alone is the requested portal.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-old-portal-links-must-land-on-the-site-req-srp-048
+	 */
+	public function testTheSiteHeaderNamesTheRequestedPortal(): void {
+		[$shell] = $this->shell([], 'nl', ['slug' => 'zuid'], headers: ['X-Portaliq-Portal' => 'zuid']);
+
+		$this->assertSame('zuid', $shell->requestedPortalSlug());
+	}//end testTheSiteHeaderNamesTheRequestedPortal()
 
 	/**
 	 * A resolved themed portal fills every template parameter.

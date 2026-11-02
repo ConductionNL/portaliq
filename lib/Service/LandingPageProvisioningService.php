@@ -65,12 +65,12 @@ class LandingPageProvisioningService {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Reads portal/page rows for validation.
+	 * @param ScopedCollectionReaderInterface $reader Reads portal/page rows for validation.
 	 * @param PortalObjectWriter $writer Writes the form + page objects.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly LoggerInterface $logger,
 	) {

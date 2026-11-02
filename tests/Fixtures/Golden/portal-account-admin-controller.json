@@ -1,0 +1,512 @@
+{
+    "provision": {
+        "anonymous": {
+            "status": 401,
+            "data": {
+                "error": "not_authenticated"
+            },
+            "calls": []
+        },
+        "ordinary": {
+            "status": 403,
+            "data": {
+                "error": "forbidden"
+            },
+            "calls": [
+                {
+                    "requireAction": [
+                        "resident-bob",
+                        "portal.provision"
+                    ]
+                }
+            ]
+        },
+        "clerk": {
+            "status": 200,
+            "data": {
+                "subjectRef": "subject-new",
+                "status": "pending"
+            },
+            "calls": [
+                {
+                    "requireAction": [
+                        "clerk-anna",
+                        "portal.provision"
+                    ]
+                },
+                {
+                    "provision": {
+                        "audience": "client",
+                        "organisation": "gemeente-x",
+                        "identityType": "digid",
+                        "identityRef": "bsn-1",
+                        "email": "a@example.org",
+                        "verifiedEmail": true,
+                        "provisionedBy": "clerk-anna",
+                        "displayName": "Anna"
+                    }
+                }
+            ]
+        }
+    },
+    "void": {
+        "anonymous": {
+            "status": 401,
+            "data": {
+                "error": "not_authenticated"
+            },
+            "calls": []
+        },
+        "ordinary": {
+            "status": 403,
+            "data": {
+                "error": "forbidden"
+            },
+            "calls": [
+                {
+                    "requireAction": [
+                        "resident-bob",
+                        "portal.provision"
+                    ]
+                }
+            ]
+        },
+        "clerk": {
+            "status": 200,
+            "data": {
+                "status": "void"
+            },
+            "calls": [
+                {
+                    "requireAction": [
+                        "clerk-anna",
+                        "portal.provision"
+                    ]
+                },
+                {
+                    "voidPending": {
+                        "subjectRef": "subject-1",
+                        "reason": "mistake",
+                        "voidedBy": "clerk-anna"
+                    }
+                }
+            ]
+        }
+    },
+    "void-no-reason": {
+        "anonymous": {
+            "status": 401,
+            "data": {
+                "error": "not_authenticated"
+            },
+            "calls": []
+        },
+        "ordinary": {
+            "status": 403,
+            "data": {
+                "error": "forbidden"
+            },
+            "calls": [
+                {
+                    "requireAction": [
+                        "resident-bob",
+                        "portal.provision"
+                    ]
+                }
+            ]
+        },
+        "clerk": {
+            "status": 400,
+            "data": {
+                "error": "reason_required"
+            },
+            "calls": [
+                {
+                    "requireAction": [
+                        "clerk-anna",
+                        "portal.provision"
+                    ]
+                }
+            ]
+        }
+    },
+    "invite": {
+        "anonymous": {
+            "status": 401,
+            "data": {
+                "error": "not_authenticated"
+            },
+            "calls": []
+        },
+        "ordinary": {
+            "status": 403,
+            "data": {
+                "error": "forbidden"
+            },
+            "calls": [
+                {
+                    "requireAction": [
+                        "resident-bob",
+                        "portal.provision"
+                    ]
+                }
+            ]
+        },
+        "clerk": {
+            "status": 200,
+            "data": {
+                "state": "sent",
+                "expiresAt": "2026-11-08"
+            },
+            "calls": [
+                {
+                    "requireAction": [
+                        "clerk-anna",
+                        "portal.provision"
+                    ]
+                },
+                {
+                    "invite": {
+                        "email": "b@example.org",
+                        "organisation": "gemeente-x",
+                        "audience": "member",
+                        "invitedBy": "clerk-anna",
+                        "ttl": ""
+                    }
+                },
+                {
+                    "send": {
+                        "template": "invitation",
+                        "email": "b@example.org",
+                        "secret": "secret-1",
+                        "organisation": "gemeente-x",
+                        "portal": null,
+                        "details": []
+                    }
+                }
+            ]
+        }
+    },
+    "invitations": {
+        "anonymous": {
+            "status": 401,
+            "data": {
+                "error": "not_authenticated"
+            },
+            "calls": []
+        },
+        "ordinary": {
+            "status": 403,
+            "data": {
+                "error": "forbidden"
+            },
+            "calls": [
+                {
+                    "requireAction": [
+                        "resident-bob",
+                        "portal.provision"
+                    ]
+                }
+            ]
+        },
+        "clerk": {
+            "status": 200,
+            "data": {
+                "invitations": [
+                    {
+                        "id": "inv-1",
+                        "state": "sent"
+                    }
+                ]
+            },
+            "calls": [
+                {
+                    "requireAction": [
+                        "clerk-anna",
+                        "portal.provision"
+                    ]
+                },
+                {
+                    "sentBy": {
+                        "invitedBy": "clerk-anna",
+                        "organisation": "gemeente-x",
+                        "now": null
+                    }
+                }
+            ]
+        }
+    },
+    "revokeInvitation": {
+        "anonymous": {
+            "status": 401,
+            "data": {
+                "error": "not_authenticated"
+            },
+            "calls": []
+        },
+        "ordinary": {
+            "status": 403,
+            "data": {
+                "error": "forbidden"
+            },
+            "calls": [
+                {
+                    "requireAction": [
+                        "resident-bob",
+                        "portal.provision"
+                    ]
+                }
+            ]
+        },
+        "clerk": {
+            "status": 200,
+            "data": {
+                "state": "revoked"
+            },
+            "calls": [
+                {
+                    "requireAction": [
+                        "clerk-anna",
+                        "portal.provision"
+                    ]
+                },
+                {
+                    "revoke": {
+                        "id": "inv-1",
+                        "organisation": "gemeente-x"
+                    }
+                }
+            ]
+        }
+    },
+    "resendInvitation": {
+        "anonymous": {
+            "status": 401,
+            "data": {
+                "error": "not_authenticated"
+            },
+            "calls": []
+        },
+        "ordinary": {
+            "status": 403,
+            "data": {
+                "error": "forbidden"
+            },
+            "calls": [
+                {
+                    "requireAction": [
+                        "resident-bob",
+                        "portal.provision"
+                    ]
+                }
+            ]
+        },
+        "clerk": {
+            "status": 200,
+            "data": {
+                "state": "sent",
+                "expiresAt": "2026-11-09"
+            },
+            "calls": [
+                {
+                    "requireAction": [
+                        "clerk-anna",
+                        "portal.provision"
+                    ]
+                },
+                {
+                    "resend": {
+                        "id": "inv-2",
+                        "organisation": "gemeente-x",
+                        "ttl": ""
+                    }
+                },
+                {
+                    "send": {
+                        "template": "invitation",
+                        "email": "c@example.org",
+                        "secret": "secret-2",
+                        "organisation": "gemeente-x",
+                        "portal": null,
+                        "details": []
+                    }
+                }
+            ]
+        }
+    },
+    "approve": {
+        "anonymous": {
+            "status": 401,
+            "data": {
+                "error": "not_authenticated"
+            },
+            "calls": []
+        },
+        "ordinary": {
+            "status": 403,
+            "data": {
+                "error": "forbidden"
+            },
+            "calls": [
+                {
+                    "requireAction": [
+                        "resident-bob",
+                        "portal.provision"
+                    ]
+                }
+            ]
+        },
+        "clerk": {
+            "status": 200,
+            "data": {
+                "status": "active"
+            },
+            "calls": [
+                {
+                    "requireAction": [
+                        "clerk-anna",
+                        "portal.provision"
+                    ]
+                },
+                {
+                    "approvePending": {
+                        "subjectRef": "subject-2"
+                    }
+                }
+            ]
+        }
+    },
+    "refuse": {
+        "anonymous": {
+            "status": 401,
+            "data": {
+                "error": "not_authenticated"
+            },
+            "calls": []
+        },
+        "ordinary": {
+            "status": 403,
+            "data": {
+                "error": "forbidden"
+            },
+            "calls": [
+                {
+                    "requireAction": [
+                        "resident-bob",
+                        "portal.provision"
+                    ]
+                }
+            ]
+        },
+        "clerk": {
+            "status": 200,
+            "data": {
+                "status": "void"
+            },
+            "calls": [
+                {
+                    "requireAction": [
+                        "clerk-anna",
+                        "portal.provision"
+                    ]
+                },
+                {
+                    "voidPending": {
+                        "subjectRef": "subject-3",
+                        "reason": "unknown address",
+                        "voidedBy": "clerk-anna"
+                    }
+                }
+            ]
+        }
+    },
+    "refuse-no-reason": {
+        "anonymous": {
+            "status": 401,
+            "data": {
+                "error": "not_authenticated"
+            },
+            "calls": []
+        },
+        "ordinary": {
+            "status": 403,
+            "data": {
+                "error": "forbidden"
+            },
+            "calls": [
+                {
+                    "requireAction": [
+                        "resident-bob",
+                        "portal.provision"
+                    ]
+                }
+            ]
+        },
+        "clerk": {
+            "status": 400,
+            "data": {
+                "error": "reason_required"
+            },
+            "calls": [
+                {
+                    "requireAction": [
+                        "clerk-anna",
+                        "portal.provision"
+                    ]
+                }
+            ]
+        }
+    },
+    "signInAddress": {
+        "anonymous": {
+            "status": 401,
+            "data": {
+                "error": "not_authenticated"
+            },
+            "calls": []
+        },
+        "ordinary": {
+            "status": 403,
+            "data": {
+                "error": "forbidden"
+            },
+            "calls": [
+                {
+                    "requireAction": [
+                        "resident-bob",
+                        "portal.provision"
+                    ]
+                }
+            ]
+        },
+        "clerk": {
+            "status": 200,
+            "data": {
+                "signInAddress": "new@example.org"
+            },
+            "calls": [
+                {
+                    "requireAction": [
+                        "clerk-anna",
+                        "portal.provision"
+                    ]
+                },
+                {
+                    "findBySubjectRef": {
+                        "subjectRef": "subject-4"
+                    }
+                },
+                {
+                    "change": {
+                        "account": {
+                            "subjectRef": "subject-4"
+                        },
+                        "newAddress": " New@Example.ORG ",
+                        "byStaff": true,
+                        "trust": ""
+                    }
+                }
+            ]
+        }
+    }
+}

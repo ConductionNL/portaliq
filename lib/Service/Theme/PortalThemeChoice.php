@@ -22,7 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Theme;
 
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalThemeResolver;
 
@@ -48,13 +48,13 @@ class PortalThemeChoice {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader  $reader   Reads the portal.
+	 * @param ScopedCollectionReaderInterface  $reader   Reads the portal.
 	 * @param PortalObjectWriter  $writer   Saves the choice.
 	 * @param PortalThemeResolver $resolver The theme app's catalogue and tokens.
 	 * @param PortalThemeContrast $contrast The contrast verdict per set.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly PortalThemeResolver $resolver,
 		private readonly PortalThemeContrast $contrast,

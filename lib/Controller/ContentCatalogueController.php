@@ -33,7 +33,6 @@ use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PublicCatalogue;
 use OCA\Portaliq\Service\PublicCatalogueQuery;
 use OCP\AppFramework\Controller;
-use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
@@ -45,12 +44,13 @@ use OCP\IRequest;
  *
  * @spec openspec/changes/portal-public-catalogue/specs/portal-public-catalogue/spec.md#requirement-a-visitor-may-search-and-filter-a-portals-public-catalogue
  *
- * @SuppressWarnings(PHPMD.StaticAccess) -- PortalSessionService::trustSatisfies,
- * the one trust ordering every portal gate shares.
  * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- index() takes one query parameter per catalogue
  * filter, bound by name from the route.
  */
 class ContentCatalogueController extends Controller {
+	use PublicContentGate;
+	use BearerCachedJson;
+
 	/**
 	 * The longest query.
 	 */
@@ -284,78 +284,4 @@ class ContentCatalogueController extends Controller {
 
 		return $filters;
 	}//end withVisitorValues()
-
-	/**
-	 * Null when the portal is public or the session meets its trust; else
-	 * the refusal, with the portal's ways in.
-	 *
-	 * @param array<string, mixed> $portal The resolved portal.
-	 *
-	 * @return JSONResponse|null
-	 */
-	private function refuseUnlessPermitted(array $portal): ?JSONResponse {
-		$auth  = (array)($portal['authentication'] ?? []);
-		$modes = array_values(array_filter((array)($auth['modes'] ?? []), 'is_string'));
-		if ($modes === [] || in_array('public', $modes, true) === true) {
-			return null;
-		}
-
-		$subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
-		if ($subject === null) {
-			return $this->refusal(error: 'authentication_required', status: Http::STATUS_UNAUTHORIZED, modes: $modes);
-		}
-
-		if (PortalSessionService::trustSatisfies($subject['trust'] ?? null, ($auth['minTrust'] ?? null)) === false) {
-			return $this->refusal(error: 'insufficient_trust', status: Http::STATUS_FORBIDDEN, modes: $modes);
-		}
-
-		return null;
-	}//end refuseUnlessPermitted()
-
-	/**
-	 * A refusal that is never cached.
-	 *
-	 * @param string             $error  The error code.
-	 * @param int                $status The status.
-	 * @param array<int, string> $modes  The portal's ways in.
-	 *
-	 * @return JSONResponse
-	 */
-	private function refusal(string $error, int $status, array $modes): JSONResponse {
-		$response = new JSONResponse(['error' => $error, 'authentication' => ['modes' => $modes]], $status);
-		$response->addHeader('Cache-Control', 'private, no-store');
-
-		return $response;
-	}//end refusal()
-
-	/**
-	 * The answer, cacheable for a visitor who sent no bearer.
-	 *
-	 * @param array<string, mixed> $payload The answer.
-	 *
-	 * @return JSONResponse
-	 */
-	private function publicJson(array $payload): JSONResponse {
-		$response = new JSONResponse($payload);
-		$cache    = 'private, no-store';
-		if ((string)$this->request->getHeader('Authorization') === '') {
-			$cache = 'public, max-age=300, must-revalidate';
-		}
-
-		$response->addHeader('Cache-Control', $cache);
-
-		return $response;
-	}//end publicJson()
-
-	/**
-	 * The shared 404.
-	 *
-	 * @return JSONResponse
-	 */
-	private function notFound(): JSONResponse {
-		$response = new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
-		$response->addHeader('Cache-Control', 'private, no-store');
-
-		return $response;
-	}//end notFound()
 }//end class

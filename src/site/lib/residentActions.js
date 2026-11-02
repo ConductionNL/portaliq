@@ -175,26 +175,20 @@ function headersFor(token) {
  * Never throws: a network failure is `{ok: false, status: 0}`, so the block
  * says it did not work instead of breaking.
  *
- * @param {string}   authBase  The portal API base (`.../portal/api`).
- * @param {string}   appId     The contributing app.
- * @param {string}   actionId  The action.
- * @param {object}   body      The body.
- * @param {string}   token     The portal bearer.
- * @param {Function} fetchImpl `fetch`, replaceable in tests.
- * @param {{submissionKey?: string}} [options] The form's submission key (REQ-AFS-001).
+ * @param {object}   request          The action to run.
+ * @param {string}   request.authBase The portal API base (`.../portal/api`).
+ * @param {string}   request.appId    The contributing app.
+ * @param {string}   request.actionId The action.
+ * @param {object}   request.body     The body.
+ * @param {string}   request.token    The portal bearer.
+ * @param {{submissionKey?: string}} [request.options] The form's submission key (REQ-AFS-001).
+ * @param {typeof fetch} fetchImpl    `fetch`, replaceable in tests.
  * @return {Promise<object>} `{ok, status, body}`.
  *
  * @spec openspec/changes/woo-journey-entry-points/specs/portal-federated-search/spec.md#requirement-a-resident-must-be-able-to-keep-a-publication-or-one-document-in-a-dossier-req-wje-002
  */
-export async function postAction(
-	authBase,
-	appId,
-	actionId,
-	body,
-	token,
-	fetchImpl = fetch,
-	options = {},
-) {
+export async function postAction(request, fetchImpl = fetch) {
+	const { authBase, appId, actionId, body, token, options = {} } = request
 	try {
 		const response = await fetchImpl(
 			`${authBase}/actions/${encodeURIComponent(appId)}/${encodeURIComponent(actionId)}`,
@@ -231,13 +225,8 @@ export function forwardApi(authBase, token, fetchImpl = fetch) {
 	return {
 		forwardAction(appId, actionId, body, options = {}) {
 			return postAction(
-				authBase,
-				appId,
-				actionId,
-				body,
-				token(),
+				{ authBase, appId, actionId, body, token: token(), options },
 				fetchImpl,
-				options,
 			)
 		},
 	}

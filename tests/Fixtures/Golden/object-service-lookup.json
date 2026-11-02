@@ -1,0 +1,226 @@
+{
+    "OCA\\Portaliq\\Controller\\PushSubscriptionController": {
+        "object": true,
+        "throws": null,
+        "string": null,
+        "asked": [
+            "OCA\\OpenRegister\\Service\\ObjectService"
+        ]
+    },
+    "OCA\\Portaliq\\Controller\\NewsController": {
+        "object": true,
+        "throws": null,
+        "string": null,
+        "asked": [
+            "OCA\\OpenRegister\\Service\\ObjectService"
+        ]
+    },
+    "OCA\\Portaliq\\Controller\\EventController": {
+        "object": true,
+        "throws": null,
+        "string": null,
+        "asked": [
+            "OCA\\OpenRegister\\Service\\ObjectService"
+        ]
+    },
+    "OCA\\Portaliq\\Controller\\NewsletterController": {
+        "object": true,
+        "throws": null,
+        "string": null,
+        "asked": [
+            "OCA\\OpenRegister\\Service\\ObjectService"
+        ]
+    },
+    "OCA\\Portaliq\\Repair\\BackfillNewsPublishedAt": {
+        "object": true,
+        "throws": null,
+        "string": null,
+        "asked": [
+            "OCA\\OpenRegister\\Service\\ObjectService"
+        ]
+    },
+    "OCA\\Portaliq\\Repair\\BackfillCmsPortalReference": {
+        "object": true,
+        "throws": null,
+        "string": null,
+        "asked": [
+            "OCA\\OpenRegister\\Service\\ObjectService"
+        ]
+    },
+    "OCA\\Portaliq\\Repair\\MoveBindingDestination": {
+        "object": true,
+        "throws": null,
+        "string": null,
+        "asked": [
+            "OCA\\OpenRegister\\Service\\ObjectService"
+        ]
+    },
+    "OCA\\Portaliq\\Repair\\MoveActionSummarySentence": {
+        "object": true,
+        "throws": null,
+        "string": null,
+        "asked": [
+            "OCA\\OpenRegister\\Service\\ObjectService"
+        ]
+    },
+    "OCA\\Portaliq\\Service\\NewsRowSource": {
+        "object": true,
+        "throws": null,
+        "string": null,
+        "asked": [
+            "OCA\\OpenRegister\\Service\\ObjectService"
+        ]
+    },
+    "OCA\\Portaliq\\Service\\PortalObjectWriter": {
+        "object": true,
+        "throws": null,
+        "string": null,
+        "asked": [
+            "OCA\\OpenRegister\\Service\\ObjectService"
+        ]
+    },
+    "OCA\\Portaliq\\Service\\GuardianAudienceFixtureReader": {
+        "object": true,
+        "throws": null,
+        "string": null,
+        "asked": [
+            "OCA\\OpenRegister\\Service\\ObjectService"
+        ]
+    },
+    "OCA\\Portaliq\\Service\\NewsAudienceOptions": {
+        "object": true,
+        "throws": null,
+        "string": null,
+        "asked": [
+            "OCA\\OpenRegister\\Service\\ObjectService"
+        ]
+    },
+    "OCA\\Portaliq\\Service\\CaseTypeReader": {
+        "object": true,
+        "throws": null,
+        "string": null,
+        "asked": [
+            "OCA\\OpenRegister\\Service\\ObjectService"
+        ]
+    },
+    "OCA\\Portaliq\\Service\\EventSignupService": {
+        "object": true,
+        "throws": null,
+        "string": null,
+        "asked": [
+            "OCA\\OpenRegister\\Service\\ObjectService"
+        ]
+    },
+    "OCA\\Portaliq\\Service\\NewsReadReceiptService": {
+        "object": true,
+        "throws": null,
+        "string": null,
+        "asked": [
+            "OCA\\OpenRegister\\Service\\ObjectService"
+        ]
+    },
+    "OCA\\Portaliq\\Service\\GuardianAccountDirectory": {
+        "object": true,
+        "throws": null,
+        "string": null,
+        "asked": [
+            "OCA\\OpenRegister\\Service\\ObjectService"
+        ]
+    },
+    "OCA\\Portaliq\\Service\\EventRsvpService": {
+        "object": true,
+        "throws": null,
+        "string": null,
+        "asked": [
+            "OCA\\OpenRegister\\Service\\ObjectService"
+        ]
+    },
+    "OCA\\Portaliq\\Service\\GroupStaffFixtureReader": {
+        "object": true,
+        "throws": null,
+        "string": null,
+        "asked": [
+            "OCA\\OpenRegister\\Service\\ObjectService"
+        ]
+    },
+    "OCA\\Portaliq\\Service\\ActivityStore": {
+        "object": true,
+        "throws": null,
+        "string": null,
+        "asked": [
+            "OCA\\OpenRegister\\Service\\ObjectService"
+        ]
+    },
+    "OCA\\Portaliq\\Service\\EventFeedReader": {
+        "object": true,
+        "throws": null,
+        "string": null,
+        "asked": [
+            "OCA\\OpenRegister\\Service\\ObjectService"
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Notifications\\QuietHoursPolicy": {
+        "object": true,
+        "throws": null,
+        "string": null,
+        "asked": [
+            "OCA\\OpenRegister\\Service\\ObjectService"
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Notifications\\PendingPushService": {
+        "object": true,
+        "throws": null,
+        "string": null,
+        "asked": [
+            "OCA\\OpenRegister\\Service\\ObjectService"
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Identity\\PortalAccountsByClaim": {
+        "object": true,
+        "throws": null,
+        "string": null,
+        "asked": [
+            "OCA\\OpenRegister\\Service\\ObjectService"
+        ]
+    },
+    "OCA\\Portaliq\\Service\\ExampleResident\\ExampleResidentStore": {
+        "object": true,
+        "throws": null,
+        "string": null,
+        "asked": [
+            "OCA\\OpenRegister\\Service\\ObjectService"
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Messaging\\MessageStore": {
+        "object": true,
+        "throws": null,
+        "string": null,
+        "asked": [
+            "OCA\\OpenRegister\\Service\\ObjectService"
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Availability\\AvailabilityStore": {
+        "object": true,
+        "throws": null,
+        "string": null,
+        "asked": [
+            "OCA\\OpenRegister\\Service\\ObjectService"
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Traffic\\TrafficEventStore": {
+        "object": true,
+        "throws": null,
+        "string": null,
+        "asked": [
+            "OCA\\OpenRegister\\Service\\ObjectService"
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Traffic\\TrafficRecordingStore": {
+        "object": true,
+        "throws": null,
+        "string": null,
+        "asked": [
+            "OCA\\OpenRegister\\Service\\ObjectService"
+        ]
+    }
+}

@@ -40,6 +40,7 @@ use OCA\Portaliq\Service\Identity\EmailLink\EmailLinkTokens;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\RequestedPortal;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -368,11 +369,6 @@ class EmailLinkController extends Controller {
 	 * @return array<string, mixed>|null
 	 */
 	private function site(): ?array {
-		$named = $this->request->getParam('portal', '');
-		if (is_string($named) === false) {
-			$named = '';
-		}
-
-		return $this->portals->resolve(request: $this->request, portalSlug: trim($named));
+		return $this->portals->resolve(request: $this->request, portalSlug: (new RequestedPortal())->slug(request: $this->request));
 	}//end site()
 }//end class

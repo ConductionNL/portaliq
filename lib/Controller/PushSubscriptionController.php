@@ -29,6 +29,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PagedObjectReads;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
@@ -46,6 +47,7 @@ use Throwable;
  * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
  */
 class PushSubscriptionController extends Controller implements PortalProtected {
+	use ObjectServiceLookup;
 	use PagedObjectReads;
 
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
@@ -306,23 +308,4 @@ class PushSubscriptionController extends Controller implements PortalProtected {
 	private function subject(): ?array {
 		return $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
 	}//end subject()
-
-	/**
-	 * Resolve OpenRegister's ObjectService, or null when unavailable.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 }//end class

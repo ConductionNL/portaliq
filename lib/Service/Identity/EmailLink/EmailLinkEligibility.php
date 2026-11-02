@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity\EmailLink;
 
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
  * Finds the one account an e-mail link may sign in to.
@@ -56,11 +56,11 @@ class EmailLinkEligibility {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader  Reads the accounts.
+	 * @param ScopedCollectionReaderInterface $reader  Reads the accounts.
 	 * @param EmailLinkAddress   $address Normalises the address.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly EmailLinkAddress $address,
 	) {
 	}//end __construct()
