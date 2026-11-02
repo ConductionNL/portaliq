@@ -249,19 +249,6 @@ export default {
 
 	emits: PAGE_EMITS,
 
-	watch: {
-		/**
-		 * Tell the area whether the page carries its own h1.
-		 *
-		 * @param {boolean} shows Whether an open task is on screen.
-		 * @return {void}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
-		 */
-		showsTask(shows) {
-			this.$emit('titled', shows)
-		},
-	},
-
 	data() {
 		return {
 			loading: true,
@@ -366,6 +353,19 @@ export default {
 		 */
 		accept() {
 			return acceptAttribute(this.rules.acceptedTypes)
+		},
+	},
+
+	watch: {
+		/**
+		 * Tell the area whether the page carries its own h1.
+		 *
+		 * @param {boolean} shows Whether an open task is on screen.
+		 * @return {void}
+		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+		 */
+		showsTask(shows) {
+			this.$emit('titled', shows)
 		},
 	},
 
