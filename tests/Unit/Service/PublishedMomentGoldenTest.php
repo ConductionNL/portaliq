@@ -29,6 +29,7 @@ use ReflectionClass;
  *
  * @covers \OCA\Portaliq\Service\NewsFeedReader
  * @covers \OCA\Portaliq\Service\PublicNewsReader
+ * @uses   \OCA\Portaliq\Service\PublishedMoment
  */
 class PublishedMomentGoldenTest extends TestCase {
 
