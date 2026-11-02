@@ -119,9 +119,26 @@ class StaffRowWriteGoldenTest extends TestCase {
 			'news unpublish x2' => fn (ContainerInterface $c) => $this->news(container: $c)->unpublish('x2'),
 			'newsletter send x2' => fn (ContainerInterface $c) => $this->newsletter(container: $c)->send('x2'),
 			'newsletter send no id' => fn (ContainerInterface $c) => $this->newsletter(container: $c)->send(''),
-			'event create' => fn (ContainerInterface $c) => $this->event(container: $c)->create('Feest', '2026-12-01T10:00:00Z', ['groupRefs' => ['g1']], 'Omschrijving', '2026-12-01T12:00:00Z', true, [['name' => 'Hulp']]),
+			'event create' => fn (ContainerInterface $c) => $this->event(container: $c)->create(
+				title: 'Feest',
+				start: '2026-12-01T10:00:00Z',
+				target: ['groupRefs' => ['g1']],
+				description: 'Omschrijving',
+				end: '2026-12-01T12:00:00Z',
+				rsvpEnabled: true,
+				signupRoles: [['name' => 'Hulp']]
+			),
 			'event create no target' => fn (ContainerInterface $c) => $this->event(container: $c)->create('Feest', '2026-12-01T10:00:00Z', []),
-			'news create' => fn (ContainerInterface $c) => $this->news(container: $c)->create('Titel', 'Tekst', ['groupRefs' => ['g1']], ['p1'], true, 'zuid', 'Ouders', 'e1'),
+			'news create' => fn (ContainerInterface $c) => $this->news(container: $c)->create(
+				title: 'Titel',
+				body: 'Tekst',
+				target: ['groupRefs' => ['g1']],
+				photoRefs: ['p1'],
+				public: true,
+				portal: 'zuid',
+				audienceLabel: 'Ouders',
+				eventRef: 'e1'
+			),
 			'news create no body' => fn (ContainerInterface $c) => $this->news(container: $c)->create('Titel', '', ['groupRefs' => ['g1']]),
 			'newsletter create' => fn (ContainerInterface $c) => $this->newsletter(container: $c)->create('Brief', ['n1', 'n2'], ['groupRefs' => ['g1']]),
 			'newsletter create no items' => fn (ContainerInterface $c) => $this->newsletter(container: $c)->create('Brief', [], ['groupRefs' => ['g1']]),
@@ -206,7 +223,7 @@ class StaffRowWriteGoldenTest extends TestCase {
 	 */
 	private function logger(): LoggerInterface {
 		$asked  = &$this->asked;
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		foreach (['error', 'warning'] as $level) {
 			$logger->method($level)->willReturnCallback(
 				static function (string $message, array $context = []) use (&$asked, $level): void {
@@ -219,20 +236,40 @@ class StaffRowWriteGoldenTest extends TestCase {
 	}
 
 	private function event(ContainerInterface $container): EventController {
-		return new EventController($this->createMock(IRequest::class), $this->session(), $container, $this->logger(), $this->staffActionAuth(EventController::ACTION));
+		return new EventController(
+			request: $this->createMock(originalClassName: IRequest::class),
+			userSession: $this->session(),
+			container: $container,
+			logger: $this->logger(),
+			actionAuth: $this->staffActionAuth(action: EventController::ACTION)
+		);
 	}
 
 	private function news(ContainerInterface $container): NewsController {
 		$time = $this->createMock(ITimeFactory::class);
 		$time->method('getTime')->willReturn(1767225600);
 
-		return new NewsController($this->createMock(IRequest::class), $this->session(), $container, $this->logger(), $this->staffActionAuth(NewsController::ACTION), null, $time);
+		return new NewsController(
+			request: $this->createMock(originalClassName: IRequest::class),
+			userSession: $this->session(),
+			container: $container,
+			logger: $this->logger(),
+			actionAuth: $this->staffActionAuth(action: NewsController::ACTION),
+			timeFactory: $time
+		);
 	}
 
 	private function newsletter(ContainerInterface $container): NewsletterController {
 		$preflight = $this->createMock(NewsletterPreflightService::class);
 		$preflight->method('sendIsRefused')->willReturn(false);
 
-		return new NewsletterController($this->createMock(IRequest::class), $this->session(), $container, $preflight, $this->logger(), $this->staffActionAuth(NewsletterController::ACTION));
+		return new NewsletterController(
+			request: $this->createMock(originalClassName: IRequest::class),
+			userSession: $this->session(),
+			container: $container,
+			preflight: $preflight,
+			logger: $this->logger(),
+			actionAuth: $this->staffActionAuth(action: NewsletterController::ACTION)
+		);
 	}
 }
