@@ -29,7 +29,6 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\ObjectServiceLookup;
-use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -55,6 +54,7 @@ class EventController extends Controller {
 	use StaffActionGuard;
 	use ObjectArrayRow;
 	use TargetedAudience;
+	use StaffRowWrite;
 
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
@@ -170,21 +170,6 @@ class EventController extends Controller {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$writer = new PortalObjectWriter(container: $this->container, logger: $this->logger);
-		$updated = $writer->updateObject(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: '',
-			subjectRef: '',
-			organisation: '',
-			id: $id,
-			data: ['status' => 'published']
-		);
-
-		if ($updated === null) {
-			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
-		}
-
-		return new JSONResponse($updated);
+		return $this->writeRow(id: $id, data: ['status' => 'published']);
 	}//end publish()
 }//end class

@@ -30,7 +30,6 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\NewsletterPreflightService;
 use OCA\Portaliq\Service\ObjectServiceLookup;
-use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -55,6 +54,7 @@ class NewsletterController extends Controller {
 	use ObjectServiceLookup;
 	use StaffActionGuard;
 	use ObjectArrayRow;
+	use StaffRowWrite;
 
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
@@ -190,22 +190,7 @@ class NewsletterController extends Controller {
 			return new JSONResponse(['error' => 'empty-audience'], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
 
-		$writer = new PortalObjectWriter(container: $this->container, logger: $this->logger);
-		$updated = $writer->updateObject(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: '',
-			subjectRef: '',
-			organisation: '',
-			id: $id,
-			data: ['sentAt' => gmdate('c')]
-		);
-
-		if ($updated === null) {
-			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
-		}
-
-		return new JSONResponse($updated);
+		return $this->writeRow(id: $id, data: ['sentAt' => gmdate('c')]);
 	}//end send()
 
 	/**
