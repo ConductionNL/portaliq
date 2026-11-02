@@ -60,6 +60,7 @@ use Throwable;
  */
 class TrafficEventStore {
 	use ObjectServiceLookup;
+	use ExpiredRowPurge;
 
 	/**
 	 * OpenRegister's ObjectService FQCN, resolved lazily from the container.
@@ -178,44 +179,41 @@ class TrafficEventStore {
 	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
 	 */
 	public function purgeExpired(): int {
-		$objectService = $this->objectService();
-		if ($objectService === null) {
-			return 0;
-		}
+		return $this->purgeExpiredOf(schema: self::EVENT_SCHEMA, failure: 'Portaliq: traffic purge failed');
+	}
 
-		try {
-			if (method_exists($objectService, 'purgeExpiredObjectsRaw') === true) {
-				return (int)$objectService->purgeExpiredObjectsRaw(self::REGISTER, self::EVENT_SCHEMA);
+	/**
+	 * Delete expired raw events one by one through the ordinary path. Slow,
+	 * but retention is a promise and "the platform is old" is not a reason
+	 * to break it.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 *
+	 * @return int How many were removed.
+	 *
+	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
+	 */
+	protected function deleteExpired(object $objectService): int {
+		$now = gmdate('Y-m-d\TH:i:s\Z');
+		$rows = $this->findAll(schema: self::EVENT_SCHEMA, filters: ['expires' => ['lt' => $now]], limit: self::PAGE);
+		$removed = 0;
+		foreach ($rows as $row) {
+			$uuid = (string)($row['@self']['uuid'] ?? $row['uuid'] ?? $row['@self']['id'] ?? $row['id'] ?? '');
+			if ($uuid === '') {
+				continue;
 			}
 
-			// The fallback deletes one by one through the ordinary path. Slow,
-			// but retention is a promise and "the platform is old" is not a
-			// reason to break it.
-			$now = gmdate('Y-m-d\TH:i:s\Z');
-			$rows = $this->findAll(schema: self::EVENT_SCHEMA, filters: ['expires' => ['lt' => $now]], limit: self::PAGE);
-			$removed = 0;
-			foreach ($rows as $row) {
-				$uuid = (string)($row['@self']['uuid'] ?? $row['uuid'] ?? $row['@self']['id'] ?? $row['id'] ?? '');
-				if ($uuid === '') {
-					continue;
-				}
-
-				$objectService->deleteObject(
-					uuid: $uuid,
-					register: self::REGISTER,
-					schema: self::EVENT_SCHEMA,
-					_rbac: false,
-					_multitenancy: false
-				);
-				$removed++;
-			}
-
-			return $removed;
-		} catch (Throwable $e) {
-			$this->logger->error('Portaliq: traffic purge failed', ['reason' => $e->getMessage()]);
-
-			return 0;
+			$objectService->deleteObject(
+				uuid: $uuid,
+				register: self::REGISTER,
+				schema: self::EVENT_SCHEMA,
+				_rbac: false,
+				_multitenancy: false
+			);
+			$removed++;
 		}
+
+		return $removed;
 	}
 
 	/**
