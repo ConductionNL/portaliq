@@ -193,6 +193,11 @@ class MandateController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => $result], Http::STATUS_CONFLICT);
 		}
 
+		if ($result === PortalMandateAdminService::TRY_LATER) {
+			// Temporary: the invitation is still good, try again later.
+			return new JSONResponse(['error' => $result], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
 		if (is_string($result) === true) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}

@@ -53,11 +53,35 @@
 				{{ summary }}
 			</p>
 
+			<!-- The long description's markdown as text: headings and
+			     paragraphs, never markup (the richText block's rules). -->
+			<div
+				v-if="longDescription.length > 0"
+				class="pq-detail__long-description"
+				data-testid="publication-detail-long-description">
+				<template v-for="line in longDescription" :key="line.index">
+					<h2 v-if="line.level === 1" class="utrecht-heading-2">
+						{{ line.text }}
+					</h2>
+					<h3 v-else-if="line.level === 2" class="utrecht-heading-3">
+						{{ line.text }}
+					</h3>
+					<h4 v-else-if="line.level === 3" class="utrecht-heading-4">
+						{{ line.text }}
+					</h4>
+					<p v-else class="utrecht-paragraph">
+						{{ line.text }}
+					</p>
+				</template>
+			</div>
+
 			<!--
 				WHAT A VISITOR NEEDS, IN WORDS (resident-sees-words-not-codes):
 				the date, the information category by name and the themes by
 				name. The archive's bookkeeping (Plooi, retention, the
-				organisation id, the status) stays off the page.
+				organisation id, the status) stays off the page. A publication
+				of another schema adds its other public fields, named by the
+				schema (publication-page-shows-the-schemas-fields).
 			-->
 			<dl
 				v-if="fields.length > 0"
@@ -71,7 +95,9 @@
 					<!-- The cards variant sets the labels in a column of their
 					     own, without the colon (board Publicatie). -->
 					<dt class="pq-detail__label">
-						<strong>{{ cards ? field.label : `${field.label}:` }}</strong>
+						<strong>{{
+							cards ? field.label : `${field.label}:`
+						}}</strong>
 					</dt>
 					<dd class="pq-detail__value">
 						<ul v-if="field.kind === 'list'" class="pq-detail__list">
@@ -79,6 +105,23 @@
 								{{ item }}
 							</li>
 						</ul>
+						<a
+							v-else-if="field.kind === 'link'"
+							class="utrecht-link"
+							:href="field.value"
+							rel="noopener noreferrer"
+							>{{ field.value }}</a
+						>
+						<span
+							v-else-if="field.kind === 'lines'"
+							class="pq-detail__lines">
+							<span
+								v-for="line in field.value"
+								:key="line.index"
+								class="pq-detail__line"
+								>{{ line.text }}</span
+							>
+						</span>
 						<span v-else>{{ field.value }}</span>
 					</dd>
 				</div>
@@ -195,7 +238,9 @@ import { defineAsyncComponent } from 'vue'
 import { createTranslator } from '../../shared/i18n/index.js'
 import { pageLocale } from '../lib/facetLabels.js'
 import {
+	longDescriptionLines,
 	publicationSummary,
+	schemaRows,
 	themeIdsOf,
 	toDocuments,
 	visitorRows,
@@ -321,6 +366,15 @@ export default {
 		},
 
 		/**
+		 * @return {Array<object>} The long description's lines, under the summary.
+		 *
+		 * @spec openspec/changes/publication-page-shows-the-schemas-fields/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-the-public-fields-of-any-other-schema
+		 */
+		longDescription() {
+			return longDescriptionLines(this.publication)
+		},
+
+		/**
 		 * @return {string} The publication's title.
 		 *
 		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
@@ -332,11 +386,6 @@ export default {
 			return row.title || row.name || self.name || this.t('Untitled')
 		},
 
-		/**
-		 * @return {Array<object>} The rendered field rows.
-		 *
-		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
-		 */
 		/**
 		 * @return {boolean} Whether the cards variant is drawn.
 		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md#requirement-the-publication-page-may-draw-the-boards-cards
@@ -354,12 +403,22 @@ export default {
 			return row ? String(row.value) : ''
 		},
 
+		/**
+		 * @return {Array<object>} The rendered field rows: the Woo rows, then
+		 * the other schema's public fields.
+		 *
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+		 * @spec openspec/changes/publication-page-shows-the-schemas-fields/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-the-public-fields-of-any-other-schema
+		 */
 		fields() {
-			return visitorRows(this.publication, {
-				t: this.t,
-				locale: this.locale,
-				themeNames: this.themeNames,
-			})
+			return [
+				...visitorRows(this.publication, {
+					t: this.t,
+					locale: this.locale,
+					themeNames: this.themeNames,
+				}),
+				...schemaRows(this.publication, { t: this.t, locale: this.locale }),
+			]
 		},
 	},
 
@@ -421,8 +480,13 @@ export default {
 					`${base}/${encodeURIComponent(this.subjectId)}`,
 					window.location.origin,
 				)
+				// The schema comes along, so its titles, order and formats
+				// name the other fields (schemaRows); a peer that ignores the
+				// extend still answers, and the field names are put in words.
+				const read = new URL(url.toString())
+				read.searchParams.set('_extend', '@self.schema')
 
-				const response = await fetch(url.toString(), {
+				const response = await fetch(read.toString(), {
 					headers: { Accept: 'application/json' },
 				})
 
@@ -576,6 +640,22 @@ export default {
 <style scoped>
 .pq-detail__summary {
 	margin-block-end: 16px;
+}
+
+.pq-detail__long-description {
+	margin-block-end: 16px;
+}
+
+/* The theme draws a link as a flex box; in a row it follows its label. */
+.pq-detail__value .utrecht-link {
+	display: inline-flex;
+}
+
+.pq-detail__lines {
+	display: inline-flex;
+	flex-direction: column;
+	gap: 4px;
+	vertical-align: top;
 }
 
 .pq-detail__fields {

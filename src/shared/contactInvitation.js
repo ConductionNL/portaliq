@@ -125,6 +125,17 @@ export async function redeemKeptContactInvitation({ api, session, t, storage }) 
 			claimed: true,
 		}
 	}
+	if (!(answer.status >= 400 && answer.status < 500)) {
+		// The server could not be reached or failed: the invitation itself
+		// may be fine, and the kept secret is tried again on the next visit.
+		return {
+			role: 'alert',
+			text: t(
+				'The invitation could not be accepted right now. Try again later.',
+			),
+			claimed: false,
+		}
+	}
 	return {
 		role: 'alert',
 		text: t('This invitation is no longer valid. Ask for a new one.'),

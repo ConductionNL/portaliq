@@ -231,8 +231,21 @@ test('an invitation link is kept across sign-in, handed back once, and forgotten
 
 	const calls = []
 	const api = { request: async (method, path, body) => { calls.push([method, path, body]); return { ok: false, status: 0, json: {} } } }
-	await redeemKeptContactInvitation({ api, session: { subjectRef: 'a' }, t, storage })
+	const unreachable = await redeemKeptContactInvitation({ api, session: { subjectRef: 'a' }, t, storage })
 	assert.equal(store.has(CONTACT_INVITATION_KEY), true, 'a server that could not be reached keeps it')
+	assert.match(unreachable.text, /Try again later/, 'an unreachable server is not an invalid invitation')
+	assert.doesNotMatch(unreachable.text, /no longer valid/)
+
+	api.request = async (method, path, body) => { calls.push([method, path, body]); return { ok: false, status: 503, json: {} } }
+	const failing = await redeemKeptContactInvitation({ api, session: { subjectRef: 'a' }, t, storage })
+	assert.equal(store.has(CONTACT_INVITATION_KEY), true, 'a failing server keeps it')
+	assert.match(failing.text, /Try again later/, 'a 5xx is not an invalid invitation')
+
+	api.request = async (method, path, body) => { calls.push([method, path, body]); return { ok: false, status: 410, json: {} } }
+	const gone = await redeemKeptContactInvitation({ api, session: { subjectRef: 'a' }, t, storage })
+	assert.match(gone.text, /no longer valid/, 'a 4xx answer is about the invitation itself')
+	assert.equal(store.has(CONTACT_INVITATION_KEY), false)
+	store.set(CONTACT_INVITATION_KEY, 'abc 123')
 
 	api.request = async (method, path, body) => { calls.push([method, path, body]); return { ok: true, status: 200, json: {} } }
 	const done = await redeemKeptContactInvitation({ api, session: { subjectRef: 'a' }, t, storage })

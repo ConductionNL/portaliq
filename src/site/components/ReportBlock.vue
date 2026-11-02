@@ -146,7 +146,9 @@
 				<a
 					class="utrecht-link"
 					:href="threadRoute"
-					data-testid="report-thread-link">{{ words.toThread }}</a>
+					data-testid="report-thread-link"
+					>{{ words.toThread }}</a
+				>
 			</section>
 			<section v-if="expectations.length > 0" class="pq-report__card">
 				<h2 class="utrecht-heading-4">

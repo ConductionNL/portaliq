@@ -12,11 +12,22 @@
 <template>
 	<CnDialog
 		:look="look"
-		:name="allow ? t('portaliq', 'Allow this reveal') : t('portaliq', 'Refuse this reveal')"
+		:name="
+			allow
+				? t('portaliq', 'Allow this reveal')
+				: t('portaliq', 'Refuse this reveal')
+		"
 		size="normal"
 		data-testid="reveal-decision"
 		@closing="$emit('close', null)">
-		<p>{{ t('portaliq', 'Your answer and its reason are recorded with the request.') }}</p>
+		<p>
+			{{
+				t(
+					'portaliq',
+					'Your answer and its reason are recorded with the request.',
+				)
+			}}
+		</p>
 		<NcTextArea
 			v-model="reason"
 			:label="t('portaliq', 'Reason')"

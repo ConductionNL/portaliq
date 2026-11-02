@@ -138,6 +138,39 @@ class MandateStore {
 	}//end mandate()
 
 	/**
+	 * The mandate an invitation already made, if any: an accept whose
+	 * invitation could not be marked accepted, and whose mandate could not
+	 * be taken back, leaves one behind.
+	 *
+	 * @param string $invitationId The invitation.
+	 * @param string $organisation The tenant.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md
+	 */
+	public function mandateForInvitation(string $invitationId, string $organisation): ?array {
+		if ($invitationId === '') {
+			return null;
+		}
+
+		foreach ($this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::MANDATES,
+			scopeField: 'invitationId',
+			subjectRef: $invitationId,
+			organisation: $organisation,
+			limit: 5
+		) as $row) {
+			if (is_array($row) === true && (string)($row['invitationId'] ?? '') === $invitationId) {
+				return $row;
+			}
+		}
+
+		return null;
+	}//end mandateForInvitation()
+
+	/**
 	 * @param string $token The invitation secret.
 	 *
 	 * @return array<string, mixed>|null

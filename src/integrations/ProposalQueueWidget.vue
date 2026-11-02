@@ -31,7 +31,9 @@
 			role="alert">
 			{{ t('portaliq', 'The proposals could not be loaded.') }}
 		</p>
-		<p v-else-if="proposals.length === 0 && !carded" class="portaliq-proposal-queue__state">
+		<p
+			v-else-if="proposals.length === 0 && !carded"
+			class="portaliq-proposal-queue__state">
 			{{ t('portaliq', 'No proposals are waiting on this record.') }}
 		</p>
 		<ul v-else-if="proposals.length > 0" class="portaliq-proposal-queue__list">
@@ -202,7 +204,9 @@ export default {
 
 		/** @return {string} Why the queue could not be read, or ''. */
 		error() {
-			return this.state === 'forbidden' || this.state === 'error' ? this.state : ''
+			return this.state === 'forbidden' || this.state === 'error'
+				? this.state
+				: ''
 		},
 
 		/**
@@ -214,11 +218,20 @@ export default {
 		leafReport() {
 			return {
 				count: this.proposals.length,
-				emptyLabel: t('portaliq', 'No proposals are waiting on this record.'),
+				emptyLabel: t(
+					'portaliq',
+					'No proposals are waiting on this record.',
+				),
+
 				noun: t('portaliq', 'change proposals'),
 				rows: this.proposals.map((proposal) => ({
-					label: (proposal.channel === 'portal' ? t('portaliq', 'From the portal') : t('portaliq', 'From a colleague'))
-						+ (proposal.proposedAt ? ` · ${this.dateOf(proposal.proposedAt)}` : ''),
+					label:
+						(proposal.channel === 'portal'
+							? t('portaliq', 'From the portal')
+							: t('portaliq', 'From a colleague'))
+						+ (proposal.proposedAt
+							? ` · ${this.dateOf(proposal.proposedAt)}`
+							: ''),
 					icon: 'FileDocumentEditOutline',
 				})),
 			}

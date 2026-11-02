@@ -306,7 +306,11 @@
 						</button>
 						<details v-if="file.earlier.length > 0">
 							<summary data-testid="plan-file-earlier">
-								{{ fill(words.earlier, { count: file.earlier.length }) }}
+								{{
+									fill(words.earlier, {
+										count: file.earlier.length,
+									})
+								}}
 							</summary>
 							<ul class="utrecht-unordered-list">
 								<li v-for="older in file.earlier" :key="older.id">

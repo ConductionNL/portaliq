@@ -49,6 +49,9 @@ use Throwable;
  * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
  *
  * @SuppressWarnings(PHPMD.StaticAccess) -- PortalSessionService::trustSatisfies, the one trust rule every portal path uses.
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- action, destination, body
+ * and retention are resolved for one draft, and each branches on what the
+ * action declares; splitting them would scatter one draft's rules.
  */
 class ActionDraft {
 	/**

@@ -250,7 +250,10 @@ export default {
 }
 
 .pq-not-found__code.utrecht-paragraph {
-	color: var(--nldesign-color-text-muted, var(--utrecht-document-color, CanvasText));
+	color: var(
+		--nldesign-color-text-muted,
+		var(--utrecht-document-color, CanvasText)
+	);
 	font-size: 1.125rem;
 	font-weight: 600;
 }
@@ -307,7 +310,10 @@ export default {
 }
 
 .pq-not-found__report.utrecht-paragraph {
-	color: var(--nldesign-color-text-muted, var(--utrecht-document-color, CanvasText));
+	color: var(
+		--nldesign-color-text-muted,
+		var(--utrecht-document-color, CanvasText)
+	);
 	font-size: 1rem;
 	line-height: 1.5;
 }

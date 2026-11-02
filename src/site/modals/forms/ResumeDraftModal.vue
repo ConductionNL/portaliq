@@ -29,10 +29,15 @@
 		<p id="pq-resume-draft-body" class="utrecht-paragraph">
 			{{
 				savedAt
-					? t('You filled in answers on {moment}. Do you want to continue with them?', {
-						moment: savedAt,
-					})
-					: t('You already filled in answers. Do you want to continue with them?')
+					? t(
+							'You filled in answers on {moment}. Do you want to continue with them?',
+							{
+								moment: savedAt,
+							},
+						)
+					: t(
+							'You already filled in answers. Do you want to continue with them?',
+						)
 			}}
 		</p>
 		<p class="utrecht-paragraph">
