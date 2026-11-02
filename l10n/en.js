@@ -3147,15 +3147,17 @@ OC.L10N.register(
         "The audience a business contact's first portal account gets. Empty means supplier.": "The audience a business contact's first portal account gets. Empty means supplier.",
         "The words a visitor sees for each option, keyed by the option that is sent. An option without words shows as itself.": "The words a visitor sees for each option, keyed by the option that is sent. An option without words shows as itself.",
         "cards draws the folder cards; rows draws one line per case with its number, title, tag and the day it is due by; folders draws the board folders with the case number, title, tag and the day it is due by.": "cards draws the folder cards; rows draws one line per case with its number, title, tag and the day it is due by; folders draws the board folders with the case number, title, tag and the day it is due by.",
-        "Aside width": "Aside width",
-        "The width of the right column in pixels, 160 to 640.": "The width of the right column in pixels, 160 to 640.",
-        "Aside gap": "Aside gap",
-        "The space between the main column and the right column in pixels, 0 to 160. The default is 48.": "The space between the main column and the right column in pixels, 0 to 160. The default is 48.",
         "Indeling": "Indeling",
         "Upload": "Upload",
         "{name}": "{name}",
         "{path}": "{path}",
-        "{title}": "{title}"
+        "{title}": "{title}",
+        "Aside width": "Aside width",
+        "Aside gap": "Aside gap",
+        "The aside column's fixed width in pixels, 160 to 640.": "The aside column's fixed width in pixels, 160 to 640.",
+        "The space between the main column and the aside column in pixels, 0 to 160. Unset, the gap is 48.": "The space between the main column and the aside column in pixels, 0 to 160. Unset, the gap is 48.",
+        "The width of the right column in pixels, 160 to 640.": "The width of the right column in pixels, 160 to 640.",
+        "The space between the main column and the right column in pixels, 0 to 160. The default is 48.": "The space between the main column and the right column in pixels, 0 to 160. The default is 48."
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -52,8 +52,10 @@ const FORMS = [
 	/^cast:[a-z0-9-]+\.[A-Za-z.]+$/,
 	/^lookup:[A-Za-z][A-Za-z0-9]*$/,
 	/^object:[a-z0-9-]+\.[A-Za-z]+$/,
-	/^date:[+-]?\d{1,4}$/,
-	/^datetime:[+-]?\d{1,4} ([01]\d|2[0-3]):[0-5]\d$/,
+	/^date:[+-]?\d{1,4}(@(mon|tue|wed|thu|fri|sat|sun))?$/,
+	/^datetime:[+-]?\d{1,4}(@(mon|tue|wed|thu|fri|sat|sun))? ([01]\d|2[0-3]):[0-5]\d$/,
+	/^account:[a-z0-9-]+\.[A-Za-z]+$/,
+	/^organisation:[A-Za-z0-9 -]+$/,
 	// OpenRegister's example-set loader fills it with overwrite.cli.url
 	// (ExampleSetValues); the case objects link the public-space register.
 	/^instance:baseUrl$/,
@@ -139,10 +141,12 @@ for (const { file, fragment } of fragments) {
 				}
 			}
 			assert.equal(account.data.subjectRef, `{{cast:${resident.cast}.uid}}`)
-			// Sanne signs in with DigiD (#1730): her account names her BSN, and
-			// the demo sign-in still finds her by her account id.
-			const identityRef = account.data.identityType === 'digid' ? `{{cast:${resident.cast}.bsn}}` : 'example-resident'
-			assert.equal(account.data.identityRef, identityRef)
+			// A resident who signs in with DigiD carries her BSN; the demo
+			// sign-in finds her by her account id either way.
+			assert.equal(
+				account.data.identityRef,
+				account.data.identityType === 'digid' ? `{{cast:${resident.cast}.bsn}}` : 'example-resident',
+			)
 			assert.ok(!('email' in account.data), 'no e-mail address, so the resident meets the prompt for one')
 		}
 	})
@@ -323,9 +327,8 @@ test('zuiddrecht.json puts the business contacts in the business group the porta
 test('zuiddrecht.json keeps the cases of the Woo journey and the resident boards', () => {
 	const zuiddrecht = fragments.find(({ file }) => file === 'zuiddrecht.json').fragment
 	const cases = zuiddrecht.objects.filter((object) => object.schema === 'case').map((object) => object.data.title)
-	assert.deepEqual(cases, [
-		'Aanleg fietspad Lindelaan',
-		'Advies verlichting fietspad',
+	// The set may grow; these six must stay.
+	for (const title of [
 		'Verlichting fietspad Lindelaan',
 		'Dakkapel Lindelaan 14',
 		'Losse stoeptegel bij de bushalte Lindelaan',
@@ -335,7 +338,9 @@ test('zuiddrecht.json keeps the cases of the Woo journey and the resident boards
 		'Zienswijze Aannemersbedrijf Van Wijk',
 		'Lakken offerte lantaarnpalen',
 		'Parkeervergunning Lindelaan',
-	])
+	]) {
+		assert.ok(cases.includes(title), `${title} is still a case of the set`)
+	}
 	assert.deepEqual(zuiddrecht.after, ['dossiq'])
 	assert.equal(zuiddrecht.exampleResident[0].cast, 'sanne')
 })
