@@ -395,9 +395,11 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.101.0 (form 0.4.0): a form field's `optionLabels`, the words shown per option (site-organisation-registration-form). Additive.
 		// 0.102.0 (portalPlan 0.2.0): a plan's `files`, each file with its series and version (shared-plans-with-a-caseworker T04). Additive.
 		// 0.103.0 (portalAction 0.3.0, portal: actionsEnabled): an action's `fileName`, `editedBy` and `editedAt`, and the portal's switch for Mijn acties (personal-action-list T02, T03, T05). Additive.
-		$this->assertSame(expected: '0.103.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.103.0', actual: self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalAction']['properties']['editedBy']['type']);
+		// 0.104.0 (portalSubmission 0.3.0): a submission's `actionTitle`, the name the Submissions list shows (board PtInzendingen). Additive.
+		$this->assertSame(expected: '0.104.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.104.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalSubmission']['properties']['actionTitle']['type']);
 		$this->assertSame(expected: 'boolean', actual: self::$register['components']['schemas']['portal']['properties']['actionsEnabled']['type']);
 		$this->assertSame(expected: '0.2.0', actual: self::$register['components']['schemas']['media']['version']);
 		$this->assertSame(expected: 'integer', actual: self::$register['components']['schemas']['media']['properties']['usedOn']['type']);

@@ -2639,7 +2639,8 @@
         "columns": [
           {
             "key": "actionId",
-            "label": "Submitted action"
+            "label": "Submitted action",
+            "widget": "action-title"
           },
           {
             "key": "appId",

@@ -1,6 +1,6 @@
 {
 	"set": "zuiddrecht",
-	"$comment": "portaliq's part of the Zuiddrecht example set: portal accounts for the residents Sanne de Vries (a phone number and an e-mail address still waiting for confirmation, as the MijnAccount board lists them; no confirmed `email`, so she still meets the prompt for one on the MijnOverzicht board), Henk Bakker, Linda Bakker and Fatima El-Amrani and the business contacts Jan-Willem and Mark, the mandates that let Linda act for her father Henk, Sanne for the butcher's shop and Jan-Willem and Mark for their companies, Sanne's two access requests (one granted, one waiting) of the Machtigingen board, Sanne's six cases, one question and four messages, the portal task on her parking permit that asks for a copy of her ID (an external task for `party:<her uid>`, at most two files: board TaakAfronden), the parking product finder over the twelve parking product pages of the site, the residents' group `inwoners`, the business contacts' group `ondernemers`, and on the portal the `nextcloud` way in with the account card of the Inloggen board, the resident group the Nextcloud registration app fills and the business group. Installed by `occ openregister:example-set:install zuiddrecht` after `occ portaliq:example-site:install zuiddrecht`; dossiq goes first because the cases are dossiq's. `exampleResident` lists the residents portaliq's one-click demo sign-in offers, each with its portal account object and its card; the cards show beside the account card only while `example_resident_demo_login` is `yes`. Business contacts get no one-click card and stay out of `inwoners`: they act for a company, which is eHerkenning, and the group is the portal's statement of who its residents are. They are in `ondernemers`, the portal's business group, so a direct Nextcloud sign-in lands them on the portal with the business audience. Every date is a number of days from the install day. `waitingOnApplicant` is written beside the open question on purpose: dossiq sets that flag in the act that sends a question, and a seed is not that act.",
+	"$comment": "portaliq's part of the Zuiddrecht example set: portal accounts for the residents Sanne de Vries (a confirmed preferred e-mail address, a second one still waiting for confirmation and a phone number, as the MijnAccount board lists them; the account's own `email` stays empty, so she still meets the prompt for one on the MijnOverzicht board), Henk Bakker, Linda Bakker and Fatima El-Amrani and the business contacts Jan-Willem and Mark, the mandates that let Linda act for her father Henk, Sanne for Bakkerij Lindelaan B.V. and Jan-Willem and Mark for their companies, Sanne's two access requests (one granted, one waiting) of the Machtigingen board, Sanne's six cases, one question and four messages, the portal task on her parking permit that asks for a copy of her ID (an external task for `party:<her uid>`, at most two files: board TaakAfronden), the parking product finder over the twelve parking product pages of the site, the residents' group `inwoners`, the business contacts' group `ondernemers`, and on the portal the `nextcloud` way in with the account card of the Inloggen board, the resident group the Nextcloud registration app fills and the business group. Installed by `occ openregister:example-set:install zuiddrecht` after `occ portaliq:example-site:install zuiddrecht`; dossiq goes first because the cases are dossiq's. `exampleResident` lists the residents portaliq's one-click demo sign-in offers, each with its portal account object and its card; the cards show beside the account card only while `example_resident_demo_login` is `yes`. Business contacts get no one-click card and stay out of `inwoners`: they act for a company, which is eHerkenning, and the group is the portal's statement of who its residents are. They are in `ondernemers`, the portal's business group, so a direct Nextcloud sign-in lands them on the portal with the business audience. Every date is a number of days from the install day. `waitingOnApplicant` is written beside the open question on purpose: dossiq sets that flag in the act that sends a question, and a seed is not that act.",
 	"after": [
 		"dossiq"
 	],
@@ -78,6 +78,12 @@
 				"status": "active",
 				"contactChannel": "portal",
 				"contactAddresses": [
+					{
+						"kind": "email",
+						"value": "sanne.devries@example.nl",
+						"confirmed": true,
+						"preferred": true
+					},
 					{
 						"kind": "email",
 						"value": "s.devries@werk.example.nl",
@@ -220,12 +226,12 @@
 			"data": {
 				"subjectRef": "{{cast:sanne.uid}}",
 				"organisation": "zuiddrecht",
-				"onBehalfOf": "kvk:{{cast:slagerij.kvk}}",
-				"label": "{{cast:slagerij.name}}",
+				"onBehalfOf": "kvk:87654321",
+				"label": "Bakkerij Lindelaan B.V.",
 				"reach": "organisation",
 				"status": "active",
 				"grantedBy": "example-set",
-				"grantedAt": "{{datetime:-39 09:00}}"
+				"grantedAt": "{{datetime:-26 09:00}}"
 			}
 		},
 		{
@@ -236,12 +242,12 @@
 				"subjectRef": "{{cast:sanne.uid}}",
 				"displayName": "{{cast:sanne.displayName}}",
 				"organisation": "zuiddrecht",
-				"onBehalfOf": "{{cast:slagerij.name}} (KvK {{cast:slagerij.kvk}})",
-				"reason": "Ik doe de administratie van de zaak.",
+				"onBehalfOf": "Bakkerij Lindelaan B.V. (KvK 87654321)",
+				"reason": "Ik doe de administratie van de bakkerij.",
 				"state": "granted",
 				"decidedBy": "example-set",
-				"decidedAt": "{{datetime:-39 09:00}}",
-				"requestedAt": "{{datetime:-40 10:00}}"
+				"decidedAt": "{{datetime:-26 09:00}}",
+				"requestedAt": "{{datetime:-26 08:30}}"
 			}
 		},
 		{
@@ -252,10 +258,10 @@
 				"subjectRef": "{{cast:sanne.uid}}",
 				"displayName": "{{cast:sanne.displayName}}",
 				"organisation": "zuiddrecht",
-				"onBehalfOf": "{{cast:henk.displayName}}",
+				"onBehalfOf": "Henk de Vries",
 				"reason": "Ik help mijn buurman met zijn post van de gemeente.",
 				"state": "pending",
-				"requestedAt": "{{datetime:-19 10:00}}"
+				"requestedAt": "{{datetime:-6 10:00}}"
 			}
 		},
 		{
@@ -594,7 +600,7 @@
 				"roleType": "{{lookup:roleType}}",
 				"case": "{{object:woo-fietspad.id}}",
 				"participant": "{{lookup:sanne}}",
-				"description": "Deed het Woo-verzoek via Mijn Zuiddrecht, ingelogd met DigiD."
+				"description": ""
 			}
 		},
 		{
@@ -621,7 +627,104 @@
 				"roleType": "{{lookup:roleType}}",
 				"case": "{{object:woo-fietspad.id}}",
 				"participant": "{{lookup:vanwijk}}",
-				"description": "Aannemer van de verlichting; staat in de offerte en de mail die openbaar kunnen worden."
+				"description": "KvK {{cast:vanwijk.kvk}}"
+			}
+		},
+		{
+			"key": "rol-woo-fietspad-gemachtigde",
+			"register": "dossiq",
+			"schema": "role",
+			"lookups": {
+				"roleType": {
+					"schema": "roleType",
+					"where": {
+						"name": "Gemachtigde",
+						"caseType": "3c0f5a00-0000-4000-a000-00000000a001"
+					}
+				},
+				"jvanwijk": {
+					"schema": "brpPerson",
+					"where": {
+						"citizenServiceNumber": "{{cast:jvanwijk.bsn}}"
+					}
+				},
+				"vanwijk": {
+					"schema": "kvkCompany",
+					"where": {
+						"kvkNumber": "{{cast:vanwijk.kvk}}"
+					}
+				}
+			},
+			"data": {
+				"name": "{{cast:jvanwijk.displayName}}",
+				"roleType": "{{lookup:roleType}}",
+				"case": "{{object:woo-fietspad.id}}",
+				"participant": "{{lookup:jvanwijk}}",
+				"representedParty": "{{lookup:vanwijk}}",
+				"description": "namens {{cast:vanwijk.name}} · Awb 2:1"
+			}
+		},
+		{
+			"key": "rol-woo-fietspad-melder",
+			"register": "dossiq",
+			"schema": "role",
+			"lookups": {
+				"roleType": {
+					"schema": "roleType",
+					"where": {
+						"name": "Melder",
+						"caseType": "3c0f5a00-0000-4000-a000-00000000a001"
+					}
+				},
+				"bewoners": {
+					"schema": "kvkCompany",
+					"where": {
+						"kvkNumber": "{{cast:bewonerslindelaan.kvk}}"
+					}
+				}
+			},
+			"data": {
+				"name": "{{cast:bewonerslindelaan.name}}",
+				"roleType": "{{lookup:roleType}}",
+				"case": "{{object:woo-fietspad.id}}",
+				"participant": "{{lookup:bewoners}}",
+				"description": "zonder account · via de balie"
+			}
+		},
+		{
+			"key": "rol-woo-fietspad-adviseur",
+			"register": "dossiq",
+			"schema": "role",
+			"lookups": {
+				"roleType": {
+					"schema": "roleType",
+					"where": {
+						"name": "Adviseur",
+						"caseType": "3c0f5a00-0000-4000-a000-00000000a001"
+					}
+				}
+			},
+			"data": {
+				"name": "{{cast:lars.displayName}}",
+				"roleType": "{{lookup:roleType}}",
+				"case": "{{object:woo-fietspad.id}}",
+				"participant": "{{object:collega-lars.id}}",
+				"description": "{{cast:lars.department}}"
+			}
+		},
+		{
+			"key": "woo-fietspad-link-sanne",
+			"register": "dossiq",
+			"schema": "caseShare",
+			"data": {
+				"caseId": "{{object:woo-fietspad.id}}",
+				"shareType": "link",
+				"permissionLevel": "bekijken",
+				"label": "{{cast:sanne.displayName}}",
+				"capabilities": "read",
+				"status": "active",
+				"createdBy": "{{cast:pieter.uid}}",
+				"expiresAt": "{{datetime:29 23:59}}"
 			}
 		},
 		{
@@ -2248,7 +2351,7 @@
 				"state": "active",
 				"performerType": "external",
 				"assignee": "party:{{cast:sanne.uid}}",
-				"dueAt": "{{date:7}}",
+				"dueAt": "{{date:10}}",
 				"uploadRules": {
 					"required": true,
 					"maxFiles": 2
@@ -2545,6 +2648,7 @@
 				"partyUuid": "{{object:rol-woo-fietspad-verzoeker.participant}}",
 				"role": "3c0f5a00-0000-4000-a000-0000000c0001",
 				"validFrom": "{{date:-14}}",
+				"note": "{{cast:sanne.address.street}} {{cast:sanne.address.number}} · ingelogd met DigiD",
 				"primary": true
 			}
 		},
@@ -2554,7 +2658,29 @@
 				"objectUuid": "{{object:woo-fietspad.id}}",
 				"partyUuid": "{{object:rol-woo-fietspad-belanghebbende.participant}}",
 				"role": "3c0f5a00-0000-4000-a000-0000000c0003",
-				"validFrom": "{{date:-11}}"
+				"validFrom": "{{date:-11}}",
+				"note": "KvK {{cast:vanwijk.kvk}} · contactpersoon {{cast:jvanwijk.displayName}}"
+			}
+		},
+		{
+			"key": "partij-jvanwijk-gemachtigde",
+			"data": {
+				"objectUuid": "{{object:woo-fietspad.id}}",
+				"partyUuid": "{{object:rol-woo-fietspad-gemachtigde.participant}}",
+				"role": "3c0f5a00-0000-4000-a000-0000000c0002",
+				"validFrom": null,
+				"validUntil": "{{date:75}}",
+				"note": "Machtiging namens {{cast:vanwijk.name}} · Awb 2:1"
+			}
+		},
+		{
+			"key": "partij-bewonerslindelaan-melder",
+			"data": {
+				"objectUuid": "{{object:woo-fietspad.id}}",
+				"partyUuid": "{{object:rol-woo-fietspad-melder.participant}}",
+				"role": "3c0f5a00-0000-4000-a000-0000000c0005",
+				"validFrom": "{{date:-14}}",
+				"note": "Melder zonder account · via de balie"
 			}
 		},
 		{
@@ -2563,9 +2689,9 @@
 				"objectUuid": "{{object:woo-fietspad.id}}",
 				"partyUuid": "{{object:collega-lars.id}}",
 				"role": "3c0f5a00-0000-4000-a000-0000000c0004",
-				"validFrom": "{{date:-11}}",
+				"validFrom": null,
 				"validUntil": "{{date:14}}",
-				"note": "Advies over de verlichting vanuit Mobiliteit en verkeer"
+				"note": "{{cast:lars.department}} · {{cast:lars.email}}"
 			}
 		}
 	],
