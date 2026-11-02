@@ -53,6 +53,8 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-news-item-shows-on-a-portals-public-website-only-when-staff-put-it-there
  */
 class PublicNewsReader {
+	use PublishedMoment;
+
 	/**
 	 * The most items one list returns.
 	 */
@@ -318,33 +320,4 @@ class PublicNewsReader {
 
 		return rtrim($cut, ' ,.;:').'…';
 	}//end introOf()
-
-	/**
-	 * When an item was published, as a Unix timestamp; PHP_INT_MIN when undated.
-	 * The same order as the guardian feed: `publishedAt`, else OpenRegister's
-	 * `@self.published`, else `@self.created`.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return int
-	 */
-	private function momentOf(array $row): int {
-		$self = [];
-		if (is_array($row['@self'] ?? null) === true) {
-			$self = $row['@self'];
-		}
-
-		foreach ([($row['publishedAt'] ?? null), ($self['published'] ?? null), ($self['created'] ?? null)] as $value) {
-			if (is_string($value) === false || $value === '') {
-				continue;
-			}
-
-			$time = strtotime($value);
-			if ($time !== false) {
-				return $time;
-			}
-		}
-
-		return PHP_INT_MIN;
-	}//end momentOf()
 }//end class
