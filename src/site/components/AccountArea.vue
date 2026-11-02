@@ -618,7 +618,9 @@ export default {
 </script>
 
 <style scoped>
-.pq-account {
+/* The shell only: a page whose own root is a `.pq-account` (AccountPage)
+   carries this component's scope too, and would be inset twice. */
+.container.pq-account {
 	padding-block: 24px;
 }
 
