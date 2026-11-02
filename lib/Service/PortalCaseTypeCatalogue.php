@@ -42,6 +42,8 @@ use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
  * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
  */
 class PortalCaseTypeCatalogue {
+	use CaseTypeLabel;
+
 	/**
 	 * The register the portal objects live in.
 	 */
@@ -268,28 +270,4 @@ class PortalCaseTypeCatalogue {
 	private function idOf(array $type): string {
 		return (string)($type['id'] ?? $type['uuid'] ?? ($type['@self']['id'] ?? ''));
 	}//end idOf()
-
-	/**
-	 * A case type object's name: the declared label field first.
-	 *
-	 * @param array<string, mixed> $type The case type.
-	 * @param string $labelField The field the case app named, or ''.
-	 *
-	 * @return string
-	 */
-	private function labelOf(array $type, string $labelField): string {
-		$fields = self::LABEL_FIELDS;
-		if ($labelField !== '') {
-			array_unshift($fields, $labelField);
-		}
-
-		foreach ($fields as $field) {
-			$value = ($type[$field] ?? null);
-			if (is_string($value) === true && trim($value) !== '') {
-				return trim($value);
-			}
-		}
-
-		return '';
-	}//end labelOf()
 }//end class

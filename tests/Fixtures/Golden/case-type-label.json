@@ -1,0 +1,110 @@
+{
+    "empty | no label field": {
+        "CaseTypeNames": "",
+        "PortalCaseTypeCatalogue": ""
+    },
+    "empty | label field naam": {
+        "CaseTypeNames": "",
+        "PortalCaseTypeCatalogue": ""
+    },
+    "empty | label field title": {
+        "CaseTypeNames": "",
+        "PortalCaseTypeCatalogue": ""
+    },
+    "every field | no label field": {
+        "CaseTypeNames": "Titel",
+        "PortalCaseTypeCatalogue": "Titel"
+    },
+    "every field | label field naam": {
+        "CaseTypeNames": "Eigen",
+        "PortalCaseTypeCatalogue": "Eigen"
+    },
+    "every field | label field title": {
+        "CaseTypeNames": "Titel",
+        "PortalCaseTypeCatalogue": "Titel"
+    },
+    "name only | no label field": {
+        "CaseTypeNames": "Naam",
+        "PortalCaseTypeCatalogue": "Naam"
+    },
+    "name only | label field naam": {
+        "CaseTypeNames": "Naam",
+        "PortalCaseTypeCatalogue": "Naam"
+    },
+    "name only | label field title": {
+        "CaseTypeNames": "Naam",
+        "PortalCaseTypeCatalogue": "Naam"
+    },
+    "label only | no label field": {
+        "CaseTypeNames": "Label",
+        "PortalCaseTypeCatalogue": "Label"
+    },
+    "label only | label field naam": {
+        "CaseTypeNames": "Label",
+        "PortalCaseTypeCatalogue": "Label"
+    },
+    "label only | label field title": {
+        "CaseTypeNames": "Label",
+        "PortalCaseTypeCatalogue": "Label"
+    },
+    "omschrijving only | no label field": {
+        "CaseTypeNames": "Omschrijving",
+        "PortalCaseTypeCatalogue": "Omschrijving"
+    },
+    "omschrijving only | label field naam": {
+        "CaseTypeNames": "Omschrijving",
+        "PortalCaseTypeCatalogue": "Omschrijving"
+    },
+    "omschrijving only | label field title": {
+        "CaseTypeNames": "Omschrijving",
+        "PortalCaseTypeCatalogue": "Omschrijving"
+    },
+    "blank title | no label field": {
+        "CaseTypeNames": "Naam",
+        "PortalCaseTypeCatalogue": "Naam"
+    },
+    "blank title | label field naam": {
+        "CaseTypeNames": "Naam",
+        "PortalCaseTypeCatalogue": "Naam"
+    },
+    "blank title | label field title": {
+        "CaseTypeNames": "Naam",
+        "PortalCaseTypeCatalogue": "Naam"
+    },
+    "non-string title | no label field": {
+        "CaseTypeNames": "Label",
+        "PortalCaseTypeCatalogue": "Label"
+    },
+    "non-string title | label field naam": {
+        "CaseTypeNames": "Label",
+        "PortalCaseTypeCatalogue": "Label"
+    },
+    "non-string title | label field title": {
+        "CaseTypeNames": "Label",
+        "PortalCaseTypeCatalogue": "Label"
+    },
+    "blank label field | no label field": {
+        "CaseTypeNames": "Titel",
+        "PortalCaseTypeCatalogue": "Titel"
+    },
+    "blank label field | label field naam": {
+        "CaseTypeNames": "Titel",
+        "PortalCaseTypeCatalogue": "Titel"
+    },
+    "blank label field | label field title": {
+        "CaseTypeNames": "Titel",
+        "PortalCaseTypeCatalogue": "Titel"
+    },
+    "unknown field only | no label field": {
+        "CaseTypeNames": "",
+        "PortalCaseTypeCatalogue": ""
+    },
+    "unknown field only | label field naam": {
+        "CaseTypeNames": "",
+        "PortalCaseTypeCatalogue": ""
+    },
+    "unknown field only | label field title": {
+        "CaseTypeNames": "",
+        "PortalCaseTypeCatalogue": ""
+    }
+}
