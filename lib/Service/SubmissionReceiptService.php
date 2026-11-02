@@ -38,6 +38,7 @@
  * @spec openspec/specs/supplier-portal/spec.md#proof-of-receipt-log-satisfying-the-wmebv-burden-of-proof
  * @spec openspec/specs/supplier-portal/spec.md#a-receipt-or-log-failure-never-loses-the-submission
  * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
+ * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
  */
 
 declare(strict_types=1);
@@ -73,6 +74,11 @@ class SubmissionReceiptService {
 	 * The append-only burden-of-proof log schema.
 	 */
 	private const SUBMISSION_SCHEMA = 'portalSubmission';
+
+	/**
+	 * The longest action title kept on a proof-log record.
+	 */
+	private const TITLE_MAX_LENGTH = 200;
 
 	/**
 	 * The receipt subject-line translation key. English key text per
@@ -136,6 +142,9 @@ class SubmissionReceiptService {
 	 *                         dispatch — resolves the app manifest via the
 	 *                         registry; empty is safe, it simply yields no
 	 *                         notification match).
+	 * @param mixed $actionTitle The action's name as the resident read it,
+	 *                           stored on the proof log as text; anything
+	 *                           but a non-blank string records no title.
 	 *
 	 * @return void
 	 *
@@ -143,6 +152,7 @@ class SubmissionReceiptService {
 	 * @spec openspec/specs/supplier-portal/spec.md#proof-of-receipt-log-satisfying-the-wmebv-burden-of-proof
 	 * @spec openspec/specs/supplier-portal/spec.md#a-receipt-or-log-failure-never-loses-the-submission
 	 * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
+	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
 	 */
 	public function record(
 		string $subjectRef,
@@ -151,7 +161,9 @@ class SubmissionReceiptService {
 		string $actionId,
 		array $whitelistedData,
 		string $audience = '',
+		mixed $actionTitle = '',
 	): void {
+		$named = $this->titleFields(actionTitle: $actionTitle);
 		try {
 			$this->doRecord(
 				subjectRef: $subjectRef,
@@ -159,7 +171,8 @@ class SubmissionReceiptService {
 				appId: $appId,
 				actionId: $actionId,
 				whitelistedData: $whitelistedData,
-				audience: $audience
+				audience: $audience,
+				named: $named
 			);
 		} catch (Throwable $e) {
 			// Belt-and-braces: doRecord()'s own writes already degrade to null
@@ -170,9 +183,33 @@ class SubmissionReceiptService {
 				'Portaliq: WMEBV receipt recording failed entirely',
 				['appId' => $appId, 'actionId' => $actionId, 'reason' => $e->getMessage()]
 			);
-			$this->writeFallbackSubmission(subjectRef: $subjectRef, organisation: $organisation, appId: $appId, actionId: $actionId);
+			$this->writeFallbackSubmission(subjectRef: $subjectRef, organisation: $organisation, appId: $appId, actionId: $actionId, named: $named);
 		}
 	}//end record()
+
+	/**
+	 * The proof-log fields that name the action: `actionTitle`, trimmed and
+	 * kept to TITLE_MAX_LENGTH characters, or nothing for a title that is no
+	 * string or is blank.
+	 *
+	 * @param mixed $actionTitle The title the caller passed.
+	 *
+	 * @return array<string, string> Either `['actionTitle' => ...]` or empty.
+	 *
+	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 */
+	private function titleFields(mixed $actionTitle): array {
+		if (is_string($actionTitle) === false) {
+			return [];
+		}
+
+		$title = mb_substr(trim($actionTitle), 0, self::TITLE_MAX_LENGTH);
+		if ($title === '') {
+			return [];
+		}
+
+		return ['actionTitle' => $title];
+	}//end titleFields()
 
 	/**
 	 * Write the receipt message, then the linked proof-log record.
@@ -183,6 +220,7 @@ class SubmissionReceiptService {
 	 * @param string $actionId The declared action id.
 	 * @param array<string, mixed> $whitelistedData The whitelisted submitted data.
 	 * @param string $audience The subject's audience (notification dispatch).
+	 * @param array<string, string> $named The fields that name the action (titleFields()).
 	 *
 	 * @return void
 	 *
@@ -195,6 +233,7 @@ class SubmissionReceiptService {
 		string $actionId,
 		array $whitelistedData,
 		string $audience = '',
+		array $named = [],
 	): void {
 		$referenceId = $this->generateReferenceId();
 		$submittedAt = $this->now();
@@ -239,7 +278,7 @@ class SubmissionReceiptService {
 				'receiptMessageRef' => $referenceId,
 				'submittedAt' => $submittedAt,
 				'deliveryStatus' => $deliveryStatus,
-			]
+			] + $named
 		);
 
 		if ($submission === null) {
@@ -247,7 +286,7 @@ class SubmissionReceiptService {
 				'Portaliq: WMEBV proof-log write failed — retrying with a minimal fallback record',
 				['appId' => $appId, 'actionId' => $actionId, 'subjectRef' => $subjectRef]
 			);
-			$this->writeFallbackSubmission(subjectRef: $subjectRef, organisation: $organisation, appId: $appId, actionId: $actionId);
+			$this->writeFallbackSubmission(subjectRef: $subjectRef, organisation: $organisation, appId: $appId, actionId: $actionId, named: $named);
 		}
 	}//end doRecord()
 
@@ -310,12 +349,13 @@ class SubmissionReceiptService {
 	 * @param string $organisation The subject's tenant.
 	 * @param string $appId The contributing app.
 	 * @param string $actionId The declared action id.
+	 * @param array<string, string> $named The fields that name the action (titleFields()).
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/supplier-portal/spec.md#a-receipt-or-log-failure-never-loses-the-submission
 	 */
-	private function writeFallbackSubmission(string $subjectRef, string $organisation, string $appId, string $actionId): void {
+	private function writeFallbackSubmission(string $subjectRef, string $organisation, string $appId, string $actionId, array $named = []): void {
 		try {
 			$this->writer->createObject(
 				register: self::REGISTER,
@@ -328,7 +368,7 @@ class SubmissionReceiptService {
 					'actionId' => $actionId,
 					'submittedAt' => $this->now(),
 					'deliveryStatus' => 'failed',
-				]
+				] + $named
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
