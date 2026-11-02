@@ -64,7 +64,10 @@ test('the head carries the eyebrow, the title and a close button', () => {
 	)
 	assert.match(rule('.pq-mandate-invite__head'), /padding: 22px 28px 0;/)
 	assert.match(rule('.pq-mandate-invite__eyebrow'), /font-size: 0\.9375rem; font-weight: 600;/)
-	assert.match(rule('.pq-mandate-invite__title'), /font-size: 1\.5rem;/)
+	assert.match(
+		rule('.pq-mandate-invite__title'),
+		/font-size: 1\.5rem; font-weight: 700; line-height: normal;/,
+	)
 	assert.match(rule('.pq-mandate-invite__close'), /block-size: 44px; inline-size: 44px;/)
 })
 
