@@ -60,7 +60,7 @@ class PortalCaseTypeCatalogue {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Reads the portal.
+	 * @param ScopedCollectionReaderInterface $reader Reads the portal.
 	 * @param PortalObjectWriter $writer Writes the portal's hidden list.
 	 * @param PortalFormBindingResolver $bindings The portal's published bindings.
 	 * @param CaseTypeReader $caseTypes Reads case types for their names.
@@ -68,7 +68,7 @@ class PortalCaseTypeCatalogue {
 	 * @param PortalContributionRegistry $registry The case apps' declarations.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly PortalFormBindingResolver $bindings,
 		private readonly CaseTypeReader $caseTypes,

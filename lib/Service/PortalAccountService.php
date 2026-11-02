@@ -83,12 +83,12 @@ class PortalAccountService {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Looks up an existing account.
+	 * @param ScopedCollectionReaderInterface $reader Looks up an existing account.
 	 * @param PortalObjectWriter $writer Creates/updates the account row.
 	 * @param ISecureRandom $random Mints a NEW subjectRef on first login.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly ISecureRandom $random,
 	) {

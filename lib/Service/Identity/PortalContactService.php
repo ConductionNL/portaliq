@@ -27,7 +27,7 @@ namespace OCA\Portaliq\Service\Identity;
 
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\Security\ISecureRandom;
 
@@ -105,14 +105,14 @@ class PortalContactService {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Reads contact rows and accounts.
+	 * @param ScopedCollectionReaderInterface $reader Reads contact rows and accounts.
 	 * @param PortalObjectWriter $writer Writes contact rows.
 	 * @param ISecureRandom $random Mints the one-time secret.
 	 * @param PortalIdentityMailer $mailer Mails the invitation.
 	 * @param PortalAccountLookup $accounts Reads an account's name.
 	 */
 	public function __construct(
-		PortalObjectReader $reader,
+		ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly ISecureRandom $random,
 		private readonly PortalIdentityMailer $mailer,

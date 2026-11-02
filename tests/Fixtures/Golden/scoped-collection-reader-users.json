@@ -1,0 +1,1346 @@
+{
+    "OCA\\Portaliq\\BackgroundJob\\NotificationDispatchJob": [
+        {
+            "name": "time",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": false,
+            "acceptsReader": false
+        },
+        {
+            "name": "reader",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "writer",
+            "position": 2,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "orgConfig",
+            "position": 3,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "mailer",
+            "position": 4,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "language",
+            "position": 5,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "deepLinks",
+            "position": 6,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "config",
+            "position": 7,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "logger",
+            "position": 8,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "channels",
+            "position": 9,
+            "allowsNull": true,
+            "optional": true,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\BackgroundJob\\PortalTaskDeliveryJob": [
+        {
+            "name": "time",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": false,
+            "acceptsReader": false
+        },
+        {
+            "name": "container",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "reader",
+            "position": 2,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "writer",
+            "position": 3,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "orgConfig",
+            "position": 4,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "mailer",
+            "position": 5,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "language",
+            "position": 6,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "deepLinks",
+            "position": 7,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "logger",
+            "position": 8,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Listener\\PortalDigitalPostDeliveredListener": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "writer",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "logger",
+            "position": 2,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Portal\\PortalContributionProvider": [
+        {
+            "name": "objectReader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "random",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "logger",
+            "position": 2,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Cms\\AccessibilityMeasurements": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "writer",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "statement",
+            "position": 2,
+            "allowsNull": false,
+            "optional": true,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Cms\\PortalDomainVerifier": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "writer",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "logger",
+            "position": 2,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "lookup",
+            "position": 3,
+            "allowsNull": true,
+            "optional": true,
+            "promoted": false,
+            "acceptsReader": false
+        },
+        {
+            "name": "probe",
+            "position": 4,
+            "allowsNull": true,
+            "optional": true,
+            "promoted": false,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Cms\\PortalHomePage": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Identity\\ConfirmedAddressJoin": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "writer",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "auditor",
+            "position": 2,
+            "allowsNull": true,
+            "optional": true,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "lock",
+            "position": 3,
+            "allowsNull": true,
+            "optional": true,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Identity\\ContactInvitationLink": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "rows",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "writer",
+            "position": 2,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "accounts",
+            "position": 3,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Identity\\ContactRows": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Identity\\EmailLink\\EmailLinkEligibility": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "address",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Identity\\EmailLink\\EmailLinkSender": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "setting",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "eligibility",
+            "position": 2,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "tokens",
+            "position": 3,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "limits",
+            "position": 4,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "address",
+            "position": 5,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "mailer",
+            "position": 6,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "logger",
+            "position": 7,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Identity\\EmailLink\\EmailLinkTokens": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "writer",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "random",
+            "position": 2,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "lock",
+            "position": 3,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Identity\\PortalAccountActivationService": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "writer",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "random",
+            "position": 2,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Identity\\PortalAccountLookup": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Identity\\PortalAccountPresence": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "portalName",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "userSession",
+            "position": 2,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Identity\\PortalContactService": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": false,
+            "acceptsReader": true
+        },
+        {
+            "name": "writer",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "random",
+            "position": 2,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "mailer",
+            "position": 3,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "accounts",
+            "position": 4,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": false,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Identity\\PortalMandateService": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Identity\\PortalReferenceCaseService": [
+        {
+            "name": "registry",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "reader",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Identity\\PortalReferenceLinkService": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "writer",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "random",
+            "position": 2,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Identity\\PortalSelfServiceService": [
+        {
+            "name": "accounts",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "reader",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "writer",
+            "position": 2,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "random",
+            "position": 3,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "addressChange",
+            "position": 4,
+            "allowsNull": false,
+            "optional": true,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "push",
+            "position": 5,
+            "allowsNull": true,
+            "optional": true,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "auditor",
+            "position": 6,
+            "allowsNull": true,
+            "optional": true,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "claimLock",
+            "position": 7,
+            "allowsNull": true,
+            "optional": true,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Identity\\WaitingAccountInvitation": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "writer",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "random",
+            "position": 2,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "attempts",
+            "position": 3,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "auditor",
+            "position": 4,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "lock",
+            "position": 5,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "secrets",
+            "position": 6,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "claims",
+            "position": 7,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Identity\\WaitingAccountSecret": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "config",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Intake\\DestinationLookup": [
+        {
+            "name": "bindings",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "reader",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "schemas",
+            "position": 2,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "mapping",
+            "position": 3,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Intake\\LandingSubmissionDrain": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "writer",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "intake",
+            "position": 2,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Intake\\PortalCatalogueReader": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "bindings",
+            "position": 1,
+            "allowsNull": true,
+            "optional": true,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "caseTypes",
+            "position": 2,
+            "allowsNull": true,
+            "optional": true,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Intake\\PortalDraftDrain": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "writer",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "actions",
+            "position": 2,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "drafts",
+            "position": 3,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Intake\\PortalDraftStore": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "writer",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\LandingPageProvisioningService": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "writer",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "logger",
+            "position": 2,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\LeafGuardianAudienceReader": [
+        {
+            "name": "registry",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "reader",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "logger",
+            "position": 2,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Notifications\\MessageBoxDeliveries": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "orgConfig",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Notifications\\NotificationChannels": [
+        {
+            "name": "push",
+            "position": 0,
+            "allowsNull": true,
+            "optional": true,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "reader",
+            "position": 1,
+            "allowsNull": true,
+            "optional": true,
+            "promoted": true,
+            "acceptsReader": true
+        }
+    ],
+    "OCA\\Portaliq\\Service\\OidcStateStoreService": [
+        {
+            "name": "writer",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "reader",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Plans\\PlanTemplates": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "rules",
+            "position": 1,
+            "allowsNull": false,
+            "optional": true,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\PollService": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "writer",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\PortalAccountService": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "writer",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "random",
+            "position": 2,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\PortalCaseListReader": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "mandates",
+            "position": 1,
+            "allowsNull": true,
+            "optional": true,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "branches",
+            "position": 2,
+            "allowsNull": false,
+            "optional": true,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "typeNames",
+            "position": 3,
+            "allowsNull": true,
+            "optional": true,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\PortalCaseTypeCatalogue": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "writer",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "bindings",
+            "position": 2,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "caseTypes",
+            "position": 3,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "visibility",
+            "position": 4,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "registry",
+            "position": 5,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\PortalInboxReader": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "logger",
+            "position": 1,
+            "allowsNull": true,
+            "optional": true,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "deliveries",
+            "position": 2,
+            "allowsNull": true,
+            "optional": true,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "files",
+            "position": 3,
+            "allowsNull": true,
+            "optional": true,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Proposals\\ProposalQueueReader": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Reports\\ReportThreadService": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "writer",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "throttler",
+            "position": 2,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Reports\\RevealService": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "writer",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "groupManager",
+            "position": 2,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "dispatcher",
+            "position": 3,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Signin\\PortalSigninSettings": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "orgConfig",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "route",
+            "position": 2,
+            "allowsNull": false,
+            "optional": true,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ],
+    "OCA\\Portaliq\\Service\\Theme\\PortalThemeChoice": [
+        {
+            "name": "reader",
+            "position": 0,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": true
+        },
+        {
+            "name": "writer",
+            "position": 1,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "resolver",
+            "position": 2,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        },
+        {
+            "name": "contrast",
+            "position": 3,
+            "allowsNull": false,
+            "optional": false,
+            "promoted": true,
+            "acceptsReader": false
+        }
+    ]
+}
