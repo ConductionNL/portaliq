@@ -22,6 +22,7 @@ namespace OCA\Portaliq\Service\Traffic;
 
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PortalRegisterContext;
+use OCA\Portaliq\Service\RowAsArray;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -42,6 +43,7 @@ use Throwable;
  */
 class TrafficRecordingStore {
 	use ObjectServiceLookup;
+	use RowAsArray;
 
 	/**
 	 * OpenRegister's ObjectService FQCN, resolved lazily from the container.
@@ -214,7 +216,7 @@ class TrafficRecordingStore {
 
 			$out = [];
 			foreach ($rows as $row) {
-				$out[] = $this->row(row: $row);
+				$out[] = $this->asArray(row: $row);
 			}
 
 			return $out;
@@ -223,25 +225,5 @@ class TrafficRecordingStore {
 
 			return [];
 		}
-	}
-
-	/**
-	 * One row as an array, whether OpenRegister handed back an array or an
-	 * entity.
-	 *
-	 * @param mixed $row The row.
-	 *
-	 * @return array<string, mixed> The row's fields.
-	 */
-	private function row(mixed $row): array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			return (array)$row->jsonSerialize();
-		}
-
-		return [];
 	}
 }

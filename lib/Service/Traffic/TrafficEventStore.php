@@ -22,6 +22,7 @@ namespace OCA\Portaliq\Service\Traffic;
 
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PortalRegisterContext;
+use OCA\Portaliq\Service\RowAsArray;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -60,6 +61,7 @@ use Throwable;
  */
 class TrafficEventStore {
 	use ObjectServiceLookup;
+	use RowAsArray;
 
 	/**
 	 * OpenRegister's ObjectService FQCN, resolved lazily from the container.
@@ -505,7 +507,7 @@ class TrafficEventStore {
 			}
 
 			foreach ($rows as $row) {
-				$shaped = $this->row(row: $row);
+				$shaped = $this->asArray(row: $row);
 				if ($shape !== null) {
 					$shaped = $shape($shaped);
 				}
@@ -521,25 +523,6 @@ class TrafficEventStore {
 		return $out;
 	}
 
-	/**
-	 * One row as an array, whether OpenRegister handed back an array or an
-	 * entity.
-	 *
-	 * @param mixed $row The row.
-	 *
-	 * @return array<string, mixed> The row's fields.
-	 */
-	private function row(mixed $row): array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			return (array)$row->jsonSerialize();
-		}
-
-		return [];
-	}
 
 	/**
 	 * A row without `@self` and without its empty fields.
