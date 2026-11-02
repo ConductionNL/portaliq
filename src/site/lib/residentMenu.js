@@ -100,10 +100,11 @@ export function ownAreaLink(session, t, hrefFor) {
  * @param {number} unread The inbox's unread count.
  * @param {(route: string) => string} hrefFor A real address for a route.
  * @param {Record<string, Array<object>>} [recordRows] Known rows, for a `badge` count.
+ * @param {number} [openTasks] The resident's open tasks, for the tasks section's count.
  * @return {object} `{key, name, link, href, icon?, badge?, badgeLabel?}`.
  * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-menu-must-show-icons-and-counts-in-groups-req-smo-006
  */
-function itemFor(entry, t, unread, hrefFor, recordRows = {}) {
+function itemFor(entry, t, unread, hrefFor, recordRows = {}, openTasks = 0) {
 	const link = routeForNav(entry)
 	const item = {
 		key: entry.key,
@@ -118,6 +119,10 @@ function itemFor(entry, t, unread, hrefFor, recordRows = {}) {
 	if (entry.special === 'inbox' && Number(unread) > 0) {
 		item.badge = String(unread)
 		item.badgeLabel = t('{count} unread', { count: unread })
+	}
+	if (entry.special === 'tasks' && Number(openTasks) > 0) {
+		item.badge = String(openTasks)
+		item.badgeLabel = t('{count} open', { count: openTasks })
 	}
 	// A page that counts the rows of one of its collections (`badge`,
 	// resident-menu-badges-and-cards): the count, once those rows are known.
@@ -147,6 +152,21 @@ export function badgeRows(entry, recordRows) {
 	}
 	const rows = recordRows?.[`${entry.contribution?.app || ''}:${collection}`]
 	return Array.isArray(rows) ? rows : null
+}
+
+/**
+ * How many open tasks a "My tasks" read holds: none when the read failed, so
+ * the menu never shows a count it could not ask for.
+ *
+ * @param {{results?: Array<object>, failed?: boolean}|null} page The answer of the portal api's `fetchTasks()`.
+ * @return {number} The count.
+ * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-a-menu-entry-may-show-the-count-of-a-collection
+ */
+export function openTaskCount(page) {
+	if (!page || page.failed === true || !Array.isArray(page.results)) {
+		return 0
+	}
+	return page.results.length
 }
 
 /** The name a portal's layout calls each item by: a section, or `app:page`. */
@@ -180,6 +200,7 @@ const NAMES = new WeakMap()
  *   portal's own groups (`residentMenu.groups`), or none.
  * @param {Array<string>|null} [leaveOut] Items the portal leaves out of the
  *   menu by name (`residentMenu.leaveOut`, resident-menu-leave-out).
+ * @param {number} [openTasks] The resident's open tasks, counted beside "My tasks".
  * @return {Array<{key: string, title: string, items: Array<object>}>} The groups.
  * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
  * @spec openspec/changes/resident-sees-words-not-codes/specs/site-resident-menu/spec.md#requirement-a-contributed-page-may-name-the-menu-group-it-belongs-to-req-srm-005
@@ -194,6 +215,7 @@ export function residentMenuGroups(
 	recordRows = {},
 	layout = null,
 	leaveOut = null,
+	openTasks = 0,
 ) {
 	const entries = Array.isArray(nav) ? nav : []
 	const named = (item, name) => {
@@ -207,7 +229,10 @@ export function residentMenuGroups(
 			.map((special) => entries.find((entry) => entry.special === special))
 			.filter(Boolean)
 			.map((entry) =>
-				named(itemFor(entry, t, unread, hrefFor, recordRows), entry.special),
+				named(
+					itemFor(entry, t, unread, hrefFor, recordRows, openTasks),
+					entry.special,
+				),
 			),
 	})
 
