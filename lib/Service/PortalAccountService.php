@@ -333,27 +333,12 @@ class PortalAccountService {
 			return false;
 		}
 
-		$uuid = $this->lookup()->identifierOf(row: $account);
-		if ($uuid === null) {
-			return false;
-		}
-
 		$claims = (array)($account['claims'] ?? []);
 		$appClaims = (array)($claims[$appId] ?? []);
 		$appClaims[$claimName] = $value;
 		$claims[$appId] = $appClaims;
 
-		$written = $this->writer->updateObject(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: '',
-			subjectRef: '',
-			organisation: '',
-			id: $uuid,
-			data: ['claims' => $claims]
-		);
-
-		return $written !== null;
+		return $this->update(account: $account, data: ['claims' => $claims]);
 	}//end claim()
 
 	/**
@@ -380,26 +365,14 @@ class PortalAccountService {
 			return false;
 		}
 
-		$uuid = $this->lookup()->identifierOf(row: $account);
-		if ($uuid === null) {
-			return false;
-		}
-
-		$written = $this->writer->updateObject(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: '',
-			subjectRef: '',
-			organisation: '',
-			id: $uuid,
+		return $this->update(
+			account: $account,
 			data: [
 				'status' => self::STATUS_VOID,
 				'voidReason' => $reason,
 				'provisionedBy' => (string)($account['provisionedBy'] ?? $voidedBy),
 			]
 		);
-
-		return $written !== null;
 	}//end voidPending()
 
 
@@ -426,20 +399,7 @@ class PortalAccountService {
 			return false;
 		}
 
-		$uuid = $this->lookup()->identifierOf(row: $account);
-		if ($uuid === null) {
-			return false;
-		}
-
-		return $this->writer->updateObject(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: '',
-			subjectRef: '',
-			organisation: '',
-			id: $uuid,
-			data: ['status' => self::STATUS_ACTIVE]
-		) !== null;
+		return $this->update(account: $account, data: ['status' => self::STATUS_ACTIVE]);
 	}//end approvePending()
 
 	/**
@@ -462,18 +422,8 @@ class PortalAccountService {
 			return;
 		}
 
-		$uuid = $this->lookup()->identifierOf(row: $existing);
-		if ($uuid === null) {
-			return;
-		}
-
-		$this->writer->updateObject(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: '',
-			subjectRef: '',
-			organisation: '',
-			id: $uuid,
+		$this->update(
+			account: $existing,
 			data: [
 				'status' => self::STATUS_ACTIVE,
 				'identityType' => $identityType,
@@ -493,25 +443,37 @@ class PortalAccountService {
 	 * @return void
 	 */
 	private function touchLastLogin(array $existing): void {
-		$uuid = $this->lookup()->identifierOf(row: $existing);
+		$this->update(account: $existing, data: ['lastLoginAt' => (new DateTimeImmutable())->format(DATE_ATOM)]);
+	}//end touchLastLogin()
+
+	/**
+	 * Write `$data` onto an account row this service itself already located.
+	 *
+	 * Internal, privileged update: an empty scopeField/subjectRef/organisation
+	 * skips the writer's ownership re-check, mirroring
+	 * PortalSessionService::revokeQuietly()'s identical rationale.
+	 *
+	 * @param array<string, mixed> $account The account row.
+	 * @param array<string, mixed> $data    The fields to write.
+	 *
+	 * @return bool False when the row has no identifier or the write failed.
+	 */
+	private function update(array $account, array $data): bool {
+		$uuid = $this->lookup()->identifierOf(row: $account);
 		if ($uuid === null) {
-			return;
+			return false;
 		}
 
-		// Internal, privileged update of a row this service itself already
-		// located and verified — an empty scopeField/subjectRef/organisation
-		// skips the writer's ownership re-check, mirroring
-		// PortalSessionService::revokeQuietly()'s identical rationale.
-		$this->writer->updateObject(
+		return $this->writer->updateObject(
 			register: self::REGISTER,
 			schema: self::SCHEMA,
 			scopeField: '',
 			subjectRef: '',
 			organisation: '',
 			id: $uuid,
-			data: ['lastLoginAt' => (new DateTimeImmutable())->format(DATE_ATOM)]
-		);
-	}//end touchLastLogin()
+			data: $data
+		) !== null;
+	}//end update()
 
 	/**
 	 * Mint a fresh, cryptographically random subjectRef for a brand-new account.
