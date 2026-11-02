@@ -68,7 +68,7 @@ const ROWS = {
 }
 
 test('a per-record page in a group lists each row as an item with its subtitle', () => {
-	const groups = residentMenuGroups(buildNav([LEARNIQ], t, {}), t, 0, href, ROWS)
+	const groups = residentMenuGroups(buildNav([LEARNIQ], t, {}), { t, unread: 0, hrefFor: href, recordRows: ROWS })
 	const children = groups.find((group) => group.title === 'Mijn kinderen')
 	assert.ok(children, 'one group named after the page group')
 	assert.deepEqual(
@@ -89,7 +89,7 @@ test('a per-record page in a group lists each row as an item with its subtitle',
 test('without a group a per-record page keeps a group per row, as before', () => {
 	const plain = structuredClone(LEARNIQ)
 	delete plain.pages[0].group
-	const groups = residentMenuGroups(buildNav([plain], t, {}), t, 0, href, ROWS)
+	const groups = residentMenuGroups(buildNav([plain], t, {}), { t, unread: 0, hrefFor: href, recordRows: ROWS })
 	assert.ok(groups.some((group) => group.title === 'Vera'))
 	assert.equal(
 		groups.find((group) => group.title === 'Vera').items[0].subline,
@@ -98,14 +98,14 @@ test('without a group a per-record page keeps a group per row, as before', () =>
 })
 
 test('a page counts the rows of the collection its badge names, once they are known', () => {
-	const counted = residentMenuGroups(buildNav([LEARNIQ], t, {}), t, 0, href, ROWS)
+	const counted = residentMenuGroups(buildNav([LEARNIQ], t, {}), { t, unread: 0, hrefFor: href, recordRows: ROWS })
 	const item = counted
 		.flatMap((group) => group.items)
 		.find((entry) => entry.name === 'Oudergesprekken')
 	assert.equal(item.badge, '1')
 	assert.equal(item.badgeLabel, '1 te plannen')
 
-	const unknown = residentMenuGroups(buildNav([LEARNIQ], t, {}), t, 0, href, {})
+	const unknown = residentMenuGroups(buildNav([LEARNIQ], t, {}), { t, unread: 0, hrefFor: href, recordRows: {} })
 	const none = unknown
 		.flatMap((group) => group.items)
 		.find((entry) => entry.name === 'Oudergesprekken')
@@ -126,7 +126,7 @@ test('the badge collection is loaded with the per-record ones', async () => {
 
 test('the menu renders sublines, the organisation card and the total on the phone button', async () => {
 	// Two unread messages and one conference to plan: three new.
-	const groups = residentMenuGroups(buildNav([LEARNIQ], t, {}), t, 2, href, ROWS)
+	const groups = residentMenuGroups(buildNav([LEARNIQ], t, {}), { t, unread: 2, hrefFor: href, recordRows: ROWS })
 	const html = await renderComponent(ResidentMenu, {
 		groups,
 		showLabel: 'Mijn Wilgenboom',
@@ -154,14 +154,14 @@ test('"My tasks" counts the resident\'s open tasks the way the inbox counts unre
 	const nav = buildNav([], t, { tasks: true })
 	const tasksItem = (groups) => groups.flatMap((group) => group.items).find((entry) => entry.key === '__tasks__')
 
-	const counted = tasksItem(residentMenuGroups(nav, t, 0, href, {}, null, null, 3))
+	const counted = tasksItem(residentMenuGroups(nav, { t, unread: 0, hrefFor: href, recordRows: {}, layout: null, leaveOut: null, openTasks: 3 }))
 	assert.equal(counted.badge, '3')
 	assert.equal(counted.badgeLabel, '3 open')
 
-	assert.equal(tasksItem(residentMenuGroups(nav, t, 0, href, {}, null, null, 0)).badge, undefined, 'no count at 0')
-	assert.equal(tasksItem(residentMenuGroups(nav, t, 0, href, {})).badge, undefined, 'no count before the tasks are known')
+	assert.equal(tasksItem(residentMenuGroups(nav, { t, unread: 0, hrefFor: href, recordRows: {}, layout: null, leaveOut: null, openTasks: 0 })).badge, undefined, 'no count at 0')
+	assert.equal(tasksItem(residentMenuGroups(nav, { t, unread: 0, hrefFor: href, recordRows: {} })).badge, undefined, 'no count before the tasks are known')
 
-	const laidOut = residentMenuGroups(nav, t, 0, href, {}, [{ title: 'Zaken en taken', items: ['tasks'] }], null, 2)
+	const laidOut = residentMenuGroups(nav, { t, unread: 0, hrefFor: href, recordRows: {}, layout: [{ title: 'Zaken en taken', items: ['tasks'] }], leaveOut: null, openTasks: 2 })
 	assert.equal(tasksItem(laidOut).badge, '2', 'the portal\'s own groups keep the count')
 })
 

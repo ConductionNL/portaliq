@@ -225,7 +225,7 @@ export default {
 				return
 			}
 			const asked = { ...this.block }
-			const found = await lookupAddress(this.base, asked)
+			const found = await lookupAddress({ base: this.base }, asked)
 			const unchanged =
 				this.block.postcode === asked.postcode
 				&& this.block.number === asked.number

@@ -53,23 +53,33 @@ export function parseOpenFragment(hash) {
  */
 export function consumeOpenTarget(location, history, storage) {
 	const fromHash = parseOpenFragment(location?.hash || '')
-	if (fromHash) {
-		try {
-			history?.replaceState(
-				null,
-				'',
-				`${location.pathname || ''}${location.search || ''}`,
-			)
-		} catch {
-			// An address bar that cannot be rewritten still opens the record.
-		}
-		try {
-			storage?.setItem(OPEN_STORAGE_KEY, JSON.stringify(fromHash))
-		} catch {
-			// Without storage the target lives as long as this page.
-		}
-		return fromHash
+	if (!fromHash) {
+		return keptOpenTarget(storage)
 	}
+	try {
+		history?.replaceState(
+			null,
+			'',
+			`${location.pathname || ''}${location.search || ''}`,
+		)
+	} catch {
+		// An address bar that cannot be rewritten still opens the record.
+	}
+	try {
+		storage?.setItem(OPEN_STORAGE_KEY, JSON.stringify(fromHash))
+	} catch {
+		// Without storage the target lives as long as this page.
+	}
+	return fromHash
+}
+
+/**
+ * The target kept before the sign-in, or null.
+ *
+ * @param {{getItem: (key: string) => string|null}|null} storage sessionStorage.
+ * @return {{app: string, collection: string, id: string}|null}
+ */
+function keptOpenTarget(storage) {
 	try {
 		const kept = JSON.parse(storage?.getItem(OPEN_STORAGE_KEY) || 'null')
 		if (

@@ -313,19 +313,20 @@ function dutchLabel(key, vars = {}) {
  * accounts is a support ticket from every visitor who presses it.
  *
  * @param {object} site     The portal record from /api/content/site.
- * @param {string} authBase The auth edge base.
- * @param {(key: string, vars?: object) => string} [t] The site translator;
+ * @param {object} ways     What the ways in are built from.
+ * @param {string} ways.authBase The auth edge base.
+ * @param {(key: string, vars?: object) => string} [ways.t] The site translator;
  *        without one the labels are the Dutch the site always showed.
- * @param {string} [exampleResident] The example set whose residents the
+ * @param {string} [ways.exampleResident] The example set whose residents the
  *        one-click demo sign-in offers on this portal (the shell's
  *        `signin.exampleResident`), or ''.
- * @param {Array<{key: string, name: string, card?: object}>} [demoResidents]
+ * @param {Array<{key: string, name: string, card?: object}>} [ways.demoResidents]
  *        The residents of that set (`signin.exampleResidents`). Each gets its
  *        own card marked `demo`, after the portal's own ways in. The
  *        `nextcloud` way stays the account route, with its password reset and
  *        registration links, so a resident who made an account still signs in
  *        with it (demo-sign-in-beside-the-account).
- * @param {boolean} [emailLink] Whether the portal offers the e-mail link (`waysIn.emailLink`).
+ * @param {boolean} [ways.emailLink] Whether the portal offers the e-mail link (`waysIn.emailLink`).
  * @return {Array<{key: string, mode: string, label: string, card?: object, href: string, demo?: boolean, form?: string}>} The routes.
  * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
  * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#1
@@ -333,18 +334,37 @@ function dutchLabel(key, vars = {}) {
  * @spec openspec/changes/nextcloud-account-registration/specs/portal-nextcloud-account-login/spec.md#requirement-the-sign-in-page-leads-to-nextclouds-own-registration-req-ncl-005
  * @spec openspec/changes/demo-sign-in-beside-the-account/specs/example-resident/spec.md#requirement-a-demo-may-sign-in-each-example-resident-with-one-click
  */
-export function signInRoutes(
-	site,
-	authBase,
-	t = dutchLabel,
-	exampleResident = '',
-	demoResidents = [],
-	emailLink = false,
-) {
+export function signInRoutes(site, ways) {
+	const { authBase, t = dutchLabel, exampleResident = '', demoResidents = [], emailLink = false } = ways
 	const modes = Array.isArray(site?.authentication?.modes)
 		? site.authentication.modes
 		: []
+	const labels = modeLabels(t, emailLink)
+	const ctx = { site, authBase, t, exampleResident, ...returnQuery(site) }
+	const routes = modes
+		.filter((mode) => mode !== 'public' && Object.hasOwn(labels, mode))
+		.map((mode) => modeRoute(mode, { ...ctx, label: labels[mode] }))
 
+	// The one-click demo cards (demo-sign-in-beside-the-account): one per
+	// example resident, only where the shell offers them and the portal
+	// signs residents in with their account, as the route requires.
+	const demo = typeof exampleResident === 'string' && exampleResident !== ''
+	if (!demo || !modes.includes('nextcloud')) {
+		return routes
+	}
+	return routes.concat(demoRoutes(demoResidents, ctx))
+}
+
+/**
+ * The standard label of each way in. The e-mail link is a form, not a link:
+ * only where the auth edge says the switch is on and the portal declares it
+ * (sign-in-with-an-email-link).
+ *
+ * @param {(key: string, vars?: object) => string} t The translator.
+ * @param {boolean} emailLink Whether the portal offers the e-mail link.
+ * @return {Record<string, string>} The label per mode.
+ */
+function modeLabels(t, emailLink) {
 	const labels = {
 		nextcloud: t('Log in with your account'),
 		local: t('Log in'),
@@ -353,13 +373,26 @@ export function signInRoutes(
 		eherkenning: t('Log in with {provider}', { provider: 'eHerkenning' }),
 		eidas: t('Log in with {provider}', { provider: 'eIDAS' }),
 	}
+	if (emailLink === true) {
+		labels['email-link'] = t('Send me a sign-in link')
+	}
+	return labels
+}
 
-	// THE PORTAL SLUG TRAVELS WITH THE LINK, and leaving it off is not a
-	// cosmetic omission. The auth edge falls back to resolving the portal by
-	// HOST, and several portals share one host on a development instance — so a
-	// sign-in started from portal B arrived at the edge looking like portal A
-	// and was refused with `mode_not_offered`. Measured: the button led to a
-	// 404 whose body named a mode the visitor's portal does in fact offer.
+/**
+ * The portal slug and the page to come back to, as query parts.
+ *
+ * THE PORTAL SLUG TRAVELS WITH THE LINK, and leaving it off is not a
+ * cosmetic omission. The auth edge falls back to resolving the portal by
+ * HOST, and several portals share one host on a development instance, so a
+ * sign-in started from portal B arrived at the edge looking like portal A
+ * and was refused with `mode_not_offered`. Measured: the button led to a
+ * 404 whose body named a mode the visitor's portal does in fact offer.
+ *
+ * @param {object|null} site The portal record.
+ * @return {{slug: string, scope: string, returnTo: string, query: string}} The parts, and both joined.
+ */
+function returnQuery(site) {
 	const slug = site && site.slug ? String(site.slug) : ''
 	const scope = slug ? `portal=${encodeURIComponent(slug)}` : ''
 	// Come back to the page the visitor was actually on, not the portal root.
@@ -367,101 +400,118 @@ export function signInRoutes(
 		typeof window !== 'undefined' && window.location
 			? `returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`
 			: ''
-	const query = [scope, returnTo].filter(Boolean).join('&')
+	return { slug, scope, returnTo, query: [scope, returnTo].filter(Boolean).join('&') }
+}
 
-	// A MODE IS NOT A PROVIDER. The auth edge knows the providers digid,
-	// eherkenning, eidas and generic. `local` and `oidc` are portal modes that
-	// both sign in through the organisation's generic OIDC broker, so a link
-	// carrying `provider=oidc` was refused whatever the organisation had
-	// configured (#802).
-	const providers = { local: 'generic', oidc: 'generic' }
+/**
+ * A MODE IS NOT A PROVIDER. The auth edge knows the providers digid,
+ * eherkenning, eidas and generic. `local` and `oidc` are portal modes that
+ * both sign in through the organisation's generic OIDC broker, so a link
+ * carrying `provider=oidc` was refused whatever the organisation had
+ * configured (#802).
+ */
+const PROVIDER_OF_MODE = { local: 'generic', oidc: 'generic' }
 
-	// The card a portal wrote for a way in (site-chrome-follows-the-design):
-	// who it is for, what it opens, the button's text and a hint. A way in
-	// without one keeps the standard label and no card text.
+/**
+ * The route of one way in. The card a portal wrote for it
+ * (site-chrome-follows-the-design) names who it is for, what it opens, the
+ * button's text and a hint; a way in without one keeps the standard label.
+ *
+ * @param {string} mode The mode.
+ * @param {{site: object, authBase: string, slug: string, query: string, label: string}} ctx The portal, the auth edge base, the query and the standard label.
+ * @return {object} The route.
+ */
+function modeRoute(mode, { site, authBase, slug, query, label }) {
 	const cards = site?.authentication?.modeLabels || {}
-	const demo = typeof exampleResident === 'string' && exampleResident !== ''
-
-	// The e-mail link is a form, not a link: only where the auth edge says
-	// the switch is on and the portal declares it (sign-in-with-an-email-link).
-	if (emailLink === true) {
-		labels['email-link'] = t('Send me a sign-in link')
+	return {
+		key: mode,
+		mode,
+		label: cards[mode]?.button || label,
+		...(cards[mode] ? { card: cards[mode] } : {}),
+		// Nextcloud's own reset, reached from the account route's card
+		// (password-reset-from-the-sign-in-page REQ-PWR-001).
+		...(mode === 'nextcloud' && site?.lostPasswordUrl
+			? { lostPasswordUrl: String(site.lostPasswordUrl) }
+			: {}),
+		// Nextcloud's own registration form, served by the site config only
+		// when the portal names a resident group the registration app fills
+		// (nextcloud-account-registration REQ-NCL-005). Also on a demo: the
+		// one-click cards sit beside this route, they do not replace it.
+		// Never on another mode: the e-mail link opens no registration.
+		...(mode === 'nextcloud' && site?.registerUrl
+			? { registerUrl: String(site.registerUrl) }
+			: {}),
+		...(mode === 'email-link'
+			? { form: 'email-link', authBase, portal: slug }
+			: {}),
+		href: modeHref(mode, { authBase, query }),
 	}
+}
 
-	const routes = modes
-		.filter((mode) => mode !== 'public' && Object.hasOwn(labels, mode))
-		.map((mode) => ({
-			key: mode,
-			mode,
-			label: cards[mode]?.button || labels[mode],
-			...(cards[mode] ? { card: cards[mode] } : {}),
-			// Nextcloud's own reset, reached from the account route's card
-			// (password-reset-from-the-sign-in-page REQ-PWR-001).
-			...(mode === 'nextcloud' && site?.lostPasswordUrl
-				? { lostPasswordUrl: String(site.lostPasswordUrl) }
-				: {}),
-			// Nextcloud's own registration form, served by the site config only
-			// when the portal names a resident group the registration app fills
-			// (nextcloud-account-registration REQ-NCL-005). Also on a demo: the
-			// one-click cards sit beside this route, they do not replace it.
-			// Never on another mode: the e-mail link opens no registration.
-			...(mode === 'nextcloud' && site?.registerUrl
-				? { registerUrl: String(site.registerUrl) }
-				: {}),
-			...(mode === 'email-link'
-				? { form: 'email-link', authBase, portal: slug }
-				: {}),
-			href:
-				mode === 'email-link'
-					? ''
-					: mode === 'nextcloud'
-						? `${authBase}/session/nextcloud${query ? `?${query}` : ''}`
-						: `${authBase}/session/oidc/start?provider=${encodeURIComponent(
-								providers[mode] || mode,
-							)}${query ? `&${query}` : ''}`,
-		}))
-
-	// The one-click demo cards (demo-sign-in-beside-the-account): one per
-	// example resident, only where the shell offers them and the portal
-	// signs residents in with their account, as the route requires.
-	if (!demo || !modes.includes('nextcloud')) {
-		return routes
+/**
+ * The address a way in starts at: none for the e-mail link's form.
+ *
+ * @param {string} mode The mode.
+ * @param {{authBase: string, query: string}} ctx The auth edge base and the query.
+ * @return {string} The address.
+ */
+function modeHref(mode, { authBase, query }) {
+	if (mode === 'email-link') {
+		return ''
 	}
+	if (mode === 'nextcloud') {
+		return `${authBase}/session/nextcloud${query ? `?${query}` : ''}`
+	}
+	return `${authBase}/session/oidc/start?provider=${encodeURIComponent(
+		PROVIDER_OF_MODE[mode] || mode,
+	)}${query ? `&${query}` : ''}`
+}
 
+/**
+ * One demo card per example resident. A shell from before there were
+ * several names only the set: one card for its first resident.
+ *
+ * @param {Array<object>|unknown} demoResidents The residents of the example set.
+ * @param {{authBase: string, t: (key: string, vars?: object) => string, exampleResident: string, scope: string, returnTo: string}} ctx The auth edge base, the translator, the set and the query parts.
+ * @return {Array<object>} The routes.
+ */
+function demoRoutes(demoResidents, ctx) {
 	const residents = Array.isArray(demoResidents)
 		? demoResidents.filter((r) => r && typeof r.key === 'string' && r.key)
 		: []
-	// A shell from before there were several names only the set: one card
-	// for its first resident.
 	const offered = residents.length ? residents : [{ key: '', name: '' }]
+	return offered.map((resident) => demoRoute(resident, ctx))
+}
 
-	return routes.concat(
-		offered.map((resident) => {
-			const name = String(resident.name || '')
-			const card = resident.card || {}
-			const demoQuery = [
-				`id=${encodeURIComponent(exampleResident)}`,
-				resident.key ? `resident=${encodeURIComponent(resident.key)}` : '',
-				scope,
-				returnTo,
-			]
-				.filter(Boolean)
-				.join('&')
-			return {
-				key: `example-resident:${resident.key}`,
-				mode: 'example-resident',
-				label:
-					card.button
-					|| (name
-						? t('Log in as {name}', { name })
-						: t('Log in as the example resident')),
-				card: {
-					title: card.title || name || t('Example resident'),
-					...(card.text ? { text: card.text } : {}),
-				},
-				demo: true,
-				href: `${authBase}/session/example-resident?${demoQuery}`,
-			}
-		}),
-	)
+/**
+ * The one-click card of one example resident.
+ *
+ * @param {{key: string, name?: string, card?: object}} resident The resident.
+ * @param {{authBase: string, t: (key: string, vars?: object) => string, exampleResident: string, scope: string, returnTo: string}} ctx The auth edge base, the translator, the set and the query parts.
+ * @return {object} The route.
+ */
+function demoRoute(resident, { authBase, t, exampleResident, scope, returnTo }) {
+	const name = String(resident.name || '')
+	const card = resident.card || {}
+	const demoQuery = [
+		`id=${encodeURIComponent(exampleResident)}`,
+		resident.key ? `resident=${encodeURIComponent(resident.key)}` : '',
+		scope,
+		returnTo,
+	]
+		.filter(Boolean)
+		.join('&')
+	return {
+		key: `example-resident:${resident.key}`,
+		mode: 'example-resident',
+		label:
+			card.button
+			|| (name ? t('Log in as {name}', { name }) : t('Log in as the example resident')),
+		card: {
+			title: card.title || name || t('Example resident'),
+			...(card.text ? { text: card.text } : {}),
+		},
+		demo: true,
+		href: `${authBase}/session/example-resident?${demoQuery}`,
+	}
 }

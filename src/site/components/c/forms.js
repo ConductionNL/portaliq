@@ -92,6 +92,14 @@ export function fieldLabel(action, field) {
 	return typeof label === 'string' && label !== '' ? label : field
 }
 
+/** The input a field's schema `input` hint renders as; any other hint is a text box. */
+const INPUT_OF_HINT = {
+	date: 'date',
+	datetime: 'datetime-local',
+	number: 'number',
+	email: 'email',
+}
+
 /**
  * The input one field renders as. A file field is a file picker, a field with
  * options a select, a large field a textarea; otherwise the schema's `input`
@@ -116,19 +124,9 @@ export function fieldInput(action, field, options) {
 	if (config.size === 'large' || config.size === 'full') {
 		return 'textarea'
 	}
-	switch (config.input) {
-		case 'date':
-			return 'date'
-		case 'datetime':
-			return 'datetime-local'
-		case 'number':
-			return 'number'
-		case 'email':
-			return 'email'
-		default:
-			return 'text'
-	}
+	return Object.hasOwn(INPUT_OF_HINT, config.input) ? INPUT_OF_HINT[config.input] : 'text'
 }
+
 
 /**
  * The options a form knows without asking: every `static` provider.
@@ -179,17 +177,8 @@ export function collectionProviders(action) {
 export function withSingleOptions(action, values, options) {
 	const out = { ...(values || {}) }
 	for (const field of formFields(action)) {
-		const list = (options || {})[field]
-		if (
-			fieldConfig(action, field).required !== true
-			|| fieldInput(action, field, list) !== 'select'
-			|| !Array.isArray(list)
-			|| list.length !== 1
-		) {
-			continue
-		}
+		const only = singleOption(action, { field, options })
 		const current = out[field]
-		const only = list[0] && list[0].value
 		if (
 			(current === undefined || current === null || String(current) === '')
 			&& only !== undefined
@@ -200,6 +189,27 @@ export function withSingleOptions(action, values, options) {
 		}
 	}
 	return out
+}
+
+/**
+ * The value of the one option a required select offers, or undefined when
+ * the field is no required select with exactly one option.
+ *
+ * @param {object} action The action.
+ * @param {{field: string, options: Record<string, Array<{value: string}>>|null}} ask The field and the resolved options per field.
+ * @return {string|undefined} The option's value.
+ */
+function singleOption(action, { field, options }) {
+	const list = (options || {})[field]
+	if (
+		fieldConfig(action, field).required !== true
+		|| fieldInput(action, field, list) !== 'select'
+		|| !Array.isArray(list)
+		|| list.length !== 1
+	) {
+		return undefined
+	}
+	return list[0] && list[0].value
 }
 
 /**
@@ -362,52 +372,46 @@ export function isEndpointAction(action) {
  * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-word-its-own-error-req-smf-006
  */
 export function fieldErrors(action, values, files, t) {
-	const translate = translatorOr(t)
-	const fileNames = fileFields(action)
+	const ask = { action, values: values || {}, files: files || {}, translate: translatorOr(t), fileNames: fileFields(action) }
 	const errors = {}
 	for (const field of formFields(action)) {
-		const config = fieldConfig(action, field)
-		const required = config.required === true
-		const label = fieldLabel(action, field)
-		// The app's own words for an empty required field win (REQ-SMF-006).
-		const own =
-			typeof config.requiredMessage === 'string'
-			&& config.requiredMessage.trim() !== ''
-				? config.requiredMessage
-				: ''
-		if (fileNames.includes(field)) {
-			if (required && ((files || {})[field] || []).length === 0) {
-				errors[field] =
-					own
-					|| translate('Please choose a file for {field}.', {
-						field: label,
-					})
-			}
-			continue
-		}
-		const value = (values || {})[field]
-		const empty =
-			value === undefined || value === null || String(value).trim() === ''
-		if (empty) {
-			if (required) {
-				errors[field] =
-					own || translate('{field} is required.', { field: label })
-			}
-			continue
-		}
-		if (fieldInput(action, field) === 'date' && dateProblem(value)) {
-			errors[field] = translate(
-				'{field}: enter a real date, for example 1 3 2026.',
-				{ field: label },
-			)
-			continue
-		}
-		const wrongType = typeProblem(valueTypeOf(action, field), String(value))
-		if (wrongType !== '') {
-			errors[field] = translate(wrongType, { field: label })
+		const error = fieldError(field, ask)
+		if (error !== null) {
+			errors[field] = error
 		}
 	}
 	return errors
+}
+
+/**
+ * The inline error of one field, or null when it has none.
+ *
+ * @param {string} field The field.
+ * @param {{action: object, values: object, files: object, translate: (key: string, vars?: object) => string, fileNames: string[]}} ask The action, the typed values, the picked files, the translator and the file fields.
+ * @return {string|null} The message, or null.
+ */
+function fieldError(field, { action, values, files, translate, fileNames }) {
+	const config = fieldConfig(action, field)
+	const label = fieldLabel(action, field)
+	// The app's own words for an empty required field win (REQ-SMF-006).
+	const own =
+		typeof config.requiredMessage === 'string'
+		&& config.requiredMessage.trim() !== ''
+			? config.requiredMessage
+			: ''
+	if (fileNames.includes(field)) {
+		const missing = config.required === true && (files[field] || []).length === 0
+		return missing ? own || translate('Please choose a file for {field}.', { field: label }) : null
+	}
+	const value = values[field]
+	if (value === undefined || value === null || String(value).trim() === '') {
+		return config.required === true ? own || translate('{field} is required.', { field: label }) : null
+	}
+	if (fieldInput(action, field) === 'date' && dateProblem(value)) {
+		return translate('{field}: enter a real date, for example 1 3 2026.', { field: label })
+	}
+	const wrongType = typeProblem(valueTypeOf(action, field), String(value))
+	return wrongType === '' ? null : translate(wrongType, { field: label })
 }
 
 /**

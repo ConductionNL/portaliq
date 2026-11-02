@@ -149,11 +149,11 @@ test('the menu lists a theme only when the server announced it, in a group of it
 	assert.equal(entry.label, 'Parkeren')
 	assert.equal(entry.special, 'thema/parkeren', 'the page lives at /mijn/thema/parkeren')
 
-	const groups = residentMenuGroups(nav, t, 0, (route) => route)
+	const groups = residentMenuGroups(nav, { t, unread: 0, hrefFor: (route) => route })
 	const group = groups.find((g) => g.key === 'themes')
 	assert.equal(group.title, 'Themes')
 	assert.deepEqual(group.items.map((i) => [i.name, i.link]), [['Parkeren', '/mijn/thema/parkeren']])
-	assert.equal(residentMenuGroups(buildNav([], t, off), t, 0, (r) => r).some((g) => g.key === 'themes'), false)
+	assert.equal(residentMenuGroups(buildNav([], t, off), { t, unread: 0, hrefFor: (r) => r }).some((g) => g.key === 'themes'), false)
 	assert.deepEqual(themesToList(themes), [{ slug: 'parkeren', title: 'Parkeren' }])
 	assert.deepEqual(themesToList(null), [])
 	assert.equal(typeof sitePageLoader(entry), 'function', 'the theme entry opens the theme page')

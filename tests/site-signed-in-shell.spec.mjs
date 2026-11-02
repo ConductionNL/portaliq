@@ -172,14 +172,14 @@ test('the sign-in routes are labelled in the site language and keep the portal a
 	globalThis.window = { location: { pathname: '/apps/portaliq/site', search: '?portal=wilgenboom&route=%2Fmijn' } }
 	try {
 		const site = { slug: 'wilgenboom', authentication: { modes: ['public', 'digid'] } }
-		const [digid] = signInRoutes(site, '/apps/portaliq/portal/api', createTranslator('en'))
+		const [digid] = signInRoutes(site, { authBase: '/apps/portaliq/portal/api', t: createTranslator('en') })
 		assert.equal(digid.label, 'Log in with DigiD')
 		assert.match(digid.href, /provider=digid/)
 		assert.match(digid.href, /portal=wilgenboom/)
 		assert.match(digid.href, /returnTo=%2Fapps%2Fportaliq%2Fsite%3Fportal%3Dwilgenboom%26route%3D%252Fmijn/)
-		assert.equal(signInRoutes(site, '/x', createTranslator('nl'))[0].label, 'Inloggen met DigiD')
+		assert.equal(signInRoutes(site, { authBase: '/x', t: createTranslator('nl') })[0].label, 'Inloggen met DigiD')
 		// Without a translator the labels stay the Dutch the site always showed.
-		assert.equal(signInRoutes(site, '/x')[0].label, 'Inloggen met DigiD')
+		assert.equal(signInRoutes(site, { authBase: '/x' })[0].label, 'Inloggen met DigiD')
 	} finally {
 		delete globalThis.window
 	}

@@ -458,6 +458,21 @@ import '@utrecht/button-link-css/dist/index.css'
  *
  * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
  */
+/**
+ * The connection the intake calls use: the api base, the portal and the
+ * visitor's bearer as it stands now.
+ *
+ * @param {string} portal The portal slug, or ''.
+ * @return {{base: string, portal: string, token: string}} The connection.
+ */
+function intakeConnection(portal) {
+	return {
+		base: authBaseFrom(resolveApiBase()),
+		portal,
+		token: adoptSessionToken(),
+	}
+}
+
 export default {
 	name: 'IntakeFormBlock',
 
@@ -946,12 +961,7 @@ export default {
 			}
 
 			try {
-				const view = await loadForm(
-					authBaseFrom(resolveApiBase()),
-					this.bindingRoute,
-					this.portal,
-					adoptSessionToken(),
-				)
+				const view = await loadForm(intakeConnection(this.portal), this.bindingRoute)
 				this.render = view.render
 				this.values = initialValues(view.render.fields, view.render.prefill)
 				this.state =
@@ -994,16 +1004,12 @@ export default {
 
 			this.submitting = true
 			try {
-				const outcome = await submitIntake(
-					authBaseFrom(resolveApiBase()),
-					this.bindingRoute,
-					this.values,
-					this.portal,
-					adoptSessionToken(),
-					null,
-					this.accepted,
-					this.verifiedEmails,
-				)
+				const outcome = await submitIntake(intakeConnection(this.portal), {
+					route: this.bindingRoute,
+					answers: this.values,
+					statements: this.accepted,
+					verifiedEmails: this.verifiedEmails,
+				})
 				if (outcome.reference === '') {
 					const { _form: formLevel, ...fieldErrors } = outcome.errors || {}
 					this.formError = String(formLevel || '')
@@ -1053,9 +1059,8 @@ export default {
 				return
 			}
 			const status = await lookUpStatus(
-				authBaseFrom(resolveApiBase()),
+				{ base: authBaseFrom(resolveApiBase()), portal: this.portal },
 				reference,
-				this.portal,
 			)
 			if (!status || !status.reference) {
 				return
@@ -1078,12 +1083,7 @@ export default {
 		async pay() {
 			this.payFailed = false
 			this.paying = true
-			const result = await payIntake(
-				authBaseFrom(resolveApiBase()),
-				this.reference,
-				this.portal,
-				adoptSessionToken(),
-			)
+			const result = await payIntake(intakeConnection(this.portal), this.reference)
 			this.paying = false
 			if (!result.ok) {
 				this.payFailed = true
@@ -1332,14 +1332,11 @@ export default {
 		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t06
 		 */
 		async decideStep(step) {
-			const decided = await decideStepOnServer(
-				authBaseFrom(resolveApiBase()),
-				this.bindingRoute,
-				step.id,
-				this.values,
-				this.portal,
-				adoptSessionToken(),
-			)
+			const decided = await decideStepOnServer(intakeConnection(this.portal), {
+				route: this.bindingRoute,
+				step: step.id,
+				answers: this.values,
+			})
 			if (decided.output !== '' && decided.outcome !== '') {
 				this.values[decided.output] = decided.outcome
 			}

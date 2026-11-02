@@ -238,14 +238,13 @@ export default {
 		 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
 		 */
 		async sendOpen(body, options = {}) {
-			const result = await runAttachedAction(
-				this.api,
-				this.collection,
-				this.row,
-				this.open,
-				body,
+			const result = await runAttachedAction(this.api, {
+				collection: this.collection,
+				row: this.row,
+				action: this.open,
+				values: body,
 				options,
-			)
+			})
 			// The status and the app's per-field refusal (`errors`,
 			// `invalid`) go to the form as an endpoint form gets them
 			// (forwardResult), so a refused answer lands on its field instead
@@ -333,13 +332,12 @@ export default {
 				return
 			}
 			this.busy = true
-			const result = await runAttachedAction(
-				this.api,
-				this.collection,
-				this.row,
-				this.open,
-				this.values,
-			)
+			const result = await runAttachedAction(this.api, {
+				collection: this.collection,
+				row: this.row,
+				action: this.open,
+				values: this.values,
+			})
 			this.busy = false
 			// The server refuses an empty required field per field
 			// (REQ-SMF-024); those land in the summary like the form's own.

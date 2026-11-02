@@ -48,10 +48,18 @@ export async function askAssistant(apiBase, ask, fetcher) {
 	if (!response.ok) {
 		throw new Error(`assistant ${response.status}`)
 	}
+	return assistantReply(await response.json())
+}
 
-	const body = await response.json()
+/**
+ * The reply the screen shows. An answer without a source is never shown,
+ * whatever the server sent.
+ *
+ * @param {object} body The answer's body.
+ * @return {{status: string, answer: ?string, sources: Array<{title: string, url: string}>, removed: boolean, conversationId: string}} The reply.
+ */
+function assistantReply(body) {
 	const sources = Array.isArray(body.sources) ? body.sources : []
-	// An answer without a source is never shown, whatever the server sent.
 	const answered =
 		body.status === 'answered'
 		&& typeof body.answer === 'string'

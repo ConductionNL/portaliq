@@ -272,51 +272,81 @@ export function readable(value, { locale, t }, depth = 0) {
 	if (value === null || value === undefined || value === '') {
 		return ''
 	}
+	if (typeof value !== 'object') {
+		return scalarText(value, { locale, t })
+	}
+	if (depth > 2) {
+		return ''
+	}
+	return Array.isArray(value)
+		? listText(value, { locale, t, depth })
+		: objectText(value, { locale, t, depth })
+}
+
+/**
+ * A value that is no list or object, written for a person: yes or no, a
+ * number in the language's notation, a date as a date, an identifier as
+ * nothing; anything else reads as nothing.
+ *
+ * @param {unknown} value The value.
+ * @param {{locale: string, t: (key: string) => string}} context The language and the translator.
+ * @return {string}
+ */
+function scalarText(value, { locale, t }) {
 	if (typeof value === 'boolean') {
 		return value ? t('Yes') : t('No')
 	}
 	if (typeof value === 'number') {
 		return Number.isFinite(value) ? value.toLocaleString(locale) : ''
 	}
-	if (typeof value === 'string') {
-		const text = value.trim()
-		if (isIdentifier(text)) {
-			return ''
-		}
-		if (ISO_DATE.test(text)) {
-			return formatMoment(`${text}T00:00:00`, false, locale)
-		}
-		if (ISO_DATETIME.test(text)) {
-			return formatMoment(text, true, locale)
-		}
-		return value
-	}
-	if (depth > 2) {
+	if (typeof value !== 'string') {
 		return ''
 	}
-	if (Array.isArray(value)) {
-		// A list in a cell reads one value per line; the table keeps the
-		// breaks (white-space: pre-line). Joined with commas, "Rekenen: 7,9"
-		// and "Taal: 8,3" ran together with their Dutch decimal commas
-		// (array-cells-one-line-per-item).
-		return value
-			.map((item) => readable(item, { locale, t }, depth + 1))
-			.filter((text) => text !== '')
-			.join(depth === 0 ? '\n' : ', ')
+	const text = value.trim()
+	if (isIdentifier(text)) {
+		return ''
 	}
-	if (typeof value === 'object') {
-		for (const key of NAME_KEYS) {
-			if (typeof value[key] === 'string' && value[key].trim() !== '') {
-				return value[key]
-			}
+	if (ISO_DATE.test(text)) {
+		return formatMoment(`${text}T00:00:00`, false, locale)
+	}
+	return ISO_DATETIME.test(text) ? formatMoment(text, true, locale) : value
+}
+
+/**
+ * A list written for a person. A list in a cell reads one value per line;
+ * the table keeps the breaks (white-space: pre-line). Joined with commas,
+ * "Rekenen: 7,9" and "Taal: 8,3" ran together with their Dutch decimal
+ * commas (array-cells-one-line-per-item). A nested list joins with commas.
+ *
+ * @param {Array<unknown>} list The list.
+ * @param {{locale: string, t: (key: string) => string, depth: number}} context The language, the translator and how deep the list is nested.
+ * @return {string}
+ */
+function listText(list, { locale, t, depth }) {
+	return list
+		.map((item) => readable(item, { locale, t }, depth + 1))
+		.filter((text) => text !== '')
+		.join(depth === 0 ? '\n' : ', ')
+}
+
+/**
+ * An object written for a person: its name, else its readable parts.
+ *
+ * @param {object} value The object.
+ * @param {{locale: string, t: (key: string) => string, depth: number}} context The language, the translator and how deep the object is nested.
+ * @return {string}
+ */
+function objectText(value, { locale, t, depth }) {
+	for (const key of NAME_KEYS) {
+		if (typeof value[key] === 'string' && value[key].trim() !== '') {
+			return value[key]
 		}
-		return Object.entries(value)
-			.filter(([key]) => !ENVELOPE.has(key))
-			.map(([, item]) => readable(item, { locale, t }, depth + 1))
-			.filter((text) => text !== '')
-			.join(', ')
 	}
-	return ''
+	return Object.entries(value)
+		.filter(([key]) => !ENVELOPE.has(key))
+		.map(([, item]) => readable(item, { locale, t }, depth + 1))
+		.filter((text) => text !== '')
+		.join(', ')
 }
 
 /**
@@ -367,6 +397,23 @@ function labelled(value, valueLabels, context) {
 	return valueLabel(value, valueLabels)
 }
 
+/** How a cell of each render kind is written; any other kind reads as readable() writes it. */
+const RENDERED = {
+	boolean: (value, { t }) => (value ? t('Yes') : t('No')),
+	date: (value, { locale }) => formatMoment(value, false, locale),
+	datetime: (value, { locale }) => formatMoment(value, true, locale),
+	currency: (value, { locale }) => {
+		try {
+			return new Intl.NumberFormat(locale, {
+				style: 'currency',
+				currency: 'EUR',
+			}).format(Number(value))
+		} catch {
+			return String(value)
+		}
+	},
+}
+
 /**
  * The text of one cell, following the column's `render`. A value the column
  * labels reads as its label, whatever the render kind.
@@ -387,25 +434,8 @@ export function formatCell(value, render, { locale, t, valueLabels }) {
 	if (label !== undefined) {
 		return label
 	}
-	switch (render) {
-		case 'boolean':
-			return value ? t('Yes') : t('No')
-		case 'date':
-			return formatMoment(value, false, locale)
-		case 'datetime':
-			return formatMoment(value, true, locale)
-		case 'currency':
-			try {
-				return new Intl.NumberFormat(locale, {
-					style: 'currency',
-					currency: 'EUR',
-				}).format(Number(value))
-			} catch {
-				return String(value)
-			}
-		default:
-			return readable(value, { locale, t })
-	}
+	const format = Object.hasOwn(RENDERED, render) ? RENDERED[render] : readable
+	return format(value, { locale, t })
 }
 
 /**

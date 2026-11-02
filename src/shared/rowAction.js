@@ -296,21 +296,15 @@ export function answerLink(result, origin = pageOrigin()) {
  * server stamps the rest.
  *
  * @param {object} api The portal api (forwardRowAction).
- * @param {object} collection The collection the row belongs to.
- * @param {object} row The row.
- * @param {object} action The endpoint row action.
- * @param {object} answers The typed row inputs, under the action's `into` key.
- * @param {Array<File>} files The files the resident chose, for an action that declares `files`.
+ * @param {object} run What to run.
+ * @param {object} run.collection The collection the row belongs to.
+ * @param {object} run.row The row.
+ * @param {object} run.action The endpoint row action.
+ * @param {object} [run.answers] The typed row inputs, under the action's `into` key.
+ * @param {Array<File>} [run.files] The files the resident chose, for an action that declares `files`.
  * @return {Promise<{redirect: string|null, messageKey: string, link: string}>}
  */
-export async function runRowAction(
-	api,
-	collection,
-	row,
-	action,
-	answers = {},
-	files = [],
-) {
+export async function runRowAction(api, { collection, row, action, answers = {}, files = [] }) {
 	const rowId = row && (row.id || row['@self']?.id)
 	if (!rowId || !api) {
 		return {
@@ -323,20 +317,23 @@ export async function runRowAction(
 			? { field: action.files.field, files }
 			: null
 	const result = upload
-		? await api.forwardRowAction(
-				collection,
-				rowId,
-				action.id,
-				answers,
-				'',
-				upload,
-			)
+		? await api.forwardRowAction(collection, rowId, action.id, answers, '', upload)
 		: await api.forwardRowAction(collection, rowId, action.id, answers)
+	return rowActionOutcome(result)
+}
+
+/**
+ * What the screen does after a row action answered: go to `redirect`, or
+ * show the message `messageKey`. `link`, `message` and `errors` only when the
+ * answer carried them, so every other outcome keeps its shape.
+ *
+ * @param {object} result The forward's answer, `{ok, status, body}`.
+ * @return {{redirect: string|null, messageKey: string, link?: string, message?: string, errors?: object}} The outcome.
+ */
+function rowActionOutcome(result) {
 	const redirect = redirectTarget(result)
 	const link = answerLink(result)
 	const words = answerWords(result)
-	// `link`, `message` and `errors` only when the answer carried them, so
-	// every other outcome keeps its shape.
 	return {
 		redirect,
 		messageKey: redirect ? '' : outcomeKey(result),
