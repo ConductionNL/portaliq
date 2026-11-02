@@ -76,6 +76,48 @@
         },
         "asked": []
     },
+    "no object service | event create": {
+        "status": 500,
+        "data": {
+            "error": "server_error"
+        },
+        "asked": []
+    },
+    "no object service | event create no target": {
+        "status": 400,
+        "data": {
+            "error": "invalid_target"
+        },
+        "asked": []
+    },
+    "no object service | news create": {
+        "status": 500,
+        "data": {
+            "error": "server_error"
+        },
+        "asked": []
+    },
+    "no object service | news create no body": {
+        "status": 400,
+        "data": {
+            "error": "invalid_target"
+        },
+        "asked": []
+    },
+    "no object service | newsletter create": {
+        "status": 500,
+        "data": {
+            "error": "server_error"
+        },
+        "asked": []
+    },
+    "no object service | newsletter create no items": {
+        "status": 400,
+        "data": {
+            "error": "invalid_request"
+        },
+        "asked": []
+    },
     "found and saved | event publish": {
         "status": 200,
         "data": {
@@ -399,6 +441,173 @@
         },
         "asked": []
     },
+    "found and saved | event create": {
+        "status": 200,
+        "data": {
+            "title": "Feest",
+            "description": "Omschrijving",
+            "start": "2026-12-01T10:00:00Z",
+            "end": "2026-12-01T12:00:00Z",
+            "target": {
+                "groupRefs": [
+                    "g1"
+                ]
+            },
+            "status": "draft",
+            "rsvpEnabled": true,
+            "signupRoles": [
+                {
+                    "name": "Hulp"
+                }
+            ],
+            "authorRef": "staff-1"
+        },
+        "asked": [
+            {
+                "saveObject": [
+                    {
+                        "title": "Feest",
+                        "description": "Omschrijving",
+                        "start": "2026-12-01T10:00:00Z",
+                        "end": "2026-12-01T12:00:00Z",
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "status": "draft",
+                        "rsvpEnabled": true,
+                        "signupRoles": [
+                            {
+                                "name": "Hulp"
+                            }
+                        ],
+                        "authorRef": "staff-1"
+                    },
+                    "portaliq",
+                    "schoolEvent",
+                    null,
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "found and saved | event create no target": {
+        "status": 400,
+        "data": {
+            "error": "invalid_target"
+        },
+        "asked": []
+    },
+    "found and saved | news create": {
+        "status": 200,
+        "data": {
+            "title": "Titel",
+            "body": "Tekst",
+            "target": {
+                "groupRefs": [
+                    "g1"
+                ]
+            },
+            "authorRef": "staff-1",
+            "status": "draft",
+            "photoRefs": [
+                "p1"
+            ],
+            "readReceipts": [],
+            "public": true,
+            "portal": "zuid",
+            "audienceLabel": "Ouders",
+            "eventRef": "e1"
+        },
+        "asked": [
+            {
+                "saveObject": [
+                    {
+                        "title": "Titel",
+                        "body": "Tekst",
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "authorRef": "staff-1",
+                        "status": "draft",
+                        "photoRefs": [
+                            "p1"
+                        ],
+                        "readReceipts": [],
+                        "public": true,
+                        "portal": "zuid",
+                        "audienceLabel": "Ouders",
+                        "eventRef": "e1"
+                    },
+                    "portaliq",
+                    "newsItem",
+                    null,
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "found and saved | news create no body": {
+        "status": 400,
+        "data": {
+            "error": "invalid_target"
+        },
+        "asked": []
+    },
+    "found and saved | newsletter create": {
+        "status": 200,
+        "data": {
+            "title": "Brief",
+            "itemRefs": [
+                "n1",
+                "n2"
+            ],
+            "target": {
+                "groupRefs": [
+                    "g1"
+                ]
+            },
+            "sentAt": null,
+            "archived": false
+        },
+        "asked": [
+            {
+                "saveObject": [
+                    {
+                        "title": "Brief",
+                        "itemRefs": [
+                            "n1",
+                            "n2"
+                        ],
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "sentAt": null,
+                        "archived": false
+                    },
+                    "portaliq",
+                    "newsletter",
+                    null,
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "found and saved | newsletter create no items": {
+        "status": 400,
+        "data": {
+            "error": "invalid_request"
+        },
+        "asked": []
+    },
     "not found | event publish": {
         "status": 404,
         "data": {
@@ -556,6 +765,173 @@
         },
         "asked": []
     },
+    "not found | event create": {
+        "status": 200,
+        "data": {
+            "title": "Feest",
+            "description": "Omschrijving",
+            "start": "2026-12-01T10:00:00Z",
+            "end": "2026-12-01T12:00:00Z",
+            "target": {
+                "groupRefs": [
+                    "g1"
+                ]
+            },
+            "status": "draft",
+            "rsvpEnabled": true,
+            "signupRoles": [
+                {
+                    "name": "Hulp"
+                }
+            ],
+            "authorRef": "staff-1"
+        },
+        "asked": [
+            {
+                "saveObject": [
+                    {
+                        "title": "Feest",
+                        "description": "Omschrijving",
+                        "start": "2026-12-01T10:00:00Z",
+                        "end": "2026-12-01T12:00:00Z",
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "status": "draft",
+                        "rsvpEnabled": true,
+                        "signupRoles": [
+                            {
+                                "name": "Hulp"
+                            }
+                        ],
+                        "authorRef": "staff-1"
+                    },
+                    "portaliq",
+                    "schoolEvent",
+                    null,
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "not found | event create no target": {
+        "status": 400,
+        "data": {
+            "error": "invalid_target"
+        },
+        "asked": []
+    },
+    "not found | news create": {
+        "status": 200,
+        "data": {
+            "title": "Titel",
+            "body": "Tekst",
+            "target": {
+                "groupRefs": [
+                    "g1"
+                ]
+            },
+            "authorRef": "staff-1",
+            "status": "draft",
+            "photoRefs": [
+                "p1"
+            ],
+            "readReceipts": [],
+            "public": true,
+            "portal": "zuid",
+            "audienceLabel": "Ouders",
+            "eventRef": "e1"
+        },
+        "asked": [
+            {
+                "saveObject": [
+                    {
+                        "title": "Titel",
+                        "body": "Tekst",
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "authorRef": "staff-1",
+                        "status": "draft",
+                        "photoRefs": [
+                            "p1"
+                        ],
+                        "readReceipts": [],
+                        "public": true,
+                        "portal": "zuid",
+                        "audienceLabel": "Ouders",
+                        "eventRef": "e1"
+                    },
+                    "portaliq",
+                    "newsItem",
+                    null,
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "not found | news create no body": {
+        "status": 400,
+        "data": {
+            "error": "invalid_target"
+        },
+        "asked": []
+    },
+    "not found | newsletter create": {
+        "status": 200,
+        "data": {
+            "title": "Brief",
+            "itemRefs": [
+                "n1",
+                "n2"
+            ],
+            "target": {
+                "groupRefs": [
+                    "g1"
+                ]
+            },
+            "sentAt": null,
+            "archived": false
+        },
+        "asked": [
+            {
+                "saveObject": [
+                    {
+                        "title": "Brief",
+                        "itemRefs": [
+                            "n1",
+                            "n2"
+                        ],
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "sentAt": null,
+                        "archived": false
+                    },
+                    "portaliq",
+                    "newsletter",
+                    null,
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "not found | newsletter create no items": {
+        "status": 400,
+        "data": {
+            "error": "invalid_request"
+        },
+        "asked": []
+    },
     "find throws | event publish": {
         "status": 404,
         "data": {
@@ -569,6 +945,15 @@
                     "schoolEvent",
                     false,
                     false
+                ]
+            },
+            {
+                "warning": [
+                    "Portaliq: OR ownership read failed",
+                    {
+                        "schema": "schoolEvent",
+                        "reason": "find down"
+                    }
                 ]
             }
         ]
@@ -594,6 +979,15 @@
                     false,
                     false
                 ]
+            },
+            {
+                "warning": [
+                    "Portaliq: OR ownership read failed",
+                    {
+                        "schema": "newsItem",
+                        "reason": "find down"
+                    }
+                ]
             }
         ]
     },
@@ -618,6 +1012,15 @@
                     false,
                     false
                 ]
+            },
+            {
+                "warning": [
+                    "Portaliq: OR ownership read failed",
+                    {
+                        "schema": "newsItem",
+                        "reason": "find down"
+                    }
+                ]
             }
         ]
     },
@@ -634,6 +1037,15 @@
                     "newsItem",
                     false,
                     false
+                ]
+            },
+            {
+                "warning": [
+                    "Portaliq: OR ownership read failed",
+                    {
+                        "schema": "newsItem",
+                        "reason": "find down"
+                    }
                 ]
             }
         ]
@@ -652,6 +1064,14 @@
                     false,
                     false
                 ]
+            },
+            {
+                "warning": [
+                    "Portaliq: newsletter fetch failed",
+                    {
+                        "reason": "find down"
+                    }
+                ]
             }
         ]
     },
@@ -668,6 +1088,15 @@
                     "schoolEvent",
                     false,
                     false
+                ]
+            },
+            {
+                "warning": [
+                    "Portaliq: OR ownership read failed",
+                    {
+                        "schema": "schoolEvent",
+                        "reason": "find down"
+                    }
                 ]
             }
         ]
@@ -686,6 +1115,15 @@
                     false,
                     false
                 ]
+            },
+            {
+                "warning": [
+                    "Portaliq: OR ownership read failed",
+                    {
+                        "schema": "newsItem",
+                        "reason": "find down"
+                    }
+                ]
             }
         ]
     },
@@ -703,6 +1141,14 @@
                     false,
                     false
                 ]
+            },
+            {
+                "warning": [
+                    "Portaliq: newsletter fetch failed",
+                    {
+                        "reason": "find down"
+                    }
+                ]
             }
         ]
     },
@@ -710,6 +1156,173 @@
         "status": 404,
         "data": {
             "error": "not_found"
+        },
+        "asked": []
+    },
+    "find throws | event create": {
+        "status": 200,
+        "data": {
+            "title": "Feest",
+            "description": "Omschrijving",
+            "start": "2026-12-01T10:00:00Z",
+            "end": "2026-12-01T12:00:00Z",
+            "target": {
+                "groupRefs": [
+                    "g1"
+                ]
+            },
+            "status": "draft",
+            "rsvpEnabled": true,
+            "signupRoles": [
+                {
+                    "name": "Hulp"
+                }
+            ],
+            "authorRef": "staff-1"
+        },
+        "asked": [
+            {
+                "saveObject": [
+                    {
+                        "title": "Feest",
+                        "description": "Omschrijving",
+                        "start": "2026-12-01T10:00:00Z",
+                        "end": "2026-12-01T12:00:00Z",
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "status": "draft",
+                        "rsvpEnabled": true,
+                        "signupRoles": [
+                            {
+                                "name": "Hulp"
+                            }
+                        ],
+                        "authorRef": "staff-1"
+                    },
+                    "portaliq",
+                    "schoolEvent",
+                    null,
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "find throws | event create no target": {
+        "status": 400,
+        "data": {
+            "error": "invalid_target"
+        },
+        "asked": []
+    },
+    "find throws | news create": {
+        "status": 200,
+        "data": {
+            "title": "Titel",
+            "body": "Tekst",
+            "target": {
+                "groupRefs": [
+                    "g1"
+                ]
+            },
+            "authorRef": "staff-1",
+            "status": "draft",
+            "photoRefs": [
+                "p1"
+            ],
+            "readReceipts": [],
+            "public": true,
+            "portal": "zuid",
+            "audienceLabel": "Ouders",
+            "eventRef": "e1"
+        },
+        "asked": [
+            {
+                "saveObject": [
+                    {
+                        "title": "Titel",
+                        "body": "Tekst",
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "authorRef": "staff-1",
+                        "status": "draft",
+                        "photoRefs": [
+                            "p1"
+                        ],
+                        "readReceipts": [],
+                        "public": true,
+                        "portal": "zuid",
+                        "audienceLabel": "Ouders",
+                        "eventRef": "e1"
+                    },
+                    "portaliq",
+                    "newsItem",
+                    null,
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "find throws | news create no body": {
+        "status": 400,
+        "data": {
+            "error": "invalid_target"
+        },
+        "asked": []
+    },
+    "find throws | newsletter create": {
+        "status": 200,
+        "data": {
+            "title": "Brief",
+            "itemRefs": [
+                "n1",
+                "n2"
+            ],
+            "target": {
+                "groupRefs": [
+                    "g1"
+                ]
+            },
+            "sentAt": null,
+            "archived": false
+        },
+        "asked": [
+            {
+                "saveObject": [
+                    {
+                        "title": "Brief",
+                        "itemRefs": [
+                            "n1",
+                            "n2"
+                        ],
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "sentAt": null,
+                        "archived": false
+                    },
+                    "portaliq",
+                    "newsletter",
+                    null,
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "find throws | newsletter create no items": {
+        "status": 400,
+        "data": {
+            "error": "invalid_request"
         },
         "asked": []
     },
@@ -746,6 +1359,15 @@
                     "x1",
                     false,
                     false
+                ]
+            },
+            {
+                "warning": [
+                    "Portaliq: OR update failed",
+                    {
+                        "schema": "schoolEvent",
+                        "reason": "save down"
+                    }
                 ]
             }
         ]
@@ -792,6 +1414,15 @@
                     false,
                     false
                 ]
+            },
+            {
+                "warning": [
+                    "Portaliq: OR update failed",
+                    {
+                        "schema": "newsItem",
+                        "reason": "save down"
+                    }
+                ]
             }
         ]
     },
@@ -837,6 +1468,15 @@
                     false,
                     false
                 ]
+            },
+            {
+                "warning": [
+                    "Portaliq: OR update failed",
+                    {
+                        "schema": "newsItem",
+                        "reason": "save down"
+                    }
+                ]
             }
         ]
     },
@@ -874,6 +1514,15 @@
                     "x1",
                     false,
                     false
+                ]
+            },
+            {
+                "warning": [
+                    "Portaliq: OR update failed",
+                    {
+                        "schema": "newsItem",
+                        "reason": "save down"
+                    }
                 ]
             }
         ]
@@ -921,6 +1570,15 @@
                     "x1",
                     false,
                     false
+                ]
+            },
+            {
+                "warning": [
+                    "Portaliq: OR update failed",
+                    {
+                        "schema": "newsletter",
+                        "reason": "save down"
+                    }
                 ]
             }
         ]
@@ -989,6 +1647,154 @@
         "status": 404,
         "data": {
             "error": "not_found"
+        },
+        "asked": []
+    },
+    "save throws | event create": {
+        "status": 500,
+        "data": {
+            "error": "server_error"
+        },
+        "asked": [
+            {
+                "saveObject": [
+                    {
+                        "title": "Feest",
+                        "description": "Omschrijving",
+                        "start": "2026-12-01T10:00:00Z",
+                        "end": "2026-12-01T12:00:00Z",
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "status": "draft",
+                        "rsvpEnabled": true,
+                        "signupRoles": [
+                            {
+                                "name": "Hulp"
+                            }
+                        ],
+                        "authorRef": "staff-1"
+                    },
+                    "portaliq",
+                    "schoolEvent",
+                    null,
+                    false,
+                    false
+                ]
+            },
+            {
+                "error": [
+                    "Portaliq: event create failed",
+                    {
+                        "reason": "save down"
+                    }
+                ]
+            }
+        ]
+    },
+    "save throws | event create no target": {
+        "status": 400,
+        "data": {
+            "error": "invalid_target"
+        },
+        "asked": []
+    },
+    "save throws | news create": {
+        "status": 500,
+        "data": {
+            "error": "server_error"
+        },
+        "asked": [
+            {
+                "saveObject": [
+                    {
+                        "title": "Titel",
+                        "body": "Tekst",
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "authorRef": "staff-1",
+                        "status": "draft",
+                        "photoRefs": [
+                            "p1"
+                        ],
+                        "readReceipts": [],
+                        "public": true,
+                        "portal": "zuid",
+                        "audienceLabel": "Ouders",
+                        "eventRef": "e1"
+                    },
+                    "portaliq",
+                    "newsItem",
+                    null,
+                    false,
+                    false
+                ]
+            },
+            {
+                "error": [
+                    "Portaliq: news item create failed",
+                    {
+                        "reason": "save down"
+                    }
+                ]
+            }
+        ]
+    },
+    "save throws | news create no body": {
+        "status": 400,
+        "data": {
+            "error": "invalid_target"
+        },
+        "asked": []
+    },
+    "save throws | newsletter create": {
+        "status": 500,
+        "data": {
+            "error": "server_error"
+        },
+        "asked": [
+            {
+                "saveObject": [
+                    {
+                        "title": "Brief",
+                        "itemRefs": [
+                            "n1",
+                            "n2"
+                        ],
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "sentAt": null,
+                        "archived": false
+                    },
+                    "portaliq",
+                    "newsletter",
+                    null,
+                    false,
+                    false
+                ]
+            },
+            {
+                "error": [
+                    "Portaliq: newsletter create failed",
+                    {
+                        "reason": "save down"
+                    }
+                ]
+            }
+        ]
+    },
+    "save throws | newsletter create no items": {
+        "status": 400,
+        "data": {
+            "error": "invalid_request"
         },
         "asked": []
     },
@@ -1271,6 +2077,124 @@
         },
         "asked": []
     },
+    "save answers null | event create": {
+        "status": 200,
+        "data": [],
+        "asked": [
+            {
+                "saveObject": [
+                    {
+                        "title": "Feest",
+                        "description": "Omschrijving",
+                        "start": "2026-12-01T10:00:00Z",
+                        "end": "2026-12-01T12:00:00Z",
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "status": "draft",
+                        "rsvpEnabled": true,
+                        "signupRoles": [
+                            {
+                                "name": "Hulp"
+                            }
+                        ],
+                        "authorRef": "staff-1"
+                    },
+                    "portaliq",
+                    "schoolEvent",
+                    null,
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "save answers null | event create no target": {
+        "status": 400,
+        "data": {
+            "error": "invalid_target"
+        },
+        "asked": []
+    },
+    "save answers null | news create": {
+        "status": 200,
+        "data": [],
+        "asked": [
+            {
+                "saveObject": [
+                    {
+                        "title": "Titel",
+                        "body": "Tekst",
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "authorRef": "staff-1",
+                        "status": "draft",
+                        "photoRefs": [
+                            "p1"
+                        ],
+                        "readReceipts": [],
+                        "public": true,
+                        "portal": "zuid",
+                        "audienceLabel": "Ouders",
+                        "eventRef": "e1"
+                    },
+                    "portaliq",
+                    "newsItem",
+                    null,
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "save answers null | news create no body": {
+        "status": 400,
+        "data": {
+            "error": "invalid_target"
+        },
+        "asked": []
+    },
+    "save answers null | newsletter create": {
+        "status": 200,
+        "data": [],
+        "asked": [
+            {
+                "saveObject": [
+                    {
+                        "title": "Brief",
+                        "itemRefs": [
+                            "n1",
+                            "n2"
+                        ],
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "sentAt": null,
+                        "archived": false
+                    },
+                    "portaliq",
+                    "newsletter",
+                    null,
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "save answers null | newsletter create no items": {
+        "status": 400,
+        "data": {
+            "error": "invalid_request"
+        },
+        "asked": []
+    },
     "found empty | event publish": {
         "status": 404,
         "data": {
@@ -1425,6 +2349,173 @@
         "status": 404,
         "data": {
             "error": "not_found"
+        },
+        "asked": []
+    },
+    "found empty | event create": {
+        "status": 200,
+        "data": {
+            "title": "Feest",
+            "description": "Omschrijving",
+            "start": "2026-12-01T10:00:00Z",
+            "end": "2026-12-01T12:00:00Z",
+            "target": {
+                "groupRefs": [
+                    "g1"
+                ]
+            },
+            "status": "draft",
+            "rsvpEnabled": true,
+            "signupRoles": [
+                {
+                    "name": "Hulp"
+                }
+            ],
+            "authorRef": "staff-1"
+        },
+        "asked": [
+            {
+                "saveObject": [
+                    {
+                        "title": "Feest",
+                        "description": "Omschrijving",
+                        "start": "2026-12-01T10:00:00Z",
+                        "end": "2026-12-01T12:00:00Z",
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "status": "draft",
+                        "rsvpEnabled": true,
+                        "signupRoles": [
+                            {
+                                "name": "Hulp"
+                            }
+                        ],
+                        "authorRef": "staff-1"
+                    },
+                    "portaliq",
+                    "schoolEvent",
+                    null,
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "found empty | event create no target": {
+        "status": 400,
+        "data": {
+            "error": "invalid_target"
+        },
+        "asked": []
+    },
+    "found empty | news create": {
+        "status": 200,
+        "data": {
+            "title": "Titel",
+            "body": "Tekst",
+            "target": {
+                "groupRefs": [
+                    "g1"
+                ]
+            },
+            "authorRef": "staff-1",
+            "status": "draft",
+            "photoRefs": [
+                "p1"
+            ],
+            "readReceipts": [],
+            "public": true,
+            "portal": "zuid",
+            "audienceLabel": "Ouders",
+            "eventRef": "e1"
+        },
+        "asked": [
+            {
+                "saveObject": [
+                    {
+                        "title": "Titel",
+                        "body": "Tekst",
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "authorRef": "staff-1",
+                        "status": "draft",
+                        "photoRefs": [
+                            "p1"
+                        ],
+                        "readReceipts": [],
+                        "public": true,
+                        "portal": "zuid",
+                        "audienceLabel": "Ouders",
+                        "eventRef": "e1"
+                    },
+                    "portaliq",
+                    "newsItem",
+                    null,
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "found empty | news create no body": {
+        "status": 400,
+        "data": {
+            "error": "invalid_target"
+        },
+        "asked": []
+    },
+    "found empty | newsletter create": {
+        "status": 200,
+        "data": {
+            "title": "Brief",
+            "itemRefs": [
+                "n1",
+                "n2"
+            ],
+            "target": {
+                "groupRefs": [
+                    "g1"
+                ]
+            },
+            "sentAt": null,
+            "archived": false
+        },
+        "asked": [
+            {
+                "saveObject": [
+                    {
+                        "title": "Brief",
+                        "itemRefs": [
+                            "n1",
+                            "n2"
+                        ],
+                        "target": {
+                            "groupRefs": [
+                                "g1"
+                            ]
+                        },
+                        "sentAt": null,
+                        "archived": false
+                    },
+                    "portaliq",
+                    "newsletter",
+                    null,
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "found empty | newsletter create no items": {
+        "status": 400,
+        "data": {
+            "error": "invalid_request"
         },
         "asked": []
     }
