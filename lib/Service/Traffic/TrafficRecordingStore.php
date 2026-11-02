@@ -155,6 +155,8 @@ class TrafficRecordingStore {
 	 * @param object $objectService OpenRegister's ObjectService.
 	 *
 	 * @return int How many were removed.
+	 *
+	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 	 */
 	protected function deleteExpired(object $objectService): int {
 		$now = gmdate('Y-m-d\TH:i:s\Z');

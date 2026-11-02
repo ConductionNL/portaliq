@@ -40,6 +40,8 @@ trait ExpiredRowPurge {
 	 * @param object $objectService OpenRegister's ObjectService.
 	 *
 	 * @return int How many were removed.
+	 *
+	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
 	 */
 	abstract protected function deleteExpired(object $objectService): int;
 
