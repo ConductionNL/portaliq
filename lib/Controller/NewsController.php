@@ -36,7 +36,6 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
-use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IRequest;
 use OCP\IUserSession;
@@ -56,6 +55,9 @@ use Throwable;
  */
 class NewsController extends Controller {
 	use ObjectServiceLookup;
+	use StaffActionGuard;
+	use ObjectArrayRow;
+	use TargetedAudience;
 
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
@@ -90,30 +92,6 @@ class NewsController extends Controller {
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
-
-	/**
-	 * The staff authorization guard every `#[NoAdminRequired]` method calls
-	 * FIRST, before any read or write: `#[NoAdminRequired]` already opens
-	 * this endpoint to every authenticated Nextcloud user, so this makes the
-	 * requirement explicit at the call site (ADR-005) rather than relying
-	 * only on the framework attribute, and narrows it to the groups holding
-	 * the ADR-023 action `portal.author-news`.
-	 *
-	 * @return string The staff member's user id.
-	 *
-	 * @throws OCSForbiddenException When no Nextcloud user is authenticated, or the
-	 *                               user's groups do not hold self::ACTION.
-	 */
-	private function requireAuthenticatedStaff(): string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			throw new OCSForbiddenException('Authentication required');
-		}
-
-		$this->actionAuth->requireAction(user: $user, action: self::ACTION);
-
-		return $user->getUID();
-	}//end requireAuthenticatedStaff()
 
 	/**
 	 * Create a draft news item. The author is the signed-in staff member,
@@ -368,49 +346,4 @@ class NewsController extends Controller {
 
 		return $value;
 	}//end eventRef()
-
-	/**
-	 * Whether a target names at least one dimension.
-	 *
-	 * @param array<string, mixed> $target The target.
-	 *
-	 * @return bool
-	 */
-	private function hasAnyTarget(array $target): bool {
-		if (is_string($target['schoolRef'] ?? null) === true && $target['schoolRef'] !== '') {
-			return true;
-		}
-
-		if (is_array($target['groupRefs'] ?? null) === true && count($target['groupRefs']) > 0) {
-			return true;
-		}
-
-		if (is_array($target['childRefs'] ?? null) === true && count($target['childRefs']) > 0) {
-			return true;
-		}
-
-		return false;
-	}//end hasAnyTarget()
-
-	/**
-	 * Normalise an OpenRegister row (array or object) to an associative array.
-	 *
-	 * @param mixed $row The row.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function normalise(mixed $row): array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$data = $row->jsonSerialize();
-			if (is_array($data) === true) {
-				return $data;
-			}
-		}
-
-		return [];
-	}//end normalise()
 }//end class

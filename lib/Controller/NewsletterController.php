@@ -35,7 +35,6 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
-use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
@@ -54,6 +53,8 @@ use Throwable;
  */
 class NewsletterController extends Controller {
 	use ObjectServiceLookup;
+	use StaffActionGuard;
+	use ObjectArrayRow;
 
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
@@ -86,25 +87,6 @@ class NewsletterController extends Controller {
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
-
-	/**
-	 * The staff authorization guard every `#[NoAdminRequired]` method calls
-	 * FIRST, before any read or write (see `NewsController`'s identical
-	 * guard for the full rationale).
-	 *
-	 * @return void
-	 *
-	 * @throws OCSForbiddenException When no Nextcloud user is authenticated, or the
-	 *                               user's groups do not hold self::ACTION.
-	 */
-	private function requireAuthenticatedStaff(): void {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			throw new OCSForbiddenException('Authentication required');
-		}
-
-		$this->actionAuth->requireAction(user: $user, action: self::ACTION);
-	}//end requireAuthenticatedStaff()
 
 	/**
 	 * Compose a draft newsletter from existing news items.
@@ -261,26 +243,4 @@ class NewsletterController extends Controller {
 
 		return $row;
 	}//end fetch()
-
-	/**
-	 * Normalise an OpenRegister row (array or object) to an associative array.
-	 *
-	 * @param mixed $row The row.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function normalise(mixed $row): array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$data = $row->jsonSerialize();
-			if (is_array($data) === true) {
-				return $data;
-			}
-		}
-
-		return [];
-	}//end normalise()
 }//end class
