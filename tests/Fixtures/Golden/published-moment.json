@@ -1,0 +1,38 @@
+{
+    "empty": {
+        "NewsFeedReader": -9223372036854775808,
+        "PublicNewsReader": -9223372036854775808
+    },
+    "publishedAt": {
+        "NewsFeedReader": 1790848800,
+        "PublicNewsReader": 1790848800
+    },
+    "self published": {
+        "NewsFeedReader": 1788256800,
+        "PublicNewsReader": 1788256800
+    },
+    "self created": {
+        "NewsFeedReader": 1785578400,
+        "PublicNewsReader": 1785578400
+    },
+    "empty publishedAt": {
+        "NewsFeedReader": 1785578400,
+        "PublicNewsReader": 1785578400
+    },
+    "unreadable publishedAt": {
+        "NewsFeedReader": 1788256800,
+        "PublicNewsReader": 1788256800
+    },
+    "numeric publishedAt": {
+        "NewsFeedReader": 1785578400,
+        "PublicNewsReader": 1785578400
+    },
+    "self not an array": {
+        "NewsFeedReader": -9223372036854775808,
+        "PublicNewsReader": -9223372036854775808
+    },
+    "all unreadable": {
+        "NewsFeedReader": -9223372036854775808,
+        "PublicNewsReader": -9223372036854775808
+    }
+}
