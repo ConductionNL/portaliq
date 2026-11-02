@@ -55,6 +55,10 @@ use Throwable;
  *
  * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.2
  * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T01
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- presentation and OIDC
+ * broker configuration share one organisation lookup; splitting the class is
+ * a refactor of its own, not part of a release fix.
  */
 class PortalOrganisationConfigService {
 	/**
@@ -585,6 +589,9 @@ class PortalOrganisationConfigService {
 	 * @return array{uuid: string, name: string}|null
 	 *
 	 * @throws RuntimeException With `$strict`, when OpenRegister could not be asked.
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- one lookup, two failure
+	 * answers; a second method would duplicate the mapper call and its catch.
 	 */
 	private function findOrganisationBySlug(string $slug, bool $strict = false): ?array {
 		$mapper = $this->organisationMapper();
