@@ -108,27 +108,33 @@ export function deadlineBadge(due, today, tr, locale = 'nl') {
 		String(day.getMonth() + 1).padStart(2, '0'),
 		String(day.getDate()).padStart(2, '0'),
 	].join('-')
+	return { ...countdown(day, { now, tr, locale }), datetime }
+}
+
+/**
+ * The words and state of a deadline badge, by the days left.
+ *
+ * @param {Date} day The deadline's day.
+ * @param {{now: Date, tr: (key: string, vars?: object) => string, locale: string}} context Today, the translator and the page language.
+ * @return {{text: string, state: string}} The badge's words and state.
+ */
+function countdown(day, { now, tr, locale }) {
 	const days = Math.round((day.getTime() - now.getTime()) / DAY_MS)
 	if (days < 0) {
-		return { text: tr('Overdue'), state: 'error', datetime }
+		return { text: tr('Overdue'), state: 'error' }
 	}
 	if (days === 0) {
-		return { text: tr('Due today'), state: 'warning', datetime }
+		return { text: tr('Due today'), state: 'warning' }
 	}
 	if (days === 1) {
-		return { text: tr('1 day left'), state: 'warning', datetime }
+		return { text: tr('1 day left'), state: 'warning' }
 	}
 	if (days <= COUNTDOWN_DAYS) {
-		return {
-			text: tr('{count} days left', { count: days }),
-			state: 'warning',
-			datetime,
-		}
+		return { text: tr('{count} days left', { count: days }), state: 'warning' }
 	}
 	return {
 		text: tr('Before {date}', { date: dayInWords(day, now, locale) }),
 		state: 'neutral',
-		datetime,
 	}
 }
 
