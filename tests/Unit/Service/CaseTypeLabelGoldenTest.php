@@ -29,6 +29,7 @@ use ReflectionClass;
  *
  * @covers \OCA\Portaliq\Service\CaseTypeNames
  * @covers \OCA\Portaliq\Service\PortalCaseTypeCatalogue
+ * @uses   \OCA\Portaliq\Service\CaseTypeLabel
  */
 class CaseTypeLabelGoldenTest extends TestCase {
 

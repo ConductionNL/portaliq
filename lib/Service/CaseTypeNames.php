@@ -35,6 +35,8 @@ namespace OCA\Portaliq\Service;
  * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-my-cases/spec.md#requirement-my-cases-must-name-each-cases-type-req-smo-030
  */
 class CaseTypeNames {
+	use CaseTypeLabel;
+
 	/**
 	 * The fields a case type's name is read from when the source names none,
 	 * the same as PortalCaseTypeCatalogue.
@@ -155,28 +157,4 @@ class CaseTypeNames {
 
 		return $this->names[$key];
 	}//end namesFor()
-
-	/**
-	 * A case type's name: the source's label field first.
-	 *
-	 * @param array<string, mixed> $type       The case type.
-	 * @param string               $labelField The field the source names, or ''.
-	 *
-	 * @return string
-	 */
-	private function labelOf(array $type, string $labelField): string {
-		$fields = self::LABEL_FIELDS;
-		if ($labelField !== '') {
-			array_unshift($fields, $labelField);
-		}
-
-		foreach ($fields as $field) {
-			$value = ($type[$field] ?? null);
-			if (is_string($value) === true && trim($value) !== '') {
-				return trim($value);
-			}
-		}
-
-		return '';
-	}//end labelOf()
 }//end class
