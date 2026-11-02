@@ -2592,9 +2592,12 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	font-size: 1rem;
 }
 
+/* The sign-in buttons' labels set at the font's own leading, as the Inloggen
+   board draws them (18px on 21.6); the button keeps its 52px. */
 .pq-site:has(.pq-site__header--designed) .pq-signin__button.utrecht-button-link {
 	font-size: 1.125rem;
 	font-weight: 600;
+	line-height: normal;
 }
 
 .pq-site:has(.pq-site__header--designed) .pq-signin__mark--eherkenning {
