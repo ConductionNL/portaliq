@@ -28,7 +28,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Cms;
 
 use Closure;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -69,14 +69,14 @@ class PortalDomainVerifier {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader The portal reader.
+	 * @param ScopedCollectionReaderInterface $reader The portal reader.
 	 * @param PortalObjectWriter $writer The portal writer.
 	 * @param LoggerInterface    $logger The logger.
 	 * @param Closure|null       $lookup Resolves a TXT name to its values; DNS by default.
 	 * @param Closure|null       $probe  Reads the end of a host's certificate as a timestamp; a TLS connection to port 443 by default.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly LoggerInterface $logger,
 		?Closure $lookup = null,

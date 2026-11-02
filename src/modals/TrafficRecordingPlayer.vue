@@ -126,6 +126,19 @@ const BOXES = [
 const MAX_GAP = 1000
 
 /**
+ * The method that applies each recorded event kind.
+ */
+const EVENT_HANDLERS = Object.freeze({
+	y: 'applyStyle',
+	s: 'applySnapshot',
+	v: 'applyViewport',
+	m: 'applyMove',
+	c: 'applyClick',
+	r: 'applyScroll',
+	n: 'applyPage',
+})
+
+/**
  * The style every replayed document gets: the masks, the boxes, and no
  * pointer events.
  */
@@ -380,69 +393,118 @@ export default {
 		},
 
 		/**
-		 * Apply one event to the frame and the overlay.
+		 * Apply one event to the frame and the overlay. An event of a kind the
+		 * player does not know changes nothing.
 		 *
 		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
 		 * @param {object} event The event.
 		 * @return {void}
 		 */
 		apply(event) {
-			const frame = this.$refs.frame
-			switch (event.k) {
-				case 'y':
-					if (typeof event.h === 'string' && event.h !== '') {
-						this.styles[event.h] = String(event.s || '')
-					}
-					break
-				case 's':
-					this.viewport = {
-						w: Number(event.w) || this.viewport.w,
-						h: Number(event.h) || this.viewport.h,
-					}
-					this.measure()
-					this.srcdoc = this.document(event.n)
-					break
-				case 'v':
-					this.viewport = {
-						w: Number(event.w) || this.viewport.w,
-						h: Number(event.h) || this.viewport.h,
-					}
-					this.measure()
-					break
-				case 'm':
-					this.cursor = {
-						x: Number(event.x) || 0,
-						y: Number(event.y) || 0,
-					}
-					break
-				case 'c':
-					this.cursor = {
-						x: Number(event.x) || 0,
-						y: Number(event.y) || 0,
-					}
-					this.clicked = true
-					window.setTimeout(() => {
-						this.clicked = false
-					}, 300)
-					break
-				case 'r':
-					if (frame && frame.contentWindow) {
-						try {
-							frame.contentWindow.scrollTo(
-								Number(event.x) || 0,
-								Number(event.y) || 0,
-							)
-						} catch {
-							// A frame that is still loading cannot scroll yet.
-						}
-					}
-					break
-				case 'n':
-					this.page = String(event.p || '')
-					break
-				default:
-					break
+			if (Object.hasOwn(EVENT_HANDLERS, event.k)) {
+				this[EVENT_HANDLERS[event.k]](event)
 			}
+		},
+
+		/**
+		 * A stylesheet the stream carries once, kept by its hash.
+		 *
+		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @param {object} event The event.
+		 * @return {void}
+		 */
+		applyStyle(event) {
+			if (typeof event.h === 'string' && event.h !== '') {
+				this.styles[event.h] = String(event.s || '')
+			}
+		},
+
+		/**
+		 * A snapshot: its viewport, then its masked document.
+		 *
+		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @param {object} event The event.
+		 * @return {void}
+		 */
+		applySnapshot(event) {
+			this.applyViewport(event)
+			this.srcdoc = this.document(event.n)
+		},
+
+		/**
+		 * A viewport change, kept where a size is missing.
+		 *
+		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @param {object} event The event.
+		 * @return {void}
+		 */
+		applyViewport(event) {
+			this.viewport = {
+				w: Number(event.w) || this.viewport.w,
+				h: Number(event.h) || this.viewport.h,
+			}
+			this.measure()
+		},
+
+		/**
+		 * A pointer move.
+		 *
+		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @param {object} event The event.
+		 * @return {void}
+		 */
+		applyMove(event) {
+			this.cursor = {
+				x: Number(event.x) || 0,
+				y: Number(event.y) || 0,
+			}
+		},
+
+		/**
+		 * A click: the pointer moves there and flashes briefly.
+		 *
+		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @param {object} event The event.
+		 * @return {void}
+		 */
+		applyClick(event) {
+			this.applyMove(event)
+			this.clicked = true
+			window.setTimeout(() => {
+				this.clicked = false
+			}, 300)
+		},
+
+		/**
+		 * A scroll of the frame.
+		 *
+		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @param {object} event The event.
+		 * @return {void}
+		 */
+		applyScroll(event) {
+			const frame = this.$refs.frame
+			if (frame && frame.contentWindow) {
+				try {
+					frame.contentWindow.scrollTo(
+						Number(event.x) || 0,
+						Number(event.y) || 0,
+					)
+				} catch {
+					// A frame that is still loading cannot scroll yet.
+				}
+			}
+		},
+
+		/**
+		 * A navigation to another page.
+		 *
+		 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-session-recording-must-never-hold-text-or-a-typed-value
+		 * @param {object} event The event.
+		 * @return {void}
+		 */
+		applyPage(event) {
+			this.page = String(event.p || '')
 		},
 
 		/**

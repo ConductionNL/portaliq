@@ -71,6 +71,20 @@ class MoveBindingDestinationTest extends TestCase {
 		$this->assertCount(1, $store->saves);
 	}//end testARunSavesOnlyWhatMovesAndNamesTheBindingsWithoutADestination()
 
+	public function testARunReadsEveryPageAndRepairsEveryRowInOrder(): void {
+		$rows = [];
+		for ($i = 0; $i < 103; $i++) {
+			$rows[] = ['portal' => 'x', 'caseRegister' => 'dossiq', 'caseSchema' => 'case', '@self' => ['uuid' => 'b-' . $i]];
+		}
+
+		$store = $this->store(rows: $rows);
+
+		$this->step(store: $store)->run($this->createMock(IOutput::class));
+
+		$this->assertSame([0, 100], $store->offsets);
+		$this->assertSame(array_map(static fn (int $i): string => 'b-' . $i, range(0, 102)), array_column($store->saves, 'uuid'));
+	}//end testARunReadsEveryPageAndRepairsEveryRowInOrder()
+
 	public function testWithoutOpenRegisterTheStepDoesNothing(): void {
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willThrowException(new \RuntimeException('no'));
@@ -107,10 +121,14 @@ class MoveBindingDestinationTest extends TestCase {
 		return new class($rows) {
 			public array $saves = [];
 
+			public array $offsets = [];
+
 			public function __construct(public array $rows) {
 			}
 
 			public function findAll(array $config = [], bool $_rbac = true, bool $_multitenancy = true): array {
+				$this->offsets[] = (int)($config['offset'] ?? 0);
+
 				return array_slice($this->rows, (int)($config['offset'] ?? 0), (int)($config['limit'] ?? 100));
 			}
 

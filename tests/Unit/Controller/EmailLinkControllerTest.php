@@ -88,6 +88,27 @@ class EmailLinkControllerTest extends TestCase {
 	/**
 	 * @return void
 	 */
+	/**
+	 * The portal the site names in its header.
+	 *
+	 * @var string
+	 */
+	private string $portalHeader = '';
+
+	/**
+	 * The `portal` query parameter.
+	 *
+	 * @var mixed
+	 */
+	private mixed $portalParam = 'academie';
+
+	/**
+	 * The slug the resolver was asked for.
+	 *
+	 * @var string|null
+	 */
+	private ?string $resolvedSlug = null;
+
 	protected function setUp(): void {
 		$this->seedRow('portalAccount', ['subjectRef' => 'email:tom', 'audience' => 'client', 'organisation' => 'academie', 'identityType' => 'email', 'status' => 'active', 'signInAddress' => 'tom@example.nl']);
 	}//end setUp()
@@ -106,6 +127,20 @@ class EmailLinkControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
 		$this->assertSame([], $this->queued);
 	}//end testWhileTheSwitchIsOffTheRequestIsRefused()
+
+	/**
+	 * The portal the site names in its header alone is the one asked for the link.
+	 *
+	 * @return void
+	 */
+	public function testTheSiteHeaderNamesThePortal(): void {
+		$this->portalHeader = 'academie';
+		$this->portalParam  = null;
+
+		$this->controller()->request(email: 'tom@example.nl');
+
+		$this->assertSame(expected: 'academie', actual: $this->resolvedSlug);
+	}//end testTheSiteHeaderNamesThePortal()
 
 	/**
 	 * @return void
@@ -290,12 +325,17 @@ class EmailLinkControllerTest extends TestCase {
 	 */
 	private function controller(array $modes = ['eherkenning', 'email-link']): EmailLinkController {
 		$request = $this->createMock(IRequest::class);
-		$request->method('getParam')->willReturn('academie');
+		$request->method('getParam')->willReturnCallback(fn (string $key): mixed => ($key === 'portal' ? $this->portalParam : 'academie'));
 		$request->method('getCookie')->willReturnCallback(fn (string $name): ?string => ($name === EmailLinkController::COOKIE ? $this->cookie : null));
-		$request->method('getHeader')->willReturnCallback(fn (string $name): string => ($name === 'Authorization' ? $this->authorization : ''));
+		$request->method('getHeader')->willReturnCallback(fn (string $name): string => match ($name) { 'Authorization' => $this->authorization, 'X-Portaliq-Portal' => $this->portalHeader, default => '' });
 
 		$portals = $this->getMockBuilder(PortalResolver::class)->disableOriginalConstructor()->onlyMethods(['resolve'])->getMock();
-		$portals->method('resolve')->willReturn(['slug' => 'academie', 'title' => 'Mijn academie', 'organisation' => 'academie', 'authentication' => ['modes' => $modes]]);
+		$portals->method('resolve')->willReturnCallback(
+			function (IRequest $request, ?string $portalSlug = null) use ($modes): array {
+				$this->resolvedSlug = $portalSlug;
+				return ['slug' => 'academie', 'title' => 'Mijn academie', 'organisation' => 'academie', 'authentication' => ['modes' => $modes]];
+			}
+		);
 
 		$config = $this->createMock(IAppConfig::class);
 		$config->method('getValueString')->willReturnCallback(fn (): string => ($this->enabled ? '1' : '0'));

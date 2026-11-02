@@ -15,6 +15,7 @@ import { test } from 'node:test'
 import { buildNav } from '../src/shared/portalNav.js'
 import {
 	loadPerRecordRows,
+	openTaskCount,
 	residentMenuGroups,
 } from '../src/site/lib/residentMenu.js'
 import { t } from './support/page-instance.mjs'
@@ -147,4 +148,26 @@ test('the menu renders sublines, the organisation card and the total on the phon
 	const bare = await renderComponent(ResidentMenu, { groups: [] })
 	assert.equal(bare.includes('site-resident-menu-card'), false)
 	assert.equal(bare.includes('site-resident-menu-toggle-badge'), false)
+})
+
+test('"My tasks" counts the resident\'s open tasks the way the inbox counts unread messages', () => {
+	const nav = buildNav([], t, { tasks: true })
+	const tasksItem = (groups) => groups.flatMap((group) => group.items).find((entry) => entry.key === '__tasks__')
+
+	const counted = tasksItem(residentMenuGroups(nav, t, 0, href, {}, null, null, 3))
+	assert.equal(counted.badge, '3')
+	assert.equal(counted.badgeLabel, '3 open')
+
+	assert.equal(tasksItem(residentMenuGroups(nav, t, 0, href, {}, null, null, 0)).badge, undefined, 'no count at 0')
+	assert.equal(tasksItem(residentMenuGroups(nav, t, 0, href, {})).badge, undefined, 'no count before the tasks are known')
+
+	const laidOut = residentMenuGroups(nav, t, 0, href, {}, [{ title: 'Zaken en taken', items: ['tasks'] }], null, 2)
+	assert.equal(tasksItem(laidOut).badge, '2', 'the portal\'s own groups keep the count')
+})
+
+test('the open-task count reads the page "My tasks" lists, and a failed read counts nothing', () => {
+	assert.equal(openTaskCount({ results: [{ id: 'a' }, { id: 'b' }, { id: 'c' }], total: 3 }), 3)
+	assert.equal(openTaskCount({ results: [], total: 0, failed: true }), 0)
+	assert.equal(openTaskCount({ results: [{ id: 'a' }], failed: true }), 0)
+	assert.equal(openTaskCount(null), 0)
 })

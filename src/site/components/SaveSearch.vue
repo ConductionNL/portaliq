@@ -173,17 +173,17 @@ export default {
 		 */
 		async submit() {
 			this.busy = true
-			const result = await postAction(
-				residentAuthBase(),
-				this.app,
-				this.actionId,
-				saveSearchBody({
+			const result = await postAction({
+				authBase: residentAuthBase(),
+				appId: this.app,
+				actionId: this.actionId,
+				body: saveSearchBody({
 					title: this.title,
 					frequency: this.frequency,
 					query: this.query,
 				}),
-				residentToken(),
-			)
+				token: residentToken(),
+			})
 			this.busy = false
 
 			if (result.ok === true) {

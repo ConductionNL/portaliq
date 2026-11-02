@@ -7,3 +7,5 @@
 - ZoekenGeenTreffers https://identity.conduction.nl/screens/board?id=portaliq/ZoekenGeenTreffers
 - Zoeken https://identity.conduction.nl/screens/board?id=wilgenboom/Zoeken
 - Zoeken https://identity.conduction.nl/screens/board?id=vaartveld/Zoeken
+- opencatalogi/srch-facets: no opencatalogi screen; the public search page and its filters are portaliq's
+- opencatalogi/srch-content: no opencatalogi screen; words inside attached documents are found through the public search page

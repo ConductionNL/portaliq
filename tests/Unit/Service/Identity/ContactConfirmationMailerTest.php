@@ -6,6 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 
 use OCA\Portaliq\Service\Identity\ContactConfirmationMailer;
 use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\Mail\MailSite;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
@@ -98,6 +99,21 @@ class ContactConfirmationMailerTest extends TestCase {
 		$this->assertFalse($this->mailer(account: null)->afterCreate($this->subject(), $this->action(), ['onderwerp' => 'afval']));
 		$this->assertSame(0, $this->mailed['sent']);
 	}//end testAnAccountWithoutAConfirmedAddressGetsNothing()
+
+	/**
+	 * A withdrawn (void) account gets no confirmation, also with a usable
+	 * address; the skip is logged with the account id only.
+	 *
+	 * @return void
+	 */
+	public function testAWithdrawnAccountGetsNoConfirmation(): void {
+		$account = ['id' => 'account-void', 'email' => 'anna@example.nl', 'status' => 'void'];
+		$sent = $this->mailer(account: $account)->afterCreate(subject: $this->subject(), action: $this->action(), data: ['onderwerp' => 'afval']);
+
+		$this->assertFalse(condition: $sent);
+		$this->assertSame(expected: 0, actual: $this->mailed['sent']);
+		$this->assertSame(expected: ['Portaliq: no question confirmation to a withdrawn account {"account":"account-void"}'], actual: $this->logged);
+	}//end testAWithdrawnAccountGetsNoConfirmation()
 
 	public function testAFailingMailServerNeverBreaksTheCreate(): void {
 		$sent = $this->mailer(failWith: new RuntimeException('smtp down'))->afterCreate($this->subject(), $this->action(), ['onderwerp' => 'afval']);
@@ -196,8 +212,7 @@ class ContactConfirmationMailerTest extends TestCase {
 			mailer: $imailer,
 			l10nFactory: $factory,
 			deepLinks: new PortalDeepLinkBuilder($urls),
-			portals: $portals,
-			organisations: $organisations,
+			site: new MailSite(portals: $portals, organisations: $organisations),
 			accounts: $accounts,
 			logger: $logger
 		);

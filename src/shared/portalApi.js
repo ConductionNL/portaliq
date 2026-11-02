@@ -630,20 +630,24 @@ export function createPortalApi(config, store = {}) {
 		 *
 		 * @param {string} method The verb.
 		 * @param {string} path The path under the api base.
-		 * @param {object|null} [body] The JSON body, or none.
+		 * @param {object|FormData|null} [body] The JSON body, a multipart body, or none.
 		 * @param {boolean} [raw] Answer `{ok, status, res}` and leave the body unread.
 		 * @return {Promise<{ok: boolean, status: number, json?: object, res?: Response}>} The answer.
 		 */
 		async request(method, path, body = null, raw = false) {
+			const multipart =
+				typeof FormData !== 'undefined' && body instanceof FormData
 			try {
 				const res = await fetch(`${base}${path}`, {
 					method,
 					headers: {
-						'Content-Type': 'application/json',
+						...(multipart ? {} : { 'Content-Type': 'application/json' }),
 						Accept: 'application/json',
 						...authHeaders(),
 					},
-					...(body === null ? {} : { body: JSON.stringify(body) }),
+					...(body === null
+						? {}
+						: { body: multipart ? body : JSON.stringify(body) }),
 				})
 				if (raw) {
 					return { ok: res.ok, status: res.status, res }

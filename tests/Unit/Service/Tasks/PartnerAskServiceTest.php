@@ -99,6 +99,49 @@ class PartnerAskServiceTest extends TestCase {
 
 	}//end testASubjectRefNobodyAnswersToRaisesNothing()
 
+	/**
+	 * A withdrawn (void) partner is refused as an unknown one is: nothing is raised.
+	 *
+	 * @return void
+	 */
+	public function testAWithdrawnPartnerIsRefusedAsAnUnknownOneIs(): void {
+		$accounts = $this->accounts();
+		$accounts->method('findBySubjectRef')->willReturn(
+			['id' => 'account-void', 'subjectRef' => 'partner-subject', 'audience' => 'partner', 'status' => 'void']
+		);
+		$accounts->expects($this->never())->method('provision');
+
+		$asked = $this->service(accounts: $accounts)->ask(
+			handler: $this->handler(),
+			partner: ['subjectRef' => 'partner-subject'],
+			ask: $this->ask()
+		);
+
+		$this->assertNull(actual: $asked);
+		$this->assertSame(expected: [], actual: $this->raised);
+
+	}//end testAWithdrawnPartnerIsRefusedAsAnUnknownOneIs()
+
+	/**
+	 * A KvK number that provisioning matches to a withdrawn account raises nothing.
+	 *
+	 * @return void
+	 */
+	public function testAKvkNumberThatFindsAWithdrawnAccountRaisesNothing(): void {
+		$accounts = $this->accounts();
+		$accounts->method('provision')->willReturn(['subjectRef' => 'partner-void', 'isNew' => false, 'status' => 'void']);
+
+		$asked = $this->service(accounts: $accounts)->ask(
+			handler: $this->handler(),
+			partner: ['kvk' => '12345678', 'email' => 'info@partner.example'],
+			ask: $this->ask()
+		);
+
+		$this->assertNull(actual: $asked);
+		$this->assertSame(expected: [], actual: $this->raised);
+
+	}//end testAKvkNumberThatFindsAWithdrawnAccountRaisesNothing()
+
 	public function testAnAskWithNoTitleOrNoCaseRaisesNothing(): void {
 		$service = $this->service();
 

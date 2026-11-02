@@ -1,0 +1,977 @@
+{
+    "OCA\\Portaliq\\Service\\Cms\\AccessibilityMeasurements::portalBySlug | empty slug": {
+        "result": null,
+        "asked": []
+    },
+    "OCA\\Portaliq\\Service\\Cms\\AccessibilityMeasurements::portalBySlug | match": {
+        "result": {
+            "slug": "zuid",
+            "title": "Zuid",
+            "status": "draft"
+        },
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Cms\\AccessibilityMeasurements::portalBySlug | no rows": {
+        "result": null,
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Cms\\AccessibilityMeasurements::portalBySlug | other slug only": {
+        "result": null,
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Cms\\AccessibilityMeasurements::portalBySlug | match after other": {
+        "result": {
+            "slug": "zuid",
+            "title": "Zuid",
+            "status": "draft"
+        },
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Cms\\AccessibilityMeasurements::portalBySlug | not an array first": {
+        "result": {
+            "slug": "zuid",
+            "title": "Zuid",
+            "status": "draft"
+        },
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Cms\\AccessibilityMeasurements::portalBySlug | array-like object first": {
+        "result": {
+            "slug": "zuid",
+            "title": "Zuid",
+            "status": "draft"
+        },
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Cms\\AccessibilityMeasurements::portalBySlug | first of two matches": {
+        "result": {
+            "slug": "zuid",
+            "title": "Zuid",
+            "status": "draft"
+        },
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Cms\\AccessibilityMeasurements::portalBySlug | slug of another type": {
+        "result": null,
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "1",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Cms\\AccessibilityMeasurements::portalBySlug | slug with a space": {
+        "result": null,
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid ",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Identity\\EmailLink\\EmailLinkSender::portal | empty slug": {
+        "result": null,
+        "asked": []
+    },
+    "OCA\\Portaliq\\Service\\Identity\\EmailLink\\EmailLinkSender::portal | match": {
+        "result": {
+            "slug": "zuid",
+            "title": "Zuid",
+            "status": "draft"
+        },
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Identity\\EmailLink\\EmailLinkSender::portal | no rows": {
+        "result": null,
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Identity\\EmailLink\\EmailLinkSender::portal | other slug only": {
+        "result": null,
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Identity\\EmailLink\\EmailLinkSender::portal | match after other": {
+        "result": {
+            "slug": "zuid",
+            "title": "Zuid",
+            "status": "draft"
+        },
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Identity\\EmailLink\\EmailLinkSender::portal | not an array first": {
+        "result": {
+            "slug": "zuid",
+            "title": "Zuid",
+            "status": "draft"
+        },
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Identity\\EmailLink\\EmailLinkSender::portal | array-like object first": {
+        "result": {
+            "slug": "zuid",
+            "title": "Zuid",
+            "status": "draft"
+        },
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Identity\\EmailLink\\EmailLinkSender::portal | first of two matches": {
+        "result": {
+            "slug": "zuid",
+            "title": "Zuid",
+            "status": "draft"
+        },
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Identity\\EmailLink\\EmailLinkSender::portal | slug of another type": {
+        "result": null,
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "1",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Identity\\EmailLink\\EmailLinkSender::portal | slug with a space": {
+        "result": null,
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid ",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\PortalCaseTypeCatalogue::portalBySlug | empty slug": {
+        "result": null,
+        "asked": []
+    },
+    "OCA\\Portaliq\\Service\\PortalCaseTypeCatalogue::portalBySlug | match": {
+        "result": {
+            "slug": "zuid",
+            "title": "Zuid",
+            "status": "draft"
+        },
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\PortalCaseTypeCatalogue::portalBySlug | no rows": {
+        "result": null,
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\PortalCaseTypeCatalogue::portalBySlug | other slug only": {
+        "result": null,
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\PortalCaseTypeCatalogue::portalBySlug | match after other": {
+        "result": {
+            "slug": "zuid",
+            "title": "Zuid",
+            "status": "draft"
+        },
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\PortalCaseTypeCatalogue::portalBySlug | not an array first": {
+        "result": {
+            "slug": "zuid",
+            "title": "Zuid",
+            "status": "draft"
+        },
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\PortalCaseTypeCatalogue::portalBySlug | array-like object first": {
+        "result": {
+            "slug": "zuid",
+            "title": "Zuid",
+            "status": "draft"
+        },
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\PortalCaseTypeCatalogue::portalBySlug | first of two matches": {
+        "result": {
+            "slug": "zuid",
+            "title": "Zuid",
+            "status": "draft"
+        },
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\PortalCaseTypeCatalogue::portalBySlug | slug of another type": {
+        "result": null,
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "1",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\PortalCaseTypeCatalogue::portalBySlug | slug with a space": {
+        "result": null,
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid ",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Signin\\PortalSigninSettings::portalBySlug | empty slug": {
+        "result": null,
+        "asked": []
+    },
+    "OCA\\Portaliq\\Service\\Signin\\PortalSigninSettings::portalBySlug | match": {
+        "result": {
+            "slug": "zuid",
+            "title": "Zuid",
+            "status": "draft"
+        },
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Signin\\PortalSigninSettings::portalBySlug | no rows": {
+        "result": null,
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Signin\\PortalSigninSettings::portalBySlug | other slug only": {
+        "result": null,
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Signin\\PortalSigninSettings::portalBySlug | match after other": {
+        "result": {
+            "slug": "zuid",
+            "title": "Zuid",
+            "status": "draft"
+        },
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Signin\\PortalSigninSettings::portalBySlug | not an array first": {
+        "result": {
+            "slug": "zuid",
+            "title": "Zuid",
+            "status": "draft"
+        },
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Signin\\PortalSigninSettings::portalBySlug | array-like object first": {
+        "result": {
+            "slug": "zuid",
+            "title": "Zuid",
+            "status": "draft"
+        },
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Signin\\PortalSigninSettings::portalBySlug | first of two matches": {
+        "result": {
+            "slug": "zuid",
+            "title": "Zuid",
+            "status": "draft"
+        },
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Signin\\PortalSigninSettings::portalBySlug | slug of another type": {
+        "result": null,
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "1",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Signin\\PortalSigninSettings::portalBySlug | slug with a space": {
+        "result": null,
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid ",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Theme\\PortalThemeChoice::portalBySlug | empty slug": {
+        "result": null,
+        "asked": []
+    },
+    "OCA\\Portaliq\\Service\\Theme\\PortalThemeChoice::portalBySlug | match": {
+        "result": {
+            "slug": "zuid",
+            "title": "Zuid",
+            "status": "draft"
+        },
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Theme\\PortalThemeChoice::portalBySlug | no rows": {
+        "result": null,
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Theme\\PortalThemeChoice::portalBySlug | other slug only": {
+        "result": null,
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Theme\\PortalThemeChoice::portalBySlug | match after other": {
+        "result": {
+            "slug": "zuid",
+            "title": "Zuid",
+            "status": "draft"
+        },
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Theme\\PortalThemeChoice::portalBySlug | not an array first": {
+        "result": {
+            "slug": "zuid",
+            "title": "Zuid",
+            "status": "draft"
+        },
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Theme\\PortalThemeChoice::portalBySlug | array-like object first": {
+        "result": {
+            "slug": "zuid",
+            "title": "Zuid",
+            "status": "draft"
+        },
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Theme\\PortalThemeChoice::portalBySlug | first of two matches": {
+        "result": {
+            "slug": "zuid",
+            "title": "Zuid",
+            "status": "draft"
+        },
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Theme\\PortalThemeChoice::portalBySlug | slug of another type": {
+        "result": null,
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "1",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    },
+    "OCA\\Portaliq\\Service\\Theme\\PortalThemeChoice::portalBySlug | slug with a space": {
+        "result": null,
+        "asked": [
+            {
+                "register": "portaliq",
+                "schema": "portal",
+                "scopeField": "slug",
+                "subjectRef": "zuid ",
+                "organisation": "",
+                "limit": 2,
+                "scopeClaim": "",
+                "contributingApp": "",
+                "via": null,
+                "audience": "",
+                "fields": null,
+                "filter": []
+            }
+        ]
+    }
+}

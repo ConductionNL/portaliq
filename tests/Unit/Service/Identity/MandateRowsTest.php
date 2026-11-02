@@ -10,6 +10,7 @@ use OCA\Portaliq\Service\Identity\MandateDays;
 use OCA\Portaliq\Service\Identity\MandateListing;
 use OCA\Portaliq\Service\Identity\MandateParties;
 use OCA\Portaliq\Service\Identity\MandateStore;
+use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -24,6 +25,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(ContactRows::class)]
 #[UsesClass(MandateParties::class)]
 #[UsesClass(MandateDays::class)]
+#[UsesClass(PortalAccountLookup::class)]
 #[UsesClass(\OCA\Portaliq\Service\Identity\PortalContactService::class)]
 class MandateRowsTest extends TestCase {
 	private const NOW = '2026-05-10 12:00:00';
@@ -107,22 +109,31 @@ class MandateRowsTest extends TestCase {
 			['uuid' => 'm2', 'organisation' => 'zuid', 'onBehalfOf' => 'subject:abc', 'subjectRef' => 'h', 'expiresAt' => '2020-01-01'],
 			['uuid' => 'm3', 'organisation' => 'zuid', 'onBehalfOf' => 'subject:abc', 'status' => 'revoked'],
 			['uuid' => 'm4', 'organisation' => 'zuid', 'onBehalfOf' => 'subject:zzz'],
+			['uuid' => 'm5', 'organisation' => 'zuid', 'onBehalfOf' => 'subject:abc', 'holder' => 'subject:hanna', 'subjectRef' => 'clerk'],
+		];
+		$accounts = [
+			['subjectRef' => 'hanna', 'displayName' => 'Hanna Smit', 'email' => 'hanna@example.nl'],
+			['subjectRef' => 'clerk', 'displayName' => 'Clerk'],
 		];
 		$invites = [
 			['uuid' => 'i1', 'organisation' => 'zuid', 'onBehalfOf' => 'subject:abc', 'email' => 'a@b.nl', 'mandate' => ['label' => 'IL', 'caseTypes' => ['c'], 'expiresAt' => '2031-01-01']],
 			['uuid' => 'i2', 'organisation' => 'zuid', 'onBehalfOf' => 'subject:abc', 'state' => 'accepted'],
 			['uuid' => 'i3', 'organisation' => 'zuid', 'onBehalfOf' => 'subject:other', 'state' => 'opened'],
 		];
-		$store   = new MandateStore($this->reader([MandateStore::MANDATES => $mandates, MandateStore::INVITATIONS => $invites]), $this->createMock(PortalObjectWriter::class));
-		$listing = new MandateListing($store, new MandateParties(), new MandateDays());
+		$reader  = $this->reader([MandateStore::MANDATES => $mandates, MandateStore::INVITATIONS => $invites, 'portalAccount' => $accounts]);
+		$store   = new MandateStore($reader, $this->createMock(PortalObjectWriter::class));
+		$listing = new MandateListing($store, new MandateParties(), new MandateDays(), new PortalAccountLookup($reader));
 		$now     = new DateTimeImmutable(self::NOW);
 
 		$given = $listing->given('subject:abc', 'zuid', $now);
-		$this->assertSame(['m1', 'm2', 'i1'], array_column($given, 'id'));
-		$this->assertSame(['active', 'expired', 'pending'], array_column($given, 'state'));
+		$this->assertSame(['m1', 'm2', 'm5', 'i1'], array_column($given, 'id'));
+		$this->assertSame(['active', 'expired', 'active', 'pending'], array_column($given, 'state'));
 		$this->assertSame('kvk:12345678', $given[0]['holder']);
-		$this->assertSame('IL', $given[2]['label']);
-		$this->assertSame(['c'], $given[2]['caseTypes']);
+		$this->assertArrayNotHasKey('name', $given[0], 'a company holder without an accepting account names nobody');
+		$this->assertSame(['', ''], [$given[1]['name'], $given[1]['email']], 'a person without an account is named empty');
+		$this->assertSame(['Hanna Smit', 'hanna@example.nl'], [$given[2]['name'], $given[2]['email']], 'a person holder is named by their own account, not the recording one');
+		$this->assertSame('IL', $given[3]['label']);
+		$this->assertSame(['c'], $given[3]['caseTypes']);
 
 		$held = $listing->held(['kvk:12345678', 'subject:h'], 'zuid', $now);
 		$this->assertSame(['m1'], array_column($held, 'id'));

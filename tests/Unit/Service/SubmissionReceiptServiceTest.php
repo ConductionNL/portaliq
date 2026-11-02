@@ -414,6 +414,110 @@ class SubmissionReceiptServiceTest extends TestCase {
 	}//end testAFallbackWriteThatAlsoThrowsIsSwallowed()
 
 	/**
+	 * The proof-log writes a recording writer captured, by schema.
+	 *
+	 * @param array<int, array{schema: string, data: array<string, mixed>}> $writes The captured writes.
+	 *
+	 * @return array<int, array<string, mixed>> The data of each portalSubmission write.
+	 */
+	private function submissionData(array $writes): array {
+		return array_values(array_map(static fn (array $w): array => $w['data'], array_filter($writes, static fn (array $w): bool => $w['schema'] === 'portalSubmission')));
+	}//end submissionData()
+
+	/**
+	 * A writer that records every write and answers each one.
+	 *
+	 * @param array<int, array{schema: string, data: array<string, mixed>}> $writes Receives the writes.
+	 * @param bool $failFirstSubmission Whether the first portalSubmission write answers null.
+	 *
+	 * @return PortalObjectWriter
+	 */
+	private function recordingWriter(array &$writes, bool $failFirstSubmission = false): PortalObjectWriter {
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, array $data) use (&$writes, $failFirstSubmission) {
+				$writes[] = ['schema' => $schema, 'data' => $data];
+				if ($failFirstSubmission === true && $schema === 'portalSubmission' && count($this->submissionData($writes)) === 1) {
+					return null;
+				}
+
+				return ['id' => $schema . '-id'];
+			}
+		);
+
+		return $writer;
+	}//end recordingWriter()
+
+	/**
+	 * The proof log names the action by the title the resident read; the
+	 * receipt message itself does not carry it.
+	 *
+	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 */
+	public function testTheProofLogNamesTheActionByItsTitle(): void {
+		$writes = [];
+		$service = new SubmissionReceiptService($this->recordingWriter($writes), $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+		$service->record('s1', 'org-1', 'dossiq', 'meldingOpenbareRuimte', ['title' => 'X'], actionTitle: 'Melding openbare ruimte');
+
+		$submissions = $this->submissionData($writes);
+		$this->assertCount(1, $submissions);
+		$this->assertSame('meldingOpenbareRuimte', $submissions[0]['actionId']);
+		$this->assertSame('Melding openbare ruimte', $submissions[0]['actionTitle']);
+		$this->assertArrayNotHasKey('actionTitle', $writes[0]['data']);
+	}//end testTheProofLogNamesTheActionByItsTitle()
+
+	/**
+	 * A blank title, a title that is no string, and no title at all write no
+	 * `actionTitle` key, so the list falls back to the action id.
+	 *
+	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 */
+	public function testABlankTitleIsNotWritten(): void {
+		foreach (['   ', ['nl' => 'Melding'], null] as $title) {
+			$writes = [];
+			$service = new SubmissionReceiptService($this->recordingWriter($writes), $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+			$service->record('s1', 'org-1', 'dossiq', 'meldingOpenbareRuimte', [], actionTitle: $title);
+
+			$this->assertArrayNotHasKey('actionTitle', $this->submissionData($writes)[0]);
+		}
+
+		$writes = [];
+		$service = new SubmissionReceiptService($this->recordingWriter($writes), $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+		$service->record('s1', 'org-1', 'dossiq', 'meldingOpenbareRuimte', []);
+		$this->assertArrayNotHasKey('actionTitle', $this->submissionData($writes)[0]);
+	}//end testABlankTitleIsNotWritten()
+
+	/**
+	 * A title is trimmed and kept to 200 characters.
+	 *
+	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 */
+	public function testATitleIsTrimmedAndKeptShort(): void {
+		$writes = [];
+		$service = new SubmissionReceiptService($this->recordingWriter($writes), $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+		$service->record('s1', 'org-1', 'dossiq', 'lang', [], actionTitle: '  ' . str_repeat('é', 250) . '  ');
+
+		$this->assertSame(str_repeat('é', 200), $this->submissionData($writes)[0]['actionTitle']);
+	}//end testATitleIsTrimmedAndKeptShort()
+
+	/**
+	 * The minimal fallback record keeps the title, so the failed row is named
+	 * in the list too.
+	 *
+	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 */
+	public function testTheFallbackRecordKeepsTheTitle(): void {
+		$writes = [];
+		$service = new SubmissionReceiptService($this->recordingWriter($writes, failFirstSubmission: true), $this->language(), $this->timeFactory(), $this->createMock(LoggerInterface::class), $this->createMock(NotificationDispatchService::class));
+		$service->record('s1', 'org-1', 'dossiq', 'grofAfval', ['title' => 'X'], actionTitle: 'Grof afval laten ophalen');
+
+		$submissions = $this->submissionData($writes);
+		$this->assertCount(2, $submissions);
+		$this->assertSame('failed', $submissions[1]['deliveryStatus']);
+		$this->assertSame('Grof afval laten ophalen', $submissions[1]['actionTitle']);
+	}//end testTheFallbackRecordKeepsTheTitle()
+
+	/**
 	 * A service with every collaborator stubbed.
 	 *
 	 * `taskCompletionCopy()` is a pure mapping -- it reads no service state --

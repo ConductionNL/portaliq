@@ -1,0 +1,2162 @@
+{
+    "unresolved": {
+        "anonymous": {
+            "news.index": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    }
+                ]
+            },
+            "news.show": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    }
+                ]
+            },
+            "news.showMissing": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": null
+                    }
+                ]
+            },
+            "catalogue.kinds": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    }
+                ]
+            },
+            "catalogue.detail": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    }
+                ]
+            },
+            "catalogue.detailMissing": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": null
+                    }
+                ]
+            },
+            "catalogue.index": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    }
+                ]
+            }
+        },
+        "bearer": {
+            "news.index": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    }
+                ]
+            },
+            "news.show": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    }
+                ]
+            },
+            "news.showMissing": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": null
+                    }
+                ]
+            },
+            "catalogue.kinds": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    }
+                ]
+            },
+            "catalogue.detail": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    }
+                ]
+            },
+            "catalogue.detailMissing": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": null
+                    }
+                ]
+            },
+            "catalogue.index": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    }
+                ]
+            }
+        }
+    },
+    "open": {
+        "anonymous": {
+            "news.index": {
+                "status": 200,
+                "data": {
+                    "items": [
+                        {
+                            "id": "n-1"
+                        }
+                    ]
+                },
+                "cache": "public, max-age=300, must-revalidate",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "listFor": [
+                            "p-open",
+                            2
+                        ]
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            },
+            "news.show": {
+                "status": 200,
+                "data": {
+                    "item": {
+                        "id": "n-1"
+                    }
+                },
+                "cache": "public, max-age=300, must-revalidate",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "itemFor": [
+                            "p-open",
+                            "n-1"
+                        ]
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            },
+            "news.showMissing": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": null
+                    },
+                    {
+                        "itemFor": [
+                            "p-open",
+                            "missing"
+                        ]
+                    }
+                ]
+            },
+            "catalogue.kinds": {
+                "status": 200,
+                "data": {
+                    "kinds": [
+                        {
+                            "kind": "course"
+                        }
+                    ]
+                },
+                "cache": "public, max-age=300, must-revalidate",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "kindsFor": "p-open"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            },
+            "catalogue.detail": {
+                "status": 200,
+                "data": {
+                    "slug": "s"
+                },
+                "cache": "public, max-age=300, must-revalidate",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "detailFor": [
+                            "p-open",
+                            "a",
+                            "k",
+                            "s"
+                        ]
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            },
+            "catalogue.detailMissing": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": null
+                    },
+                    {
+                        "detailFor": [
+                            "p-open",
+                            "",
+                            "",
+                            "missing"
+                        ]
+                    }
+                ]
+            },
+            "catalogue.index": {
+                "status": 200,
+                "data": {
+                    "items": [],
+                    "total": 0,
+                    "page": 1,
+                    "pages": 1,
+                    "facets": []
+                },
+                "cache": "public, max-age=300, must-revalidate",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            }
+        },
+        "bearer": {
+            "news.index": {
+                "status": 200,
+                "data": {
+                    "items": [
+                        {
+                            "id": "n-1"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "listFor": [
+                            "p-open",
+                            2
+                        ]
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            },
+            "news.show": {
+                "status": 200,
+                "data": {
+                    "item": {
+                        "id": "n-1"
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "itemFor": [
+                            "p-open",
+                            "n-1"
+                        ]
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            },
+            "news.showMissing": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": null
+                    },
+                    {
+                        "itemFor": [
+                            "p-open",
+                            "missing"
+                        ]
+                    }
+                ]
+            },
+            "catalogue.kinds": {
+                "status": 200,
+                "data": {
+                    "kinds": [
+                        {
+                            "kind": "course"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "kindsFor": "p-open"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            },
+            "catalogue.detail": {
+                "status": 200,
+                "data": {
+                    "slug": "s"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "detailFor": [
+                            "p-open",
+                            "a",
+                            "k",
+                            "s"
+                        ]
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            },
+            "catalogue.detailMissing": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": null
+                    },
+                    {
+                        "detailFor": [
+                            "p-open",
+                            "",
+                            "",
+                            "missing"
+                        ]
+                    }
+                ]
+            },
+            "catalogue.index": {
+                "status": 200,
+                "data": {
+                    "items": [],
+                    "total": 0,
+                    "page": 1,
+                    "pages": 1,
+                    "facets": []
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            }
+        }
+    },
+    "publicMode": {
+        "anonymous": {
+            "news.index": {
+                "status": 200,
+                "data": {
+                    "items": [
+                        {
+                            "id": "n-1"
+                        }
+                    ]
+                },
+                "cache": "public, max-age=300, must-revalidate",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "listFor": [
+                            "p-pub",
+                            2
+                        ]
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            },
+            "news.show": {
+                "status": 200,
+                "data": {
+                    "item": {
+                        "id": "n-1"
+                    }
+                },
+                "cache": "public, max-age=300, must-revalidate",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "itemFor": [
+                            "p-pub",
+                            "n-1"
+                        ]
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            },
+            "news.showMissing": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": null
+                    },
+                    {
+                        "itemFor": [
+                            "p-pub",
+                            "missing"
+                        ]
+                    }
+                ]
+            },
+            "catalogue.kinds": {
+                "status": 200,
+                "data": {
+                    "kinds": [
+                        {
+                            "kind": "course"
+                        }
+                    ]
+                },
+                "cache": "public, max-age=300, must-revalidate",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "kindsFor": "p-pub"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            },
+            "catalogue.detail": {
+                "status": 200,
+                "data": {
+                    "slug": "s"
+                },
+                "cache": "public, max-age=300, must-revalidate",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "detailFor": [
+                            "p-pub",
+                            "a",
+                            "k",
+                            "s"
+                        ]
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            },
+            "catalogue.detailMissing": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": null
+                    },
+                    {
+                        "detailFor": [
+                            "p-pub",
+                            "",
+                            "",
+                            "missing"
+                        ]
+                    }
+                ]
+            },
+            "catalogue.index": {
+                "status": 200,
+                "data": {
+                    "items": [],
+                    "total": 0,
+                    "page": 1,
+                    "pages": 1,
+                    "facets": []
+                },
+                "cache": "public, max-age=300, must-revalidate",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            }
+        },
+        "bearer": {
+            "news.index": {
+                "status": 200,
+                "data": {
+                    "items": [
+                        {
+                            "id": "n-1"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "listFor": [
+                            "p-pub",
+                            2
+                        ]
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            },
+            "news.show": {
+                "status": 200,
+                "data": {
+                    "item": {
+                        "id": "n-1"
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "itemFor": [
+                            "p-pub",
+                            "n-1"
+                        ]
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            },
+            "news.showMissing": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": null
+                    },
+                    {
+                        "itemFor": [
+                            "p-pub",
+                            "missing"
+                        ]
+                    }
+                ]
+            },
+            "catalogue.kinds": {
+                "status": 200,
+                "data": {
+                    "kinds": [
+                        {
+                            "kind": "course"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "kindsFor": "p-pub"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            },
+            "catalogue.detail": {
+                "status": 200,
+                "data": {
+                    "slug": "s"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "detailFor": [
+                            "p-pub",
+                            "a",
+                            "k",
+                            "s"
+                        ]
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            },
+            "catalogue.detailMissing": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": null
+                    },
+                    {
+                        "detailFor": [
+                            "p-pub",
+                            "",
+                            "",
+                            "missing"
+                        ]
+                    }
+                ]
+            },
+            "catalogue.index": {
+                "status": 200,
+                "data": {
+                    "items": [],
+                    "total": 0,
+                    "page": 1,
+                    "pages": 1,
+                    "facets": []
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            }
+        }
+    },
+    "signInNoBearer": {
+        "anonymous": {
+            "news.index": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "news.show": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "news.showMissing": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": null
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "catalogue.kinds": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "catalogue.detail": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "catalogue.detailMissing": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": null
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "catalogue.index": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            }
+        },
+        "bearer": {
+            "news.index": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "news.show": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "news.showMissing": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": null
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "catalogue.kinds": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "catalogue.detail": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "catalogue.detailMissing": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": null
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "catalogue.index": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            }
+        }
+    },
+    "signInLowTrust": {
+        "anonymous": {
+            "news.index": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "news.show": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "news.showMissing": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": null
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "catalogue.kinds": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "catalogue.detail": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "catalogue.detailMissing": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": null
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "catalogue.index": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            }
+        },
+        "bearer": {
+            "news.index": {
+                "status": 403,
+                "data": {
+                    "error": "insufficient_trust",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "news.show": {
+                "status": 403,
+                "data": {
+                    "error": "insufficient_trust",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "news.showMissing": {
+                "status": 403,
+                "data": {
+                    "error": "insufficient_trust",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": null
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "catalogue.kinds": {
+                "status": 403,
+                "data": {
+                    "error": "insufficient_trust",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "catalogue.detail": {
+                "status": 403,
+                "data": {
+                    "error": "insufficient_trust",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "catalogue.detailMissing": {
+                "status": 403,
+                "data": {
+                    "error": "insufficient_trust",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": null
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "catalogue.index": {
+                "status": 403,
+                "data": {
+                    "error": "insufficient_trust",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            }
+        }
+    },
+    "signInEnoughTrust": {
+        "anonymous": {
+            "news.index": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "news.show": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "news.showMissing": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": null
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "catalogue.kinds": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "catalogue.detail": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "catalogue.detailMissing": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": null
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "catalogue.index": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            }
+        },
+        "bearer": {
+            "news.index": {
+                "status": 200,
+                "data": {
+                    "items": [
+                        {
+                            "id": "n-1"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    },
+                    {
+                        "listFor": [
+                            "p-in",
+                            2
+                        ]
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            },
+            "news.show": {
+                "status": 200,
+                "data": {
+                    "item": {
+                        "id": "n-1"
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    },
+                    {
+                        "itemFor": [
+                            "p-in",
+                            "n-1"
+                        ]
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            },
+            "news.showMissing": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": null
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    },
+                    {
+                        "itemFor": [
+                            "p-in",
+                            "missing"
+                        ]
+                    }
+                ]
+            },
+            "catalogue.kinds": {
+                "status": 200,
+                "data": {
+                    "kinds": [
+                        {
+                            "kind": "course"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    },
+                    {
+                        "kindsFor": "p-in"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            },
+            "catalogue.detail": {
+                "status": 200,
+                "data": {
+                    "slug": "s"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    },
+                    {
+                        "detailFor": [
+                            "p-in",
+                            "a",
+                            "k",
+                            "s"
+                        ]
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            },
+            "catalogue.detailMissing": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": null
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    },
+                    {
+                        "detailFor": [
+                            "p-in",
+                            "",
+                            "",
+                            "missing"
+                        ]
+                    }
+                ]
+            },
+            "catalogue.index": {
+                "status": 200,
+                "data": {
+                    "items": [],
+                    "total": 0,
+                    "page": 1,
+                    "pages": 1,
+                    "facets": []
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            }
+        }
+    },
+    "signInDefaultTrust": {
+        "anonymous": {
+            "news.index": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "eherkenning"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "news.show": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "eherkenning"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "news.showMissing": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "eherkenning"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": null
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "catalogue.kinds": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "eherkenning"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "catalogue.detail": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "eherkenning"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "catalogue.detailMissing": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "eherkenning"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": null
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "catalogue.index": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "eherkenning"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            }
+        },
+        "bearer": {
+            "news.index": {
+                "status": 200,
+                "data": {
+                    "items": [
+                        {
+                            "id": "n-1"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    },
+                    {
+                        "listFor": [
+                            "p-in",
+                            2
+                        ]
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            },
+            "news.show": {
+                "status": 200,
+                "data": {
+                    "item": {
+                        "id": "n-1"
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    },
+                    {
+                        "itemFor": [
+                            "p-in",
+                            "n-1"
+                        ]
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            },
+            "news.showMissing": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": null
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    },
+                    {
+                        "itemFor": [
+                            "p-in",
+                            "missing"
+                        ]
+                    }
+                ]
+            },
+            "catalogue.kinds": {
+                "status": 200,
+                "data": {
+                    "kinds": [
+                        {
+                            "kind": "course"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    },
+                    {
+                        "kindsFor": "p-in"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            },
+            "catalogue.detail": {
+                "status": 200,
+                "data": {
+                    "slug": "s"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    },
+                    {
+                        "detailFor": [
+                            "p-in",
+                            "a",
+                            "k",
+                            "s"
+                        ]
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            },
+            "catalogue.detailMissing": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": null
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    },
+                    {
+                        "detailFor": [
+                            "p-in",
+                            "",
+                            "",
+                            "missing"
+                        ]
+                    }
+                ]
+            },
+            "catalogue.index": {
+                "status": 200,
+                "data": {
+                    "items": [],
+                    "total": 0,
+                    "page": 1,
+                    "pages": 1,
+                    "facets": []
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolve": "asked"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    },
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    },
+                    {
+                        "getHeader": "Authorization"
+                    }
+                ]
+            }
+        }
+    }
+}

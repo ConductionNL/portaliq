@@ -96,13 +96,13 @@ endpoints keep their bearer check.
 
 ### Requirement: Content rights and settings rights stay apart (REQ-ORA-007)
 
-A member of a page editor group who is not an instance administrator SHALL be able to write pages, menus, media and notices, and SHALL be refused on every admin settings endpoint, including the action grants, a portal's settings and its sign-in settings. A group granted an action SHALL get that action only, and SHALL NOT become a page editor by it. An instance administrator SHALL keep both.
+A member of a page editor group who is not an instance administrator SHALL be able to write pages, menus, media and notices, and SHALL be refused on every admin settings endpoint, including the action grants, a portal's settings and its sign-in settings. An instance-wide settings endpoint SHALL refuse with 403. A portal's own settings endpoints, its sign-in settings among them, are scoped to the portal's admin scope (an instance administrator or a member of the portal's `adminGroups`) and SHALL answer 404 to anyone outside it, so the portal is not revealed to someone who may not administer it. A group granted an action SHALL get that action only, and SHALL NOT become a page editor by it. An instance administrator SHALL keep both.
 
 #### Scenario: An editor cannot change the sign-in
 - **GIVEN** a member of the page editor group "Communicatie" who is not an administrator
 - **WHEN** they publish a page and then call `PUT /api/portals/zuiddrecht/signin`
-- **THEN** the page is published and the sign-in call is refused with 403
-- @e2e exclude Authorization guard; pinned by AdminOnlyPostureTest and PageEditorServiceTest
+- **THEN** the page is published and the sign-in call is refused with 404, because "Communicatie" is not in the portal's `adminGroups` and the editor is outside the portal's admin scope
+- @e2e exclude Authorization guard; pinned by AdminOnlyPostureTest, PortalSigninControllerTest and PageEditorServiceTest
 
 #### Scenario: An action grant gives no page rights
 - **GIVEN** a group "Service desk" granted `portal.provision` and not listed as an editor group

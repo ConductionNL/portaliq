@@ -53,6 +53,36 @@ class PortalPdfExportTest extends TestCase {
 	}//end testAvailable()
 
 	/**
+	 * An OpenRegister that converts PDFs through an office server reports
+	 * whether one is installed, and availability follows it.
+	 *
+	 * @return void
+	 */
+	public function testAvailableFollowsTheOfficeServer(): void {
+		$withServer = new class() {
+			public function renderRowsToPdf(string $t, array $c, array $r): string {
+				return '%PDF-1';
+			}
+
+			public function isPdfAvailable(): bool {
+				return true;
+			}
+		};
+		$withoutServer = new class() {
+			public function renderRowsToPdf(string $t, array $c, array $r): string {
+				return '%PDF-1';
+			}
+
+			public function isPdfAvailable(): bool {
+				return false;
+			}
+		};
+
+		$this->assertTrue($this->export($withServer)->available());
+		$this->assertFalse($this->export($withoutServer)->available());
+	}//end testAvailableFollowsTheOfficeServer()
+
+	/**
 	 * Rendering returns PDF bytes, or null for anything else.
 	 *
 	 * @return void

@@ -1,0 +1,510 @@
+{
+	"states": [
+		{
+			"event": {
+				"k": "y",
+				"h": "sheet-1",
+				"s": "body{color:red}"
+			},
+			"viewport": {
+				"w": 1280,
+				"h": 800
+			},
+			"scale": 1,
+			"stageWidth": 800,
+			"srcdoc": "",
+			"page": "",
+			"cursor": {
+				"x": 0,
+				"y": 0
+			},
+			"clicked": false,
+			"styles": {
+				"sheet-1": "body{color:red}"
+			}
+		},
+		{
+			"event": {
+				"k": "y",
+				"h": "",
+				"s": "ignored"
+			},
+			"viewport": {
+				"w": 1280,
+				"h": 800
+			},
+			"scale": 1,
+			"stageWidth": 800,
+			"srcdoc": "",
+			"page": "",
+			"cursor": {
+				"x": 0,
+				"y": 0
+			},
+			"clicked": false,
+			"styles": {
+				"sheet-1": "body{color:red}"
+			}
+		},
+		{
+			"event": {
+				"k": "y",
+				"h": 7,
+				"s": "ignored"
+			},
+			"viewport": {
+				"w": 1280,
+				"h": 800
+			},
+			"scale": 1,
+			"stageWidth": 800,
+			"srcdoc": "",
+			"page": "",
+			"cursor": {
+				"x": 0,
+				"y": 0
+			},
+			"clicked": false,
+			"styles": {
+				"sheet-1": "body{color:red}"
+			}
+		},
+		{
+			"event": {
+				"k": "y",
+				"h": "sheet-2"
+			},
+			"viewport": {
+				"w": 1280,
+				"h": 800
+			},
+			"scale": 1,
+			"stageWidth": 800,
+			"srcdoc": "",
+			"page": "",
+			"cursor": {
+				"x": 0,
+				"y": 0
+			},
+			"clicked": false,
+			"styles": {
+				"sheet-1": "body{color:red}",
+				"sheet-2": ""
+			}
+		},
+		{
+			"event": {
+				"k": "s",
+				"w": 1024,
+				"h": 700,
+				"n": {
+					"n": "div",
+					"a": {
+						"class": "x",
+						"onclick": "no"
+					},
+					"c": [
+						{
+							"l": 3
+						},
+						{
+							"n": "style",
+							"h": "sheet-1"
+						},
+						{
+							"n": "img",
+							"a": {
+								"src": "a"
+							}
+						}
+					]
+				}
+			},
+			"viewport": {
+				"w": 1024,
+				"h": 700
+			},
+			"scale": 0.625,
+			"stageWidth": 640,
+			"srcdoc": "<!doctype html><style>.pq-mask{color:rgba(127,127,127,.55);letter-spacing:-.05em;word-break:break-all}.pq-box{display:inline-block;background:rgba(127,127,127,.25);min-width:1em;min-height:1em}input,textarea,select{color:rgba(127,127,127,.7)}</style><div class=\"x\"><span class=\"pq-mask\">░░░</span><style>body{color:red}</style><img src=\"a\" class=\"pq-box \"></div>",
+			"page": "",
+			"cursor": {
+				"x": 0,
+				"y": 0
+			},
+			"clicked": false,
+			"styles": {
+				"sheet-1": "body{color:red}",
+				"sheet-2": ""
+			}
+		},
+		{
+			"event": {
+				"k": "s",
+				"w": 0,
+				"h": "x",
+				"n": null
+			},
+			"viewport": {
+				"w": 1024,
+				"h": 700
+			},
+			"scale": 0.625,
+			"stageWidth": 640,
+			"srcdoc": "<!doctype html><style>.pq-mask{color:rgba(127,127,127,.55);letter-spacing:-.05em;word-break:break-all}.pq-box{display:inline-block;background:rgba(127,127,127,.25);min-width:1em;min-height:1em}input,textarea,select{color:rgba(127,127,127,.7)}</style>",
+			"page": "",
+			"cursor": {
+				"x": 0,
+				"y": 0
+			},
+			"clicked": false,
+			"styles": {
+				"sheet-1": "body{color:red}",
+				"sheet-2": ""
+			}
+		},
+		{
+			"event": {
+				"k": "v",
+				"w": 320,
+				"h": 0
+			},
+			"viewport": {
+				"w": 320,
+				"h": 700
+			},
+			"scale": 1,
+			"stageWidth": 640,
+			"srcdoc": "<!doctype html><style>.pq-mask{color:rgba(127,127,127,.55);letter-spacing:-.05em;word-break:break-all}.pq-box{display:inline-block;background:rgba(127,127,127,.25);min-width:1em;min-height:1em}input,textarea,select{color:rgba(127,127,127,.7)}</style>",
+			"page": "",
+			"cursor": {
+				"x": 0,
+				"y": 0
+			},
+			"clicked": false,
+			"styles": {
+				"sheet-1": "body{color:red}",
+				"sheet-2": ""
+			}
+		},
+		{
+			"event": {
+				"k": "v",
+				"w": "x",
+				"h": 900
+			},
+			"viewport": {
+				"w": 320,
+				"h": 900
+			},
+			"scale": 1,
+			"stageWidth": 640,
+			"srcdoc": "<!doctype html><style>.pq-mask{color:rgba(127,127,127,.55);letter-spacing:-.05em;word-break:break-all}.pq-box{display:inline-block;background:rgba(127,127,127,.25);min-width:1em;min-height:1em}input,textarea,select{color:rgba(127,127,127,.7)}</style>",
+			"page": "",
+			"cursor": {
+				"x": 0,
+				"y": 0
+			},
+			"clicked": false,
+			"styles": {
+				"sheet-1": "body{color:red}",
+				"sheet-2": ""
+			}
+		},
+		{
+			"event": {
+				"k": "m",
+				"x": 10,
+				"y": "20"
+			},
+			"viewport": {
+				"w": 320,
+				"h": 900
+			},
+			"scale": 1,
+			"stageWidth": 640,
+			"srcdoc": "<!doctype html><style>.pq-mask{color:rgba(127,127,127,.55);letter-spacing:-.05em;word-break:break-all}.pq-box{display:inline-block;background:rgba(127,127,127,.25);min-width:1em;min-height:1em}input,textarea,select{color:rgba(127,127,127,.7)}</style>",
+			"page": "",
+			"cursor": {
+				"x": 10,
+				"y": 20
+			},
+			"clicked": false,
+			"styles": {
+				"sheet-1": "body{color:red}",
+				"sheet-2": ""
+			}
+		},
+		{
+			"event": {
+				"k": "m",
+				"x": "a"
+			},
+			"viewport": {
+				"w": 320,
+				"h": 900
+			},
+			"scale": 1,
+			"stageWidth": 640,
+			"srcdoc": "<!doctype html><style>.pq-mask{color:rgba(127,127,127,.55);letter-spacing:-.05em;word-break:break-all}.pq-box{display:inline-block;background:rgba(127,127,127,.25);min-width:1em;min-height:1em}input,textarea,select{color:rgba(127,127,127,.7)}</style>",
+			"page": "",
+			"cursor": {
+				"x": 0,
+				"y": 0
+			},
+			"clicked": false,
+			"styles": {
+				"sheet-1": "body{color:red}",
+				"sheet-2": ""
+			}
+		},
+		{
+			"event": {
+				"k": "c",
+				"x": 5,
+				"y": 6
+			},
+			"viewport": {
+				"w": 320,
+				"h": 900
+			},
+			"scale": 1,
+			"stageWidth": 640,
+			"srcdoc": "<!doctype html><style>.pq-mask{color:rgba(127,127,127,.55);letter-spacing:-.05em;word-break:break-all}.pq-box{display:inline-block;background:rgba(127,127,127,.25);min-width:1em;min-height:1em}input,textarea,select{color:rgba(127,127,127,.7)}</style>",
+			"page": "",
+			"cursor": {
+				"x": 5,
+				"y": 6
+			},
+			"clicked": true,
+			"styles": {
+				"sheet-1": "body{color:red}",
+				"sheet-2": ""
+			}
+		},
+		{
+			"event": {
+				"k": "r",
+				"x": 0,
+				"y": 300
+			},
+			"viewport": {
+				"w": 320,
+				"h": 900
+			},
+			"scale": 1,
+			"stageWidth": 640,
+			"srcdoc": "<!doctype html><style>.pq-mask{color:rgba(127,127,127,.55);letter-spacing:-.05em;word-break:break-all}.pq-box{display:inline-block;background:rgba(127,127,127,.25);min-width:1em;min-height:1em}input,textarea,select{color:rgba(127,127,127,.7)}</style>",
+			"page": "",
+			"cursor": {
+				"x": 5,
+				"y": 6
+			},
+			"clicked": true,
+			"styles": {
+				"sheet-1": "body{color:red}",
+				"sheet-2": ""
+			}
+		},
+		{
+			"event": {
+				"k": "r",
+				"x": "z",
+				"y": null
+			},
+			"viewport": {
+				"w": 320,
+				"h": 900
+			},
+			"scale": 1,
+			"stageWidth": 640,
+			"srcdoc": "<!doctype html><style>.pq-mask{color:rgba(127,127,127,.55);letter-spacing:-.05em;word-break:break-all}.pq-box{display:inline-block;background:rgba(127,127,127,.25);min-width:1em;min-height:1em}input,textarea,select{color:rgba(127,127,127,.7)}</style>",
+			"page": "",
+			"cursor": {
+				"x": 5,
+				"y": 6
+			},
+			"clicked": true,
+			"styles": {
+				"sheet-1": "body{color:red}",
+				"sheet-2": ""
+			}
+		},
+		{
+			"event": {
+				"k": "n",
+				"p": "/page/one"
+			},
+			"viewport": {
+				"w": 320,
+				"h": 900
+			},
+			"scale": 1,
+			"stageWidth": 640,
+			"srcdoc": "<!doctype html><style>.pq-mask{color:rgba(127,127,127,.55);letter-spacing:-.05em;word-break:break-all}.pq-box{display:inline-block;background:rgba(127,127,127,.25);min-width:1em;min-height:1em}input,textarea,select{color:rgba(127,127,127,.7)}</style>",
+			"page": "/page/one",
+			"cursor": {
+				"x": 5,
+				"y": 6
+			},
+			"clicked": true,
+			"styles": {
+				"sheet-1": "body{color:red}",
+				"sheet-2": ""
+			}
+		},
+		{
+			"event": {
+				"k": "n"
+			},
+			"viewport": {
+				"w": 320,
+				"h": 900
+			},
+			"scale": 1,
+			"stageWidth": 640,
+			"srcdoc": "<!doctype html><style>.pq-mask{color:rgba(127,127,127,.55);letter-spacing:-.05em;word-break:break-all}.pq-box{display:inline-block;background:rgba(127,127,127,.25);min-width:1em;min-height:1em}input,textarea,select{color:rgba(127,127,127,.7)}</style>",
+			"page": "",
+			"cursor": {
+				"x": 5,
+				"y": 6
+			},
+			"clicked": true,
+			"styles": {
+				"sheet-1": "body{color:red}",
+				"sheet-2": ""
+			}
+		},
+		{
+			"event": {
+				"k": "q",
+				"x": 1
+			},
+			"viewport": {
+				"w": 320,
+				"h": 900
+			},
+			"scale": 1,
+			"stageWidth": 640,
+			"srcdoc": "<!doctype html><style>.pq-mask{color:rgba(127,127,127,.55);letter-spacing:-.05em;word-break:break-all}.pq-box{display:inline-block;background:rgba(127,127,127,.25);min-width:1em;min-height:1em}input,textarea,select{color:rgba(127,127,127,.7)}</style>",
+			"page": "",
+			"cursor": {
+				"x": 5,
+				"y": 6
+			},
+			"clicked": true,
+			"styles": {
+				"sheet-1": "body{color:red}",
+				"sheet-2": ""
+			}
+		},
+		{
+			"event": {
+				"k": "constructor"
+			},
+			"viewport": {
+				"w": 320,
+				"h": 900
+			},
+			"scale": 1,
+			"stageWidth": 640,
+			"srcdoc": "<!doctype html><style>.pq-mask{color:rgba(127,127,127,.55);letter-spacing:-.05em;word-break:break-all}.pq-box{display:inline-block;background:rgba(127,127,127,.25);min-width:1em;min-height:1em}input,textarea,select{color:rgba(127,127,127,.7)}</style>",
+			"page": "",
+			"cursor": {
+				"x": 5,
+				"y": 6
+			},
+			"clicked": true,
+			"styles": {
+				"sheet-1": "body{color:red}",
+				"sheet-2": ""
+			}
+		},
+		{
+			"event": {
+				"k": "toString"
+			},
+			"viewport": {
+				"w": 320,
+				"h": 900
+			},
+			"scale": 1,
+			"stageWidth": 640,
+			"srcdoc": "<!doctype html><style>.pq-mask{color:rgba(127,127,127,.55);letter-spacing:-.05em;word-break:break-all}.pq-box{display:inline-block;background:rgba(127,127,127,.25);min-width:1em;min-height:1em}input,textarea,select{color:rgba(127,127,127,.7)}</style>",
+			"page": "",
+			"cursor": {
+				"x": 5,
+				"y": 6
+			},
+			"clicked": true,
+			"styles": {
+				"sheet-1": "body{color:red}",
+				"sheet-2": ""
+			}
+		},
+		{
+			"event": {
+				"k": "__proto__"
+			},
+			"viewport": {
+				"w": 320,
+				"h": 900
+			},
+			"scale": 1,
+			"stageWidth": 640,
+			"srcdoc": "<!doctype html><style>.pq-mask{color:rgba(127,127,127,.55);letter-spacing:-.05em;word-break:break-all}.pq-box{display:inline-block;background:rgba(127,127,127,.25);min-width:1em;min-height:1em}input,textarea,select{color:rgba(127,127,127,.7)}</style>",
+			"page": "",
+			"cursor": {
+				"x": 5,
+				"y": 6
+			},
+			"clicked": true,
+			"styles": {
+				"sheet-1": "body{color:red}",
+				"sheet-2": ""
+			}
+		},
+		{
+			"event": {},
+			"viewport": {
+				"w": 320,
+				"h": 900
+			},
+			"scale": 1,
+			"stageWidth": 640,
+			"srcdoc": "<!doctype html><style>.pq-mask{color:rgba(127,127,127,.55);letter-spacing:-.05em;word-break:break-all}.pq-box{display:inline-block;background:rgba(127,127,127,.25);min-width:1em;min-height:1em}input,textarea,select{color:rgba(127,127,127,.7)}</style>",
+			"page": "",
+			"cursor": {
+				"x": 5,
+				"y": 6
+			},
+			"clicked": true,
+			"styles": {
+				"sheet-1": "body{color:red}",
+				"sheet-2": ""
+			}
+		},
+		{
+			"afterTimers": {
+				"clicked": false
+			}
+		}
+	],
+	"log": [
+		{
+			"setTimeout": 300
+		},
+		{
+			"scrollTo": [
+				0,
+				300
+			]
+		},
+		{
+			"scrollTo": [
+				0,
+				0
+			]
+		}
+	]
+}

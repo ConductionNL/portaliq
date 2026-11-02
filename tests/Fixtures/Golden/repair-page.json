@@ -1,0 +1,407 @@
+{
+    "MoveBindingDestination": {
+        "contextRefuses": {
+            "answer": {
+                "read": 0,
+                "rows": []
+            },
+            "log": [
+                {
+                    "apply": "portalFormBinding"
+                }
+            ]
+        },
+        "findAllThrows": {
+            "answer": {
+                "read": 0,
+                "rows": []
+            },
+            "log": [
+                {
+                    "apply": "portalFormBinding"
+                },
+                {
+                    "findAll": {
+                        "config": {
+                            "limit": 100,
+                            "offset": 200
+                        },
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                },
+                {
+                    "info": "Portaliq: no form bindings to repair",
+                    "context": {
+                        "reason": "schema not found"
+                    }
+                }
+            ]
+        },
+        "mixedRows": {
+            "answer": {
+                "read": 5,
+                "rows": [
+                    {
+                        "id": "a"
+                    },
+                    {
+                        "id": "b"
+                    }
+                ]
+            },
+            "log": [
+                {
+                    "apply": "portalFormBinding"
+                },
+                {
+                    "findAll": {
+                        "config": {
+                            "limit": 100,
+                            "offset": 200
+                        },
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                }
+            ]
+        },
+        "junkFirst": {
+            "answer": {
+                "read": 3,
+                "rows": [
+                    {
+                        "id": "c"
+                    }
+                ]
+            },
+            "log": [
+                {
+                    "apply": "portalFormBinding"
+                },
+                {
+                    "findAll": {
+                        "config": {
+                            "limit": 100,
+                            "offset": 200
+                        },
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                }
+            ]
+        },
+        "notAList": {
+            "answer": {
+                "read": 1,
+                "rows": []
+            },
+            "log": [
+                {
+                    "apply": "portalFormBinding"
+                },
+                {
+                    "findAll": {
+                        "config": {
+                            "limit": 100,
+                            "offset": 200
+                        },
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                }
+            ]
+        },
+        "nothing": {
+            "answer": {
+                "read": 0,
+                "rows": []
+            },
+            "log": [
+                {
+                    "apply": "portalFormBinding"
+                },
+                {
+                    "findAll": {
+                        "config": {
+                            "limit": 100,
+                            "offset": 200
+                        },
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                }
+            ]
+        }
+    },
+    "MoveActionSummarySentence": {
+        "contextRefuses": {
+            "answer": {
+                "read": 0,
+                "rows": []
+            },
+            "log": [
+                {
+                    "apply": "portalPage"
+                }
+            ]
+        },
+        "findAllThrows": {
+            "answer": {
+                "read": 0,
+                "rows": []
+            },
+            "log": [
+                {
+                    "apply": "portalPage"
+                },
+                {
+                    "findAll": {
+                        "config": {
+                            "limit": 100,
+                            "offset": 200
+                        },
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                },
+                {
+                    "info": "Portaliq: no portal pages to repair",
+                    "context": {
+                        "reason": "schema not found"
+                    }
+                }
+            ]
+        },
+        "mixedRows": {
+            "answer": {
+                "read": 5,
+                "rows": [
+                    {
+                        "id": "a"
+                    },
+                    {
+                        "id": "b"
+                    }
+                ]
+            },
+            "log": [
+                {
+                    "apply": "portalPage"
+                },
+                {
+                    "findAll": {
+                        "config": {
+                            "limit": 100,
+                            "offset": 200
+                        },
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                }
+            ]
+        },
+        "junkFirst": {
+            "answer": {
+                "read": 3,
+                "rows": [
+                    {
+                        "id": "c"
+                    }
+                ]
+            },
+            "log": [
+                {
+                    "apply": "portalPage"
+                },
+                {
+                    "findAll": {
+                        "config": {
+                            "limit": 100,
+                            "offset": 200
+                        },
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                }
+            ]
+        },
+        "notAList": {
+            "answer": {
+                "read": 1,
+                "rows": []
+            },
+            "log": [
+                {
+                    "apply": "portalPage"
+                },
+                {
+                    "findAll": {
+                        "config": {
+                            "limit": 100,
+                            "offset": 200
+                        },
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                }
+            ]
+        },
+        "nothing": {
+            "answer": {
+                "read": 0,
+                "rows": []
+            },
+            "log": [
+                {
+                    "apply": "portalPage"
+                },
+                {
+                    "findAll": {
+                        "config": {
+                            "limit": 100,
+                            "offset": 200
+                        },
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                }
+            ]
+        }
+    },
+    "BackfillNewsPublishedAt": {
+        "contextRefuses": {
+            "answer": {
+                "read": 0,
+                "rows": []
+            },
+            "log": [
+                {
+                    "apply": "newsItem"
+                }
+            ]
+        },
+        "findAllThrows": {
+            "answer": {
+                "read": 0,
+                "rows": []
+            },
+            "log": [
+                {
+                    "apply": "newsItem"
+                },
+                {
+                    "findAll": {
+                        "config": {
+                            "limit": 100,
+                            "offset": 200
+                        },
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                },
+                {
+                    "info": "Portaliq: no news items to stamp",
+                    "context": {
+                        "reason": "schema not found"
+                    }
+                }
+            ]
+        },
+        "mixedRows": {
+            "answer": {
+                "read": 5,
+                "rows": [
+                    {
+                        "id": "a"
+                    },
+                    {
+                        "id": "b"
+                    }
+                ]
+            },
+            "log": [
+                {
+                    "apply": "newsItem"
+                },
+                {
+                    "findAll": {
+                        "config": {
+                            "limit": 100,
+                            "offset": 200
+                        },
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                }
+            ]
+        },
+        "junkFirst": {
+            "answer": {
+                "read": 3,
+                "rows": [
+                    {
+                        "id": "c"
+                    }
+                ]
+            },
+            "log": [
+                {
+                    "apply": "newsItem"
+                },
+                {
+                    "findAll": {
+                        "config": {
+                            "limit": 100,
+                            "offset": 200
+                        },
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                }
+            ]
+        },
+        "notAList": {
+            "answer": {
+                "read": 1,
+                "rows": []
+            },
+            "log": [
+                {
+                    "apply": "newsItem"
+                },
+                {
+                    "findAll": {
+                        "config": {
+                            "limit": 100,
+                            "offset": 200
+                        },
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                }
+            ]
+        },
+        "nothing": {
+            "answer": {
+                "read": 0,
+                "rows": []
+            },
+            "log": [
+                {
+                    "apply": "newsItem"
+                },
+                {
+                    "findAll": {
+                        "config": {
+                            "limit": 100,
+                            "offset": 200
+                        },
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                }
+            ]
+        }
+    }
+}

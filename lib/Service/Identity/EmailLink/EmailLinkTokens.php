@@ -31,7 +31,7 @@ namespace OCA\Portaliq\Service\Identity\EmailLink;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Portaliq\Service\Identity\ClaimLock;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\Security\ISecureRandom;
 
@@ -99,13 +99,13 @@ class EmailLinkTokens {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Reads links by hash or account.
+	 * @param ScopedCollectionReaderInterface $reader Reads links by hash or account.
 	 * @param PortalObjectWriter $writer Records, spends and voids links.
 	 * @param ISecureRandom      $random Mints the token.
 	 * @param ClaimLock          $lock   Serialises two redeems of one link.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly ISecureRandom $random,
 		private readonly ClaimLock $lock,

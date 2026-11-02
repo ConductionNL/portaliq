@@ -240,7 +240,7 @@ class ActivityContributionService {
 	 */
 	private function debtor(string $guardianRef): ?array {
 		$account = $this->accounts->bySubjectRef(subjectRef: $guardianRef);
-		if ($account === null) {
+		if ($account === null || ($account['status'] ?? '') === PortalAccountLookup::STATUS_VOID) {
 			return null;
 		}
 

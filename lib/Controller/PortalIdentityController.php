@@ -46,6 +46,7 @@ use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\RequestedPortal;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -501,11 +502,6 @@ class PortalIdentityController extends Controller {
 		// The SPA names the portal it is served as, the way `/site` and the
 		// runtime config do; on a shared host the host alone names none.
 		// A named portal that does not exist is a miss, never the host's.
-		$named = $this->request->getParam('portal', '');
-		if (is_string($named) === false) {
-			$named = '';
-		}
-
-		return $this->portals->resolve(request: $this->request, portalSlug: trim($named));
+		return $this->portals->resolve(request: $this->request, portalSlug: (new RequestedPortal())->slug(request: $this->request));
 	}//end site()
 }//end class

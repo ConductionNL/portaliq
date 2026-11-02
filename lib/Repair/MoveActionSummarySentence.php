@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Repair;
 
+use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -43,6 +44,9 @@ use Throwable;
  * @spec openspec/changes/action-summary-sentence/specs/portal-contribution-contract/spec.md#requirement-an-action-may-sum-up-the-answers-in-one-sentence
  */
 class MoveActionSummarySentence implements IRepairStep {
+	use PagedSchemaRead;
+	use ObjectServiceLookup;
+
 	/**
 	 * The schema of a data-provisioned contribution.
 	 */
@@ -67,6 +71,11 @@ class MoveActionSummarySentence implements IRepairStep {
 	 * The most pages read in one run.
 	 */
 	private const MAX_PAGES = 10000;
+
+	/**
+	 * Logged when the schema cannot be read.
+	 */
+	private const EMPTY_PAGE_LOG = 'Portaliq: no portal pages to repair';
 
 	/**
 	 * Constructor.
@@ -114,9 +123,9 @@ class MoveActionSummarySentence implements IRepairStep {
 		do {
 			$pages++;
 			$page    = $this->page(objectService: $objectService, offset: $offset);
-			$read    = count($page);
+			$read    = $page['read'];
 			$offset += $read;
-			foreach ($page as $row) {
+			foreach ($page['rows'] as $row) {
 				if ($this->move(objectService: $objectService, row: $row) === true) {
 					$moved++;
 				}
@@ -195,58 +204,4 @@ class MoveActionSummarySentence implements IRepairStep {
 
 		return true;
 	}//end move()
-
-	/**
-	 * One page of portalPage records.
-	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param int $offset The offset.
-	 *
-	 * @return array<int, array<string, mixed>>
-	 */
-	private function page(object $objectService, int $offset): array {
-		try {
-			if ($this->context->apply(objectService: $objectService, schemaSlug: self::SCHEMA) === false) {
-				return [];
-			}
-
-			$rows = $objectService->findAll(config: ['limit' => self::PAGE, 'offset' => $offset], _rbac: false, _multitenancy: false);
-		} catch (Throwable $e) {
-			$this->logger->info('Portaliq: no portal pages to repair', ['reason' => $e->getMessage()]);
-
-			return [];
-		}
-
-		$out = [];
-		foreach ((array)$rows as $row) {
-			if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-				$row = $row->jsonSerialize();
-			}
-
-			if (is_array($row) === true) {
-				$out[] = $row;
-			}
-		}
-
-		return $out;
-	}//end page()
-
-	/**
-	 * OpenRegister's object service, or null when it is not installed.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 }//end class

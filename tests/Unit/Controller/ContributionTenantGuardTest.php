@@ -101,6 +101,8 @@ class ContributionTenantGuardTest extends TestCase {
 			[['contactsEnabled' => true], ['contacts']],
 			[['plansEnabled' => true], ['samenwerken']],
 			[['contactsEnabled' => true, 'plansEnabled' => true], ['contacts', 'samenwerken']],
+			[['actionsEnabled' => true], ['acties']],
+			[['contactsEnabled' => true, 'plansEnabled' => true, 'actionsEnabled' => true], ['contacts', 'samenwerken', 'acties']],
 			[['contactsEnabled' => 'yes', 'plansEnabled' => 1], []],
 			[[], []],
 		];

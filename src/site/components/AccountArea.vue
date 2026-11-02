@@ -159,13 +159,15 @@
 
 			<template v-else-if="entry">
 				<h1
-					v-if="!ownsHeading"
+					v-if="!ownsHeading && !pageTitled"
 					id="site-account-title"
 					class="utrecht-heading-2"
 					data-testid="site-account-title">
 					{{ entry.label }}
 				</h1>
-				<PageHelp v-if="sectionHelpText" :text="sectionHelpText" />
+				<PageHelp
+					v-if="sectionHelpText && !pageTitled"
+					:text="sectionHelpText" />
 				<!-- A page the login is too low for: which login reaches it
 				     (site-member-voting-record-and-confidential-papers REQ-SCR-004). -->
 				<StepUpPrompt
@@ -184,6 +186,7 @@
 					@navigate="$emit('navigate', $event)"
 					@unread="$emit('unread', $event)"
 					@refresh="$emit('refresh')"
+					@titled="pageTitled = $event === true"
 					@claimed="$emit('claimed')"
 					@removed="$emit('signout')" />
 			</template>
@@ -314,6 +317,9 @@ export default {
 			pageLoading: false,
 			// The `/mijn` home, loaded the first time it is opened.
 			homeComponent: null,
+			// Whether the page on screen shows its own h1 (an open item's
+			// title), so the area's heading and help stay out.
+			pageTitled: false,
 		}
 	},
 
@@ -528,6 +534,7 @@ export default {
 		 */
 		async loadPage() {
 			const entry = this.entry
+			this.pageTitled = false
 			if (entry && entry.stepUp) {
 				// The step-up prompt is the page; nothing to load.
 				this.pageComponent = null
@@ -611,7 +618,9 @@ export default {
 </script>
 
 <style scoped>
-.pq-account {
+/* The shell only: a page whose own root is a `.pq-account` (AccountPage)
+   carries this component's scope too, and would be inset twice. */
+.container.pq-account {
 	padding-block: 24px;
 }
 

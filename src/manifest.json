@@ -2029,6 +2029,8 @@
               "filter": {
                 "subjectRef": "@object.subjectRef"
               },
+              "sortable": true,
+              "filterable": true,
               "sort": {
                 "field": "issuedAt",
                 "dir": "desc"
@@ -2072,6 +2074,8 @@
               "filter": {
                 "subjectRef": "@object.subjectRef"
               },
+              "sortable": true,
+              "filterable": true,
               "sort": {
                 "field": "receivedAt",
                 "dir": "desc"
@@ -2452,20 +2456,99 @@
         "widgets": [
           {
             "id": "message-data",
-            "type": "data",
+            "type": "facts",
             "title": "Message",
             "icon": "Email",
             "content": {
-              "columns": 3,
-              "include": [
-                "body",
-                "subjectRef",
-                "receivedAt",
-                "read",
-                "nature",
-                "rechtsgevolg",
-                "term",
-                "referenceId"
+              "fields": [
+                {
+                  "as": "text",
+                  "path": "body"
+                },
+                {
+                  "label": "Recipient",
+                  "path": "subjectRef"
+                },
+                {
+                  "key": "sending",
+                  "label": "Sending",
+                  "parts": [
+                    {
+                      "text": "All recipients of this sending"
+                    }
+                  ],
+                  "when": {
+                    "field": "sendingRef",
+                    "op": "notEmpty"
+                  },
+                  "route": {
+                    "name": "PortalMessages",
+                    "query": {
+                      "sendingRef": "@source.sendingRef"
+                    }
+                  }
+                },
+                {
+                  "label": "Received on",
+                  "path": "receivedAt",
+                  "format": "today-time"
+                },
+                {
+                  "label": "Read",
+                  "path": "readAt",
+                  "format": "today-time",
+                  "emptyValue": "not yet",
+                  "when": {
+                    "field": "readReceiptRequested",
+                    "op": "eq",
+                    "value": true
+                  }
+                },
+                {
+                  "label": "Read",
+                  "path": "read",
+                  "map": {
+                    "true": "yes",
+                    "false": "not yet"
+                  },
+                  "emptyValue": "not yet",
+                  "when": {
+                    "field": "readReceiptRequested",
+                    "op": "neq",
+                    "value": true
+                  }
+                },
+                {
+                  "key": "readReceipt",
+                  "label": "Read receipt",
+                  "parts": [
+                    {
+                      "text": "asked for"
+                    }
+                  ],
+                  "when": {
+                    "field": "readReceiptRequested",
+                    "op": "eq",
+                    "value": true
+                  }
+                },
+                {
+                  "label": "Kind",
+                  "path": "nature"
+                },
+                {
+                  "label": "Legal effect",
+                  "path": "rechtsgevolg"
+                },
+                {
+                  "label": "Deadline",
+                  "path": "term",
+                  "format": "date-long"
+                },
+                {
+                  "label": "Reference",
+                  "path": "referenceId"
+                }
               ]
             }
           },
@@ -2480,7 +2563,15 @@
             "id": "message-history",
             "type": "audit-trail",
             "title": "Historie",
-            "icon": "History"
+            "icon": "History",
+            "content": {
+              "changeLabels": [
+                {
+                  "field": "readAt",
+                  "label": "Read by {object.subjectRef}"
+                }
+              ]
+            }
           }
         ],
         "layout": [
@@ -2552,7 +2643,8 @@
         "columns": [
           {
             "key": "actionId",
-            "label": "Submitted action"
+            "label": "Submitted action",
+            "widget": "action-title"
           },
           {
             "key": "appId",
@@ -2646,6 +2738,7 @@
       "config": {
         "register": "portaliq",
         "schema": "portalSubmission",
+        "titleTemplate": "{actionTitle}",
         "titleField": "actionId",
         "documentationUrl": "https://portaliq.conduction.nl",
         "_note": "Detail in the v2 shape: the body is the grid below and the facts beside it are the sideColumn, History last (the board has no tab strip on this record).",
@@ -2673,6 +2766,7 @@
             "content": {
               "columns": 3,
               "include": [
+                "actionTitle",
                 "actionId",
                 "appId",
                 "submittedAt",
@@ -2680,7 +2774,23 @@
                 "subjectRef",
                 "organisation",
                 "receiptMessageRef"
-              ]
+              ],
+              "overrides": {
+                "actionTitle": {
+                  "label": "Submitted action",
+                  "visibleWhen": {
+                    "field": "actionTitle",
+                    "op": "notEmpty"
+                  }
+                },
+                "actionId": {
+                  "label": "Submitted action",
+                  "visibleWhen": {
+                    "field": "actionTitle",
+                    "op": "empty"
+                  }
+                }
+              }
             }
           },
           {
@@ -2756,8 +2866,7 @@
         "favourite": false,
         "breadcrumb": {
           "label": "Submissions",
-          "route": "PortalSubmissions",
-          "currentField": "actionId"
+          "route": "PortalSubmissions"
         },
         "statusPill": {
           "field": "deliveryStatus",
@@ -4141,12 +4250,22 @@
         ],
         "headerActions": [
           {
+            "id": "view-page",
+            "label": "View",
+            "icon": "EyeOutline",
+            "href": "/apps/portaliq/site?route=@object.route&portal=@object.portal",
+            "target": "_blank"
+          },
+          {
             "id": "edit-layout",
             "label": "Edit layout",
             "icon": "ViewDashboardOutline",
             "type": "open-page",
             "target": "PageLayout"
           }
+        ],
+        "quickActions": [
+          "view-page"
         ],
         "sidebar": {
           "enabled": true,
