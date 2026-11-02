@@ -35,14 +35,16 @@ class MandateListing {
 	/**
 	 * Constructor.
 	 *
-	 * @param MandateStore   $store   The mandate and invitation rows.
-	 * @param MandateParties $parties Who holds and who is represented.
-	 * @param MandateDays    $days    Whether an end has passed.
+	 * @param MandateStore        $store    The mandate and invitation rows.
+	 * @param MandateParties      $parties  Who holds and who is represented.
+	 * @param MandateDays         $days     Whether an end has passed.
+	 * @param PortalAccountLookup $accounts The accounts that hold or accepted a mandate.
 	 */
 	public function __construct(
 		private readonly MandateStore $store,
 		private readonly MandateParties $parties,
 		private readonly MandateDays $days,
+		private readonly PortalAccountLookup $accounts,
 	) {
 	}//end __construct()
 
@@ -53,7 +55,8 @@ class MandateListing {
 	 * @param string                 $organisation The tenant.
 	 * @param DateTimeImmutable|null $now          The moment.
 	 *
-	 * @return array<int, array<string, mixed>> `{kind, id, label, caseTypes, expiresAt, state, email|holder}`.
+	 * @return array<int, array<string, mixed>> `{kind, id, label, caseTypes, expiresAt, state, email|holder}`;
+	 *         a mandate also carries the `name` and `email` of its account.
 	 *
 	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md#requirement-the-represented-party-must-see-who-may-act-for-it-req-smr-002
 	 */
@@ -78,7 +81,7 @@ class MandateListing {
 				'caseTypes' => array_values((array)($row['caseTypes'] ?? [])),
 				'expiresAt' => (string)($row['expiresAt'] ?? ''),
 				'state' => $mandateState,
-			];
+			] + $this->named(row: $row);
 		}
 
 		foreach ($this->store->rows(schema: MandateStore::INVITATIONS, organisation: $organisation) as $row) {
@@ -140,6 +143,32 @@ class MandateListing {
 
 		return $out;
 	}//end held()
+
+	/**
+	 * The name and address of the account a mandate names: the holder when a
+	 * person holds it, else the account that accepted it for its company.
+	 *
+	 * @param array<string, mixed> $row The mandate.
+	 *
+	 * @return array{name?: string, email?: string} Empty when no account is named.
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md#requirement-the-represented-party-must-see-who-may-act-for-it-req-smr-002
+	 */
+	private function named(array $row): array {
+		$holder = $this->parties->holderOf(row: $row);
+		$ref    = trim((string)($row['subjectRef'] ?? ''));
+		if (str_starts_with($holder, 'subject:') === true) {
+			$ref = substr($holder, strlen('subject:'));
+		}
+
+		if ($ref === '') {
+			return [];
+		}
+
+		$account = $this->accounts->bySubjectRef(subjectRef: $ref);
+
+		return ['name' => (string)($account['displayName'] ?? ''), 'email' => (string)($account['email'] ?? '')];
+	}//end named()
 
 	/**
 	 * Who gave a mandate, without naming the account that recorded it.
