@@ -35,6 +35,7 @@ use OCA\Portaliq\Contribution\GuestActionRegistry;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\RequestedPortal;
 use OCA\Portaliq\Service\RequiredFieldsGuard;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -260,12 +261,7 @@ class GuestActionController extends Controller {
 	 * @return array{subjectRef: string, audience: string, organisation: string, trust: string, jti: string}
 	 */
 	private function guestSubject(string $token): array {
-		$named = $this->request->getParam('portal', '');
-		if (is_string($named) === false) {
-			$named = '';
-		}
-
-		$site = $this->portals->resolve(request: $this->request, portalSlug: trim($named));
+		$site = $this->portals->resolve(request: $this->request, portalSlug: (new RequestedPortal())->slug(request: $this->request));
 
 		return [
 			'subjectRef' => 'guest:' . hash('sha256', $token),

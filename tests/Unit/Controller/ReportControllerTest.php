@@ -43,6 +43,13 @@ class ReportControllerTest extends TestCase {
 	 */
 	private array $doubles = [];
 
+	/**
+	 * The portal slug each resolve() was asked for.
+	 *
+	 * @var array<int, string|null>
+	 */
+	private array $resolvedSlugs = [];
+
 	public function testAFilingOnNoPortalIsNotFound(): void {
 		$controller = $this->controller(site: null);
 		$this->doubles['intake']->expects($this->never())->method('accept');
@@ -53,6 +60,44 @@ class ReportControllerTest extends TestCase {
 		$this->assertSame(['error' => 'portal_not_found'], $response->getData());
 
 	}//end testAFilingOnNoPortalIsNotFound()
+
+	/**
+	 * A filing lands on the portal the site names, as its challenge did: the
+	 * X-Portaliq-Portal header first, else `?portal=`.
+	 *
+	 * @return void
+	 */
+	public function testAFilingResolvesThePortalTheSiteNames(): void {
+		$controller = $this->controller();
+		$this->doubles['request']->method('getHeader')->willReturnCallback(
+			static fn (string $name): string => $name === 'X-Portaliq-Portal' ? 'gemeente-y' : ''
+		);
+		$this->doubles['challenge']->method('accepts')->willReturn(false);
+
+		$controller->file(caseType: 'misstand', report: ['body' => 'Er klopt iets niet.']);
+
+		$this->assertSame(['gemeente-y'], $this->resolvedSlugs);
+
+	}//end testAFilingResolvesThePortalTheSiteNames()
+
+	/**
+	 * Without the header, `?portal=` names the portal.
+	 *
+	 * @return void
+	 */
+	public function testAFilingWithoutTheHeaderResolvesThePortalParameter(): void {
+		$controller = $this->controller();
+		$this->doubles['request']->method('getHeader')->willReturn('');
+		$this->doubles['request']->method('getParam')->willReturnCallback(
+			static fn (string $key, mixed $default = null): mixed => $key === 'portal' ? 'gemeente-z' : $default
+		);
+		$this->doubles['challenge']->method('accepts')->willReturn(false);
+
+		$controller->file(caseType: 'misstand', report: ['body' => 'Er klopt iets niet.']);
+
+		$this->assertSame(['gemeente-z'], $this->resolvedSlugs);
+
+	}//end testAFilingWithoutTheHeaderResolvesThePortalParameter()
 
 	public function testAnUnsolvedChallengeStopsTheFilingBeforeAnythingIsAccepted(): void {
 		$controller = $this->controller();
@@ -348,7 +393,12 @@ class ReportControllerTest extends TestCase {
 		$request->method('getRemoteAddress')->willReturn('203.0.113.9');
 
 		$portals = $this->double(PortalResolver::class, ['resolve']);
-		$portals->method('resolve')->willReturn($site);
+		$portals->method('resolve')->willReturnCallback(
+			function (IRequest $request, ?string $portalSlug = null) use ($site): ?array {
+				$this->resolvedSlugs[] = $portalSlug;
+				return $site;
+			}
+		);
 
 		$session = $this->createMock(IUserSession::class);
 		if ($user === true) {
@@ -366,6 +416,7 @@ class ReportControllerTest extends TestCase {
 		);
 
 		$this->doubles = [
+			'request' => $request,
 			'challenge' => $this->double(PortalChallengeService::class, ['accepts']),
 			'intake' => $this->double(ReportIntakeService::class, ['accept']),
 			'threads' => $this->double(ReportThreadService::class, ['openByCode', 'messagesForReporter', 'allMessages', 'write']),

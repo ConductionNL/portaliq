@@ -70,6 +70,8 @@ use OCA\Portaliq\Service\Messaging\GuardianMessagingLeafInterface;
 use OCA\Portaliq\Service\Messaging\InAppMessagingLeaf;
 use OCA\Portaliq\Service\Notifications\LoggingPushSender;
 use OCA\Portaliq\Service\Notifications\PushSenderInterface;
+use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\Traffic\Geo\MmdbGeoResolver;
 use OCA\Portaliq\Service\Traffic\GeoResolverInterface;
 use OCP\AppFramework\App;
@@ -172,28 +174,7 @@ class Application extends App implements IBootstrap {
 		$context->registerEventListener(PortalAccountInvitationRequestedEvent::class, PortalAccountInvitationListener::class);
 		$this->registerResidentLanding(context: $context);
 
-		// Traffic analytics (portal-traffic-visitors-and-geo): where a
-		// visitor's address turns into a region. The offline MMDB lookup is
-		// bound here and the ingest path did not change from phase 0, which
-		// bound the resolver that answered nothing. NullGeoResolver stays
-		// for the tests and for an instance that wants no geography at all
-		// (the settings provider `none` makes this resolver answer null too).
-		$context->registerServiceAlias(GeoResolverInterface::class, MmdbGeoResolver::class);
-
-		// Guardian-direct-messages: InAppMessagingLeaf is the FIRST
-		// implementation of the messaging-leaf interface, backed by this
-		// app's own OpenRegister schemas. When OpenRegister's planned
-		// guardian-participant-messaging-leaf ships, a second
-		// implementation can be aliased here instead, with no controller
-		// change (design.md "Messaging leaf interface").
-		$context->registerServiceAlias(GuardianMessagingLeafInterface::class, InAppMessagingLeaf::class);
-		// Push-notifications-quiet-hours: LoggingPushSender is the FIRST
-		// implementation of the push transport seam (a real Web Push
-		// implementation needs VAPID key provisioning, an admin-settings
-		// concern for a follow-up change — design.md "Messaging leaf
-		// interface"). Alias here so a real transport can be swapped in
-		// with no caller change.
-		$context->registerServiceAlias(PushSenderInterface::class, LoggingPushSender::class);
+		$this->registerServiceAliases(context: $context);
 
 		// Traffic reports and alerts (portal-traffic-reporting) reach a
 		// user as an in-app notification beside the mail; this renders it.
@@ -230,6 +211,43 @@ class Application extends App implements IBootstrap {
 		$context->registerEventListener(UserAddedEvent::class, ResidentLandingListener::class);
 		$context->registerEventListener(UserRemovedEvent::class, ResidentLandingListener::class);
 	}//end registerResidentLanding()
+
+	/**
+	 * Bind each interface the app's services ask for to its implementation.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec exclude container wiring only: each alias belongs to the change that introduced its interface
+	 */
+	private function registerServiceAliases(IRegistrationContext $context): void {
+		// Traffic analytics (portal-traffic-visitors-and-geo): where a
+		// visitor's address turns into a region. The offline MMDB lookup is
+		// bound here and the ingest path did not change from phase 0, which
+		// bound the resolver that answered nothing. NullGeoResolver stays
+		// for the tests and for an instance that wants no geography at all
+		// (the settings provider `none` makes this resolver answer null too).
+		$context->registerServiceAlias(GeoResolverInterface::class, MmdbGeoResolver::class);
+
+		// Guardian-direct-messages: InAppMessagingLeaf is the FIRST
+		// implementation of the messaging-leaf interface, backed by this
+		// app's own OpenRegister schemas. When OpenRegister's planned
+		// guardian-participant-messaging-leaf ships, a second
+		// implementation can be aliased here instead, with no controller
+		// change (design.md "Messaging leaf interface").
+		$context->registerServiceAlias(GuardianMessagingLeafInterface::class, InAppMessagingLeaf::class);
+		// Push-notifications-quiet-hours: LoggingPushSender is the FIRST
+		// implementation of the push transport seam (a real Web Push
+		// implementation needs VAPID key provisioning, an admin-settings
+		// concern for a follow-up change — design.md "Messaging leaf
+		// interface"). Alias here so a real transport can be swapped in
+		// with no caller change.
+		$context->registerServiceAlias(PushSenderInterface::class, LoggingPushSender::class);
+
+		// Callers that only read scoped collections depend on the narrow read contract.
+		$context->registerServiceAlias(ScopedCollectionReaderInterface::class, PortalObjectReader::class);
+	}//end registerServiceAliases()
 
 	/**
 	 * The CMS content listeners.

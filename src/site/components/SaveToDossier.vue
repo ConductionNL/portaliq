@@ -216,18 +216,18 @@ export default {
 			const chosen = this.dossiers.find(
 				(dossier) => dossier.id === this.target,
 			)
-			const result = await postAction(
-				residentAuthBase(),
-				this.app,
-				this.actionId,
-				addToCollectionBody({
+			const result = await postAction({
+				authBase: residentAuthBase(),
+				appId: this.app,
+				actionId: this.actionId,
+				body: addToCollectionBody({
 					collection: this.target,
 					title: this.title,
 					publication: this.publication,
 					attachment: this.attachment,
 				}),
-				residentToken(),
-			)
+				token: residentToken(),
+			})
 			this.busy = false
 
 			if (result.ok === true) {

@@ -48,7 +48,7 @@ namespace OCA\Portaliq\BackgroundJob;
 use OCA\Portaliq\Service\Notifications\NotificationChannels;
 use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -79,6 +79,11 @@ class NotificationDispatchJob extends QueuedJob {
 	 * The account schema.
 	 */
 	private const ACCOUNT_SCHEMA = 'portalAccount';
+
+	/**
+	 * The status of a withdrawn account (PortalAccountService::STATUS_VOID).
+	 */
+	private const STATUS_VOID = 'void';
 
 	/**
 	 * The append-only per-attempt notification log schema.
@@ -139,7 +144,7 @@ class NotificationDispatchJob extends QueuedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory $time Testable clock (Job base class).
-	 * @param PortalObjectReader $reader Resolves the subject's own portalAccount.
+	 * @param ScopedCollectionReaderInterface $reader Resolves the subject's own portalAccount.
 	 * @param PortalObjectWriter $writer Writes the portalNotification log + the
 	 *                                   needsAlternativeContact flag.
 	 * @param PortalOrganisationConfigService $orgConfig Resolves the tenant's display name.
@@ -152,7 +157,7 @@ class NotificationDispatchJob extends QueuedJob {
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly PortalOrganisationConfigService $orgConfig,
 		private readonly IMailer $mailer,
@@ -486,7 +491,13 @@ class NotificationDispatchJob extends QueuedJob {
 			limit: 2
 		);
 
-		return ($rows[0] ?? null);
+		$account = ($rows[0] ?? null);
+		if (($account['status'] ?? '') === self::STATUS_VOID) {
+			$this->logger->info('Portaliq: NotificationDispatchJob skips a withdrawn portalAccount', ['account' => (string)$this->rowId(row: $account)]);
+			return null;
+		}
+
+		return $account;
 	}//end findAccount()
 
 	/**

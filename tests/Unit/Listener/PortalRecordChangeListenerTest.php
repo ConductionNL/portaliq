@@ -65,6 +65,13 @@ class PortalRecordChangeListenerTest extends TestCase {
 	private array $jobs = [];
 
 	/**
+	 * What reached the logger at info level.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private array $infos = [];
+
+	/**
 	 * The write context the listener shares with the writers.
 	 *
 	 * @var PortalWriteContext
@@ -134,7 +141,23 @@ class PortalRecordChangeListenerTest extends TestCase {
 
 		$accounts = $this->createMock(PortalAccountService::class);
 		$accounts->method('findBySubjectRef')->willReturnCallback(
-			static fn (string $subjectRef): ?array => ($subjectRef === 'bsn-1' ? ['subjectRef' => 'bsn-1', 'organisation' => 'venray', 'audience' => 'client', 'notificationPreferences' => ($messageBox['preferences'] ?? null)] : null)
+			static fn (string $subjectRef): ?array => match ($subjectRef) {
+				'bsn-1' => [
+					'subjectRef' => 'bsn-1',
+					'organisation' => 'venray',
+					'audience' => 'client',
+					'notificationPreferences' => ($messageBox['preferences'] ?? null),
+				],
+				'bsn-void' => [
+					'id' => 'account-void',
+					'subjectRef' => 'bsn-void',
+					'organisation' => 'venray',
+					'audience' => 'client',
+					'email' => 'void@example.nl',
+					'status' => 'void',
+				],
+				default => null,
+			}
 		);
 
 		$writer = $this->createMock(PortalObjectWriter::class);
@@ -185,10 +208,26 @@ class PortalRecordChangeListenerTest extends TestCase {
 			writer: $writer,
 			dispatch: $dispatch,
 			language: new PortalNoticeLanguage(l10nFactory: $factory, portals: $portals),
-			logger: $this->createMock(LoggerInterface::class),
+			logger: $this->infoLogger(),
 			messageBox: $this->messageBoxChannel(offered: ($messageBox['offered'] ?? false)),
 		);
 	}//end listener()
+
+	/**
+	 * A logger that records each info line with its context.
+	 *
+	 * @return LoggerInterface
+	 */
+	private function infoLogger(): LoggerInterface {
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$logger->method('info')->willReturnCallback(
+			function (string $message, array $context = []): void {
+				$this->infos[] = ['message' => $message, 'context' => $context];
+			}
+		);
+
+		return $logger;
+	}//end infoLogger()
 
 	/**
 	 * The REAL message box channel over an organisation that offers it or not,
@@ -275,6 +314,35 @@ class PortalRecordChangeListenerTest extends TestCase {
 		$this->assertSame('bsn-1', $this->dispatched[0]['subject']['subjectRef']);
 		$this->assertSame(['app' => 'dossiq', 'collection' => 'mijnZaken', 'id' => 'zaak-uuid-1', 'label' => 'Mijn zaken'], $this->dispatched[0]['record']);
 	}//end testStatusChangeWritesAMessageAndDispatches()
+
+	/**
+	 * A withdrawn (void) account is told nothing: no inbox message and no
+	 * dispatch for a declared change, no nudge and no message box job for a
+	 * case app's message, no dispatch for another app's message. Each skip is
+	 * logged at info with the account id only.
+	 *
+	 * @return void
+	 */
+	public function testAWithdrawnAccountIsToldNothing(): void {
+		$old = $this->object(schema: '12', data: ['initiator' => 'bsn-void', 'identifier' => 'Z-2026-1', 'status' => 'Ontvangen']);
+		$new = $this->object(schema: '12', data: ['initiator' => 'bsn-void', 'identifier' => 'Z-2026-1', 'status' => 'Afgewezen']);
+		$listener = $this->listener(messageBox: ['declared' => true, 'offered' => true]);
+
+		$inboxMessage = $this->object(schema: '13', data: ['ontvanger' => 'bsn-void', 'onderwerp' => 'Uw aanvraag']);
+		$foreignMessage = $this->foreignMessage(extra: ['subjectRef' => 'bsn-void', 'ruleKey' => 'pipelinq.question.answered']);
+
+		$listener->handle(event: new ObjectUpdatedEvent(newObject: $new, oldObject: $old));
+		$listener->handle(event: new ObjectCreatedEvent(object: $inboxMessage));
+		$listener->handle(event: new ObjectCreatedEvent(object: $foreignMessage));
+
+		$this->assertSame(expected: [], actual: $this->written, message: 'no inbox message');
+		$this->assertSame(expected: [], actual: $this->dispatched, message: 'no dispatch, so no mail');
+		$this->assertSame(expected: [], actual: $this->jobs, message: 'no message box job');
+		$this->assertCount(expectedCount: 3, haystack: $this->infos, message: 'each skip is logged');
+		foreach ($this->infos as $info) {
+			$this->assertSame(expected: ['account' => 'account-void'], actual: $info['context'], message: 'the account id and nothing else');
+		}
+	}//end testAWithdrawnAccountIsToldNothing()
 
 	/**
 	 * Only an internal note changes: nothing.

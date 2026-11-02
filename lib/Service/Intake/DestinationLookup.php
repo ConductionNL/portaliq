@@ -25,7 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalSchemaReader;
 
 /**
@@ -52,13 +52,13 @@ class DestinationLookup {
 	 * Constructor.
 	 *
 	 * @param PortalFormBindingResolver $bindings The portal's published bindings.
-	 * @param PortalObjectReader        $reader   Reads destination objects.
+	 * @param ScopedCollectionReaderInterface        $reader   Reads destination objects.
 	 * @param PortalSchemaReader        $schemas  Reads a destination's markers.
 	 * @param DestinationMapping        $mapping  Says where a binding submits.
 	 */
 	public function __construct(
 		private readonly PortalFormBindingResolver $bindings,
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalSchemaReader $schemas,
 		private readonly DestinationMapping $mapping,
 	) {

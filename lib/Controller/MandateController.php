@@ -92,7 +92,7 @@ class MandateController extends Controller implements PortalProtected {
 
 		$items = $this->mandates->given(party: $party, organisation: (string)$subject['organisation']);
 
-		return new JSONResponse(['party' => $party, 'items' => array_map(fn (array $item): array => $this->named(item: $item), $items)]);
+		return new JSONResponse(['party' => $party, 'items' => $items]);
 	}//end given()
 
 	/**
@@ -325,25 +325,6 @@ class MandateController extends Controller implements PortalProtected {
 			)
 		);
 	}//end stop()
-
-	/**
-	 * A mandate in the given list carries the name and address of the
-	 * account that holds it; an invitation keeps the address it went to.
-	 *
-	 * @param array<string, mixed> $item The listed mandate or invitation.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function named(array $item): array {
-		$holder = (string)($item['holder'] ?? '');
-		if (($item['kind'] ?? '') !== 'mandate' || str_starts_with($holder, 'subject:') === false) {
-			return $item;
-		}
-
-		$account = $this->accounts->bySubjectRef(subjectRef: substr($holder, strlen('subject:')));
-
-		return $item + ['name' => (string)($account['displayName'] ?? ''), 'email' => (string)($account['email'] ?? '')];
-	}//end named()
 
 	/**
 	 * The session, its party, and the refusal when there is none.

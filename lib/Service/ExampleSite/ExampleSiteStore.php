@@ -28,7 +28,6 @@ namespace OCA\Portaliq\Service\ExampleSite;
 
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalRegisterContext;
-use OCA\Portaliq\Service\PortalResolver;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -143,7 +142,7 @@ class ExampleSiteStore {
 	 * @spec openspec/changes/example-site-zuiddrecht/specs/example-site/spec.md#requirement-an-administrator-must-be-able-to-install-an-example-site-with-one-command
 	 */
 	public function create(string $schema, array $data): ?string {
-		$saved = $this->writer->createAnonymousObject(register: PortalResolver::REGISTER, schema: $schema, data: $data);
+		$saved = $this->writer->createAnonymousObject(register: PortalRegisterContext::REGISTER, schema: $schema, data: $data);
 		if ($saved === null) {
 			return null;
 		}
@@ -175,7 +174,7 @@ class ExampleSiteStore {
 		try {
 			$deleted = $objectService->deleteObject(
 				uuid: $id,
-				register: PortalResolver::REGISTER,
+				register: PortalRegisterContext::REGISTER,
 				schema: $schema,
 				_rbac: false,
 				_multitenancy: false

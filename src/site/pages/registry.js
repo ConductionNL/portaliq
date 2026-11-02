@@ -70,6 +70,7 @@ const BUILT_IN = {
 	account: accountPages.__account__,
 	contacts: accountPages.__contacts__,
 	samenwerken: accountPages.__plans__,
+	acties: accountPages.__actions__,
 	theme: accountPages.__theme__,
 	// Slice d: inbox, my tasks, messages and news.
 	inbox: inboxPages.inbox,
@@ -95,6 +96,7 @@ const OWNS_HEADING = new Set([
 	'details',
 	'contacts',
 	'samenwerken',
+	'acties',
 	'account',
 ])
 

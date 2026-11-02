@@ -76,6 +76,7 @@ use OCA\Portaliq\Service\PortalInboxReader;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\RequestedPortal;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\Tenancy\SchemaTenancy;
@@ -406,10 +407,7 @@ class ContributionController extends Controller implements PortalProtected {
 	private function withThemes(array $aggregate): array {
 		$declared = [];
 		if ($this->portals !== null) {
-			$slug = $this->request->getParam('portal');
-			if (is_string($slug) === false) {
-				$slug = null;
-			}
+			$slug = (new RequestedPortal())->slug(request: $this->request);
 
 			$declared = ($this->portals->resolve(request: $this->request, portalSlug: $slug)['themes'] ?? []);
 		}
@@ -425,16 +423,14 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
 	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t08
+	 * @spec openspec/changes/personal-action-list/tasks.md#t05
 	 */
 	private function areaPages(): array {
 		if ($this->portals === null) {
 			return [];
 		}
 
-		$slug = $this->request->getParam('portal');
-		if (is_string($slug) === false) {
-			$slug = null;
-		}
+		$slug = (new RequestedPortal())->slug(request: $this->request);
 
 		$portal = $this->portals->resolve(request: $this->request, portalSlug: $slug);
 		$pages  = [];
@@ -444,6 +440,10 @@ class ContributionController extends Controller implements PortalProtected {
 
 		if (($portal['plansEnabled'] ?? false) === true) {
 			$pages[] = ['special' => 'samenwerken', 'label' => 'Collaborate', 'icon' => 'ClipboardCheckOutline'];
+		}
+
+		if (($portal['actionsEnabled'] ?? false) === true) {
+			$pages[] = ['special' => 'acties', 'label' => 'My actions', 'icon' => 'CheckboxMarkedOutline'];
 		}
 
 		return $pages;
@@ -466,10 +466,7 @@ class ContributionController extends Controller implements PortalProtected {
 			return $aggregate;
 		}
 
-		$slug = $this->request->getParam('portal');
-		if (is_string($slug) === false) {
-			$slug = null;
-		}
+		$slug = (new RequestedPortal())->slug(request: $this->request);
 
 		$portal = $this->portals->resolve(request: $this->request, portalSlug: $slug);
 		$navigation = $portal['navigation'][(string)($aggregate['audience'] ?? '')] ?? null;
@@ -1532,6 +1529,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @return JSONResponse The created object, or the refusal.
 	 *
 	 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t02
+	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
 	 */
 	private function createFrom(array $subject, array $match, string $register, string $schema, array $carried=[]): JSONResponse {
 		$action = $match['action'];
@@ -1612,7 +1610,8 @@ class ContributionController extends Controller implements PortalProtected {
 			appId: $match['app'],
 			actionId: (string)($action['id'] ?? ''),
 			whitelistedData: $data,
-			audience: (string)($subject['audience'] ?? '')
+			audience: (string)($subject['audience'] ?? ''),
+			actionTitle: ($action['label'] ?? '')
 		);
 
 		// The question is stored; the confirmation mail is a follow-on that
@@ -2154,6 +2153,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
 	 * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
 	 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
+	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
 	 *
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) -- the audit fact-record
 	 * (portal-session-hardening-v2), the WMEBV receipt follow-on
@@ -2236,7 +2236,8 @@ class ContributionController extends Controller implements PortalProtected {
 				appId: $appId,
 				actionId: $actionId,
 				whitelistedData: $this->whitelist(fields: (array)($action['fields'] ?? [])),
-				audience: (string)($subject['audience'] ?? '')
+				audience: (string)($subject['audience'] ?? ''),
+				actionTitle: ($action['label'] ?? '')
 			);
 		}
 

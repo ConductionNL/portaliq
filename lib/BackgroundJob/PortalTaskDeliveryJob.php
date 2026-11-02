@@ -45,8 +45,9 @@ namespace OCA\Portaliq\BackgroundJob;
 use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
+use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -99,6 +100,11 @@ class PortalTaskDeliveryJob extends TimedJob {
 	 * The engine freezes the matched party as `party:<subjectRef>`.
 	 */
 	private const PARTY_PREFIX = 'party:';
+
+	/**
+	 * The failure reason for a row addressed to a withdrawn (void) account.
+	 */
+	private const WITHDRAWN = 'the portalAccount was withdrawn';
 
 	/**
 	 * Ledger rows drained per run — a backlog drains oldest first across runs.
@@ -171,7 +177,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 	 *
 	 * @param ITimeFactory $time Testable clock (job base class).
 	 * @param ContainerInterface $container Resolves the ledger seam by name.
-	 * @param PortalObjectReader $reader The idempotency probe + account lookup.
+	 * @param ScopedCollectionReaderInterface $reader The idempotency probe + account lookup.
 	 * @param PortalObjectWriter $writer Writes the inbox message (scope stamped server-side).
 	 * @param PortalOrganisationConfigService $orgConfig Resolves the tenant display name.
 	 * @param IMailer $mailer Sends the privacy-minimal mail.
@@ -182,7 +188,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 	public function __construct(
 		ITimeFactory $time,
 		private readonly ContainerInterface $container,
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly PortalOrganisationConfigService $orgConfig,
 		private readonly IMailer $mailer,
@@ -319,7 +325,12 @@ class PortalTaskDeliveryJob extends TimedJob {
 			return null;
 		}
 
-		$l10n = $this->language->forOrganisation(organisation: (string)($this->account(subjectRef: $subjectRef)['organisation'] ?? ''));
+		$account = $this->account(subjectRef: $subjectRef);
+		if ($this->withdrawn(account: $account) === true) {
+			return self::WITHDRAWN;
+		}
+
+		$l10n = $this->language->forOrganisation(organisation: (string)($account['organisation'] ?? ''));
 		$written = $this->writer->createObject(
 			register: self::REGISTER,
 			schema: self::MESSAGE_SCHEMA,
@@ -355,15 +366,12 @@ class PortalTaskDeliveryJob extends TimedJob {
 	 */
 	private function deliverMail(string $subjectRef, string $kind): ?string {
 		$account = $this->account(subjectRef: $subjectRef);
-		if ($account === null) {
-			return 'no portalAccount for the party';
+		$refusal = $this->mailRefusal(account: $account);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$email = (string)($account['email'] ?? '');
-		if ($email === '' || $this->mailer->validateMailAddress($email) === false) {
-			return 'the portalAccount has no valid mail address';
-		}
-
 		$organisation = (string)($account['organisation'] ?? '');
 		$organisationName = (string)($this->orgConfig->resolve(orgSlug: $organisation)['organisationName'] ?? 'Portaliq');
 		$deepLink = $this->deepLink(organisation: $organisation);
@@ -453,6 +461,47 @@ class PortalTaskDeliveryJob extends TimedJob {
 			limit: 2
 		)[0] ?? null);
 	}//end account()
+
+	/**
+	 * Why a mail cannot go to this account, or null when it can.
+	 *
+	 * @param array<string, mixed>|null $account The party's account, or null.
+	 *
+	 * @return string|null
+	 */
+	private function mailRefusal(?array $account): ?string {
+		if ($account === null) {
+			return 'no portalAccount for the party';
+		}
+
+		if ($this->withdrawn(account: $account) === true) {
+			return self::WITHDRAWN;
+		}
+
+		$email = (string)($account['email'] ?? '');
+		if ($email === '' || $this->mailer->validateMailAddress($email) === false) {
+			return 'the portalAccount has no valid mail address';
+		}
+
+		return null;
+	}//end mailRefusal()
+
+	/**
+	 * Whether the party's account was withdrawn; logged with the account id only.
+	 *
+	 * @param array<string, mixed>|null $account The party's account, or null.
+	 *
+	 * @return bool
+	 */
+	private function withdrawn(?array $account): bool {
+		if (($account['status'] ?? '') !== PortalAccountService::STATUS_VOID) {
+			return false;
+		}
+
+		$this->logger->info('[PortalTaskDeliveryJob] No delivery to a withdrawn account', ['account' => (string)($account['id'] ?? '')]);
+
+		return true;
+	}//end withdrawn()
 
 	/**
 	 * A readable day for an ISO-8601 due timestamp, or '' when unparseable.

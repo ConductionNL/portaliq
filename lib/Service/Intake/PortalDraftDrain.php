@@ -31,7 +31,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Intake;
 
 use DateTimeImmutable;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 
 /**
@@ -53,13 +53,13 @@ class PortalDraftDrain {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader  Reads the rows.
+	 * @param ScopedCollectionReaderInterface $reader  Reads the rows.
 	 * @param PortalObjectWriter $writer  Deletes a drained row.
 	 * @param ActionDraft        $actions Resolves the row's action and the draft body.
 	 * @param DestinationDraft   $drafts  Saves the OpenRegister draft.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly ActionDraft $actions,
 		private readonly DestinationDraft $drafts,

@@ -48,6 +48,13 @@ class PlanEndingMailerTest extends TestCase {
 	 */
 	private array $logged = [];
 
+	/**
+	 * What reached the logger at info level.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private array $infos = [];
+
 	protected function setUp(): void {
 		$this->mailed = ['to' => [], 'subject' => '', 'texts' => [], 'buttons' => [], 'sent' => 0];
 		$this->logged = [];
@@ -80,6 +87,29 @@ class PlanEndingMailerTest extends TestCase {
 		$this->assertSame(0, $this->mailed['sent']);
 		$this->assertSame([], $this->logged);
 	}//end testNoAddressNoMail()
+
+	/**
+	 * A withdrawn (void) account gets no mail, also with a usable address;
+	 * the skip is logged at info with the account id only.
+	 *
+	 * @return void
+	 */
+	public function testAWithdrawnAccountGetsNoMail(): void {
+		$account = ['id' => 'account-void', 'email' => 'sanne@example.nl', 'status' => 'void'];
+
+		$sent = $this->mailer(account: $account)->send(
+			subjectRef: 'sanne',
+			organisation: 'org-1',
+			plan: 'Schuldhulp op orde',
+			endDate: '2026-10-20',
+			open: 3
+		);
+
+		$this->assertFalse(condition: $sent);
+		$this->assertSame(expected: 0, actual: $this->mailed['sent']);
+		$this->assertSame(expected: [], actual: $this->logged);
+		$this->assertSame(expected: [['account' => 'account-void']], actual: array_column($this->infos, 'context'));
+	}//end testAWithdrawnAccountGetsNoMail()
 
 	/**
 	 * A mail server that throws is a false, never an error in the daily job.
@@ -161,6 +191,20 @@ class PlanEndingMailerTest extends TestCase {
 			return true;
 		});
 
-		return new PlanEndingMailer($imailer, $factory, $links, $site, $accounts, new MailTemplateRenderer($reader), $log, $this->createMock(LoggerInterface::class));
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$logger->method('info')->willReturnCallback(function (string $message, array $context = []): void {
+			$this->infos[] = ['message' => $message, 'context' => $context];
+		});
+
+		return new PlanEndingMailer(
+			mailer: $imailer,
+			l10nFactory: $factory,
+			deepLinks: $links,
+			site: $site,
+			accounts: $accounts,
+			renderer: new MailTemplateRenderer(reader: $reader),
+			mailLog: $log,
+			logger: $logger
+		);
 	}//end mailer()
 }//end class

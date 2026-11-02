@@ -64,11 +64,11 @@ class OidcStateStoreService {
 	 * Constructor.
 	 *
 	 * @param PortalObjectWriter $writer Persists/updates the state row.
-	 * @param PortalObjectReader $reader Looks the row up by `state`.
+	 * @param ScopedCollectionReaderInterface $reader Looks the row up by `state`.
 	 */
 	public function __construct(
 		private readonly PortalObjectWriter $writer,
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 	) {
 	}//end __construct()
 

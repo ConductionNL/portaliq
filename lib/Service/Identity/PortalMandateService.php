@@ -32,7 +32,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use DateTimeImmutable;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
  * Reads and resolves the mandates a portal identity holds.
@@ -69,10 +69,10 @@ class PortalMandateService {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader The subject-scoped OpenRegister reader.
+	 * @param ScopedCollectionReaderInterface $reader The subject-scoped OpenRegister reader.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 	) {
 	}//end __construct()
 

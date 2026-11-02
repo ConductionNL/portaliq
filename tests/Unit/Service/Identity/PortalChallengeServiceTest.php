@@ -155,6 +155,40 @@ class PortalChallengeServiceTest extends TestCase {
 	}//end testANonceIssuedForOneSurfaceIsNotGoodOnAnother()
 
 	/**
+	 * The portal is inside the signed message too, so a nonce issued by one
+	 * portal is not good at another portal on the same instance.
+	 *
+	 * @return void
+	 */
+	public function testANonceIssuedByOnePortalIsNotGoodAtAnother(): void {
+		$service = $this->service();
+		$portalA = ['slug' => 'portal-a'] + $this->site(difficulty: 8);
+		$portalB = ['slug' => 'portal-b'] + $this->site(difficulty: 8);
+		$solution = $this->solve(nonce: 'nonce-1', difficulty: 8);
+		$issuedByA = $service->issue(site: $portalA, surface: 'form');
+
+		$this->assertTrue($service->accepts(
+			site: $portalA,
+			surface: 'form',
+			submission: [],
+			nonce: 'nonce-1',
+			solution: $solution,
+			expiresAt: $issuedByA['expiresAt'],
+			signature: $issuedByA['signature']
+		));
+		$this->assertFalse($service->accepts(
+			site: $portalB,
+			surface: 'form',
+			submission: [],
+			nonce: 'nonce-1',
+			solution: $solution,
+			expiresAt: $issuedByA['expiresAt'],
+			signature: $issuedByA['signature']
+		));
+
+	}//end testANonceIssuedByOnePortalIsNotGoodAtAnother()
+
+	/**
 	 * A solved nonce is not a season ticket: past its expiry it buys nothing,
 	 * and the work has to be done again on a fresh one.
 	 *

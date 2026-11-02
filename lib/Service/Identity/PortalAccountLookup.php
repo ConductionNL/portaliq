@@ -33,7 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
  * Finds an existing portal account, three ways.
@@ -70,10 +70,10 @@ class PortalAccountLookup {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Reads the account rows.
+	 * @param ScopedCollectionReaderInterface $reader Reads the account rows.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 	) {
 	}//end __construct()
 

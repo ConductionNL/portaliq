@@ -32,6 +32,24 @@ class PlanViewsTest extends TestCase {
 	}//end views()
 
 	/**
+	 * A withdrawn (void) account names nobody; a live one still does.
+	 *
+	 * @return void
+	 */
+	public function testAWithdrawnAccountNamesNobody(): void {
+		$accounts = $this->createMock(PortalAccountLookup::class);
+		$accounts->method('bySubjectRef')->willReturnCallback(
+			static fn (string $ref): ?array => (['owner' => ['displayName' => 'Olga', 'status' => 'active'], 'p1' => ['displayName' => 'Piet', 'status' => 'void']][$ref] ?? null)
+		);
+		$views = new PlanViews($accounts);
+
+		$this->assertSame('', $views->nameOf('p1'));
+		$this->assertSame('Olga', $views->nameOf('owner'));
+		$card = $views->card(['id' => 'pl1', 'owner' => 'owner'], ['p1'], [], ['subjectRef' => 'owner'], '2026-05-10');
+		$this->assertSame(['Olga', ''], array_column($card['participants'], 'displayName'));
+	}//end testAWithdrawnAccountNamesNobody()
+
+	/**
 	 * A card counts actions, names people and marks the viewer's role.
 	 *
 	 * @return void
@@ -84,4 +102,24 @@ class PlanViewsTest extends TestCase {
 		$this->assertSame('', $v->nameOf(''));
 		$this->assertSame('', $v->nameOf('stranger'));
 	}//end testNoteAndAction()
+	/**
+	 * Each file shows its newest version, with the earlier ones under it.
+	 *
+	 * @return void
+	 */
+	public function testFilesGroupVersions(): void {
+		$files = [
+			['id' => 'f1', 'name' => 'Budget.pdf', 'series' => 'f1', 'version' => 1, 'addedBy' => 'owner', 'addedAt' => 'a'],
+			['id' => 'f2', 'name' => 'Brief.pdf', 'series' => 'f2', 'version' => 1, 'addedBy' => 'p1', 'addedAt' => 'b'],
+			['id' => 'f3', 'name' => 'Budget.pdf', 'series' => 'f1', 'version' => 2, 'addedBy' => 'p1', 'addedAt' => 'c'],
+		];
+
+		$view = $this->views()->files($files);
+
+		$this->assertSame(['f1', 'f2'], array_column($view, 'series'));
+		$this->assertSame(['id' => 'f3', 'name' => 'Budget.pdf', 'version' => 2, 'addedBy' => 'Piet', 'addedAt' => 'c'], $view[0]['current']);
+		$this->assertSame(['f1'], array_column($view[0]['earlier'], 'id'));
+		$this->assertSame([], $view[1]['earlier']);
+		$this->assertSame([], $this->views()->files([]));
+	}//end testFilesGroupVersions()
 }//end class

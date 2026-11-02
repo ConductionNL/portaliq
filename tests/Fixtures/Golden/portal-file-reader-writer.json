@@ -1,0 +1,793 @@
+{
+    "fileServiceThrows": {
+        "listFiles": {
+            "answer": [],
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                }
+            ]
+        },
+        "listReleasedFiles": {
+            "answer": [],
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                }
+            ]
+        },
+        "listTaggedFiles": {
+            "answer": [],
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                }
+            ]
+        },
+        "streamFile": {
+            "answer": null,
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                }
+            ]
+        },
+        "attachFile": {
+            "answer": null,
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                }
+            ]
+        },
+        "attachFileBare": {
+            "answer": null,
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                }
+            ]
+        }
+    },
+    "fileServiceNotObject": {
+        "listFiles": {
+            "answer": [],
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                }
+            ]
+        },
+        "listReleasedFiles": {
+            "answer": [],
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                }
+            ]
+        },
+        "listTaggedFiles": {
+            "answer": [],
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                }
+            ]
+        },
+        "streamFile": {
+            "answer": null,
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                }
+            ]
+        },
+        "attachFile": {
+            "answer": null,
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                }
+            ]
+        },
+        "attachFileBare": {
+            "answer": null,
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                }
+            ]
+        }
+    },
+    "objectServiceThrows": {
+        "listFiles": {
+            "answer": [],
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                },
+                {
+                    "warning": "Portaliq: object resolve for file read failed",
+                    "context": {
+                        "reason": "not installed"
+                    }
+                }
+            ]
+        },
+        "listReleasedFiles": {
+            "answer": [],
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                },
+                {
+                    "warning": "Portaliq: object resolve for file read failed",
+                    "context": {
+                        "reason": "not installed"
+                    }
+                }
+            ]
+        },
+        "listTaggedFiles": {
+            "answer": [],
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                },
+                {
+                    "warning": "Portaliq: object resolve for file read failed",
+                    "context": {
+                        "reason": "not installed"
+                    }
+                }
+            ]
+        },
+        "streamFile": {
+            "answer": null,
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                },
+                {
+                    "warning": "Portaliq: object resolve for file read failed",
+                    "context": {
+                        "reason": "not installed"
+                    }
+                }
+            ]
+        },
+        "attachFile": {
+            "answer": null,
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                },
+                {
+                    "warning": "Portaliq: object resolve for file attach failed",
+                    "context": {
+                        "reason": "not installed"
+                    }
+                }
+            ]
+        },
+        "attachFileBare": {
+            "answer": null,
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                },
+                {
+                    "warning": "Portaliq: object resolve for file attach failed",
+                    "context": {
+                        "reason": "not installed"
+                    }
+                }
+            ]
+        }
+    },
+    "objectServiceNotObject": {
+        "listFiles": {
+            "answer": [],
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                }
+            ]
+        },
+        "listReleasedFiles": {
+            "answer": [],
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                }
+            ]
+        },
+        "listTaggedFiles": {
+            "answer": [],
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                }
+            ]
+        },
+        "streamFile": {
+            "answer": null,
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                }
+            ]
+        },
+        "attachFile": {
+            "answer": null,
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                }
+            ]
+        },
+        "attachFileBare": {
+            "answer": null,
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                }
+            ]
+        }
+    },
+    "objectMissing": {
+        "listFiles": {
+            "answer": [],
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                },
+                {
+                    "find": {
+                        "id": "obj-1",
+                        "register": "reg",
+                        "schema": "sch",
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                },
+                {
+                    "warning": "Portaliq: object resolve for file read failed",
+                    "context": {
+                        "reason": "Object not found"
+                    }
+                }
+            ]
+        },
+        "listReleasedFiles": {
+            "answer": [],
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                },
+                {
+                    "find": {
+                        "id": "obj-1",
+                        "register": "reg",
+                        "schema": "sch",
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                },
+                {
+                    "warning": "Portaliq: object resolve for file read failed",
+                    "context": {
+                        "reason": "Object not found"
+                    }
+                }
+            ]
+        },
+        "listTaggedFiles": {
+            "answer": [],
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                },
+                {
+                    "find": {
+                        "id": "obj-1",
+                        "register": "reg",
+                        "schema": "sch",
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                },
+                {
+                    "warning": "Portaliq: object resolve for file read failed",
+                    "context": {
+                        "reason": "Object not found"
+                    }
+                }
+            ]
+        },
+        "streamFile": {
+            "answer": null,
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                },
+                {
+                    "find": {
+                        "id": "obj-1",
+                        "register": "reg",
+                        "schema": "sch",
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                },
+                {
+                    "warning": "Portaliq: object resolve for file read failed",
+                    "context": {
+                        "reason": "Object not found"
+                    }
+                }
+            ]
+        },
+        "attachFile": {
+            "answer": null,
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                },
+                {
+                    "find": {
+                        "id": "obj-1",
+                        "register": "reg",
+                        "schema": "sch",
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                },
+                {
+                    "warning": "Portaliq: object resolve for file attach failed",
+                    "context": {
+                        "reason": "Object not found"
+                    }
+                }
+            ]
+        },
+        "attachFileBare": {
+            "answer": null,
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                },
+                {
+                    "find": {
+                        "id": "obj-1",
+                        "register": "reg",
+                        "schema": "sch",
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                },
+                {
+                    "warning": "Portaliq: object resolve for file attach failed",
+                    "context": {
+                        "reason": "Object not found"
+                    }
+                }
+            ]
+        }
+    },
+    "findAnswersScalar": {
+        "listFiles": {
+            "answer": [],
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                },
+                {
+                    "find": {
+                        "id": "obj-1",
+                        "register": "reg",
+                        "schema": "sch",
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                }
+            ]
+        },
+        "listReleasedFiles": {
+            "answer": [],
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                },
+                {
+                    "find": {
+                        "id": "obj-1",
+                        "register": "reg",
+                        "schema": "sch",
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                }
+            ]
+        },
+        "listTaggedFiles": {
+            "answer": [],
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                },
+                {
+                    "find": {
+                        "id": "obj-1",
+                        "register": "reg",
+                        "schema": "sch",
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                }
+            ]
+        },
+        "streamFile": {
+            "answer": null,
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                },
+                {
+                    "find": {
+                        "id": "obj-1",
+                        "register": "reg",
+                        "schema": "sch",
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                }
+            ]
+        },
+        "attachFile": {
+            "answer": null,
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                },
+                {
+                    "find": {
+                        "id": "obj-1",
+                        "register": "reg",
+                        "schema": "sch",
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                }
+            ]
+        },
+        "attachFileBare": {
+            "answer": null,
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                },
+                {
+                    "find": {
+                        "id": "obj-1",
+                        "register": "reg",
+                        "schema": "sch",
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                }
+            ]
+        }
+    },
+    "found": {
+        "listFiles": {
+            "answer": [
+                {
+                    "id": 9,
+                    "name": "42",
+                    "size": 4
+                },
+                {
+                    "id": null,
+                    "name": null,
+                    "size": null
+                },
+                {
+                    "id": null,
+                    "name": null,
+                    "size": null
+                }
+            ],
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                },
+                {
+                    "find": {
+                        "id": "obj-1",
+                        "register": "reg",
+                        "schema": "sch",
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                },
+                {
+                    "getFiles": {
+                        "object": "obj-1",
+                        "sharedFilesOnly": false
+                    }
+                }
+            ]
+        },
+        "listReleasedFiles": {
+            "answer": [
+                {
+                    "id": 9,
+                    "name": "42",
+                    "size": 4
+                },
+                {
+                    "id": null,
+                    "name": null,
+                    "size": null
+                },
+                {
+                    "id": null,
+                    "name": null,
+                    "size": null
+                }
+            ],
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                },
+                {
+                    "find": {
+                        "id": "obj-1",
+                        "register": "reg",
+                        "schema": "sch",
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                },
+                {
+                    "getFiles": {
+                        "object": "obj-1",
+                        "sharedFilesOnly": true
+                    }
+                }
+            ]
+        },
+        "listTaggedFiles": {
+            "answer": [
+                {
+                    "id": 9,
+                    "name": "42",
+                    "size": 4
+                }
+            ],
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                },
+                {
+                    "find": {
+                        "id": "obj-1",
+                        "register": "reg",
+                        "schema": "sch",
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                },
+                {
+                    "getFiles": {
+                        "object": "obj-1",
+                        "sharedFilesOnly": false
+                    }
+                },
+                {
+                    "getFileTags": "9"
+                },
+                {
+                    "getFileTags": ""
+                },
+                {
+                    "getFileTags": ""
+                }
+            ]
+        },
+        "streamFile": {
+            "answer": "stream",
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                },
+                {
+                    "find": {
+                        "id": "obj-1",
+                        "register": "reg",
+                        "schema": "sch",
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                },
+                {
+                    "getFile": {
+                        "object": "obj-1",
+                        "file": "7"
+                    }
+                },
+                "streamFile"
+            ]
+        },
+        "attachFile": {
+            "answer": {
+                "id": 9,
+                "name": "42",
+                "size": 4
+            },
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                },
+                {
+                    "find": {
+                        "id": "obj-1",
+                        "register": "reg",
+                        "schema": "sch",
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                },
+                {
+                    "addFile": {
+                        "object": "obj-1",
+                        "fileName": "upload.pdf",
+                        "content": "abc",
+                        "tags": [
+                            "t"
+                        ],
+                        "_schema": "sch",
+                        "_register": "reg"
+                    }
+                }
+            ]
+        },
+        "attachFileBare": {
+            "answer": {
+                "id": null,
+                "name": "upload.pdf",
+                "size": null
+            },
+            "log": [
+                {
+                    "get": "OCA\\OpenRegister\\Service\\FileService"
+                },
+                {
+                    "get": "OCA\\OpenRegister\\Service\\ObjectService"
+                },
+                {
+                    "find": {
+                        "id": "obj-1",
+                        "register": "reg",
+                        "schema": "sch",
+                        "_rbac": false,
+                        "_multitenancy": false
+                    }
+                },
+                {
+                    "addFile": {
+                        "object": "obj-1",
+                        "fileName": "upload.pdf",
+                        "content": "abc",
+                        "tags": [],
+                        "_schema": "sch",
+                        "_register": "reg"
+                    }
+                }
+            ]
+        }
+    }
+}

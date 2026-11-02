@@ -361,6 +361,36 @@ class SessionControllerTest extends TestCase {
 		$this->assertSame('/portaliq.brokerSession.start?org=gemeente-x&provider=digid&portal=venray', $response->getRedirectURL());
 	}//end testOidcStartForwardsABrokerRoutedProvider()
 
+	/**
+	 * A sign-in started from a site that names its portal in the
+	 * X-Portaliq-Portal header is the sign-in of that portal, as every other
+	 * portal read is.
+	 *
+	 * @return void
+	 */
+	public function testOidcStartTakesThePortalTheSiteNamesInItsHeader(): void {
+		$loginConfig = $this->createMock(OrganisationLoginConfig::class);
+		$loginConfig->method('loginRouteFor')->willReturnMap([['gemeente-x', 'digid', 'broker']]);
+		$urls = $this->createMock(IURLGenerator::class);
+		$urls->method('linkToRoute')->willReturnCallback(
+			static fn (string $route, array $parameters = []): string => '/'.$route.'?'.http_build_query($parameters)
+		);
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('resolve')->willReturnCallback(
+			static fn (IRequest $request, ?string $portalSlug = null): ?array => $portalSlug === 'venray' ? ['slug' => 'venray', 'organisation' => 'gemeente-x'] : null
+		);
+
+		$response = $this->controller(
+			session: $this->createMock(PortalSessionService::class),
+			urlGenerator: $urls,
+			portals: $portals,
+			loginConfig: $loginConfig,
+			portalHeader: 'venray'
+		)->oidcStart(provider: 'digid');
+
+		$this->assertSame('/portaliq.brokerSession.start?org=gemeente-x&provider=digid&portal=venray', $response->getRedirectURL());
+	}//end testOidcStartTakesThePortalTheSiteNamesInItsHeader()
+
 	public function testOidcStartRefusesBeforeResolvingAnySecretWhenThePolicyDeclines(): void {
 		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
 		$orgConfig->method('isLoginProviderAllowed')->willReturn(false);
@@ -1185,12 +1215,13 @@ class SessionControllerTest extends TestCase {
 		?IUserSession $userSession = null,
 		?PortalResolver $portals = null,
 		?OrganisationLoginConfig $loginConfig = null,
+		string $portalHeader = '',
 	): SessionController {
 		$request = $this->createMock(IRequest::class);
 		// Defaults to a bearer being PRESENT, which is what every pre-existing
 		// assertion here assumes. `''` models the anonymous visitor who offers
 		// no credential at all — a different case, and now a different answer.
-		$request->method('getHeader')->willReturnMap([['Authorization', $authorization]]);
+		$request->method('getHeader')->willReturnMap([['Authorization', $authorization], ['X-Portaliq-Portal', $portalHeader]]);
 
 		return new SessionController(
 			$request,

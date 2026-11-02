@@ -32,6 +32,7 @@ use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\SiteOrganisation;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCA\Portaliq\Service\TrafficConfigResolver;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http;
@@ -1022,7 +1023,7 @@ class ContentControllerTest extends TestCase {
 			$appConfig,
 			$urls,
 			$this->createMock(IGroupManager::class),
-			$this->createMock(PortalResolver::class)
+			$this->createMock(PublishedPortals::class)
 		);
 	}//end registrationDoor()
 

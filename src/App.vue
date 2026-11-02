@@ -61,6 +61,7 @@
 import { CnAppRoot, CnObjectSidebar } from '@conduction/nextcloud-vue'
 import { translate as ncT } from '@nextcloud/l10n'
 import { reactive } from 'vue'
+import ActionTitleCell from './cellRenderers/ActionTitleCell.vue'
 import NewsTargetCell from './cellRenderers/NewsTargetCell.vue'
 
 export default {
@@ -145,7 +146,12 @@ export default {
 		return {
 			// Column widgets by id, for `columns[].widget` in the manifest:
 			// `news-target` shows who a news item is for (staff-news-screen).
-			cellWidgets: { 'news-target': NewsTargetCell },
+			// `action-title` names a submission by its action's title (PtInzendingen).
+			cellWidgets: {
+				'news-target': NewsTargetCell,
+				'action-title': ActionTitleCell,
+			},
+
 			objectSidebarState: reactive({
 				active: false,
 				open: true,
