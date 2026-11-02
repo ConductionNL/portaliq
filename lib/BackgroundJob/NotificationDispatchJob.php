@@ -81,6 +81,11 @@ class NotificationDispatchJob extends QueuedJob {
 	private const ACCOUNT_SCHEMA = 'portalAccount';
 
 	/**
+	 * The status of a withdrawn account (PortalAccountService::STATUS_VOID).
+	 */
+	private const STATUS_VOID = 'void';
+
+	/**
 	 * The append-only per-attempt notification log schema.
 	 */
 	private const NOTIFICATION_SCHEMA = 'portalNotification';
@@ -486,7 +491,13 @@ class NotificationDispatchJob extends QueuedJob {
 			limit: 2
 		);
 
-		return ($rows[0] ?? null);
+		$account = ($rows[0] ?? null);
+		if (($account['status'] ?? '') === self::STATUS_VOID) {
+			$this->logger->info('Portaliq: NotificationDispatchJob skips a withdrawn portalAccount', ['account' => (string)$this->rowId(row: $account)]);
+			return null;
+		}
+
+		return $account;
 	}//end findAccount()
 
 	/**

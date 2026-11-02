@@ -28,6 +28,7 @@ namespace OCA\Portaliq\Service\Plans;
 use DateTimeImmutable;
 use DateTimeZone;
 use OCA\Portaliq\Service\PagedObjectReads;
+use OCA\Portaliq\Service\PortalAccountService;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -56,12 +57,14 @@ class PlanEndReminderService {
 	 * @param LoggerInterface $logger The logger.
 	 * @param PlanRules $rules The rules that say when a plan is near its end.
 	 * @param PlanEndingMailer|null $mail Mails each participant beside the portal message.
+	 * @param PortalAccountService|null $accounts Tells a withdrawn participant apart.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 		private readonly PlanRules $rules = new PlanRules(),
 		private readonly ?PlanEndingMailer $mail = null,
+		private readonly ?PortalAccountService $accounts = null,
 	) {
 	}//end __construct()
 
@@ -181,6 +184,29 @@ class PlanEndReminderService {
 	}//end idOf()
 
 	/**
+	 * The people a reminder may reach: every non-empty reference whose
+	 * account was not withdrawn (void). A skip is logged with the account id only.
+	 *
+	 * @param array<int, string> $people The plan's owner and participants.
+	 *
+	 * @return array<int, string>
+	 */
+	private function reachable(array $people): array {
+		$reachable = [];
+		foreach (array_filter($people) as $ref) {
+			$account = $this->accounts?->findBySubjectRef(subjectRef: $ref);
+			if (($account['status'] ?? '') === PortalAccountService::STATUS_VOID) {
+				$this->logger->info('Portaliq: no plan end reminder to a withdrawn account', ['account' => (string)($account['id'] ?? '')]);
+				continue;
+			}
+
+			$reachable[] = $ref;
+		}
+
+		return $reachable;
+	}//end reachable()
+
+	/**
 	 * Write one message per person, then record the reminder on the plan. The
 	 * record comes last and only after every message exists, so a failure
 	 * sends the reminder again rather than losing it.
@@ -199,7 +225,7 @@ class PlanEndReminderService {
 		$members = array_filter((array)($plan['participants'] ?? []), 'is_string');
 		$people  = array_values(array_unique(array_merge([(string)($plan['owner'] ?? '')], $members)));
 		try {
-			foreach (array_filter($people) as $ref) {
+			foreach ($this->reachable(people: $people) as $ref) {
 				$objectService->saveObject(
 					object: [
 						'subjectRef' => $ref,
