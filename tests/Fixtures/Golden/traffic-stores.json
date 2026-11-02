@@ -1,0 +1,742 @@
+{
+    "no object service | events purge": {
+        "answer": 0,
+        "asked": []
+    },
+    "no object service | events between": {
+        "answer": [],
+        "asked": []
+    },
+    "no object service | recordings purge": {
+        "answer": 0,
+        "asked": []
+    },
+    "no object service | recording find": {
+        "answer": null,
+        "asked": []
+    },
+    "raw purge | events purge": {
+        "answer": 4,
+        "asked": [
+            {
+                "purgeExpiredObjectsRaw": [
+                    "portaliq",
+                    "portalTrafficEvent"
+                ]
+            }
+        ]
+    },
+    "raw purge | events between": {
+        "answer": [
+            {
+                "@self": {
+                    "uuid": " u-padded "
+                },
+                "portal": "zuid",
+                "recordingId": "r0"
+            },
+            {
+                "uuid": "u-flat"
+            },
+            {
+                "@self": {
+                    "id": "u-self-id"
+                }
+            },
+            {
+                "id": "u-id"
+            },
+            [],
+            {
+                "@self": {
+                    "uuid": "u-entity"
+                },
+                "portal": "zuid",
+                "recordingId": "r1"
+            },
+            {
+                "id": "u-object"
+            },
+            []
+        ],
+        "asked": [
+            {
+                "findAll": [
+                    {
+                        "filters": {
+                            "portal": "zuid",
+                            "occurredAt": {
+                                "gte": "2026-11-01",
+                                "lt": "2026-11-02"
+                            }
+                        },
+                        "limit": 1000,
+                        "offset": 0,
+                        "sort": {
+                            "occurredAt": "ASC"
+                        }
+                    },
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "raw purge | recordings purge": {
+        "answer": 4,
+        "asked": [
+            {
+                "purgeExpiredObjectsRaw": [
+                    "portaliq",
+                    "portalTrafficRecording"
+                ]
+            }
+        ]
+    },
+    "raw purge | recording find": {
+        "answer": {
+            "@self": {
+                "uuid": "u-entity"
+            },
+            "portal": "zuid",
+            "recordingId": "r1"
+        },
+        "asked": [
+            {
+                "findAll": [
+                    {
+                        "filters": {
+                            "portal": "zuid",
+                            "recordingId": "r1"
+                        },
+                        "limit": 5,
+                        "offset": 0
+                    },
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "raw purge fails | events purge": {
+        "answer": 0,
+        "asked": [
+            {
+                "purgeExpiredObjectsRaw": [
+                    "portaliq",
+                    "portalTrafficEvent"
+                ]
+            },
+            {
+                "error": [
+                    "Portaliq: traffic purge failed",
+                    {
+                        "reason": "raw down"
+                    }
+                ]
+            }
+        ]
+    },
+    "raw purge fails | events between": {
+        "answer": [
+            {
+                "@self": {
+                    "uuid": " u-padded "
+                },
+                "portal": "zuid",
+                "recordingId": "r0"
+            },
+            {
+                "uuid": "u-flat"
+            },
+            {
+                "@self": {
+                    "id": "u-self-id"
+                }
+            },
+            {
+                "id": "u-id"
+            },
+            [],
+            {
+                "@self": {
+                    "uuid": "u-entity"
+                },
+                "portal": "zuid",
+                "recordingId": "r1"
+            },
+            {
+                "id": "u-object"
+            },
+            []
+        ],
+        "asked": [
+            {
+                "findAll": [
+                    {
+                        "filters": {
+                            "portal": "zuid",
+                            "occurredAt": {
+                                "gte": "2026-11-01",
+                                "lt": "2026-11-02"
+                            }
+                        },
+                        "limit": 1000,
+                        "offset": 0,
+                        "sort": {
+                            "occurredAt": "ASC"
+                        }
+                    },
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "raw purge fails | recordings purge": {
+        "answer": 0,
+        "asked": [
+            {
+                "purgeExpiredObjectsRaw": [
+                    "portaliq",
+                    "portalTrafficRecording"
+                ]
+            },
+            {
+                "error": [
+                    "Portaliq: traffic recording purge failed",
+                    {
+                        "reason": "raw down"
+                    }
+                ]
+            }
+        ]
+    },
+    "raw purge fails | recording find": {
+        "answer": {
+            "@self": {
+                "uuid": "u-entity"
+            },
+            "portal": "zuid",
+            "recordingId": "r1"
+        },
+        "asked": [
+            {
+                "findAll": [
+                    {
+                        "filters": {
+                            "portal": "zuid",
+                            "recordingId": "r1"
+                        },
+                        "limit": 5,
+                        "offset": 0
+                    },
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "ordinary path | events purge": {
+        "answer": 6,
+        "asked": [
+            {
+                "findAll": [
+                    {
+                        "filters": {
+                            "expires": {
+                                "lt": "(now)"
+                            }
+                        },
+                        "limit": 1000,
+                        "offset": 0
+                    },
+                    false,
+                    false
+                ]
+            },
+            {
+                "deleteObject": [
+                    " u-padded ",
+                    "portaliq",
+                    "portalTrafficEvent",
+                    false,
+                    false
+                ]
+            },
+            {
+                "deleteObject": [
+                    "u-flat",
+                    "portaliq",
+                    "portalTrafficEvent",
+                    false,
+                    false
+                ]
+            },
+            {
+                "deleteObject": [
+                    "u-self-id",
+                    "portaliq",
+                    "portalTrafficEvent",
+                    false,
+                    false
+                ]
+            },
+            {
+                "deleteObject": [
+                    "u-id",
+                    "portaliq",
+                    "portalTrafficEvent",
+                    false,
+                    false
+                ]
+            },
+            {
+                "deleteObject": [
+                    "u-entity",
+                    "portaliq",
+                    "portalTrafficEvent",
+                    false,
+                    false
+                ]
+            },
+            {
+                "deleteObject": [
+                    "u-object",
+                    "portaliq",
+                    "portalTrafficEvent",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "ordinary path | events between": {
+        "answer": [
+            {
+                "@self": {
+                    "uuid": " u-padded "
+                },
+                "portal": "zuid",
+                "recordingId": "r0"
+            },
+            {
+                "uuid": "u-flat"
+            },
+            {
+                "@self": {
+                    "id": "u-self-id"
+                }
+            },
+            {
+                "id": "u-id"
+            },
+            [],
+            {
+                "@self": {
+                    "uuid": "u-entity"
+                },
+                "portal": "zuid",
+                "recordingId": "r1"
+            },
+            {
+                "id": "u-object"
+            },
+            []
+        ],
+        "asked": [
+            {
+                "findAll": [
+                    {
+                        "filters": {
+                            "portal": "zuid",
+                            "occurredAt": {
+                                "gte": "2026-11-01",
+                                "lt": "2026-11-02"
+                            }
+                        },
+                        "limit": 1000,
+                        "offset": 0,
+                        "sort": {
+                            "occurredAt": "ASC"
+                        }
+                    },
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "ordinary path | recordings purge": {
+        "answer": 6,
+        "asked": [
+            {
+                "findAll": [
+                    {
+                        "filters": {
+                            "expires": {
+                                "lt": "(now)"
+                            }
+                        },
+                        "limit": 200,
+                        "offset": 0
+                    },
+                    false,
+                    false
+                ]
+            },
+            {
+                "deleteObject": [
+                    "u-padded",
+                    "portaliq",
+                    "portalTrafficRecording",
+                    false,
+                    false
+                ]
+            },
+            {
+                "deleteObject": [
+                    "u-flat",
+                    "portaliq",
+                    "portalTrafficRecording",
+                    false,
+                    false
+                ]
+            },
+            {
+                "deleteObject": [
+                    "u-self-id",
+                    "portaliq",
+                    "portalTrafficRecording",
+                    false,
+                    false
+                ]
+            },
+            {
+                "deleteObject": [
+                    "u-id",
+                    "portaliq",
+                    "portalTrafficRecording",
+                    false,
+                    false
+                ]
+            },
+            {
+                "deleteObject": [
+                    "u-entity",
+                    "portaliq",
+                    "portalTrafficRecording",
+                    false,
+                    false
+                ]
+            },
+            {
+                "deleteObject": [
+                    "u-object",
+                    "portaliq",
+                    "portalTrafficRecording",
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "ordinary path | recording find": {
+        "answer": {
+            "@self": {
+                "uuid": "u-entity"
+            },
+            "portal": "zuid",
+            "recordingId": "r1"
+        },
+        "asked": [
+            {
+                "findAll": [
+                    {
+                        "filters": {
+                            "portal": "zuid",
+                            "recordingId": "r1"
+                        },
+                        "limit": 5,
+                        "offset": 0
+                    },
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "read fails | events purge": {
+        "answer": 0,
+        "asked": [
+            {
+                "findAll": [
+                    {
+                        "filters": {
+                            "expires": {
+                                "lt": "(now)"
+                            }
+                        },
+                        "limit": 1000,
+                        "offset": 0
+                    },
+                    false,
+                    false
+                ]
+            },
+            {
+                "error": [
+                    "Portaliq: traffic read failed",
+                    {
+                        "schema": "portalTrafficEvent",
+                        "reason": "read down"
+                    }
+                ]
+            }
+        ]
+    },
+    "read fails | events between": {
+        "answer": [],
+        "asked": [
+            {
+                "findAll": [
+                    {
+                        "filters": {
+                            "portal": "zuid",
+                            "occurredAt": {
+                                "gte": "2026-11-01",
+                                "lt": "2026-11-02"
+                            }
+                        },
+                        "limit": 1000,
+                        "offset": 0,
+                        "sort": {
+                            "occurredAt": "ASC"
+                        }
+                    },
+                    false,
+                    false
+                ]
+            },
+            {
+                "error": [
+                    "Portaliq: traffic read failed",
+                    {
+                        "schema": "portalTrafficEvent",
+                        "reason": "read down"
+                    }
+                ]
+            }
+        ]
+    },
+    "read fails | recordings purge": {
+        "answer": 0,
+        "asked": [
+            {
+                "findAll": [
+                    {
+                        "filters": {
+                            "expires": {
+                                "lt": "(now)"
+                            }
+                        },
+                        "limit": 200,
+                        "offset": 0
+                    },
+                    false,
+                    false
+                ]
+            },
+            {
+                "error": [
+                    "Portaliq: traffic recording read failed",
+                    {
+                        "reason": "read down"
+                    }
+                ]
+            }
+        ]
+    },
+    "read fails | recording find": {
+        "answer": null,
+        "asked": [
+            {
+                "findAll": [
+                    {
+                        "filters": {
+                            "portal": "zuid",
+                            "recordingId": "r1"
+                        },
+                        "limit": 5,
+                        "offset": 0
+                    },
+                    false,
+                    false
+                ]
+            },
+            {
+                "error": [
+                    "Portaliq: traffic recording read failed",
+                    {
+                        "reason": "read down"
+                    }
+                ]
+            }
+        ]
+    },
+    "delete fails | events purge": {
+        "answer": 0,
+        "asked": [
+            {
+                "findAll": [
+                    {
+                        "filters": {
+                            "expires": {
+                                "lt": "(now)"
+                            }
+                        },
+                        "limit": 1000,
+                        "offset": 0
+                    },
+                    false,
+                    false
+                ]
+            },
+            {
+                "deleteObject": [
+                    " u-padded ",
+                    "portaliq",
+                    "portalTrafficEvent",
+                    false,
+                    false
+                ]
+            },
+            {
+                "error": [
+                    "Portaliq: traffic purge failed",
+                    {
+                        "reason": "delete down"
+                    }
+                ]
+            }
+        ]
+    },
+    "delete fails | events between": {
+        "answer": [
+            {
+                "@self": {
+                    "uuid": " u-padded "
+                },
+                "portal": "zuid",
+                "recordingId": "r0"
+            },
+            {
+                "uuid": "u-flat"
+            },
+            {
+                "@self": {
+                    "id": "u-self-id"
+                }
+            },
+            {
+                "id": "u-id"
+            },
+            [],
+            {
+                "@self": {
+                    "uuid": "u-entity"
+                },
+                "portal": "zuid",
+                "recordingId": "r1"
+            },
+            {
+                "id": "u-object"
+            },
+            []
+        ],
+        "asked": [
+            {
+                "findAll": [
+                    {
+                        "filters": {
+                            "portal": "zuid",
+                            "occurredAt": {
+                                "gte": "2026-11-01",
+                                "lt": "2026-11-02"
+                            }
+                        },
+                        "limit": 1000,
+                        "offset": 0,
+                        "sort": {
+                            "occurredAt": "ASC"
+                        }
+                    },
+                    false,
+                    false
+                ]
+            }
+        ]
+    },
+    "delete fails | recordings purge": {
+        "answer": 0,
+        "asked": [
+            {
+                "findAll": [
+                    {
+                        "filters": {
+                            "expires": {
+                                "lt": "(now)"
+                            }
+                        },
+                        "limit": 200,
+                        "offset": 0
+                    },
+                    false,
+                    false
+                ]
+            },
+            {
+                "deleteObject": [
+                    "u-padded",
+                    "portaliq",
+                    "portalTrafficRecording",
+                    false,
+                    false
+                ]
+            },
+            {
+                "error": [
+                    "Portaliq: traffic recording purge failed",
+                    {
+                        "reason": "delete down"
+                    }
+                ]
+            }
+        ]
+    },
+    "delete fails | recording find": {
+        "answer": {
+            "@self": {
+                "uuid": "u-entity"
+            },
+            "portal": "zuid",
+            "recordingId": "r1"
+        },
+        "asked": [
+            {
+                "findAll": [
+                    {
+                        "filters": {
+                            "portal": "zuid",
+                            "recordingId": "r1"
+                        },
+                        "limit": 5,
+                        "offset": 0
+                    },
+                    false,
+                    false
+                ]
+            }
+        ]
+    }
+}
