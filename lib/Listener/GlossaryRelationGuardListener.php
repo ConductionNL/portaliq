@@ -82,6 +82,8 @@ class GlossaryRelationGuardListener implements IEventListener {
 	 * @param object                                  $entity The object being written.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/portal-cms-content-model/tasks.md#task-3
 	 */
 	protected function check(ObjectCreatingEvent|ObjectUpdatingEvent $event, object $entity): void {
 		if ($this->guardsSchema(schema: (string)$entity->getSchema()) === false) {

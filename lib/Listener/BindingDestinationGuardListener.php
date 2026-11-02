@@ -83,6 +83,8 @@ class BindingDestinationGuardListener implements IEventListener {
 	 * @param object                                  $entity The object being written.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-form-binding-names-its-destination-and-is-valid-against-it-req-pifo-007
 	 */
 	protected function check(ObjectCreatingEvent|ObjectUpdatingEvent $event, object $entity): void {
 		$errors = $this->refusalFor(schema: (string)$entity->getSchema(), binding: (array)($entity->getObject() ?? []));

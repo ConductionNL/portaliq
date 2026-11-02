@@ -85,6 +85,8 @@ class NoticeWriteGuardListener implements IEventListener {
 	 * @param object                                  $entity The object being written.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/specs/portal-notices/spec.md#requirement-page-editors-manage-notices-req-omn-003
 	 */
 	protected function check(ObjectCreatingEvent|ObjectUpdatingEvent $event, object $entity): void {
 		if ($this->guardsSchema(schema: (string)$entity->getSchema()) === false) {
