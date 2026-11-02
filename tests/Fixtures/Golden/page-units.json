@@ -1234,5 +1234,77 @@
 	"summary:en:3": "",
 	"summary:4": "Een parkeervergunning op morgen voor b, 0",
 	"summary:en:4": "Een parkeervergunning op morgen voor b, 0",
-	"summary:none": ""
+	"summary:none": "",
+	"search:0": {
+		"kind": "publication",
+		"publication": "",
+		"key": "",
+		"title": "Zonder titel",
+		"summary": "",
+		"href": "",
+		"directory": "",
+		"id": "",
+		"date": "",
+		"type": ""
+	},
+	"search:1": {
+		"kind": "publication",
+		"publication": "",
+		"key": "",
+		"title": "Zonder titel",
+		"summary": "",
+		"href": "",
+		"directory": "",
+		"id": "",
+		"date": "",
+		"type": ""
+	},
+	"search:2": {
+		"kind": "publication",
+		"publication": "",
+		"key": "s1",
+		"title": "Rij",
+		"summary": "Kort",
+		"href": "/land",
+		"directory": "https://elders.nl/dir",
+		"id": "s1",
+		"date": "1 februari 2026",
+		"type": "Besluit"
+	},
+	"search:3": {
+		"kind": "document",
+		"publication": "Publicatie",
+		"key": "abc",
+		"title": "Titel",
+		"summary": "",
+		"href": "/doc",
+		"directory": "",
+		"id": "",
+		"date": "",
+		"type": ""
+	},
+	"search:4": {
+		"kind": "document",
+		"publication": "Besluit X",
+		"key": "d2",
+		"title": "Zonder titel",
+		"summary": "",
+		"href": "",
+		"directory": "",
+		"id": "d2",
+		"date": "",
+		"type": ""
+	},
+	"search:5": {
+		"kind": "publication",
+		"publication": "",
+		"key": "Alleen naam",
+		"title": "Alleen naam",
+		"summary": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+		"href": "",
+		"directory": "",
+		"id": "",
+		"date": "",
+		"type": ""
+	}
 }

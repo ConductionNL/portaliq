@@ -15,6 +15,7 @@ import { formatCell } from '../../src/site/components/collections/cells.js'
 import { summarySentence } from '../../src/site/components/forms/summary.js'
 import { fillTemplate } from '../../src/site/components/mijn/template.js'
 import { askAssistant } from '../../src/site/lib/assistantApi.js'
+import { toResult } from '../../src/site/lib/federatedSearch.js'
 import { golden, outcomeOf, recordingFetch } from '../support/golden.mjs'
 
 const t = (key, vars = {}) => `[${key}]${Object.entries(vars).map(([k, v]) => `${k}=${v}`).join(',')}`
@@ -94,6 +95,15 @@ const VALUES = [
 const SUMMARY_OPTIONS = { who: [{ value: 'a', label: ' Anna ' }, { value: 'b', label: '' }, null], kind: 'not a list' }
 const NOW = new Date(2026, 9, 2, 12)
 
+const SEARCH_ROWS = [
+	null,
+	{},
+	{ '@self': { id: 's1', summary: 'Kort', directory: 'https://elders.nl/dir', uri: '/u', name: 'Self', schemaTitle: 'Besluit', published: '2026-03-01' }, id: 'r1', name: 'Rij', description: 'Lang', landingUrl: '/land', publicationDate: '2026-02-01' },
+	{ '@self': { title: 'Titel', directory: 'local', summary: 7 }, sha: 'abc', url: '/doc', resultType: 'Document', publication: { name: 'Publicatie' } },
+	{ '@self': { resultType: 'document' }, publicationTitle: 'Besluit X', id: 'd2' },
+	{ name: 'Alleen naam', description: 'x'.repeat(300), _score: 3.2 },
+]
+
 test('the page helpers answer as pinned', async () => {
 	const file = golden('page-units')
 	for (const [l, location] of LOCATIONS.entries()) {
@@ -139,5 +149,8 @@ test('the page helpers answer as pinned', async () => {
 		file.check(`summary:en:${v}`, summarySentence(SUMMARY, values, undefined, { locale: 'en', now: NOW }))
 	}
 	file.check('summary:none', summarySentence(null, {}))
+	for (const [r, row] of SEARCH_ROWS.entries()) {
+		file.check(`search:${r}`, toResult(row))
+	}
 	file.save()
 })
