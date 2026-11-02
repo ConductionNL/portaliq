@@ -3246,6 +3246,7 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	margin-block-start: 6px;
 	font-size: 1.1875rem;
 	font-weight: 500;
+	line-height: normal;
 	color: var(--thematiq-website-text-muted, var(--nldesign-color-text-muted));
 }
 
@@ -3271,7 +3272,7 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
-	margin: -6px 0 0;
+	margin: -3px 0 0;
 	padding: 0 0 22px 56px;
 }
 
@@ -3281,13 +3282,14 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	order: 2;
 	color: var(--thematiq-website-text-muted, var(--nldesign-color-text-muted));
 	font-size: 0.9375rem;
+	line-height: normal;
 }
 
 .pq-site:has(.pq-site__header--designed) .pq-process-steps .pq-process-steps__text {
 	margin: 0;
 	color: var(--thematiq-website-text-muted, var(--nldesign-color-text-muted));
 	font-size: 1rem;
-	line-height: 1.5 !important;
+	line-height: normal !important;
 }
 
 /* Gegevens: the label column as wide as its longest label, 12px rows

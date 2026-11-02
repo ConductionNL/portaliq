@@ -150,12 +150,18 @@ export default {
 		},
 
 		/**
+		 * A step's date in words with its year, "3 oktober 2026", as the
+		 * Zaak boards draw it.
+		 *
 		 * @param {string} value An ISO date.
 		 * @return {string} The day in words.
 		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
 		 */
 		day(value) {
-			return dayInWords(value, this.today || new Date(), this.locale) || value
+			return (
+				dayInWords(value, this.today || new Date(), this.locale, true) ||
+				value
+			)
 		},
 	},
 }
