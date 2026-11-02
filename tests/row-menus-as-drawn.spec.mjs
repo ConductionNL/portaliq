@@ -3,8 +3,8 @@
 // Copyright (C) 2026 Conduction B.V.
 //
 // row-menus-as-drawn.spec.mjs: the admin lists' row menus open as the boards
-// draw them. View comes first (PtUitnodigingen, PtToegangsverzoeken,
-// PtSessies), and the entry that takes something away is destructive, so the
+// draw them. View comes first and Edit second (PtUitnodigingen,
+// PtToegangsverzoeken, PtSessies), and the entry that takes something away is destructive, so the
 // library draws it in red (Uitnodiging intrekken, Afwijzen met een reden,
 // Sessie intrekken).
 //
@@ -27,6 +27,15 @@ const lists = [
 for (const { page, destructive } of lists) {
 	test(`${page}: View opens the row menu`, () => {
 		assert.equal(actionsOf(page)[0], 'builtin:view')
+	})
+
+	test(`${page}: Edit stands second, before the list's own entries`, () => {
+		assert.equal(actionsOf(page)[1], 'builtin:edit')
+	})
+
+	test(`${page}: the destructive entry is the last one`, () => {
+		const last = actionsOf(page).at(-1)
+		assert.equal(last.id, destructive)
 	})
 
 	test(`${page}: ${destructive} is destructive and the others are not`, () => {

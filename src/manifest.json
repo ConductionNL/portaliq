@@ -1854,6 +1854,7 @@
         ],
         "actions": [
           "builtin:view",
+          "builtin:edit",
           {
             "id": "resend-invitation",
             "label": "Send again",
@@ -2265,6 +2266,7 @@
         ],
         "actions": [
           "builtin:view",
+          "builtin:edit",
           {
             "id": "open-session-account",
             "label": "Go to the account",
@@ -4653,6 +4655,7 @@
         ],
         "actions": [
           "builtin:view",
+          "builtin:edit",
           {
             "id": "grant",
             "label": "Approve",
