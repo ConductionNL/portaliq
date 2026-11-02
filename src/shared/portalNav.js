@@ -30,6 +30,7 @@ const NEVER_DEFAULT = [
 	'details',
 	'contacts',
 	'samenwerken',
+	'acties',
 	'account',
 ]
 

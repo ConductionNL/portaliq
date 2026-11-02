@@ -24,7 +24,6 @@ namespace OCA\Portaliq\Listener;
 
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\Cms\GlossaryRelations;
 use OCA\Portaliq\Service\CmsReader;
 use OCP\EventDispatcher\Event;
@@ -32,7 +31,6 @@ use OCP\EventDispatcher\IEventListener;
 use OCP\IL10N;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Vetoes a glossary term write that relates to a term of another portal.
@@ -47,7 +45,17 @@ use Throwable;
  */
 class GlossaryRelationGuardListener implements IEventListener {
 
-	private const SCHEMA_MAPPER = 'OCA\\OpenRegister\\Db\\SchemaMapper';
+	use SchemaWriteGuard;
+
+	/**
+	 * The slug of the schema this guard checks.
+	 */
+	private const GUARDED_SCHEMA = 'glossaryTerm';
+
+	/**
+	 * How this guard names itself in the log.
+	 */
+	private const GUARD_NAME = 'glossary guard';
 
 	/**
 	 * Constructor.
@@ -68,35 +76,17 @@ class GlossaryRelationGuardListener implements IEventListener {
 	}//end __construct()
 
 	/**
-	 * Check one pre-write event.
-	 *
-	 * @param Event $event The event.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/portal-cms-content-model/tasks.md#task-3
-	 */
-	public function handle(Event $event): void {
-		if ($event instanceof ObjectCreatingEvent) {
-			$this->check(event: $event, entity: $event->getObject());
-			return;
-		}
-
-		if ($event instanceof ObjectUpdatingEvent) {
-			$this->check(event: $event, entity: $event->getNewObject());
-		}
-	}//end handle()
-
-	/**
 	 * Refuse the write when a relation leaves the portal.
 	 *
 	 * @param ObjectCreatingEvent|ObjectUpdatingEvent $event  The pre-write event.
 	 * @param object                                  $entity The object being written.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/portal-cms-content-model/tasks.md#task-3
 	 */
-	private function check(ObjectCreatingEvent|ObjectUpdatingEvent $event, object $entity): void {
-		if ($this->isTerm(schema: (string)$entity->getSchema()) === false) {
+	protected function check(ObjectCreatingEvent|ObjectUpdatingEvent $event, object $entity): void {
+		if ($this->guardsSchema(schema: (string)$entity->getSchema()) === false) {
 			return;
 		}
 
@@ -126,22 +116,4 @@ class GlossaryRelationGuardListener implements IEventListener {
 			$event->setErrors(['message' => $message]);
 		}
 	}//end check()
-
-	/**
-	 * Whether an object's schema is portaliq's glossary term schema.
-	 *
-	 * @param string $schema The object's schema id.
-	 *
-	 * @return bool
-	 */
-	private function isTerm(string $schema): bool {
-		try {
-			$term = $this->container->get(self::SCHEMA_MAPPER)->findByApplicationAndSlug(slug: 'glossaryTerm', application: Application::APP_ID);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: glossary guard could not read the schema', ['reason' => $e->getMessage()]);
-			return false;
-		}
-
-		return $term !== null && $schema !== '' && $schema === (string)$term->getId();
-	}//end isTerm()
 }//end class

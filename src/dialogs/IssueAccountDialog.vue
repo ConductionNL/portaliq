@@ -45,7 +45,7 @@
 					}}
 				</p>
 			</div>
-			<div>
+			<div class="issue__select">
 				<NcSelect
 					v-model="identityType"
 					:options="identityTypes"
@@ -79,7 +79,7 @@
 				v-model="fields.organisation"
 				:label="t('portaliq', 'Organisation')"
 				data-testid="issue-account-organisation" />
-			<div>
+			<div class="issue__select">
 				<NcSelect
 					v-model="audience"
 					:options="audiences"
@@ -271,6 +271,33 @@ export default {
 .issue__help--check {
 	margin-top: 0;
 	padding-inline-start: 28px;
+}
+
+/* The board's rhythm: rows 16px apart, help lines on the font's own line. */
+.cn-dialog-board .issue__grid {
+	row-gap: 16px;
+}
+
+.cn-dialog-board .issue__help {
+	line-height: normal;
+}
+
+/* The board puts the check's help right under its text; the checkbox row is
+   24px high with its text on a 22.5px line. */
+.cn-dialog-board .issue__help--check {
+	margin-top: -5px;
+}
+
+/* The board draws the select across its column with its help line right
+   under it; NcSelect is inline at its own width with a 4px bottom margin. */
+.cn-dialog-board .issue__select :deep(.v-select.select) {
+	width: 100%;
+	margin-bottom: 0;
+}
+
+/* The board puts the note 16px under the fields, the dialog body's gap is 18. */
+.cn-dialog-board .dialog__content .notecard.issue__note {
+	margin-top: -2px;
 }
 
 .issue__note {

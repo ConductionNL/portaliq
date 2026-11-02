@@ -643,6 +643,37 @@ class NotificationDispatchJobTest extends TestCase {
 	}//end jobWithPush()
 
 	/**
+	 * A withdrawn (void) account is treated as a missing one: no push, no
+	 * e-mail and no portalNotification row, also with a device and an address.
+	 *
+	 * @return void
+	 */
+	public function testAWithdrawnAccountGetsNoPushAndNoMail(): void {
+		$created = [];
+		$captured = [];
+		$pushes = [];
+		$account = [
+			'@self' => ['id' => 'account-void'],
+			'email' => 'r@example.org',
+			'status' => 'void',
+			'notificationPreferences' => ['message.created' => ['email' => true, 'push' => true]],
+		];
+		$job = $this->jobWithPush(
+			account: $account,
+			created: $created,
+			captured: $captured,
+			pushes: $pushes,
+			subscriptions: [['endpoint' => 'https://push.example/1']]
+		);
+
+		$this->invokeRun(job: $job, argument: self::ARGUMENT);
+
+		$this->assertArrayNotHasKey(key: 'to', array: $captured);
+		$this->assertSame(expected: [], actual: $pushes);
+		$this->assertSame(expected: [], actual: $created);
+	}//end testAWithdrawnAccountGetsNoPushAndNoMail()
+
+	/**
 	 * A change rule's e-mail names the collection label and links to the
 	 * record, and carries no field value (REQ-NAP-005, REQ-NAP-006).
 	 *

@@ -30,7 +30,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Intake;
 
 use OCA\Portaliq\Service\CaseTypeVisibility;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
  * Lists the published catalogue entries, grouped by their topic.
@@ -56,7 +56,7 @@ class PortalCatalogueReader {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Reads the published catalogue.
+	 * @param ScopedCollectionReaderInterface $reader Reads the published catalogue.
 	 * @param PortalFormBindingResolver|null $bindings The portal's published
 	 *                                                 bindings, to find the
 	 *                                                 routes of hidden types.
@@ -65,7 +65,7 @@ class PortalCatalogueReader {
 	 *                                           Either absent hides nothing.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly ?PortalFormBindingResolver $bindings = null,
 		private readonly ?CaseTypeVisibility $caseTypes = null,
 	) {

@@ -28,8 +28,9 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity\EmailLink;
 
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Service\PortalSlugLookup;
 
 /**
  * Looks the address up and mails the link, or does nothing.
@@ -40,7 +41,7 @@ class EmailLinkSender {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader   $reader      Reads the portal.
+	 * @param ScopedCollectionReaderInterface   $reader      Reads the portal.
 	 * @param EmailLinkSetting     $setting     The switch and the portal's modes.
 	 * @param EmailLinkEligibility $eligibility The one account behind the address.
 	 * @param EmailLinkTokens      $tokens      Issues the link.
@@ -52,7 +53,7 @@ class EmailLinkSender {
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- one dependency per check the request passes.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly EmailLinkSetting $setting,
 		private readonly EmailLinkEligibility $eligibility,
 		private readonly EmailLinkTokens $tokens,
@@ -123,17 +124,6 @@ class EmailLinkSender {
 	 * @return array<string, mixed>|null
 	 */
 	private function portal(string $slug): ?array {
-		if ($slug === '') {
-			return null;
-		}
-
-		$rows = $this->reader->readCollection(register: 'portaliq', schema: 'portal', scopeField: 'slug', subjectRef: $slug, organisation: '', limit: 2);
-		foreach ($rows as $row) {
-			if (is_array($row) === true && ($row['slug'] ?? null) === $slug) {
-				return $row;
-			}
-		}
-
-		return null;
+		return (new PortalSlugLookup(reader: $this->reader))->find(slug: $slug);
 	}//end portal()
 }//end class

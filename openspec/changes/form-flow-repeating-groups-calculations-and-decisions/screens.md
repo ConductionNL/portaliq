@@ -12,3 +12,4 @@
 - PtFormulierPrijs https://identity.conduction.nl/screens/board?id=portaliq/PtFormulierPrijs
 - WooVerzoekControleren https://identity.conduction.nl/screens/board?id=portaliq/WooVerzoekControleren
 - WooVerzoekGegevens https://identity.conduction.nl/screens/board?id=portaliq/WooVerzoekGegevens
+- No screen: the resident sees only the outcome (a filled line or the next step); the table itself is authored on buildiq's BqBeslistabel (int-decision-table-logic)

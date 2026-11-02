@@ -350,6 +350,55 @@ class PortalTaskDeliveryJobTest extends TestCase {
 	}//end testAMailRowSendsThePrivacyMinimalMail()
 
 	/**
+	 * A withdrawn (void) account gets no task mail, also with a valid
+	 * address: the row fails with the reason and nothing is sent.
+	 *
+	 * @return void
+	 */
+	public function testAWithdrawnAccountGetsNoTaskMail(): void {
+		$ledger = new FakeLedger(rows: [new FakeDeliveryRow(uuid: 'd-1', party: 'party:s1', channel: 'mail', kind: 'reminder', message: self::MESSAGE)]);
+
+		$reader = $this->createMock(originalClassName: PortalObjectReader::class);
+		$reader->method('readCollection')->willReturn([['id' => 'a-1', 'email' => 'resident@example.org', 'organisation' => 'org-1', 'status' => 'void']]);
+
+		$mailer = $this->createMock(originalClassName: IMailer::class);
+		$mailer->method('validateMailAddress')->willReturn(true);
+		$mailer->expects($this->never())->method('send');
+
+		$this->runJob(ledger: $ledger, reader: $reader, writer: $this->createMock(originalClassName: PortalObjectWriter::class), mailer: $mailer);
+
+		$this->assertSame(expected: [], actual: $ledger->delivered);
+		$this->assertSame(expected: ['d-1' => 'the portalAccount was withdrawn'], actual: $ledger->failed);
+	}//end testAWithdrawnAccountGetsNoTaskMail()
+
+	/**
+	 * A withdrawn (void) account gets no task inbox message: the row fails
+	 * with the reason and nothing is written.
+	 *
+	 * @return void
+	 */
+	public function testAWithdrawnAccountGetsNoTaskInboxMessage(): void {
+		$row = new FakeDeliveryRow(uuid: 'd-1', party: 'party:s1', channel: 'portal-inbox', kind: 'reminder', message: self::MESSAGE);
+		$ledger = new FakeLedger(rows: [$row]);
+
+		$reader = $this->createMock(originalClassName: PortalObjectReader::class);
+		$reader->method('readCollection')->willReturnCallback(
+			static fn (string $register, string $schema): array => match ($schema) {
+				'portalAccount' => [['id' => 'a-1', 'organisation' => 'org-1', 'status' => 'void']],
+				default => [],
+			}
+		);
+
+		$writer = $this->createMock(originalClassName: PortalObjectWriter::class);
+		$writer->expects($this->never())->method('createObject');
+
+		$this->runJob(ledger: $ledger, reader: $reader, writer: $writer);
+
+		$this->assertSame(expected: [], actual: $ledger->delivered);
+		$this->assertSame(expected: ['d-1' => 'the portalAccount was withdrawn'], actual: $ledger->failed);
+	}//end testAWithdrawnAccountGetsNoTaskInboxMessage()
+
+	/**
 	 * #803: a reminder is about a task the resident already has. Its mail
 	 * must say so and must not announce a new task; an ask keeps the
 	 * new-task wording (tasks-reminders-after-the-deadline REQ-TRD-002).

@@ -45,7 +45,7 @@
 				:key="entry.value"
 				class="pq-address__row"
 				:data-testid="`address-${kind}`">
-				<NoTranslate class="pq-address__value" :value="entry.value" />
+				<NoTranslate class="pq-address__value" :value="shown(entry.value)" />
 				<span
 					v-if="entry.preferred"
 					class="pq-address__pill pq-address__pill--preferred">
@@ -108,6 +108,7 @@
 
 <script>
 import NoTranslate from '../NoTranslate.vue'
+import { phoneDisplay } from '../../lib/phoneDisplay.js'
 
 export default {
 	name: 'AddressList',
@@ -169,6 +170,18 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * An address as the list shows it: a phone number the Dutch way, an
+		 * e-mail address as it is. Actions still send the stored value.
+		 *
+		 * @param {string} value The stored address.
+		 * @return {string} The address to show.
+		 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T05
+		 */
+		shown(value) {
+			return this.kind === 'phone' ? phoneDisplay(value) : value
+		},
+
 		/**
 		 * Show or hide the form to add an address; once shown, the focus
 		 * goes to its field.

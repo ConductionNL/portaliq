@@ -1,0 +1,1378 @@
+{
+    "missing | write fails | claim": {
+        "result": false,
+        "writes": []
+    },
+    "missing | write fails | claim new app": {
+        "result": false,
+        "writes": []
+    },
+    "missing | write fails | claim empty value": {
+        "result": false,
+        "writes": []
+    },
+    "missing | write fails | voidPending": {
+        "result": false,
+        "writes": []
+    },
+    "missing | write fails | voidPending no reason": {
+        "result": false,
+        "writes": []
+    },
+    "missing | write fails | approvePending": {
+        "result": false,
+        "writes": []
+    },
+    "missing | write fails | findOrCreate": {
+        "result": null,
+        "writes": [
+            {
+                "create": "portalAccount",
+                "data": {
+                    "audience": "client",
+                    "identityType": "digid",
+                    "identityRef": "ref-1",
+                    "subjectRef": "minted",
+                    "organisation": "zuid",
+                    "status": "active",
+                    "lastLoginAt": "(now)"
+                }
+            }
+        ]
+    },
+    "missing | write fails | findOrCreate other type": {
+        "result": null,
+        "writes": [
+            {
+                "create": "portalAccount",
+                "data": {
+                    "audience": "client",
+                    "identityType": "eidas",
+                    "identityRef": "ref-1",
+                    "subjectRef": "minted",
+                    "organisation": "zuid",
+                    "status": "active",
+                    "lastLoginAt": "(now)"
+                }
+            }
+        ]
+    },
+    "missing | written | claim": {
+        "result": false,
+        "writes": []
+    },
+    "missing | written | claim new app": {
+        "result": false,
+        "writes": []
+    },
+    "missing | written | claim empty value": {
+        "result": false,
+        "writes": []
+    },
+    "missing | written | voidPending": {
+        "result": false,
+        "writes": []
+    },
+    "missing | written | voidPending no reason": {
+        "result": false,
+        "writes": []
+    },
+    "missing | written | approvePending": {
+        "result": false,
+        "writes": []
+    },
+    "missing | written | findOrCreate": {
+        "result": null,
+        "writes": [
+            {
+                "create": "portalAccount",
+                "data": {
+                    "audience": "client",
+                    "identityType": "digid",
+                    "identityRef": "ref-1",
+                    "subjectRef": "minted",
+                    "organisation": "zuid",
+                    "status": "active",
+                    "lastLoginAt": "(now)"
+                }
+            }
+        ]
+    },
+    "missing | written | findOrCreate other type": {
+        "result": null,
+        "writes": [
+            {
+                "create": "portalAccount",
+                "data": {
+                    "audience": "client",
+                    "identityType": "eidas",
+                    "identityRef": "ref-1",
+                    "subjectRef": "minted",
+                    "organisation": "zuid",
+                    "status": "active",
+                    "lastLoginAt": "(now)"
+                }
+            }
+        ]
+    },
+    "active with uuid | write fails | claim": {
+        "result": false,
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-1",
+                "data": {
+                    "claims": {
+                        "app": {
+                            "old": "x",
+                            "name": "value"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "active with uuid | write fails | claim new app": {
+        "result": false,
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-1",
+                "data": {
+                    "claims": {
+                        "app": {
+                            "old": "x"
+                        },
+                        "other": {
+                            "name": "value"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "active with uuid | write fails | claim empty value": {
+        "result": false,
+        "writes": []
+    },
+    "active with uuid | write fails | voidPending": {
+        "result": false,
+        "writes": []
+    },
+    "active with uuid | write fails | voidPending no reason": {
+        "result": false,
+        "writes": []
+    },
+    "active with uuid | write fails | approvePending": {
+        "result": false,
+        "writes": []
+    },
+    "active with uuid | write fails | findOrCreate": {
+        "result": {
+            "subjectRef": "sub-1",
+            "isNew": false,
+            "audience": "client"
+        },
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-1",
+                "data": {
+                    "lastLoginAt": "(now)"
+                }
+            }
+        ]
+    },
+    "active with uuid | write fails | findOrCreate other type": {
+        "result": null,
+        "writes": [
+            {
+                "create": "portalAccount",
+                "data": {
+                    "audience": "client",
+                    "identityType": "eidas",
+                    "identityRef": "ref-1",
+                    "subjectRef": "minted",
+                    "organisation": "zuid",
+                    "status": "active",
+                    "lastLoginAt": "(now)"
+                }
+            }
+        ]
+    },
+    "active with uuid | written | claim": {
+        "result": true,
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-1",
+                "data": {
+                    "claims": {
+                        "app": {
+                            "old": "x",
+                            "name": "value"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "active with uuid | written | claim new app": {
+        "result": true,
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-1",
+                "data": {
+                    "claims": {
+                        "app": {
+                            "old": "x"
+                        },
+                        "other": {
+                            "name": "value"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "active with uuid | written | claim empty value": {
+        "result": false,
+        "writes": []
+    },
+    "active with uuid | written | voidPending": {
+        "result": false,
+        "writes": []
+    },
+    "active with uuid | written | voidPending no reason": {
+        "result": false,
+        "writes": []
+    },
+    "active with uuid | written | approvePending": {
+        "result": false,
+        "writes": []
+    },
+    "active with uuid | written | findOrCreate": {
+        "result": {
+            "subjectRef": "sub-1",
+            "isNew": false,
+            "audience": "client"
+        },
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-1",
+                "data": {
+                    "lastLoginAt": "(now)"
+                }
+            }
+        ]
+    },
+    "active with uuid | written | findOrCreate other type": {
+        "result": null,
+        "writes": [
+            {
+                "create": "portalAccount",
+                "data": {
+                    "audience": "client",
+                    "identityType": "eidas",
+                    "identityRef": "ref-1",
+                    "subjectRef": "minted",
+                    "organisation": "zuid",
+                    "status": "active",
+                    "lastLoginAt": "(now)"
+                }
+            }
+        ]
+    },
+    "active without identifier | write fails | claim": {
+        "result": false,
+        "writes": []
+    },
+    "active without identifier | write fails | claim new app": {
+        "result": false,
+        "writes": []
+    },
+    "active without identifier | write fails | claim empty value": {
+        "result": false,
+        "writes": []
+    },
+    "active without identifier | write fails | voidPending": {
+        "result": false,
+        "writes": []
+    },
+    "active without identifier | write fails | voidPending no reason": {
+        "result": false,
+        "writes": []
+    },
+    "active without identifier | write fails | approvePending": {
+        "result": false,
+        "writes": []
+    },
+    "active without identifier | write fails | findOrCreate": {
+        "result": {
+            "subjectRef": "sub-1",
+            "isNew": false,
+            "audience": "client"
+        },
+        "writes": []
+    },
+    "active without identifier | write fails | findOrCreate other type": {
+        "result": null,
+        "writes": [
+            {
+                "create": "portalAccount",
+                "data": {
+                    "audience": "client",
+                    "identityType": "eidas",
+                    "identityRef": "ref-1",
+                    "subjectRef": "minted",
+                    "organisation": "zuid",
+                    "status": "active",
+                    "lastLoginAt": "(now)"
+                }
+            }
+        ]
+    },
+    "active without identifier | written | claim": {
+        "result": false,
+        "writes": []
+    },
+    "active without identifier | written | claim new app": {
+        "result": false,
+        "writes": []
+    },
+    "active without identifier | written | claim empty value": {
+        "result": false,
+        "writes": []
+    },
+    "active without identifier | written | voidPending": {
+        "result": false,
+        "writes": []
+    },
+    "active without identifier | written | voidPending no reason": {
+        "result": false,
+        "writes": []
+    },
+    "active without identifier | written | approvePending": {
+        "result": false,
+        "writes": []
+    },
+    "active without identifier | written | findOrCreate": {
+        "result": {
+            "subjectRef": "sub-1",
+            "isNew": false,
+            "audience": "client"
+        },
+        "writes": []
+    },
+    "active without identifier | written | findOrCreate other type": {
+        "result": null,
+        "writes": [
+            {
+                "create": "portalAccount",
+                "data": {
+                    "audience": "client",
+                    "identityType": "eidas",
+                    "identityRef": "ref-1",
+                    "subjectRef": "minted",
+                    "organisation": "zuid",
+                    "status": "active",
+                    "lastLoginAt": "(now)"
+                }
+            }
+        ]
+    },
+    "pending clerk with self id | write fails | claim": {
+        "result": false,
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "7",
+                "data": {
+                    "claims": {
+                        "app": {
+                            "name": "value"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "pending clerk with self id | write fails | claim new app": {
+        "result": false,
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "7",
+                "data": {
+                    "claims": {
+                        "other": {
+                            "name": "value"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "pending clerk with self id | write fails | claim empty value": {
+        "result": false,
+        "writes": []
+    },
+    "pending clerk with self id | write fails | voidPending": {
+        "result": false,
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "7",
+                "data": {
+                    "status": "void",
+                    "voidReason": "duplicate",
+                    "provisionedBy": "clerk"
+                }
+            }
+        ]
+    },
+    "pending clerk with self id | write fails | voidPending no reason": {
+        "result": false,
+        "writes": []
+    },
+    "pending clerk with self id | write fails | approvePending": {
+        "result": false,
+        "writes": []
+    },
+    "pending clerk with self id | write fails | findOrCreate": {
+        "result": {
+            "subjectRef": "sub-1",
+            "isNew": false,
+            "audience": "client"
+        },
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "7",
+                "data": {
+                    "status": "active",
+                    "identityType": "digid",
+                    "identityRef": "ref-1",
+                    "lastLoginAt": "(now)"
+                }
+            }
+        ]
+    },
+    "pending clerk with self id | write fails | findOrCreate other type": {
+        "result": null,
+        "writes": [
+            {
+                "create": "portalAccount",
+                "data": {
+                    "audience": "client",
+                    "identityType": "eidas",
+                    "identityRef": "ref-1",
+                    "subjectRef": "minted",
+                    "organisation": "zuid",
+                    "status": "active",
+                    "lastLoginAt": "(now)"
+                }
+            }
+        ]
+    },
+    "pending clerk with self id | written | claim": {
+        "result": true,
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "7",
+                "data": {
+                    "claims": {
+                        "app": {
+                            "name": "value"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "pending clerk with self id | written | claim new app": {
+        "result": true,
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "7",
+                "data": {
+                    "claims": {
+                        "other": {
+                            "name": "value"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "pending clerk with self id | written | claim empty value": {
+        "result": false,
+        "writes": []
+    },
+    "pending clerk with self id | written | voidPending": {
+        "result": true,
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "7",
+                "data": {
+                    "status": "void",
+                    "voidReason": "duplicate",
+                    "provisionedBy": "clerk"
+                }
+            }
+        ]
+    },
+    "pending clerk with self id | written | voidPending no reason": {
+        "result": false,
+        "writes": []
+    },
+    "pending clerk with self id | written | approvePending": {
+        "result": false,
+        "writes": []
+    },
+    "pending clerk with self id | written | findOrCreate": {
+        "result": {
+            "subjectRef": "sub-1",
+            "isNew": false,
+            "audience": "client"
+        },
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "7",
+                "data": {
+                    "status": "active",
+                    "identityType": "digid",
+                    "identityRef": "ref-1",
+                    "lastLoginAt": "(now)"
+                }
+            }
+        ]
+    },
+    "pending clerk with self id | written | findOrCreate other type": {
+        "result": null,
+        "writes": [
+            {
+                "create": "portalAccount",
+                "data": {
+                    "audience": "client",
+                    "identityType": "eidas",
+                    "identityRef": "ref-1",
+                    "subjectRef": "minted",
+                    "organisation": "zuid",
+                    "status": "active",
+                    "lastLoginAt": "(now)"
+                }
+            }
+        ]
+    },
+    "pending self-registered | write fails | claim": {
+        "result": false,
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-2",
+                "data": {
+                    "claims": {
+                        "app": {
+                            "name": "value"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "pending self-registered | write fails | claim new app": {
+        "result": false,
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-2",
+                "data": {
+                    "claims": {
+                        "other": {
+                            "name": "value"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "pending self-registered | write fails | claim empty value": {
+        "result": false,
+        "writes": []
+    },
+    "pending self-registered | write fails | voidPending": {
+        "result": false,
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-2",
+                "data": {
+                    "status": "void",
+                    "voidReason": "duplicate",
+                    "provisionedBy": "self-registration"
+                }
+            }
+        ]
+    },
+    "pending self-registered | write fails | voidPending no reason": {
+        "result": false,
+        "writes": []
+    },
+    "pending self-registered | write fails | approvePending": {
+        "result": false,
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-2",
+                "data": {
+                    "status": "active"
+                }
+            }
+        ]
+    },
+    "pending self-registered | write fails | findOrCreate": {
+        "result": {
+            "subjectRef": "sub-1",
+            "isNew": false,
+            "audience": "client"
+        },
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-2",
+                "data": {
+                    "status": "active",
+                    "identityType": "digid",
+                    "identityRef": "ref-1",
+                    "lastLoginAt": "(now)"
+                }
+            }
+        ]
+    },
+    "pending self-registered | write fails | findOrCreate other type": {
+        "result": null,
+        "writes": [
+            {
+                "create": "portalAccount",
+                "data": {
+                    "audience": "client",
+                    "identityType": "eidas",
+                    "identityRef": "ref-1",
+                    "subjectRef": "minted",
+                    "organisation": "zuid",
+                    "status": "active",
+                    "lastLoginAt": "(now)"
+                }
+            }
+        ]
+    },
+    "pending self-registered | written | claim": {
+        "result": true,
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-2",
+                "data": {
+                    "claims": {
+                        "app": {
+                            "name": "value"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "pending self-registered | written | claim new app": {
+        "result": true,
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-2",
+                "data": {
+                    "claims": {
+                        "other": {
+                            "name": "value"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "pending self-registered | written | claim empty value": {
+        "result": false,
+        "writes": []
+    },
+    "pending self-registered | written | voidPending": {
+        "result": true,
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-2",
+                "data": {
+                    "status": "void",
+                    "voidReason": "duplicate",
+                    "provisionedBy": "self-registration"
+                }
+            }
+        ]
+    },
+    "pending self-registered | written | voidPending no reason": {
+        "result": false,
+        "writes": []
+    },
+    "pending self-registered | written | approvePending": {
+        "result": true,
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-2",
+                "data": {
+                    "status": "active"
+                }
+            }
+        ]
+    },
+    "pending self-registered | written | findOrCreate": {
+        "result": {
+            "subjectRef": "sub-1",
+            "isNew": false,
+            "audience": "client"
+        },
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-2",
+                "data": {
+                    "status": "active",
+                    "identityType": "digid",
+                    "identityRef": "ref-1",
+                    "lastLoginAt": "(now)"
+                }
+            }
+        ]
+    },
+    "pending self-registered | written | findOrCreate other type": {
+        "result": null,
+        "writes": [
+            {
+                "create": "portalAccount",
+                "data": {
+                    "audience": "client",
+                    "identityType": "eidas",
+                    "identityRef": "ref-1",
+                    "subjectRef": "minted",
+                    "organisation": "zuid",
+                    "status": "active",
+                    "lastLoginAt": "(now)"
+                }
+            }
+        ]
+    },
+    "pending without identifier | write fails | claim": {
+        "result": false,
+        "writes": []
+    },
+    "pending without identifier | write fails | claim new app": {
+        "result": false,
+        "writes": []
+    },
+    "pending without identifier | write fails | claim empty value": {
+        "result": false,
+        "writes": []
+    },
+    "pending without identifier | write fails | voidPending": {
+        "result": false,
+        "writes": []
+    },
+    "pending without identifier | write fails | voidPending no reason": {
+        "result": false,
+        "writes": []
+    },
+    "pending without identifier | write fails | approvePending": {
+        "result": false,
+        "writes": []
+    },
+    "pending without identifier | write fails | findOrCreate": {
+        "result": {
+            "subjectRef": "sub-1",
+            "isNew": false,
+            "audience": "client"
+        },
+        "writes": []
+    },
+    "pending without identifier | write fails | findOrCreate other type": {
+        "result": null,
+        "writes": [
+            {
+                "create": "portalAccount",
+                "data": {
+                    "audience": "client",
+                    "identityType": "eidas",
+                    "identityRef": "ref-1",
+                    "subjectRef": "minted",
+                    "organisation": "zuid",
+                    "status": "active",
+                    "lastLoginAt": "(now)"
+                }
+            }
+        ]
+    },
+    "pending without identifier | written | claim": {
+        "result": false,
+        "writes": []
+    },
+    "pending without identifier | written | claim new app": {
+        "result": false,
+        "writes": []
+    },
+    "pending without identifier | written | claim empty value": {
+        "result": false,
+        "writes": []
+    },
+    "pending without identifier | written | voidPending": {
+        "result": false,
+        "writes": []
+    },
+    "pending without identifier | written | voidPending no reason": {
+        "result": false,
+        "writes": []
+    },
+    "pending without identifier | written | approvePending": {
+        "result": false,
+        "writes": []
+    },
+    "pending without identifier | written | findOrCreate": {
+        "result": {
+            "subjectRef": "sub-1",
+            "isNew": false,
+            "audience": "client"
+        },
+        "writes": []
+    },
+    "pending without identifier | written | findOrCreate other type": {
+        "result": null,
+        "writes": [
+            {
+                "create": "portalAccount",
+                "data": {
+                    "audience": "client",
+                    "identityType": "eidas",
+                    "identityRef": "ref-1",
+                    "subjectRef": "minted",
+                    "organisation": "zuid",
+                    "status": "active",
+                    "lastLoginAt": "(now)"
+                }
+            }
+        ]
+    },
+    "pending without provisionedBy | write fails | claim": {
+        "result": false,
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-3",
+                "data": {
+                    "claims": {
+                        "app": {
+                            "name": "value"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "pending without provisionedBy | write fails | claim new app": {
+        "result": false,
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-3",
+                "data": {
+                    "claims": {
+                        "other": {
+                            "name": "value"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "pending without provisionedBy | write fails | claim empty value": {
+        "result": false,
+        "writes": []
+    },
+    "pending without provisionedBy | write fails | voidPending": {
+        "result": false,
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-3",
+                "data": {
+                    "status": "void",
+                    "voidReason": "duplicate",
+                    "provisionedBy": "clerk-2"
+                }
+            }
+        ]
+    },
+    "pending without provisionedBy | write fails | voidPending no reason": {
+        "result": false,
+        "writes": []
+    },
+    "pending without provisionedBy | write fails | approvePending": {
+        "result": false,
+        "writes": []
+    },
+    "pending without provisionedBy | write fails | findOrCreate": {
+        "result": {
+            "subjectRef": "sub-1",
+            "isNew": false,
+            "audience": "client"
+        },
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-3",
+                "data": {
+                    "status": "active",
+                    "identityType": "digid",
+                    "identityRef": "ref-1",
+                    "lastLoginAt": "(now)"
+                }
+            }
+        ]
+    },
+    "pending without provisionedBy | write fails | findOrCreate other type": {
+        "result": null,
+        "writes": [
+            {
+                "create": "portalAccount",
+                "data": {
+                    "audience": "client",
+                    "identityType": "eidas",
+                    "identityRef": "ref-1",
+                    "subjectRef": "minted",
+                    "organisation": "zuid",
+                    "status": "active",
+                    "lastLoginAt": "(now)"
+                }
+            }
+        ]
+    },
+    "pending without provisionedBy | written | claim": {
+        "result": true,
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-3",
+                "data": {
+                    "claims": {
+                        "app": {
+                            "name": "value"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "pending without provisionedBy | written | claim new app": {
+        "result": true,
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-3",
+                "data": {
+                    "claims": {
+                        "other": {
+                            "name": "value"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "pending without provisionedBy | written | claim empty value": {
+        "result": false,
+        "writes": []
+    },
+    "pending without provisionedBy | written | voidPending": {
+        "result": true,
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-3",
+                "data": {
+                    "status": "void",
+                    "voidReason": "duplicate",
+                    "provisionedBy": "clerk-2"
+                }
+            }
+        ]
+    },
+    "pending without provisionedBy | written | voidPending no reason": {
+        "result": false,
+        "writes": []
+    },
+    "pending without provisionedBy | written | approvePending": {
+        "result": false,
+        "writes": []
+    },
+    "pending without provisionedBy | written | findOrCreate": {
+        "result": {
+            "subjectRef": "sub-1",
+            "isNew": false,
+            "audience": "client"
+        },
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-3",
+                "data": {
+                    "status": "active",
+                    "identityType": "digid",
+                    "identityRef": "ref-1",
+                    "lastLoginAt": "(now)"
+                }
+            }
+        ]
+    },
+    "pending without provisionedBy | written | findOrCreate other type": {
+        "result": null,
+        "writes": [
+            {
+                "create": "portalAccount",
+                "data": {
+                    "audience": "client",
+                    "identityType": "eidas",
+                    "identityRef": "ref-1",
+                    "subjectRef": "minted",
+                    "organisation": "zuid",
+                    "status": "active",
+                    "lastLoginAt": "(now)"
+                }
+            }
+        ]
+    },
+    "no status | write fails | claim": {
+        "result": false,
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-4",
+                "data": {
+                    "claims": {
+                        "app": {
+                            "name": "value"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "no status | write fails | claim new app": {
+        "result": false,
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-4",
+                "data": {
+                    "claims": {
+                        "other": {
+                            "name": "value"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "no status | write fails | claim empty value": {
+        "result": false,
+        "writes": []
+    },
+    "no status | write fails | voidPending": {
+        "result": false,
+        "writes": []
+    },
+    "no status | write fails | voidPending no reason": {
+        "result": false,
+        "writes": []
+    },
+    "no status | write fails | approvePending": {
+        "result": false,
+        "writes": []
+    },
+    "no status | write fails | findOrCreate": {
+        "result": {
+            "subjectRef": "sub-1",
+            "isNew": false,
+            "audience": "client"
+        },
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-4",
+                "data": {
+                    "lastLoginAt": "(now)"
+                }
+            }
+        ]
+    },
+    "no status | write fails | findOrCreate other type": {
+        "result": null,
+        "writes": [
+            {
+                "create": "portalAccount",
+                "data": {
+                    "audience": "client",
+                    "identityType": "eidas",
+                    "identityRef": "ref-1",
+                    "subjectRef": "minted",
+                    "organisation": "zuid",
+                    "status": "active",
+                    "lastLoginAt": "(now)"
+                }
+            }
+        ]
+    },
+    "no status | written | claim": {
+        "result": true,
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-4",
+                "data": {
+                    "claims": {
+                        "app": {
+                            "name": "value"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "no status | written | claim new app": {
+        "result": true,
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-4",
+                "data": {
+                    "claims": {
+                        "other": {
+                            "name": "value"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "no status | written | claim empty value": {
+        "result": false,
+        "writes": []
+    },
+    "no status | written | voidPending": {
+        "result": false,
+        "writes": []
+    },
+    "no status | written | voidPending no reason": {
+        "result": false,
+        "writes": []
+    },
+    "no status | written | approvePending": {
+        "result": false,
+        "writes": []
+    },
+    "no status | written | findOrCreate": {
+        "result": {
+            "subjectRef": "sub-1",
+            "isNew": false,
+            "audience": "client"
+        },
+        "writes": [
+            {
+                "register": "portaliq",
+                "schema": "portalAccount",
+                "scopeField": "",
+                "subjectRef": "",
+                "organisation": "",
+                "id": "u-4",
+                "data": {
+                    "lastLoginAt": "(now)"
+                }
+            }
+        ]
+    },
+    "no status | written | findOrCreate other type": {
+        "result": null,
+        "writes": [
+            {
+                "create": "portalAccount",
+                "data": {
+                    "audience": "client",
+                    "identityType": "eidas",
+                    "identityRef": "ref-1",
+                    "subjectRef": "minted",
+                    "organisation": "zuid",
+                    "status": "active",
+                    "lastLoginAt": "(now)"
+                }
+            }
+        ]
+    }
+}

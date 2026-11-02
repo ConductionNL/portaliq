@@ -7,4 +7,4 @@
 - Berichten https://identity.conduction.nl/screens/board?id=wilgenboom/Berichten
 - LqDetail https://identity.conduction.nl/screens/board?id=wilgenboom/LqDetail
 - LqDetail https://identity.conduction.nl/screens/board?id=vaartveld/LqDetail
-- pending: portaliq/OuderBerichten (board lane)
+- OuderBerichten https://identity.conduction.nl/screens/board?id=portaliq/OuderBerichten

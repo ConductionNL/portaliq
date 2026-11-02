@@ -20,7 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
 
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCA\Portaliq\Service\TrafficEventValidator;
 use OCA\Portaliq\Service\TrafficIngestService;
 
@@ -47,14 +47,14 @@ class TrafficLogImporter {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalResolver       $portals Finds the portal by slug.
+	 * @param PublishedPortals       $portals Finds the portal by slug.
 	 * @param TrafficLogParser     $parser  Reads a line.
 	 * @param TrafficIngestService $ingest  Stores the views.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly PortalResolver $portals,
+		private readonly PublishedPortals $portals,
 		private readonly TrafficLogParser $parser,
 		private readonly TrafficIngestService $ingest,
 	) {

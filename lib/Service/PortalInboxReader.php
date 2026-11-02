@@ -70,7 +70,7 @@ class PortalInboxReader {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader The subject-scoped OR reader every
+	 * @param ScopedCollectionReaderInterface $reader The subject-scoped OR reader every
 	 *                                   inbox collection is read through —
 	 *                                   identical per-row tenant + trust
 	 *                                   boundary as any other collection.
@@ -87,7 +87,7 @@ class PortalInboxReader {
 	 *                                     (inbox-reply-with-attachments REQ-IRA-004).
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly ?LoggerInterface $logger = null,
 		private readonly ?MessageBoxDeliveries $deliveries = null,
 		private readonly ?PortalFileReader $files = null,

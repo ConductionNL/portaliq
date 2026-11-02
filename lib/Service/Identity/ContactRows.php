@@ -25,7 +25,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use DateTimeImmutable;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
  * The contact rows of one resident and the questions asked of them.
@@ -36,10 +36,10 @@ class ContactRows {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader The scoped reader.
+	 * @param ScopedCollectionReaderInterface $reader The scoped reader.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 	) {
 	}//end __construct()
 

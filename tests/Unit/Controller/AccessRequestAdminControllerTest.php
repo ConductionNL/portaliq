@@ -7,7 +7,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Controller\AccessRequestAdminController;
 use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\Identity\PortalAccessRequestService;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
@@ -175,7 +175,7 @@ class AccessRequestAdminControllerTest extends TestCase {
 		$session = $this->createMock(IUserSession::class);
 		$session->method('getUser')->willReturn($user);
 
-		$portals = $this->getMockBuilder(PortalResolver::class)
+		$portals = $this->getMockBuilder(PublishedPortals::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['allPublishedPortals'])
 			->getMock();

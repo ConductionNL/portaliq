@@ -58,10 +58,12 @@ class ActionReminderService {
 	 *
 	 * @param ContainerInterface $container For resolving OpenRegister's ObjectService.
 	 * @param LoggerInterface    $logger    The logger.
+	 * @param PortalAccountService|null $accounts Tells a withdrawn assignee apart.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly ?PortalAccountService $accounts = null,
 	) {
 	}//end __construct()
 
@@ -156,6 +158,24 @@ class ActionReminderService {
 	}//end asArray()
 
 	/**
+	 * Whether the assignee's account was withdrawn (void); logged with the account id only.
+	 *
+	 * @param string $assignee The assignee's subject reference.
+	 *
+	 * @return bool
+	 */
+	private function withdrawn(string $assignee): bool {
+		$account = $this->accounts?->findBySubjectRef(subjectRef: $assignee);
+		if (($account['status'] ?? '') !== PortalAccountService::STATUS_VOID) {
+			return false;
+		}
+
+		$this->logger->info('Portaliq: no action reminder to a withdrawn account', ['account' => (string)($account['id'] ?? '')]);
+
+		return true;
+	}//end withdrawn()
+
+	/**
 	 * Write the reminder, then record it on the action. The record comes last
 	 * and only after the message exists, so a failure sends the reminder again
 	 * rather than losing it.
@@ -173,6 +193,10 @@ class ActionReminderService {
 		}
 
 		try {
+			if ($this->withdrawn(assignee: (string)$action['assignee']) === true) {
+				return false;
+			}
+
 			$objectService->saveObject(
 				object: [
 					'subjectRef' => (string)$action['assignee'],

@@ -4,4 +4,4 @@
 - Gesprek https://identity.conduction.nl/screens/board?id=portaliq/Gesprek
 - PtBericht https://identity.conduction.nl/screens/board?id=portaliq/PtBericht
 - Zaak https://identity.conduction.nl/screens/board?id=portaliq/Zaak
-- pending: portaliq/OuderBerichten (board lane)
+- OuderBerichten https://identity.conduction.nl/screens/board?id=portaliq/OuderBerichten

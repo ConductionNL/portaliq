@@ -28,7 +28,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Intake;
 
 use DateTimeImmutable;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 
 /**
@@ -60,11 +60,11 @@ class PortalDraftStore {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Reads the drafts.
+	 * @param ScopedCollectionReaderInterface $reader Reads the drafts.
 	 * @param PortalObjectWriter $writer Writes and deletes the drafts.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 	) {
 	}//end __construct()

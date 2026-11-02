@@ -24,6 +24,24 @@ use ReflectionProperty;
 class PortalManifestControllerTest extends TestCase {
 
 	/**
+	 * The slug the resolver was asked for.
+	 *
+	 * @var string|null
+	 */
+	private ?string $resolvedSlug = null;
+
+	/**
+	 * The portal the site names in its header alone is the one the manifest is for.
+	 *
+	 * @return void
+	 */
+	public function testTheSiteHeaderNamesThePortal(): void {
+		$this->controller(orgSlug: '', portalHeader: 'zuid')->manifest();
+
+		$this->assertSame(expected: 'zuid', actual: $this->resolvedSlug);
+	}//end testTheSiteHeaderNamesThePortal()
+
+	/**
 	 * Throwaway app directories to remove after the test.
 	 *
 	 * @var list<string>
@@ -306,8 +324,10 @@ class PortalManifestControllerTest extends TestCase {
 		string $portalSlug = '',
 		string $requestUri = '/index.php/apps/portaliq/portal/sw.js',
 		string $workerRoute = '/index.php/apps/portaliq/portal/sw.js',
+		string $portalHeader = '',
 	): PortalManifestController {
 		$request = $this->createMock(IRequest::class);
+		$request->method('getHeader')->willReturnCallback(static fn (string $name): string => ($name === 'X-Portaliq-Portal' ? $portalHeader : ''));
 		$request->method('getRequestUri')->willReturn($requestUri);
 		$request->method('getParam')->willReturnCallback(
 			function (string $key, $default = null) use ($orgSlug, $portalSlug) {
@@ -337,7 +357,12 @@ class PortalManifestControllerTest extends TestCase {
 		];
 
 		$configResolver = $this->createMock(PortalRuntimeConfigResolver::class);
-		$configResolver->method('resolvePortal')->willReturn(null);
+		$configResolver->method('resolvePortal')->willReturnCallback(
+			function (IRequest $request, string $portalSlug = '', string $orgValue = ''): ?array {
+				$this->resolvedSlug = $portalSlug;
+				return null;
+			}
+		);
 		$configResolver->method('runtimeConfigFor')->willReturn(array_merge($default, $resolved));
 
 		$urlGenerator = $this->createMock(IURLGenerator::class);

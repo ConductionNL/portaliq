@@ -18,7 +18,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Traffic;
 
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCA\Portaliq\Service\Traffic\TrafficLogImporter;
 use OCA\Portaliq\Service\Traffic\TrafficLogParser;
 use OCA\Portaliq\Service\TrafficIngestService;
@@ -60,7 +60,7 @@ class TrafficLogImporterTest extends TestCase {
 	 * @return TrafficLogImporter The importer.
 	 */
 	private function importer(): TrafficLogImporter {
-		$portals = $this->createMock(PortalResolver::class);
+		$portals = $this->createMock(PublishedPortals::class);
 		$portals->method('allPublishedPortals')->willReturn([['slug' => 'open-tilburg', 'status' => 'published', 'traffic' => ['enabled' => true]]]);
 
 		$ingest = $this->createMock(TrafficIngestService::class);

@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\ExampleResident;
 
+use OCA\Portaliq\Service\ObjectServiceLookup;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -43,6 +44,8 @@ use Throwable;
  * @spec openspec/changes/example-resident-zuiddrecht/specs/example-resident/spec.md#requirement-the-install-must-prove-what-arrived
  */
 class ExampleResidentStore {
+	use ObjectServiceLookup;
+
 	/**
 	 * OpenRegister's ObjectService, fetched by string id: OpenRegister is an
 	 * optional sibling app, so its classes are never imported.
@@ -263,23 +266,4 @@ class ExampleResidentStore {
 
 		return null;
 	}//end plain()
-
-	/**
-	 * OpenRegister's ObjectService, or null when it is not installed.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 }//end class

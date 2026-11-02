@@ -30,7 +30,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\Identity\PortalAccessRequestService;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -58,14 +58,14 @@ class AccessRequestAdminController extends Controller {
 	 * @param PortalAccessRequestService $requests The requests and their answers.
 	 * @param ActionAuthService $actionAuth Decides whether this staff user may answer.
 	 * @param IUserSession $userSession The staff user making the request.
-	 * @param PortalResolver $portals The organisations the published portals serve.
+	 * @param PublishedPortals $portals The organisations the published portals serve.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalAccessRequestService $requests,
 		private readonly ActionAuthService $actionAuth,
 		private readonly IUserSession $userSession,
-		private readonly PortalResolver $portals,
+		private readonly PublishedPortals $portals,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()

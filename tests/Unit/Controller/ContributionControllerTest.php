@@ -140,6 +140,69 @@ class ContributionControllerTest extends TestCase {
 	}//end testPortalNavigationHidesAndOrdersPages()
 
 	/**
+	 * A resolver that answers only for the portal named `zuid`.
+	 *
+	 * @param array<string, mixed> $portal The portal it answers with.
+	 *
+	 * @return PortalResolver
+	 */
+	private function portalsOnlyForZuid(array $portal): PortalResolver {
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('resolve')->willReturnCallback(
+			static fn (IRequest $request, ?string $portalSlug = null): ?array => ($portalSlug === 'zuid' ? $portal : null)
+		);
+
+		return $portals;
+	}//end portalsOnlyForZuid()
+
+	/**
+	 * The portal the site names in its header alone decides the navigation.
+	 *
+	 * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-a-portal-shows-the-pages-its-administrator-chose-in-the-chosen-order-req-pgc-001
+	 */
+	public function testTheSiteHeaderNamesThePortalForTheNavigation(): void {
+		$aggregate = [
+			'audience' => 'client',
+			'contributions' => [['app' => 'pipelinq', 'pages' => [['id' => 'quotes'], ['id' => 'cases']], 'collections' => []]],
+		];
+		$portals   = $this->portalsOnlyForZuid(portal: ['slug' => 'zuid', 'navigation' => ['client' => [['page' => 'pipelinq:quotes', 'hidden' => true]]]]);
+
+		$data = $this->controller(aggregate: $aggregate, portals: $portals, portalHeader: 'zuid')->index()->getData();
+
+		$this->assertSame(expected: ['cases'], actual: array_column($data['contributions'][0]['pages'], 'id'));
+	}//end testTheSiteHeaderNamesThePortalForTheNavigation()
+
+	/**
+	 * The portal the site names in its header alone decides the themes.
+	 *
+	 * @spec openspec/changes/life-domain-theme-pages/tasks.md#t02
+	 */
+	public function testTheSiteHeaderNamesThePortalForTheThemes(): void {
+		$aggregate = [
+			'audience' => 'client',
+			'contributions' => [['app' => 'pipelinq', 'pages' => [], 'collections' => [['id' => 'c', 'theme' => 'wonen']]]],
+		];
+		$portals   = $this->portalsOnlyForZuid(portal: ['slug' => 'zuid', 'themes' => [['slug' => 'wonen', 'title' => 'Wonen']]]);
+
+		$data = $this->controller(aggregate: $aggregate, portals: $portals, portalHeader: 'zuid')->index()->getData();
+
+		$this->assertSame(expected: ['wonen'], actual: array_column($data['themes'], 'slug'));
+	}//end testTheSiteHeaderNamesThePortalForTheThemes()
+
+	/**
+	 * The portal the site names in its header alone decides the own-area pages.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+	 */
+	public function testTheSiteHeaderNamesThePortalForTheAreaPages(): void {
+		$portals = $this->portalsOnlyForZuid(portal: ['slug' => 'zuid', 'contactsEnabled' => true]);
+
+		$data = $this->controller(aggregate: ['contributions' => []], portals: $portals, portalHeader: 'zuid')->index()->getData();
+
+		$this->assertSame(expected: ['contacts'], actual: array_column($data['areaPages'], 'special'));
+	}//end testTheSiteHeaderNamesThePortalForTheAreaPages()
+
+	/**
 	 * @spec openspec/changes/operate-pages-per-portal-and-client/tasks.md#t02
 	 */
 	public function testUnlistedPageKeepsItsPlaceAndNoChoiceAnswersAsToday(): void {
@@ -1005,6 +1068,36 @@ class ContributionControllerTest extends TestCase {
 	}//end testSuccessfulCreateTriggersReceiptRecordWithWhitelistedMap()
 
 	/**
+	 * A successful create passes the matched action's declared `label` as the
+	 * title the proof log names the submission by.
+	 *
+	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 */
+	public function testSuccessfulCreatePassesTheActionsLabelAsItsTitle(): void {
+		$aggregate = $this->aggregate(
+			actions: [
+				['id' => 'c1', 'type' => 'create', 'label' => 'Melding openbare ruimte', 'register' => 'r1', 'schema' => 'a', 'fields' => ['title']],
+			]
+		);
+
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturn(['id' => 'new']);
+
+		$title = null;
+		$receiptService = $this->createMock(SubmissionReceiptService::class);
+		$receiptService->expects($this->once())->method('record')->willReturnCallback(
+			function (string $subjectRef, string $organisation, string $appId, string $actionId, array $whitelistedData, string $audience = '', mixed $actionTitle = '') use (&$title) {
+				$title = $actionTitle;
+			}
+		);
+
+		$response = $this->controller(aggregate: $aggregate, writer: $writer, receiptService: $receiptService)->create('r1', 'a');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('Melding openbare ruimte', $title);
+	}//end testSuccessfulCreatePassesTheActionsLabelAsItsTitle()
+
+	/**
 	 * WMEBV: a create that never reaches the domain write (403 IDOR, 403
 	 * trust) never fires the receipt — no receipt/log for a submission the
 	 * subject was never entitled to make.
@@ -1272,7 +1365,7 @@ class ContributionControllerTest extends TestCase {
 	public function testActionWithTypeCreateAndSuccessfulForwardTriggersReceiptRecord(): void {
 		$aggregate = $this->aggregate(
 			actions: [
-				['id' => 'submitAccreditation', 'type' => 'create', 'endpoint' => '/apps/demo/api/portal/accreditations', 'method' => 'POST', 'fields' => ['title']],
+				['id' => 'submitAccreditation', 'type' => 'create', 'endpoint' => '/apps/demo/api/portal/accreditations', 'method' => 'POST', 'label' => 'Grof afval laten ophalen', 'fields' => ['title']],
 			]
 		);
 
@@ -1289,8 +1382,8 @@ class ContributionControllerTest extends TestCase {
 		$received = [];
 		$receiptService = $this->createMock(SubmissionReceiptService::class);
 		$receiptService->expects($this->once())->method('record')->willReturnCallback(
-			function (string $subjectRef, string $organisation, string $appId, string $actionId, array $whitelistedData) use (&$received) {
-				$received = compact('subjectRef', 'organisation', 'appId', 'actionId', 'whitelistedData');
+			function (string $subjectRef, string $organisation, string $appId, string $actionId, array $whitelistedData, string $audience = '', mixed $actionTitle = '') use (&$received) {
+				$received = compact('subjectRef', 'organisation', 'appId', 'actionId', 'whitelistedData', 'actionTitle');
 			}
 		);
 
@@ -1303,6 +1396,7 @@ class ContributionControllerTest extends TestCase {
 		$this->assertSame('portaliq', $received['appId']);
 		$this->assertSame('submitAccreditation', $received['actionId']);
 		$this->assertSame(['title' => 'X'], $received['whitelistedData']);
+		$this->assertSame('Grof afval laten ophalen', $received['actionTitle']);
 
 	}//end testActionWithTypeCreateAndSuccessfulForwardTriggersReceiptRecord()
 
@@ -2684,9 +2778,10 @@ class ContributionControllerTest extends TestCase {
 		array $params = [],
 		?PortalResolver $portals = null,
 		?\OCA\Portaliq\Service\Identity\ContactConfirmationMailer $confirmation = null,
+		string $portalHeader = '',
 	): ContributionController {
 		$request = $this->createMock(IRequest::class);
-		$request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token'], ['X-Portaliq-Portal', ''], ['Idempotency-Key', '']]);
+		$request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token'], ['X-Portaliq-Portal', $portalHeader], ['Idempotency-Key', '']]);
 		$request->method('getParam')->willReturnCallback(
 			function (string $key, $default = null) use ($params) {
 				$params = $params + [

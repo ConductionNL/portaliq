@@ -18,7 +18,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Signin;
 
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
+use OCA\Portaliq\Service\PortalSlugLookup;
 
 /**
  * The sign-in settings an administrator edits on a portal's page: per
@@ -46,14 +47,14 @@ class PortalSigninSettings {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader              $reader    Reads the portal.
+	 * @param ScopedCollectionReaderInterface              $reader    Reads the portal.
 	 * @param OrganisationLoginConfig $orgConfig The organisation's override and secret.
 	 * @param BrokerLoginRoute                $route     Reads routes and broker settings.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly OrganisationLoginConfig $orgConfig,
 		private readonly BrokerLoginRoute $route = new BrokerLoginRoute(),
 	) {
@@ -70,18 +71,7 @@ class PortalSigninSettings {
 	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
 	 */
 	public function portalBySlug(string $slug): ?array {
-		if ($slug === '') {
-			return null;
-		}
-
-		$rows = $this->reader->readCollection(register: 'portaliq', schema: 'portal', scopeField: 'slug', subjectRef: $slug, organisation: '', limit: 2);
-		foreach ($rows as $row) {
-			if (is_array($row) === true && ($row['slug'] ?? null) === $slug) {
-				return $row;
-			}
-		}
-
-		return null;
+		return (new PortalSlugLookup(reader: $this->reader))->find(slug: $slug);
 	}//end portalBySlug()
 
 
