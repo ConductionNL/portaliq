@@ -546,7 +546,12 @@ import {
 import { forgetActingFor, learnMandates } from './components/e/actingFor.js'
 import { ActingForSwitcher, ContactPrompt } from './components/e/index.js'
 import { InstallBanner } from './components/f/index.js'
-import { isStatementRoute, withStatementLink } from './lib/accessibilityStatement.js'
+import {
+	authoredStatement,
+	isStatementRoute,
+	showsGeneratedStatement,
+	withStatementLink,
+} from './lib/accessibilityStatement.js'
 import { accountCrumbs, accountRedirect, loggedInAs } from './lib/accountArea.js'
 import { setAssistantAvailable } from './lib/assistantAvailable.js'
 import {
@@ -783,6 +788,8 @@ export default {
 			routeParam: '',
 			// The title of the shared dossier on screen, once it is read.
 			sharedDossierTitle: '',
+			// Whether the portal authored its own page at the statement's route.
+			statementAuthored: false,
 			// What a block on the page shows, told by it (site-article-page-follows-the-board).
 			subject: null,
 			loading: true,
@@ -856,6 +863,10 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 		 */
 		breadcrumbs() {
+			// A missing page is no place on the site to trail to (NietGevonden).
+			if (this.error && this.error.status === 404) {
+				return []
+			}
 			if (this.accountRoute) {
 				// Signed out, the own area is the sign-in page.
 				if (!this.session) {
@@ -1350,12 +1361,16 @@ export default {
 		},
 
 		/**
-		 * @return {boolean} Whether the route on screen is the accessibility statement.
+		 * @return {boolean} Whether the generated accessibility statement is on
+		 *   screen: its route, with no authored page there.
 		 *
 		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
 		 */
 		statementRoute() {
-			return isStatementRoute(this.route)
+			return showsGeneratedStatement(this.route, {
+				loading: this.loading,
+				authored: this.statementAuthored,
+			})
 		},
 
 		/**
@@ -2241,17 +2256,6 @@ export default {
 				return
 			}
 
-			// The accessibility statement is generated, not authored, so it
-			// opens on every portal without a CMS page.
-			if (isStatementRoute(route)) {
-				this.page = null
-				this.error = null
-				this.routeParam = ''
-				this.loading = false
-				this.applyDocumentTitle()
-				return
-			}
-
 			// A shared dossier link renders from opencatalogi's answer, not
 			// from a CMS page, so it opens on every portal without one.
 			if (isSharedDossierRoute(route)) {
@@ -2261,6 +2265,29 @@ export default {
 				this.sharedDossierTitle = ''
 				this.loading = false
 				this.applyDocumentTitle()
+				return
+			}
+
+			// The accessibility statement opens on every portal: the portal's
+			// own page at the route when it authored one, else the generated
+			// statement, never "not found".
+			this.statementAuthored = false
+			if (isStatementRoute(route)) {
+				this.error = null
+				this.routeParam = ''
+				this.loading = true
+				this.page = await authoredStatement(() =>
+					fetchPage(route, this.portalSlug, {
+						fresh,
+						locale: this.chosenLocale,
+					}),
+				)
+				this.statementAuthored = this.page !== null
+				this.loading = false
+				this.applyDocumentTitle()
+				if (this.statementAuthored) {
+					await this.refreshEditingContext()
+				}
 				return
 			}
 

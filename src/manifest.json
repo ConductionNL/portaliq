@@ -1694,16 +1694,19 @@
           },
           {
             "action": "import",
-            "label": "Import"
+            "label": "Import",
+            "icon": "Upload"
           },
           {
             "action": "invite-someone",
-            "label": "Iemand uitnodigen"
+            "label": "Iemand uitnodigen",
+            "icon": "EmailOutline"
           },
           {
             "action": "issue-account",
             "variant": "primary",
-            "label": "Account uitgeven"
+            "label": "Account uitgeven",
+            "icon": "Plus"
           }
         ],
         "quickFilters": [
@@ -1850,6 +1853,8 @@
           }
         ],
         "actions": [
+          "builtin:view",
+          "builtin:edit",
           {
             "id": "resend-invitation",
             "label": "Send again",
@@ -1872,6 +1877,7 @@
             "icon": "Close",
             "type": "handler",
             "handler": "withdrawInvitation",
+            "destructive": true,
             "visibleWhen": {
               "field": "state",
               "op": "neq",
@@ -1890,7 +1896,8 @@
           {
             "action": "invite-someone",
             "variant": "primary",
-            "label": "Iemand uitnodigen"
+            "label": "Iemand uitnodigen",
+            "icon": "EmailFastOutline"
           }
         ],
         "quickFilters": [
@@ -2258,6 +2265,8 @@
           }
         ],
         "actions": [
+          "builtin:view",
+          "builtin:edit",
           {
             "id": "open-session-account",
             "label": "Go to the account",
@@ -2271,6 +2280,7 @@
             "icon": "Close",
             "type": "handler",
             "handler": "revokeSession",
+            "destructive": true,
             "visibleWhen": {
               "field": "revoked",
               "op": "neq",
@@ -2718,7 +2728,7 @@
             "showCount": true
           }
         ],
-        "rowTitle": "plain",
+        "rowTitle": "strong",
         "filterMenu": true,
         "viewSwitch": [
           "table",
@@ -3081,12 +3091,14 @@
           },
           {
             "action": "import",
-            "label": "Import"
+            "label": "Import",
+            "icon": "Upload"
           },
           {
             "action": "add",
             "variant": "primary",
-            "label": "New portal"
+            "label": "New portal",
+            "icon": "Plus"
           }
         ],
         "quickFilters": [
@@ -3111,7 +3123,6 @@
             "showCount": true
           }
         ],
-        "rowTitle": "plain",
         "filterMenu": true,
         "viewSwitch": [
           "table",
@@ -4603,7 +4614,8 @@
         "columns": [
           {
             "key": "displayName",
-            "label": "Requester"
+            "label": "Requester",
+            "widget": "avatar"
           },
           {
             "key": "onBehalfOf",
@@ -4642,6 +4654,8 @@
           }
         ],
         "actions": [
+          "builtin:view",
+          "builtin:edit",
           {
             "id": "grant",
             "label": "Approve",
@@ -4654,7 +4668,8 @@
             "label": "Refuse with a reason",
             "icon": "Close",
             "type": "handler",
-            "handler": "refuseAccessRequest"
+            "handler": "refuseAccessRequest",
+            "destructive": true
           }
         ],
         "showTitle": true,
@@ -4778,6 +4793,7 @@
         ],
         "showTitle": true,
         "showTitleIcon": false,
+        "rowTitle": "text",
         "countText": "{shown} of {total} entries on the portals · which form each entry opens, for whom",
         "headerButtons": [
           {
@@ -5656,6 +5672,7 @@
         ],
         "showTitle": true,
         "showTitleIcon": false,
+        "rowTitle": "strong",
         "countText": "{shown} of {total} news items",
         "headerButtons": [
           {
@@ -5665,7 +5682,8 @@
           {
             "action": "new-news-item",
             "variant": "primary",
-            "label": "Nieuw nieuwsbericht"
+            "label": "Nieuw nieuwsbericht",
+            "icon": "Plus"
           }
         ],
         "quickFilters": [
