@@ -2796,6 +2796,7 @@ OC.L10N.register(
         "What the products held in this theme are called, for example parkeervergunningen.": "Hoe de producten in dit thema heten, bijvoorbeeld parkeervergunningen.",
         "Action kind": "Soort actie",
         "Action title": "Titel van de actie",
+        "The submitted action's name as the resident read it. Empty on a row written without one; the list then shows the action id.": "De naam van de verstuurde actie zoals de inwoner die las. Leeg bij een rij die zonder naam is geschreven; de lijst toont dan het id van de actie.",
         "Days after the start": "Dagen na de start",
         "Done at": "Afgerond op",
         "Duration in days": "Looptijd in dagen",
