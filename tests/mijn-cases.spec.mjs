@@ -230,7 +230,11 @@ test('process steps are an ordered list; the current step is marked, a done step
 	)
 	assert.doesNotMatch(items[0] + items[2], /aria-current/)
 	assert.match(items[0], /<span class="sr-only">Gereed: <\/span>Ontvangen/)
-	assert.match(items[0], /<time datetime="2026-10-02">2 oktober<\/time>/)
+	assert.match(
+		items[0],
+		/<time datetime="2026-10-02">2 oktober 2026<\/time>/,
+		'a step date carries its year, also in this year',
+	)
 	assert.match(items[1], /Wij zoeken de documenten\./)
 	assert.match(
 		items[0],
