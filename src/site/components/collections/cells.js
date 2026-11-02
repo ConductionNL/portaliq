@@ -417,25 +417,25 @@ export function formatCell(value, render, { locale, t, valueLabels }) {
 	if (label !== undefined) {
 		return label
 	}
-	switch (render) {
-		case 'boolean':
-			return value ? t('Yes') : t('No')
-		case 'date':
-			return formatMoment(value, false, locale)
-		case 'datetime':
-			return formatMoment(value, true, locale)
-		case 'currency':
-			try {
-				return new Intl.NumberFormat(locale, {
-					style: 'currency',
-					currency: 'EUR',
-				}).format(Number(value))
-			} catch {
-				return String(value)
-			}
-		default:
-			return readable(value, { locale, t })
-	}
+	const format = Object.hasOwn(RENDERED, render) ? RENDERED[render] : readable
+	return format(value, { locale, t })
+}
+
+/** How a cell of each render kind is written; any other kind reads as readable() writes it. */
+const RENDERED = {
+	boolean: (value, { t }) => (value ? t('Yes') : t('No')),
+	date: (value, { locale }) => formatMoment(value, false, locale),
+	datetime: (value, { locale }) => formatMoment(value, true, locale),
+	currency: (value, { locale }) => {
+		try {
+			return new Intl.NumberFormat(locale, {
+				style: 'currency',
+				currency: 'EUR',
+			}).format(Number(value))
+		} catch {
+			return String(value)
+		}
+	},
 }
 
 /**
