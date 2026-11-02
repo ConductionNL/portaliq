@@ -1171,7 +1171,11 @@ export default {
 		this.readLocation()
 		// A link that carries a term and no order opens on relevance.
 		if (!new URLSearchParams(window.location.search).has('_sort')) {
-			this.sort = sortForNewSearch(this.query, this.sort, this.relevanceUnavailable)
+			this.sort = sortForNewSearch(
+				this.query,
+				this.sort,
+				this.relevanceUnavailable,
+			)
 		}
 		this.search()
 		window.addEventListener('popstate', this.onPopState)
@@ -1300,7 +1304,10 @@ export default {
 				// An unranked answer to a relevance order: the backend ignored
 				// it. Drop the option, say so once, search again in the default
 				// order (REQ-SSR-002).
-				if (this.sort === RELEVANCE_SORT && !relevanceApplied(body.results)) {
+				if (
+					this.sort === RELEVANCE_SORT
+					&& !relevanceApplied(body.results)
+				) {
 					this.relevanceUnavailable = true
 					this.relevanceNotice = 'Sorteren op relevantie kan hier niet.'
 					this.sort = ''
@@ -1387,7 +1394,11 @@ export default {
 			this.query = term || ''
 			this.reported = ''
 			this.relevanceNotice = ''
-			this.sort = sortForNewSearch(this.query, this.sort, this.relevanceUnavailable)
+			this.sort = sortForNewSearch(
+				this.query,
+				this.sort,
+				this.relevanceUnavailable,
+			)
 			// A new query invalidates the page number. Staying on page 7 of a
 			// previous search shows an empty list for a search that has
 			// results, which reads as "nothing found".

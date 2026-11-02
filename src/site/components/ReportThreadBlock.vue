@@ -58,7 +58,11 @@
 					{{ thread.report.subject || words.yourReport }}
 				</h2>
 				<p v-if="thread.report.receivedAt" class="utrecht-paragraph">
-					{{ fill(words.receivedOn, { date: day(thread.report.receivedAt) }) }}
+					{{
+						fill(words.receivedOn, {
+							date: day(thread.report.receivedAt),
+						})
+					}}
 				</p>
 				<p class="utrecht-paragraph pq-report-thread__body">
 					{{ thread.report.body }}
@@ -93,7 +97,9 @@
 						<label :for="ids.answer" class="utrecht-form-label">{{
 							words.answer
 						}}</label>
-						<p :id="ids.answerHint" class="utrecht-form-field-description">
+						<p
+							:id="ids.answerHint"
+							class="utrecht-form-field-description">
 							{{ words.answerHint }}
 						</p>
 						<textarea
@@ -157,12 +163,7 @@
 <script>
 import { authBaseFrom } from '../lib/authApi.js'
 import { resolveApiBase } from '../lib/contentApi.js'
-import {
-	fillReport,
-	reportApi,
-	reportWords,
-	termLines,
-} from '../lib/reportApi.js'
+import { fillReport, reportApi, reportWords, termLines } from '../lib/reportApi.js'
 import { pageLocale } from '../pages/inbox/translate.js'
 
 import '@utrecht/paragraph-css/dist/index.css'
@@ -213,7 +214,11 @@ export default {
 		 */
 		ids() {
 			const id = (part) => `pq-report-thread-${this.uid}-${part}`
-			return { code: id('code'), answer: id('answer'), answerHint: id('answer-hint') }
+			return {
+				code: id('code'),
+				answer: id('answer'),
+				answerHint: id('answer-hint'),
+			}
 		},
 
 		/**
