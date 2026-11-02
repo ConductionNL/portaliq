@@ -189,7 +189,7 @@ class PlanViews {
 			return '';
 		}
 
-		$account = $this->accounts->bySubjectRef(subjectRef: $ref);
+		$account = PortalAccountLookup::unlessVoid(account: $this->accounts->bySubjectRef(subjectRef: $ref));
 
 		return (string)($account['displayName'] ?? '');
 	}//end nameOf()

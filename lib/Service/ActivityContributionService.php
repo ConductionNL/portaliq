@@ -239,7 +239,7 @@ class ActivityContributionService {
 	 * @return array{portalSubjectRef: string, name: string, email: string}|null
 	 */
 	private function debtor(string $guardianRef): ?array {
-		$account = $this->accounts->bySubjectRef(subjectRef: $guardianRef);
+		$account = PortalAccountLookup::unlessVoid(account: $this->accounts->bySubjectRef(subjectRef: $guardianRef));
 		if ($account === null) {
 			return null;
 		}

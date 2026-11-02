@@ -222,7 +222,7 @@ class ContactInvitationLink {
 			return PortalContactService::FAILED;
 		}
 
-		$inviterAccount = $this->accounts->bySubjectRef(subjectRef: $inviter);
+		$inviterAccount = PortalAccountLookup::unlessVoid(account: $this->accounts->bySubjectRef(subjectRef: $inviter));
 		$this->writer->createObject(
 			register: PortalContactService::REGISTER,
 			schema: PortalContactService::SCHEMA,

@@ -16,6 +16,7 @@ use PHPUnit\Framework\TestCase;
  */
 #[CoversClass(PlanViews::class)]
 #[UsesClass(PlanRules::class)]
+#[UsesClass(PortalAccountLookup::class)]
 class PlanViewsTest extends TestCase {
 	/**
 	 * Build the views over an account lookup that knows two people.
@@ -30,6 +31,24 @@ class PlanViewsTest extends TestCase {
 
 		return new PlanViews($accounts);
 	}//end views()
+
+	/**
+	 * A withdrawn (void) account names nobody; a live one still does.
+	 *
+	 * @return void
+	 */
+	public function testAWithdrawnAccountNamesNobody(): void {
+		$accounts = $this->createMock(PortalAccountLookup::class);
+		$accounts->method('bySubjectRef')->willReturnCallback(
+			static fn (string $ref): ?array => (['owner' => ['displayName' => 'Olga', 'status' => 'active'], 'p1' => ['displayName' => 'Piet', 'status' => 'void']][$ref] ?? null)
+		);
+		$views = new PlanViews($accounts);
+
+		$this->assertSame('', $views->nameOf('p1'));
+		$this->assertSame('Olga', $views->nameOf('owner'));
+		$card = $views->card(['id' => 'pl1', 'owner' => 'owner'], ['p1'], [], ['subjectRef' => 'owner'], '2026-05-10');
+		$this->assertSame(['Olga', ''], array_column($card['participants'], 'displayName'));
+	}//end testAWithdrawnAccountNamesNobody()
 
 	/**
 	 * A card counts actions, names people and marks the viewer's role.
