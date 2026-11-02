@@ -37,6 +37,8 @@ use stdClass;
  * @covers \OCA\Portaliq\Service\ExampleSite\ExampleSiteStore
  * @covers \OCA\Portaliq\Service\ExampleResident\ExampleResidentStore
  * @uses   \OCA\Portaliq\Service\ObjectServiceLookup
+ * @uses   \OCA\Portaliq\Service\ObjectRowNormaliser
+ * @uses   \OCA\Portaliq\Service\RowIdOf
  */
 class ExampleRowStoresGoldenTest extends TestCase {
 
@@ -88,10 +90,10 @@ class ExampleRowStoresGoldenTest extends TestCase {
 
 		$expected = json_decode((string)file_get_contents(self::GOLDEN), true);
 		foreach ($expected as $case => $answer) {
-			$this->assertSame($answer, json_decode((string)json_encode($actual[$case] ?? null), true), $case);
+			$this->assertSame(expected: $answer, actual: json_decode((string)json_encode($actual[$case] ?? null), true), message: $case);
 		}
 
-		$this->assertSame(array_keys($expected), array_keys($actual));
+		$this->assertSame(expected: array_keys($expected), actual: array_keys($actual));
 	}//end testEveryStoreAnswerMatchesTheGolden()
 
 	/**
@@ -102,11 +104,21 @@ class ExampleRowStoresGoldenTest extends TestCase {
 	 */
 	private function worlds(): array {
 		$entity = new class implements JsonSerializable {
+			/**
+			 * An entity that serialises to a row.
+			 *
+			 * @return mixed
+			 */
 			public function jsonSerialize(): mixed {
 				return ['id' => 'b', 'route' => '/afval', '@self' => ['id' => 'b']];
 			}
 		};
 		$scalarEntity = new class implements JsonSerializable {
+			/**
+			 * An entity that serialises to text.
+			 *
+			 * @return mixed
+			 */
 			public function jsonSerialize(): mixed {
 				return 'not a row';
 			}
@@ -164,15 +176,35 @@ class ExampleRowStoresGoldenTest extends TestCase {
 		$service = null;
 		if ($rows !== null) {
 			$service = new class($rows) {
+				/**
+				 * @param mixed $rows The rows, or a Throwable to throw.
+				 */
 				public function __construct(private mixed $rows) {
 				}
 
+				/**
+				 * @param string $register The register.
+				 *
+				 * @return void
+				 */
 				public function setRegister(string $register): void {
 				}
 
+				/**
+				 * @param string $schema The schema.
+				 *
+				 * @return void
+				 */
 				public function setSchema(string $schema): void {
 				}
 
+				/**
+				 * @param array<string, mixed> $config        The read config.
+				 * @param bool                 $_rbac         Access rules.
+				 * @param bool                 $_multitenancy Tenancy rules.
+				 *
+				 * @return mixed
+				 */
 				public function findAll(array $config = [], bool $_rbac = true, bool $_multitenancy = true): mixed {
 					if ($this->rows instanceof \Throwable) {
 						throw $this->rows;
@@ -181,6 +213,15 @@ class ExampleRowStoresGoldenTest extends TestCase {
 					return $this->rows;
 				}
 
+				/**
+				 * @param string $id            The id.
+				 * @param mixed  $register      The register.
+				 * @param mixed  $schema        The schema.
+				 * @param bool   $_rbac         Access rules.
+				 * @param bool   $_multitenancy Tenancy rules.
+				 *
+				 * @return mixed
+				 */
 				public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
 					if ($this->rows instanceof \Throwable) {
 						throw $this->rows;
@@ -199,7 +240,13 @@ class ExampleRowStoresGoldenTest extends TestCase {
 
 		$container = $this->createMock(originalClassName: ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
-			static fn (string $id): mixed => ($id === self::OS && $service !== null) ? $service : throw new RuntimeException('no ' . $id)
+			static function (string $id) use ($service): object {
+				if ($id === self::OS && $service !== null) {
+					return $service;
+				}
+
+				throw new RuntimeException('no ' . $id);
+			}
 		);
 
 		return $container;
