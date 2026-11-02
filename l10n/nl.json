@@ -3326,7 +3326,9 @@
         "The aside column's fixed width in pixels, 160 to 640.": "De vaste breedte van de zijkolom in pixels, 160 tot 640.",
         "The space between the main column and the aside column in pixels, 0 to 160. Unset, the gap is 48.": "De ruimte tussen de hoofdkolom en de zijkolom in pixels, 0 tot 160. Niet ingesteld is de ruimte 48.",
         "The width of the right column in pixels, 160 to 640.": "De breedte van de rechterkolom in pixels, 160 tot 640.",
-        "The space between the main column and the right column in pixels, 0 to 160. The default is 48.": "De ruimte tussen de hoofdkolom en de rechterkolom in pixels, 0 tot 160. De standaard is 48."
+        "The space between the main column and the right column in pixels, 0 to 160. The default is 48.": "De ruimte tussen de hoofdkolom en de rechterkolom in pixels, 0 tot 160. De standaard is 48.",
+        "Files": "Bestanden",
+        "The files added to the plan. Each names an OpenRegister file on this plan object, its series and version; a new version is a new file pointing at the one before it through previousVersion, so nothing is overwritten.": "De bestanden die aan het plan zijn toegevoegd. Elk bestand noemt een OpenRegister-bestand op dit planobject, met zijn reeks en versie; een nieuwe versie is een nieuw bestand dat via previousVersion naar het vorige verwijst, zodat niets wordt overschreven."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

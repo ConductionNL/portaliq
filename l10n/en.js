@@ -3157,7 +3157,9 @@ OC.L10N.register(
         "The aside column's fixed width in pixels, 160 to 640.": "The aside column's fixed width in pixels, 160 to 640.",
         "The space between the main column and the aside column in pixels, 0 to 160. Unset, the gap is 48.": "The space between the main column and the aside column in pixels, 0 to 160. Unset, the gap is 48.",
         "The width of the right column in pixels, 160 to 640.": "The width of the right column in pixels, 160 to 640.",
-        "The space between the main column and the right column in pixels, 0 to 160. The default is 48.": "The space between the main column and the right column in pixels, 0 to 160. The default is 48."
+        "The space between the main column and the right column in pixels, 0 to 160. The default is 48.": "The space between the main column and the right column in pixels, 0 to 160. The default is 48.",
+        "Files": "Files",
+        "The files added to the plan. Each names an OpenRegister file on this plan object, its series and version; a new version is a new file pointing at the one before it through previousVersion, so nothing is overwritten.": "The files added to the plan. Each names an OpenRegister file on this plan object, its series and version; a new version is a new file pointing at the one before it through previousVersion, so nothing is overwritten."
     },
     "nplurals=2; plural=(n != 1);"
 )
