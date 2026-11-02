@@ -176,6 +176,7 @@
     "check:timed-task": "node --test tests/timed-task.spec.mjs",
     "check:row-action": "node --test tests/row-action.spec.mjs",
     "check:access-requests": "node --test tests/access-requests.spec.mjs",
+    "check:admin-lists-as-drawn": "node --test tests/admin-lists-as-drawn.spec.mjs",
     "check:form-binding-preview": "node --test tests/form-binding-preview.spec.mjs",
     "check:portal-details": "node --test tests/portal-details.spec.mjs",
     "check:form-binding-embed": "node --test tests/form-binding-embed.spec.mjs",
