@@ -123,9 +123,9 @@ class MoveActionSummarySentence implements IRepairStep {
 		do {
 			$pages++;
 			$page    = $this->page(objectService: $objectService, offset: $offset);
-			$read    = count($page);
+			$read    = $page['read'];
 			$offset += $read;
-			foreach ($page as $row) {
+			foreach ($page['rows'] as $row) {
 				if ($this->move(objectService: $objectService, row: $row) === true) {
 					$moved++;
 				}

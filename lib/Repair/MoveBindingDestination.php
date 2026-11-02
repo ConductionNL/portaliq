@@ -133,9 +133,9 @@ class MoveBindingDestination implements IRepairStep {
 		do {
 			$pages++;
 			$page    = $this->page(objectService: $objectService, offset: $offset);
-			$read    = count($page);
+			$read    = $page['read'];
 			$offset += $read;
-			foreach ($page as $row) {
+			foreach ($page['rows'] as $row) {
 				$outcome = $this->repair(objectService: $objectService, row: $row);
 				$moved  += (int)($outcome === 'moved');
 				if ($outcome === 'without') {

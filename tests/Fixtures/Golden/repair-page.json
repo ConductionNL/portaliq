@@ -1,7 +1,10 @@
 {
     "MoveBindingDestination": {
         "contextRefuses": {
-            "answer": [],
+            "answer": {
+                "read": 0,
+                "rows": []
+            },
             "log": [
                 {
                     "apply": "portalFormBinding"
@@ -9,7 +12,10 @@
             ]
         },
         "findAllThrows": {
-            "answer": [],
+            "answer": {
+                "read": 0,
+                "rows": []
+            },
             "log": [
                 {
                     "apply": "portalFormBinding"
@@ -33,14 +39,17 @@
             ]
         },
         "mixedRows": {
-            "answer": [
-                {
-                    "id": "a"
-                },
-                {
-                    "id": "b"
-                }
-            ],
+            "answer": {
+                "read": 5,
+                "rows": [
+                    {
+                        "id": "a"
+                    },
+                    {
+                        "id": "b"
+                    }
+                ]
+            },
             "log": [
                 {
                     "apply": "portalFormBinding"
@@ -58,11 +67,14 @@
             ]
         },
         "junkFirst": {
-            "answer": [
-                {
-                    "id": "c"
-                }
-            ],
+            "answer": {
+                "read": 3,
+                "rows": [
+                    {
+                        "id": "c"
+                    }
+                ]
+            },
             "log": [
                 {
                     "apply": "portalFormBinding"
@@ -80,7 +92,10 @@
             ]
         },
         "notAList": {
-            "answer": [],
+            "answer": {
+                "read": 1,
+                "rows": []
+            },
             "log": [
                 {
                     "apply": "portalFormBinding"
@@ -98,7 +113,10 @@
             ]
         },
         "nothing": {
-            "answer": [],
+            "answer": {
+                "read": 0,
+                "rows": []
+            },
             "log": [
                 {
                     "apply": "portalFormBinding"
@@ -118,7 +136,10 @@
     },
     "MoveActionSummarySentence": {
         "contextRefuses": {
-            "answer": [],
+            "answer": {
+                "read": 0,
+                "rows": []
+            },
             "log": [
                 {
                     "apply": "portalPage"
@@ -126,7 +147,10 @@
             ]
         },
         "findAllThrows": {
-            "answer": [],
+            "answer": {
+                "read": 0,
+                "rows": []
+            },
             "log": [
                 {
                     "apply": "portalPage"
@@ -150,14 +174,17 @@
             ]
         },
         "mixedRows": {
-            "answer": [
-                {
-                    "id": "a"
-                },
-                {
-                    "id": "b"
-                }
-            ],
+            "answer": {
+                "read": 5,
+                "rows": [
+                    {
+                        "id": "a"
+                    },
+                    {
+                        "id": "b"
+                    }
+                ]
+            },
             "log": [
                 {
                     "apply": "portalPage"
@@ -175,11 +202,14 @@
             ]
         },
         "junkFirst": {
-            "answer": [
-                {
-                    "id": "c"
-                }
-            ],
+            "answer": {
+                "read": 3,
+                "rows": [
+                    {
+                        "id": "c"
+                    }
+                ]
+            },
             "log": [
                 {
                     "apply": "portalPage"
@@ -197,7 +227,10 @@
             ]
         },
         "notAList": {
-            "answer": [],
+            "answer": {
+                "read": 1,
+                "rows": []
+            },
             "log": [
                 {
                     "apply": "portalPage"
@@ -215,7 +248,10 @@
             ]
         },
         "nothing": {
-            "answer": [],
+            "answer": {
+                "read": 0,
+                "rows": []
+            },
             "log": [
                 {
                     "apply": "portalPage"
@@ -235,7 +271,10 @@
     },
     "BackfillNewsPublishedAt": {
         "contextRefuses": {
-            "answer": [],
+            "answer": {
+                "read": 0,
+                "rows": []
+            },
             "log": [
                 {
                     "apply": "newsItem"
@@ -243,7 +282,10 @@
             ]
         },
         "findAllThrows": {
-            "answer": [],
+            "answer": {
+                "read": 0,
+                "rows": []
+            },
             "log": [
                 {
                     "apply": "newsItem"
@@ -267,14 +309,17 @@
             ]
         },
         "mixedRows": {
-            "answer": [
-                {
-                    "id": "a"
-                },
-                {
-                    "id": "b"
-                }
-            ],
+            "answer": {
+                "read": 5,
+                "rows": [
+                    {
+                        "id": "a"
+                    },
+                    {
+                        "id": "b"
+                    }
+                ]
+            },
             "log": [
                 {
                     "apply": "newsItem"
@@ -292,11 +337,14 @@
             ]
         },
         "junkFirst": {
-            "answer": [
-                {
-                    "id": "c"
-                }
-            ],
+            "answer": {
+                "read": 3,
+                "rows": [
+                    {
+                        "id": "c"
+                    }
+                ]
+            },
             "log": [
                 {
                     "apply": "newsItem"
@@ -314,7 +362,10 @@
             ]
         },
         "notAList": {
-            "answer": [],
+            "answer": {
+                "read": 1,
+                "rows": []
+            },
             "log": [
                 {
                     "apply": "newsItem"
@@ -332,7 +383,10 @@
             ]
         },
         "nothing": {
-            "answer": [],
+            "answer": {
+                "read": 0,
+                "rows": []
+            },
             "log": [
                 {
                     "apply": "newsItem"

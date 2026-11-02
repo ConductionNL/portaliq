@@ -124,9 +124,9 @@ class BackfillNewsPublishedAt implements IRepairStep {
 		do {
 			$pages++;
 			$page    = $this->page(objectService: $objectService, offset: $offset);
-			$read    = count($page);
+			$read    = $page['read'];
 			$offset += $read;
-			foreach ($page as $row) {
+			foreach ($page['rows'] as $row) {
 				if ($this->stamp(objectService: $objectService, row: $row) === true) {
 					$stamped++;
 				}
