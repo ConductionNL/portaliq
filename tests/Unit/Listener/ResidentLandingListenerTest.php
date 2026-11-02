@@ -9,7 +9,7 @@ namespace OCA\Portaliq\Tests\Unit\Listener;
 
 use OCA\Portaliq\Listener\ResidentLandingListener;
 use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCP\App\IAppManager;
 use OCP\Group\Events\UserAddedEvent;
 use OCP\Group\Events\UserRemovedEvent;
@@ -103,7 +103,7 @@ class ResidentLandingListenerTest extends TestCase {
 			fn (string $uid, string $gid): bool => in_array(needle: $gid, haystack: ($this->memberships[$uid] ?? []), strict: true)
 		);
 
-		$portals = $this->createMock(originalClassName: PortalResolver::class);
+		$portals = $this->createMock(originalClassName: PublishedPortals::class);
 		$portals->method('allPublishedPortals')->willReturnCallback(
 			function (): array {
 				if ($this->portalsFail === true) {

@@ -37,9 +37,8 @@ namespace OCA\Portaliq\Service\Identity;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\Mail\MailLog;
 use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
+use OCA\Portaliq\Service\Mail\MailSite;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
-use OCA\Portaliq\Service\PortalOrganisationConfigService;
-use OCA\Portaliq\Service\PortalResolver;
 use DateTimeInterface;
 use OCP\IL10N;
 use OCP\L10N\IFactory;
@@ -195,23 +194,12 @@ class PortalIdentityMailer {
 	private const IGNORE_KEY = 'Did you not ask for this? Then you can ignore this mail.';
 
 	/**
-	 * The language of a portal that declares none.
-	 */
-	private const DEFAULT_LANGUAGE = 'nl';
-
-	/**
-	 * The name of a tenant nothing names.
-	 */
-	private const DEFAULT_NAME = 'Portaliq';
-
-	/**
 	 * Constructor.
 	 *
 	 * @param IMailer $mailer Sends the mail.
 	 * @param IFactory $l10nFactory The portal's language, independent of any session locale.
 	 * @param PortalDeepLinkBuilder $deepLinks Builds the portal link from the route table.
-	 * @param PortalResolver $portals Finds the organisation's portal when the caller has none.
-	 * @param PortalOrganisationConfigService $organisations The tenant's name when no portal names it.
+	 * @param MailSite $site The portal, name and language a mail is sent with.
 	 * @param LoggerInterface $logger Records a failed send, never the secret.
 	 * @param MailTemplateRenderer|null $renderer Swaps in a portal's own text (mail-templates-admin-screen).
 	 * @param MailLog|null $mailLog Logs each send, with the address masked.
@@ -220,8 +208,7 @@ class PortalIdentityMailer {
 		private readonly IMailer $mailer,
 		private readonly IFactory $l10nFactory,
 		private readonly PortalDeepLinkBuilder $deepLinks,
-		private readonly PortalResolver $portals,
-		private readonly PortalOrganisationConfigService $organisations,
+		private readonly MailSite $site,
 		private readonly LoggerInterface $logger,
 		private readonly ?MailTemplateRenderer $renderer=null,
 		private readonly ?MailLog $mailLog=null,
@@ -255,13 +242,13 @@ class PortalIdentityMailer {
 			return false;
 		}
 
-		$portal = ($portal ?? $this->portalOf(organisation: $organisation));
-		$name   = $this->nameOf(portal: $portal, organisation: $organisation);
+		$portal = ($portal ?? $this->site->portal(organisation: $organisation));
+		$name   = $this->site->name(portal: $portal, organisation: $organisation);
 		$link   = $this->linkFor(keys: $keys, portalSlug: trim((string)($portal['slug'] ?? '')), organisation: $organisation);
 		$link  .= '#' . $keys['fragment'] . '=' . rawurlencode($secret);
 
 		try {
-			$l10n = $this->l10nFactory->get(Application::APP_ID, $this->languageOf(portal: $portal));
+			$l10n = $this->l10nFactory->get(Application::APP_ID, $this->site->language(portal: $portal));
 
 			$mail = $this->mailer->createEMailTemplate('portaliq.identity.' . $template, []);
 			$text = $this->textOf(
@@ -417,11 +404,11 @@ class PortalIdentityMailer {
 			return false;
 		}
 
-		$portal = $this->portalOf(organisation: $organisation);
-		$name   = $this->nameOf(portal: $portal, organisation: $organisation);
+		$portal = $this->site->portal(organisation: $organisation);
+		$name   = $this->site->name(portal: $portal, organisation: $organisation);
 
 		try {
-			$l10n = $this->l10nFactory->get(Application::APP_ID, $this->languageOf(portal: $portal));
+			$l10n = $this->l10nFactory->get(Application::APP_ID, $this->site->language(portal: $portal));
 			$day  = (string)$l10n->l('date', $moment, ['width' => 'long']);
 
 			$mail = $this->mailer->createEMailTemplate('portaliq.identity.' . self::NOTICE_TEMPLATE, []);
@@ -522,11 +509,11 @@ class PortalIdentityMailer {
 			return false;
 		}
 
-		$portal = ($portal ?? $this->portalOf(organisation: $organisation));
-		$name   = $this->nameOf(portal: $portal, organisation: $organisation);
+		$portal = ($portal ?? $this->site->portal(organisation: $organisation));
+		$name   = $this->site->name(portal: $portal, organisation: $organisation);
 
 		try {
-			$l10n = $this->l10nFactory->get(Application::APP_ID, $this->languageOf(portal: $portal));
+			$l10n = $this->l10nFactory->get(Application::APP_ID, $this->site->language(portal: $portal));
 			$day  = (string)$l10n->l('datetime', $moment, ['width' => 'long']);
 
 			$mail = $this->mailer->createEMailTemplate('portaliq.identity.' . $template, []);
@@ -581,63 +568,4 @@ class PortalIdentityMailer {
 	private function closing(IL10N $l10n): string {
 		return $l10n->t(self::ONCE_KEY) . ' ' . $l10n->t(self::IGNORE_KEY);
 	}//end closing()
-
-	/**
-	 * The organisation's one published portal, or null when it has none or
-	 * several (then the link names the organisation instead).
-	 *
-	 * @param string $organisation The tenant.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function portalOf(string $organisation): ?array {
-		try {
-			return $this->portals->resolveByOrganisation(organisation: $organisation);
-		} catch (Throwable) {
-			return null;
-		}
-	}//end portalOf()
-
-	/**
-	 * The name the mail greets from: the portal's title, else the tenant's.
-	 *
-	 * @param array<string, mixed>|null $portal The portal, or null.
-	 * @param string $organisation The tenant.
-	 *
-	 * @return string
-	 */
-	private function nameOf(?array $portal, string $organisation): string {
-		$title = trim((string)($portal['title'] ?? ''));
-		if ($title !== '') {
-			return $title;
-		}
-
-		try {
-			$name = trim((string)($this->organisations->resolve(orgSlug: $organisation)['organisationName'] ?? ''));
-		} catch (Throwable) {
-			$name = '';
-		}
-
-		if ($name === '') {
-			return self::DEFAULT_NAME;
-		}
-
-		return $name;
-	}//end nameOf()
-
-	/**
-	 * The portal's language: the first locale it publishes in.
-	 *
-	 * @param array<string, mixed>|null $portal The portal, or null.
-	 *
-	 * @return string
-	 */
-	private function languageOf(?array $portal): string {
-		$locales = ($portal['locales'] ?? []);
-		if (is_array($locales) === true && is_string($locales[0] ?? null) === true && trim($locales[0]) !== '') {
-			return trim($locales[0]);
-		}
-
-		return self::DEFAULT_LANGUAGE;
-	}//end languageOf()
 }//end class

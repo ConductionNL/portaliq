@@ -39,7 +39,7 @@ use OCA\Integriq\Event\DigitalPostDeliveredEvent;
 use OCA\Portaliq\Service\Notifications\MessageBoxChannel;
 use OCA\Portaliq\Service\Notifications\MessageBoxSender;
 use OCA\Portaliq\Service\Notifications\MessageBoxStatus;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -66,12 +66,12 @@ class PortalDigitalPostDeliveredListener implements IEventListener {
 	/**
 	 * Wire the listener.
 	 *
-	 * @param PortalObjectReader $reader Finds the row by integriq's message id.
+	 * @param ScopedCollectionReaderInterface $reader Finds the row by integriq's message id.
 	 * @param PortalObjectWriter $writer Writes the status.
 	 * @param LoggerInterface    $logger The logger.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly LoggerInterface $logger,
 	) {

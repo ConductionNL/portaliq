@@ -1939,6 +1939,7 @@ OC.L10N.register(
         "Publish": "Publiceren",
         "Discard draft": "Concept verwijderen",
         "View on the site": "Bekijk op de site",
+        "View": "Bekijken",
         "Reload the page": "Pagina opnieuw laden",
         "Unsaved changes. Save the draft to keep them.": "Niet opgeslagen wijzigingen. Sla het concept op om ze te bewaren.",
         "The PKCE `code_verifier` presented to the token endpoint on callback, matching the `code_challenge` sent at start.": "De PKCE-`code_verifier` die bij de callback aan het token-endpoint wordt aangeboden, passend bij de `code_challenge` van de start.",

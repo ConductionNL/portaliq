@@ -34,7 +34,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Reports;
 
 use DateTimeImmutable;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\Security\Bruteforce\IThrottler;
 
@@ -67,12 +67,12 @@ class ReportThreadService {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Reads the report and its messages.
+	 * @param ScopedCollectionReaderInterface $reader Reads the report and its messages.
 	 * @param PortalObjectWriter $writer Writes a message on the thread.
 	 * @param IThrottler $throttler Nextcloud's own brute-force throttler.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly IThrottler $throttler,
 	) {

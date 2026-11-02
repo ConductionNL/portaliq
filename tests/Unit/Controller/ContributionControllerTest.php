@@ -140,6 +140,69 @@ class ContributionControllerTest extends TestCase {
 	}//end testPortalNavigationHidesAndOrdersPages()
 
 	/**
+	 * A resolver that answers only for the portal named `zuid`.
+	 *
+	 * @param array<string, mixed> $portal The portal it answers with.
+	 *
+	 * @return PortalResolver
+	 */
+	private function portalsOnlyForZuid(array $portal): PortalResolver {
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('resolve')->willReturnCallback(
+			static fn (IRequest $request, ?string $portalSlug = null): ?array => ($portalSlug === 'zuid' ? $portal : null)
+		);
+
+		return $portals;
+	}//end portalsOnlyForZuid()
+
+	/**
+	 * The portal the site names in its header alone decides the navigation.
+	 *
+	 * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-a-portal-shows-the-pages-its-administrator-chose-in-the-chosen-order-req-pgc-001
+	 */
+	public function testTheSiteHeaderNamesThePortalForTheNavigation(): void {
+		$aggregate = [
+			'audience' => 'client',
+			'contributions' => [['app' => 'pipelinq', 'pages' => [['id' => 'quotes'], ['id' => 'cases']], 'collections' => []]],
+		];
+		$portals   = $this->portalsOnlyForZuid(portal: ['slug' => 'zuid', 'navigation' => ['client' => [['page' => 'pipelinq:quotes', 'hidden' => true]]]]);
+
+		$data = $this->controller(aggregate: $aggregate, portals: $portals, portalHeader: 'zuid')->index()->getData();
+
+		$this->assertSame(expected: ['cases'], actual: array_column($data['contributions'][0]['pages'], 'id'));
+	}//end testTheSiteHeaderNamesThePortalForTheNavigation()
+
+	/**
+	 * The portal the site names in its header alone decides the themes.
+	 *
+	 * @spec openspec/changes/life-domain-theme-pages/tasks.md#t02
+	 */
+	public function testTheSiteHeaderNamesThePortalForTheThemes(): void {
+		$aggregate = [
+			'audience' => 'client',
+			'contributions' => [['app' => 'pipelinq', 'pages' => [], 'collections' => [['id' => 'c', 'theme' => 'wonen']]]],
+		];
+		$portals   = $this->portalsOnlyForZuid(portal: ['slug' => 'zuid', 'themes' => [['slug' => 'wonen', 'title' => 'Wonen']]]);
+
+		$data = $this->controller(aggregate: $aggregate, portals: $portals, portalHeader: 'zuid')->index()->getData();
+
+		$this->assertSame(expected: ['wonen'], actual: array_column($data['themes'], 'slug'));
+	}//end testTheSiteHeaderNamesThePortalForTheThemes()
+
+	/**
+	 * The portal the site names in its header alone decides the own-area pages.
+	 *
+	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+	 */
+	public function testTheSiteHeaderNamesThePortalForTheAreaPages(): void {
+		$portals = $this->portalsOnlyForZuid(portal: ['slug' => 'zuid', 'contactsEnabled' => true]);
+
+		$data = $this->controller(aggregate: ['contributions' => []], portals: $portals, portalHeader: 'zuid')->index()->getData();
+
+		$this->assertSame(expected: ['contacts'], actual: array_column($data['areaPages'], 'special'));
+	}//end testTheSiteHeaderNamesThePortalForTheAreaPages()
+
+	/**
 	 * @spec openspec/changes/operate-pages-per-portal-and-client/tasks.md#t02
 	 */
 	public function testUnlistedPageKeepsItsPlaceAndNoChoiceAnswersAsToday(): void {
@@ -2684,9 +2747,10 @@ class ContributionControllerTest extends TestCase {
 		array $params = [],
 		?PortalResolver $portals = null,
 		?\OCA\Portaliq\Service\Identity\ContactConfirmationMailer $confirmation = null,
+		string $portalHeader = '',
 	): ContributionController {
 		$request = $this->createMock(IRequest::class);
-		$request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token'], ['X-Portaliq-Portal', ''], ['Idempotency-Key', '']]);
+		$request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token'], ['X-Portaliq-Portal', $portalHeader], ['Idempotency-Key', '']]);
 		$request->method('getParam')->willReturnCallback(
 			function (string $key, $default = null) use ($params) {
 				$params = $params + [

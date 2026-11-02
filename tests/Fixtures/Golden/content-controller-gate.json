@@ -1,0 +1,2054 @@
+{
+    "unresolved": {
+        "anonymous": {
+            "menus": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "pages": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "page": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "glossary": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "faq": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "finder": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "contributions": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
+            }
+        },
+        "bearer": {
+            "menus": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "pages": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "page": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "glossary": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "faq": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "finder": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "contributions": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
+            }
+        },
+        "editor": {
+            "menus": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "pages": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "page": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "glossary": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "faq": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "finder": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "contributions": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
+            }
+        }
+    },
+    "open": {
+        "anonymous": {
+            "menus": {
+                "status": 200,
+                "data": {
+                    "menus": [
+                        {
+                            "id": "m"
+                        }
+                    ]
+                },
+                "cache": "public, max-age=300, must-revalidate",
+                "log": []
+            },
+            "pages": {
+                "status": 200,
+                "data": {
+                    "pages": [
+                        {
+                            "id": "p"
+                        }
+                    ]
+                },
+                "cache": "public, max-age=300, must-revalidate",
+                "log": []
+            },
+            "page": {
+                "status": 200,
+                "data": {
+                    "route": "/over"
+                },
+                "cache": "public, max-age=300, must-revalidate",
+                "log": []
+            },
+            "glossary": {
+                "status": 200,
+                "data": {
+                    "terms": []
+                },
+                "cache": "public, max-age=300, must-revalidate",
+                "log": []
+            },
+            "faq": {
+                "status": 200,
+                "data": {
+                    "entries": []
+                },
+                "cache": "public, max-age=300, must-revalidate",
+                "log": []
+            },
+            "finder": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "contributions": {
+                "status": 200,
+                "data": {
+                    "contributions": [
+                        {
+                            "id": "c-1"
+                        }
+                    ]
+                },
+                "cache": "public, max-age=300, must-revalidate",
+                "log": [
+                    "aggregateAnonymous",
+                    {
+                        "forPortal": "p-open"
+                    }
+                ]
+            }
+        },
+        "bearer": {
+            "menus": {
+                "status": 200,
+                "data": {
+                    "menus": [
+                        {
+                            "id": "m"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "pages": {
+                "status": 200,
+                "data": {
+                    "pages": [
+                        {
+                            "id": "p"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "page": {
+                "status": 200,
+                "data": {
+                    "route": "/over"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "glossary": {
+                "status": 200,
+                "data": {
+                    "terms": []
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "faq": {
+                "status": 200,
+                "data": {
+                    "entries": []
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "finder": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "contributions": {
+                "status": 200,
+                "data": {
+                    "contributions": [
+                        {
+                            "id": "c-1"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": [
+                    "aggregateAnonymous",
+                    {
+                        "forPortal": "p-open"
+                    }
+                ]
+            }
+        },
+        "editor": {
+            "menus": {
+                "status": 200,
+                "data": {
+                    "menus": [
+                        {
+                            "id": "m"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "pages": {
+                "status": 200,
+                "data": {
+                    "pages": [
+                        {
+                            "id": "p"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "page": {
+                "status": 200,
+                "data": {
+                    "route": "/over"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "glossary": {
+                "status": 200,
+                "data": {
+                    "terms": []
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "faq": {
+                "status": 200,
+                "data": {
+                    "entries": []
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "finder": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "contributions": {
+                "status": 200,
+                "data": {
+                    "contributions": [
+                        {
+                            "id": "c-1"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": [
+                    "aggregateAnonymous",
+                    {
+                        "forPortal": "p-open"
+                    }
+                ]
+            }
+        }
+    },
+    "publicMode": {
+        "anonymous": {
+            "menus": {
+                "status": 200,
+                "data": {
+                    "menus": [
+                        {
+                            "id": "m"
+                        }
+                    ]
+                },
+                "cache": "public, max-age=300, must-revalidate",
+                "log": []
+            },
+            "pages": {
+                "status": 200,
+                "data": {
+                    "pages": [
+                        {
+                            "id": "p"
+                        }
+                    ]
+                },
+                "cache": "public, max-age=300, must-revalidate",
+                "log": []
+            },
+            "page": {
+                "status": 200,
+                "data": {
+                    "route": "/over"
+                },
+                "cache": "public, max-age=300, must-revalidate",
+                "log": []
+            },
+            "glossary": {
+                "status": 200,
+                "data": {
+                    "terms": []
+                },
+                "cache": "public, max-age=300, must-revalidate",
+                "log": []
+            },
+            "faq": {
+                "status": 200,
+                "data": {
+                    "entries": []
+                },
+                "cache": "public, max-age=300, must-revalidate",
+                "log": []
+            },
+            "finder": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "contributions": {
+                "status": 200,
+                "data": {
+                    "contributions": [
+                        {
+                            "id": "c-1"
+                        }
+                    ]
+                },
+                "cache": "public, max-age=300, must-revalidate",
+                "log": [
+                    "aggregateAnonymous",
+                    {
+                        "forPortal": "p-pub"
+                    }
+                ]
+            }
+        },
+        "bearer": {
+            "menus": {
+                "status": 200,
+                "data": {
+                    "menus": [
+                        {
+                            "id": "m"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "pages": {
+                "status": 200,
+                "data": {
+                    "pages": [
+                        {
+                            "id": "p"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "page": {
+                "status": 200,
+                "data": {
+                    "route": "/over"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "glossary": {
+                "status": 200,
+                "data": {
+                    "terms": []
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "faq": {
+                "status": 200,
+                "data": {
+                    "entries": []
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "finder": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "contributions": {
+                "status": 200,
+                "data": {
+                    "contributions": [
+                        {
+                            "id": "c-1"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": [
+                    "aggregateAnonymous",
+                    {
+                        "forPortal": "p-pub"
+                    }
+                ]
+            }
+        },
+        "editor": {
+            "menus": {
+                "status": 200,
+                "data": {
+                    "menus": [
+                        {
+                            "id": "m"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "pages": {
+                "status": 200,
+                "data": {
+                    "pages": [
+                        {
+                            "id": "p"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "page": {
+                "status": 200,
+                "data": {
+                    "route": "/over"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "glossary": {
+                "status": 200,
+                "data": {
+                    "terms": []
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "faq": {
+                "status": 200,
+                "data": {
+                    "entries": []
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "finder": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": []
+            },
+            "contributions": {
+                "status": 200,
+                "data": {
+                    "contributions": [
+                        {
+                            "id": "c-1"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": [
+                    "aggregateAnonymous",
+                    {
+                        "forPortal": "p-pub"
+                    }
+                ]
+            }
+        }
+    },
+    "signInNoBearer": {
+        "anonymous": {
+            "menus": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "pages": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "page": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "glossary": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "faq": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "finder": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "contributions": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            }
+        },
+        "bearer": {
+            "menus": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "pages": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "page": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "glossary": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "faq": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "finder": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "contributions": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            }
+        },
+        "editor": {
+            "menus": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "pages": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "page": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "glossary": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "faq": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "finder": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "contributions": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            }
+        }
+    },
+    "signInLowTrust": {
+        "anonymous": {
+            "menus": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "pages": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "page": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "glossary": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "faq": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "finder": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "contributions": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            }
+        },
+        "bearer": {
+            "menus": {
+                "status": 403,
+                "data": {
+                    "error": "insufficient_trust",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "pages": {
+                "status": 403,
+                "data": {
+                    "error": "insufficient_trust",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "page": {
+                "status": 403,
+                "data": {
+                    "error": "insufficient_trust",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "glossary": {
+                "status": 403,
+                "data": {
+                    "error": "insufficient_trust",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "faq": {
+                "status": 403,
+                "data": {
+                    "error": "insufficient_trust",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "finder": {
+                "status": 403,
+                "data": {
+                    "error": "insufficient_trust",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "contributions": {
+                "status": 403,
+                "data": {
+                    "error": "insufficient_trust",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            }
+        },
+        "editor": {
+            "menus": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "pages": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "page": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "glossary": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "faq": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "finder": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "contributions": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            }
+        }
+    },
+    "signInEnoughTrust": {
+        "anonymous": {
+            "menus": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "pages": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "page": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "glossary": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "faq": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "finder": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "contributions": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            }
+        },
+        "bearer": {
+            "menus": {
+                "status": 200,
+                "data": {
+                    "menus": [
+                        {
+                            "id": "m"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "pages": {
+                "status": 200,
+                "data": {
+                    "pages": [
+                        {
+                            "id": "p"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "page": {
+                "status": 200,
+                "data": {
+                    "route": "/over"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "glossary": {
+                "status": 200,
+                "data": {
+                    "terms": []
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "faq": {
+                "status": 200,
+                "data": {
+                    "entries": []
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "finder": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "contributions": {
+                "status": 200,
+                "data": {
+                    "contributions": [
+                        {
+                            "id": "c-1"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    },
+                    "aggregateAnonymous",
+                    {
+                        "forPortal": "p-in"
+                    }
+                ]
+            }
+        },
+        "editor": {
+            "menus": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "pages": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "page": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "glossary": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "faq": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "finder": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "contributions": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "digid"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            }
+        }
+    },
+    "signInDefaultTrust": {
+        "anonymous": {
+            "menus": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "eherkenning"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "pages": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "eherkenning"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "page": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "eherkenning"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "glossary": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "eherkenning"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "faq": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "eherkenning"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "finder": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "eherkenning"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "contributions": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "eherkenning"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            }
+        },
+        "bearer": {
+            "menus": {
+                "status": 200,
+                "data": {
+                    "menus": [
+                        {
+                            "id": "m"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "pages": {
+                "status": 200,
+                "data": {
+                    "pages": [
+                        {
+                            "id": "p"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "page": {
+                "status": 200,
+                "data": {
+                    "route": "/over"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "glossary": {
+                "status": 200,
+                "data": {
+                    "terms": []
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "faq": {
+                "status": 200,
+                "data": {
+                    "entries": []
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "finder": {
+                "status": 404,
+                "data": {
+                    "error": "not_found"
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    }
+                ]
+            },
+            "contributions": {
+                "status": 200,
+                "data": {
+                    "contributions": [
+                        {
+                            "id": "c-1"
+                        }
+                    ]
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": "Bearer t-1"
+                    },
+                    "aggregateAnonymous",
+                    {
+                        "forPortal": "p-in"
+                    }
+                ]
+            }
+        },
+        "editor": {
+            "menus": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "eherkenning"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "pages": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "eherkenning"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "page": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "eherkenning"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "glossary": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "eherkenning"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "faq": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "eherkenning"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "finder": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "eherkenning"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            },
+            "contributions": {
+                "status": 401,
+                "data": {
+                    "error": "authentication_required",
+                    "authentication": {
+                        "modes": [
+                            "eherkenning"
+                        ]
+                    }
+                },
+                "cache": "private, no-store",
+                "log": [
+                    {
+                        "resolveFromBearer": ""
+                    }
+                ]
+            }
+        }
+    }
+}

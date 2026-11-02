@@ -26,7 +26,7 @@ use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\Portaliq\Listener\CmsCacheInvalidationListener;
 use OCA\Portaliq\Service\CmsReader;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -142,7 +142,7 @@ class CmsCacheInvalidationListenerTest extends TestCase {
 			$this->markTestSkipped('OpenRegister is not installed in this environment.');
 		}
 
-		$portals = $this->createMock(PortalResolver::class);
+		$portals = $this->createMock(PublishedPortals::class);
 		$portals->method('allPublishedPortals')->willReturn(
 			[
 				['slug' => 'inwoners', 'organisation' => 'gemeente-voorbeeld'],

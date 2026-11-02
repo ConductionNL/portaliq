@@ -45,7 +45,7 @@ class CaseTypeVisibility {
 	/**
 	 * The header the resident portal names its own portal slug in.
 	 */
-	public const HEADER = 'X-Portaliq-Portal';
+	public const HEADER = RequestedPortal::HEADER;
 
 	/**
 	 * The case field a `cases` collection keeps its case type in, unless it
@@ -191,13 +191,10 @@ class CaseTypeVisibility {
 	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
 	public function servingPortal(IRequest $request, array $subject): ?array {
-		$slug = trim($request->getHeader(self::HEADER));
-		if ($slug === '') {
-			$slug = trim((string)$request->getParam('portal', ''));
-		}
+		$slug = (new RequestedPortal())->slug(request: $request);
 
 		$named = null;
-		if ($slug !== '') {
+		if ($slug !== null) {
 			$named = $this->portals->resolve(request: $request, portalSlug: $slug);
 		}
 

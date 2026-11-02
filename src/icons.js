@@ -53,6 +53,7 @@ import EmailOutline from 'vue-material-design-icons/EmailOutline.vue'
 import EmailPlusOutline from 'vue-material-design-icons/EmailPlusOutline.vue'
 import EmailSearchOutline from 'vue-material-design-icons/EmailSearchOutline.vue'
 import EyeLock from 'vue-material-design-icons/EyeLock.vue'
+import EyeOutline from 'vue-material-design-icons/EyeOutline.vue'
 import FileCheckOutline from 'vue-material-design-icons/FileCheckOutline.vue'
 import FileDocument from 'vue-material-design-icons/FileDocument.vue'
 import FileDocumentEdit from 'vue-material-design-icons/FileDocumentEdit.vue'
@@ -125,6 +126,7 @@ export default {
 	EmailOutline,
 	EmailPlusOutline,
 	EyeLock,
+	EyeOutline,
 	FileCheckOutline,
 	FileDocument,
 	FileDocumentEdit,

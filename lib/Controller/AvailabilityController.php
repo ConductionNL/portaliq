@@ -30,7 +30,7 @@ namespace OCA\Portaliq\Controller;
 use DateTimeImmutable;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\Availability\AvailabilityReport;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -51,13 +51,13 @@ class AvailabilityController extends Controller {
 	 *
 	 * @param IRequest $request The request.
 	 * @param AvailabilityReport $report Builds the report.
-	 * @param PortalResolver $portals Lists the published portals.
+	 * @param PublishedPortals $portals Lists the published portals.
 	 * @param ITimeFactory $time The clock.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly AvailabilityReport $report,
-		private readonly PortalResolver $portals,
+		private readonly PublishedPortals $portals,
 		private readonly ITimeFactory $time,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);

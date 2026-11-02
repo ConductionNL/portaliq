@@ -22,7 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Cms;
 
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
  * Classifies a portal's root route into published, draft or missing.
@@ -74,10 +74,10 @@ class PortalHomePage {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Reads the portal's pages.
+	 * @param ScopedCollectionReaderInterface $reader Reads the portal's pages.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 	) {
 	}//end __construct()
 

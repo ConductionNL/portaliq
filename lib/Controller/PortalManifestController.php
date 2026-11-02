@@ -34,6 +34,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
+use OCA\Portaliq\Service\RequestedPortal;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -85,7 +86,7 @@ class PortalManifestController extends Controller {
 	#[AnonRateLimit(limit: 120, period: 60)]
 	public function manifest(): DataDisplayResponse {
 		$orgValue = (string)$this->request->getParam('org', '');
-		$portalSlug = (string)$this->request->getParam('portal', '');
+		$portalSlug = (string)(new RequestedPortal())->slug(request: $this->request);
 
 		$portal = $this->configResolver->resolvePortal(request: $this->request, portalSlug: $portalSlug, orgValue: $orgValue);
 		$runtimeConfig = $this->configResolver->runtimeConfigFor(portal: $portal, orgValue: $orgValue, locale: 'nl');

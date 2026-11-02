@@ -7,7 +7,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Theme;
 
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCA\Portaliq\Service\PortalThemeResolver;
 use OCA\Portaliq\Service\Theme\PortalThemeContrast;
 use OCA\Portaliq\Service\Theme\PortalThemeOverview;
@@ -128,7 +128,7 @@ class PortalThemeOverviewTest extends TestCase {
 			$container->method('get')->willThrowException(new \RuntimeException('not installed'));
 		}
 
-		$resolver = $this->getMockBuilder(PortalResolver::class)
+		$resolver = $this->getMockBuilder(PublishedPortals::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['allPublishedPortals'])
 			->getMock();

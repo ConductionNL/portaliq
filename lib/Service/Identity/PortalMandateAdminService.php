@@ -106,7 +106,12 @@ class PortalMandateAdminService {
 		$this->parties = new MandateParties();
 		$this->days    = new MandateDays();
 		$this->store   = new MandateStore(reader: $reader, writer: $writer);
-		$this->listing = new MandateListing(store: $this->store, parties: $this->parties, days: $this->days);
+		$this->listing = new MandateListing(
+			store: $this->store,
+			parties: $this->parties,
+			days: $this->days,
+			accounts: new PortalAccountLookup(reader: $reader)
+		);
 	}//end __construct()
 
 	/**
@@ -116,7 +121,8 @@ class PortalMandateAdminService {
 	 * @param string                 $organisation The tenant.
 	 * @param DateTimeImmutable|null $now          The moment.
 	 *
-	 * @return array<int, array<string, mixed>> `{kind, id, label, caseTypes, expiresAt, state, email|holder}`.
+	 * @return array<int, array<string, mixed>> `{kind, id, label, caseTypes, expiresAt, state, email|holder}`;
+	 *         a mandate also carries the `name` and `email` of its account.
 	 *
 	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md#requirement-the-represented-party-must-see-who-may-act-for-it-req-smr-002
 	 */

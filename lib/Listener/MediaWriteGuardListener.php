@@ -30,14 +30,12 @@ namespace OCA\Portaliq\Listener;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\Cms\MediaLibraryReader;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\IL10N;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Vetoes a media write through OpenRegister's pre-write hooks.
@@ -52,7 +50,19 @@ use Throwable;
  */
 class MediaWriteGuardListener implements IEventListener {
 
-	private const SCHEMA_MAPPER = 'OCA\\OpenRegister\\Db\\SchemaMapper';
+	use SchemaWriteGuard {
+		handle as private handleWrite;
+	}
+
+	/**
+	 * The slug of the schema this guard checks.
+	 */
+	private const GUARDED_SCHEMA = 'media';
+
+	/**
+	 * How this guard names itself in the log.
+	 */
+	private const GUARD_NAME = 'media write guard';
 
 	/**
 	 * Constructor.
@@ -80,14 +90,12 @@ class MediaWriteGuardListener implements IEventListener {
 	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 	 */
 	public function handle(Event $event): void {
-		if ($event instanceof ObjectCreatingEvent || $event instanceof ObjectDeletingEvent) {
+		if ($event instanceof ObjectDeletingEvent) {
 			$this->check(event: $event, entity: $event->getObject());
 			return;
 		}
 
-		if ($event instanceof ObjectUpdatingEvent) {
-			$this->check(event: $event, entity: $event->getNewObject());
-		}
+		$this->handleWrite(event: $event);
 	}//end handle()
 
 	/**
@@ -99,7 +107,7 @@ class MediaWriteGuardListener implements IEventListener {
 	 * @return void
 	 */
 	private function check(ObjectCreatingEvent|ObjectUpdatingEvent|ObjectDeletingEvent $event, object $entity): void {
-		if ($this->isMedia(schema: (string)$entity->getSchema()) === false) {
+		if ($this->guardsSchema(schema: (string)$entity->getSchema()) === false) {
 			return;
 		}
 
@@ -136,22 +144,4 @@ class MediaWriteGuardListener implements IEventListener {
 
 		return null;
 	}//end refusal()
-
-	/**
-	 * Whether an object's schema is portaliq's media schema.
-	 *
-	 * @param string $schema The object's schema id.
-	 *
-	 * @return bool
-	 */
-	private function isMedia(string $schema): bool {
-		try {
-			$media = $this->container->get(self::SCHEMA_MAPPER)->findByApplicationAndSlug(slug: 'media', application: Application::APP_ID);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: media write guard could not read the schema', ['reason' => $e->getMessage()]);
-			return false;
-		}
-
-		return $media !== null && $schema !== '' && $schema === (string)$media->getId();
-	}//end isMedia()
 }//end class

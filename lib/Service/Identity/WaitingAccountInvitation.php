@@ -35,7 +35,7 @@ namespace OCA\Portaliq\Service\Identity;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Portaliq\Service\AuditTrailService;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\Security\ISecureRandom;
 
@@ -110,7 +110,7 @@ class WaitingAccountInvitation {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Finds the account a secret belongs to.
+	 * @param ScopedCollectionReaderInterface $reader Finds the account a secret belongs to.
 	 * @param PortalObjectWriter $writer Stores the hash and spends it.
 	 * @param ISecureRandom $random Mints the secret.
 	 * @param ClaimAttempts $attempts Limits the wrong secrets one person may offer.
@@ -122,7 +122,7 @@ class WaitingAccountInvitation {
 	 * @return void
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly ISecureRandom $random,
 		private readonly ClaimAttempts $attempts,

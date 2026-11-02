@@ -29,7 +29,7 @@ namespace OCA\Portaliq\Service\Cms;
 
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 
 /**
  * Keeps each media item's `usedOn` count.
@@ -55,12 +55,12 @@ class MediaUsage {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalResolver $portals The published portals.
+	 * @param PublishedPortals $portals The published portals.
 	 * @param PortalObjectReader $reader Reads a portal's records.
 	 * @param PortalObjectWriter $writer Writes the count onto an item.
 	 */
 	public function __construct(
-		private readonly PortalResolver $portals,
+		private readonly PublishedPortals $portals,
 		private readonly PortalObjectReader $reader,
 		private readonly PortalObjectWriter $writer,
 	) {
