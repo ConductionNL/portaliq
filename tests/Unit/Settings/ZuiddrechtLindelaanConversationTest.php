@@ -39,7 +39,7 @@ class ZuiddrechtLindelaanConversationTest extends TestCase {
 				['{{datetime:-13 10:24}}', 'De aanleg begint in maart. Er komt verlichting langs het hele fietspad.'],
 				['{{datetime:-13 10:52}}', 'Dank u wel. Ik wil graag alle stukken over de verlichting zien.'],
 				[
-					'{{datetime:-12 09:15}}',
+					'{{datetime:-2 09:15}}',
 					'Goedemorgen, ik wil mijn verzoek aanvullen. Kunt u ook de offertes voor de lantaarnpalen meenemen? Met vriendelijke groet, Sanne de Vries',
 				],
 			],
