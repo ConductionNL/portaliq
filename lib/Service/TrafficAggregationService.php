@@ -69,6 +69,7 @@ use Psr\Log\LoggerInterface;
  * would hide which step reads what.
  */
 class TrafficAggregationService {
+	use PublishedPortalWalk;
 
 	/**
 	 * The app config key prefix for each portal's watermark.
@@ -124,19 +125,8 @@ class TrafficAggregationService {
 		$portalsDone = 0;
 		$daysDone = 0;
 		$written = [];
-		$rollups = [];
-		foreach ($this->portals->allPublishedPortals() as $portal) {
-			$slug = trim((string)($portal['slug'] ?? ''));
-			if ($slug === '') {
-				continue;
-			}
-
-			$config = $this->config->resolve(portal: $portal);
-			if ($config['rollupOf'] !== []) {
-				$rollups[$slug] = $config['rollupOf'];
-				continue;
-			}
-
+		[$own, $rollups] = $this->portalWalk();
+		foreach ($own as [$slug, $config]) {
 			$portalsDone++;
 			$written[$slug] = $this->aggregatePortal(slug: $slug, config: $config, now: $now);
 			$daysDone += count($written[$slug]);
