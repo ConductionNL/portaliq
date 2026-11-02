@@ -44,7 +44,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCP\App\IAppManager;
 use OCP\Exceptions\AppConfigTypeConflictException;
 use OCP\IAppConfig;
@@ -96,7 +96,7 @@ class NextcloudRegistrationDoor {
 	 * @param IAppConfig     $appConfig The registration app's group setting.
 	 * @param IURLGenerator  $urls      Builds the addresses.
 	 * @param IGroupManager  $groups    Group membership.
-	 * @param PortalResolver $portals   The published portals.
+	 * @param PublishedPortals $portals   The published portals.
 	 * @param NextcloudAccountProvisioner|null $provisioner Writes a resident's first account.
 	 */
 	public function __construct(
@@ -104,7 +104,7 @@ class NextcloudRegistrationDoor {
 		private readonly IAppConfig $appConfig,
 		private readonly IURLGenerator $urls,
 		private readonly IGroupManager $groups,
-		private readonly PortalResolver $portals,
+		private readonly PublishedPortals $portals,
 		private readonly ?NextcloudAccountProvisioner $provisioner = null,
 	) {
 	}//end __construct()

@@ -32,6 +32,8 @@ const PUBLIC_LABELS = {
 	contactForm: 'Vraagformulier',
 	assistant: 'Vraag het de assistent',
 	publicRecords: 'Openbare overzichten',
+	report: 'Misstand melden',
+	reportThread: 'Uw melding met meldcode',
 	sharedBlock: 'Gedeeld blok',
 	// The NL Design System blocks, named as the boards name them (PtPagina).
 	nlAccordion: 'Uitklapblokken',

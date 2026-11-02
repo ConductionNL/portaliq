@@ -13,7 +13,7 @@ use DateTimeImmutable;
 use OCA\Portaliq\Service\Availability\AvailabilityReport;
 use OCA\Portaliq\Service\Availability\AvailabilityStore;
 use OCA\Portaliq\Service\Overview\PortalOverview;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCA\Portaliq\Service\Traffic\TrafficEventStore;
 use OCA\Portaliq\Service\Traffic\TrafficReportNumbers;
 use PHPUnit\Framework\TestCase;
@@ -120,7 +120,7 @@ class PortalOverviewTest extends TestCase {
 	 * @return PortalOverview
 	 */
 	private function overview(TrafficEventStore $traffic, ?AvailabilityStore $store = null): PortalOverview {
-		$portals = $this->createMock(originalClassName: PortalResolver::class);
+		$portals = $this->createMock(originalClassName: PublishedPortals::class);
 		$portals->method('allPublishedPortals')->willReturn(
 			value: [
 				['slug' => 'zuiddrecht', 'title' => 'Gemeente Zuiddrecht'],

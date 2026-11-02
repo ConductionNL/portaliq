@@ -30,7 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 
 /**
@@ -60,12 +60,12 @@ class LandingSubmissionDrain {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Reads the stored submissions and their forms.
+	 * @param ScopedCollectionReaderInterface $reader Reads the stored submissions and their forms.
 	 * @param PortalObjectWriter $writer Deletes a delivered submission.
 	 * @param DestinationIntake  $intake Submits into the destination, as a live submit does.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly DestinationIntake $intake,
 	) {

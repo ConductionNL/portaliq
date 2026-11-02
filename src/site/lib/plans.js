@@ -65,6 +65,17 @@ const WORDS = {
 		start: 'Plan starten',
 		saved: 'Uw wijziging is opgeslagen.',
 		pdfUnavailable: 'De pdf kan nu niet worden gemaakt.',
+		files: 'Bestanden',
+		addFile: 'Bestand toevoegen',
+		newVersion: 'Nieuwe versie uploaden',
+		version: 'Versie {version}',
+		newest: 'nieuwste',
+		earlier: 'Eerdere versies ({count})',
+		versionNote:
+			'Een nieuwe versie vervangt het bestand niet. De vorige versie blijft hieronder staan.',
+		noFiles: 'Er zijn nog geen bestanden.',
+		addedBy: '{name}, {date}',
+		chooseFile: 'Kies een bestand',
 	},
 	en: {
 		title: 'Collaborate',
@@ -125,6 +136,17 @@ const WORDS = {
 		start: 'Start the plan',
 		saved: 'Your change is saved.',
 		pdfUnavailable: 'The PDF cannot be made right now.',
+		files: 'Files',
+		addFile: 'Add a file',
+		newVersion: 'Upload a new version',
+		version: 'Version {version}',
+		newest: 'newest',
+		earlier: 'Earlier versions ({count})',
+		versionNote:
+			'A new version does not replace the file. The previous version stays listed below.',
+		noFiles: 'There are no files yet.',
+		addedBy: '{name}, {date}',
+		chooseFile: 'Choose a file',
 	},
 }
 
@@ -234,4 +256,19 @@ export function daysLine(days, words) {
 export function personLine(person, viewer, words) {
 	const name = person.ref === viewer ? words.you : person.displayName
 	return person.isOwner ? `${name}, ${words.maker}` : name
+}
+
+/**
+ * "Versie 2, nieuwste": the version line of a file on the plan page.
+ *
+ * @param {{version: number}} file The version.
+ * @param {boolean} newest Whether it is the newest version.
+ * @param {Record<string, string>} words The words.
+ * @return {string} The line.
+ *
+ * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+ */
+export function versionLine(file, newest, words) {
+	const line = fill(words.version, { version: Number(file?.version) || 1 })
+	return newest ? `${line}, ${words.newest}` : line
 }

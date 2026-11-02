@@ -22,7 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Theme;
 
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCA\Portaliq\Service\PortalThemeResolver;
 
 /**
@@ -37,12 +37,12 @@ class PortalThemeOverview {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalResolver      $portals  The published portals.
+	 * @param PublishedPortals      $portals  The published portals.
 	 * @param PortalThemeResolver $resolver The theme app's catalogue and tokens.
 	 * @param PortalThemeContrast $contrast The contrast verdict per theme.
 	 */
 	public function __construct(
-		private readonly PortalResolver $portals,
+		private readonly PublishedPortals $portals,
 		private readonly PortalThemeResolver $resolver,
 		private readonly PortalThemeContrast $contrast,
 	) {

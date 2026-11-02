@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Repair;
 
+use OCA\Portaliq\Service\ObjectServiceLookup;
 use DateTimeImmutable;
 use DateTimeZone;
 use OCA\Portaliq\Service\PortalRegisterContext;
@@ -44,6 +45,9 @@ use Throwable;
  * @spec openspec/changes/news-publish-date/tasks.md#T3
  */
 class BackfillNewsPublishedAt implements IRepairStep {
+	use PagedSchemaRead;
+	use ObjectServiceLookup;
+
 	/**
 	 * The news item schema.
 	 */
@@ -68,6 +72,11 @@ class BackfillNewsPublishedAt implements IRepairStep {
 	 * A bound on the pages read.
 	 */
 	private const MAX_PAGES = 10000;
+
+	/**
+	 * Logged when the schema cannot be read.
+	 */
+	private const EMPTY_PAGE_LOG = 'Portaliq: no news items to stamp';
 
 	/**
 	 * Constructor.
@@ -115,9 +124,9 @@ class BackfillNewsPublishedAt implements IRepairStep {
 		do {
 			$pages++;
 			$page    = $this->page(objectService: $objectService, offset: $offset);
-			$read    = count($page);
+			$read    = $page['read'];
 			$offset += $read;
-			foreach ($page as $row) {
+			foreach ($page['rows'] as $row) {
 				if ($this->stamp(objectService: $objectService, row: $row) === true) {
 					$stamped++;
 				}
@@ -162,58 +171,4 @@ class BackfillNewsPublishedAt implements IRepairStep {
 
 		return true;
 	}//end stamp()
-
-	/**
-	 * One page of news items, or none when the schema is absent.
-	 *
-	 * @param object $objectService OpenRegister's object service.
-	 * @param int $offset Items to skip.
-	 *
-	 * @return list<array<string, mixed>>
-	 */
-	private function page(object $objectService, int $offset): array {
-		try {
-			if ($this->context->apply(objectService: $objectService, schemaSlug: self::SCHEMA) === false) {
-				return [];
-			}
-
-			$rows = $objectService->findAll(config: ['limit' => self::PAGE, 'offset' => $offset], _rbac: false, _multitenancy: false);
-		} catch (Throwable $e) {
-			$this->logger->info('Portaliq: no news items to stamp', ['reason' => $e->getMessage()]);
-
-			return [];
-		}
-
-		$out = [];
-		foreach ((array)$rows as $row) {
-			if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-				$row = $row->jsonSerialize();
-			}
-
-			if (is_array($row) === true) {
-				$out[] = $row;
-			}
-		}
-
-		return $out;
-	}//end page()
-
-	/**
-	 * OpenRegister's object service, or null when it is not installed.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 }//end class

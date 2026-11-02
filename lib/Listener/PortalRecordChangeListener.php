@@ -368,6 +368,8 @@ class PortalRecordChangeListener implements IEventListener {
 	/**
 	 * The resident's account for the reference the record holds, or null.
 	 *
+	 * A withdrawn (void) account is no recipient: it gets no notice.
+	 *
 	 * @param array<string, mixed> $data       The record.
 	 * @param string               $scopeField The collection's scope field.
 	 *
@@ -379,7 +381,13 @@ class PortalRecordChangeListener implements IEventListener {
 			return null;
 		}
 
-		return $this->accounts->findBySubjectRef(subjectRef: $subjectRef);
+		$account = $this->accounts->findBySubjectRef(subjectRef: $subjectRef);
+		if (($account['status'] ?? '') === PortalAccountService::STATUS_VOID) {
+			$this->logger->info('Portaliq: no change notice to a withdrawn account', ['account' => (string)($account['id'] ?? '')]);
+			return null;
+		}
+
+		return $account;
 	}//end account()
 
 	/**

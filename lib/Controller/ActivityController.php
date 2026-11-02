@@ -40,7 +40,6 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
-use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
 use OCP\IUserSession;
 
@@ -60,6 +59,8 @@ use OCP\IUserSession;
  * (portal.manage-activity); the other nine are the services above.
  */
 class ActivityController extends Controller {
+	use StaffActionGuard;
+
 	/**
 	 * The ADR-023 action every staff method is gated by (author, open, close, staff and roster an activity).
 	 */
@@ -118,26 +119,6 @@ class ActivityController extends Controller {
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
-
-	/**
-	 * The staff guard every method calls first, before any read or write
-	 * (the same guard as `EventController`).
-	 *
-	 * @return string The staff member's user id.
-	 *
-	 * @throws OCSForbiddenException When no Nextcloud user is authenticated, or the
-	 *                               user's groups do not hold self::ACTION.
-	 */
-	private function requireAuthenticatedStaff(): string {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			throw new OCSForbiddenException('Authentication required');
-		}
-
-		$this->actionAuth->requireAction(user: $user, action: self::ACTION);
-
-		return $user->getUID();
-	}//end requireAuthenticatedStaff()
 
 	/**
 	 * Create a draft activity. The optional fields (`termEnd`,

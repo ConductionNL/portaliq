@@ -39,7 +39,7 @@ namespace OCA\Portaliq\Service\Identity;
 use DateTimeImmutable;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCP\IUserManager;
 
 /**
@@ -75,13 +75,13 @@ class NextcloudAccountProvisioner {
 	 * @param PortalObjectReader $reader  Looks accounts up.
 	 * @param PortalObjectWriter $writer  Writes the new account.
 	 * @param IUserManager       $users   Whether the Nextcloud user exists.
-	 * @param PortalResolver     $portals The published portals.
+	 * @param PublishedPortals     $portals The published portals.
 	 */
 	public function __construct(
 		private readonly PortalObjectReader $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly IUserManager $users,
-		private readonly PortalResolver $portals,
+		private readonly PublishedPortals $portals,
 	) {
 	}//end __construct()
 

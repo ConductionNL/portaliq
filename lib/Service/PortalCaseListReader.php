@@ -61,7 +61,7 @@ class PortalCaseListReader {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader The subject-scoped OpenRegister reader.
+	 * @param ScopedCollectionReaderInterface $reader The subject-scoped OpenRegister reader.
 	 * @param Identity\PortalMandateService|null $mandates Resolves what a
 	 *                                                     mandate covers.
 	 *                                                     Optional so the
@@ -75,7 +75,7 @@ class PortalCaseListReader {
 	 *                                      carry no name.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly ?Identity\PortalMandateService $mandates = null,
 		private readonly PortalBranchScope $branches = new PortalBranchScope(),
 		private readonly ?CaseTypeNames $typeNames = null,

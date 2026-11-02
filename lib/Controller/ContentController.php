@@ -39,7 +39,6 @@ use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\SiteOrganisation;
 use OCA\Portaliq\Service\TrafficConfigResolver;
 use OCP\AppFramework\Controller;
-use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
@@ -64,11 +63,6 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-content-api-must-be-sufficient-without-the-built-in-renderer
  *
- * @SuppressWarnings(PHPMD.StaticAccess)             -- PortalSessionService::trustSatisfies
- * is deliberately THE single trust comparator (contract-v2 design decision);
- * every re-check calls it statically so the ordering can never fork. Same
- * reasoning, and the same suppression, as ContributionController.
- *
  * @SuppressWarnings(PHPMD.ExcessiveParameterList)   -- eleven parameters, of which
  * `$appName` and `$request` are Nextcloud's own `Controller` contract and
  * cannot be dropped or grouped. The class injects nine collaborators of its
@@ -82,6 +76,7 @@ use Psr\Log\LoggerInterface;
  * would hide the coupling, not remove it.
  */
 class ContentController extends Controller {
+	use PublicContentGate;
 
 
 	/**
@@ -126,98 +121,6 @@ class ContentController extends Controller {
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
-
-
-	/**
-	 * Refuse a CONTENT read the resolved portal does not allow this caller.
-	 *
-	 * `portal.authentication.modes` was declared, documented and rendered — and
-	 * enforced NOWHERE. Measured on the rig: a portal set to
-	 * `modes: ['digid'], minTrust: 'substantial'` — no public mode at all —
-	 * still served its menus, its page list and full page BODIES to an
-	 * anonymous caller, all HTTP 200. Declaring an authentication mode did
-	 * nothing whatsoever.
-	 *
-	 * THE DOOR IS PUBLIC, THE ROOMS ARE NOT. `site()` deliberately does not
-	 * call this: a visitor to a DigiD-only portal has to be able to load its
-	 * title, theme and — above all — its `authentication.modes`, or there is
-	 * nothing to render a sign-in door from. That is the same reason a login
-	 * page is anonymous. Everything that carries actual content is gated.
-	 *
-	 * Fails closed to public READ-ONLY when the block is absent or unparseable,
-	 * which is what the schema documents: a portal that never configured
-	 * authentication keeps behaving exactly as it does today, so this change
-	 * cannot silently take an existing public site off the air.
-	 *
-	 * @param array $portal The resolved portal.
-	 *
-	 * @return JSONResponse|null A refusal, or null when the read may proceed.
-	 *
-	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-portal
-	 */
-	private function refuseUnlessPermitted(array $portal): ?JSONResponse {
-		$auth  = (array)($portal['authentication'] ?? []);
-		$modes = array_values(array_filter((array)($auth['modes'] ?? []), 'is_string'));
-
-		// Absent or unparseable => public read-only (the schema's own words).
-		if ($modes === [] || in_array('public', $modes, true) === true) {
-			return null;
-		}
-
-		$subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
-		if ($subject === null) {
-			// 401, not 404. `site()` already tells an anonymous caller this
-			// portal exists and how to sign in, so hiding it here would buy no
-			// secrecy and would cost the renderer its sign-in door. The modes
-			// are echoed for exactly that purpose — they are public by design.
-			return $this->refusal(
-				error: 'authentication_required',
-				status: Http::STATUS_UNAUTHORIZED,
-				modes: $modes
-			);
-		}
-
-		if (PortalSessionService::trustSatisfies($subject['trust'] ?? null, ($auth['minTrust'] ?? null)) === false) {
-			// A real session that is not assured ENOUGH. Distinct from 401 on
-			// purpose: re-authenticating with the same means would loop, so the
-			// caller has to be told the level is the problem.
-			return $this->refusal(
-				error: 'insufficient_trust',
-				status: Http::STATUS_FORBIDDEN,
-				modes: $modes
-			);
-		}
-
-		return null;
-	}//end refuseUnlessPermitted()
-
-
-	/**
-	 * The refusal shape both gated answers share.
-	 *
-	 * `private, no-store` is load-bearing rather than tidy: a refusal for a
-	 * NON-public portal must never be poolable at a CDN, or the first
-	 * anonymous miss becomes the answer every later visitor gets — including
-	 * the ones who did sign in.
-	 *
-	 * @param string $error  The machine-readable reason.
-	 * @param int    $status The HTTP status.
-	 * @param array  $modes  The portal's declared modes, for the sign-in door.
-	 *
-	 * @return JSONResponse The refusal.
-	 */
-	private function refusal(string $error, int $status, array $modes): JSONResponse {
-		$response = new JSONResponse(
-			[
-				'error'          => $error,
-				'authentication' => ['modes' => $modes],
-			],
-			$status
-		);
-		$response->addHeader('Cache-Control', 'private, no-store');
-
-		return $response;
-	}//end refusal()
 
 
 	/**
@@ -670,19 +573,6 @@ class ContentController extends Controller {
 
 		return $response;
 	}//end publicJson()
-
-
-	/**
-	 * The single not-found response every miss shares.
-	 *
-	 * @return JSONResponse A 404.
-	 */
-	private function notFound(): JSONResponse {
-		$response = new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
-		$response->addHeader('Cache-Control', 'private, no-store');
-
-		return $response;
-	}//end notFound()
 
 
 

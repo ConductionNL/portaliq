@@ -282,8 +282,11 @@ export default {
 	block-size: 1.25rem;
 }
 
+/* The label keeps the font's own leading (17px on 20.4), as the Mijn boards
+   draw it, not the page's 1.5. */
 .pq-resident-menu__label {
 	flex-grow: 1;
+	line-height: normal;
 }
 
 .pq-resident-menu__link:hover {

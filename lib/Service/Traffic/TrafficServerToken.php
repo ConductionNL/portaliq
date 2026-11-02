@@ -21,7 +21,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Traffic;
 
 use OCA\Portaliq\Service\PortalRegisterContext;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCA\Portaliq\Service\TrafficConfigResolver;
 use OCP\Security\ISecureRandom;
 use Psr\Container\ContainerInterface;
@@ -59,7 +59,7 @@ class TrafficServerToken {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalResolver        $portals   Finds the portal by slug.
+	 * @param PublishedPortals        $portals   Finds the portal by slug.
 	 * @param TrafficConfigResolver $config    Reads the stored hash.
 	 * @param ISecureRandom         $random    Mints the token.
 	 * @param ContainerInterface    $container For the lazy OpenRegister lookup.
@@ -69,7 +69,7 @@ class TrafficServerToken {
 	 * @return void
 	 */
 	public function __construct(
-		private readonly PortalResolver $portals,
+		private readonly PublishedPortals $portals,
 		private readonly TrafficConfigResolver $config,
 		private readonly ISecureRandom $random,
 		private readonly ContainerInterface $container,

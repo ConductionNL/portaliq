@@ -30,7 +30,7 @@ namespace OCA\Portaliq\Service\Identity;
 
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalAccountService;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSessionService;
 
@@ -67,7 +67,7 @@ class ConfirmedAddressJoin {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Finds the waiting account.
+	 * @param ScopedCollectionReaderInterface $reader Finds the waiting account.
 	 * @param PortalObjectWriter $writer Writes both accounts.
 	 * @param AuditTrailService|null $auditor Records the join.
 	 * @param ClaimLock|null $lock Keeps a redeem of the same waiting account out while it joins.
@@ -75,7 +75,7 @@ class ConfirmedAddressJoin {
 	 * @return void
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly ?AuditTrailService $auditor = null,
 		private readonly ?ClaimLock $lock = null,

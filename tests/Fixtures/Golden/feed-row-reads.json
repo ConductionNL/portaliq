@@ -1,0 +1,900 @@
+{
+    "event | no object service | schoolEvent": {
+        "count": 0,
+        "rows": "",
+        "last": "false",
+        "seen": []
+    },
+    "event | no object service | eventRsvp": {
+        "count": 0,
+        "rows": "",
+        "last": "false",
+        "seen": []
+    },
+    "event | not an object | schoolEvent": {
+        "count": 0,
+        "rows": "",
+        "last": "false",
+        "seen": []
+    },
+    "event | not an object | eventRsvp": {
+        "count": 0,
+        "rows": "",
+        "last": "false",
+        "seen": []
+    },
+    "event | empty | schoolEvent": {
+        "count": 0,
+        "rows": "",
+        "last": "false",
+        "seen": [
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "schoolEvent"
+            },
+            {
+                "findAll": {
+                    "filters": [],
+                    "limit": 500,
+                    "offset": 0,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            }
+        ]
+    },
+    "event | empty | eventRsvp": {
+        "count": 0,
+        "rows": "",
+        "last": "false",
+        "seen": [
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "eventRsvp"
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "guardianRef": "g-1"
+                    },
+                    "limit": 500,
+                    "offset": 0,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            }
+        ]
+    },
+    "event | mixed rows | schoolEvent": {
+        "count": 3,
+        "rows": "{\"id\":\"a\"},{\"id\":\"c\"},{\"uuid\":\"d\"}",
+        "last": "{\"uuid\":\"d\"}",
+        "seen": [
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "schoolEvent"
+            },
+            {
+                "findAll": {
+                    "filters": [],
+                    "limit": 500,
+                    "offset": 0,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            }
+        ]
+    },
+    "event | mixed rows | eventRsvp": {
+        "count": 3,
+        "rows": "{\"id\":\"a\"},{\"id\":\"c\"},{\"uuid\":\"d\"}",
+        "last": "{\"uuid\":\"d\"}",
+        "seen": [
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "eventRsvp"
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "guardianRef": "g-1"
+                    },
+                    "limit": 500,
+                    "offset": 0,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            }
+        ]
+    },
+    "event | two pages | schoolEvent": {
+        "count": 503,
+        "rows": "{\"id\":\"r0\"},{\"id\":\"r1\"},{\"id\":\"r2\"},{\"id\":\"r3\"}",
+        "last": "{\"id\":\"r502\"}",
+        "seen": [
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "schoolEvent"
+            },
+            {
+                "findAll": {
+                    "filters": [],
+                    "limit": 500,
+                    "offset": 0,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            },
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "schoolEvent"
+            },
+            {
+                "findAll": {
+                    "filters": [],
+                    "limit": 500,
+                    "offset": 500,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            }
+        ]
+    },
+    "event | two pages | eventRsvp": {
+        "count": 503,
+        "rows": "{\"id\":\"r0\"},{\"id\":\"r1\"},{\"id\":\"r2\"},{\"id\":\"r3\"}",
+        "last": "{\"id\":\"r502\"}",
+        "seen": [
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "eventRsvp"
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "guardianRef": "g-1"
+                    },
+                    "limit": 500,
+                    "offset": 0,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            },
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "eventRsvp"
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "guardianRef": "g-1"
+                    },
+                    "limit": 500,
+                    "offset": 500,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            }
+        ]
+    },
+    "event | not a list | schoolEvent": {
+        "count": 0,
+        "rows": "",
+        "last": "false",
+        "seen": [
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "schoolEvent"
+            },
+            {
+                "findAll": {
+                    "filters": [],
+                    "limit": 500,
+                    "offset": 0,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            }
+        ]
+    },
+    "event | not a list | eventRsvp": {
+        "count": 0,
+        "rows": "",
+        "last": "false",
+        "seen": [
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "eventRsvp"
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "guardianRef": "g-1"
+                    },
+                    "limit": 500,
+                    "offset": 0,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            }
+        ]
+    },
+    "event | second page not a list | schoolEvent": {
+        "count": 0,
+        "rows": "",
+        "last": "false",
+        "seen": [
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "schoolEvent"
+            },
+            {
+                "findAll": {
+                    "filters": [],
+                    "limit": 500,
+                    "offset": 0,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            },
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "schoolEvent"
+            },
+            {
+                "findAll": {
+                    "filters": [],
+                    "limit": 500,
+                    "offset": 500,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            }
+        ]
+    },
+    "event | second page not a list | eventRsvp": {
+        "count": 0,
+        "rows": "",
+        "last": "false",
+        "seen": [
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "eventRsvp"
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "guardianRef": "g-1"
+                    },
+                    "limit": 500,
+                    "offset": 0,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            },
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "eventRsvp"
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "guardianRef": "g-1"
+                    },
+                    "limit": 500,
+                    "offset": 500,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            }
+        ]
+    },
+    "event | throws | schoolEvent": {
+        "count": 0,
+        "rows": "",
+        "last": "false",
+        "seen": [
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "schoolEvent"
+            },
+            {
+                "findAll": {
+                    "filters": [],
+                    "limit": 500,
+                    "offset": 0,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            },
+            {
+                "warning": "Portaliq: event feed read failed",
+                "context": {
+                    "schema": "schoolEvent",
+                    "reason": "store down"
+                }
+            }
+        ]
+    },
+    "event | throws | eventRsvp": {
+        "count": 0,
+        "rows": "",
+        "last": "false",
+        "seen": [
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "eventRsvp"
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "guardianRef": "g-1"
+                    },
+                    "limit": 500,
+                    "offset": 0,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            },
+            {
+                "warning": "Portaliq: event feed read failed",
+                "context": {
+                    "schema": "eventRsvp",
+                    "reason": "store down"
+                }
+            }
+        ]
+    },
+    "event | rowId | id": "7",
+    "event | rowId | uuid": "u",
+    "event | rowId | self id": "s",
+    "event | rowId | self uuid": "su",
+    "event | rowId | self not an array": "",
+    "event | rowId | nothing": "",
+    "event | rowId | null id": "u",
+    "news | no object service | schoolEvent": {
+        "count": 0,
+        "rows": "",
+        "last": "false",
+        "seen": []
+    },
+    "news | no object service | eventRsvp": {
+        "count": 0,
+        "rows": "",
+        "last": "false",
+        "seen": []
+    },
+    "news | not an object | schoolEvent": {
+        "count": 0,
+        "rows": "",
+        "last": "false",
+        "seen": []
+    },
+    "news | not an object | eventRsvp": {
+        "count": 0,
+        "rows": "",
+        "last": "false",
+        "seen": []
+    },
+    "news | empty | schoolEvent": {
+        "count": 0,
+        "rows": "",
+        "last": "false",
+        "seen": [
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "schoolEvent"
+            },
+            {
+                "findAll": {
+                    "filters": [],
+                    "limit": 500,
+                    "offset": 0,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            }
+        ]
+    },
+    "news | empty | eventRsvp": {
+        "count": 0,
+        "rows": "",
+        "last": "false",
+        "seen": [
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "eventRsvp"
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "guardianRef": "g-1"
+                    },
+                    "limit": 500,
+                    "offset": 0,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            }
+        ]
+    },
+    "news | mixed rows | schoolEvent": {
+        "count": 3,
+        "rows": "{\"id\":\"a\"},{\"id\":\"c\"},{\"uuid\":\"d\"}",
+        "last": "{\"uuid\":\"d\"}",
+        "seen": [
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "schoolEvent"
+            },
+            {
+                "findAll": {
+                    "filters": [],
+                    "limit": 500,
+                    "offset": 0,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            }
+        ]
+    },
+    "news | mixed rows | eventRsvp": {
+        "count": 3,
+        "rows": "{\"id\":\"a\"},{\"id\":\"c\"},{\"uuid\":\"d\"}",
+        "last": "{\"uuid\":\"d\"}",
+        "seen": [
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "eventRsvp"
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "guardianRef": "g-1"
+                    },
+                    "limit": 500,
+                    "offset": 0,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            }
+        ]
+    },
+    "news | two pages | schoolEvent": {
+        "count": 503,
+        "rows": "{\"id\":\"r0\"},{\"id\":\"r1\"},{\"id\":\"r2\"},{\"id\":\"r3\"}",
+        "last": "{\"id\":\"r502\"}",
+        "seen": [
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "schoolEvent"
+            },
+            {
+                "findAll": {
+                    "filters": [],
+                    "limit": 500,
+                    "offset": 0,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            },
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "schoolEvent"
+            },
+            {
+                "findAll": {
+                    "filters": [],
+                    "limit": 500,
+                    "offset": 500,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            }
+        ]
+    },
+    "news | two pages | eventRsvp": {
+        "count": 503,
+        "rows": "{\"id\":\"r0\"},{\"id\":\"r1\"},{\"id\":\"r2\"},{\"id\":\"r3\"}",
+        "last": "{\"id\":\"r502\"}",
+        "seen": [
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "eventRsvp"
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "guardianRef": "g-1"
+                    },
+                    "limit": 500,
+                    "offset": 0,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            },
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "eventRsvp"
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "guardianRef": "g-1"
+                    },
+                    "limit": 500,
+                    "offset": 500,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            }
+        ]
+    },
+    "news | not a list | schoolEvent": {
+        "count": 0,
+        "rows": "",
+        "last": "false",
+        "seen": [
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "schoolEvent"
+            },
+            {
+                "findAll": {
+                    "filters": [],
+                    "limit": 500,
+                    "offset": 0,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            }
+        ]
+    },
+    "news | not a list | eventRsvp": {
+        "count": 0,
+        "rows": "",
+        "last": "false",
+        "seen": [
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "eventRsvp"
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "guardianRef": "g-1"
+                    },
+                    "limit": 500,
+                    "offset": 0,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            }
+        ]
+    },
+    "news | second page not a list | schoolEvent": {
+        "count": 0,
+        "rows": "",
+        "last": "false",
+        "seen": [
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "schoolEvent"
+            },
+            {
+                "findAll": {
+                    "filters": [],
+                    "limit": 500,
+                    "offset": 0,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            },
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "schoolEvent"
+            },
+            {
+                "findAll": {
+                    "filters": [],
+                    "limit": 500,
+                    "offset": 500,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            }
+        ]
+    },
+    "news | second page not a list | eventRsvp": {
+        "count": 0,
+        "rows": "",
+        "last": "false",
+        "seen": [
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "eventRsvp"
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "guardianRef": "g-1"
+                    },
+                    "limit": 500,
+                    "offset": 0,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            },
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "eventRsvp"
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "guardianRef": "g-1"
+                    },
+                    "limit": 500,
+                    "offset": 500,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            }
+        ]
+    },
+    "news | throws | schoolEvent": {
+        "count": 0,
+        "rows": "",
+        "last": "false",
+        "seen": [
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "schoolEvent"
+            },
+            {
+                "findAll": {
+                    "filters": [],
+                    "limit": 500,
+                    "offset": 0,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            },
+            {
+                "warning": "Portaliq: news feed read failed",
+                "context": {
+                    "schema": "schoolEvent",
+                    "reason": "store down"
+                }
+            }
+        ]
+    },
+    "news | throws | eventRsvp": {
+        "count": 0,
+        "rows": "",
+        "last": "false",
+        "seen": [
+            {
+                "setRegister": "portaliq"
+            },
+            {
+                "setSchema": "eventRsvp"
+            },
+            {
+                "findAll": {
+                    "filters": {
+                        "guardianRef": "g-1"
+                    },
+                    "limit": 500,
+                    "offset": 0,
+                    "sort": {
+                        "_created": "ASC",
+                        "_uuid": "ASC"
+                    }
+                },
+                "rbac": false,
+                "multitenancy": false
+            },
+            {
+                "warning": "Portaliq: news feed read failed",
+                "context": {
+                    "schema": "eventRsvp",
+                    "reason": "store down"
+                }
+            }
+        ]
+    },
+    "news | rowId | id": "7",
+    "news | rowId | uuid": "u",
+    "news | rowId | self id": "s",
+    "news | rowId | self uuid": "su",
+    "news | rowId | self not an array": "",
+    "news | rowId | nothing": "",
+    "news | rowId | null id": "u"
+}

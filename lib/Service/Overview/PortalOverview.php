@@ -30,7 +30,7 @@ namespace OCA\Portaliq\Service\Overview;
 use DateTimeImmutable;
 use DateTimeZone;
 use OCA\Portaliq\Service\Availability\AvailabilityReport;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCA\Portaliq\Service\Traffic\TrafficEventStore;
 use OCA\Portaliq\Service\Traffic\TrafficReportNumbers;
 
@@ -48,13 +48,13 @@ class PortalOverview {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalResolver $portals The published portals.
+	 * @param PublishedPortals $portals The published portals.
 	 * @param TrafficEventStore $traffic The daily traffic records.
 	 * @param TrafficReportNumbers $numbers Folds daily records into totals.
 	 * @param AvailabilityReport $availability The monthly availability per portal.
 	 */
 	public function __construct(
-		private readonly PortalResolver $portals,
+		private readonly PublishedPortals $portals,
 		private readonly TrafficEventStore $traffic,
 		private readonly TrafficReportNumbers $numbers,
 		private readonly AvailabilityReport $availability,

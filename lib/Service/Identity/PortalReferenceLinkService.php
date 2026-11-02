@@ -29,7 +29,7 @@ namespace OCA\Portaliq\Service\Identity;
 
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\Security\ISecureRandom;
 
@@ -67,12 +67,12 @@ class PortalReferenceLinkService {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Looks the link up by hash.
+	 * @param ScopedCollectionReaderInterface $reader Looks the link up by hash.
 	 * @param PortalObjectWriter $writer Records and spends the link.
 	 * @param ISecureRandom $random Mints the one-time secret.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly ISecureRandom $random,
 	) {

@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 
 /**
@@ -49,11 +49,11 @@ class MessageBoxDeliveries {
 	/**
 	 * Wire the deliveries.
 	 *
-	 * @param PortalObjectReader              $reader    Reads the resident's account and log.
+	 * @param ScopedCollectionReaderInterface              $reader    Reads the resident's account and log.
 	 * @param PortalOrganisationConfigService $orgConfig Whether the organisation offers the channel.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalOrganisationConfigService $orgConfig,
 	) {
 	}//end __construct()

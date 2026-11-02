@@ -581,6 +581,7 @@ import { blocksOwnHeading } from './lib/pageHeading.js'
 import { pageRegionsOf, resolveRegions } from './lib/regions.js'
 import {
 	loadPerRecordRows,
+	openTaskCount,
 	ownAreaLink as ownAreaLinkFor,
 	residentMenuGroups,
 	showsResidentMenu,
@@ -742,6 +743,8 @@ export default {
 			// The rows a page lists itself per row of (`perRecord`), by
 			// `<app>:<collection>` (site-mijn-omgeving-components REQ-SMO-020).
 			recordRows: {},
+			// The resident's open tasks, counted beside "My tasks" in the menu.
+			openTasks: 0,
 
 			// The inbox's unread count after a page changed it, else null.
 			unreadOverride: null,
@@ -1093,6 +1096,7 @@ export default {
 									this.site?.residentMenu?.groups,
 									// Items the portal leaves out (resident-menu-leave-out).
 									this.site?.residentMenu?.leaveOut,
+									this.openTasks,
 								)
 							: [],
 					menus: menusWithAddresses(
@@ -1193,6 +1197,7 @@ export default {
 				this.site?.residentMenu?.groups,
 				// Items the portal leaves out (resident-menu-leave-out).
 				this.site?.residentMenu?.leaveOut,
+				this.openTasks,
 			)
 		},
 
@@ -1832,6 +1837,12 @@ export default {
 				contributions?.contributions,
 				this.api,
 			)
+			// The count beside "My tasks", from the same read that page lists.
+			this.openTasks =
+				shellSections({ session: this.session, ...this.account }).tasks === true
+				&& typeof this.api.fetchTasks === 'function'
+					? openTaskCount(await this.api.fetchTasks().catch(() => null))
+					: 0
 			// The mandates the resident holds, so the acting-for bar can name
 			// its party before Mijn zaken was opened (REQ-SMO-008). Only when
 			// the portal lists cases: that answer carries the mandates.
@@ -1859,6 +1870,7 @@ export default {
 			}
 			this.unreadOverride = null
 			this.recordRows = {}
+			this.openTasks = 0
 			this.contactPrompt = false
 			forgetActingFor()
 			forgetClaimSecret(this.claimStorage())

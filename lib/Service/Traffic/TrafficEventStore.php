@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
 
+use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -58,6 +59,7 @@ use Throwable;
  * entry point, and it pages through the same helper as the other reads.
  */
 class TrafficEventStore {
+	use ObjectServiceLookup;
 
 	/**
 	 * OpenRegister's ObjectService FQCN, resolved lazily from the container.
@@ -550,25 +552,6 @@ class TrafficEventStore {
 		unset($row['@self']);
 
 		return array_filter($row, static fn (mixed $value): bool => $value !== null && $value !== '' && $value !== []);
-	}
-
-	/**
-	 * OpenRegister's object service, or null when it is not installed.
-	 *
-	 * @return object|null The service.
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
 	}
 
 	/**

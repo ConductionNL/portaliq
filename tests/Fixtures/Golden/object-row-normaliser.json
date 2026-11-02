@@ -1,0 +1,218 @@
+{
+    "OCA\\Portaliq\\Controller\\PushSubscriptionController": {
+        "array": {
+            "id": "a1",
+            "title": "One"
+        },
+        "empty array": [],
+        "serialises array": {
+            "id": "b2"
+        },
+        "serialises empty": [],
+        "serialises text": null,
+        "serialises null": null,
+        "serialises obj": null,
+        "plain object": null,
+        "string": null,
+        "null": null,
+        "int": null
+    },
+    "OCA\\Portaliq\\Service\\NewsRowSource": {
+        "array": {
+            "id": "a1",
+            "title": "One"
+        },
+        "empty array": [],
+        "serialises array": {
+            "id": "b2"
+        },
+        "serialises empty": [],
+        "serialises text": null,
+        "serialises null": null,
+        "serialises obj": null,
+        "plain object": null,
+        "string": null,
+        "null": null,
+        "int": null
+    },
+    "OCA\\Portaliq\\Service\\PortalObjectWriter": {
+        "array": {
+            "id": "a1",
+            "title": "One"
+        },
+        "empty array": [],
+        "serialises array": {
+            "id": "b2"
+        },
+        "serialises empty": [],
+        "serialises text": null,
+        "serialises null": null,
+        "serialises obj": null,
+        "plain object": null,
+        "string": null,
+        "null": null,
+        "int": null
+    },
+    "OCA\\Portaliq\\Service\\GuardianAudienceFixtureReader": {
+        "array": {
+            "id": "a1",
+            "title": "One"
+        },
+        "empty array": [],
+        "serialises array": {
+            "id": "b2"
+        },
+        "serialises empty": [],
+        "serialises text": null,
+        "serialises null": null,
+        "serialises obj": null,
+        "plain object": null,
+        "string": null,
+        "null": null,
+        "int": null
+    },
+    "OCA\\Portaliq\\Service\\EventSignupService": {
+        "array": {
+            "id": "a1",
+            "title": "One"
+        },
+        "empty array": [],
+        "serialises array": {
+            "id": "b2"
+        },
+        "serialises empty": [],
+        "serialises text": null,
+        "serialises null": null,
+        "serialises obj": null,
+        "plain object": null,
+        "string": null,
+        "null": null,
+        "int": null
+    },
+    "OCA\\Portaliq\\Service\\EventRsvpService": {
+        "array": {
+            "id": "a1",
+            "title": "One"
+        },
+        "empty array": [],
+        "serialises array": {
+            "id": "b2"
+        },
+        "serialises empty": [],
+        "serialises text": null,
+        "serialises null": null,
+        "serialises obj": null,
+        "plain object": null,
+        "string": null,
+        "null": null,
+        "int": null
+    },
+    "OCA\\Portaliq\\Service\\GroupStaffFixtureReader": {
+        "array": {
+            "id": "a1",
+            "title": "One"
+        },
+        "empty array": [],
+        "serialises array": {
+            "id": "b2"
+        },
+        "serialises empty": [],
+        "serialises text": null,
+        "serialises null": null,
+        "serialises obj": null,
+        "plain object": null,
+        "string": null,
+        "null": null,
+        "int": null
+    },
+    "OCA\\Portaliq\\Service\\ActivityStore": {
+        "array": {
+            "id": "a1",
+            "title": "One"
+        },
+        "empty array": [],
+        "serialises array": {
+            "id": "b2"
+        },
+        "serialises empty": [],
+        "serialises text": null,
+        "serialises null": null,
+        "serialises obj": null,
+        "plain object": null,
+        "string": null,
+        "null": null,
+        "int": null
+    },
+    "OCA\\Portaliq\\Service\\EventFeedReader": {
+        "array": {
+            "id": "a1",
+            "title": "One"
+        },
+        "empty array": [],
+        "serialises array": {
+            "id": "b2"
+        },
+        "serialises empty": [],
+        "serialises text": null,
+        "serialises null": null,
+        "serialises obj": null,
+        "plain object": null,
+        "string": null,
+        "null": null,
+        "int": null
+    },
+    "OCA\\Portaliq\\Service\\Notifications\\QuietHoursPolicy": {
+        "array": {
+            "id": "a1",
+            "title": "One"
+        },
+        "empty array": [],
+        "serialises array": {
+            "id": "b2"
+        },
+        "serialises empty": [],
+        "serialises text": null,
+        "serialises null": null,
+        "serialises obj": null,
+        "plain object": null,
+        "string": null,
+        "null": null,
+        "int": null
+    },
+    "OCA\\Portaliq\\Service\\Notifications\\PendingPushService": {
+        "array": {
+            "id": "a1",
+            "title": "One"
+        },
+        "empty array": [],
+        "serialises array": {
+            "id": "b2"
+        },
+        "serialises empty": [],
+        "serialises text": null,
+        "serialises null": null,
+        "serialises obj": null,
+        "plain object": null,
+        "string": null,
+        "null": null,
+        "int": null
+    },
+    "OCA\\Portaliq\\Service\\Messaging\\MessageStore": {
+        "array": {
+            "id": "a1",
+            "title": "One"
+        },
+        "empty array": [],
+        "serialises array": {
+            "id": "b2"
+        },
+        "serialises empty": [],
+        "serialises text": null,
+        "serialises null": null,
+        "serialises obj": null,
+        "plain object": null,
+        "string": null,
+        "null": null,
+        "int": null
+    }
+}
