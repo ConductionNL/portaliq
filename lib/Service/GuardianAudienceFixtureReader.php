@@ -51,6 +51,7 @@ use Throwable;
  * now would only spread the seam.
  */
 class GuardianAudienceFixtureReader {
+	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
 	use PagedObjectReads;
 
@@ -384,26 +385,4 @@ class GuardianAudienceFixtureReader {
 
 		return $map;
 	}//end nestedBoolMap()
-
-	/**
-	 * Normalise an OpenRegister row (array or object) to an associative array.
-	 *
-	 * @param mixed $row The row.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function normalise(mixed $row): ?array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$data = $row->jsonSerialize();
-			if (is_array($data) === true) {
-				return $data;
-			}
-		}
-
-		return null;
-	}//end normalise()
 }//end class

@@ -39,6 +39,7 @@ use OCA\Portaliq\Service\CaseTypeReader;
 use OCA\Portaliq\Service\Identity\PortalChallengeService;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\RequestedPortal;
 use OCA\Portaliq\Service\Reports\ReportIntakeService;
 use OCA\Portaliq\Service\Reports\ReportProjection;
 use OCA\Portaliq\Service\Reports\ReportTermsService;
@@ -155,7 +156,7 @@ class ReportController extends Controller {
 		int $expiresAt = 0,
 		string $signature = '',
 	): JSONResponse {
-		$site = $this->portals->resolve(request: $this->request);
+		$site = $this->portals->resolve(request: $this->request, portalSlug: (new RequestedPortal())->slug(request: $this->request));
 		if ($site === null) {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}

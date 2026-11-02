@@ -43,6 +43,7 @@ use Throwable;
  * @spec openspec/changes/extracurricular-activity-offer/design.md#d6-a-store-class-instead-of-openregister-calls-in-every-service
  */
 class ActivityStore {
+	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
 
 	/**
@@ -245,26 +246,4 @@ class ActivityStore {
 
 		return array_values(array_unique($keys));
 	}//end keys()
-
-	/**
-	 * Normalise an OpenRegister result (array or entity) to an array.
-	 *
-	 * @param mixed $row The row.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function normalise(mixed $row): ?array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$data = $row->jsonSerialize();
-			if (is_array($data) === true) {
-				return $data;
-			}
-		}
-
-		return null;
-	}//end normalise()
 }//end class

@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
+use OCA\Portaliq\Service\ObjectRowNormaliser;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use DateInterval;
 use DateTimeImmutable;
@@ -45,6 +46,7 @@ use Throwable;
  * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-a-non-emergency-push-during-quiet-hours-is-deferred-not-dropped
  */
 class QuietHoursPolicy {
+	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
 
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
@@ -331,26 +333,4 @@ class QuietHoursPolicy {
 
 		return null;
 	}//end findExistingId()
-
-	/**
-	 * Normalise an OpenRegister row (array or object) to an associative array.
-	 *
-	 * @param mixed $row The row.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function normalise(mixed $row): ?array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$data = $row->jsonSerialize();
-			if (is_array($data) === true) {
-				return $data;
-			}
-		}
-
-		return null;
-	}//end normalise()
 }//end class
