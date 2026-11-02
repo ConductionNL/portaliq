@@ -223,6 +223,9 @@ class ContactInvitationLink {
 		}
 
 		$inviterAccount = $this->accounts->bySubjectRef(subjectRef: $inviter);
+		if (($inviterAccount['status'] ?? '') === PortalAccountLookup::STATUS_VOID) {
+			$inviterAccount = null;
+		}
 		$this->writer->createObject(
 			register: PortalContactService::REGISTER,
 			schema: PortalContactService::SCHEMA,
