@@ -234,6 +234,128 @@
                 ]
             }
         },
+        "create-stringrow": {
+            "anonymous": {
+                "answer": {
+                    "throws": "OCP\\AppFramework\\OCS\\OCSForbiddenException",
+                    "message": "Authentication required"
+                },
+                "log": []
+            },
+            "ordinary": {
+                "answer": {
+                    "throws": "OCP\\AppFramework\\OCS\\OCSForbiddenException",
+                    "message": "no"
+                },
+                "log": [
+                    {
+                        "requireAction": [
+                            "resident-bob",
+                            "portal.manage-event"
+                        ]
+                    }
+                ]
+            },
+            "staff": {
+                "answer": {
+                    "status": 200,
+                    "data": []
+                },
+                "log": [
+                    {
+                        "requireAction": [
+                            "staff-anna",
+                            "portal.manage-event"
+                        ]
+                    },
+                    {
+                        "container.get": "OCA\\OpenRegister\\Service\\ObjectService"
+                    },
+                    {
+                        "saveObject": {
+                            "object": {
+                                "title": "string-row",
+                                "description": "",
+                                "start": "2026-11-10T09:00",
+                                "end": "",
+                                "target": {
+                                    "schoolRef": "s-1"
+                                },
+                                "status": "draft",
+                                "rsvpEnabled": false,
+                                "signupRoles": [],
+                                "authorRef": "staff-anna"
+                            },
+                            "register": "portaliq",
+                            "schema": "schoolEvent",
+                            "_rbac": false,
+                            "_multitenancy": false
+                        }
+                    }
+                ]
+            }
+        },
+        "create-nullrow": {
+            "anonymous": {
+                "answer": {
+                    "throws": "OCP\\AppFramework\\OCS\\OCSForbiddenException",
+                    "message": "Authentication required"
+                },
+                "log": []
+            },
+            "ordinary": {
+                "answer": {
+                    "throws": "OCP\\AppFramework\\OCS\\OCSForbiddenException",
+                    "message": "no"
+                },
+                "log": [
+                    {
+                        "requireAction": [
+                            "resident-bob",
+                            "portal.manage-event"
+                        ]
+                    }
+                ]
+            },
+            "staff": {
+                "answer": {
+                    "status": 200,
+                    "data": []
+                },
+                "log": [
+                    {
+                        "requireAction": [
+                            "staff-anna",
+                            "portal.manage-event"
+                        ]
+                    },
+                    {
+                        "container.get": "OCA\\OpenRegister\\Service\\ObjectService"
+                    },
+                    {
+                        "saveObject": {
+                            "object": {
+                                "title": "null-row",
+                                "description": "",
+                                "start": "2026-11-10T09:00",
+                                "end": "",
+                                "target": {
+                                    "schoolRef": "s-1"
+                                },
+                                "status": "draft",
+                                "rsvpEnabled": false,
+                                "signupRoles": [],
+                                "authorRef": "staff-anna"
+                            },
+                            "register": "portaliq",
+                            "schema": "schoolEvent",
+                            "_rbac": false,
+                            "_multitenancy": false
+                        }
+                    }
+                ]
+            }
+        },
         "create-groups": {
             "anonymous": {
                 "answer": {
@@ -891,6 +1013,136 @@
                 ]
             }
         },
+        "create-stringrow": {
+            "anonymous": {
+                "answer": {
+                    "throws": "OCP\\AppFramework\\OCS\\OCSForbiddenException",
+                    "message": "Authentication required"
+                },
+                "log": []
+            },
+            "ordinary": {
+                "answer": {
+                    "throws": "OCP\\AppFramework\\OCS\\OCSForbiddenException",
+                    "message": "no"
+                },
+                "log": [
+                    {
+                        "requireAction": [
+                            "resident-bob",
+                            "portal.author-news"
+                        ]
+                    }
+                ]
+            },
+            "staff": {
+                "answer": {
+                    "status": 200,
+                    "data": []
+                },
+                "log": [
+                    {
+                        "requireAction": [
+                            "staff-anna",
+                            "portal.author-news"
+                        ]
+                    },
+                    {
+                        "container.get": "OCA\\OpenRegister\\Service\\ObjectService"
+                    },
+                    {
+                        "saveObject": {
+                            "object": {
+                                "title": "string-row",
+                                "body": "b",
+                                "target": {
+                                    "groupRefs": [
+                                        "g-1"
+                                    ]
+                                },
+                                "authorRef": "staff-anna",
+                                "status": "draft",
+                                "photoRefs": [],
+                                "readReceipts": [],
+                                "public": false,
+                                "portal": "",
+                                "audienceLabel": "",
+                                "eventRef": ""
+                            },
+                            "register": "portaliq",
+                            "schema": "newsItem",
+                            "_rbac": false,
+                            "_multitenancy": false
+                        }
+                    }
+                ]
+            }
+        },
+        "create-nullrow": {
+            "anonymous": {
+                "answer": {
+                    "throws": "OCP\\AppFramework\\OCS\\OCSForbiddenException",
+                    "message": "Authentication required"
+                },
+                "log": []
+            },
+            "ordinary": {
+                "answer": {
+                    "throws": "OCP\\AppFramework\\OCS\\OCSForbiddenException",
+                    "message": "no"
+                },
+                "log": [
+                    {
+                        "requireAction": [
+                            "resident-bob",
+                            "portal.author-news"
+                        ]
+                    }
+                ]
+            },
+            "staff": {
+                "answer": {
+                    "status": 200,
+                    "data": []
+                },
+                "log": [
+                    {
+                        "requireAction": [
+                            "staff-anna",
+                            "portal.author-news"
+                        ]
+                    },
+                    {
+                        "container.get": "OCA\\OpenRegister\\Service\\ObjectService"
+                    },
+                    {
+                        "saveObject": {
+                            "object": {
+                                "title": "null-row",
+                                "body": "b",
+                                "target": {
+                                    "groupRefs": [
+                                        "g-1"
+                                    ]
+                                },
+                                "authorRef": "staff-anna",
+                                "status": "draft",
+                                "photoRefs": [],
+                                "readReceipts": [],
+                                "public": false,
+                                "portal": "",
+                                "audienceLabel": "",
+                                "eventRef": ""
+                            },
+                            "register": "portaliq",
+                            "schema": "newsItem",
+                            "_rbac": false,
+                            "_multitenancy": false
+                        }
+                    }
+                ]
+            }
+        },
         "update": {
             "anonymous": {
                 "answer": {
@@ -1390,6 +1642,124 @@
                         "saveObject": {
                             "object": {
                                 "title": "array-row",
+                                "itemRefs": [
+                                    "n-1"
+                                ],
+                                "target": {
+                                    "schoolRef": "s-1"
+                                },
+                                "sentAt": null,
+                                "archived": false
+                            },
+                            "register": "portaliq",
+                            "schema": "newsletter",
+                            "_rbac": false,
+                            "_multitenancy": false
+                        }
+                    }
+                ]
+            }
+        },
+        "create-stringrow": {
+            "anonymous": {
+                "answer": {
+                    "throws": "OCP\\AppFramework\\OCS\\OCSForbiddenException",
+                    "message": "Authentication required"
+                },
+                "log": []
+            },
+            "ordinary": {
+                "answer": {
+                    "throws": "OCP\\AppFramework\\OCS\\OCSForbiddenException",
+                    "message": "no"
+                },
+                "log": [
+                    {
+                        "requireAction": [
+                            "resident-bob",
+                            "portal.send-newsletter"
+                        ]
+                    }
+                ]
+            },
+            "staff": {
+                "answer": {
+                    "status": 200,
+                    "data": []
+                },
+                "log": [
+                    {
+                        "requireAction": [
+                            "staff-anna",
+                            "portal.send-newsletter"
+                        ]
+                    },
+                    {
+                        "container.get": "OCA\\OpenRegister\\Service\\ObjectService"
+                    },
+                    {
+                        "saveObject": {
+                            "object": {
+                                "title": "string-row",
+                                "itemRefs": [
+                                    "n-1"
+                                ],
+                                "target": {
+                                    "schoolRef": "s-1"
+                                },
+                                "sentAt": null,
+                                "archived": false
+                            },
+                            "register": "portaliq",
+                            "schema": "newsletter",
+                            "_rbac": false,
+                            "_multitenancy": false
+                        }
+                    }
+                ]
+            }
+        },
+        "create-nullrow": {
+            "anonymous": {
+                "answer": {
+                    "throws": "OCP\\AppFramework\\OCS\\OCSForbiddenException",
+                    "message": "Authentication required"
+                },
+                "log": []
+            },
+            "ordinary": {
+                "answer": {
+                    "throws": "OCP\\AppFramework\\OCS\\OCSForbiddenException",
+                    "message": "no"
+                },
+                "log": [
+                    {
+                        "requireAction": [
+                            "resident-bob",
+                            "portal.send-newsletter"
+                        ]
+                    }
+                ]
+            },
+            "staff": {
+                "answer": {
+                    "status": 200,
+                    "data": []
+                },
+                "log": [
+                    {
+                        "requireAction": [
+                            "staff-anna",
+                            "portal.send-newsletter"
+                        ]
+                    },
+                    {
+                        "container.get": "OCA\\OpenRegister\\Service\\ObjectService"
+                    },
+                    {
+                        "saveObject": {
+                            "object": {
+                                "title": "null-row",
                                 "itemRefs": [
                                     "n-1"
                                 ],
