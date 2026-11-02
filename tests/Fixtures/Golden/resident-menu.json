@@ -1,0 +1,2022 @@
+{
+	"groups:plain": [
+		{
+			"key": "cases",
+			"title": "[Cases and tasks]",
+			"items": [
+				{
+					"key": "cases",
+					"name": "Mijn zaken",
+					"link": "/mijn/cases",
+					"href": "/site/mijn/cases",
+					"icon": "folder"
+				},
+				{
+					"key": "tasks",
+					"name": "Mijn taken",
+					"link": "/mijn/tasks",
+					"href": "/site/mijn/tasks"
+				},
+				{
+					"key": "access",
+					"name": "Toegang",
+					"link": "/mijn/access",
+					"href": "/site/mijn/access"
+				}
+			]
+		},
+		{
+			"key": "themes",
+			"title": "[Themes]",
+			"items": [
+				{
+					"key": "thema/parkeren",
+					"name": "Parkeren",
+					"link": "/mijn/thema/parkeren",
+					"href": "/site/mijn/thema/parkeren"
+				}
+			]
+		},
+		{
+			"key": "collaborate",
+			"title": "[Collaborate]",
+			"items": [
+				{
+					"key": "samenwerken",
+					"name": "Samenwerken",
+					"link": "/mijn/samenwerken",
+					"href": "/site/mijn/samenwerken"
+				}
+			]
+		},
+		{
+			"key": "app:dossiq",
+			"title": "Dossiq",
+			"items": [
+				{
+					"key": "dossiq:cases",
+					"name": "[{label} ({source})]label=Mijn zaken,source=Dossiq",
+					"link": "/mijn/dossiq/cases",
+					"href": "/site/mijn/dossiq/cases"
+				}
+			]
+		},
+		{
+			"key": "group:verzoeken",
+			"title": "Verzoeken",
+			"items": [
+				{
+					"key": "dossiq:requests",
+					"name": "Mijn verzoeken",
+					"link": "/mijn/dossiq/requests",
+					"href": "/site/mijn/dossiq/requests"
+				},
+				{
+					"key": "pipelinq:leads",
+					"name": "Verzoeken",
+					"link": "/mijn/pipelinq/leads",
+					"href": "/site/mijn/pipelinq/leads"
+				}
+			]
+		},
+		{
+			"key": "app:learniq",
+			"title": "learniq",
+			"items": [
+				{
+					"key": "learniq:child",
+					"name": "Kind",
+					"link": "/mijn/learniq/child",
+					"href": "/site/mijn/learniq/child"
+				},
+				{
+					"key": "learniq:talks",
+					"name": "Gesprekken",
+					"link": "/mijn/learniq/talks",
+					"href": "/site/mijn/learniq/talks"
+				}
+			]
+		},
+		{
+			"key": "group:mijn kinderen",
+			"title": "Mijn kinderen",
+			"items": [
+				{
+					"key": "learniq:kids",
+					"name": "Kinderen",
+					"link": "/mijn/learniq/kids",
+					"href": "/site/mijn/learniq/kids"
+				}
+			]
+		},
+		{
+			"key": "app:shillinq",
+			"title": "shillinq",
+			"items": [
+				{
+					"key": "shillinq:invoices",
+					"name": "Facturen",
+					"link": "/mijn/shillinq/invoices",
+					"href": "/site/mijn/shillinq/invoices",
+					"icon": "euro"
+				}
+			]
+		},
+		{
+			"key": "messages",
+			"title": "[Messages and news]",
+			"items": [
+				{
+					"key": "inbox",
+					"name": "Berichtenbox",
+					"link": "/mijn/inbox",
+					"href": "/site/mijn/inbox",
+					"icon": "mail"
+				},
+				{
+					"key": "news",
+					"name": "Nieuws",
+					"link": "/mijn/news",
+					"href": "/site/mijn/news"
+				}
+			]
+		},
+		{
+			"key": "profile",
+			"title": "[Your details and account]",
+			"items": [
+				{
+					"key": "details",
+					"name": "Mijn gegevens",
+					"link": "/mijn/details",
+					"href": "/site/mijn/details"
+				},
+				{
+					"key": "account",
+					"name": "Account",
+					"link": "/mijn/account",
+					"href": "/site/mijn/account"
+				}
+			]
+		}
+	],
+	"current:plain:/mijn/dossiq/cases": "/mijn/dossiq/cases",
+	"current:plain:/mijn/dossiq/cases/z1": "/mijn/dossiq/cases",
+	"current:plain:/mijn/cases/abc": "/mijn/cases",
+	"current:plain:/mijn/learniq/child/c1/x": "/mijn/learniq/child",
+	"current:plain:/mijn": "/mijn",
+	"current:plain:": "",
+	"current:plain:/elders": "/elders",
+	"current:plain:/mijn/shillinq/invoices": "/mijn/shillinq/invoices",
+	"current:plain:/mijn/dossiq/archive/1": "/mijn/cases",
+	"current:plain:/mijn/learniq/hidden": "/mijn/learniq/hidden",
+	"groups:unread": [
+		{
+			"key": "cases",
+			"title": "[Cases and tasks]",
+			"items": [
+				{
+					"key": "cases",
+					"name": "Mijn zaken",
+					"link": "/mijn/cases",
+					"href": "/site/mijn/cases",
+					"icon": "folder"
+				},
+				{
+					"key": "tasks",
+					"name": "Mijn taken",
+					"link": "/mijn/tasks",
+					"href": "/site/mijn/tasks"
+				},
+				{
+					"key": "access",
+					"name": "Toegang",
+					"link": "/mijn/access",
+					"href": "/site/mijn/access"
+				}
+			]
+		},
+		{
+			"key": "themes",
+			"title": "[Themes]",
+			"items": [
+				{
+					"key": "thema/parkeren",
+					"name": "Parkeren",
+					"link": "/mijn/thema/parkeren",
+					"href": "/site/mijn/thema/parkeren"
+				}
+			]
+		},
+		{
+			"key": "collaborate",
+			"title": "[Collaborate]",
+			"items": [
+				{
+					"key": "samenwerken",
+					"name": "Samenwerken",
+					"link": "/mijn/samenwerken",
+					"href": "/site/mijn/samenwerken"
+				}
+			]
+		},
+		{
+			"key": "app:dossiq",
+			"title": "Dossiq",
+			"items": [
+				{
+					"key": "dossiq:cases",
+					"name": "[{label} ({source})]label=Mijn zaken,source=Dossiq",
+					"link": "/mijn/dossiq/cases",
+					"href": "/site/mijn/dossiq/cases"
+				}
+			]
+		},
+		{
+			"key": "group:verzoeken",
+			"title": "Verzoeken",
+			"items": [
+				{
+					"key": "dossiq:requests",
+					"name": "Mijn verzoeken",
+					"link": "/mijn/dossiq/requests",
+					"href": "/site/mijn/dossiq/requests"
+				},
+				{
+					"key": "pipelinq:leads",
+					"name": "Verzoeken",
+					"link": "/mijn/pipelinq/leads",
+					"href": "/site/mijn/pipelinq/leads"
+				}
+			]
+		},
+		{
+			"key": "app:learniq",
+			"title": "learniq",
+			"items": [
+				{
+					"key": "learniq:child",
+					"name": "Kind",
+					"link": "/mijn/learniq/child",
+					"href": "/site/mijn/learniq/child"
+				},
+				{
+					"key": "learniq:talks",
+					"name": "Gesprekken",
+					"link": "/mijn/learniq/talks",
+					"href": "/site/mijn/learniq/talks"
+				}
+			]
+		},
+		{
+			"key": "group:mijn kinderen",
+			"title": "Mijn kinderen",
+			"items": [
+				{
+					"key": "learniq:kids",
+					"name": "Kinderen",
+					"link": "/mijn/learniq/kids",
+					"href": "/site/mijn/learniq/kids"
+				}
+			]
+		},
+		{
+			"key": "app:shillinq",
+			"title": "shillinq",
+			"items": [
+				{
+					"key": "shillinq:invoices",
+					"name": "Facturen",
+					"link": "/mijn/shillinq/invoices",
+					"href": "/site/mijn/shillinq/invoices",
+					"icon": "euro"
+				}
+			]
+		},
+		{
+			"key": "messages",
+			"title": "[Messages and news]",
+			"items": [
+				{
+					"key": "inbox",
+					"name": "Berichtenbox",
+					"link": "/mijn/inbox",
+					"href": "/site/mijn/inbox",
+					"icon": "mail",
+					"badge": "3",
+					"badgeLabel": "[{count} unread]count=3"
+				},
+				{
+					"key": "news",
+					"name": "Nieuws",
+					"link": "/mijn/news",
+					"href": "/site/mijn/news"
+				}
+			]
+		},
+		{
+			"key": "profile",
+			"title": "[Your details and account]",
+			"items": [
+				{
+					"key": "details",
+					"name": "Mijn gegevens",
+					"link": "/mijn/details",
+					"href": "/site/mijn/details"
+				},
+				{
+					"key": "account",
+					"name": "Account",
+					"link": "/mijn/account",
+					"href": "/site/mijn/account"
+				}
+			]
+		}
+	],
+	"current:unread:/mijn/dossiq/cases": "/mijn/dossiq/cases",
+	"current:unread:/mijn/dossiq/cases/z1": "/mijn/dossiq/cases",
+	"current:unread:/mijn/cases/abc": "/mijn/cases",
+	"current:unread:/mijn/learniq/child/c1/x": "/mijn/learniq/child",
+	"current:unread:/mijn": "/mijn",
+	"current:unread:": "",
+	"current:unread:/elders": "/elders",
+	"current:unread:/mijn/shillinq/invoices": "/mijn/shillinq/invoices",
+	"current:unread:/mijn/dossiq/archive/1": "/mijn/cases",
+	"current:unread:/mijn/learniq/hidden": "/mijn/learniq/hidden",
+	"groups:rows": [
+		{
+			"key": "cases",
+			"title": "[Cases and tasks]",
+			"items": [
+				{
+					"key": "cases",
+					"name": "Mijn zaken",
+					"link": "/mijn/cases",
+					"href": "/site/mijn/cases",
+					"icon": "folder"
+				},
+				{
+					"key": "tasks",
+					"name": "Mijn taken",
+					"link": "/mijn/tasks",
+					"href": "/site/mijn/tasks"
+				},
+				{
+					"key": "access",
+					"name": "Toegang",
+					"link": "/mijn/access",
+					"href": "/site/mijn/access"
+				}
+			]
+		},
+		{
+			"key": "themes",
+			"title": "[Themes]",
+			"items": [
+				{
+					"key": "thema/parkeren",
+					"name": "Parkeren",
+					"link": "/mijn/thema/parkeren",
+					"href": "/site/mijn/thema/parkeren"
+				}
+			]
+		},
+		{
+			"key": "collaborate",
+			"title": "[Collaborate]",
+			"items": [
+				{
+					"key": "samenwerken",
+					"name": "Samenwerken",
+					"link": "/mijn/samenwerken",
+					"href": "/site/mijn/samenwerken"
+				}
+			]
+		},
+		{
+			"key": "app:dossiq",
+			"title": "Dossiq",
+			"items": [
+				{
+					"key": "dossiq:cases",
+					"name": "[{label} ({source})]label=Mijn zaken,source=Dossiq",
+					"link": "/mijn/dossiq/cases",
+					"href": "/site/mijn/dossiq/cases"
+				}
+			]
+		},
+		{
+			"key": "group:verzoeken",
+			"title": "Verzoeken",
+			"items": [
+				{
+					"key": "dossiq:requests",
+					"name": "Mijn verzoeken",
+					"link": "/mijn/dossiq/requests",
+					"href": "/site/mijn/dossiq/requests"
+				},
+				{
+					"key": "pipelinq:leads",
+					"name": "Verzoeken",
+					"link": "/mijn/pipelinq/leads",
+					"href": "/site/mijn/pipelinq/leads"
+				}
+			]
+		},
+		{
+			"key": "group:mijn kinderen",
+			"title": "Mijn kinderen",
+			"items": [
+				{
+					"key": "learniq:kids:c1",
+					"name": "Vera V Vera",
+					"link": "/mijn/learniq/kids/c1",
+					"href": "/site/mijn/learniq/kids/c1",
+					"subline": "De Wilg · 3a"
+				},
+				{
+					"key": "learniq:kids:c 2",
+					"name": "Sami",
+					"link": "/mijn/learniq/kids/c%202",
+					"href": "/site/mijn/learniq/kids/c%202"
+				},
+				{
+					"key": "learniq:kids:c3",
+					"name": "Derde",
+					"link": "/mijn/learniq/kids/c3",
+					"href": "/site/mijn/learniq/kids/c3"
+				}
+			]
+		},
+		{
+			"key": "app:learniq",
+			"title": "learniq",
+			"items": [
+				{
+					"key": "learniq:talks",
+					"name": "Gesprekken",
+					"link": "/mijn/learniq/talks",
+					"href": "/site/mijn/learniq/talks",
+					"badge": "2",
+					"badgeLabel": "[{count} gepland]count=2"
+				}
+			]
+		},
+		{
+			"key": "app:shillinq",
+			"title": "shillinq",
+			"items": [
+				{
+					"key": "shillinq:invoices",
+					"name": "Facturen",
+					"link": "/mijn/shillinq/invoices",
+					"href": "/site/mijn/shillinq/invoices",
+					"icon": "euro"
+				}
+			]
+		},
+		{
+			"key": "record:learniq:children:c1",
+			"title": "Vera",
+			"items": [
+				{
+					"key": "learniq:child:c1",
+					"name": "Kind",
+					"link": "/mijn/learniq/child/c1",
+					"href": "/site/mijn/learniq/child/c1"
+				}
+			]
+		},
+		{
+			"key": "record:learniq:children:c 2",
+			"title": "Sami",
+			"items": [
+				{
+					"key": "learniq:child:c 2",
+					"name": "Kind",
+					"link": "/mijn/learniq/child/c%202",
+					"href": "/site/mijn/learniq/child/c%202"
+				}
+			]
+		},
+		{
+			"key": "messages",
+			"title": "[Messages and news]",
+			"items": [
+				{
+					"key": "inbox",
+					"name": "Berichtenbox",
+					"link": "/mijn/inbox",
+					"href": "/site/mijn/inbox",
+					"icon": "mail"
+				},
+				{
+					"key": "news",
+					"name": "Nieuws",
+					"link": "/mijn/news",
+					"href": "/site/mijn/news"
+				}
+			]
+		},
+		{
+			"key": "profile",
+			"title": "[Your details and account]",
+			"items": [
+				{
+					"key": "details",
+					"name": "Mijn gegevens",
+					"link": "/mijn/details",
+					"href": "/site/mijn/details"
+				},
+				{
+					"key": "account",
+					"name": "Account",
+					"link": "/mijn/account",
+					"href": "/site/mijn/account"
+				}
+			]
+		}
+	],
+	"current:rows:/mijn/dossiq/cases": "/mijn/dossiq/cases",
+	"current:rows:/mijn/dossiq/cases/z1": "/mijn/dossiq/cases",
+	"current:rows:/mijn/cases/abc": "/mijn/cases",
+	"current:rows:/mijn/learniq/child/c1/x": "/mijn/learniq/child/c1",
+	"current:rows:/mijn": "/mijn",
+	"current:rows:": "",
+	"current:rows:/elders": "/elders",
+	"current:rows:/mijn/shillinq/invoices": "/mijn/shillinq/invoices",
+	"current:rows:/mijn/dossiq/archive/1": "/mijn/cases",
+	"current:rows:/mijn/learniq/hidden": "/mijn/learniq/hidden",
+	"groups:tasks": [
+		{
+			"key": "cases",
+			"title": "[Cases and tasks]",
+			"items": [
+				{
+					"key": "cases",
+					"name": "Mijn zaken",
+					"link": "/mijn/cases",
+					"href": "/site/mijn/cases",
+					"icon": "folder"
+				},
+				{
+					"key": "tasks",
+					"name": "Mijn taken",
+					"link": "/mijn/tasks",
+					"href": "/site/mijn/tasks",
+					"badge": "4",
+					"badgeLabel": "[{count} open]count=4"
+				},
+				{
+					"key": "access",
+					"name": "Toegang",
+					"link": "/mijn/access",
+					"href": "/site/mijn/access"
+				}
+			]
+		},
+		{
+			"key": "themes",
+			"title": "[Themes]",
+			"items": [
+				{
+					"key": "thema/parkeren",
+					"name": "Parkeren",
+					"link": "/mijn/thema/parkeren",
+					"href": "/site/mijn/thema/parkeren"
+				}
+			]
+		},
+		{
+			"key": "collaborate",
+			"title": "[Collaborate]",
+			"items": [
+				{
+					"key": "samenwerken",
+					"name": "Samenwerken",
+					"link": "/mijn/samenwerken",
+					"href": "/site/mijn/samenwerken"
+				}
+			]
+		},
+		{
+			"key": "app:dossiq",
+			"title": "Dossiq",
+			"items": [
+				{
+					"key": "dossiq:cases",
+					"name": "[{label} ({source})]label=Mijn zaken,source=Dossiq",
+					"link": "/mijn/dossiq/cases",
+					"href": "/site/mijn/dossiq/cases"
+				}
+			]
+		},
+		{
+			"key": "group:verzoeken",
+			"title": "Verzoeken",
+			"items": [
+				{
+					"key": "dossiq:requests",
+					"name": "Mijn verzoeken",
+					"link": "/mijn/dossiq/requests",
+					"href": "/site/mijn/dossiq/requests"
+				},
+				{
+					"key": "pipelinq:leads",
+					"name": "Verzoeken",
+					"link": "/mijn/pipelinq/leads",
+					"href": "/site/mijn/pipelinq/leads"
+				}
+			]
+		},
+		{
+			"key": "group:mijn kinderen",
+			"title": "Mijn kinderen",
+			"items": [
+				{
+					"key": "learniq:kids:c1",
+					"name": "Vera V Vera",
+					"link": "/mijn/learniq/kids/c1",
+					"href": "/site/mijn/learniq/kids/c1",
+					"subline": "De Wilg · 3a"
+				},
+				{
+					"key": "learniq:kids:c 2",
+					"name": "Sami",
+					"link": "/mijn/learniq/kids/c%202",
+					"href": "/site/mijn/learniq/kids/c%202"
+				},
+				{
+					"key": "learniq:kids:c3",
+					"name": "Derde",
+					"link": "/mijn/learniq/kids/c3",
+					"href": "/site/mijn/learniq/kids/c3"
+				}
+			]
+		},
+		{
+			"key": "app:learniq",
+			"title": "learniq",
+			"items": [
+				{
+					"key": "learniq:talks",
+					"name": "Gesprekken",
+					"link": "/mijn/learniq/talks",
+					"href": "/site/mijn/learniq/talks",
+					"badge": "2",
+					"badgeLabel": "[{count} gepland]count=2"
+				}
+			]
+		},
+		{
+			"key": "app:shillinq",
+			"title": "shillinq",
+			"items": [
+				{
+					"key": "shillinq:invoices",
+					"name": "Facturen",
+					"link": "/mijn/shillinq/invoices",
+					"href": "/site/mijn/shillinq/invoices",
+					"icon": "euro"
+				}
+			]
+		},
+		{
+			"key": "record:learniq:children:c1",
+			"title": "Vera",
+			"items": [
+				{
+					"key": "learniq:child:c1",
+					"name": "Kind",
+					"link": "/mijn/learniq/child/c1",
+					"href": "/site/mijn/learniq/child/c1"
+				}
+			]
+		},
+		{
+			"key": "record:learniq:children:c 2",
+			"title": "Sami",
+			"items": [
+				{
+					"key": "learniq:child:c 2",
+					"name": "Kind",
+					"link": "/mijn/learniq/child/c%202",
+					"href": "/site/mijn/learniq/child/c%202"
+				}
+			]
+		},
+		{
+			"key": "messages",
+			"title": "[Messages and news]",
+			"items": [
+				{
+					"key": "inbox",
+					"name": "Berichtenbox",
+					"link": "/mijn/inbox",
+					"href": "/site/mijn/inbox",
+					"icon": "mail",
+					"badge": "2",
+					"badgeLabel": "[{count} unread]count=2"
+				},
+				{
+					"key": "news",
+					"name": "Nieuws",
+					"link": "/mijn/news",
+					"href": "/site/mijn/news"
+				}
+			]
+		},
+		{
+			"key": "profile",
+			"title": "[Your details and account]",
+			"items": [
+				{
+					"key": "details",
+					"name": "Mijn gegevens",
+					"link": "/mijn/details",
+					"href": "/site/mijn/details"
+				},
+				{
+					"key": "account",
+					"name": "Account",
+					"link": "/mijn/account",
+					"href": "/site/mijn/account"
+				}
+			]
+		}
+	],
+	"current:tasks:/mijn/dossiq/cases": "/mijn/dossiq/cases",
+	"current:tasks:/mijn/dossiq/cases/z1": "/mijn/dossiq/cases",
+	"current:tasks:/mijn/cases/abc": "/mijn/cases",
+	"current:tasks:/mijn/learniq/child/c1/x": "/mijn/learniq/child/c1",
+	"current:tasks:/mijn": "/mijn",
+	"current:tasks:": "",
+	"current:tasks:/elders": "/elders",
+	"current:tasks:/mijn/shillinq/invoices": "/mijn/shillinq/invoices",
+	"current:tasks:/mijn/dossiq/archive/1": "/mijn/cases",
+	"current:tasks:/mijn/learniq/hidden": "/mijn/learniq/hidden",
+	"groups:layout": [
+		{
+			"key": "layout:0",
+			"title": "Zaken en taken",
+			"items": [
+				{
+					"key": "__overview__",
+					"name": "[Overview]",
+					"link": "/mijn",
+					"href": "/site/mijn"
+				},
+				{
+					"key": "cases",
+					"name": "Mijn zaken",
+					"link": "/mijn/cases",
+					"href": "/site/mijn/cases"
+				},
+				{
+					"key": "tasks",
+					"name": "Mijn taken",
+					"link": "/mijn/tasks",
+					"href": "/site/mijn/tasks",
+					"badge": "4",
+					"badgeLabel": "[{count} open]count=4"
+				},
+				{
+					"key": "learniq:talks",
+					"name": "Gesprekken",
+					"link": "/mijn/learniq/talks",
+					"href": "/site/mijn/learniq/talks",
+					"badge": "2",
+					"badgeLabel": "[{count} gepland]count=2"
+				}
+			]
+		},
+		{
+			"key": "layout:2",
+			"title": "[Your details and account]",
+			"items": [
+				{
+					"key": "details",
+					"name": "Mijn gegevens",
+					"link": "/mijn/details",
+					"href": "/site/mijn/details"
+				},
+				{
+					"key": "account",
+					"name": "Account",
+					"link": "/mijn/account",
+					"href": "/site/mijn/account"
+				}
+			]
+		},
+		{
+			"key": "layout:3",
+			"title": "",
+			"items": [
+				{
+					"key": "inbox",
+					"name": "Berichtenbox",
+					"link": "/mijn/inbox",
+					"href": "/site/mijn/inbox",
+					"badge": "2",
+					"badgeLabel": "[{count} unread]count=2"
+				}
+			]
+		},
+		{
+			"key": "cases",
+			"title": "[Cases and tasks]",
+			"items": [
+				{
+					"key": "access",
+					"name": "Toegang",
+					"link": "/mijn/access",
+					"href": "/site/mijn/access"
+				}
+			]
+		},
+		{
+			"key": "themes",
+			"title": "[Themes]",
+			"items": [
+				{
+					"key": "thema/parkeren",
+					"name": "Parkeren",
+					"link": "/mijn/thema/parkeren",
+					"href": "/site/mijn/thema/parkeren"
+				}
+			]
+		},
+		{
+			"key": "collaborate",
+			"title": "[Collaborate]",
+			"items": [
+				{
+					"key": "samenwerken",
+					"name": "Samenwerken",
+					"link": "/mijn/samenwerken",
+					"href": "/site/mijn/samenwerken"
+				}
+			]
+		},
+		{
+			"key": "app:dossiq",
+			"title": "Dossiq",
+			"items": [
+				{
+					"key": "dossiq:cases",
+					"name": "[{label} ({source})]label=Mijn zaken,source=Dossiq",
+					"link": "/mijn/dossiq/cases",
+					"href": "/site/mijn/dossiq/cases"
+				}
+			]
+		},
+		{
+			"key": "group:verzoeken",
+			"title": "Verzoeken",
+			"items": [
+				{
+					"key": "dossiq:requests",
+					"name": "Mijn verzoeken",
+					"link": "/mijn/dossiq/requests",
+					"href": "/site/mijn/dossiq/requests"
+				},
+				{
+					"key": "pipelinq:leads",
+					"name": "Verzoeken",
+					"link": "/mijn/pipelinq/leads",
+					"href": "/site/mijn/pipelinq/leads"
+				}
+			]
+		},
+		{
+			"key": "group:mijn kinderen",
+			"title": "Mijn kinderen",
+			"items": [
+				{
+					"key": "learniq:kids:c1",
+					"name": "Vera V Vera",
+					"link": "/mijn/learniq/kids/c1",
+					"href": "/site/mijn/learniq/kids/c1",
+					"subline": "De Wilg · 3a"
+				},
+				{
+					"key": "learniq:kids:c 2",
+					"name": "Sami",
+					"link": "/mijn/learniq/kids/c%202",
+					"href": "/site/mijn/learniq/kids/c%202"
+				},
+				{
+					"key": "learniq:kids:c3",
+					"name": "Derde",
+					"link": "/mijn/learniq/kids/c3",
+					"href": "/site/mijn/learniq/kids/c3"
+				}
+			]
+		},
+		{
+			"key": "app:shillinq",
+			"title": "shillinq",
+			"items": [
+				{
+					"key": "shillinq:invoices",
+					"name": "Facturen",
+					"link": "/mijn/shillinq/invoices",
+					"href": "/site/mijn/shillinq/invoices"
+				}
+			]
+		},
+		{
+			"key": "record:learniq:children:c1",
+			"title": "Vera",
+			"items": [
+				{
+					"key": "learniq:child:c1",
+					"name": "Kind",
+					"link": "/mijn/learniq/child/c1",
+					"href": "/site/mijn/learniq/child/c1"
+				}
+			]
+		},
+		{
+			"key": "record:learniq:children:c 2",
+			"title": "Sami",
+			"items": [
+				{
+					"key": "learniq:child:c 2",
+					"name": "Kind",
+					"link": "/mijn/learniq/child/c%202",
+					"href": "/site/mijn/learniq/child/c%202"
+				}
+			]
+		},
+		{
+			"key": "messages",
+			"title": "[Messages and news]",
+			"items": [
+				{
+					"key": "news",
+					"name": "Nieuws",
+					"link": "/mijn/news",
+					"href": "/site/mijn/news"
+				}
+			]
+		}
+	],
+	"current:layout:/mijn/dossiq/cases": "/mijn/dossiq/cases",
+	"current:layout:/mijn/dossiq/cases/z1": "/mijn/dossiq/cases",
+	"current:layout:/mijn/cases/abc": "/mijn/cases",
+	"current:layout:/mijn/learniq/child/c1/x": "/mijn/learniq/child/c1",
+	"current:layout:/mijn": "/mijn",
+	"current:layout:": "",
+	"current:layout:/elders": "/elders",
+	"current:layout:/mijn/shillinq/invoices": "/mijn/shillinq/invoices",
+	"current:layout:/mijn/dossiq/archive/1": "/mijn/cases",
+	"current:layout:/mijn/learniq/hidden": "/mijn/learniq/hidden",
+	"groups:leaveOut": [
+		{
+			"key": "cases",
+			"title": "[Cases and tasks]",
+			"items": [
+				{
+					"key": "cases",
+					"name": "Mijn zaken",
+					"link": "/mijn/cases",
+					"href": "/site/mijn/cases",
+					"icon": "folder"
+				},
+				{
+					"key": "access",
+					"name": "Toegang",
+					"link": "/mijn/access",
+					"href": "/site/mijn/access"
+				}
+			]
+		},
+		{
+			"key": "collaborate",
+			"title": "[Collaborate]",
+			"items": [
+				{
+					"key": "samenwerken",
+					"name": "Samenwerken",
+					"link": "/mijn/samenwerken",
+					"href": "/site/mijn/samenwerken"
+				}
+			]
+		},
+		{
+			"key": "app:dossiq",
+			"title": "Dossiq",
+			"items": [
+				{
+					"key": "dossiq:cases",
+					"name": "[{label} ({source})]label=Mijn zaken,source=Dossiq",
+					"link": "/mijn/dossiq/cases",
+					"href": "/site/mijn/dossiq/cases"
+				}
+			]
+		},
+		{
+			"key": "group:verzoeken",
+			"title": "Verzoeken",
+			"items": [
+				{
+					"key": "pipelinq:leads",
+					"name": "Verzoeken",
+					"link": "/mijn/pipelinq/leads",
+					"href": "/site/mijn/pipelinq/leads"
+				}
+			]
+		},
+		{
+			"key": "group:mijn kinderen",
+			"title": "Mijn kinderen",
+			"items": [
+				{
+					"key": "learniq:kids:c1",
+					"name": "Vera V Vera",
+					"link": "/mijn/learniq/kids/c1",
+					"href": "/site/mijn/learniq/kids/c1",
+					"subline": "De Wilg · 3a"
+				},
+				{
+					"key": "learniq:kids:c 2",
+					"name": "Sami",
+					"link": "/mijn/learniq/kids/c%202",
+					"href": "/site/mijn/learniq/kids/c%202"
+				},
+				{
+					"key": "learniq:kids:c3",
+					"name": "Derde",
+					"link": "/mijn/learniq/kids/c3",
+					"href": "/site/mijn/learniq/kids/c3"
+				}
+			]
+		},
+		{
+			"key": "app:learniq",
+			"title": "learniq",
+			"items": [
+				{
+					"key": "learniq:talks",
+					"name": "Gesprekken",
+					"link": "/mijn/learniq/talks",
+					"href": "/site/mijn/learniq/talks",
+					"badge": "2",
+					"badgeLabel": "[{count} gepland]count=2"
+				}
+			]
+		},
+		{
+			"key": "app:shillinq",
+			"title": "shillinq",
+			"items": [
+				{
+					"key": "shillinq:invoices",
+					"name": "Facturen",
+					"link": "/mijn/shillinq/invoices",
+					"href": "/site/mijn/shillinq/invoices",
+					"icon": "euro"
+				}
+			]
+		},
+		{
+			"key": "record:learniq:children:c1",
+			"title": "Vera",
+			"items": [
+				{
+					"key": "learniq:child:c1",
+					"name": "Kind",
+					"link": "/mijn/learniq/child/c1",
+					"href": "/site/mijn/learniq/child/c1"
+				}
+			]
+		},
+		{
+			"key": "record:learniq:children:c 2",
+			"title": "Sami",
+			"items": [
+				{
+					"key": "learniq:child:c 2",
+					"name": "Kind",
+					"link": "/mijn/learniq/child/c%202",
+					"href": "/site/mijn/learniq/child/c%202"
+				}
+			]
+		},
+		{
+			"key": "messages",
+			"title": "[Messages and news]",
+			"items": [
+				{
+					"key": "inbox",
+					"name": "Berichtenbox",
+					"link": "/mijn/inbox",
+					"href": "/site/mijn/inbox",
+					"icon": "mail"
+				}
+			]
+		}
+	],
+	"current:leaveOut:/mijn/dossiq/cases": "/mijn/dossiq/cases",
+	"current:leaveOut:/mijn/dossiq/cases/z1": "/mijn/dossiq/cases",
+	"current:leaveOut:/mijn/cases/abc": "/mijn/cases",
+	"current:leaveOut:/mijn/learniq/child/c1/x": "/mijn/learniq/child/c1",
+	"current:leaveOut:/mijn": "/mijn",
+	"current:leaveOut:": "",
+	"current:leaveOut:/elders": "/elders",
+	"current:leaveOut:/mijn/shillinq/invoices": "/mijn/shillinq/invoices",
+	"current:leaveOut:/mijn/dossiq/archive/1": "/mijn/cases",
+	"current:leaveOut:/mijn/learniq/hidden": "/mijn/learniq/hidden",
+	"groups:both": [
+		{
+			"key": "layout:0",
+			"title": "Zaken en taken",
+			"items": [
+				{
+					"key": "__overview__",
+					"name": "[Overview]",
+					"link": "/mijn",
+					"href": "/site/mijn"
+				},
+				{
+					"key": "tasks",
+					"name": "Mijn taken",
+					"link": "/mijn/tasks",
+					"href": "/site/mijn/tasks"
+				},
+				{
+					"key": "learniq:talks",
+					"name": "Gesprekken",
+					"link": "/mijn/learniq/talks",
+					"href": "/site/mijn/learniq/talks",
+					"badge": "2",
+					"badgeLabel": "[{count} gepland]count=2"
+				}
+			]
+		},
+		{
+			"key": "layout:2",
+			"title": "[Your details and account]",
+			"items": [
+				{
+					"key": "details",
+					"name": "Mijn gegevens",
+					"link": "/mijn/details",
+					"href": "/site/mijn/details"
+				},
+				{
+					"key": "account",
+					"name": "Account",
+					"link": "/mijn/account",
+					"href": "/site/mijn/account"
+				}
+			]
+		},
+		{
+			"key": "layout:3",
+			"title": "",
+			"items": [
+				{
+					"key": "inbox",
+					"name": "Berichtenbox",
+					"link": "/mijn/inbox",
+					"href": "/site/mijn/inbox",
+					"badge": "1",
+					"badgeLabel": "[{count} unread]count=1"
+				}
+			]
+		},
+		{
+			"key": "cases",
+			"title": "[Cases and tasks]",
+			"items": [
+				{
+					"key": "access",
+					"name": "Toegang",
+					"link": "/mijn/access",
+					"href": "/site/mijn/access"
+				}
+			]
+		},
+		{
+			"key": "themes",
+			"title": "[Themes]",
+			"items": [
+				{
+					"key": "thema/parkeren",
+					"name": "Parkeren",
+					"link": "/mijn/thema/parkeren",
+					"href": "/site/mijn/thema/parkeren"
+				}
+			]
+		},
+		{
+			"key": "collaborate",
+			"title": "[Collaborate]",
+			"items": [
+				{
+					"key": "samenwerken",
+					"name": "Samenwerken",
+					"link": "/mijn/samenwerken",
+					"href": "/site/mijn/samenwerken"
+				}
+			]
+		},
+		{
+			"key": "app:dossiq",
+			"title": "Dossiq",
+			"items": [
+				{
+					"key": "dossiq:cases",
+					"name": "[{label} ({source})]label=Mijn zaken,source=Dossiq",
+					"link": "/mijn/dossiq/cases",
+					"href": "/site/mijn/dossiq/cases"
+				}
+			]
+		},
+		{
+			"key": "group:verzoeken",
+			"title": "Verzoeken",
+			"items": [
+				{
+					"key": "dossiq:requests",
+					"name": "Mijn verzoeken",
+					"link": "/mijn/dossiq/requests",
+					"href": "/site/mijn/dossiq/requests"
+				},
+				{
+					"key": "pipelinq:leads",
+					"name": "Verzoeken",
+					"link": "/mijn/pipelinq/leads",
+					"href": "/site/mijn/pipelinq/leads"
+				}
+			]
+		},
+		{
+			"key": "group:mijn kinderen",
+			"title": "Mijn kinderen",
+			"items": [
+				{
+					"key": "learniq:kids:c1",
+					"name": "Vera V Vera",
+					"link": "/mijn/learniq/kids/c1",
+					"href": "/site/mijn/learniq/kids/c1",
+					"subline": "De Wilg · 3a"
+				},
+				{
+					"key": "learniq:kids:c 2",
+					"name": "Sami",
+					"link": "/mijn/learniq/kids/c%202",
+					"href": "/site/mijn/learniq/kids/c%202"
+				},
+				{
+					"key": "learniq:kids:c3",
+					"name": "Derde",
+					"link": "/mijn/learniq/kids/c3",
+					"href": "/site/mijn/learniq/kids/c3"
+				}
+			]
+		},
+		{
+			"key": "app:shillinq",
+			"title": "shillinq",
+			"items": [
+				{
+					"key": "shillinq:invoices",
+					"name": "Facturen",
+					"link": "/mijn/shillinq/invoices",
+					"href": "/site/mijn/shillinq/invoices"
+				}
+			]
+		},
+		{
+			"key": "record:learniq:children:c1",
+			"title": "Vera",
+			"items": [
+				{
+					"key": "learniq:child:c1",
+					"name": "Kind",
+					"link": "/mijn/learniq/child/c1",
+					"href": "/site/mijn/learniq/child/c1"
+				}
+			]
+		},
+		{
+			"key": "record:learniq:children:c 2",
+			"title": "Sami",
+			"items": [
+				{
+					"key": "learniq:child:c 2",
+					"name": "Kind",
+					"link": "/mijn/learniq/child/c%202",
+					"href": "/site/mijn/learniq/child/c%202"
+				}
+			]
+		},
+		{
+			"key": "messages",
+			"title": "[Messages and news]",
+			"items": [
+				{
+					"key": "news",
+					"name": "Nieuws",
+					"link": "/mijn/news",
+					"href": "/site/mijn/news"
+				}
+			]
+		}
+	],
+	"current:both:/mijn/dossiq/cases": "/mijn/dossiq/cases",
+	"current:both:/mijn/dossiq/cases/z1": "/mijn/dossiq/cases",
+	"current:both:/mijn/cases/abc": "/mijn/cases/abc",
+	"current:both:/mijn/learniq/child/c1/x": "/mijn/learniq/child/c1",
+	"current:both:/mijn": "/mijn",
+	"current:both:": "",
+	"current:both:/elders": "/elders",
+	"current:both:/mijn/shillinq/invoices": "/mijn/shillinq/invoices",
+	"current:both:/mijn/dossiq/archive/1": "/mijn/dossiq/archive/1",
+	"current:both:/mijn/learniq/hidden": "/mijn/learniq/hidden",
+	"groups:empty": [],
+	"current:empty:/mijn/dossiq/cases": "/mijn/dossiq/cases",
+	"current:empty:/mijn/dossiq/cases/z1": "/mijn/dossiq/cases/z1",
+	"current:empty:/mijn/cases/abc": "/mijn/cases/abc",
+	"current:empty:/mijn/learniq/child/c1/x": "/mijn/learniq/child/c1/x",
+	"current:empty:/mijn": "/mijn",
+	"current:empty:": "",
+	"current:empty:/elders": "/elders",
+	"current:empty:/mijn/shillinq/invoices": "/mijn/shillinq/invoices",
+	"current:empty:/mijn/dossiq/archive/1": "/mijn/dossiq/archive/1",
+	"current:empty:/mijn/learniq/hidden": "/mijn/learniq/hidden",
+	"groups:noRowsKnown": [
+		{
+			"key": "cases",
+			"title": "[Cases and tasks]",
+			"items": [
+				{
+					"key": "cases",
+					"name": "Mijn zaken",
+					"link": "/mijn/cases",
+					"href": "/site/mijn/cases",
+					"icon": "folder"
+				},
+				{
+					"key": "tasks",
+					"name": "Mijn taken",
+					"link": "/mijn/tasks",
+					"href": "/site/mijn/tasks"
+				},
+				{
+					"key": "access",
+					"name": "Toegang",
+					"link": "/mijn/access",
+					"href": "/site/mijn/access"
+				}
+			]
+		},
+		{
+			"key": "themes",
+			"title": "[Themes]",
+			"items": [
+				{
+					"key": "thema/parkeren",
+					"name": "Parkeren",
+					"link": "/mijn/thema/parkeren",
+					"href": "/site/mijn/thema/parkeren"
+				}
+			]
+		},
+		{
+			"key": "collaborate",
+			"title": "[Collaborate]",
+			"items": [
+				{
+					"key": "samenwerken",
+					"name": "Samenwerken",
+					"link": "/mijn/samenwerken",
+					"href": "/site/mijn/samenwerken"
+				}
+			]
+		},
+		{
+			"key": "app:dossiq",
+			"title": "Dossiq",
+			"items": [
+				{
+					"key": "dossiq:cases",
+					"name": "[{label} ({source})]label=Mijn zaken,source=Dossiq",
+					"link": "/mijn/dossiq/cases",
+					"href": "/site/mijn/dossiq/cases"
+				}
+			]
+		},
+		{
+			"key": "group:verzoeken",
+			"title": "Verzoeken",
+			"items": [
+				{
+					"key": "dossiq:requests",
+					"name": "Mijn verzoeken",
+					"link": "/mijn/dossiq/requests",
+					"href": "/site/mijn/dossiq/requests"
+				},
+				{
+					"key": "pipelinq:leads",
+					"name": "Verzoeken",
+					"link": "/mijn/pipelinq/leads",
+					"href": "/site/mijn/pipelinq/leads"
+				}
+			]
+		},
+		{
+			"key": "app:learniq",
+			"title": "learniq",
+			"items": [
+				{
+					"key": "learniq:child",
+					"name": "Kind",
+					"link": "/mijn/learniq/child",
+					"href": "/site/mijn/learniq/child"
+				},
+				{
+					"key": "learniq:talks",
+					"name": "Gesprekken",
+					"link": "/mijn/learniq/talks",
+					"href": "/site/mijn/learniq/talks"
+				}
+			]
+		},
+		{
+			"key": "group:mijn kinderen",
+			"title": "Mijn kinderen",
+			"items": [
+				{
+					"key": "learniq:kids",
+					"name": "Kinderen",
+					"link": "/mijn/learniq/kids",
+					"href": "/site/mijn/learniq/kids"
+				}
+			]
+		},
+		{
+			"key": "app:shillinq",
+			"title": "shillinq",
+			"items": [
+				{
+					"key": "shillinq:invoices",
+					"name": "Facturen",
+					"link": "/mijn/shillinq/invoices",
+					"href": "/site/mijn/shillinq/invoices",
+					"icon": "euro"
+				}
+			]
+		},
+		{
+			"key": "messages",
+			"title": "[Messages and news]",
+			"items": [
+				{
+					"key": "inbox",
+					"name": "Berichtenbox",
+					"link": "/mijn/inbox",
+					"href": "/site/mijn/inbox",
+					"icon": "mail"
+				},
+				{
+					"key": "news",
+					"name": "Nieuws",
+					"link": "/mijn/news",
+					"href": "/site/mijn/news"
+				}
+			]
+		},
+		{
+			"key": "profile",
+			"title": "[Your details and account]",
+			"items": [
+				{
+					"key": "details",
+					"name": "Mijn gegevens",
+					"link": "/mijn/details",
+					"href": "/site/mijn/details"
+				},
+				{
+					"key": "account",
+					"name": "Account",
+					"link": "/mijn/account",
+					"href": "/site/mijn/account"
+				}
+			]
+		}
+	],
+	"current:noRowsKnown:/mijn/dossiq/cases": "/mijn/dossiq/cases",
+	"current:noRowsKnown:/mijn/dossiq/cases/z1": "/mijn/dossiq/cases",
+	"current:noRowsKnown:/mijn/cases/abc": "/mijn/cases",
+	"current:noRowsKnown:/mijn/learniq/child/c1/x": "/mijn/learniq/child",
+	"current:noRowsKnown:/mijn": "/mijn",
+	"current:noRowsKnown:": "",
+	"current:noRowsKnown:/elders": "/elders",
+	"current:noRowsKnown:/mijn/shillinq/invoices": "/mijn/shillinq/invoices",
+	"current:noRowsKnown:/mijn/dossiq/archive/1": "/mijn/cases",
+	"current:noRowsKnown:/mijn/learniq/hidden": "/mijn/learniq/hidden",
+	"current:noNav": "/mijn/dossiq/cases",
+	"current:nullGroups": "/mijn/x",
+	"laidOut:none": [
+		{
+			"key": "cases",
+			"title": "[Cases and tasks]",
+			"items": [
+				{
+					"key": "cases",
+					"name": "Mijn zaken",
+					"link": "/mijn/cases",
+					"href": "/site/mijn/cases",
+					"icon": "folder"
+				},
+				{
+					"key": "tasks",
+					"name": "Mijn taken",
+					"link": "/mijn/tasks",
+					"href": "/site/mijn/tasks"
+				},
+				{
+					"key": "access",
+					"name": "Toegang",
+					"link": "/mijn/access",
+					"href": "/site/mijn/access"
+				}
+			]
+		},
+		{
+			"key": "themes",
+			"title": "[Themes]",
+			"items": [
+				{
+					"key": "thema/parkeren",
+					"name": "Parkeren",
+					"link": "/mijn/thema/parkeren",
+					"href": "/site/mijn/thema/parkeren"
+				}
+			]
+		},
+		{
+			"key": "collaborate",
+			"title": "[Collaborate]",
+			"items": [
+				{
+					"key": "samenwerken",
+					"name": "Samenwerken",
+					"link": "/mijn/samenwerken",
+					"href": "/site/mijn/samenwerken"
+				}
+			]
+		},
+		{
+			"key": "app:dossiq",
+			"title": "Dossiq",
+			"items": [
+				{
+					"key": "dossiq:cases",
+					"name": "[{label} ({source})]label=Mijn zaken,source=Dossiq",
+					"link": "/mijn/dossiq/cases",
+					"href": "/site/mijn/dossiq/cases"
+				}
+			]
+		},
+		{
+			"key": "group:verzoeken",
+			"title": "Verzoeken",
+			"items": [
+				{
+					"key": "dossiq:requests",
+					"name": "Mijn verzoeken",
+					"link": "/mijn/dossiq/requests",
+					"href": "/site/mijn/dossiq/requests"
+				},
+				{
+					"key": "pipelinq:leads",
+					"name": "Verzoeken",
+					"link": "/mijn/pipelinq/leads",
+					"href": "/site/mijn/pipelinq/leads"
+				}
+			]
+		},
+		{
+			"key": "app:learniq",
+			"title": "learniq",
+			"items": [
+				{
+					"key": "learniq:child",
+					"name": "Kind",
+					"link": "/mijn/learniq/child",
+					"href": "/site/mijn/learniq/child"
+				},
+				{
+					"key": "learniq:talks",
+					"name": "Gesprekken",
+					"link": "/mijn/learniq/talks",
+					"href": "/site/mijn/learniq/talks"
+				}
+			]
+		},
+		{
+			"key": "group:mijn kinderen",
+			"title": "Mijn kinderen",
+			"items": [
+				{
+					"key": "learniq:kids",
+					"name": "Kinderen",
+					"link": "/mijn/learniq/kids",
+					"href": "/site/mijn/learniq/kids"
+				}
+			]
+		},
+		{
+			"key": "app:shillinq",
+			"title": "shillinq",
+			"items": [
+				{
+					"key": "shillinq:invoices",
+					"name": "Facturen",
+					"link": "/mijn/shillinq/invoices",
+					"href": "/site/mijn/shillinq/invoices",
+					"icon": "euro"
+				}
+			]
+		},
+		{
+			"key": "messages",
+			"title": "[Messages and news]",
+			"items": [
+				{
+					"key": "inbox",
+					"name": "Berichtenbox",
+					"link": "/mijn/inbox",
+					"href": "/site/mijn/inbox",
+					"icon": "mail"
+				},
+				{
+					"key": "news",
+					"name": "Nieuws",
+					"link": "/mijn/news",
+					"href": "/site/mijn/news"
+				}
+			]
+		},
+		{
+			"key": "profile",
+			"title": "[Your details and account]",
+			"items": [
+				{
+					"key": "details",
+					"name": "Mijn gegevens",
+					"link": "/mijn/details",
+					"href": "/site/mijn/details"
+				},
+				{
+					"key": "account",
+					"name": "Account",
+					"link": "/mijn/account",
+					"href": "/site/mijn/account"
+				}
+			]
+		}
+	],
+	"laidOut:empty": [
+		{
+			"key": "cases",
+			"title": "[Cases and tasks]",
+			"items": [
+				{
+					"key": "cases",
+					"name": "Mijn zaken",
+					"link": "/mijn/cases",
+					"href": "/site/mijn/cases",
+					"icon": "folder"
+				},
+				{
+					"key": "tasks",
+					"name": "Mijn taken",
+					"link": "/mijn/tasks",
+					"href": "/site/mijn/tasks"
+				},
+				{
+					"key": "access",
+					"name": "Toegang",
+					"link": "/mijn/access",
+					"href": "/site/mijn/access"
+				}
+			]
+		},
+		{
+			"key": "themes",
+			"title": "[Themes]",
+			"items": [
+				{
+					"key": "thema/parkeren",
+					"name": "Parkeren",
+					"link": "/mijn/thema/parkeren",
+					"href": "/site/mijn/thema/parkeren"
+				}
+			]
+		},
+		{
+			"key": "collaborate",
+			"title": "[Collaborate]",
+			"items": [
+				{
+					"key": "samenwerken",
+					"name": "Samenwerken",
+					"link": "/mijn/samenwerken",
+					"href": "/site/mijn/samenwerken"
+				}
+			]
+		},
+		{
+			"key": "app:dossiq",
+			"title": "Dossiq",
+			"items": [
+				{
+					"key": "dossiq:cases",
+					"name": "[{label} ({source})]label=Mijn zaken,source=Dossiq",
+					"link": "/mijn/dossiq/cases",
+					"href": "/site/mijn/dossiq/cases"
+				}
+			]
+		},
+		{
+			"key": "group:verzoeken",
+			"title": "Verzoeken",
+			"items": [
+				{
+					"key": "dossiq:requests",
+					"name": "Mijn verzoeken",
+					"link": "/mijn/dossiq/requests",
+					"href": "/site/mijn/dossiq/requests"
+				},
+				{
+					"key": "pipelinq:leads",
+					"name": "Verzoeken",
+					"link": "/mijn/pipelinq/leads",
+					"href": "/site/mijn/pipelinq/leads"
+				}
+			]
+		},
+		{
+			"key": "app:learniq",
+			"title": "learniq",
+			"items": [
+				{
+					"key": "learniq:child",
+					"name": "Kind",
+					"link": "/mijn/learniq/child",
+					"href": "/site/mijn/learniq/child"
+				},
+				{
+					"key": "learniq:talks",
+					"name": "Gesprekken",
+					"link": "/mijn/learniq/talks",
+					"href": "/site/mijn/learniq/talks"
+				}
+			]
+		},
+		{
+			"key": "group:mijn kinderen",
+			"title": "Mijn kinderen",
+			"items": [
+				{
+					"key": "learniq:kids",
+					"name": "Kinderen",
+					"link": "/mijn/learniq/kids",
+					"href": "/site/mijn/learniq/kids"
+				}
+			]
+		},
+		{
+			"key": "app:shillinq",
+			"title": "shillinq",
+			"items": [
+				{
+					"key": "shillinq:invoices",
+					"name": "Facturen",
+					"link": "/mijn/shillinq/invoices",
+					"href": "/site/mijn/shillinq/invoices",
+					"icon": "euro"
+				}
+			]
+		},
+		{
+			"key": "messages",
+			"title": "[Messages and news]",
+			"items": [
+				{
+					"key": "inbox",
+					"name": "Berichtenbox",
+					"link": "/mijn/inbox",
+					"href": "/site/mijn/inbox",
+					"icon": "mail"
+				},
+				{
+					"key": "news",
+					"name": "Nieuws",
+					"link": "/mijn/news",
+					"href": "/site/mijn/news"
+				}
+			]
+		},
+		{
+			"key": "profile",
+			"title": "[Your details and account]",
+			"items": [
+				{
+					"key": "details",
+					"name": "Mijn gegevens",
+					"link": "/mijn/details",
+					"href": "/site/mijn/details"
+				},
+				{
+					"key": "account",
+					"name": "Account",
+					"link": "/mijn/account",
+					"href": "/site/mijn/account"
+				}
+			]
+		}
+	],
+	"laidOut:layout": [
+		{
+			"key": "layout:0",
+			"title": "Zaken en taken",
+			"items": [
+				{
+					"key": "__overview__",
+					"name": "[Overview]",
+					"link": "/mijn",
+					"href": "/site/mijn"
+				},
+				{
+					"key": "cases",
+					"name": "Mijn zaken",
+					"link": "/mijn/cases",
+					"href": "/site/mijn/cases"
+				},
+				{
+					"key": "tasks",
+					"name": "Mijn taken",
+					"link": "/mijn/tasks",
+					"href": "/site/mijn/tasks"
+				},
+				{
+					"key": "learniq:talks",
+					"name": "Gesprekken",
+					"link": "/mijn/learniq/talks",
+					"href": "/site/mijn/learniq/talks"
+				}
+			]
+		},
+		{
+			"key": "layout:2",
+			"title": "[Your details and account]",
+			"items": [
+				{
+					"key": "details",
+					"name": "Mijn gegevens",
+					"link": "/mijn/details",
+					"href": "/site/mijn/details"
+				},
+				{
+					"key": "account",
+					"name": "Account",
+					"link": "/mijn/account",
+					"href": "/site/mijn/account"
+				}
+			]
+		},
+		{
+			"key": "layout:3",
+			"title": "",
+			"items": [
+				{
+					"key": "inbox",
+					"name": "Berichtenbox",
+					"link": "/mijn/inbox",
+					"href": "/site/mijn/inbox"
+				}
+			]
+		},
+		{
+			"key": "cases",
+			"title": "[Cases and tasks]",
+			"items": [
+				{
+					"key": "access",
+					"name": "Toegang",
+					"link": "/mijn/access",
+					"href": "/site/mijn/access"
+				}
+			]
+		},
+		{
+			"key": "themes",
+			"title": "[Themes]",
+			"items": [
+				{
+					"key": "thema/parkeren",
+					"name": "Parkeren",
+					"link": "/mijn/thema/parkeren",
+					"href": "/site/mijn/thema/parkeren"
+				}
+			]
+		},
+		{
+			"key": "collaborate",
+			"title": "[Collaborate]",
+			"items": [
+				{
+					"key": "samenwerken",
+					"name": "Samenwerken",
+					"link": "/mijn/samenwerken",
+					"href": "/site/mijn/samenwerken"
+				}
+			]
+		},
+		{
+			"key": "app:dossiq",
+			"title": "Dossiq",
+			"items": [
+				{
+					"key": "dossiq:cases",
+					"name": "[{label} ({source})]label=Mijn zaken,source=Dossiq",
+					"link": "/mijn/dossiq/cases",
+					"href": "/site/mijn/dossiq/cases"
+				}
+			]
+		},
+		{
+			"key": "group:verzoeken",
+			"title": "Verzoeken",
+			"items": [
+				{
+					"key": "dossiq:requests",
+					"name": "Mijn verzoeken",
+					"link": "/mijn/dossiq/requests",
+					"href": "/site/mijn/dossiq/requests"
+				},
+				{
+					"key": "pipelinq:leads",
+					"name": "Verzoeken",
+					"link": "/mijn/pipelinq/leads",
+					"href": "/site/mijn/pipelinq/leads"
+				}
+			]
+		},
+		{
+			"key": "app:learniq",
+			"title": "learniq",
+			"items": [
+				{
+					"key": "learniq:child",
+					"name": "Kind",
+					"link": "/mijn/learniq/child",
+					"href": "/site/mijn/learniq/child"
+				}
+			]
+		},
+		{
+			"key": "group:mijn kinderen",
+			"title": "Mijn kinderen",
+			"items": [
+				{
+					"key": "learniq:kids",
+					"name": "Kinderen",
+					"link": "/mijn/learniq/kids",
+					"href": "/site/mijn/learniq/kids"
+				}
+			]
+		},
+		{
+			"key": "app:shillinq",
+			"title": "shillinq",
+			"items": [
+				{
+					"key": "shillinq:invoices",
+					"name": "Facturen",
+					"link": "/mijn/shillinq/invoices",
+					"href": "/site/mijn/shillinq/invoices"
+				}
+			]
+		},
+		{
+			"key": "messages",
+			"title": "[Messages and news]",
+			"items": [
+				{
+					"key": "news",
+					"name": "Nieuws",
+					"link": "/mijn/news",
+					"href": "/site/mijn/news"
+				}
+			]
+		}
+	]
+}

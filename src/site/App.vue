@@ -1083,6 +1083,26 @@ export default {
 		},
 
 		/**
+		 * What the resident menu is built from: the translator, the unread
+		 * count, the address of a route, the known rows, the portal's own
+		 * groups (zuiddrecht-resident-pages-match-the-boards), the items it
+		 * leaves out (resident-menu-leave-out) and the open tasks.
+		 *
+		 * @return {object} The second argument of residentMenuGroups().
+		 */
+		residentMenuSource() {
+			return {
+				t: this.t,
+				unread: this.unreadCount,
+				hrefFor: this.hrefForRoute,
+				recordRows: this.recordRows,
+				layout: this.site?.residentMenu?.groups,
+				leaveOut: this.site?.residentMenu?.leaveOut,
+				openTasks: this.openTasks,
+			}
+		},
+
+		/**
 		 * The menu block's data: the header menus and the signed-in
 		 * navigation in groups, the route on screen, and the labels in the
 		 * site's language (site-navigation-block).
@@ -1098,17 +1118,7 @@ export default {
 					// `/mijn` (site-resident-menu), so both menus read alike.
 					residentGroups:
 						this.session && this.nav.length > 0
-							? residentMenuGroups(
-									this.nav,
-									this.t,
-									this.unreadCount,
-									this.hrefForRoute,
-									this.recordRows,
-									this.site?.residentMenu?.groups,
-									// Items the portal leaves out (resident-menu-leave-out).
-									this.site?.residentMenu?.leaveOut,
-									this.openTasks,
-								)
+							? residentMenuGroups(this.nav, this.residentMenuSource)
 							: [],
 					menus: menusWithAddresses(
 						headerMenusOf(this.menus),
@@ -1198,18 +1208,7 @@ export default {
 			if (!showsResidentMenu(this.session, this.route, this.nav)) {
 				return []
 			}
-			return residentMenuGroups(
-				this.nav,
-				this.t,
-				this.unreadCount,
-				this.hrefForRoute,
-				this.recordRows,
-				// The portal's own groups (zuiddrecht-resident-pages-match-the-boards).
-				this.site?.residentMenu?.groups,
-				// Items the portal leaves out (resident-menu-leave-out).
-				this.site?.residentMenu?.leaveOut,
-				this.openTasks,
-			)
+			return residentMenuGroups(this.nav, this.residentMenuSource)
 		},
 
 		/**

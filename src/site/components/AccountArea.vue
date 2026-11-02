@@ -332,12 +332,11 @@ export default {
 		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
 		 */
 		menuRoute() {
-			return menuCurrentRoute(
-				this.currentRoute,
-				this.menuGroups,
-				this.nav,
-				this.contributions,
-			)
+			return menuCurrentRoute(this.currentRoute, {
+				groups: this.menuGroups,
+				nav: this.nav,
+				contributions: this.contributions,
+			})
 		},
 
 		/**

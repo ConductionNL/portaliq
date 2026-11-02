@@ -82,7 +82,7 @@ const href = (route) => `https://site.example/?route=${route}`
 test('a menu: false page leaves the menu and keeps its route', () => {
 	// REQ-SMO-020 scenario "Old routes stay, the menu shrinks".
 	const nav = buildNav([LEARNIQ], t, {})
-	const names = residentMenuGroups(nav, t, 0, href).flatMap((group) =>
+	const names = residentMenuGroups(nav, { t, unread: 0, hrefFor: href }).flatMap((group) =>
 		group.items.map((item) => item.name),
 	)
 	assert.equal(names.includes('Cijfers'), false, 'not in the menu')
@@ -97,9 +97,9 @@ test('a menu: false page leaves the menu and keeps its route', () => {
 test('a perRecord page is listed under each record, linking to that record', () => {
 	// REQ-SMO-020 scenario "A page per child".
 	const nav = buildNav([LEARNIQ], t, {})
-	const groups = residentMenuGroups(nav, t, 0, href, {
+	const groups = residentMenuGroups(nav, { t, unread: 0, hrefFor: href, recordRows: {
 		'learniq:parentChildren': ROWS,
-	})
+	} })
 	const vera = groups.find((group) => group.title === 'Vera')
 	const sami = groups.find((group) => group.title === 'Sami')
 	assert.ok(vera && sami, 'one group per child')
@@ -122,7 +122,7 @@ test('a perRecord page is listed under each record, linking to that record', () 
 		'no internal mark leaves the function',
 	)
 
-	const before = residentMenuGroups(nav, t, 0, href)
+	const before = residentMenuGroups(nav, { t, unread: 0, hrefFor: href })
 	const listed = before
 		.flatMap((group) => group.items)
 		.filter((item) => item.name === 'Afwezigheid')
