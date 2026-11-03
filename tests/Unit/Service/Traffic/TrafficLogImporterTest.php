@@ -117,4 +117,24 @@ class TrafficLogImporterTest extends TestCase {
 		$this->assertNull($this->importer()->import(slug: 'nope', stream: $stream, format: 'combined', host: 'https://x'));
 		$this->assertSame([], $this->calls);
 	}//end testAnUnknownPortalImportsNothing()
+
+
+	/**
+	 * Two lines with the same second, path and agent from different addresses
+	 * are two visitors, so neither is dropped as a repeat.
+	 *
+	 * @return void
+	 */
+	public function testTheSameLineFromAnotherAddressIsNotADuplicate(): void {
+		$stream = fopen('php://memory', 'r+');
+		fwrite($stream, $this->line('203.0.113.9', '/'));
+		fwrite($stream, $this->line('198.51.100.4', '/'));
+		rewind($stream);
+
+		$outcome = $this->importer()->import(slug: 'open-tilburg', stream: $stream, format: 'combined', host: 'https://example.org/');
+
+		$this->assertSame(2, $outcome['views']);
+		$this->assertSame(0, $outcome['duplicates']);
+		$this->assertSame(['203.0.113.9', '198.51.100.4'], array_map(static fn (array $call): string => $call[1]['ip'], $this->calls));
+	}//end testTheSameLineFromAnotherAddressIsNotADuplicate()
 }//end class

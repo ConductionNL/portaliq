@@ -19,6 +19,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service;
 
 use DateTime;
+use DateTimeImmutable;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\Traffic\GeoResolverInterface;
 use OCA\Portaliq\Service\Traffic\ReferrerClassifier;
@@ -86,6 +87,20 @@ class TrafficIngestServiceTest extends TestCase {
 	 * @return TrafficIngestService The service.
 	 */
 	private function service(array $portals, ?string $region = null): TrafficIngestService {
+		return $this->serviceWith(validator: new TrafficEventValidator(), portals: $portals, region: $region);
+	}//end service()
+
+
+	/**
+	 * The service over a given validator.
+	 *
+	 * @param TrafficEventValidator            $validator The validator the service calls.
+	 * @param array<int, array<string, mixed>> $portals   The published portals.
+	 * @param string|null                      $region    What the geo resolver answers.
+	 *
+	 * @return TrafficIngestService The service.
+	 */
+	private function serviceWith(TrafficEventValidator $validator, array $portals, ?string $region = null): TrafficIngestService {
 		$resolver = $this->createMock(PortalResolver::class);
 		$resolver->method('allPublishedPortals')->willReturn($portals);
 
@@ -109,7 +124,7 @@ class TrafficIngestServiceTest extends TestCase {
 		return new TrafficIngestService(
 			$resolver,
 			new TrafficConfigResolver(),
-			new TrafficEventValidator(),
+			$validator,
 			$store,
 			new TrafficMetrics($appConfig),
 			new VisitorHasher($appConfig, $clock),
@@ -118,7 +133,7 @@ class TrafficIngestServiceTest extends TestCase {
 			$geo,
 			$clock
 		);
-	}//end service()
+	}//end serviceWith()
 
 
 	/**
@@ -487,4 +502,59 @@ class TrafficIngestServiceTest extends TestCase {
 		$linked->ingest(portalSlug: 'open-tilburg', events: [$event], context: $this->browser());
 		$this->assertArrayNotHasKey('userRef', $this->stored[0], 'no bearer, no reference, no empty string either');
 	}//end testTheSubjectReferenceIsKeptOnlyWithAccountLinking()
+
+
+	/**
+	 * Only the boolean true is consent. A truthy string such as 'yes' is not:
+	 * the validator is asked with hasConsent false and the stored record says
+	 * consent false. The control with true shows both halves can be true.
+	 *
+	 * @return void
+	 */
+	public function testOnlyTheBooleanTrueIsConsent(): void {
+		$validator = new class extends TrafficEventValidator {
+			/**
+			 * The hasConsent value of every validate call.
+			 *
+			 * @var array<int, bool>
+			 */
+			public array $consents = [];
+
+			/**
+			 * Records hasConsent and validates as the real validator does.
+			 *
+			 * @param array<string, mixed>   $event      The event.
+			 * @param array<string, mixed>   $config     The traffic config.
+			 * @param bool                   $hasConsent Whether the visitor consented.
+			 * @param TrafficConfigResolver  $resolver   The config resolver.
+			 * @param array<string, mixed>   $context    serverSide, allowOld.
+			 * @param DateTimeImmutable|null $now        The clock.
+			 *
+			 * @return array<string, mixed> The verdict.
+			 */
+			public function validate(
+				array $event,
+				array $config,
+				bool $hasConsent,
+				TrafficConfigResolver $resolver,
+				array $context = [],
+				?DateTimeImmutable $now = null,
+			): array {
+				$this->consents[] = $hasConsent;
+				return parent::validate(event: $event, config: $config, hasConsent: $hasConsent, resolver: $resolver, context: $context, now: $now);
+			}//end validate()
+		};
+		$service   = $this->serviceWith(validator: $validator, portals: [$this->portal()]);
+		$event     = ['name' => 'page_view', 'sequence' => 0, 'pageLocation' => 'https://open-tilburg.nl/woo'];
+
+		$service->ingest(portalSlug: 'open-tilburg', events: [$event], context: ['consent' => 'yes'] + $this->browser());
+		$this->assertSame([false], $validator->consents);
+		$this->assertCount(1, $this->stored);
+		$this->assertFalse($this->stored[0]['consent']);
+
+		$this->stored = [];
+		$service->ingest(portalSlug: 'open-tilburg', events: [$event], context: $this->browser());
+		$this->assertSame([false, true], $validator->consents);
+		$this->assertTrue($this->stored[0]['consent']);
+	}//end testOnlyTheBooleanTrueIsConsent()
 }//end class

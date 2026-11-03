@@ -402,6 +402,30 @@ class TrafficConfigResolverTest extends TestCase {
 
 
 	/**
+	 * A heat event listed before consent is dropped with the heatmaps switch
+	 * off: the pre-consent list is cut down to the events left AFTER the
+	 * switch, not to the events the portal listed.
+	 *
+	 * @return void
+	 */
+	public function testAPreConsentHeatEventGoesWithTheHeatmapsSwitch(): void {
+		$config = $this->resolver->resolve(
+			portal: [
+				'traffic' => [
+					'enabled' => true,
+					'events' => ['heat_click', 'page_view'],
+					'sensitive' => ['heatmaps' => false],
+					'consent' => ['required' => true, 'preConsentEvents' => ['heat_click', 'page_view']],
+				],
+			]
+		);
+
+		$this->assertSame(['page_view'], $config['events']);
+		$this->assertSame(['page_view'], $config['preConsentEvents']);
+	}//end testAPreConsentHeatEventGoesWithTheHeatmapsSwitch()
+
+
+	/**
 	 * Experiments resolve like the other definitions: running and stopped
 	 * kept, drafts and the unusable dropped, and an unconfigured portal
 	 * has none.
