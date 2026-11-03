@@ -69,6 +69,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Event\PortalClaimScopeEvent;
+use OCA\Portaliq\Service\Tenancy\ClaimScopeCheck;
 use OCA\Portaliq\Service\Tenancy\SchemaTenancy;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -839,6 +841,15 @@ class PortalObjectReader implements ScopedCollectionReaderInterface {
 		}
 
 		if (is_string($value) === false || $value === '') {
+			return null;
+		}
+
+		// The owning app may refuse a claim that names a record of another tenant.
+		$check = new PortalClaimScopeEvent(
+			claim: $address,
+			holder: ['value' => $value, 'organisation' => (string)($account['organisation'] ?? $organisation)]
+		);
+		if ((new ClaimScopeCheck(container: $this->container, logger: $this->logger))->admits(event: $check) === false) {
 			return null;
 		}
 
