@@ -1,0 +1,1730 @@
+{
+    "unknown portal": {
+        "outcome": null,
+        "calls": []
+    },
+    "empty slug": {
+        "outcome": null,
+        "calls": []
+    },
+    "empty log": {
+        "outcome": {
+            "lines": 0,
+            "views": 0,
+            "skipped": 0,
+            "duplicates": 0,
+            "accepted": 0,
+            "refused": []
+        },
+        "calls": []
+    },
+    "mixed log": {
+        "outcome": {
+            "lines": 8,
+            "views": 5,
+            "skipped": 2,
+            "duplicates": 1,
+            "accepted": 5,
+            "refused": []
+        },
+        "calls": [
+            {
+                "portal": {
+                    "slug": "zuid",
+                    "status": "published",
+                    "traffic": {
+                        "enabled": true
+                    }
+                },
+                "events": [
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:00.000Z",
+                        "sequence": 0,
+                        "pageLocation": "https://zuid.example/",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:01.000Z",
+                        "sequence": 1,
+                        "pageLocation": "https://zuid.example/over-ons",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    }
+                ],
+                "context": {
+                    "ip": "203.0.113.9",
+                    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36",
+                    "consent": false,
+                    "serverSide": false,
+                    "allowOld": true
+                }
+            },
+            {
+                "portal": {
+                    "slug": "zuid",
+                    "status": "published",
+                    "traffic": {
+                        "enabled": true
+                    }
+                },
+                "events": [
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:00.000Z",
+                        "sequence": 0,
+                        "pageLocation": "https://zuid.example/",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    }
+                ],
+                "context": {
+                    "ip": "203.0.113.9",
+                    "userAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130.0",
+                    "consent": false,
+                    "serverSide": false,
+                    "allowOld": true
+                }
+            },
+            {
+                "portal": {
+                    "slug": "zuid",
+                    "status": "published",
+                    "traffic": {
+                        "enabled": true
+                    }
+                },
+                "events": [
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:00.000Z",
+                        "sequence": 0,
+                        "pageLocation": "https://zuid.example/contact",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    }
+                ],
+                "context": {
+                    "ip": "198.51.100.4",
+                    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36",
+                    "consent": false,
+                    "serverSide": false,
+                    "allowOld": true
+                }
+            },
+            {
+                "portal": {
+                    "slug": "zuid",
+                    "status": "published",
+                    "traffic": {
+                        "enabled": true
+                    }
+                },
+                "events": [
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:02.000Z",
+                        "sequence": 0,
+                        "pageLocation": "https://zuid.example/nieuws",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    }
+                ],
+                "context": {
+                    "ip": "2001:db8::1",
+                    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36",
+                    "consent": false,
+                    "serverSide": false,
+                    "allowOld": true
+                }
+            }
+        ]
+    },
+    "refusals summed": {
+        "outcome": {
+            "lines": 8,
+            "views": 5,
+            "skipped": 2,
+            "duplicates": 1,
+            "accepted": 4,
+            "refused": {
+                "event-not-enabled": 8,
+                "bot": 4
+            }
+        },
+        "calls": [
+            {
+                "portal": {
+                    "slug": "zuid",
+                    "status": "published",
+                    "traffic": {
+                        "enabled": true
+                    }
+                },
+                "events": [
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:00.000Z",
+                        "sequence": 0,
+                        "pageLocation": "https://zuid.example/",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:01.000Z",
+                        "sequence": 1,
+                        "pageLocation": "https://zuid.example/over-ons",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    }
+                ],
+                "context": {
+                    "ip": "203.0.113.9",
+                    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36",
+                    "consent": false,
+                    "serverSide": false,
+                    "allowOld": true
+                }
+            },
+            {
+                "portal": {
+                    "slug": "zuid",
+                    "status": "published",
+                    "traffic": {
+                        "enabled": true
+                    }
+                },
+                "events": [
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:00.000Z",
+                        "sequence": 0,
+                        "pageLocation": "https://zuid.example/",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    }
+                ],
+                "context": {
+                    "ip": "203.0.113.9",
+                    "userAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130.0",
+                    "consent": false,
+                    "serverSide": false,
+                    "allowOld": true
+                }
+            },
+            {
+                "portal": {
+                    "slug": "zuid",
+                    "status": "published",
+                    "traffic": {
+                        "enabled": true
+                    }
+                },
+                "events": [
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:00.000Z",
+                        "sequence": 0,
+                        "pageLocation": "https://zuid.example/contact",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    }
+                ],
+                "context": {
+                    "ip": "198.51.100.4",
+                    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36",
+                    "consent": false,
+                    "serverSide": false,
+                    "allowOld": true
+                }
+            },
+            {
+                "portal": {
+                    "slug": "zuid",
+                    "status": "published",
+                    "traffic": {
+                        "enabled": true
+                    }
+                },
+                "events": [
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:02.000Z",
+                        "sequence": 0,
+                        "pageLocation": "https://zuid.example/nieuws",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    }
+                ],
+                "context": {
+                    "ip": "2001:db8::1",
+                    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36",
+                    "consent": false,
+                    "serverSide": false,
+                    "allowOld": true
+                }
+            }
+        ]
+    },
+    "host without slash": {
+        "outcome": {
+            "lines": 8,
+            "views": 5,
+            "skipped": 2,
+            "duplicates": 1,
+            "accepted": 5,
+            "refused": []
+        },
+        "calls": [
+            {
+                "portal": {
+                    "slug": "zuid",
+                    "status": "published",
+                    "traffic": {
+                        "enabled": true
+                    }
+                },
+                "events": [
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:00.000Z",
+                        "sequence": 0,
+                        "pageLocation": "https://zuid.example/",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:01.000Z",
+                        "sequence": 1,
+                        "pageLocation": "https://zuid.example/over-ons",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    }
+                ],
+                "context": {
+                    "ip": "203.0.113.9",
+                    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36",
+                    "consent": false,
+                    "serverSide": false,
+                    "allowOld": true
+                }
+            },
+            {
+                "portal": {
+                    "slug": "zuid",
+                    "status": "published",
+                    "traffic": {
+                        "enabled": true
+                    }
+                },
+                "events": [
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:00.000Z",
+                        "sequence": 0,
+                        "pageLocation": "https://zuid.example/",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    }
+                ],
+                "context": {
+                    "ip": "203.0.113.9",
+                    "userAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130.0",
+                    "consent": false,
+                    "serverSide": false,
+                    "allowOld": true
+                }
+            },
+            {
+                "portal": {
+                    "slug": "zuid",
+                    "status": "published",
+                    "traffic": {
+                        "enabled": true
+                    }
+                },
+                "events": [
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:00.000Z",
+                        "sequence": 0,
+                        "pageLocation": "https://zuid.example/contact",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    }
+                ],
+                "context": {
+                    "ip": "198.51.100.4",
+                    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36",
+                    "consent": false,
+                    "serverSide": false,
+                    "allowOld": true
+                }
+            },
+            {
+                "portal": {
+                    "slug": "zuid",
+                    "status": "published",
+                    "traffic": {
+                        "enabled": true
+                    }
+                },
+                "events": [
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:02.000Z",
+                        "sequence": 0,
+                        "pageLocation": "https://zuid.example/nieuws",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    }
+                ],
+                "context": {
+                    "ip": "2001:db8::1",
+                    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36",
+                    "consent": false,
+                    "serverSide": false,
+                    "allowOld": true
+                }
+            }
+        ]
+    },
+    "host with slashes": {
+        "outcome": {
+            "lines": 1,
+            "views": 1,
+            "skipped": 0,
+            "duplicates": 0,
+            "accepted": 1,
+            "refused": []
+        },
+        "calls": [
+            {
+                "portal": {
+                    "slug": "zuid",
+                    "status": "published",
+                    "traffic": {
+                        "enabled": true
+                    }
+                },
+                "events": [
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:00.000Z",
+                        "sequence": 0,
+                        "pageLocation": "https://zuid.example/",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    }
+                ],
+                "context": {
+                    "ip": "203.0.113.9",
+                    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36",
+                    "consent": false,
+                    "serverSide": false,
+                    "allowOld": true
+                }
+            }
+        ]
+    },
+    "batch overflows": {
+        "outcome": {
+            "lines": 54,
+            "views": 54,
+            "skipped": 0,
+            "duplicates": 0,
+            "accepted": 54,
+            "refused": []
+        },
+        "calls": [
+            {
+                "portal": {
+                    "slug": "zuid",
+                    "status": "published",
+                    "traffic": {
+                        "enabled": true
+                    }
+                },
+                "events": [
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:00.000Z",
+                        "sequence": 0,
+                        "pageLocation": "https://zuid.example/p0",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:01.000Z",
+                        "sequence": 1,
+                        "pageLocation": "https://zuid.example/p1",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:02.000Z",
+                        "sequence": 2,
+                        "pageLocation": "https://zuid.example/p2",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:03.000Z",
+                        "sequence": 3,
+                        "pageLocation": "https://zuid.example/p3",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:04.000Z",
+                        "sequence": 4,
+                        "pageLocation": "https://zuid.example/p4",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:05.000Z",
+                        "sequence": 5,
+                        "pageLocation": "https://zuid.example/p5",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:06.000Z",
+                        "sequence": 6,
+                        "pageLocation": "https://zuid.example/p6",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:07.000Z",
+                        "sequence": 7,
+                        "pageLocation": "https://zuid.example/p7",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:08.000Z",
+                        "sequence": 8,
+                        "pageLocation": "https://zuid.example/p8",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:09.000Z",
+                        "sequence": 9,
+                        "pageLocation": "https://zuid.example/p9",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:10.000Z",
+                        "sequence": 10,
+                        "pageLocation": "https://zuid.example/p10",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:11.000Z",
+                        "sequence": 11,
+                        "pageLocation": "https://zuid.example/p11",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:12.000Z",
+                        "sequence": 12,
+                        "pageLocation": "https://zuid.example/p12",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:13.000Z",
+                        "sequence": 13,
+                        "pageLocation": "https://zuid.example/p13",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:14.000Z",
+                        "sequence": 14,
+                        "pageLocation": "https://zuid.example/p14",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:15.000Z",
+                        "sequence": 15,
+                        "pageLocation": "https://zuid.example/p15",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:16.000Z",
+                        "sequence": 16,
+                        "pageLocation": "https://zuid.example/p16",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:17.000Z",
+                        "sequence": 17,
+                        "pageLocation": "https://zuid.example/p17",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:18.000Z",
+                        "sequence": 18,
+                        "pageLocation": "https://zuid.example/p18",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:19.000Z",
+                        "sequence": 19,
+                        "pageLocation": "https://zuid.example/p19",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:20.000Z",
+                        "sequence": 20,
+                        "pageLocation": "https://zuid.example/p20",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:21.000Z",
+                        "sequence": 21,
+                        "pageLocation": "https://zuid.example/p21",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:22.000Z",
+                        "sequence": 22,
+                        "pageLocation": "https://zuid.example/p22",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:23.000Z",
+                        "sequence": 23,
+                        "pageLocation": "https://zuid.example/p23",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:24.000Z",
+                        "sequence": 24,
+                        "pageLocation": "https://zuid.example/p24",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:25.000Z",
+                        "sequence": 25,
+                        "pageLocation": "https://zuid.example/p25",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:26.000Z",
+                        "sequence": 26,
+                        "pageLocation": "https://zuid.example/p26",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:27.000Z",
+                        "sequence": 27,
+                        "pageLocation": "https://zuid.example/p27",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:28.000Z",
+                        "sequence": 28,
+                        "pageLocation": "https://zuid.example/p28",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:29.000Z",
+                        "sequence": 29,
+                        "pageLocation": "https://zuid.example/p29",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:30.000Z",
+                        "sequence": 30,
+                        "pageLocation": "https://zuid.example/p30",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:31.000Z",
+                        "sequence": 31,
+                        "pageLocation": "https://zuid.example/p31",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:32.000Z",
+                        "sequence": 32,
+                        "pageLocation": "https://zuid.example/p32",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:33.000Z",
+                        "sequence": 33,
+                        "pageLocation": "https://zuid.example/p33",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:34.000Z",
+                        "sequence": 34,
+                        "pageLocation": "https://zuid.example/p34",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:35.000Z",
+                        "sequence": 35,
+                        "pageLocation": "https://zuid.example/p35",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:36.000Z",
+                        "sequence": 36,
+                        "pageLocation": "https://zuid.example/p36",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:37.000Z",
+                        "sequence": 37,
+                        "pageLocation": "https://zuid.example/p37",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:38.000Z",
+                        "sequence": 38,
+                        "pageLocation": "https://zuid.example/p38",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:39.000Z",
+                        "sequence": 39,
+                        "pageLocation": "https://zuid.example/p39",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:40.000Z",
+                        "sequence": 40,
+                        "pageLocation": "https://zuid.example/p40",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:41.000Z",
+                        "sequence": 41,
+                        "pageLocation": "https://zuid.example/p41",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:42.000Z",
+                        "sequence": 42,
+                        "pageLocation": "https://zuid.example/p42",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:43.000Z",
+                        "sequence": 43,
+                        "pageLocation": "https://zuid.example/p43",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:44.000Z",
+                        "sequence": 44,
+                        "pageLocation": "https://zuid.example/p44",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:45.000Z",
+                        "sequence": 45,
+                        "pageLocation": "https://zuid.example/p45",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:46.000Z",
+                        "sequence": 46,
+                        "pageLocation": "https://zuid.example/p46",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:47.000Z",
+                        "sequence": 47,
+                        "pageLocation": "https://zuid.example/p47",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:48.000Z",
+                        "sequence": 48,
+                        "pageLocation": "https://zuid.example/p48",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:49.000Z",
+                        "sequence": 49,
+                        "pageLocation": "https://zuid.example/p49",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    }
+                ],
+                "context": {
+                    "ip": "203.0.113.7",
+                    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36",
+                    "consent": false,
+                    "serverSide": false,
+                    "allowOld": true
+                }
+            },
+            {
+                "portal": {
+                    "slug": "zuid",
+                    "status": "published",
+                    "traffic": {
+                        "enabled": true
+                    }
+                },
+                "events": [
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:50.000Z",
+                        "sequence": 0,
+                        "pageLocation": "https://zuid.example/p50",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:51.000Z",
+                        "sequence": 1,
+                        "pageLocation": "https://zuid.example/p51",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:52.000Z",
+                        "sequence": 2,
+                        "pageLocation": "https://zuid.example/p52",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    }
+                ],
+                "context": {
+                    "ip": "203.0.113.7",
+                    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36",
+                    "consent": false,
+                    "serverSide": false,
+                    "allowOld": true
+                }
+            },
+            {
+                "portal": {
+                    "slug": "zuid",
+                    "status": "published",
+                    "traffic": {
+                        "enabled": true
+                    }
+                },
+                "events": [
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:00.000Z",
+                        "sequence": 0,
+                        "pageLocation": "https://zuid.example/after",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    }
+                ],
+                "context": {
+                    "ip": "198.51.100.4",
+                    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36",
+                    "consent": false,
+                    "serverSide": false,
+                    "allowOld": true
+                }
+            }
+        ]
+    },
+    "batch exactly full": {
+        "outcome": {
+            "lines": 50,
+            "views": 50,
+            "skipped": 0,
+            "duplicates": 0,
+            "accepted": 50,
+            "refused": []
+        },
+        "calls": [
+            {
+                "portal": {
+                    "slug": "zuid",
+                    "status": "published",
+                    "traffic": {
+                        "enabled": true
+                    }
+                },
+                "events": [
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:00.000Z",
+                        "sequence": 0,
+                        "pageLocation": "https://zuid.example/p0",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:01.000Z",
+                        "sequence": 1,
+                        "pageLocation": "https://zuid.example/p1",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:02.000Z",
+                        "sequence": 2,
+                        "pageLocation": "https://zuid.example/p2",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:03.000Z",
+                        "sequence": 3,
+                        "pageLocation": "https://zuid.example/p3",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:04.000Z",
+                        "sequence": 4,
+                        "pageLocation": "https://zuid.example/p4",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:05.000Z",
+                        "sequence": 5,
+                        "pageLocation": "https://zuid.example/p5",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:06.000Z",
+                        "sequence": 6,
+                        "pageLocation": "https://zuid.example/p6",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:07.000Z",
+                        "sequence": 7,
+                        "pageLocation": "https://zuid.example/p7",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:08.000Z",
+                        "sequence": 8,
+                        "pageLocation": "https://zuid.example/p8",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:09.000Z",
+                        "sequence": 9,
+                        "pageLocation": "https://zuid.example/p9",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:10.000Z",
+                        "sequence": 10,
+                        "pageLocation": "https://zuid.example/p10",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:11.000Z",
+                        "sequence": 11,
+                        "pageLocation": "https://zuid.example/p11",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:12.000Z",
+                        "sequence": 12,
+                        "pageLocation": "https://zuid.example/p12",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:13.000Z",
+                        "sequence": 13,
+                        "pageLocation": "https://zuid.example/p13",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:14.000Z",
+                        "sequence": 14,
+                        "pageLocation": "https://zuid.example/p14",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:15.000Z",
+                        "sequence": 15,
+                        "pageLocation": "https://zuid.example/p15",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:16.000Z",
+                        "sequence": 16,
+                        "pageLocation": "https://zuid.example/p16",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:17.000Z",
+                        "sequence": 17,
+                        "pageLocation": "https://zuid.example/p17",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:18.000Z",
+                        "sequence": 18,
+                        "pageLocation": "https://zuid.example/p18",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:19.000Z",
+                        "sequence": 19,
+                        "pageLocation": "https://zuid.example/p19",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:20.000Z",
+                        "sequence": 20,
+                        "pageLocation": "https://zuid.example/p20",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:21.000Z",
+                        "sequence": 21,
+                        "pageLocation": "https://zuid.example/p21",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:22.000Z",
+                        "sequence": 22,
+                        "pageLocation": "https://zuid.example/p22",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:23.000Z",
+                        "sequence": 23,
+                        "pageLocation": "https://zuid.example/p23",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:24.000Z",
+                        "sequence": 24,
+                        "pageLocation": "https://zuid.example/p24",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:25.000Z",
+                        "sequence": 25,
+                        "pageLocation": "https://zuid.example/p25",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:26.000Z",
+                        "sequence": 26,
+                        "pageLocation": "https://zuid.example/p26",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:27.000Z",
+                        "sequence": 27,
+                        "pageLocation": "https://zuid.example/p27",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:28.000Z",
+                        "sequence": 28,
+                        "pageLocation": "https://zuid.example/p28",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:29.000Z",
+                        "sequence": 29,
+                        "pageLocation": "https://zuid.example/p29",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:30.000Z",
+                        "sequence": 30,
+                        "pageLocation": "https://zuid.example/p30",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:31.000Z",
+                        "sequence": 31,
+                        "pageLocation": "https://zuid.example/p31",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:32.000Z",
+                        "sequence": 32,
+                        "pageLocation": "https://zuid.example/p32",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:33.000Z",
+                        "sequence": 33,
+                        "pageLocation": "https://zuid.example/p33",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:34.000Z",
+                        "sequence": 34,
+                        "pageLocation": "https://zuid.example/p34",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:35.000Z",
+                        "sequence": 35,
+                        "pageLocation": "https://zuid.example/p35",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:36.000Z",
+                        "sequence": 36,
+                        "pageLocation": "https://zuid.example/p36",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:37.000Z",
+                        "sequence": 37,
+                        "pageLocation": "https://zuid.example/p37",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:38.000Z",
+                        "sequence": 38,
+                        "pageLocation": "https://zuid.example/p38",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:39.000Z",
+                        "sequence": 39,
+                        "pageLocation": "https://zuid.example/p39",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:40.000Z",
+                        "sequence": 40,
+                        "pageLocation": "https://zuid.example/p40",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:41.000Z",
+                        "sequence": 41,
+                        "pageLocation": "https://zuid.example/p41",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:42.000Z",
+                        "sequence": 42,
+                        "pageLocation": "https://zuid.example/p42",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:43.000Z",
+                        "sequence": 43,
+                        "pageLocation": "https://zuid.example/p43",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:44.000Z",
+                        "sequence": 44,
+                        "pageLocation": "https://zuid.example/p44",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:45.000Z",
+                        "sequence": 45,
+                        "pageLocation": "https://zuid.example/p45",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:46.000Z",
+                        "sequence": 46,
+                        "pageLocation": "https://zuid.example/p46",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:47.000Z",
+                        "sequence": 47,
+                        "pageLocation": "https://zuid.example/p47",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:48.000Z",
+                        "sequence": 48,
+                        "pageLocation": "https://zuid.example/p48",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:49.000Z",
+                        "sequence": 49,
+                        "pageLocation": "https://zuid.example/p49",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    }
+                ],
+                "context": {
+                    "ip": "203.0.113.7",
+                    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36",
+                    "consent": false,
+                    "serverSide": false,
+                    "allowOld": true
+                }
+            }
+        ]
+    },
+    "json format": {
+        "outcome": {
+            "lines": 2,
+            "views": 1,
+            "skipped": 1,
+            "duplicates": 0,
+            "accepted": 1,
+            "refused": []
+        },
+        "calls": [
+            {
+                "portal": {
+                    "slug": "zuid",
+                    "status": "published",
+                    "traffic": {
+                        "enabled": true
+                    }
+                },
+                "events": [
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:36.000Z",
+                        "sequence": 0,
+                        "pageLocation": "https://zuid.example/a",
+                        "pageReferrer": "",
+                        "params": {
+                            "import": "log"
+                        }
+                    }
+                ],
+                "context": {
+                    "ip": "203.0.113.9",
+                    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36",
+                    "consent": false,
+                    "serverSide": false,
+                    "allowOld": true
+                }
+            }
+        ]
+    },
+    "combined line as json": {
+        "outcome": {
+            "lines": 1,
+            "views": 0,
+            "skipped": 1,
+            "duplicates": 0,
+            "accepted": 0,
+            "refused": []
+        },
+        "calls": []
+    },
+    "first matching portal": {
+        "outcome": {
+            "lines": 1,
+            "views": 1,
+            "skipped": 0,
+            "duplicates": 0,
+            "accepted": 1,
+            "refused": []
+        },
+        "calls": [
+            {
+                "portal": {
+                    "slug": "noord",
+                    "status": "published"
+                },
+                "events": [
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:00.000Z",
+                        "sequence": 0,
+                        "pageLocation": "https://zuid.example/",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    }
+                ],
+                "context": {
+                    "ip": "203.0.113.9",
+                    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36",
+                    "consent": false,
+                    "serverSide": false,
+                    "allowOld": true
+                }
+            }
+        ]
+    },
+    "no trailing newline": {
+        "outcome": {
+            "lines": 1,
+            "views": 1,
+            "skipped": 0,
+            "duplicates": 0,
+            "accepted": 1,
+            "refused": []
+        },
+        "calls": [
+            {
+                "portal": {
+                    "slug": "zuid",
+                    "status": "published",
+                    "traffic": {
+                        "enabled": true
+                    }
+                },
+                "events": [
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:00.000Z",
+                        "sequence": 0,
+                        "pageLocation": "https://zuid.example/x",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    }
+                ],
+                "context": {
+                    "ip": "203.0.113.9",
+                    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36",
+                    "consent": false,
+                    "serverSide": false,
+                    "allowOld": true
+                }
+            }
+        ]
+    }
+}
