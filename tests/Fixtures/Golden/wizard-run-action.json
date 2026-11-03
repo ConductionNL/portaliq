@@ -1,0 +1,443 @@
+{
+    "unknown action": {
+        "status": 404,
+        "data": {
+            "success": false,
+            "message": "Unknown setup action: nope"
+        },
+        "log": []
+    },
+    "skip": {
+        "status": 200,
+        "data": {
+            "success": true,
+            "message": "No example data was loaded."
+        },
+        "log": [
+            [
+                "config",
+                "portaliq",
+                "demo_dataset",
+                "none"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_data_decided",
+                "skipped"
+            ]
+        ]
+    },
+    "load without a choice": {
+        "status": 400,
+        "data": {
+            "success": false,
+            "message": "Pick a dataset first."
+        },
+        "log": []
+    },
+    "load stored none": {
+        "status": 200,
+        "data": {
+            "success": true,
+            "message": "No example data was loaded."
+        },
+        "log": [
+            [
+                "config",
+                "portaliq",
+                "demo_dataset",
+                "none"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_data_decided",
+                "skipped"
+            ]
+        ]
+    },
+    "load posted none": {
+        "status": 200,
+        "data": {
+            "success": true,
+            "message": "No example data was loaded."
+        },
+        "log": [
+            [
+                "config",
+                "portaliq",
+                "demo_dataset",
+                "none"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_data_decided",
+                "skipped"
+            ]
+        ]
+    },
+    "load posted unknown": {
+        "status": 400,
+        "data": {
+            "success": false,
+            "message": "No dataset is called \"bogus\"."
+        },
+        "log": []
+    },
+    "load posted list": {
+        "status": 400,
+        "data": {
+            "success": false,
+            "message": "A dataset is named by a string."
+        },
+        "log": []
+    },
+    "load posted int": {
+        "status": 400,
+        "data": {
+            "success": false,
+            "message": "No dataset is called \"7\"."
+        },
+        "log": []
+    },
+    "load posted overrides store": {
+        "status": 200,
+        "data": {
+            "success": true,
+            "message": "Imported 4 of 4 demo object(s)."
+        },
+        "log": [
+            [
+                "install"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_dataset",
+                "zuiddrecht"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_data_decided",
+                "installed"
+            ]
+        ]
+    },
+    "legacy outranks none": {
+        "status": 200,
+        "data": {
+            "success": true,
+            "message": "Imported 4 of 4 demo object(s)."
+        },
+        "log": [
+            [
+                "install"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_dataset",
+                "demo"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_data_decided",
+                "installed"
+            ]
+        ]
+    },
+    "legacy outranks posted": {
+        "status": 200,
+        "data": {
+            "success": true,
+            "message": "Imported 4 of 4 demo object(s)."
+        },
+        "log": [
+            [
+                "install"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_dataset",
+                "demo"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_data_decided",
+                "installed"
+            ]
+        ]
+    },
+    "legacy refuses bad post": {
+        "status": 400,
+        "data": {
+            "success": false,
+            "message": "No dataset is called \"bogus\"."
+        },
+        "log": []
+    },
+    "import throws": {
+        "status": 500,
+        "data": {
+            "success": false,
+            "message": "Could not import the demo data: register missing"
+        },
+        "log": [
+            [
+                "install"
+            ],
+            [
+                "log.error",
+                "Setup install-demo-data failed: register missing",
+                "portaliq",
+                true
+            ]
+        ]
+    },
+    "import all": {
+        "status": 200,
+        "data": {
+            "success": true,
+            "message": "Imported 4 of 4 demo object(s)."
+        },
+        "log": [
+            [
+                "install"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_dataset",
+                "zuiddrecht"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_data_decided",
+                "installed"
+            ]
+        ]
+    },
+    "import no declared": {
+        "status": 200,
+        "data": {
+            "success": true,
+            "message": "Imported 4 of 4 demo object(s)."
+        },
+        "log": [
+            [
+                "install"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_dataset",
+                "zuiddrecht"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_data_decided",
+                "installed"
+            ]
+        ]
+    },
+    "import partial skipped": {
+        "status": 200,
+        "data": {
+            "success": true,
+            "message": "Imported 3 of 5 demo object(s). 2 skipped: their schema is not installed on this instance, or OpenRegister rejected them (see the Nextcloud log)."
+        },
+        "log": [
+            [
+                "install"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_dataset",
+                "zuiddrecht"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_data_decided",
+                "installed"
+            ]
+        ]
+    },
+    "import rerun present": {
+        "status": 200,
+        "data": {
+            "success": true,
+            "message": "The demo data was already present: nothing new was imported (5 object(s) in the demo schemas)."
+        },
+        "log": [
+            [
+                "install"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_dataset",
+                "zuiddrecht"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_data_decided",
+                "installed"
+            ]
+        ]
+    },
+    "import zero none present": {
+        "status": 200,
+        "data": {
+            "success": true,
+            "message": "Imported 0 of 5 demo object(s). 5 skipped: their schema is not installed on this instance, or OpenRegister rejected them (see the Nextcloud log)."
+        },
+        "log": [
+            [
+                "install"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_dataset",
+                "zuiddrecht"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_data_decided",
+                "installed"
+            ]
+        ]
+    },
+    "import zero nothing": {
+        "status": 200,
+        "data": {
+            "success": true,
+            "message": "Imported 0 of 0 demo object(s)."
+        },
+        "log": [
+            [
+                "install"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_dataset",
+                "zuiddrecht"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_data_decided",
+                "installed"
+            ]
+        ]
+    },
+    "import present and skipped": {
+        "status": 200,
+        "data": {
+            "success": true,
+            "message": "The demo data was already present: nothing new was imported (2 object(s) in the demo schemas)."
+        },
+        "log": [
+            [
+                "install"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_dataset",
+                "zuiddrecht"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_data_decided",
+                "installed"
+            ]
+        ]
+    },
+    "import some with present": {
+        "status": 200,
+        "data": {
+            "success": true,
+            "message": "Imported 2 of 2 demo object(s). 1 skipped: their schema is not installed on this instance, or OpenRegister rejected them (see the Nextcloud log)."
+        },
+        "log": [
+            [
+                "install"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_dataset",
+                "zuiddrecht"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_data_decided",
+                "installed"
+            ]
+        ]
+    },
+    "import string counts": {
+        "status": 200,
+        "data": {
+            "success": true,
+            "message": "Imported 2 of 3 demo object(s). 1 skipped: their schema is not installed on this instance, or OpenRegister rejected them (see the Nextcloud log)."
+        },
+        "log": [
+            [
+                "install"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_dataset",
+                "zuiddrecht"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_data_decided",
+                "installed"
+            ]
+        ]
+    },
+    "import negative skipped": {
+        "status": 200,
+        "data": {
+            "success": true,
+            "message": "Imported 2 of 2 demo object(s)."
+        },
+        "log": [
+            [
+                "install"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_dataset",
+                "zuiddrecht"
+            ],
+            [
+                "config",
+                "portaliq",
+                "demo_data_decided",
+                "installed"
+            ]
+        ]
+    }
+}
