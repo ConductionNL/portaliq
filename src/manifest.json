@@ -1592,7 +1592,8 @@
             "key": "displayName",
             "label": "Name",
             "secondary": "{email}",
-            "widget": "avatar"
+            "widget": "avatar",
+            "width": "304px"
           },
           {
             "key": "audience",
@@ -1616,7 +1617,8 @@
               "student": "Student",
               "parent": "Parent",
               "external-employee": "External employee"
-            }
+            },
+            "width": "152px"
           },
           {
             "key": "identityType",
@@ -1636,7 +1638,8 @@
               "generic": "OIDC broker",
               "dev": "Developer sign-in",
               "email": "Account"
-            }
+            },
+            "width": "155px"
           },
           {
             "key": "status",
@@ -1661,13 +1664,18 @@
               "suspended": "Suspended",
               "void": "Withdrawn",
               "removed": "Removed"
-            }
+            },
+            "width": "197px"
           },
           {
             "key": "lastLoginAt",
-            "label": "Last signed in"
+            "label": "Last signed in",
+            "width": "186px"
           }
         ],
+        "pagination": {
+          "limit": 7
+        },
         "showAdd": false,
         "headerActions": [
           {
@@ -1797,7 +1805,8 @@
         "columns": [
           {
             "key": "email",
-            "label": "Email"
+            "label": "Email",
+            "width": "229px"
           },
           {
             "key": "state",
@@ -1825,25 +1834,34 @@
               "accepted": "Accepted",
               "expired": "Expired",
               "revoked": "Withdrawn"
-            }
+            },
+            "width": "133px"
           },
           {
             "key": "sentAt",
-            "label": "Sent"
+            "label": "Sent",
+            "width": "163px"
           },
           {
             "key": "expiresAt",
-            "label": "Expires"
+            "label": "Expires",
+            "width": "131px"
           },
           {
             "key": "invitedBy",
-            "label": "Invited by"
+            "label": "Invited by",
+            "width": "187px"
           },
           {
             "key": "organisation",
-            "label": "Organisation"
+            "label": "Organisation",
+            "width": "150px"
           }
         ],
+        "pagination": {
+          "limit": 6
+        },
+        "rowTitle": "plain",
         "headerActions": [
           {
             "id": "invite-someone",
@@ -2654,16 +2672,19 @@
           {
             "key": "actionId",
             "label": "Submitted action",
-            "widget": "action-title"
+            "widget": "action-title",
+            "width": "339px"
           },
           {
             "key": "appId",
-            "label": "App"
+            "label": "App",
+            "width": "134px"
           },
           {
             "key": "submittedAt",
             "label": "Submitted on",
-            "widget": "date"
+            "widget": "date",
+            "width": "212px"
           },
           {
             "key": "deliveryStatus",
@@ -2685,9 +2706,13 @@
               "delivered": "Confirmed",
               "pending": "Waiting",
               "failed": "Failed"
-            }
+            },
+            "width": "286px"
           }
         ],
+        "pagination": {
+          "limit": 8
+        },
         "showTitle": true,
         "showTitleIcon": false,
         "countText": "{shown} of {total} submissions via the portals · with the proof that the resident received a confirmation",
@@ -3013,7 +3038,8 @@
           {
             "key": "title",
             "label": "Portal",
-            "secondary": "{domains.0.hostname}"
+            "secondary": "{domains.0.hostname}",
+            "width": "142px"
           },
           {
             "key": "kind",
@@ -3025,15 +3051,18 @@
             "enumLabels": {
               "site": "Website",
               "external": "Umbrella"
-            }
+            },
+            "width": "129px"
           },
           {
             "key": "theme",
-            "label": "Theme"
+            "label": "Theme",
+            "width": "119px"
           },
           {
             "key": "organisation",
-            "label": "Organisation"
+            "label": "Organisation",
+            "width": "153px"
           },
           {
             "key": "pages",
@@ -3045,12 +3074,14 @@
                 "portal": "@self.slug"
               }
             },
-            "sortable": false
+            "sortable": false,
+            "width": "128px"
           },
           {
             "key": "@self.updated",
             "label": "Last published",
-            "widget": "date"
+            "widget": "date",
+            "width": "191px"
           },
           {
             "key": "status",
@@ -3069,7 +3100,8 @@
             "enumLabels": {
               "published": "Published",
               "draft": "Draft"
-            }
+            },
+            "width": "131px"
           }
         ],
         "actions": [
@@ -4615,20 +4647,24 @@
           {
             "key": "displayName",
             "label": "Requester",
-            "widget": "avatar"
+            "widget": "avatar",
+            "width": "163px"
           },
           {
             "key": "onBehalfOf",
-            "label": "Access requested to"
+            "label": "Access requested to",
+            "width": "195px"
           },
           {
             "key": "reason",
-            "label": "Reason"
+            "label": "Reason",
+            "width": "262px"
           },
           {
             "key": "requestedAt",
             "label": "Requested on",
-            "widget": "date"
+            "widget": "date",
+            "width": "178px"
           },
           {
             "key": "state",
@@ -4650,9 +4686,13 @@
               "pending": "Awaiting a decision",
               "granted": "Granted",
               "refused": "Refused"
-            }
+            },
+            "width": "194px"
           }
         ],
+        "pagination": {
+          "limit": 8
+        },
         "actions": [
           "builtin:view",
           "builtin:edit",
@@ -5594,12 +5634,14 @@
         "columns": [
           {
             "key": "title",
-            "label": "Title"
+            "label": "Title",
+            "width": "340px"
           },
           {
             "key": "target",
             "label": "Audience",
-            "widget": "news-target"
+            "widget": "news-target",
+            "width": "216px"
           },
           {
             "key": "status",
@@ -5618,17 +5660,23 @@
             "enumLabels": {
               "published": "Published",
               "draft": "Draft"
-            }
+            },
+            "width": "131px"
           },
           {
             "key": "publishedAt",
-            "label": "Published"
+            "label": "Published",
+            "width": "181px"
           },
           {
             "key": "authorRef",
-            "label": "Author"
+            "label": "Author",
+            "width": "124px"
           }
         ],
+        "pagination": {
+          "limit": 6
+        },
         "headerActions": [
           {
             "id": "new-news-item",
