@@ -97,6 +97,7 @@ class TrafficPathExploreGoldenTest extends TestCase {
 	 */
 	private function requests(): array {
 		$plain   = ['traffic' => [], 'maxEvents' => 1000];
+		$goal    = ['traffic' => ['goals' => [['id' => 'contact', 'type' => 'page_reached', 'match' => ['pathEquals' => '/contact']]], 'segments' => [['id' => 'converted', 'name' => 'Converted', 'conditions' => [['dimension' => 'goal:contact', 'operator' => 'is', 'value' => 'true']]]]], 'maxEvents' => 1000];
 		$segment = ['traffic' => ['segments' => [['id' => 'mobile', 'name' => 'Mobile', 'conditions' => [['dimension' => 'deviceType', 'operator' => 'is', 'value' => 'mobile']]]]], 'maxEvents' => 1000];
 
 		return [
@@ -112,6 +113,9 @@ class TrafficPathExploreGoldenTest extends TestCase {
 			'capped at day end'   => [['traffic' => [], 'maxEvents' => 3], [['open-tilburg', '2026-09-19', '2026-09-23', '', 'start', '', 1, []]]],
 			'segment'             => [$segment, [['open-tilburg', '2026-09-20', '2026-09-23', 'mobile', 'start', '', 1, []]]],
 			'cached second read'  => [$plain, [['open-tilburg', '2026-09-22', '2026-09-23', '', 'start', '', 1, []], ['open-tilburg', '2026-09-22', '2026-09-23', '', 'end', '', 2, []]]],
+			'from at kept edge'   => [['traffic' => ['retentionDays' => 3], 'maxEvents' => 1000], [['open-tilburg', '2026-09-21', '2026-09-23', '', 'start', '', 1, []]]],
+			'segment then all'    => [$segment, [['open-tilburg', '2026-09-22', '2026-09-23', 'mobile', 'start', '', 1, []], ['open-tilburg', '2026-09-22', '2026-09-23', '', 'start', '', 1, []]]],
+			'goal segment'        => [$goal, [['open-tilburg', '2026-09-20', '2026-09-23', 'converted', 'start', '', 2, []]]],
 			'other timeout'       => [['traffic' => ['sessionTimeoutMinutes' => 1], 'maxEvents' => 1000], [['open-tilburg', '2026-09-22', '2026-09-23', '', 'start', '', 1, []]]],
 		];
 	}//end requests()
