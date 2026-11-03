@@ -951,6 +951,71 @@
             ]
         ]
     },
+    "mail envelope blank medium": {
+        "result": {
+            "accepted": 1,
+            "refused": []
+        },
+        "log": [
+            [
+                "geo",
+                "",
+                "country"
+            ],
+            [
+                "append",
+                [
+                    {
+                        "name": "email_open",
+                        "sequence": 0,
+                        "occurredAt": "2026-08-29T10:40:00.000Z",
+                        "pageLocation": "https://zuid.example/woo?utm_medium=url-medium&utm_source=url-source",
+                        "sessionId": "",
+                        "clientId": "",
+                        "params": [],
+                        "campaign": "woo-week",
+                        "source": "email",
+                        "medium": "url-medium",
+                        "term": "envelope",
+                        "blastRef": "42",
+                        "contactRef": "c-7",
+                        "portal": "zuid",
+                        "receivedAt": "2026-08-29T10:40:00.000Z",
+                        "visitorHash": "5f7ceeb5bade03864754803dec735ac4d381656efd0bd5257559f2c848854bc0",
+                        "pagePath": "/woo",
+                        "consent": false,
+                        "expires": "2026-11-27T10:40:00Z",
+                        "region": "NL",
+                        "channel": "email"
+                    }
+                ]
+            ],
+            [
+                "metrics.accepted",
+                1
+            ],
+            [
+                "metrics.refused",
+                []
+            ]
+        ]
+    },
+    "server side not strictly": {
+        "result": {
+            "accepted": 0,
+            "refused": {
+                "bot": 1
+            }
+        },
+        "log": [
+            [
+                "metrics.refused",
+                {
+                    "bot": 1
+                }
+            ]
+        ]
+    },
     "mail event from browser": {
         "result": {
             "accepted": 0,

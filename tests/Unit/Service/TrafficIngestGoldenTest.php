@@ -260,6 +260,12 @@ class TrafficIngestGoldenTest extends TestCase {
 				'events' => [$mail],
 				'context' => ['serverSide' => true, 'ip' => '198.51.100.1'],
 			],
+			'mail envelope blank medium' => [
+				'traffic' => $mailTraffic,
+				'events'  => [['pageLocation' => 'https://zuid.example/woo?utm_medium=url-medium&utm_source=url-source'] + $mail],
+				'context' => ['serverSide' => true],
+			],
+			'server side not strictly'   => ['traffic' => $mailTraffic, 'events' => [$mail], 'context' => ['serverSide' => 'yes', 'userAgent' => self::BOT]],
 			'mail event from browser'    => ['traffic' => $mailTraffic, 'events' => [$mail], 'context' => self::browser()],
 			'two visitors same batch'    => [
 				'traffic' => $wide,
