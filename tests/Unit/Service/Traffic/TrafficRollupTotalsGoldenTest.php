@@ -102,6 +102,10 @@ class TrafficRollupTotalsGoldenTest extends TestCase {
 				['visitor' => 'c:9', 'events' => [$this->event('session_start', 0, ['params' => ['visitorType' => 'returning']])]],
 				['visitor' => 'c:9', 'events' => [$this->event('session_start', 9, ['params' => ['visitorType' => 'new']])]],
 			],
+			'returning, unknown'   => [
+				['visitor' => 'c:7', 'events' => [$this->event('session_start', 0, ['params' => ['visitorType' => 'returning']])]],
+				['visitor' => 'c:7', 'events' => [$this->event('page_view', 9)]],
+			],
 			'many names, last'     => [
 				['visitor' => 'h1', 'events' => [$this->event('page_view', 0), $this->event('form_start', 4), $this->event('page_view', 70)]],
 				['visitor' => 'h2', 'events' => [$this->event('zeta', 0), $this->event('alpha', 1), $this->event('page_view', 2, ['occurredAt' => ''])]],

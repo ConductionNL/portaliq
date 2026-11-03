@@ -186,6 +186,24 @@
         },
         "lastEventAt": "2026-09-04T10:00:09.000Z"
     },
+    "returning, unknown": {
+        "pageViews": 1,
+        "visitors": 1,
+        "newVisitors": 0,
+        "returningVisitors": 1,
+        "accounts": 0,
+        "engaged": 0,
+        "engagedBy": [
+            false,
+            false
+        ],
+        "seconds": 0.0,
+        "events": {
+            "page_view": 1,
+            "session_start": 1
+        },
+        "lastEventAt": "2026-09-04T10:00:09.000Z"
+    },
     "many names, last": {
         "pageViews": 3,
         "visitors": 2,
