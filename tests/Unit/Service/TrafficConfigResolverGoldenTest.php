@@ -83,7 +83,15 @@ class TrafficConfigResolverGoldenTest extends TestCase {
 			'rollupOf'              => ['noord', 'zuid', 'noord'],
 			'reports'               => [['id' => 'd', 'name' => 'Daily', 'cadence' => 'daily', 'recipients' => ['admin']]],
 			'alerts'                => [
-				['id' => 'busy', 'name' => 'Busy', 'metric' => 'pageViews', 'comparison' => 'above', 'threshold' => 50, 'period' => 'day', 'recipients' => ['admin']],
+				[
+					'id'         => 'busy',
+					'name'       => 'Busy',
+					'metric'     => 'pageViews',
+					'comparison' => 'above',
+					'threshold'  => 50,
+					'period'     => 'day',
+					'recipients' => ['admin'],
+				],
 				['id' => 'goal', 'metric' => 'goal:contact', 'comparison' => 'below', 'threshold' => 1, 'recipients' => ['admin']],
 			],
 			'experiments'           => [
@@ -114,7 +122,10 @@ class TrafficConfigResolverGoldenTest extends TestCase {
 			'float numbers'             => ['slug' => 'zuid', 'traffic' => ['sessionTimeoutMinutes' => 12.5, 'retentionDays' => '07']],
 			'consent not an array'      => ['slug' => 'zuid', 'traffic' => ['consent' => 'required']],
 			'consent truthy'            => ['slug' => 'zuid', 'traffic' => ['consent' => ['required' => 'yes', 'preConsentEvents' => ['session_start']]]],
-			'pre-consent not enabled'   => ['slug' => 'zuid', 'traffic' => ['events' => ['page_view'], 'consent' => ['preConsentEvents' => ['scroll', 'page_view']]]],
+			'pre-consent not enabled'   => [
+				'slug'    => 'zuid',
+				'traffic' => ['events' => ['page_view'], 'consent' => ['preConsentEvents' => ['scroll', 'page_view']]],
+			],
 			'excluded not a list'       => ['slug' => 'zuid', 'traffic' => ['excludedPaths' => '/melden']],
 			'rollup includes itself'    => ['slug' => 'zuid', 'traffic' => ['rollupOf' => ['zuid', 'west']]],
 		];
