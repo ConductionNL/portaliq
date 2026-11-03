@@ -42,6 +42,7 @@ use RuntimeException;
  * @covers \OCA\Portaliq\Controller\NewsletterController
  * @uses   \OCA\Portaliq\Service\PortalObjectWriter
  * @uses   \OCA\Portaliq\Service\ActionAuthService
+ * @uses   \OCA\Portaliq\Service\Tenancy\PortalTenantContext
  */
 class StaffRowWriteGoldenTest extends TestCase {
 	use StaffActionDoubleTrait;

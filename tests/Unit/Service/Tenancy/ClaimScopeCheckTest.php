@@ -36,6 +36,8 @@ use RuntimeException;
  * @covers \OCA\Portaliq\Service\Tenancy\ClaimScopeCheck
  * @covers \OCA\Portaliq\Event\PortalClaimScopeEvent
  * @covers \OCA\Portaliq\Service\Identity\PortalAccountsByClaim
+ * @uses   \OCA\Portaliq\Service\Tenancy\PortalTenantContext
+ * @uses   \OCA\Portaliq\Service\ObjectServiceLookup
  */
 class ClaimScopeCheckTest extends TestCase {
 
