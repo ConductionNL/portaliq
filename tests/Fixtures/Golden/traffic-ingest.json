@@ -1,0 +1,1299 @@
+{
+    "unknown portal": {
+        "result": {
+            "accepted": 0,
+            "refused": {
+                "unknown-portal": 2
+            }
+        },
+        "log": [
+            [
+                "metrics.refused",
+                {
+                    "unknown-portal": 2
+                }
+            ]
+        ]
+    },
+    "unknown portal no events": {
+        "result": {
+            "accepted": 0,
+            "refused": {
+                "unknown-portal": 1
+            }
+        },
+        "log": [
+            [
+                "metrics.refused",
+                {
+                    "unknown-portal": 1
+                }
+            ]
+        ]
+    },
+    "rollup portal": {
+        "result": {
+            "accepted": 0,
+            "refused": {
+                "rollup-portal": 3
+            }
+        },
+        "log": [
+            [
+                "metrics.refused",
+                {
+                    "rollup-portal": 3
+                }
+            ]
+        ]
+    },
+    "bot": {
+        "result": {
+            "accepted": 0,
+            "refused": {
+                "bot": 1
+            }
+        },
+        "log": [
+            [
+                "metrics.refused",
+                {
+                    "bot": 1
+                }
+            ]
+        ]
+    },
+    "bot server side": {
+        "result": {
+            "accepted": 1,
+            "refused": []
+        },
+        "log": [
+            [
+                "geo",
+                "",
+                "country"
+            ],
+            [
+                "append",
+                [
+                    {
+                        "name": "email_open",
+                        "sequence": 0,
+                        "occurredAt": "2026-08-29T10:40:00.000Z",
+                        "pageLocation": "https://zuid.example/woo?utm_campaign=url-campaign&utm_term=t",
+                        "sessionId": "",
+                        "clientId": "",
+                        "params": [],
+                        "campaign": "woo-week",
+                        "source": "email",
+                        "medium": "",
+                        "term": "envelope",
+                        "blastRef": "42",
+                        "contactRef": "c-7",
+                        "portal": "zuid",
+                        "receivedAt": "2026-08-29T10:40:00.000Z",
+                        "visitorHash": "5f7ceeb5bade03864754803dec735ac4d381656efd0bd5257559f2c848854bc0",
+                        "pagePath": "/woo",
+                        "consent": false,
+                        "expires": "2026-11-27T10:40:00Z",
+                        "region": "NL",
+                        "channel": "email"
+                    }
+                ]
+            ],
+            [
+                "metrics.accepted",
+                1
+            ],
+            [
+                "metrics.refused",
+                []
+            ]
+        ]
+    },
+    "disabled portal": {
+        "result": {
+            "accepted": 0,
+            "refused": {
+                "measurement-disabled": 1
+            }
+        },
+        "log": [
+            [
+                "append",
+                []
+            ],
+            [
+                "metrics.accepted",
+                0
+            ],
+            [
+                "metrics.refused",
+                {
+                    "measurement-disabled": 1
+                }
+            ]
+        ]
+    },
+    "default dimensions": {
+        "result": {
+            "accepted": 1,
+            "refused": []
+        },
+        "log": [
+            [
+                "append",
+                [
+                    {
+                        "name": "page_view",
+                        "sequence": 0,
+                        "occurredAt": "2026-08-29T10:40:00.000Z",
+                        "pageLocation": "https://zuid.example/woo?utm_campaign=najaar&utm_source=nieuwsbrief&utm_medium=email",
+                        "sessionId": "",
+                        "clientId": "",
+                        "params": [],
+                        "pageReferrer": "https://www.google.nl/",
+                        "pageTitle": "Woo",
+                        "portal": "zuid",
+                        "receivedAt": "2026-08-29T10:40:00.000Z",
+                        "visitorHash": "20eac16eda2981e1040d9a063e6240f01dcf25530bd6717a43ca8e2de1a8bc0f",
+                        "pagePath": "/woo",
+                        "consent": true,
+                        "expires": "2026-11-27T10:40:00Z"
+                    }
+                ]
+            ],
+            [
+                "metrics.accepted",
+                1
+            ],
+            [
+                "metrics.refused",
+                []
+            ]
+        ]
+    },
+    "wide dimensions": {
+        "result": {
+            "accepted": 1,
+            "refused": []
+        },
+        "log": [
+            [
+                "geo",
+                "203.0.113.9",
+                "region"
+            ],
+            [
+                "append",
+                [
+                    {
+                        "name": "page_view",
+                        "sequence": 0,
+                        "occurredAt": "2026-08-29T10:40:00.000Z",
+                        "pageLocation": "https://zuid.example/woo?utm_campaign=najaar&utm_source=nieuwsbrief&utm_medium=email",
+                        "sessionId": "",
+                        "clientId": "",
+                        "params": [],
+                        "pageReferrer": "https://www.google.nl/",
+                        "pageTitle": "Woo",
+                        "portal": "zuid",
+                        "receivedAt": "2026-08-29T10:40:00.000Z",
+                        "visitorHash": "20eac16eda2981e1040d9a063e6240f01dcf25530bd6717a43ca8e2de1a8bc0f",
+                        "pagePath": "/woo",
+                        "consent": true,
+                        "expires": "2026-11-27T10:40:00Z",
+                        "deviceType": "desktop",
+                        "browser": "Chrome",
+                        "os": "Windows",
+                        "language": "nl",
+                        "region": "NL",
+                        "referrerHost": "www.google.nl",
+                        "channel": "email",
+                        "campaign": "najaar",
+                        "source": "nieuwsbrief",
+                        "medium": "email",
+                        "userRef": "acct-1"
+                    }
+                ]
+            ],
+            [
+                "metrics.accepted",
+                1
+            ],
+            [
+                "metrics.refused",
+                []
+            ]
+        ]
+    },
+    "wide without account link": {
+        "result": {
+            "accepted": 1,
+            "refused": []
+        },
+        "log": [
+            [
+                "geo",
+                "203.0.113.9",
+                "region"
+            ],
+            [
+                "append",
+                [
+                    {
+                        "name": "page_view",
+                        "sequence": 0,
+                        "occurredAt": "2026-08-29T10:40:00.000Z",
+                        "pageLocation": "https://zuid.example/woo?utm_campaign=najaar&utm_source=nieuwsbrief&utm_medium=email",
+                        "sessionId": "",
+                        "clientId": "",
+                        "params": [],
+                        "pageReferrer": "https://www.google.nl/",
+                        "pageTitle": "Woo",
+                        "portal": "zuid",
+                        "receivedAt": "2026-08-29T10:40:00.000Z",
+                        "visitorHash": "20eac16eda2981e1040d9a063e6240f01dcf25530bd6717a43ca8e2de1a8bc0f",
+                        "pagePath": "/woo",
+                        "consent": true,
+                        "expires": "2026-11-27T10:40:00Z",
+                        "deviceType": "desktop",
+                        "browser": "Chrome",
+                        "os": "Windows",
+                        "language": "nl",
+                        "region": "NL",
+                        "referrerHost": "www.google.nl",
+                        "channel": "email",
+                        "campaign": "najaar",
+                        "source": "nieuwsbrief",
+                        "medium": "email"
+                    }
+                ]
+            ],
+            [
+                "metrics.accepted",
+                1
+            ],
+            [
+                "metrics.refused",
+                []
+            ]
+        ]
+    },
+    "region none": {
+        "result": {
+            "accepted": 1,
+            "refused": []
+        },
+        "log": [
+            [
+                "append",
+                [
+                    {
+                        "name": "page_view",
+                        "sequence": 0,
+                        "occurredAt": "2026-08-29T10:40:00.000Z",
+                        "pageLocation": "https://zuid.example/woo?utm_campaign=najaar&utm_source=nieuwsbrief&utm_medium=email",
+                        "sessionId": "",
+                        "clientId": "",
+                        "params": [],
+                        "pageReferrer": "https://www.google.nl/",
+                        "pageTitle": "Woo",
+                        "portal": "zuid",
+                        "receivedAt": "2026-08-29T10:40:00.000Z",
+                        "visitorHash": "20eac16eda2981e1040d9a063e6240f01dcf25530bd6717a43ca8e2de1a8bc0f",
+                        "pagePath": "/woo",
+                        "consent": true,
+                        "expires": "2026-11-27T10:40:00Z",
+                        "deviceType": "desktop",
+                        "browser": "Chrome",
+                        "os": "Windows",
+                        "language": "nl",
+                        "referrerHost": "www.google.nl",
+                        "channel": "email",
+                        "campaign": "najaar",
+                        "source": "nieuwsbrief",
+                        "medium": "email"
+                    }
+                ]
+            ],
+            [
+                "metrics.accepted",
+                1
+            ],
+            [
+                "metrics.refused",
+                []
+            ]
+        ]
+    },
+    "region unknown answer": {
+        "result": {
+            "accepted": 1,
+            "refused": []
+        },
+        "log": [
+            [
+                "geo",
+                "203.0.113.9",
+                "region"
+            ],
+            [
+                "append",
+                [
+                    {
+                        "name": "page_view",
+                        "sequence": 0,
+                        "occurredAt": "2026-08-29T10:40:00.000Z",
+                        "pageLocation": "https://zuid.example/woo?utm_campaign=najaar&utm_source=nieuwsbrief&utm_medium=email",
+                        "sessionId": "",
+                        "clientId": "",
+                        "params": [],
+                        "pageReferrer": "https://www.google.nl/",
+                        "pageTitle": "Woo",
+                        "portal": "zuid",
+                        "receivedAt": "2026-08-29T10:40:00.000Z",
+                        "visitorHash": "20eac16eda2981e1040d9a063e6240f01dcf25530bd6717a43ca8e2de1a8bc0f",
+                        "pagePath": "/woo",
+                        "consent": true,
+                        "expires": "2026-11-27T10:40:00Z",
+                        "deviceType": "desktop",
+                        "browser": "Chrome",
+                        "os": "Windows",
+                        "language": "nl",
+                        "region": "NL",
+                        "referrerHost": "www.google.nl",
+                        "channel": "email",
+                        "campaign": "najaar",
+                        "source": "nieuwsbrief",
+                        "medium": "email"
+                    }
+                ]
+            ],
+            [
+                "metrics.accepted",
+                1
+            ],
+            [
+                "metrics.refused",
+                []
+            ]
+        ]
+    },
+    "country granularity": {
+        "result": {
+            "accepted": 1,
+            "refused": []
+        },
+        "log": [
+            [
+                "geo",
+                "203.0.113.9",
+                "country"
+            ],
+            [
+                "append",
+                [
+                    {
+                        "name": "page_view",
+                        "sequence": 0,
+                        "occurredAt": "2026-08-29T10:40:00.000Z",
+                        "pageLocation": "https://zuid.example/woo?utm_campaign=najaar&utm_source=nieuwsbrief&utm_medium=email",
+                        "sessionId": "",
+                        "clientId": "",
+                        "params": [],
+                        "pageReferrer": "https://www.google.nl/",
+                        "pageTitle": "Woo",
+                        "portal": "zuid",
+                        "receivedAt": "2026-08-29T10:40:00.000Z",
+                        "visitorHash": "20eac16eda2981e1040d9a063e6240f01dcf25530bd6717a43ca8e2de1a8bc0f",
+                        "pagePath": "/woo",
+                        "consent": true,
+                        "expires": "2026-11-27T10:40:00Z",
+                        "deviceType": "desktop",
+                        "browser": "Chrome",
+                        "os": "Windows",
+                        "language": "nl",
+                        "referrerHost": "www.google.nl",
+                        "channel": "email",
+                        "campaign": "najaar",
+                        "source": "nieuwsbrief",
+                        "medium": "email"
+                    }
+                ]
+            ],
+            [
+                "metrics.accepted",
+                1
+            ],
+            [
+                "metrics.refused",
+                []
+            ]
+        ]
+    },
+    "no consent": {
+        "result": {
+            "accepted": 1,
+            "refused": []
+        },
+        "log": [
+            [
+                "geo",
+                "203.0.113.9",
+                "region"
+            ],
+            [
+                "append",
+                [
+                    {
+                        "name": "page_view",
+                        "sequence": 0,
+                        "occurredAt": "2026-08-29T10:40:00.000Z",
+                        "pageLocation": "https://zuid.example/woo?utm_campaign=najaar&utm_source=nieuwsbrief&utm_medium=email",
+                        "sessionId": "",
+                        "clientId": "",
+                        "params": [],
+                        "pageReferrer": "https://www.google.nl/",
+                        "pageTitle": "Woo",
+                        "portal": "zuid",
+                        "receivedAt": "2026-08-29T10:40:00.000Z",
+                        "visitorHash": "20eac16eda2981e1040d9a063e6240f01dcf25530bd6717a43ca8e2de1a8bc0f",
+                        "pagePath": "/woo",
+                        "consent": false,
+                        "expires": "2026-11-27T10:40:00Z",
+                        "deviceType": "desktop",
+                        "browser": "Chrome",
+                        "os": "Windows",
+                        "language": "nl",
+                        "region": "NL",
+                        "referrerHost": "www.google.nl",
+                        "channel": "email",
+                        "campaign": "najaar",
+                        "source": "nieuwsbrief",
+                        "medium": "email"
+                    }
+                ]
+            ],
+            [
+                "metrics.accepted",
+                1
+            ],
+            [
+                "metrics.refused",
+                []
+            ]
+        ]
+    },
+    "consent required, none": {
+        "result": {
+            "accepted": 0,
+            "refused": {
+                "event-requires-consent": 1
+            }
+        },
+        "log": [
+            [
+                "geo",
+                "203.0.113.9",
+                "region"
+            ],
+            [
+                "append",
+                []
+            ],
+            [
+                "metrics.accepted",
+                0
+            ],
+            [
+                "metrics.refused",
+                {
+                    "event-requires-consent": 1
+                }
+            ]
+        ]
+    },
+    "malformed and refused": {
+        "result": {
+            "accepted": 2,
+            "refused": {
+                "malformed-event": 2,
+                "event-not-enabled": 1
+            }
+        },
+        "log": [
+            [
+                "geo",
+                "203.0.113.9",
+                "region"
+            ],
+            [
+                "append",
+                [
+                    {
+                        "name": "page_view",
+                        "sequence": 0,
+                        "occurredAt": "2026-08-29T10:40:00.000Z",
+                        "pageLocation": "https://zuid.example/woo?utm_campaign=najaar&utm_source=nieuwsbrief&utm_medium=email",
+                        "sessionId": "",
+                        "clientId": "",
+                        "params": [],
+                        "pageReferrer": "https://www.google.nl/",
+                        "pageTitle": "Woo",
+                        "portal": "zuid",
+                        "receivedAt": "2026-08-29T10:40:00.000Z",
+                        "visitorHash": "20eac16eda2981e1040d9a063e6240f01dcf25530bd6717a43ca8e2de1a8bc0f",
+                        "pagePath": "/woo",
+                        "consent": true,
+                        "expires": "2026-11-27T10:40:00Z",
+                        "deviceType": "desktop",
+                        "browser": "Chrome",
+                        "os": "Windows",
+                        "language": "nl",
+                        "region": "NL",
+                        "referrerHost": "www.google.nl",
+                        "channel": "email",
+                        "campaign": "najaar",
+                        "source": "nieuwsbrief",
+                        "medium": "email"
+                    },
+                    {
+                        "name": "page_view",
+                        "sequence": 2,
+                        "occurredAt": "2026-08-29T10:40:00.000Z",
+                        "pageLocation": "https://zuid.example/a",
+                        "sessionId": "",
+                        "clientId": "",
+                        "params": [],
+                        "pageReferrer": "https://www.google.nl/",
+                        "pageTitle": "Woo",
+                        "portal": "zuid",
+                        "receivedAt": "2026-08-29T10:40:00.000Z",
+                        "visitorHash": "20eac16eda2981e1040d9a063e6240f01dcf25530bd6717a43ca8e2de1a8bc0f",
+                        "pagePath": "/a",
+                        "consent": true,
+                        "expires": "2026-11-27T10:40:00Z",
+                        "deviceType": "desktop",
+                        "browser": "Chrome",
+                        "os": "Windows",
+                        "language": "nl",
+                        "region": "NL",
+                        "referrerHost": "www.google.nl",
+                        "channel": "organic search"
+                    }
+                ]
+            ],
+            [
+                "metrics.accepted",
+                2
+            ],
+            [
+                "metrics.refused",
+                {
+                    "malformed-event": 2,
+                    "event-not-enabled": 1
+                }
+            ]
+        ]
+    },
+    "excluded paths": {
+        "result": {
+            "accepted": 0,
+            "refused": {
+                "excluded-path": 3
+            }
+        },
+        "log": [
+            [
+                "geo",
+                "203.0.113.9",
+                "region"
+            ],
+            [
+                "append",
+                []
+            ],
+            [
+                "metrics.accepted",
+                0
+            ],
+            [
+                "metrics.refused",
+                {
+                    "excluded-path": 3
+                }
+            ]
+        ]
+    },
+    "excluded sub path only": {
+        "result": {
+            "accepted": 1,
+            "refused": {
+                "excluded-path": 1
+            }
+        },
+        "log": [
+            [
+                "geo",
+                "203.0.113.9",
+                "region"
+            ],
+            [
+                "append",
+                [
+                    {
+                        "name": "page_view",
+                        "sequence": 1,
+                        "occurredAt": "2026-08-29T10:40:00.000Z",
+                        "pageLocation": "https://zuid.example/meldingen",
+                        "sessionId": "",
+                        "clientId": "",
+                        "params": [],
+                        "pageReferrer": "https://www.google.nl/",
+                        "pageTitle": "Woo",
+                        "portal": "zuid",
+                        "receivedAt": "2026-08-29T10:40:00.000Z",
+                        "visitorHash": "20eac16eda2981e1040d9a063e6240f01dcf25530bd6717a43ca8e2de1a8bc0f",
+                        "pagePath": "/meldingen",
+                        "consent": true,
+                        "expires": "2026-11-27T10:40:00Z",
+                        "deviceType": "desktop",
+                        "browser": "Chrome",
+                        "os": "Windows",
+                        "language": "nl",
+                        "region": "NL",
+                        "referrerHost": "www.google.nl",
+                        "channel": "organic search"
+                    }
+                ]
+            ],
+            [
+                "metrics.accepted",
+                1
+            ],
+            [
+                "metrics.refused",
+                {
+                    "excluded-path": 1
+                }
+            ]
+        ]
+    },
+    "store keeps some": {
+        "result": {
+            "accepted": 1,
+            "refused": {
+                "storage-failed": 2
+            }
+        },
+        "log": [
+            [
+                "geo",
+                "203.0.113.9",
+                "region"
+            ],
+            [
+                "append",
+                [
+                    {
+                        "name": "page_view",
+                        "sequence": 0,
+                        "occurredAt": "2026-08-29T10:40:00.000Z",
+                        "pageLocation": "https://zuid.example/woo?utm_campaign=najaar&utm_source=nieuwsbrief&utm_medium=email",
+                        "sessionId": "",
+                        "clientId": "",
+                        "params": [],
+                        "pageReferrer": "https://www.google.nl/",
+                        "pageTitle": "Woo",
+                        "portal": "zuid",
+                        "receivedAt": "2026-08-29T10:40:00.000Z",
+                        "visitorHash": "20eac16eda2981e1040d9a063e6240f01dcf25530bd6717a43ca8e2de1a8bc0f",
+                        "pagePath": "/woo",
+                        "consent": true,
+                        "expires": "2026-11-27T10:40:00Z",
+                        "deviceType": "desktop",
+                        "browser": "Chrome",
+                        "os": "Windows",
+                        "language": "nl",
+                        "region": "NL",
+                        "referrerHost": "www.google.nl",
+                        "channel": "email",
+                        "campaign": "najaar",
+                        "source": "nieuwsbrief",
+                        "medium": "email"
+                    },
+                    {
+                        "name": "page_view",
+                        "sequence": 1,
+                        "occurredAt": "2026-08-29T10:40:00.000Z",
+                        "pageLocation": "https://zuid.example/woo?utm_campaign=najaar&utm_source=nieuwsbrief&utm_medium=email",
+                        "sessionId": "",
+                        "clientId": "",
+                        "params": [],
+                        "pageReferrer": "https://www.google.nl/",
+                        "pageTitle": "Woo",
+                        "portal": "zuid",
+                        "receivedAt": "2026-08-29T10:40:00.000Z",
+                        "visitorHash": "20eac16eda2981e1040d9a063e6240f01dcf25530bd6717a43ca8e2de1a8bc0f",
+                        "pagePath": "/woo",
+                        "consent": true,
+                        "expires": "2026-11-27T10:40:00Z",
+                        "deviceType": "desktop",
+                        "browser": "Chrome",
+                        "os": "Windows",
+                        "language": "nl",
+                        "region": "NL",
+                        "referrerHost": "www.google.nl",
+                        "channel": "email",
+                        "campaign": "najaar",
+                        "source": "nieuwsbrief",
+                        "medium": "email"
+                    },
+                    {
+                        "name": "page_view",
+                        "sequence": 2,
+                        "occurredAt": "2026-08-29T10:40:00.000Z",
+                        "pageLocation": "https://zuid.example/woo?utm_campaign=najaar&utm_source=nieuwsbrief&utm_medium=email",
+                        "sessionId": "",
+                        "clientId": "",
+                        "params": [],
+                        "pageReferrer": "https://www.google.nl/",
+                        "pageTitle": "Woo",
+                        "portal": "zuid",
+                        "receivedAt": "2026-08-29T10:40:00.000Z",
+                        "visitorHash": "20eac16eda2981e1040d9a063e6240f01dcf25530bd6717a43ca8e2de1a8bc0f",
+                        "pagePath": "/woo",
+                        "consent": true,
+                        "expires": "2026-11-27T10:40:00Z",
+                        "deviceType": "desktop",
+                        "browser": "Chrome",
+                        "os": "Windows",
+                        "language": "nl",
+                        "region": "NL",
+                        "referrerHost": "www.google.nl",
+                        "channel": "email",
+                        "campaign": "najaar",
+                        "source": "nieuwsbrief",
+                        "medium": "email"
+                    }
+                ]
+            ],
+            [
+                "metrics.accepted",
+                1
+            ],
+            [
+                "metrics.refused",
+                {
+                    "storage-failed": 2
+                }
+            ]
+        ]
+    },
+    "store keeps none": {
+        "result": {
+            "accepted": 0,
+            "refused": {
+                "storage-failed": 1
+            }
+        },
+        "log": [
+            [
+                "geo",
+                "203.0.113.9",
+                "region"
+            ],
+            [
+                "append",
+                [
+                    {
+                        "name": "page_view",
+                        "sequence": 0,
+                        "occurredAt": "2026-08-29T10:40:00.000Z",
+                        "pageLocation": "https://zuid.example/woo?utm_campaign=najaar&utm_source=nieuwsbrief&utm_medium=email",
+                        "sessionId": "",
+                        "clientId": "",
+                        "params": [],
+                        "pageReferrer": "https://www.google.nl/",
+                        "pageTitle": "Woo",
+                        "portal": "zuid",
+                        "receivedAt": "2026-08-29T10:40:00.000Z",
+                        "visitorHash": "20eac16eda2981e1040d9a063e6240f01dcf25530bd6717a43ca8e2de1a8bc0f",
+                        "pagePath": "/woo",
+                        "consent": true,
+                        "expires": "2026-11-27T10:40:00Z",
+                        "deviceType": "desktop",
+                        "browser": "Chrome",
+                        "os": "Windows",
+                        "language": "nl",
+                        "region": "NL",
+                        "referrerHost": "www.google.nl",
+                        "channel": "email",
+                        "campaign": "najaar",
+                        "source": "nieuwsbrief",
+                        "medium": "email"
+                    }
+                ]
+            ],
+            [
+                "metrics.accepted",
+                0
+            ],
+            [
+                "metrics.refused",
+                {
+                    "storage-failed": 1
+                }
+            ]
+        ]
+    },
+    "retention days": {
+        "result": {
+            "accepted": 1,
+            "refused": []
+        },
+        "log": [
+            [
+                "geo",
+                "203.0.113.9",
+                "region"
+            ],
+            [
+                "append",
+                [
+                    {
+                        "name": "page_view",
+                        "sequence": 0,
+                        "occurredAt": "2026-08-29T10:40:00.000Z",
+                        "pageLocation": "https://zuid.example/woo?utm_campaign=najaar&utm_source=nieuwsbrief&utm_medium=email",
+                        "sessionId": "",
+                        "clientId": "",
+                        "params": [],
+                        "pageReferrer": "https://www.google.nl/",
+                        "pageTitle": "Woo",
+                        "portal": "zuid",
+                        "receivedAt": "2026-08-29T10:40:00.000Z",
+                        "visitorHash": "20eac16eda2981e1040d9a063e6240f01dcf25530bd6717a43ca8e2de1a8bc0f",
+                        "pagePath": "/woo",
+                        "consent": true,
+                        "expires": "2026-09-05T10:40:00Z",
+                        "deviceType": "desktop",
+                        "browser": "Chrome",
+                        "os": "Windows",
+                        "language": "nl",
+                        "region": "NL",
+                        "referrerHost": "www.google.nl",
+                        "channel": "email",
+                        "campaign": "najaar",
+                        "source": "nieuwsbrief",
+                        "medium": "email"
+                    }
+                ]
+            ],
+            [
+                "metrics.accepted",
+                1
+            ],
+            [
+                "metrics.refused",
+                []
+            ]
+        ]
+    },
+    "mail event server side": {
+        "result": {
+            "accepted": 1,
+            "refused": []
+        },
+        "log": [
+            [
+                "geo",
+                "198.51.100.1",
+                "country"
+            ],
+            [
+                "append",
+                [
+                    {
+                        "name": "email_open",
+                        "sequence": 0,
+                        "occurredAt": "2026-08-29T10:40:00.000Z",
+                        "pageLocation": "https://zuid.example/woo?utm_campaign=url-campaign&utm_term=t",
+                        "sessionId": "",
+                        "clientId": "",
+                        "params": [],
+                        "campaign": "woo-week",
+                        "source": "email",
+                        "medium": "",
+                        "term": "envelope",
+                        "blastRef": "42",
+                        "contactRef": "c-7",
+                        "portal": "zuid",
+                        "receivedAt": "2026-08-29T10:40:00.000Z",
+                        "visitorHash": "5f7ceeb5bade03864754803dec735ac4d381656efd0bd5257559f2c848854bc0",
+                        "pagePath": "/woo",
+                        "consent": false,
+                        "expires": "2026-11-27T10:40:00Z",
+                        "region": "NL",
+                        "channel": "email"
+                    }
+                ]
+            ],
+            [
+                "metrics.accepted",
+                1
+            ],
+            [
+                "metrics.refused",
+                []
+            ]
+        ]
+    },
+    "mail event from browser": {
+        "result": {
+            "accepted": 0,
+            "refused": {
+                "event-server-side-only": 1
+            }
+        },
+        "log": [
+            [
+                "geo",
+                "203.0.113.9",
+                "country"
+            ],
+            [
+                "append",
+                []
+            ],
+            [
+                "metrics.accepted",
+                0
+            ],
+            [
+                "metrics.refused",
+                {
+                    "event-server-side-only": 1
+                }
+            ]
+        ]
+    },
+    "two visitors same batch": {
+        "result": {
+            "accepted": 2,
+            "refused": []
+        },
+        "log": [
+            [
+                "geo",
+                "203.0.113.9",
+                "region"
+            ],
+            [
+                "append",
+                [
+                    {
+                        "name": "page_view",
+                        "sequence": 0,
+                        "occurredAt": "2026-08-29T10:40:00.000Z",
+                        "pageLocation": "https://zuid.example/woo?utm_campaign=najaar&utm_source=nieuwsbrief&utm_medium=email",
+                        "sessionId": "",
+                        "clientId": "",
+                        "params": [],
+                        "pageReferrer": "https://www.google.nl/",
+                        "pageTitle": "Woo",
+                        "portal": "zuid",
+                        "receivedAt": "2026-08-29T10:40:00.000Z",
+                        "visitorHash": "20eac16eda2981e1040d9a063e6240f01dcf25530bd6717a43ca8e2de1a8bc0f",
+                        "pagePath": "/woo",
+                        "consent": true,
+                        "expires": "2026-11-27T10:40:00Z",
+                        "deviceType": "desktop",
+                        "browser": "Chrome",
+                        "os": "Windows",
+                        "language": "nl",
+                        "region": "NL",
+                        "referrerHost": "www.google.nl",
+                        "channel": "email",
+                        "campaign": "najaar",
+                        "source": "nieuwsbrief",
+                        "medium": "email"
+                    },
+                    {
+                        "name": "page_view",
+                        "sequence": 1,
+                        "occurredAt": "2026-08-29T10:40:00.000Z",
+                        "pageLocation": "https://zuid.example/woo?utm_campaign=najaar&utm_source=nieuwsbrief&utm_medium=email",
+                        "sessionId": "",
+                        "clientId": "",
+                        "params": [],
+                        "pageReferrer": "",
+                        "pageTitle": "Woo",
+                        "portal": "zuid",
+                        "receivedAt": "2026-08-29T10:40:00.000Z",
+                        "visitorHash": "20eac16eda2981e1040d9a063e6240f01dcf25530bd6717a43ca8e2de1a8bc0f",
+                        "pagePath": "/woo",
+                        "consent": true,
+                        "expires": "2026-11-27T10:40:00Z",
+                        "deviceType": "desktop",
+                        "browser": "Chrome",
+                        "os": "Windows",
+                        "language": "nl",
+                        "region": "NL",
+                        "channel": "email",
+                        "campaign": "najaar",
+                        "source": "nieuwsbrief",
+                        "medium": "email"
+                    }
+                ]
+            ],
+            [
+                "metrics.accepted",
+                2
+            ],
+            [
+                "metrics.refused",
+                []
+            ]
+        ]
+    },
+    "language header odd": {
+        "result": {
+            "accepted": 1,
+            "refused": []
+        },
+        "log": [
+            [
+                "geo",
+                "203.0.113.9",
+                "region"
+            ],
+            [
+                "append",
+                [
+                    {
+                        "name": "page_view",
+                        "sequence": 0,
+                        "occurredAt": "2026-08-29T10:40:00.000Z",
+                        "pageLocation": "https://zuid.example/woo?utm_campaign=najaar&utm_source=nieuwsbrief&utm_medium=email",
+                        "sessionId": "",
+                        "clientId": "",
+                        "params": [],
+                        "pageReferrer": "https://www.google.nl/",
+                        "pageTitle": "Woo",
+                        "portal": "zuid",
+                        "receivedAt": "2026-08-29T10:40:00.000Z",
+                        "visitorHash": "20eac16eda2981e1040d9a063e6240f01dcf25530bd6717a43ca8e2de1a8bc0f",
+                        "pagePath": "/woo",
+                        "consent": true,
+                        "expires": "2026-11-27T10:40:00Z",
+                        "deviceType": "desktop",
+                        "browser": "Chrome",
+                        "os": "Windows",
+                        "language": "en",
+                        "region": "NL",
+                        "referrerHost": "www.google.nl",
+                        "channel": "email",
+                        "campaign": "najaar",
+                        "source": "nieuwsbrief",
+                        "medium": "email"
+                    }
+                ]
+            ],
+            [
+                "metrics.accepted",
+                1
+            ],
+            [
+                "metrics.refused",
+                []
+            ]
+        ]
+    },
+    "language header empty": {
+        "result": {
+            "accepted": 1,
+            "refused": []
+        },
+        "log": [
+            [
+                "geo",
+                "203.0.113.9",
+                "region"
+            ],
+            [
+                "append",
+                [
+                    {
+                        "name": "page_view",
+                        "sequence": 0,
+                        "occurredAt": "2026-08-29T10:40:00.000Z",
+                        "pageLocation": "https://zuid.example/woo?utm_campaign=najaar&utm_source=nieuwsbrief&utm_medium=email",
+                        "sessionId": "",
+                        "clientId": "",
+                        "params": [],
+                        "pageReferrer": "https://www.google.nl/",
+                        "pageTitle": "Woo",
+                        "portal": "zuid",
+                        "receivedAt": "2026-08-29T10:40:00.000Z",
+                        "visitorHash": "20eac16eda2981e1040d9a063e6240f01dcf25530bd6717a43ca8e2de1a8bc0f",
+                        "pagePath": "/woo",
+                        "consent": true,
+                        "expires": "2026-11-27T10:40:00Z",
+                        "deviceType": "desktop",
+                        "browser": "Chrome",
+                        "os": "Windows",
+                        "region": "NL",
+                        "referrerHost": "www.google.nl",
+                        "channel": "email",
+                        "campaign": "najaar",
+                        "source": "nieuwsbrief",
+                        "medium": "email"
+                    }
+                ]
+            ],
+            [
+                "metrics.accepted",
+                1
+            ],
+            [
+                "metrics.refused",
+                []
+            ]
+        ]
+    },
+    "old event allowed": {
+        "result": {
+            "accepted": 1,
+            "refused": []
+        },
+        "log": [
+            [
+                "geo",
+                "203.0.113.9",
+                "region"
+            ],
+            [
+                "append",
+                [
+                    {
+                        "name": "page_view",
+                        "sequence": 0,
+                        "occurredAt": "2026-01-01T00:00:00.000Z",
+                        "pageLocation": "https://zuid.example/woo?utm_campaign=najaar&utm_source=nieuwsbrief&utm_medium=email",
+                        "sessionId": "",
+                        "clientId": "",
+                        "params": [],
+                        "pageReferrer": "https://www.google.nl/",
+                        "pageTitle": "Woo",
+                        "portal": "zuid",
+                        "receivedAt": "2026-08-29T10:40:00.000Z",
+                        "visitorHash": "20eac16eda2981e1040d9a063e6240f01dcf25530bd6717a43ca8e2de1a8bc0f",
+                        "pagePath": "/woo",
+                        "consent": true,
+                        "expires": "2026-11-27T10:40:00Z",
+                        "deviceType": "desktop",
+                        "browser": "Chrome",
+                        "os": "Windows",
+                        "language": "nl",
+                        "region": "NL",
+                        "referrerHost": "www.google.nl",
+                        "channel": "email",
+                        "campaign": "najaar",
+                        "source": "nieuwsbrief",
+                        "medium": "email"
+                    }
+                ]
+            ],
+            [
+                "metrics.accepted",
+                1
+            ],
+            [
+                "metrics.refused",
+                []
+            ]
+        ]
+    },
+    "old event refused": {
+        "result": {
+            "accepted": 0,
+            "refused": {
+                "timestamp-out-of-range": 1
+            }
+        },
+        "log": [
+            [
+                "geo",
+                "203.0.113.9",
+                "region"
+            ],
+            [
+                "append",
+                []
+            ],
+            [
+                "metrics.accepted",
+                0
+            ],
+            [
+                "metrics.refused",
+                {
+                    "timestamp-out-of-range": 1
+                }
+            ]
+        ]
+    },
+    "internal referrer": {
+        "result": {
+            "accepted": 1,
+            "refused": []
+        },
+        "log": [
+            [
+                "geo",
+                "203.0.113.9",
+                "region"
+            ],
+            [
+                "append",
+                [
+                    {
+                        "name": "page_view",
+                        "sequence": 0,
+                        "occurredAt": "2026-08-29T10:40:00.000Z",
+                        "pageLocation": "https://zuid.example/b",
+                        "sessionId": "",
+                        "clientId": "",
+                        "params": [],
+                        "pageReferrer": "https://zuid.example/home",
+                        "pageTitle": "Woo",
+                        "portal": "zuid",
+                        "receivedAt": "2026-08-29T10:40:00.000Z",
+                        "visitorHash": "20eac16eda2981e1040d9a063e6240f01dcf25530bd6717a43ca8e2de1a8bc0f",
+                        "pagePath": "/b",
+                        "consent": true,
+                        "expires": "2026-11-27T10:40:00Z",
+                        "deviceType": "desktop",
+                        "browser": "Chrome",
+                        "os": "Windows",
+                        "language": "nl",
+                        "region": "NL",
+                        "referrerHost": "zuid.example",
+                        "channel": "internal"
+                    }
+                ]
+            ],
+            [
+                "metrics.accepted",
+                1
+            ],
+            [
+                "metrics.refused",
+                []
+            ]
+        ]
+    }
+}
