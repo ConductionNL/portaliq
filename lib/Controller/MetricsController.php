@@ -86,6 +86,15 @@ class MetricsController extends Controller {
 	private const METRIC_ROW_CAP = 1000;
 
 	/**
+	 * The help text of each gauge after the info line, in exposition order.
+	 */
+	private const GAUGE_HELP = [
+		'health_status' => '1 when OpenRegister reachable, 0 otherwise',
+		'notifications_failed_total' => 'Count of failed notification attempts (count-only, no recipient identity).',
+		'accounts_needs_alt_contact' => 'Count of accounts flagged needsAlternativeContact (WMEBV fallback; count-only).',
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request object
@@ -133,61 +142,7 @@ class MetricsController extends Controller {
 	 */
 	public function index(): DataDisplayResponse {
 		try {
-			$prefix = self::METRIC_PREFIX;
-			$healthy = (int)$this->settingsService->isOpenRegisterAvailable();
-
-			// Portal-notifications-dispatch: count-only — NEVER the recipients
-			// or subjects themselves, only how many rows exist.
-			$failedNotifications = $this->countObjects(schema: 'portalNotification', filters: ['status' => 'failed']);
-			$needsAltContact = $this->countObjects(schema: 'portalAccount', filters: ['needsAlternativeContact' => true]);
-
-			$lines = [
-				'# HELP ' . $prefix . '_info Static app information',
-				'# TYPE ' . $prefix . '_info gauge',
-				$prefix . '_info{app="' . Application::APP_ID . '",version="0.1.0"} 1',
-				'# HELP ' . $prefix . '_health_status 1 when OpenRegister reachable, 0 otherwise',
-				'# TYPE ' . $prefix . '_health_status gauge',
-				$prefix . '_health_status ' . $healthy,
-				'# HELP ' . $prefix . '_notifications_failed_total Count of failed notification attempts (count-only, no recipient identity).',
-				'# TYPE ' . $prefix . '_notifications_failed_total gauge',
-				$prefix . '_notifications_failed_total ' . $failedNotifications,
-				'# HELP ' . $prefix . '_accounts_needs_alt_contact Count of accounts flagged needsAlternativeContact (WMEBV fallback; count-only).',
-				'# TYPE ' . $prefix . '_accounts_needs_alt_contact gauge',
-				$prefix . '_accounts_needs_alt_contact ' . $needsAltContact,
-			];
-
-			// Count-only portal audit-trail exposure (portal-session-hardening-v2,
-			// T10): a total PER VERB, never a subject, target id, or payload.
-			$lines[] = '# HELP ' . $prefix . '_audit_entries_total Portal audit-trail entry count by verb';
-			$lines[] = '# TYPE ' . $prefix . '_audit_entries_total counter';
-			foreach ($this->auditor->countsByVerb() as $verb => $count) {
-				$lines[] = $prefix . '_audit_entries_total{verb="' . $verb . '"} ' . $count;
-			}
-
-			// The traffic collector (portal-traffic-analytics): how many
-			// events were stored, and how many were refused under which
-			// reason. The refused counter is what makes a misconfigured
-			// client VISIBLE: without it a client whose events are all
-			// refused and a working one produce the same 204s and the same
-			// quiet dashboard. Counts only, never a portal, a page or a hash.
-			$lines[] = '# HELP ' . $prefix . '_traffic_accepted_total Traffic events accepted by the collector.';
-			$lines[] = '# TYPE ' . $prefix . '_traffic_accepted_total counter';
-			$lines[] = $prefix . '_traffic_accepted_total ' . $this->traffic->acceptedTotal();
-			$lines[] = '# HELP ' . $prefix . '_traffic_refused_total Traffic events refused by the collector, by reason.';
-			$lines[] = '# TYPE ' . $prefix . '_traffic_refused_total counter';
-			foreach ($this->traffic->refusedByReason() as $reason => $count) {
-				$lines[] = $prefix . '_traffic_refused_total{reason="' . $reason . '"} ' . $count;
-			}
-
-			// The public content cache (portal-headless-content-api): without
-			// the two counts a cache that never hits looks like no cache.
-			if ($this->cms !== null) {
-				$cache   = $this->cms->cacheStats();
-				$lines[] = '# HELP ' . $prefix . '_content_cache_total Public content reads by cache outcome.';
-				$lines[] = '# TYPE ' . $prefix . '_content_cache_total counter';
-				$lines[] = $prefix . '_content_cache_total{outcome="hit"} ' . $cache['hits'];
-				$lines[] = $prefix . '_content_cache_total{outcome="miss"} ' . $cache['misses'];
-			}
+			$lines = array_merge($this->gaugeLines(), $this->auditLines(), $this->trafficLines(), $this->cacheLines());
 
 			return new DataDisplayResponse(
 				implode("\n", $lines) . "\n",
@@ -199,6 +154,106 @@ class MetricsController extends Controller {
 			return new DataDisplayResponse('', Http::STATUS_INTERNAL_SERVER_ERROR);
 		}//end try
 	}//end index()
+
+	/**
+	 * The app info line and the gauges, each with its help and type line.
+	 *
+	 * The notification and account gauges are count-only: never the
+	 * recipients or subjects themselves, only how many rows exist.
+	 *
+	 * @return array<int, string>
+	 */
+	private function gaugeLines(): array {
+		$values = [
+			'health_status' => (int)$this->settingsService->isOpenRegisterAvailable(),
+			'notifications_failed_total' => $this->countObjects(schema: 'portalNotification', filters: ['status' => 'failed']),
+			'accounts_needs_alt_contact' => $this->countObjects(schema: 'portalAccount', filters: ['needsAlternativeContact' => true]),
+		];
+
+		$prefix = self::METRIC_PREFIX;
+		$lines  = [
+			'# HELP ' . $prefix . '_info Static app information',
+			'# TYPE ' . $prefix . '_info gauge',
+			$prefix . '_info{app="' . Application::APP_ID . '",version="0.1.0"} 1',
+		];
+		foreach (self::GAUGE_HELP as $name => $help) {
+			$metric = $prefix . '_' . $name;
+			array_push($lines, '# HELP ' . $metric . ' ' . $help, '# TYPE ' . $metric . ' gauge', $metric . ' ' . $values[$name]);
+		}
+
+		return $lines;
+	}//end gaugeLines()
+
+	/**
+	 * Count-only portal audit-trail exposure (portal-session-hardening-v2,
+	 * T10): a total PER VERB, never a subject, target id, or payload.
+	 *
+	 * @return array<int, string>
+	 */
+	private function auditLines(): array {
+		$lines = $this->counterHead(name: 'audit_entries_total', help: 'Portal audit-trail entry count by verb');
+		foreach ($this->auditor->countsByVerb() as $verb => $count) {
+			$lines[] = self::METRIC_PREFIX . '_audit_entries_total{verb="' . $verb . '"} ' . $count;
+		}
+
+		return $lines;
+	}//end auditLines()
+
+	/**
+	 * The traffic collector (portal-traffic-analytics): how many events were
+	 * stored, and how many were refused under which reason.
+	 *
+	 * The refused counter is what makes a misconfigured client VISIBLE:
+	 * without it a client whose events are all refused and a working one
+	 * produce the same 204s and the same quiet dashboard. Counts only, never
+	 * a portal, a page or a hash.
+	 *
+	 * @return array<int, string>
+	 */
+	private function trafficLines(): array {
+		$lines   = $this->counterHead(name: 'traffic_accepted_total', help: 'Traffic events accepted by the collector.');
+		$lines[] = self::METRIC_PREFIX . '_traffic_accepted_total ' . $this->traffic->acceptedTotal();
+		$lines   = array_merge($lines, $this->counterHead(name: 'traffic_refused_total', help: 'Traffic events refused by the collector, by reason.'));
+		foreach ($this->traffic->refusedByReason() as $reason => $count) {
+			$lines[] = self::METRIC_PREFIX . '_traffic_refused_total{reason="' . $reason . '"} ' . $count;
+		}
+
+		return $lines;
+	}//end trafficLines()
+
+	/**
+	 * The public content cache (portal-headless-content-api): without the
+	 * two counts a cache that never hits looks like no cache.
+	 *
+	 * @return array<int, string>
+	 */
+	private function cacheLines(): array {
+		if ($this->cms === null) {
+			return [];
+		}
+
+		$cache   = $this->cms->cacheStats();
+		$lines   = $this->counterHead(name: 'content_cache_total', help: 'Public content reads by cache outcome.');
+		$lines[] = self::METRIC_PREFIX . '_content_cache_total{outcome="hit"} ' . $cache['hits'];
+		$lines[] = self::METRIC_PREFIX . '_content_cache_total{outcome="miss"} ' . $cache['misses'];
+
+		return $lines;
+	}//end cacheLines()
+
+	/**
+	 * The help and type lines of one counter.
+	 *
+	 * @param string $name The metric name after the prefix.
+	 * @param string $help The help text.
+	 *
+	 * @return array<int, string>
+	 */
+	private function counterHead(string $name, string $help): array {
+		return [
+			'# HELP ' . self::METRIC_PREFIX . '_' . $name . ' ' . $help,
+			'# TYPE ' . self::METRIC_PREFIX . '_' . $name . ' counter',
+		];
+	}//end counterHead()
 
 	/**
 	 * Count objects matching a filter, fail-closed to 0 on any error
