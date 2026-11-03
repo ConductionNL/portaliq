@@ -64,15 +64,6 @@ use OCP\AppFramework\Utility\ITimeFactory;
  *     hasConsent: bool,
  *     derived?: array<string, string>
  * }
- * @phpstan-type IngestBatch array{
- *     config: array<string, mixed>,
- *     context: array<string, mixed>,
- *     serverSide: bool,
- *     now: DateTimeImmutable,
- *     slug: string,
- *     hasConsent: bool,
- *     derived?: array<string, string>
- * }
  */
 class TrafficIngestService {
 
