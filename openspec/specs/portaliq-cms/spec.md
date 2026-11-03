@@ -545,21 +545,22 @@ When `consentRequired` is false, no consent record SHALL be written.
 - **WHEN** staff open it
 - **THEN** the answer SHALL be 422 `no_consent_statement`
 
-### Requirement: Where photos are taken, the roster MUST show each child's photo consent
+### Requirement: Where photos are taken, a guardian's own sign-ups MUST carry the child's photo consent
 
 `activityOffer` SHALL carry `photosTaken` (boolean). When it is true, every
-entry in the staff roster and in the guardian's own `mySignups` SHALL carry
-`photoConsent`, read through `GuardianAudienceFixtureReader::photoConsentGranted()`
-for the signing guardian and child (purpose `news`, the channel school photos
-are shared through). An absent consent entry SHALL read as false. When
-`photosTaken` is false, `photoConsent` SHALL be absent.
+entry in the guardian's own `mySignups` SHALL carry `photoConsent`, read through
+`GuardianAudienceFixtureReader::photoConsentGranted()` for the signing guardian
+and child (purpose `news`). An absent consent entry SHALL read as false. When
+`photosTaken` is false, `photoConsent` SHALL be absent. The staff roster with
+each child's photo consent is specified in learniq, change
+`school-activities-staff-side`, on board `learniq/LqActiviteiten` (decision 286).
 
-#### Scenario: The supervisor sees who may not be photographed
+#### Scenario: A guardian sees the photo consent on their own sign-up
 @e2e exclude {needs guardian consent fixtures on a live instance; asserted in tests/Unit/Service/ActivityRosterTest.php::testTheRosterShowsPhotoConsentWherePhotosAreTaken}
 
-- **GIVEN** an activity with `photosTaken: true` and two confirmed children, one with photo consent on file and one without
-- **WHEN** staff read the roster
-- **THEN** the first SHALL carry `photoConsent: true` and the second `photoConsent: false`
+- **GIVEN** an activity with `photosTaken: true` and a guardian's confirmed child without photo consent on file
+- **WHEN** the guardian reads their own sign-ups
+- **THEN** that sign-up SHALL carry `photoConsent: false`
 
 ### Requirement: An event is authored per school, group or child, with guardian RSVP
 
@@ -622,7 +623,7 @@ limits").
   `EventSignupServiceTest::testASignupIsRefusedOnceTheRoleIsFull`, asserting
   the write is never attempted; no UI surface
 
-### Requirement: A term-long activity MUST be offered with places set by capacity and supervision
+### Requirement: A term-long activity MUST be offered to guardians with the places staff set in learniq
 
 An `activityOffer` schema (register `portaliq`) SHALL carry `title`, `kind`
 (`club`, `sport`, `culture`, `trip`, `course`, `other`), the `target` shape
@@ -630,25 +631,18 @@ An `activityOffer` schema (register `portaliq`) SHALL carry `title`, `kind`
 `capacity` (at least 1), `waitlistEnabled`, `sessions[]` (`{id, start, end?,
 location?}`), `supervisorRefs[]`, `childrenPerSupervisor`, `paymentRequested`
 and `status` (`draft`, `open`, `closed`). It SHALL NOT carry an amount; a place
-that costs money SHALL be paid through a shillinq payment request (D19). The
-places of an activity SHALL be the lower of `capacity` and the number of
-distinct supervisors times `childrenPerSupervisor` (capacity alone when
-`childrenPerSupervisor` is 0 or absent). Staff SHALL NOT be able to open an
-activity that has no place.
+that costs money SHALL be paid through a shillinq payment request (D19). How
+staff set the places by capacity and supervision, and refuse to open an
+activity without a place, is specified in learniq, change
+`school-activities-staff-side`, on board `learniq/LqActiviteiten` (decision 286).
+Portaliq SHALL offer a guardian only the places that rule gives.
 
-#### Scenario: Supervision caps the places
+#### Scenario: A guardian is offered the places supervision allows
 @e2e exclude {a derived number on the server; asserted in tests/Unit/Service/ActivitySignupServiceTest.php::testPlacesAreTheLowerOfCapacityAndSupervision}
 
-- **GIVEN** an activity with `capacity: 20`, two supervisors and `childrenPerSupervisor: 8`
-- **WHEN** its places are computed
-- **THEN** the activity SHALL have 16 places
-
-#### Scenario: An activity without enough supervision does not open
-@e2e exclude {staff API refusal with no screen in this change; asserted in tests/Unit/Controller/ActivityControllerTest.php::testOpenRefusesAnActivityWithNoPlace}
-
-- **GIVEN** a draft activity with `childrenPerSupervisor: 8` and no supervisors
-- **WHEN** staff open it
-- **THEN** the answer SHALL be 422 `no_places` and the activity SHALL stay a draft
+- **GIVEN** an open activity with `capacity: 20`, two supervisors and `childrenPerSupervisor: 8`
+- **WHEN** a guardian in its audience reads it
+- **THEN** the activity SHALL offer 16 places
 
 ### Requirement: A guardian MUST be able to sign up one of their own children, with a waiting list when full
 
@@ -701,27 +695,19 @@ children.
 - **WHEN** staff set two supervisors
 - **THEN** two waitlisted children SHALL be confirmed in sign-up order
 
-### Requirement: Staff MUST be able to mark attendance per session
+### Requirement: Attendance per session MUST be marked on learniq's staff side
 
-Staff SHALL be able to mark a child `present`, `absent` or `excused` for one of
-the activity's declared sessions, only for a child with a confirmed place. A
-second mark for the same session and child SHALL update the first. An unknown
-session, a child without a confirmed place and an unknown status SHALL each be
-refused with 422 and nothing written.
+Marking a child present, absent or excused for an activity's session SHALL be
+specified in learniq, change `school-activities-staff-side`, on board
+`learniq/LqActiviteiten` (decision 286). The attendance rows SHALL refer to the
+portaliq `activityOffer` and its sign-ups.
 
-#### Scenario: A second mark corrects the first
-@e2e exclude {an upsert invariant on stored rows; asserted in tests/Unit/Service/ActivityAttendanceServiceTest.php::testASecondMarkUpdatesTheFirst}
+#### Scenario: A supervisor takes the activity register in learniq
+@e2e exclude {an ownership reference; the behaviour is specified and tested in learniq's school-activities-staff-side change}
 
-- **GIVEN** a child marked `absent` for session `week-3`
-- **WHEN** staff mark the same child `present` for `week-3`
-- **THEN** exactly one attendance row SHALL exist for that child and session, reading `present`
-
-#### Scenario: A waitlisted child cannot be marked present
-@e2e exclude {a refusal on the staff API; asserted in tests/Unit/Service/ActivityAttendanceServiceTest.php::testOnlyAConfirmedChildInADeclaredSessionIsMarked}
-
-- **GIVEN** a waitlisted child
-- **WHEN** staff mark that child present
-- **THEN** the answer SHALL be 422 `not_confirmed` and nothing SHALL be written
+- **GIVEN** a supervisor of an open activity
+- **WHEN** they take the register for a session
+- **THEN** they SHALL do so on learniq's Activiteiten page
 
 ### Requirement: Staff MUST be able to raise the contribution for an activity's confirmed places, and portaliq MUST write the reference
 
