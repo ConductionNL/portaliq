@@ -155,3 +155,9 @@ test('step labels take the board ink: text for done and current, muted for the r
 		'the state words draw the same muted ink',
 	)
 })
+
+test('on the band a step is as tall as its two lines at the font leading, 38px', () => {
+	const css = wide()
+	assert.match(css, /\.pq-form-progress__item \{[^}]*padding-block: 0;/)
+	assert.match(css, /\.pq-form-progress__title, \.pq-form-progress__state \{ line-height: normal; \}/)
+})
