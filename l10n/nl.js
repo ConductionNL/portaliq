@@ -3322,7 +3322,8 @@ OC.L10N.register(
         "{domains.0.hostname} · theme {theme} · {count:pages} pages": "{domains.0.hostname} · thema {theme} · {count:pages} pagina's",
         "View theme": "Thema bekijken",
         "Last changed {date}": "Laatst gewijzigd {date}",
-        "_%n page waits to be published_::_%n pages wait to be published_": ["%n pagina wacht op publicatie","%n pagina's wachten op publicatie"]
+        "_%n page waits to be published_::_%n pages wait to be published_": ["%n pagina wacht op publicatie","%n pagina's wachten op publicatie"],
+        "Upcoming": "Komend"
     },
     "nplurals=2; plural=(n != 1);"
 )

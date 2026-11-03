@@ -214,6 +214,11 @@ export default {
 
 	watch: {
 		'portal.slug': {
+			/**
+			 * Read what the card names beyond the record once the portal is known.
+			 *
+			 * @spec openspec/changes/portal-notices-as-drawn/specs/portaliq-cms/spec.md#requirement-a-portals-side-cards-read-as-drawn
+			 */
 			handler() {
 				this.load()
 			},

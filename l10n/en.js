@@ -3167,7 +3167,8 @@ OC.L10N.register(
         "{domains.0.hostname} · theme {theme} · {count:pages} pages": "{domains.0.hostname} · theme {theme} · {count:pages} pages",
         "View theme": "View theme",
         "Last changed {date}": "Last changed {date}",
-        "_%n page waits to be published_::_%n pages wait to be published_": ["%n page waits to be published","%n pages wait to be published"]
+        "_%n page waits to be published_::_%n pages wait to be published_": ["%n page waits to be published","%n pages wait to be published"],
+        "Upcoming": "Upcoming"
     },
     "nplurals=2; plural=(n != 1);"
 )

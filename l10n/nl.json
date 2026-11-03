@@ -3339,7 +3339,8 @@
         "_%n page waits to be published_::_%n pages wait to be published_": [
             "%n pagina wacht op publicatie",
             "%n pagina's wachten op publicatie"
-        ]
+        ],
+        "Upcoming": "Komend"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

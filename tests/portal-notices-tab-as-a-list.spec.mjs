@@ -28,7 +28,7 @@ test('the notices tab is a list page\'s list of this portal\'s notices', () => {
 	assert.equal(notices.content.filterMenu, true)
 	assert.equal(notices.content.pagination.limit, 6)
 	assert.equal(notices.content.rowRoute, 'NoticeDetail')
-	assert.deepEqual(notices.content.quickFilters.map((q) => q.label), ['Alles', 'Nu zichtbaar', 'Komend', 'Concept'])
+	assert.deepEqual(notices.content.quickFilters.map((q) => q.label), ['Alles', 'Visible now', 'Upcoming', 'Concept'])
 	assert.ok(notices.content.quickFilters.every((q) => q.showCount === true))
 })
 
@@ -70,7 +70,7 @@ test('the header names the domain, theme and pages, and offers the website and a
 })
 
 test('every new label reads in Dutch', () => {
-	for (const key of ['Announcement', 'Information', 'Warning', 'Signed-in portal', 'Visible now', 'only published and within the period visible', portal.headerMeta]) {
+	for (const key of ['Upcoming', ...notices.content.quickFilters.map((q) => q.label), 'Announcement', 'Information', 'Warning', 'Signed-in portal', 'Visible now', 'only published and within the period visible', portal.headerMeta]) {
 		assert.ok(nl[key], `nl has ${key}`)
 	}
 })

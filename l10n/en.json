@@ -3184,7 +3184,8 @@
         "_%n page waits to be published_::_%n pages wait to be published_": [
             "%n page waits to be published",
             "%n pages wait to be published"
-        ]
+        ],
+        "Upcoming": "Upcoming"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

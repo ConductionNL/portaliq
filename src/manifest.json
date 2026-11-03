@@ -3631,7 +3631,7 @@
                   "default": true
                 },
                 {
-                  "label": "Nu zichtbaar",
+                  "label": "Visible now",
                   "filter": {
                     "status": "published",
                     "startsAt": {
@@ -3644,7 +3644,7 @@
                   "showCount": true
                 },
                 {
-                  "label": "Komend",
+                  "label": "Upcoming",
                   "filter": {
                     "status": "published",
                     "startsAt": {
