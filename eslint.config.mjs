@@ -361,4 +361,13 @@ export default [
 			'@stylistic/exp-list-style': 'off',
 		},
 	},
+
+	{
+		// Golden fixtures are recorded outputs, compared byte for byte by the
+		// golden specs. They hold PHP's 64-bit integer bounds as plain numbers,
+		// which `json/no-unsafe-values` rejects; editing them would change what
+		// the specs pin.
+		name: 'conduction/golden-fixtures',
+		ignores: ['tests/Fixtures/Golden/**'],
+	},
 ]
