@@ -38,7 +38,7 @@ With `?record=<id>` the block MUST show the record on the same page, laid out as
 A contributed collection with `documents` MUST show its rows on its page under `/mijn` and, on a row's detail, a Documenten section with each listed document and a Downloaden action. An object with no listed documents MUST say there are no papers.
 
 #### Scenario: Pieter Bos reads the papers for the closed session
-- GIVEN Pieter Bos signed in with DigiD at substantial and is named on "Grondaankoop Lindelaan"
+- GIVEN Pieter Bos signed in with DigiD at substantial and is named on "Besloten deel raadsvergadering van 1 oktober 2026"
 - WHEN he opens "Vertrouwelijke stukken" and then the item
 - THEN he sees the meeting and date, and the two papers each with Downloaden
 - e2e: `tests/e2e/confidential-papers.spec.ts`

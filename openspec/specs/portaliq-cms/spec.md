@@ -832,28 +832,29 @@ Publishing a news item MUST set `publishedAt` to the server's current time, neve
 
 ### Requirement: The header must never name a person by a number
 
-The site header MUST name a signed-in resident by their portal account's display name. A display name equal to the subject reference or to the account's identity number, or made of digits only (a BSN, a KvK number), MUST NOT be served by the session endpoint nor shown by the site: the line then reads "Ingelogd" ("Logged in"). Which name an account carries is set by provisioning or the broker, not by this rule.
+The site header MUST name a signed-in resident by their portal account's display name. A display name equal to the subject reference or to the account's identity number, or made of digits only (a BSN, a KvK number), MUST NOT be served by the session endpoint nor shown by the site: the account pill then shows a person icon and "Ingelogd". Which name an account carries is set by provisioning or the broker, not by this rule.
 
 #### Scenario: A BSN stored as the display name
 - GIVEN a portal account whose `displayName` is `999993653`, its identity number
 - WHEN the resident signs in on the site
-- THEN the session's `displayName` is empty and the header reads "Ingelogd"
+- THEN the session's `displayName` is empty and the account pill reads "Ingelogd"
 - @e2e exclude pinned by `SessionControllerTest::testIndexNamesThePersonNeverTheReference` and `tests/site-signed-in-shell.spec.mjs` ("the header says who is signed in")
 
 ### Requirement: The header must name the signed-in person, never their reference
 
-The session endpoint MUST answer the portal account's display name as `displayName`, and MUST answer `''` when the account has none or when the value equals the subject reference. The site header MUST show "Logged in as {name}" with that name, and "Logged in" when no name is known. The header MUST NOT show the subject reference.
+The session endpoint MUST answer the portal account's display name as `displayName`, and MUST answer `''` when the account has none or when the value equals the subject reference. The site header MUST show an account pill with the initials and that name, linking to the own area, and "Ingelogd" when no name is known. The pill's accessible name MUST read "Ingelogd als {name}, naar {own area}", or "Ingelogd, naar {own area}" without a name. The header MUST NOT show the subject reference.
 
 #### Scenario: A parent with a name on her account
 - GIVEN Fatima Hulstkamp's portal account carries the display name "Fatima Hulstkamp"
 - WHEN she signs in on the Dutch parent portal
-- THEN the header reads "Ingelogd als Fatima Hulstkamp"
+- THEN the account pill shows "Fatima Hulstkamp" with her initials
+- AND its accessible name reads "Ingelogd als Fatima Hulstkamp, naar Mijn Wilgenboom"
 - @e2e exclude pinned by `tests/site-signed-in-shell.spec.mjs` and `SessionControllerTest::testIndexNamesThePersonNeverTheReference`; live-checked on the primary-school instance
 
 #### Scenario: An account without a name
 - GIVEN a portal account without a display name
 - WHEN its holder signs in
-- THEN the header reads "Ingelogd" and shows no reference
+- THEN the account pill reads "Ingelogd" and shows no reference
 - @e2e exclude pinned by `tests/site-signed-in-shell.spec.mjs`
 
 ### Requirement: A menu block must show the portal's navigation in groups
@@ -881,7 +882,7 @@ When the CMS page on screen carries a `siteNavigation` block in its side region 
 #### Scenario: The header without its menu
 - GIVEN a page with the block in its side region
 - WHEN it renders
-- THEN the header shows no menu links and still shows "Ingelogd als ..." and the sign-out button
+- THEN the header shows no menu links and still shows the account pill and "Uitloggen"
 - @e2e exclude pinned by `tests/site-navigation.spec.mjs` (header rendered with and without its menu); live-checked on the primary-school instance
 
 ### Requirement: Staff write, change and publish news on a News screen
