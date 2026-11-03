@@ -832,6 +832,46 @@
             ]
         ]
     },
+    "single interval": {
+        "report": {
+            "portal": "zuid",
+            "from": "2026-10-01",
+            "until": "2026-10-31",
+            "months": [
+                {
+                    "month": "2026-10",
+                    "intervals": 1,
+                    "available": 1,
+                    "degraded": 0,
+                    "down": 0,
+                    "noCheck": 0,
+                    "percentage": 100.0
+                }
+            ],
+            "outages": [],
+            "summary": {
+                "percentage": 100.0,
+                "outageCount": 0,
+                "outageMinutes": 0,
+                "longestMinutes": 0,
+                "longestStartedAt": ""
+            }
+        },
+        "log": [
+            [
+                "daily",
+                "zuid",
+                "2026-10-01",
+                "2026-10-31"
+            ],
+            [
+                "outages",
+                "zuid",
+                "2026-10-01T00:00:00+00:00",
+                "2026-10-31T23:59:59+00:00"
+            ]
+        ]
+    },
     "only outages": {
         "report": {
             "portal": "zuid",

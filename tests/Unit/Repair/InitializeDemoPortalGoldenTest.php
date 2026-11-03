@@ -87,7 +87,12 @@ class InitializeDemoPortalGoldenTest extends TestCase {
 		$writer->method('createAnonymousObject')->willReturnCallback(
 			static function (string $register, string $schema, array $data) use (&$log, $scenario): ?array {
 				$log[] = ['write', $register, $schema, $data];
-				return ($scenario['results'][$data['title']] ?? ['@self' => ['id' => 'id-' . $data['title']]]);
+				$results = ($scenario['results'] ?? []);
+				if (array_key_exists($data['title'], $results) === true) {
+					return $results[$data['title']];
+				}
+
+				return ['@self' => ['id' => 'id-' . $data['title']]];
 			}
 		);
 
