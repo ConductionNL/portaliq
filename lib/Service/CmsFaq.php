@@ -145,39 +145,96 @@ class CmsFaq {
 	 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t02
 	 */
 	public function finder(string $portal, string $id, string $locale, string $audience): ?array {
-		$pages = [];
-		foreach ($this->reader->pages(portal: $portal, locale: $locale, audience: $audience) as $summary) {
-			$pages[$summary['route']] = $summary;
+		$pages = self::byRoute(summaries: $this->reader->pages(portal: $portal, locale: $locale, audience: $audience));
+		$row   = $this->publishedFinder(portal: $portal, id: $id);
+		if ($row === null) {
+			return null;
 		}
 
+		return [
+			'id'        => self::finderId(row: $row),
+			'title'     => (string)($row['title'] ?? ''),
+			'intro'     => (string)($row['intro'] ?? ''),
+			'products'  => $this->products(routes: (array)($row['products'] ?? []), pages: $pages),
+			'questions' => $this->shapeQuestions(questions: (array)($row['questions'] ?? [])),
+		];
+	}//end finder()
+
+	/**
+	 * The first published finder row of a portal, or the one with the given id.
+	 *
+	 * @param string $portal The portal slug.
+	 * @param string $id     The finder's id, or '' for the first published one.
+	 *
+	 * @return array<string, mixed>|null The row, or null when there is none.
+	 */
+	private function publishedFinder(string $portal, string $id): ?array {
 		foreach ($this->rows->query(schema: 'portalFinder', filters: ['portal' => $portal, 'status' => 'published']) as $row) {
-			$rowId = (string)($row['@self']['id'] ?? $row['id'] ?? $row['uuid'] ?? '');
-			if (($row['status'] ?? '') !== 'published' || ($id !== '' && $rowId !== $id)) {
-				continue;
+			if (self::isWanted(row: $row, id: $id) === true) {
+				return $row;
 			}
-
-			$products = [];
-			foreach ((array)($row['products'] ?? []) as $route) {
-				if (is_string($route) === true && isset($pages[$route]) === true) {
-					$products[] = [
-						'route'   => $route,
-						'title'   => $pages[$route]['title'],
-						'summary' => $pages[$route]['summary'],
-					];
-				}
-			}
-
-			return [
-				'id'        => $rowId,
-				'title'     => (string)($row['title'] ?? ''),
-				'intro'     => (string)($row['intro'] ?? ''),
-				'products'  => $products,
-				'questions' => $this->shapeQuestions(questions: (array)($row['questions'] ?? [])),
-			];
 		}
 
 		return null;
-	}//end finder()
+	}//end publishedFinder()
+
+	/**
+	 * Whether a row is published and is the finder asked for.
+	 *
+	 * @param array<string, mixed> $row The finder row.
+	 * @param string               $id  The finder's id, or '' for any.
+	 *
+	 * @return bool
+	 */
+	private static function isWanted(array $row, string $id): bool {
+		return ($row['status'] ?? '') === 'published' && ($id === '' || self::finderId(row: $row) === $id);
+	}//end isWanted()
+
+	/**
+	 * Page summaries by route; a later summary for the same route wins.
+	 *
+	 * @param array<int, array<string, mixed>> $summaries The published page summaries.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private static function byRoute(array $summaries): array {
+		$pages = [];
+		foreach ($summaries as $summary) {
+			$pages[$summary['route']] = $summary;
+		}
+
+		return $pages;
+	}//end byRoute()
+
+	/**
+	 * A finder row's id: its own id, else the flat id, else the uuid.
+	 *
+	 * @param array<string, mixed> $row The finder row.
+	 *
+	 * @return string The id, or ''.
+	 */
+	private static function finderId(array $row): string {
+		return (string)($row['@self']['id'] ?? $row['id'] ?? $row['uuid'] ?? '');
+	}//end finderId()
+
+	/**
+	 * The products a finder names that have a published page, in the finder's order.
+	 *
+	 * @param array<int, mixed>                   $routes The routes the finder names.
+	 * @param array<string, array<string, mixed>> $pages  The published page summaries, by route.
+	 *
+	 * @return array<int, array{route: string, title: mixed, summary: mixed}>
+	 */
+	private function products(array $routes, array $pages): array {
+		$products = [];
+		foreach ($routes as $route) {
+			if (is_string($route) === true && isset($pages[$route]) === true) {
+				$products[] = ['route' => $route, 'title' => $pages[$route]['title'], 'summary' => $pages[$route]['summary']];
+			}
+		}
+
+		return $products;
+	}//end products()
 
 	/**
 	 * The finder's questions with only the fields the browser needs.
