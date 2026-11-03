@@ -101,9 +101,9 @@ class ContentCatalogueIndexGoldenTest extends TestCase {
 		);
 		$catalogue = $this->createMock(originalClassName: PublicCatalogue::class);
 		$catalogue->method('itemsFor')->willReturnCallback(
-			function (string $portal) use (&$log): array {
+			function (string $portal) use (&$log, $world): array {
 				$log[] = ['catalogue.itemsFor', $portal];
-				return $this->items();
+				return array_merge($this->items(), ($world['more'] ?? []));
 			}
 		);
 		$catalogue->method('visitorValuesFor')->willReturnCallback(
@@ -218,6 +218,8 @@ class ContentCatalogueIndexGoldenTest extends TestCase {
 			'page and limit as text'        => ['params' => ['page' => 'x', 'limit' => '2abc']],
 			'page as array'                 => ['params' => ['page' => ['2'], 'limit' => []]],
 			'limit null'                    => ['params' => ['limit' => null]],
+			'limit only'                    => ['params' => ['limit' => '2']],
+			'page only'                     => ['params' => ['page' => '2'], 'more' => array_map(static fn (int $n): array => ['id' => 'more:' . $n, 'type' => 'page', 'title' => 'Item ' . $n], range(1, 8))],
 			'upcoming on'                   => ['params' => ['upcoming' => '1']],
 			'upcoming other value'          => ['params' => ['upcoming' => 'true']],
 			'app'                           => ['params' => ['app' => 'myapp']],
