@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
 
+use OCA\Portaliq\Service\PortalBySlug;
 use OCA\Portaliq\Service\PublishedPortals;
 use OCA\Portaliq\Service\TrafficIngestService;
 
@@ -42,6 +43,7 @@ use OCA\Portaliq\Service\TrafficIngestService;
  * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
  */
 class TrafficLogImporter {
+	use PortalBySlug;
 
 	/**
 	 * Constructor.
@@ -91,23 +93,6 @@ class TrafficLogImporter {
 		}
 
 		return $run->outcome;
-	}
-
-	/**
-	 * The first published portal with this slug, or null.
-	 *
-	 * @param string $slug The portal slug.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function portalBySlug(string $slug): ?array {
-		foreach ($this->portals->allPublishedPortals() as $candidate) {
-			if (($candidate['slug'] ?? null) === $slug) {
-				return $candidate;
-			}
-		}
-
-		return null;
 	}
 
 	/**

@@ -29,6 +29,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Portaliq\Service\Traffic\TrafficLogImporter
  * @covers \OCA\Portaliq\Service\Traffic\TrafficLogImportRun
+ * @covers \OCA\Portaliq\Service\PortalBySlug
  * @uses   \OCA\Portaliq\Service\Traffic\TrafficLogParser
  */
 class TrafficLogImporterGoldenTest extends TestCase {
