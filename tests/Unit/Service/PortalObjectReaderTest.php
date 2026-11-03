@@ -56,6 +56,11 @@ class PortalObjectReaderTest extends TestCase {
 	 */
 	private \Closure $claimListener;
 
+	/**
+	 * Every claim is admitted unless a test says otherwise.
+	 *
+	 * @return void
+	 */
 	protected function setUp(): void {
 		$this->claimListener = static function (PortalClaimScopeEvent $event): void {
 		};
@@ -340,70 +345,152 @@ class PortalObjectReaderTest extends TestCase {
 
 	}//end testClaimScopedReadResolvesTheClaimServerSide()
 
+	/**
+	 * The claim check names the claim, its value and the account's organisation.
+	 *
+	 * @return void
+	 */
 	public function testTheClaimCheckNamesTheClaimAndTheAccountsOrganisation(): void {
-		$reader = new PortalObjectReader($this->container($this->companyStore()), $this->createMock(LoggerInterface::class), $this->projector());
-		$reader->readCollection(register: 'learniq', schema: 'booking', scopeField: 'organisationRef', subjectRef: 's1', organisation: 'org-1', scopeClaim: 'organisationRef', contributingApp: 'learniq', audience: 'employer');
+		$reader = $this->employerReader(objectService: $this->companyStore());
+		$this->readBookings(reader: $reader);
 
-		$this->assertCount(1, $this->claimChecks);
+		$this->assertCount(expectedCount: 1, haystack: $this->claimChecks);
 		$check = $this->claimChecks[0];
 		$this->assertSame(
-			['learniq', 'organisationRef', 'co-1', 'org-1'],
-			[$check->getAppId(), $check->getClaimName(), $check->getValue(), $check->getOrganisation()]
+			expected: ['learniq', 'organisationRef', 'co-1', 'org-1'],
+			actual: [$check->getAppId(), $check->getClaimName(), $check->getValue(), $check->getOrganisation()]
 		);
 
 		// A session that names no tenant is checked against the account's own organisation.
-		$reader->resolveScopeValue(scopeClaim: 'organisationRef', contributingApp: 'learniq', subject: ['subjectRef' => 's1', 'audience' => 'employer', 'organisation' => '']);
-		$this->assertSame('org-1', $this->claimChecks[1]->getOrganisation());
+		$this->resolveCompany(reader: $reader, organisation: '');
+		$this->assertSame(expected: 'org-1', actual: $this->claimChecks[1]->getOrganisation());
 
 	}//end testTheClaimCheckNamesTheClaimAndTheAccountsOrganisation()
 
+	/**
+	 * A refused claim reads no rows, no object and no scope value, and the collection is never queried.
+	 *
+	 * @return void
+	 */
 	public function testAClaimItsAppRefusesReadsNothingAndNeverQueriesTheCollection(): void {
 		$this->claimListener = static function (PortalClaimScopeEvent $event): void {
 			$event->refuse();
 		};
 		$objectService = $this->companyStore();
-		$reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
+		$reader        = $this->employerReader(objectService: $objectService);
 
-		$rows = $reader->readCollection(register: 'learniq', schema: 'booking', scopeField: 'organisationRef', subjectRef: 's1', organisation: 'org-1', scopeClaim: 'organisationRef', contributingApp: 'learniq', audience: 'employer');
-		$object = $reader->readObject(register: 'learniq', schema: 'booking', scopeField: 'organisationRef', subjectRef: 's1', id: 'b-1', organisation: 'org-1', scopeClaim: 'organisationRef', contributingApp: 'learniq', audience: 'employer');
-		$value = $reader->resolveScopeValue(scopeClaim: 'organisationRef', contributingApp: 'learniq', subject: ['subjectRef' => 's1', 'audience' => 'employer', 'organisation' => 'org-1']);
+		$rows   = $this->readBookings(reader: $reader);
+		$object = $reader->readObject(
+			register: 'learniq',
+			schema: 'booking',
+			scopeField: 'organisationRef',
+			subjectRef: 's1',
+			id: 'b-1',
+			organisation: 'org-1',
+			scopeClaim: 'organisationRef',
+			contributingApp: 'learniq',
+			audience: 'employer'
+		);
+		$value  = $this->resolveCompany(reader: $reader, organisation: 'org-1');
 
-		$this->assertSame([], $rows);
-		$this->assertNull($object);
-		$this->assertNull($value);
-		$this->assertSame(['portalAccount', 'portalAccount', 'portalAccount'], array_column($objectService->calls, 'schema'));
+		$this->assertSame(expected: [], actual: $rows);
+		$this->assertNull(actual: $object);
+		$this->assertNull(actual: $value);
+		$this->assertSame(expected: ['portalAccount', 'portalAccount', 'portalAccount'], actual: array_column($objectService->calls, 'schema'));
 
 	}//end testAClaimItsAppRefusesReadsNothingAndNeverQueriesTheCollection()
 
+	/**
+	 * Without an event dispatcher the claim cannot be checked, so it is refused.
+	 *
+	 * @return void
+	 */
 	public function testAClaimIsRefusedWhenItCannotBeChecked(): void {
 		$objectService = $this->companyStore();
-		$container = $this->createMock(ContainerInterface::class);
+		$container     = $this->createMock(originalClassName: ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
 			static function (string $id) use ($objectService): object {
 				if ($id === self::OS) {
 					return $objectService;
 				}
 
-				throw new RuntimeException('no service: ' . $id);
+				throw new RuntimeException(message: 'no service: ' . $id);
 			}
 		);
-		$reader = new PortalObjectReader($container, $this->createMock(LoggerInterface::class), $this->projector());
+		$reader = new PortalObjectReader(
+			container: $container,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			projector: $this->projector()
+		);
 
-		$this->assertSame([], $reader->readCollection(register: 'learniq', schema: 'booking', scopeField: 'organisationRef', subjectRef: 's1', organisation: 'org-1', scopeClaim: 'organisationRef', contributingApp: 'learniq', audience: 'employer'));
-		$this->assertNull($reader->resolveScopeValue(scopeClaim: 'organisationRef', contributingApp: 'learniq', subject: ['subjectRef' => 's1', 'audience' => 'employer', 'organisation' => 'org-1']));
+		$this->assertSame(expected: [], actual: $this->readBookings(reader: $reader));
+		$this->assertNull(actual: $this->resolveCompany(reader: $reader, organisation: 'org-1'));
 
 	}//end testAClaimIsRefusedWhenItCannotBeChecked()
 
+	/**
+	 * An admitted claim reads its rows and resolves its value as before.
+	 *
+	 * @return void
+	 */
 	public function testAnAdmittedClaimStillReadsItsRows(): void {
-		$reader = new PortalObjectReader($this->container($this->companyStore()), $this->createMock(LoggerInterface::class), $this->projector());
+		$reader = $this->employerReader(objectService: $this->companyStore());
 
-		$rows = $reader->readCollection(register: 'learniq', schema: 'booking', scopeField: 'organisationRef', subjectRef: 's1', organisation: 'org-1', scopeClaim: 'organisationRef', contributingApp: 'learniq', audience: 'employer');
-		$value = $reader->resolveScopeValue(scopeClaim: 'organisationRef', contributingApp: 'learniq', subject: ['subjectRef' => 's1', 'audience' => 'employer', 'organisation' => 'org-1']);
-
-		$this->assertSame(['b-1'], array_column($rows, 'id'));
-		$this->assertSame('co-1', $value);
+		$this->assertSame(expected: ['b-1'], actual: array_column($this->readBookings(reader: $reader), 'id'));
+		$this->assertSame(expected: 'co-1', actual: $this->resolveCompany(reader: $reader, organisation: 'org-1'));
 
 	}//end testAnAdmittedClaimStillReadsItsRows()
+
+	/**
+	 * The reader over this object service, with the claim-check dispatcher.
+	 *
+	 * @param object $objectService The object service double.
+	 *
+	 * @return PortalObjectReader
+	 */
+	private function employerReader(object $objectService): PortalObjectReader {
+		return new PortalObjectReader(
+			container: $this->container(objectService: $objectService),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			projector: $this->projector()
+		);
+	}//end employerReader()
+
+	/**
+	 * The employer's bookings, scoped by learniq's organisationRef claim.
+	 *
+	 * @param PortalObjectReader $reader The reader.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function readBookings(PortalObjectReader $reader): array {
+		return $reader->readCollection(
+			register: 'learniq',
+			schema: 'booking',
+			scopeField: 'organisationRef',
+			subjectRef: 's1',
+			organisation: 'org-1',
+			scopeClaim: 'organisationRef',
+			contributingApp: 'learniq',
+			audience: 'employer'
+		);
+	}//end readBookings()
+
+	/**
+	 * The employer's company as the write path resolves it.
+	 *
+	 * @param PortalObjectReader $reader       The reader.
+	 * @param string             $organisation The session's organisation.
+	 *
+	 * @return string|null
+	 */
+	private function resolveCompany(PortalObjectReader $reader, string $organisation): ?string {
+		return $reader->resolveScopeValue(
+			scopeClaim: 'organisationRef',
+			contributingApp: 'learniq',
+			subject: ['subjectRef' => 's1', 'audience' => 'employer', 'organisation' => $organisation]
+		);
+	}//end resolveCompany()
 
 	/**
 	 * An employer account claiming company co-1, and one booking of that company.
@@ -412,7 +499,7 @@ class PortalObjectReaderTest extends TestCase {
 	 */
 	private function companyStore(): object {
 		return $this->objectService(
-			[
+			returnsPerSchema: [
 				'portalAccount' => [
 					['subjectRef' => 's1', 'organisation' => 'org-1', 'audience' => 'employer', 'claims' => ['learniq' => ['organisationRef' => 'co-1']]],
 				],
@@ -1981,7 +2068,7 @@ class PortalObjectReaderTest extends TestCase {
 	}//end objectService()
 
 	private function container(object $objectService): ContainerInterface {
-		$dispatcher = $this->createMock(IEventDispatcher::class);
+		$dispatcher = $this->createMock(originalClassName: IEventDispatcher::class);
 		$dispatcher->method('dispatchTyped')->willReturnCallback(
 			function (Event $event): void {
 				if ($event instanceof PortalClaimScopeEvent === true) {

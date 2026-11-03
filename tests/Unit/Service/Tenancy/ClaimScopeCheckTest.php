@@ -62,7 +62,7 @@ class ClaimScopeCheckTest extends TestCase {
 	 * @return ContainerInterface
 	 */
 	private function container(?\Closure $listener, ?object $objects=null): ContainerInterface {
-		$dispatcher = $this->createMock(IEventDispatcher::class);
+		$dispatcher = $this->createMock(originalClassName: IEventDispatcher::class);
 		$dispatcher->method('dispatchTyped')->willReturnCallback(
 			static function (Event $event) use ($listener): void {
 				if ($event instanceof PortalClaimScopeEvent === true && $listener !== null) {
@@ -70,7 +70,7 @@ class ClaimScopeCheckTest extends TestCase {
 				}
 			}
 		);
-		$container = $this->createMock(ContainerInterface::class);
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
 			static function (string $id) use ($listener, $dispatcher, $objects): object {
 				if ($id === IEventDispatcher::class && $listener !== null) {
@@ -81,69 +81,122 @@ class ClaimScopeCheckTest extends TestCase {
 					return $objects;
 				}
 
-				throw new RuntimeException('no service: ' . $id);
+				throw new RuntimeException(message: 'no service: ' . $id);
 			}
 		);
 
 		return $container;
 	}//end container()
 
+	/**
+	 * The event carries the claim, its value and the account's organisation, unrefused.
+	 *
+	 * @return void
+	 */
 	public function testTheEventCarriesTheClaimAndItsHolder(): void {
 		$event = self::event();
 
 		$this->assertSame(
-			['learniq', 'organisationRef', 'co-1', 'org-1', false],
-			[$event->getAppId(), $event->getClaimName(), $event->getValue(), $event->getOrganisation(), $event->isRefused()]
+			expected: ['learniq', 'organisationRef', 'co-1', 'org-1', false],
+			actual: [$event->getAppId(), $event->getClaimName(), $event->getValue(), $event->getOrganisation(), $event->isRefused()]
 		);
 	}//end testTheEventCarriesTheClaimAndItsHolder()
 
+	/**
+	 * A claim no listener refuses is admitted.
+	 *
+	 * @return void
+	 */
 	public function testAClaimNobodyRefusesIsAdmitted(): void {
 		$check = new ClaimScopeCheck(container: $this->container(listener: static function (PortalClaimScopeEvent $event): void {
 		}), logger: new NullLogger());
 
-		$this->assertTrue($check->admits(event: self::event()));
+		$this->assertTrue(condition: $check->admits(event: self::event()));
 	}//end testAClaimNobodyRefusesIsAdmitted()
 
+	/**
+	 * A claim a listener refuses is not admitted.
+	 *
+	 * @return void
+	 */
 	public function testARefusedClaimIsNotAdmitted(): void {
 		$check = new ClaimScopeCheck(container: $this->container(listener: static function (PortalClaimScopeEvent $event): void {
 			$event->refuse();
 		}), logger: new NullLogger());
 
-		$this->assertFalse($check->admits(event: self::event()));
+		$this->assertFalse(condition: $check->admits(event: self::event()));
 	}//end testARefusedClaimIsNotAdmitted()
 
+	/**
+	 * Without an event dispatcher the claim is refused.
+	 *
+	 * @return void
+	 */
 	public function testWithoutADispatcherTheClaimIsRefused(): void {
 		$check = new ClaimScopeCheck(container: $this->container(listener: null), logger: new NullLogger());
 
-		$this->assertFalse($check->admits(event: self::event()));
+		$this->assertFalse(condition: $check->admits(event: self::event()));
 	}//end testWithoutADispatcherTheClaimIsRefused()
 
+	/**
+	 * A container answer that is no dispatcher refuses the claim.
+	 *
+	 * @return void
+	 */
 	public function testAServiceThatIsNoDispatcherRefusesTheClaim(): void {
-		$container = $this->createMock(ContainerInterface::class);
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
 		$container->method('get')->willReturn(new \stdClass());
 		$check = new ClaimScopeCheck(container: $container, logger: new NullLogger());
 
-		$this->assertFalse($check->admits(event: self::event()));
+		$this->assertFalse(condition: $check->admits(event: self::event()));
 	}//end testAServiceThatIsNoDispatcherRefusesTheClaim()
 
+	/**
+	 * A listener that throws refuses the claim.
+	 *
+	 * @return void
+	 */
 	public function testAListenerThatFailsRefusesTheClaim(): void {
 		$check = new ClaimScopeCheck(container: $this->container(listener: static function (PortalClaimScopeEvent $event): void {
-			throw new RuntimeException('store down');
+			throw new RuntimeException(message: 'store down');
 		}), logger: new NullLogger());
 
-		$this->assertFalse($check->admits(event: self::event()));
+		$this->assertFalse(condition: $check->admits(event: self::event()));
 	}//end testAListenerThatFailsRefusesTheClaim()
 
+	/**
+	 * Change notices skip an account whose claim its app refuses, and skip all without a dispatcher.
+	 *
+	 * @return void
+	 */
 	public function testChangeNoticesSkipAnAccountWhoseClaimItsAppRefuses(): void {
 		$objects = new class {
+			/**
+			 * Ignored: one register.
+			 *
+			 * @param string $register The register.
+			 *
+			 * @return void
+			 */
 			public function setRegister(string $register): void {
 			}
 
+			/**
+			 * Ignored: one schema.
+			 *
+			 * @param string $schema The schema.
+			 *
+			 * @return void
+			 */
 			public function setSchema(string $schema): void {
 			}
 
 			/**
-			 * @param array<string, mixed> $config
+			 * Two active accounts holding the same company, in org-1 and org-2.
+			 *
+			 * @param array<string, mixed> $config        The query.
+			 * @param bool                 $_rbac         Ignored.
+			 * @param bool                 $_multitenancy Ignored.
 			 *
 			 * @return array<int, array<string, mixed>>
 			 */
@@ -164,10 +217,11 @@ class ClaimScopeCheckTest extends TestCase {
 
 		$accounts = new PortalAccountsByClaim(container: $this->container(listener: $listener, objects: $objects), logger: new NullLogger());
 
-		$this->assertSame(['own'], array_column($accounts->find(appId: 'learniq', claim: 'organisationRef', value: 'co-1'), 'subjectRef'));
-		$this->assertSame([['learniq', 'organisationRef', 'co-1', 'org-1'], ['learniq', 'organisationRef', 'co-1', 'org-2']], $seen);
+		$found = $accounts->find(appId: 'learniq', claim: 'organisationRef', value: 'co-1');
+		$this->assertSame(expected: ['own'], actual: array_column($found, 'subjectRef'));
+		$this->assertSame(expected: [['learniq', 'organisationRef', 'co-1', 'org-1'], ['learniq', 'organisationRef', 'co-1', 'org-2']], actual: $seen);
 
 		$unchecked = new PortalAccountsByClaim(container: $this->container(listener: null, objects: $objects), logger: new NullLogger());
-		$this->assertSame([], $unchecked->find(appId: 'learniq', claim: 'organisationRef', value: 'co-1'));
+		$this->assertSame(expected: [], actual: $unchecked->find(appId: 'learniq', claim: 'organisationRef', value: 'co-1'));
 	}//end testChangeNoticesSkipAnAccountWhoseClaimItsAppRefuses()
 }//end class
