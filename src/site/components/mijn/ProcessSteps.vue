@@ -159,8 +159,8 @@ export default {
 		 */
 		day(value) {
 			return (
-				dayInWords(value, this.today || new Date(), this.locale, true) ||
-				value
+				dayInWords(value, this.today || new Date(), this.locale, true)
+				|| value
 			)
 		},
 	},

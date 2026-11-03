@@ -60,7 +60,9 @@ export function fillTemplate(
 		.split(/(?<=[.!?])\s+/)
 		.map((sentence) => sentence.trim())
 		.filter(Boolean)
-		.map((sentence) => filledSentence(sentence, { record, whenEmpty, fields, locale }))
+		.map((sentence) =>
+			filledSentence(sentence, { record, whenEmpty, fields, locale }),
+		)
 		.filter((sentence) => sentence !== null)
 }
 

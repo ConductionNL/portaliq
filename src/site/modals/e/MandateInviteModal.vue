@@ -82,7 +82,9 @@
 							data-testid="mandate-invite-all" />
 						{{ t('All cases') }}
 					</label>
-					<label v-if="caseTypes.length > 0" class="pq-mandate-invite__choice">
+					<label
+						v-if="caseTypes.length > 0"
+						class="pq-mandate-invite__choice">
 						<input
 							v-model="scope"
 							type="radio"
@@ -122,7 +124,9 @@
 					</p>
 					<div class="pq-mandate-invite__date">
 						<label v-for="part in DATE_PARTS" :key="part.key">
-							<span class="utrecht-form-label">{{ t(part.label) }}</span>
+							<span class="utrecht-form-label">{{
+								t(part.label)
+							}}</span>
 							<input
 								v-model="end[part.key]"
 								class="utrecht-textbox"
@@ -316,8 +320,12 @@ export default {
 }
 
 .pq-mandate-invite__eyebrow {
-	color: var(--thematiq-website-text-muted, var(--nldesign-color-text-muted, inherit));
-	font-size: 0.9375rem; font-weight: 600;
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, inherit)
+	);
+	font-size: 0.9375rem;
+	font-weight: 600;
 }
 
 .pq-mandate-invite__title {
@@ -332,7 +340,8 @@ export default {
 	align-items: center;
 	justify-content: center;
 	flex: none;
-	block-size: 44px; inline-size: 44px;
+	block-size: 44px;
+	inline-size: 44px;
 	border: 0;
 	border-radius: 50%;
 	background: transparent;
@@ -346,7 +355,10 @@ export default {
 }
 
 .pq-mandate-invite__body {
-	display: flex; flex-direction: column; gap: 20px; padding: 16px 28px 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	padding: 16px 28px 24px;
 }
 
 .pq-mandate-invite__body > *,
@@ -361,7 +373,8 @@ export default {
 }
 
 .pq-mandate-invite__label {
-	font-size: 1.0625rem; font-weight: 600;
+	font-size: 1.0625rem;
+	font-weight: 600;
 	margin-block-end: 8px;
 	padding: 0;
 }
@@ -372,23 +385,29 @@ export default {
 
 .pq-mandate-invite__optional,
 .pq-mandate-invite__hint {
-	color: var(--thematiq-website-text-muted, var(--nldesign-color-text-muted, inherit));
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, inherit)
+	);
 	font-weight: 400;
 }
 
 .pq-mandate-invite__email {
-	inline-size: 100%; max-inline-size: none;
+	inline-size: 100%;
+	max-inline-size: none;
 }
 
 .pq-mandate-invite__choice {
 	display: flex;
 	align-items: center;
-	gap: 10px; min-block-size: 32px;
+	gap: 10px;
+	min-block-size: 32px;
 	font-size: 1.0625rem;
 }
 
 .pq-mandate-invite__choice input {
-	block-size: 22px; inline-size: 22px;
+	block-size: 22px;
+	inline-size: 22px;
 	margin: 0;
 	accent-color: var(--nldesign-color-primary, auto);
 }
@@ -396,7 +415,8 @@ export default {
 .pq-mandate-invite__types {
 	display: flex;
 	flex-direction: column;
-	gap: 2px; padding: 6px 0 0 32px;
+	gap: 2px;
+	padding: 6px 0 0 32px;
 }
 
 .pq-mandate-invite__date {

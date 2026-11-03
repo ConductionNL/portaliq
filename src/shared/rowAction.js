@@ -304,7 +304,10 @@ export function answerLink(result, origin = pageOrigin()) {
  * @param {Array<File>} [run.files] The files the resident chose, for an action that declares `files`.
  * @return {Promise<{redirect: string|null, messageKey: string, link: string}>}
  */
-export async function runRowAction(api, { collection, row, action, answers = {}, files = [] }) {
+export async function runRowAction(
+	api,
+	{ collection, row, action, answers = {}, files = [] },
+) {
 	const rowId = row && (row.id || row['@self']?.id)
 	if (!rowId || !api) {
 		return {
@@ -317,7 +320,14 @@ export async function runRowAction(api, { collection, row, action, answers = {},
 			? { field: action.files.field, files }
 			: null
 	const result = upload
-		? await api.forwardRowAction(collection, rowId, action.id, answers, '', upload)
+		? await api.forwardRowAction(
+				collection,
+				rowId,
+				action.id,
+				answers,
+				'',
+				upload,
+			)
 		: await api.forwardRowAction(collection, rowId, action.id, answers)
 	return rowActionOutcome(result)
 }
