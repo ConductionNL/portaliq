@@ -500,7 +500,9 @@ OC.L10N.register(
         "Read receipt": "Read receipt",
         "Legal effect": "Legal effect",
         "Deadline": "Deadline",
-        "Read by {object.subjectRef}": "Read by {object.subjectRef}"
+        "Read by {object.subjectRef}": "Read by {object.subjectRef}",
+        "Partner": "Partner",
+        "by {decidedBy|user}, {decidedAt|date}": "by {decidedBy|user}, {decidedAt|date}"
     },
     "nplurals=2; plural=(n != 1);"
 )
