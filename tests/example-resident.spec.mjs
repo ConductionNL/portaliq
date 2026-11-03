@@ -586,11 +586,14 @@ test('PtMededelingenActies: the zuiddrecht portal has 14 notices, 3 coming, 1 co
 	const published = notices.filter((notice) => notice.data.status === 'published')
 	assert.equal(notices.length - published.length, 1, 'Concept 1')
 	assert.equal(published.filter((notice) => minutes(notice.data.startsAt) > now).length, 3, 'Komend 3')
-	assert.deepEqual(
-		published.filter((notice) => minutes(notice.data.startsAt) <= now && minutes(notice.data.endsAt) > now).map((notice) => notice.key),
-		[],
-		'no notice runs on the install day, so no Mijn board gets a banner the boards do not draw',
-	)
+	for (const day of [0, 1, 2]) {
+		const moment = now + day * 24 * 60
+		assert.deepEqual(
+			published.filter((notice) => minutes(notice.data.startsAt) <= moment && minutes(notice.data.endsAt) > moment).map((notice) => notice.key),
+			[],
+			`no notice runs ${day} day(s) after the install, so no board measured that week gets a banner the boards do not draw`,
+		)
+	}
 	assert.deepEqual(
 		notices.slice(0, 6).map((notice) => notice.data.message.split(' ').slice(0, 3).join(' ')),
 		['Inloggen met DigiD', 'Het Stadskantoor is', 'Door Kerst en', 'De afvalkalender voor', 'Parkeervergunningen verlengen kan', 'Stemmen voor de'],

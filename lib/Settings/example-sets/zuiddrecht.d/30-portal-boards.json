@@ -92,8 +92,8 @@
 				"surfaces": [
 					"site"
 				],
-				"startsAt": "{{datetime:1 00:00}}",
-				"endsAt": "{{datetime:5 23:59}}",
+				"startsAt": "{{datetime:3 00:00}}",
+				"endsAt": "{{datetime:7 23:59}}",
 				"status": "published"
 			}
 		},
