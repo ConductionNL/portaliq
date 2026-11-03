@@ -128,14 +128,18 @@ class TrafficIngestGoldenTest extends TestCase {
 			validator: new TrafficEventValidator(),
 			store: $store,
 			metrics: $metrics,
-			hasher: new VisitorHasher($appConfig->mock($this), $clock),
+			hasher: new VisitorHasher(config: $appConfig->mock(test: $this), time: $clock),
 			agents: new UserAgentClassifier(),
 			referrers: new ReferrerClassifier(),
 			geo: $geo,
 			time: $clock
 		);
 
-		$result = $service->ingest(portalSlug: ($scenario['slug'] ?? 'zuid'), events: ($scenario['events'] ?? [self::view()]), context: ($scenario['context'] ?? self::browser()));
+		$result = $service->ingest(
+			portalSlug: ($scenario['slug'] ?? 'zuid'),
+			events: ($scenario['events'] ?? [self::view()]),
+			context: ($scenario['context'] ?? self::browser())
+		);
 
 		return ['result' => $result, 'log' => $log];
 	}//end trace()
@@ -172,7 +176,10 @@ class TrafficIngestGoldenTest extends TestCase {
 	 * @return array<string, array<string, mixed>>
 	 */
 	private function scenarios(): array {
-		$all  = ['pageReferrer', 'pageTitle', 'deviceType', 'browser', 'os', 'language', 'referrerHost', 'channel', 'region', 'campaign', 'source', 'medium', 'userRef'];
+		$all  = [
+			'pageReferrer', 'pageTitle', 'deviceType', 'browser', 'os', 'language', 'referrerHost',
+			'channel', 'region', 'campaign', 'source', 'medium', 'userRef',
+		];
 		$wide = ['enabled' => true, 'dimensions' => $all, 'regionGranularity' => 'region', 'sensitive' => ['accountLinking' => true]];
 		$mail = [
 			'name'         => 'email_open',
@@ -185,14 +192,25 @@ class TrafficIngestGoldenTest extends TestCase {
 			'blastRef'     => '42',
 			'contactRef'   => 'c-7',
 		];
-		$mailTraffic = ['enabled' => true, 'events' => ['email_open'], 'dimensions' => ['campaign', 'source', 'medium', 'term', 'blastRef', 'contactRef', 'channel', 'region']];
+		$mailTraffic = [
+			'enabled'    => true,
+			'events'     => ['email_open'],
+			'dimensions' => ['campaign', 'source', 'medium', 'term', 'blastRef', 'contactRef', 'channel', 'region'],
+		];
 
 		return [
 			'unknown portal'             => ['slug' => 'west', 'events' => [self::view(), self::view()]],
 			'unknown portal no events'   => ['slug' => 'west', 'events' => []],
-			'rollup portal'              => ['traffic' => ['enabled' => true, 'rollupOf' => ['noord']], 'events' => [self::view(), self::view(), self::view()]],
+			'rollup portal'              => [
+				'traffic' => ['enabled' => true, 'rollupOf' => ['noord']],
+				'events' => [self::view(), self::view(), self::view()],
+			],
 			'bot'                        => ['context' => ['userAgent' => self::BOT] + self::browser()],
-			'bot server side'            => ['traffic' => $mailTraffic, 'events' => [$mail], 'context' => ['serverSide' => true, 'userAgent' => self::BOT]],
+			'bot server side'            => [
+				'traffic' => $mailTraffic,
+				'events' => [$mail],
+				'context' => ['serverSide' => true, 'userAgent' => self::BOT],
+			],
 			'disabled portal'            => ['traffic' => ['enabled' => false]],
 			'default dimensions'         => [],
 			'wide dimensions'            => ['traffic' => $wide, 'context' => ['userRef' => '  acct-1  '] + self::browser()],
@@ -201,27 +219,68 @@ class TrafficIngestGoldenTest extends TestCase {
 			'region unknown answer'      => ['traffic' => $wide, 'region' => null],
 			'country granularity'        => ['traffic' => ['regionGranularity' => 'country'] + $wide, 'region' => ''],
 			'no consent'                 => ['traffic' => $wide, 'context' => ['consent' => false] + self::browser()],
-			'consent required, none'     => ['traffic' => ['consent' => ['required' => true]] + $wide, 'context' => ['consent' => false] + self::browser()],
-			'malformed and refused'      => ['traffic' => $wide, 'events' => ['x', self::view(), ['name' => 'bogus', 'sequence' => 1], 7, self::view(['sequence' => 2, 'pageLocation' => 'https://zuid.example/a'])]],
+			'consent required, none'     => [
+				'traffic' => ['consent' => ['required' => true]] + $wide,
+				'context' => ['consent' => false] + self::browser(),
+			],
+			'malformed and refused'      => [
+				'traffic' => $wide,
+				'events' => [
+					'x',
+					self::view(),
+					['name' => 'bogus', 'sequence' => 1],
+					7,
+					self::view(extra: ['sequence' => 2, 'pageLocation' => 'https://zuid.example/a']),
+				],
+			],
 			'excluded paths'             => [
 				'traffic' => ['excludedPaths' => ['/melden', '/']] + $wide,
-				'events'  => [self::view(['pageLocation' => 'https://zuid.example/melden/x']), self::view(['pageLocation' => 'https://zuid.example/meldenx', 'sequence' => 1]), self::view(['pageLocation' => 'https://zuid.example', 'sequence' => 2])],
+				'events'  => [
+					self::view(extra: ['pageLocation' => 'https://zuid.example/melden/x']),
+					self::view(extra: ['pageLocation' => 'https://zuid.example/meldenx', 'sequence' => 1]),
+					self::view(extra: ['pageLocation' => 'https://zuid.example', 'sequence' => 2]),
+				],
 			],
 			'excluded sub path only'     => [
 				'traffic' => ['excludedPaths' => ['/melden']] + $wide,
-				'events'  => [self::view(['pageLocation' => 'https://zuid.example/melden/']), self::view(['pageLocation' => 'https://zuid.example/meldingen', 'sequence' => 1])],
+				'events'  => [
+					self::view(extra: ['pageLocation' => 'https://zuid.example/melden/']),
+					self::view(extra: ['pageLocation' => 'https://zuid.example/meldingen', 'sequence' => 1]),
+				],
 			],
-			'store keeps some'           => ['traffic' => $wide, 'events' => [self::view(), self::view(['sequence' => 1]), self::view(['sequence' => 2])], 'storeAccepts' => 1],
+			'store keeps some'           => [
+				'traffic' => $wide,
+				'events' => [self::view(), self::view(extra: ['sequence' => 1]), self::view(extra: ['sequence' => 2])],
+				'storeAccepts' => 1,
+			],
 			'store keeps none'           => ['traffic' => $wide, 'storeAccepts' => 0],
 			'retention days'             => ['traffic' => ['retentionDays' => 7] + $wide],
-			'mail event server side'     => ['traffic' => $mailTraffic, 'events' => [$mail], 'context' => ['serverSide' => true, 'ip' => '198.51.100.1']],
+			'mail event server side'     => [
+				'traffic' => $mailTraffic,
+				'events' => [$mail],
+				'context' => ['serverSide' => true, 'ip' => '198.51.100.1'],
+			],
 			'mail event from browser'    => ['traffic' => $mailTraffic, 'events' => [$mail], 'context' => self::browser()],
-			'two visitors same batch'    => ['traffic' => $wide, 'events' => [self::view(), self::view(['sequence' => 1, 'pageReferrer' => ''])]],
+			'two visitors same batch'    => [
+				'traffic' => $wide,
+				'events' => [self::view(), self::view(extra: ['sequence' => 1, 'pageReferrer' => ''])],
+			],
 			'language header odd'        => ['traffic' => $wide, 'context' => ['acceptLanguage' => ' EN-gb'] + self::browser()],
 			'language header empty'      => ['traffic' => $wide, 'context' => ['acceptLanguage' => '*'] + self::browser()],
-			'old event allowed'          => ['traffic' => $wide, 'events' => [self::view(['timestamp' => '2026-01-01T00:00:00.000Z'])], 'context' => ['allowOld' => true] + self::browser()],
-			'old event refused'          => ['traffic' => $wide, 'events' => [self::view(['timestamp' => '2026-01-01T00:00:00.000Z'])], 'context' => ['allowOld' => 'yes'] + self::browser()],
-			'internal referrer'          => ['traffic' => $wide, 'events' => [self::view(['pageReferrer' => 'https://zuid.example/home', 'pageLocation' => 'https://zuid.example/b'])]],
+			'old event allowed'          => [
+				'traffic' => $wide,
+				'events' => [self::view(extra: ['timestamp' => '2026-01-01T00:00:00.000Z'])],
+				'context' => ['allowOld' => true] + self::browser(),
+			],
+			'old event refused'          => [
+				'traffic' => $wide,
+				'events' => [self::view(extra: ['timestamp' => '2026-01-01T00:00:00.000Z'])],
+				'context' => ['allowOld' => 'yes'] + self::browser(),
+			],
+			'internal referrer'          => [
+				'traffic' => $wide,
+				'events' => [self::view(extra: ['pageReferrer' => 'https://zuid.example/home', 'pageLocation' => 'https://zuid.example/b'])],
+			],
 		];
 	}//end scenarios()
 }//end class
