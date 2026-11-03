@@ -90,18 +90,18 @@ class PortalContributionProvider implements IPortalContributionProvider {
 	private const FORM_SCHEMA = 'form';
 
 	/**
-	 * The collection address a landing-page form posts to. A published page
-	 * carries only its form id, not the form's destination, so the address
-	 * stays `portaliq/landingPageSubmission`; nothing is written under it.
-	 */
-	private const SUBMIT_ADDRESS = 'landingPageSubmission';
-
-	/**
 	 * The dedicated pseudo-audience under which synthesised form-submission
 	 * actions are surfaced — landing-page forms have no `portalAccount`
 	 * audience of their own, unlike a `portalPage` contribution.
 	 */
 	private const ANONYMOUS_FORM_AUDIENCE = 'anonymous';
+
+	/**
+	 * Builds each active form's submission action.
+	 *
+	 * @var FormSubmitActions
+	 */
+	private readonly FormSubmitActions $formActions;
 
 	/**
 	 * Constructor.
@@ -114,9 +114,10 @@ class PortalContributionProvider implements IPortalContributionProvider {
 	 */
 	public function __construct(
 		private readonly ScopedCollectionReaderInterface $objectReader,
-		private readonly ISecureRandom $random,
+		ISecureRandom $random,
 		private readonly LoggerInterface $logger,
 	) {
+		$this->formActions = new FormSubmitActions(random: $random, logger: $logger);
 	}//end __construct()
 
 	/**
@@ -198,8 +199,52 @@ class PortalContributionProvider implements IPortalContributionProvider {
 			return null;
 		}
 
-		$contribution = null;
+		$contribution = $this->pageContribution(audience: $audience);
 
+		// Landing-page-provisioning: fold every active `form` object's
+		// synthesised anonymous submission action into the dedicated
+		// pseudo-audience — additive, never displaces a portalPage-declared
+		// contribution for the SAME audience.
+		if ($audience === self::ANONYMOUS_FORM_AUDIENCE) {
+			$contribution = $this->withFormActions(contribution: $contribution);
+		}
+
+		return $contribution;
+	}//end getContribution()
+
+	/**
+	 * The contribution of the active portalPage for an audience; the lowest
+	 * id wins when several match, and that is logged.
+	 *
+	 * @param string $audience The subject's audience.
+	 *
+	 * @return array<string, mixed>|null The contribution, or null when no page matches.
+	 */
+	private function pageContribution(string $audience): ?array {
+		$matches = $this->pagesFor(audience: $audience);
+		if ($matches === []) {
+			return null;
+		}
+
+		usort($matches, fn (array $a, array $b): int => $this->rowId(row: $a) <=> $this->rowId(row: $b));
+		if (count($matches) > 1) {
+			$this->logger->warning(
+				'Portaliq: multiple active portalPage objects for one audience — picking the first, not merging',
+				['audience' => $audience, 'count' => count($matches)]
+			);
+		}
+
+		return $this->toContribution(row: $matches[0]);
+	}//end pageContribution()
+
+	/**
+	 * The active portalPage rows for an audience, in read order.
+	 *
+	 * @param string $audience The subject's audience.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function pagesFor(string $audience): array {
 		$matches = [];
 		foreach ($this->activePortalPages() as $row) {
 			if (($row['audience'] ?? null) === $audience) {
@@ -207,36 +252,31 @@ class PortalContributionProvider implements IPortalContributionProvider {
 			}
 		}
 
-		if ($matches !== []) {
-			usort($matches, fn (array $a, array $b): int => $this->rowId(row: $a) <=> $this->rowId(row: $b));
+		return $matches;
+	}//end pagesFor()
 
-			if (count($matches) > 1) {
-				$this->logger->warning(
-					'Portaliq: multiple active portalPage objects for one audience — picking the first, not merging',
-					['audience' => $audience, 'count' => count($matches)]
-				);
-			}
-
-			$contribution = $this->toContribution(row: $matches[0]);
+	/**
+	 * The contribution with the forms' submission actions appended; an empty
+	 * contribution is made for them when there is none.
+	 *
+	 * @param array<string, mixed>|null $contribution The page contribution, if any.
+	 *
+	 * @return array<string, mixed>|null The contribution, still null when no form is submittable.
+	 */
+	private function withFormActions(?array $contribution): ?array {
+		$formActions = $this->synthesiseFormActions();
+		if ($formActions === []) {
+			return $contribution;
 		}
 
-		// Landing-page-provisioning: fold every active `form` object's
-		// synthesised anonymous submission action into the dedicated
-		// pseudo-audience — additive, never displaces a portalPage-declared
-		// contribution for the SAME audience.
-		if ($audience === self::ANONYMOUS_FORM_AUDIENCE) {
-			$formActions = $this->synthesiseFormActions();
-			if ($formActions !== []) {
-				if ($contribution === null) {
-					$contribution = ['label' => '', 'collections' => [], 'actions' => [], 'pages' => []];
-				}
-
-				$contribution['actions'] = array_merge($contribution['actions'], $formActions);
-			}
+		if ($contribution === null) {
+			$contribution = ['label' => '', 'collections' => [], 'actions' => [], 'pages' => []];
 		}
+
+		$contribution['actions'] = array_merge($contribution['actions'], $formActions);
 
 		return $contribution;
-	}//end getContribution()
+	}//end withFormActions()
 
 	/**
 	 * Convert one `portalPage` object row into the manifest shape every
@@ -376,79 +416,15 @@ class PortalContributionProvider implements IPortalContributionProvider {
 	 */
 	private function synthesiseFormActions(): array {
 		$actions = [];
-
 		foreach ($this->activeForms() as $row) {
-			$formId = $this->rowId(row: $row);
-			if ($formId === '') {
-				continue;
-			}
-
-			$fieldIds = $this->fieldIdsOf(row: $row);
-			if ($fieldIds === []) {
-				continue;
-			}
-
-			$destination = (array)($row['destination'] ?? []);
-			$register    = trim((string)($destination['register'] ?? ''));
-			$schema      = trim((string)($destination['schema'] ?? ''));
-			if ($register === '' || $schema === '') {
-				$this->logger->warning('Portaliq: a landing-page form names no destination and cannot be submitted', ['form' => $formId]);
-				continue;
-			}
-
-			$fieldIds = array_merge($fieldIds, ['utmFirstTouch', 'utmLastTouch', 'referrer']);
-
-			$actions[] = [
-				'id' => ('submit-' . $formId),
-				'type' => 'create',
-				'anonymous' => true,
-				// The address the public form posts to. It is only an address:
-				// the submit creates `destination`, never an object here.
-				'register' => self::REGISTER,
-				'schema' => self::SUBMIT_ADDRESS,
-				'label' => (string)($row['submitLabel'] ?? 'Submit'),
-				'fields' => $fieldIds,
-				'destination' => array_merge($destination, ['register' => $register, 'schema' => $schema]),
-				'intakeScope' => (string)($row['portal'] ?? '') . '/' . (string)($row['pageRoute'] ?? ''),
-				'server' => [
-					'formId' => $formId,
-					'pageId' => (string)($row['pageId'] ?? ''),
-					'pageRoute' => (string)($row['pageRoute'] ?? ''),
-					'portal' => (string)($row['portal'] ?? ''),
-					'sourceApp' => (string)($row['sourceApp'] ?? ''),
-					'externalReference' => (string)($row['externalReference'] ?? ''),
-					'campaign' => (array)($row['campaign'] ?? []),
-					'submittedAt' => date(DATE_ATOM),
-					'nonce' => $this->random->generate(32, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS)),
-				],
-			];
-		}//end foreach
-
-		return $actions;
-	}//end synthesiseFormActions()
-
-	/**
-	 * A form's declared field ids, in order.
-	 *
-	 * @param array<string, mixed> $row The `form` row.
-	 *
-	 * @return array<int, string>
-	 */
-	private function fieldIdsOf(array $row): array {
-		$fieldIds = [];
-		foreach ((array)($row['fields'] ?? []) as $field) {
-			$fieldId = null;
-			if (is_array($field) === true) {
-				$fieldId = ($field['id'] ?? null);
-			}
-
-			if (is_string($fieldId) === true && $fieldId !== '') {
-				$fieldIds[] = $fieldId;
+			$action = $this->formActions->action(row: $row, formId: $this->rowId(row: $row));
+			if ($action !== null) {
+				$actions[] = $action;
 			}
 		}
 
-		return $fieldIds;
-	}//end fieldIdsOf()
+		return $actions;
+	}//end synthesiseFormActions()
 
 	/**
 	 * Resolve a row's identifier (`id`/`uuid`, flat or in `@self`) for the

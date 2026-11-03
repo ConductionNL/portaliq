@@ -31,6 +31,7 @@ use Psr\Log\LoggerInterface;
  * time and then recorded as `<atom>`, because it is the clock.
  *
  * @covers \OCA\Portaliq\Portal\PortalContributionProvider
+ * @uses   \OCA\Portaliq\Portal\FormSubmitActions
  */
 class PortalContributionProviderGoldenTest extends TestCase {
 
