@@ -1,0 +1,2008 @@
+{
+    "nothing asked": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [
+                "a:2",
+                "myapp:5",
+                "a:1",
+                "b:3",
+                "myapp:4"
+            ],
+            "total": 5,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "g1",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "g2",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "visitor",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Plain",
+                    "values": [
+                        {
+                            "value": "p",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "q",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "unknown portal": {
+        "status": 404,
+        "cache": "private, no-store",
+        "data": {
+            "error": "not_found"
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                "nope"
+            ]
+        ]
+    },
+    "portal named": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [
+                "a:2",
+                "myapp:5",
+                "a:1",
+                "b:3",
+                "myapp:4"
+            ],
+            "total": 5,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "g1",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "g2",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "visitor",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Plain",
+                    "values": [
+                        {
+                            "value": "p",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "q",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                "asked"
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "sign-in portal, anonymous": {
+        "status": 401,
+        "cache": "private, no-store",
+        "data": {
+            "error": "authentication_required",
+            "authentication": {
+                "modes": [
+                    "digid"
+                ]
+            }
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "session.resolveFromBearer",
+                ""
+            ]
+        ]
+    },
+    "search": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [
+                "a:1",
+                "myapp:4"
+            ],
+            "total": 2,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "g1",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "visitor",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Plain",
+                    "values": [
+                        {
+                            "value": "p",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "search cut at 200": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [
+                "a:2",
+                "myapp:5",
+                "a:1",
+                "b:3",
+                "myapp:4"
+            ],
+            "total": 5,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "g1",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "g2",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "visitor",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Plain",
+                    "values": [
+                        {
+                            "value": "p",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "q",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "search just inside 200": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [
+                "a:1",
+                "myapp:4"
+            ],
+            "total": 2,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "g1",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "visitor",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Plain",
+                    "values": [
+                        {
+                            "value": "p",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "types trimmed": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [
+                "a:2",
+                "myapp:5",
+                "b:3",
+                "myapp:4"
+            ],
+            "total": 4,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "g2",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "visitor",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "g1",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Plain",
+                    "values": [
+                        {
+                            "value": "p",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "q",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "types empty": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [
+                "a:2",
+                "myapp:5",
+                "a:1",
+                "b:3",
+                "myapp:4"
+            ],
+            "total": 5,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "g1",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "g2",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "visitor",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Plain",
+                    "values": [
+                        {
+                            "value": "p",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "q",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "filters": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [
+                "a:1",
+                "b:3"
+            ],
+            "total": 2,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "g1",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Plain",
+                    "values": [
+                        {
+                            "value": "p",
+                            "count": 2,
+                            "selected": true
+                        },
+                        {
+                            "value": "q",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "filters junk": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [
+                "a:2",
+                "myapp:5",
+                "a:1",
+                "b:3",
+                "myapp:4"
+            ],
+            "total": 5,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "g1",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "g2",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "visitor",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Plain",
+                    "values": [
+                        {
+                            "value": "p",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "q",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "filters scalar json": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [
+                "a:2",
+                "myapp:5",
+                "a:1",
+                "b:3",
+                "myapp:4"
+            ],
+            "total": 5,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "g1",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "g2",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "visitor",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Plain",
+                    "values": [
+                        {
+                            "value": "p",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "q",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "sort title": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [
+                "myapp:4",
+                "myapp:5",
+                "a:2",
+                "b:3",
+                "a:1"
+            ],
+            "total": 5,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "g1",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "g2",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "visitor",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Plain",
+                    "values": [
+                        {
+                            "value": "p",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "q",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "sort date": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [
+                "b:3",
+                "a:1",
+                "myapp:5",
+                "a:2",
+                "myapp:4"
+            ],
+            "total": 5,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "g1",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "g2",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "visitor",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Plain",
+                    "values": [
+                        {
+                            "value": "p",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "q",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "sort dateDesc": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [
+                "a:2",
+                "myapp:5",
+                "a:1",
+                "b:3",
+                "myapp:4"
+            ],
+            "total": 5,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "g1",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "g2",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "visitor",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Plain",
+                    "values": [
+                        {
+                            "value": "p",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "q",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "sort bogus": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [
+                "a:2",
+                "myapp:5",
+                "a:1",
+                "b:3",
+                "myapp:4"
+            ],
+            "total": 5,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "g1",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "g2",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "visitor",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Plain",
+                    "values": [
+                        {
+                            "value": "p",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "q",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "page and limit": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [
+                "a:1",
+                "b:3"
+            ],
+            "total": 5,
+            "page": 2,
+            "pages": 3,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "g1",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "g2",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "visitor",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Plain",
+                    "values": [
+                        {
+                            "value": "p",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "q",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "page and limit as text": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [
+                "a:2",
+                "myapp:5"
+            ],
+            "total": 5,
+            "page": 1,
+            "pages": 3,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "g1",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "g2",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "visitor",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Plain",
+                    "values": [
+                        {
+                            "value": "p",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "q",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "page as array": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [
+                "a:2"
+            ],
+            "total": 5,
+            "page": 1,
+            "pages": 5,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "g1",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "g2",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "visitor",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Plain",
+                    "values": [
+                        {
+                            "value": "p",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "q",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "limit null": {
+        "threw": "TypeError",
+        "calls": []
+    },
+    "upcoming on": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [
+                "a:2",
+                "myapp:5",
+                "a:1"
+            ],
+            "total": 3,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "g1",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "g2",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Plain",
+                    "values": [
+                        {
+                            "value": "p",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "upcoming other value": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [
+                "a:2",
+                "myapp:5",
+                "a:1",
+                "b:3",
+                "myapp:4"
+            ],
+            "total": 5,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "g1",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "g2",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "visitor",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Plain",
+                    "values": [
+                        {
+                            "value": "p",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "q",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "app": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [
+                "myapp:5",
+                "myapp:4"
+            ],
+            "total": 2,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "visitor",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "g1",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "app malformed": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [
+                "a:2",
+                "myapp:5",
+                "a:1",
+                "b:3",
+                "myapp:4"
+            ],
+            "total": 5,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "g1",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "g2",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "visitor",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Plain",
+                    "values": [
+                        {
+                            "value": "p",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "q",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "app too long": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [
+                "a:2",
+                "myapp:5",
+                "a:1",
+                "b:3",
+                "myapp:4"
+            ],
+            "total": 5,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "g1",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "g2",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "visitor",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Plain",
+                    "values": [
+                        {
+                            "value": "p",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "q",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "categories": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [
+                "a:2",
+                "a:1",
+                "b:3"
+            ],
+            "total": 3,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "g1",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "g2",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Plain",
+                    "values": [
+                        {
+                            "value": "p",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "q",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "range schoolYear": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [
+                "a:1"
+            ],
+            "total": 1,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "g1",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Plain",
+                    "values": [
+                        {
+                            "value": "p",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "range other": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [
+                "a:2",
+                "myapp:5",
+                "a:1",
+                "b:3",
+                "myapp:4"
+            ],
+            "total": 5,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "g1",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "g2",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "visitor",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Plain",
+                    "values": [
+                        {
+                            "value": "p",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "q",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "facetsBy": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [
+                "a:2",
+                "myapp:5",
+                "a:1",
+                "b:3",
+                "myapp:4"
+            ],
+            "total": 5,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "g1",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "g2",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "visitor",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Plain",
+                    "values": [
+                        {
+                            "value": "p",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "q",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Soort",
+                    "values": [
+                        {
+                            "value": "Nieuws",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "Markt",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "Beurs",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "Dienst",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Voor wie",
+                    "values": [
+                        {
+                            "value": "Inwoners",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "facetsBy junk": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [
+                "a:2",
+                "myapp:5",
+                "a:1",
+                "b:3",
+                "myapp:4"
+            ],
+            "total": 5,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "g1",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "g2",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "visitor",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Plain",
+                    "values": [
+                        {
+                            "value": "p",
+                            "count": 2,
+                            "selected": false
+                        },
+                        {
+                            "value": "q",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "visitor signed in": {
+        "status": 200,
+        "cache": "private, no-store",
+        "data": {
+            "items": [],
+            "total": 0,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": []
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "session.resolveFromBearer",
+                "Bearer t-1"
+            ],
+            [
+                "catalogue.visitorValuesFor",
+                "zuid",
+                "myapp",
+                {
+                    "subjectRef": "anne"
+                }
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "visitor signed in, no values": {
+        "status": 200,
+        "cache": "private, no-store",
+        "data": {
+            "items": [],
+            "total": 0,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": []
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "session.resolveFromBearer",
+                "Bearer t-1"
+            ],
+            [
+                "catalogue.visitorValuesFor",
+                "zuid",
+                "myapp",
+                {
+                    "subjectRef": "anne"
+                }
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "visitor narrows": {
+        "status": 200,
+        "cache": "private, no-store",
+        "data": {
+            "items": [
+                "myapp:4"
+            ],
+            "total": 1,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "visitor",
+                            "count": 1,
+                            "selected": false
+                        },
+                        {
+                            "value": "g1",
+                            "count": 1,
+                            "selected": true
+                        }
+                    ]
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "session.resolveFromBearer",
+                "Bearer t-1"
+            ],
+            [
+                "catalogue.visitorValuesFor",
+                "zuid",
+                "myapp",
+                {
+                    "subjectRef": "anne"
+                }
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "visitor anonymous": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [],
+            "total": 0,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": []
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "session.resolveFromBearer",
+                ""
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "visitor without app": {
+        "status": 200,
+        "cache": "private, no-store",
+        "data": {
+            "items": [],
+            "total": 0,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "g1",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Plain",
+                    "values": []
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "session.resolveFromBearer",
+                "Bearer t-1"
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "visitor with malformed app": {
+        "status": 200,
+        "cache": "private, no-store",
+        "data": {
+            "items": [],
+            "total": 0,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": [
+                        {
+                            "value": "g1",
+                            "count": 1,
+                            "selected": false
+                        }
+                    ]
+                },
+                {
+                    "label": "Plain",
+                    "values": []
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "session.resolveFromBearer",
+                "Bearer t-1"
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "forged subject in the query": {
+        "status": 200,
+        "cache": "private, no-store",
+        "data": {
+            "items": [],
+            "total": 0,
+            "page": 1,
+            "pages": 1,
+            "facets": [
+                {
+                    "label": "Group",
+                    "values": []
+                }
+            ]
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                null
+            ],
+            [
+                "session.resolveFromBearer",
+                "Bearer t-1"
+            ],
+            [
+                "catalogue.visitorValuesFor",
+                "zuid",
+                "myapp",
+                {
+                    "subjectRef": "anne"
+                }
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    },
+    "search as array": {
+        "threw": "TypeError",
+        "calls": []
+    },
+    "types as array": {
+        "threw": "TypeError",
+        "calls": []
+    },
+    "filters as array": {
+        "threw": "TypeError",
+        "calls": []
+    },
+    "sort as number": {
+        "threw": "TypeError",
+        "calls": []
+    },
+    "upcoming as array": {
+        "threw": "TypeError",
+        "calls": []
+    },
+    "app as array": {
+        "threw": "TypeError",
+        "calls": []
+    },
+    "categories as array": {
+        "threw": "TypeError",
+        "calls": []
+    },
+    "range as array": {
+        "threw": "TypeError",
+        "calls": []
+    },
+    "facetsBy as array": {
+        "threw": "TypeError",
+        "calls": []
+    },
+    "portal as array": {
+        "threw": "TypeError",
+        "calls": []
+    },
+    "search null": {
+        "threw": "TypeError",
+        "calls": []
+    },
+    "everything together": {
+        "status": 200,
+        "cache": "public, max-age=300, must-revalidate",
+        "data": {
+            "items": [
+                "myapp:5"
+            ],
+            "total": 1,
+            "page": 1,
+            "pages": 1,
+            "facets": []
+        },
+        "calls": [
+            [
+                "resolver.resolve",
+                "asked"
+            ],
+            [
+                "catalogue.itemsFor",
+                "zuid"
+            ]
+        ]
+    }
+}
