@@ -89,19 +89,20 @@ class PublicIndexSourceTest extends TestCase {
 	}
 
 	public function testTheEndpointOffersTheDeclaredKindsAndResolvesVisitorOnlyForASignedInPerson(): void {
-		$anonymous = $this->controller(subject: null);
+		$asked     = ['types' => 'test', 'filters' => '{"Afdeling":["visitor"]}', 'sort' => 'date'];
+		$anonymous = $this->controller(subject: null, query: $asked);
 		$kinds     = $anonymous->kinds('vaartveld')->getData()['kinds'];
 		$this->assertSame('test', $kinds[0]['type']);
 
-		$all = $anonymous->index('vaartveld', '', 'test', '{"Afdeling":["visitor"]}', 'date');
+		$all = $anonymous->index('vaartveld');
 		$this->assertSame(2, $all->getData()['total'], 'an anonymous visitor leaves the filter empty');
 
-		$signedIn = $this->controller(subject: ['sub' => 'p-1']);
-		$mine     = $signedIn->index('vaartveld', '', 'test', '{"Afdeling":["visitor"]}', 'date', 1, 10, '', 'learniq');
+		$signedIn = $this->controller(subject: ['sub' => 'p-1'], query: $asked + ['app' => 'learniq']);
+		$mine     = $signedIn->index('vaartveld');
 		$this->assertSame(['learniq:t1'], array_column($mine->getData()['items'], 'id'), "the visitor's own class");
 
-		$other = $this->controller(subject: ['sub' => 'p-2']);
-		$this->assertSame(2, $other->index('vaartveld', '', 'test', '{"Afdeling":["visitor"]}', 'date', 1, 10, '', 'learniq')->getData()['total'], 'a person the app cannot place narrows nothing');
+		$other = $this->controller(subject: ['sub' => 'p-2'], query: $asked + ['app' => 'learniq']);
+		$this->assertSame(2, $other->index('vaartveld')->getData()['total'], 'a person the app cannot place narrows nothing');
 	}
 
 	/**
@@ -111,7 +112,7 @@ class PublicIndexSourceTest extends TestCase {
 	 *
 	 * @return ContentCatalogueController
 	 */
-	private function controller(?array $subject): ContentCatalogueController {
+	private function controller(?array $subject, array $query = []): ContentCatalogueController {
 		$apps = $this->createMock(IAppManager::class);
 		$apps->method('getInstalledApps')->willReturn(['learniq']);
 
@@ -139,6 +140,7 @@ class PublicIndexSourceTest extends TestCase {
 		$catalogue = new PublicCatalogue($apps, $locator, $reader, $caches, $this->createMock(LoggerInterface::class));
 
 		$request = $this->createMock(IRequest::class);
+		$request->method('getParam')->willReturnCallback(static fn (string $key, mixed $default = null): mixed => ($query[$key] ?? $default));
 		$request->method('getHeader')->willReturn($subject === null ? '' : 'Bearer x');
 		$resolver = $this->createMock(PortalResolver::class);
 		$resolver->method('resolve')->willReturn(['slug' => 'vaartveld', 'authentication' => ['modes' => ['public']]]);
