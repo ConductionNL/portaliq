@@ -103,6 +103,7 @@ class TrafficPageReportFoldGoldenTest extends TestCase {
 				['pages' => [['path' => '/diensten', 'views' => 2, 'entrances' => 0, 'exits' => 2], 'junk']],
 				['pages' => [$this->row('/diensten', ['referrers' => 'none', 'outbound' => [['url' => 'https://elders.example/a', 'count' => 4], 'junk', ['count' => 1]]])]],
 			],
+			'half detailed day'   => [['pages' => [$this->row('/diensten')]], ['pages' => [$this->row('/diensten'), ['path' => '/diensten/', 'views' => 1, 'entrances' => 1, 'exits' => 0]]]],
 			'many referrers'      => [['pages' => [$this->row('/diensten', ['referrers' => array_map(static fn (int $i): array => ['host' => 'h' . $i . '.example', 'channel' => 'referral', 'count' => $i], range(1, 12))])]]],
 			'negative counts'     => [['pages' => [$this->row('/diensten', ['views' => -4, 'entrances' => null, 'exits' => 1.9])]]],
 		];

@@ -335,6 +335,50 @@
             }
         ]
     },
+    "half detailed day | /diensten": {
+        "recordedDays": 2,
+        "detailDays": 1,
+        "pageViews": 11,
+        "entrances": 5,
+        "exits": 2,
+        "sessions": 4,
+        "visitors": 3,
+        "engagedSessions": 2,
+        "previous": [],
+        "next": [],
+        "referrers": [
+            {
+                "host": "example.org",
+                "channel": "referral",
+                "count": 2
+            },
+            {
+                "host": "search.example",
+                "channel": "search",
+                "count": 1
+            }
+        ],
+        "outbound": [
+            {
+                "url": "https://elders.example/a",
+                "count": 1
+            }
+        ]
+    },
+    "half detailed day | /": {
+        "recordedDays": 2,
+        "detailDays": 1,
+        "pageViews": 0,
+        "entrances": 0,
+        "exits": 0,
+        "sessions": 0,
+        "visitors": 0,
+        "engagedSessions": 0,
+        "previous": [],
+        "next": [],
+        "referrers": [],
+        "outbound": []
+    },
     "many referrers | /diensten": {
         "recordedDays": 1,
         "detailDays": 1,
