@@ -138,15 +138,24 @@ and SHALL NOT translate or rewrite the label it is given.
 - **THEN** the text shown is the label from the contribution, unchanged
 - @e2e exclude Identity of the rendered string with the contribution payload; covered by PHPUnit
 
-### Requirement: A case that has ended offers nothing and explains nothing
+### Requirement: A case that has ended takes no changes and keeps the question to the handler
 
-A case has ended when it carries `withdrawnAt`, or when the `closedField` its collection declares holds a value. The writable set of an ended case MUST say `ended: true`. It MUST close the amendment window, the document window and every field, each with the sentence "This case is not open for changes from the portal.". The withdrawal MUST be closed. The case screen MUST show the case's status, answers and withdrawal, and MUST NOT show a sentence about a closed window, a closed withdrawal or a field that cannot change. A running case MUST keep the case type's own sentences.
+A case has ended when it carries `withdrawnAt`, or when the `closedField` its collection declares holds a value. The writable set of an ended case MUST say `ended: true`. It MUST close the amendment window, the document window and every field, each with the sentence "This case is not open for changes from the portal.". The withdrawal MUST be closed. The case screen MUST show the case's status, answers and withdrawal, and MUST NOT show a sentence about a closed window, a closed withdrawal or a field that cannot change. The case screen MUST still offer a question to the handler, as board `portaliq/ZaakAfgerond` draws it: the heading "Een vraag over deze zaak?", the line "Ook nu uw zaak is afgerond, kunt u ons een vraag stellen. Uw bericht komt bij de behandelaar van deze zaak.", a message field and the button "Bericht sturen". A running case MUST keep the case type's own sentences.
 
-#### Scenario: A withdrawn Woo request does not invite more
+#### Scenario: A closed case still takes a question
+- GIVEN a resident's parking permit case that staff closed on 14 oktober 2026
+- WHEN the resident opens it
+- THEN the screen shows "Deze zaak is afgerond op 14 oktober 2026." with the status and the decision to download
+- AND it shows "Een vraag over deze zaak?" with a message field and "Bericht sturen"
+- AND it does not show "Wilt u iets aanvullen?" or a way to add a document or withdraw
+- @e2e exclude the question block is drawn on portaliq/ZaakAfgerond; pinned by the node test for the ended case once the site renders it
+
+#### Scenario: A withdrawn Woo request takes no more changes
 - GIVEN a resident withdrew their Woo request in the portal
 - WHEN they open it again
 - THEN the screen shows "Ingetrokken op" with the date and the status
-- AND it does not show "Wilt u iets aanvullen?" or "Stuur ons een bericht"
+- AND it does not show "Wilt u iets aanvullen?"
+- AND it offers "Een vraag over deze zaak?" with "Bericht sturen", as a closed case does
 - @e2e exclude pinned by `CitizenWritableSetResolverTest::testAWithdrawnCaseHasEndedAndInvitesNothing` and the node test "site: an ended case shows its state, never an invitation to add to it"; the live check on :8090 is in the PR
 
 #### Scenario: A case closed by staff takes nothing more
