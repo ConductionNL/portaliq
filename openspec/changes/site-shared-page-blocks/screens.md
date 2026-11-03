@@ -6,3 +6,4 @@
 - portaliq/PtMediaKiezen media kiezen https://identity.conduction.nl/screens/board?id=portaliq/PtMediaKiezen
 - portaliq/PtPagina pagina-indeling https://identity.conduction.nl/screens/board?id=portaliq/PtPagina
 - portaliq/PtPaginaZoekmachines pagina, zoekmachines https://identity.conduction.nl/screens/board?id=portaliq/PtPaginaZoekmachines
+- portaliq/Home website: a page cell with the shared block "Contact en openingstijden" (REQ-SPB-002) https://identity.conduction.nl/screens/board?id=portaliq/Home
