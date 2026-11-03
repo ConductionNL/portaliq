@@ -394,6 +394,16 @@
         "answer": null,
         "handlerRestored": true
     },
+    "a public address as host": {
+        "calls": [
+            [
+                "resolve",
+                "93.184.216.34"
+            ]
+        ],
+        "answer": null,
+        "handlerRestored": true
+    },
     "refused 127.0.0.1": {
         "calls": [
             [

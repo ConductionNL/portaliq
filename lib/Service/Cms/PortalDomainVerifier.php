@@ -225,25 +225,53 @@ class PortalDomainVerifier {
 	 * @spec openspec/changes/archive/2026-10-12-portal-domains-and-editors/tasks.md#t03
 	 */
 	public static function probeCertificate(string $host): ?int {
-		$errorCode    = 0;
-		$errorMessage = '';
+		$address = self::publicAddress(host: $host);
+		if ($address === null) {
+			return null;
+		}
+
+		$certificate = self::peerCertificate(host: $host, address: $address);
+		if ($certificate === null) {
+			return null;
+		}
+
+		$parsed = openssl_x509_parse($certificate);
+		if ($parsed === false || isset($parsed['validTo_time_t']) === false) {
+			return null;
+		}
+
+		return (int)$parsed['validTo_time_t'];
+	}//end probeCertificate()
+
+	/**
+	 * The address a host resolves to, unless it is private or reserved.
+	 *
+	 * @param string $host The host name.
+	 *
+	 * @return string|null The address, null when the host must not be contacted.
+	 */
+	private static function publicAddress(string $host): ?string {
 		$address = gethostbyname($host);
 		if ($address === $host || filter_var($address, FILTER_VALIDATE_IP, (FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) === false) {
 			return null;
 		}
 
-		$context = stream_context_create(
-			[
-				'ssl' => [
-					'capture_peer_cert' => true,
-					'verify_peer'       => false,
-					'verify_peer_name'  => false,
-					'peer_name'         => $host,
-					'SNI_enabled'       => true,
-					'SNI_server_name'   => $host,
-				],
-			]
-		);
+		return $address;
+	}//end publicAddress()
+
+	/**
+	 * The certificate a host presents on port 443 of an address already checked.
+	 * The connection goes to the address, so a second lookup cannot redirect it.
+	 *
+	 * @param string $host    The host name, sent as the TLS server name.
+	 * @param string $address The checked address.
+	 *
+	 * @return mixed The certificate, null when the connection failed or gave none.
+	 */
+	private static function peerCertificate(string $host, string $address): mixed {
+		$errorCode    = 0;
+		$errorMessage = '';
+		$context      = self::tlsContext(host: $host);
 
 		set_error_handler(static fn (): bool => true);
 		try {
@@ -265,18 +293,31 @@ class PortalDomainVerifier {
 
 		$params = stream_context_get_params($socket);
 		fclose($socket);
-		$certificate = ($params['options']['ssl']['peer_certificate'] ?? null);
-		if ($certificate === null) {
-			return null;
-		}
 
-		$parsed = openssl_x509_parse($certificate);
-		if ($parsed === false || isset($parsed['validTo_time_t']) === false) {
-			return null;
-		}
+		return ($params['options']['ssl']['peer_certificate'] ?? null);
+	}//end peerCertificate()
 
-		return (int)$parsed['validTo_time_t'];
-	}//end probeCertificate()
+	/**
+	 * A TLS context that captures the peer's certificate without verifying the chain.
+	 *
+	 * @param string $host The host name, sent as the TLS server name.
+	 *
+	 * @return resource The context.
+	 */
+	private static function tlsContext(string $host) {
+		return stream_context_create(
+			[
+				'ssl' => [
+					'capture_peer_cert' => true,
+					'verify_peer'       => false,
+					'verify_peer_name'  => false,
+					'peer_name'         => $host,
+					'SNI_enabled'       => true,
+					'SNI_server_name'   => $host,
+				],
+			]
+		);
+	}//end tlsContext()
 
 	/**
 	 * Whether the domain's record is published with this portal's token.

@@ -249,7 +249,7 @@ namespace OCA\Portaliq\Tests\Unit\Service\Cms {
 			$marker = static fn (): bool => false;
 			set_error_handler($marker);
 			try {
-				$answer = PortalDomainVerifier::probeCertificate(host: 'www.example.org');
+				$answer = PortalDomainVerifier::probeCertificate(host: ($world['host'] ?? 'www.example.org'));
 			} catch (RuntimeException $error) {
 				$answer = 'threw ' . $error->getMessage();
 			}
@@ -283,6 +283,7 @@ namespace OCA\Portaliq\Tests\Unit\Service\Cms {
 				'parse with a text end'    => $public + ['parsed' => ['validTo_time_t' => '12']],
 				'connection throws'        => $public + ['throws' => true],
 				'not an address'           => ['address' => 'not-an-ip'],
+				'a public address as host' => ['host' => '93.184.216.34'],
 			];
 			foreach (['127.0.0.1', '10.1.2.3', '172.16.0.1', '192.168.1.1', '169.254.169.254', '0.0.0.0', '240.0.0.1', '255.255.255.255'] as $blocked) {
 				$worlds['refused ' . $blocked] = ['address' => $blocked];
