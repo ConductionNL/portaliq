@@ -57,4 +57,4 @@ Granting a request SHALL record an active mandate for the asker on behalf of the
 - **GIVEN** a pending request from a bookkeeper for company 87654321
 - **WHEN** a clerk grants it
 - **THEN** the bookkeeper's "My cases" lists the cases of 87654321, labelled "87654321"
-- **AND** acting for it reads "U regelt nu zaken voor 87654321"
+- **AND** the selector "Zaken van" on "Mijn zaken" offers "87654321"

@@ -673,10 +673,10 @@ Every account page (my cases, access to cases, my details, my account, contacts,
 
 ### Requirement: A mandate is named by its party
 
-A mandate's `label` MUST be the name of the party it acts for, as the holder reads it, because the site says "U regelt nu zaken voor {label}". Seeded and demo mandates MUST carry such a name, not a sentence such as "Namens Henk Bakker".
+A mandate's `label` MUST be the name of the party it acts for, as the holder reads it, because the selector "Zaken van" on "Mijn zaken" lists the party by its label (board `portaliq/MijnZaken`). Seeded and demo mandates MUST carry such a name, not a sentence such as "Namens Henk Bakker".
 
 #### Scenario: Linda acts for her father
 - GIVEN Linda Bakker holds the example mandate for Henk Bakker
-- WHEN she chooses to act for him
-- THEN the bar reads "U regelt nu zaken voor Henk Bakker"
+- WHEN she opens "Mijn zaken"
+- THEN the selector "Zaken van" offers "Henk Bakker"
 - @e2e exclude pinned by `tests/account-pages-language.spec.mjs` "an example mandate is named by its party, not by a sentence"
