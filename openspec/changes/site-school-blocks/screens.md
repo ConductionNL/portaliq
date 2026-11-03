@@ -15,3 +15,4 @@
 - Home https://identity.conduction.nl/screens/board?id=esdoornveen/Home
 - Home https://identity.conduction.nl/screens/board?id=warmtepompacademie/Home
 - Editor https://identity.conduction.nl/screens/board?id=warmtepompacademie/Editor
+- esdoornveen/Detail mijn BPV: the hours figure "van 480 uur" on the overview https://identity.conduction.nl/screens/board?id=esdoornveen/Detail
