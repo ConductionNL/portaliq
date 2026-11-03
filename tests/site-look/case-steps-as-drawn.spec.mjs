@@ -68,7 +68,7 @@ test('the next step stands on a dashed chip 8px under the current step', () => {
 	assert.match(rule, /align-self: flex-start;/)
 	assert.match(rule, /margin-block-start: 8px;/)
 	assert.match(rule, /padding: 6px 12px;/)
-	assert.match(rule, /border: 1px dashed/)
+	assert.match(rule, /border: 1px dashed color-mix\( in srgb, var\(--nldesign-color-border-dark, currentcolor\) 58%, var\(--utrecht-document-background-color/, 'an opaque grey, #b4bac3 on white')
 	assert.match(rule, /background-color: var\(--nldesign-color-surface/)
 	assert.match(rule, /color: var\(--nldesign-color-text-muted/)
 	assert.match(rule, /font-size: 0\.9375rem;/)

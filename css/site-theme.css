@@ -3300,7 +3300,11 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	margin-block-start: 8px;
 	padding: 6px 12px;
 	border: 1px dashed
-		color-mix(in srgb, var(--nldesign-color-border-dark, currentcolor) 60%, transparent);
+		color-mix(
+			in srgb,
+			var(--nldesign-color-border-dark, currentcolor) 58%,
+			var(--utrecht-document-background-color, var(--color-main-background, Canvas))
+		);
 	border-radius: 4px;
 	background-color: var(--nldesign-color-surface, transparent);
 	color: var(--nldesign-color-text-muted, inherit);
