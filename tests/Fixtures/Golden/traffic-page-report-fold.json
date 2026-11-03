@@ -1,0 +1,466 @@
+{
+    "no records | /diensten": {
+        "recordedDays": 0,
+        "detailDays": 0,
+        "pageViews": 0,
+        "entrances": 0,
+        "exits": 0,
+        "sessions": null,
+        "visitors": null,
+        "engagedSessions": null,
+        "previous": [],
+        "next": [],
+        "referrers": null,
+        "outbound": null
+    },
+    "no records | /": {
+        "recordedDays": 0,
+        "detailDays": 0,
+        "pageViews": 0,
+        "entrances": 0,
+        "exits": 0,
+        "sessions": null,
+        "visitors": null,
+        "engagedSessions": null,
+        "previous": [],
+        "next": [],
+        "referrers": null,
+        "outbound": null
+    },
+    "one detailed day | /diensten": {
+        "recordedDays": 1,
+        "detailDays": 1,
+        "pageViews": 5,
+        "entrances": 2,
+        "exits": 1,
+        "sessions": 4,
+        "visitors": 3,
+        "engagedSessions": 2,
+        "previous": [
+            {
+                "path": "/nieuws",
+                "count": 4
+            },
+            {
+                "path": "/",
+                "count": 3
+            }
+        ],
+        "next": [
+            {
+                "path": "/contact",
+                "count": 2
+            },
+            {
+                "path": "/",
+                "count": 0
+            }
+        ],
+        "referrers": [
+            {
+                "host": "example.org",
+                "channel": "referral",
+                "count": 2
+            },
+            {
+                "host": "search.example",
+                "channel": "search",
+                "count": 1
+            }
+        ],
+        "outbound": [
+            {
+                "url": "https://elders.example/a",
+                "count": 1
+            }
+        ]
+    },
+    "one detailed day | /": {
+        "recordedDays": 1,
+        "detailDays": 1,
+        "pageViews": 5,
+        "entrances": 2,
+        "exits": 1,
+        "sessions": 4,
+        "visitors": 3,
+        "engagedSessions": 2,
+        "previous": [
+            {
+                "path": "/diensten",
+                "count": 0
+            }
+        ],
+        "next": [
+            {
+                "path": "/diensten",
+                "count": 3
+            }
+        ],
+        "referrers": [
+            {
+                "host": "example.org",
+                "channel": "referral",
+                "count": 2
+            },
+            {
+                "host": "search.example",
+                "channel": "search",
+                "count": 1
+            }
+        ],
+        "outbound": [
+            {
+                "url": "https://elders.example/a",
+                "count": 1
+            }
+        ]
+    },
+    "trailing slash rows | /diensten": {
+        "recordedDays": 1,
+        "detailDays": 1,
+        "pageViews": 12,
+        "entrances": 4,
+        "exits": 2,
+        "sessions": 4,
+        "visitors": 6,
+        "engagedSessions": 4,
+        "previous": [],
+        "next": [],
+        "referrers": [
+            {
+                "host": "example.org",
+                "channel": "referral",
+                "count": 4
+            },
+            {
+                "host": "search.example",
+                "channel": "search",
+                "count": 2
+            }
+        ],
+        "outbound": [
+            {
+                "url": "https://elders.example/a",
+                "count": 2
+            }
+        ]
+    },
+    "trailing slash rows | /": {
+        "recordedDays": 1,
+        "detailDays": 1,
+        "pageViews": 0,
+        "entrances": 0,
+        "exits": 0,
+        "sessions": 0,
+        "visitors": 0,
+        "engagedSessions": 0,
+        "previous": [],
+        "next": [],
+        "referrers": [],
+        "outbound": []
+    },
+    "older day no detail | /diensten": {
+        "recordedDays": 1,
+        "detailDays": 0,
+        "pageViews": 3,
+        "entrances": 1,
+        "exits": 1,
+        "sessions": null,
+        "visitors": null,
+        "engagedSessions": null,
+        "previous": [],
+        "next": [],
+        "referrers": null,
+        "outbound": null
+    },
+    "older day no detail | /": {
+        "recordedDays": 1,
+        "detailDays": 0,
+        "pageViews": 0,
+        "entrances": 0,
+        "exits": 0,
+        "sessions": null,
+        "visitors": null,
+        "engagedSessions": null,
+        "previous": [],
+        "next": [],
+        "referrers": null,
+        "outbound": null
+    },
+    "not viewed that day | /diensten": {
+        "recordedDays": 3,
+        "detailDays": 3,
+        "pageViews": 0,
+        "entrances": 0,
+        "exits": 0,
+        "sessions": 0,
+        "visitors": 0,
+        "engagedSessions": 0,
+        "previous": [],
+        "next": [],
+        "referrers": [],
+        "outbound": []
+    },
+    "not viewed that day | /": {
+        "recordedDays": 3,
+        "detailDays": 3,
+        "pageViews": 0,
+        "entrances": 0,
+        "exits": 0,
+        "sessions": 0,
+        "visitors": 0,
+        "engagedSessions": 0,
+        "previous": [],
+        "next": [],
+        "referrers": [],
+        "outbound": []
+    },
+    "not viewed, old day | /diensten": {
+        "recordedDays": 1,
+        "detailDays": 0,
+        "pageViews": 0,
+        "entrances": 0,
+        "exits": 0,
+        "sessions": null,
+        "visitors": null,
+        "engagedSessions": null,
+        "previous": [],
+        "next": [],
+        "referrers": null,
+        "outbound": null
+    },
+    "not viewed, old day | /": {
+        "recordedDays": 1,
+        "detailDays": 0,
+        "pageViews": 0,
+        "entrances": 0,
+        "exits": 0,
+        "sessions": null,
+        "visitors": null,
+        "engagedSessions": null,
+        "previous": [],
+        "next": [],
+        "referrers": null,
+        "outbound": null
+    },
+    "mixed days | /diensten": {
+        "recordedDays": 3,
+        "detailDays": 2,
+        "pageViews": 12,
+        "entrances": 4,
+        "exits": 4,
+        "sessions": 8,
+        "visitors": 6,
+        "engagedSessions": 4,
+        "previous": [
+            {
+                "path": "/nieuws",
+                "count": 4
+            },
+            {
+                "path": "/",
+                "count": 3
+            }
+        ],
+        "next": [
+            {
+                "path": "/contact",
+                "count": 2
+            },
+            {
+                "path": "/",
+                "count": 0
+            }
+        ],
+        "referrers": [
+            {
+                "host": "example.org",
+                "channel": "referral",
+                "count": 2
+            },
+            {
+                "host": "search.example",
+                "channel": "search",
+                "count": 1
+            }
+        ],
+        "outbound": [
+            {
+                "url": "https://elders.example/a",
+                "count": 5
+            },
+            {
+                "url": "",
+                "count": 1
+            }
+        ]
+    },
+    "mixed days | /": {
+        "recordedDays": 3,
+        "detailDays": 2,
+        "pageViews": 5,
+        "entrances": 2,
+        "exits": 1,
+        "sessions": 4,
+        "visitors": 3,
+        "engagedSessions": 2,
+        "previous": [
+            {
+                "path": "/diensten",
+                "count": 0
+            }
+        ],
+        "next": [
+            {
+                "path": "/diensten",
+                "count": 3
+            }
+        ],
+        "referrers": [
+            {
+                "host": "example.org",
+                "channel": "referral",
+                "count": 2
+            },
+            {
+                "host": "search.example",
+                "channel": "search",
+                "count": 1
+            }
+        ],
+        "outbound": [
+            {
+                "url": "https://elders.example/a",
+                "count": 1
+            }
+        ]
+    },
+    "many referrers | /diensten": {
+        "recordedDays": 1,
+        "detailDays": 1,
+        "pageViews": 5,
+        "entrances": 2,
+        "exits": 1,
+        "sessions": 4,
+        "visitors": 3,
+        "engagedSessions": 2,
+        "previous": [],
+        "next": [],
+        "referrers": [
+            {
+                "host": "h12.example",
+                "channel": "referral",
+                "count": 12
+            },
+            {
+                "host": "h11.example",
+                "channel": "referral",
+                "count": 11
+            },
+            {
+                "host": "h10.example",
+                "channel": "referral",
+                "count": 10
+            },
+            {
+                "host": "h9.example",
+                "channel": "referral",
+                "count": 9
+            },
+            {
+                "host": "h8.example",
+                "channel": "referral",
+                "count": 8
+            },
+            {
+                "host": "h7.example",
+                "channel": "referral",
+                "count": 7
+            },
+            {
+                "host": "h6.example",
+                "channel": "referral",
+                "count": 6
+            },
+            {
+                "host": "h5.example",
+                "channel": "referral",
+                "count": 5
+            },
+            {
+                "host": "h4.example",
+                "channel": "referral",
+                "count": 4
+            },
+            {
+                "host": "h3.example",
+                "channel": "referral",
+                "count": 3
+            }
+        ],
+        "outbound": [
+            {
+                "url": "https://elders.example/a",
+                "count": 1
+            }
+        ]
+    },
+    "many referrers | /": {
+        "recordedDays": 1,
+        "detailDays": 1,
+        "pageViews": 0,
+        "entrances": 0,
+        "exits": 0,
+        "sessions": 0,
+        "visitors": 0,
+        "engagedSessions": 0,
+        "previous": [],
+        "next": [],
+        "referrers": [],
+        "outbound": []
+    },
+    "negative counts | /diensten": {
+        "recordedDays": 1,
+        "detailDays": 1,
+        "pageViews": 0,
+        "entrances": 0,
+        "exits": 1,
+        "sessions": 4,
+        "visitors": 3,
+        "engagedSessions": 2,
+        "previous": [],
+        "next": [],
+        "referrers": [
+            {
+                "host": "example.org",
+                "channel": "referral",
+                "count": 2
+            },
+            {
+                "host": "search.example",
+                "channel": "search",
+                "count": 1
+            }
+        ],
+        "outbound": [
+            {
+                "url": "https://elders.example/a",
+                "count": 1
+            }
+        ]
+    },
+    "negative counts | /": {
+        "recordedDays": 1,
+        "detailDays": 1,
+        "pageViews": 0,
+        "entrances": 0,
+        "exits": 0,
+        "sessions": 0,
+        "visitors": 0,
+        "engagedSessions": 0,
+        "previous": [],
+        "next": [],
+        "referrers": [],
+        "outbound": []
+    }
+}
