@@ -51,9 +51,9 @@ class TrafficPageReportFoldGoldenTest extends TestCase {
 		}
 
 		$expected = json_decode((string)file_get_contents(self::GOLDEN), true);
-		$this->assertSame(array_keys($expected), array_keys($actual));
+		$this->assertSame(expected: array_keys($expected), actual: array_keys($actual));
 		foreach ($expected as $name => $case) {
-			$this->assertSame($case, $actual[$name], $name);
+			$this->assertSame(expected: $case, actual: $actual[$name], message: $name);
 		}
 	}//end testEveryFoldMatchesTheGolden()
 
@@ -93,19 +93,19 @@ class TrafficPageReportFoldGoldenTest extends TestCase {
 
 		return [
 			'no records'          => [],
-			'one detailed day'    => [['pages' => [$this->row('/diensten'), $this->row('/')], 'transitions' => $transitions]],
-			'trailing slash rows' => [['pages' => [$this->row('/diensten/'), $this->row('diensten', ['views' => '7', 'sessions' => 'x'])]]],
+			'one detailed day'    => [['pages' => [$this->row(path: '/diensten'), $this->row(path: '/')], 'transitions' => $transitions]],
+			'trailing slash rows' => [['pages' => [$this->row(path: '/diensten/'), $this->row(path: 'diensten', extra: ['views' => '7', 'sessions' => 'x'])]]],
 			'older day no detail' => [['pages' => [['path' => '/diensten', 'views' => 3, 'entrances' => 1, 'exits' => 1]]]],
-			'not viewed that day' => [['pages' => [$this->row('/elders')]], ['pages' => []], ['transitions' => 'none']],
+			'not viewed that day' => [['pages' => [$this->row(path: '/elders')]], ['pages' => []], ['transitions' => 'none']],
 			'not viewed, old day' => [['pages' => [['path' => '/elders', 'views' => 1]]]],
 			'mixed days'          => [
-				['pages' => [$this->row('/diensten'), $this->row('/')], 'transitions' => $transitions],
+				['pages' => [$this->row(path: '/diensten'), $this->row(path: '/')], 'transitions' => $transitions],
 				['pages' => [['path' => '/diensten', 'views' => 2, 'entrances' => 0, 'exits' => 2], 'junk']],
-				['pages' => [$this->row('/diensten', ['referrers' => 'none', 'outbound' => [['url' => 'https://elders.example/a', 'count' => 4], 'junk', ['count' => 1]]])]],
+				['pages' => [$this->row(path: '/diensten', extra: ['referrers' => 'none', 'outbound' => [['url' => 'https://elders.example/a', 'count' => 4], 'junk', ['count' => 1]]])]],
 			],
-			'half detailed day'   => [['pages' => [$this->row('/diensten')]], ['pages' => [$this->row('/diensten'), ['path' => '/diensten/', 'views' => 1, 'entrances' => 1, 'exits' => 0]]]],
-			'many referrers'      => [['pages' => [$this->row('/diensten', ['referrers' => array_map(static fn (int $i): array => ['host' => 'h' . $i . '.example', 'channel' => 'referral', 'count' => $i], range(1, 12))])]]],
-			'negative counts'     => [['pages' => [$this->row('/diensten', ['views' => -4, 'entrances' => null, 'exits' => 1.9])]]],
+			'half detailed day'   => [['pages' => [$this->row(path: '/diensten')]], ['pages' => [$this->row(path: '/diensten'), ['path' => '/diensten/', 'views' => 1, 'entrances' => 1, 'exits' => 0]]]],
+			'many referrers'      => [['pages' => [$this->row(path: '/diensten', extra: ['referrers' => array_map(static fn (int $i): array => ['host' => 'h' . $i . '.example', 'channel' => 'referral', 'count' => $i], range(1, 12))])]]],
+			'negative counts'     => [['pages' => [$this->row(path: '/diensten', extra: ['views' => -4, 'entrances' => null, 'exits' => 1.9])]]],
 		];
 	}//end recordSets()
 }//end class

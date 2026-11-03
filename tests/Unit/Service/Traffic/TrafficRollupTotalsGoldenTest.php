@@ -28,6 +28,10 @@ use ReflectionMethod;
  * the last event.
  *
  * @covers \OCA\Portaliq\Service\Traffic\TrafficRollup
+ * @uses   \OCA\Portaliq\Service\Traffic\TrafficExperiments
+ * @uses   \OCA\Portaliq\Service\Traffic\TrafficFunnels
+ * @uses   \OCA\Portaliq\Service\Traffic\TrafficGoals
+ * @uses   \OCA\Portaliq\Service\Traffic\TrafficJourneyStats
  */
 class TrafficRollupTotalsGoldenTest extends TestCase {
 
@@ -51,9 +55,9 @@ class TrafficRollupTotalsGoldenTest extends TestCase {
 		}
 
 		$expected = json_decode((string)file_get_contents(self::GOLDEN), true);
-		$this->assertSame(array_keys($expected), array_keys($actual));
+		$this->assertSame(expected: array_keys($expected), actual: array_keys($actual));
 		foreach ($expected as $name => $case) {
-			$this->assertSame($case, $actual[$name], $name);
+			$this->assertSame(expected: $case, actual: $actual[$name], message: $name);
 		}
 	}//end testEveryTotalsMatchesTheGolden()
 
@@ -78,37 +82,37 @@ class TrafficRollupTotalsGoldenTest extends TestCase {
 	private function sessionSets(): array {
 		return [
 			'none'                 => [],
-			'one view'             => [['visitor' => 'h1', 'events' => [$this->event('page_view', 0)]]],
-			'two views engaged'    => [['visitor' => 'h1', 'events' => [$this->event('page_view', 0), $this->event('page_view', 3)]]],
-			'scroll engaged'       => [['visitor' => 'h1', 'events' => [$this->event('page_view', 0), $this->event('scroll', 2)]]],
-			'heat scroll only'     => [['visitor' => 'h1', 'events' => [$this->event('page_view', 0), $this->event('heat_scroll', 2)]]],
-			'long stay engaged'    => [['visitor' => 'h1', 'events' => [$this->event('page_view', 0), $this->event('click', 10)]]],
-			'just short'           => [['visitor' => 'h1', 'events' => [$this->event('page_view', 0), $this->event('click', 9.5)]]],
-			'backwards clock'      => [['visitor' => 'h1', 'events' => [$this->event('page_view', 20), $this->event('click', 5)]]],
+			'one view'             => [['visitor' => 'h1', 'events' => [$this->event(name: 'page_view', at: 0)]]],
+			'two views engaged'    => [['visitor' => 'h1', 'events' => [$this->event(name: 'page_view', at: 0), $this->event(name: 'page_view', at: 3)]]],
+			'scroll engaged'       => [['visitor' => 'h1', 'events' => [$this->event(name: 'page_view', at: 0), $this->event(name: 'scroll', at: 2)]]],
+			'heat scroll only'     => [['visitor' => 'h1', 'events' => [$this->event(name: 'page_view', at: 0), $this->event(name: 'heat_scroll', at: 2)]]],
+			'long stay engaged'    => [['visitor' => 'h1', 'events' => [$this->event(name: 'page_view', at: 0), $this->event(name: 'click', at: 10)]]],
+			'just short'           => [['visitor' => 'h1', 'events' => [$this->event(name: 'page_view', at: 0), $this->event(name: 'click', at: 9.5)]]],
+			'backwards clock'      => [['visitor' => 'h1', 'events' => [$this->event(name: 'page_view', at: 20), $this->event(name: 'click', at: 5)]]],
 			'accounts'             => [
-				['visitor' => 'h1', 'events' => [$this->event('page_view', 0, ['userRef' => ' u-1 ']), $this->event('click', 1, ['userRef' => 'u-1'])]],
-				['visitor' => 'h2', 'events' => [$this->event('page_view', 0, ['userRef' => '']), $this->event('click', 1, ['userRef' => 'u-2'])]],
+				['visitor' => 'h1', 'events' => [$this->event(name: 'page_view', at: 0, extra: ['userRef' => ' u-1 ']), $this->event(name: 'click', at: 1, extra: ['userRef' => 'u-1'])]],
+				['visitor' => 'h2', 'events' => [$this->event(name: 'page_view', at: 0, extra: ['userRef' => '']), $this->event(name: 'click', at: 1, extra: ['userRef' => 'u-2'])]],
 			],
 			'visitor types'        => [
-				'a' => ['visitor' => 'c:1', 'events' => [$this->event('session_start', 0, ['params' => ['visitorType' => 'returning']])]],
-				'b' => ['visitor' => 'c:1', 'events' => [$this->event('session_start', 30, ['params' => ['first' => true]])]],
-				'c' => ['visitor' => 'c:1', 'events' => [$this->event('session_start', 60, ['params' => ['visitorType' => 'returning']])]],
-				'd' => ['visitor' => 'c:2', 'events' => [$this->event('session_start', 0, ['params' => ['visitorType' => 'returning']])]],
-				'e' => ['visitor' => 'c:3', 'events' => [$this->event('page_view', 0)]],
-				'f' => ['visitor' => 'h4', 'events' => [$this->event('session_start', 0, ['params' => ['visitorType' => 'new']])]],
-				'g' => ['visitor' => 'c:5', 'events' => [$this->event('session_start', 0, ['params' => ['visitorType' => 'new']])]],
+				'a' => ['visitor' => 'c:1', 'events' => [$this->event(name: 'session_start', at: 0, extra: ['params' => ['visitorType' => 'returning']])]],
+				'b' => ['visitor' => 'c:1', 'events' => [$this->event(name: 'session_start', at: 30, extra: ['params' => ['first' => true]])]],
+				'c' => ['visitor' => 'c:1', 'events' => [$this->event(name: 'session_start', at: 60, extra: ['params' => ['visitorType' => 'returning']])]],
+				'd' => ['visitor' => 'c:2', 'events' => [$this->event(name: 'session_start', at: 0, extra: ['params' => ['visitorType' => 'returning']])]],
+				'e' => ['visitor' => 'c:3', 'events' => [$this->event(name: 'page_view', at: 0)]],
+				'f' => ['visitor' => 'h4', 'events' => [$this->event(name: 'session_start', at: 0, extra: ['params' => ['visitorType' => 'new']])]],
+				'g' => ['visitor' => 'c:5', 'events' => [$this->event(name: 'session_start', at: 0, extra: ['params' => ['visitorType' => 'new']])]],
 			],
 			'returning then new'   => [
-				['visitor' => 'c:9', 'events' => [$this->event('session_start', 0, ['params' => ['visitorType' => 'returning']])]],
-				['visitor' => 'c:9', 'events' => [$this->event('session_start', 9, ['params' => ['visitorType' => 'new']])]],
+				['visitor' => 'c:9', 'events' => [$this->event(name: 'session_start', at: 0, extra: ['params' => ['visitorType' => 'returning']])]],
+				['visitor' => 'c:9', 'events' => [$this->event(name: 'session_start', at: 9, extra: ['params' => ['visitorType' => 'new']])]],
 			],
 			'returning, unknown'   => [
-				['visitor' => 'c:7', 'events' => [$this->event('session_start', 0, ['params' => ['visitorType' => 'returning']])]],
-				['visitor' => 'c:7', 'events' => [$this->event('page_view', 9)]],
+				['visitor' => 'c:7', 'events' => [$this->event(name: 'session_start', at: 0, extra: ['params' => ['visitorType' => 'returning']])]],
+				['visitor' => 'c:7', 'events' => [$this->event(name: 'page_view', at: 9)]],
 			],
 			'many names, last'     => [
-				['visitor' => 'h1', 'events' => [$this->event('page_view', 0), $this->event('form_start', 4), $this->event('page_view', 70)]],
-				['visitor' => 'h2', 'events' => [$this->event('zeta', 0), $this->event('alpha', 1), $this->event('page_view', 2, ['occurredAt' => ''])]],
+				['visitor' => 'h1', 'events' => [$this->event(name: 'page_view', at: 0), $this->event(name: 'form_start', at: 4), $this->event(name: 'page_view', at: 70)]],
+				['visitor' => 'h2', 'events' => [$this->event(name: 'zeta', at: 0), $this->event(name: 'alpha', at: 1), $this->event(name: 'page_view', at: 2, extra: ['occurredAt' => ''])]],
 				['visitor' => 'h1', 'events' => [['name' => 'ping', '_at' => 0.0]]],
 			],
 		];

@@ -70,9 +70,9 @@ class ActionDraftAnswersGoldenTest extends TestCase {
 		}
 
 		$expected = json_decode((string)file_get_contents(self::GOLDEN), true);
-		$this->assertSame(array_keys($expected), array_keys($actual));
+		$this->assertSame(expected: array_keys($expected), actual: array_keys($actual));
 		foreach ($expected as $name => $case) {
-			$this->assertSame($case, $actual[$name], $name);
+			$this->assertSame(expected: $case, actual: $actual[$name], message: $name);
 		}
 	}//end testEveryAnswerSetMatchesTheGolden()
 
@@ -82,20 +82,20 @@ class ActionDraftAnswersGoldenTest extends TestCase {
 	 * @return ActionDraft
 	 */
 	private function drafts(): ActionDraft {
-		$reader = $this->createMock(PortalObjectReader::class);
+		$reader = $this->createMock(originalClassName: PortalObjectReader::class);
 		$reader->method('resolveScopeValue')->willReturnCallback(
 			static fn (string $scopeClaim, string $contributingApp, array $subject): ?string => (string)($subject['subjectRef'] ?? '')
 		);
-		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer = $this->createMock(originalClassName: PortalObjectWriter::class);
 		$writer->method('stamp')->willReturnCallback(
 			static fn (string $schema, string $scopeField, string $subjectRef, string $organisation, array $data): array => ['schema' => $schema, 'scopeField' => $scopeField, 'subjectRef' => $subjectRef, 'organisation' => $organisation, 'data' => $data]
 		);
 
 		return new ActionDraft(
-			registry: $this->createMock(PortalContributionRegistry::class),
+			registry: $this->createMock(originalClassName: PortalContributionRegistry::class),
 			reader: $reader,
 			writer: $writer,
-			drafts: $this->createMock(DestinationDraft::class)
+			drafts: $this->createMock(originalClassName: DestinationDraft::class)
 		);
 	}//end drafts()
 

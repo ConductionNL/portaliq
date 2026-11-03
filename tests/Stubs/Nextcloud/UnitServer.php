@@ -42,16 +42,31 @@ class UnitServer implements ContainerInterface {
 	public function get(string $id) {
 		return match ($id) {
 			IRequest::class => new class {
+				/**
+				 * The request id.
+				 *
+				 * @return string
+				 */
 				public function getId(): string {
 					return 'portaliq-unit-request';
 				}
 			},
 			ITimeFactory::class => new class {
+				/**
+				 * The current Unix time.
+				 *
+				 * @return int
+				 */
 				public function getTime(): int {
 					return time();
 				}
 			},
 			IUserSession::class => new class {
+				/**
+				 * No signed-in user.
+				 *
+				 * @return object|null
+				 */
 				public function getUser(): ?object {
 					return null;
 				}

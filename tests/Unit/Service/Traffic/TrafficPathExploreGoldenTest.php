@@ -41,6 +41,11 @@ use PHPUnit\Framework\TestCase;
  * @uses   \OCA\Portaliq\Service\Traffic\TrafficSegments
  * @uses   \OCA\Portaliq\Service\Traffic\TrafficSessioniser
  * @uses   \OCA\Portaliq\Service\TrafficConfigResolver
+ * @uses   \OCA\Portaliq\Service\Traffic\TrafficExperimentDefinitions
+ * @uses   \OCA\Portaliq\Service\Traffic\TrafficMatch
+ * @uses   \OCA\Portaliq\Service\Traffic\TrafficOutcomeDefinitions
+ * @uses   \OCA\Portaliq\Service\Traffic\TrafficPagePath
+ * @uses   \OCA\Portaliq\Service\Traffic\TrafficReportDefinitions
  */
 class TrafficPathExploreGoldenTest extends TestCase {
 
@@ -84,9 +89,9 @@ class TrafficPathExploreGoldenTest extends TestCase {
 		}
 
 		$expected = json_decode((string)file_get_contents(self::GOLDEN), true);
-		$this->assertSame(array_keys($expected), array_keys($actual));
+		$this->assertSame(expected: array_keys($expected), actual: array_keys($actual));
 		foreach ($expected as $name => $case) {
-			$this->assertSame($case, $actual[$name], $name);
+			$this->assertSame(expected: $case, actual: $actual[$name], message: $name);
 		}
 	}//end testEveryExploreMatchesTheGolden()
 
@@ -129,13 +134,13 @@ class TrafficPathExploreGoldenTest extends TestCase {
 	 * @return TrafficPathService
 	 */
 	private function service(array $traffic, int $maxEvents): TrafficPathService {
-		$portals = $this->createMock(PortalResolver::class);
+		$portals = $this->createMock(originalClassName: PortalResolver::class);
 		$portals->method('allPublishedPortals')->willReturn(
 			['not a portal', ['slug' => 'open-tilburg', 'traffic' => array_merge(['enabled' => true], $traffic)]]
 		);
 
 		$days  = $this->days();
-		$store = $this->createMock(TrafficEventStore::class);
+		$store = $this->createMock(originalClassName: TrafficEventStore::class);
 		$store->method('eventsForPaths')->willReturnCallback(
 			function (string $portal, string $from, string $to, int $limit) use ($days): array {
 				$day           = substr($from, 0, 10);
@@ -146,7 +151,7 @@ class TrafficPathExploreGoldenTest extends TestCase {
 			}
 		);
 
-		$cache = $this->createMock(ICache::class);
+		$cache = $this->createMock(originalClassName: ICache::class);
 		$cache->method('get')->willReturnCallback(fn (string $key): mixed => ($this->cached[$key] ?? null));
 		$cache->method('set')->willReturnCallback(
 			function (string $key, mixed $value): bool {
@@ -155,13 +160,23 @@ class TrafficPathExploreGoldenTest extends TestCase {
 				return true;
 			}
 		);
-		$factory = $this->createMock(ICacheFactory::class);
+		$factory = $this->createMock(originalClassName: ICacheFactory::class);
 		$factory->method('createDistributed')->willReturn($cache);
 
-		$time = $this->createMock(ITimeFactory::class);
+		$time = $this->createMock(originalClassName: ITimeFactory::class);
 		$time->method('getDateTime')->willReturn(new DateTime('2026-09-23 10:00:00', new DateTimeZone('UTC')));
 
-		return new TrafficPathService($portals, new TrafficConfigResolver(), $store, new TrafficSessioniser(), new TrafficSegments(), new TrafficPaths(), $factory, $time, $maxEvents);
+		return new TrafficPathService(
+			portals: $portals,
+			config: new TrafficConfigResolver(),
+			store: $store,
+			sessioniser: new TrafficSessioniser(),
+			segments: new TrafficSegments(),
+			paths: new TrafficPaths(),
+			cacheFactory: $factory,
+			time: $time,
+			maxEvents: $maxEvents
+		);
 	}//end service()
 
 	/**
@@ -171,10 +186,10 @@ class TrafficPathExploreGoldenTest extends TestCase {
 	 */
 	private function days(): array {
 		return [
-			'2026-09-23' => array_merge($this->visit('2026-09-23', 'a', ['/home', '/news', '/contact'], 'mobile'), $this->visit('2026-09-23', 'b', ['/about'], 'desktop')),
-			'2026-09-22' => array_merge($this->visit('2026-09-22', 'c', ['/news', '/home'], 'mobile'), $this->visit('2026-09-22', 'd', ['/home', '/news'], 'desktop')),
-			'2026-09-21' => $this->visit('2026-09-21', 'e', ['/home'], 'mobile'),
-			'2026-09-20' => $this->visit('2026-09-20', 'f', ['/x', '/y', '/z'], 'desktop'),
+			'2026-09-23' => array_merge($this->visit(day: '2026-09-23', id: 'a', paths: ['/home', '/news', '/contact'], device: 'mobile'), $this->visit(day: '2026-09-23', id: 'b', paths: ['/about'], device: 'desktop')),
+			'2026-09-22' => array_merge($this->visit(day: '2026-09-22', id: 'c', paths: ['/news', '/home'], device: 'mobile'), $this->visit(day: '2026-09-22', id: 'd', paths: ['/home', '/news'], device: 'desktop')),
+			'2026-09-21' => $this->visit(day: '2026-09-21', id: 'e', paths: ['/home'], device: 'mobile'),
+			'2026-09-20' => $this->visit(day: '2026-09-20', id: 'f', paths: ['/x', '/y', '/z'], device: 'desktop'),
 		];
 	}//end days()
 
