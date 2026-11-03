@@ -37,6 +37,7 @@ use PHPUnit\Framework\TestCase;
  * install record.
  *
  * @covers \OCA\Portaliq\Service\ExampleSite\ExampleSiteInstaller
+ * @uses   \OCA\Portaliq\Service\ExampleSite\ExampleSiteInstallRun
  */
 class ExampleSiteInstallerGoldenTest extends TestCase {
 
