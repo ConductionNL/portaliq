@@ -229,6 +229,36 @@ class DemoDataService {
 	 * @spec exclude Demo-data import; ADR-111 rule 1 has no per-app behavioural spec.
 	 */
 	public function install(): array {
+		$data = $this->descriptor();
+		$objects = $this->declaredObjects(data: $data);
+		$result = $this->configurationService()->importFromApp(
+			appId: self::CONFIG_APP_ID,
+			data: $data,
+			version: $this->appManager->getAppVersion(Application::APP_ID),
+			force: true
+		);
+		$imported = $this->outcome(objects: $objects, result: $result);
+
+		$this->logger->info(
+			'[DemoDataService] imported demo data: '
+			. $imported['objects'] . ' of ' . $imported['declared'] . ' object(s) landed ('
+			. $imported['skipped'] . ' skipped, ' . $imported['present'] . ' present in the demo schemas), '
+			. $imported['registers'] . ' register(s), '
+			. $imported['schemas'] . ' schema(s).',
+			['app' => Application::APP_ID]
+		);
+
+		return $imported;
+	}//end install()
+
+	/**
+	 * The shipped demo descriptor, decoded.
+	 *
+	 * @return array<string, mixed> The descriptor.
+	 *
+	 * @throws RuntimeException When the descriptor is missing, unreadable or not JSON.
+	 */
+	private function descriptor(): array {
 		$path = $this->descriptorPath();
 		if (is_file($path) === false) {
 			throw new RuntimeException('No demo dataset ships with this app (' . self::DESCRIPTOR . ' not found).');
@@ -244,23 +274,41 @@ class DemoDataService {
 			throw new RuntimeException('The demo dataset is not valid JSON: ' . $path);
 		}
 
+		return $data;
+	}//end descriptor()
+
+	/**
+	 * The objects the descriptor declares, or none.
+	 *
+	 * @param array<string, mixed> $data The descriptor.
+	 *
+	 * @return array<int|string, mixed> The declared objects.
+	 */
+	private function declaredObjects(array $data): array {
 		// The number ASKED FOR comes from the file; the number that LANDED comes
 		// from the importer. They differ whenever OpenRegister skips an object
 		// whose schema it cannot resolve, and that gap is exactly the condition
 		// an operator must be able to see.
-		$declared = 0;
 		$components = ($data['components'] ?? []);
 		if (is_array($components) === true && is_array(($components['objects'] ?? null)) === true) {
-			$declared = count($components['objects']);
+			return $components['objects'];
 		}
 
-		$result = $this->configurationService()->importFromApp(
-			appId: self::CONFIG_APP_ID,
-			data: $data,
-			version: $this->appManager->getAppVersion(Application::APP_ID),
-			force: true
-		);
+		return [];
+	}//end declaredObjects()
 
+	/**
+	 * What the import landed, skipped and left present, against what was declared.
+	 *
+	 * @param array<int|string, mixed> $objects The declared objects.
+	 * @param array<string, mixed>     $result  The importer's result.
+	 *
+	 * @return array{objects: int, declared: int, skipped: int, present: int, registers: int, schemas: int} The outcome.
+	 *
+	 * @throws RuntimeException When objects were declared, none landed and the demo schemas are empty.
+	 */
+	private function outcome(array $objects, array $result): array {
+		$declared = count($objects);
 		// `objects` lists what the importer wrote; newer OpenRegister versions
 		// also count what they deliberately left alone (`unchanged`, an object
 		// already present and identical), which is landed data too — a re-run
@@ -284,7 +332,7 @@ class DemoDataService {
 		// there"; empty → the import really did nothing and says so loudly.
 		$present = 0;
 		if ($declared > 0 && $landed === 0) {
-			$present = $this->presentObjects(objects: $components['objects']);
+			$present = $this->presentObjects(objects: $objects);
 			if ($present === 0) {
 				throw new RuntimeException(
 					'The demo dataset declares ' . $declared . ' object(s) but OpenRegister imported none of them'
@@ -294,7 +342,7 @@ class DemoDataService {
 			}
 		}
 
-		$imported = [
+		return [
 			'objects'   => $landed,
 			'declared'  => $declared,
 			'skipped'   => $skipped,
@@ -302,18 +350,7 @@ class DemoDataService {
 			'registers' => count((array)($result['registers'] ?? [])),
 			'schemas'   => count((array)($result['schemas'] ?? [])),
 		];
-
-		$this->logger->info(
-			'[DemoDataService] imported demo data: '
-			. $imported['objects'] . ' of ' . $imported['declared'] . ' object(s) landed ('
-			. $imported['skipped'] . ' skipped, ' . $imported['present'] . ' present in the demo schemas), '
-			. $imported['registers'] . ' register(s), '
-			. $imported['schemas'] . ' schema(s).',
-			['app' => Application::APP_ID]
-		);
-
-		return $imported;
-	}//end install()
+	}//end outcome()
 
 	/**
 	 * How many objects this app's register holds in the schemas the demo
