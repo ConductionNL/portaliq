@@ -21,7 +21,6 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Traffic;
 
 use OCA\Portaliq\Service\PublishedPortals;
-use OCA\Portaliq\Service\TrafficEventValidator;
 use OCA\Portaliq\Service\TrafficIngestService;
 
 /**
@@ -74,80 +73,59 @@ class TrafficLogImporter {
 	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
 	 */
 	public function import(string $slug, $stream, string $format, string $host): ?array {
-		$portal = null;
-		foreach ($this->portals->allPublishedPortals() as $candidate) {
-			if (($candidate['slug'] ?? null) === $slug) {
-				$portal = $candidate;
-				break;
-			}
-		}
-
+		$portal = $this->portalBySlug(slug: $slug);
 		if ($portal === null) {
 			return null;
 		}
 
-		$origin = rtrim($host, '/');
-		$outcome = ['lines' => 0, 'views' => 0, 'skipped' => 0, 'duplicates' => 0, 'accepted' => 0, 'refused' => []];
-		$seen = [];
-		$batches = [];
+		$run = new TrafficLogImportRun(portal: $portal, origin: rtrim($host, '/'));
 		while (($line = fgets($stream)) !== false) {
-			$outcome['lines']++;
-			$view = $this->parser->parse(line: $line, format: $format);
-			if ($view === null) {
-				$outcome['skipped']++;
-				continue;
-			}
-
-			$key = implode("\0", [$slug, substr($view['timestamp'], 0, 19), $view['path'], $view['ip'], $view['userAgent']]);
-			if (isset($seen[$key]) === true) {
-				$outcome['duplicates']++;
-				continue;
-			}
-
-			$seen[$key] = true;
-			$outcome['views']++;
-			$visitor = $view['ip'] . "\0" . $view['userAgent'];
-			$batches[$visitor][] = [
-				'name' => 'page_view',
-				'timestamp' => $view['timestamp'],
-				'sequence' => count($batches[$visitor] ?? []),
-				'pageLocation' => $origin . $view['path'],
-				'pageReferrer' => $view['referrer'],
-				'params' => ['import' => 'log'],
-			];
-			if (count($batches[$visitor]) >= TrafficEventValidator::MAX_BATCH) {
-				$this->flush(portal: $portal, visitor: $visitor, events: $batches[$visitor], outcome: $outcome);
-				unset($batches[$visitor]);
+			$full = $run->add(view: $this->parser->parse(line: $line, format: $format));
+			if ($full !== null) {
+				$this->flush(run: $run, visitor: $full);
 			}
 		}
 
-		foreach ($batches as $visitor => $events) {
-			$this->flush(portal: $portal, visitor: (string)$visitor, events: $events, outcome: $outcome);
+		foreach ($run->waiting() as $visitor) {
+			$this->flush(run: $run, visitor: $visitor);
 		}
 
-		return $outcome;
+		return $run->outcome;
 	}
 
 	/**
-	 * Hand one visitor's views to the ingest service.
+	 * The first published portal with this slug, or null.
 	 *
-	 * @param array<string, mixed>             $portal  The portal record.
-	 * @param string                           $visitor The address and agent, joined.
-	 * @param array<int, array<string, mixed>> $events  The views.
-	 * @param array<string, mixed>             $outcome The running outcome, updated in place.
+	 * @param string $slug The portal slug.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function portalBySlug(string $slug): ?array {
+		foreach ($this->portals->allPublishedPortals() as $candidate) {
+			if (($candidate['slug'] ?? null) === $slug) {
+				return $candidate;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Hand one visitor's queued views to the ingest service.
+	 *
+	 * @param TrafficLogImportRun $run     The import, whose outcome is updated.
+	 * @param string              $visitor The address and agent, joined.
 	 *
 	 * @return void
 	 */
-	private function flush(array $portal, string $visitor, array $events, array &$outcome): void {
+	private function flush(TrafficLogImportRun $run, string $visitor): void {
 		[$address, $agent] = explode("\0", $visitor, 2) + ['', ''];
-		$result = $this->ingest->ingestForPortal(
-			portal: $portal,
-			events: $events,
-			context: ['ip' => $address, 'userAgent' => $agent, 'consent' => false, 'serverSide' => false, 'allowOld' => true]
+		$run->count(
+			result: $this->ingest->ingestForPortal(
+				portal: $run->portal,
+				events: $run->take(visitor: $visitor),
+				context: ['ip' => $address, 'userAgent' => $agent, 'consent' => false, 'serverSide' => false, 'allowOld' => true]
+			)
 		);
-		$outcome['accepted'] += (int)$result['accepted'];
-		foreach ($result['refused'] as $reason => $count) {
-			$outcome['refused'][$reason] = ($outcome['refused'][$reason] ?? 0) + (int)$count;
-		}
 	}
 }
