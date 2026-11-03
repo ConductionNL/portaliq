@@ -29,6 +29,7 @@ use PHPUnit\Framework\TestCase;
  * @uses   \OCA\Portaliq\Service\Traffic\TrafficSegments
  * @uses   \OCA\Portaliq\Service\Traffic\TrafficReportDefinitions
  * @uses   \OCA\Portaliq\Service\Traffic\TrafficExperimentDefinitions
+ * @uses   \OCA\Portaliq\Service\Traffic\TrafficMatch
  */
 class TrafficConfigResolverGoldenTest extends TestCase {
 
