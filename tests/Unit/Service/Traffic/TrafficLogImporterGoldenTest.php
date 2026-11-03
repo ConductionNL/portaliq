@@ -90,7 +90,7 @@ class TrafficLogImporterGoldenTest extends TestCase {
 		fwrite($stream, implode('', $scenario['lines'] ?? []));
 		rewind($stream);
 
-		$outcome = (new TrafficLogImporter($portals, new TrafficLogParser(), $ingest))->import(
+		$outcome = (new TrafficLogImporter(portals: $portals, parser: new TrafficLogParser(), ingest: $ingest))->import(
 			slug: ($scenario['slug'] ?? 'zuid'),
 			stream: $stream,
 			format: ($scenario['format'] ?? 'combined'),
@@ -111,7 +111,9 @@ class TrafficLogImporterGoldenTest extends TestCase {
 	 * @return string
 	 */
 	private static function line(string $ip, string $path, int $second = 0, string $agent = self::CHROME): string {
-		return $ip . ' - - [04/Sep/2026:10:15:' . sprintf('%02d', $second) . ' +0000] "GET ' . $path . ' HTTP/1.1" 200 512 "https://www.google.com/" "' . $agent . '"' . "\n";
+		$time = '[04/Sep/2026:10:15:' . sprintf('%02d', $second) . ' +0000]';
+
+		return $ip . ' - - ' . $time . ' "GET ' . $path . ' HTTP/1.1" 200 512 "https://www.google.com/" "' . $agent . '"' . "\n";
 	}//end line()
 
 	/**
@@ -121,24 +123,33 @@ class TrafficLogImporterGoldenTest extends TestCase {
 	 */
 	private function scenarios(): array {
 		$mixed = [
-			self::line('203.0.113.9', '/'),
-			self::line('203.0.113.9', '/over-ons', 1),
-			self::line('203.0.113.9', '/'),
-			self::line('203.0.113.9', '/', 0, self::FIREFOX),
-			self::line('198.51.100.4', '/contact'),
-			self::line('198.51.100.4', '/js/site.js'),
+			self::line(ip: '203.0.113.9', path: '/'),
+			self::line(ip: '203.0.113.9', path: '/over-ons', second: 1),
+			self::line(ip: '203.0.113.9', path: '/'),
+			self::line(ip: '203.0.113.9', path: '/', second: 0, agent: self::FIREFOX),
+			self::line(ip: '198.51.100.4', path: '/contact'),
+			self::line(ip: '198.51.100.4', path: '/js/site.js'),
 			"garbage\n",
-			self::line('2001:db8::1', '/nieuws?x=1', 2),
+			self::line(ip: '2001:db8::1', path: '/nieuws?x=1', second: 2),
 		];
 		$many = [];
 		for ($i = 0; $i < 53; $i++) {
-			$many[] = self::line('203.0.113.7', '/p' . $i, ($i % 60));
+			$many[] = self::line(ip: '203.0.113.7', path: '/p' . $i, second: ($i % 60));
 		}
 
-		$many[] = self::line('198.51.100.4', '/after');
+		$many[] = self::line(ip: '198.51.100.4', path: '/after');
 		$exact = array_slice($many, 0, 50);
 		$json  = [
-			json_encode(['time' => '2026-09-04T10:15:36+00:00', 'remote_addr' => '203.0.113.9', 'request' => 'GET /a HTTP/1.1', 'status' => 200, 'http_user_agent' => self::CHROME, 'http_referer' => '-']) . "\n",
+			json_encode(
+				[
+					'time'            => '2026-09-04T10:15:36+00:00',
+					'remote_addr'     => '203.0.113.9',
+					'request'         => 'GET /a HTTP/1.1',
+					'status'          => 200,
+					'http_user_agent' => self::CHROME,
+					'http_referer'    => '-',
+				]
+			) . "\n",
 			"{not json\n",
 		];
 
@@ -149,15 +160,25 @@ class TrafficLogImporterGoldenTest extends TestCase {
 			'mixed log'                 => ['lines' => $mixed],
 			'refusals summed'           => ['lines' => $mixed, 'answer' => ['accepted' => '1', 'refused' => ['event-not-enabled' => '2', 'bot' => 1]]],
 			'host without slash'        => ['lines' => $mixed, 'host' => 'https://zuid.example'],
-			'host with slashes'         => ['lines' => [self::line('203.0.113.9', '/')], 'host' => 'https://zuid.example///'],
+			'host with slashes'         => ['lines' => [self::line(ip: '203.0.113.9', path: '/')], 'host' => 'https://zuid.example///'],
 			'batch overflows'           => ['lines' => $many],
 			'batch exactly full'        => ['lines' => $exact],
 			'json format'               => ['lines' => $json, 'format' => 'json'],
-			'combined line as json'     => ['lines' => [self::line('203.0.113.9', '/')], 'format' => 'json'],
-			'first matching portal'     => ['slug' => 'noord', 'lines' => [self::line('203.0.113.9', '/')]],
-			'same second other path'    => ['lines' => [self::line('203.0.113.9', '/a', 5), self::line('203.0.113.9', '/b', 5), self::line('203.0.113.9', '/a', 6), self::line('203.0.113.9', '/a', 5)]],
-			'odd refusal counts'        => ['lines' => [self::line('203.0.113.9', '/')], 'answer' => ['accepted' => 1, 'refused' => ['bot' => 'many', 'rate' => '3']]],
-			'no trailing newline'       => ['lines' => [rtrim(self::line('203.0.113.9', '/x'))]],
+			'combined line as json'     => ['lines' => [self::line(ip: '203.0.113.9', path: '/')], 'format' => 'json'],
+			'first matching portal'     => ['slug' => 'noord', 'lines' => [self::line(ip: '203.0.113.9', path: '/')]],
+			'same second other path'    => [
+				'lines' => [
+					self::line(ip: '203.0.113.9', path: '/a', second: 5),
+					self::line(ip: '203.0.113.9', path: '/b', second: 5),
+					self::line(ip: '203.0.113.9', path: '/a', second: 6),
+					self::line(ip: '203.0.113.9', path: '/a', second: 5),
+				],
+			],
+			'odd refusal counts'        => [
+				'lines'  => [self::line(ip: '203.0.113.9', path: '/')],
+				'answer' => ['accepted' => 1, 'refused' => ['bot' => 'many', 'rate' => '3']],
+			],
+			'no trailing newline'       => ['lines' => [rtrim(self::line(ip: '203.0.113.9', path: '/x'))]],
 		];
 	}//end scenarios()
 }//end class
