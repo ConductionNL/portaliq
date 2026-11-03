@@ -3324,7 +3324,22 @@
         "Read receipt": "Leesbevestiging",
         "Legal effect": "Rechtsgevolg",
         "Deadline": "Termijn",
-        "Read by {object.subjectRef}": "Gelezen door {object.subjectRef}"
+        "Read by {object.subjectRef}": "Gelezen door {object.subjectRef}",
+        "Announcement": "Mededeling",
+        "{level} · shows on {surfaces}": "{level} · toont op {surfaces}",
+        "Information": "Informatie",
+        "Warning": "Waarschuwing",
+        "website": "website",
+        "Signed-in portal": "Mijn omgeving",
+        "Visible now": "Nu zichtbaar",
+        "only published and within the period visible": "alleen gepubliceerd en binnen de periode zichtbaar",
+        "{domains.0.hostname} · theme {theme} · {count:pages} pages": "{domains.0.hostname} · thema {theme} · {count:pages} pagina's",
+        "View theme": "Thema bekijken",
+        "Last changed {date}": "Laatst gewijzigd {date}",
+        "_%n page waits to be published_::_%n pages wait to be published_": [
+            "%n pagina wacht op publicatie",
+            "%n pagina's wachten op publicatie"
+        ]
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"
