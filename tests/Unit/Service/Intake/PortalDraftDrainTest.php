@@ -24,6 +24,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Portaliq\Service\Intake\PortalDraftDrain
  * @uses \OCA\Portaliq\Service\Intake\ActionDraft
+ * @uses \OCA\Portaliq\Service\Intake\ActionAnswerFields
  * @uses \OCA\Portaliq\Service\Intake\DestinationDraft
  * @uses \OCA\Portaliq\Service\Intake\DestinationSubmit
  * @uses \OCA\Portaliq\Contribution\ActionScopeResolver
