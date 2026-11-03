@@ -25,7 +25,7 @@ const DETAIL = MANIFEST.pages.find((page) => page.id === 'PageDetail')
 
 test('the page carries an Indeling tab holding the embedded editor, in the address', () => {
 	const tabs = DETAIL.config.widgets.find((widget) => widget.id === 'page-tabs').content.tabs
-	assert.deepEqual(tabs[1], { id: 'layout', widgetId: 'page-layout', label: 'Indeling' })
+	assert.deepEqual(tabs[1], { id: 'layout', widgetId: 'page-layout', label: 'Layout' })
 	assert.equal(DETAIL.config.widgets.find((widget) => widget.id === 'page-layout').type, 'PageLayoutEditor')
 	assert.equal(DETAIL.tabInAddress, true)
 	assert.match(REGISTRY, /PageLayoutEditor: \{\n\t\tkind: 'widget',\n\t\tcomponent: PageLayoutEditor,/)

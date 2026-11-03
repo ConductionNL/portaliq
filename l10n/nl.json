@@ -3324,7 +3324,8 @@
         "Read receipt": "Leesbevestiging",
         "Legal effect": "Rechtsgevolg",
         "Deadline": "Termijn",
-        "Read by {object.subjectRef}": "Gelezen door {object.subjectRef}"
+        "Read by {object.subjectRef}": "Gelezen door {object.subjectRef}",
+        "Upload": "Uploaden"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

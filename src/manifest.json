@@ -4564,7 +4564,7 @@
                 {
                   "id": "layout",
                   "widgetId": "page-layout",
-                  "label": "Indeling"
+                  "label": "Layout"
                 },
                 {
                   "widgetId": "page-search",
