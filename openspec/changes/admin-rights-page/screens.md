@@ -1,3 +1,3 @@
 # Screens
 
-- PtBeheerdersrechten https://identity.conduction.nl/screens/board?id=portaliq/PtBeheerdersrechten
+- portaliq/PtBeheerdersrechten beheerdersrechten en auditlog https://identity.conduction.nl/screens/board?id=portaliq/PtBeheerdersrechten
