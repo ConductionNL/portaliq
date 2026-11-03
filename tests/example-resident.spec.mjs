@@ -86,7 +86,19 @@ const FORMS = [
 	/^object:[a-z0-9-]+\.[A-Za-z]+$/,
 	/^date:[+-]?\d{1,4}$/,
 	/^datetime:[+-]?\d{1,4} ([01]\d|2[0-3]):[0-5]\d$/,
+	/^instance:baseUrl$/,
 ]
+
+/**
+ * The identity a one-click resident's account carries: a DigiD account names
+ * the resident's BSN, any other the shared example-resident marker. The demo
+ * sign-in finds the resident by the account id either way.
+ *
+ * @param {object} data The portal account's data.
+ * @param {string} cast The resident's cast key.
+ * @return {string} The expected identityRef.
+ */
+const oneClickRef = (data, cast) => (data.identityType === 'digid' ? `{{cast:${cast}.bsn}}` : 'example-resident')
 
 /**
  * Every string in a value, with its path.
@@ -168,7 +180,7 @@ for (const { file, fragment } of fragments) {
 				}
 			}
 			assert.equal(account.data.subjectRef, `{{cast:${resident.cast}.uid}}`)
-			assert.equal(account.data.identityRef, 'example-resident')
+			assert.equal(account.data.identityRef, oneClickRef(account.data, resident.cast))
 			assert.ok(!('email' in account.data), 'no e-mail address, so the resident meets the prompt for one')
 		}
 	})
@@ -267,7 +279,10 @@ test('zuiddrecht.json: every portal account and mandate fits its schema, and the
 		assert.match(mandate.data.onBehalfOf, /^((subject|kvk):\{\{cast:[a-z]+\.(uid|kvk)\}\}|kvk:\d{8})$/, `${mandate.key} names a typed party`)
 	}
 	assert.deepEqual(
-		accounts.filter((object) => object.data.identityRef === 'example-resident').map((object) => object.key),
+		accounts.filter((object) => {
+			const cast = object.data.subjectRef.match(/^\{\{cast:([a-z]+)\.uid\}\}$/)?.[1]
+			return cast !== undefined && object.data.identityRef === oneClickRef(object.data, cast)
+		}).map((object) => object.key),
 		zuiddrecht.exampleResident.map((resident) => resident.account),
 		'exactly the residents are one click away',
 	)
@@ -363,15 +378,21 @@ test('zuiddrecht.json puts the business contacts in the business group the porta
 	assert.equal(registration.businessAudience.type, 'string', 'the schema declares the business audience')
 })
 
-test('zuiddrecht.json keeps the six cases of the Woo journey and the resident boards', () => {
+test('zuiddrecht.json keeps the six cases of the Woo journey, the Lindelaan case\'s related cases and the resident boards', () => {
 	const zuiddrecht = fragments.find(({ file }) => file === 'zuiddrecht.json').fragment
 	const cases = zuiddrecht.objects.filter((object) => object.schema === 'case').map((object) => object.data.title)
+	// The Lindelaan Woo case names a subject case and two sub-cases (DqZaakGerelateerd).
 	assert.deepEqual(cases, [
+		'Aanleg fietspad Lindelaan',
+		'Advies verlichting fietspad',
 		'Verlichting fietspad Lindelaan',
 		'Dakkapel Lindelaan 14',
 		'Losse stoeptegel bij de bushalte Lindelaan',
 		'Kapotte lantaarnpaal Kerkplein',
+		'Kapotte lantaarnpaal Lindelaan',
 		'Subsidie buurtfeest Lindelaan',
+		'Zienswijze Aannemersbedrijf Van Wijk',
+		'Lakken offerte lantaarnpalen',
 		'Parkeervergunning Lindelaan',
 	])
 	assert.deepEqual(zuiddrecht.after, ['dossiq'])
