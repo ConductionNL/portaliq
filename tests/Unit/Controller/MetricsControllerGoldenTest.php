@@ -114,13 +114,13 @@ class MetricsControllerGoldenTest extends TestCase {
 		}
 
 		$controller = new MetricsController(
-			$this->createMock(originalClassName: IRequest::class),
-			$settings,
-			$container,
-			$logger,
-			$auditor,
-			$traffic,
-			$cms
+			request: $this->createMock(originalClassName: IRequest::class),
+			settingsService: $settings,
+			container: $container,
+			logger: $logger,
+			auditor: $auditor,
+			traffic: $traffic,
+			cms: $cms
 		);
 		$response   = $controller->index();
 

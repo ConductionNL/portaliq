@@ -69,7 +69,23 @@ class LandingPageProvisioningGoldenTest extends TestCase {
 
 		$reader = $this->createMock(originalClassName: ScopedCollectionReaderInterface::class);
 		$reader->method('readCollection')->willReturnCallback(
-			static function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation = '', int $limit = 200, string $scopeClaim = '', string $contributingApp = '', mixed $via = null, string $audience = '', mixed $fields = null, array $filter = []) use (&$log, $scenario): array {
+			static function (
+				string $register,
+				string $schema,
+				string $scopeField,
+				string $subjectRef,
+				string $organisation = '',
+				int $limit = 200,
+				string $scopeClaim = '',
+				string $contributingApp = '',
+				mixed $via = null,
+				string $audience = '',
+				mixed $fields = null,
+				array $filter = []
+			) use (
+				&$log,
+				$scenario
+			): array {
 				$log[] = ['read', $register, $schema, $scopeField, $subjectRef, $limit, $filter];
 				return ($scenario['rows'][$schema] ?? []);
 			}
@@ -79,7 +95,11 @@ class LandingPageProvisioningGoldenTest extends TestCase {
 		$writer->method('createAnonymousObject')->willReturnCallback(
 			static function (string $register, string $schema, array $data) use (&$log, $scenario): ?array {
 				$log[] = ['write', $register, $schema, $data];
-				return (array_key_exists($schema, $scenario['written'] ?? []) === true ? $scenario['written'][$schema] : ['@self' => ['id' => $schema . '-1']]);
+				if (array_key_exists($schema, ($scenario['written'] ?? [])) === true) {
+					return $scenario['written'][$schema];
+				}
+
+				return ['@self' => ['id' => $schema . '-1']];
 			}
 		);
 
@@ -115,7 +135,11 @@ class LandingPageProvisioningGoldenTest extends TestCase {
 			'title'             => 'Actie',
 			'locale'            => 'nl',
 			'article'           => ['summary' => 'Kort', 'body' => 'Lang verhaal', 'heroImageRef' => 'img-1', 'links' => [['href' => '/a']]],
-			'form'              => ['fields' => [['id' => 'naam', 'label' => 'Naam', 'type' => 'text']], 'submitLabel' => 'Verstuur', 'consentText' => 'Akkoord'],
+			'form'              => [
+				'fields'      => [['id' => 'naam', 'label' => 'Naam', 'type' => 'text']],
+				'submitLabel' => 'Verstuur',
+				'consentText' => 'Akkoord',
+			],
 			'utm'               => ['source' => 'mail'],
 			'externalReference' => 'ext-1',
 			'correlationId'     => 'c-1',
@@ -137,12 +161,16 @@ class LandingPageProvisioningGoldenTest extends TestCase {
 			'empty portal'               => ['request' => ['portal' => '']] + $known,
 			'unknown portal'             => [],
 			'route taken any case'       => ['rows' => ['portal' => [$portal], 'page' => [['portal' => 'zuid', 'route' => '/actie']]]],
-			'route taken in other portal' => ['rows' => ['portal' => [$portal], 'page' => [['portal' => 'noord', 'route' => '/Actie'], ['route' => '/Actie']]]],
+			'route taken in other portal' => [
+				'rows' => ['portal' => [$portal], 'page' => [['portal' => 'noord', 'route' => '/Actie'], ['route' => '/Actie']]],
+			],
 			'article without summary'    => ['request' => ['article' => ['summary' => '  ', 'body' => 'x']]] + $known,
 			'article without body'       => ['request' => ['article' => ['summary' => 'x']]] + $known,
 			'form without fields'        => ['request' => ['form' => ['submitLabel' => 'Go']]] + $known,
 			'form field not an array'    => ['request' => ['form' => ['fields' => ['naam'], 'submitLabel' => 'Go']]] + $known,
-			'form field without type'    => ['request' => ['form' => ['fields' => [['id' => 'a', 'label' => 'A', 'type' => ' ']], 'submitLabel' => 'Go']]] + $known,
+			'form field without type'    => [
+				'request' => ['form' => ['fields' => [['id' => 'a', 'label' => 'A', 'type' => ' ']], 'submitLabel' => 'Go']],
+			] + $known,
 			'form without submit label'  => ['request' => ['form' => ['fields' => [$field], 'submitLabel' => ' ']]] + $known,
 			'form write fails'           => ['written' => ['form' => null]] + $known,
 			'form write without id'      => ['written' => ['form' => ['@self' => ['id' => '']]]] + $known,
@@ -151,13 +179,28 @@ class LandingPageProvisioningGoldenTest extends TestCase {
 			'page write fails'           => ['written' => ['page' => null]] + $known,
 			'page uuid in self'          => ['written' => ['page' => ['@self' => ['uuid' => 'pu-1']]]] + $known,
 			'everything lands'           => $known,
-			'destination carried'        => ['request' => ['form' => $base['form'] + ['destination' => ['register' => ' dossiq ', 'schema' => 'lead', 'fields' => ['naam', 3, 'mail'], 'fixed' => ['bron' => 'web']]]]] + $known,
+			'destination carried'        => [
+				'request' => [
+					'form' => $base['form'] + [
+						'destination' => ['register' => ' dossiq ', 'schema' => 'lead', 'fields' => ['naam', 3, 'mail'], 'fixed' => ['bron' => 'web']],
+					],
+				],
+			] + $known,
 			'destination without schema' => ['request' => ['form' => $base['form'] + ['destination' => ['register' => 'dossiq']]]] + $known,
 			'first domain unverified'    => ['rows' => ['portal' => [['slug' => 'zuid', 'domains' => [['hostname' => 'a.example'], 'odd']]]]],
 			'first domain not an array'  => ['rows' => ['portal' => [['slug' => 'zuid', 'domains' => ['odd', ['hostname' => 'a.example']]]]]],
 			'no domains'                 => ['rows' => ['portal' => [['slug' => 'zuid']]]],
-			'verified without hostname'  => ['rows' => ['portal' => [['slug' => 'zuid', 'domains' => [['verified' => true], ['hostname' => 'b.example', 'verified' => true]]]]]],
-			'minimal article and form'   => ['request' => ['article' => ['summary' => 's', 'body' => 'b'], 'form' => ['fields' => [$field], 'submitLabel' => 'Go'], 'utm' => [], 'externalReference' => '']] + $known,
+			'verified without hostname'  => [
+				'rows' => ['portal' => [['slug' => 'zuid', 'domains' => [['verified' => true], ['hostname' => 'b.example', 'verified' => true]]]]],
+			],
+			'minimal article and form'   => [
+				'request' => [
+					'article'           => ['summary' => 's', 'body' => 'b'],
+					'form'              => ['fields' => [$field], 'submitLabel' => 'Go'],
+					'utm'               => [],
+					'externalReference' => '',
+				],
+			] + $known,
 		];
 	}//end scenarios()
 }//end class

@@ -114,8 +114,16 @@ class AvailabilityReportGoldenTest extends TestCase {
 			'thirteen months clamps'       => ['months' => 13, 'daily' => $days, 'outages' => $outages],
 			'twelve months'                => ['months' => 12, 'daily' => $days, 'outages' => $outages],
 			'zone shifts the month'        => ['now' => '2026-11-01T00:30:00+02:00', 'months' => 2, 'daily' => $days],
-			'end of march'                 => ['now' => '2026-03-31T23:59:59+00:00', 'months' => 2, 'daily' => ['2026-02-28' => ['intervals' => 3, 'available' => 1]]],
-			'leap year february'           => ['now' => '2024-03-15T12:00:00Z', 'months' => 1, 'daily' => ['2024-02-29' => ['intervals' => 7, 'available' => 7]]],
+			'end of march'                 => [
+				'now'    => '2026-03-31T23:59:59+00:00',
+				'months' => 2,
+				'daily'  => ['2026-02-28' => ['intervals' => 3, 'available' => 1]],
+			],
+			'leap year february'           => [
+				'now'    => '2024-03-15T12:00:00Z',
+				'months' => 1,
+				'daily'  => ['2024-02-29' => ['intervals' => 7, 'available' => 7]],
+			],
 			'single interval'              => ['months' => 1, 'daily' => ['2026-10-05' => ['intervals' => 1, 'available' => 1]]],
 			'only outages'                 => ['months' => 2, 'outages' => [['durationMinutes' => 0], ['durationMinutes' => 5, 'startedAt' => 'x']]],
 		];

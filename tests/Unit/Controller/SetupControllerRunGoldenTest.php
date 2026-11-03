@@ -69,7 +69,13 @@ class SetupControllerRunGoldenTest extends TestCase {
 
 		$request = $this->createMock(originalClassName: IRequest::class);
 		$request->method('getParam')->willReturnCallback(
-			static fn (string $key, mixed $default = null): mixed => ($key === 'dataset' ? ($scenario['posted'] ?? null) : $default)
+			static function (string $key, mixed $default = null) use ($scenario): mixed {
+				if ($key === 'dataset') {
+					return ($scenario['posted'] ?? null);
+				}
+
+				return $default;
+			}
 		);
 
 		$config = $this->createMock(originalClassName: IAppConfig::class);
@@ -99,7 +105,8 @@ class SetupControllerRunGoldenTest extends TestCase {
 			return ($scenario['import'] ?? ['objects' => 4]);
 		});
 
-		$response = (new SetupController($request, $config, $logger, $demo))->runAction(actionId: (string)$scenario['action']);
+		$controller = new SetupController(request: $request, appConfig: $config, logger: $logger, demoDataService: $demo);
+		$response   = $controller->runAction(actionId: (string)$scenario['action']);
 
 		return ['status' => $response->getStatus(), 'data' => $response->getData(), 'log' => $log];
 	}//end trace()
