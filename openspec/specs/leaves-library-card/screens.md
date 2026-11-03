@@ -1,3 +1,3 @@
 # Screens
 
-- PtGedeeldeBibliotheek https://identity.conduction.nl/screens/board?id=portaliq/PtGedeeldeBibliotheek
+- portaliq/PtGedeeldeBibliotheek gedeelde bibliotheek https://identity.conduction.nl/screens/board?id=portaliq/PtGedeeldeBibliotheek

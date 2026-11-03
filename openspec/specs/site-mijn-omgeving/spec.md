@@ -86,14 +86,15 @@ The resident menu MUST render each page's declared `icon` before its label, deco
 - WHEN they open `/mijn`
 - THEN the page shows the greeting and an empty state that says there is nothing to do
 
-### Requirement: The resident MUST see and switch for whom they act (REQ-SMO-008)
+### Requirement: The resident MUST see and choose for whom they act (REQ-SMO-008)
 
-While a resident acts for someone else, every signed-in page MUST show a bar that names that party and offers a link back to acting for themselves. A page with `records` MUST show a switcher over the collection's rows as a radio group, with initials, a title and a subtitle. The chosen row MUST be part of the route. Switching MUST move focus to the page heading.
+A resident who holds a mandate MUST choose on "Mijn zaken" whose cases they see, through the selector "Zaken van" that board `portaliq/MijnZaken` draws. Its options MUST be "Iedereen voor wie ik werk", the resident themselves ("Mijzelf" with their name) and each party they act for, named by its label. Choosing a party MUST show only that party's cases. The selector MUST sit above the link "Toegang tot zaken regelen". A page with `records` MUST show a switcher over the collection's rows as a radio group, with initials, a title and a subtitle. The chosen row MUST be part of the route. Switching MUST move focus to the page heading.
 
-#### Scenario: Linda acts for her father, `DossiqPhone.dc.html`
-- GIVEN Linda Bakker holds an active mandate for H. Bakker and has chosen it
-- WHEN any signed-in page renders
-- THEN a bar reads "U regelt nu zaken voor uw vader, H. Bakker" with "Wissel naar uzelf"
+#### Scenario: Linda chooses her father's cases, `portaliq/MijnZaken`
+- GIVEN Linda Bakker holds an active mandate for H. Bakker
+- WHEN she opens "Mijn zaken"
+- THEN the selector "Zaken van" offers "Iedereen voor wie ik werk", "Mijzelf, Linda Bakker" and "H. Bakker"
+- AND choosing "H. Bakker" shows only his cases
 
 #### Scenario: A guardian switches child, `Main.dc.html`
 - GIVEN the guardian overview declares `records: parentChildren` and the guardian has Vera and Sami

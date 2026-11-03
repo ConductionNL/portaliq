@@ -1,14 +1,14 @@
 # Screens
 
-- AccountAanmaken https://identity.conduction.nl/screens/board?id=portaliq/AccountAanmaken
-- Inloggen https://identity.conduction.nl/screens/board?id=portaliq/Inloggen
-- MijnAccountZonderDigid https://identity.conduction.nl/screens/board?id=portaliq/MijnAccountZonderDigid
-- MijnZaken https://identity.conduction.nl/screens/board?id=portaliq/MijnZaken
-- NcLogin https://identity.conduction.nl/screens/board?id=werkplek/NcLogin
-- PtAccount https://identity.conduction.nl/screens/board?id=portaliq/PtAccount
-- PtAccountUitgeven https://identity.conduction.nl/screens/board?id=portaliq/PtAccountUitgeven
-- PtAccounts https://identity.conduction.nl/screens/board?id=portaliq/PtAccounts
-- PtPortalInstellingen https://identity.conduction.nl/screens/board?id=portaliq/PtPortalInstellingen
-- PtUitnodigen https://identity.conduction.nl/screens/board?id=portaliq/PtUitnodigen
-- PtUitnodigingen https://identity.conduction.nl/screens/board?id=portaliq/PtUitnodigingen
-- ZaakVolgen https://identity.conduction.nl/screens/board?id=portaliq/ZaakVolgen
+- portaliq/AccountAanmaken account aanmaken https://identity.conduction.nl/screens/board?id=portaliq/AccountAanmaken
+- portaliq/Inloggen inloggen https://identity.conduction.nl/screens/board?id=portaliq/Inloggen
+- portaliq/MijnAccountZonderDigid account zonder DigiD https://identity.conduction.nl/screens/board?id=portaliq/MijnAccountZonderDigid
+- portaliq/MijnZaken mijn zaken https://identity.conduction.nl/screens/board?id=portaliq/MijnZaken
+- werkplek/NcLogin Nextcloud: inloggen https://identity.conduction.nl/screens/board?id=werkplek/NcLogin
+- portaliq/PtAccount account https://identity.conduction.nl/screens/board?id=portaliq/PtAccount
+- portaliq/PtAccountUitgeven een account uitgeven https://identity.conduction.nl/screens/board?id=portaliq/PtAccountUitgeven
+- portaliq/PtAccounts accounts https://identity.conduction.nl/screens/board?id=portaliq/PtAccounts
+- portaliq/PtPortalInstellingen portal, instellingen https://identity.conduction.nl/screens/board?id=portaliq/PtPortalInstellingen
+- portaliq/PtUitnodigen iemand uitnodigen https://identity.conduction.nl/screens/board?id=portaliq/PtUitnodigen
+- portaliq/PtUitnodigingen uitnodigingen https://identity.conduction.nl/screens/board?id=portaliq/PtUitnodigingen
+- portaliq/ZaakVolgen een zaak volgen https://identity.conduction.nl/screens/board?id=portaliq/ZaakVolgen

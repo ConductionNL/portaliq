@@ -112,6 +112,191 @@ class InitializeDemoPortal implements IRepairStep {
 	private const SLUG = 'demo';
 
 	/**
+	 * The seeded portal object.
+	 */
+	private const PORTAL = [
+		'title' => 'Open Catalogi',
+		'tagline' => 'Zoek in publicaties uit alle aangesloten catalogi',
+		'slug' => self::SLUG,
+		'status' => 'published',
+		'theme' => self::THEME,
+		// NO DOMAINS, AND THE PORTAL THEREFORE DOES NOT SERVE YET.
+		//
+		// PortalResolver has exactly two modes — explicit slug, or a
+		// VERIFIED hostname — and deliberately no fallback, because a
+		// "default portal" is how a multi-tenant host serves one
+		// tenant's content under another tenant's domain. So this
+		// portal answers only once an operator binds a hostname to it.
+		//
+		// Seeding a verified domain here would be this install hook
+		// asserting control of a hostname on the operator's behalf,
+		// which is precisely what the `verified` flag exists to stop.
+		// A demo rig binds `localhost` itself, as a deployment
+		// decision on a throwaway box; an app-store install must not
+		// make that decision for somebody's server.
+		//
+		// Until then the portal is reachable by slug, at
+		// /site?portal=demo.
+		'domains' => [],
+		'locales' => ['nl'],
+		// PUBLIC ONLY. Declaring a sign-in mode here would render a
+		// login button with no identity provider behind it — an inert
+		// control is a support ticket from every visitor who presses
+		// it.
+		'authentication' => ['modes' => ['public']],
+	];
+
+	/**
+	 * The landing page: a hero band and a section, as on the reference.
+	 */
+	private const HOME_PAGE = [
+		'title' => 'Home',
+		'route' => '/',
+		'status' => 'published',
+		'locale' => 'nl',
+		'summary' => 'Één plek voor alle publicaties.',
+		'portal' => self::SLUG,
+		'body' => [
+			'type' => 'grid',
+			'widgets' => [
+				[
+					'id' => 'demo-hero',
+					'widgetKey' => 'hero',
+					'gridX' => 0,
+					'gridY' => 0,
+					'gridWidth' => 12,
+					'gridHeight' => 4,
+					'props' => [
+						'title' => 'Waar bent u naar op zoek?',
+						'search' => true,
+						'submitLabel' => 'Zoeken',
+						'placeholder' => 'Zoek op naam of trefwoord',
+					],
+				],
+				[
+					'id' => 'demo-home-intro',
+					'widgetKey' => 'markdown',
+					'gridX' => 0,
+					'gridY' => 4,
+					'gridWidth' => 12,
+					'gridHeight' => 4,
+					'props' => [
+						'markdown' => "## Onderwerpen\n\n"
+							. 'Bekijk het overzicht van onderwerpen die relevant zijn voor '
+							. 'gemeenten en leveranciers binnen het domein van gemeentelijke ICT.',
+					],
+				],
+			],
+		],
+	];
+
+	/**
+	 * The single detail page every `/publicatie/<id>` route resolves to.
+	 */
+	private const DETAIL_PAGE = [
+		'title' => 'Publicatie',
+		'route' => '/publicatie',
+		'status' => 'published',
+		'locale' => 'nl',
+		'summary' => 'Details van één publicatie.',
+		'portal' => self::SLUG,
+		'body' => [
+			'type' => 'grid',
+			'widgets' => [
+				[
+					'id' => 'demo-publication-detail',
+					'widgetKey' => 'publicationDetail',
+					'gridX' => 0,
+					'gridY' => 0,
+					'gridWidth' => 12,
+					'gridHeight' => 8,
+					// The subject id is supplied by the host from the
+					// route and is deliberately NOT settable here — a
+					// placement that pinned it would make every
+					// publication URL render the same publication.
+					'props' => [
+						'endpoint' => '/index.php/apps/opencatalogi/api/federation/publications',
+					],
+				],
+			],
+		],
+	];
+
+	/**
+	 * The legal strip at position 2 (0 header, 1 footer column, 2+ strip).
+	 */
+	private const LEGAL_MENU = [
+		'title' => 'Sub footer menu 1',
+		'position' => 2,
+		'portal' => self::SLUG,
+		'items' => [
+			['name' => 'Cookies', 'link' => '/cookies'],
+			['name' => 'Privacy', 'link' => '/privacy'],
+			['name' => 'Disclaimer', 'link' => '/disclaimer'],
+		],
+	];
+
+	/**
+	 * The search page at `/zoeken`.
+	 */
+	private const SEARCH_PAGE = [
+		'title' => 'Zoeken',
+		'route' => '/zoeken',
+		'status' => 'published',
+		'locale' => 'nl',
+		'summary' => 'Doorzoek publicaties uit alle aangesloten catalogi.',
+		// THE SLUG, NOT THE ID — see self::SLUG. CmsReader filters
+		// content by slug, so the id here silently yields no pages.
+		'portal' => self::SLUG,
+		'body' => [
+			'type' => 'grid',
+			'widgets' => [
+				[
+					'id' => 'demo-federated-search',
+					'widgetKey' => 'federatedSearch',
+					'gridX' => 0,
+					'gridY' => 0,
+					'gridWidth' => 12,
+					'gridHeight' => 8,
+					// No `endpoint` prop: the block's default is
+					// relative, so it finds OpenCatalogi on whichever
+					// instance serves the portal. Writing an absolute
+					// URL here would bake this machine's hostname into
+					// seeded content and break the moment the instance
+					// is reached by any other name.
+					//
+					// No `title` either — the page is already called
+					// "Zoeken" and the renderer prints that above the
+					// block. Passing one here rendered two headings
+					// saying the same thing.
+					//
+					// `props` MUST BE A NON-EMPTY OBJECT. Both of the
+					// obvious ways to say "no props" are rejected by
+					// the schema, with two different messages:
+					//
+					//   []   → "expects object but got empty ({}) ...
+					//           set this to null to clear the field"
+					//   null → "should be type 'object' but is 'null'"
+					//
+					// The first message recommends exactly what the
+					// second refuses. Either way the whole page write
+					// fails, so the portal provisions and its only page
+					// does not — a portal that renders its own chrome
+					// around a 404.
+					//
+					// So it carries a real prop instead of an empty
+					// one. A placeholder that names something actually
+					// in the seeded corpus is more use to a first-time
+					// visitor than the generic "Zoekterm" default.
+					'props' => [
+						'placeholder' => 'Bijvoorbeeld: subsidies',
+					],
+				],
+			],
+		],
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param PortalObjectWriter $writer Writes portal and page objects.
@@ -138,6 +323,7 @@ class InitializeDemoPortal implements IRepairStep {
 		return 'Provision a themed portal with search on first install';
 	}//end getName()
 
+
 	/**
 	 * Seed the portal, unless anything at all suggests it should not.
 	 *
@@ -148,56 +334,14 @@ class InitializeDemoPortal implements IRepairStep {
 	 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
 	 */
 	public function run(IOutput $output): void {
-		if ($this->appConfig->getValueString(Application::APP_ID, self::CONFIG_KEY, 'yes') === 'no') {
-			$output->info('Demo portal disabled by configuration — nothing provisioned.');
+		$refusal = $this->refusal();
+		if ($refusal !== null) {
+			$output->info($refusal);
 			return;
 		}
 
-		if ($this->appConfig->getValueString(Application::APP_ID, self::MARKER_KEY, '') !== '') {
-			$output->info('Demo portal was already provisioned once — not provisioning again.');
-			return;
-		}
-
-		$existing = $this->writer->countObjects(
-			register: PortalRegisterContext::REGISTER,
-			schema: 'portal'
-		);
-
-		if ($existing > 0) {
-			$output->info(
-				sprintf('%d portal(s) already present — leaving content untouched.', $existing)
-			);
-			return;
-		}
-
-		$portal = $this->createPortal();
-		if ($portal === null) {
-			$output->warning(
-				'Could not create the demo portal — OpenRegister may not be ready yet. '
-				. 'Install continues; re-run `occ maintenance:repair` once it is.'
-			);
-			$this->logger->warning('[portaliq] demo portal not provisioned: portal write returned null');
-			return;
-		}
-
-		$portalId = ($portal['@self']['id'] ?? ($portal['id'] ?? null));
-		if ($portalId === null) {
-			$output->warning('Demo portal created but carries no id — pages not linked.');
-			return;
-		}
-
-		if ($this->createHomePage() === null) {
-			$output->warning('Demo portal created, but its home page was not.');
-			$this->logger->warning('[portaliq] demo home page not provisioned: page write returned null');
-			return;
-		}
-
-		$this->createDetailPage();
-		$this->createLegalMenu();
-
-		if ($this->createSearchPage() === null) {
-			$output->warning('Demo portal created, but its search page was not — the portal will render empty.');
-			$this->logger->warning('[portaliq] demo portal page not provisioned: page write returned null');
+		$portalId = $this->seedPortal(output: $output);
+		if ($portalId === null || $this->seedPages(output: $output) === false) {
 			return;
 		}
 
@@ -210,237 +354,96 @@ class InitializeDemoPortal implements IRepairStep {
 	}//end run()
 
 	/**
-	 * The portal object itself.
+	 * Why this run provisions nothing, or null when it may.
 	 *
-	 * @return array<string, mixed>|null The created object, or null on failure.
+	 * The portal count is taken only after both config guards passed.
 	 *
-	 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+	 * @return string|null The message to report, or null.
 	 */
-	private function createPortal(): ?array {
-		return $this->writer->createAnonymousObject(
-			register: PortalRegisterContext::REGISTER,
-			schema: 'portal',
-			data: [
-				'title' => 'Open Catalogi',
-				'tagline' => 'Zoek in publicaties uit alle aangesloten catalogi',
-				'slug' => self::SLUG,
-				'status' => 'published',
-				'theme' => self::THEME,
-				// NO DOMAINS, AND THE PORTAL THEREFORE DOES NOT SERVE YET.
-				//
-				// PortalResolver has exactly two modes — explicit slug, or a
-				// VERIFIED hostname — and deliberately no fallback, because a
-				// "default portal" is how a multi-tenant host serves one
-				// tenant's content under another tenant's domain. So this
-				// portal answers only once an operator binds a hostname to it.
-				//
-				// Seeding a verified domain here would be this install hook
-				// asserting control of a hostname on the operator's behalf,
-				// which is precisely what the `verified` flag exists to stop.
-				// A demo rig binds `localhost` itself, as a deployment
-				// decision on a throwaway box; an app-store install must not
-				// make that decision for somebody's server.
-				//
-				// Until then the portal is reachable by slug, at
-				// /site?portal=demo.
-				'domains' => [],
-				'locales' => ['nl'],
-				// PUBLIC ONLY. Declaring a sign-in mode here would render a
-				// login button with no identity provider behind it — an inert
-				// control is a support ticket from every visitor who presses
-				// it.
-				'authentication' => ['modes' => ['public']],
-			]
-		);
-	}//end createPortal()
+	private function refusal(): ?string {
+		if ($this->appConfig->getValueString(Application::APP_ID, self::CONFIG_KEY, 'yes') === 'no') {
+			return 'Demo portal disabled by configuration — nothing provisioned.';
+		}
+
+		if ($this->appConfig->getValueString(Application::APP_ID, self::MARKER_KEY, '') !== '') {
+			return 'Demo portal was already provisioned once — not provisioning again.';
+		}
+
+		$existing = $this->writer->countObjects(register: PortalRegisterContext::REGISTER, schema: 'portal');
+		if ($existing > 0) {
+			return sprintf('%d portal(s) already present — leaving content untouched.', $existing);
+		}
+
+		return null;
+	}//end refusal()
 
 	/**
-	 * The landing page: a hero band and a section, as on the reference.
+	 * Write the portal object and return its id, or null after warning why not.
 	 *
-	 * @return array<string, mixed>|null The created object, or null on failure.
+	 * @param IOutput $output Repair output channel.
 	 *
-	 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+	 * @return mixed The created portal's id, or null.
 	 */
-	private function createHomePage(): ?array {
-		return $this->writer->createAnonymousObject(
-			register: PortalRegisterContext::REGISTER,
-			schema: 'page',
-			data: [
-				'title' => 'Home',
-				'route' => '/',
-				'status' => 'published',
-				'locale' => 'nl',
-				'summary' => 'Één plek voor alle publicaties.',
-				'portal' => self::SLUG,
-				'body' => [
-					'type' => 'grid',
-					'widgets' => [
-						[
-							'id' => 'demo-hero',
-							'widgetKey' => 'hero',
-							'gridX' => 0,
-							'gridY' => 0,
-							'gridWidth' => 12,
-							'gridHeight' => 4,
-							'props' => [
-								'title' => 'Waar bent u naar op zoek?',
-								'search' => true,
-								'submitLabel' => 'Zoeken',
-								'placeholder' => 'Zoek op naam of trefwoord',
-							],
-						],
-						[
-							'id' => 'demo-home-intro',
-							'widgetKey' => 'markdown',
-							'gridX' => 0,
-							'gridY' => 4,
-							'gridWidth' => 12,
-							'gridHeight' => 4,
-							'props' => [
-								'markdown' => "## Onderwerpen\n\n"
-									. 'Bekijk het overzicht van onderwerpen die relevant zijn voor '
-									. 'gemeenten en leveranciers binnen het domein van gemeentelijke ICT.',
-							],
-						],
-					],
-				],
-			]
-		);
-	}//end createHomePage()
+	private function seedPortal(IOutput $output): mixed {
+		$portal = $this->create(schema: 'portal', data: self::PORTAL);
+		if ($portal === null) {
+			$output->warning(
+				'Could not create the demo portal — OpenRegister may not be ready yet. '
+				. 'Install continues; re-run `occ maintenance:repair` once it is.'
+			);
+			$this->logger->warning('[portaliq] demo portal not provisioned: portal write returned null');
+			return null;
+		}
+
+		$portalId = ($portal['@self']['id'] ?? ($portal['id'] ?? null));
+		if ($portalId === null) {
+			$output->warning('Demo portal created but carries no id — pages not linked.');
+		}
+
+		return $portalId;
+	}//end seedPortal()
 
 	/**
-	 * The single detail page every `/publicatie/<id>` route resolves to.
+	 * Write the pages and the legal menu; false after warning when a page the portal needs failed.
 	 *
-	 * @return array<string, mixed>|null The created object, or null on failure.
+	 * The detail page and the legal menu are best effort.
 	 *
-	 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+	 * @param IOutput $output Repair output channel.
+	 *
+	 * @return bool Whether the home and search pages both landed.
 	 */
-	private function createDetailPage(): ?array {
-		return $this->writer->createAnonymousObject(
-			register: PortalRegisterContext::REGISTER,
-			schema: 'page',
-			data: [
-				'title' => 'Publicatie',
-				'route' => '/publicatie',
-				'status' => 'published',
-				'locale' => 'nl',
-				'summary' => 'Details van één publicatie.',
-				'portal' => self::SLUG,
-				'body' => [
-					'type' => 'grid',
-					'widgets' => [
-						[
-							'id' => 'demo-publication-detail',
-							'widgetKey' => 'publicationDetail',
-							'gridX' => 0,
-							'gridY' => 0,
-							'gridWidth' => 12,
-							'gridHeight' => 8,
-							// The subject id is supplied by the host from the
-							// route and is deliberately NOT settable here — a
-							// placement that pinned it would make every
-							// publication URL render the same publication.
-							'props' => [
-								'endpoint' => '/index.php/apps/opencatalogi/api/federation/publications',
-							],
-						],
-					],
-				],
-			]
-		);
-	}//end createDetailPage()
+	private function seedPages(IOutput $output): bool {
+		if ($this->create(schema: 'page', data: self::HOME_PAGE) === null) {
+			$output->warning('Demo portal created, but its home page was not.');
+			$this->logger->warning('[portaliq] demo home page not provisioned: page write returned null');
+			return false;
+		}
+
+		$this->create(schema: 'page', data: self::DETAIL_PAGE);
+		$this->create(schema: 'menu', data: self::LEGAL_MENU);
+
+		if ($this->create(schema: 'page', data: self::SEARCH_PAGE) === null) {
+			$output->warning('Demo portal created, but its search page was not — the portal will render empty.');
+			$this->logger->warning('[portaliq] demo portal page not provisioned: page write returned null');
+			return false;
+		}
+
+		return true;
+	}//end seedPages()
 
 	/**
-	 * The legal strip at position 2 (0 header, 1 footer column, 2+ strip).
+	 * Write one seeded object into the portal register.
+	 *
+	 * @param string               $schema The schema slug.
+	 * @param array<string, mixed> $data   The object.
 	 *
 	 * @return array<string, mixed>|null The created object, or null on failure.
-	 *
-	 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
 	 */
-	private function createLegalMenu(): ?array {
+	private function create(string $schema, array $data): ?array {
 		return $this->writer->createAnonymousObject(
 			register: PortalRegisterContext::REGISTER,
-			schema: 'menu',
-			data: [
-				'title' => 'Sub footer menu 1',
-				'position' => 2,
-				'portal' => self::SLUG,
-				'items' => [
-					['name' => 'Cookies', 'link' => '/cookies'],
-					['name' => 'Privacy', 'link' => '/privacy'],
-					['name' => 'Disclaimer', 'link' => '/disclaimer'],
-				],
-			]
+			schema: $schema,
+			data: $data
 		);
-	}//end createLegalMenu()
-
-	/**
-	 * The search page at `/zoeken`.
-	 *
-	 * @return array<string, mixed>|null The created object, or null on failure.
-	 *
-	 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
-	 */
-	private function createSearchPage(): ?array {
-		return $this->writer->createAnonymousObject(
-			register: PortalRegisterContext::REGISTER,
-			schema: 'page',
-			data: [
-				'title' => 'Zoeken',
-				'route' => '/zoeken',
-				'status' => 'published',
-				'locale' => 'nl',
-				'summary' => 'Doorzoek publicaties uit alle aangesloten catalogi.',
-				// THE SLUG, NOT THE ID — see self::SLUG. CmsReader filters
-				// content by slug, so the id here silently yields no pages.
-				'portal' => self::SLUG,
-				'body' => [
-					'type' => 'grid',
-					'widgets' => [
-						[
-							'id' => 'demo-federated-search',
-							'widgetKey' => 'federatedSearch',
-							'gridX' => 0,
-							'gridY' => 0,
-							'gridWidth' => 12,
-							'gridHeight' => 8,
-							// No `endpoint` prop: the block's default is
-							// relative, so it finds OpenCatalogi on whichever
-							// instance serves the portal. Writing an absolute
-							// URL here would bake this machine's hostname into
-							// seeded content and break the moment the instance
-							// is reached by any other name.
-							//
-							// No `title` either — the page is already called
-							// "Zoeken" and the renderer prints that above the
-							// block. Passing one here rendered two headings
-							// saying the same thing.
-							//
-							// `props` MUST BE A NON-EMPTY OBJECT. Both of the
-							// obvious ways to say "no props" are rejected by
-							// the schema, with two different messages:
-							//
-							//   []   → "expects object but got empty ({}) ...
-							//           set this to null to clear the field"
-							//   null → "should be type 'object' but is 'null'"
-							//
-							// The first message recommends exactly what the
-							// second refuses. Either way the whole page write
-							// fails, so the portal provisions and its only page
-							// does not — a portal that renders its own chrome
-							// around a 404.
-							//
-							// So it carries a real prop instead of an empty
-							// one. A placeholder that names something actually
-							// in the seeded corpus is more use to a first-time
-							// visitor than the generic "Zoekterm" default.
-							'props' => [
-								'placeholder' => 'Bijvoorbeeld: subsidies',
-							],
-						],
-					],
-				],
-			]
-		);
-	}//end createSearchPage()
+	}//end create()
 }//end class

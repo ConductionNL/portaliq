@@ -1,11 +1,11 @@
 # Screens
 
-- ActieBewerken https://identity.conduction.nl/screens/board?id=portaliq/ActieBewerken
-- Berichten https://identity.conduction.nl/screens/board?id=portaliq/Berichten
-- MijnOverzicht https://identity.conduction.nl/screens/board?id=portaliq/MijnOverzicht
-- MijnTaken https://identity.conduction.nl/screens/board?id=portaliq/MijnTaken
-- MijnTakenTabel https://identity.conduction.nl/screens/board?id=portaliq/MijnTakenTabel
-- Plan https://identity.conduction.nl/screens/board?id=portaliq/Plan
-- Plannen https://identity.conduction.nl/screens/board?id=portaliq/Plannen
-- PtPlansjablonen https://identity.conduction.nl/screens/board?id=portaliq/PtPlansjablonen
-- TaakAfronden https://identity.conduction.nl/screens/board?id=portaliq/TaakAfronden
+- portaliq/ActieBewerken actie bewerken https://identity.conduction.nl/screens/board?id=portaliq/ActieBewerken
+- portaliq/Berichten berichten https://identity.conduction.nl/screens/board?id=portaliq/Berichten
+- portaliq/MijnOverzicht overzicht https://identity.conduction.nl/screens/board?id=portaliq/MijnOverzicht
+- portaliq/MijnTaken mijn taken https://identity.conduction.nl/screens/board?id=portaliq/MijnTaken
+- portaliq/MijnTakenTabel Mijn taken als tabel https://identity.conduction.nl/screens/board?id=portaliq/MijnTakenTabel
+- portaliq/Plan plan Schuldhulp op orde https://identity.conduction.nl/screens/board?id=portaliq/Plan
+- portaliq/Plannen samenwerken https://identity.conduction.nl/screens/board?id=portaliq/Plannen
+- portaliq/PtPlansjablonen plansjablonen https://identity.conduction.nl/screens/board?id=portaliq/PtPlansjablonen
+- portaliq/TaakAfronden Taak: stuur een kopie van uw ID-bewijs https://identity.conduction.nl/screens/board?id=portaliq/TaakAfronden
