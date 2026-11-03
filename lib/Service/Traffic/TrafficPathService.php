@@ -163,105 +163,143 @@ class TrafficPathService {
 			return ['error' => 'unknown-segment'];
 		}
 
-		$retention = (int)$config['retentionDays'];
-		$today = $this->today();
-		$kept = $today->modify('-' . ($retention - 1) . ' days')->format('Y-m-d');
-		$first = max($from, $kept);
-		$last = min($to, $today->format('Y-m-d'));
-
-		$read = $this->read(
-			portal: $portal,
-			first: $first,
-			last: $last,
-			segment: $definition,
-			config: $config
-		);
+		$window = $this->window(retentionDays: (int)$config['retentionDays'], period: ['from' => $from, 'to' => $to]);
+		$read = $this->read(portal: $portal, scope: $window + ['segment' => $definition, 'config' => $config]);
 
 		return array_merge(
-			[
-				'portal' => $portal,
-				'from' => $from,
-				'to' => $to,
-				'segment' => $segment,
-				'mode' => $mode,
-				'anchor' => $anchor,
-				'steps' => $steps,
-				'coverage' => [
-					'from' => $read['coveredFrom'],
-					'to' => $read['coveredTo'],
-					'keptFrom' => $kept,
-					'retentionDays' => $retention,
-					'beyondRetention' => ($from < $kept),
-					'partialDay' => $read['partialDay'],
-				],
-				'truncated' => $read['truncated'],
-				'eventCap' => $this->maxEvents,
-				'eventsScanned' => $read['scanned'],
-				'sessionsRead' => $read['sessions'],
-			],
+			['portal' => $portal, 'from' => $from, 'to' => $to, 'segment' => $segment, 'mode' => $mode, 'anchor' => $anchor, 'steps' => $steps],
+			$this->coverage(window: $window, read: $read),
 			$this->paths->explore(folded: $read['folded'], mode: $mode, anchor: $anchor, steps: $steps, trail: $trail)
 		);
 	}
 
 	/**
-	 * The fold for the days from `$first` to `$last`, from the cache or
-	 * read newest day first under the event cap.
+	 * The days to read: the asked period within the retention, up to today.
 	 *
-	 * @param string                    $portal  The portal slug.
-	 * @param string                    $first   The first day to read, YYYY-MM-DD.
-	 * @param string                    $last    The last day to read, YYYY-MM-DD.
-	 * @param array<string, mixed>|null $segment The resolved segment, or null for all visits.
-	 * @param array<string, mixed>      $config  The portal's resolved configuration.
+	 * @param int                               $retentionDays The portal's retention in days.
+	 * @param array{from: string, to: string}   $period        The asked first and last day, YYYY-MM-DD.
+	 *
+	 * @return array{from: string, first: string, last: string, kept: string, retentionDays: int} The window.
+	 */
+	private function window(int $retentionDays, array $period): array {
+		$today = $this->today();
+		$kept = $today->modify('-' . ($retentionDays - 1) . ' days')->format('Y-m-d');
+
+		return [
+			'from' => $period['from'],
+			'first' => max($period['from'], $kept),
+			'last' => min($period['to'], $today->format('Y-m-d')),
+			'kept' => $kept,
+			'retentionDays' => $retentionDays,
+		];
+	}
+
+	/**
+	 * What the answer covers: the days read, the retention and the event cap.
+	 *
+	 * @param array<string, mixed> $window The window read.
+	 * @param array<string, mixed> $read   The fold and what it covers.
+	 *
+	 * @return array<string, mixed> coverage, truncated, eventCap, eventsScanned and sessionsRead.
+	 */
+	private function coverage(array $window, array $read): array {
+		return [
+			'coverage' => [
+				'from' => $read['coveredFrom'],
+				'to' => $read['coveredTo'],
+				'keptFrom' => $window['kept'],
+				'retentionDays' => $window['retentionDays'],
+				'beyondRetention' => ($window['from'] < $window['kept']),
+				'partialDay' => $read['partialDay'],
+			],
+			'truncated' => $read['truncated'],
+			'eventCap' => $this->maxEvents,
+			'eventsScanned' => $read['scanned'],
+			'sessionsRead' => $read['sessions'],
+		];
+	}
+
+	/**
+	 * The fold for the days from the scope's `first` to its `last`, from the
+	 * cache or read newest day first under the event cap.
+	 *
+	 * @param string               $portal The portal slug.
+	 * @param array<string, mixed> $scope  The window's first and last day, the resolved
+	 *                                     segment (null for all visits) and the portal's configuration.
 	 *
 	 * @return array{folded: array<string, int>, coveredFrom: ?string, coveredTo: ?string,
 	 *               partialDay: ?string, truncated: bool, scanned: int, sessions: int} The fold and what it covers.
 	 */
-	private function read(string $portal, string $first, string $last, ?array $segment, array $config): array {
-		$timeout = (int)$config['sessionTimeoutMinutes'];
-		$key = hash('sha256', implode('|', [$portal, $first, $last, (string)($segment['id'] ?? ''), (string)$timeout]));
+	private function read(string $portal, array $scope): array {
+		$timeout = (int)$scope['config']['sessionTimeoutMinutes'];
+		$key = hash('sha256', implode('|', [$portal, $scope['first'], $scope['last'], (string)($scope['segment']['id'] ?? ''), (string)$timeout]));
 		$hit = $this->cached(key: $key);
 		if ($hit !== null) {
 			return $hit;
 		}
 
-		$out = ['folded' => [], 'coveredFrom' => null, 'coveredTo' => null, 'partialDay' => null, 'truncated' => false, 'scanned' => 0, 'sessions' => 0];
-		$goals = (array)($config['goals'] ?? []);
-		for ($day = $last; $day >= $first; $day = $this->shift(day: $day, offset: '-1 day')) {
+		$run = [
+			'portal' => $portal,
+			'timeout' => $timeout,
+			'segment' => $scope['segment'],
+			'goals' => (array)($scope['config']['goals'] ?? []),
+			'out' => ['folded' => [], 'coveredFrom' => null, 'coveredTo' => null, 'partialDay' => null, 'truncated' => false, 'scanned' => 0, 'sessions' => 0],
+		];
+		for ($day = $scope['last']; $day >= $scope['first']; $day = $this->shift(day: $day, offset: '-1 day')) {
 			// The cap was reached exactly at the end of the newer day: this
 			// day is not read at all, so it is not covered either.
-			if ($out['scanned'] >= $this->maxEvents) {
-				$out['truncated'] = true;
+			if ($run['out']['scanned'] >= $this->maxEvents) {
+				$run['out']['truncated'] = true;
 				break;
 			}
 
-			$page = $this->store->eventsForPaths(
-				portal: $portal,
-				from: $day . 'T00:00:00.000Z',
-				to: $this->shift(day: $day, offset: '+1 day') . 'T00:00:00.000Z',
-				limit: $this->maxEvents - $out['scanned']
-			);
-			$out['scanned'] += count($page['events']);
-			$out['coveredTo'] ??= $day;
-			$out['coveredFrom'] = $day;
-
-			$sessions = $this->sessioniser->sessions(events: $page['events'], timeoutMinutes: $timeout);
-			if ($segment !== null) {
-				$sessions = $this->segments->filter(segment: $segment, sessions: $sessions, goals: $goals);
-			}
-
-			$out['sessions'] += count($sessions);
-			$out['folded'] = $this->paths->fold(folded: $out['folded'], sessions: $sessions);
-
-			if ($page['truncated'] === true) {
-				$out['truncated'] = true;
-				$out['partialDay'] = $day;
+			$run = $this->readDay(run: $run, day: $day);
+			if ($run['out']['partialDay'] !== null) {
 				break;
 			}
 		}
 
-		$this->remember(key: $key, value: $out);
+		$this->remember(key: $key, value: $run['out']);
 
-		return $out;
+		return $run['out'];
+	}
+
+	/**
+	 * Read one day under what is left of the event cap and fold its visits.
+	 * A day the cap cut short is the partial day.
+	 *
+	 * @param array<string, mixed> $run The portal, timeout, segment, goals and the fold so far.
+	 * @param string               $day The day, YYYY-MM-DD.
+	 *
+	 * @return array<string, mixed> The run.
+	 */
+	private function readDay(array $run, string $day): array {
+		$out = $run['out'];
+		$page = $this->store->eventsForPaths(
+			portal: $run['portal'],
+			from: $day . 'T00:00:00.000Z',
+			to: $this->shift(day: $day, offset: '+1 day') . 'T00:00:00.000Z',
+			limit: $this->maxEvents - $out['scanned']
+		);
+		$out['scanned'] += count($page['events']);
+		$out['coveredTo'] ??= $day;
+		$out['coveredFrom'] = $day;
+
+		$sessions = $this->sessioniser->sessions(events: $page['events'], timeoutMinutes: $run['timeout']);
+		if ($run['segment'] !== null) {
+			$sessions = $this->segments->filter(segment: $run['segment'], sessions: $sessions, goals: $run['goals']);
+		}
+
+		$out['sessions'] += count($sessions);
+		$out['folded'] = $this->paths->fold(folded: $out['folded'], sessions: $sessions);
+		if ($page['truncated'] === true) {
+			$out['truncated'] = true;
+			$out['partialDay'] = $day;
+		}
+
+		$run['out'] = $out;
+
+		return $run;
 	}
 
 	/**

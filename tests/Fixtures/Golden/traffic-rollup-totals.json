@@ -1,0 +1,229 @@
+{
+    "none": {
+        "pageViews": 0,
+        "visitors": 0,
+        "newVisitors": 0,
+        "returningVisitors": 0,
+        "accounts": 0,
+        "engaged": 0,
+        "engagedBy": [],
+        "seconds": 0.0,
+        "events": [],
+        "lastEventAt": ""
+    },
+    "one view": {
+        "pageViews": 1,
+        "visitors": 1,
+        "newVisitors": 0,
+        "returningVisitors": 0,
+        "accounts": 0,
+        "engaged": 0,
+        "engagedBy": [
+            false
+        ],
+        "seconds": 0.0,
+        "events": {
+            "page_view": 1
+        },
+        "lastEventAt": "2026-09-04T10:00:00.000Z"
+    },
+    "two views engaged": {
+        "pageViews": 2,
+        "visitors": 1,
+        "newVisitors": 0,
+        "returningVisitors": 0,
+        "accounts": 0,
+        "engaged": 1,
+        "engagedBy": [
+            true
+        ],
+        "seconds": 3.0,
+        "events": {
+            "page_view": 2
+        },
+        "lastEventAt": "2026-09-04T10:00:03.000Z"
+    },
+    "scroll engaged": {
+        "pageViews": 1,
+        "visitors": 1,
+        "newVisitors": 0,
+        "returningVisitors": 0,
+        "accounts": 0,
+        "engaged": 1,
+        "engagedBy": [
+            true
+        ],
+        "seconds": 2.0,
+        "events": {
+            "page_view": 1,
+            "scroll": 1
+        },
+        "lastEventAt": "2026-09-04T10:00:02.000Z"
+    },
+    "heat scroll only": {
+        "pageViews": 1,
+        "visitors": 1,
+        "newVisitors": 0,
+        "returningVisitors": 0,
+        "accounts": 0,
+        "engaged": 0,
+        "engagedBy": [
+            false
+        ],
+        "seconds": 2.0,
+        "events": {
+            "heat_scroll": 1,
+            "page_view": 1
+        },
+        "lastEventAt": "2026-09-04T10:00:02.000Z"
+    },
+    "long stay engaged": {
+        "pageViews": 1,
+        "visitors": 1,
+        "newVisitors": 0,
+        "returningVisitors": 0,
+        "accounts": 0,
+        "engaged": 1,
+        "engagedBy": [
+            true
+        ],
+        "seconds": 10.0,
+        "events": {
+            "click": 1,
+            "page_view": 1
+        },
+        "lastEventAt": "2026-09-04T10:00:10.000Z"
+    },
+    "just short": {
+        "pageViews": 1,
+        "visitors": 1,
+        "newVisitors": 0,
+        "returningVisitors": 0,
+        "accounts": 0,
+        "engaged": 0,
+        "engagedBy": [
+            false
+        ],
+        "seconds": 9.5,
+        "events": {
+            "click": 1,
+            "page_view": 1
+        },
+        "lastEventAt": "2026-09-04T10:00:09.000Z"
+    },
+    "backwards clock": {
+        "pageViews": 1,
+        "visitors": 1,
+        "newVisitors": 0,
+        "returningVisitors": 0,
+        "accounts": 0,
+        "engaged": 0,
+        "engagedBy": [
+            false
+        ],
+        "seconds": 0.0,
+        "events": {
+            "click": 1,
+            "page_view": 1
+        },
+        "lastEventAt": "2026-09-04T10:00:20.000Z"
+    },
+    "accounts": {
+        "pageViews": 2,
+        "visitors": 2,
+        "newVisitors": 0,
+        "returningVisitors": 0,
+        "accounts": 2,
+        "engaged": 0,
+        "engagedBy": [
+            false,
+            false
+        ],
+        "seconds": 2.0,
+        "events": {
+            "click": 2,
+            "page_view": 2
+        },
+        "lastEventAt": "2026-09-04T10:00:01.000Z"
+    },
+    "visitor types": {
+        "pageViews": 1,
+        "visitors": 5,
+        "newVisitors": 2,
+        "returningVisitors": 1,
+        "accounts": 0,
+        "engaged": 0,
+        "engagedBy": {
+            "a": false,
+            "b": false,
+            "c": false,
+            "d": false,
+            "e": false,
+            "f": false,
+            "g": false
+        },
+        "seconds": 0.0,
+        "events": {
+            "page_view": 1,
+            "session_start": 6
+        },
+        "lastEventAt": "2026-09-04T10:01:00.000Z"
+    },
+    "returning then new": {
+        "pageViews": 0,
+        "visitors": 1,
+        "newVisitors": 1,
+        "returningVisitors": 0,
+        "accounts": 0,
+        "engaged": 0,
+        "engagedBy": [
+            false,
+            false
+        ],
+        "seconds": 0.0,
+        "events": {
+            "session_start": 2
+        },
+        "lastEventAt": "2026-09-04T10:00:09.000Z"
+    },
+    "returning, unknown": {
+        "pageViews": 1,
+        "visitors": 1,
+        "newVisitors": 0,
+        "returningVisitors": 1,
+        "accounts": 0,
+        "engaged": 0,
+        "engagedBy": [
+            false,
+            false
+        ],
+        "seconds": 0.0,
+        "events": {
+            "page_view": 1,
+            "session_start": 1
+        },
+        "lastEventAt": "2026-09-04T10:00:09.000Z"
+    },
+    "many names, last": {
+        "pageViews": 3,
+        "visitors": 2,
+        "newVisitors": 0,
+        "returningVisitors": 0,
+        "accounts": 0,
+        "engaged": 1,
+        "engagedBy": [
+            true,
+            false,
+            false
+        ],
+        "seconds": 72.0,
+        "events": {
+            "alpha": 1,
+            "form_start": 1,
+            "page_view": 3,
+            "ping": 1,
+            "zeta": 1
+        },
+        "lastEventAt": "2026-09-04T10:01:10.000Z"
+    }
+}

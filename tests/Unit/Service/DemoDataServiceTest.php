@@ -228,6 +228,27 @@ class DemoDataServiceTest extends TestCase {
 		$this->assertSame(3, $result['skipped']);
 	}
 
+	public function testTheImportersOwnSkipCountWinsWhenItIsTheLarger(): void {
+		// When the importer's own skip count is larger than the gap between
+		// declared and landed, its count is the one reported.
+		file_put_contents(
+			$this->descriptor(),
+			json_encode(['components' => ['objects' => [['a' => 1], ['b' => 2]]]])
+		);
+		$importer = new class {
+			public function importFromApp(string $appId, array $data, string $version, bool $force): array {
+				return ['objects' => [['id' => 'x']], 'skipped' => ['objects' => 3]];
+			}
+		};
+		$this->container->method('get')->willReturn($importer);
+
+		$result = $this->service()->install();
+
+		$this->assertSame(1, $result['objects']);
+		$this->assertSame(2, $result['declared']);
+		$this->assertSame(3, $result['skipped']);
+	}
+
 	public function testARerunThatLeavesEveryObjectAloneStillCountsAsLanded(): void {
 		// Newer OpenRegister reports an object it found already present and
 		// identical under `unchanged` rather than `objects`. That is landed data;

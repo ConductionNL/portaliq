@@ -335,7 +335,7 @@ class TrafficRollup {
 	}
 
 	/**
-	 * The session-level totals in one pass.
+	 * The session-level totals.
 	 *
 	 * @param array<int, array<string, mixed>> $sessions The sessions.
 	 *
@@ -343,57 +343,94 @@ class TrafficRollup {
 	 *                              (per session key, whether it was engaged), seconds, events, lastEventAt.
 	 */
 	private function totals(array $sessions): array {
+		$engagement = $this->engagement(sessions: $sessions);
+		$events     = $this->eventTotals(sessions: $sessions);
+
+		return ['pageViews' => $engagement['pageViews']] + $this->visitorTotals(sessions: $sessions) + [
+			'accounts' => $events['accounts'],
+			'engaged' => $engagement['engaged'],
+			'engagedBy' => $engagement['engagedBy'],
+			'seconds' => $engagement['seconds'],
+			'events' => $events['events'],
+			'lastEventAt' => $events['lastEventAt'],
+		];
+	}
+
+	/**
+	 * The distinct visitors, and how many said they were new or returning.
+	 * A visitor that said new in any session counts as new.
+	 *
+	 * @param array<int|string, array<string, mixed>> $sessions The sessions.
+	 *
+	 * @return array{visitors: int, newVisitors: int, returningVisitors: int} The counts.
+	 */
+	private function visitorTotals(array $sessions): array {
 		$visitors = [];
 		$types = [];
-		$accounts = [];
-		$events = [];
-		$pageViews = 0;
-		$engaged = 0;
-		$engagedBy = [];
-		$seconds = 0.0;
-		$last = '';
-		foreach ($sessions as $key => $session) {
+		foreach ($sessions as $session) {
 			$visitors[$session['visitor']] = true;
 			$type = $this->visitorType(session: $session);
 			if ($type !== '' && ($types[$session['visitor']] ?? '') !== 'new') {
 				$types[$session['visitor']] = $type;
 			}
+		}
 
-			$views = 0;
-			$scrolled = false;
+		return [
+			'visitors' => count($visitors),
+			'newVisitors' => count(array_filter($types, static fn (string $t): bool => $t === 'new')),
+			'returningVisitors' => count(array_filter($types, static fn (string $t): bool => $t === 'returning')),
+		];
+	}
+
+	/**
+	 * The events per name (sorted by name), the distinct accounts and the last event.
+	 *
+	 * @param array<int|string, array<string, mixed>> $sessions The sessions.
+	 *
+	 * @return array{accounts: int, events: array<string, int>, lastEventAt: string} The totals.
+	 */
+	private function eventTotals(array $sessions): array {
+		$events = [];
+		$accounts = [];
+		$last = '';
+		foreach ($sessions as $session) {
 			foreach ($session['events'] as $event) {
 				$name = (string)($event['name'] ?? '');
 				$events[$name] = ($events[$name] ?? 0) + 1;
-				$views += (int)($name === 'page_view');
-				$scrolled = $scrolled || ($name === 'scroll');
 				$last = max($last, (string)($event['occurredAt'] ?? ''));
 				$userRef = trim((string)($event['userRef'] ?? ''));
 				if ($userRef !== '') {
 					$accounts[$userRef] = true;
 				}
 			}
-
-			$duration = $this->duration(session: $session);
-			$seconds += $duration;
-			$pageViews += $views;
-			$engagedBy[$key] = ($views > 1 || $scrolled === true || $duration >= self::ENGAGED_SECONDS);
-			$engaged += (int)$engagedBy[$key];
 		}
 
 		ksort($events);
 
-		return [
-			'pageViews' => $pageViews,
-			'visitors' => count($visitors),
-			'newVisitors' => count(array_filter($types, static fn (string $t): bool => $t === 'new')),
-			'returningVisitors' => count(array_filter($types, static fn (string $t): bool => $t === 'returning')),
-			'accounts' => count($accounts),
-			'engaged' => $engaged,
-			'engagedBy' => $engagedBy,
-			'seconds' => $seconds,
-			'events' => $events,
-			'lastEventAt' => $last,
-		];
+		return ['accounts' => count($accounts), 'events' => $events, 'lastEventAt' => $last];
+	}
+
+	/**
+	 * The page views, seconds and engaged sessions. A session is engaged
+	 * with more than one view, a scroll, or a stay of ENGAGED_SECONDS.
+	 *
+	 * @param array<int|string, array<string, mixed>> $sessions The sessions.
+	 *
+	 * @return array{pageViews: int, engaged: int, engagedBy: array<int|string, bool>, seconds: float} The totals.
+	 */
+	private function engagement(array $sessions): array {
+		$out = ['pageViews' => 0, 'engaged' => 0, 'engagedBy' => [], 'seconds' => 0.0];
+		foreach ($sessions as $key => $session) {
+			$names = array_map(static fn ($event): string => (string)($event['name'] ?? ''), $session['events']);
+			$views = count(array_keys($names, 'page_view', true));
+			$duration = $this->duration(session: $session);
+			$out['seconds'] += $duration;
+			$out['pageViews'] += $views;
+			$out['engagedBy'][$key] = ($views > 1 || in_array('scroll', $names, true) === true || $duration >= self::ENGAGED_SECONDS);
+			$out['engaged'] += (int)$out['engagedBy'][$key];
+		}
+
+		return $out;
 	}
 
 	/**
