@@ -33,12 +33,12 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Tenancy;
 
+use RuntimeException;
+use Throwable;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
-use Throwable;
 
 /**
  * Restamps `@self.organisation` of portaliq rows from their organisation slug.
