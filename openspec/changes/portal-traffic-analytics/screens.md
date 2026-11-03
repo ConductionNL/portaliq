@@ -1,14 +1,14 @@
 # Screens
 
-- Cookieverklaring https://identity.conduction.nl/screens/board?id=portaliq/Cookieverklaring
-- Kop https://identity.conduction.nl/screens/board?id=huisstijl/Kop
-- PtIntegraties https://identity.conduction.nl/screens/board?id=portaliq/PtIntegraties
-- PtPaginaVerkeer https://identity.conduction.nl/screens/board?id=portaliq/PtPaginaVerkeer
-- PtPortal https://identity.conduction.nl/screens/board?id=portaliq/PtPortal
-- PtPortalInstellingen https://identity.conduction.nl/screens/board?id=portaliq/PtPortalInstellingen
-- PtSessies https://identity.conduction.nl/screens/board?id=portaliq/PtSessies
-- PtVerkeer https://identity.conduction.nl/screens/board?id=portaliq/PtVerkeer
-- SessieVerloopt https://identity.conduction.nl/screens/board?id=portaliq/SessieVerloopt
+- portaliq/Cookieverklaring Site: cookieverklaring https://identity.conduction.nl/screens/board?id=portaliq/Cookieverklaring
+- huisstijl/Kop Onderdeel: kop en hoofdmenu https://identity.conduction.nl/screens/board?id=huisstijl/Kop
+- portaliq/PtIntegraties integraties https://identity.conduction.nl/screens/board?id=portaliq/PtIntegraties
+- portaliq/PtPaginaVerkeer pagina, verkeer https://identity.conduction.nl/screens/board?id=portaliq/PtPaginaVerkeer
+- portaliq/PtPortal portal, tabblad pagina's https://identity.conduction.nl/screens/board?id=portaliq/PtPortal
+- portaliq/PtPortalInstellingen portal, instellingen https://identity.conduction.nl/screens/board?id=portaliq/PtPortalInstellingen
+- portaliq/PtSessies sessies https://identity.conduction.nl/screens/board?id=portaliq/PtSessies
+- portaliq/PtVerkeer verkeer https://identity.conduction.nl/screens/board?id=portaliq/PtVerkeer
+- portaliq/SessieVerloopt sessie verloopt https://identity.conduction.nl/screens/board?id=portaliq/SessieVerloopt
 - portaliq has no board of its own for row ana-pixel-pageview: the visitor's browser reports a page view in the background; the figures show on PtVerkeer
 - portaliq has no board of its own for row ana-pixel-fallback: a tracking pixel the browser loads in the background when the script cannot run
 - portaliq has no board of its own for row ana-client-script-served: a script file the portal loads; it has no page

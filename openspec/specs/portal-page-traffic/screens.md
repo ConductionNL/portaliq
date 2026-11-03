@@ -1,3 +1,3 @@
 # Screens
 
-- PtPaginaVerkeer https://identity.conduction.nl/screens/board?id=portaliq/PtPaginaVerkeer
+- portaliq/PtPaginaVerkeer pagina, verkeer https://identity.conduction.nl/screens/board?id=portaliq/PtPaginaVerkeer

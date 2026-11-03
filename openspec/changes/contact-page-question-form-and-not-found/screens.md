@@ -1,6 +1,6 @@
 # Screens
 
-- NietGevonden https://identity.conduction.nl/screens/board?id=portaliq/NietGevonden
-- Zaak https://identity.conduction.nl/screens/board?id=portaliq/Zaak
-- Contact https://identity.conduction.nl/screens/board?id=portaliq/Contact
-- PtMailsjablonen https://identity.conduction.nl/screens/board?id=portaliq/PtMailsjablonen
+- portaliq/NietGevonden Site: pagina niet gevonden https://identity.conduction.nl/screens/board?id=portaliq/NietGevonden
+- portaliq/Zaak uw zaak https://identity.conduction.nl/screens/board?id=portaliq/Zaak
+- portaliq/Contact Site: contact https://identity.conduction.nl/screens/board?id=portaliq/Contact
+- portaliq/PtMailsjablonen e-mailsjablonen en verzendlog https://identity.conduction.nl/screens/board?id=portaliq/PtMailsjablonen

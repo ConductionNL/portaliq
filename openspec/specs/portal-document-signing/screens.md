@@ -1,5 +1,5 @@
 # Screens
 
-- DocumentOndertekenen https://identity.conduction.nl/screens/board?id=portaliq/DocumentOndertekenen
-- MedeOndertekenen https://identity.conduction.nl/screens/board?id=portaliq/MedeOndertekenen
-- MijnTaken https://identity.conduction.nl/screens/board?id=portaliq/MijnTaken
+- portaliq/DocumentOndertekenen document ondertekenen https://identity.conduction.nl/screens/board?id=portaliq/DocumentOndertekenen
+- portaliq/MedeOndertekenen Aanvraag mede-ondertekenen https://identity.conduction.nl/screens/board?id=portaliq/MedeOndertekenen
+- portaliq/MijnTaken mijn taken https://identity.conduction.nl/screens/board?id=portaliq/MijnTaken

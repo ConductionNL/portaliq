@@ -1,4 +1,4 @@
 # Screens
 
-- Contentpagina https://identity.conduction.nl/screens/board?id=vaartveld/Contentpagina
-- Inloggen https://identity.conduction.nl/screens/board?id=vaartveld/Inloggen
+- vaartveld/Contentpagina Website: informatiepagina https://identity.conduction.nl/screens/board?id=vaartveld/Contentpagina
+- vaartveld/Inloggen inloggen https://identity.conduction.nl/screens/board?id=vaartveld/Inloggen

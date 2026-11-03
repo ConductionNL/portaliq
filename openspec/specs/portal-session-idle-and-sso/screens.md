@@ -1,5 +1,5 @@
 # Screens
 
-- PtPortalInstellingen https://identity.conduction.nl/screens/board?id=portaliq/PtPortalInstellingen
-- PtSessies https://identity.conduction.nl/screens/board?id=portaliq/PtSessies
-- SessieVerloopt https://identity.conduction.nl/screens/board?id=portaliq/SessieVerloopt
+- portaliq/PtPortalInstellingen portal, instellingen https://identity.conduction.nl/screens/board?id=portaliq/PtPortalInstellingen
+- portaliq/PtSessies sessies https://identity.conduction.nl/screens/board?id=portaliq/PtSessies
+- portaliq/SessieVerloopt sessie verloopt https://identity.conduction.nl/screens/board?id=portaliq/SessieVerloopt
