@@ -28,6 +28,7 @@ use PHPUnit\Framework\TestCase;
  * Every ingest call (portal, events, visitor context) and the outcome of a log import, per log shape.
  *
  * @covers \OCA\Portaliq\Service\Traffic\TrafficLogImporter
+ * @covers \OCA\Portaliq\Service\Traffic\TrafficLogImportRun
  * @uses   \OCA\Portaliq\Service\Traffic\TrafficLogParser
  */
 class TrafficLogImporterGoldenTest extends TestCase {
@@ -154,6 +155,8 @@ class TrafficLogImporterGoldenTest extends TestCase {
 			'json format'               => ['lines' => $json, 'format' => 'json'],
 			'combined line as json'     => ['lines' => [self::line('203.0.113.9', '/')], 'format' => 'json'],
 			'first matching portal'     => ['slug' => 'noord', 'lines' => [self::line('203.0.113.9', '/')]],
+			'same second other path'    => ['lines' => [self::line('203.0.113.9', '/a', 5), self::line('203.0.113.9', '/b', 5), self::line('203.0.113.9', '/a', 6), self::line('203.0.113.9', '/a', 5)]],
+			'odd refusal counts'        => ['lines' => [self::line('203.0.113.9', '/')], 'answer' => ['accepted' => 1, 'refused' => ['bot' => 'many', 'rate' => '3']]],
 			'no trailing newline'       => ['lines' => [rtrim(self::line('203.0.113.9', '/x'))]],
 		];
 	}//end scenarios()

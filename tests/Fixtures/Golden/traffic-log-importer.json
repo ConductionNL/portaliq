@@ -1687,6 +1687,109 @@
             }
         ]
     },
+    "same second other path": {
+        "outcome": {
+            "lines": 4,
+            "views": 3,
+            "skipped": 0,
+            "duplicates": 1,
+            "accepted": 3,
+            "refused": []
+        },
+        "calls": [
+            {
+                "portal": {
+                    "slug": "zuid",
+                    "status": "published",
+                    "traffic": {
+                        "enabled": true
+                    }
+                },
+                "events": [
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:05.000Z",
+                        "sequence": 0,
+                        "pageLocation": "https://zuid.example/a",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:05.000Z",
+                        "sequence": 1,
+                        "pageLocation": "https://zuid.example/b",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    },
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:06.000Z",
+                        "sequence": 2,
+                        "pageLocation": "https://zuid.example/a",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    }
+                ],
+                "context": {
+                    "ip": "203.0.113.9",
+                    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36",
+                    "consent": false,
+                    "serverSide": false,
+                    "allowOld": true
+                }
+            }
+        ]
+    },
+    "odd refusal counts": {
+        "outcome": {
+            "lines": 1,
+            "views": 1,
+            "skipped": 0,
+            "duplicates": 0,
+            "accepted": 1,
+            "refused": {
+                "bot": 0,
+                "rate": 3
+            }
+        },
+        "calls": [
+            {
+                "portal": {
+                    "slug": "zuid",
+                    "status": "published",
+                    "traffic": {
+                        "enabled": true
+                    }
+                },
+                "events": [
+                    {
+                        "name": "page_view",
+                        "timestamp": "2026-09-04T10:15:00.000Z",
+                        "sequence": 0,
+                        "pageLocation": "https://zuid.example/",
+                        "pageReferrer": "https://www.google.com/",
+                        "params": {
+                            "import": "log"
+                        }
+                    }
+                ],
+                "context": {
+                    "ip": "203.0.113.9",
+                    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36",
+                    "consent": false,
+                    "serverSide": false,
+                    "allowOld": true
+                }
+            }
+        ]
+    },
     "no trailing newline": {
         "outcome": {
             "lines": 1,
