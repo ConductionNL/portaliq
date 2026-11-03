@@ -1,0 +1,879 @@
+{
+    "no registers": [
+        [
+            "query",
+            "SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?",
+            [
+                "portaliq%"
+            ]
+        ],
+        [
+            "fetchAll",
+            7
+        ],
+        [
+            "info",
+            "RenameDutchColumns: no portaliq shard tables on this install; nothing to do."
+        ]
+    ],
+    "registers unreadable": [
+        [
+            "query",
+            "SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?",
+            [
+                "portaliq%"
+            ]
+        ],
+        [
+            "log.warning",
+            "RenameDutchColumns: could not resolve the registers; skipping.",
+            {
+                "exception": "registers unreadable"
+            }
+        ],
+        [
+            "info",
+            "RenameDutchColumns: no portaliq shard tables on this install; nothing to do."
+        ]
+    ],
+    "tables unreadable": [
+        [
+            "query",
+            "SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?",
+            [
+                "portaliq%"
+            ]
+        ],
+        [
+            "fetchAll",
+            7
+        ],
+        [
+            "prepare",
+            "SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern"
+        ],
+        [
+            "bind",
+            "pattern",
+            "%openregister\\_table\\_%"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "log.warning",
+            "RenameDutchColumns: could not list tables; skipping.",
+            {
+                "exception": "tables unreadable"
+            }
+        ],
+        [
+            "info",
+            "RenameDutchColumns: no portaliq shard tables on this install; nothing to do."
+        ]
+    ],
+    "no tables": [
+        [
+            "query",
+            "SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?",
+            [
+                "portaliq%"
+            ]
+        ],
+        [
+            "fetchAll",
+            7
+        ],
+        [
+            "prepare",
+            "SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern"
+        ],
+        [
+            "bind",
+            "pattern",
+            "%openregister\\_table\\_%"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "info",
+            "RenameDutchColumns: no portaliq shard tables on this install; nothing to do."
+        ]
+    ],
+    "tables of other registers": [
+        [
+            "query",
+            "SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?",
+            [
+                "portaliq%"
+            ]
+        ],
+        [
+            "fetchAll",
+            7
+        ],
+        [
+            "prepare",
+            "SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern"
+        ],
+        [
+            "bind",
+            "pattern",
+            "%openregister\\_table\\_%"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "info",
+            "RenameDutchColumns: no portaliq shard tables on this install; nothing to do."
+        ]
+    ],
+    "empty table name skipped": [
+        [
+            "query",
+            "SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?",
+            [
+                "portaliq%"
+            ]
+        ],
+        [
+            "fetchAll",
+            7
+        ],
+        [
+            "prepare",
+            "SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern"
+        ],
+        [
+            "bind",
+            "pattern",
+            "%openregister\\_table\\_%"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "prepare",
+            "SELECT column_name FROM information_schema.columns WHERE table_name = :table"
+        ],
+        [
+            "bind",
+            "table",
+            "oc_openregister_table_3_7"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "statement",
+            "ALTER TABLE `oc_openregister_table_3_7` RENAME COLUMN `aard` TO `nature`"
+        ],
+        [
+            "info",
+            "RenameDutchColumns: 1 renamed, 0 back-filled, 0 refused, across 1 shard table(s)."
+        ]
+    ],
+    "only old columns renamed": [
+        [
+            "query",
+            "SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?",
+            [
+                "portaliq%"
+            ]
+        ],
+        [
+            "fetchAll",
+            7
+        ],
+        [
+            "prepare",
+            "SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern"
+        ],
+        [
+            "bind",
+            "pattern",
+            "%openregister\\_table\\_%"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "prepare",
+            "SELECT column_name FROM information_schema.columns WHERE table_name = :table"
+        ],
+        [
+            "bind",
+            "table",
+            "oc_openregister_table_3_7"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "statement",
+            "ALTER TABLE `oc_openregister_table_3_7` RENAME COLUMN `aard` TO `nature`"
+        ],
+        [
+            "statement",
+            "ALTER TABLE `oc_openregister_table_3_7` RENAME COLUMN `termijn` TO `term`"
+        ],
+        [
+            "info",
+            "RenameDutchColumns: 2 renamed, 0 back-filled, 0 refused, across 1 shard table(s)."
+        ]
+    ],
+    "new columns present": [
+        [
+            "query",
+            "SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?",
+            [
+                "portaliq%"
+            ]
+        ],
+        [
+            "fetchAll",
+            7
+        ],
+        [
+            "prepare",
+            "SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern"
+        ],
+        [
+            "bind",
+            "pattern",
+            "%openregister\\_table\\_%"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "prepare",
+            "SELECT column_name FROM information_schema.columns WHERE table_name = :table"
+        ],
+        [
+            "bind",
+            "table",
+            "oc_openregister_table_3_7"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "statement",
+            "UPDATE `oc_openregister_table_3_7` SET `nature` = `aard` WHERE `nature` IS NULL AND `aard` IS NOT NULL"
+        ],
+        [
+            "statement",
+            "UPDATE `oc_openregister_table_3_7` SET `term` = `termijn` WHERE `term` IS NULL AND `termijn` IS NOT NULL"
+        ],
+        [
+            "info",
+            "RenameDutchColumns: 0 renamed, 2 back-filled, 0 refused, across 1 shard table(s)."
+        ]
+    ],
+    "mixed rename and back-fill": [
+        [
+            "query",
+            "SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?",
+            [
+                "portaliq%"
+            ]
+        ],
+        [
+            "fetchAll",
+            7
+        ],
+        [
+            "prepare",
+            "SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern"
+        ],
+        [
+            "bind",
+            "pattern",
+            "%openregister\\_table\\_%"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "prepare",
+            "SELECT column_name FROM information_schema.columns WHERE table_name = :table"
+        ],
+        [
+            "bind",
+            "table",
+            "oc_openregister_table_3_7"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "statement",
+            "ALTER TABLE `oc_openregister_table_3_7` RENAME COLUMN `aard` TO `nature`"
+        ],
+        [
+            "statement",
+            "UPDATE `oc_openregister_table_3_7` SET `term` = `termijn` WHERE `term` IS NULL AND `termijn` IS NOT NULL"
+        ],
+        [
+            "info",
+            "RenameDutchColumns: 1 renamed, 1 back-filled, 0 refused, across 1 shard table(s)."
+        ]
+    ],
+    "nothing to move": [
+        [
+            "query",
+            "SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?",
+            [
+                "portaliq%"
+            ]
+        ],
+        [
+            "fetchAll",
+            7
+        ],
+        [
+            "prepare",
+            "SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern"
+        ],
+        [
+            "bind",
+            "pattern",
+            "%openregister\\_table\\_%"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "prepare",
+            "SELECT column_name FROM information_schema.columns WHERE table_name = :table"
+        ],
+        [
+            "bind",
+            "table",
+            "oc_openregister_table_3_7"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "info",
+            "RenameDutchColumns: 0 renamed, 0 back-filled, 0 refused, across 1 shard table(s)."
+        ]
+    ],
+    "empty column name skipped": [
+        [
+            "query",
+            "SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?",
+            [
+                "portaliq%"
+            ]
+        ],
+        [
+            "fetchAll",
+            7
+        ],
+        [
+            "prepare",
+            "SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern"
+        ],
+        [
+            "bind",
+            "pattern",
+            "%openregister\\_table\\_%"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "prepare",
+            "SELECT column_name FROM information_schema.columns WHERE table_name = :table"
+        ],
+        [
+            "bind",
+            "table",
+            "oc_openregister_table_3_7"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "statement",
+            "ALTER TABLE `oc_openregister_table_3_7` RENAME COLUMN `aard` TO `nature`"
+        ],
+        [
+            "info",
+            "RenameDutchColumns: 1 renamed, 0 back-filled, 0 refused, across 1 shard table(s)."
+        ]
+    ],
+    "columns unreadable": [
+        [
+            "query",
+            "SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?",
+            [
+                "portaliq%"
+            ]
+        ],
+        [
+            "fetchAll",
+            7
+        ],
+        [
+            "prepare",
+            "SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern"
+        ],
+        [
+            "bind",
+            "pattern",
+            "%openregister\\_table\\_%"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "prepare",
+            "SELECT column_name FROM information_schema.columns WHERE table_name = :table"
+        ],
+        [
+            "bind",
+            "table",
+            "oc_openregister_table_3_7"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "log.warning",
+            "RenameDutchColumns: could not read columns; skipping table.",
+            {
+                "table": "oc_openregister_table_3_7",
+                "exception": "columns unreadable"
+            }
+        ],
+        [
+            "prepare",
+            "SELECT column_name FROM information_schema.columns WHERE table_name = :table"
+        ],
+        [
+            "bind",
+            "table",
+            "oc_openregister_table_3_12"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "statement",
+            "ALTER TABLE `oc_openregister_table_3_12` RENAME COLUMN `termijn` TO `term`"
+        ],
+        [
+            "info",
+            "RenameDutchColumns: 1 renamed, 0 back-filled, 0 refused, across 2 shard table(s)."
+        ]
+    ],
+    "rename fails": [
+        [
+            "query",
+            "SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?",
+            [
+                "portaliq%"
+            ]
+        ],
+        [
+            "fetchAll",
+            7
+        ],
+        [
+            "prepare",
+            "SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern"
+        ],
+        [
+            "bind",
+            "pattern",
+            "%openregister\\_table\\_%"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "prepare",
+            "SELECT column_name FROM information_schema.columns WHERE table_name = :table"
+        ],
+        [
+            "bind",
+            "table",
+            "oc_openregister_table_3_7"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "statement",
+            "ALTER TABLE `oc_openregister_table_3_7` RENAME COLUMN `aard` TO `nature`"
+        ],
+        [
+            "log.warning",
+            "RenameDutchColumns: statement failed; leaving the column as it was.",
+            {
+                "sql": "ALTER TABLE `oc_openregister_table_3_7` RENAME COLUMN `aard` TO `nature`",
+                "exception": "statement refused"
+            }
+        ],
+        [
+            "statement",
+            "ALTER TABLE `oc_openregister_table_3_7` RENAME COLUMN `termijn` TO `term`"
+        ],
+        [
+            "info",
+            "RenameDutchColumns: 1 renamed, 0 back-filled, 0 refused, across 1 shard table(s)."
+        ]
+    ],
+    "back-fill fails": [
+        [
+            "query",
+            "SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?",
+            [
+                "portaliq%"
+            ]
+        ],
+        [
+            "fetchAll",
+            7
+        ],
+        [
+            "prepare",
+            "SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern"
+        ],
+        [
+            "bind",
+            "pattern",
+            "%openregister\\_table\\_%"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "prepare",
+            "SELECT column_name FROM information_schema.columns WHERE table_name = :table"
+        ],
+        [
+            "bind",
+            "table",
+            "oc_openregister_table_3_7"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "statement",
+            "UPDATE `oc_openregister_table_3_7` SET `nature` = `aard` WHERE `nature` IS NULL AND `aard` IS NOT NULL"
+        ],
+        [
+            "log.warning",
+            "RenameDutchColumns: statement failed; leaving the column as it was.",
+            {
+                "sql": "UPDATE `oc_openregister_table_3_7` SET `nature` = `aard` WHERE `nature` IS NULL AND `aard` IS NOT NULL",
+                "exception": "statement refused"
+            }
+        ],
+        [
+            "statement",
+            "ALTER TABLE `oc_openregister_table_3_7` RENAME COLUMN `termijn` TO `term`"
+        ],
+        [
+            "info",
+            "RenameDutchColumns: 1 renamed, 0 back-filled, 0 refused, across 1 shard table(s)."
+        ]
+    ],
+    "every statement fails": [
+        [
+            "query",
+            "SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?",
+            [
+                "portaliq%"
+            ]
+        ],
+        [
+            "fetchAll",
+            7
+        ],
+        [
+            "prepare",
+            "SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern"
+        ],
+        [
+            "bind",
+            "pattern",
+            "%openregister\\_table\\_%"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "prepare",
+            "SELECT column_name FROM information_schema.columns WHERE table_name = :table"
+        ],
+        [
+            "bind",
+            "table",
+            "oc_openregister_table_3_7"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "statement",
+            "UPDATE `oc_openregister_table_3_7` SET `nature` = `aard` WHERE `nature` IS NULL AND `aard` IS NOT NULL"
+        ],
+        [
+            "log.warning",
+            "RenameDutchColumns: statement failed; leaving the column as it was.",
+            {
+                "sql": "UPDATE `oc_openregister_table_3_7` SET `nature` = `aard` WHERE `nature` IS NULL AND `aard` IS NOT NULL",
+                "exception": "statement refused"
+            }
+        ],
+        [
+            "prepare",
+            "SELECT column_name FROM information_schema.columns WHERE table_name = :table"
+        ],
+        [
+            "bind",
+            "table",
+            "oc_openregister_table_3_12"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "statement",
+            "ALTER TABLE `oc_openregister_table_3_12` RENAME COLUMN `termijn` TO `term`"
+        ],
+        [
+            "log.warning",
+            "RenameDutchColumns: statement failed; leaving the column as it was.",
+            {
+                "sql": "ALTER TABLE `oc_openregister_table_3_12` RENAME COLUMN `termijn` TO `term`",
+                "exception": "statement refused"
+            }
+        ],
+        [
+            "info",
+            "RenameDutchColumns: 0 renamed, 0 back-filled, 0 refused, across 2 shard table(s)."
+        ]
+    ],
+    "two registers two tables": [
+        [
+            "query",
+            "SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?",
+            [
+                "portaliq%"
+            ]
+        ],
+        [
+            "fetchAll",
+            7
+        ],
+        [
+            "prepare",
+            "SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern"
+        ],
+        [
+            "bind",
+            "pattern",
+            "%openregister\\_table\\_%"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "prepare",
+            "SELECT column_name FROM information_schema.columns WHERE table_name = :table"
+        ],
+        [
+            "bind",
+            "table",
+            "x_oc_openregister_table_5_2"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "statement",
+            "UPDATE `x_oc_openregister_table_5_2` SET `term` = `termijn` WHERE `term` IS NULL AND `termijn` IS NOT NULL"
+        ],
+        [
+            "prepare",
+            "SELECT column_name FROM information_schema.columns WHERE table_name = :table"
+        ],
+        [
+            "bind",
+            "table",
+            "oc_openregister_table_3_7"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "statement",
+            "ALTER TABLE `oc_openregister_table_3_7` RENAME COLUMN `aard` TO `nature`"
+        ],
+        [
+            "prepare",
+            "SELECT column_name FROM information_schema.columns WHERE table_name = :table"
+        ],
+        [
+            "bind",
+            "table",
+            "oc_openregister_table_5_2"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "info",
+            "RenameDutchColumns: 1 renamed, 1 back-filled, 0 refused, across 3 shard table(s)."
+        ]
+    ],
+    "duplicate table listed": [
+        [
+            "query",
+            "SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?",
+            [
+                "portaliq%"
+            ]
+        ],
+        [
+            "fetchAll",
+            7
+        ],
+        [
+            "prepare",
+            "SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern"
+        ],
+        [
+            "bind",
+            "pattern",
+            "%openregister\\_table\\_%"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "prepare",
+            "SELECT column_name FROM information_schema.columns WHERE table_name = :table"
+        ],
+        [
+            "bind",
+            "table",
+            "oc_openregister_table_3_7"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "statement",
+            "ALTER TABLE `oc_openregister_table_3_7` RENAME COLUMN `aard` TO `nature`"
+        ],
+        [
+            "info",
+            "RenameDutchColumns: 1 renamed, 0 back-filled, 0 refused, across 1 shard table(s)."
+        ]
+    ],
+    "register id cast to int": [
+        [
+            "query",
+            "SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?",
+            [
+                "portaliq%"
+            ]
+        ],
+        [
+            "fetchAll",
+            7
+        ],
+        [
+            "prepare",
+            "SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern"
+        ],
+        [
+            "bind",
+            "pattern",
+            "%openregister\\_table\\_%"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "prepare",
+            "SELECT column_name FROM information_schema.columns WHERE table_name = :table"
+        ],
+        [
+            "bind",
+            "table",
+            "oc_openregister_table_3_7"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "statement",
+            "ALTER TABLE `oc_openregister_table_3_7` RENAME COLUMN `termijn` TO `term`"
+        ],
+        [
+            "info",
+            "RenameDutchColumns: 1 renamed, 0 back-filled, 0 refused, across 1 shard table(s)."
+        ]
+    ],
+    "prefixless table": [
+        [
+            "query",
+            "SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?",
+            [
+                "portaliq%"
+            ]
+        ],
+        [
+            "fetchAll",
+            7
+        ],
+        [
+            "prepare",
+            "SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern"
+        ],
+        [
+            "bind",
+            "pattern",
+            "%openregister\\_table\\_%"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "prepare",
+            "SELECT column_name FROM information_schema.columns WHERE table_name = :table"
+        ],
+        [
+            "bind",
+            "table",
+            "openregister_table_3_9"
+        ],
+        [
+            "execute"
+        ],
+        [
+            "statement",
+            "UPDATE `openregister_table_3_9` SET `nature` = `aard` WHERE `nature` IS NULL AND `aard` IS NOT NULL"
+        ],
+        [
+            "statement",
+            "ALTER TABLE `openregister_table_3_9` RENAME COLUMN `termijn` TO `term`"
+        ],
+        [
+            "info",
+            "RenameDutchColumns: 1 renamed, 1 back-filled, 0 refused, across 1 shard table(s)."
+        ]
+    ]
+}
