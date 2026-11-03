@@ -19,6 +19,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\MetricsController;
+use OCA\Portaliq\Service\MetricsSources;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\SettingsService;
@@ -33,6 +34,7 @@ use RuntimeException;
  * The exposition text, status and headers of the metrics endpoint, per collaborator answer.
  *
  * @covers \OCA\Portaliq\Controller\MetricsController
+ * @uses   \OCA\Portaliq\Service\MetricsSources
  */
 class MetricsControllerGoldenTest extends TestCase {
 
@@ -115,12 +117,9 @@ class MetricsControllerGoldenTest extends TestCase {
 
 		$controller = new MetricsController(
 			request: $this->createMock(originalClassName: IRequest::class),
-			settingsService: $settings,
 			container: $container,
 			logger: $logger,
-			auditor: $auditor,
-			traffic: $traffic,
-			cms: $cms
+			sources: new MetricsSources(settingsService: $settings, auditor: $auditor, traffic: $traffic, cms: $cms)
 		);
 		$response   = $controller->index();
 

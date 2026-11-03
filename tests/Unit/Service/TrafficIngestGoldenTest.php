@@ -25,6 +25,8 @@ use OCA\Portaliq\Service\Traffic\ReferrerClassifier;
 use OCA\Portaliq\Service\Traffic\TrafficEventStore;
 use OCA\Portaliq\Service\Traffic\TrafficMetrics;
 use OCA\Portaliq\Service\Traffic\UserAgentClassifier;
+use OCA\Portaliq\Service\Traffic\TrafficIngestPipeline;
+use OCA\Portaliq\Service\Traffic\TrafficRecordDerivers;
 use OCA\Portaliq\Service\Traffic\VisitorHasher;
 use OCA\Portaliq\Service\TrafficConfigResolver;
 use OCA\Portaliq\Service\TrafficEventValidator;
@@ -39,6 +41,8 @@ require_once __DIR__ . '/Traffic/FakeAppConfig.php';
  * The stored records, the refusal counts, the metrics and the geo lookups of a traffic batch, per portal, request and event shape.
  *
  * @covers \OCA\Portaliq\Service\TrafficIngestService
+ * @uses   \OCA\Portaliq\Service\Traffic\TrafficIngestPipeline
+ * @uses   \OCA\Portaliq\Service\Traffic\TrafficRecordDerivers
  * @uses   \OCA\Portaliq\Service\TrafficConfigResolver
  * @uses   \OCA\Portaliq\Service\TrafficEventValidator
  * @uses   \OCA\Portaliq\Service\Traffic\UserAgentClassifier
@@ -124,15 +128,14 @@ class TrafficIngestGoldenTest extends TestCase {
 		$appConfig->values['portaliq/' . VisitorHasher::SALT_PREFIX . gmdate('Ymd', 1788000000)] = str_repeat('5a', 32);
 
 		$service = new TrafficIngestService(
-			portals: $resolver,
-			config: new TrafficConfigResolver(),
-			validator: new TrafficEventValidator(),
-			store: $store,
+			pipeline: new TrafficIngestPipeline(portals: $resolver, config: new TrafficConfigResolver(), validator: new TrafficEventValidator(), store: $store),
+			derivers: new TrafficRecordDerivers(
+				hasher: new VisitorHasher(config: $appConfig->mock(test: $this), time: $clock),
+				agents: new UserAgentClassifier(),
+				referrers: new ReferrerClassifier(),
+				geo: $geo
+			),
 			metrics: $metrics,
-			hasher: new VisitorHasher(config: $appConfig->mock(test: $this), time: $clock),
-			agents: new UserAgentClassifier(),
-			referrers: new ReferrerClassifier(),
-			geo: $geo,
 			time: $clock
 		);
 

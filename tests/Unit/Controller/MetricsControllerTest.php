@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\MetricsController;
+use OCA\Portaliq\Service\MetricsSources;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\SettingsService;
 use OCA\Portaliq\Service\Traffic\TrafficMetrics;
@@ -71,12 +72,9 @@ class MetricsControllerTest extends TestCase {
 
 		return new MetricsController(
 			$this->createMock(IRequest::class),
-			$settingsService,
 			$container,
 			$this->createMock(LoggerInterface::class),
-			($auditor ?? $this->auditorReturning([])),
-			($traffic ?? $this->createMock(TrafficMetrics::class)),
-			$cms
+			new MetricsSources($settingsService, ($auditor ?? $this->auditorReturning([])), ($traffic ?? $this->createMock(TrafficMetrics::class)), $cms)
 		);
 	}//end controller()
 
@@ -128,11 +126,9 @@ class MetricsControllerTest extends TestCase {
 
 		$controller = new MetricsController(
 			$this->createMock(IRequest::class),
-			$settings,
 			$container,
 			$this->createMock(LoggerInterface::class),
-			$this->auditorReturning([]),
-			$this->createMock(TrafficMetrics::class)
+			new MetricsSources($settings, $this->auditorReturning([]), $this->createMock(TrafficMetrics::class))
 		);
 
 		$body = $controller->index()->render();
@@ -169,11 +165,9 @@ class MetricsControllerTest extends TestCase {
 
 		$controller = new MetricsController(
 			$this->createMock(IRequest::class),
-			$settingsService,
 			$container,
 			$this->createMock(LoggerInterface::class),
-			$this->auditorReturning([]),
-			$this->createMock(TrafficMetrics::class)
+			new MetricsSources($settingsService, $this->auditorReturning([]), $this->createMock(TrafficMetrics::class))
 		);
 
 		$response = $controller->index();
