@@ -77,6 +77,6 @@ shows the new file. Deleting an item that a published page references SHALL be
 refused, naming the pages.
 
 #### Scenario: A used image cannot be deleted
-- **GIVEN** an image used as the hero image of /contact
+- **GIVEN** an image used on /afval, /nieuws/nieuwe-containers-oosthaven and /container-kapot
 - **WHEN** an editor deletes it from the library
-- **THEN** the delete is refused and the message names /contact
+- **THEN** the delete is refused and the message names those three pages
