@@ -1,0 +1,2807 @@
+{
+    "no record": {
+        "calls": [
+            [
+                "record.read",
+                "sanne"
+            ],
+            [
+                "record.isEmpty",
+                {
+                    "userId": "",
+                    "userCreated": false,
+                    "account": "",
+                    "signIn": {
+                        "mode": "",
+                        "label": false
+                    },
+                    "objects": []
+                }
+            ],
+            [
+                "store.available"
+            ]
+        ],
+        "report": {
+            "id": "sanne",
+            "recorded": false,
+            "available": true,
+            "userId": "",
+            "types": [],
+            "failed": [],
+            "account": "kept-not-ours",
+            "signIn": "kept-not-ours",
+            "user": "kept-not-ours"
+        }
+    },
+    "no record, store down": {
+        "calls": [
+            [
+                "record.read",
+                "sanne"
+            ],
+            [
+                "record.isEmpty",
+                {
+                    "userId": "",
+                    "userCreated": false,
+                    "account": "",
+                    "signIn": {
+                        "mode": "",
+                        "label": false
+                    },
+                    "objects": []
+                }
+            ],
+            [
+                "store.available"
+            ]
+        ],
+        "report": {
+            "id": "sanne",
+            "recorded": false,
+            "available": false,
+            "userId": "",
+            "types": [],
+            "failed": [],
+            "account": "kept-not-ours",
+            "signIn": "kept-not-ours",
+            "user": "kept-not-ours"
+        }
+    },
+    "store down": {
+        "calls": [
+            [
+                "record.read",
+                "sanne"
+            ],
+            [
+                "record.isEmpty",
+                {
+                    "userId": "sanne",
+                    "userCreated": true,
+                    "account": "acc-1",
+                    "signIn": {
+                        "mode": "password",
+                        "label": true
+                    },
+                    "objects": {
+                        "case": {
+                            "register": "procest",
+                            "schema": "case",
+                            "id": "c-1",
+                            "subject": "sanne"
+                        },
+                        "message": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-1",
+                            "subject": "sanne"
+                        },
+                        "7": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-2",
+                            "subject": "sanne"
+                        },
+                        "draft": {
+                            "register": "portaliq",
+                            "schema": "draft",
+                            "id": "d-1",
+                            "subject": "sanne"
+                        }
+                    }
+                }
+            ],
+            [
+                "store.available"
+            ]
+        ],
+        "report": {
+            "id": "sanne",
+            "recorded": true,
+            "available": false,
+            "userId": "sanne",
+            "types": [],
+            "failed": [],
+            "account": "kept-not-ours",
+            "signIn": "kept-not-ours",
+            "user": "kept-not-ours"
+        }
+    },
+    "everything removed": {
+        "calls": [
+            [
+                "record.read",
+                "sanne"
+            ],
+            [
+                "record.isEmpty",
+                {
+                    "userId": "sanne",
+                    "userCreated": true,
+                    "account": "acc-1",
+                    "signIn": {
+                        "mode": "password",
+                        "label": true
+                    },
+                    "objects": {
+                        "case": {
+                            "register": "procest",
+                            "schema": "case",
+                            "id": "c-1",
+                            "subject": "sanne"
+                        },
+                        "message": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-1",
+                            "subject": "sanne"
+                        },
+                        "7": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-2",
+                            "subject": "sanne"
+                        },
+                        "draft": {
+                            "register": "portaliq",
+                            "schema": "draft",
+                            "id": "d-1",
+                            "subject": "sanne"
+                        }
+                    }
+                }
+            ],
+            [
+                "store.available"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.get",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "store.delete",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "wayIn.account",
+                "acc-1"
+            ],
+            [
+                "wayIn.deleteAccount",
+                "acc-1"
+            ],
+            [
+                "wayIn.portal",
+                "zuiddrecht"
+            ],
+            [
+                "wayIn.withdraw",
+                {
+                    "slug": "zuiddrecht"
+                },
+                "password",
+                true
+            ],
+            [
+                "user.delete",
+                "sanne"
+            ],
+            [
+                "record.write",
+                "sanne",
+                {
+                    "userId": "",
+                    "userCreated": false,
+                    "account": "",
+                    "signIn": {
+                        "mode": "",
+                        "label": false
+                    },
+                    "objects": []
+                }
+            ]
+        ],
+        "report": {
+            "id": "sanne",
+            "recorded": true,
+            "available": true,
+            "userId": "sanne",
+            "types": {
+                "portaliq draft": {
+                    "deleted": 1,
+                    "gone": 0
+                },
+                "portaliq message": {
+                    "deleted": 2,
+                    "gone": 0
+                },
+                "procest case": {
+                    "deleted": 1,
+                    "gone": 0
+                }
+            },
+            "failed": [],
+            "account": "deleted",
+            "signIn": "withdrawn",
+            "user": "deleted"
+        }
+    },
+    "some objects gone": {
+        "calls": [
+            [
+                "record.read",
+                "sanne"
+            ],
+            [
+                "record.isEmpty",
+                {
+                    "userId": "sanne",
+                    "userCreated": true,
+                    "account": "acc-1",
+                    "signIn": {
+                        "mode": "password",
+                        "label": true
+                    },
+                    "objects": {
+                        "case": {
+                            "register": "procest",
+                            "schema": "case",
+                            "id": "c-1",
+                            "subject": "sanne"
+                        },
+                        "message": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-1",
+                            "subject": "sanne"
+                        },
+                        "7": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-2",
+                            "subject": "sanne"
+                        },
+                        "draft": {
+                            "register": "portaliq",
+                            "schema": "draft",
+                            "id": "d-1",
+                            "subject": "sanne"
+                        }
+                    }
+                }
+            ],
+            [
+                "store.available"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.get",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "store.delete",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "wayIn.account",
+                "acc-1"
+            ],
+            [
+                "wayIn.deleteAccount",
+                "acc-1"
+            ],
+            [
+                "wayIn.portal",
+                "zuiddrecht"
+            ],
+            [
+                "wayIn.withdraw",
+                {
+                    "slug": "zuiddrecht"
+                },
+                "password",
+                true
+            ],
+            [
+                "user.delete",
+                "sanne"
+            ],
+            [
+                "record.write",
+                "sanne",
+                {
+                    "userId": "",
+                    "userCreated": false,
+                    "account": "",
+                    "signIn": {
+                        "mode": "",
+                        "label": false
+                    },
+                    "objects": []
+                }
+            ]
+        ],
+        "report": {
+            "id": "sanne",
+            "recorded": true,
+            "available": true,
+            "userId": "sanne",
+            "types": {
+                "portaliq draft": {
+                    "deleted": 0,
+                    "gone": 1
+                },
+                "portaliq message": {
+                    "deleted": 1,
+                    "gone": 1
+                },
+                "procest case": {
+                    "deleted": 1,
+                    "gone": 0
+                }
+            },
+            "failed": [],
+            "account": "deleted",
+            "signIn": "withdrawn",
+            "user": "deleted"
+        }
+    },
+    "some deletes fail": {
+        "calls": [
+            [
+                "record.read",
+                "sanne"
+            ],
+            [
+                "record.isEmpty",
+                {
+                    "userId": "sanne",
+                    "userCreated": true,
+                    "account": "acc-1",
+                    "signIn": {
+                        "mode": "password",
+                        "label": true
+                    },
+                    "objects": {
+                        "case": {
+                            "register": "procest",
+                            "schema": "case",
+                            "id": "c-1",
+                            "subject": "sanne"
+                        },
+                        "message": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-1",
+                            "subject": "sanne"
+                        },
+                        "7": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-2",
+                            "subject": "sanne"
+                        },
+                        "draft": {
+                            "register": "portaliq",
+                            "schema": "draft",
+                            "id": "d-1",
+                            "subject": "sanne"
+                        }
+                    }
+                }
+            ],
+            [
+                "store.available"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.get",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "store.delete",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "wayIn.account",
+                "acc-1"
+            ],
+            [
+                "wayIn.deleteAccount",
+                "acc-1"
+            ],
+            [
+                "wayIn.portal",
+                "zuiddrecht"
+            ],
+            [
+                "wayIn.withdraw",
+                {
+                    "slug": "zuiddrecht"
+                },
+                "password",
+                true
+            ],
+            [
+                "user.delete",
+                "sanne"
+            ],
+            [
+                "record.write",
+                "sanne",
+                {
+                    "userId": "",
+                    "userCreated": false,
+                    "account": "",
+                    "signIn": {
+                        "mode": "",
+                        "label": false
+                    },
+                    "objects": {
+                        "case": {
+                            "register": "procest",
+                            "schema": "case",
+                            "id": "c-1",
+                            "subject": "sanne"
+                        },
+                        "7": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-2",
+                            "subject": "sanne"
+                        }
+                    }
+                }
+            ]
+        ],
+        "report": {
+            "id": "sanne",
+            "recorded": true,
+            "available": true,
+            "userId": "sanne",
+            "types": {
+                "portaliq draft": {
+                    "deleted": 1,
+                    "gone": 0
+                },
+                "portaliq message": {
+                    "deleted": 1,
+                    "gone": 0
+                },
+                "procest case": {
+                    "deleted": 0,
+                    "gone": 0
+                }
+            },
+            "failed": [
+                "portaliq message 7",
+                "procest case case"
+            ],
+            "account": "deleted",
+            "signIn": "withdrawn",
+            "user": "deleted"
+        }
+    },
+    "gone and failing mixed": {
+        "calls": [
+            [
+                "record.read",
+                "sanne"
+            ],
+            [
+                "record.isEmpty",
+                {
+                    "userId": "sanne",
+                    "userCreated": true,
+                    "account": "acc-1",
+                    "signIn": {
+                        "mode": "password",
+                        "label": true
+                    },
+                    "objects": {
+                        "case": {
+                            "register": "procest",
+                            "schema": "case",
+                            "id": "c-1",
+                            "subject": "sanne"
+                        },
+                        "message": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-1",
+                            "subject": "sanne"
+                        },
+                        "7": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-2",
+                            "subject": "sanne"
+                        },
+                        "draft": {
+                            "register": "portaliq",
+                            "schema": "draft",
+                            "id": "d-1",
+                            "subject": "sanne"
+                        }
+                    }
+                }
+            ],
+            [
+                "store.available"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.get",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "wayIn.account",
+                "acc-1"
+            ],
+            [
+                "wayIn.deleteAccount",
+                "acc-1"
+            ],
+            [
+                "wayIn.portal",
+                "zuiddrecht"
+            ],
+            [
+                "wayIn.withdraw",
+                {
+                    "slug": "zuiddrecht"
+                },
+                "password",
+                true
+            ],
+            [
+                "user.delete",
+                "sanne"
+            ],
+            [
+                "record.write",
+                "sanne",
+                {
+                    "userId": "",
+                    "userCreated": false,
+                    "account": "",
+                    "signIn": {
+                        "mode": "",
+                        "label": false
+                    },
+                    "objects": {
+                        "message": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-1",
+                            "subject": "sanne"
+                        }
+                    }
+                }
+            ]
+        ],
+        "report": {
+            "id": "sanne",
+            "recorded": true,
+            "available": true,
+            "userId": "sanne",
+            "types": {
+                "portaliq draft": {
+                    "deleted": 1,
+                    "gone": 0
+                },
+                "portaliq message": {
+                    "deleted": 1,
+                    "gone": 0
+                },
+                "procest case": {
+                    "deleted": 0,
+                    "gone": 1
+                }
+            },
+            "failed": [
+                "portaliq message message"
+            ],
+            "account": "deleted",
+            "signIn": "withdrawn",
+            "user": "deleted"
+        }
+    },
+    "only a user id": {
+        "calls": [
+            [
+                "record.read",
+                "sanne"
+            ],
+            [
+                "record.isEmpty",
+                {
+                    "userId": "sanne",
+                    "userCreated": false,
+                    "account": "",
+                    "signIn": {
+                        "mode": "",
+                        "label": false
+                    },
+                    "objects": []
+                }
+            ],
+            [
+                "store.available"
+            ],
+            [
+                "record.write",
+                "sanne",
+                {
+                    "userId": "",
+                    "userCreated": false,
+                    "account": "",
+                    "signIn": {
+                        "mode": "",
+                        "label": false
+                    },
+                    "objects": []
+                }
+            ]
+        ],
+        "report": {
+            "id": "sanne",
+            "recorded": true,
+            "available": true,
+            "userId": "sanne",
+            "types": [],
+            "failed": [],
+            "account": "kept-not-ours",
+            "signIn": "kept-not-ours",
+            "user": "kept-not-ours"
+        }
+    },
+    "user not created": {
+        "calls": [
+            [
+                "record.read",
+                "sanne"
+            ],
+            [
+                "record.isEmpty",
+                {
+                    "userId": "sanne",
+                    "userCreated": false,
+                    "account": "acc-1",
+                    "signIn": {
+                        "mode": "password",
+                        "label": true
+                    },
+                    "objects": {
+                        "case": {
+                            "register": "procest",
+                            "schema": "case",
+                            "id": "c-1",
+                            "subject": "sanne"
+                        },
+                        "message": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-1",
+                            "subject": "sanne"
+                        },
+                        "7": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-2",
+                            "subject": "sanne"
+                        },
+                        "draft": {
+                            "register": "portaliq",
+                            "schema": "draft",
+                            "id": "d-1",
+                            "subject": "sanne"
+                        }
+                    }
+                }
+            ],
+            [
+                "store.available"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.get",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "store.delete",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "wayIn.account",
+                "acc-1"
+            ],
+            [
+                "wayIn.deleteAccount",
+                "acc-1"
+            ],
+            [
+                "wayIn.portal",
+                "zuiddrecht"
+            ],
+            [
+                "wayIn.withdraw",
+                {
+                    "slug": "zuiddrecht"
+                },
+                "password",
+                true
+            ],
+            [
+                "record.write",
+                "sanne",
+                {
+                    "userId": "",
+                    "userCreated": false,
+                    "account": "",
+                    "signIn": {
+                        "mode": "",
+                        "label": false
+                    },
+                    "objects": []
+                }
+            ]
+        ],
+        "report": {
+            "id": "sanne",
+            "recorded": true,
+            "available": true,
+            "userId": "sanne",
+            "types": {
+                "portaliq draft": {
+                    "deleted": 1,
+                    "gone": 0
+                },
+                "portaliq message": {
+                    "deleted": 2,
+                    "gone": 0
+                },
+                "procest case": {
+                    "deleted": 1,
+                    "gone": 0
+                }
+            },
+            "failed": [],
+            "account": "deleted",
+            "signIn": "withdrawn",
+            "user": "kept-not-ours"
+        }
+    },
+    "user created without id": {
+        "calls": [
+            [
+                "record.read",
+                "sanne"
+            ],
+            [
+                "record.isEmpty",
+                {
+                    "userId": "",
+                    "userCreated": true,
+                    "account": "acc-1",
+                    "signIn": {
+                        "mode": "password",
+                        "label": true
+                    },
+                    "objects": {
+                        "case": {
+                            "register": "procest",
+                            "schema": "case",
+                            "id": "c-1",
+                            "subject": "sanne"
+                        },
+                        "message": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-1",
+                            "subject": "sanne"
+                        },
+                        "7": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-2",
+                            "subject": "sanne"
+                        },
+                        "draft": {
+                            "register": "portaliq",
+                            "schema": "draft",
+                            "id": "d-1",
+                            "subject": "sanne"
+                        }
+                    }
+                }
+            ],
+            [
+                "store.available"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.get",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "store.delete",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "wayIn.account",
+                "acc-1"
+            ],
+            [
+                "wayIn.deleteAccount",
+                "acc-1"
+            ],
+            [
+                "wayIn.portal",
+                "zuiddrecht"
+            ],
+            [
+                "wayIn.withdraw",
+                {
+                    "slug": "zuiddrecht"
+                },
+                "password",
+                true
+            ],
+            [
+                "record.write",
+                "sanne",
+                {
+                    "userId": "",
+                    "userCreated": false,
+                    "account": "",
+                    "signIn": {
+                        "mode": "",
+                        "label": false
+                    },
+                    "objects": []
+                }
+            ]
+        ],
+        "report": {
+            "id": "sanne",
+            "recorded": true,
+            "available": true,
+            "userId": "",
+            "types": {
+                "portaliq draft": {
+                    "deleted": 1,
+                    "gone": 0
+                },
+                "portaliq message": {
+                    "deleted": 2,
+                    "gone": 0
+                },
+                "procest case": {
+                    "deleted": 1,
+                    "gone": 0
+                }
+            },
+            "failed": [],
+            "account": "deleted",
+            "signIn": "withdrawn",
+            "user": "kept-not-ours"
+        }
+    },
+    "user delete fails": {
+        "calls": [
+            [
+                "record.read",
+                "sanne"
+            ],
+            [
+                "record.isEmpty",
+                {
+                    "userId": "sanne",
+                    "userCreated": true,
+                    "account": "acc-1",
+                    "signIn": {
+                        "mode": "password",
+                        "label": true
+                    },
+                    "objects": {
+                        "case": {
+                            "register": "procest",
+                            "schema": "case",
+                            "id": "c-1",
+                            "subject": "sanne"
+                        },
+                        "message": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-1",
+                            "subject": "sanne"
+                        },
+                        "7": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-2",
+                            "subject": "sanne"
+                        },
+                        "draft": {
+                            "register": "portaliq",
+                            "schema": "draft",
+                            "id": "d-1",
+                            "subject": "sanne"
+                        }
+                    }
+                }
+            ],
+            [
+                "store.available"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.get",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "store.delete",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "wayIn.account",
+                "acc-1"
+            ],
+            [
+                "wayIn.deleteAccount",
+                "acc-1"
+            ],
+            [
+                "wayIn.portal",
+                "zuiddrecht"
+            ],
+            [
+                "wayIn.withdraw",
+                {
+                    "slug": "zuiddrecht"
+                },
+                "password",
+                true
+            ],
+            [
+                "user.delete",
+                "sanne"
+            ],
+            [
+                "record.write",
+                "sanne",
+                {
+                    "userId": "sanne",
+                    "userCreated": true,
+                    "account": "",
+                    "signIn": {
+                        "mode": "",
+                        "label": false
+                    },
+                    "objects": []
+                }
+            ]
+        ],
+        "report": {
+            "id": "sanne",
+            "recorded": true,
+            "available": true,
+            "userId": "sanne",
+            "types": {
+                "portaliq draft": {
+                    "deleted": 1,
+                    "gone": 0
+                },
+                "portaliq message": {
+                    "deleted": 2,
+                    "gone": 0
+                },
+                "procest case": {
+                    "deleted": 1,
+                    "gone": 0
+                }
+            },
+            "failed": [
+                "user"
+            ],
+            "account": "deleted",
+            "signIn": "withdrawn",
+            "user": "failed"
+        }
+    },
+    "account already gone": {
+        "calls": [
+            [
+                "record.read",
+                "sanne"
+            ],
+            [
+                "record.isEmpty",
+                {
+                    "userId": "sanne",
+                    "userCreated": true,
+                    "account": "acc-1",
+                    "signIn": {
+                        "mode": "password",
+                        "label": true
+                    },
+                    "objects": {
+                        "case": {
+                            "register": "procest",
+                            "schema": "case",
+                            "id": "c-1",
+                            "subject": "sanne"
+                        },
+                        "message": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-1",
+                            "subject": "sanne"
+                        },
+                        "7": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-2",
+                            "subject": "sanne"
+                        },
+                        "draft": {
+                            "register": "portaliq",
+                            "schema": "draft",
+                            "id": "d-1",
+                            "subject": "sanne"
+                        }
+                    }
+                }
+            ],
+            [
+                "store.available"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.get",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "store.delete",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "wayIn.account",
+                "acc-1"
+            ],
+            [
+                "wayIn.portal",
+                "zuiddrecht"
+            ],
+            [
+                "wayIn.withdraw",
+                {
+                    "slug": "zuiddrecht"
+                },
+                "password",
+                true
+            ],
+            [
+                "user.delete",
+                "sanne"
+            ],
+            [
+                "record.write",
+                "sanne",
+                {
+                    "userId": "",
+                    "userCreated": false,
+                    "account": "",
+                    "signIn": {
+                        "mode": "",
+                        "label": false
+                    },
+                    "objects": []
+                }
+            ]
+        ],
+        "report": {
+            "id": "sanne",
+            "recorded": true,
+            "available": true,
+            "userId": "sanne",
+            "types": {
+                "portaliq draft": {
+                    "deleted": 1,
+                    "gone": 0
+                },
+                "portaliq message": {
+                    "deleted": 2,
+                    "gone": 0
+                },
+                "procest case": {
+                    "deleted": 1,
+                    "gone": 0
+                }
+            },
+            "failed": [],
+            "account": "deleted",
+            "signIn": "withdrawn",
+            "user": "deleted"
+        }
+    },
+    "account delete fails": {
+        "calls": [
+            [
+                "record.read",
+                "sanne"
+            ],
+            [
+                "record.isEmpty",
+                {
+                    "userId": "sanne",
+                    "userCreated": true,
+                    "account": "acc-1",
+                    "signIn": {
+                        "mode": "password",
+                        "label": true
+                    },
+                    "objects": {
+                        "case": {
+                            "register": "procest",
+                            "schema": "case",
+                            "id": "c-1",
+                            "subject": "sanne"
+                        },
+                        "message": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-1",
+                            "subject": "sanne"
+                        },
+                        "7": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-2",
+                            "subject": "sanne"
+                        },
+                        "draft": {
+                            "register": "portaliq",
+                            "schema": "draft",
+                            "id": "d-1",
+                            "subject": "sanne"
+                        }
+                    }
+                }
+            ],
+            [
+                "store.available"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.get",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "store.delete",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "wayIn.account",
+                "acc-1"
+            ],
+            [
+                "wayIn.deleteAccount",
+                "acc-1"
+            ],
+            [
+                "wayIn.portal",
+                "zuiddrecht"
+            ],
+            [
+                "wayIn.withdraw",
+                {
+                    "slug": "zuiddrecht"
+                },
+                "password",
+                true
+            ],
+            [
+                "user.delete",
+                "sanne"
+            ],
+            [
+                "record.write",
+                "sanne",
+                {
+                    "userId": "",
+                    "userCreated": false,
+                    "account": "acc-1",
+                    "signIn": {
+                        "mode": "",
+                        "label": false
+                    },
+                    "objects": []
+                }
+            ]
+        ],
+        "report": {
+            "id": "sanne",
+            "recorded": true,
+            "available": true,
+            "userId": "sanne",
+            "types": {
+                "portaliq draft": {
+                    "deleted": 1,
+                    "gone": 0
+                },
+                "portaliq message": {
+                    "deleted": 2,
+                    "gone": 0
+                },
+                "procest case": {
+                    "deleted": 1,
+                    "gone": 0
+                }
+            },
+            "failed": [
+                "account"
+            ],
+            "account": "failed",
+            "signIn": "withdrawn",
+            "user": "deleted"
+        }
+    },
+    "no account": {
+        "calls": [
+            [
+                "record.read",
+                "sanne"
+            ],
+            [
+                "record.isEmpty",
+                {
+                    "userId": "sanne",
+                    "userCreated": true,
+                    "account": "",
+                    "signIn": {
+                        "mode": "password",
+                        "label": true
+                    },
+                    "objects": {
+                        "case": {
+                            "register": "procest",
+                            "schema": "case",
+                            "id": "c-1",
+                            "subject": "sanne"
+                        },
+                        "message": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-1",
+                            "subject": "sanne"
+                        },
+                        "7": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-2",
+                            "subject": "sanne"
+                        },
+                        "draft": {
+                            "register": "portaliq",
+                            "schema": "draft",
+                            "id": "d-1",
+                            "subject": "sanne"
+                        }
+                    }
+                }
+            ],
+            [
+                "store.available"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.get",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "store.delete",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "wayIn.portal",
+                "zuiddrecht"
+            ],
+            [
+                "wayIn.withdraw",
+                {
+                    "slug": "zuiddrecht"
+                },
+                "password",
+                true
+            ],
+            [
+                "user.delete",
+                "sanne"
+            ],
+            [
+                "record.write",
+                "sanne",
+                {
+                    "userId": "",
+                    "userCreated": false,
+                    "account": "",
+                    "signIn": {
+                        "mode": "",
+                        "label": false
+                    },
+                    "objects": []
+                }
+            ]
+        ],
+        "report": {
+            "id": "sanne",
+            "recorded": true,
+            "available": true,
+            "userId": "sanne",
+            "types": {
+                "portaliq draft": {
+                    "deleted": 1,
+                    "gone": 0
+                },
+                "portaliq message": {
+                    "deleted": 2,
+                    "gone": 0
+                },
+                "procest case": {
+                    "deleted": 1,
+                    "gone": 0
+                }
+            },
+            "failed": [],
+            "account": "kept-not-ours",
+            "signIn": "withdrawn",
+            "user": "deleted"
+        }
+    },
+    "no sign-in mode": {
+        "calls": [
+            [
+                "record.read",
+                "sanne"
+            ],
+            [
+                "record.isEmpty",
+                {
+                    "userId": "sanne",
+                    "userCreated": true,
+                    "account": "acc-1",
+                    "signIn": {
+                        "mode": "",
+                        "label": true
+                    },
+                    "objects": {
+                        "case": {
+                            "register": "procest",
+                            "schema": "case",
+                            "id": "c-1",
+                            "subject": "sanne"
+                        },
+                        "message": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-1",
+                            "subject": "sanne"
+                        },
+                        "7": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-2",
+                            "subject": "sanne"
+                        },
+                        "draft": {
+                            "register": "portaliq",
+                            "schema": "draft",
+                            "id": "d-1",
+                            "subject": "sanne"
+                        }
+                    }
+                }
+            ],
+            [
+                "store.available"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.get",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "store.delete",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "wayIn.account",
+                "acc-1"
+            ],
+            [
+                "wayIn.deleteAccount",
+                "acc-1"
+            ],
+            [
+                "user.delete",
+                "sanne"
+            ],
+            [
+                "record.write",
+                "sanne",
+                {
+                    "userId": "",
+                    "userCreated": false,
+                    "account": "",
+                    "signIn": {
+                        "mode": "",
+                        "label": true
+                    },
+                    "objects": []
+                }
+            ]
+        ],
+        "report": {
+            "id": "sanne",
+            "recorded": true,
+            "available": true,
+            "userId": "sanne",
+            "types": {
+                "portaliq draft": {
+                    "deleted": 1,
+                    "gone": 0
+                },
+                "portaliq message": {
+                    "deleted": 2,
+                    "gone": 0
+                },
+                "procest case": {
+                    "deleted": 1,
+                    "gone": 0
+                }
+            },
+            "failed": [],
+            "account": "deleted",
+            "signIn": "kept-not-ours",
+            "user": "deleted"
+        }
+    },
+    "portal gone": {
+        "calls": [
+            [
+                "record.read",
+                "sanne"
+            ],
+            [
+                "record.isEmpty",
+                {
+                    "userId": "sanne",
+                    "userCreated": true,
+                    "account": "acc-1",
+                    "signIn": {
+                        "mode": "password",
+                        "label": true
+                    },
+                    "objects": {
+                        "case": {
+                            "register": "procest",
+                            "schema": "case",
+                            "id": "c-1",
+                            "subject": "sanne"
+                        },
+                        "message": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-1",
+                            "subject": "sanne"
+                        },
+                        "7": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-2",
+                            "subject": "sanne"
+                        },
+                        "draft": {
+                            "register": "portaliq",
+                            "schema": "draft",
+                            "id": "d-1",
+                            "subject": "sanne"
+                        }
+                    }
+                }
+            ],
+            [
+                "store.available"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.get",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "store.delete",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "wayIn.account",
+                "acc-1"
+            ],
+            [
+                "wayIn.deleteAccount",
+                "acc-1"
+            ],
+            [
+                "wayIn.portal",
+                "zuiddrecht"
+            ],
+            [
+                "user.delete",
+                "sanne"
+            ],
+            [
+                "record.write",
+                "sanne",
+                {
+                    "userId": "",
+                    "userCreated": false,
+                    "account": "",
+                    "signIn": {
+                        "mode": "",
+                        "label": false
+                    },
+                    "objects": []
+                }
+            ]
+        ],
+        "report": {
+            "id": "sanne",
+            "recorded": true,
+            "available": true,
+            "userId": "sanne",
+            "types": {
+                "portaliq draft": {
+                    "deleted": 1,
+                    "gone": 0
+                },
+                "portaliq message": {
+                    "deleted": 2,
+                    "gone": 0
+                },
+                "procest case": {
+                    "deleted": 1,
+                    "gone": 0
+                }
+            },
+            "failed": [],
+            "account": "deleted",
+            "signIn": "withdrawn",
+            "user": "deleted"
+        }
+    },
+    "withdraw fails": {
+        "calls": [
+            [
+                "record.read",
+                "sanne"
+            ],
+            [
+                "record.isEmpty",
+                {
+                    "userId": "sanne",
+                    "userCreated": true,
+                    "account": "acc-1",
+                    "signIn": {
+                        "mode": "password",
+                        "label": true
+                    },
+                    "objects": {
+                        "case": {
+                            "register": "procest",
+                            "schema": "case",
+                            "id": "c-1",
+                            "subject": "sanne"
+                        },
+                        "message": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-1",
+                            "subject": "sanne"
+                        },
+                        "7": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-2",
+                            "subject": "sanne"
+                        },
+                        "draft": {
+                            "register": "portaliq",
+                            "schema": "draft",
+                            "id": "d-1",
+                            "subject": "sanne"
+                        }
+                    }
+                }
+            ],
+            [
+                "store.available"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.get",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "store.delete",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "wayIn.account",
+                "acc-1"
+            ],
+            [
+                "wayIn.deleteAccount",
+                "acc-1"
+            ],
+            [
+                "wayIn.portal",
+                "zuiddrecht"
+            ],
+            [
+                "wayIn.withdraw",
+                {
+                    "slug": "zuiddrecht"
+                },
+                "password",
+                true
+            ],
+            [
+                "user.delete",
+                "sanne"
+            ],
+            [
+                "record.write",
+                "sanne",
+                {
+                    "userId": "",
+                    "userCreated": false,
+                    "account": "",
+                    "signIn": {
+                        "mode": "password",
+                        "label": true
+                    },
+                    "objects": []
+                }
+            ]
+        ],
+        "report": {
+            "id": "sanne",
+            "recorded": true,
+            "available": true,
+            "userId": "sanne",
+            "types": {
+                "portaliq draft": {
+                    "deleted": 1,
+                    "gone": 0
+                },
+                "portaliq message": {
+                    "deleted": 2,
+                    "gone": 0
+                },
+                "procest case": {
+                    "deleted": 1,
+                    "gone": 0
+                }
+            },
+            "failed": [
+                "signIn"
+            ],
+            "account": "deleted",
+            "signIn": "failed",
+            "user": "deleted"
+        }
+    },
+    "withdraw without label": {
+        "calls": [
+            [
+                "record.read",
+                "sanne"
+            ],
+            [
+                "record.isEmpty",
+                {
+                    "userId": "sanne",
+                    "userCreated": true,
+                    "account": "acc-1",
+                    "signIn": {
+                        "mode": "digid",
+                        "label": false
+                    },
+                    "objects": {
+                        "case": {
+                            "register": "procest",
+                            "schema": "case",
+                            "id": "c-1",
+                            "subject": "sanne"
+                        },
+                        "message": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-1",
+                            "subject": "sanne"
+                        },
+                        "7": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-2",
+                            "subject": "sanne"
+                        },
+                        "draft": {
+                            "register": "portaliq",
+                            "schema": "draft",
+                            "id": "d-1",
+                            "subject": "sanne"
+                        }
+                    }
+                }
+            ],
+            [
+                "store.available"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.get",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "store.delete",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "wayIn.account",
+                "acc-1"
+            ],
+            [
+                "wayIn.deleteAccount",
+                "acc-1"
+            ],
+            [
+                "wayIn.portal",
+                "zuiddrecht"
+            ],
+            [
+                "wayIn.withdraw",
+                {
+                    "slug": "zuiddrecht"
+                },
+                "digid",
+                false
+            ],
+            [
+                "user.delete",
+                "sanne"
+            ],
+            [
+                "record.write",
+                "sanne",
+                {
+                    "userId": "",
+                    "userCreated": false,
+                    "account": "",
+                    "signIn": {
+                        "mode": "",
+                        "label": false
+                    },
+                    "objects": []
+                }
+            ]
+        ],
+        "report": {
+            "id": "sanne",
+            "recorded": true,
+            "available": true,
+            "userId": "sanne",
+            "types": {
+                "portaliq draft": {
+                    "deleted": 1,
+                    "gone": 0
+                },
+                "portaliq message": {
+                    "deleted": 2,
+                    "gone": 0
+                },
+                "procest case": {
+                    "deleted": 1,
+                    "gone": 0
+                }
+            },
+            "failed": [],
+            "account": "deleted",
+            "signIn": "withdrawn",
+            "user": "deleted"
+        }
+    },
+    "everything fails": {
+        "calls": [
+            [
+                "record.read",
+                "sanne"
+            ],
+            [
+                "record.isEmpty",
+                {
+                    "userId": "sanne",
+                    "userCreated": true,
+                    "account": "acc-1",
+                    "signIn": {
+                        "mode": "password",
+                        "label": true
+                    },
+                    "objects": {
+                        "case": {
+                            "register": "procest",
+                            "schema": "case",
+                            "id": "c-1",
+                            "subject": "sanne"
+                        },
+                        "message": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-1",
+                            "subject": "sanne"
+                        },
+                        "7": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-2",
+                            "subject": "sanne"
+                        },
+                        "draft": {
+                            "register": "portaliq",
+                            "schema": "draft",
+                            "id": "d-1",
+                            "subject": "sanne"
+                        }
+                    }
+                }
+            ],
+            [
+                "store.available"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.get",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "store.delete",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "wayIn.account",
+                "acc-1"
+            ],
+            [
+                "wayIn.deleteAccount",
+                "acc-1"
+            ],
+            [
+                "wayIn.portal",
+                "zuiddrecht"
+            ],
+            [
+                "wayIn.withdraw",
+                {
+                    "slug": "zuiddrecht"
+                },
+                "password",
+                true
+            ],
+            [
+                "user.delete",
+                "sanne"
+            ],
+            [
+                "record.write",
+                "sanne",
+                {
+                    "userId": "sanne",
+                    "userCreated": true,
+                    "account": "acc-1",
+                    "signIn": {
+                        "mode": "password",
+                        "label": true
+                    },
+                    "objects": {
+                        "case": {
+                            "register": "procest",
+                            "schema": "case",
+                            "id": "c-1",
+                            "subject": "sanne"
+                        },
+                        "message": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-1",
+                            "subject": "sanne"
+                        },
+                        "7": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-2",
+                            "subject": "sanne"
+                        },
+                        "draft": {
+                            "register": "portaliq",
+                            "schema": "draft",
+                            "id": "d-1",
+                            "subject": "sanne"
+                        }
+                    }
+                }
+            ]
+        ],
+        "report": {
+            "id": "sanne",
+            "recorded": true,
+            "available": true,
+            "userId": "sanne",
+            "types": {
+                "portaliq draft": {
+                    "deleted": 0,
+                    "gone": 0
+                },
+                "portaliq message": {
+                    "deleted": 0,
+                    "gone": 0
+                },
+                "procest case": {
+                    "deleted": 0,
+                    "gone": 0
+                }
+            },
+            "failed": [
+                "portaliq draft draft",
+                "portaliq message 7",
+                "portaliq message message",
+                "procest case case",
+                "account",
+                "signIn",
+                "user"
+            ],
+            "account": "failed",
+            "signIn": "failed",
+            "user": "failed"
+        }
+    },
+    "objects only": {
+        "calls": [
+            [
+                "record.read",
+                "sanne"
+            ],
+            [
+                "record.isEmpty",
+                {
+                    "userId": "",
+                    "userCreated": false,
+                    "account": "",
+                    "signIn": {
+                        "mode": "",
+                        "label": false
+                    },
+                    "objects": {
+                        "case": {
+                            "register": "procest",
+                            "schema": "case",
+                            "id": "c-1",
+                            "subject": "sanne"
+                        },
+                        "message": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-1",
+                            "subject": "sanne"
+                        },
+                        "7": {
+                            "register": "portaliq",
+                            "schema": "message",
+                            "id": "m-2",
+                            "subject": "sanne"
+                        },
+                        "draft": {
+                            "register": "portaliq",
+                            "schema": "draft",
+                            "id": "d-1",
+                            "subject": "sanne"
+                        }
+                    }
+                }
+            ],
+            [
+                "store.available"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "draft",
+                "d-1"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-2"
+            ],
+            [
+                "store.get",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.delete",
+                "portaliq",
+                "message",
+                "m-1"
+            ],
+            [
+                "store.get",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "store.delete",
+                "procest",
+                "case",
+                "c-1"
+            ],
+            [
+                "record.write",
+                "sanne",
+                {
+                    "userId": "",
+                    "userCreated": false,
+                    "account": "",
+                    "signIn": {
+                        "mode": "",
+                        "label": false
+                    },
+                    "objects": []
+                }
+            ]
+        ],
+        "report": {
+            "id": "sanne",
+            "recorded": true,
+            "available": true,
+            "userId": "",
+            "types": {
+                "portaliq draft": {
+                    "deleted": 1,
+                    "gone": 0
+                },
+                "portaliq message": {
+                    "deleted": 2,
+                    "gone": 0
+                },
+                "procest case": {
+                    "deleted": 1,
+                    "gone": 0
+                }
+            },
+            "failed": [],
+            "account": "kept-not-ours",
+            "signIn": "kept-not-ours",
+            "user": "kept-not-ours"
+        }
+    },
+    "one object type twice, one failing": {
+        "calls": [
+            [
+                "record.read",
+                "sanne"
+            ],
+            [
+                "record.isEmpty",
+                {
+                    "userId": "",
+                    "userCreated": false,
+                    "account": "",
+                    "signIn": {
+                        "mode": "",
+                        "label": false
+                    },
+                    "objects": {
+                        "a": {
+                            "register": "r",
+                            "schema": "s",
+                            "id": "x-1",
+                            "subject": ""
+                        },
+                        "b": {
+                            "register": "r",
+                            "schema": "s",
+                            "id": "x-2",
+                            "subject": ""
+                        }
+                    }
+                }
+            ],
+            [
+                "store.available"
+            ],
+            [
+                "store.get",
+                "r",
+                "s",
+                "x-2"
+            ],
+            [
+                "store.delete",
+                "r",
+                "s",
+                "x-2"
+            ],
+            [
+                "store.get",
+                "r",
+                "s",
+                "x-1"
+            ],
+            [
+                "store.delete",
+                "r",
+                "s",
+                "x-1"
+            ],
+            [
+                "record.write",
+                "sanne",
+                {
+                    "userId": "",
+                    "userCreated": false,
+                    "account": "",
+                    "signIn": {
+                        "mode": "",
+                        "label": false
+                    },
+                    "objects": {
+                        "a": {
+                            "register": "r",
+                            "schema": "s",
+                            "id": "x-1",
+                            "subject": ""
+                        }
+                    }
+                }
+            ]
+        ],
+        "report": {
+            "id": "sanne",
+            "recorded": true,
+            "available": true,
+            "userId": "",
+            "types": {
+                "r s": {
+                    "deleted": 1,
+                    "gone": 0
+                }
+            },
+            "failed": [
+                "r s a"
+            ],
+            "account": "kept-not-ours",
+            "signIn": "kept-not-ours",
+            "user": "kept-not-ours"
+        }
+    }
+}
