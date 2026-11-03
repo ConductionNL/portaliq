@@ -68,7 +68,7 @@ function writeRefusal(status, refusal) {
 export function getToken() {
 	try {
 		return window.localStorage.getItem(TOKEN_KEY) || null
-	} catch (e) {
+	} catch {
 		return null
 	}
 }
@@ -84,7 +84,7 @@ export function setToken(token) {
 		} else {
 			window.localStorage.removeItem(TOKEN_KEY)
 		}
-	} catch (e) {
+	} catch {
 		/* storage unavailable — session simply won't persist */
 	}
 }
@@ -1681,7 +1681,7 @@ export function createPortalApi(config, store = {}) {
 					window.URL.revokeObjectURL(objectUrl)
 				}, 10000)
 				return { ok: true }
-			} catch (e) {
+			} catch {
 				return { ok: false, status: 0 }
 			}
 		},
@@ -1829,7 +1829,7 @@ export function createPortalApi(config, store = {}) {
 					headers: { Accept: 'application/json', ...authHeaders() },
 				})
 				answer = res.ok ? await res.json().catch(() => null) : null
-			} catch (e) {
+			} catch {
 				/* best-effort — the token is dropped regardless */
 			}
 			writeToken(null)

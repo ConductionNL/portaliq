@@ -84,14 +84,21 @@ const FORMS = [
 	/^cast:[a-z0-9-]+\.[A-Za-z.]+$/,
 	/^lookup:[A-Za-z][A-Za-z0-9]*$/,
 	/^object:[a-z0-9-]+\.[A-Za-z]+$/,
-	/^date:[+-]?\d{1,4}(@(mon|tue|wed|thu|fri|sat|sun))?$/,
-	/^datetime:[+-]?\d{1,4}(@(mon|tue|wed|thu|fri|sat|sun))? ([01]\d|2[0-3]):[0-5]\d$/,
-	/^account:[a-z0-9-]+\.[A-Za-z]+$/,
-	/^organisation:[A-Za-z0-9 -]+$/,
-	// OpenRegister's example-set loader fills it with overwrite.cli.url
-	// (ExampleSetValues); the case objects link the public-space register.
+	/^date:[+-]?\d{1,4}$/,
+	/^datetime:[+-]?\d{1,4} ([01]\d|2[0-3]):[0-5]\d$/,
 	/^instance:baseUrl$/,
 ]
+
+/**
+ * The identity a one-click resident's account carries: a DigiD account names
+ * the resident's BSN, any other the shared example-resident marker. The demo
+ * sign-in finds the resident by the account id either way.
+ *
+ * @param {object} data The portal account's data.
+ * @param {string} cast The resident's cast key.
+ * @return {string} The expected identityRef.
+ */
+const oneClickRef = (data, cast) => (data.identityType === 'digid' ? `{{cast:${cast}.bsn}}` : 'example-resident')
 
 /**
  * Every string in a value, with its path.
@@ -173,12 +180,7 @@ for (const { file, fragment } of fragments) {
 				}
 			}
 			assert.equal(account.data.subjectRef, `{{cast:${resident.cast}.uid}}`)
-			// A resident who signs in with DigiD carries her BSN; the demo
-			// sign-in finds her by her account id either way.
-			assert.equal(
-				account.data.identityRef,
-				account.data.identityType === 'digid' ? `{{cast:${resident.cast}.bsn}}` : 'example-resident',
-			)
+			assert.equal(account.data.identityRef, oneClickRef(account.data, resident.cast))
 			assert.ok(!('email' in account.data), 'no e-mail address, so the resident meets the prompt for one')
 		}
 	})
@@ -277,7 +279,10 @@ test('zuiddrecht.json: every portal account and mandate fits its schema, and the
 		assert.match(mandate.data.onBehalfOf, /^((subject|kvk):\{\{cast:[a-z]+\.(uid|kvk)\}\}|kvk:\d{8})$/, `${mandate.key} names a typed party`)
 	}
 	assert.deepEqual(
-		accounts.filter((object) => object.data.identityRef !== 'example-set').map((object) => object.key),
+		accounts.filter((object) => {
+			const cast = object.data.subjectRef.match(/^\{\{cast:([a-z]+)\.uid\}\}$/)?.[1]
+			return cast !== undefined && object.data.identityRef === oneClickRef(object.data, cast)
+		}).map((object) => object.key),
 		zuiddrecht.exampleResident.map((resident) => resident.account),
 		'exactly the residents are one click away',
 	)
@@ -373,11 +378,13 @@ test('zuiddrecht.json puts the business contacts in the business group the porta
 	assert.equal(registration.businessAudience.type, 'string', 'the schema declares the business audience')
 })
 
-test('zuiddrecht.json keeps the cases of the Woo journey and the resident boards', () => {
+test('zuiddrecht.json keeps the six cases of the Woo journey, the Lindelaan case\'s related cases and the resident boards', () => {
 	const zuiddrecht = fragments.find(({ file }) => file === 'zuiddrecht.json').fragment
 	const cases = zuiddrecht.objects.filter((object) => object.schema === 'case').map((object) => object.data.title)
-	// The set may grow; these six must stay.
-	for (const title of [
+	// The Lindelaan Woo case names a subject case and two sub-cases (DqZaakGerelateerd).
+	assert.deepEqual(cases, [
+		'Aanleg fietspad Lindelaan',
+		'Advies verlichting fietspad',
 		'Verlichting fietspad Lindelaan',
 		'Dakkapel Lindelaan 14',
 		'Losse stoeptegel bij de bushalte Lindelaan',
@@ -387,9 +394,7 @@ test('zuiddrecht.json keeps the cases of the Woo journey and the resident boards
 		'Zienswijze Aannemersbedrijf Van Wijk',
 		'Lakken offerte lantaarnpalen',
 		'Parkeervergunning Lindelaan',
-	]) {
-		assert.ok(cases.includes(title), `${title} is still a case of the set`)
-	}
+	])
 	assert.deepEqual(zuiddrecht.after, ['dossiq'])
 	assert.equal(zuiddrecht.exampleResident[0].cast, 'sanne')
 })
@@ -602,11 +607,14 @@ test('PtMededelingenActies: the zuiddrecht portal has 14 notices, 3 coming, 1 co
 	const published = notices.filter((notice) => notice.data.status === 'published')
 	assert.equal(notices.length - published.length, 1, 'Concept 1')
 	assert.equal(published.filter((notice) => minutes(notice.data.startsAt) > now).length, 3, 'Komend 3')
-	assert.deepEqual(
-		published.filter((notice) => minutes(notice.data.startsAt) <= now && minutes(notice.data.endsAt) > now).map((notice) => notice.key),
-		[],
-		'no notice runs on the install day, so no Mijn board gets a banner the boards do not draw',
-	)
+	for (const day of [0, 1, 2]) {
+		const moment = now + day * 24 * 60
+		assert.deepEqual(
+			published.filter((notice) => minutes(notice.data.startsAt) <= moment && minutes(notice.data.endsAt) > moment).map((notice) => notice.key),
+			[],
+			`no notice runs ${day} day(s) after the install, so no board measured that week gets a banner the boards do not draw`,
+		)
+	}
 	assert.deepEqual(
 		notices.slice(0, 6).map((notice) => notice.data.message.split(' ').slice(0, 3).join(' ')),
 		['Inloggen met DigiD', 'Het Stadskantoor is', 'Door Kerst en', 'De afvalkalender voor', 'Parkeervergunningen verlengen kan', 'Stemmen voor de'],

@@ -3292,6 +3292,26 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	line-height: normal !important;
 }
 
+/* The current step names the next one on a dashed chip, 8px under its
+   words, as the Zaak boards draw "Volgende stap: besluit". */
+.pq-site:has(.pq-site__header--designed) .pq-process-steps .pq-process-steps__next {
+	order: 3;
+	align-self: flex-start;
+	margin-block-start: 8px;
+	padding: 6px 12px;
+	border: 1px dashed
+		color-mix(
+			in srgb,
+			var(--nldesign-color-border-dark, currentcolor) 58%,
+			var(--utrecht-document-background-color, var(--color-main-background, Canvas))
+		);
+	border-radius: 4px;
+	background-color: var(--nldesign-color-surface, transparent);
+	color: var(--nldesign-color-text-muted, inherit);
+	font-size: 0.9375rem;
+	line-height: normal;
+}
+
 /* Gegevens: the label column as wide as its longest label, 12px rows
    between lines, labels in 600. */
 .pq-site:has(.pq-site__header--designed) .pq-detail .pq-description-list {

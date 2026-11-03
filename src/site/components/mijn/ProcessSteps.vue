@@ -79,6 +79,12 @@
 					class="utrecht-paragraph pq-process-steps__text">
 					{{ step.description }}
 				</p>
+				<p
+					v-if="step.state === 'current' && nextOf(index)"
+					class="pq-process-steps__next"
+					data-testid="mijn-step-next">
+					{{ tr('Next step: {step}', { step: nextOf(index) }) }}
+				</p>
 			</div>
 		</li>
 	</ol>
@@ -126,6 +132,19 @@ export default {
 				return text
 			}
 			return step?.state === 'done' && step?.date ? this.day(step.date) : ''
+		},
+
+		/**
+		 * The step after this one, as it reads inside a sentence ("besluit"):
+		 * the current step names it, as the Zaak boards draw.
+		 *
+		 * @param {number} index The step's place in the list.
+		 * @return {string} The next step's label, or '' for the last step.
+		 * @spec openspec/changes/case-page-tasks-decision-dates-and-next-step/tasks.md#t04
+		 */
+		nextOf(index) {
+			const label = String(this.steps[index + 1]?.label || '').trim()
+			return label.charAt(0).toLocaleLowerCase(this.locale) + label.slice(1)
 		},
 
 		markerOf(step) {
@@ -188,6 +207,7 @@ export default {
 
 .denhaag-process-steps__step-heading,
 .pq-process-steps__text,
+.pq-process-steps__next,
 .denhaag-process-steps__step-meta {
 	margin: 0;
 }
