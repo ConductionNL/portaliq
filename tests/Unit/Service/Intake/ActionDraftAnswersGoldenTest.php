@@ -30,6 +30,7 @@ use PHPUnit\Framework\TestCase;
  * field shape: declared fields, `claims`, file fields and odd entries.
  *
  * @covers \OCA\Portaliq\Service\Intake\ActionDraft
+ * @covers \OCA\Portaliq\Service\Intake\ActionAnswerFields
  * @uses   \OCA\Portaliq\Contribution\ActionScopeResolver
  * @uses   \OCA\Portaliq\Contribution\CreateBody
  */
@@ -45,6 +46,7 @@ class ActionDraftAnswersGoldenTest extends TestCase {
 		'extra'       => 'not declared',
 		'empty'       => null,
 		'0'           => 'numeric key',
+		''            => 'blank key',
 	];
 
 	/**
