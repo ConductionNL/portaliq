@@ -4673,8 +4673,8 @@
               "refused"
             ],
             "enumLabels": {
-              "pending": "Awaiting a decision",
-              "granted": "Granted",
+              "pending": "Open",
+              "granted": "Approved",
               "refused": "Refused"
             },
             "width": "194px",

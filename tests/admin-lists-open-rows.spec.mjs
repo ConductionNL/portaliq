@@ -91,3 +91,10 @@ test('an answered access request names who answered and when, under its state', 
 	assert.deepEqual(column('AccessRequests', 'state').secondary, [key])
 	assert.equal(nl[key], 'door {decidedBy|user}, {decidedAt|date}')
 })
+
+test('an access request reads Open, Approved or Refused, as the list\'s tabs do', () => {
+	const state = column('AccessRequests', 'state')
+	assert.deepEqual(state.enumLabels, { pending: 'Open', granted: 'Approved', refused: 'Refused' })
+	assert.equal(nl.Approved, 'Goedgekeurd')
+	assert.equal(nl.Refused, 'Afgewezen')
+})
