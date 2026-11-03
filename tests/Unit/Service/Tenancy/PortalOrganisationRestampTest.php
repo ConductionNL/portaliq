@@ -290,7 +290,9 @@ class PortalOrganisationRestampTest extends TestCase {
 	}//end recordUpdate()
 
 	/**
-	 * The lookup: gemeente-a is uuid-a and gemeente-b is uuid-b.
+	 * The lookup: gemeente-a is uuid-a and gemeente-b is uuid-b. It also
+	 * answers for an empty slug, as a store holding an organisation without
+	 * a slug would, so a row without a slug proves the restamp never asks.
 	 *
 	 * @return PortalOrganisationConfigService
 	 */
@@ -298,7 +300,7 @@ class PortalOrganisationRestampTest extends TestCase {
 		$organisations = $this->createMock(PortalOrganisationConfigService::class);
 		$organisations->method('findOrganisationBySlug')->willReturnCallback(
 			static function (string $slug): ?array {
-				$known = ['gemeente-a' => 'uuid-a', 'gemeente-b' => 'uuid-b'];
+				$known = ['gemeente-a' => 'uuid-a', 'gemeente-b' => 'uuid-b', '' => 'uuid-without-slug'];
 				return isset($known[$slug]) === true ? ['uuid' => $known[$slug], 'name' => $slug] : null;
 			}
 		);
