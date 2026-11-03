@@ -10,9 +10,12 @@
  * read that acts for the portal's organisation would not see them.
  *
  * `report()` only reads and counts. `apply()` writes `@self.organisation` for
- * each row whose slug resolves and whose stored organisation differs. A row
- * without a slug, or whose slug names no organisation, is listed and left as
- * it is: nothing is guessed.
+ * each row whose slug resolves and that is stored in the default organisation
+ * or in none. A row without a slug, or whose slug names no organisation, is
+ * listed and left as it is: nothing is guessed. A row already stored in
+ * another organisation is listed for a person and never moved, because the
+ * slug is row data that whoever may write the row can change. Each row is read
+ * again just before it is written and left alone when it changed.
  *
  * @category Service
  * @package  OCA\Portaliq\Service\Tenancy
@@ -59,6 +62,11 @@ class PortalOrganisationRestamp {
 	private const OBJECT_MAPPER = 'OCA\\OpenRegister\\Db\\MagicMapper';
 
 	/**
+	 * OpenRegister's organisation service, which knows the default organisation.
+	 */
+	private const ORGANISATION_SERVICE = 'OCA\\OpenRegister\\Service\\OrganisationService';
+
+	/**
 	 * The register the rows live in.
 	 */
 	private const REGISTER = 'portaliq';
@@ -79,6 +87,13 @@ class PortalOrganisationRestamp {
 	 * @var array<string, string>
 	 */
 	private array $uuids = [];
+
+	/**
+	 * The default organisation's uuid, or '' when it is not known.
+	 *
+	 * @var string
+	 */
+	private string $defaultUuid = '';
 
 	/**
 	 * Constructor.
@@ -138,6 +153,7 @@ class PortalOrganisationRestamp {
 			throw new RuntimeException('OpenRegister is not available, so nothing was read or written.');
 		}
 
+		$this->defaultUuid = $this->defaultOrganisation();
 		foreach (SchemaTenancy::MAP as $schema => $declaration) {
 			if ($declaration['scope'] !== SchemaTenancy::ORGANISATION) {
 				continue;
@@ -238,6 +254,11 @@ class PortalOrganisationRestamp {
 			return;
 		}
 
+		if ($this->movable(stored: $row['stored']) === false) {
+			$tally->elsewhere(row: ['schema' => $row['schema'], 'uuid' => $row['uuid'], 'organisation' => $slug, 'stored' => $row['stored']]);
+			return;
+		}
+
 		if ($tally->apply === false) {
 			$tally->count(organisation: $organisation, outcome: RestampTally::TO_RESTAMP);
 			return;
@@ -269,6 +290,11 @@ class PortalOrganisationRestamp {
 				throw new RuntimeException('the row was not found again');
 			}
 
+			$again = $this->facts(row: $entity);
+			if ($again['slug'] !== $row['slug'] || $this->movable(stored: $again['stored']) === false) {
+				throw new RuntimeException('the row changed after it was listed');
+			}
+
 			$entity->setOrganisation($uuid);
 			$this->mapper()?->update(entity: $entity);
 		} catch (Throwable $e) {
@@ -281,6 +307,33 @@ class PortalOrganisationRestamp {
 
 		return RestampTally::RESTAMPED;
 	}//end restamp()
+
+	/**
+	 * Whether a row stored in this organisation may be restamped: only from
+	 * the default organisation or from none.
+	 *
+	 * @param string $stored The stored organisation uuid.
+	 *
+	 * @return bool
+	 */
+	private function movable(string $stored): bool {
+		return $stored === '' || ($this->defaultUuid !== '' && $stored === $this->defaultUuid);
+	}//end movable()
+
+	/**
+	 * The default organisation's uuid, or '' when OpenRegister cannot say.
+	 *
+	 * @return string
+	 */
+	private function defaultOrganisation(): string {
+		try {
+			$organisations = $this->container->get(self::ORGANISATION_SERVICE);
+			return (string)($organisations->getDefaultOrganisationUuid() ?? '');
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: the default organisation is not known, only rows without one are restamped', ['reason' => $e->getMessage()]);
+			return '';
+		}
+	}//end defaultOrganisation()
 
 	/**
 	 * The uuid of the organisation with this slug, or ''.

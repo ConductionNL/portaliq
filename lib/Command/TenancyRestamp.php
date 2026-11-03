@@ -171,6 +171,11 @@ class TenancyRestamp extends Command {
 			$output->writeln('  '.$row['schema'].' '.$row['uuid'].': '.$row['organisation']);
 		}
 
+		$output->writeln('Rows stored in another organisation than they name, left for a person: '.count($report['elsewhere']));
+		foreach ($report['elsewhere'] as $row) {
+			$output->writeln('  '.$row['schema'].' '.$row['uuid'].': names '.$row['organisation'].', stored in '.$row['stored']);
+		}
+
 		foreach ($report['unreadable'] as $schema => $reason) {
 			$output->writeln('<comment>Schema '.$schema.' was not read completely: '.$reason.'</comment>');
 		}

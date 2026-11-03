@@ -76,6 +76,13 @@ final class RestampTally {
 	private array $unresolved = [];
 
 	/**
+	 * The rows stored in another organisation than their slug names, left for a person.
+	 *
+	 * @var array<int, array{schema: string, uuid: string, organisation: string, stored: string}>
+	 */
+	private array $elsewhere = [];
+
+	/**
 	 * The schemas that could not be read, with the reason.
 	 *
 	 * @var array<string, string>
@@ -126,6 +133,19 @@ final class RestampTally {
 	}//end unresolved()
 
 	/**
+	 * Note a row stored in another organisation than its slug names.
+	 *
+	 * @param array{schema: string, uuid: string, organisation: string, stored: string} $row The row.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-acts-for-its-organisation/specs/portal-tenancy/spec.md#requirement-existing-rows-get-their-organisation-from-a-reported-dry-run-then-an-explicit-apply-req-pao-004
+	 */
+	public function elsewhere(array $row): void {
+		$this->elsewhere[] = $row;
+	}//end elsewhere()
+
+	/**
 	 * Note a schema that could not be read.
 	 *
 	 * @param string $schema The schema slug.
@@ -143,8 +163,9 @@ final class RestampTally {
 	 * The counts, the unresolved rows and the unreadable schemas.
 	 *
 	 * @return array<string, mixed> `apply` (bool), `organisations` (per slug: uuid and
-	 *                              a count per outcome), `unresolved` (rows) and
-	 *                              `unreadable` (schema to reason).
+	 *                              a count per outcome), `unresolved` (rows),
+	 *                              `elsewhere` (rows in another organisation)
+	 *                              and `unreadable` (schema to reason).
 	 *
 	 * @spec openspec/changes/portal-acts-for-its-organisation/specs/portal-tenancy/spec.md#requirement-existing-rows-get-their-organisation-from-a-reported-dry-run-then-an-explicit-apply-req-pao-004
 	 */
@@ -160,6 +181,7 @@ final class RestampTally {
 			'apply'         => $this->apply,
 			'organisations' => $organisations,
 			'unresolved'    => $this->unresolved,
+			'elsewhere'     => $this->elsewhere,
 			'unreadable'    => $this->unreadable,
 		];
 	}//end report()

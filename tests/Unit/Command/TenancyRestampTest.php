@@ -68,6 +68,8 @@ class TenancyRestampTest extends TestCase {
 		$this->assertStringContainsString('Rows whose organisation does not resolve, left as they are: 1', $tester->getDisplay());
 		$this->assertStringContainsString('portalAccount acc-4: onbekend', $tester->getDisplay());
 		$this->assertStringContainsString('Schema portalPoll was not read completely: no such schema', $tester->getDisplay());
+		$this->assertStringContainsString('Rows stored in another organisation than they name, left for a person: 1', $tester->getDisplay());
+		$this->assertStringContainsString('portalAccount acc-5: names gemeente-a, stored in uuid-b', $tester->getDisplay());
 	}//end testTheUnresolvedRowsAndUnreadableSchemasArePrinted()
 
 	public function testAFailedWriteExitsOne(): void {
@@ -76,7 +78,7 @@ class TenancyRestampTest extends TestCase {
 
 	public function testNothingThatResolvesIsSaid(): void {
 		$restamp = $this->createMock(PortalOrganisationRestamp::class);
-		$restamp->method('report')->willReturn(['apply' => false, 'organisations' => [], 'unresolved' => [], 'unreadable' => []]);
+		$restamp->method('report')->willReturn(['apply' => false, 'organisations' => [], 'unresolved' => [], 'elsewhere' => [], 'unreadable' => []]);
 		$tester = new CommandTester(new TenancyRestamp(restamp: $restamp));
 
 		$this->assertSame(0, $tester->execute([]));
@@ -106,6 +108,7 @@ class TenancyRestampTest extends TestCase {
 				'gemeente-a' => ['uuid' => 'uuid-a', 'already' => 1, 'toRestamp' => 2, 'restamped' => 3, 'failed' => ($apply === true ? $failed : 0)],
 			],
 			'unresolved'    => [['schema' => 'portalAccount', 'uuid' => 'acc-4', 'organisation' => 'onbekend']],
+			'elsewhere'     => [['schema' => 'portalAccount', 'uuid' => 'acc-5', 'organisation' => 'gemeente-a', 'stored' => 'uuid-b']],
 			'unreadable'    => ['portalPoll' => 'no such schema'],
 		];
 

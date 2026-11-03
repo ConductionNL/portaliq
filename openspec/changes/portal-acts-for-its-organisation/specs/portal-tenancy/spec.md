@@ -44,7 +44,7 @@ For a change rule that names its recipients by an account claim, portaliq SHALL 
 
 ### Requirement: Existing rows get their organisation from a reported dry run, then an explicit apply (REQ-PAO-004)
 
-`occ portaliq:tenancy:restamp` SHALL list the rows of every organisation-scoped portaliq schema and report, per organisation, how many already carry it and how many would be restamped, plus every row whose organisation slug is missing or names no organisation. It SHALL write nothing unless `--apply` is given. With `--apply` it SHALL set `@self.organisation` to the uuid of the organisation the row's `organisation` names, only for rows whose slug resolves and whose stored organisation differs. It SHALL never derive an organisation any other way.
+`occ portaliq:tenancy:restamp` SHALL list the rows of every organisation-scoped portaliq schema and report, per organisation, how many already carry it and how many would be restamped, plus every row whose organisation slug is missing or names no organisation. It SHALL write nothing unless `--apply` is given. With `--apply` it SHALL set `@self.organisation` to the uuid of the organisation the row's `organisation` names, only for rows whose slug resolves and that are stored in the default organisation or in none. A row stored in any other organisation SHALL be listed for a person and never moved. Each row SHALL be read again just before the write and left alone when its slug or stored organisation changed. It SHALL never derive an organisation any other way.
 
 #### Scenario: The dry run reports and writes nothing
 - **GIVEN** rows with a resolving slug and the default organisation, rows already restamped, and rows without a slug or with an unknown slug
@@ -55,5 +55,5 @@ For a change rule that names its recipients by an account claim, portaliq SHALL 
 #### Scenario: The apply restamps only what resolves
 - **GIVEN** the same rows
 - **WHEN** the command runs with `--apply`
-- **THEN** only the rows with a resolving slug and another stored organisation get the organisation uuid, and a failed write makes the command exit 1
+- **THEN** only the rows with a resolving slug that sit in the default organisation or in none get the organisation uuid, rows in another organisation are listed and not moved, and a failed write makes the command exit 1
 - @e2e exclude Command over doubles; pinned by PortalOrganisationRestampTest and TenancyRestampTest
