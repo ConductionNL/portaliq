@@ -49,6 +49,7 @@ require_once __DIR__ . '/Traffic/FakeAppConfig.php';
  * @uses   \OCA\Portaliq\Service\Traffic\TrafficSegments
  * @uses   \OCA\Portaliq\Service\Traffic\TrafficReportDefinitions
  * @uses   \OCA\Portaliq\Service\Traffic\TrafficExperimentDefinitions
+ * @uses   \OCA\Portaliq\Service\Traffic\TrafficExperiments
  */
 class TrafficIngestGoldenTest extends TestCase {
 
