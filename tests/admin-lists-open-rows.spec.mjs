@@ -98,3 +98,7 @@ test('an access request reads Open, Approved or Refused, as the list\'s tabs do'
 	assert.equal(nl.Approved, 'Goedgekeurd')
 	assert.equal(nl.Refused, 'Afgewezen')
 })
+
+test('the requester stands beside the grey initials chip, as dossiq draws a person', () => {
+	assert.deepEqual(column('AccessRequests', 'displayName').widgetProps, { tone: 'neutral' })
+})

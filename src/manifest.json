@@ -4638,6 +4638,9 @@
             "key": "displayName",
             "label": "Requester",
             "widget": "avatar",
+            "widgetProps": {
+              "tone": "neutral"
+            },
             "width": "163px"
           },
           {
