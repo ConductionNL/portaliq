@@ -1,3 +1,24 @@
 # Screens
 
-- No screen: Moves the old portal onto the site; every capability it moves is drawn
+- portaliq/Inloggen inloggen: the sign-in screen (REQ-SRP-003) https://identity.conduction.nl/screens/board?id=portaliq/Inloggen
+- portaliq/SessieVerloopt sessie verloopt: the idle warning with "Ingelogd blijven" (REQ-SRP-005) https://identity.conduction.nl/screens/board?id=portaliq/SessieVerloopt
+- huisstijl/MijnMenu Onderdeel: menu Mijn Zuiddrecht: navigation built from the pages contributions declare (REQ-SRP-007) https://identity.conduction.nl/screens/board?id=huisstijl/MijnMenu
+- portaliq/Home Website: home: notices above the page, and a button link with its style (REQ-SRP-010) https://identity.conduction.nl/screens/board?id=portaliq/Home
+- portaliq/MijnZaken mijn zaken: every case in one list, "Zaken van" and "Namens vestiging" (REQ-SRP-011, REQ-SRP-040, REQ-SRP-041) https://identity.conduction.nl/screens/board?id=portaliq/MijnZaken
+- portaliq/MijnZakenTabel mijn zaken als tabel: the collection table with its declared columns (REQ-SRP-015) https://identity.conduction.nl/screens/board?id=portaliq/MijnZakenTabel
+- portaliq/MijnOverzicht overzicht: a contribution page with its blocks (REQ-SRP-014) https://identity.conduction.nl/screens/board?id=portaliq/MijnOverzicht
+- portaliq/Zaak uw zaak: the case page with its timeline and the resident's own uploads (REQ-SRP-019, REQ-SRP-042) https://identity.conduction.nl/screens/board?id=portaliq/Zaak
+- portaliq/ZaakWijzigingVoorstellen Uw zaak: wijziging voorstellen: proposing a change (REQ-SRP-024) https://identity.conduction.nl/screens/board?id=portaliq/ZaakWijzigingVoorstellen
+- portaliq/ZaakIntrekken aanvraag intrekken: withdrawing a request (REQ-SRP-043) https://identity.conduction.nl/screens/board?id=portaliq/ZaakIntrekken
+- portaliq/GedeeldDossier Gedeeld dossier: Fietspad Lindelaan: an item list with a remove control per item (REQ-SRP-020) https://identity.conduction.nl/screens/board?id=portaliq/GedeeldDossier
+- portaliq/FormulierKaart Buurtfeest aanvragen, stap 2: a form with a file field (REQ-SRP-023) https://identity.conduction.nl/screens/board?id=portaliq/FormulierKaart
+- wilgenboom/Detail mijn kind: an endpoint row action with its confirm step (REQ-SRP-026) https://identity.conduction.nl/screens/board?id=wilgenboom/Detail
+- portaliq/DocumentOndertekenen document ondertekenen: signing or declining a document from its row (REQ-SRP-029) https://identity.conduction.nl/screens/board?id=portaliq/DocumentOndertekenen
+- portaliq/Berichten berichten: one inbox for every app's messages (REQ-SRP-030) https://identity.conduction.nl/screens/board?id=portaliq/Berichten
+- portaliq/MijnAccount mijn account: the own account with notification choices per kind (REQ-SRP-031, REQ-SRP-037) https://identity.conduction.nl/screens/board?id=portaliq/MijnAccount
+- portaliq/OuderBerichten berichten van school: a guardian's messages in their chosen language (REQ-SRP-032) https://identity.conduction.nl/screens/board?id=portaliq/OuderBerichten
+- portaliq/MijnTaken mijn taken: the resident's open tasks (REQ-SRP-035) https://identity.conduction.nl/screens/board?id=portaliq/MijnTaken
+- portaliq/MijnGegevens mijn gegevens: the registered details (REQ-SRP-038) https://identity.conduction.nl/screens/board?id=portaliq/MijnGegevens
+- portaliq/Machtigingen toegang tot zaken: asking for access to cases, in the page's language (REQ-SRP-039) https://identity.conduction.nl/screens/board?id=portaliq/Machtigingen
+- portaliq/MobielHome Telefoon: home: the install offer with "Niet nu" (REQ-SRP-046) https://identity.conduction.nl/screens/board?id=portaliq/MobielHome
+- portaliq/PtFormulierInsluiten formulier insluiten op uw website: the embed frame of a form (REQ-SRP-047) https://identity.conduction.nl/screens/board?id=portaliq/PtFormulierInsluiten
