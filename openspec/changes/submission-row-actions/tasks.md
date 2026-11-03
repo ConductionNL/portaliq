@@ -14,7 +14,7 @@
   - Test: tests/Unit/Listener/SubmissionWriteGuardListenerTest.php
 - [ ] 2.1 nc-vue: an `api-call` can open what the call answered (`openResponse`), if the dispatcher still lacks it
   - Files: nextcloud-vue src/utils/actionsDispatcher.js, manifest schema
-- [ ] 2.2 `PortalSubmissions.config.actions`: Edit, Link a form, Conversation in Talk, Register again, then Copy and Delete; visibility per deliveryStatus and per installed app
+- [ ] 2.2 `PortalSubmissions.config.actions`: Edit, Link a form, Conversation in Talk, Register again, nothing else; visibility per deliveryStatus and per installed app; showCopyAction, showDeleteAction, showMassCopy and showMassDelete false
   - Files: src/manifest.json, l10n/en.json, l10n/nl.json
   - Test: tests/submission-row-actions.spec.mjs
 - [ ] 3.1 Live: on PtInzendingen, register a failed row again, start a Talk room and link a form; the open row menu matches the board

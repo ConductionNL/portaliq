@@ -18,6 +18,6 @@ OpenRegister already links Talk rooms to any object (`POST /api/objects/{registe
 
 The action is an `open-form` with one select field whose options are the portal's `portalFormBinding` records (`portal` = the submission's portal), saved as an `object-op` patch of `formBinding` only. A write guard, as `NoticeWriteGuardListener` does for notices, protects the rest: a `portalSubmission` update that changes any field other than `formBinding` or `deliveryStatus`/`receiptMessageRef` (the service's own writes) is refused, so the proof fields stay append-only even though the list offers Edit.
 
-## D5. Kopiëren and Verwijderen stay
+## D5. Copy and delete go
 
-The board draws four entries; portaliq offers Kopiëren and Verwijderen today. Users keep their features, so both stay, after the board's four. Whether a proof-of-receipt log should offer copy and delete at all is a product question for Ruben (DECISIONS-FOR-RUBEN); until he answers, the board gets the two entries in a board PR, or the list drops them, not both.
+Ruben decided on 3 Nov: a submission is a proof of receipt, so the list offers only the board's four entries. The index page's built-in Copy and Delete row actions are switched off (`showCopyAction`, `showDeleteAction`), and so are the selection's Copy selected and Delete selected (`showMassCopy`, `showMassDelete`), or the toolbar would still offer them. A submission leaves the log only through the retention and archival rules, which keep their own record of what was removed and why. The register's delete rights are not changed here; this change is about what the list offers.

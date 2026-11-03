@@ -68,10 +68,16 @@ Every row of the Submissions list SHALL offer "Link a form". It SHALL open a dia
 
 ### Requirement: The submission row menu reads as the board
 
-The row menu of the Submissions list SHALL list, in this order: Edit, Link a form, Conversation in Talk (while Talk is installed), Register again (on a failed or pending row), then the kept Copy and Delete.
+The row menu of the Submissions list SHALL list, in this order: Edit, Link a form, Conversation in Talk (while Talk is installed) and Register again (on a failed or pending row), and nothing else. A submission is a proof of receipt: the list SHALL NOT offer Copy or Delete, neither in a row menu nor as an action on a selection. A submission SHALL leave the log only through the retention and archival rules.
 
 #### Scenario: The menu on a failed row
 @e2e exclude covered by tests/submission-row-actions.spec.mjs (manifest order)
 - **GIVEN** Talk is installed and a failed submission
 - **WHEN** Pieter opens its row menu
-- **THEN** it reads Bewerken, Formulier koppelen, Gesprek in Talk, Opnieuw registreren, Kopiëren, Verwijderen
+- **THEN** it reads Bewerken, Formulier koppelen, Gesprek in Talk, Opnieuw registreren
+
+#### Scenario: A submission cannot be copied or deleted from the list
+@e2e exclude covered by tests/submission-row-actions.spec.mjs (showCopyAction, showDeleteAction, showMassCopy and showMassDelete are false)
+- **GIVEN** any submission on the Submissions list
+- **WHEN** Pieter opens its row menu, or selects rows and opens the list's Acties menu
+- **THEN** neither menu offers Kopiëren, Verwijderen, Selectie kopiëren or Selectie verwijderen
