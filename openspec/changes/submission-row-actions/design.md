@@ -16,7 +16,7 @@ OpenRegister already links Talk rooms to any object (`POST /api/objects/{registe
 
 ## D4. Link a form writes one field
 
-The action is an `open-form` with one select field whose options are the portal's `portalFormBinding` records (`portal` = the submission's portal), saved as an `object-op` patch of `formBinding` only. `NoticeWriteGuardListener`'s pattern guards the rest: a `portalSubmission` update that changes any field other than `formBinding` or `deliveryStatus`/`receiptMessageRef` (the service's own writes) is refused, so the proof fields stay append-only even though the list offers Edit.
+The action is an `open-form` with one select field whose options are the portal's `portalFormBinding` records (`portal` = the submission's portal), saved as an `object-op` patch of `formBinding` only. A write guard, as `NoticeWriteGuardListener` does for notices, protects the rest: a `portalSubmission` update that changes any field other than `formBinding` or `deliveryStatus`/`receiptMessageRef` (the service's own writes) is refused, so the proof fields stay append-only even though the list offers Edit.
 
 ## D5. Kopiëren and Verwijderen stay
 
