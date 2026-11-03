@@ -102,22 +102,16 @@ export function fieldLabel(action, field) {
 /**
  * Forward the attached action for one row.
  *
- * @param {object} api        The portal api.
- * @param {object} collection The target collection.
- * @param {object} row        The row on screen.
- * @param {object} action     The attached action.
- * @param {object} values     What the resident typed.
- * @param {{submissionKey?: string}} [options] The form's submission key (REQ-AFS-001).
+ * @param {object} api The portal api.
+ * @param {object} run What to run.
+ * @param {object} run.collection The target collection.
+ * @param {object} run.row The row on screen.
+ * @param {object} run.action The attached action.
+ * @param {object} run.values What the resident typed.
+ * @param {{submissionKey?: string}} [run.options] The form's submission key (REQ-AFS-001).
  * @return {Promise<object>} `{ok, body, messageKey}`.
  */
-export async function runAttachedAction(
-	api,
-	collection,
-	row,
-	action,
-	values,
-	options = {},
-) {
+export async function runAttachedAction(api, { collection, row, action, values, options = {} }) {
 	const rowId = row && (row.id || row['@self']?.id)
 	if (!rowId || !api) {
 		return {

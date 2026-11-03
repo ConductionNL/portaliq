@@ -55,20 +55,18 @@ export function dayWords(text, { locale = 'nl', now = new Date() } = {}) {
 /**
  * The words for one answer.
  *
- * @param {string} field The field.
  * @param {unknown} answer The answer.
- * @param {object} phrases The action's phrases.
- * @param {Array<{value: unknown, label: string}>} options The field's options.
- * @param {{locale?: string, now?: Date}} context The page language and today.
+ * @param {{field: string, phrases: object, options: Array<{value: unknown, label: string}>, context: {locale?: string, now?: Date}}} source The field, the action's phrases, the field's options, and the page language and today.
  * @return {string} The words, or '' when there is no answer.
  */
-function wordsFor(field, answer, phrases, options, context) {
+function wordsFor(answer, source) {
 	if (Array.isArray(answer)) {
 		return answer
-			.map((one) => wordsFor(field, one, phrases, options, context))
+			.map((one) => wordsFor(one, source))
 			.filter(Boolean)
 			.join(', ')
 	}
+	const { field, phrases, options, context } = source
 	if (answer === null || answer === undefined || typeof answer === 'object') {
 		return ''
 	}
@@ -107,13 +105,12 @@ export function summarySentence(summary, values, options = {}, context = {}) {
 	const sentence = template.replace(
 		/\{([A-Za-z][A-Za-z0-9_]*)\}/g,
 		(all, field) => {
-			const words = wordsFor(
+			const words = wordsFor(values?.[field], {
 				field,
-				values?.[field],
-				summary.phrases,
-				options?.[field],
+				phrases: summary.phrases,
+				options: options?.[field],
 				context,
-			)
+			})
 			if (words === '') {
 				complete = false
 			}

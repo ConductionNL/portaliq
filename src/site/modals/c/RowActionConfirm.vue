@@ -258,14 +258,13 @@ export default {
 			this.errors = {}
 			const answers = this.answers()
 			const { redirect, messageKey, link, message, errors } =
-				await runRowAction(
-					this.api,
-					this.collection,
-					this.row,
-					this.action,
+				await runRowAction(this.api, {
+					collection: this.collection,
+					row: this.row,
+					action: this.action,
 					answers,
-					this.fileSlot ? this.files : [],
-				)
+					files: this.fileSlot ? this.files : [],
+				})
 			if (redirect) {
 				this.navigate(redirect)
 				return

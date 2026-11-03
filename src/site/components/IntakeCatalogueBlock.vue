@@ -143,10 +143,10 @@ export default {
 	 */
 	async mounted() {
 		try {
-			this.topics = await fetchCatalogue(
-				authBaseFrom(resolveApiBase()),
-				this.portal,
-			)
+			this.topics = await fetchCatalogue({
+				base: authBaseFrom(resolveApiBase()),
+				portal: this.portal,
+			})
 		} catch {
 			this.failed = true
 		} finally {

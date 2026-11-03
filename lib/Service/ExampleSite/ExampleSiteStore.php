@@ -26,8 +26,11 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\ExampleSite;
 
+use OCA\Portaliq\Service\ObjectRowNormaliser;
+use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalRegisterContext;
+use OCA\Portaliq\Service\RowIdOf;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -42,6 +45,10 @@ use Throwable;
  * @spec openspec/changes/example-site-zuiddrecht/specs/example-site/spec.md#requirement-the-install-must-prove-what-arrived
  */
 class ExampleSiteStore {
+	use ObjectServiceLookup;
+	use ObjectRowNormaliser;
+	use RowIdOf;
+
 	/**
 	 * OpenRegister's ObjectService, fetched by string id: OpenRegister is an
 	 * optional sibling app, so its classes are never imported.
@@ -119,11 +126,8 @@ class ExampleSiteStore {
 
 		$plain = [];
 		foreach ($rows as $row) {
-			if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-				$row = $row->jsonSerialize();
-			}
-
-			if (is_array($row) === true) {
+			$row = $this->normalise(row: $row);
+			if ($row !== null) {
 				$plain[] = $row;
 			}
 		}
@@ -186,47 +190,4 @@ class ExampleSiteStore {
 
 		return $deleted !== false;
 	}//end delete()
-
-	/**
-	 * The id OpenRegister gave a row, wherever it put it.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string The id, or '' when the row names none.
-	 *
-	 * @spec openspec/changes/example-site-zuiddrecht/specs/example-site/spec.md#requirement-an-administrator-must-be-able-to-remove-an-example-site
-	 */
-	public function idOf(array $row): string {
-		$self = [];
-		if (is_array($row['@self'] ?? null) === true) {
-			$self = $row['@self'];
-		}
-
-		foreach ([($self['id'] ?? null), ($self['uuid'] ?? null), ($row['id'] ?? null), ($row['uuid'] ?? null)] as $id) {
-			if (is_string($id) === true && $id !== '') {
-				return $id;
-			}
-		}
-
-		return '';
-	}//end idOf()
-
-	/**
-	 * OpenRegister's ObjectService, or null when it is not installed.
-	 *
-	 * @return object|null
-	 */
-	private function objectService(): ?object {
-		try {
-			$service = $this->container->get(self::OBJECT_SERVICE);
-		} catch (Throwable) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end objectService()
 }//end class

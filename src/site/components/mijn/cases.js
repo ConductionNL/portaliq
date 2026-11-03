@@ -77,20 +77,25 @@ export function stepPosition(steps) {
 }
 
 /**
- * A day in words: "30 oktober", with the year when it is not this year's.
+ * A day in words: "30 oktober", with the year when it is not this year's or
+ * when `withYear` asks for it.
  *
  * @param {string} value An ISO date.
  * @param {Date} today Today.
  * @param {string} locale The page language.
+ * @param {boolean} [withYear] Always name the year.
  * @return {string} The words, or '' for no date.
  */
-export function dayInWords(value, today, locale) {
+export function dayInWords(value, today, locale, withYear = false) {
 	const date = value ? new Date(value) : null
 	if (!date || Number.isNaN(date.getTime())) {
 		return ''
 	}
 	const options = { day: 'numeric', month: 'long' }
-	if (date.getFullYear() !== (today || new Date()).getFullYear()) {
+	if (
+		withYear ||
+		date.getFullYear() !== (today || new Date()).getFullYear()
+	) {
 		options.year = 'numeric'
 	}
 	return date.toLocaleDateString(
@@ -144,16 +149,8 @@ export function caseCard(
 	{ tr, locale, today, steps = null, yourTurn = [] },
 ) {
 	const title = caseTitle(row)
-	const reference = ['reference', 'identifier']
-		.map((field) => row?.[field])
-		.find(
-			(value) =>
-				typeof value === 'string' && value.trim() !== '' && value !== title,
-		)
-	// The legal decision date is the due day when the case has one (case-page-tasks-decision-dates-and-next-step).
-	const dueDay = dayInWords(dueValueOf(row, collection), today, locale)
+	const reference = referenceOf(row, title)
 	const position = stepPosition(steps)
-	const turnValue = collection?.turnField ? row?.[collection.turnField] : undefined
 	return {
 		title,
 		typeName: typeof row?._caseTypeName === 'string' ? row._caseTypeName : '',
@@ -162,18 +159,64 @@ export function caseCard(
 		// The bare number for the board card, where "Zaak" is not repeated.
 		number: reference || '',
 		numberLabel: reference ? tr('Case number') : '',
-		due: dueDay ? tr('Answer by {date}', { date: dueDay }) : '',
-		dueDay,
-		readyBy: dueDay ? tr('ready by {date}', { date: dueDay }) : '',
+		...dueWords(row, { collection, tr, locale, today }),
 		turn: turnSentence(row, collection),
-		yourTurn:
-			Array.isArray(yourTurn)
-			&& turnValue !== undefined
-			&& turnValue !== null
-			&& yourTurn.map(String).includes(String(turnValue)),
+		yourTurn: isYourTurn(row, { collection, yourTurn }),
 		position: position
 			? { ...position, text: tr('Step {current} of {total}', position) }
 			: null,
 		closed: isClosedCase(row, collection),
 	}
+}
+
+/**
+ * A case's reference or identifier, when it is not its title.
+ *
+ * @param {object} row The case row.
+ * @param {string} title The case's title.
+ * @return {string|undefined} The reference.
+ */
+function referenceOf(row, title) {
+	return ['reference', 'identifier']
+		.map((field) => row?.[field])
+		.find(
+			(value) =>
+				typeof value === 'string' && value.trim() !== '' && value !== title,
+		)
+}
+
+/**
+ * The due day of a case in words, and the sentences that carry it. The legal
+ * decision date is the due day when the case has one
+ * (case-page-tasks-decision-dates-and-next-step).
+ *
+ * @param {object} row The case row.
+ * @param {{collection: object|null, tr: (key: string, vars?: object) => string, locale: string, today: Date}} context The collection, the translator, the page language and today.
+ * @return {{due: string, dueDay: string, readyBy: string}} The words.
+ */
+function dueWords(row, { collection, tr, locale, today }) {
+	const dueDay = dayInWords(dueValueOf(row, collection), today, locale)
+	return {
+		due: dueDay ? tr('Answer by {date}', { date: dueDay }) : '',
+		dueDay,
+		readyBy: dueDay ? tr('ready by {date}', { date: dueDay }) : '',
+	}
+}
+
+/**
+ * Whether the case waits on the resident: its turn value is one of the
+ * board card's turn values.
+ *
+ * @param {object} row The case row.
+ * @param {{collection: object|null, yourTurn: Array<string>}} context The collection and the turn values at which the resident must act.
+ * @return {boolean}
+ */
+function isYourTurn(row, { collection, yourTurn }) {
+	const turnValue = collection?.turnField ? row?.[collection.turnField] : undefined
+	return (
+		Array.isArray(yourTurn)
+		&& turnValue !== undefined
+		&& turnValue !== null
+		&& yourTurn.map(String).includes(String(turnValue))
+	)
 }

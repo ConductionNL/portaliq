@@ -477,16 +477,7 @@ class TrafficRollupSum {
 	 * @return array<string, array<string, mixed>> The accumulator.
 	 */
 	private function addGoals(array $into, mixed $rows): array {
-		if (is_array($rows) === false) {
-			return $into;
-		}
-
-		foreach ($rows as $row) {
-			if (is_array($row) === false || (string)($row['id'] ?? '') === '') {
-				continue;
-			}
-
-			$id = (string)$row['id'];
+		foreach ($this->keyedRows(rows: $rows, key: 'id') as [$id, $row]) {
 			$goal = $into[$id] ?? ['id' => $id, 'name' => (string)($row['name'] ?? $id), 'conversions' => 0, 'completions' => 0, 'value' => 0.0];
 			$goal['conversions'] += $this->int(value: $row['conversions'] ?? 0);
 			$goal['completions'] += $this->int(value: $row['completions'] ?? 0);
@@ -507,25 +498,11 @@ class TrafficRollupSum {
 	 * @return array<string, array<string, mixed>> The accumulator.
 	 */
 	private function addExperiments(array $into, mixed $rows): array {
-		if (is_array($rows) === false) {
-			return $into;
-		}
-
-		foreach ($rows as $row) {
-			if (is_array($row) === false || (string)($row['id'] ?? '') === '') {
-				continue;
-			}
-
-			$id = (string)$row['id'];
+		foreach ($this->keyedRows(rows: $rows, key: 'id') as [$id, $row]) {
 			$experiment = $into[$id] ?? ['id' => $id, 'name' => $id, 'status' => 'running', 'variants' => []];
 			$experiment['name'] = (string)($row['name'] ?? $experiment['name']);
 			$experiment['status'] = (string)($row['status'] ?? $experiment['status']);
-			foreach ((array)($row['variants'] ?? []) as $variant) {
-				if (is_array($variant) === false || (string)($variant['id'] ?? '') === '') {
-					continue;
-				}
-
-				$variantId = (string)$variant['id'];
+			foreach ($this->keyedRows(rows: (array)($row['variants'] ?? []), key: 'id') as [$variantId, $variant]) {
 				$summed = $experiment['variants'][$variantId]
 					?? ['id' => $variantId, 'name' => (string)($variant['name'] ?? $variantId), 'sessions' => 0, 'conversions' => 0];
 				$summed['sessions'] += $this->int(value: $variant['sessions'] ?? 0);
@@ -572,16 +549,7 @@ class TrafficRollupSum {
 	 * @return array<string, array<string, mixed>> The accumulator.
 	 */
 	private function addFunnels(array $into, mixed $rows): array {
-		if (is_array($rows) === false) {
-			return $into;
-		}
-
-		foreach ($rows as $row) {
-			if (is_array($row) === false || (string)($row['id'] ?? '') === '') {
-				continue;
-			}
-
-			$id = (string)$row['id'];
+		foreach ($this->keyedRows(rows: $rows, key: 'id') as [$id, $row]) {
 			$funnel = $into[$id] ?? ['id' => $id, 'name' => (string)($row['name'] ?? $id), 'steps' => []];
 			foreach (array_values((array)($row['steps'] ?? [])) as $index => $step) {
 				if (is_array($step) === false) {
@@ -638,27 +606,13 @@ class TrafficRollupSum {
 	 * @return array<string, array<string, mixed>> The accumulator.
 	 */
 	private function addForms(array $into, mixed $rows): array {
-		if (is_array($rows) === false) {
-			return $into;
-		}
-
-		foreach ($rows as $row) {
-			if (is_array($row) === false || (string)($row['formId'] ?? '') === '') {
-				continue;
-			}
-
-			$id = (string)$row['formId'];
+		foreach ($this->keyedRows(rows: $rows, key: 'formId') as [$id, $row]) {
 			$form = $into[$id] ?? ['formId' => $id, 'starts' => 0, 'submits' => 0, 'abandons' => 0, 'fields' => []];
 			foreach (['starts', 'submits', 'abandons'] as $key) {
 				$form[$key] += $this->int(value: $row[$key] ?? 0);
 			}
 
-			foreach ((array)($row['fields'] ?? []) as $field) {
-				if (is_array($field) === false || (string)($field['fieldId'] ?? '') === '') {
-					continue;
-				}
-
-				$fieldId = (string)$field['fieldId'];
+			foreach ($this->keyedRows(rows: (array)($row['fields'] ?? []), key: 'fieldId') as [$fieldId, $field]) {
 				$sum = $form['fields'][$fieldId] ?? ['fieldId' => $fieldId, 'ms' => 0, 'members' => 0, 'abandonedHere' => 0];
 				$sum['ms'] += $this->int(value: $field['avgMs'] ?? 0);
 				$sum['members'] += 1;
@@ -727,6 +681,30 @@ class TrafficRollupSum {
 		}
 
 		return $into;
+	}
+
+	/**
+	 * The rows that are arrays with a non-empty key, each paired with that
+	 * key as a string, in their order.
+	 *
+	 * @param mixed  $rows The record's rows.
+	 * @param string $key  The field that identifies a row.
+	 *
+	 * @return array<int, array{0: string, 1: array<string, mixed>}> The [key, row] pairs.
+	 */
+	private function keyedRows(mixed $rows, string $key): array {
+		if (is_array($rows) === false) {
+			return [];
+		}
+
+		$keyed = [];
+		foreach ($rows as $row) {
+			if (is_array($row) === true && (string)($row[$key] ?? '') !== '') {
+				$keyed[] = [(string)$row[$key], $row];
+			}
+		}
+
+		return $keyed;
 	}
 
 	/**

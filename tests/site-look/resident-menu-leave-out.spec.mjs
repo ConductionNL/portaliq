@@ -41,7 +41,7 @@ function menu(leaveOut) {
 			news: [],
 		}),
 	)
-	return residentMenuGroups(nav, t, 0, (route) => route, {}, null, leaveOut).map(
+	return residentMenuGroups(nav, { t, unread: 0, hrefFor: (route) => route, recordRows: {}, layout: null, leaveOut }).map(
 		(group) => ({
 			title: group.title,
 			names: group.items.map((item) => item.name),
@@ -62,7 +62,8 @@ test('leaving its items out removes the group and nothing else', () => {
 
 test('the site hands the portal list to the menu in both places', () => {
 	const app = readFileSync(join(ROOT, 'src/site/App.vue'), 'utf8')
-	assert.equal(app.split('this.site?.residentMenu?.leaveOut,').length - 1, 2)
+	assert.match(app, /residentMenuSource\(\) \{[^}]*leaveOut: this\.site\?\.residentMenu\?\.leaveOut,/)
+	assert.equal(app.split('residentMenuGroups(this.nav, this.residentMenuSource)').length - 1, 2)
 })
 
 test('Zuiddrecht leaves out the contributed pages its MijnMenu board does not draw', () => {

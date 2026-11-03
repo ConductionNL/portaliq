@@ -180,15 +180,15 @@ test('the account way in stays, and the demo cards follow it only while the demo
 	}
 	const modes = (routes) => routes.map((route) => route.mode)
 	// Off: the server offers no resident, every way in stays.
-	assert.deepEqual(modes(signInRoutes(site, '/a', undefined, '', [])), [
+	assert.deepEqual(modes(signInRoutes(site, { authBase: '/a', t: undefined, exampleResident: '', demoResidents: [] })), [
 		'digid',
 		'nextcloud',
 	])
 	// On: the account way in keeps its own route, a card per resident follows.
-	const on = signInRoutes(site, '/a', undefined, 'zuiddrecht', [
+	const on = signInRoutes(site, { authBase: '/a', t: undefined, exampleResident: 'zuiddrecht', demoResidents: [
 		{ key: 'sanne', name: 'Sanne de Vries' },
 		{ key: 'linda', name: 'Linda Bakker' },
-	])
+	] })
 	assert.deepEqual(modes(on), [
 		'digid',
 		'nextcloud',
@@ -202,7 +202,7 @@ test('the account way in stays, and the demo cards follow it only while the demo
 		[true, true],
 	)
 	// A portal without an example resident keeps every way in.
-	assert.deepEqual(modes(signInRoutes(site, '/a')), ['digid', 'nextcloud'])
+	assert.deepEqual(modes(signInRoutes(site, { authBase: '/a' })), ['digid', 'nextcloud'])
 })
 
 test('a call to action carries the open case into a create form, and the form does not ask for it', async () => {

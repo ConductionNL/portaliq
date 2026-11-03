@@ -104,7 +104,7 @@ test('the blue bar holds the website menus only, never the resident items', () =
 })
 
 test('the resident items go into groups: cases, one per app, messages, then details', () => {
-	const groups = residentMenuGroups(navFor(nl, { messages: true, news: true }), nl, 0, href)
+	const groups = residentMenuGroups(navFor(nl, { messages: true, news: true }), { t: nl, unread: 0, hrefFor: href })
 	assert.deepEqual(names(groups), [
 		['Zaken en taken', ['Mijn zaken', 'Mijn taken', 'Toegang tot zaken']],
 		['Dossiq', ['Mijn zaken (Dossiq)', 'Berichten (Dossiq)', 'Mijn verzoeken']],
@@ -122,7 +122,7 @@ test('plans and contacts, once the portal switches them on, sit in a group of th
 		{ special: 'contacts', label: 'My contacts', icon: 'AccountMultiple' },
 		{ special: 'samenwerken', label: 'Collaborate', icon: 'ClipboardCheckOutline' },
 	]
-	const groups = residentMenuGroups(navFor(nl, { pages: areaPages }), nl, 0, href)
+	const groups = residentMenuGroups(navFor(nl, { pages: areaPages }), { t: nl, unread: 0, hrefFor: href })
 	const collaborate = groups.find((group) => group.key === 'collaborate')
 	assert.ok(collaborate, 'a Samenwerken group')
 	assert.equal(collaborate.title, 'Samenwerken')
@@ -131,13 +131,13 @@ test('plans and contacts, once the portal switches them on, sit in a group of th
 		['/mijn/samenwerken', '/mijn/contacts'],
 	)
 	// The portal's layout places them by name.
-	const laid = residentMenuGroups(navFor(nl, { pages: areaPages }), nl, 0, href, {}, [
+	const laid = residentMenuGroups(navFor(nl, { pages: areaPages }), { t: nl, unread: 0, hrefFor: href, recordRows: {}, layout: [
 		{ title: 'Samenwerken', items: ['samenwerken', 'contacts'] },
-	])
+	] })
 	assert.deepEqual(laid[0].items.map((item) => item.link), ['/mijn/samenwerken', '/mijn/contacts'])
 	// Switched off, no group.
 	assert.equal(
-		residentMenuGroups(navFor(nl), nl, 0, href).find((group) => group.key === 'collaborate'),
+		residentMenuGroups(navFor(nl), { t: nl, unread: 0, hrefFor: href }).find((group) => group.key === 'collaborate'),
 		undefined,
 	)
 })
@@ -179,7 +179,7 @@ test('Mijn Zuiddrecht lays out Samenwerken, and its example set switches plans a
 
 test('no two items read the same, in either language', () => {
 	for (const t of [nl, en]) {
-		const all = residentMenuGroups(navFor(t, { messages: true, news: true }), t, 0, href)
+		const all = residentMenuGroups(navFor(t, { messages: true, news: true }), { t, unread: 0, hrefFor: href })
 			.flatMap((group) => group.items.map((item) => item.name.toLowerCase()))
 		assert.equal(new Set(all).size, all.length, all.join(', '))
 	}
@@ -189,12 +189,12 @@ test('no two items read the same, in either language', () => {
 
 test('an app named only by its id groups under that id, and an empty group is left out', () => {
 	const nav = buildNav([{ app: 'pipelinq', pages: [{ id: 'vragen', label: 'Vragen' }] }], en, {})
-	assert.deepEqual(names(residentMenuGroups(nav, en, 0, href)), [
+	assert.deepEqual(names(residentMenuGroups(nav, { t: en, unread: 0, hrefFor: href })), [
 		['pipelinq', ['Vragen']],
 		['Messages and news', ['Inbox']],
 	])
-	assert.deepEqual(residentMenuGroups([], en, 0, href), [])
-	assert.deepEqual(residentMenuGroups(null, en, 0, href), [])
+	assert.deepEqual(residentMenuGroups([], { t: en, unread: 0, hrefFor: href }), [])
+	assert.deepEqual(residentMenuGroups(null, { t: en, unread: 0, hrefFor: href }), [])
 })
 
 test('pages with the same group share one heading across apps, in the order they first appear', () => {
@@ -225,7 +225,7 @@ test('pages with the same group share one heading across apps, in the order they
 		nl,
 		{},
 	)
-	assert.deepEqual(names(residentMenuGroups(nav, nl, 0, href)), [
+	assert.deepEqual(names(residentMenuGroups(nav, { t: nl, unread: 0, hrefFor: href })), [
 		['Mijn zaken en verzoeken', ['Mijn zaken', 'Mijn verzoeken']],
 		['Dossiq', ['Mijn uren']],
 		['Vragen en contact', ['Mijn vragen']],
@@ -243,18 +243,18 @@ test('two items of one name in a shared group are told apart by their app', () =
 		nl,
 		{},
 	)
-	assert.deepEqual(names(residentMenuGroups(nav, nl, 0, href))[0], [
+	assert.deepEqual(names(residentMenuGroups(nav, { t: nl, unread: 0, hrefFor: href }))[0], [
 		'Mijn zaken en verzoeken',
 		['Mijn zaken (Dossiq)', 'Mijn zaken (Pipelinq)'],
 	])
 })
 
 test('the inbox item carries the unread count, read out in words', () => {
-	const groups = residentMenuGroups(navFor(en), en, 2, href)
+	const groups = residentMenuGroups(navFor(en), { t: en, unread: 2, hrefFor: href })
 	const inbox = groups.flatMap((group) => group.items).find((item) => item.link === '/mijn/inbox')
 	assert.equal(inbox.badge, '2')
 	assert.equal(inbox.badgeLabel, '2 unread')
-	const none = residentMenuGroups(navFor(en), en, 0, href)
+	const none = residentMenuGroups(navFor(en), { t: en, unread: 0, hrefFor: href })
 		.flatMap((group) => group.items)
 		.find((item) => item.link === '/mijn/inbox')
 	assert.equal(none.badge, undefined)
@@ -301,7 +301,7 @@ test('the header links to the own area when signed in, and keeps the sign-in lin
 })
 
 test('the menu is a named landmark with labelled groups and marks the current item', async () => {
-	const groups = residentMenuGroups(navFor(nl), nl, 2, href)
+	const groups = residentMenuGroups(navFor(nl), { t: nl, unread: 2, hrefFor: href })
 	const html = await renderSfc('src/site/components/ResidentMenu.vue', {
 		groups,
 		currentRoute: '/mijn/dossiq/verzoeken',
@@ -357,29 +357,29 @@ test('on a case opened from "Mijn zaken" the menu marks "Mijn zaken"; a route of
 	}
 	// The case page is no item of the menu: the cases section is marked.
 	assert.equal(
-		menuCurrentRoute('/mijn/dossiq/mijnZaken/c-82', groups, nav, contributions),
+		menuCurrentRoute('/mijn/dossiq/mijnZaken/c-82', { groups, nav, contributions }),
 		'/mijn/cases',
 	)
 	// A case opened on the cases collection's own page marks it too (Zaak board).
 	assert.equal(
-		menuCurrentRoute('/mijn/dossiq/mijnZaken', groups, nav, contributions),
+		menuCurrentRoute('/mijn/dossiq/mijnZaken', { groups, nav, contributions }),
 		'/mijn/cases',
 	)
 	// A page with an item of its own keeps it.
-	assert.equal(menuCurrentRoute('/mijn/inbox', groups, nav, contributions), '/mijn/inbox')
+	assert.equal(menuCurrentRoute('/mijn/inbox', { groups, nav, contributions }), '/mijn/inbox')
 	// A page one level under an item marks that item, never the overview.
 	assert.equal(
-		menuCurrentRoute('/mijn/opencatalogi/dossiers/d-1', groups, nav, contributions),
+		menuCurrentRoute('/mijn/opencatalogi/dossiers/d-1', { groups, nav, contributions }),
 		'/mijn/opencatalogi/dossiers',
 	)
 	// A record of a collection that is no cases collection marks nothing.
 	assert.equal(
-		menuCurrentRoute('/mijn/dossiq/mijnMeldingen/m-1', groups, nav, contributions),
+		menuCurrentRoute('/mijn/dossiq/mijnMeldingen/m-1', { groups, nav, contributions }),
 		'/mijn/dossiq/mijnMeldingen/m-1',
 	)
 	// Without the cases section in the menu, nothing either.
 	assert.equal(
-		menuCurrentRoute('/mijn/dossiq/mijnZaken/c-82', groups.slice(0, 1), nav, contributions),
+		menuCurrentRoute('/mijn/dossiq/mijnZaken/c-82', { groups: groups.slice(0, 1), nav, contributions }),
 		'/mijn/dossiq/mijnZaken/c-82',
 	)
 })
@@ -387,7 +387,7 @@ test('on a case opened from "Mijn zaken" the menu marks "Mijn zaken"; a route of
 test('the signed-in area hands the menu the item a deeper page belongs to', () => {
 	const area = read('src', 'site', 'components', 'AccountArea.vue')
 	assert.match(area, /:currentRoute="menuRoute"/)
-	assert.match(area, /menuCurrentRoute\(\s*this\.currentRoute,\s*this\.menuGroups,\s*this\.nav,\s*this\.contributions,?\s*\)/)
+	assert.match(area, /menuCurrentRoute\(this\.currentRoute, \{\s*groups: this\.menuGroups,\s*nav: this\.nav,\s*contributions: this\.contributions,?\s*\}\)/)
 })
 
 test('on the board look the menu links are square, as the boards draw them', () => {
@@ -400,7 +400,7 @@ test('on the board look the menu links are square, as the boards draw them', () 
 
 test('on a phone the menu folds behind one button that says whether it is open', async () => {
 	const component = await loadSfc('src/site/components/ResidentMenu.vue')
-	const groups = residentMenuGroups(navFor(nl), nl, 0, href)
+	const groups = residentMenuGroups(navFor(nl), { t: nl, unread: 0, hrefFor: href })
 	const closed = await renderComponent(component, { groups, currentRoute: '/mijn/cases' })
 	assert.match(closed, /<button[^>]*aria-expanded="false"[^>]*aria-controls="pq-resident-menu-list"[^>]*data-testid="site-resident-menu-toggle"[^>]*>\s*Menu mijn omgeving\s*</)
 	assert.match(closed, /id="pq-resident-menu-list" class="pq-resident-menu__groups"/)

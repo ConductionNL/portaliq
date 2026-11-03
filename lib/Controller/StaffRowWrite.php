@@ -25,6 +25,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
+use Throwable;
 
 /**
  * Writes fields onto one row of the controller's schema, for staff authoring.
@@ -62,4 +63,28 @@ trait StaffRowWrite {
 
 		return new JSONResponse($updated);
 	}//end writeRow()
+
+	/**
+	 * Save a new row and answer it, or 500 when the store is absent or fails.
+	 *
+	 * @param array<string, mixed> $object  The fields of the new row.
+	 * @param string               $failure The log line for a failed save.
+	 *
+	 * @return JSONResponse
+	 */
+	private function createRow(array $object, string $failure): JSONResponse {
+		$objectService = $this->objectService();
+		if ($objectService === null) {
+			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		try {
+			$saved = $objectService->saveObject(object: $object, register: self::REGISTER, schema: self::SCHEMA, _rbac: false, _multitenancy: false);
+		} catch (Throwable $e) {
+			$this->logger->error($failure, ['reason' => $e->getMessage()]);
+			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		return new JSONResponse($this->normalise(row: $saved));
+	}//end createRow()
 }//end trait

@@ -40,6 +40,7 @@ use Throwable;
  * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
  */
 class ActionReminderService {
+	use RowAsArray;
 	use PagedObjectReads;
 
 	public const RULE_KEY = 'action-due';
@@ -138,24 +139,6 @@ class ActionReminderService {
 		return $sent;
 	}//end remindDue()
 
-	/**
-	 * A stored row as an array.
-	 *
-	 * @param mixed $row The row, an array or an entity.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function asArray(mixed $row): array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			return (array)$row->jsonSerialize();
-		}
-
-		return [];
-	}//end asArray()
 
 	/**
 	 * Whether the assignee's account was withdrawn (void); logged with the account id only.

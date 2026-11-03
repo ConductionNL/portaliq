@@ -59,7 +59,7 @@ test('payIntake sends the reference and the bearer, never an amount, and fails c
 		seen = { url, init }
 		return { ok: true, status: 200, json: async () => ({ checkoutUrl: 'https://www.mollie.com/x' }) }
 	}
-	const paid = await payIntake('/api', 'AANVRAAG-1', 'gemeente-x', 'tok', ok)
+	const paid = await payIntake({ base: '/api', portal: 'gemeente-x', token: 'tok', fetchImpl: ok }, 'AANVRAAG-1')
 
 	assert.equal(paid.ok, true)
 	assert.equal(paid.checkoutUrl, 'https://www.mollie.com/x')
@@ -67,9 +67,9 @@ test('payIntake sends the reference and the bearer, never an amount, and fails c
 	assert.deepEqual(JSON.parse(seen.init.body), { reference: 'AANVRAAG-1', portal: 'gemeente-x' })
 	assert.equal(seen.init.headers.Authorization, 'Bearer tok')
 
-	assert.equal((await payIntake('/api', 'R', '', 't', async () => ({ ok: false, status: 502, json: async () => ({ error: 'payment_unavailable' }) }))).ok, false)
-	assert.equal((await payIntake('/api', 'R', '', 't', async () => ({ ok: true, status: 200, json: async () => ({}) }))).ok, false)
-	assert.equal((await payIntake('/api', 'R', '', 't', async () => { throw new Error('down') })).ok, false)
+	assert.equal((await payIntake({ base: '/api', portal: '', token: 't', fetchImpl: async () => ({ ok: false, status: 502, json: async () => ({ error: 'payment_unavailable' }) }) }, 'R')).ok, false)
+	assert.equal((await payIntake({ base: '/api', portal: '', token: 't', fetchImpl: async () => ({ ok: true, status: 200, json: async () => ({}) }) }, 'R')).ok, false)
+	assert.equal((await payIntake({ base: '/api', portal: '', token: 't', fetchImpl: async () => { throw new Error('down') } }, 'R')).ok, false)
 })
 
 test('site: after sending, a fee shows the amount and "Pay now"', async () => {

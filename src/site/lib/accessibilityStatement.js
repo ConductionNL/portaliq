@@ -55,3 +55,33 @@ export function withStatementLink(links, label, columns = []) {
 	)
 	return present ? list : [...list, { label, href: STATEMENT_ROUTE }]
 }
+
+/**
+ * The portal's own page at the statement's route, or null when it has none
+ * and the generated statement shows. Any failed read counts as none, so the
+ * statement never disappears behind an error.
+ *
+ * @param {() => Promise<object|null>} read Reads the CMS page at the route.
+ * @return {Promise<object|null>}
+ * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+ */
+export async function authoredStatement(read) {
+	try {
+		return (await read()) || null
+	} catch {
+		return null
+	}
+}
+
+/**
+ * Whether the generated statement shows: on its route, once the read is
+ * done, and only when the portal has no authored page there.
+ *
+ * @param {string} route The in-site route.
+ * @param {{loading: boolean, authored: boolean}} state The read's state.
+ * @return {boolean}
+ * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+ */
+export function showsGeneratedStatement(route, { loading, authored }) {
+	return isStatementRoute(route) && !loading && !authored
+}

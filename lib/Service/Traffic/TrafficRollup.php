@@ -92,11 +92,7 @@ class TrafficRollup {
 	 */
 	public function build(string $portal, string $date, array $sessions, string $aggregatedAt, array $options = []): array {
 		$totals = $this->totals(sessions: $sessions);
-		$pages = $this->journeys->pages(sessions: $sessions, engaged: $totals['engagedBy']);
-		$visitorCounts = $this->visitorCounts(totals: $totals, options: $options);
-		$goalDefinitions = $this->definitions(options: $options, key: 'goals');
-
-		$zeroResults = $this->dimensions->zeroResults(sessions: $sessions);
+		$day    = ['sessions' => $sessions, 'totals' => $totals, 'options' => $options];
 
 		return [
 			'portal' => $portal,
@@ -104,18 +100,58 @@ class TrafficRollup {
 			// All sessions. The aggregation overwrites this with the
 			// segment's id when it builds a segment's record.
 			'segment' => '',
+		]
+			+ $this->visits(day: $day)
+			+ $this->sessionSources(sessions: $sessions)
+			+ $this->eventSources(sessions: $sessions)
+			+ $this->outcomes(day: $day)
+			+ ['aggregatedAt' => $aggregatedAt, 'lastEventAt' => $totals['lastEventAt']];
+	}
+
+	/**
+	 * The day's visits: views, sessions, visitors, engagement and the pages
+	 * with their transitions.
+	 *
+	 * @param array{sessions: array<int, array<string, mixed>>, totals: array<string, mixed>, options: array<string, mixed>} $day The day.
+	 *
+	 * @return array<string, mixed> The visit fields, in record order.
+	 *
+	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-visitors-must-be-counted-honestly-in-each-mode
+	 */
+	private function visits(array $day): array {
+		$totals        = $day['totals'];
+		$sessions      = count($day['sessions']);
+		$pages         = $this->journeys->pages(sessions: $day['sessions'], engaged: $totals['engagedBy']);
+		$visitorCounts = $this->visitorCounts(totals: $totals, options: $day['options']);
+
+		return [
 			'pageViews' => $totals['pageViews'],
-			'sessions' => count($sessions),
+			'sessions' => $sessions,
 			'visitors' => $totals['visitors'],
 			'newVisitors' => $visitorCounts['new'],
 			'returningVisitors' => $visitorCounts['returning'],
 			'accounts' => $visitorCounts['accounts'],
 			'engagedSessions' => $totals['engaged'],
-			'avgEngagementSeconds' => $this->mean(sum: $totals['seconds'], count: count($sessions)),
-			'bounceRate' => $this->bounceRate(engaged: $totals['engaged'], sessions: count($sessions)),
+			'avgEngagementSeconds' => $this->mean(sum: $totals['seconds'], count: $sessions),
+			'bounceRate' => $this->bounceRate(engaged: $totals['engaged'], sessions: $sessions),
 			'events' => $totals['events'],
 			'pages' => $pages['pages'],
 			'transitions' => $pages['transitions'],
+		];
+	}
+
+	/**
+	 * Where the sessions came from and on what: referrers, campaigns,
+	 * devices, browsers, systems, languages and regions, once per session.
+	 *
+	 * @param array<int, array<string, mixed>> $sessions The day's sessions.
+	 *
+	 * @return array<string, mixed> The source fields, in record order.
+	 *
+	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+	 */
+	private function sessionSources(array $sessions): array {
+		return [
 			'referrers' => $this->dimensions->perSession(
 				sessions: $sessions,
 				keys: ['referrerHost', 'channel'],
@@ -133,6 +169,23 @@ class TrafficRollup {
 			'os' => $this->dimensions->perSessionMap(sessions: $sessions, key: 'os'),
 			'languages' => $this->dimensions->perSessionMap(sessions: $sessions, key: 'language'),
 			'regions' => $this->dimensions->perSessionMap(sessions: $sessions, key: 'region'),
+		];
+	}
+
+	/**
+	 * What the sessions did, counted per event: searches, the searches that
+	 * found nothing, downloads and outbound links.
+	 *
+	 * @param array<int, array<string, mixed>> $sessions The day's sessions.
+	 *
+	 * @return array<string, mixed> The event fields, in record order.
+	 *
+	 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-roll-up-counts-searches-that-found-nothing-req-pzr-001
+	 */
+	private function eventSources(array $sessions): array {
+		$zeroResults = $this->dimensions->zeroResults(sessions: $sessions);
+
+		return [
 			'searches' => $this->dimensions->perEvent(sessions: $sessions, name: 'search', keys: ['searchTerm', 'params.search_term'], label: 'term'),
 			// What the public searched for and did not find
 			// (portal-traffic-zero-result-searches).
@@ -145,6 +198,27 @@ class TrafficRollup {
 				label: 'file'
 			),
 			'outbound' => $this->dimensions->perEvent(sessions: $sessions, name: 'outbound_click', keys: ['linkUrl', 'params.link_url'], label: 'url'),
+		];
+	}
+
+	/**
+	 * The day's outcomes against the portal's definitions: goals, funnels,
+	 * forms, not-found pages, script errors, experiments, heatmaps and
+	 * custom dimensions, and the mail opens and clicks.
+	 *
+	 * @param array{sessions: array<int, array<string, mixed>>, totals: array<string, mixed>, options: array<string, mixed>} $day The day.
+	 *
+	 * @return array<string, mixed> The outcome fields, in record order.
+	 *
+	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
+	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
+	 */
+	private function outcomes(array $day): array {
+		$sessions        = $day['sessions'];
+		$options         = $day['options'];
+		$goalDefinitions = $this->definitions(options: $options, key: 'goals');
+
+		return [
 			'goals' => $this->goals->rows(goals: $goalDefinitions, sessions: $sessions),
 			'conversionRate' => $this->goals->conversionRate(goals: $goalDefinitions, sessions: $sessions),
 			'funnels' => $this->funnels->rows(funnels: $this->definitions(options: $options, key: 'funnels'), sessions: $sessions),
@@ -173,11 +247,9 @@ class TrafficRollup {
 			// on null.
 			'customDimensions' => $this->customDimensions(sessions: $sessions, options: $options),
 			'emails' => [
-				'opens' => (int)($totals['events']['email_open'] ?? 0),
-				'clicks' => (int)($totals['events']['email_click'] ?? 0),
+				'opens' => (int)($day['totals']['events']['email_open'] ?? 0),
+				'clicks' => (int)($day['totals']['events']['email_click'] ?? 0),
 			],
-			'aggregatedAt' => $aggregatedAt,
-			'lastEventAt' => $totals['lastEventAt'],
 		];
 	}
 

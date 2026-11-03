@@ -151,8 +151,9 @@ export function toResult(row) {
  * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
  */
 function baseResult(row) {
-	const self = (row || {})['@self'] || {}
-	const summary = self.summary || (row || {}).description || ''
+	const source = row || {}
+	const self = source['@self'] || {}
+	const summary = self.summary || source.description || ''
 	const kind = resultKind(row)
 
 	return {
@@ -162,12 +163,12 @@ function baseResult(row) {
 		// The publication a document belongs to, so a hit inside a PDF still
 		// says where it lives. Empty for a row that is not a document.
 		publication: kind === 'document' ? publicationName(row) : '',
-		key: self.id || (row || {}).id || (row || {}).sha || (row || {}).name || '',
-		title: (row || {}).name || self.name || self.title || 'Zonder titel',
+		key: self.id || source.id || source.sha || source.name || '',
+		title: source.name || self.name || self.title || 'Zonder titel',
 		// Truncated here rather than by CSS: an ellipsis that hides text still
 		// ships every byte of it to a mobile connection.
 		summary: typeof summary === 'string' ? summary.slice(0, 280) : '',
-		href: (row || {}).landingUrl || (row || {}).url || self.uri || '',
+		href: source.landingUrl || source.url || self.uri || '',
 		// The directory of a row from ANOTHER catalogue, else ''. `local` is
 		// the API's word for a row this instance owns, and so is no
 		// directory at all; a visitor on the portal's own site reads that as
@@ -176,8 +177,8 @@ function baseResult(row) {
 		directory: foreignDirectory(self.directory),
 		// The id the portal's own detail route addresses. Falls back through
 		// the same chain as `key` so a row from an older peer still links.
-		id: self.id || (row || {}).id || '',
-		date: formatDutchDate((row || {}).publicationDate || self.published || ''),
+		id: self.id || source.id || '',
+		date: formatDutchDate(source.publicationDate || self.published || ''),
 		// THE TYPE IS OFTEN NOT KNOWABLE FROM THIS ENVELOPE.
 		//
 		// The reference shows a type chip reading "Publiccode" — the SCHEMA

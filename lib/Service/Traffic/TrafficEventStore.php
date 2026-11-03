@@ -22,6 +22,7 @@ namespace OCA\Portaliq\Service\Traffic;
 
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PortalRegisterContext;
+use OCA\Portaliq\Service\RowAsArray;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -60,6 +61,8 @@ use Throwable;
  */
 class TrafficEventStore {
 	use ObjectServiceLookup;
+	use ExpiredRowPurge;
+	use RowAsArray;
 
 	/**
 	 * OpenRegister's ObjectService FQCN, resolved lazily from the container.
@@ -178,44 +181,41 @@ class TrafficEventStore {
 	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
 	 */
 	public function purgeExpired(): int {
-		$objectService = $this->objectService();
-		if ($objectService === null) {
-			return 0;
-		}
+		return $this->purgeExpiredOf(schema: self::EVENT_SCHEMA, failure: 'Portaliq: traffic purge failed');
+	}
 
-		try {
-			if (method_exists($objectService, 'purgeExpiredObjectsRaw') === true) {
-				return (int)$objectService->purgeExpiredObjectsRaw(self::REGISTER, self::EVENT_SCHEMA);
+	/**
+	 * Delete expired raw events one by one through the ordinary path. Slow,
+	 * but retention is a promise and "the platform is old" is not a reason
+	 * to break it.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 *
+	 * @return int How many were removed.
+	 *
+	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
+	 */
+	protected function deleteExpired(object $objectService): int {
+		$now = gmdate('Y-m-d\TH:i:s\Z');
+		$rows = $this->findAll(schema: self::EVENT_SCHEMA, filters: ['expires' => ['lt' => $now]], limit: self::PAGE);
+		$removed = 0;
+		foreach ($rows as $row) {
+			$uuid = (string)($row['@self']['uuid'] ?? $row['uuid'] ?? $row['@self']['id'] ?? $row['id'] ?? '');
+			if ($uuid === '') {
+				continue;
 			}
 
-			// The fallback deletes one by one through the ordinary path. Slow,
-			// but retention is a promise and "the platform is old" is not a
-			// reason to break it.
-			$now = gmdate('Y-m-d\TH:i:s\Z');
-			$rows = $this->findAll(schema: self::EVENT_SCHEMA, filters: ['expires' => ['lt' => $now]], limit: self::PAGE);
-			$removed = 0;
-			foreach ($rows as $row) {
-				$uuid = (string)($row['@self']['uuid'] ?? $row['uuid'] ?? $row['@self']['id'] ?? $row['id'] ?? '');
-				if ($uuid === '') {
-					continue;
-				}
-
-				$objectService->deleteObject(
-					uuid: $uuid,
-					register: self::REGISTER,
-					schema: self::EVENT_SCHEMA,
-					_rbac: false,
-					_multitenancy: false
-				);
-				$removed++;
-			}
-
-			return $removed;
-		} catch (Throwable $e) {
-			$this->logger->error('Portaliq: traffic purge failed', ['reason' => $e->getMessage()]);
-
-			return 0;
+			$objectService->deleteObject(
+				uuid: $uuid,
+				register: self::REGISTER,
+				schema: self::EVENT_SCHEMA,
+				_rbac: false,
+				_multitenancy: false
+			);
+			$removed++;
 		}
+
+		return $removed;
 	}
 
 	/**
@@ -505,7 +505,7 @@ class TrafficEventStore {
 			}
 
 			foreach ($rows as $row) {
-				$shaped = $this->row(row: $row);
+				$shaped = $this->asArray(row: $row);
 				if ($shape !== null) {
 					$shaped = $shape($shaped);
 				}
@@ -521,25 +521,6 @@ class TrafficEventStore {
 		return $out;
 	}
 
-	/**
-	 * One row as an array, whether OpenRegister handed back an array or an
-	 * entity.
-	 *
-	 * @param mixed $row The row.
-	 *
-	 * @return array<string, mixed> The row's fields.
-	 */
-	private function row(mixed $row): array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			return (array)$row->jsonSerialize();
-		}
-
-		return [];
-	}
 
 	/**
 	 * A row without `@self` and without its empty fields.

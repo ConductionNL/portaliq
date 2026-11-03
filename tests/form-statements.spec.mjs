@@ -105,13 +105,13 @@ test('submitIntake sends the ticked statements and returns the confirmation and 
 			json: async () => ({ reference: 'WOO-1', confirmation: { title: 'Bedankt' }, mailedTo: 'sanne@example.nl' }),
 		}
 	}
-	const outcome = await submitIntake('/api', 'woo', { a: 'b' }, '', '', fetchImpl, ['truth', 'privacy'])
+	const outcome = await submitIntake({ base: '/api', portal: '', token: '', fetchImpl }, { route: 'woo', answers: { a: 'b' }, statements: ['truth', 'privacy'] })
 
 	assert.deepEqual(sent.statements, ['truth', 'privacy'])
 	assert.equal(outcome.mailedTo, 'sanne@example.nl')
 	assert.equal(outcome.confirmation.title, 'Bedankt')
 
-	await submitIntake('/api', 'woo', {}, '', '', fetchImpl)
+	await submitIntake({ base: '/api', portal: '', token: '', fetchImpl }, { route: 'woo', answers: {} })
 	assert.equal('statements' in sent, false, 'nothing is sent for a form that asks none')
 })
 

@@ -608,8 +608,8 @@ function names(groups) {
 
 test("the resident menu in the portal's own groups, Overzicht first, nothing unreachable, icons off", () => {
 	const nav = navFor(nl)
-	const own = residentMenuGroups(nav, nl, 2, href)
-	const laid = residentMenuGroups(nav, nl, 2, href, {}, LAYOUT)
+	const own = residentMenuGroups(nav, { t: nl, unread: 2, hrefFor: href })
+	const laid = residentMenuGroups(nav, { t: nl, unread: 2, hrefFor: href, recordRows: {}, layout: LAYOUT })
 	assert.deepEqual(names(laid).slice(0, 4), [
 		['Mijn Zuiddrecht', ['Overzicht', 'Berichten']],
 		['Zaken en taken', ['Mijn zaken', 'Mijn taken', 'Toegang tot zaken']],
@@ -637,8 +637,8 @@ test("the resident menu in the portal's own groups, Overzicht first, nothing unr
 			.every((item) => item.icon === undefined),
 	)
 	// Without a layout: as before.
-	assert.deepEqual(residentMenuGroups(nav, nl, 2, href, {}, null), own)
-	assert.deepEqual(residentMenuGroups(nav, nl, 2, href, {}, []), own)
+	assert.deepEqual(residentMenuGroups(nav, { t: nl, unread: 2, hrefFor: href, recordRows: {}, layout: null }), own)
+	assert.deepEqual(residentMenuGroups(nav, { t: nl, unread: 2, hrefFor: href, recordRows: {}, layout: [] }), own)
 })
 
 test('Mijn zaken as rows when the portal says so, folder cards otherwise', async () => {

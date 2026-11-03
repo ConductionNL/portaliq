@@ -138,6 +138,28 @@ export function groupRows(rows, field, labelRows = []) {
 	if (!field || !Array.isArray(rows) || rows.length === 0) {
 		return []
 	}
+	const groups = groupsOf(rows, { field, names: namesOf(labelRows) })
+	if (groups.size < 2) {
+		return []
+	}
+	const named = [...groups.values()].filter((group) => group.value !== '')
+	named.sort((a, b) =>
+		a.label.localeCompare(b.label, undefined, {
+			numeric: true,
+			sensitivity: 'base',
+		}),
+	)
+	const rest = groups.get('')
+	return rest ? [...named, rest] : named
+}
+
+/**
+ * The name of each value, from the rows that name the values.
+ *
+ * @param {Array<object>|null} labelRows The rows that name the values (the children).
+ * @return {Map<string, string>} The name per value.
+ */
+function namesOf(labelRows) {
 	const names = new Map()
 	for (const row of labelRows || []) {
 		const id = idOf(row)
@@ -146,7 +168,17 @@ export function groupRows(rows, field, labelRows = []) {
 			names.set(id, name)
 		}
 	}
+	return names
+}
 
+/**
+ * The rows by their value, in the order the values first occur.
+ *
+ * @param {Array<object>} rows The rows.
+ * @param {{field: string, names: Map<string, string>}} by The group field and the name per value.
+ * @return {Map<string, {value: string, label: string, rows: Array<object>}>} The groups.
+ */
+function groupsOf(rows, { field, names }) {
 	const groups = new Map()
 	for (const row of rows) {
 		const value = valueOf(row, field)
@@ -159,17 +191,5 @@ export function groupRows(rows, field, labelRows = []) {
 		}
 		groups.get(value).rows.push(row)
 	}
-	if (groups.size < 2) {
-		return []
-	}
-
-	const named = [...groups.values()].filter((group) => group.value !== '')
-	named.sort((a, b) =>
-		a.label.localeCompare(b.label, undefined, {
-			numeric: true,
-			sensitivity: 'base',
-		}),
-	)
-	const rest = groups.get('')
-	return rest ? [...named, rest] : named
+	return groups
 }
