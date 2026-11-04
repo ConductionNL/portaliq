@@ -119,7 +119,11 @@ class ExampleSiteInstallerGoldenTest extends TestCase {
 				$created++;
 				$id = $schema . '-' . $created;
 				$this->state[$schema][$id] = array_diff_key($data, array_flip($world['dropped'][$schema] ?? [])) + ['id' => $id];
-				return in_array($schema . ' ' . $key, ($world['unanswered'] ?? []), true) === true ? null : $id;
+				if (in_array($schema . ' ' . $key, ($world['unanswered'] ?? []), true) === true) {
+					return null;
+				}
+
+				return $id;
 			}
 		);
 		$store->method('idOf')->willReturnCallback(
@@ -245,7 +249,10 @@ class ExampleSiteInstallerGoldenTest extends TestCase {
 	private function worlds(): array {
 		$existing = [
 			'portal'       => ['p-0' => ['id' => 'p-0', 'slug' => 'demo', 'title' => 'Bestaand']],
-			'page'         => ['pg-0' => ['id' => 'pg-0', 'route' => '/', 'title' => 'Aangepast', 'portal' => 'demo'], 'pg-x' => ['id' => 'pg-x', 'route' => '/leeg', 'portal' => 'ander']],
+			'page'         => [
+				'pg-0' => ['id' => 'pg-0', 'route' => '/', 'title' => 'Aangepast', 'portal' => 'demo'],
+				'pg-x' => ['id' => 'pg-x', 'route' => '/leeg', 'portal' => 'ander'],
+			],
 			'form'         => ['f-0' => ['id' => 'f-0', 'externalReference' => 'aanmelden', 'portal' => 'demo']],
 			'glossaryTerm' => ['g-0' => ['id' => 'g-0', 'term' => 'Zaak', 'portal' => 'demo']],
 		];
@@ -254,18 +261,32 @@ class ExampleSiteInstallerGoldenTest extends TestCase {
 			'no OpenRegister'                => ['site' => $this->site(), 'available' => false],
 			'no OpenRegister, theme offered' => ['site' => $this->site(), 'available' => false, 'themes' => ['rijkshuisstijl' => 'x.css']],
 			'fresh instance'                 => ['site' => $this->site(), 'themes' => ['rijkshuisstijl' => 'rhs.css']],
-			'fresh, no theme set'            => ['site' => $this->site(['portal' => ['slug' => 'demo', 'title' => 'Demo']])],
-			'fresh, empty theme'             => ['site' => $this->site(['portal' => ['slug' => 'demo', 'theme' => '']])],
-			'second run'                     => ['site' => $this->site(), 'rows' => $existing, 'record' => ['portal' => 'p-0', 'menu' => [], 'page' => ['pg-0'], 'newsItem' => [], 'glossaryTerm' => ['g-0'], 'form' => ['f-0']]],
+			'fresh, no theme set'            => ['site' => $this->site(changes: ['portal' => ['slug' => 'demo', 'title' => 'Demo']])],
+			'fresh, empty theme'             => ['site' => $this->site(changes: ['portal' => ['slug' => 'demo', 'theme' => '']])],
+			'second run'                     => [
+				'site' => $this->site(),
+				'rows' => $existing,
+				'record' => ['portal' => 'p-0', 'menu' => [], 'page' => ['pg-0'], 'newsItem' => [], 'glossaryTerm' => ['g-0'], 'form' => ['f-0']],
+			],
 			'portal write refused'           => ['site' => $this->site(), 'refused' => ['portal demo']],
 			'portal answered without id'     => ['site' => $this->site(), 'unanswered' => ['portal demo']],
 			'a page refused'                 => ['site' => $this->site(), 'refused' => ['page /leeg', 'newsItem Nieuws 1']],
 			'a page answered without id'     => ['site' => $this->site(), 'unanswered' => ['page /']],
 			'the form refused'               => ['site' => $this->site(), 'refused' => ['form aanmelden']],
-			'keys dropped'                   => ['site' => $this->site(), 'dropped' => ['portal' => ['headerSearch'], 'page' => ['body'], 'menu' => ['items']]],
+			'keys dropped'                   => [
+				'site' => $this->site(),
+				'dropped' => ['portal' => ['headerSearch'], 'page' => ['body'], 'menu' => ['items']],
+			],
 			'no forms, no glossary'          => ['site' => array_diff_key($this->site(), ['forms' => 1, 'glossary' => 1, 'news' => 1])],
-			'page widgets not a list'        => ['site' => $this->site(['pages' => [['route' => '/x', 'body' => ['widgets' => 'geen']], ['route' => '/y', 'body' => 'geen']]])],
-			'a page of another portal'       => ['site' => $this->site(), 'rows' => ['page' => ['pg-x' => ['id' => 'pg-x', 'route' => '/', 'portal' => 'ander']]]],
+			'page widgets not a list'        => [
+				'site' => $this->site(
+					changes: ['pages' => [['route' => '/x', 'body' => ['widgets' => 'geen']], ['route' => '/y', 'body' => 'geen']]]
+				),
+			],
+			'a page of another portal'       => [
+				'site' => $this->site(),
+				'rows' => ['page' => ['pg-x' => ['id' => 'pg-x', 'route' => '/', 'portal' => 'ander']]],
+			],
 			'existing row edited, lost key'  => ['site' => $this->site(), 'rows' => $existing, 'dropped' => ['menu' => ['items']]],
 		];
 	}//end worlds()

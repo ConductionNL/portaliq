@@ -210,21 +210,55 @@ class RenameDutchColumnsGoldenTest extends TestCase {
 			'registers unreadable'         => ['registers' => 'throw'],
 			'tables unreadable'            => ['registers' => ['3'], 'tables' => 'throw'],
 			'no tables'                    => ['registers' => ['3']],
-			'tables of other registers'    => ['registers' => ['3'], 'tables' => ['oc_openregister_table_33_1', 'oc_openregister_table_4_3', 'oc_openregister_table_3_x', 'oc_openregister_table_3_']],
+			'tables of other registers'    => [
+				'registers' => ['3'],
+				'tables' => ['oc_openregister_table_33_1', 'oc_openregister_table_4_3', 'oc_openregister_table_3_x', 'oc_openregister_table_3_'],
+			],
 			'empty table name skipped'     => ['registers' => ['3'], 'tables' => ['', $table], 'columns' => [$table => ['aard']]],
 			'only old columns renamed'     => ['registers' => ['3'], 'tables' => [$table], 'columns' => [$table => ['id', 'aard', 'termijn']]],
-			'new columns present'          => ['registers' => ['3'], 'tables' => [$table], 'columns' => [$table => ['aard', 'nature', 'termijn', 'term']]],
+			'new columns present'          => [
+				'registers' => ['3'],
+				'tables' => [$table],
+				'columns' => [$table => ['aard', 'nature', 'termijn', 'term']],
+			],
 			'mixed rename and back-fill'   => ['registers' => ['3'], 'tables' => [$table], 'columns' => [$table => ['aard', 'term', 'termijn']]],
 			'nothing to move'              => ['registers' => ['3'], 'tables' => [$table], 'columns' => [$table => ['id', 'nature', 'term']]],
 			'empty column name skipped'    => ['registers' => ['3'], 'tables' => [$table], 'columns' => [$table => ['', 'aard']]],
-			'columns unreadable'           => ['registers' => ['3'], 'tables' => [$table, $second], 'columns' => [$table => 'throw', $second => ['termijn']]],
-			'rename fails'                 => ['registers' => ['3'], 'tables' => [$table], 'columns' => [$table => ['aard', 'termijn']], 'failing' => ['RENAME COLUMN `aard`']],
-			'back-fill fails'              => ['registers' => ['3'], 'tables' => [$table], 'columns' => [$table => ['aard', 'nature', 'termijn']], 'failing' => ['SET `nature`']],
-			'every statement fails'        => ['registers' => ['3'], 'tables' => [$table, $second], 'columns' => [$table => ['aard', 'nature'], $second => ['termijn']], 'failing' => ['oc_openregister']],
-			'two registers two tables'     => ['registers' => ['3', 5], 'tables' => ['x_oc_openregister_table_5_2', $table, 'oc_openregister_table_5_2'], 'columns' => [$table => ['aard'], 'x_oc_openregister_table_5_2' => ['termijn', 'term'], 'oc_openregister_table_5_2' => []]],
+			'columns unreadable'           => [
+				'registers' => ['3'],
+				'tables' => [$table, $second],
+				'columns' => [$table => 'throw', $second => ['termijn']],
+			],
+			'rename fails'                 => [
+				'registers' => ['3'],
+				'tables' => [$table],
+				'columns' => [$table => ['aard', 'termijn']],
+				'failing' => ['RENAME COLUMN `aard`'],
+			],
+			'back-fill fails'              => [
+				'registers' => ['3'],
+				'tables' => [$table],
+				'columns' => [$table => ['aard', 'nature', 'termijn']],
+				'failing' => ['SET `nature`'],
+			],
+			'every statement fails'        => [
+				'registers' => ['3'],
+				'tables' => [$table, $second],
+				'columns' => [$table => ['aard', 'nature'], $second => ['termijn']],
+				'failing' => ['oc_openregister'],
+			],
+			'two registers two tables'     => [
+				'registers' => ['3', 5],
+				'tables' => ['x_oc_openregister_table_5_2', $table, 'oc_openregister_table_5_2'],
+				'columns' => [$table => ['aard'], 'x_oc_openregister_table_5_2' => ['termijn', 'term'], 'oc_openregister_table_5_2' => []],
+			],
 			'duplicate table listed'       => ['registers' => ['3', '3'], 'tables' => [$table, $table], 'columns' => [$table => ['aard']]],
 			'register id cast to int'      => ['registers' => ['3abc'], 'tables' => [$table], 'columns' => [$table => ['termijn']]],
-			'prefixless table'             => ['registers' => ['3'], 'tables' => ['openregister_table_3_9'], 'columns' => ['openregister_table_3_9' => ['aard', 'termijn', 'nature']]],
+			'prefixless table'             => [
+				'registers' => ['3'],
+				'tables' => ['openregister_table_3_9'],
+				'columns' => ['openregister_table_3_9' => ['aard', 'termijn', 'nature']],
+			],
 		];
 	}//end worlds()
 }//end class

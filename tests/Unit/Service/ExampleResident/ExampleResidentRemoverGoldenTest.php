@@ -97,7 +97,11 @@ class ExampleResidentRemoverGoldenTest extends TestCase {
 		$store->method('get')->willReturnCallback(
 			static function (string $register, string $schema, string $id) use (&$log, $world): ?array {
 				$log[] = ['store.get', $register, $schema, $id];
-				return in_array($id, ($world['gone'] ?? []), true) === true ? null : ['id' => $id];
+				if (in_array($id, ($world['gone'] ?? []), true) === true) {
+					return null;
+				}
+
+				return ['id' => $id];
 			}
 		);
 		$store->method('delete')->willReturnCallback(
@@ -111,7 +115,11 @@ class ExampleResidentRemoverGoldenTest extends TestCase {
 		$wayIn->method('account')->willReturnCallback(
 			static function (string $id) use (&$log, $world): ?array {
 				$log[] = ['wayIn.account', $id];
-				return array_key_exists('account', $world) === true ? $world['account'] : ['id' => $id];
+				if (array_key_exists('account', $world) === true) {
+					return $world['account'];
+				}
+
+				return ['id' => $id];
 			}
 		);
 		$wayIn->method('deleteAccount')->willReturnCallback(
@@ -123,7 +131,11 @@ class ExampleResidentRemoverGoldenTest extends TestCase {
 		$wayIn->method('portal')->willReturnCallback(
 			static function (string $slug) use (&$log, $world): ?array {
 				$log[] = ['wayIn.portal', $slug];
-				return array_key_exists('portal', $world) === true ? $world['portal'] : ['slug' => $slug];
+				if (array_key_exists('portal', $world) === true) {
+					return $world['portal'];
+				}
+
+				return ['slug' => $slug];
 			}
 		);
 		$wayIn->method('withdraw')->willReturnCallback(
@@ -189,19 +201,36 @@ class ExampleResidentRemoverGoldenTest extends TestCase {
 			'some deletes fail'                 => ['record' => $this->record(), 'undeletable' => ['c-1', 'm-2']],
 			'gone and failing mixed'            => ['record' => $this->record(), 'gone' => ['c-1'], 'undeletable' => ['m-1']],
 			'only a user id'                    => ['record' => array_replace($blank, ['userId' => 'sanne'])],
-			'user not created'                  => ['record' => $this->record(['userCreated' => false])],
-			'user created without id'           => ['record' => $this->record(['userId' => ''])],
+			'user not created'                  => ['record' => $this->record(changes: ['userCreated' => false])],
+			'user created without id'           => ['record' => $this->record(changes: ['userId' => ''])],
 			'user delete fails'                 => ['record' => $this->record(), 'userDeletes' => false],
 			'account already gone'              => ['record' => $this->record(), 'account' => null, 'accountDeletes' => false],
 			'account delete fails'              => ['record' => $this->record(), 'accountDeletes' => false],
-			'no account'                        => ['record' => $this->record(['account' => ''])],
-			'no sign-in mode'                   => ['record' => $this->record(['signIn' => ['mode' => '', 'label' => true]])],
+			'no account'                        => ['record' => $this->record(changes: ['account' => ''])],
+			'no sign-in mode'                   => ['record' => $this->record(changes: ['signIn' => ['mode' => '', 'label' => true]])],
 			'portal gone'                       => ['record' => $this->record(), 'portal' => null, 'withdraws' => false],
 			'withdraw fails'                    => ['record' => $this->record(), 'withdraws' => false],
-			'withdraw without label'            => ['record' => $this->record(['signIn' => ['mode' => 'digid', 'label' => false]])],
-			'everything fails'                  => ['record' => $this->record(), 'undeletable' => ['c-1', 'm-1', 'm-2', 'd-1'], 'accountDeletes' => false, 'withdraws' => false, 'userDeletes' => false],
+			'withdraw without label'            => ['record' => $this->record(changes: ['signIn' => ['mode' => 'digid', 'label' => false]])],
+			'everything fails'                  => [
+				'record' => $this->record(),
+				'undeletable' => ['c-1', 'm-1', 'm-2', 'd-1'],
+				'accountDeletes' => false,
+				'withdraws' => false,
+				'userDeletes' => false,
+			],
 			'objects only'                      => ['record' => array_replace($blank, ['objects' => $this->record()['objects']])],
-			'one object type twice, one failing' => ['record' => array_replace($blank, ['objects' => ['a' => ['register' => 'r', 'schema' => 's', 'id' => 'x-1', 'subject' => ''], 'b' => ['register' => 'r', 'schema' => 's', 'id' => 'x-2', 'subject' => '']]]), 'undeletable' => ['x-1']],
+			'one object type twice, one failing' => [
+				'record' => array_replace(
+						$blank,
+						[
+							'objects' => [
+								'a' => ['register' => 'r', 'schema' => 's', 'id' => 'x-1', 'subject' => ''],
+								'b' => ['register' => 'r', 'schema' => 's', 'id' => 'x-2', 'subject' => ''],
+							],
+						]
+					),
+				'undeletable' => ['x-1'],
+			],
 		];
 	}//end worlds()
 }//end class
