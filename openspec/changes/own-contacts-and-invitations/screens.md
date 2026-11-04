@@ -1,4 +1,4 @@
 # Screens
 
-- Contacten https://identity.conduction.nl/screens/board?id=portaliq/Contacten
-- ContactUitnodigen https://identity.conduction.nl/screens/board?id=portaliq/ContactUitnodigen
+- portaliq/Contacten mijn contacten https://identity.conduction.nl/screens/board?id=portaliq/Contacten
+- portaliq/ContactUitnodigen iemand uitnodigen https://identity.conduction.nl/screens/board?id=portaliq/ContactUitnodigen

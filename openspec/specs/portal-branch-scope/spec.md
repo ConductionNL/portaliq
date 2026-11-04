@@ -19,7 +19,7 @@ value SHALL be dropped and SHALL NOT widen or narrow the session.
 @e2e exclude The CI instance has no eHerkenning broker to send a branch claim; tests/Unit/Service/OidcClaimMapperServiceTest.php, tests/Unit/Service/PortalSessionServiceTest.php::testALoginBranchTravelsWithTheSessionAsRestricted and tests/branch-in-effect.spec.mjs cover the claim, the session and the header.
 - **GIVEN** an organisation whose eHerkenning `claimMap.branch` names the broker's vestigingsnummer claim
 - **WHEN** a manager signs in with eHerkenning restricted to branch 000012345678
-- **THEN** the portal header reads that they act for branch 000012345678
+- **THEN** "Mijn zaken" reads that they signed in for branch 000012345678
 
 ### Requirement: A restricted session sees only its branch (REQ-SEB-002)
 
@@ -44,15 +44,15 @@ the branch.
 ### Requirement: A whole-company user can narrow to a branch (REQ-SEB-003)
 
 A business user whose login carried no branch SHALL be able to choose one of
-the company's branches, or the whole company, under "Acting for". The choice
+the company's branches, or the whole company, under "Namens vestiging". The choice
 SHALL filter the collections that declare a branch field and SHALL be refused
 for a branch that is not the company's.
 
 #### Scenario: Narrowing to one branch
 @e2e exclude The CI instance configures no kvk source, so the company has no branch to choose; tests/e2e/signin-eherkenning-branch.spec.ts drives the refusal and the whole-company choice, and tests/Unit/Service/Branch/BranchChoiceTest.php, tests/Unit/Service/PortalSessionServiceTest.php::testAWholeCompanySessionNarrowsToABranchAndBack and tests/branch-choice.spec.mjs cover narrowing and back.
 - **GIVEN** a business user signed in for the whole company, whose company has two branches
-- **WHEN** they choose the Utrecht branch under "Acting for"
-- **THEN** "My cases" lists the Utrecht branch's cases, and choosing "Whole company" lists all again
+- **WHEN** they choose the Utrecht branch under "Namens vestiging"
+- **THEN** "My cases" lists the Utrecht branch's cases, and choosing "Hele bedrijf" lists all again
 
 #### Scenario: A restricted session cannot widen
 @e2e exclude Needs a restricted session, which only a broker login mints; tests/Unit/Service/PortalSessionServiceTest.php::testARestrictedSessionCannotChooseABranch and tests/Unit/Service/Branch/BranchChoiceTest.php::testARestrictedSessionIsOfferedNothingAndAllowedNothing cover it.

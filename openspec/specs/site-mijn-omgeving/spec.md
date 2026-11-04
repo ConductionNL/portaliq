@@ -88,12 +88,14 @@ The resident menu MUST render each page's declared `icon` before its label, deco
 
 ### Requirement: The resident MUST see and switch for whom they act (REQ-SMO-008)
 
-While a resident acts for someone else, every signed-in page MUST show a bar that names that party and offers a link back to acting for themselves. A page with `records` MUST show a switcher over the collection's rows as a radio group, with initials, a title and a subtitle. The chosen row MUST be part of the route. Switching MUST move focus to the page heading.
+While a resident acts for someone else, "Mijn overzicht" and "Mijn zaken" MUST show one bar: "U regelt nu zaken voor {party}", with the selector "Wissel naar" inside it (board `huisstijl/NamensBalk`). There is no second selector. The options MUST be the resident themselves ("Uzelf" with their name), each party they act for, named by its label, and "Iedereen voor wie u zaken regelt". The current party MUST be selected. Choosing a party MUST show only that party's cases. The bar MUST hold the link "Toegang tot zaken regelen". A page with `records` MUST show a switcher over the collection's rows as a radio group, with initials, a title and a subtitle. The chosen row MUST be part of the route. Switching MUST move focus to the page heading.
 
-#### Scenario: Linda acts for her father, `DossiqPhone.dc.html`
+#### Scenario: Linda acts for her father, `huisstijl/NamensBalk`
 - GIVEN Linda Bakker holds an active mandate for H. Bakker and has chosen it
-- WHEN any signed-in page renders
-- THEN a bar reads "U regelt nu zaken voor uw vader, H. Bakker" with "Wissel naar uzelf"
+- WHEN she opens "Mijn overzicht" or "Mijn zaken"
+- THEN the bar reads "U regelt nu zaken voor uw vader, H. Bakker"
+- AND "Wissel naar" offers "Uzelf, Linda Bakker", "Uw vader, H. Bakker" and "Iedereen voor wie u zaken regelt"
+- AND "Mijn zaken" shows only his cases
 
 #### Scenario: A guardian switches child, `Main.dc.html`
 - GIVEN the guardian overview declares `records: parentChildren` and the guardian has Vera and Sami

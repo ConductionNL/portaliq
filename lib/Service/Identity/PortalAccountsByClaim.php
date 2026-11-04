@@ -34,7 +34,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
+use OCA\Portaliq\Event\PortalClaimScopeEvent;
 use OCA\Portaliq\Service\ObjectServiceLookup;
+use OCA\Portaliq\Service\Tenancy\ClaimScopeCheck;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -145,7 +147,8 @@ class PortalAccountsByClaim {
 			foreach ($rows as $row) {
 				$account = $this->activeAccount(row: $row);
 				$held = ($account['claims'][$appId][$claim] ?? null);
-				if ($account !== null && is_string($held) === true && $held !== '') {
+				$admitted = ($account !== null && is_string($held) === true && $held !== '');
+				if ($admitted === true && $this->admitted(address: ['appId' => $appId, 'claimName' => $claim], account: $account) === true) {
 					$index[$held][] = $account;
 				}
 			}
@@ -157,6 +160,26 @@ class PortalAccountsByClaim {
 
 		return $index;
 	}//end index()
+
+	/**
+	 * Whether the app that owns the claim lets it stand for the account's organisation.
+	 *
+	 * @param array{appId: string, claimName: string} $address The claim's app and name.
+	 * @param array<string, mixed>                    $account The account holding it.
+	 *
+	 * @return bool
+	 */
+	private function admitted(array $address, array $account): bool {
+		$event = new PortalClaimScopeEvent(
+			claim: $address,
+			holder: [
+				'value' => (string)$account['claims'][$address['appId']][$address['claimName']],
+				'organisation' => (string)($account['organisation'] ?? ''),
+			]
+		);
+
+		return (new ClaimScopeCheck(container: $this->container, logger: $this->logger))->admits(event: $event);
+	}//end admitted()
 
 	/**
 	 * One page of active accounts.

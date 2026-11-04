@@ -1,4 +1,4 @@
 # Screens
 
-- Home https://identity.conduction.nl/screens/board?id=portaliq/Home
-- Zoeken https://identity.conduction.nl/screens/board?id=portaliq/Zoeken
+- portaliq/Home Website: home https://identity.conduction.nl/screens/board?id=portaliq/Home
+- portaliq/Zoeken Website: Woo-publicaties zoeken https://identity.conduction.nl/screens/board?id=portaliq/Zoeken

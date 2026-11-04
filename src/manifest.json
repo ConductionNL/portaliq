@@ -1806,7 +1806,18 @@
           {
             "key": "email",
             "label": "Email",
-            "width": "229px"
+            "width": "229px",
+            "secondary": "audience",
+            "secondaryLabels": {
+              "audience": {
+                "citizen": "Resident",
+                "client": "Client",
+                "organisation": "Business",
+                "business": "Business",
+                "supplier": "Supplier",
+                "partner": "Partner"
+              }
+            }
           },
           {
             "key": "state",
@@ -1815,10 +1826,10 @@
             "widgetProps": {
               "colorMap": {
                 "sent": "info",
-                "opened": "info",
+                "opened": "purple",
                 "accepted": "success",
-                "expired": "warning",
-                "revoked": "error"
+                "expired": "default",
+                "revoked": "default"
               }
             },
             "enum": [
@@ -1829,7 +1840,7 @@
               "revoked"
             ],
             "enumLabels": {
-              "sent": "Open",
+              "sent": "Sent",
               "opened": "Opened",
               "accepted": "Accepted",
               "expired": "Expired",
@@ -1850,7 +1861,8 @@
           {
             "key": "invitedBy",
             "label": "Invited by",
-            "width": "187px"
+            "width": "187px",
+            "formatter": "userName"
           },
           {
             "key": "organisation",
@@ -1862,6 +1874,22 @@
           "limit": 6
         },
         "rowTitle": "plain",
+        "rowClass": [
+          {
+            "when": {
+              "field": "state",
+              "value": "sent"
+            },
+            "class": "cn-row--attention"
+          },
+          {
+            "when": {
+              "field": "state",
+              "value": "opened"
+            },
+            "class": "cn-row--attention"
+          }
+        ],
         "headerActions": [
           {
             "id": "invite-someone",
@@ -4761,7 +4789,7 @@
                 {
                   "id": "layout",
                   "widgetId": "page-layout",
-                  "label": "Indeling"
+                  "label": "Layout"
                 },
                 {
                   "widgetId": "page-search",
@@ -4845,6 +4873,9 @@
             "key": "displayName",
             "label": "Requester",
             "widget": "avatar",
+            "widgetProps": {
+              "tone": "neutral"
+            },
             "width": "163px"
           },
           {
@@ -4880,16 +4911,28 @@
               "refused"
             ],
             "enumLabels": {
-              "pending": "Awaiting a decision",
-              "granted": "Granted",
+              "pending": "Open",
+              "granted": "Approved",
               "refused": "Refused"
             },
-            "width": "194px"
+            "width": "194px",
+            "secondary": [
+              "by {decidedBy|user}, {decidedAt|date}"
+            ]
           }
         ],
         "pagination": {
           "limit": 8
         },
+        "rowClass": [
+          {
+            "when": {
+              "field": "state",
+              "value": "pending"
+            },
+            "class": "cn-row--attention"
+          }
+        ],
         "actions": [
           "builtin:view",
           "builtin:edit",

@@ -1,3 +1,3 @@
 # Screens
 
-- PtVerkeer https://identity.conduction.nl/screens/board?id=portaliq/PtVerkeer
+- portaliq/PtVerkeer verkeer https://identity.conduction.nl/screens/board?id=portaliq/PtVerkeer

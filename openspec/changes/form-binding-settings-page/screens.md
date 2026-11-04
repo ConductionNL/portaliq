@@ -1,3 +1,3 @@
 # Screens
 
-- PtFormulierInstellingen https://identity.conduction.nl/screens/board?id=portaliq/PtFormulierInstellingen
+- portaliq/PtFormulierInstellingen instellingen van een formulier https://identity.conduction.nl/screens/board?id=portaliq/PtFormulierInstellingen

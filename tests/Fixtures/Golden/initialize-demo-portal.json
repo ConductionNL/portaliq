@@ -1,0 +1,1832 @@
+{
+    "switched off": [
+        [
+            "info",
+            "Demo portal disabled by configuration — nothing provisioned."
+        ]
+    ],
+    "switched off and marked": [
+        [
+            "info",
+            "Demo portal disabled by configuration — nothing provisioned."
+        ]
+    ],
+    "other switch value": [
+        [
+            "count",
+            "portaliq",
+            "portal",
+            []
+        ],
+        [
+            "write",
+            "portaliq",
+            "portal",
+            {
+                "title": "Open Catalogi",
+                "tagline": "Zoek in publicaties uit alle aangesloten catalogi",
+                "slug": "demo",
+                "status": "published",
+                "theme": "opencatalogi",
+                "domains": [],
+                "locales": [
+                    "nl"
+                ],
+                "authentication": {
+                    "modes": [
+                        "public"
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Home",
+                "route": "/",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Één plek voor alle publicaties.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-hero",
+                            "widgetKey": "hero",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 4,
+                            "props": {
+                                "title": "Waar bent u naar op zoek?",
+                                "search": true,
+                                "submitLabel": "Zoeken",
+                                "placeholder": "Zoek op naam of trefwoord"
+                            }
+                        },
+                        {
+                            "id": "demo-home-intro",
+                            "widgetKey": "markdown",
+                            "gridX": 0,
+                            "gridY": 4,
+                            "gridWidth": 12,
+                            "gridHeight": 4,
+                            "props": {
+                                "markdown": "## Onderwerpen\n\nBekijk het overzicht van onderwerpen die relevant zijn voor gemeenten en leveranciers binnen het domein van gemeentelijke ICT."
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Publicatie",
+                "route": "/publicatie",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Details van één publicatie.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-publication-detail",
+                            "widgetKey": "publicationDetail",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 8,
+                            "props": {
+                                "endpoint": "/index.php/apps/opencatalogi/api/federation/publications"
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "menu",
+            {
+                "title": "Sub footer menu 1",
+                "position": 2,
+                "portal": "demo",
+                "items": [
+                    {
+                        "name": "Cookies",
+                        "link": "/cookies"
+                    },
+                    {
+                        "name": "Privacy",
+                        "link": "/privacy"
+                    },
+                    {
+                        "name": "Disclaimer",
+                        "link": "/disclaimer"
+                    }
+                ]
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Zoeken",
+                "route": "/zoeken",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Doorzoek publicaties uit alle aangesloten catalogi.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-federated-search",
+                            "widgetKey": "federatedSearch",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 8,
+                            "props": {
+                                "placeholder": "Bijvoorbeeld: subsidies"
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "config",
+            "portaliq",
+            "demo_portal_provisioned",
+            "id-Open Catalogi"
+        ],
+        [
+            "info",
+            "Provisioned the \"Open Catalogi\" portal with a landing page, search at /zoeken and publication detail pages."
+        ]
+    ],
+    "already marked": [
+        [
+            "info",
+            "Demo portal was already provisioned once — not provisioning again."
+        ]
+    ],
+    "one portal present": [
+        [
+            "count",
+            "portaliq",
+            "portal",
+            []
+        ],
+        [
+            "info",
+            "1 portal(s) already present — leaving content untouched."
+        ]
+    ],
+    "three portals present": [
+        [
+            "count",
+            "portaliq",
+            "portal",
+            []
+        ],
+        [
+            "info",
+            "3 portal(s) already present — leaving content untouched."
+        ]
+    ],
+    "negative count": [
+        [
+            "count",
+            "portaliq",
+            "portal",
+            []
+        ],
+        [
+            "write",
+            "portaliq",
+            "portal",
+            {
+                "title": "Open Catalogi",
+                "tagline": "Zoek in publicaties uit alle aangesloten catalogi",
+                "slug": "demo",
+                "status": "published",
+                "theme": "opencatalogi",
+                "domains": [],
+                "locales": [
+                    "nl"
+                ],
+                "authentication": {
+                    "modes": [
+                        "public"
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Home",
+                "route": "/",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Één plek voor alle publicaties.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-hero",
+                            "widgetKey": "hero",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 4,
+                            "props": {
+                                "title": "Waar bent u naar op zoek?",
+                                "search": true,
+                                "submitLabel": "Zoeken",
+                                "placeholder": "Zoek op naam of trefwoord"
+                            }
+                        },
+                        {
+                            "id": "demo-home-intro",
+                            "widgetKey": "markdown",
+                            "gridX": 0,
+                            "gridY": 4,
+                            "gridWidth": 12,
+                            "gridHeight": 4,
+                            "props": {
+                                "markdown": "## Onderwerpen\n\nBekijk het overzicht van onderwerpen die relevant zijn voor gemeenten en leveranciers binnen het domein van gemeentelijke ICT."
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Publicatie",
+                "route": "/publicatie",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Details van één publicatie.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-publication-detail",
+                            "widgetKey": "publicationDetail",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 8,
+                            "props": {
+                                "endpoint": "/index.php/apps/opencatalogi/api/federation/publications"
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "menu",
+            {
+                "title": "Sub footer menu 1",
+                "position": 2,
+                "portal": "demo",
+                "items": [
+                    {
+                        "name": "Cookies",
+                        "link": "/cookies"
+                    },
+                    {
+                        "name": "Privacy",
+                        "link": "/privacy"
+                    },
+                    {
+                        "name": "Disclaimer",
+                        "link": "/disclaimer"
+                    }
+                ]
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Zoeken",
+                "route": "/zoeken",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Doorzoek publicaties uit alle aangesloten catalogi.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-federated-search",
+                            "widgetKey": "federatedSearch",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 8,
+                            "props": {
+                                "placeholder": "Bijvoorbeeld: subsidies"
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "config",
+            "portaliq",
+            "demo_portal_provisioned",
+            "id-Open Catalogi"
+        ],
+        [
+            "info",
+            "Provisioned the \"Open Catalogi\" portal with a landing page, search at /zoeken and publication detail pages."
+        ]
+    ],
+    "portal write fails": [
+        [
+            "count",
+            "portaliq",
+            "portal",
+            []
+        ],
+        [
+            "write",
+            "portaliq",
+            "portal",
+            {
+                "title": "Open Catalogi",
+                "tagline": "Zoek in publicaties uit alle aangesloten catalogi",
+                "slug": "demo",
+                "status": "published",
+                "theme": "opencatalogi",
+                "domains": [],
+                "locales": [
+                    "nl"
+                ],
+                "authentication": {
+                    "modes": [
+                        "public"
+                    ]
+                }
+            }
+        ],
+        [
+            "warning",
+            "Could not create the demo portal — OpenRegister may not be ready yet. Install continues; re-run `occ maintenance:repair` once it is."
+        ],
+        [
+            "log.warning",
+            "[portaliq] demo portal not provisioned: portal write returned null"
+        ]
+    ],
+    "portal without id": [
+        [
+            "count",
+            "portaliq",
+            "portal",
+            []
+        ],
+        [
+            "write",
+            "portaliq",
+            "portal",
+            {
+                "title": "Open Catalogi",
+                "tagline": "Zoek in publicaties uit alle aangesloten catalogi",
+                "slug": "demo",
+                "status": "published",
+                "theme": "opencatalogi",
+                "domains": [],
+                "locales": [
+                    "nl"
+                ],
+                "authentication": {
+                    "modes": [
+                        "public"
+                    ]
+                }
+            }
+        ],
+        [
+            "warning",
+            "Demo portal created but carries no id — pages not linked."
+        ]
+    ],
+    "portal with flat id": [
+        [
+            "count",
+            "portaliq",
+            "portal",
+            []
+        ],
+        [
+            "write",
+            "portaliq",
+            "portal",
+            {
+                "title": "Open Catalogi",
+                "tagline": "Zoek in publicaties uit alle aangesloten catalogi",
+                "slug": "demo",
+                "status": "published",
+                "theme": "opencatalogi",
+                "domains": [],
+                "locales": [
+                    "nl"
+                ],
+                "authentication": {
+                    "modes": [
+                        "public"
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Home",
+                "route": "/",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Één plek voor alle publicaties.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-hero",
+                            "widgetKey": "hero",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 4,
+                            "props": {
+                                "title": "Waar bent u naar op zoek?",
+                                "search": true,
+                                "submitLabel": "Zoeken",
+                                "placeholder": "Zoek op naam of trefwoord"
+                            }
+                        },
+                        {
+                            "id": "demo-home-intro",
+                            "widgetKey": "markdown",
+                            "gridX": 0,
+                            "gridY": 4,
+                            "gridWidth": 12,
+                            "gridHeight": 4,
+                            "props": {
+                                "markdown": "## Onderwerpen\n\nBekijk het overzicht van onderwerpen die relevant zijn voor gemeenten en leveranciers binnen het domein van gemeentelijke ICT."
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Publicatie",
+                "route": "/publicatie",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Details van één publicatie.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-publication-detail",
+                            "widgetKey": "publicationDetail",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 8,
+                            "props": {
+                                "endpoint": "/index.php/apps/opencatalogi/api/federation/publications"
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "menu",
+            {
+                "title": "Sub footer menu 1",
+                "position": 2,
+                "portal": "demo",
+                "items": [
+                    {
+                        "name": "Cookies",
+                        "link": "/cookies"
+                    },
+                    {
+                        "name": "Privacy",
+                        "link": "/privacy"
+                    },
+                    {
+                        "name": "Disclaimer",
+                        "link": "/disclaimer"
+                    }
+                ]
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Zoeken",
+                "route": "/zoeken",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Doorzoek publicaties uit alle aangesloten catalogi.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-federated-search",
+                            "widgetKey": "federatedSearch",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 8,
+                            "props": {
+                                "placeholder": "Bijvoorbeeld: subsidies"
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "config",
+            "portaliq",
+            "demo_portal_provisioned",
+            "flat-1"
+        ],
+        [
+            "info",
+            "Provisioned the \"Open Catalogi\" portal with a landing page, search at /zoeken and publication detail pages."
+        ]
+    ],
+    "portal self id null": [
+        [
+            "count",
+            "portaliq",
+            "portal",
+            []
+        ],
+        [
+            "write",
+            "portaliq",
+            "portal",
+            {
+                "title": "Open Catalogi",
+                "tagline": "Zoek in publicaties uit alle aangesloten catalogi",
+                "slug": "demo",
+                "status": "published",
+                "theme": "opencatalogi",
+                "domains": [],
+                "locales": [
+                    "nl"
+                ],
+                "authentication": {
+                    "modes": [
+                        "public"
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Home",
+                "route": "/",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Één plek voor alle publicaties.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-hero",
+                            "widgetKey": "hero",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 4,
+                            "props": {
+                                "title": "Waar bent u naar op zoek?",
+                                "search": true,
+                                "submitLabel": "Zoeken",
+                                "placeholder": "Zoek op naam of trefwoord"
+                            }
+                        },
+                        {
+                            "id": "demo-home-intro",
+                            "widgetKey": "markdown",
+                            "gridX": 0,
+                            "gridY": 4,
+                            "gridWidth": 12,
+                            "gridHeight": 4,
+                            "props": {
+                                "markdown": "## Onderwerpen\n\nBekijk het overzicht van onderwerpen die relevant zijn voor gemeenten en leveranciers binnen het domein van gemeentelijke ICT."
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Publicatie",
+                "route": "/publicatie",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Details van één publicatie.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-publication-detail",
+                            "widgetKey": "publicationDetail",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 8,
+                            "props": {
+                                "endpoint": "/index.php/apps/opencatalogi/api/federation/publications"
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "menu",
+            {
+                "title": "Sub footer menu 1",
+                "position": 2,
+                "portal": "demo",
+                "items": [
+                    {
+                        "name": "Cookies",
+                        "link": "/cookies"
+                    },
+                    {
+                        "name": "Privacy",
+                        "link": "/privacy"
+                    },
+                    {
+                        "name": "Disclaimer",
+                        "link": "/disclaimer"
+                    }
+                ]
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Zoeken",
+                "route": "/zoeken",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Doorzoek publicaties uit alle aangesloten catalogi.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-federated-search",
+                            "widgetKey": "federatedSearch",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 8,
+                            "props": {
+                                "placeholder": "Bijvoorbeeld: subsidies"
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "config",
+            "portaliq",
+            "demo_portal_provisioned",
+            "flat-2"
+        ],
+        [
+            "info",
+            "Provisioned the \"Open Catalogi\" portal with a landing page, search at /zoeken and publication detail pages."
+        ]
+    ],
+    "portal self id zero": [
+        [
+            "count",
+            "portaliq",
+            "portal",
+            []
+        ],
+        [
+            "write",
+            "portaliq",
+            "portal",
+            {
+                "title": "Open Catalogi",
+                "tagline": "Zoek in publicaties uit alle aangesloten catalogi",
+                "slug": "demo",
+                "status": "published",
+                "theme": "opencatalogi",
+                "domains": [],
+                "locales": [
+                    "nl"
+                ],
+                "authentication": {
+                    "modes": [
+                        "public"
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Home",
+                "route": "/",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Één plek voor alle publicaties.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-hero",
+                            "widgetKey": "hero",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 4,
+                            "props": {
+                                "title": "Waar bent u naar op zoek?",
+                                "search": true,
+                                "submitLabel": "Zoeken",
+                                "placeholder": "Zoek op naam of trefwoord"
+                            }
+                        },
+                        {
+                            "id": "demo-home-intro",
+                            "widgetKey": "markdown",
+                            "gridX": 0,
+                            "gridY": 4,
+                            "gridWidth": 12,
+                            "gridHeight": 4,
+                            "props": {
+                                "markdown": "## Onderwerpen\n\nBekijk het overzicht van onderwerpen die relevant zijn voor gemeenten en leveranciers binnen het domein van gemeentelijke ICT."
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Publicatie",
+                "route": "/publicatie",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Details van één publicatie.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-publication-detail",
+                            "widgetKey": "publicationDetail",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 8,
+                            "props": {
+                                "endpoint": "/index.php/apps/opencatalogi/api/federation/publications"
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "menu",
+            {
+                "title": "Sub footer menu 1",
+                "position": 2,
+                "portal": "demo",
+                "items": [
+                    {
+                        "name": "Cookies",
+                        "link": "/cookies"
+                    },
+                    {
+                        "name": "Privacy",
+                        "link": "/privacy"
+                    },
+                    {
+                        "name": "Disclaimer",
+                        "link": "/disclaimer"
+                    }
+                ]
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Zoeken",
+                "route": "/zoeken",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Doorzoek publicaties uit alle aangesloten catalogi.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-federated-search",
+                            "widgetKey": "federatedSearch",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 8,
+                            "props": {
+                                "placeholder": "Bijvoorbeeld: subsidies"
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "config",
+            "portaliq",
+            "demo_portal_provisioned",
+            "0"
+        ],
+        [
+            "info",
+            "Provisioned the \"Open Catalogi\" portal with a landing page, search at /zoeken and publication detail pages."
+        ]
+    ],
+    "home page fails": [
+        [
+            "count",
+            "portaliq",
+            "portal",
+            []
+        ],
+        [
+            "write",
+            "portaliq",
+            "portal",
+            {
+                "title": "Open Catalogi",
+                "tagline": "Zoek in publicaties uit alle aangesloten catalogi",
+                "slug": "demo",
+                "status": "published",
+                "theme": "opencatalogi",
+                "domains": [],
+                "locales": [
+                    "nl"
+                ],
+                "authentication": {
+                    "modes": [
+                        "public"
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Home",
+                "route": "/",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Één plek voor alle publicaties.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-hero",
+                            "widgetKey": "hero",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 4,
+                            "props": {
+                                "title": "Waar bent u naar op zoek?",
+                                "search": true,
+                                "submitLabel": "Zoeken",
+                                "placeholder": "Zoek op naam of trefwoord"
+                            }
+                        },
+                        {
+                            "id": "demo-home-intro",
+                            "widgetKey": "markdown",
+                            "gridX": 0,
+                            "gridY": 4,
+                            "gridWidth": 12,
+                            "gridHeight": 4,
+                            "props": {
+                                "markdown": "## Onderwerpen\n\nBekijk het overzicht van onderwerpen die relevant zijn voor gemeenten en leveranciers binnen het domein van gemeentelijke ICT."
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "warning",
+            "Demo portal created, but its home page was not."
+        ],
+        [
+            "log.warning",
+            "[portaliq] demo home page not provisioned: page write returned null"
+        ]
+    ],
+    "detail page and menu fail": [
+        [
+            "count",
+            "portaliq",
+            "portal",
+            []
+        ],
+        [
+            "write",
+            "portaliq",
+            "portal",
+            {
+                "title": "Open Catalogi",
+                "tagline": "Zoek in publicaties uit alle aangesloten catalogi",
+                "slug": "demo",
+                "status": "published",
+                "theme": "opencatalogi",
+                "domains": [],
+                "locales": [
+                    "nl"
+                ],
+                "authentication": {
+                    "modes": [
+                        "public"
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Home",
+                "route": "/",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Één plek voor alle publicaties.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-hero",
+                            "widgetKey": "hero",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 4,
+                            "props": {
+                                "title": "Waar bent u naar op zoek?",
+                                "search": true,
+                                "submitLabel": "Zoeken",
+                                "placeholder": "Zoek op naam of trefwoord"
+                            }
+                        },
+                        {
+                            "id": "demo-home-intro",
+                            "widgetKey": "markdown",
+                            "gridX": 0,
+                            "gridY": 4,
+                            "gridWidth": 12,
+                            "gridHeight": 4,
+                            "props": {
+                                "markdown": "## Onderwerpen\n\nBekijk het overzicht van onderwerpen die relevant zijn voor gemeenten en leveranciers binnen het domein van gemeentelijke ICT."
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Publicatie",
+                "route": "/publicatie",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Details van één publicatie.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-publication-detail",
+                            "widgetKey": "publicationDetail",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 8,
+                            "props": {
+                                "endpoint": "/index.php/apps/opencatalogi/api/federation/publications"
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "menu",
+            {
+                "title": "Sub footer menu 1",
+                "position": 2,
+                "portal": "demo",
+                "items": [
+                    {
+                        "name": "Cookies",
+                        "link": "/cookies"
+                    },
+                    {
+                        "name": "Privacy",
+                        "link": "/privacy"
+                    },
+                    {
+                        "name": "Disclaimer",
+                        "link": "/disclaimer"
+                    }
+                ]
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Zoeken",
+                "route": "/zoeken",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Doorzoek publicaties uit alle aangesloten catalogi.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-federated-search",
+                            "widgetKey": "federatedSearch",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 8,
+                            "props": {
+                                "placeholder": "Bijvoorbeeld: subsidies"
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "config",
+            "portaliq",
+            "demo_portal_provisioned",
+            "id-Open Catalogi"
+        ],
+        [
+            "info",
+            "Provisioned the \"Open Catalogi\" portal with a landing page, search at /zoeken and publication detail pages."
+        ]
+    ],
+    "search page fails": [
+        [
+            "count",
+            "portaliq",
+            "portal",
+            []
+        ],
+        [
+            "write",
+            "portaliq",
+            "portal",
+            {
+                "title": "Open Catalogi",
+                "tagline": "Zoek in publicaties uit alle aangesloten catalogi",
+                "slug": "demo",
+                "status": "published",
+                "theme": "opencatalogi",
+                "domains": [],
+                "locales": [
+                    "nl"
+                ],
+                "authentication": {
+                    "modes": [
+                        "public"
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Home",
+                "route": "/",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Één plek voor alle publicaties.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-hero",
+                            "widgetKey": "hero",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 4,
+                            "props": {
+                                "title": "Waar bent u naar op zoek?",
+                                "search": true,
+                                "submitLabel": "Zoeken",
+                                "placeholder": "Zoek op naam of trefwoord"
+                            }
+                        },
+                        {
+                            "id": "demo-home-intro",
+                            "widgetKey": "markdown",
+                            "gridX": 0,
+                            "gridY": 4,
+                            "gridWidth": 12,
+                            "gridHeight": 4,
+                            "props": {
+                                "markdown": "## Onderwerpen\n\nBekijk het overzicht van onderwerpen die relevant zijn voor gemeenten en leveranciers binnen het domein van gemeentelijke ICT."
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Publicatie",
+                "route": "/publicatie",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Details van één publicatie.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-publication-detail",
+                            "widgetKey": "publicationDetail",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 8,
+                            "props": {
+                                "endpoint": "/index.php/apps/opencatalogi/api/federation/publications"
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "menu",
+            {
+                "title": "Sub footer menu 1",
+                "position": 2,
+                "portal": "demo",
+                "items": [
+                    {
+                        "name": "Cookies",
+                        "link": "/cookies"
+                    },
+                    {
+                        "name": "Privacy",
+                        "link": "/privacy"
+                    },
+                    {
+                        "name": "Disclaimer",
+                        "link": "/disclaimer"
+                    }
+                ]
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Zoeken",
+                "route": "/zoeken",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Doorzoek publicaties uit alle aangesloten catalogi.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-federated-search",
+                            "widgetKey": "federatedSearch",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 8,
+                            "props": {
+                                "placeholder": "Bijvoorbeeld: subsidies"
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "warning",
+            "Demo portal created, but its search page was not — the portal will render empty."
+        ],
+        [
+            "log.warning",
+            "[portaliq] demo portal page not provisioned: page write returned null"
+        ]
+    ],
+    "search page empty array": [
+        [
+            "count",
+            "portaliq",
+            "portal",
+            []
+        ],
+        [
+            "write",
+            "portaliq",
+            "portal",
+            {
+                "title": "Open Catalogi",
+                "tagline": "Zoek in publicaties uit alle aangesloten catalogi",
+                "slug": "demo",
+                "status": "published",
+                "theme": "opencatalogi",
+                "domains": [],
+                "locales": [
+                    "nl"
+                ],
+                "authentication": {
+                    "modes": [
+                        "public"
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Home",
+                "route": "/",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Één plek voor alle publicaties.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-hero",
+                            "widgetKey": "hero",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 4,
+                            "props": {
+                                "title": "Waar bent u naar op zoek?",
+                                "search": true,
+                                "submitLabel": "Zoeken",
+                                "placeholder": "Zoek op naam of trefwoord"
+                            }
+                        },
+                        {
+                            "id": "demo-home-intro",
+                            "widgetKey": "markdown",
+                            "gridX": 0,
+                            "gridY": 4,
+                            "gridWidth": 12,
+                            "gridHeight": 4,
+                            "props": {
+                                "markdown": "## Onderwerpen\n\nBekijk het overzicht van onderwerpen die relevant zijn voor gemeenten en leveranciers binnen het domein van gemeentelijke ICT."
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Publicatie",
+                "route": "/publicatie",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Details van één publicatie.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-publication-detail",
+                            "widgetKey": "publicationDetail",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 8,
+                            "props": {
+                                "endpoint": "/index.php/apps/opencatalogi/api/federation/publications"
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "menu",
+            {
+                "title": "Sub footer menu 1",
+                "position": 2,
+                "portal": "demo",
+                "items": [
+                    {
+                        "name": "Cookies",
+                        "link": "/cookies"
+                    },
+                    {
+                        "name": "Privacy",
+                        "link": "/privacy"
+                    },
+                    {
+                        "name": "Disclaimer",
+                        "link": "/disclaimer"
+                    }
+                ]
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Zoeken",
+                "route": "/zoeken",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Doorzoek publicaties uit alle aangesloten catalogi.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-federated-search",
+                            "widgetKey": "federatedSearch",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 8,
+                            "props": {
+                                "placeholder": "Bijvoorbeeld: subsidies"
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "config",
+            "portaliq",
+            "demo_portal_provisioned",
+            "id-Open Catalogi"
+        ],
+        [
+            "info",
+            "Provisioned the \"Open Catalogi\" portal with a landing page, search at /zoeken and publication detail pages."
+        ]
+    ],
+    "everything lands": [
+        [
+            "count",
+            "portaliq",
+            "portal",
+            []
+        ],
+        [
+            "write",
+            "portaliq",
+            "portal",
+            {
+                "title": "Open Catalogi",
+                "tagline": "Zoek in publicaties uit alle aangesloten catalogi",
+                "slug": "demo",
+                "status": "published",
+                "theme": "opencatalogi",
+                "domains": [],
+                "locales": [
+                    "nl"
+                ],
+                "authentication": {
+                    "modes": [
+                        "public"
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Home",
+                "route": "/",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Één plek voor alle publicaties.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-hero",
+                            "widgetKey": "hero",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 4,
+                            "props": {
+                                "title": "Waar bent u naar op zoek?",
+                                "search": true,
+                                "submitLabel": "Zoeken",
+                                "placeholder": "Zoek op naam of trefwoord"
+                            }
+                        },
+                        {
+                            "id": "demo-home-intro",
+                            "widgetKey": "markdown",
+                            "gridX": 0,
+                            "gridY": 4,
+                            "gridWidth": 12,
+                            "gridHeight": 4,
+                            "props": {
+                                "markdown": "## Onderwerpen\n\nBekijk het overzicht van onderwerpen die relevant zijn voor gemeenten en leveranciers binnen het domein van gemeentelijke ICT."
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Publicatie",
+                "route": "/publicatie",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Details van één publicatie.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-publication-detail",
+                            "widgetKey": "publicationDetail",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 8,
+                            "props": {
+                                "endpoint": "/index.php/apps/opencatalogi/api/federation/publications"
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "menu",
+            {
+                "title": "Sub footer menu 1",
+                "position": 2,
+                "portal": "demo",
+                "items": [
+                    {
+                        "name": "Cookies",
+                        "link": "/cookies"
+                    },
+                    {
+                        "name": "Privacy",
+                        "link": "/privacy"
+                    },
+                    {
+                        "name": "Disclaimer",
+                        "link": "/disclaimer"
+                    }
+                ]
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Zoeken",
+                "route": "/zoeken",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Doorzoek publicaties uit alle aangesloten catalogi.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-federated-search",
+                            "widgetKey": "federatedSearch",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 8,
+                            "props": {
+                                "placeholder": "Bijvoorbeeld: subsidies"
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "config",
+            "portaliq",
+            "demo_portal_provisioned",
+            "id-Open Catalogi"
+        ],
+        [
+            "info",
+            "Provisioned the \"Open Catalogi\" portal with a landing page, search at /zoeken and publication detail pages."
+        ]
+    ],
+    "explicit yes": [
+        [
+            "count",
+            "portaliq",
+            "portal",
+            []
+        ],
+        [
+            "write",
+            "portaliq",
+            "portal",
+            {
+                "title": "Open Catalogi",
+                "tagline": "Zoek in publicaties uit alle aangesloten catalogi",
+                "slug": "demo",
+                "status": "published",
+                "theme": "opencatalogi",
+                "domains": [],
+                "locales": [
+                    "nl"
+                ],
+                "authentication": {
+                    "modes": [
+                        "public"
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Home",
+                "route": "/",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Één plek voor alle publicaties.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-hero",
+                            "widgetKey": "hero",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 4,
+                            "props": {
+                                "title": "Waar bent u naar op zoek?",
+                                "search": true,
+                                "submitLabel": "Zoeken",
+                                "placeholder": "Zoek op naam of trefwoord"
+                            }
+                        },
+                        {
+                            "id": "demo-home-intro",
+                            "widgetKey": "markdown",
+                            "gridX": 0,
+                            "gridY": 4,
+                            "gridWidth": 12,
+                            "gridHeight": 4,
+                            "props": {
+                                "markdown": "## Onderwerpen\n\nBekijk het overzicht van onderwerpen die relevant zijn voor gemeenten en leveranciers binnen het domein van gemeentelijke ICT."
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Publicatie",
+                "route": "/publicatie",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Details van één publicatie.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-publication-detail",
+                            "widgetKey": "publicationDetail",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 8,
+                            "props": {
+                                "endpoint": "/index.php/apps/opencatalogi/api/federation/publications"
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "menu",
+            {
+                "title": "Sub footer menu 1",
+                "position": 2,
+                "portal": "demo",
+                "items": [
+                    {
+                        "name": "Cookies",
+                        "link": "/cookies"
+                    },
+                    {
+                        "name": "Privacy",
+                        "link": "/privacy"
+                    },
+                    {
+                        "name": "Disclaimer",
+                        "link": "/disclaimer"
+                    }
+                ]
+            }
+        ],
+        [
+            "write",
+            "portaliq",
+            "page",
+            {
+                "title": "Zoeken",
+                "route": "/zoeken",
+                "status": "published",
+                "locale": "nl",
+                "summary": "Doorzoek publicaties uit alle aangesloten catalogi.",
+                "portal": "demo",
+                "body": {
+                    "type": "grid",
+                    "widgets": [
+                        {
+                            "id": "demo-federated-search",
+                            "widgetKey": "federatedSearch",
+                            "gridX": 0,
+                            "gridY": 0,
+                            "gridWidth": 12,
+                            "gridHeight": 8,
+                            "props": {
+                                "placeholder": "Bijvoorbeeld: subsidies"
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        [
+            "config",
+            "portaliq",
+            "demo_portal_provisioned",
+            "id-Open Catalogi"
+        ],
+        [
+            "info",
+            "Provisioned the \"Open Catalogi\" portal with a landing page, search at /zoeken and publication detail pages."
+        ]
+    ]
+}

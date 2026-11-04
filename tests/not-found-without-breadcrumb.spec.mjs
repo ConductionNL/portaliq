@@ -53,3 +53,9 @@ test('a page that is there keeps its trail', () => {
 	const crumbs = breadcrumbsOf({ ...shell, route: '/afval', error: null, page: { title: 'Afval' } })
 	assert.deepEqual(crumbs.map((c) => c.label), ['Home', 'Afval'])
 })
+
+test('without the trail the page keeps the room the board leaves under the header', () => {
+	const page = readFileSync(new URL('../src/site/components/NotFoundPage.vue', import.meta.url), 'utf8')
+	const css = page.slice(page.indexOf('<style')).replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s+/g, ' ')
+	assert.match(css, /\.pq-not-found \{[^}]*padding-block: 3\.6875rem 1rem;/)
+})

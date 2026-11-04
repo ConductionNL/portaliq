@@ -1,6 +1,7 @@
 # Screens
 
-- EditorMenu https://identity.conduction.nl/screens/board?id=portaliq/EditorMenu
-- Kop https://identity.conduction.nl/screens/board?id=huisstijl/Kop
-- Voet https://identity.conduction.nl/screens/board?id=huisstijl/Voet
+- portaliq/EditorMenu Redacteur: menu van het portaal https://identity.conduction.nl/screens/board?id=portaliq/EditorMenu
+- huisstijl/Kop Onderdeel: kop en hoofdmenu https://identity.conduction.nl/screens/board?id=huisstijl/Kop
+- huisstijl/Voet Onderdeel: voettekst https://identity.conduction.nl/screens/board?id=huisstijl/Voet
+- portaliq/PtPortal portal: the choice and order of contributed pages per portal (REQ-PGC-003) https://identity.conduction.nl/screens/board?id=portaliq/PtPortal
 - pipelinq/portal-menu-choice: no pipelinq screen; the menu items and records a client sees are chosen on the portaliq boards above

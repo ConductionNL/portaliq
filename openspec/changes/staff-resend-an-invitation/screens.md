@@ -1,3 +1,3 @@
 # Screens
 
-- PtUitnodigingen https://identity.conduction.nl/screens/board?id=portaliq/PtUitnodigingen
+- portaliq/PtUitnodigingen uitnodigingen https://identity.conduction.nl/screens/board?id=portaliq/PtUitnodigingen

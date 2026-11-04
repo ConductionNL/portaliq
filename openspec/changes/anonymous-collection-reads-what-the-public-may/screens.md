@@ -1,3 +1,3 @@
 # Screens
 
-- MijnOverzicht https://identity.conduction.nl/screens/board?id=portaliq/MijnOverzicht
+- portaliq/MijnOverzicht overzicht https://identity.conduction.nl/screens/board?id=portaliq/MijnOverzicht
