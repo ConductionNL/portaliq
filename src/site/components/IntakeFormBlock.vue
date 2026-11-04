@@ -23,16 +23,14 @@
 			{{ noFormLabel }}
 		</p>
 
-		<p
-			v-else-if="state === 'signIn'"
-			class="utrecht-paragraph"
-			data-testid="intake-form-sign-in">
-			{{
-				feeAmountText
-					? text.signInFee.split('{amount}').join(feeAmountText)
-					: signInLabel
-			}}
-		</p>
+		<div v-else-if="state === 'signIn'" data-testid="intake-form-sign-in">
+			<p v-if="feeAmountText" class="utrecht-paragraph">
+				{{ text.signInFee.split('{amount}').join(feeAmountText) }}
+			</p>
+			<p class="utrecht-paragraph">
+				{{ feeAmountText ? text.signInFirst : signInLabel }}
+			</p>
+		</div>
 
 		<div v-else-if="state === 'external'" data-testid="intake-form-external">
 			<p class="utrecht-paragraph">
@@ -197,7 +195,7 @@
 				ref="summary"
 				:entries="summary"
 				idBase="pq-intake-summary"
-				:heading="text.summaryHeading"
+				:heading="summaryHeading"
 				:intro="text.summaryIntro"
 				:titlePrefix="text.titlePrefix" />
 
@@ -428,6 +426,7 @@ import {
 	explainsOptional,
 	plainFieldErrors,
 	summaryEntries,
+	summaryHeadingOf,
 } from './forms/fields.js'
 import { groupCountErrors, itemLines } from './forms/group.js'
 import { identityWords } from './forms/identityWords.js'
@@ -887,6 +886,17 @@ export default {
 				&& explainsOptional(
 					this.shownFields.map((field) => field.required === true),
 				)
+			)
+		},
+
+		/**
+		 * @return {string} The error summary's heading: errors counted on a step, "Er ontbreekt nog iets" on sending.
+		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
+		 */
+		summaryHeading() {
+			return summaryHeadingOf(
+				{ count: this.summary.length, step: this.hasSteps && !this.onReview },
+				this.text,
 			)
 		},
 

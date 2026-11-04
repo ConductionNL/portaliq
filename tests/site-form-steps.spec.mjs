@@ -19,6 +19,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { afterEach, test } from 'node:test'
+import { DUTCH, summaryHeadingOf } from '../src/site/components/forms/fields.js'
 import {
 	confirmationText,
 	flowSteps,
@@ -605,4 +606,16 @@ test('a published form in steps: the review, then the confirmation heading takes
 		form.textOf(form.find('intake-form-done')),
 		/Wij halen het op\. Uw kenmerk: MLD-7/,
 	)
+})
+
+test('a failed step counts its errors; a failed send reads "Er ontbreekt nog iets" (REQ-SMF-002)', () => {
+	assert.equal(summaryHeadingOf({ count: 1, step: true }, DUTCH), 'Er is 1 fout')
+	assert.equal(summaryHeadingOf({ count: 3, step: true }, DUTCH), 'Er zijn 3 fouten')
+	assert.equal(
+		summaryHeadingOf({ count: 3, step: false }, DUTCH),
+		'Er ontbreekt nog iets',
+	)
+	const intake = readFileSync(INTAKE, 'utf8')
+	assert.match(intake, /:heading="summaryHeading"/)
+	assert.match(intake, /step: this\.hasSteps && !this\.onReview/)
 })
