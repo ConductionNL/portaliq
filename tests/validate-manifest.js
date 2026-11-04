@@ -214,6 +214,9 @@ const RENDERABLE_WIDGET_TYPES = new Set([
 	// nextcloud-vue 2.80 registers it for the detail-page and app-dashboard
 	// surfaces; a filter without @objectId tokens needs no current object.
 	'record-list',
+	// A built-in of its own (CnWidgetObjectTable in CnWidgetGrid/builtInWidgets.js),
+	// not an alias of `table`: CnDashboardPage looks the type up as written.
+	'object-table',
 	...registryWidgetKeys(),
 ])
 
@@ -252,9 +255,8 @@ const TILE_LINK_TYPES = new Set(['app', 'url'])
  *                      layout renders its empty state — "No widgets
  *                      configured" — which reads as "nothing was configured
  *                      yet" rather than "your configuration is unreachable".
- *   unrenderable type  `text` and `object-table` are not in the renderer's
- *                      vocabulary. They validate, they round-trip, and they
- *                      mount nothing.
+ *   unrenderable type  `text` is not in the renderer's vocabulary. It
+ *                      validates, it round-trips, and it mounts nothing.
  *
  * Neither is a schema violation: the schema describes the manifest's SHAPE,
  * and both of these are true statements about a component's behaviour.

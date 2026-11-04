@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Service\Identity\ClaimLock;
 use OCA\Portaliq\Service\Identity\PortalInvitationService;
 use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\PortalObjectWriter;
+use OCP\Lock\ILockingProvider;
+use OCP\Lock\LockedException;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -20,7 +24,9 @@ class PortalInvitationServiceTest extends TestCase {
 	use PortalIdentityStoreTrait;
 
 	protected function setUp(): void {
-		$this->rows = [];
+		$this->rows       = [];
+		$this->held       = [];
+		$this->beforeLock = null;
 
 	}//end setUp()
 
@@ -223,14 +229,84 @@ class PortalInvitationServiceTest extends TestCase {
 	 *
 	 * @return PortalInvitationService
 	 */
-	private function service(?PortalAccountService $accounts = null): PortalInvitationService {
+	private function service(?PortalAccountService $accounts = null, ?PortalObjectWriter $writer = null): PortalInvitationService {
 		if ($accounts === null) {
 			$accounts = $this->accounts();
 			$accounts->method('provision')->willReturn(['subjectRef' => 'subject-1', 'isNew' => true, 'status' => 'pending']);
 		}
 
-		return new PortalInvitationService($this->fakeReader(), $this->fakeWriter(), $accounts, $this->fakeRandom());
+		return new PortalInvitationService($this->fakeReader(), ($writer ?? $this->fakeWriter()), $accounts, $this->fakeRandom(), new ClaimLock($this->fakeLocks(), 0));
 	}//end service()
+
+	/** @var array<string, bool> The locks held right now. */
+	private array $held = [];
+
+	/** @var callable|null Runs once, just before the next lock is taken. */
+	private $beforeLock = null;
+
+	/**
+	 * A locking provider that holds exclusive locks in memory and refuses a
+	 * taken one, the way Nextcloud's does.
+	 *
+	 * @return ILockingProvider
+	 */
+	private function fakeLocks(): ILockingProvider {
+		$locks = $this->createMock(ILockingProvider::class);
+		$locks->method('acquireLock')->willReturnCallback(
+			function (string $path): void {
+				$hook = $this->beforeLock;
+				if ($hook !== null) {
+					$this->beforeLock = null;
+					$hook($path);
+				}
+
+				if (isset($this->held[$path]) === true) {
+					throw new LockedException($path);
+				}
+
+				$this->held[$path] = true;
+			}
+		);
+		$locks->method('releaseLock')->willReturnCallback(
+			function (string $path): void {
+				unset($this->held[$path]);
+			}
+		);
+
+		return $locks;
+	}//end fakeLocks()
+
+	public function testTwoAcceptsOfOneInvitationProvisionOnce(): void {
+		$accounts = $this->accounts();
+		$accounts->expects($this->once())->method('provision')->willReturn(['subjectRef' => 'subject-1', 'isNew' => true, 'status' => 'pending']);
+		$service = $this->service($accounts);
+		$invited = $service->invite(email: 'tom@example.nl', organisation: 'gemeente-x', audience: 'client', invitedBy: 'admin');
+
+		// A second accept lands between the first one's arrival and its lock.
+		$raced = null;
+		$this->beforeLock = function () use ($service, $invited, &$raced): void {
+			$raced = $service->accept(token: $invited['token']);
+		};
+
+		$this->assertNull($service->accept(token: $invited['token']), 'the invitation is spent once the lock is free');
+		$this->assertSame(['subjectRef' => 'subject-1'], $raced);
+	}
+
+	public function testAnAcceptWhoseInvitationCannotBeSpentIsRefused(): void {
+		$base   = $this->fakeWriter();
+		$writer = $this->getMockBuilder(PortalObjectWriter::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['createObject', 'updateObject', 'deleteObject'])
+			->getMock();
+		$writer->method('createObject')->willReturnCallback(fn (...$args) => $base->createObject(...$args));
+		$writer->method('deleteObject')->willReturnCallback(fn (...$args) => $base->deleteObject(...$args));
+		$writer->method('updateObject')->willReturn(null);
+
+		$service = $this->service(null, $writer);
+		$invited = $service->invite(email: 'tom@example.nl', organisation: 'gemeente-x', audience: 'client', invitedBy: 'admin');
+
+		$this->assertSame(PortalInvitationService::TRY_LATER, $service->accept(token: $invited['token']), 'temporary, not an invalid invitation');
+	}
 
 	/**
 	 * A double that can only answer methods the real service has.

@@ -111,7 +111,10 @@ export function fieldLabel(action, field) {
  * @param {{submissionKey?: string}} [run.options] The form's submission key (REQ-AFS-001).
  * @return {Promise<object>} `{ok, body, messageKey}`.
  */
-export async function runAttachedAction(api, { collection, row, action, values, options = {} }) {
+export async function runAttachedAction(
+	api,
+	{ collection, row, action, values, options = {} },
+) {
 	const rowId = row && (row.id || row['@self']?.id)
 	if (!rowId || !api) {
 		return {

@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/example-set-portaal/specs/example-set-portaal/spec.md
+ * @spec openspec/specs/example-set-sanne-cases/spec.md#requirement-sannes-lindelaan-case-is-the-case-the-boards-draw-and-her-cases-name-her
  */
 
 declare(strict_types=1);

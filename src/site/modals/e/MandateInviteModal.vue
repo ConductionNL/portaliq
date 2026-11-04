@@ -82,7 +82,9 @@
 							data-testid="mandate-invite-all" />
 						{{ t('All cases') }}
 					</label>
-					<label v-if="caseTypes.length > 0" class="pq-mandate-invite__choice">
+					<label
+						v-if="caseTypes.length > 0"
+						class="pq-mandate-invite__choice">
 						<input
 							v-model="scope"
 							type="radio"
@@ -122,7 +124,9 @@
 					</p>
 					<div class="pq-mandate-invite__date">
 						<label v-for="part in DATE_PARTS" :key="part.key">
-							<span class="utrecht-form-label">{{ t(part.label) }}</span>
+							<span class="utrecht-form-label">{{
+								t(part.label)
+							}}</span>
 							<input
 								v-model="end[part.key]"
 								class="utrecht-textbox"
@@ -161,7 +165,10 @@
 						class="pq-button-icon"
 						viewBox="0 0 24 24"
 						aria-hidden="true"
-						focusable="false"><path d="M22 5.5H9C7.9 5.5 7 6.4 7 7.5V16.5C7 17.61 7.9 18.5 9 18.5H22C23.11 18.5 24 17.61 24 16.5V7.5C24 6.4 23.11 5.5 22 5.5M22 16.5H9V9.17L15.5 12.5L22 9.17V16.5M15.5 10.81L9 7.5H22L15.5 10.81M5 16.5C5 16.67 5.03 16.83 5.05 17H1C.448 17 0 16.55 0 16S.448 15 1 15H5V16.5M3 7H5.05C5.03 7.17 5 7.33 5 7.5V9H3C2.45 9 2 8.55 2 8S2.45 7 3 7M1 12C1 11.45 1.45 11 2 11H5V13H2C1.45 13 1 12.55 1 12Z" /></svg>
+						focusable="false">
+						<path
+							d="M22 5.5H9C7.9 5.5 7 6.4 7 7.5V16.5C7 17.61 7.9 18.5 9 18.5H22C23.11 18.5 24 17.61 24 16.5V7.5C24 6.4 23.11 5.5 22 5.5M22 16.5H9V9.17L15.5 12.5L22 9.17V16.5M15.5 10.81L9 7.5H22L15.5 10.81M5 16.5C5 16.67 5.03 16.83 5.05 17H1C.448 17 0 16.55 0 16S.448 15 1 15H5V16.5M3 7H5.05C5.03 7.17 5 7.33 5 7.5V9H3C2.45 9 2 8.55 2 8S2.45 7 3 7M1 12C1 11.45 1.45 11 2 11H5V13H2C1.45 13 1 12.55 1 12Z" />
+					</svg>
 					{{ t('Send the invitation') }}
 				</button>
 			</div>
@@ -313,8 +320,12 @@ export default {
 }
 
 .pq-mandate-invite__eyebrow {
-	color: var(--thematiq-website-text-muted, var(--nldesign-color-text-muted, inherit));
-	font-size: 0.9375rem; font-weight: 600;
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, inherit)
+	);
+	font-size: 0.9375rem;
+	font-weight: 600;
 }
 
 .pq-mandate-invite__title {
@@ -329,7 +340,8 @@ export default {
 	align-items: center;
 	justify-content: center;
 	flex: none;
-	block-size: 44px; inline-size: 44px;
+	block-size: 44px;
+	inline-size: 44px;
 	border: 0;
 	border-radius: 50%;
 	background: transparent;
@@ -343,7 +355,10 @@ export default {
 }
 
 .pq-mandate-invite__body {
-	display: flex; flex-direction: column; gap: 20px; padding: 16px 28px 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	padding: 16px 28px 24px;
 }
 
 .pq-mandate-invite__body > *,
@@ -358,7 +373,8 @@ export default {
 }
 
 .pq-mandate-invite__label {
-	font-size: 1.0625rem; font-weight: 600;
+	font-size: 1.0625rem;
+	font-weight: 600;
 	margin-block-end: 8px;
 	padding: 0;
 }
@@ -369,23 +385,29 @@ export default {
 
 .pq-mandate-invite__optional,
 .pq-mandate-invite__hint {
-	color: var(--thematiq-website-text-muted, var(--nldesign-color-text-muted, inherit));
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, inherit)
+	);
 	font-weight: 400;
 }
 
 .pq-mandate-invite__email {
-	inline-size: 100%; max-inline-size: none;
+	inline-size: 100%;
+	max-inline-size: none;
 }
 
 .pq-mandate-invite__choice {
 	display: flex;
 	align-items: center;
-	gap: 10px; min-block-size: 32px;
+	gap: 10px;
+	min-block-size: 32px;
 	font-size: 1.0625rem;
 }
 
 .pq-mandate-invite__choice input {
-	block-size: 22px; inline-size: 22px;
+	block-size: 22px;
+	inline-size: 22px;
 	margin: 0;
 	accent-color: var(--nldesign-color-primary, auto);
 }
@@ -393,7 +415,8 @@ export default {
 .pq-mandate-invite__types {
 	display: flex;
 	flex-direction: column;
-	gap: 2px; padding: 6px 0 0 32px;
+	gap: 2px;
+	padding: 6px 0 0 32px;
 }
 
 .pq-mandate-invite__date {

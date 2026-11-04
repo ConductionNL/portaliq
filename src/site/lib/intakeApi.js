@@ -336,7 +336,10 @@ export async function submitIntake(conn, submission) {
  * @param {string} [portal] The portal slug, or ''.
  * @return {object} The body.
  */
-function submissionBody({ route, answers, statements = [], verifiedEmails = {} }, portal) {
+function submissionBody(
+	{ route, answers, statements = [], verifiedEmails = {} },
+	portal,
+) {
 	const body = { route, answers: answers || {} }
 	if (verifiedEmails && Object.keys(verifiedEmails).length > 0) {
 		body.verifiedEmails = verifiedEmails
@@ -385,7 +388,10 @@ export async function lookUpStatus(conn, reference) {
 	}
 
 	const response = await fetcher(conn.fetchImpl)(
-		intakeUrl(conn.base, '/intake/status', { reference: trimmed, portal: conn.portal }),
+		intakeUrl(conn.base, '/intake/status', {
+			reference: trimmed,
+			portal: conn.portal,
+		}),
 		{
 			headers: headersFor(''),
 		},

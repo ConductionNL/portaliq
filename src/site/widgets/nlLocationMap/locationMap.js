@@ -22,7 +22,13 @@ export const MAP_BOX = { width: 640, height: 400, margin: 40 }
  */
 function coordinate(value, min, max) {
 	const number = Number(value)
-	return value !== '' && value !== null && Number.isFinite(number) && number >= min && number <= max ? number : null
+	return value !== ''
+		&& value !== null
+		&& Number.isFinite(number)
+		&& number >= min
+		&& number <= max
+		? number
+		: null
 }
 
 /**
@@ -34,8 +40,15 @@ function coordinate(value, min, max) {
  */
 function safeLinks(links) {
 	return (Array.isArray(links) ? links : [])
-		.map((link) => ({ label: String(link?.label || '').trim(), href: String(link?.href || '').trim() }))
-		.filter((link) => link.label !== '' && /^(\/(?!\/)|https?:\/\/|mailto:|tel:)/i.test(link.href))
+		.map((link) => ({
+			label: String(link?.label || '').trim(),
+			href: String(link?.href || '').trim(),
+		}))
+		.filter(
+			(link) =>
+				link.label !== ''
+				&& /^(\/(?!\/)|https?:\/\/|mailto:|tel:)/i.test(link.href),
+		)
 }
 
 /**
@@ -71,11 +84,20 @@ export function normaliseLocations(locations) {
  * @spec openspec/changes/site-location-map/specs/portaliq-cms/spec.md#requirement-a-page-can-show-the-organisations-locations-on-a-map-req-slm-001
  */
 export function categoryChips(locations, allLabel) {
-	const categories = [...new Set(locations.map((location) => location.category).filter((category) => category !== ''))]
+	const categories = [
+		...new Set(
+			locations
+				.map((location) => location.category)
+				.filter((category) => category !== ''),
+		),
+	]
 	if (categories.length < 2) {
 		return []
 	}
-	return [{ value: '', label: allLabel }, ...categories.map((category) => ({ value: category, label: category }))]
+	return [
+		{ value: '', label: allLabel },
+		...categories.map((category) => ({ value: category, label: category })),
+	]
 }
 
 /**
@@ -88,20 +110,38 @@ export function categoryChips(locations, allLabel) {
  * @spec openspec/changes/site-location-map/specs/portaliq-cms/spec.md#requirement-a-page-can-show-the-organisations-locations-on-a-map-req-slm-001
  */
 export function markerPositions(locations) {
-	const located = locations.filter((location) => location.lat !== null && location.lon !== null)
+	const located = locations.filter(
+		(location) => location.lat !== null && location.lon !== null,
+	)
 	if (located.length === 0) {
 		return []
 	}
 	const lats = located.map((location) => location.lat)
 	const lons = located.map((location) => location.lon)
-	const [south, north, west, east] = [Math.min(...lats), Math.max(...lats), Math.min(...lons), Math.max(...lons)]
-	const innerWidth = MAP_BOX.width - (2 * MAP_BOX.margin)
-	const innerHeight = MAP_BOX.height - (2 * MAP_BOX.margin)
-	const span = (low, high) => (high - low) || 1
+	const [south, north, west, east] = [
+		Math.min(...lats),
+		Math.max(...lats),
+		Math.min(...lons),
+		Math.max(...lons),
+	]
+	const innerWidth = MAP_BOX.width - 2 * MAP_BOX.margin
+	const innerHeight = MAP_BOX.height - 2 * MAP_BOX.margin
+	const span = (low, high) => high - low || 1
 	return located.map((location) => ({
 		number: location.number,
-		x: Math.round(east === west ? MAP_BOX.width / 2 : MAP_BOX.margin + (((location.lon - west) / span(west, east)) * innerWidth)),
-		y: Math.round(north === south ? MAP_BOX.height / 2 : MAP_BOX.margin + (((north - location.lat) / span(south, north)) * innerHeight)),
+		x: Math.round(
+			east === west
+				? MAP_BOX.width / 2
+				: MAP_BOX.margin
+						+ ((location.lon - west) / span(west, east)) * innerWidth,
+		),
+		y: Math.round(
+			north === south
+				? MAP_BOX.height / 2
+				: MAP_BOX.margin
+						+ ((north - location.lat) / span(south, north))
+							* innerHeight,
+		),
 	}))
 }
 

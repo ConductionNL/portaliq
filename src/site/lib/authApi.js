@@ -335,7 +335,13 @@ function dutchLabel(key, vars = {}) {
  * @spec openspec/changes/demo-sign-in-beside-the-account/specs/example-resident/spec.md#requirement-a-demo-may-sign-in-each-example-resident-with-one-click
  */
 export function signInRoutes(site, ways) {
-	const { authBase, t = dutchLabel, exampleResident = '', demoResidents = [], emailLink = false } = ways
+	const {
+		authBase,
+		t = dutchLabel,
+		exampleResident = '',
+		demoResidents = [],
+		emailLink = false,
+	} = ways
 	const modes = Array.isArray(site?.authentication?.modes)
 		? site.authentication.modes
 		: []
@@ -400,7 +406,12 @@ function returnQuery(site) {
 		typeof window !== 'undefined' && window.location
 			? `returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`
 			: ''
-	return { slug, scope, returnTo, query: [scope, returnTo].filter(Boolean).join('&') }
+	return {
+		slug,
+		scope,
+		returnTo,
+		query: [scope, returnTo].filter(Boolean).join('&'),
+	}
 }
 
 /**
@@ -506,7 +517,9 @@ function demoRoute(resident, { authBase, t, exampleResident, scope, returnTo }) 
 		mode: 'example-resident',
 		label:
 			card.button
-			|| (name ? t('Log in as {name}', { name }) : t('Log in as the example resident')),
+			|| (name
+				? t('Log in as {name}', { name })
+				: t('Log in as the example resident')),
 		card: {
 			title: card.title || name || t('Example resident'),
 			...(card.text ? { text: card.text } : {}),

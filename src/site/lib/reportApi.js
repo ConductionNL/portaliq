@@ -87,8 +87,7 @@ const WORDS = {
 			'The check against automated reports did not pass. Try again.',
 		yourCode: 'Your report code',
 		keepCode: 'Keep this code. We cannot send it to you again.',
-		codeOnce:
-			'You see the code once, now. It is the only way to come back.',
+		codeOnce: 'You see the code once, now. It is the only way to come back.',
 		copy: 'Copy the code',
 		copied: 'The code is copied.',
 		alreadyReported: 'Already reported?',
@@ -153,9 +152,7 @@ export function reportWords(locale) {
  * @spec openspec/changes/intake-report-pages/tasks.md#t05
  */
 export function fillReport(text, vars = {}) {
-	return String(text).replace(/\{(\w+)\}/g, (_, key) =>
-		String(vars[key] ?? ''),
-	)
+	return String(text).replace(/\{(\w+)\}/g, (_, key) => String(vars[key] ?? ''))
 }
 
 /**

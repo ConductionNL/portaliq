@@ -961,7 +961,10 @@ export default {
 			}
 
 			try {
-				const view = await loadForm(intakeConnection(this.portal), this.bindingRoute)
+				const view = await loadForm(
+					intakeConnection(this.portal),
+					this.bindingRoute,
+				)
 				this.render = view.render
 				this.values = initialValues(view.render.fields, view.render.prefill)
 				this.state =
@@ -1083,7 +1086,10 @@ export default {
 		async pay() {
 			this.payFailed = false
 			this.paying = true
-			const result = await payIntake(intakeConnection(this.portal), this.reference)
+			const result = await payIntake(
+				intakeConnection(this.portal),
+				this.reference,
+			)
 			this.paying = false
 			if (!result.ok) {
 				this.payFailed = true

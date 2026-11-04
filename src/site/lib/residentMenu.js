@@ -232,8 +232,23 @@ const NAMES = new WeakMap()
  * @spec openspec/changes/resident-menu-leave-out/specs/site-resident-menu/spec.md#requirement-a-portal-may-leave-items-out-of-the-resident-menu
  */
 export function residentMenuGroups(nav, menu) {
-	const { t, unread, hrefFor, recordRows = {}, layout = null, leaveOut = null, openTasks = 0 } = menu
-	const ctx = { entries: Array.isArray(nav) ? nav : [], t, unread, hrefFor, recordRows, openTasks }
+	const {
+		t,
+		unread,
+		hrefFor,
+		recordRows = {},
+		layout = null,
+		leaveOut = null,
+		openTasks = 0,
+	} = menu
+	const ctx = {
+		entries: Array.isArray(nav) ? nav : [],
+		t,
+		unread,
+		hrefFor,
+		recordRows,
+		openTasks,
+	}
 	const { appGroups, recordGroups } = contributedGroups(ctx)
 	const groups = [
 		sectionGroup(ctx, ['cases', t('Cases and tasks'), CASE_SECTIONS]),
@@ -242,7 +257,11 @@ export function residentMenuGroups(nav, menu) {
 		...appGroups,
 		...recordGroups,
 		sectionGroup(ctx, ['messages', t('Messages and news'), MESSAGE_SECTIONS]),
-		sectionGroup(ctx, ['profile', t('Your details and account'), PROFILE_SECTIONS]),
+		sectionGroup(ctx, [
+			'profile',
+			t('Your details and account'),
+			PROFILE_SECTIONS,
+		]),
 	].filter((group) => group.items.length > 0)
 	withDistinctNames(groups, t)
 	return laidOut(withoutLeftOut(groups, leaveOut), { layout, t, hrefFor })
@@ -321,7 +340,10 @@ function contributedGroups(ctx) {
 			const grouped =
 				typeof entry.page?.group === 'string'
 				&& entry.page.group.trim() !== ''
-			addPerRecordItems({ groups: grouped ? appGroups : recordGroups, entry, rows, grouped }, ctx)
+			addPerRecordItems(
+				{ groups: grouped ? appGroups : recordGroups, entry, rows, grouped },
+				ctx,
+			)
 			continue
 		}
 		groupIn(appGroups, pageGroupOf(entry)).items.push(
@@ -521,7 +543,11 @@ export function laidOut(groups, { layout, t, hrefFor }) {
 	layout.forEach((group, index) => {
 		const items = declaredItems(group, { byName, placed, t, hrefFor })
 		if (items.length > 0) {
-			out.push({ key: `layout:${index}`, title: String(group?.title ?? '').trim(), items })
+			out.push({
+				key: `layout:${index}`,
+				title: String(group?.title ?? '').trim(),
+				items,
+			})
 		}
 	})
 	return withRestOf(out, { groups, placed })

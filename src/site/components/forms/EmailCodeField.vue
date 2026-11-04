@@ -212,7 +212,11 @@ export default {
 			this.busy = true
 			const answer = await checkEmailCode(
 				{ base: this.base, portal: this.portal, token: adoptSessionToken() },
-				{ route: this.route, email: this.modelValue.trim(), code: this.code.trim() },
+				{
+					route: this.route,
+					email: this.modelValue.trim(),
+					code: this.code.trim(),
+				},
 			)
 			this.busy = false
 			if (!answer.ok) {

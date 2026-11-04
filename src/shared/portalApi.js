@@ -272,7 +272,10 @@ export function createPortalApi(config, store = {}) {
 			})
 			if (res.ok) {
 				const json = await res.json().catch(() => ({}))
-				return { retry: false, result: { ok: true, file: json.file || json } }
+				return {
+					retry: false,
+					result: { ok: true, file: json.file || json },
+				}
 			}
 			return {
 				retry: [502, 503, 504].includes(res.status),
@@ -1147,7 +1150,10 @@ export function createPortalApi(config, store = {}) {
 		 */
 		async saveDraft(app, actionId, draft) {
 			try {
-				const res = await fetch(draftUrl(app, actionId), jsonInit('PUT', draft))
+				const res = await fetch(
+					draftUrl(app, actionId),
+					jsonInit('PUT', draft),
+				)
 				if (res.ok) {
 					return await res.json()
 				}
@@ -1332,7 +1338,10 @@ export function createPortalApi(config, store = {}) {
 		 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
 		 */
 		async amendCitizenCase(collection, id, fields) {
-			const res = await fetch(citizenCaseUrl(collection, id), jsonInit('PATCH', { fields }))
+			const res = await fetch(
+				citizenCaseUrl(collection, id),
+				jsonInit('PATCH', { fields }),
+			)
 			const json = await res.json().catch(() => ({}))
 			if (!res.ok) {
 				return caseRefusal(res.status, json)
@@ -1559,7 +1568,9 @@ export function createPortalApi(config, store = {}) {
 					{
 						method: 'POST',
 						headers: {
-							...(multipart ? {} : { 'Content-Type': 'application/json' }),
+							...(multipart
+								? {}
+								: { 'Content-Type': 'application/json' }),
 							Accept: 'application/json',
 							...authHeaders(),
 							...submissionHeaders(options),

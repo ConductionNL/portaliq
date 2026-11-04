@@ -124,9 +124,10 @@ export function fieldInput(action, field, options) {
 	if (config.size === 'large' || config.size === 'full') {
 		return 'textarea'
 	}
-	return Object.hasOwn(INPUT_OF_HINT, config.input) ? INPUT_OF_HINT[config.input] : 'text'
+	return Object.hasOwn(INPUT_OF_HINT, config.input)
+		? INPUT_OF_HINT[config.input]
+		: 'text'
 }
-
 
 /**
  * The options a form knows without asking: every `static` provider.
@@ -372,7 +373,13 @@ export function isEndpointAction(action) {
  * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-word-its-own-error-req-smf-006
  */
 export function fieldErrors(action, values, files, t) {
-	const ask = { action, values: values || {}, files: files || {}, translate: translatorOr(t), fileNames: fileFields(action) }
+	const ask = {
+		action,
+		values: values || {},
+		files: files || {},
+		translate: translatorOr(t),
+		fileNames: fileFields(action),
+	}
 	const errors = {}
 	for (const field of formFields(action)) {
 		const error = fieldError(field, ask)
@@ -401,14 +408,20 @@ function fieldError(field, { action, values, files, translate, fileNames }) {
 			: ''
 	if (fileNames.includes(field)) {
 		const missing = config.required === true && (files[field] || []).length === 0
-		return missing ? own || translate('Please choose a file for {field}.', { field: label }) : null
+		return missing
+			? own || translate('Please choose a file for {field}.', { field: label })
+			: null
 	}
 	const value = values[field]
 	if (value === undefined || value === null || String(value).trim() === '') {
-		return config.required === true ? own || translate('{field} is required.', { field: label }) : null
+		return config.required === true
+			? own || translate('{field} is required.', { field: label })
+			: null
 	}
 	if (fieldInput(action, field) === 'date' && dateProblem(value)) {
-		return translate('{field}: enter a real date, for example 1 3 2026.', { field: label })
+		return translate('{field}: enter a real date, for example 1 3 2026.', {
+			field: label,
+		})
 	}
 	const wrongType = typeProblem(valueTypeOf(action, field), String(value))
 	return wrongType === '' ? null : translate(wrongType, { field: label })

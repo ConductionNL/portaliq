@@ -92,10 +92,7 @@ export function dayInWords(value, today, locale, withYear = false) {
 		return ''
 	}
 	const options = { day: 'numeric', month: 'long' }
-	if (
-		withYear ||
-		date.getFullYear() !== (today || new Date()).getFullYear()
-	) {
+	if (withYear || date.getFullYear() !== (today || new Date()).getFullYear()) {
 		options.year = 'numeric'
 	}
 	return date.toLocaleDateString(

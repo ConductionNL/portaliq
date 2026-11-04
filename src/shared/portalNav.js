@@ -81,7 +81,11 @@ export function buildNav(contributions, t, enabled = {}) {
 	}
 	nav.push(...ownAreaEntries(enabled, t))
 	if (enabled.access === true) {
-		nav.push(...['access', 'details', 'account'].map((special) => sectionEntry(special, t)))
+		nav.push(
+			...['access', 'details', 'account'].map((special) =>
+				sectionEntry(special, t),
+			),
+		)
 	}
 	// A page the login is too low for says which login reaches it, last, and
 	// never as the page the resident opens on (REQ-SCR-004).

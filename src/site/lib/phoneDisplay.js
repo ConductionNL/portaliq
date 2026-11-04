@@ -11,9 +11,36 @@
 
 /** Dutch area codes of two digits after the 0; every other one has three. */
 const TWO_DIGIT_AREAS = new Set([
-	'10', '13', '15', '20', '23', '24', '26', '30', '33', '35', '36', '38', '40', '43',
-	'45', '46', '50', '53', '55', '58', '70', '71', '72', '73', '74', '75', '76', '77',
-	'78', '79',
+	'10',
+	'13',
+	'15',
+	'20',
+	'23',
+	'24',
+	'26',
+	'30',
+	'33',
+	'35',
+	'36',
+	'38',
+	'40',
+	'43',
+	'45',
+	'46',
+	'50',
+	'53',
+	'55',
+	'58',
+	'70',
+	'71',
+	'72',
+	'73',
+	'74',
+	'75',
+	'76',
+	'77',
+	'78',
+	'79',
 ])
 
 /**
@@ -34,9 +61,17 @@ export function phoneDisplay(value) {
 	const national = match[1]
 	if (national.startsWith('6')) {
 		const rest = national.slice(1)
-		return ['06', rest.slice(0, 2), rest.slice(2, 4), rest.slice(4, 6), rest.slice(6)].join(' ')
+		return [
+			'06',
+			rest.slice(0, 2),
+			rest.slice(2, 4),
+			rest.slice(4, 6),
+			rest.slice(6),
+		].join(' ')
 	}
-	const area = TWO_DIGIT_AREAS.has(national.slice(0, 2)) ? national.slice(0, 2) : national.slice(0, 3)
+	const area = TWO_DIGIT_AREAS.has(national.slice(0, 2))
+		? national.slice(0, 2)
+		: national.slice(0, 3)
 	const local = national.slice(area.length)
 	return `0${area} ${local.slice(0, 3)} ${local.slice(3)}`
 }

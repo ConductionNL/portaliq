@@ -1852,8 +1852,8 @@ export default {
 			)
 			// The count beside "My tasks", from the same read that page lists.
 			this.openTasks =
-				shellSections({ session: this.session, ...this.account }).tasks === true
-				&& typeof this.api.fetchTasks === 'function'
+				shellSections({ session: this.session, ...this.account }).tasks
+					=== true && typeof this.api.fetchTasks === 'function'
 					? openTaskCount(await this.api.fetchTasks().catch(() => null))
 					: 0
 			// The mandates the resident holds, so the acting-for bar can name

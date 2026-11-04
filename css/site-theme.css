@@ -3303,7 +3303,10 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 		color-mix(
 			in srgb,
 			var(--nldesign-color-border-dark, currentcolor) 58%,
-			var(--utrecht-document-background-color, var(--color-main-background, Canvas))
+			var(
+				--utrecht-document-background-color,
+				var(--color-main-background, Canvas)
+			)
 		);
 	border-radius: 4px;
 	background-color: var(--nldesign-color-surface, transparent);
@@ -3629,7 +3632,10 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 
 .pq-site .pq-draft-dialog__form {
 	margin: 0;
-	color: var(--thematiq-website-text-muted, var(--nldesign-color-text-muted, inherit));
+	color: var(
+		--thematiq-website-text-muted,
+		var(--nldesign-color-text-muted, inherit)
+	);
 	font-size: 0.9375rem;
 	font-weight: 600;
 }

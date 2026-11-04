@@ -323,9 +323,7 @@
 							class="utrecht-unordered-list__item">
 							{{ fewerWordsTip }}
 						</li>
-						<li
-							v-if="filtersOn"
-							class="utrecht-unordered-list__item">
+						<li v-if="filtersOn" class="utrecht-unordered-list__item">
 							{{ emptyFewerFilters }}
 						</li>
 					</ul>
@@ -931,10 +929,7 @@ export default {
 		 */
 		nothingFound() {
 			return (
-				!this.loading
-				&& !this.error
-				&& this.sequence > 0
-				&& this.total === 0
+				!this.loading && !this.error && this.sequence > 0 && this.total === 0
 			)
 		},
 
@@ -959,10 +954,18 @@ export default {
 		 */
 		emptyActionAddress() {
 			const href = this.emptyActionHref
-			if (!href.startsWith('/') || href.startsWith('//') || typeof window === 'undefined') {
+			if (
+				!href.startsWith('/')
+				|| href.startsWith('//')
+				|| typeof window === 'undefined'
+			) {
 				return href
 			}
-			return addressOfRoute(href, window.location.href, runtimeConfig()).toString()
+			return addressOfRoute(
+				href,
+				window.location.href,
+				runtimeConfig(),
+			).toString()
 		},
 
 		/**
@@ -971,7 +974,10 @@ export default {
 		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md
 		 */
 		fewerWordsTip() {
-			const words = String(this.query || '').trim().split(/\s+/).filter(Boolean)
+			const words = String(this.query || '')
+				.trim()
+				.split(/\s+/)
+				.filter(Boolean)
 			return words.length > 1
 				? this.emptyFewerWords.replace('{word}', words[words.length - 1])
 				: ''
@@ -1165,7 +1171,11 @@ export default {
 		this.readLocation()
 		// A link that carries a term and no order opens on relevance.
 		if (!new URLSearchParams(window.location.search).has('_sort')) {
-			this.sort = sortForNewSearch(this.query, this.sort, this.relevanceUnavailable)
+			this.sort = sortForNewSearch(
+				this.query,
+				this.sort,
+				this.relevanceUnavailable,
+			)
 		}
 		this.search()
 		window.addEventListener('popstate', this.onPopState)
@@ -1294,7 +1304,10 @@ export default {
 				// An unranked answer to a relevance order: the backend ignored
 				// it. Drop the option, say so once, search again in the default
 				// order (REQ-SSR-002).
-				if (this.sort === RELEVANCE_SORT && !relevanceApplied(body.results)) {
+				if (
+					this.sort === RELEVANCE_SORT
+					&& !relevanceApplied(body.results)
+				) {
 					this.relevanceUnavailable = true
 					this.relevanceNotice = 'Sorteren op relevantie kan hier niet.'
 					this.sort = ''
@@ -1381,7 +1394,11 @@ export default {
 			this.query = term || ''
 			this.reported = ''
 			this.relevanceNotice = ''
-			this.sort = sortForNewSearch(this.query, this.sort, this.relevanceUnavailable)
+			this.sort = sortForNewSearch(
+				this.query,
+				this.sort,
+				this.relevanceUnavailable,
+			)
 			// A new query invalidates the page number. Staying on page 7 of a
 			// previous search shows an empty list for a search that has
 			// results, which reads as "nothing found".

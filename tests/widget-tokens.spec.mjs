@@ -124,13 +124,14 @@ test('a token fallback is another token or a system colour, never a literal', ()
 		for (const match of withoutComments(styles(source)).matchAll(
 			/var\(\s*(--[a-z0-9-]+)\s*,([^)]*)\)/gi,
 		)) {
-			const fallback = match[2].trim()
+			// Prettier wraps a nested fallback over lines: `var(\n\t--x,`.
+			const fallback = match[2].replace(/\s+/g, ' ').trim()
 			if (fallback === '') {
 				continue
 			}
 
 			const sound =
-				fallback.startsWith('var(--')
+				/^var\(\s*--/.test(fallback)
 				|| /^(Canvas|CanvasText|LinkText|currentcolor|transparent|inherit|none)$/i.test(
 					fallback,
 				)
@@ -173,7 +174,7 @@ test('the check can fail, on both halves', () => {
 			.filter(
 				(fallback) =>
 					!(
-						fallback.startsWith('var(--')
+						/^var\(\s*--/.test(fallback)
 						|| /^(Canvas|CanvasText|LinkText|currentcolor|transparent)$/i.test(
 							fallback,
 						)
