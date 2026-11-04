@@ -54,6 +54,7 @@ use Throwable;
  * @uses   \OCA\Portaliq\Service\PortalObjectWriter
  * @uses   \OCA\Portaliq\Service\ObjectServiceLookup
  * @uses   \OCA\Portaliq\Service\ObjectRowNormaliser
+ * @uses   \OCA\Portaliq\Service\Tenancy\PortalTenantContext
  */
 class StaffAuthoringGoldenTest extends TestCase {
 

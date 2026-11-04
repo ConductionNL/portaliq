@@ -65,7 +65,6 @@ class ObjectServiceLookupGoldenTest extends TestCase {
 		'OCA\\Portaliq\\Service\\EventFeedReader',
 		'OCA\\Portaliq\\Service\\Notifications\\QuietHoursPolicy',
 		'OCA\\Portaliq\\Service\\Notifications\\PendingPushService',
-		'OCA\\Portaliq\\Service\\Identity\\PortalAccountsByClaim',
 		'OCA\\Portaliq\\Service\\ExampleResident\\ExampleResidentStore',
 		'OCA\\Portaliq\\Service\\Messaging\\MessageStore',
 		'OCA\\Portaliq\\Service\\Availability\\AvailabilityStore',

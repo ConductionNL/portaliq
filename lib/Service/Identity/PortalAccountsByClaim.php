@@ -35,7 +35,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use OCA\Portaliq\Event\PortalClaimScopeEvent;
-use OCA\Portaliq\Service\ObjectServiceLookup;
+use OCA\Portaliq\Service\Tenancy\ActsForTheOrganisation;
 use OCA\Portaliq\Service\Tenancy\ClaimScopeCheck;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -47,14 +47,7 @@ use Throwable;
  * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
  */
 class PortalAccountsByClaim {
-	use ObjectServiceLookup;
-
-	/**
-	 * OpenRegister's object service, resolved by name.
-	 *
-	 * @var string
-	 */
-	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
+	use ActsForTheOrganisation;
 
 	/**
 	 * The register the accounts live in.
@@ -85,7 +78,7 @@ class PortalAccountsByClaim {
 	private const MAX_PAGES = 40;
 
 	/**
-	 * Per `app|claim`: claim value to the accounts holding it.
+	 * Per `app|claim|organisation`: claim value to the accounts holding it.
 	 *
 	 * @var array<string, array<string, array<int, array<string, mixed>>>>
 	 */
@@ -106,22 +99,31 @@ class PortalAccountsByClaim {
 	/**
 	 * The active accounts whose claim `$claim` of `$appId` is `$value`.
 	 *
-	 * @param string $appId The app whose claim it is.
-	 * @param string $claim The claim name.
-	 * @param string $value The value the record holds.
+	 * The accounts are listed acting for the record's organisation, so only
+	 * that organisation's accounts are read. A record without one lists as
+	 * before.
+	 *
+	 * @param string $appId        The app whose claim it is.
+	 * @param string $claim        The claim name.
+	 * @param string $value        The value the record holds.
+	 * @param string $organisation The record's organisation uuid, or ''.
 	 *
 	 * @return array<int, array<string, mixed>> The accounts; empty when none or OpenRegister is unavailable.
 	 *
 	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+	 * @spec openspec/changes/portal-acts-for-its-organisation/specs/portal-tenancy/spec.md#requirement-claim-addressed-recipients-are-found-in-the-records-organisation-req-pao-003
 	 */
-	public function find(string $appId, string $claim, string $value): array {
+	public function find(string $appId, string $claim, string $value, string $organisation=''): array {
 		if ($appId === '' || $claim === '' || $value === '') {
 			return [];
 		}
 
-		$key = $appId.'|'.$claim;
+		$key = $appId.'|'.$claim.'|'.$organisation;
 		if (isset($this->byValue[$key]) === false) {
-			$this->byValue[$key] = $this->index(appId: $appId, claim: $claim);
+			$this->byValue[$key] = $this->index(
+				address: ['appId' => $appId, 'claimName' => $claim],
+				objectService: $this->actingObjectServiceForUuid(organisationUuid: $organisation)
+			);
 		}
 
 		return ($this->byValue[$key][$value] ?? []);
@@ -130,13 +132,12 @@ class PortalAccountsByClaim {
 	/**
 	 * Every active account holding the app claim, by its value.
 	 *
-	 * @param string $appId The app.
-	 * @param string $claim The claim.
+	 * @param array{appId: string, claimName: string} $address       The claim's app and name.
+	 * @param object|null                             $objectService The object service to list with, or null.
 	 *
 	 * @return array<string, array<int, array<string, mixed>>>
 	 */
-	private function index(string $appId, string $claim): array {
-		$objectService = $this->objectService();
+	private function index(array $address, ?object $objectService): array {
 		if ($objectService === null) {
 			return [];
 		}
@@ -146,9 +147,9 @@ class PortalAccountsByClaim {
 			$rows = $this->page(objectService: $objectService, offset: ($page * self::PAGE));
 			foreach ($rows as $row) {
 				$account = $this->activeAccount(row: $row);
-				$held = ($account['claims'][$appId][$claim] ?? null);
+				$held = ($account['claims'][$address['appId']][$address['claimName']] ?? null);
 				$admitted = ($account !== null && is_string($held) === true && $held !== '');
-				if ($admitted === true && $this->admitted(address: ['appId' => $appId, 'claimName' => $claim], account: $account) === true) {
+				if ($admitted === true && $this->admitted(address: $address, account: $account) === true) {
 					$index[$held][] = $account;
 				}
 			}

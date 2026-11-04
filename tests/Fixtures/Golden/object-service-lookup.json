@@ -175,14 +175,6 @@
             "OCA\\OpenRegister\\Service\\ObjectService"
         ]
     },
-    "OCA\\Portaliq\\Service\\Identity\\PortalAccountsByClaim": {
-        "object": true,
-        "throws": null,
-        "string": null,
-        "asked": [
-            "OCA\\OpenRegister\\Service\\ObjectService"
-        ]
-    },
     "OCA\\Portaliq\\Service\\ExampleResident\\ExampleResidentStore": {
         "object": true,
         "throws": null,

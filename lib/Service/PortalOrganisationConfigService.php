@@ -555,8 +555,10 @@ class PortalOrganisationConfigService {
 	 * @param string $slug The organisation slug.
 	 *
 	 * @return array{uuid: string, name: string}|null
+	 *
+	 * @spec openspec/changes/portal-acts-for-its-organisation/specs/portal-tenancy/spec.md#requirement-a-portal-read-or-write-runs-as-its-organisation-req-pao-001
 	 */
-	private function findOrganisationBySlug(string $slug): ?array {
+	public function findOrganisationBySlug(string $slug): ?array {
 		$mapper = $this->organisationMapper();
 		if ($mapper === null || method_exists($mapper, 'findBySlug') === false) {
 			return null;

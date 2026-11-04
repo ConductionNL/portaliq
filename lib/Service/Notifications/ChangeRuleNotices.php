@@ -93,25 +93,27 @@ class ChangeRuleNotices {
 	 * @param string               $claim      The app's claim name.
 	 * @param array<string, mixed> $collection The rule's collection.
 	 * @param array<string, mixed> $data       The record after the change.
-	 * @param string               $recordId   The record's uuid.
+	 * @param array{id: string, organisation: string} $record The record's uuid and organisation uuid.
 	 *
 	 * @return array<int, array{account: array<string, mixed>, row: array<string, mixed>}>
 	 *
 	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+	 * @spec openspec/changes/portal-acts-for-its-organisation/specs/portal-tenancy/spec.md#requirement-claim-addressed-recipients-are-found-in-the-records-organisation-req-pao-003
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- each argument is one
 	 * part of the declared rule; an options array would hide which one a
 	 * caller forgot.
 	 */
-	public function recipients(string $appId, string $field, string $claim, array $collection, array $data, string $recordId): array {
-		$value = ($data[$field] ?? null);
+	public function recipients(string $appId, string $field, string $claim, array $collection, array $data, array $record): array {
+		$value    = ($data[$field] ?? null);
+		$recordId = $record['id'];
 		if (is_string($value) === false || $value === '' || $recordId === '') {
 			return [];
 		}
 
 		$recipients = [];
 		$seen = [];
-		foreach ($this->accounts->find(appId: $appId, claim: $claim, value: $value) as $account) {
+		foreach ($this->accounts->find(appId: $appId, claim: $claim, value: $value, organisation: $record['organisation']) as $account) {
 			$subjectRef = (string)($account['subjectRef'] ?? '');
 			if (isset($seen[$subjectRef]) === true) {
 				continue;
