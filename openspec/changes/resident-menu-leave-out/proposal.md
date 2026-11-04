@@ -1,6 +1,6 @@
 ## Why
 
-The school boards' own area (De Wilgenboom MijnMenu, MijnOverzicht) has no "Zaken en taken"
+The school boards' own area (De Wilgenboom MijnMenu, MijnOverzicht) has no "Mijn zaken en verzoeken"
 group. The proof (06 Oct, item 11) showed it on every school portal: "Mijn taken" and "Toegang tot
 zaken". Portaliq builds that group itself from shell sections that are on for every signed-in
 resident (`tasks` whenever the task seam is there, `access` for every session), and the portal's
