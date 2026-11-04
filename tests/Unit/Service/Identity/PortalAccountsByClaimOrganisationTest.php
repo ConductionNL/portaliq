@@ -40,8 +40,18 @@ use Psr\Log\NullLogger;
 class PortalAccountsByClaimOrganisationTest extends TestCase {
 	use TenantHarness;
 
+	/**
+	 * Object service.
+	 *
+	 * @var ActingObjectService
+	 */
 	private ActingObjectService $objectService;
 
+	/**
+	 * Builds the fixture for each test.
+	 *
+	 * @return void
+	 */
 	protected function setUp(): void {
 		$this->objectService = new ActingObjectService();
 		$this->objectService->rows = [
@@ -51,19 +61,34 @@ class PortalAccountsByClaimOrganisationTest extends TestCase {
 		];
 	}//end setUp()
 
+	/**
+	 * The accounts are listed acting for the records organisation.
+	 *
+	 * @return void
+	 */
 	public function testTheAccountsAreListedActingForTheRecordsOrganisation(): void {
 		$accounts = $this->accounts()->find(appId: 'learniq', claim: 'guardianRef', value: 'g-1', organisation: 'uuid-school-a');
 
-		$this->assertSame(['acc-1'], array_column($accounts, 'id'));
-		$this->assertSame(['uuid-school-a'], $this->objectService->actedFor(method: 'findAll'));
+		$this->assertSame(expected: ['acc-1'], actual: array_column($accounts, 'id'));
+		$this->assertSame(expected: ['uuid-school-a'], actual: $this->objectService->actedFor(method: 'findAll'));
 	}//end testTheAccountsAreListedActingForTheRecordsOrganisation()
 
+	/**
+	 * Arecord without an organisation lists as before.
+	 *
+	 * @return void
+	 */
 	public function testARecordWithoutAnOrganisationListsAsBefore(): void {
 		$this->accounts()->find(appId: 'learniq', claim: 'guardianRef', value: 'g-1');
 
-		$this->assertSame([null], $this->objectService->actedFor(method: 'findAll'));
+		$this->assertSame(expected: [null], actual: $this->objectService->actedFor(method: 'findAll'));
 	}//end testARecordWithoutAnOrganisationListsAsBefore()
 
+	/**
+	 * Each organisation gets its own listing.
+	 *
+	 * @return void
+	 */
 	public function testEachOrganisationGetsItsOwnListing(): void {
 		$accounts = $this->accounts();
 
@@ -71,7 +96,7 @@ class PortalAccountsByClaimOrganisationTest extends TestCase {
 		$accounts->find(appId: 'learniq', claim: 'guardianRef', value: 'g-1', organisation: 'uuid-school-a');
 		$accounts->find(appId: 'learniq', claim: 'guardianRef', value: 'g-1', organisation: 'uuid-school-b');
 
-		$this->assertSame(['uuid-school-a', 'uuid-school-b'], $this->objectService->actedFor(method: 'findAll'));
+		$this->assertSame(expected: ['uuid-school-a', 'uuid-school-b'], actual: $this->objectService->actedFor(method: 'findAll'));
 	}//end testEachOrganisationGetsItsOwnListing()
 
 	/**

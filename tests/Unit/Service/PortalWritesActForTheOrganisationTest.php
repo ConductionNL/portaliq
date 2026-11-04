@@ -39,8 +39,18 @@ use Psr\Log\NullLogger;
 class PortalWritesActForTheOrganisationTest extends TestCase {
 	use TenantHarness;
 
+	/**
+	 * Object service.
+	 *
+	 * @var ActingObjectService
+	 */
 	private ActingObjectService $objectService;
 
+	/**
+	 * Builds the fixture for each test.
+	 *
+	 * @return void
+	 */
 	protected function setUp(): void {
 		$this->objectService = new ActingObjectService();
 		$this->objectService->found = [
@@ -48,47 +58,77 @@ class PortalWritesActForTheOrganisationTest extends TestCase {
 		];
 	}//end setUp()
 
+	/**
+	 * Acreate is written acting for the portal organisation.
+	 *
+	 * @return void
+	 */
 	public function testACreateIsWrittenActingForThePortalOrganisation(): void {
 		$saved = $this->writer()->createObject('portaliq', 'portalMessage', 'subjectRef', 's1', 'gemeente-a', ['title' => 'X']);
 
-		$this->assertSame('gemeente-a', $saved['organisation']);
-		$this->assertSame(['uuid-a'], $this->objectService->actedFor(method: 'saveObject'));
+		$this->assertSame(expected: 'gemeente-a', actual: $saved['organisation']);
+		$this->assertSame(expected: ['uuid-a'], actual: $this->objectService->actedFor(method: 'saveObject'));
 	}//end testACreateIsWrittenActingForThePortalOrganisation()
 
+	/**
+	 * An update reads and writes acting for the portal organisation.
+	 *
+	 * @return void
+	 */
 	public function testAnUpdateReadsAndWritesActingForThePortalOrganisation(): void {
 		$saved = $this->writer()->updateObject('portaliq', 'portalMessage', 'subjectRef', 's1', 'gemeente-a', 'row-1', ['status' => 'read']);
 
-		$this->assertSame('read', $saved['status']);
-		$this->assertSame(['uuid-a'], $this->objectService->actedFor(method: 'find'));
-		$this->assertSame(['uuid-a'], $this->objectService->actedFor(method: 'saveObject'));
+		$this->assertSame(expected: 'read', actual: $saved['status']);
+		$this->assertSame(expected: ['uuid-a'], actual: $this->objectService->actedFor(method: 'find'));
+		$this->assertSame(expected: ['uuid-a'], actual: $this->objectService->actedFor(method: 'saveObject'));
 	}//end testAnUpdateReadsAndWritesActingForThePortalOrganisation()
 
+	/**
+	 * Adelete reads and deletes acting for the portal organisation.
+	 *
+	 * @return void
+	 */
 	public function testADeleteReadsAndDeletesActingForThePortalOrganisation(): void {
-		$this->assertTrue($this->writer()->deleteObject('portaliq', 'portalMessage', 'subjectRef', 's1', 'gemeente-a', 'row-1'));
+		$this->assertTrue(condition: $this->writer()->deleteObject('portaliq', 'portalMessage', 'subjectRef', 's1', 'gemeente-a', 'row-1'));
 
-		$this->assertSame(['uuid-a'], $this->objectService->actedFor(method: 'find'));
-		$this->assertSame(['uuid-a'], $this->objectService->actedFor(method: 'deleteObject'));
+		$this->assertSame(expected: ['uuid-a'], actual: $this->objectService->actedFor(method: 'find'));
+		$this->assertSame(expected: ['uuid-a'], actual: $this->objectService->actedFor(method: 'deleteObject'));
 	}//end testADeleteReadsAndDeletesActingForThePortalOrganisation()
 
+	/**
+	 * An anonymous submission is written as before.
+	 *
+	 * @return void
+	 */
 	public function testAnAnonymousSubmissionIsWrittenAsBefore(): void {
 		$this->writer()->createAnonymousObject('portaliq', 'landingPageSubmission', ['name' => 'Anna']);
 
-		$this->assertSame([null], $this->objectService->actedFor(method: 'saveObject'));
+		$this->assertSame(expected: [null], actual: $this->objectService->actedFor(method: 'saveObject'));
 	}//end testAnAnonymousSubmissionIsWrittenAsBefore()
 
+	/**
+	 * Awrite without an organisation runs as before.
+	 *
+	 * @return void
+	 */
 	public function testAWriteWithoutAnOrganisationRunsAsBefore(): void {
 		$this->writer()->createObject('portaliq', 'portalMessage', 'subjectRef', 's1', '', ['title' => 'X']);
 
-		$this->assertSame([null], $this->objectService->actedFor(method: 'saveObject'));
+		$this->assertSame(expected: [null], actual: $this->objectService->actedFor(method: 'saveObject'));
 	}//end testAWriteWithoutAnOrganisationRunsAsBefore()
 
+	/**
+	 * Aslug that names no organisation writes nothing.
+	 *
+	 * @return void
+	 */
 	public function testASlugThatNamesNoOrganisationWritesNothing(): void {
 		$writer = $this->writer();
 
-		$this->assertNull($writer->createObject('portaliq', 'portalMessage', 'subjectRef', 's1', 'onbekend', ['title' => 'X']));
-		$this->assertNull($writer->updateObject('portaliq', 'portalMessage', 'subjectRef', 's1', 'onbekend', 'row-1', ['status' => 'read']));
-		$this->assertFalse($writer->deleteObject('portaliq', 'portalMessage', 'subjectRef', 's1', 'onbekend', 'row-1'));
-		$this->assertSame([], $this->objectService->calls);
+		$this->assertNull(actual: $writer->createObject('portaliq', 'portalMessage', 'subjectRef', 's1', 'onbekend', ['title' => 'X']));
+		$this->assertNull(actual: $writer->updateObject('portaliq', 'portalMessage', 'subjectRef', 's1', 'onbekend', 'row-1', ['status' => 'read']));
+		$this->assertFalse(condition: $writer->deleteObject('portaliq', 'portalMessage', 'subjectRef', 's1', 'onbekend', 'row-1'));
+		$this->assertSame(expected: [], actual: $this->objectService->calls);
 	}//end testASlugThatNamesNoOrganisationWritesNothing()
 
 	/**
@@ -97,6 +137,6 @@ class PortalWritesActForTheOrganisationTest extends TestCase {
 	 * @return PortalObjectWriter
 	 */
 	private function writer(): PortalObjectWriter {
-		return new PortalObjectWriter($this->tenantContainer(objectService: $this->objectService), new NullLogger());
+		return new PortalObjectWriter(container: $this->tenantContainer(objectService: $this->objectService), logger: new NullLogger());
 	}//end writer()
 }//end class

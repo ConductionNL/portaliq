@@ -41,7 +41,7 @@ trait TenantHarness {
 	 * @return ContainerInterface
 	 */
 	private function tenantContainer(object $objectService): ContainerInterface {
-		$organisations = $this->createMock(PortalOrganisationConfigService::class);
+		$organisations = $this->createMock(originalClassName: PortalOrganisationConfigService::class);
 		$organisations->method('findOrganisationBySlug')->willReturnCallback(
 			static function (string $slug): ?array {
 				$known = ['gemeente-a' => 'uuid-a', 'gemeente-b' => 'uuid-b'];
@@ -56,10 +56,10 @@ trait TenantHarness {
 		$services = [
 			'OCA\\OpenRegister\\Service\\ObjectService' => $objectService,
 			PortalOrganisationConfigService::class    => $organisations,
-			IEventDispatcher::class                   => $this->createMock(IEventDispatcher::class),
+			IEventDispatcher::class                   => $this->createMock(originalClassName: IEventDispatcher::class),
 		];
 
-		$container = $this->createMock(ContainerInterface::class);
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
 			static function (string $id) use ($services): object {
 				if (isset($services[$id]) === true) {

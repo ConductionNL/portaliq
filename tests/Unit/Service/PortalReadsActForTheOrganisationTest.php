@@ -45,8 +45,18 @@ use Psr\Log\NullLogger;
 class PortalReadsActForTheOrganisationTest extends TestCase {
 	use TenantHarness;
 
+	/**
+	 * Object service.
+	 *
+	 * @var ActingObjectService
+	 */
 	private ActingObjectService $objectService;
 
+	/**
+	 * Builds the fixture for each test.
+	 *
+	 * @return void
+	 */
 	protected function setUp(): void {
 		$this->objectService = new ActingObjectService();
 		$this->objectService->rows = [
@@ -55,7 +65,13 @@ class PortalReadsActForTheOrganisationTest extends TestCase {
 				['id' => 'm-2', 'subjectRef' => 's1', 'organisation' => 'onbekend', 'title' => 'Unknown portal'],
 			],
 			'portalAccount' => [
-				['id' => 'acc-1', 'subjectRef' => 's1', 'audience' => 'resident', 'organisation' => 'gemeente-a', 'claims' => ['learniq' => ['guardianRef' => 'g-1']]],
+				[
+					'id' => 'acc-1',
+					'subjectRef' => 's1',
+					'audience' => 'resident',
+					'organisation' => 'gemeente-a',
+					'claims' => ['learniq' => ['guardianRef' => 'g-1']],
+				],
 			],
 			'guardianNote' => [
 				['id' => 'n-1', 'guardianRef' => 'g-1', 'organisation' => 'gemeente-a'],
@@ -64,14 +80,24 @@ class PortalReadsActForTheOrganisationTest extends TestCase {
 		$this->objectService->found = ['m-1' => $this->objectService->rows['portalMessage'][0]];
 	}//end setUp()
 
+	/**
+	 * Acollection is read acting for the portal organisation.
+	 *
+	 * @return void
+	 */
 	public function testACollectionIsReadActingForThePortalOrganisation(): void {
 		$rows = $this->reader()->readCollection('portaliq', 'portalMessage', 'subjectRef', 's1', 'gemeente-a');
 
-		$this->assertSame(['m-1'], array_column($rows, 'id'));
-		$this->assertSame(['uuid-a'], $this->objectService->actedFor(method: 'findAll'));
-		$this->assertSame(['uuid-a'], $this->objectService->actedFor(method: 'setSchema'));
+		$this->assertSame(expected: ['m-1'], actual: array_column($rows, 'id'));
+		$this->assertSame(expected: ['uuid-a'], actual: $this->objectService->actedFor(method: 'findAll'));
+		$this->assertSame(expected: ['uuid-a'], actual: $this->objectService->actedFor(method: 'setSchema'));
 	}//end testACollectionIsReadActingForThePortalOrganisation()
 
+	/**
+	 * The claim read and the collection read both act for the organisation.
+	 *
+	 * @return void
+	 */
 	public function testTheClaimReadAndTheCollectionReadBothActForTheOrganisation(): void {
 		$rows = $this->reader()->readCollection(
 			register: 'learniq',
@@ -83,24 +109,39 @@ class PortalReadsActForTheOrganisationTest extends TestCase {
 			audience: 'resident'
 		);
 
-		$this->assertSame(['n-1'], array_column($rows, 'id'));
-		$this->assertSame(['uuid-a', 'uuid-a'], $this->objectService->actedFor(method: 'findAll'));
+		$this->assertSame(expected: ['n-1'], actual: array_column($rows, 'id'));
+		$this->assertSame(expected: ['uuid-a', 'uuid-a'], actual: $this->objectService->actedFor(method: 'findAll'));
 	}//end testTheClaimReadAndTheCollectionReadBothActForTheOrganisation()
 
+	/**
+	 * Ascoped page is read acting for the portal organisation.
+	 *
+	 * @return void
+	 */
 	public function testAScopedPageIsReadActingForThePortalOrganisation(): void {
 		$page = $this->reader()->readScopedPage('portaliq', 'portalMessage', 'subjectRef', 's1', 'gemeente-a', [], 10, 0);
 
-		$this->assertSame(['m-1'], array_column($page['rows'], 'id'));
-		$this->assertSame(['uuid-a'], $this->objectService->actedFor(method: 'findAll'));
+		$this->assertSame(expected: ['m-1'], actual: array_column($page['rows'], 'id'));
+		$this->assertSame(expected: ['uuid-a'], actual: $this->objectService->actedFor(method: 'findAll'));
 	}//end testAScopedPageIsReadActingForThePortalOrganisation()
 
+	/**
+	 * One row is read acting for the portal organisation.
+	 *
+	 * @return void
+	 */
 	public function testOneRowIsReadActingForThePortalOrganisation(): void {
 		$row = $this->reader()->readObject('portaliq', 'portalMessage', 'subjectRef', 's1', 'm-1', 'gemeente-a');
 
-		$this->assertSame('m-1', $row['id']);
-		$this->assertSame(['uuid-a'], $this->objectService->actedFor(method: 'find'));
+		$this->assertSame(expected: 'm-1', actual: $row['id']);
+		$this->assertSame(expected: ['uuid-a'], actual: $this->objectService->actedFor(method: 'find'));
 	}//end testOneRowIsReadActingForThePortalOrganisation()
 
+	/**
+	 * The write scope claim is resolved acting for the organisation.
+	 *
+	 * @return void
+	 */
 	public function testTheWriteScopeClaimIsResolvedActingForTheOrganisation(): void {
 		$value = $this->reader()->resolveScopeValue(
 			scopeClaim: 'learniq.guardianRef',
@@ -108,29 +149,44 @@ class PortalReadsActForTheOrganisationTest extends TestCase {
 			subject: ['subjectRef' => 's1', 'audience' => 'resident', 'organisation' => 'gemeente-a']
 		);
 
-		$this->assertSame('g-1', $value);
-		$this->assertSame(['uuid-a'], $this->objectService->actedFor(method: 'findAll'));
+		$this->assertSame(expected: 'g-1', actual: $value);
+		$this->assertSame(expected: ['uuid-a'], actual: $this->objectService->actedFor(method: 'findAll'));
 	}//end testTheWriteScopeClaimIsResolvedActingForTheOrganisation()
 
+	/**
+	 * An anonymous collection is read as before.
+	 *
+	 * @return void
+	 */
 	public function testAnAnonymousCollectionIsReadAsBefore(): void {
 		$this->reader()->readPublicCollection('portaliq', 'portalMessage', 'gemeente-a');
 
-		$this->assertSame([null], $this->objectService->actedFor(method: 'findAll'));
+		$this->assertSame(expected: [null], actual: $this->objectService->actedFor(method: 'findAll'));
 	}//end testAnAnonymousCollectionIsReadAsBefore()
 
+	/**
+	 * Aread without an organisation runs as before.
+	 *
+	 * @return void
+	 */
 	public function testAReadWithoutAnOrganisationRunsAsBefore(): void {
 		$this->reader()->readCollection('portaliq', 'portalMessage', 'subjectRef', 's1');
 
-		$this->assertSame([null], $this->objectService->actedFor(method: 'findAll'));
+		$this->assertSame(expected: [null], actual: $this->objectService->actedFor(method: 'findAll'));
 	}//end testAReadWithoutAnOrganisationRunsAsBefore()
 
+	/**
+	 * Aslug that names no organisation reads nothing.
+	 *
+	 * @return void
+	 */
 	public function testASlugThatNamesNoOrganisationReadsNothing(): void {
 		$reader = $this->reader();
 
-		$this->assertSame([], $reader->readCollection('portaliq', 'portalMessage', 'subjectRef', 's1', 'onbekend'));
-		$this->assertNull($reader->readScopedPage('portaliq', 'portalMessage', 'subjectRef', 's1', 'onbekend', [], 10, 0));
-		$this->assertNull($reader->readObject('portaliq', 'portalMessage', 'subjectRef', 's1', 'm-1', 'onbekend'));
-		$this->assertSame([], $this->objectService->calls);
+		$this->assertSame(expected: [], actual: $reader->readCollection('portaliq', 'portalMessage', 'subjectRef', 's1', 'onbekend'));
+		$this->assertNull(actual: $reader->readScopedPage('portaliq', 'portalMessage', 'subjectRef', 's1', 'onbekend', [], 10, 0));
+		$this->assertNull(actual: $reader->readObject('portaliq', 'portalMessage', 'subjectRef', 's1', 'm-1', 'onbekend'));
+		$this->assertSame(expected: [], actual: $this->objectService->calls);
 	}//end testASlugThatNamesNoOrganisationReadsNothing()
 
 	/**
@@ -140,9 +196,9 @@ class PortalReadsActForTheOrganisationTest extends TestCase {
 	 */
 	private function reader(): PortalObjectReader {
 		return new PortalObjectReader(
-			$this->tenantContainer(objectService: $this->objectService),
-			new NullLogger(),
-			new PortalFieldProjector(new NullLogger())
+			container: $this->tenantContainer(objectService: $this->objectService),
+			logger: new NullLogger(),
+			projector: new PortalFieldProjector(logger: new NullLogger())
 		);
 	}//end reader()
 }//end class

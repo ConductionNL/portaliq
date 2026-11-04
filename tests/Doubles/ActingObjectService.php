@@ -92,6 +92,8 @@ class ActingObjectService {
 
 	/**
 	 * @param mixed $register The register.
+	 *
+	 * @return static
 	 */
 	public function setRegister(mixed $register): static {
 		$this->record(method: 'setRegister');
@@ -100,6 +102,8 @@ class ActingObjectService {
 
 	/**
 	 * @param mixed $schema The schema.
+	 *
+	 * @return static
 	 */
 	public function setSchema(mixed $schema): static {
 		$this->record(method: 'setSchema');
@@ -108,7 +112,9 @@ class ActingObjectService {
 	}//end setSchema()
 
 	/**
-	 * @param array<string, mixed> $config The query.
+	 * @param array<string, mixed> $config        The query.
+	 * @param bool                 $_rbac         Unused.
+	 * @param bool                 $_multitenancy Unused.
 	 *
 	 * @return array<int, mixed>
 	 */
@@ -118,7 +124,17 @@ class ActingObjectService {
 	}//end findAll()
 
 	/**
-	 * @param int|string $id The id.
+	 * @param int|string $id            The id.
+	 * @param array|null $_extend       Unused.
+	 * @param bool       $files         Unused.
+	 * @param mixed      $register      Unused.
+	 * @param mixed      $schema        Unused.
+	 * @param bool       $_rbac         Unused.
+	 * @param bool       $_multitenancy Unused.
+	 * @param bool       $_render       Unused.
+	 * @param bool       $_audit        Unused.
+	 *
+	 * @return mixed
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList)
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
@@ -139,7 +155,13 @@ class ActingObjectService {
 	}//end find()
 
 	/**
-	 * @param array<string, mixed> $object The object.
+	 * @param array<string, mixed> $object        The object.
+	 * @param array|null           $extend        Unused.
+	 * @param mixed                $register      Unused.
+	 * @param mixed                $schema        Unused.
+	 * @param string|null          $uuid          The uuid.
+	 * @param bool                 $_rbac         Unused.
+	 * @param bool                 $_multitenancy Unused.
 	 *
 	 * @return array<string, mixed>
 	 *
@@ -160,7 +182,13 @@ class ActingObjectService {
 	}//end saveObject()
 
 	/**
-	 * @param string $uuid The uuid.
+	 * @param string $uuid          The uuid.
+	 * @param mixed  $register      Unused.
+	 * @param mixed  $schema        Unused.
+	 * @param bool   $_rbac         Unused.
+	 * @param bool   $_multitenancy Unused.
+	 *
+	 * @return bool
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
 	 */

@@ -48,22 +48,32 @@ class PortalTenantContextTest extends TestCase {
 	 */
 	private array $lookups = [];
 
+	/**
+	 * Aknown slug acts for its organisation on every call.
+	 *
+	 * @return void
+	 */
 	public function testAKnownSlugActsForItsOrganisationOnEveryCall(): void {
 		$objectService = new ActingObjectService();
 		$scoped = $this->context(objectService: $objectService)->objectServiceFor(organisation: 'gemeente-a');
 
-		$this->assertInstanceOf(OrganisationScopedObjectService::class, $scoped);
+		$this->assertInstanceOf(expected: OrganisationScopedObjectService::class, actual: $scoped);
 		$scoped->setRegister(register: 'portaliq');
 		$scoped->setSchema(schema: 'portalMessage');
 		$scoped->findAll(config: ['limit' => 3], _rbac: false, _multitenancy: false);
 
 		$this->assertSame(
-			[['setRegister', 'uuid-a'], ['setSchema', 'uuid-a'], ['findAll', 'uuid-a']],
-			$objectService->calls
+			expected: [['setRegister', 'uuid-a'], ['setSchema', 'uuid-a'], ['findAll', 'uuid-a']],
+			actual: $objectService->calls
 		);
-		$this->assertNull($objectService->actingFor, 'the context is left after each call');
+		$this->assertNull(actual: $objectService->actingFor, message: 'the context is left after each call');
 	}//end testAKnownSlugActsForItsOrganisationOnEveryCall()
 
+	/**
+	 * Arguments and the answer pass through unchanged.
+	 *
+	 * @return void
+	 */
 	public function testArgumentsAndTheAnswerPassThroughUnchanged(): void {
 		$objectService = new ActingObjectService();
 		$scoped = $this->context(objectService: $objectService)->objectServiceFor(organisation: 'gemeente-a');
@@ -71,59 +81,98 @@ class PortalTenantContextTest extends TestCase {
 		$saved = $scoped->saveObject(object: ['title' => 'X'], register: 'portaliq', schema: 'portalMessage', uuid: 'row-1', _rbac: false);
 		$positional = $scoped->saveObject(['title' => 'Y']);
 
-		$this->assertSame(['title' => 'X', 'id' => 'row-1'], $saved);
-		$this->assertSame(['title' => 'Y', 'id' => 'new-1'], $positional);
-		$this->assertSame([['title' => 'X'], ['title' => 'Y']], $objectService->saves);
+		$this->assertSame(expected: ['title' => 'X', 'id' => 'row-1'], actual: $saved);
+		$this->assertSame(expected: ['title' => 'Y', 'id' => 'new-1'], actual: $positional);
+		$this->assertSame(expected: [['title' => 'X'], ['title' => 'Y']], actual: $objectService->saves);
 	}//end testArgumentsAndTheAnswerPassThroughUnchanged()
 
+	/**
+	 * An exception of the call reaches the caller.
+	 *
+	 * @return void
+	 */
 	public function testAnExceptionOfTheCallReachesTheCaller(): void {
 		$objectService = new class extends ActingObjectService {
+			/**
+			 * Find all.
+			 *
+			 * @param array $config The config.
+			 * @param bool $_rbac The _rbac.
+			 * @param bool $_multitenancy The _multitenancy.
+			 *
+			 * @return array
+			 */
 			public function findAll(array $config = [], bool $_rbac = true, bool $_multitenancy = true): array {
 				throw new RuntimeException('store down');
 			}
 		};
 		$scoped = $this->context(objectService: $objectService)->objectServiceFor(organisation: 'gemeente-a');
 
-		$this->expectExceptionMessage('store down');
+		$this->expectExceptionMessage(message: 'store down');
 		$scoped->findAll();
 	}//end testAnExceptionOfTheCallReachesTheCaller()
 
+	/**
+	 * Aslug that names no organisation gets no service.
+	 *
+	 * @return void
+	 */
 	public function testASlugThatNamesNoOrganisationGetsNoService(): void {
 		$objectService = new ActingObjectService();
 
-		$this->assertNull($this->context(objectService: $objectService)->objectServiceFor(organisation: 'onbekend'));
-		$this->assertSame([], $objectService->calls);
+		$this->assertNull(actual: $this->context(objectService: $objectService)->objectServiceFor(organisation: 'onbekend'));
+		$this->assertSame(expected: [], actual: $objectService->calls);
 	}//end testASlugThatNamesNoOrganisationGetsNoService()
 
+	/**
+	 * No organisation gets the plain service.
+	 *
+	 * @return void
+	 */
 	public function testNoOrganisationGetsThePlainService(): void {
 		$objectService = new ActingObjectService();
 		$context = $this->context(objectService: $objectService);
 
-		$this->assertSame($objectService, $context->objectServiceFor(organisation: ''));
-		$this->assertSame($objectService, $context->objectServiceForUuid(organisationUuid: ''));
-		$this->assertSame([], $this->lookups);
+		$this->assertSame(expected: $objectService, actual: $context->objectServiceFor(organisation: ''));
+		$this->assertSame(expected: $objectService, actual: $context->objectServiceForUuid(organisationUuid: ''));
+		$this->assertSame(expected: [], actual: $this->lookups);
 	}//end testNoOrganisationGetsThePlainService()
 
+	/**
+	 * An open register that cannot act for an organisation gets the plain service.
+	 *
+	 * @return void
+	 */
 	public function testAnOpenRegisterThatCannotActForAnOrganisationGetsThePlainService(): void {
 		$objectService = new stdClass();
 		$context = $this->context(objectService: $objectService);
 
-		$this->assertSame($objectService, $context->objectServiceFor(organisation: 'gemeente-a'));
-		$this->assertSame($objectService, $context->objectServiceForUuid(organisationUuid: 'uuid-a'));
+		$this->assertSame(expected: $objectService, actual: $context->objectServiceFor(organisation: 'gemeente-a'));
+		$this->assertSame(expected: $objectService, actual: $context->objectServiceForUuid(organisationUuid: 'uuid-a'));
 	}//end testAnOpenRegisterThatCannotActForAnOrganisationGetsThePlainService()
 
+	/**
+	 * Without open register there is no service.
+	 *
+	 * @return void
+	 */
 	public function testWithoutOpenRegisterThereIsNoService(): void {
-		$container = $this->createMock(ContainerInterface::class);
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
 		$container->method('get')->willThrowException(new RuntimeException('no openregister'));
 		$context = new PortalTenantContext(container: $container, logger: new NullLogger());
 
-		$this->assertNull($context->objectServiceFor(organisation: 'gemeente-a'));
-		$this->assertNull($context->objectServiceForUuid(organisationUuid: 'uuid-a'));
+		$this->assertNull(actual: $context->objectServiceFor(organisation: 'gemeente-a'));
+		$this->assertNull(actual: $context->objectServiceForUuid(organisationUuid: 'uuid-a'));
 	}//end testWithoutOpenRegisterThereIsNoService()
 
+	/**
+	 * Without the organisation lookup the plain service is used.
+	 *
+	 * @return void
+	 */
 	public function testWithoutTheOrganisationLookupThePlainServiceIsUsed(): void {
 		$objectService = new ActingObjectService();
-		$container = $this->createMock(ContainerInterface::class);
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
 			static function (string $id) use ($objectService): object {
 				if ($id === self::OS) {
@@ -136,19 +185,29 @@ class PortalTenantContextTest extends TestCase {
 
 		$context = new PortalTenantContext(container: $container, logger: new NullLogger());
 
-		$this->assertSame($objectService, $context->objectServiceFor(organisation: 'gemeente-a'));
+		$this->assertSame(expected: $objectService, actual: $context->objectServiceFor(organisation: 'gemeente-a'));
 	}//end testWithoutTheOrganisationLookupThePlainServiceIsUsed()
 
+	/**
+	 * Auuid acts for that organisation without alookup.
+	 *
+	 * @return void
+	 */
 	public function testAUuidActsForThatOrganisationWithoutALookup(): void {
 		$objectService = new ActingObjectService();
 		$scoped = $this->context(objectService: $objectService)->objectServiceForUuid(organisationUuid: 'uuid-b');
 
 		$scoped->findAll();
 
-		$this->assertSame(['uuid-b'], $objectService->actedFor(method: 'findAll'));
-		$this->assertSame([], $this->lookups);
+		$this->assertSame(expected: ['uuid-b'], actual: $objectService->actedFor(method: 'findAll'));
+		$this->assertSame(expected: [], actual: $this->lookups);
 	}//end testAUuidActsForThatOrganisationWithoutALookup()
 
+	/**
+	 * Aslug is looked up once per context.
+	 *
+	 * @return void
+	 */
 	public function testASlugIsLookedUpOncePerContext(): void {
 		$context = $this->context(objectService: new ActingObjectService());
 
@@ -157,7 +216,7 @@ class PortalTenantContextTest extends TestCase {
 		$context->objectServiceFor(organisation: 'onbekend');
 		$context->objectServiceFor(organisation: 'onbekend');
 
-		$this->assertSame(['gemeente-a' => 1, 'onbekend' => 1], $this->lookups);
+		$this->assertSame(expected: ['gemeente-a' => 1, 'onbekend' => 1], actual: $this->lookups);
 	}//end testASlugIsLookedUpOncePerContext()
 
 	/**
@@ -169,7 +228,7 @@ class PortalTenantContextTest extends TestCase {
 	 * @return PortalTenantContext
 	 */
 	private function context(object $objectService): PortalTenantContext {
-		$organisations = $this->createMock(PortalOrganisationConfigService::class);
+		$organisations = $this->createMock(originalClassName: PortalOrganisationConfigService::class);
 		$organisations->method('findOrganisationBySlug')->willReturnCallback(
 			function (string $slug): ?array {
 				$this->lookups[$slug] = (($this->lookups[$slug] ?? 0) + 1);
@@ -182,7 +241,7 @@ class PortalTenantContextTest extends TestCase {
 			}
 		);
 
-		$container = $this->createMock(ContainerInterface::class);
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
 			static function (string $id) use ($objectService, $organisations): object {
 				if ($id === self::OS) {
