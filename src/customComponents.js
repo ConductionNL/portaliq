@@ -44,6 +44,7 @@ import { generateUrl } from '@nextcloud/router'
 import FormEmbedDialog from './dialogs/FormEmbedDialog.vue'
 import InviteDialog from './dialogs/InviteDialog.vue'
 import IssueAccountDialog from './dialogs/IssueAccountDialog.vue'
+import MailTemplateDialog from './dialogs/MailTemplateDialog.vue'
 import NewsItemDialog from './dialogs/NewsItemDialog.vue'
 import RefuseAccessRequestDialog from './dialogs/RefuseAccessRequestDialog.vue'
 import RevealDecisionDialog from './dialogs/RevealDecisionDialog.vue'
@@ -54,6 +55,7 @@ import { spawnLookDialog } from './lib/dialogLook.js'
 import { createFormBindingEmbed } from './lib/formBindingEmbed.js'
 import { createFormBindingPreview } from './lib/formBindingPreview.js'
 import { refreshList } from './lib/listRefresh.js'
+import { createMailTemplateApi, createMailTemplateHandlers } from './lib/mailTemplateEditing.js'
 import { createNewsApi, createNewsHandlers, NEWS_LIST } from './lib/newsAuthoring.js'
 import { createOpenPortalSite } from './lib/openPortalSite.js'
 import { createRevealHandlers } from './lib/revealActions.js'
@@ -220,6 +222,34 @@ const newsHandlers = createNewsHandlers({
 	reload: () => refreshList(NEWS_LIST) || window.location.reload(),
 })
 
+/**
+ * `New mail text`, `Change` and `Back to the default text` on the Mail
+ * templates page (mail-templates-admin-screen T06). The editor checks a text
+ * against its kind's variables before it is stored; see
+ * src/lib/mailTemplateEditing.js.
+ */
+const mailTemplateHandlers = createMailTemplateHandlers({
+	api: createMailTemplateApi({
+		get: (url) => axios.get(url),
+		post: (url, body) => axios.post(url, body),
+		put: (url, body) => axios.put(url, body),
+		del: (url) => axios.delete(url),
+		generateUrl,
+	}),
+	openEditor: (props) => spawnLookDialog(MailTemplateDialog, props),
+	confirmReset: () =>
+		showConfirmation({
+			name: t('portaliq', 'Put the default text back?'),
+			text: t('portaliq', 'This portal sends the default text of this mail again.'),
+			labelConfirm: t('portaliq', 'Put the default text back'),
+			labelReject: t('portaliq', 'Cancel'),
+		}),
+	notify: showSuccess,
+	notifyError: showError,
+	translate: (text, vars) => t('portaliq', text, vars),
+	reload: () => window.location.reload(),
+})
+
 export default {
 	// Header-action handler: the Integrations page's Add integration
 	// (adopt-connection-registry). A FUNCTION, because it leaves the app for
@@ -270,4 +300,5 @@ export default {
 	 * The Reveal requests page's row actions (intake-report-pages T09).
 	 */
 	...revealHandlers,
+	...mailTemplateHandlers,
 }

@@ -6191,7 +6191,7 @@
       "config": {
         "register": "portaliq",
         "schema": "portalMailTemplate",
-        "_note": "The text of each kind of mail, per portal (mail-templates-admin-screen). A stored active text replaces the default; a text with a variable its kind does not declare is ignored. Preview and the test mail go through MailTemplateAdminController.",
+        "_note": "The text of each kind of mail, per portal (mail-templates-admin-screen). A stored active text replaces the default; a text with a variable its kind does not declare is ignored. Preview and the test mail go through MailTemplateAdminController. 'New mail text' and 'Change' open MailTemplateDialog, where CnMarkdownEditor inserts the kind's variables and names an unknown one; a text with one is not saved. 'Back to the default text' removes the stored row.",
         "columns": [
           {
             "key": "templateKey",
@@ -6228,6 +6228,12 @@
           {
             "action": "export",
             "label": "Download"
+          },
+          {
+            "action": "new-mail-template",
+            "variant": "primary",
+            "label": "New mail text",
+            "icon": "Plus"
           }
         ],
         "quickFilters": [
@@ -6238,7 +6244,32 @@
             "default": true
           }
         ],
-        "showAdd": false
+        "showAdd": false,
+        "headerActions": [
+          {
+            "id": "new-mail-template",
+            "label": "New mail text",
+            "icon": "Plus",
+            "handler": "newMailTemplate"
+          }
+        ],
+        "actions": [
+          {
+            "id": "change-mail-template",
+            "label": "Change",
+            "icon": "Pencil",
+            "type": "handler",
+            "handler": "editMailTemplate"
+          },
+          {
+            "id": "reset-mail-template",
+            "label": "Back to the default text",
+            "icon": "Restore",
+            "type": "handler",
+            "handler": "resetMailTemplate",
+            "destructive": true
+          }
+        ]
       }
     },
     {
