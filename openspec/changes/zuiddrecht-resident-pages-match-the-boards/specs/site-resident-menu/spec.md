@@ -15,11 +15,11 @@ they were.
 
 #### Scenario: The Zuiddrecht menu
 @e2e exclude Static: tests/zuiddrecht-resident-boards.spec.mjs builds the groups from a nav
-- GIVEN the Zuiddrecht portal's groups (Mijn Zuiddrecht: overview, inbox; Zaken en taken: cases, tasks; Vragen en meldingen: portaliq:meldingen; Uw gegevens: details, account)
+- GIVEN the Zuiddrecht portal's groups (Mijn Zuiddrecht: overview, inbox; Mijn zaken en verzoeken: cases, tasks; Vragen en contact: portaliq:meldingen; Uw gegevens: details, account)
 - AND a nav that also holds access
 - WHEN the groups are built
 - THEN the five declared groups MUST come first, in order, Overzicht linking to /mijn
-- AND Toegang tot zaken MUST follow in the site's own Zaken en taken group
+- AND Toegang tot zaken MUST follow in the site's own Mijn zaken en verzoeken group
 
 #### Scenario: Mijn zaken as rows
 @e2e exclude Static: tests/zuiddrecht-resident-boards.spec.mjs renders the page

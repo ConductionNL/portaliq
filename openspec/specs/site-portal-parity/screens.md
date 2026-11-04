@@ -4,7 +4,7 @@
 - portaliq/SessieVerloopt sessie verloopt: the idle warning with "Ingelogd blijven" (REQ-SRP-005) https://identity.conduction.nl/screens/board?id=portaliq/SessieVerloopt
 - huisstijl/MijnMenu Onderdeel: menu Mijn Zuiddrecht: navigation built from the pages contributions declare (REQ-SRP-007) https://identity.conduction.nl/screens/board?id=huisstijl/MijnMenu
 - portaliq/Home Website: home: notices above the page, and a button link with its style (REQ-SRP-010) https://identity.conduction.nl/screens/board?id=portaliq/Home
-- portaliq/MijnZaken mijn zaken: every case in one list, "Zaken van" and "Namens vestiging" (REQ-SRP-011, REQ-SRP-040, REQ-SRP-041) https://identity.conduction.nl/screens/board?id=portaliq/MijnZaken
+- portaliq/MijnZaken mijn zaken: every case in one list, the acting-for bar and "Namens vestiging" (REQ-SRP-011, REQ-SRP-040, REQ-SRP-041) https://identity.conduction.nl/screens/board?id=portaliq/MijnZaken
 - portaliq/MijnZakenTabel mijn zaken als tabel: the collection table with its declared columns (REQ-SRP-015) https://identity.conduction.nl/screens/board?id=portaliq/MijnZakenTabel
 - portaliq/MijnOverzicht overzicht: a contribution page with its blocks (REQ-SRP-014) https://identity.conduction.nl/screens/board?id=portaliq/MijnOverzicht
 - portaliq/Zaak uw zaak: the case page with its timeline and the resident's own uploads (REQ-SRP-019, REQ-SRP-042) https://identity.conduction.nl/screens/board?id=portaliq/Zaak
@@ -22,3 +22,5 @@
 - portaliq/Machtigingen toegang tot zaken: asking for access to cases, in the page's language (REQ-SRP-039) https://identity.conduction.nl/screens/board?id=portaliq/Machtigingen
 - portaliq/MobielHome Telefoon: home: the install offer with "Niet nu" (REQ-SRP-046) https://identity.conduction.nl/screens/board?id=portaliq/MobielHome
 - portaliq/PtFormulierInsluiten formulier insluiten op uw website: the embed frame of a form (REQ-SRP-047) https://identity.conduction.nl/screens/board?id=portaliq/PtFormulierInsluiten
+- huisstijl/NamensBalk the acting-for bar with the selector inside it (REQ-SRP-041, "A mandate is named by its party") https://identity.conduction.nl/screens/board?id=huisstijl/NamensBalk
+- vaartveld/Toets a timed task: the time left, answers saved on each change, and the end screen (REQ-SRP-036) https://identity.conduction.nl/screens/board?id=vaartveld/Toets
