@@ -1,7 +1,5 @@
 # Screens
 
-The contract between portaliq and the apps that contribute to it renders on these portal screens.
-
 - portaliq/MijnZaken mijn zaken: the resident's case list, filled by contributing apps, including cases shared with a partner (cas-contrib-list, con-contributed-pages-render, dem-tnd-joint-case-partner) https://identity.conduction.nl/screens/board?id=portaliq/MijnZaken
 - portaliq/Zaak uw zaak: the case page with status transitions, file uploads and contact moments (cas-detail, act-row-transition, act-file-upload-generic, dem-fr-case-contact-moments) https://identity.conduction.nl/screens/board?id=portaliq/Zaak
 - portaliq/MobielZaak Telefoon: uw zaak: the case page on a phone (cas-detail) https://identity.conduction.nl/screens/board?id=portaliq/MobielZaak

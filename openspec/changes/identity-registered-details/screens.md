@@ -6,3 +6,4 @@
 - portaliq/MijnAdres Mijn adres https://identity.conduction.nl/screens/board?id=portaliq/MijnAdres
 - portaliq/MijnGegevens mijn gegevens https://identity.conduction.nl/screens/board?id=portaliq/MijnGegevens
 - portaliq/MijnOverzicht overzicht https://identity.conduction.nl/screens/board?id=portaliq/MijnOverzicht
+- portaliq/MijnAccountZonderDigid account zonder DigiD: "Bij deze manier van inloggen kan het portaal geen geregistreerde gegevens tonen." (REQ-IRD-001) https://identity.conduction.nl/screens/board?id=portaliq/MijnAccountZonderDigid

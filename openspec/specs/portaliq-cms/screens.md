@@ -40,7 +40,7 @@
 - warmtepompacademie/Contentpagina Website: informatiepagina https://identity.conduction.nl/screens/board?id=warmtepompacademie/Contentpagina
 - wilgenboom/Activiteiten activities and events: signing up your own child, the waiting list and the guardian's answer https://identity.conduction.nl/screens/board?id=wilgenboom/Activiteiten
 - learniq/LqActiviteiten the staff side of an activity, specified in learniq: places, roster with photo consent, attendance (decision 286) https://identity.conduction.nl/screens/board?id=learniq/LqActiviteiten
-- opencatalogi/pub-house-style: no opencatalogi screen; the reading room's house style is set in portaliq
+- opencatalogi has no board of its own for row pub-house-style: the reading room's house style is set in portaliq
 - portaliq has no board of its own for row site-content-cache: caching happens on the server; editors and visitors only notice faster pages
 - portaliq has no board of its own for row thm-theme-fail-closed: a portal whose theme does not resolve renders with the base look; there is no page for the fallback itself
 

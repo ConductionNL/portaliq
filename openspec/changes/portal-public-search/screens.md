@@ -7,7 +7,7 @@
 - portaliq/ZoekenGeenTreffers Site: zoeken zonder treffers https://identity.conduction.nl/screens/board?id=portaliq/ZoekenGeenTreffers
 - wilgenboom/Zoeken Website: nieuws en documenten zoeken https://identity.conduction.nl/screens/board?id=wilgenboom/Zoeken
 - vaartveld/Zoeken Website: nieuws en documenten zoeken https://identity.conduction.nl/screens/board?id=vaartveld/Zoeken
-- opencatalogi/srch-facets: no opencatalogi screen; the public search page and its filters are portaliq's
-- opencatalogi/srch-content: no opencatalogi screen; words inside attached documents are found through the public search page
+- opencatalogi has no board of its own for row srch-facets: the public search page and its filters are portaliq's
+- opencatalogi has no board of its own for row srch-content: words inside attached documents are found through the public search page
 
 Components: CnSiteEmptyState, CnSiteSearch
