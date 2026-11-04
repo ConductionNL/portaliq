@@ -597,8 +597,8 @@ function navFor(t) {
 
 const LAYOUT = [
 	{ title: 'Mijn Zuiddrecht', items: ['overview', 'inbox'] },
-	{ title: 'Zaken en taken', items: ['cases', 'tasks'] },
-	{ title: 'Vragen en meldingen', items: ['portaliq:meldingen'] },
+	{ title: 'Mijn zaken en verzoeken', items: ['cases', 'tasks'] },
+	{ title: 'Vragen en contact', items: ['portaliq:meldingen'] },
 	{ title: 'Uw gegevens', items: ['details', 'account'] },
 ]
 
@@ -612,8 +612,8 @@ test("the resident menu in the portal's own groups, Overzicht first, nothing unr
 	const laid = residentMenuGroups(nav, { t: nl, unread: 2, hrefFor: href, recordRows: {}, layout: LAYOUT })
 	assert.deepEqual(names(laid).slice(0, 4), [
 		['Mijn Zuiddrecht', ['Overzicht', 'Berichten']],
-		['Zaken en taken', ['Mijn zaken', 'Mijn taken', 'Toegang tot zaken']],
-		['Vragen en meldingen', ['Melding indienen']],
+		['Mijn zaken en verzoeken', ['Mijn zaken', 'Mijn taken', 'Toegang tot zaken']],
+		['Vragen en contact', ['Melding indienen']],
 		['Uw gegevens', ['Mijn gegevens', 'Mijn account']],
 	])
 	const overview = laid[0].items[0]
@@ -627,7 +627,6 @@ test("the resident menu in the portal's own groups, Overzicht first, nothing unr
 	for (const route of routes(own)) {
 		assert.ok(routes(laid).includes(route), `${route} stays reachable`)
 	}
-	// Toegang tot zaken, not named by the layout, follows in its own group.
 	// Toegang tot zaken, not named by the layout, joined the declared group
 	// of the same name above, so one heading never stands twice.
 	assert.equal(new Set(laid.map((group) => group.title)).size, laid.length)

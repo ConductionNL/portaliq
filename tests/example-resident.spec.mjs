@@ -696,7 +696,7 @@ test('Mijn menu: the portal lays out the groups every Mijn board draws, Thema’
 	assert.deepEqual(change.where, { slug: 'zuiddrecht' })
 	assert.deepEqual(
 		change.set['residentMenu.groups'].map((group) => group.title),
-		['Mijn Zuiddrecht', 'Thema’s', 'Zaken en taken', 'Samenwerken', 'Vragen en meldingen', 'Uw gegevens'],
+		['Mijn Zuiddrecht', 'Thema’s', 'Mijn zaken en verzoeken', 'Samenwerken', 'Vragen en contact', 'Uw gegevens'],
 	)
 	assert.deepEqual(change.set['residentMenu.groups'][1].items, ['__theme__:parkeren'], 'a theme item is named by its nav key')
 	const site = JSON.parse(read('lib/Settings/sites/zuiddrecht.json'))

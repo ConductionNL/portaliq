@@ -61,16 +61,34 @@
 				v-if="accountLink"
 				class="pq-header-tools__chip"
 				:href="accountLink.href"
+				:aria-label="pillLabel || null"
 				data-testid="site-own-area"
 				@click.prevent="$emit('navigate', accountLink.route)">
-				<span class="pq-header-tools__initials" aria-hidden="true">{{
-					person ? person.initials : ''
-				}}</span>
+				<span
+					v-if="person"
+					class="pq-header-tools__initials"
+					aria-hidden="true"
+					>{{ person.initials }}</span
+				>
+				<svg
+					v-else
+					class="pq-header-tools__initials"
+					viewBox="0 0 24 24"
+					aria-hidden="true"
+					focusable="false"
+					data-testid="site-auth-person-icon">
+					<path
+						:d="PERSON"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2.4"
+						stroke-linecap="round" />
+				</svg>
 				<span class="pq-header-tools__who">
 					<span
 						class="pq-header-tools__name"
 						data-testid="site-auth-subject"
-						>{{ person ? person.name : accountLink.label }}</span
+						>{{ person ? person.name : signedInLabel }}</span
 					>
 					<span
 						v-if="person && person.subline"
@@ -159,6 +177,10 @@ export default {
 		session: { type: Object, default: null },
 		/** `{route, href, label}` of the own area while signed in. */
 		accountLink: { type: Object, default: null },
+		/** The pill's accessible name, "Ingelogd als {name}, naar {own area}". */
+		pillLabel: { type: String, default: '' },
+		/** The pill's text without a name. */
+		signedInLabel: { type: String, default: 'Ingelogd' },
 		signOutLabel: { type: String, default: 'Uitloggen' },
 		/** Whether there is a navigation bar to open on a phone. */
 		hasMenu: { type: Boolean, default: false },

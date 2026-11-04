@@ -492,5 +492,9 @@
 	"Continue with my answers": "Continue with my answers",
 	"Unfinished form": "Unfinished form",
 	"Saved on {date}. Not sent yet.": "Saved on {date}. Not sent yet.",
-	"Finish the form": "Finish the form"
+	"Finish the form": "Finish the form",
+	"My cases and requests": "My cases and requests",
+	"Your details": "Your details",
+	"Logged in as {name}, to {area}": "Logged in as {name}, to {area}",
+	"Logged in, to {area}": "Logged in, to {area}"
 }

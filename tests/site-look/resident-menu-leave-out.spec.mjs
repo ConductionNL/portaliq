@@ -4,7 +4,7 @@
 //
 // resident-menu-leave-out.spec.mjs: a portal may leave items of the own area
 // out of the resident menu by name, so the school portals have no generic
-// "Zaken en taken" group their boards do not draw (resident-menu-leave-out).
+// "Mijn zaken en verzoeken" group their boards do not draw (resident-menu-leave-out).
 //
 // Usage:
 //   node --test tests/site-look/resident-menu-leave-out.spec.mjs
@@ -18,7 +18,7 @@ import { buildNav, shellSections } from '../../src/shared/portalNav.js'
 import { residentMenuGroups } from '../../src/site/lib/residentMenu.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
-const t = (key) => ({ 'Cases and tasks': 'Zaken en taken' })[key] || key
+const t = (key) => ({ 'My cases and requests': 'Mijn zaken en verzoeken' })[key] || key
 const CONTRIBUTIONS = {
 	contributions: [],
 	tasks: { enabled: true },
@@ -49,14 +49,14 @@ function menu(leaveOut) {
 	)
 }
 
-test('without leaveOut the site builds its "Zaken en taken" group', () => {
-	assert.ok(menu(null).some((group) => group.title === 'Zaken en taken'))
+test('without leaveOut the site builds its "Mijn zaken en verzoeken" group', () => {
+	assert.ok(menu(null).some((group) => group.title === 'Mijn zaken en verzoeken'))
 })
 
 test('leaving its items out removes the group and nothing else', () => {
-	const before = menu(null).filter((group) => group.title !== 'Zaken en taken')
+	const before = menu(null).filter((group) => group.title !== 'Mijn zaken en verzoeken')
 	const after = menu(['cases', 'tasks', 'access'])
-	assert.ok(!after.some((group) => group.title === 'Zaken en taken'))
+	assert.ok(!after.some((group) => group.title === 'Mijn zaken en verzoeken'))
 	assert.deepEqual(after, before)
 })
 
