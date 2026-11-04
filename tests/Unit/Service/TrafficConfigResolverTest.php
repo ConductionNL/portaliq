@@ -420,8 +420,8 @@ class TrafficConfigResolverTest extends TestCase {
 			]
 		);
 
-		$this->assertSame(['page_view'], $config['events']);
-		$this->assertSame(['page_view'], $config['preConsentEvents']);
+		$this->assertSame(expected: ['page_view'], actual: $config['events']);
+		$this->assertSame(expected: ['page_view'], actual: $config['preConsentEvents']);
 	}//end testAPreConsentHeatEventGoesWithTheHeatmapsSwitch()
 
 
