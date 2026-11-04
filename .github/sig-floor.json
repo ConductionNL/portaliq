@@ -5,7 +5,8 @@
  "tools": {
   "lizard": "1.24.3"
  },
- "measured_at": "debf1d9bac8f85144ed09973036d68b9baf394aa",
+ "unit_reader": 2,
+ "measured_at": "2dadb96df494bcb386c355bc5eebb10be4ffa983",
  "checks": [
   "javascript duplication",
   "javascript unit_complexity >25",
@@ -15,6 +16,7 @@
   "javascript unit_size >15",
   "javascript unit_size >30",
   "javascript unit_size >60",
+  "php duplication",
   "php module_coupling >10",
   "php module_coupling >20",
   "php module_coupling >50",
@@ -23,7 +25,6 @@
   "php unit_size >30",
   "php unit_size >60",
   "vue unit_complexity >10",
-  "vue unit_complexity >25",
   "vue unit_complexity >5",
   "vue unit_interfacing >2",
   "vue unit_interfacing >4",
