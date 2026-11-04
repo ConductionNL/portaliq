@@ -20,13 +20,13 @@ import {
 	routeForNav,
 } from '../../shared/portalNav.js'
 
-/** Shell sections about cases, in the first group. */
+/** Shell sections about cases, in "Mijn zaken en verzoeken". */
 const CASE_SECTIONS = ['cases', 'tasks', 'access']
 
 /** The own-area pages for working with others, when the portal switches them on. */
 const COLLABORATE_SECTIONS = ['samenwerken', 'acties', 'contacts']
 
-/** Shell sections about messages, in the group after the apps. */
+/** Shell sections about messages, in the group named after the own area. */
 const MESSAGE_SECTIONS = ['inbox', 'messages', 'news']
 
 /** Shell sections about the resident, in the last group. */
@@ -104,6 +104,7 @@ export function ownAreaLink(session, t, hrefFor) {
  * @property {(route: string) => string} hrefFor A real address for a route.
  * @property {Record<string, Array<object>>} [recordRows] Known rows, by `<app>:<collection>`.
  * @property {number} [openTasks] The resident's open tasks.
+ * @property {string} [area] The name the portal gives its own area ("Mijn Zuiddrecht").
  */
 
 /**
@@ -196,10 +197,11 @@ export function openTaskCount(page) {
 const NAMES = new WeakMap()
 
 /**
- * The resident menu in groups: cases and tasks first, then the groups of the
+ * The resident menu in groups (defaultGroups): messages under the own area's
+ * name, themes, "Mijn zaken en verzoeken", working together, the groups of the
  * contributed pages (a page's declared `group`, shared across apps, else one
- * group per app named as the app names itself), then messages and news, then
- * the resident's details and account. An empty group is left out.
+ * group per app named as the app names itself), then "Uw gegevens". An empty
+ * group is left out.
  *
  * TWO ITEMS NEVER READ THE SAME. The shell's own sections and an app's pages
  * come from two sources, and both may use one name: the shell's "Mijn zaken"
@@ -225,6 +227,7 @@ const NAMES = new WeakMap()
  * @param {Array<string>|null} [menu.leaveOut] Items the portal leaves out of the
  *   menu by name (`residentMenu.leaveOut`, resident-menu-leave-out).
  * @param {number} [menu.openTasks] The resident's open tasks, counted beside "My tasks".
+ * @param {string} [menu.area] The name the portal gives its own area.
  * @return {Array<{key: string, title: string, items: Array<object>}>} The groups.
  * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
  * @spec openspec/changes/resident-sees-words-not-codes/specs/site-resident-menu/spec.md#requirement-a-contributed-page-may-name-the-menu-group-it-belongs-to-req-srm-005
@@ -233,19 +236,53 @@ const NAMES = new WeakMap()
  */
 export function residentMenuGroups(nav, menu) {
 	const { t, unread, hrefFor, recordRows = {}, layout = null, leaveOut = null, openTasks = 0 } = menu
-	const ctx = { entries: Array.isArray(nav) ? nav : [], t, unread, hrefFor, recordRows, openTasks }
+	const ctx = { entries: Array.isArray(nav) ? nav : [], t, unread, hrefFor, recordRows, openTasks, area: menu.area }
+	const groups = defaultGroups(ctx).filter((group) => group.items.length > 0)
+	withDistinctNames(groups, t)
+	return laidOut(withoutLeftOut(groups, leaveOut), { layout, t, hrefFor })
+}
+
+/**
+ * The groups as the boards draw them (huisstijl/MijnMenu): messages under the
+ * own area's name, themes, "Mijn zaken en verzoeken" (with the contributed
+ * pages of that group), working together, the other contributed groups, and
+ * "Uw gegevens". Empty groups are still in.
+ *
+ * @param {MenuContext} ctx What the items are built from.
+ * @return {Array<{key: string, title: string, items: Array<object>}>} The groups.
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
+ */
+function defaultGroups(ctx) {
+	const { t } = ctx
 	const { appGroups, recordGroups } = contributedGroups(ctx)
-	const groups = [
-		sectionGroup(ctx, ['cases', t('Cases and tasks'), CASE_SECTIONS]),
+	const casesTitle = t('My cases and requests')
+	const cases = sectionGroup(ctx, [`group:${casesTitle.toLowerCase()}`, casesTitle, CASE_SECTIONS])
+	return [
+		sectionGroup(ctx, ['area', ctx.area || t('My area'), MESSAGE_SECTIONS]),
 		themeGroup(ctx),
+		mergedInto(cases, appGroups),
 		sectionGroup(ctx, ['collaborate', t('Collaborate'), COLLABORATE_SECTIONS]),
 		...appGroups,
 		...recordGroups,
-		sectionGroup(ctx, ['messages', t('Messages and news'), MESSAGE_SECTIONS]),
-		sectionGroup(ctx, ['profile', t('Your details and account'), PROFILE_SECTIONS]),
-	].filter((group) => group.items.length > 0)
-	withDistinctNames(groups, t)
-	return laidOut(withoutLeftOut(groups, leaveOut), { layout, t, hrefFor })
+		sectionGroup(ctx, ['profile', t('Your details'), PROFILE_SECTIONS]),
+	]
+}
+
+/**
+ * A group with the items of the contributed group of the same key, which
+ * leaves the contributed groups.
+ *
+ * @param {{key: string, items: Array<object>}} group The group.
+ * @param {Array<{key: string, items: Array<object>}>} contributed The contributed groups (changed in place).
+ * @return {{key: string, items: Array<object>}} The group.
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
+ */
+function mergedInto(group, contributed) {
+	const at = contributed.findIndex((other) => other.key === group.key)
+	if (at >= 0) {
+		group.items.push(...contributed.splice(at, 1)[0].items)
+	}
+	return group
 }
 
 /**

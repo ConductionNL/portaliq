@@ -25,7 +25,7 @@
 			class="pq-account__menu"
 			:groups="menuGroups"
 			:currentRoute="menuRoute"
-			:label="t('My area')"
+			:label="(portal && portal.accountLabel) || t('My area')"
 			:showLabel="(portal && portal.accountLabel) || t('Menu of my area')"
 			:card="menuCard"
 			:newLabel="t('{count} new')"

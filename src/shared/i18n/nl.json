@@ -492,5 +492,9 @@
 	"Continue with my answers": "Verder met mijn antwoorden",
 	"Unfinished form": "Onvoltooid formulier",
 	"Saved on {date}. Not sent yet.": "Opgeslagen op {date}. Nog niet ingediend.",
-	"Finish the form": "Formulier afmaken"
+	"Finish the form": "Formulier afmaken",
+	"My cases and requests": "Mijn zaken en verzoeken",
+	"Your details": "Uw gegevens",
+	"Logged in as {name}, to {area}": "Ingelogd als {name}, naar {area}",
+	"Logged in, to {area}": "Ingelogd, naar {area}"
 }

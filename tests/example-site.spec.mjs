@@ -777,9 +777,9 @@ test('the Zuiddrecht site lays out its own area as the MijnMenu and MijnZaken bo
 		site.portal.residentMenu.groups.map((group) => [group.title, group.items]),
 		[
 			['Mijn Zuiddrecht', ['overview', 'inbox']],
-			['Zaken en taken', ['cases', 'tasks', 'access']],
+			['Mijn zaken en verzoeken', ['cases', 'tasks', 'access']],
 			['Samenwerken', ['samenwerken', 'contacts']],
-			['Vragen en meldingen', ['portaliq:meldingen']],
+			['Vragen en contact', ['portaliq:meldingen']],
 			['Uw gegevens', ['details', 'account']],
 		],
 	)

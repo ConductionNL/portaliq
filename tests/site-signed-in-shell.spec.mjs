@@ -30,6 +30,7 @@ import {
 	accountCrumbs,
 	accountRedirect,
 	loggedInAs,
+	pillLabel,
 } from '../src/site/lib/accountArea.js'
 import { signInRoutes } from '../src/site/lib/authApi.js'
 import {
@@ -166,6 +167,17 @@ test('the header says who is signed in, in the site language', () => {
 	assert.equal(loggedInAs({ subjectRef: 's1', name: ' 123456782 ' }, nl), 'Ingelogd')
 	assert.equal(loggedInAs({}, nl), 'Ingelogd')
 	assert.equal(loggedInAs(null, nl), '')
+})
+
+test('the account pill reads "Ingelogd als {name}, naar {own area}", and without a name "Ingelogd, naar {own area}"', () => {
+	const nl = createTranslator('nl')
+	const words = { t: nl, area: 'Mijn Zuiddrecht' }
+	assert.equal(
+		pillLabel({ subjectRef: 's1', displayName: 'Sanne de Vries' }, words),
+		'Ingelogd als Sanne de Vries, naar Mijn Zuiddrecht',
+	)
+	assert.equal(pillLabel({ subjectRef: 's1', displayName: '999993653' }, words), 'Ingelogd, naar Mijn Zuiddrecht')
+	assert.equal(pillLabel(null, words), '')
 })
 
 test('the sign-in routes are labelled in the site language and keep the portal and the page to return to', () => {

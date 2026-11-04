@@ -69,6 +69,8 @@
 				:breadcrumbs="breadcrumbs"
 				:session="session"
 				:sessionLabel="sessionLabel"
+				:pillLabel="accountPillLabel"
+				:signedInLabel="t('Logged in')"
 				:accountLink="ownAreaLink"
 				:signInRoutes="signInRoutes"
 				:registerRoute="registerRoute"
@@ -551,7 +553,12 @@ import {
 	showsGeneratedStatement,
 	withStatementLink,
 } from './lib/accessibilityStatement.js'
-import { accountCrumbs, accountRedirect, loggedInAs } from './lib/accountArea.js'
+import {
+	accountCrumbs,
+	accountRedirect,
+	loggedInAs,
+	pillLabel,
+} from './lib/accountArea.js'
 import { setAssistantAvailable } from './lib/assistantAvailable.js'
 import {
 	adoptSessionToken,
@@ -1097,6 +1104,7 @@ export default {
 				layout: this.site?.residentMenu?.groups,
 				leaveOut: this.site?.residentMenu?.leaveOut,
 				openTasks: this.openTasks,
+				area: this.site?.accountLabel || '',
 			}
 		},
 
@@ -1545,6 +1553,15 @@ export default {
 		 */
 		sessionLabel() {
 			return loggedInAs(this.session, this.t)
+		},
+
+		/**
+		 * @return {string} The account pill's accessible name: who is signed in, and where it leads.
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-header-must-name-the-signed-in-person-never-their-reference
+		 */
+		accountPillLabel() {
+			const area = this.site?.accountLabel || this.t('My area')
+			return pillLabel(this.session, { t: this.t, area })
 		},
 	},
 

@@ -172,6 +172,33 @@ test('signed in, the designed header shows the person chip and a sign-out link, 
 	assert.equal(count(html, 'site-header-search'), 0)
 })
 
+test('the account pill is named "Ingelogd als ..., naar ...", and without a name shows a person icon and "Ingelogd"', async () => {
+	const props = {
+		searchBox: { enabled: false },
+		accountLabel: 'Mijn Zuiddrecht',
+		accountLink: { route: '/mijn', href: '?route=%2Fmijn', label: 'Mijn omgeving' },
+		pillLabel: 'Ingelogd als Sanne de Vries, naar Mijn Zuiddrecht',
+		signedInLabel: 'Ingelogd',
+	}
+	const named = await renderSfc('src/site/components/chrome/HeaderTools.vue', {
+		...props,
+		session: { displayName: 'Sanne de Vries' },
+	})
+	assert.match(
+		named,
+		/aria-label="Ingelogd als Sanne de Vries, naar Mijn Zuiddrecht" data-testid="site-own-area"/,
+	)
+	assert.match(named, /class="pq-header-tools__initials" aria-hidden="true">SV</)
+	const nameless = await renderSfc('src/site/components/chrome/HeaderTools.vue', {
+		...props,
+		pillLabel: 'Ingelogd, naar Mijn Zuiddrecht',
+		session: { subjectRef: 's1', displayName: '999993653' },
+	})
+	assert.match(nameless, /data-testid="site-auth-person-icon"/)
+	assert.match(nameless, /data-testid="site-auth-subject">Ingelogd</)
+	assert.doesNotMatch(nameless, /999993653/)
+})
+
 test('a portal that asks for no designed header keeps its header markup', () => {
 	const header = read('src/site/components/BrandHeader.vue')
 	assert.match(
