@@ -272,9 +272,11 @@ test.describe('cases-my-cases-page acting for', () => {
 		request,
 	}) => {
 		await signInAsEmployee(request, page, true)
-		await expect(page.getByTestId('my-cases-empty')).toBeVisible()
+		await expect(page.getByTestId('mijn-acting-for-bar')).toBeVisible()
 
-		await page.getByLabel('Namens').selectOption({ label: 'Bakkerij Jansen BV' })
+		await page
+			.getByLabel('Wissel naar')
+			.selectOption({ label: 'Bakkerij Jansen BV' })
 		const row = page.getByTestId('my-cases-row')
 		await expect(row).toContainText('Terrasvergunning')
 		await expect(page.getByTestId('my-cases-mandate')).toHaveText(
@@ -282,7 +284,7 @@ test.describe('cases-my-cases-page acting for', () => {
 		)
 
 		await page.reload()
-		await expect(page.getByLabel('Namens')).toHaveValue(/.+/)
+		await expect(page.getByLabel('Wissel naar')).toHaveValue(/.+/)
 		await expect(page.getByTestId('my-cases-row')).toContainText(
 			'Terrasvergunning',
 		)
@@ -300,7 +302,7 @@ test.describe('cases-my-cases-page acting for', () => {
 		request,
 	}) => {
 		await signInAsEmployee(request, page, false)
-		await expect(page.getByTestId('acting-for')).toHaveCount(0)
+		await expect(page.getByTestId('mijn-acting-for-bar')).toHaveCount(0)
 		await expect(page.getByTestId('my-cases-empty')).toBeVisible()
 	})
 

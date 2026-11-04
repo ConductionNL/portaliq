@@ -87,7 +87,6 @@
 				@search="goSearch"
 				@signout="signOut">
 				<template #account>
-					<ActingForSwitcher :t="t" />
 					<!-- The eHerkenning branch in effect, or the choice of one (REQ-SRP-011). -->
 					<BranchSwitcher
 						v-if="session"
@@ -544,7 +543,7 @@ import {
 	shellSections,
 } from '../shared/portalNav.js'
 import { forgetActingFor, learnMandates } from './components/e/actingFor.js'
-import { ActingForSwitcher, ContactPrompt } from './components/e/index.js'
+import { ContactPrompt } from './components/e/index.js'
 import { InstallBanner } from './components/f/index.js'
 import {
 	authoredStatement,
@@ -686,7 +685,6 @@ export default {
 	components: {
 		PageHelp,
 		AccountArea,
-		ActingForSwitcher,
 		BranchSwitcher,
 		ContactPrompt,
 		BrandHeader,
