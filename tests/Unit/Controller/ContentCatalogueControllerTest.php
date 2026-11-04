@@ -32,11 +32,21 @@ class ContentCatalogueControllerTest extends TestCase {
 	 * @param string                    $auth    The Authorization header.
 	 * @param array<string, mixed>|null $subject The session subject.
 	 * @param MockObject|null           $catalogue The catalogue double.
+	 * @param array<string, mixed>      $query   The request's query values.
 	 *
 	 * @return ContentCatalogueController
 	 */
-	private function controller(?array $portal, string $auth='', ?array $subject=null, ?MockObject $catalogue=null): ContentCatalogueController {
+	private function controller(
+		?array $portal,
+		string $auth='',
+		?array $subject=null,
+		?MockObject $catalogue=null,
+		array $query=[],
+	): ContentCatalogueController {
 		$request = $this->createMock(IRequest::class);
+		$request->method('getParam')->willReturnCallback(
+			static fn (string $key, mixed $default=null): mixed => ($query[$key] ?? $default)
+		);
 		$request->method('getHeader')->willReturn($auth);
 		$resolver = $this->createMock(PortalResolver::class);
 		$resolver->method('resolve')->willReturn($portal);
@@ -117,10 +127,22 @@ class ContentCatalogueControllerTest extends TestCase {
 		$catalogue = $this->createMock(PublicCatalogue::class);
 		$catalogue->method('itemsFor')->with('zuid')->willReturn([]);
 		$catalogue->expects($this->once())->method('visitorValuesFor')->with('zuid', 'myapp', $this->anything())->willReturn(['Group' => ['g1']]);
-		$c = $this->controller(['slug' => 'zuid'], 'Bearer x', ['subjectRef' => 'abc'], $catalogue);
-
 		$filters = json_encode(['Group' => ['visitor', 'other'], 'Empty' => ['visitor'], 'Plain' => ['p']]);
-		$response = $c->index('zuid', str_repeat('q', 300), ' a, ,b ', $filters, 'bogus', 1, 10, '1', 'myapp', 'c1,,c2', 'schoolYear');
+		$query = [
+			'search'     => str_repeat('q', 300),
+			'types'      => ' a, ,b ',
+			'filters'    => $filters,
+			'sort'       => 'bogus',
+			'page'       => 1,
+			'limit'      => 10,
+			'upcoming'   => '1',
+			'app'        => 'myapp',
+			'categories' => 'c1,,c2',
+			'range'      => 'schoolYear',
+		];
+		$c = $this->controller(portal: ['slug' => 'zuid'], auth: 'Bearer x', subject: ['subjectRef' => 'abc'], catalogue: $catalogue, query: $query);
+
+		$response = $c->index('zuid');
 
 		$this->assertSame(200, $response->getStatus());
 		$this->assertIsArray($response->getData());
@@ -135,9 +157,15 @@ class ContentCatalogueControllerTest extends TestCase {
 		$catalogue = $this->createMock(PublicCatalogue::class);
 		$catalogue->method('itemsFor')->willReturn([]);
 		$catalogue->expects($this->never())->method('visitorValuesFor');
-		$c = $this->controller(['slug' => 'zuid'], '', null, $catalogue);
+		$c = $this->controller(
+			portal: ['slug' => 'zuid'],
+			auth: '',
+			subject: null,
+			catalogue: $catalogue,
+			query: ['filters' => 'not json', 'app' => 'Bad App!']
+		);
 
-		$response = $c->index('zuid', '', '', 'not json', 'relevance', 1, 10, '', 'Bad App!');
+		$response = $c->index('zuid');
 
 		$this->assertSame(200, $response->getStatus());
 	}//end testIndexToleratesJunk()

@@ -38,6 +38,7 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use TypeError;
 
 /**
  * Serves a portal's public catalogue.
@@ -62,6 +63,25 @@ class ContentCatalogueController extends Controller {
 	private const VISITOR = 'visitor';
 
 	/**
+	 * The query's text values and their defaults: search words, comma-separated
+	 * types, JSON filters, the sort, `1` for upcoming only, the app key,
+	 * comma-separated categories, the range, and JSON naming the derived facets.
+	 *
+	 * @var array<string, string>
+	 */
+	private const TEXT_PARAMS = [
+		'search' => '',
+		'types' => '',
+		'filters' => '',
+		'sort' => 'relevance',
+		'upcoming' => '',
+		'app' => '',
+		'categories' => '',
+		'range' => '',
+		'facetsBy' => '',
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string               $appName   The app name.
@@ -83,19 +103,16 @@ class ContentCatalogueController extends Controller {
 	/**
 	 * One page of the portal's catalogue.
 	 *
-	 * @param string|null $portal   The portal slug.
-	 * @param string      $search   The words searched for.
-	 * @param string      $types    Comma-separated item types ('' for all).
-	 * @param string      $filters  The facet choices, as JSON `{label: [values]}`.
-	 * @param string      $sort     `relevance`, `date`, `dateDesc` or `title`.
-	 * @param int         $page     The page, from 1.
-	 * @param int         $limit    Results per page, at most 50.
-	 * @param string      $upcoming `1` for only the items whose date is today or later.
-	 * @param string      $app        Only items of this app's index ('' for all).
-	 * @param string      $categories Comma-separated categories ('' for all).
-	 * @param string      $range      `schoolYear` for only the school year that holds today.
-	 * @param string      $facetsBy The facets to add, as JSON `{kind, news, audience}`: a facet by kind ("Soort"),
-	 *                              a news item's kind in it ("Nieuws"), a facet by a news item's audience ("Voor wie").
+	 * The request carries the query: `search`, `types` (comma-separated, '' for
+	 * all), `filters` (JSON `{label: [values]}`), `sort` (`relevance`, `date`,
+	 * `dateDesc` or `title`), `page` (from 1), `limit` (at most 50), `upcoming`
+	 * (`1` for only the items whose date is today or later), `app` (only items of
+	 * this app's index), `categories` (comma-separated), `range` (`schoolYear` for
+	 * only the school year that holds today) and `facetsBy` (JSON `{kind, news,
+	 * audience}`: a facet by kind, a news item's kind in it, a facet by a news
+	 * item's audience).
+	 *
+	 * @param string|null $portal The portal slug.
 	 *
 	 * @return JSONResponse `{items, total, page, pages, facets}`, or 401 / 403 / 404.
 	 *
@@ -105,20 +122,8 @@ class ContentCatalogueController extends Controller {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 240, period: 60)]
-	public function index(
-		?string $portal = null,
-		string $search = '',
-		string $types = '',
-		string $filters = '',
-		string $sort = 'relevance',
-		int $page = 1,
-		int $limit = 10,
-		string $upcoming = '',
-		string $app = '',
-		string $categories = '',
-		string $range = '',
-		string $facetsBy = '',
-	): JSONResponse {
+	public function index(?string $portal = null): JSONResponse {
+		$asked    = $this->askedQuery();
 		$resolved = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
 		if ($resolved === null) {
 			return $this->notFound();
@@ -129,53 +134,152 @@ class ContentCatalogueController extends Controller {
 			return $refusal;
 		}
 
-		$appKey = '';
-		if (preg_match('/^[a-z][a-z0-9_]{0,63}$/', $app) === 1) {
-			$appKey = $app;
-		}
-
-		$chosen = json_decode($filters, true);
-		if (is_array($chosen) === false) {
-			$chosen = [];
-		}
-
-		$derive = json_decode($facetsBy, true);
-		if (is_array($derive) === false) {
-			$derive = [];
-		}
-
-		if (in_array($sort, PublicCatalogueQuery::SORTS, true) === false) {
-			$sort = 'relevance';
-		}
-
-		$chosen   = $this->withVisitorValues(portal: (string)$resolved['slug'], app: $appKey, filters: $chosen);
-		$rangeKey = '';
-		if ($range === 'schoolYear') {
-			$rangeKey = $range;
-		}
-
-		$result = (new PublicCatalogueQuery())->run(
-			items: $this->catalogue->itemsFor(portal: (string)$resolved['slug']),
-			params: [
-				'q'        => mb_substr($search, 0, self::MAX_QUERY),
-				'types'    => array_values(array_filter(array_map('trim', explode(',', $types)), static fn (string $type): bool => $type !== '')),
-				'filters'  => $chosen,
-				'sort'     => $sort,
-				'page'     => $page,
-				'limit'    => $limit,
-				'upcoming' => ($upcoming === '1'),
-				'app'      => $appKey,
-				'categories' => array_values(array_filter(array_map('trim', explode(',', $categories)), static fn (string $category): bool => $category !== '')),
-				'range'    => $rangeKey,
-				'today'         => date('Y-m-d'),
-				'kindFacet'     => ($derive['kind'] ?? ''),
-				'kindNews'      => ($derive['news'] ?? ''),
-				'audienceFacet' => ($derive['audience'] ?? ''),
-			]
-		);
+		$slug   = (string)$resolved['slug'];
+		$params = $this->queryParams(asked: $asked, slug: $slug);
+		$result = (new PublicCatalogueQuery())->run(items: $this->catalogue->itemsFor(portal: $slug), params: $params);
 
 		return $this->publicJson(payload: $result);
 	}//end index()
+
+	/**
+	 * The query values as the request carries them, with the defaults of an
+	 * empty request. A value of the wrong type is a TypeError, before anything
+	 * is resolved or read.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function askedQuery(): array {
+		$asked = [];
+		foreach (self::TEXT_PARAMS as $name => $default) {
+			$asked[$name] = $this->textParam(name: $name, default: $default);
+		}
+
+		$asked['page']  = $this->numberParam(name: 'page', default: 1);
+		$asked['limit'] = $this->numberParam(name: 'limit', default: 10);
+
+		return $asked;
+	}//end askedQuery()
+
+	/**
+	 * One text value of the request.
+	 *
+	 * @param string $name    The value's name.
+	 * @param string $default The value when the request has none.
+	 *
+	 * @return string The value.
+	 */
+	private function textParam(string $name, string $default): string {
+		return $this->request->getParam($name, $default);
+	}//end textParam()
+
+	/**
+	 * One whole number of the request, cast as the framework casts an int parameter.
+	 *
+	 * @param string $name    The value's name.
+	 * @param int    $default The value when the request has none.
+	 *
+	 * @return int The value.
+	 */
+	private function numberParam(string $name, int $default): int {
+		$value = $this->request->getParam($name, $default);
+		if ($value === null) {
+			throw new TypeError($name . ' must not be null');
+		}
+
+		return (int)$value;
+	}//end numberParam()
+
+	/**
+	 * What the catalogue query is asked, sanitised, with the visitor's own
+	 * values in place of the visitor token.
+	 *
+	 * @param array<string, mixed> $asked The values from askedQuery().
+	 * @param string               $slug  The resolved portal's slug.
+	 *
+	 * @return array<string, mixed> The query's parameters.
+	 */
+	private function queryParams(array $asked, string $slug): array {
+		$appKey = '';
+		if (preg_match('/^[a-z][a-z0-9_]{0,63}$/', $asked['app']) === 1) {
+			$appKey = $asked['app'];
+		}
+
+		$derive = self::jsonArray(text: $asked['facetsBy']);
+
+		return [
+			'q'        => mb_substr($asked['search'], 0, self::MAX_QUERY),
+			'types'    => self::commaList(text: $asked['types']),
+			'filters'  => $this->withVisitorValues(portal: $slug, app: $appKey, filters: self::jsonArray(text: $asked['filters'])),
+			'sort'     => self::sortKey(sort: $asked['sort']),
+			'page'     => $asked['page'],
+			'limit'    => $asked['limit'],
+			'upcoming' => ($asked['upcoming'] === '1'),
+			'app'      => $appKey,
+			'categories' => self::commaList(text: $asked['categories']),
+			'range'    => self::rangeKey(range: $asked['range']),
+			'today'         => date('Y-m-d'),
+			'kindFacet'     => ($derive['kind'] ?? ''),
+			'kindNews'      => ($derive['news'] ?? ''),
+			'audienceFacet' => ($derive['audience'] ?? ''),
+		];
+	}//end queryParams()
+
+	/**
+	 * The sort asked for, when the query knows it.
+	 *
+	 * @param string $sort The sort asked for.
+	 *
+	 * @return string The sort.
+	 */
+	private static function sortKey(string $sort): string {
+		if (in_array($sort, PublicCatalogueQuery::SORTS, true) === true) {
+			return $sort;
+		}
+
+		return 'relevance';
+	}//end sortKey()
+
+	/**
+	 * The range asked for, when the query knows it.
+	 *
+	 * @param string $range The range asked for.
+	 *
+	 * @return string The range, or ''.
+	 */
+	private static function rangeKey(string $range): string {
+		if ($range === 'schoolYear') {
+			return $range;
+		}
+
+		return '';
+	}//end rangeKey()
+
+	/**
+	 * A JSON text as an array; anything else is empty.
+	 *
+	 * @param string $text The text.
+	 *
+	 * @return array<mixed>
+	 */
+	private static function jsonArray(string $text): array {
+		$decoded = json_decode($text, true);
+		if (is_array($decoded) === false) {
+			return [];
+		}
+
+		return $decoded;
+	}//end jsonArray()
+
+	/**
+	 * A comma-separated text as its trimmed, non-empty entries.
+	 *
+	 * @param string $text The text.
+	 *
+	 * @return array<int, string>
+	 */
+	private static function commaList(string $text): array {
+		return array_values(array_filter(array_map('trim', explode(',', $text)), static fn (string $entry): bool => $entry !== ''));
+	}//end commaList()
 
 	/**
 	 * What each app declares its public index kinds can be narrowed by and

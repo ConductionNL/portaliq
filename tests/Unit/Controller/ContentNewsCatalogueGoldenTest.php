@@ -86,7 +86,7 @@ class ContentNewsCatalogueGoldenTest extends TestCase {
 					'catalogue.kinds' => $this->answer(response: fn (): JSONResponse => $catalogue()->kinds(portal: 'asked')),
 					'catalogue.detail' => $this->answer(response: fn (): JSONResponse => $catalogue()->detail(portal: 'asked', app: 'a', kind: 'k', slug: 's')),
 					'catalogue.detailMissing' => $this->answer(response: fn (): JSONResponse => $catalogue()->detail(slug: 'missing')),
-					'catalogue.index' => $this->answer(response: fn (): JSONResponse => $catalogue()->index(portal: 'asked', search: 'zwem')),
+					'catalogue.index' => $this->answer(response: fn (): JSONResponse => $catalogue()->index(portal: 'asked')),
 				];
 			}
 		}
@@ -123,6 +123,15 @@ class ContentNewsCatalogueGoldenTest extends TestCase {
 	 */
 	private function shared(?array $portal, ?array $subject, string $header): array {
 		$request = $this->createMock(IRequest::class);
+		$request->method('getParam')->willReturnCallback(
+			static function (string $key, mixed $default = null): mixed {
+				if ($key === 'search') {
+					return 'zwem';
+				}
+
+				return $default;
+			}
+		);
 		$request->method('getHeader')->willReturnCallback(function (string $name) use ($header): string {
 			$this->log[] = ['getHeader' => $name];
 			return ($name === 'Authorization') ? $header : '';
