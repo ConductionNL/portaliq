@@ -14,3 +14,5 @@
 - portaliq/WooVerzoekGegevens Woo-verzoek: stap 2 van 3, uw gegevens https://identity.conduction.nl/screens/board?id=portaliq/WooVerzoekGegevens
 - wilgenboom/MobielDetail Telefoon: afwezig melden https://identity.conduction.nl/screens/board?id=wilgenboom/MobielDetail
 - esdoornveen/MobielDetail Telefoon: uren schrijven https://identity.conduction.nl/screens/board?id=esdoornveen/MobielDetail
+- portaliq/FormulierFouten the error summary with focus and an action field's own words (REQ-SMF-002, REQ-SMF-006) https://identity.conduction.nl/screens/board?id=portaliq/FormulierFouten
+- portaliq/FormulierVerwerken an action's own confirmation: "Uw zaaknummer is 2026-0003." and nothing about a term (REQ-SMF-022) https://identity.conduction.nl/screens/board?id=portaliq/FormulierVerwerken
