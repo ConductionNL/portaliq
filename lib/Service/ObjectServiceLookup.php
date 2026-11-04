@@ -31,12 +31,16 @@ use Throwable;
 /**
  * OpenRegister's ObjectService, or null when it is not available.
  *
- * The using class holds the container in `$this->container` and names the
- * service in its `OBJECT_SERVICE` constant.
+ * The using class holds the container in `$this->container`.
  *
  * @spec exclude Shared lookup helper; the @spec of each calling method covers the behaviour it reads or writes for.
  */
 trait ObjectServiceLookup {
+
+	/**
+	 * OpenRegister's object service.
+	 */
+	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	/**
 	 * OpenRegister's ObjectService, or null when it is not available.

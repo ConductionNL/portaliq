@@ -172,6 +172,7 @@ class PortalRecordChangeListener implements IEventListener {
 		$newData = $new->getObject();
 		$oldData = $old->getObject();
 		$recordId = (string)($new->getUuid() ?? '');
+		$record   = ['id' => $recordId, 'organisation' => (string)($new->getOrganisation() ?? '')];
 		foreach ($rules as $rule) {
 			$field = $rule['field'];
 			if (($newData[$field] ?? null) === ($oldData[$field] ?? null)) {
@@ -186,7 +187,7 @@ class PortalRecordChangeListener implements IEventListener {
 				continue;
 			}
 
-			foreach ($this->recipients(rule: $rule, data: $newData, recordId: $recordId) as $recipient) {
+			foreach ($this->recipients(rule: $rule, data: $newData, record: $record) as $recipient) {
 				$this->tell(rule: $rule, account: $recipient['account'], row: $recipient['row'], recordId: $recordId, value: $value);
 			}
 		}//end foreach
@@ -197,14 +198,14 @@ class PortalRecordChangeListener implements IEventListener {
 	 * else the resident whose reference the record holds at the scope field.
 	 *
 	 * @param array<string, string> $rule     The rule.
-	 * @param array<string, mixed>  $data     The record after the change.
-	 * @param string                $recordId The record's uuid.
+	 * @param array<string, mixed>  $data   The record after the change.
+	 * @param array{id: string, organisation: string} $record The record's uuid and organisation uuid.
 	 *
 	 * @return array<int, array<string, array<string, mixed>>> Each with `account` and `row`.
 	 *
 	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
 	 */
-	private function recipients(array $rule, array $data, string $recordId): array {
+	private function recipients(array $rule, array $data, array $record): array {
 		if (($rule['recipientClaim'] ?? '') !== '') {
 			return ($this->ruleNotices?->recipients(
 				appId: $rule['app'],
@@ -212,7 +213,7 @@ class PortalRecordChangeListener implements IEventListener {
 				claim: $rule['recipientClaim'],
 				collection: $this->rules->details(entry: $rule)['collection'],
 				data: $data,
-				recordId: $recordId
+				record: $record
 			) ?? []);
 		}
 
