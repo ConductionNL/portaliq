@@ -67,7 +67,28 @@ class ExampleResidentRemover {
 	 */
 	public function remove(string $id, string $slug): array {
 		$record = $this->record->read(id: $id);
-		$report = [
+		$report = $this->opening(id: $id, record: $record);
+		if ($report['recorded'] === false || $report['available'] === false) {
+			return $report;
+		}
+
+		$report = $this->removeObjects(record: $record, report: $report);
+		$report = $this->withParts(report: $report, parts: $this->removeParts(record: $record, slug: $slug));
+		$this->record->write(id: $id, record: $record);
+
+		return $report;
+	}//end remove()
+
+	/**
+	 * The report before anything is removed.
+	 *
+	 * @param string               $id     The declaration's id.
+	 * @param array<string, mixed> $record The install record.
+	 *
+	 * @return array<string, mixed> The report with nothing removed yet.
+	 */
+	private function opening(string $id, array $record): array {
+		return [
 			'id'        => $id,
 			'recorded'  => ($this->record->isEmpty(record: $record) === false),
 			'available' => $this->store->available(),
@@ -78,41 +99,86 @@ class ExampleResidentRemover {
 			'signIn'    => 'kept-not-ours',
 			'user'      => 'kept-not-ours',
 		];
-		if ($report['recorded'] === false || $report['available'] === false) {
-			return $report;
-		}
+	}//end opening()
 
+	/**
+	 * Delete the recorded objects, last-written first, and count them per type.
+	 *
+	 * @param array<string, mixed> $record The record; an object leaves it once it is gone.
+	 * @param array<string, mixed> $report The report so far.
+	 *
+	 * @return array<string, mixed> The report with `types` and the failed objects.
+	 */
+	private function removeObjects(array &$record, array $report): array {
 		foreach (array_reverse($record['objects'], true) as $key => $object) {
 			$type = $object['register'] . ' ' . $object['schema'];
 			$report['types'][$type] ??= ['deleted' => 0, 'gone' => 0];
-			if ($this->store->get(register: $object['register'], schema: $object['schema'], id: $object['id']) === null) {
-				$report['types'][$type]['gone']++;
-				unset($record['objects'][$key]);
+			$outcome = $this->removeObject(object: $object);
+			if ($outcome === 'failed') {
+				$report['failed'][] = $type . ' ' . $key;
 				continue;
 			}
 
-			if ($this->store->delete(register: $object['register'], schema: $object['schema'], id: $object['id']) === true) {
-				$report['types'][$type]['deleted']++;
-				unset($record['objects'][$key]);
-				continue;
-			}
-
-			$report['failed'][] = $type . ' ' . $key;
+			$report['types'][$type][$outcome]++;
+			unset($record['objects'][$key]);
 		}
 
-		$report['account'] = $this->removeAccount(record: $record);
-		$report['signIn']  = $this->removeSignIn(record: $record, slug: $slug);
-		$report['user']    = $this->removeUser(record: $record);
-		foreach (['account', 'signIn', 'user'] as $part) {
-			if ($report[$part] === 'failed') {
+		return $report;
+	}//end removeObjects()
+
+	/**
+	 * Delete one recorded object.
+	 *
+	 * @param array<string, string> $object The recorded register, schema and id.
+	 *
+	 * @return string `gone` when it was already gone, `deleted` or `failed`.
+	 */
+	private function removeObject(array $object): string {
+		if ($this->store->get(register: $object['register'], schema: $object['schema'], id: $object['id']) === null) {
+			return 'gone';
+		}
+
+		if ($this->store->delete(register: $object['register'], schema: $object['schema'], id: $object['id']) === true) {
+			return 'deleted';
+		}
+
+		return 'failed';
+	}//end removeObject()
+
+	/**
+	 * The report with the outcome of each part, and every failed part named.
+	 *
+	 * @param array<string, mixed>  $report The report so far.
+	 * @param array<string, string> $parts  The outcome per part.
+	 *
+	 * @return array<string, mixed> The report.
+	 */
+	private function withParts(array $report, array $parts): array {
+		foreach ($parts as $part => $outcome) {
+			$report[$part] = $outcome;
+			if ($outcome === 'failed') {
 				$report['failed'][] = $part;
 			}
 		}
 
-		$this->record->write(id: $id, record: $record);
-
 		return $report;
-	}//end remove()
+	}//end withParts()
+
+	/**
+	 * Remove the portal account, the sign-in mode and the Nextcloud account, in that order.
+	 *
+	 * @param array<string, mixed> $record The record; each entry is cleared once its part is gone.
+	 * @param string               $slug   The portal's slug.
+	 *
+	 * @return array{account: string, signIn: string, user: string} The outcome per part.
+	 */
+	private function removeParts(array &$record, string $slug): array {
+		return [
+			'account' => $this->removeAccount(record: $record),
+			'signIn'  => $this->removeSignIn(record: $record, slug: $slug),
+			'user'    => $this->removeUser(record: $record),
+		];
+	}//end removeParts()
 
 	/**
 	 * Delete the portal account the install made.
