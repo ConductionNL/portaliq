@@ -28,6 +28,8 @@ namespace OCA\Portaliq\Service\Plans;
 use DateTimeImmutable;
 use DateTimeZone;
 use OCA\Portaliq\Service\PagedObjectReads;
+use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\RowAsArray;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -41,6 +43,7 @@ use Throwable;
  * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md#requirement-a-plan-near-its-end-date-asks-for-action-req-spl-004
  */
 class PlanEndReminderService {
+	use RowAsArray;
 	use PagedObjectReads;
 
 	public const RULE_KEY = 'plan-ending';
@@ -56,12 +59,14 @@ class PlanEndReminderService {
 	 * @param LoggerInterface $logger The logger.
 	 * @param PlanRules $rules The rules that say when a plan is near its end.
 	 * @param PlanEndingMailer|null $mail Mails each participant beside the portal message.
+	 * @param PortalAccountService|null $accounts Tells a withdrawn participant apart.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 		private readonly PlanRules $rules = new PlanRules(),
 		private readonly ?PlanEndingMailer $mail = null,
+		private readonly ?PortalAccountService $accounts = null,
 	) {
 	}//end __construct()
 
@@ -150,24 +155,6 @@ class PlanEndReminderService {
 		return $open;
 	}//end openActions()
 
-	/**
-	 * A stored row as an array.
-	 *
-	 * @param mixed $row The row, an array or an entity.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function asArray(mixed $row): array {
-		if (is_array($row) === true) {
-			return $row;
-		}
-
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			return (array)$row->jsonSerialize();
-		}
-
-		return [];
-	}//end asArray()
 
 	/**
 	 * A row's identifier.
@@ -179,6 +166,29 @@ class PlanEndReminderService {
 	private function idOf(array $row): string {
 		return (string)($row['uuid'] ?? $row['id'] ?? ($row['@self']['uuid'] ?? ($row['@self']['id'] ?? '')));
 	}//end idOf()
+
+	/**
+	 * The people a reminder may reach: every non-empty reference whose
+	 * account was not withdrawn (void). A skip is logged with the account id only.
+	 *
+	 * @param array<int, string> $people The plan's owner and participants.
+	 *
+	 * @return array<int, string>
+	 */
+	private function reachable(array $people): array {
+		$reachable = [];
+		foreach (array_filter($people) as $ref) {
+			$account = $this->accounts?->findBySubjectRef(subjectRef: $ref);
+			if (($account['status'] ?? '') === PortalAccountService::STATUS_VOID) {
+				$this->logger->info('Portaliq: no plan end reminder to a withdrawn account', ['account' => (string)($account['id'] ?? '')]);
+				continue;
+			}
+
+			$reachable[] = $ref;
+		}
+
+		return $reachable;
+	}//end reachable()
 
 	/**
 	 * Write one message per person, then record the reminder on the plan. The
@@ -199,7 +209,7 @@ class PlanEndReminderService {
 		$members = array_filter((array)($plan['participants'] ?? []), 'is_string');
 		$people  = array_values(array_unique(array_merge([(string)($plan['owner'] ?? '')], $members)));
 		try {
-			foreach (array_filter($people) as $ref) {
+			foreach ($this->reachable(people: $people) as $ref) {
 				$objectService->saveObject(
 					object: [
 						'subjectRef' => $ref,

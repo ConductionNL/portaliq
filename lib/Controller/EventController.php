@@ -29,7 +29,6 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\ObjectServiceLookup;
-use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -38,7 +37,6 @@ use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Staff authoring for events.
@@ -55,6 +53,7 @@ class EventController extends Controller {
 	use StaffActionGuard;
 	use ObjectArrayRow;
 	use TargetedAudience;
+	use StaffRowWrite;
 
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
@@ -122,35 +121,20 @@ class EventController extends Controller {
 			return new JSONResponse(['error' => 'invalid_target'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$objectService = $this->objectService();
-		if ($objectService === null) {
-			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);
-		}
-
-		try {
-			$saved = $objectService->saveObject(
-				object: [
-					'title' => $title,
-					'description' => $description,
-					'start' => $start,
-					'end' => $end,
-					'target' => $target,
-					'status' => 'draft',
-					'rsvpEnabled' => $rsvpEnabled,
-					'signupRoles' => $signupRoles,
-					'authorRef' => $authorRef,
-				],
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				_rbac: false,
-				_multitenancy: false
-			);
-		} catch (Throwable $e) {
-			$this->logger->error('Portaliq: event create failed', ['reason' => $e->getMessage()]);
-			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);
-		}
-
-		return new JSONResponse($this->normalise(row: $saved));
+		return $this->createRow(
+			object: [
+				'title' => $title,
+				'description' => $description,
+				'start' => $start,
+				'end' => $end,
+				'target' => $target,
+				'status' => 'draft',
+				'rsvpEnabled' => $rsvpEnabled,
+				'signupRoles' => $signupRoles,
+				'authorRef' => $authorRef,
+			],
+			failure: 'Portaliq: event create failed'
+		);
 	}//end create()
 
 	/**
@@ -170,21 +154,6 @@ class EventController extends Controller {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$writer = new PortalObjectWriter(container: $this->container, logger: $this->logger);
-		$updated = $writer->updateObject(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: '',
-			subjectRef: '',
-			organisation: '',
-			id: $id,
-			data: ['status' => 'published']
-		);
-
-		if ($updated === null) {
-			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
-		}
-
-		return new JSONResponse($updated);
+		return $this->writeRow(id: $id, data: ['status' => 'published']);
 	}//end publish()
 }//end class

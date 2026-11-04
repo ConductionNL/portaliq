@@ -68,22 +68,22 @@ console.log('signInRoutes')
 // THE NEGATIVE CASE, first because it is the one that goes wrong.
 assertEqual(
 	'a public-only portal offers NO sign-in route',
-	signInRoutes({ authentication: { modes: ['public'] } }, '/x'),
+	signInRoutes({ authentication: { modes: ['public'] } }, { authBase: '/x' }),
 	[],
 )
 assertEqual(
 	'a portal with no authentication block offers none either',
-	signInRoutes({}, '/x'),
+	signInRoutes({}, { authBase: '/x' }),
 	[],
 )
 assertEqual(
 	'a malformed modes value offers none',
-	signInRoutes({ authentication: { modes: 'digid' } }, '/x'),
+	signInRoutes({ authentication: { modes: 'digid' } }, { authBase: '/x' }),
 	[],
 )
 assertEqual(
 	'an unknown mode is not turned into a route',
-	signInRoutes({ authentication: { modes: ['telepathy'] } }, '/x'),
+	signInRoutes({ authentication: { modes: ['telepathy'] } }, { authBase: '/x' }),
 	[],
 )
 
@@ -91,7 +91,7 @@ assertEqual(
 // function that returns [] unconditionally.
 assertEqual(
 	'digid becomes a labelled OIDC start',
-	signInRoutes({ authentication: { modes: ['digid'] } }, '/x'),
+	signInRoutes({ authentication: { modes: ['digid'] } }, { authBase: '/x' }),
 	[
 		{
 			key: 'digid',
@@ -103,7 +103,7 @@ assertEqual(
 )
 assertEqual(
 	'nextcloud routes to the nextcloud edge, not to OIDC',
-	signInRoutes({ authentication: { modes: ['nextcloud'] } }, '/x'),
+	signInRoutes({ authentication: { modes: ['nextcloud'] } }, { authBase: '/x' }),
 	[
 		{
 			key: 'nextcloud',
@@ -115,24 +115,18 @@ assertEqual(
 )
 assertEqual(
 	'with example residents on offer, the nextcloud way stays the account route and one demo card per resident follows the ways in (demo-sign-in-beside-the-account)',
-	signInRoutes(
-		{
+	signInRoutes({
 			slug: 'zuiddrecht',
 			registerUrl: '/r',
 			authentication: { modes: ['nextcloud', 'digid'] },
-		},
-		'/x',
-		undefined,
-		'zuiddrecht',
-		[
+		}, { authBase: '/x', t: undefined, exampleResident: 'zuiddrecht', demoResidents: [
 			{ key: 'sanne', name: 'Sanne de Vries', card: {} },
 			{
 				key: 'linda',
 				name: 'Linda Bakker',
 				card: { text: 'Regelt zaken voor Henk.' },
 			},
-		],
-	),
+		] }),
 	[
 		{
 			key: 'nextcloud',
@@ -167,12 +161,7 @@ assertEqual(
 )
 assertEqual(
 	'a shell that names only the set gets one card for its first resident',
-	signInRoutes(
-		{ slug: 'zuiddrecht', authentication: { modes: ['nextcloud'] } },
-		'/x',
-		undefined,
-		'zuiddrecht',
-	).map((r) => [r.key, r.label, r.href]),
+	signInRoutes({ slug: 'zuiddrecht', authentication: { modes: ['nextcloud'] } }, { authBase: '/x', t: undefined, exampleResident: 'zuiddrecht' }).map((r) => [r.key, r.label, r.href]),
 	[
 		['nextcloud', 'Inloggen met uw account', '/x/session/nextcloud?portal=zuiddrecht'],
 		[
@@ -184,40 +173,23 @@ assertEqual(
 )
 assertEqual(
 	'a portal without the nextcloud way gets no demo card, as the route would refuse it',
-	signInRoutes(
-		{ slug: 'zuiddrecht', authentication: { modes: ['digid'] } },
-		'/x',
-		undefined,
-		'zuiddrecht',
-		[{ key: 'sanne', name: 'Sanne de Vries' }],
-	).map((r) => r.mode),
+	signInRoutes({ slug: 'zuiddrecht', authentication: { modes: ['digid'] } }, { authBase: '/x', t: undefined, exampleResident: 'zuiddrecht', demoResidents: [{ key: 'sanne', name: 'Sanne de Vries' }] }).map((r) => r.mode),
 	['digid'],
 )
 assertEqual(
 	'without one the nextcloud way keeps the account path',
-	signInRoutes(
-		{ slug: 'zuiddrecht', authentication: { modes: ['nextcloud'] } },
-		'/x',
-		undefined,
-		'',
-	).map((r) => [r.href, r.demo]),
+	signInRoutes({ slug: 'zuiddrecht', authentication: { modes: ['nextcloud'] } }, { authBase: '/x', t: undefined, exampleResident: '' }).map((r) => [r.href, r.demo]),
 	[['/x/session/nextcloud?portal=zuiddrecht', undefined]],
 )
 assertEqual(
 	'public is dropped from a MIXED list while the real modes survive',
-	signInRoutes(
-		{ authentication: { modes: ['public', 'digid', 'eherkenning'] } },
-		'/x',
-	).map((r) => r.mode),
+	signInRoutes({ authentication: { modes: ['public', 'digid', 'eherkenning'] } }, { authBase: '/x' }).map((r) => r.mode),
 	['digid', 'eherkenning'],
 )
 
 assertEqual(
 	'the portal slug travels with the sign-in link, so a shared host cannot resolve the wrong portal',
-	signInRoutes(
-		{ slug: 'la-franken', authentication: { modes: ['nextcloud', 'digid'] } },
-		'/x',
-	).map((r) => r.href),
+	signInRoutes({ slug: 'la-franken', authentication: { modes: ['nextcloud', 'digid'] } }, { authBase: '/x' }).map((r) => r.href),
 	[
 		'/x/session/nextcloud?portal=la-franken',
 		'/x/session/oidc/start?provider=digid&portal=la-franken',
@@ -230,10 +202,7 @@ assertEqual(
 // was refused whatever the organisation had configured.
 assertEqual(
 	'the oidc mode starts the generic provider, which is the one the edge knows',
-	signInRoutes(
-		{ slug: 'la-franken', authentication: { modes: ['oidc'] } },
-		'/x',
-	).map((r) => r.href),
+	signInRoutes({ slug: 'la-franken', authentication: { modes: ['oidc'] } }, { authBase: '/x' }).map((r) => r.href),
 	['/x/session/oidc/start?provider=generic&portal=la-franken'],
 )
 

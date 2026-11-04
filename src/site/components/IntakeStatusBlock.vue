@@ -119,9 +119,8 @@ export default {
 			this.busy = true
 			try {
 				const status = await lookUpStatus(
-					authBaseFrom(resolveApiBase()),
+					{ base: authBaseFrom(resolveApiBase()), portal: this.portal },
 					this.reference,
-					this.portal,
 				)
 				this.view = statusView(status)
 			} catch {

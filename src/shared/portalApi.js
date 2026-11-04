@@ -41,12 +41,34 @@ function submissionHeaders(options) {
 }
 
 /**
+ * A refused write, `{ ok: false, status, object, error, errors, invalid }`.
+ * A refusal may name fields, e.g. a required field left empty
+ * (site-multi-step-forms REQ-SMF-024), and the values the store refused by
+ * field and kind (site-action-forms).
+ *
+ * @param {number} status The answer's status.
+ * @param {object} refusal The answer's body.
+ * @return {object} The refusal.
+ */
+function writeRefusal(status, refusal) {
+	const objectOr = (value) => (value && typeof value === 'object' ? value : {})
+	return {
+		ok: false,
+		status,
+		object: null,
+		error: typeof refusal?.error === 'string' ? refusal.error : '',
+		errors: objectOr(refusal?.errors),
+		invalid: objectOr(refusal?.invalid),
+	}
+}
+
+/**
  *
  */
 export function getToken() {
 	try {
 		return window.localStorage.getItem(TOKEN_KEY) || null
-	} catch (e) {
+	} catch {
 		return null
 	}
 }
@@ -62,7 +84,7 @@ export function setToken(token) {
 		} else {
 			window.localStorage.removeItem(TOKEN_KEY)
 		}
-	} catch (e) {
+	} catch {
 		/* storage unavailable — session simply won't persist */
 	}
 }
@@ -164,38 +186,47 @@ export function createPortalApi(config, store = {}) {
 	 * @param body
 	 */
 	async function send(method, path, body) {
-		const res = await fetch(`${base}${path}`, {
+		const res = await fetch(`${base}${path}`, jsonInit(method, body || {}))
+		if (!res.ok) {
+			return writeRefusal(res.status, await res.json().catch(() => ({})))
+		}
+		const json = await res.json().catch(() => ({}))
+		return { ok: true, status: res.status, object: json.object || json }
+	}
+
+	/**
+	 * The init of a JSON request with the bearer.
+	 *
+	 * @param {string} method The HTTP method.
+	 * @param {object|undefined} body The body, sent as JSON.
+	 * @return {object} The init.
+	 */
+	function jsonInit(method, body) {
+		return {
 			method,
 			headers: {
 				'Content-Type': 'application/json',
 				Accept: 'application/json',
 				...authHeaders(),
 			},
-			body: JSON.stringify(body || {}),
-		})
-		if (!res.ok) {
-			// A refusal may name fields, e.g. a required field left empty
-			// (site-multi-step-forms REQ-SMF-024): keep `error` and `errors`.
-			const refusal = await res.json().catch(() => ({}))
-			return {
-				ok: false,
-				status: res.status,
-				object: null,
-				error: typeof refusal?.error === 'string' ? refusal.error : '',
-				errors:
-					refusal?.errors && typeof refusal.errors === 'object'
-						? refusal.errors
-						: {},
-				// A value the store refused, by field and kind
-				// (site-action-forms).
-				invalid:
-					refusal?.invalid && typeof refusal.invalid === 'object'
-						? refusal.invalid
-						: {},
-			}
+			body: JSON.stringify(body),
 		}
-		const json = await res.json().catch(() => ({}))
-		return { ok: true, status: res.status, object: json.object || json }
+	}
+
+	/**
+	 * A refused write citizen case call, `{ ok: false, status, message, error }`.
+	 *
+	 * @param {number} status The answer's status.
+	 * @param {object} json The answer's body.
+	 * @return {object} The refusal.
+	 */
+	function caseRefusal(status, json) {
+		return {
+			ok: false,
+			status,
+			message: json.message || '',
+			error: json.error || '',
+		}
 	}
 
 	/**
@@ -211,15 +242,7 @@ export function createPortalApi(config, store = {}) {
 	 */
 	async function answer(method, path, body) {
 		try {
-			const res = await fetch(`${base}${path}`, {
-				method,
-				headers: {
-					'Content-Type': 'application/json',
-					Accept: 'application/json',
-					...authHeaders(),
-				},
-				body: JSON.stringify(body || {}),
-			})
+			const res = await fetch(`${base}${path}`, jsonInit(method, body || {}))
 			const data = await res.json().catch(() => ({}))
 			return {
 				ok: res.ok,
@@ -229,6 +252,34 @@ export function createPortalApi(config, store = {}) {
 			}
 		} catch {
 			return { ok: false, status: 0, error: '', data: null }
+		}
+	}
+
+	/**
+	 * One multipart attach of a file: its answer, and whether a second try
+	 * may help (a 502, 503 or 504 bounce, or a network error).
+	 *
+	 * @param {string} url The attach address.
+	 * @param {FormData} form The file, as `file`.
+	 * @return {Promise<{retry: boolean, result: object}>} The outcome.
+	 */
+	async function attachOnce(url, form) {
+		try {
+			const res = await fetch(url, {
+				method: 'POST',
+				headers: { Accept: 'application/json', ...authHeaders() },
+				body: form,
+			})
+			if (res.ok) {
+				const json = await res.json().catch(() => ({}))
+				return { retry: false, result: { ok: true, file: json.file || json } }
+			}
+			return {
+				retry: [502, 503, 504].includes(res.status),
+				result: { ok: false, status: res.status },
+			}
+		} catch {
+			return { retry: true, result: { ok: false, status: 0 } }
 		}
 	}
 
@@ -251,6 +302,33 @@ export function createPortalApi(config, store = {}) {
 	// governed by the case type rather than by the collection's own opt-ins.
 	const citizenCase = (register, schema) =>
 		`/citizen/cases/${encodeURIComponent(register)}/${encodeURIComponent(schema)}`
+
+	/**
+	 * The address of one of the resident's own cases.
+	 *
+	 * @param {object} collection Manifest collection: `{ register, schema }`.
+	 * @param {string} id The case id.
+	 * @return {string} The address.
+	 */
+	function citizenCaseUrl(collection, id) {
+		return `${base}${citizenCase(collection.register, collection.schema)}/${encodeURIComponent(id)}`
+	}
+
+	/**
+	 * The address of an endpoint row action on one row. `actionApp` names
+	 * another app's action attached to this collection
+	 * (woo-journey-entry-points D3).
+	 *
+	 * @param {object} collection Manifest collection: `{ id, register, schema }`.
+	 * @param {{rowId: string, actionId: string, actionApp: string}} target The row, the action and the app it belongs to, or ''.
+	 * @return {string} The address.
+	 */
+	function rowActionUrl(collection, { rowId, actionId, actionApp }) {
+		const attached = actionApp
+			? `&actionApp=${encodeURIComponent(actionApp)}`
+			: ''
+		return `${base}${col(collection.register, collection.schema)}/${encodeURIComponent(rowId)}/actions/${encodeURIComponent(actionId)}?collection=${encodeURIComponent(collection.id)}${attached}`
+	}
 
 	/**
 	 * Fetch one listed document and save it client-side through a Blob URL,
@@ -1069,15 +1147,7 @@ export function createPortalApi(config, store = {}) {
 		 */
 		async saveDraft(app, actionId, draft) {
 			try {
-				const res = await fetch(draftUrl(app, actionId), {
-					method: 'PUT',
-					headers: {
-						'Content-Type': 'application/json',
-						Accept: 'application/json',
-						...authHeaders(),
-					},
-					body: JSON.stringify(draft),
-				})
+				const res = await fetch(draftUrl(app, actionId), jsonInit('PUT', draft))
 				if (res.ok) {
 					return await res.json()
 				}
@@ -1262,26 +1332,10 @@ export function createPortalApi(config, store = {}) {
 		 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
 		 */
 		async amendCitizenCase(collection, id, fields) {
-			const res = await fetch(
-				`${base}${citizenCase(collection.register, collection.schema)}/${encodeURIComponent(id)}`,
-				{
-					method: 'PATCH',
-					headers: {
-						'Content-Type': 'application/json',
-						Accept: 'application/json',
-						...authHeaders(),
-					},
-					body: JSON.stringify({ fields }),
-				},
-			)
+			const res = await fetch(citizenCaseUrl(collection, id), jsonInit('PATCH', { fields }))
 			const json = await res.json().catch(() => ({}))
 			if (!res.ok) {
-				return {
-					ok: false,
-					status: res.status,
-					message: json.message || '',
-					error: json.error || '',
-				}
+				return caseRefusal(res.status, json)
 			}
 			return { ok: true, status: res.status, case: json.case || null }
 		},
@@ -1395,25 +1449,12 @@ export function createPortalApi(config, store = {}) {
 		 */
 		async withdrawCitizenCase(collection, id, reason) {
 			const res = await fetch(
-				`${base}${citizenCase(collection.register, collection.schema)}/${encodeURIComponent(id)}/withdraw`,
-				{
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						Accept: 'application/json',
-						...authHeaders(),
-					},
-					body: JSON.stringify({ reason }),
-				},
+				`${citizenCaseUrl(collection, id)}/withdraw`,
+				jsonInit('POST', { reason }),
 			)
 			const json = await res.json().catch(() => ({}))
 			if (!res.ok) {
-				return {
-					ok: false,
-					status: res.status,
-					message: json.message || '',
-					error: json.error || '',
-				}
+				return caseRefusal(res.status, json)
 			}
 			return {
 				ok: true,
@@ -1436,22 +1477,14 @@ export function createPortalApi(config, store = {}) {
 		async addCitizenDocument(collection, id, file) {
 			const form = new FormData()
 			form.append('file', file)
-			const res = await fetch(
-				`${base}${citizenCase(collection.register, collection.schema)}/${encodeURIComponent(id)}/documents`,
-				{
-					method: 'POST',
-					headers: { Accept: 'application/json', ...authHeaders() },
-					body: form,
-				},
-			)
+			const res = await fetch(`${citizenCaseUrl(collection, id)}/documents`, {
+				method: 'POST',
+				headers: { Accept: 'application/json', ...authHeaders() },
+				body: form,
+			})
 			const json = await res.json().catch(() => ({}))
 			if (!res.ok) {
-				return {
-					ok: false,
-					status: res.status,
-					message: json.message || '',
-					error: json.error || '',
-				}
+				return caseRefusal(res.status, json)
 			}
 			return { ok: true, document: json.document || null }
 		},
@@ -1517,31 +1550,20 @@ export function createPortalApi(config, store = {}) {
 			upload = null,
 			options = {},
 		) {
-			// `actionApp` names another app's action attached to this
-			// collection (woo-journey-entry-points D3).
-			const attached = actionApp
-				? `&actionApp=${encodeURIComponent(actionApp)}`
-				: ''
 			// Files the action lets the resident add go multipart; without
 			// them the body stays JSON (row-action-carries-files REQ-RAF-001).
 			const multipart = rowActionFormData(answers, upload)
 			try {
 				const res = await fetch(
-					`${base}${col(collection.register, collection.schema)}/${encodeURIComponent(rowId)}/actions/${encodeURIComponent(actionId)}?collection=${encodeURIComponent(collection.id)}${attached}`,
+					rowActionUrl(collection, { rowId, actionId, actionApp }),
 					{
 						method: 'POST',
-						headers: multipart
-							? {
-									Accept: 'application/json',
-									...authHeaders(),
-									...submissionHeaders(options),
-								}
-							: {
-									'Content-Type': 'application/json',
-									Accept: 'application/json',
-									...authHeaders(),
-									...submissionHeaders(options),
-								},
+						headers: {
+							...(multipart ? {} : { 'Content-Type': 'application/json' }),
+							Accept: 'application/json',
+							...authHeaders(),
+							...submissionHeaders(options),
+						},
 						body: multipart || JSON.stringify(answers || {}),
 					},
 				)
@@ -1570,36 +1592,12 @@ export function createPortalApi(config, store = {}) {
 			// dev instance can bounce an upload that overlaps another same-object
 			// request (e.g. the detail card's file-list read). Idempotent enough
 			// for a fresh attach; the server re-verifies ownership either way.
-			for (let attempt = 0; attempt < 2; attempt++) {
-				try {
-					const res = await fetch(url, {
-						method: 'POST',
-						headers: { Accept: 'application/json', ...authHeaders() },
-						body: form,
-					})
-					if (res.ok) {
-						const json = await res.json().catch(() => ({}))
-						return { ok: true, file: json.file || json }
-					}
-					if (
-						attempt === 0
-						&& (res.status === 502
-							|| res.status === 503
-							|| res.status === 504)
-					) {
-						await new Promise((resolve) => setTimeout(resolve, 600))
-						continue
-					}
-					return { ok: false, status: res.status }
-				} catch (e) {
-					if (attempt === 0) {
-						await new Promise((resolve) => setTimeout(resolve, 600))
-						continue
-					}
-					return { ok: false, status: 0 }
-				}
+			const first = await attachOnce(url, form)
+			if (!first.retry) {
+				return first.result
 			}
-			return { ok: false, status: 0 }
+			await new Promise((resolve) => setTimeout(resolve, 600))
+			return (await attachOnce(url, form)).result
 		},
 
 		/**
@@ -1672,7 +1670,7 @@ export function createPortalApi(config, store = {}) {
 					window.URL.revokeObjectURL(objectUrl)
 				}, 10000)
 				return { ok: true }
-			} catch (e) {
+			} catch {
 				return { ok: false, status: 0 }
 			}
 		},
@@ -1820,7 +1818,7 @@ export function createPortalApi(config, store = {}) {
 					headers: { Accept: 'application/json', ...authHeaders() },
 				})
 				answer = res.ok ? await res.json().catch(() => null) : null
-			} catch (e) {
+			} catch {
 				/* best-effort — the token is dropped regardless */
 			}
 			writeToken(null)

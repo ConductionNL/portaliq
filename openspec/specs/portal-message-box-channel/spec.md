@@ -60,12 +60,12 @@ For a message whose collection declares the channel, in an organisation that off
 
 ### Requirement: The resident sees only a real delivery (REQ-MBC-004)
 
-Portaliq SHALL update the attempt when integriq reports a status for a message portaliq requested. A simulated delivery SHALL be recorded as simulated and SHALL NOT be shown as delivered. The inbox SHALL show "Also sent to {label}." under a message only once its message box send was delivered or read.
+Portaliq SHALL update the attempt when integriq reports a status for a message portaliq requested. A simulated delivery SHALL be recorded as simulated and SHALL NOT be shown as delivered. The inbox SHALL show "Ook verstuurd naar {label}, op {date} om {time}." under a message only once its message box send was delivered or read. The label follows the portal's form of address.
 
 #### Scenario: A delivered letter
-- **GIVEN** a message box send for a resident's message
+- **GIVEN** a message box send for a student's message on a portal that says "je"
 - **WHEN** integriq reports it delivered
-- **THEN** the resident's inbox shows "Also sent to {label}." under that message
+- **THEN** the student's inbox shows "Ook verstuurd naar je Berichtenbox van MijnOverheid, op vrijdag 2 oktober om 14:02." under that message
 - @e2e exclude Needs integriq's live binding; pinned by PortalInboxReaderTest::testOnlyADeliveredMessageBoxSendIsShown and tests/message-box-channel.spec.mjs
 
 #### Scenario: A simulated send stays quiet

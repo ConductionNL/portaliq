@@ -1,3 +1,3 @@
 # Screens
 
-- Documenten https://identity.conduction.nl/screens/board?id=wilgenboom/Documenten
+- wilgenboom/Documenten rapporten en documenten https://identity.conduction.nl/screens/board?id=wilgenboom/Documenten

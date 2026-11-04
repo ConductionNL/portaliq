@@ -1,0 +1,680 @@
+{
+    "all collaborators answer": {
+        "status": 200,
+        "headers": {
+            "Content-Type": "text/plain; version=0.0.4; charset=utf-8"
+        },
+        "body": [
+            "# HELP portaliq_info Static app information",
+            "# TYPE portaliq_info gauge",
+            "portaliq_info{app=\"portaliq\",version=\"0.1.0\"} 1",
+            "# HELP portaliq_health_status 1 when OpenRegister reachable, 0 otherwise",
+            "# TYPE portaliq_health_status gauge",
+            "portaliq_health_status 1",
+            "# HELP portaliq_notifications_failed_total Count of failed notification attempts (count-only, no recipient identity).",
+            "# TYPE portaliq_notifications_failed_total gauge",
+            "portaliq_notifications_failed_total 1",
+            "# HELP portaliq_accounts_needs_alt_contact Count of accounts flagged needsAlternativeContact (WMEBV fallback; count-only).",
+            "# TYPE portaliq_accounts_needs_alt_contact gauge",
+            "portaliq_accounts_needs_alt_contact 1",
+            "# HELP portaliq_audit_entries_total Portal audit-trail entry count by verb",
+            "# TYPE portaliq_audit_entries_total counter",
+            "portaliq_audit_entries_total{verb=\"login\"} 3",
+            "portaliq_audit_entries_total{verb=\"logout\"} 1",
+            "# HELP portaliq_traffic_accepted_total Traffic events accepted by the collector.",
+            "# TYPE portaliq_traffic_accepted_total counter",
+            "portaliq_traffic_accepted_total 12",
+            "# HELP portaliq_traffic_refused_total Traffic events refused by the collector, by reason.",
+            "# TYPE portaliq_traffic_refused_total counter",
+            "portaliq_traffic_refused_total{reason=\"origin\"} 2",
+            "portaliq_traffic_refused_total{reason=\"rate\"} 5",
+            "# HELP portaliq_content_cache_total Public content reads by cache outcome.",
+            "# TYPE portaliq_content_cache_total counter",
+            "portaliq_content_cache_total{outcome=\"hit\"} 7",
+            "portaliq_content_cache_total{outcome=\"miss\"} 9",
+            ""
+        ],
+        "log": [
+            [
+                "container",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "setRegister",
+                "portaliq"
+            ],
+            [
+                "setSchema",
+                "portalNotification"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "status": "failed"
+                    },
+                    "limit": 1000,
+                    "offset": 0
+                },
+                false,
+                false
+            ],
+            [
+                "container",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "setRegister",
+                "portaliq"
+            ],
+            [
+                "setSchema",
+                "portalAccount"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "needsAlternativeContact": true
+                    },
+                    "limit": 1000,
+                    "offset": 0
+                },
+                false,
+                false
+            ]
+        ]
+    },
+    "unhealthy": {
+        "status": 200,
+        "headers": {
+            "Content-Type": "text/plain; version=0.0.4; charset=utf-8"
+        },
+        "body": [
+            "# HELP portaliq_info Static app information",
+            "# TYPE portaliq_info gauge",
+            "portaliq_info{app=\"portaliq\",version=\"0.1.0\"} 1",
+            "# HELP portaliq_health_status 1 when OpenRegister reachable, 0 otherwise",
+            "# TYPE portaliq_health_status gauge",
+            "portaliq_health_status 0",
+            "# HELP portaliq_notifications_failed_total Count of failed notification attempts (count-only, no recipient identity).",
+            "# TYPE portaliq_notifications_failed_total gauge",
+            "portaliq_notifications_failed_total 1",
+            "# HELP portaliq_accounts_needs_alt_contact Count of accounts flagged needsAlternativeContact (WMEBV fallback; count-only).",
+            "# TYPE portaliq_accounts_needs_alt_contact gauge",
+            "portaliq_accounts_needs_alt_contact 1",
+            "# HELP portaliq_audit_entries_total Portal audit-trail entry count by verb",
+            "# TYPE portaliq_audit_entries_total counter",
+            "portaliq_audit_entries_total{verb=\"login\"} 3",
+            "portaliq_audit_entries_total{verb=\"logout\"} 1",
+            "# HELP portaliq_traffic_accepted_total Traffic events accepted by the collector.",
+            "# TYPE portaliq_traffic_accepted_total counter",
+            "portaliq_traffic_accepted_total 12",
+            "# HELP portaliq_traffic_refused_total Traffic events refused by the collector, by reason.",
+            "# TYPE portaliq_traffic_refused_total counter",
+            "portaliq_traffic_refused_total{reason=\"origin\"} 2",
+            "portaliq_traffic_refused_total{reason=\"rate\"} 5",
+            "# HELP portaliq_content_cache_total Public content reads by cache outcome.",
+            "# TYPE portaliq_content_cache_total counter",
+            "portaliq_content_cache_total{outcome=\"hit\"} 7",
+            "portaliq_content_cache_total{outcome=\"miss\"} 9",
+            ""
+        ],
+        "log": [
+            [
+                "container",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "setRegister",
+                "portaliq"
+            ],
+            [
+                "setSchema",
+                "portalNotification"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "status": "failed"
+                    },
+                    "limit": 1000,
+                    "offset": 0
+                },
+                false,
+                false
+            ],
+            [
+                "container",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "setRegister",
+                "portaliq"
+            ],
+            [
+                "setSchema",
+                "portalAccount"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "needsAlternativeContact": true
+                    },
+                    "limit": 1000,
+                    "offset": 0
+                },
+                false,
+                false
+            ]
+        ]
+    },
+    "no cms reader": {
+        "status": 200,
+        "headers": {
+            "Content-Type": "text/plain; version=0.0.4; charset=utf-8"
+        },
+        "body": [
+            "# HELP portaliq_info Static app information",
+            "# TYPE portaliq_info gauge",
+            "portaliq_info{app=\"portaliq\",version=\"0.1.0\"} 1",
+            "# HELP portaliq_health_status 1 when OpenRegister reachable, 0 otherwise",
+            "# TYPE portaliq_health_status gauge",
+            "portaliq_health_status 1",
+            "# HELP portaliq_notifications_failed_total Count of failed notification attempts (count-only, no recipient identity).",
+            "# TYPE portaliq_notifications_failed_total gauge",
+            "portaliq_notifications_failed_total 1",
+            "# HELP portaliq_accounts_needs_alt_contact Count of accounts flagged needsAlternativeContact (WMEBV fallback; count-only).",
+            "# TYPE portaliq_accounts_needs_alt_contact gauge",
+            "portaliq_accounts_needs_alt_contact 1",
+            "# HELP portaliq_audit_entries_total Portal audit-trail entry count by verb",
+            "# TYPE portaliq_audit_entries_total counter",
+            "portaliq_audit_entries_total{verb=\"login\"} 3",
+            "portaliq_audit_entries_total{verb=\"logout\"} 1",
+            "# HELP portaliq_traffic_accepted_total Traffic events accepted by the collector.",
+            "# TYPE portaliq_traffic_accepted_total counter",
+            "portaliq_traffic_accepted_total 12",
+            "# HELP portaliq_traffic_refused_total Traffic events refused by the collector, by reason.",
+            "# TYPE portaliq_traffic_refused_total counter",
+            "portaliq_traffic_refused_total{reason=\"origin\"} 2",
+            "portaliq_traffic_refused_total{reason=\"rate\"} 5",
+            ""
+        ],
+        "log": [
+            [
+                "container",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "setRegister",
+                "portaliq"
+            ],
+            [
+                "setSchema",
+                "portalNotification"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "status": "failed"
+                    },
+                    "limit": 1000,
+                    "offset": 0
+                },
+                false,
+                false
+            ],
+            [
+                "container",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "setRegister",
+                "portaliq"
+            ],
+            [
+                "setSchema",
+                "portalAccount"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "needsAlternativeContact": true
+                    },
+                    "limit": 1000,
+                    "offset": 0
+                },
+                false,
+                false
+            ]
+        ]
+    },
+    "empty counters": {
+        "status": 200,
+        "headers": {
+            "Content-Type": "text/plain; version=0.0.4; charset=utf-8"
+        },
+        "body": [
+            "# HELP portaliq_info Static app information",
+            "# TYPE portaliq_info gauge",
+            "portaliq_info{app=\"portaliq\",version=\"0.1.0\"} 1",
+            "# HELP portaliq_health_status 1 when OpenRegister reachable, 0 otherwise",
+            "# TYPE portaliq_health_status gauge",
+            "portaliq_health_status 1",
+            "# HELP portaliq_notifications_failed_total Count of failed notification attempts (count-only, no recipient identity).",
+            "# TYPE portaliq_notifications_failed_total gauge",
+            "portaliq_notifications_failed_total 1",
+            "# HELP portaliq_accounts_needs_alt_contact Count of accounts flagged needsAlternativeContact (WMEBV fallback; count-only).",
+            "# TYPE portaliq_accounts_needs_alt_contact gauge",
+            "portaliq_accounts_needs_alt_contact 1",
+            "# HELP portaliq_audit_entries_total Portal audit-trail entry count by verb",
+            "# TYPE portaliq_audit_entries_total counter",
+            "# HELP portaliq_traffic_accepted_total Traffic events accepted by the collector.",
+            "# TYPE portaliq_traffic_accepted_total counter",
+            "portaliq_traffic_accepted_total 0",
+            "# HELP portaliq_traffic_refused_total Traffic events refused by the collector, by reason.",
+            "# TYPE portaliq_traffic_refused_total counter",
+            "# HELP portaliq_content_cache_total Public content reads by cache outcome.",
+            "# TYPE portaliq_content_cache_total counter",
+            "portaliq_content_cache_total{outcome=\"hit\"} 0",
+            "portaliq_content_cache_total{outcome=\"miss\"} 0",
+            ""
+        ],
+        "log": [
+            [
+                "container",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "setRegister",
+                "portaliq"
+            ],
+            [
+                "setSchema",
+                "portalNotification"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "status": "failed"
+                    },
+                    "limit": 1000,
+                    "offset": 0
+                },
+                false,
+                false
+            ],
+            [
+                "container",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "setRegister",
+                "portaliq"
+            ],
+            [
+                "setSchema",
+                "portalAccount"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "needsAlternativeContact": true
+                    },
+                    "limit": 1000,
+                    "offset": 0
+                },
+                false,
+                false
+            ]
+        ]
+    },
+    "object service throws": {
+        "status": 200,
+        "headers": {
+            "Content-Type": "text/plain; version=0.0.4; charset=utf-8"
+        },
+        "body": [
+            "# HELP portaliq_info Static app information",
+            "# TYPE portaliq_info gauge",
+            "portaliq_info{app=\"portaliq\",version=\"0.1.0\"} 1",
+            "# HELP portaliq_health_status 1 when OpenRegister reachable, 0 otherwise",
+            "# TYPE portaliq_health_status gauge",
+            "portaliq_health_status 1",
+            "# HELP portaliq_notifications_failed_total Count of failed notification attempts (count-only, no recipient identity).",
+            "# TYPE portaliq_notifications_failed_total gauge",
+            "portaliq_notifications_failed_total 0",
+            "# HELP portaliq_accounts_needs_alt_contact Count of accounts flagged needsAlternativeContact (WMEBV fallback; count-only).",
+            "# TYPE portaliq_accounts_needs_alt_contact gauge",
+            "portaliq_accounts_needs_alt_contact 0",
+            "# HELP portaliq_audit_entries_total Portal audit-trail entry count by verb",
+            "# TYPE portaliq_audit_entries_total counter",
+            "portaliq_audit_entries_total{verb=\"login\"} 3",
+            "portaliq_audit_entries_total{verb=\"logout\"} 1",
+            "# HELP portaliq_traffic_accepted_total Traffic events accepted by the collector.",
+            "# TYPE portaliq_traffic_accepted_total counter",
+            "portaliq_traffic_accepted_total 12",
+            "# HELP portaliq_traffic_refused_total Traffic events refused by the collector, by reason.",
+            "# TYPE portaliq_traffic_refused_total counter",
+            "portaliq_traffic_refused_total{reason=\"origin\"} 2",
+            "portaliq_traffic_refused_total{reason=\"rate\"} 5",
+            "# HELP portaliq_content_cache_total Public content reads by cache outcome.",
+            "# TYPE portaliq_content_cache_total counter",
+            "portaliq_content_cache_total{outcome=\"hit\"} 7",
+            "portaliq_content_cache_total{outcome=\"miss\"} 9",
+            ""
+        ],
+        "log": [
+            [
+                "container",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "container",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ]
+        ]
+    },
+    "object service scalar": {
+        "status": 200,
+        "headers": {
+            "Content-Type": "text/plain; version=0.0.4; charset=utf-8"
+        },
+        "body": [
+            "# HELP portaliq_info Static app information",
+            "# TYPE portaliq_info gauge",
+            "portaliq_info{app=\"portaliq\",version=\"0.1.0\"} 1",
+            "# HELP portaliq_health_status 1 when OpenRegister reachable, 0 otherwise",
+            "# TYPE portaliq_health_status gauge",
+            "portaliq_health_status 1",
+            "# HELP portaliq_notifications_failed_total Count of failed notification attempts (count-only, no recipient identity).",
+            "# TYPE portaliq_notifications_failed_total gauge",
+            "portaliq_notifications_failed_total 0",
+            "# HELP portaliq_accounts_needs_alt_contact Count of accounts flagged needsAlternativeContact (WMEBV fallback; count-only).",
+            "# TYPE portaliq_accounts_needs_alt_contact gauge",
+            "portaliq_accounts_needs_alt_contact 0",
+            "# HELP portaliq_audit_entries_total Portal audit-trail entry count by verb",
+            "# TYPE portaliq_audit_entries_total counter",
+            "portaliq_audit_entries_total{verb=\"login\"} 3",
+            "portaliq_audit_entries_total{verb=\"logout\"} 1",
+            "# HELP portaliq_traffic_accepted_total Traffic events accepted by the collector.",
+            "# TYPE portaliq_traffic_accepted_total counter",
+            "portaliq_traffic_accepted_total 12",
+            "# HELP portaliq_traffic_refused_total Traffic events refused by the collector, by reason.",
+            "# TYPE portaliq_traffic_refused_total counter",
+            "portaliq_traffic_refused_total{reason=\"origin\"} 2",
+            "portaliq_traffic_refused_total{reason=\"rate\"} 5",
+            "# HELP portaliq_content_cache_total Public content reads by cache outcome.",
+            "# TYPE portaliq_content_cache_total counter",
+            "portaliq_content_cache_total{outcome=\"hit\"} 7",
+            "portaliq_content_cache_total{outcome=\"miss\"} 9",
+            ""
+        ],
+        "log": [
+            [
+                "container",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "container",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ]
+        ]
+    },
+    "find all throws": {
+        "status": 200,
+        "headers": {
+            "Content-Type": "text/plain; version=0.0.4; charset=utf-8"
+        },
+        "body": [
+            "# HELP portaliq_info Static app information",
+            "# TYPE portaliq_info gauge",
+            "portaliq_info{app=\"portaliq\",version=\"0.1.0\"} 1",
+            "# HELP portaliq_health_status 1 when OpenRegister reachable, 0 otherwise",
+            "# TYPE portaliq_health_status gauge",
+            "portaliq_health_status 1",
+            "# HELP portaliq_notifications_failed_total Count of failed notification attempts (count-only, no recipient identity).",
+            "# TYPE portaliq_notifications_failed_total gauge",
+            "portaliq_notifications_failed_total 0",
+            "# HELP portaliq_accounts_needs_alt_contact Count of accounts flagged needsAlternativeContact (WMEBV fallback; count-only).",
+            "# TYPE portaliq_accounts_needs_alt_contact gauge",
+            "portaliq_accounts_needs_alt_contact 0",
+            "# HELP portaliq_audit_entries_total Portal audit-trail entry count by verb",
+            "# TYPE portaliq_audit_entries_total counter",
+            "portaliq_audit_entries_total{verb=\"login\"} 3",
+            "portaliq_audit_entries_total{verb=\"logout\"} 1",
+            "# HELP portaliq_traffic_accepted_total Traffic events accepted by the collector.",
+            "# TYPE portaliq_traffic_accepted_total counter",
+            "portaliq_traffic_accepted_total 12",
+            "# HELP portaliq_traffic_refused_total Traffic events refused by the collector, by reason.",
+            "# TYPE portaliq_traffic_refused_total counter",
+            "portaliq_traffic_refused_total{reason=\"origin\"} 2",
+            "portaliq_traffic_refused_total{reason=\"rate\"} 5",
+            "# HELP portaliq_content_cache_total Public content reads by cache outcome.",
+            "# TYPE portaliq_content_cache_total counter",
+            "portaliq_content_cache_total{outcome=\"hit\"} 7",
+            "portaliq_content_cache_total{outcome=\"miss\"} 9",
+            ""
+        ],
+        "log": [
+            [
+                "container",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "setRegister",
+                "portaliq"
+            ],
+            [
+                "setSchema",
+                "portalNotification"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "status": "failed"
+                    },
+                    "limit": 1000,
+                    "offset": 0
+                },
+                false,
+                false
+            ],
+            [
+                "log.debug",
+                "Portaliq: metrics count read failed",
+                {
+                    "schema": "portalNotification",
+                    "reason": "find failed"
+                }
+            ],
+            [
+                "container",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "setRegister",
+                "portaliq"
+            ],
+            [
+                "setSchema",
+                "portalAccount"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "needsAlternativeContact": true
+                    },
+                    "limit": 1000,
+                    "offset": 0
+                },
+                false,
+                false
+            ],
+            [
+                "log.debug",
+                "Portaliq: metrics count read failed",
+                {
+                    "schema": "portalAccount",
+                    "reason": "find failed"
+                }
+            ]
+        ]
+    },
+    "find all not an array": {
+        "status": 200,
+        "headers": {
+            "Content-Type": "text/plain; version=0.0.4; charset=utf-8"
+        },
+        "body": [
+            "# HELP portaliq_info Static app information",
+            "# TYPE portaliq_info gauge",
+            "portaliq_info{app=\"portaliq\",version=\"0.1.0\"} 1",
+            "# HELP portaliq_health_status 1 when OpenRegister reachable, 0 otherwise",
+            "# TYPE portaliq_health_status gauge",
+            "portaliq_health_status 1",
+            "# HELP portaliq_notifications_failed_total Count of failed notification attempts (count-only, no recipient identity).",
+            "# TYPE portaliq_notifications_failed_total gauge",
+            "portaliq_notifications_failed_total 0",
+            "# HELP portaliq_accounts_needs_alt_contact Count of accounts flagged needsAlternativeContact (WMEBV fallback; count-only).",
+            "# TYPE portaliq_accounts_needs_alt_contact gauge",
+            "portaliq_accounts_needs_alt_contact 0",
+            "# HELP portaliq_audit_entries_total Portal audit-trail entry count by verb",
+            "# TYPE portaliq_audit_entries_total counter",
+            "portaliq_audit_entries_total{verb=\"login\"} 3",
+            "portaliq_audit_entries_total{verb=\"logout\"} 1",
+            "# HELP portaliq_traffic_accepted_total Traffic events accepted by the collector.",
+            "# TYPE portaliq_traffic_accepted_total counter",
+            "portaliq_traffic_accepted_total 12",
+            "# HELP portaliq_traffic_refused_total Traffic events refused by the collector, by reason.",
+            "# TYPE portaliq_traffic_refused_total counter",
+            "portaliq_traffic_refused_total{reason=\"origin\"} 2",
+            "portaliq_traffic_refused_total{reason=\"rate\"} 5",
+            "# HELP portaliq_content_cache_total Public content reads by cache outcome.",
+            "# TYPE portaliq_content_cache_total counter",
+            "portaliq_content_cache_total{outcome=\"hit\"} 7",
+            "portaliq_content_cache_total{outcome=\"miss\"} 9",
+            ""
+        ],
+        "log": [
+            [
+                "container",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "setRegister",
+                "portaliq"
+            ],
+            [
+                "setSchema",
+                "portalNotification"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "status": "failed"
+                    },
+                    "limit": 1000,
+                    "offset": 0
+                },
+                false,
+                false
+            ],
+            [
+                "container",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "setRegister",
+                "portaliq"
+            ],
+            [
+                "setSchema",
+                "portalAccount"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "needsAlternativeContact": true
+                    },
+                    "limit": 1000,
+                    "offset": 0
+                },
+                false,
+                false
+            ]
+        ]
+    },
+    "auditor throws": {
+        "status": 500,
+        "headers": [],
+        "body": [
+            ""
+        ],
+        "log": [
+            [
+                "container",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "setRegister",
+                "portaliq"
+            ],
+            [
+                "setSchema",
+                "portalNotification"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "status": "failed"
+                    },
+                    "limit": 1000,
+                    "offset": 0
+                },
+                false,
+                false
+            ],
+            [
+                "container",
+                "OCA\\OpenRegister\\Service\\ObjectService"
+            ],
+            [
+                "setRegister",
+                "portaliq"
+            ],
+            [
+                "setSchema",
+                "portalAccount"
+            ],
+            [
+                "findAll",
+                {
+                    "filters": {
+                        "needsAlternativeContact": true
+                    },
+                    "limit": 1000,
+                    "offset": 0
+                },
+                false,
+                false
+            ],
+            [
+                "log.error",
+                "Portaliq: metrics generation failed",
+                true
+            ]
+        ]
+    }
+}

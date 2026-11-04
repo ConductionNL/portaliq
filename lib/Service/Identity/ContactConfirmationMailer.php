@@ -40,7 +40,7 @@ use Throwable;
  * The mail names the subject the resident chose and links to the portal. It
  * never repeats the question text: no content in mail, as for every notice.
  * It goes to the account's confirmed address and to nobody else; without one,
- * nothing is sent and nothing is claimed.
+ * or for a withdrawn (void) account, nothing is sent and nothing is claimed.
  *
  * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t02
  */
@@ -89,8 +89,7 @@ class ContactConfirmationMailer {
 		}
 
 		try {
-			$account = $this->accounts->findBySubjectRef(subjectRef: (string)($subject['subjectRef'] ?? ''));
-			$email   = trim((string)($account['email'] ?? ''));
+			$email = $this->address(subjectRef: (string)($subject['subjectRef'] ?? ''));
 			if ($email === '' || $this->mailer->validateMailAddress($email) === false) {
 				return false;
 			}
@@ -108,6 +107,23 @@ class ContactConfirmationMailer {
 			return false;
 		}
 	}//end afterCreate()
+
+	/**
+	 * The account's address, or '' when there is none or the account was withdrawn.
+	 *
+	 * @param string $subjectRef The resident.
+	 *
+	 * @return string
+	 */
+	private function address(string $subjectRef): string {
+		$account = $this->accounts->findBySubjectRef(subjectRef: $subjectRef);
+		if (($account['status'] ?? '') === PortalAccountService::STATUS_VOID) {
+			$this->logger->info('Portaliq: no question confirmation to a withdrawn account', ['account' => (string)($account['id'] ?? '')]);
+			return '';
+		}
+
+		return trim((string)($account['email'] ?? ''));
+	}//end address()
 
 	/**
 	 * The subject the resident chose, in the words the action gives it.

@@ -165,7 +165,7 @@ test('the answer\'s words are read defensively', async () => {
 	assert.deepEqual(answerWords({ body: { errors: ['x'] } }), { message: '', errors: {} })
 	assert.deepEqual(answerWords(null), { message: '', errors: {} })
 
-	const outcome = await runRowAction(forwardingApi({ ok: true, status: 200, body: {} }), collection, { id: 'r' }, { id: 'a' })
+	const outcome = await runRowAction(forwardingApi({ ok: true, status: 200, body: {} }), { collection, row: { id: 'r' }, action: { id: 'a' } })
 	assert.deepEqual(outcome, { redirect: null, messageKey: 'Done.' }, 'an answer with no words keeps its shape')
 })
 

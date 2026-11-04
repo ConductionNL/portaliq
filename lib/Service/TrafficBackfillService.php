@@ -47,6 +47,7 @@ use OCP\IAppConfig;
  * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
  */
 class TrafficBackfillService {
+	use PublishedPortalWalk;
 
 	/**
 	 * The app config key that records which back-fill has run.
@@ -118,20 +119,9 @@ class TrafficBackfillService {
 	public function backfill(?string $only = null): array {
 		$now = DateTimeImmutable::createFromMutable($this->time->getDateTime())->setTimezone(new DateTimeZone('UTC'));
 		$written = [];
-		$rollups = [];
 		$kept = 0;
-		foreach ($this->portals->allPublishedPortals() as $portal) {
-			$slug = trim((string)($portal['slug'] ?? ''));
-			if ($slug === '') {
-				continue;
-			}
-
-			$config = $this->config->resolve(portal: $portal);
-			if ($config['rollupOf'] !== []) {
-				$rollups[$slug] = $config['rollupOf'];
-				continue;
-			}
-
+		[$own, $rollups] = $this->portalWalk();
+		foreach ($own as [$slug, $config]) {
 			if ($only !== null && $slug !== $only) {
 				continue;
 			}

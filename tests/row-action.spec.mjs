@@ -290,7 +290,7 @@ test('running the action sends only the row and the action, then goes to the che
 			}
 		},
 	}
-	const outcome = await rowAction.runRowAction(api, salesInvoices, issued, pay)
+	const outcome = await rowAction.runRowAction(api, { collection: salesInvoices, row: issued, action: pay })
 	assert.deepEqual(calls, [
 		{ collection: 'salesInvoices', rowId: 'inv-1', actionId: 'pay' },
 	])
@@ -308,11 +308,11 @@ test('running the action when online payment is off stays on the portal with a m
 			body: { status: 'deferred' },
 		}),
 	}
-	assert.deepEqual(await rowAction.runRowAction(api, salesInvoices, issued, pay), {
+	assert.deepEqual(await rowAction.runRowAction(api, { collection: salesInvoices, row: issued, action: pay }), {
 		redirect: null,
 		messageKey: 'This is not available right now. Try again later.',
 	})
-	assert.deepEqual(await rowAction.runRowAction(api, salesInvoices, {}, pay), {
+	assert.deepEqual(await rowAction.runRowAction(api, { collection: salesInvoices, row: {}, action: pay }), {
 		redirect: null,
 		messageKey: 'This is not available right now. Try again later.',
 	})

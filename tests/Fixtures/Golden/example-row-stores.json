@@ -1,0 +1,174 @@
+{
+    "no object service": {
+        "site available": false,
+        "resident available": false,
+        "site find": [],
+        "resident find": [],
+        "resident get a": null,
+        "resident get b": null
+    },
+    "read fails": {
+        "site available": true,
+        "resident available": true,
+        "site find": [],
+        "resident find": [],
+        "resident get a": null,
+        "resident get b": null
+    },
+    "no rows": {
+        "site available": true,
+        "resident available": true,
+        "site find": [],
+        "resident find": [],
+        "resident get a": null,
+        "resident get b": null
+    },
+    "arrays": {
+        "site available": true,
+        "resident available": true,
+        "site find": [
+            {
+                "id": "a",
+                "route": "/",
+                "@self": {
+                    "id": "a"
+                }
+            },
+            {
+                "uuid": "b",
+                "route": "/b"
+            }
+        ],
+        "resident find": [
+            {
+                "id": "a",
+                "route": "/",
+                "@self": {
+                    "id": "a"
+                }
+            },
+            {
+                "uuid": "b",
+                "route": "/b"
+            }
+        ],
+        "resident get a": {
+            "id": "a",
+            "route": "/",
+            "@self": {
+                "id": "a"
+            }
+        },
+        "resident get b": {
+            "id": "b",
+            "uuid": "b",
+            "route": "/b"
+        }
+    },
+    "mixed": {
+        "site available": true,
+        "resident available": true,
+        "site find": [
+            {
+                "@self": {
+                    "uuid": "a"
+                },
+                "route": "/"
+            },
+            {
+                "id": "b",
+                "route": "/afval",
+                "@self": {
+                    "id": "b"
+                }
+            }
+        ],
+        "resident find": [
+            {
+                "@self": {
+                    "uuid": "a"
+                },
+                "route": "/"
+            },
+            {
+                "id": "b",
+                "route": "/afval",
+                "@self": {
+                    "id": "b"
+                }
+            }
+        ],
+        "resident get a": {
+            "id": "a",
+            "@self": {
+                "uuid": "a"
+            },
+            "route": "/"
+        },
+        "resident get b": {
+            "id": "b",
+            "route": "/afval",
+            "@self": {
+                "id": "b"
+            }
+        }
+    },
+    "id mismatch": {
+        "site available": true,
+        "resident available": true,
+        "site find": [
+            {
+                "id": "z",
+                "@self": {
+                    "id": "z"
+                }
+            }
+        ],
+        "resident find": [
+            {
+                "id": "z",
+                "@self": {
+                    "id": "z"
+                }
+            }
+        ],
+        "resident get a": null,
+        "resident get b": null
+    },
+    "idOf | empty": {
+        "site": "",
+        "resident": ""
+    },
+    "idOf | self id": {
+        "site": "s1",
+        "resident": "s1"
+    },
+    "idOf | self uuid": {
+        "site": "s2",
+        "resident": "s2"
+    },
+    "idOf | row id": {
+        "site": "r1",
+        "resident": "r1"
+    },
+    "idOf | row uuid": {
+        "site": "r2",
+        "resident": "r2"
+    },
+    "idOf | empty self id": {
+        "site": "r1",
+        "resident": "r1"
+    },
+    "idOf | int ids": {
+        "site": "r2",
+        "resident": "r2"
+    },
+    "idOf | self not an array": {
+        "site": "r1",
+        "resident": "r1"
+    },
+    "idOf | only ints": {
+        "site": "",
+        "resident": ""
+    }
+}

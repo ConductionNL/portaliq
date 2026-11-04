@@ -20,7 +20,9 @@ import AccountLock from 'vue-material-design-icons/AccountLock.vue'
 import AccountMultiple from 'vue-material-design-icons/AccountMultiple.vue'
 import AccountMultipleOutline from 'vue-material-design-icons/AccountMultipleOutline.vue'
 import AccountPlus from 'vue-material-design-icons/AccountPlus.vue'
+import AccountPlusOutline from 'vue-material-design-icons/AccountPlusOutline.vue'
 import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
+import AlertOutline from 'vue-material-design-icons/AlertOutline.vue'
 import BellOutline from 'vue-material-design-icons/BellOutline.vue'
 import BookAlphabet from 'vue-material-design-icons/BookAlphabet.vue'
 import BookOpenVariant from 'vue-material-design-icons/BookOpenVariant.vue'
@@ -49,6 +51,7 @@ import CursorDefaultClickOutline from 'vue-material-design-icons/CursorDefaultCl
 import Download from 'vue-material-design-icons/Download.vue'
 import Email from 'vue-material-design-icons/Email.vue'
 import EmailEditOutline from 'vue-material-design-icons/EmailEditOutline.vue'
+import EmailFastOutline from 'vue-material-design-icons/EmailFastOutline.vue'
 import EmailOutline from 'vue-material-design-icons/EmailOutline.vue'
 import EmailPlusOutline from 'vue-material-design-icons/EmailPlusOutline.vue'
 import EmailSearchOutline from 'vue-material-design-icons/EmailSearchOutline.vue'
@@ -104,7 +107,9 @@ export default {
 	AccountLock,
 	AccountMultiple,
 	AccountPlus,
+	AccountPlusOutline,
 	AlertCircleOutline,
+	AlertOutline,
 	BellOutline,
 	BookAlphabet,
 	BookOpenVariant,
@@ -123,6 +128,7 @@ export default {
 	Close,
 	CursorDefaultClickOutline,
 	Email,
+	EmailFastOutline,
 	EmailOutline,
 	EmailPlusOutline,
 	EyeLock,

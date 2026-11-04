@@ -30,7 +30,6 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\NewsletterPreflightService;
 use OCA\Portaliq\Service\ObjectServiceLookup;
-use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -55,6 +54,7 @@ class NewsletterController extends Controller {
 	use ObjectServiceLookup;
 	use StaffActionGuard;
 	use ObjectArrayRow;
+	use StaffRowWrite;
 
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
@@ -107,31 +107,16 @@ class NewsletterController extends Controller {
 			return new JSONResponse(['error' => 'invalid_request'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$objectService = $this->objectService();
-		if ($objectService === null) {
-			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);
-		}
-
-		try {
-			$saved = $objectService->saveObject(
-				object: [
-					'title' => $title,
-					'itemRefs' => $itemRefs,
-					'target' => $target,
-					'sentAt' => null,
-					'archived' => false,
-				],
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				_rbac: false,
-				_multitenancy: false
-			);
-		} catch (Throwable $e) {
-			$this->logger->error('Portaliq: newsletter create failed', ['reason' => $e->getMessage()]);
-			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);
-		}
-
-		return new JSONResponse($this->normalise(row: $saved));
+		return $this->createRow(
+			object: [
+				'title' => $title,
+				'itemRefs' => $itemRefs,
+				'target' => $target,
+				'sentAt' => null,
+				'archived' => false,
+			],
+			failure: 'Portaliq: newsletter create failed'
+		);
 	}//end create()
 
 	/**
@@ -190,22 +175,7 @@ class NewsletterController extends Controller {
 			return new JSONResponse(['error' => 'empty-audience'], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
 
-		$writer = new PortalObjectWriter(container: $this->container, logger: $this->logger);
-		$updated = $writer->updateObject(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: '',
-			subjectRef: '',
-			organisation: '',
-			id: $id,
-			data: ['sentAt' => gmdate('c')]
-		);
-
-		if ($updated === null) {
-			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
-		}
-
-		return new JSONResponse($updated);
+		return $this->writeRow(id: $id, data: ['sentAt' => gmdate('c')]);
 	}//end send()
 
 	/**

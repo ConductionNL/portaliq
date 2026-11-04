@@ -1592,7 +1592,8 @@
             "key": "displayName",
             "label": "Name",
             "secondary": "{email}",
-            "widget": "avatar"
+            "widget": "avatar",
+            "width": "304px"
           },
           {
             "key": "audience",
@@ -1616,7 +1617,8 @@
               "student": "Student",
               "parent": "Parent",
               "external-employee": "External employee"
-            }
+            },
+            "width": "152px"
           },
           {
             "key": "identityType",
@@ -1636,7 +1638,8 @@
               "generic": "OIDC broker",
               "dev": "Developer sign-in",
               "email": "Account"
-            }
+            },
+            "width": "155px"
           },
           {
             "key": "status",
@@ -1661,13 +1664,18 @@
               "suspended": "Suspended",
               "void": "Withdrawn",
               "removed": "Removed"
-            }
+            },
+            "width": "197px"
           },
           {
             "key": "lastLoginAt",
-            "label": "Last signed in"
+            "label": "Last signed in",
+            "width": "186px"
           }
         ],
+        "pagination": {
+          "limit": 7
+        },
         "showAdd": false,
         "headerActions": [
           {
@@ -1694,16 +1702,19 @@
           },
           {
             "action": "import",
-            "label": "Import"
+            "label": "Import",
+            "icon": "Upload"
           },
           {
             "action": "invite-someone",
-            "label": "Iemand uitnodigen"
+            "label": "Iemand uitnodigen",
+            "icon": "EmailOutline"
           },
           {
             "action": "issue-account",
             "variant": "primary",
-            "label": "Account uitgeven"
+            "label": "Account uitgeven",
+            "icon": "Plus"
           }
         ],
         "quickFilters": [
@@ -1794,7 +1805,19 @@
         "columns": [
           {
             "key": "email",
-            "label": "Email"
+            "label": "Email",
+            "width": "229px",
+            "secondary": "audience",
+            "secondaryLabels": {
+              "audience": {
+                "citizen": "Resident",
+                "client": "Client",
+                "organisation": "Business",
+                "business": "Business",
+                "supplier": "Supplier",
+                "partner": "Partner"
+              }
+            }
           },
           {
             "key": "state",
@@ -1803,10 +1826,10 @@
             "widgetProps": {
               "colorMap": {
                 "sent": "info",
-                "opened": "info",
+                "opened": "purple",
                 "accepted": "success",
-                "expired": "warning",
-                "revoked": "error"
+                "expired": "default",
+                "revoked": "default"
               }
             },
             "enum": [
@@ -1817,28 +1840,54 @@
               "revoked"
             ],
             "enumLabels": {
-              "sent": "Open",
+              "sent": "Sent",
               "opened": "Opened",
               "accepted": "Accepted",
               "expired": "Expired",
               "revoked": "Withdrawn"
-            }
+            },
+            "width": "133px"
           },
           {
             "key": "sentAt",
-            "label": "Sent"
+            "label": "Sent",
+            "width": "163px"
           },
           {
             "key": "expiresAt",
-            "label": "Expires"
+            "label": "Expires",
+            "width": "131px"
           },
           {
             "key": "invitedBy",
-            "label": "Invited by"
+            "label": "Invited by",
+            "width": "187px",
+            "formatter": "userName"
           },
           {
             "key": "organisation",
-            "label": "Organisation"
+            "label": "Organisation",
+            "width": "150px"
+          }
+        ],
+        "pagination": {
+          "limit": 6
+        },
+        "rowTitle": "plain",
+        "rowClass": [
+          {
+            "when": {
+              "field": "state",
+              "value": "sent"
+            },
+            "class": "cn-row--attention"
+          },
+          {
+            "when": {
+              "field": "state",
+              "value": "opened"
+            },
+            "class": "cn-row--attention"
           }
         ],
         "headerActions": [
@@ -1850,6 +1899,8 @@
           }
         ],
         "actions": [
+          "builtin:view",
+          "builtin:edit",
           {
             "id": "resend-invitation",
             "label": "Send again",
@@ -1872,6 +1923,7 @@
             "icon": "Close",
             "type": "handler",
             "handler": "withdrawInvitation",
+            "destructive": true,
             "visibleWhen": {
               "field": "state",
               "op": "neq",
@@ -1890,7 +1942,8 @@
           {
             "action": "invite-someone",
             "variant": "primary",
-            "label": "Iemand uitnodigen"
+            "label": "Iemand uitnodigen",
+            "icon": "EmailFastOutline"
           }
         ],
         "quickFilters": [
@@ -2258,6 +2311,8 @@
           }
         ],
         "actions": [
+          "builtin:view",
+          "builtin:edit",
           {
             "id": "open-session-account",
             "label": "Go to the account",
@@ -2271,6 +2326,7 @@
             "icon": "Close",
             "type": "handler",
             "handler": "revokeSession",
+            "destructive": true,
             "visibleWhen": {
               "field": "revoked",
               "op": "neq",
@@ -2644,16 +2700,19 @@
           {
             "key": "actionId",
             "label": "Submitted action",
-            "widget": "action-title"
+            "widget": "action-title",
+            "width": "339px"
           },
           {
             "key": "appId",
-            "label": "App"
+            "label": "App",
+            "width": "134px"
           },
           {
             "key": "submittedAt",
             "label": "Submitted on",
-            "widget": "date"
+            "widget": "date",
+            "width": "212px"
           },
           {
             "key": "deliveryStatus",
@@ -2675,9 +2734,13 @@
               "delivered": "Confirmed",
               "pending": "Waiting",
               "failed": "Failed"
-            }
+            },
+            "width": "286px"
           }
         ],
+        "pagination": {
+          "limit": 8
+        },
         "showTitle": true,
         "showTitleIcon": false,
         "countText": "{shown} of {total} submissions via the portals · with the proof that the resident received a confirmation",
@@ -2718,7 +2781,7 @@
             "showCount": true
           }
         ],
-        "rowTitle": "plain",
+        "rowTitle": "strong",
         "filterMenu": true,
         "viewSwitch": [
           "table",
@@ -3003,7 +3066,8 @@
           {
             "key": "title",
             "label": "Portal",
-            "secondary": "{domains.0.hostname}"
+            "secondary": "{domains.0.hostname}",
+            "width": "142px"
           },
           {
             "key": "kind",
@@ -3015,15 +3079,18 @@
             "enumLabels": {
               "site": "Website",
               "external": "Umbrella"
-            }
+            },
+            "width": "129px"
           },
           {
             "key": "theme",
-            "label": "Theme"
+            "label": "Theme",
+            "width": "119px"
           },
           {
             "key": "organisation",
-            "label": "Organisation"
+            "label": "Organisation",
+            "width": "153px"
           },
           {
             "key": "pages",
@@ -3035,12 +3102,14 @@
                 "portal": "@self.slug"
               }
             },
-            "sortable": false
+            "sortable": false,
+            "width": "128px"
           },
           {
             "key": "@self.updated",
             "label": "Last published",
-            "widget": "date"
+            "widget": "date",
+            "width": "191px"
           },
           {
             "key": "status",
@@ -3059,7 +3128,8 @@
             "enumLabels": {
               "published": "Published",
               "draft": "Draft"
-            }
+            },
+            "width": "131px"
           }
         ],
         "actions": [
@@ -3081,12 +3151,14 @@
           },
           {
             "action": "import",
-            "label": "Import"
+            "label": "Import",
+            "icon": "Upload"
           },
           {
             "action": "add",
             "variant": "primary",
-            "label": "New portal"
+            "label": "New portal",
+            "icon": "Plus"
           }
         ],
         "quickFilters": [
@@ -3111,7 +3183,6 @@
             "showCount": true
           }
         ],
-        "rowTitle": "plain",
         "filterMenu": true,
         "viewSwitch": [
           "table",
@@ -3454,7 +3525,7 @@
           },
           {
             "id": "portal-notices",
-            "type": "object-list",
+            "type": "index-list",
             "title": "Notices",
             "icon": "BullhornOutline",
             "content": {
@@ -3463,32 +3534,177 @@
               "filter": {
                 "portal": "@object.slug"
               },
-              "sort": {
-                "field": "startsAt",
-                "dir": "desc"
-              },
               "columns": [
                 {
                   "key": "message",
-                  "label": "Notice"
+                  "label": "Announcement",
+                  "width": "193px",
+                  "cellClass": "cn-cell--wrap",
+                  "filterable": false,
+                  "sortable": false,
+                  "secondary": "{level} · shows on {surfaces}",
+                  "secondaryLabels": {
+                    "level": {
+                      "info": "Information",
+                      "warning": "Warning"
+                    },
+                    "surfaces": {
+                      "site": "website",
+                      "portal": "Signed-in portal"
+                    }
+                  }
                 },
                 {
                   "key": "startsAt",
-                  "label": "Visible from"
+                  "label": "Visible from",
+                  "width": "140px",
+                  "widget": "date",
+                  "widgetProps": {
+                    "relative": true,
+                    "showTime": true
+                  },
+                  "filterable": false,
+                  "sortable": true
                 },
                 {
                   "key": "endsAt",
-                  "label": "Until"
+                  "label": "Until",
+                  "width": "122px",
+                  "widget": "date",
+                  "widgetProps": {
+                    "relative": true,
+                    "showTime": true
+                  },
+                  "filterable": false,
+                  "sortable": false
                 },
                 {
                   "key": "status",
-                  "label": "Status"
+                  "label": "Status",
+                  "width": "131px",
+                  "widget": "badge",
+                  "filterable": false,
+                  "sortable": false,
+                  "widgetProps": {
+                    "colorMap": {
+                      "visible": "success",
+                      "published": "info",
+                      "draft": "warning",
+                      "expired": "default"
+                    }
+                  },
+                  "enum": [
+                    "published",
+                    "draft"
+                  ],
+                  "enumLabels": {
+                    "visible": "Visible now",
+                    "published": "Published",
+                    "draft": "Draft",
+                    "expired": "Expired"
+                  },
+                  "valueWhen": [
+                    {
+                      "when": [
+                        {
+                          "field": "status",
+                          "value": "published"
+                        },
+                        {
+                          "field": "startsAt",
+                          "op": "lte",
+                          "value": "@now"
+                        },
+                        {
+                          "field": "endsAt",
+                          "op": "gte",
+                          "value": "@now"
+                        }
+                      ],
+                      "value": "visible"
+                    },
+                    {
+                      "when": [
+                        {
+                          "field": "status",
+                          "value": "published"
+                        },
+                        {
+                          "field": "endsAt",
+                          "op": "lt",
+                          "value": "@now"
+                        }
+                      ],
+                      "value": "expired"
+                    }
+                  ]
                 }
               ],
-              "limit": 25,
-              "rowRoute": "NoticeDetail",
-              "viewAllRoute": "Notices",
-              "emptyText": "This portal has no notices yet"
+              "rowIcon": {
+                "field": "level",
+                "icons": {
+                  "warning": "AlertOutline",
+                  "info": "InformationOutline"
+                },
+                "tones": {
+                  "warning": "warning"
+                },
+                "icon": "InformationOutline"
+              },
+              "quickFilters": [
+                {
+                  "label": "Alles",
+                  "filter": {},
+                  "showCount": true,
+                  "default": true
+                },
+                {
+                  "label": "Visible now",
+                  "filter": {
+                    "status": "published",
+                    "startsAt": {
+                      "lte": "@now"
+                    },
+                    "endsAt": {
+                      "gte": "@now"
+                    }
+                  },
+                  "showCount": true
+                },
+                {
+                  "label": "Upcoming",
+                  "filter": {
+                    "status": "published",
+                    "startsAt": {
+                      "gt": "@now"
+                    }
+                  },
+                  "showCount": true
+                },
+                {
+                  "label": "Concept",
+                  "filter": {
+                    "status": "draft"
+                  },
+                  "showCount": true
+                }
+              ],
+              "filterMenu": true,
+              "viewSwitch": [
+                "table",
+                "cards",
+                "board",
+                "map"
+              ],
+              "selectable": true,
+              "defaultOrder": "-startsAt",
+              "pagination": {
+                "limit": 6
+              },
+              "footerNote": "only published and within the period visible",
+              "showAdd": false,
+              "emptyText": "This portal has no notices yet",
+              "rowRoute": "NoticeDetail"
             }
           },
           {
@@ -4104,7 +4320,59 @@
           "portal-side-status",
           "portal-side-editors",
           "portal-side-traffic"
-        ]
+        ],
+        "headerActions": [
+          {
+            "id": "view-website",
+            "label": "Website bekijken",
+            "icon": "EyeOutline",
+            "href": "/apps/portaliq/site?portal=@object.slug",
+            "target": "_blank"
+          },
+          {
+            "id": "new-notice",
+            "label": "New notice",
+            "icon": "Plus",
+            "type": "navigate",
+            "target": "Notices",
+            "variant": "primary"
+          }
+        ],
+        "quickActions": [
+          "view-website"
+        ],
+        "primaryActionByStage": {
+          "published": {
+            "id": "new-notice",
+            "label": "New notice",
+            "icon": "Plus",
+            "type": "navigate",
+            "target": "Notices",
+            "tabs": [
+              "portal-notices"
+            ]
+          },
+          "draft": {
+            "id": "new-notice",
+            "label": "New notice",
+            "icon": "Plus",
+            "type": "navigate",
+            "target": "Notices",
+            "tabs": [
+              "portal-notices"
+            ]
+          }
+        },
+        "headerMeta": "{domains.0.hostname} · theme {theme} · {count:pages} pages",
+        "headerMetaCounts": {
+          "pages": {
+            "register": "portaliq",
+            "schema": "page",
+            "filter": {
+              "portal": "@object.slug"
+            }
+          }
+        }
       }
     },
     {
@@ -4521,7 +4789,7 @@
                 {
                   "id": "layout",
                   "widgetId": "page-layout",
-                  "label": "Indeling"
+                  "label": "Layout"
                 },
                 {
                   "widgetId": "page-search",
@@ -4603,20 +4871,28 @@
         "columns": [
           {
             "key": "displayName",
-            "label": "Requester"
+            "label": "Requester",
+            "widget": "avatar",
+            "widgetProps": {
+              "tone": "neutral"
+            },
+            "width": "163px"
           },
           {
             "key": "onBehalfOf",
-            "label": "Access requested to"
+            "label": "Access requested to",
+            "width": "195px"
           },
           {
             "key": "reason",
-            "label": "Reason"
+            "label": "Reason",
+            "width": "262px"
           },
           {
             "key": "requestedAt",
             "label": "Requested on",
-            "widget": "date"
+            "widget": "date",
+            "width": "178px"
           },
           {
             "key": "state",
@@ -4635,13 +4911,31 @@
               "refused"
             ],
             "enumLabels": {
-              "pending": "Awaiting a decision",
-              "granted": "Granted",
+              "pending": "Open",
+              "granted": "Approved",
               "refused": "Refused"
-            }
+            },
+            "width": "194px",
+            "secondary": [
+              "by {decidedBy|user}, {decidedAt|date}"
+            ]
+          }
+        ],
+        "pagination": {
+          "limit": 8
+        },
+        "rowClass": [
+          {
+            "when": {
+              "field": "state",
+              "value": "pending"
+            },
+            "class": "cn-row--attention"
           }
         ],
         "actions": [
+          "builtin:view",
+          "builtin:edit",
           {
             "id": "grant",
             "label": "Approve",
@@ -4654,7 +4948,8 @@
             "label": "Refuse with a reason",
             "icon": "Close",
             "type": "handler",
-            "handler": "refuseAccessRequest"
+            "handler": "refuseAccessRequest",
+            "destructive": true
           }
         ],
         "showTitle": true,
@@ -4778,6 +5073,7 @@
         ],
         "showTitle": true,
         "showTitleIcon": false,
+        "rowTitle": "text",
         "countText": "{shown} of {total} entries on the portals · which form each entry opens, for whom",
         "headerButtons": [
           {
@@ -5578,12 +5874,14 @@
         "columns": [
           {
             "key": "title",
-            "label": "Title"
+            "label": "Title",
+            "width": "340px"
           },
           {
             "key": "target",
             "label": "Audience",
-            "widget": "news-target"
+            "widget": "news-target",
+            "width": "216px"
           },
           {
             "key": "status",
@@ -5602,17 +5900,23 @@
             "enumLabels": {
               "published": "Published",
               "draft": "Draft"
-            }
+            },
+            "width": "131px"
           },
           {
             "key": "publishedAt",
-            "label": "Published"
+            "label": "Published",
+            "width": "181px"
           },
           {
             "key": "authorRef",
-            "label": "Author"
+            "label": "Author",
+            "width": "124px"
           }
         ],
+        "pagination": {
+          "limit": 6
+        },
         "headerActions": [
           {
             "id": "new-news-item",
@@ -5656,6 +5960,7 @@
         ],
         "showTitle": true,
         "showTitleIcon": false,
+        "rowTitle": "strong",
         "countText": "{shown} of {total} news items",
         "headerButtons": [
           {
@@ -5665,7 +5970,8 @@
           {
             "action": "new-news-item",
             "variant": "primary",
-            "label": "Nieuw nieuwsbericht"
+            "label": "Nieuw nieuwsbericht",
+            "icon": "Plus"
           }
         ],
         "quickFilters": [

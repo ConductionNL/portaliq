@@ -208,6 +208,29 @@ test('where a case stands, whose turn it is, and which cases are closed', () => 
 	assert.equal(casesOnScreen(rows, { limit: 10 }, ZAKEN).rows.length, 6)
 })
 
+test('the current step names the next one, inside a sentence, and only there', async () => {
+	const html = await renderComponent(ProcessSteps, {
+		steps: STEPS,
+		tr: nl,
+		locale: 'nl',
+		today: TODAY,
+	})
+	const items = html.split('<li ').slice(1)
+	assert.match(
+		items[1],
+		/<p class="pq-process-steps__next" data-testid="mijn-step-next">\s*Volgende stap: besluit\s*<\/p>/,
+	)
+	for (const index of [0, 2, 3]) {
+		assert.doesNotMatch(items[index], /mijn-step-next/)
+	}
+})
+
+test('the last step being current names no next step', async () => {
+	const steps = STEPS.map((step, index) => ({ ...step, state: index === STEPS.length - 1 ? 'current' : 'done' }))
+	const html = await renderComponent(ProcessSteps, { steps, tr: nl, locale: 'nl', today: TODAY })
+	assert.doesNotMatch(html, /mijn-step-next/)
+})
+
 test('process steps are an ordered list; the current step is marked, a done step says so', async () => {
 	// REQ-SMO-003 scenario "The case page of DossiqCase.dc.html".
 	const html = await renderComponent(ProcessSteps, {
@@ -230,7 +253,11 @@ test('process steps are an ordered list; the current step is marked, a done step
 	)
 	assert.doesNotMatch(items[0] + items[2], /aria-current/)
 	assert.match(items[0], /<span class="sr-only">Gereed: <\/span>Ontvangen/)
-	assert.match(items[0], /<time datetime="2026-10-02">2 oktober<\/time>/)
+	assert.match(
+		items[0],
+		/<time datetime="2026-10-02">2 oktober 2026<\/time>/,
+		'a step date carries its year, also in this year',
+	)
 	assert.match(items[1], /Wij zoeken de documenten\./)
 	assert.match(
 		items[0],

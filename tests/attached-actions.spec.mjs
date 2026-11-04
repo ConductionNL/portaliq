@@ -95,9 +95,9 @@ test('the forward names the action app', async () => {
 		register: 'opencatalogi',
 		schema: 'collection',
 	}
-	const result = await runAttachedAction(api, collection, { id: 'dos-1' }, ASK, {
+	const result = await runAttachedAction(api, { collection, row: { id: 'dos-1' }, action: ASK, values: {
 		question: 'Wanneer?',
-	})
+	} })
 	assert.deepEqual(calls[0], [
 		collection,
 		'dos-1',
@@ -111,13 +111,7 @@ test('the forward names the action app', async () => {
 	assert.equal(result.ok, true)
 	assert.equal(result.messageKey, 'Done.')
 
-	const refused = await runAttachedAction(
-		{ forwardRowAction: async () => ({ ok: false, status: 404, body: {} }) },
-		collection,
-		{ id: 'dos-1' },
-		ASK,
-		{},
-	)
+	const refused = await runAttachedAction({ forwardRowAction: async () => ({ ok: false, status: 404, body: {} }) }, { collection, row: { id: 'dos-1' }, action: ASK, values: {} })
 	assert.equal(refused.messageKey, 'This can no longer be done for this item.')
 })
 
@@ -255,8 +249,7 @@ test('a field answered with several choices is forwarded as a list', () => {
 })
 
 test('the forward keeps the status, so a refusal is told from a failure', async () => {
-	const refused = await runAttachedAction(
-		{
+	const refused = await runAttachedAction({
 			forwardRowAction: async () => ({
 				ok: false,
 				status: 400,
@@ -264,12 +257,7 @@ test('the forward keeps the status, so a refusal is told from a failure', async 
 					errors: { periodeVan: 'Schrijf de datum als dag-maand-jaar.' },
 				},
 			}),
-		},
-		{ id: 'mijnDossiers' },
-		{ id: 'dos-1' },
-		ASK,
-		{},
-	)
+		}, { collection: { id: 'mijnDossiers' }, row: { id: 'dos-1' }, action: ASK, values: {} })
 	assert.equal(refused.status, 400)
 	assert.deepEqual(refused.body.errors, {
 		periodeVan: 'Schrijf de datum als dag-maand-jaar.',

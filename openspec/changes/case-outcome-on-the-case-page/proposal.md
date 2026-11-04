@@ -11,7 +11,7 @@ A resident whose case has ended wants to know two things: what was decided, and 
 ## What changes
 
 - **A collection names its outcome fields.** A collection may declare `outcome: {labelField, descriptionField}`, each a field it projects. The normaliser drops a field the collection does not project.
-- **The ended case shows its outcome.** Once a case has ended (REQ-CWOC "A case that has ended offers nothing and explains nothing"), the case page shows the outcome label as a heading and the explanation under it, above the status steps.
+- **The ended case shows its outcome.** Once a case has ended (REQ-CWOC "A case that has ended takes no changes and keeps the question to the handler"), the case page shows the outcome label as a heading and the explanation under it, above the status steps.
 - **No raw reference.** A value that reads as a uuid or a `$ref` is never shown as an outcome.
 
 ## Rows covered

@@ -65,6 +65,62 @@ export const THEME_PRODUCTS_SEGMENT = 'producten'
  * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t6
  */
 export function buildNav(contributions, t, enabled = {}) {
+	const nav = contributionEntries(contributions)
+	if (enabled.cases === true) {
+		nav.unshift(sectionEntry('cases', t))
+	}
+	for (const special of ['tasks', 'messages', 'news']) {
+		if (enabled[special] === true) {
+			nav.push(sectionEntry(special, t))
+		}
+	}
+	// The inbox only once something else is there: on the pre-load render it
+	// would be the sole entry and lock the default page to an empty inbox.
+	if (nav.length > 0) {
+		nav.push(sectionEntry('inbox', t))
+	}
+	nav.push(...ownAreaEntries(enabled, t))
+	if (enabled.access === true) {
+		nav.push(...['access', 'details', 'account'].map((special) => sectionEntry(special, t)))
+	}
+	// A page the login is too low for says which login reaches it, last, and
+	// never as the page the resident opens on (REQ-SCR-004).
+	nav.push(...stepUpEntries(enabled.stepUp, nav))
+	return nav
+}
+
+/** The shell's own sections: the English label and the icon of each. */
+const SHELL_SECTIONS = {
+	cases: ['My cases', 'FolderAccount'],
+	tasks: ['My tasks', 'CheckboxMarkedOutline'],
+	messages: ['Conversations', 'MessageText'],
+	news: ['News', 'Newspaper'],
+	inbox: ['Inbox', 'Email'],
+	access: ['Access to cases', 'AccountKey'],
+	details: ['My details', 'CardAccountDetails'],
+	account: ['My account', 'AccountCog'],
+}
+
+/**
+ * The navigation entry of one of the shell's own sections.
+ *
+ * @param {string} special The section.
+ * @param {(key: string) => string} t The translator.
+ * @return {{key: string, label: string, icon: string, special: string}} The entry.
+ */
+function sectionEntry(special, t) {
+	const [label, icon] = SHELL_SECTIONS[special]
+	return { key: NAV_KEYS[special], label: t(label), icon, special }
+}
+
+/**
+ * Every contribution's pages, each tagged with its owning contribution so a
+ * block's refs resolve in the right scope.
+ *
+ * @param {Array|null} contributions The aggregate's `contributions`.
+ * @return {Array<object>} `{key, label, icon, page, contribution}` entries.
+ */
+function contributionEntries(contributions) {
 	const nav = []
 	for (const contribution of contributions || []) {
 		for (const page of contribution.pages || []) {
@@ -77,89 +133,32 @@ export function buildNav(contributions, t, enabled = {}) {
 			})
 		}
 	}
-	if (enabled.cases === true) {
-		nav.unshift({
-			key: NAV_KEYS.cases,
-			label: t('My cases'),
-			icon: 'FolderAccount',
-			special: 'cases',
-		})
-	}
-	if (enabled.tasks === true) {
-		nav.push({
-			key: NAV_KEYS.tasks,
-			label: t('My tasks'),
-			icon: 'CheckboxMarkedOutline',
-			special: 'tasks',
-		})
-	}
-	if (enabled.messages === true) {
-		nav.push({
-			key: NAV_KEYS.messages,
-			label: t('Conversations'),
-			icon: 'MessageText',
-			special: 'messages',
-		})
-	}
-	if (enabled.news === true) {
-		nav.push({
-			key: NAV_KEYS.news,
-			label: t('News'),
-			icon: 'Newspaper',
-			special: 'news',
-		})
-	}
-	// The inbox only once something else is there: on the pre-load render it
-	// would be the sole entry and lock the default page to an empty inbox.
-	if (nav.length > 0) {
-		nav.push({
-			key: NAV_KEYS.inbox,
-			label: t('Inbox'),
-			icon: 'Email',
-			special: 'inbox',
-		})
-	}
-	for (const page of enabled.pages || []) {
-		nav.push({
-			key: `__${page.special}__`,
-			label: t(page.label),
-			icon: page.icon,
-			special: page.special,
-		})
-	}
-	for (const theme of enabled.themes || []) {
-		nav.push({
-			key: `__theme__:${theme.slug}`,
-			label: theme.title,
-			icon: 'Tag',
-			special: `thema/${theme.slug}`,
-			theme,
-		})
-	}
-	if (enabled.access === true) {
-		nav.push({
-			key: NAV_KEYS.access,
-			label: t('Access to cases'),
-			icon: 'AccountKey',
-			special: 'access',
-		})
-		nav.push({
-			key: NAV_KEYS.details,
-			label: t('My details'),
-			icon: 'CardAccountDetails',
-			special: 'details',
-		})
-		nav.push({
-			key: NAV_KEYS.account,
-			label: t('My account'),
-			icon: 'AccountCog',
-			special: 'account',
-		})
-	}
-	// A page the login is too low for says which login reaches it, last, and
-	// never as the page the resident opens on (REQ-SCR-004).
-	nav.push(...stepUpEntries(enabled.stepUp, nav))
 	return nav
+}
+
+/**
+ * The own-area pages the portal switched on, then the life domains with
+ * something for this resident.
+ *
+ * @param {{pages?: Array<object>, themes?: Array<object>}} enabled What the backend announced.
+ * @param {(key: string) => string} t The translator.
+ * @return {Array<object>} The entries.
+ */
+function ownAreaEntries(enabled, t) {
+	const pages = (enabled.pages || []).map((page) => ({
+		key: `__${page.special}__`,
+		label: t(page.label),
+		icon: page.icon,
+		special: page.special,
+	}))
+	const themes = (enabled.themes || []).map((theme) => ({
+		key: `__theme__:${theme.slug}`,
+		label: theme.title,
+		icon: 'Tag',
+		special: `thema/${theme.slug}`,
+		theme,
+	}))
+	return [...pages, ...themes]
 }
 
 /**

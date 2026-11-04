@@ -80,13 +80,13 @@ class PlanEndingMailer {
 	 * @param string $endDate      The end date, `Y-m-d`.
 	 * @param int    $open         How many actions are still open.
 	 *
-	 * @return bool Whether a mail left; false for a participant without a usable address.
+	 * @return bool Whether a mail left; false for a participant without a usable address or with a withdrawn account.
 	 *
 	 * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md#requirement-a-plan-near-its-end-date-asks-for-action-req-spl-004
 	 */
 	public function send(string $subjectRef, string $organisation, string $plan, string $endDate, int $open): bool {
 		try {
-			$email = trim((string)($this->accounts->findBySubjectRef(subjectRef: $subjectRef)['email'] ?? ''));
+			$email = $this->address(subjectRef: $subjectRef);
 			if ($email === '' || $this->mailer->validateMailAddress($email) === false) {
 				return false;
 			}
@@ -103,6 +103,23 @@ class PlanEndingMailer {
 			return false;
 		}
 	}//end send()
+
+	/**
+	 * The participant's address, or '' when there is none or the account was withdrawn.
+	 *
+	 * @param string $subjectRef The participant.
+	 *
+	 * @return string
+	 */
+	private function address(string $subjectRef): string {
+		$account = $this->accounts->findBySubjectRef(subjectRef: $subjectRef);
+		if (($account['status'] ?? '') === PortalAccountService::STATUS_VOID) {
+			$this->logger->info('Portaliq: no plan end mail to a withdrawn account', ['account' => (string)($account['id'] ?? '')]);
+			return '';
+		}
+
+		return trim((string)($account['email'] ?? ''));
+	}//end address()
 
 	/**
 	 * Compose, send and log the mail.

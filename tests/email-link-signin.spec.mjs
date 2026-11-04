@@ -71,11 +71,11 @@ test('the e-mail link card is offered only when the auth edge says so, and opens
 	}
 
 	assert.deepEqual(
-		signInRoutes(site, '/api', undefined, '', '', false).map((r) => r.mode),
+		signInRoutes(site, { authBase: '/api', t: undefined, exampleResident: '', demoResidents: '', emailLink: false }).map((r) => r.mode),
 		['eherkenning'],
 	)
 
-	const routes = signInRoutes(site, '/api', undefined, '', '', true)
+	const routes = signInRoutes(site, { authBase: '/api', t: undefined, exampleResident: '', demoResidents: '', emailLink: true })
 	assert.equal(routes[0].mode, 'email-link')
 	assert.equal(routes[0].form, 'email-link')
 	assert.equal(routes[0].portal, 'academie')

@@ -546,7 +546,12 @@ import {
 import { forgetActingFor, learnMandates } from './components/e/actingFor.js'
 import { ActingForSwitcher, ContactPrompt } from './components/e/index.js'
 import { InstallBanner } from './components/f/index.js'
-import { isStatementRoute, withStatementLink } from './lib/accessibilityStatement.js'
+import {
+	authoredStatement,
+	isStatementRoute,
+	showsGeneratedStatement,
+	withStatementLink,
+} from './lib/accessibilityStatement.js'
 import { accountCrumbs, accountRedirect, loggedInAs } from './lib/accountArea.js'
 import { setAssistantAvailable } from './lib/assistantAvailable.js'
 import {
@@ -783,6 +788,8 @@ export default {
 			routeParam: '',
 			// The title of the shared dossier on screen, once it is read.
 			sharedDossierTitle: '',
+			// Whether the portal authored its own page at the statement's route.
+			statementAuthored: false,
 			// What a block on the page shows, told by it (site-article-page-follows-the-board).
 			subject: null,
 			loading: true,
@@ -856,6 +863,10 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 		 */
 		breadcrumbs() {
+			// A missing page is no place on the site to trail to (NietGevonden).
+			if (this.error && this.error.status === 404) {
+				return []
+			}
 			if (this.accountRoute) {
 				// Signed out, the own area is the sign-in page.
 				if (!this.session) {
@@ -1072,6 +1083,26 @@ export default {
 		},
 
 		/**
+		 * What the resident menu is built from: the translator, the unread
+		 * count, the address of a route, the known rows, the portal's own
+		 * groups (zuiddrecht-resident-pages-match-the-boards), the items it
+		 * leaves out (resident-menu-leave-out) and the open tasks.
+		 *
+		 * @return {object} The second argument of residentMenuGroups().
+		 */
+		residentMenuSource() {
+			return {
+				t: this.t,
+				unread: this.unreadCount,
+				hrefFor: this.hrefForRoute,
+				recordRows: this.recordRows,
+				layout: this.site?.residentMenu?.groups,
+				leaveOut: this.site?.residentMenu?.leaveOut,
+				openTasks: this.openTasks,
+			}
+		},
+
+		/**
 		 * The menu block's data: the header menus and the signed-in
 		 * navigation in groups, the route on screen, and the labels in the
 		 * site's language (site-navigation-block).
@@ -1087,17 +1118,7 @@ export default {
 					// `/mijn` (site-resident-menu), so both menus read alike.
 					residentGroups:
 						this.session && this.nav.length > 0
-							? residentMenuGroups(
-									this.nav,
-									this.t,
-									this.unreadCount,
-									this.hrefForRoute,
-									this.recordRows,
-									this.site?.residentMenu?.groups,
-									// Items the portal leaves out (resident-menu-leave-out).
-									this.site?.residentMenu?.leaveOut,
-									this.openTasks,
-								)
+							? residentMenuGroups(this.nav, this.residentMenuSource)
 							: [],
 					menus: menusWithAddresses(
 						headerMenusOf(this.menus),
@@ -1187,18 +1208,7 @@ export default {
 			if (!showsResidentMenu(this.session, this.route, this.nav)) {
 				return []
 			}
-			return residentMenuGroups(
-				this.nav,
-				this.t,
-				this.unreadCount,
-				this.hrefForRoute,
-				this.recordRows,
-				// The portal's own groups (zuiddrecht-resident-pages-match-the-boards).
-				this.site?.residentMenu?.groups,
-				// Items the portal leaves out (resident-menu-leave-out).
-				this.site?.residentMenu?.leaveOut,
-				this.openTasks,
-			)
+			return residentMenuGroups(this.nav, this.residentMenuSource)
 		},
 
 		/**
@@ -1350,12 +1360,16 @@ export default {
 		},
 
 		/**
-		 * @return {boolean} Whether the route on screen is the accessibility statement.
+		 * @return {boolean} Whether the generated accessibility statement is on
+		 *   screen: its route, with no authored page there.
 		 *
 		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
 		 */
 		statementRoute() {
-			return isStatementRoute(this.route)
+			return showsGeneratedStatement(this.route, {
+				loading: this.loading,
+				authored: this.statementAuthored,
+			})
 		},
 
 		/**
@@ -1505,17 +1519,16 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
 		 */
 		signInRoutes() {
-			return signInRoutes(
-				this.site,
-				authBaseFrom(resolveApiBase()),
-				this.t,
+			return signInRoutes(this.site, {
+				authBase: authBaseFrom(resolveApiBase()),
+				t: this.t,
 				// One click on a demo per example resident, beside the portal's
 				// own ways in (demo-sign-in-beside-the-account).
-				this.signinConfig.exampleResident || '',
-				this.signinConfig.exampleResidents || [],
+				exampleResident: this.signinConfig.exampleResident || '',
+				demoResidents: this.signinConfig.exampleResidents || [],
 				// The e-mail link, behind the instance switch (sign-in-with-an-email-link).
-				this.waysIn.emailLink === true,
-			)
+				emailLink: this.waysIn.emailLink === true,
+			})
 		},
 
 		/**
@@ -2241,17 +2254,6 @@ export default {
 				return
 			}
 
-			// The accessibility statement is generated, not authored, so it
-			// opens on every portal without a CMS page.
-			if (isStatementRoute(route)) {
-				this.page = null
-				this.error = null
-				this.routeParam = ''
-				this.loading = false
-				this.applyDocumentTitle()
-				return
-			}
-
 			// A shared dossier link renders from opencatalogi's answer, not
 			// from a CMS page, so it opens on every portal without one.
 			if (isSharedDossierRoute(route)) {
@@ -2261,6 +2263,29 @@ export default {
 				this.sharedDossierTitle = ''
 				this.loading = false
 				this.applyDocumentTitle()
+				return
+			}
+
+			// The accessibility statement opens on every portal: the portal's
+			// own page at the route when it authored one, else the generated
+			// statement, never "not found".
+			this.statementAuthored = false
+			if (isStatementRoute(route)) {
+				this.error = null
+				this.routeParam = ''
+				this.loading = true
+				this.page = await authoredStatement(() =>
+					fetchPage(route, this.portalSlug, {
+						fresh,
+						locale: this.chosenLocale,
+					}),
+				)
+				this.statementAuthored = this.page !== null
+				this.loading = false
+				this.applyDocumentTitle()
+				if (this.statementAuthored) {
+					await this.refreshEditingContext()
+				}
 				return
 			}
 

@@ -247,14 +247,14 @@ test('the decide call carries the route, the step and the answers and no rule', 
 		calls.push({ url, body: JSON.parse(init.body), headers: init.headers })
 		return { ok: true, status: 200, json: async () => ({ outcome: 'bedrijf', output: 'soortVergunning', nextStep: 'bedrijf' }) }
 	}
-	const decided = await decideStep('/portal/api', 'parkeren', 'route', { kenteken: 'AB' }, 'zuiddrecht', 'tok', send)
+	const decided = await decideStep({ base: '/portal/api', portal: 'zuiddrecht', token: 'tok', fetchImpl: send }, { route: 'parkeren', step: 'route', answers: { kenteken: 'AB' } })
 	assert.deepEqual(decided, { outcome: 'bedrijf', output: 'soortVergunning', nextStep: 'bedrijf' })
 	assert.equal(calls[0].url, '/portal/api/intake/decide')
 	assert.deepEqual(calls[0].body, { route: 'parkeren', step: 'route', answers: { kenteken: 'AB' }, portal: 'zuiddrecht' })
 	assert.equal(calls[0].headers.Authorization, 'Bearer tok')
 
 	const down = async () => ({ ok: false, status: 503, json: async () => ({ error: 'decision_unavailable' }) })
-	await assert.rejects(decideStep('/portal/api', 'parkeren', 'route', {}, '', '', down), (error) => error.status === 503)
+	await assert.rejects(decideStep({ base: '/portal/api', portal: '', token: '', fetchImpl: down }, { route: 'parkeren', step: 'route', answers: {} }), (error) => error.status === 503)
 })
 
 test('the form block wires the group, the calculated line and the retry', () => {

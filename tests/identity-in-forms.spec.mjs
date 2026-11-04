@@ -112,19 +112,19 @@ test('the api asks the code routes and says why a code was refused', async () =>
 		asked.push({ url, init })
 		return { ok: status < 400, status, json: async () => body }
 	}
-	const sent = await requestEmailCode('/portal/api', 'aanvragen/x', 'a@b.nl', 'zuid', 'tok', answer(200, { sent: true, resendAfter: 60 }))
+	const sent = await requestEmailCode({ base: '/portal/api', portal: 'zuid', token: 'tok', fetchImpl: answer(200, { sent: true, resendAfter: 60 }) }, { route: 'aanvragen/x', email: 'a@b.nl' })
 	assert.deepEqual(sent, { ok: true, error: '', resendAfter: 60 })
 	assert.equal(asked[0].url, '/portal/api/intake/email-code')
 	assert.deepEqual(JSON.parse(asked[0].init.body), { route: 'aanvragen/x', email: 'a@b.nl', portal: 'zuid' })
 	assert.equal(asked[0].init.headers.Authorization, 'Bearer tok')
-	assert.deepEqual(await requestEmailCode('/p', 'r', 'a', '', '', answer(429, { error: 'wait' })), { ok: false, error: 'wait', resendAfter: 60 })
-	assert.equal((await requestEmailCode('/p', 'r', 'a', '', '', async () => { throw new Error('offline') })).error, 'failed')
+	assert.deepEqual(await requestEmailCode({ base: '/p', portal: '', token: '', fetchImpl: answer(429, { error: 'wait' }) }, { route: 'r', email: 'a' }), { ok: false, error: 'wait', resendAfter: 60 })
+	assert.equal((await requestEmailCode({ base: '/p', portal: '', token: '', fetchImpl: async () => { throw new Error('offline') } }, { route: 'r', email: 'a' })).error, 'failed')
 
-	assert.deepEqual(await checkEmailCode('/portal/api', 'r', 'a@b.nl', '123456', '', '', answer(200, { verified: true, proof: 'p.q' })), { ok: true, error: '', proof: 'p.q' })
+	assert.deepEqual(await checkEmailCode({ base: '/portal/api', portal: '', token: '', fetchImpl: answer(200, { verified: true, proof: 'p.q' }) }, { route: 'r', email: 'a@b.nl', code: '123456' }), { ok: true, error: '', proof: 'p.q' })
 	assert.equal(asked.at(-1).url, '/portal/api/intake/email-code/check')
 	assert.deepEqual(JSON.parse(asked.at(-1).init.body), { route: 'r', email: 'a@b.nl', code: '123456' })
-	assert.deepEqual(await checkEmailCode('/p', 'r', 'a', '1', '', '', answer(400, { error: 'too_many_tries' })), { ok: false, error: 'too_many_tries', proof: '' })
-	assert.equal((await checkEmailCode('/p', 'r', 'a', '1', '', '', answer(200, { verified: true }))).ok, false, 'a proof is needed')
+	assert.deepEqual(await checkEmailCode({ base: '/p', portal: '', token: '', fetchImpl: answer(400, { error: 'too_many_tries' }) }, { route: 'r', email: 'a', code: '1' }), { ok: false, error: 'too_many_tries', proof: '' })
+	assert.equal((await checkEmailCode({ base: '/p', portal: '', token: '', fetchImpl: answer(200, { verified: true }) }, { route: 'r', email: 'a', code: '1' })).ok, false, 'a proof is needed')
 })
 
 test('the submit carries the proofs of the verified addresses, and none when there are none', async () => {
@@ -133,8 +133,8 @@ test('the submit carries the proofs of the verified addresses, and none when the
 		bodies.push(JSON.parse(init.body))
 		return { ok: true, status: 200, json: async () => ({ reference: 'AANVRAAG-1', confirmationText: '' }) }
 	}
-	await submitIntake('/p', 'r', { mail: 'a@b.nl' }, '', '', fetchImpl, [], { 'a@b.nl': 'p.q' })
-	await submitIntake('/p', 'r', {}, '', '', fetchImpl, [], {})
+	await submitIntake({ base: '/p', portal: '', token: '', fetchImpl }, { route: 'r', answers: { mail: 'a@b.nl' }, statements: [], verifiedEmails: { 'a@b.nl': 'p.q' } })
+	await submitIntake({ base: '/p', portal: '', token: '', fetchImpl }, { route: 'r', answers: {}, statements: [], verifiedEmails: {} })
 	assert.deepEqual(bodies[0].verifiedEmails, { 'a@b.nl': 'p.q' })
 	assert.equal('verifiedEmails' in bodies[1], false)
 })
@@ -204,7 +204,7 @@ test('the form block shows a signature, a verified address and neither as a long
 	assert.match(block, /<SignatureField[^>]*v-else-if="field.type === 'signature'"/)
 	assert.match(block, /<EmailCodeField[^>]*v-else-if="field.type === 'email' && field.verify === true"/)
 	assert.match(block, /@verified="onVerified"/)
-	assert.match(block, /this\.verifiedEmails,\s*\)/, 'the proofs go with the submit')
+	assert.match(block, /verifiedEmails: this\.verifiedEmails,\s*\}\)/, 'the proofs go with the submit')
 	assert.match(block, /!this\.verifiedEmails\[address\]/, 'an unverified address stops the step')
 	assert.match(block, /identityWords\([^)]*\)\.signatureSet/, 'the review never prints the picture')
 })

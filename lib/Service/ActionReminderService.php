@@ -40,6 +40,7 @@ use Throwable;
  * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
  */
 class ActionReminderService {
+	use RowAsArray;
 	use PagedObjectReads;
 
 	public const RULE_KEY = 'action-due';
@@ -58,10 +59,12 @@ class ActionReminderService {
 	 *
 	 * @param ContainerInterface $container For resolving OpenRegister's ObjectService.
 	 * @param LoggerInterface    $logger    The logger.
+	 * @param PortalAccountService|null $accounts Tells a withdrawn assignee apart.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly ?PortalAccountService $accounts = null,
 	) {
 	}//end __construct()
 
@@ -136,24 +139,24 @@ class ActionReminderService {
 		return $sent;
 	}//end remindDue()
 
+
 	/**
-	 * A stored row as an array.
+	 * Whether the assignee's account was withdrawn (void); logged with the account id only.
 	 *
-	 * @param mixed $row The row, an array or an entity.
+	 * @param string $assignee The assignee's subject reference.
 	 *
-	 * @return array<string, mixed>
+	 * @return bool
 	 */
-	private function asArray(mixed $row): array {
-		if (is_array($row) === true) {
-			return $row;
+	private function withdrawn(string $assignee): bool {
+		$account = $this->accounts?->findBySubjectRef(subjectRef: $assignee);
+		if (($account['status'] ?? '') !== PortalAccountService::STATUS_VOID) {
+			return false;
 		}
 
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			return (array)$row->jsonSerialize();
-		}
+		$this->logger->info('Portaliq: no action reminder to a withdrawn account', ['account' => (string)($account['id'] ?? '')]);
 
-		return [];
-	}//end asArray()
+		return true;
+	}//end withdrawn()
 
 	/**
 	 * Write the reminder, then record it on the action. The record comes last
@@ -173,6 +176,10 @@ class ActionReminderService {
 		}
 
 		try {
+			if ($this->withdrawn(assignee: (string)$action['assignee']) === true) {
+				return false;
+			}
+
 			$objectService->saveObject(
 				object: [
 					'subjectRef' => (string)$action['assignee'],

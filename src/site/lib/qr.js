@@ -435,36 +435,66 @@ function codewords(bytes, version) {
  * Put the finder, timing, alignment, format and version patterns on a grid.
  *
  * @param {Array<Array<boolean>>} grid The modules to draw on.
- * @param {number} version The version.
- * @param {number} mask The mask chosen.
+ * @param {{version: number, mask: number}} symbol The version and the mask chosen.
  * @return {void}
  */
-function drawPatterns(grid, version, mask) {
+function drawPatterns(grid, { version, mask }) {
+	const set = setterOf(grid)
 	const size = grid.length
-	const set = (r, c, dark) => {
-		if (r >= 0 && c >= 0 && r < size && c < size) {
-			grid[r][c] = dark
-		}
-	}
-	const finder = (r0, c0) => {
-		for (let r = -1; r <= 7; r++) {
-			for (let c = -1; c <= 7; c++) {
-				const ring = Math.max(Math.abs(r - 3), Math.abs(c - 3))
-				set(
-					r0 + r,
-					c0 + c,
-					r >= 0 && r <= 6 && c >= 0 && c <= 6 && ring !== 2,
-				)
-			}
-		}
-	}
-	finder(0, 0)
-	finder(0, size - 7)
-	finder(size - 7, 0)
+	drawFinder(set, [0, 0])
+	drawFinder(set, [0, size - 7])
+	drawFinder(set, [size - 7, 0])
 	for (let i = 8; i < size - 8; i++) {
 		set(6, i, i % 2 === 0)
 		set(i, 6, i % 2 === 0)
 	}
+	drawAlignment(set, { version, size })
+	set(size - 8, 8, true)
+	drawFormat(set, { mask, size })
+	if (version >= 7) {
+		drawVersion(set, { version, size })
+	}
+}
+
+/**
+ * A setter of one module on a grid that ignores a module off the grid.
+ *
+ * @param {Array<Array<boolean>>} grid The modules to draw on.
+ * @return {(r: number, c: number, dark: boolean) => void} The setter.
+ */
+function setterOf(grid) {
+	const size = grid.length
+	return (r, c, dark) => {
+		if (r >= 0 && c >= 0 && r < size && c < size) {
+			grid[r][c] = dark
+		}
+	}
+}
+
+/**
+ * One finder pattern with its light separator.
+ *
+ * @param {(r: number, c: number, dark: boolean) => void} set The setter.
+ * @param {[number, number]} corner The finder's top left module.
+ * @return {void}
+ */
+function drawFinder(set, [r0, c0]) {
+	for (let r = -1; r <= 7; r++) {
+		for (let c = -1; c <= 7; c++) {
+			const ring = Math.max(Math.abs(r - 3), Math.abs(c - 3))
+			set(r0 + r, c0 + c, r >= 0 && r <= 6 && c >= 0 && c <= 6 && ring !== 2)
+		}
+	}
+}
+
+/**
+ * The alignment patterns of a version, except where a finder sits.
+ *
+ * @param {(r: number, c: number, dark: boolean) => void} set The setter.
+ * @param {{version: number, size: number}} symbol The version and the symbol's size.
+ * @return {void}
+ */
+function drawAlignment(set, { version, size }) {
 	const centres = ALIGNMENT[version - 1]
 	for (const r of centres) {
 		for (const c of centres) {
@@ -482,7 +512,16 @@ function drawPatterns(grid, version, mask) {
 			}
 		}
 	}
-	set(size - 8, 8, true)
+}
+
+/**
+ * The two copies of the format bits of a mask.
+ *
+ * @param {(r: number, c: number, dark: boolean) => void} set The setter.
+ * @param {{mask: number, size: number}} symbol The mask and the symbol's size.
+ * @return {void}
+ */
+function drawFormat(set, { mask, size }) {
 	const format = formatBits(mask)
 	for (let i = 0; i < 15; i++) {
 		const dark = ((format >>> i) & 1) === 1
@@ -503,15 +542,23 @@ function drawPatterns(grid, version, mask) {
 			set(size - 15 + i, 8, dark)
 		}
 	}
-	if (version >= 7) {
-		const bits = versionBits(version)
-		for (let i = 0; i < 18; i++) {
-			const dark = ((bits >>> i) & 1) === 1
-			const a = Math.floor(i / 3)
-			const b = (i % 3) + size - 11
-			set(a, b, dark)
-			set(b, a, dark)
-		}
+}
+
+/**
+ * The two copies of the version bits, from version 7 up.
+ *
+ * @param {(r: number, c: number, dark: boolean) => void} set The setter.
+ * @param {{version: number, size: number}} symbol The version and the symbol's size.
+ * @return {void}
+ */
+function drawVersion(set, { version, size }) {
+	const bits = versionBits(version)
+	for (let i = 0; i < 18; i++) {
+		const dark = ((bits >>> i) & 1) === 1
+		const a = Math.floor(i / 3)
+		const b = (i % 3) + size - 11
+		set(a, b, dark)
+		set(b, a, dark)
 	}
 }
 
@@ -605,7 +652,7 @@ export function encodeQr(text) {
 	let best = null
 	for (let mask = 0; mask < 8; mask++) {
 		const grid = Array.from({ length: size }, () => new Array(size).fill(false))
-		drawPatterns(grid, version, mask)
+		drawPatterns(grid, { version, mask })
 		positions.forEach(([r, c], i) => {
 			const bit = i < bits.length ? bits[i] === 1 : false
 			grid[r][c] = masked(mask, r, c) ? !bit : bit

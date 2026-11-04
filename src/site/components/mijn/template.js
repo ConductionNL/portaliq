@@ -56,30 +56,34 @@ export function fillTemplate(
 	record,
 	{ whenEmpty = {}, fields = null, locale = 'nl' } = {},
 ) {
-	const sentences = String(template || '')
+	return String(template || '')
 		.split(/(?<=[.!?])\s+/)
 		.map((sentence) => sentence.trim())
 		.filter(Boolean)
-	const out = []
-	for (const sentence of sentences) {
-		const names = [...sentence.matchAll(PLACEHOLDER)].map((match) => match[1])
-		if (Array.isArray(fields) && names.some((name) => !fields.includes(name))) {
-			continue
-		}
-		const empty = names.find((name) => words(record?.[name], locale) === '')
-		if (empty !== undefined) {
-			if (typeof whenEmpty?.[empty] === 'string' && whenEmpty[empty] !== '') {
-				out.push(whenEmpty[empty])
-			}
-			continue
-		}
-		out.push(
-			sentence.replace(PLACEHOLDER, (_, name) =>
-				words(record?.[name], locale),
-			),
-		)
+		.map((sentence) => filledSentence(sentence, { record, whenEmpty, fields, locale }))
+		.filter((sentence) => sentence !== null)
+}
+
+/**
+ * One sentence filled from the record; the field's `whenEmpty` text when a
+ * placeholder has no value; null when it is left out.
+ *
+ * @param {string} sentence The sentence.
+ * @param {{record: object|null, whenEmpty: Record<string, string>, fields: Array<string>|null, locale: string}} context The record, the words per empty field, the projected fields and the page language.
+ * @return {string|null} The sentence to show, or null.
+ */
+function filledSentence(sentence, { record, whenEmpty, fields, locale }) {
+	const names = [...sentence.matchAll(PLACEHOLDER)].map((match) => match[1])
+	if (Array.isArray(fields) && names.some((name) => !fields.includes(name))) {
+		return null
 	}
-	return out
+	const empty = names.find((name) => words(record?.[name], locale) === '')
+	if (empty !== undefined) {
+		return typeof whenEmpty?.[empty] === 'string' && whenEmpty[empty] !== ''
+			? whenEmpty[empty]
+			: null
+	}
+	return sentence.replace(PLACEHOLDER, (_, name) => words(record?.[name], locale))
 }
 
 /**
