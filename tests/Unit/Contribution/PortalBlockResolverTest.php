@@ -414,6 +414,21 @@ class PortalBlockResolverTest extends TestCase {
 	}//end testACtaKeepsTheLabelForAnEmptyField()
 
 	/**
+	 * A cta keeps the field that names whom its message goes to, and drops
+	 * one that is not a plain field name.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/guardian-message-to-and-whole-day/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
+	 */
+	public function testACtaKeepsWhomItsMessageGoesTo(): void {
+		$declared = ['type' => 'cta', 'route' => '/mijn/messages', 'label' => 'Bericht aan {teacherName}', 'messageTo' => 'teacherRef'];
+		$this->assertSame('teacherRef', $this->blocks([$declared])[0]['messageTo']);
+		$this->assertArrayNotHasKey('messageTo', $this->blocks([['messageTo' => 'teacher ref'] + $declared])[0]);
+		$this->assertArrayNotHasKey('messageTo', $this->blocks([['messageTo' => ['x']] + $declared])[0]);
+	}//end testACtaKeepsWhomItsMessageGoesTo()
+
+	/**
 	 * A route outside the portal is refused: a scheme, a host or `//`.
 	 *
 	 * @return void

@@ -110,6 +110,8 @@ export default {
 		todayWord: { type: String, default: 'Vandaag' },
 		/** The word for tomorrow. */
 		tomorrowWord: { type: String, default: 'Morgen' },
+		/** The words after today's date, that the absence is the whole day. */
+		wholeDayWords: { type: String, default: 'de hele dag' },
 		/** The card that opens the date group. */
 		otherDayLabel: { type: String, default: 'Een andere dag' },
 		/** The example under the date group. */
@@ -148,6 +150,7 @@ export default {
 				locale: this.locale,
 				todayWord: this.todayWord,
 				tomorrowWord: this.tomorrowWord,
+				wholeDayWords: this.wholeDayWords,
 			})
 		},
 

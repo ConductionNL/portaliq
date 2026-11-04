@@ -131,6 +131,7 @@ class PortalPageSchemaTest extends TestCase {
 			['type' => 'cta', 'page' => 'p', 'label' => '{title} ziek melden', 'withRecord' => true],
 			['type' => 'cta', 'route' => '/mijn/messages', 'label' => 'Bericht sturen'],
 			['type' => 'cta', 'route' => '/mijn/messages', 'label' => 'Bericht aan {teacherName}', 'labelWhenEmpty' => 'Bericht sturen', 'withRecord' => true],
+			['type' => 'cta', 'route' => '/mijn/messages', 'label' => 'Bericht aan {teacherName}', 'messageTo' => 'teacherRef'],
 			['type' => 'richText', 'template' => 'U heeft toegang tot {expiresAt}.', 'whenEmpty' => ['expiresAt' => 'U heeft toegang zonder einddatum.']],
 			['type' => 'collection', 'collection' => 'zaken', 'display' => 'cards', 'progress' => ['valueField' => 'a', 'totalField' => 'b', 'label' => 'uur']],
 			// site-school-blocks wave 2.

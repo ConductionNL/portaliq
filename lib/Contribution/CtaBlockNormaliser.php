@@ -77,9 +77,8 @@ class CtaBlockNormaliser {
 	}//end normalise()
 
 	/**
-	 * A cta with its optional keys: `withRecord`, and `labelWhenEmpty`, the
-	 * label shown when a field the label names is empty on the open record
-	 * ("Bericht aan {teacherName}" without a teacher reads "Bericht sturen").
+	 * A cta with its optional keys: `withRecord`, `labelWhenEmpty` and
+	 * `messageTo`.
 	 *
 	 * @param array<string, mixed> $entry The cta so far.
 	 * @param array<string, mixed> $block The declared block.
@@ -87,19 +86,54 @@ class CtaBlockNormaliser {
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/portal-contribution-contract/spec.md#requirement-a-cta-label-may-name-any-field-of-the-open-record
+	 * @spec openspec/changes/guardian-message-to-and-whole-day/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
 	 */
 	private function withOptions(array $entry, array $block): array {
 		if (($block['withRecord'] ?? null) === true) {
 			$entry['withRecord'] = true;
 		}
 
+		return $entry + $this->labelWhenEmptyOf(block: $block) + $this->messageToOf(block: $block);
+	}//end withOptions()
+
+	/**
+	 * `labelWhenEmpty`, the label shown when a field the label names is empty
+	 * on the open record ("Bericht aan {teacherName}" without a teacher reads
+	 * "Bericht sturen"), when it is a usable label.
+	 *
+	 * @param array<string, mixed> $block The declared block.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/portal-contribution-contract/spec.md#requirement-a-cta-label-may-name-any-field-of-the-open-record
+	 */
+	private function labelWhenEmptyOf(array $block): array {
 		$fallback = ($block['labelWhenEmpty'] ?? null);
-		if (is_string($fallback) === true && trim($fallback) !== '' && mb_strlen($fallback) <= self::MAX_LABEL_LENGTH) {
-			$entry['labelWhenEmpty'] = trim($fallback);
+		if (is_string($fallback) === false || trim($fallback) === '' || mb_strlen($fallback) > self::MAX_LABEL_LENGTH) {
+			return [];
 		}
 
-		return $entry;
-	}//end withOptions()
+		return ['labelWhenEmpty' => trim($fallback)];
+	}//end labelWhenEmptyOf()
+
+	/**
+	 * `messageTo`, the field of the open record that holds the staff member a
+	 * "Bericht aan ..." button writes to, when it is a plain field name.
+	 *
+	 * @param array<string, mixed> $block The declared block.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/changes/guardian-message-to-and-whole-day/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
+	 */
+	private function messageToOf(array $block): array {
+		$field = ($block['messageTo'] ?? null);
+		if (is_string($field) === false || preg_match('/^[A-Za-z0-9_]{1,64}$/', $field) !== 1) {
+			return [];
+		}
+
+		return ['messageTo' => $field];
+	}//end messageToOf()
 
 	/**
 	 * Whether a declared target resolves: a known action or page, or a route

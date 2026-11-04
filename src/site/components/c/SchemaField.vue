@@ -44,6 +44,7 @@
 			:locale="dayLocale"
 			:todayWord="translate('Today')"
 			:tomorrowWord="translate('Tomorrow')"
+			:wholeDayWords="translate('the whole day')"
 			:otherDayLabel="translate('Another day')"
 			:hint="translate('For example 1 3 2026')"
 			:required="required"

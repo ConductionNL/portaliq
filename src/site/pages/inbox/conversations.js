@@ -328,3 +328,58 @@ export function readLine(message, { who, locale, tr }) {
 	const moment = formatMessageMoment(message?.readAt, locale)
 	return moment ? tr('Read by {name} on {moment}', { name: who, moment }) : ''
 }
+
+/** Where a "Bericht aan ..." button leaves whom the message form opens for. */
+export const MESSAGE_TO_STORAGE_KEY = 'portaliq.messageTo'
+
+/**
+ * Keep whom the messages page opens its form for: the open record and the
+ * staff member its "Bericht aan ..." button names.
+ *
+ * @param {object|null} storage sessionStorage.
+ * @param {{recordRef: string, staffRef: string}} target The record and the staff member.
+ * @return {void}
+ * @spec openspec/changes/guardian-message-to-and-whole-day/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
+ */
+export function keepMessageTo(storage, target) {
+	try {
+		storage?.setItem(MESSAGE_TO_STORAGE_KEY, JSON.stringify(target))
+	} catch {
+		// Without storage the form opens with no one chosen.
+	}
+}
+
+/**
+ * Take whom the form opens for, once: it is forgotten as it is read.
+ *
+ * @param {object|null} storage sessionStorage.
+ * @return {{recordRef?: string, staffRef?: string}|null}
+ * @spec openspec/changes/guardian-message-to-and-whole-day/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
+ */
+export function takeMessageTo(storage) {
+	try {
+		const kept = storage?.getItem(MESSAGE_TO_STORAGE_KEY)
+		storage?.removeItem(MESSAGE_TO_STORAGE_KEY)
+		return kept ? JSON.parse(kept) : null
+	} catch {
+		return null
+	}
+}
+
+/**
+ * The "to" choice for a kept target: the record and staff member it names,
+ * else the record's only contact; '' when neither is offered.
+ *
+ * @param {Array<{value: string, recordRef: string}>} options The "to" choices.
+ * @param {{recordRef?: string, staffRef?: string}|null} target The kept target.
+ * @return {string} The chosen value.
+ * @spec openspec/changes/guardian-message-to-and-whole-day/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
+ */
+export function chosenContact(options, target) {
+	if (!target?.recordRef) {
+		return ''
+	}
+	const exact = options.find((o) => o.value === `${target.recordRef}|${target.staffRef}`)
+	const ofRecord = options.filter((o) => o.recordRef === target.recordRef)
+	return exact?.value || (ofRecord.length === 1 ? ofRecord[0].value : '')
+}

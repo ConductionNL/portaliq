@@ -552,6 +552,7 @@ import { rowIdOf } from '../../components/collections/cells.js'
 import { blocks as mijnBlocks } from '../../components/mijn/index.js'
 import { mijnTranslator, siteHref } from '../../components/mijn/rows.js'
 import { fillTemplate, recordLabel } from '../../components/mijn/template.js'
+import { keepMessageTo } from '../inbox/conversations.js'
 import { keepRecordToOpen, sessionStore as tabStore } from '../inbox/inbox.js'
 import {
 	createCollectionLoader,
@@ -1309,7 +1310,26 @@ export default {
 					id: this.recordId,
 				})
 			}
+			this.keepMessageTarget(tile.block)
 			this.$emit('navigate', tile.route)
+		},
+
+		/**
+		 * A cta with `messageTo` keeps the open record and the staff member
+		 * its field names, so the messages page opens its form for them.
+		 *
+		 * @param {object} block The cta block.
+		 * @return {void}
+		 * @spec openspec/changes/guardian-message-to-and-whole-day/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
+		 */
+		keepMessageTarget(block) {
+			if (!block.messageTo || !this.recordId) {
+				return
+			}
+			keepMessageTo(tabStore(), {
+				recordRef: String(this.recordId),
+				staffRef: String(this.activeRecord?.[block.messageTo] ?? ''),
+			})
 		},
 
 		/**
