@@ -11,11 +11,11 @@
 //
 // @spec openspec/changes/link-field-qr-code/specs/portal-contribution-contract/spec.md
 
+import { encodeQr } from '@conduction/nextcloud-vue/src/utils/qr.js'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import { qrHref, qrLabel } from '../src/site/components/collections/cells.js'
-import { BLOCKS_M, byteCapacity, encodeQr, formatBits, reedSolomon, TOTAL_CODEWORDS, versionBits } from '../src/site/lib/qr.js'
 import { decodeQr } from './support/qr-decode.mjs'
 import { loadSfc, renderSfc } from './support/render-sfc.mjs'
 
@@ -52,27 +52,18 @@ test('a wallet offer is drawn, and the drawn code reads back as the offer', asyn
 	assert.equal(qrHref('openid4vp://?request_uri=https%3A%2F%2Fv.example%2Fr', ''), 'openid4vp://?request_uri=https%3A%2F%2Fv.example%2Fr')
 })
 
-test('the encoder reads back for every size, and its tables and vectors are the standard\'s', () => {
+// The encoder's tables and vectors are tested in nextcloud-vue (tests/utils/qr.spec.js).
+test('the code the site draws reads back for every size', () => {
 	for (const length of [1, 14, 15, 26, 27, 42, 43, 62, 84, 106, 122, 152, 180, 213, 214, 400, 666]) {
 		const text = Array.from({ length }, (_, i) => String.fromCharCode(33 + ((i * 7) % 90))).join('')
 		const symbol = encodeQr(text)
 		assert.ok(symbol, `${length} bytes encode`)
 		const decoded = decodeQr(symbol.modules)
 		assert.deepEqual([decoded.text === text, decoded.blocksHold, decoded.copiesAgree], [true, true, true], `${length} bytes (version ${symbol.version})`)
-		assert.ok(byteCapacity(symbol.version) >= length && (symbol.version === 1 || byteCapacity(symbol.version - 1) < length), `the smallest version holds ${length}`)
 	}
 	assert.equal(encodeQr('x'.repeat(667)), null, 'too long for version 20 is no code')
 	assert.equal(encodeQr(''), null)
 	assert.equal(decodeQr(encodeQr('Zoë €5 — ✓').modules).text, 'Zoë €5 — ✓', 'any Unicode')
-	TOTAL_CODEWORDS.forEach((total, index) => {
-		const [ec, groups] = BLOCKS_M[index]
-		assert.equal(groups.reduce((sum, [count, data]) => sum + count * (data + ec), 0), total, `version ${index + 1} adds up`)
-	})
-	// Vectors from the standard's worked examples.
-	assert.deepEqual(reedSolomon([32, 91, 11, 120, 209, 114, 220, 77, 67, 64, 236, 17, 236, 17, 236, 17], 10), [196, 35, 39, 119, 235, 215, 231, 226, 93, 23])
-	assert.equal(formatBits(0).toString(2).padStart(15, '0'), '101010000010010')
-	assert.equal(versionBits(7).toString(2).padStart(18, '0'), '000111110010010100')
-	assert.equal(encodeQr('HELLO').size, 21, 'version 1 is 21 modules wide')
 })
 
 test('a refused scheme renders as text and a path is made absolute', async () => {
