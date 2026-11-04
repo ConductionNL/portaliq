@@ -1,11 +1,14 @@
 # portal-traffic-visitors-and-geo Specification
 
 ## Purpose
-TBD - created by archiving change portal-traffic-visitors-and-geo. Update Purpose after archive.
+
+Visitors are counted per day and placed in a region through an offline geography database the operator chose, with account linking only as a pseudonymous reference. This spec fixes the database providers and their refresh, honest visitor counts per measurement mode, the date range and the Visitors widget.
 
 ## Requirements
 
 ### Requirement: Geography MUST come from an offline database the operator chose
+
+Geography MUST come from an offline database the operator chose.
 
 The region on an event is derived from the visitor's address by a lookup in
 a database file held in the app's data directory, and the address is then
@@ -45,6 +48,8 @@ a third party to be resolved.
 
 ### Requirement: The geography database MUST be refreshed without an operator, and on demand
 
+The geography database MUST be refreshed without an operator, and on demand.
+
 A monthly background job refreshes the database from the configured
 provider. `occ portaliq:traffic:geo-refresh` does the same on demand. The
 first download is queued, once, when a measuring portal wants a region and
@@ -76,6 +81,8 @@ attribution is stored beside it.
 
 ### Requirement: MaxMind credentials MUST never be echoed back
 
+MaxMind credentials MUST never be echoed back.
+
 The licence key is stored as a sensitive app config value. A settings read
 says only whether a key is stored. The account id is shown to
 administrators only.
@@ -86,6 +93,8 @@ administrators only.
 - **THEN** the response says a key is stored and carries no field with its value
 
 ### Requirement: Visitors MUST be counted honestly in each mode
+
+Visitors MUST be counted honestly in each mode.
 
 `visitors` is the number of distinct visitors on the day: distinct daily
 hashes in cookieless mode, distinct client ids where the portal persists one.
@@ -110,6 +119,8 @@ survive the day cannot say whether it was here yesterday.
 
 ### Requirement: Account linking MUST attach only a pseudonymous reference
 
+Account linking MUST attach only a pseudonymous reference.
+
 When a portal switched on `sensitive.accountLinking` and the request carries
 a valid portal session bearer, the stored event carries `userRef` = the
 portal account's `subjectRef`. It never carries a BSN, a KVK number, an
@@ -133,6 +144,8 @@ bearer, the field is absent. The day's rollup counts distinct references as
 
 ### Requirement: The Traffic page MUST let the reader choose the range
 
+The Traffic page MUST let the reader choose the range.
+
 One date range, shared by every widget on the page: the last 7, 30 or 90
 days, or a custom start and end. Changing it changes every number on the
 page.
@@ -149,6 +162,8 @@ page.
 - **THEN** the Traffic page opens with the overview widget
 
 ### Requirement: The Visitors widget MUST show who visited without inventing a number
+
+The Visitors widget MUST show who visited without inventing a number.
 
 The Visitors widget shows the visitors in the range, new versus returning
 where known and the words "not available in cookieless mode" where not, the
