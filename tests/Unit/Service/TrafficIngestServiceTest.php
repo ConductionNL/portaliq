@@ -548,13 +548,13 @@ class TrafficIngestServiceTest extends TestCase {
 		$event     = ['name' => 'page_view', 'sequence' => 0, 'pageLocation' => 'https://open-tilburg.nl/woo'];
 
 		$service->ingest(portalSlug: 'open-tilburg', events: [$event], context: ['consent' => 'yes'] + $this->browser());
-		$this->assertSame([false], $validator->consents);
-		$this->assertCount(1, $this->stored);
-		$this->assertFalse($this->stored[0]['consent']);
+		$this->assertSame(expected: [false], actual: $validator->consents);
+		$this->assertCount(expectedCount: 1, haystack: $this->stored);
+		$this->assertFalse(condition: $this->stored[0]['consent']);
 
 		$this->stored = [];
 		$service->ingest(portalSlug: 'open-tilburg', events: [$event], context: $this->browser());
-		$this->assertSame([false, true], $validator->consents);
-		$this->assertTrue($this->stored[0]['consent']);
+		$this->assertSame(expected: [false, true], actual: $validator->consents);
+		$this->assertTrue(condition: $this->stored[0]['consent']);
 	}//end testOnlyTheBooleanTrueIsConsent()
 }//end class
