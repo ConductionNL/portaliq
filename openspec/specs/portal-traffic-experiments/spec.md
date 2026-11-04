@@ -1,11 +1,14 @@
 # portal-traffic-experiments Specification
 
 ## Purpose
-TBD - created by archiving change portal-traffic-experiments. Update Purpose after archive.
+
+A portal can run page experiments, heatmaps and session recordings on its own traffic. This spec fixes how a variant is assigned and judged per session, when a winner may be named, and the hard limits on heatmaps and recordings: off by default, consented, and never holding text or a typed value.
 
 ## Requirements
 
 ### Requirement: A page experiment MUST be evaluated per session against its goal
+
+A page experiment MUST be evaluated per session against its goal.
 
 A portal names experiments in `traffic.experiments[]`, each `{ id, name,
 status, page, variants: [{ id, name, weight, pageRoute | changes: [{
@@ -50,6 +53,8 @@ sessions, conversions, rate }], winner, confidence }]`.
 
 ### Requirement: A winner MUST only be named with enough sessions and a significant difference
 
+A winner MUST only be named with enough sessions and a significant difference.
+
 The two best variants are compared with a two-proportion z-test on the
 pooled proportion. A winner is named only when every variant has at
 least thirty sessions and the two-sided confidence is at least 0.95;
@@ -66,6 +71,8 @@ sessions per variant.
 @e2e exclude covered by TrafficExperimentsTest and traffic-summary.spec.mjs on the same tables
 
 ### Requirement: Heatmaps MUST be off by default and hold positions, never content
+
+Heatmaps MUST be off by default and hold positions, never content.
 
 `heat_click` and `heat_scroll` exist only under `sensitive.heatmaps`: with
 the switch off the collector refuses them as `sensitive-off` whatever the
@@ -90,6 +97,8 @@ screenshot, and reads "off for this portal" with the switch off.
 - **AND** the Heatmap widget draws the page
 
 ### Requirement: Session recording MUST be off by default, consented and bounded
+
+Session recording MUST be off by default, consented and bounded.
 
 With `sensitive.sessionRecording` on, the client loads a separate recorder
 script from `/api/traffic-recorder.js` and only then: never on a portal of
@@ -126,6 +135,8 @@ how long they are kept.
 - **THEN** the recorder is never requested, and a chunk posted for an external portal is refused as `external-portal`
 
 ### Requirement: A session recording MUST never hold text or a typed value
+
+A session recording MUST never hold text or a typed value.
 
 The recorder writes a text node as its length and an input as the length
 of its value, drops scripts, writes images and frames as boxes and keeps

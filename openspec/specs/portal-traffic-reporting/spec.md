@@ -1,11 +1,14 @@
 # portal-traffic-reporting Specification
 
 ## Purpose
-TBD - created by archiving change portal-traffic-reporting. Update Purpose after archive.
+
+Traffic figures are read, segmented, summed across portals, exported, mailed as scheduled reports and watched by alerts, and can be fed from a server, an access log or script errors. This spec fixes those reporting and import paths and what each may carry.
 
 ## Requirements
 
 ### Requirement: A segment MUST be a saved filter over sessions
+
+A segment MUST be a saved filter over sessions.
 
 A portal names segments in `traffic.segments[]`, each `{ id, name,
 conditions: [{ dimension, operator, value }] }`. A dimension is one of
@@ -43,6 +46,8 @@ segment's records.
 
 ### Requirement: A roll-up portal MUST sum its members and never count its own
 
+A roll-up portal MUST sum its members and never count its own.
+
 A portal with `traffic.rollupOf[]` naming other portals' slugs is a roll-up:
 its daily record is the sum of its members' "all sessions" records for the
 day (page views, sessions, visitors, events, pages merged by path,
@@ -67,6 +72,8 @@ says "Roll-up of N portals".
 @e2e exclude covered by TrafficRollupSumTest and TrafficAggregationServiceTest
 
 ### Requirement: A scheduled report MUST be sent once per period
+
+A scheduled report MUST be sent once per period.
 
 A portal names reports in `traffic.reports[]`, each `{ id, name, cadence,
 recipients[], sections[] }` with `cadence` one of `daily`, `weekly`,
@@ -93,6 +100,8 @@ never sent twice for one period.
 
 ### Requirement: An alert MUST fire once per period
 
+An alert MUST fire once per period.
+
 A portal names alerts in `traffic.alerts[]`, each `{ id, name, metric,
 comparison, threshold, period, recipients[] }` with `metric` one of
 `pageViews`, `sessions`, `visitors`, `notFound`, `goal:<id>`, `comparison`
@@ -118,6 +127,8 @@ app's Notifier.
 
 ### Requirement: The daily records MUST be exportable
 
+The daily records MUST be exportable.
+
 The daily records are the read API: `portalTrafficDaily` objects queried
 through the object API by `portal`, `date` and `segment`. In addition
 `GET /api/traffic/export?portal=&from=&to=&segment=&format=csv|json`,
@@ -136,6 +147,8 @@ reason. The Traffic page's Export button downloads what the page shows.
 
 ### Requirement: A server-side caller MUST hold the portal's token
 
+A server-side caller MUST hold the portal's token.
+
 `occ portaliq:traffic:token <portal>` mints a token, prints it once and
 stores its sha256 under `portal.traffic.serverToken`; the resolved traffic
 block never carries it. `POST /api/traffic/server` accepts the collector's
@@ -153,6 +166,8 @@ the request context, read and dropped the same way.
 - **AND** the same batch with a wrong token answers 401 and stores nothing
 
 ### Requirement: An access log MUST import as page views without assets or bots
+
+An access log MUST import as page views without assets or bots.
 
 `occ portaliq:traffic:import-log <portal> <file> --format=combined|json
 --host=<origin>` parses Apache or Nginx lines into `page_view` events
@@ -175,6 +190,8 @@ aggregation recomputes the days the views fall on.
 @e2e exclude covered by TrafficLogParserTest
 
 ### Requirement: Script errors MUST be reported without the stack or the query string
+
+Script errors MUST be reported without the stack or the query string.
 
 When the portal enabled `js_error`, the client reports a script error on
 `window`'s `error` event with the message, the source file's host and

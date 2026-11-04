@@ -1,7 +1,8 @@
 # portal-page-traffic Specification
 
 ## Purpose
-TBD - created by archiving change portal-page-traffic. Update Purpose after archive.
+
+Each page of a portal has its own traffic figures: sessions, visitors, where they came from and where they went next, counted by the page's in-site route and aggregated per day. This spec fixes the page rows, the page endpoint and the page detail's traffic widgets.
 
 ## Requirements
 

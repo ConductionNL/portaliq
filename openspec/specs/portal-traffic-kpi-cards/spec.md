@@ -1,7 +1,8 @@
 # portal-traffic-kpi-cards Specification
 
 ## Purpose
-TBD - created by archiving change portal-traffic-kpi-cards. Update Purpose after archive.
+
+The headline traffic numbers of a portal and of the Traffic page read as four KPI cards fed by one summary endpoint. This spec fixes which four numbers, where they appear and how the endpoint answers them for a period.
 
 ## Requirements
 
