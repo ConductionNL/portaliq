@@ -264,9 +264,17 @@ export default {
 		padding: 1rem 1.25rem;
 	}
 
+	/* A step on the band is its two lines at the font leading, 38px beside
+	   the 36px marker, so the band is 70px high (WooVerzoekGegevens). */
 	.pq-form-progress__item {
 		flex: 1 1 0;
 		gap: 0.625rem;
+		padding-block: 0;
+	}
+
+	.pq-form-progress__title,
+	.pq-form-progress__state {
+		line-height: normal;
 	}
 
 	.pq-form-progress__item:last-child {

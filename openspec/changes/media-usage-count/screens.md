@@ -1,3 +1,3 @@
 # Screens
 
-- PtMedia https://identity.conduction.nl/screens/board?id=portaliq/PtMedia
+- portaliq/PtMedia media https://identity.conduction.nl/screens/board?id=portaliq/PtMedia

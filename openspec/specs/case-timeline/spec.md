@@ -84,9 +84,9 @@ block a failed read SHALL show "What happened could not be loaded." with a
 "Try again" button.
 
 #### Scenario: Newest first
-- **GIVEN** a timeline with an entry of 1 September and one of 3 September
+- **GIVEN** a timeline with an entry of 1 October and one of 3 October
 - **WHEN** the resident opens the case
-- **THEN** the 3 September entry is shown above the 1 September entry
+- **THEN** the 3 October entry is shown above the 1 October entry
 
 #### Scenario: Nothing yet
 - **GIVEN** the provider returns an empty list

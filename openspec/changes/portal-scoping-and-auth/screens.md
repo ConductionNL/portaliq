@@ -1,5 +1,5 @@
 # Screens
 
-- Inloggen https://identity.conduction.nl/screens/board?id=portaliq/Inloggen
-- PtPortalInstellingen https://identity.conduction.nl/screens/board?id=portaliq/PtPortalInstellingen
-- Publicatie https://identity.conduction.nl/screens/board?id=portaliq/Publicatie
+- portaliq/Inloggen inloggen https://identity.conduction.nl/screens/board?id=portaliq/Inloggen
+- portaliq/PtPortalInstellingen portal, instellingen https://identity.conduction.nl/screens/board?id=portaliq/PtPortalInstellingen
+- portaliq/Publicatie Website: publicatie https://identity.conduction.nl/screens/board?id=portaliq/Publicatie

@@ -1,4 +1,4 @@
 # Screens
 
-- Home https://identity.conduction.nl/screens/board?id=portaliq/Home
-- ThemaOverzicht https://identity.conduction.nl/screens/board?id=portaliq/ThemaOverzicht
+- portaliq/Home Website: home https://identity.conduction.nl/screens/board?id=portaliq/Home
+- portaliq/ThemaOverzicht parkeren https://identity.conduction.nl/screens/board?id=portaliq/ThemaOverzicht

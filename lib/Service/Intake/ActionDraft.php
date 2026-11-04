@@ -36,7 +36,6 @@ namespace OCA\Portaliq\Service\Intake;
 use DateTimeImmutable;
 use OCA\Portaliq\Contribution\ActionScopeResolver;
 use OCA\Portaliq\Contribution\CreateBody;
-use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
@@ -189,7 +188,7 @@ class ActionDraft {
 		}
 
 		$kept = [];
-		foreach ($this->answerFields(action: $action) as $field) {
+		foreach ((new ActionAnswerFields())->forAction(action: $action) as $field) {
 			if (array_key_exists($field, $answers) === true && $answers[$field] !== null) {
 				$kept[$field] = $answers[$field];
 			}
@@ -246,7 +245,7 @@ class ActionDraft {
 	public function answersOf(array $action, array $draft): array {
 		$data    = (array)($draft['data'] ?? []);
 		$answers = [];
-		foreach ($this->answerFields(action: $action) as $field) {
+		foreach ((new ActionAnswerFields())->forAction(action: $action) as $field) {
 			if (array_key_exists($field, $data) === true) {
 				$answers[$field] = $data[$field];
 			}
@@ -340,29 +339,4 @@ class ActionDraft {
 			&& $destination['schema'] !== ''
 			&& PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === true;
 	}//end isDraftable()
-
-	/**
-	 * The action's answer fields: declared, not `claims`, not a file.
-	 *
-	 * @param array<string, mixed> $action The action.
-	 *
-	 * @return array<int, string>
-	 */
-	private function answerFields(array $action): array {
-		$files = [];
-		foreach ((array)($action['fieldConfigs'] ?? []) as $field => $config) {
-			if (is_array($config) === true && ($config['type'] ?? null) === FileFieldConfigNormaliser::TYPE_FILE) {
-				$files[] = (string)$field;
-			}
-		}
-
-		$fields = [];
-		foreach ((array)($action['fields'] ?? []) as $field) {
-			if (is_string($field) === true && $field !== '' && $field !== 'claims' && in_array($field, $files, true) === false) {
-				$fields[] = $field;
-			}
-		}
-
-		return $fields;
-	}//end answerFields()
 }//end class

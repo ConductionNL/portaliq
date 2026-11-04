@@ -1,4 +1,4 @@
 # Screens
 
-- ZaakAfgerond https://identity.conduction.nl/screens/board?id=portaliq/ZaakAfgerond
-- Zaak https://identity.conduction.nl/screens/board?id=portaliq/Zaak
+- portaliq/ZaakAfgerond Uw zaak: parkeervergunning binnenstad, afgerond https://identity.conduction.nl/screens/board?id=portaliq/ZaakAfgerond
+- portaliq/Zaak uw zaak https://identity.conduction.nl/screens/board?id=portaliq/Zaak

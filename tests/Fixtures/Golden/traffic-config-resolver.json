@@ -1,0 +1,1161 @@
+{
+    "no traffic block": {
+        "enabled": false,
+        "kind": "site",
+        "events": [
+            "page_view",
+            "session_start"
+        ],
+        "dimensions": [
+            "pageReferrer",
+            "pageTitle"
+        ],
+        "sessionTimeoutMinutes": 30,
+        "retentionDays": 90,
+        "consentRequired": false,
+        "excludedPaths": [],
+        "preConsentEvents": [],
+        "regionGranularity": "country",
+        "persistClientId": false,
+        "sensitive": {
+            "persistClientId": false,
+            "accountLinking": false,
+            "heatmaps": false,
+            "sessionRecording": false
+        },
+        "goals": [],
+        "funnels": [],
+        "customDimensions": [],
+        "segments": [],
+        "rollupOf": [],
+        "reports": [],
+        "alerts": [],
+        "experiments": []
+    },
+    "traffic not an array": {
+        "enabled": false,
+        "kind": "site",
+        "events": [
+            "page_view",
+            "session_start"
+        ],
+        "dimensions": [
+            "pageReferrer",
+            "pageTitle"
+        ],
+        "sessionTimeoutMinutes": 30,
+        "retentionDays": 90,
+        "consentRequired": false,
+        "excludedPaths": [],
+        "preConsentEvents": [],
+        "regionGranularity": "country",
+        "persistClientId": false,
+        "sensitive": {
+            "persistClientId": false,
+            "accountLinking": false,
+            "heatmaps": false,
+            "sessionRecording": false
+        },
+        "goals": [],
+        "funnels": [],
+        "customDimensions": [],
+        "segments": [],
+        "rollupOf": [],
+        "reports": [],
+        "alerts": [],
+        "experiments": []
+    },
+    "enabled only": {
+        "enabled": true,
+        "kind": "site",
+        "events": [
+            "page_view",
+            "session_start"
+        ],
+        "dimensions": [
+            "pageReferrer",
+            "pageTitle"
+        ],
+        "sessionTimeoutMinutes": 30,
+        "retentionDays": 90,
+        "consentRequired": false,
+        "excludedPaths": [],
+        "preConsentEvents": [],
+        "regionGranularity": "country",
+        "persistClientId": false,
+        "sensitive": {
+            "persistClientId": false,
+            "accountLinking": false,
+            "heatmaps": false,
+            "sessionRecording": false
+        },
+        "goals": [],
+        "funnels": [],
+        "customDimensions": [],
+        "segments": [],
+        "rollupOf": [],
+        "reports": [],
+        "alerts": [],
+        "experiments": []
+    },
+    "enabled truthy": {
+        "enabled": false,
+        "kind": "site",
+        "events": [
+            "page_view",
+            "session_start"
+        ],
+        "dimensions": [
+            "pageReferrer",
+            "pageTitle"
+        ],
+        "sessionTimeoutMinutes": 30,
+        "retentionDays": 90,
+        "consentRequired": false,
+        "excludedPaths": [],
+        "preConsentEvents": [],
+        "regionGranularity": "country",
+        "persistClientId": false,
+        "sensitive": {
+            "persistClientId": false,
+            "accountLinking": false,
+            "heatmaps": false,
+            "sessionRecording": false
+        },
+        "goals": [],
+        "funnels": [],
+        "customDimensions": [],
+        "segments": [],
+        "rollupOf": [],
+        "reports": [],
+        "alerts": [],
+        "experiments": []
+    },
+    "external kind": {
+        "enabled": true,
+        "kind": "external",
+        "events": [
+            "page_view",
+            "session_start"
+        ],
+        "dimensions": [
+            "pageReferrer",
+            "pageTitle"
+        ],
+        "sessionTimeoutMinutes": 30,
+        "retentionDays": 90,
+        "consentRequired": false,
+        "excludedPaths": [],
+        "preConsentEvents": [],
+        "regionGranularity": "country",
+        "persistClientId": false,
+        "sensitive": {
+            "persistClientId": false,
+            "accountLinking": false,
+            "heatmaps": false,
+            "sessionRecording": false
+        },
+        "goals": [],
+        "funnels": [],
+        "customDimensions": [],
+        "segments": [],
+        "rollupOf": [],
+        "reports": [],
+        "alerts": [],
+        "experiments": []
+    },
+    "other kind": {
+        "enabled": false,
+        "kind": "site",
+        "events": [
+            "page_view",
+            "session_start"
+        ],
+        "dimensions": [
+            "pageReferrer",
+            "pageTitle"
+        ],
+        "sessionTimeoutMinutes": 30,
+        "retentionDays": 90,
+        "consentRequired": false,
+        "excludedPaths": [],
+        "preConsentEvents": [],
+        "regionGranularity": "country",
+        "persistClientId": false,
+        "sensitive": {
+            "persistClientId": false,
+            "accountLinking": false,
+            "heatmaps": false,
+            "sessionRecording": false
+        },
+        "goals": [],
+        "funnels": [],
+        "customDimensions": [],
+        "segments": [],
+        "rollupOf": [],
+        "reports": [],
+        "alerts": [],
+        "experiments": []
+    },
+    "full block": {
+        "enabled": true,
+        "kind": "site",
+        "events": [
+            "page_view",
+            "search",
+            "form_start",
+            "search",
+            "heat_click",
+            "heat_scroll"
+        ],
+        "dimensions": [
+            "pageReferrer",
+            "searchTerm",
+            "region",
+            "deviceType",
+            "userRef"
+        ],
+        "sessionTimeoutMinutes": 45,
+        "retentionDays": 30,
+        "consentRequired": true,
+        "excludedPaths": [
+            "/melden",
+            "/priv\u00e9"
+        ],
+        "preConsentEvents": [
+            "page_view",
+            "search"
+        ],
+        "regionGranularity": "region",
+        "persistClientId": true,
+        "sensitive": {
+            "persistClientId": true,
+            "accountLinking": true,
+            "heatmaps": true,
+            "sessionRecording": false
+        },
+        "goals": [
+            {
+                "id": "contact",
+                "name": "contact",
+                "type": "page_reached",
+                "match": {
+                    "pathEquals": "/contact"
+                },
+                "value": 2.5
+            }
+        ],
+        "funnels": [
+            {
+                "id": "f",
+                "name": "F",
+                "steps": [
+                    {
+                        "name": "a",
+                        "match": {
+                            "pathPrefix": "/a"
+                        }
+                    }
+                ]
+            }
+        ],
+        "customDimensions": [
+            {
+                "id": "audience",
+                "name": "Audience",
+                "scope": "session"
+            }
+        ],
+        "segments": [
+            {
+                "id": "converted",
+                "name": "Converted",
+                "conditions": [
+                    {
+                        "dimension": "goal:contact",
+                        "operator": "is",
+                        "value": "true"
+                    }
+                ]
+            },
+            {
+                "id": "mobile",
+                "name": "Mobile",
+                "conditions": [
+                    {
+                        "dimension": "deviceType",
+                        "operator": "is",
+                        "value": "mobile"
+                    }
+                ]
+            }
+        ],
+        "rollupOf": [
+            "noord"
+        ],
+        "reports": [
+            {
+                "id": "d",
+                "name": "Daily",
+                "cadence": "daily",
+                "recipients": [
+                    "admin"
+                ],
+                "sections": [
+                    "overview"
+                ]
+            }
+        ],
+        "alerts": [
+            {
+                "id": "busy",
+                "name": "Busy",
+                "metric": "pageViews",
+                "comparison": "above",
+                "threshold": 50,
+                "period": "day",
+                "recipients": [
+                    "admin"
+                ]
+            },
+            {
+                "id": "goal",
+                "name": "goal",
+                "metric": "goal:contact",
+                "comparison": "below",
+                "threshold": 1,
+                "period": "day",
+                "recipients": [
+                    "admin"
+                ]
+            }
+        ],
+        "experiments": [
+            {
+                "id": "hero",
+                "name": "hero",
+                "status": "running",
+                "page": "/",
+                "variants": [
+                    {
+                        "id": "a",
+                        "name": "a",
+                        "weight": 1,
+                        "changes": []
+                    },
+                    {
+                        "id": "b",
+                        "name": "b",
+                        "weight": 1,
+                        "pageRoute": "/b"
+                    }
+                ],
+                "goal": "contact",
+                "startedAt": "",
+                "stoppedAt": ""
+            }
+        ]
+    },
+    "full block no slug": {
+        "enabled": true,
+        "kind": "site",
+        "events": [
+            "page_view",
+            "search",
+            "form_start",
+            "search",
+            "heat_click",
+            "heat_scroll"
+        ],
+        "dimensions": [
+            "pageReferrer",
+            "searchTerm",
+            "region",
+            "deviceType",
+            "userRef"
+        ],
+        "sessionTimeoutMinutes": 45,
+        "retentionDays": 30,
+        "consentRequired": true,
+        "excludedPaths": [
+            "/melden",
+            "/priv\u00e9"
+        ],
+        "preConsentEvents": [
+            "page_view",
+            "search"
+        ],
+        "regionGranularity": "region",
+        "persistClientId": true,
+        "sensitive": {
+            "persistClientId": true,
+            "accountLinking": true,
+            "heatmaps": true,
+            "sessionRecording": false
+        },
+        "goals": [
+            {
+                "id": "contact",
+                "name": "contact",
+                "type": "page_reached",
+                "match": {
+                    "pathEquals": "/contact"
+                },
+                "value": 2.5
+            }
+        ],
+        "funnels": [
+            {
+                "id": "f",
+                "name": "F",
+                "steps": [
+                    {
+                        "name": "a",
+                        "match": {
+                            "pathPrefix": "/a"
+                        }
+                    }
+                ]
+            }
+        ],
+        "customDimensions": [
+            {
+                "id": "audience",
+                "name": "Audience",
+                "scope": "session"
+            }
+        ],
+        "segments": [
+            {
+                "id": "converted",
+                "name": "Converted",
+                "conditions": [
+                    {
+                        "dimension": "goal:contact",
+                        "operator": "is",
+                        "value": "true"
+                    }
+                ]
+            },
+            {
+                "id": "mobile",
+                "name": "Mobile",
+                "conditions": [
+                    {
+                        "dimension": "deviceType",
+                        "operator": "is",
+                        "value": "mobile"
+                    }
+                ]
+            }
+        ],
+        "rollupOf": [
+            "noord",
+            "zuid"
+        ],
+        "reports": [
+            {
+                "id": "d",
+                "name": "Daily",
+                "cadence": "daily",
+                "recipients": [
+                    "admin"
+                ],
+                "sections": [
+                    "overview"
+                ]
+            }
+        ],
+        "alerts": [
+            {
+                "id": "busy",
+                "name": "Busy",
+                "metric": "pageViews",
+                "comparison": "above",
+                "threshold": 50,
+                "period": "day",
+                "recipients": [
+                    "admin"
+                ]
+            },
+            {
+                "id": "goal",
+                "name": "goal",
+                "metric": "goal:contact",
+                "comparison": "below",
+                "threshold": 1,
+                "period": "day",
+                "recipients": [
+                    "admin"
+                ]
+            }
+        ],
+        "experiments": [
+            {
+                "id": "hero",
+                "name": "hero",
+                "status": "running",
+                "page": "/",
+                "variants": [
+                    {
+                        "id": "a",
+                        "name": "a",
+                        "weight": 1,
+                        "changes": []
+                    },
+                    {
+                        "id": "b",
+                        "name": "b",
+                        "weight": 1,
+                        "pageRoute": "/b"
+                    }
+                ],
+                "goal": "contact",
+                "startedAt": "",
+                "stoppedAt": ""
+            }
+        ]
+    },
+    "heat without switch": {
+        "enabled": true,
+        "kind": "site",
+        "events": [
+            "page_view"
+        ],
+        "dimensions": [
+            "pageReferrer",
+            "searchTerm",
+            "region",
+            "deviceType"
+        ],
+        "sessionTimeoutMinutes": 45,
+        "retentionDays": 30,
+        "consentRequired": true,
+        "excludedPaths": [
+            "/melden",
+            "/priv\u00e9"
+        ],
+        "preConsentEvents": [
+            "page_view"
+        ],
+        "regionGranularity": "region",
+        "persistClientId": false,
+        "sensitive": {
+            "persistClientId": false,
+            "accountLinking": false,
+            "heatmaps": false,
+            "sessionRecording": false
+        },
+        "goals": [
+            {
+                "id": "contact",
+                "name": "contact",
+                "type": "page_reached",
+                "match": {
+                    "pathEquals": "/contact"
+                },
+                "value": 2.5
+            }
+        ],
+        "funnels": [
+            {
+                "id": "f",
+                "name": "F",
+                "steps": [
+                    {
+                        "name": "a",
+                        "match": {
+                            "pathPrefix": "/a"
+                        }
+                    }
+                ]
+            }
+        ],
+        "customDimensions": [
+            {
+                "id": "audience",
+                "name": "Audience",
+                "scope": "session"
+            }
+        ],
+        "segments": [
+            {
+                "id": "converted",
+                "name": "Converted",
+                "conditions": [
+                    {
+                        "dimension": "goal:contact",
+                        "operator": "is",
+                        "value": "true"
+                    }
+                ]
+            },
+            {
+                "id": "mobile",
+                "name": "Mobile",
+                "conditions": [
+                    {
+                        "dimension": "deviceType",
+                        "operator": "is",
+                        "value": "mobile"
+                    }
+                ]
+            }
+        ],
+        "rollupOf": [
+            "noord"
+        ],
+        "reports": [
+            {
+                "id": "d",
+                "name": "Daily",
+                "cadence": "daily",
+                "recipients": [
+                    "admin"
+                ],
+                "sections": [
+                    "overview"
+                ]
+            }
+        ],
+        "alerts": [
+            {
+                "id": "busy",
+                "name": "Busy",
+                "metric": "pageViews",
+                "comparison": "above",
+                "threshold": 50,
+                "period": "day",
+                "recipients": [
+                    "admin"
+                ]
+            },
+            {
+                "id": "goal",
+                "name": "goal",
+                "metric": "goal:contact",
+                "comparison": "below",
+                "threshold": 1,
+                "period": "day",
+                "recipients": [
+                    "admin"
+                ]
+            }
+        ],
+        "experiments": [
+            {
+                "id": "hero",
+                "name": "hero",
+                "status": "running",
+                "page": "/",
+                "variants": [
+                    {
+                        "id": "a",
+                        "name": "a",
+                        "weight": 1,
+                        "changes": []
+                    },
+                    {
+                        "id": "b",
+                        "name": "b",
+                        "weight": 1,
+                        "pageRoute": "/b"
+                    }
+                ],
+                "goal": "contact",
+                "startedAt": "",
+                "stoppedAt": ""
+            }
+        ]
+    },
+    "empty event list": {
+        "enabled": false,
+        "kind": "site",
+        "events": [],
+        "dimensions": [
+            "pageReferrer",
+            "pageTitle"
+        ],
+        "sessionTimeoutMinutes": 30,
+        "retentionDays": 90,
+        "consentRequired": false,
+        "excludedPaths": [],
+        "preConsentEvents": [],
+        "regionGranularity": "country",
+        "persistClientId": false,
+        "sensitive": {
+            "persistClientId": false,
+            "accountLinking": false,
+            "heatmaps": false,
+            "sessionRecording": false
+        },
+        "goals": [],
+        "funnels": [],
+        "customDimensions": [],
+        "segments": [],
+        "rollupOf": [],
+        "reports": [],
+        "alerts": [],
+        "experiments": []
+    },
+    "only unknown events": {
+        "enabled": false,
+        "kind": "site",
+        "events": [],
+        "dimensions": [
+            "pageReferrer",
+            "pageTitle"
+        ],
+        "sessionTimeoutMinutes": 30,
+        "retentionDays": 90,
+        "consentRequired": false,
+        "excludedPaths": [],
+        "preConsentEvents": [],
+        "regionGranularity": "country",
+        "persistClientId": false,
+        "sensitive": {
+            "persistClientId": false,
+            "accountLinking": false,
+            "heatmaps": false,
+            "sessionRecording": false
+        },
+        "goals": [],
+        "funnels": [],
+        "customDimensions": [],
+        "segments": [],
+        "rollupOf": [],
+        "reports": [],
+        "alerts": [],
+        "experiments": []
+    },
+    "events not a list": {
+        "enabled": false,
+        "kind": "site",
+        "events": [
+            "page_view",
+            "session_start"
+        ],
+        "dimensions": [
+            "pageReferrer",
+            "pageTitle"
+        ],
+        "sessionTimeoutMinutes": 30,
+        "retentionDays": 90,
+        "consentRequired": false,
+        "excludedPaths": [],
+        "preConsentEvents": [],
+        "regionGranularity": "country",
+        "persistClientId": false,
+        "sensitive": {
+            "persistClientId": false,
+            "accountLinking": false,
+            "heatmaps": false,
+            "sessionRecording": false
+        },
+        "goals": [],
+        "funnels": [],
+        "customDimensions": [],
+        "segments": [],
+        "rollupOf": [],
+        "reports": [],
+        "alerts": [],
+        "experiments": []
+    },
+    "region off": {
+        "enabled": false,
+        "kind": "site",
+        "events": [
+            "page_view",
+            "session_start"
+        ],
+        "dimensions": [
+            "browser"
+        ],
+        "sessionTimeoutMinutes": 30,
+        "retentionDays": 90,
+        "consentRequired": false,
+        "excludedPaths": [],
+        "preConsentEvents": [],
+        "regionGranularity": "none",
+        "persistClientId": false,
+        "sensitive": {
+            "persistClientId": false,
+            "accountLinking": false,
+            "heatmaps": false,
+            "sessionRecording": false
+        },
+        "goals": [],
+        "funnels": [],
+        "customDimensions": [],
+        "segments": [],
+        "rollupOf": [],
+        "reports": [],
+        "alerts": [],
+        "experiments": []
+    },
+    "region unknown": {
+        "enabled": false,
+        "kind": "site",
+        "events": [
+            "page_view",
+            "session_start"
+        ],
+        "dimensions": [
+            "region"
+        ],
+        "sessionTimeoutMinutes": 30,
+        "retentionDays": 90,
+        "consentRequired": false,
+        "excludedPaths": [],
+        "preConsentEvents": [],
+        "regionGranularity": "country",
+        "persistClientId": false,
+        "sensitive": {
+            "persistClientId": false,
+            "accountLinking": false,
+            "heatmaps": false,
+            "sessionRecording": false
+        },
+        "goals": [],
+        "funnels": [],
+        "customDimensions": [],
+        "segments": [],
+        "rollupOf": [],
+        "reports": [],
+        "alerts": [],
+        "experiments": []
+    },
+    "country region": {
+        "enabled": false,
+        "kind": "site",
+        "events": [
+            "page_view",
+            "session_start"
+        ],
+        "dimensions": [
+            "region"
+        ],
+        "sessionTimeoutMinutes": 30,
+        "retentionDays": 90,
+        "consentRequired": false,
+        "excludedPaths": [],
+        "preConsentEvents": [],
+        "regionGranularity": "country",
+        "persistClientId": false,
+        "sensitive": {
+            "persistClientId": false,
+            "accountLinking": false,
+            "heatmaps": false,
+            "sessionRecording": false
+        },
+        "goals": [],
+        "funnels": [],
+        "customDimensions": [],
+        "segments": [],
+        "rollupOf": [],
+        "reports": [],
+        "alerts": [],
+        "experiments": []
+    },
+    "account linking off": {
+        "enabled": false,
+        "kind": "site",
+        "events": [
+            "page_view",
+            "session_start"
+        ],
+        "dimensions": [
+            "os"
+        ],
+        "sessionTimeoutMinutes": 30,
+        "retentionDays": 90,
+        "consentRequired": false,
+        "excludedPaths": [],
+        "preConsentEvents": [],
+        "regionGranularity": "country",
+        "persistClientId": false,
+        "sensitive": {
+            "persistClientId": false,
+            "accountLinking": false,
+            "heatmaps": false,
+            "sessionRecording": false
+        },
+        "goals": [],
+        "funnels": [],
+        "customDimensions": [],
+        "segments": [],
+        "rollupOf": [],
+        "reports": [],
+        "alerts": [],
+        "experiments": []
+    },
+    "sensitive not an array": {
+        "enabled": false,
+        "kind": "site",
+        "events": [
+            "page_view",
+            "session_start"
+        ],
+        "dimensions": [
+            "pageReferrer",
+            "pageTitle"
+        ],
+        "sessionTimeoutMinutes": 30,
+        "retentionDays": 90,
+        "consentRequired": false,
+        "excludedPaths": [],
+        "preConsentEvents": [],
+        "regionGranularity": "country",
+        "persistClientId": false,
+        "sensitive": {
+            "persistClientId": false,
+            "accountLinking": false,
+            "heatmaps": false,
+            "sessionRecording": false
+        },
+        "goals": [],
+        "funnels": [],
+        "customDimensions": [],
+        "segments": [],
+        "rollupOf": [],
+        "reports": [],
+        "alerts": [],
+        "experiments": []
+    },
+    "bad numbers": {
+        "enabled": false,
+        "kind": "site",
+        "events": [
+            "page_view",
+            "session_start"
+        ],
+        "dimensions": [
+            "pageReferrer",
+            "pageTitle"
+        ],
+        "sessionTimeoutMinutes": 30,
+        "retentionDays": 90,
+        "consentRequired": false,
+        "excludedPaths": [],
+        "preConsentEvents": [],
+        "regionGranularity": "country",
+        "persistClientId": false,
+        "sensitive": {
+            "persistClientId": false,
+            "accountLinking": false,
+            "heatmaps": false,
+            "sessionRecording": false
+        },
+        "goals": [],
+        "funnels": [],
+        "customDimensions": [],
+        "segments": [],
+        "rollupOf": [],
+        "reports": [],
+        "alerts": [],
+        "experiments": []
+    },
+    "float numbers": {
+        "enabled": false,
+        "kind": "site",
+        "events": [
+            "page_view",
+            "session_start"
+        ],
+        "dimensions": [
+            "pageReferrer",
+            "pageTitle"
+        ],
+        "sessionTimeoutMinutes": 30,
+        "retentionDays": 7,
+        "consentRequired": false,
+        "excludedPaths": [],
+        "preConsentEvents": [],
+        "regionGranularity": "country",
+        "persistClientId": false,
+        "sensitive": {
+            "persistClientId": false,
+            "accountLinking": false,
+            "heatmaps": false,
+            "sessionRecording": false
+        },
+        "goals": [],
+        "funnels": [],
+        "customDimensions": [],
+        "segments": [],
+        "rollupOf": [],
+        "reports": [],
+        "alerts": [],
+        "experiments": []
+    },
+    "consent not an array": {
+        "enabled": false,
+        "kind": "site",
+        "events": [
+            "page_view",
+            "session_start"
+        ],
+        "dimensions": [
+            "pageReferrer",
+            "pageTitle"
+        ],
+        "sessionTimeoutMinutes": 30,
+        "retentionDays": 90,
+        "consentRequired": false,
+        "excludedPaths": [],
+        "preConsentEvents": [],
+        "regionGranularity": "country",
+        "persistClientId": false,
+        "sensitive": {
+            "persistClientId": false,
+            "accountLinking": false,
+            "heatmaps": false,
+            "sessionRecording": false
+        },
+        "goals": [],
+        "funnels": [],
+        "customDimensions": [],
+        "segments": [],
+        "rollupOf": [],
+        "reports": [],
+        "alerts": [],
+        "experiments": []
+    },
+    "consent truthy": {
+        "enabled": false,
+        "kind": "site",
+        "events": [
+            "page_view",
+            "session_start"
+        ],
+        "dimensions": [
+            "pageReferrer",
+            "pageTitle"
+        ],
+        "sessionTimeoutMinutes": 30,
+        "retentionDays": 90,
+        "consentRequired": false,
+        "excludedPaths": [],
+        "preConsentEvents": [
+            "session_start"
+        ],
+        "regionGranularity": "country",
+        "persistClientId": false,
+        "sensitive": {
+            "persistClientId": false,
+            "accountLinking": false,
+            "heatmaps": false,
+            "sessionRecording": false
+        },
+        "goals": [],
+        "funnels": [],
+        "customDimensions": [],
+        "segments": [],
+        "rollupOf": [],
+        "reports": [],
+        "alerts": [],
+        "experiments": []
+    },
+    "pre-consent not enabled": {
+        "enabled": false,
+        "kind": "site",
+        "events": [
+            "page_view"
+        ],
+        "dimensions": [
+            "pageReferrer",
+            "pageTitle"
+        ],
+        "sessionTimeoutMinutes": 30,
+        "retentionDays": 90,
+        "consentRequired": false,
+        "excludedPaths": [],
+        "preConsentEvents": [
+            "page_view"
+        ],
+        "regionGranularity": "country",
+        "persistClientId": false,
+        "sensitive": {
+            "persistClientId": false,
+            "accountLinking": false,
+            "heatmaps": false,
+            "sessionRecording": false
+        },
+        "goals": [],
+        "funnels": [],
+        "customDimensions": [],
+        "segments": [],
+        "rollupOf": [],
+        "reports": [],
+        "alerts": [],
+        "experiments": []
+    },
+    "excluded not a list": {
+        "enabled": false,
+        "kind": "site",
+        "events": [
+            "page_view",
+            "session_start"
+        ],
+        "dimensions": [
+            "pageReferrer",
+            "pageTitle"
+        ],
+        "sessionTimeoutMinutes": 30,
+        "retentionDays": 90,
+        "consentRequired": false,
+        "excludedPaths": [],
+        "preConsentEvents": [],
+        "regionGranularity": "country",
+        "persistClientId": false,
+        "sensitive": {
+            "persistClientId": false,
+            "accountLinking": false,
+            "heatmaps": false,
+            "sessionRecording": false
+        },
+        "goals": [],
+        "funnels": [],
+        "customDimensions": [],
+        "segments": [],
+        "rollupOf": [],
+        "reports": [],
+        "alerts": [],
+        "experiments": []
+    },
+    "rollup includes itself": {
+        "enabled": false,
+        "kind": "site",
+        "events": [
+            "page_view",
+            "session_start"
+        ],
+        "dimensions": [
+            "pageReferrer",
+            "pageTitle"
+        ],
+        "sessionTimeoutMinutes": 30,
+        "retentionDays": 90,
+        "consentRequired": false,
+        "excludedPaths": [],
+        "preConsentEvents": [],
+        "regionGranularity": "country",
+        "persistClientId": false,
+        "sensitive": {
+            "persistClientId": false,
+            "accountLinking": false,
+            "heatmaps": false,
+            "sessionRecording": false
+        },
+        "goals": [],
+        "funnels": [],
+        "customDimensions": [],
+        "segments": [],
+        "rollupOf": [
+            "west"
+        ],
+        "reports": [],
+        "alerts": [],
+        "experiments": []
+    }
+}

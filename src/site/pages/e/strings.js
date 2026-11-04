@@ -157,6 +157,7 @@ export default {
 		'By phone': 'Telefonisch',
 		'By post': 'Per post',
 		Cancel: 'Annuleren',
+		Close: 'Sluiten',
 		'Check the address and try again.':
 			'Controleer het adres en probeer het opnieuw.',
 		'Choose another preferred address first.':
@@ -443,6 +444,7 @@ export default {
 		'By phone': 'By phone',
 		'By post': 'By post',
 		Cancel: 'Cancel',
+		Close: 'Close',
 		'Check the address and try again.': 'Check the address and try again.',
 		'Choose another preferred address first.':
 			'Choose another preferred address first.',

@@ -1,43 +1,45 @@
 # Screens
 
-- Begrippen https://identity.conduction.nl/screens/board?id=portaliq/Begrippen
-- Contact https://identity.conduction.nl/screens/board?id=portaliq/Contact
-- Contentpagina https://identity.conduction.nl/screens/board?id=portaliq/Contentpagina
-- Cookieverklaring https://identity.conduction.nl/screens/board?id=portaliq/Cookieverklaring
-- Dossiers https://identity.conduction.nl/screens/board?id=portaliq/Dossiers
-- EditorMenu https://identity.conduction.nl/screens/board?id=portaliq/EditorMenu
-- Home https://identity.conduction.nl/screens/board?id=portaliq/Home
-- MobielHome https://identity.conduction.nl/screens/board?id=portaliq/MobielHome
-- MobielZaak https://identity.conduction.nl/screens/board?id=portaliq/MobielZaak
-- NietGevonden https://identity.conduction.nl/screens/board?id=portaliq/NietGevonden
-- PtBegrippen https://identity.conduction.nl/screens/board?id=portaliq/PtBegrippen
-- PtNieuws https://identity.conduction.nl/screens/board?id=portaliq/PtNieuws
-- PtNieuwsbericht https://identity.conduction.nl/screens/board?id=portaliq/PtNieuwsbericht
-- PtPortal https://identity.conduction.nl/screens/board?id=portaliq/PtPortal
-- PtPortalInstellingen https://identity.conduction.nl/screens/board?id=portaliq/PtPortalInstellingen
-- PtPortals https://identity.conduction.nl/screens/board?id=portaliq/PtPortals
-- PtThemas https://identity.conduction.nl/screens/board?id=portaliq/PtThemas
-- Publicatie https://identity.conduction.nl/screens/board?id=portaliq/Publicatie
-- Toegankelijkheid https://identity.conduction.nl/screens/board?id=portaliq/Toegankelijkheid
-- ZoekenGeenTreffers https://identity.conduction.nl/screens/board?id=portaliq/ZoekenGeenTreffers
-- Inloggen https://identity.conduction.nl/screens/board?id=portaliq/Inloggen
-- PtPagina https://identity.conduction.nl/screens/board?id=portaliq/PtPagina
-- Kop https://identity.conduction.nl/screens/board?id=huisstijl/Kop
-- Voet https://identity.conduction.nl/screens/board?id=huisstijl/Voet
-- Zoeken https://identity.conduction.nl/screens/board?id=portaliq/Zoeken
-- Kop https://identity.conduction.nl/screens/board?id=wilgenboom/Kop
-- Voet https://identity.conduction.nl/screens/board?id=wilgenboom/Voet
-- Home https://identity.conduction.nl/screens/board?id=wilgenboom/Home
-- Artikel https://identity.conduction.nl/screens/board?id=wilgenboom/Artikel
-- Contentpagina https://identity.conduction.nl/screens/board?id=wilgenboom/Contentpagina
-- Kop https://identity.conduction.nl/screens/board?id=vaartveld/Kop
-- Voet https://identity.conduction.nl/screens/board?id=vaartveld/Voet
-- Home https://identity.conduction.nl/screens/board?id=vaartveld/Home
-- Artikel https://identity.conduction.nl/screens/board?id=vaartveld/Artikel
-- Contentpagina https://identity.conduction.nl/screens/board?id=vaartveld/Contentpagina
-- Artikel https://identity.conduction.nl/screens/board?id=esdoornveen/Artikel
-- Contentpagina https://identity.conduction.nl/screens/board?id=esdoornveen/Contentpagina
-- Contentpagina https://identity.conduction.nl/screens/board?id=warmtepompacademie/Contentpagina
+- portaliq/Begrippen Site: begrippenlijst https://identity.conduction.nl/screens/board?id=portaliq/Begrippen
+- portaliq/Contact Site: contact https://identity.conduction.nl/screens/board?id=portaliq/Contact
+- portaliq/Contentpagina Website: informatiepagina; also the header without its menu beside a menu block https://identity.conduction.nl/screens/board?id=portaliq/Contentpagina
+- portaliq/Cookieverklaring Site: cookieverklaring https://identity.conduction.nl/screens/board?id=portaliq/Cookieverklaring
+- portaliq/Dossiers Dossiers (opgegaan in Mijn zaken) https://identity.conduction.nl/screens/board?id=portaliq/Dossiers
+- portaliq/EditorMenu Redacteur: menu van het portaal https://identity.conduction.nl/screens/board?id=portaliq/EditorMenu
+- portaliq/Home Website: home https://identity.conduction.nl/screens/board?id=portaliq/Home
+- portaliq/MobielHome Telefoon: home https://identity.conduction.nl/screens/board?id=portaliq/MobielHome
+- portaliq/MobielZaak Telefoon: uw zaak https://identity.conduction.nl/screens/board?id=portaliq/MobielZaak
+- portaliq/NietGevonden Site: pagina niet gevonden https://identity.conduction.nl/screens/board?id=portaliq/NietGevonden
+- portaliq/PtBegrippen begrippenlijst https://identity.conduction.nl/screens/board?id=portaliq/PtBegrippen
+- portaliq/PtNieuws nieuws https://identity.conduction.nl/screens/board?id=portaliq/PtNieuws
+- portaliq/PtNieuwsbericht nieuwsbericht wijzigen https://identity.conduction.nl/screens/board?id=portaliq/PtNieuwsbericht
+- portaliq/PtPortal portal, tabblad pagina's https://identity.conduction.nl/screens/board?id=portaliq/PtPortal
+- portaliq/PtPortalInstellingen portal, instellingen https://identity.conduction.nl/screens/board?id=portaliq/PtPortalInstellingen
+- portaliq/PtPortals portals https://identity.conduction.nl/screens/board?id=portaliq/PtPortals
+- portaliq/PtThemas thema's https://identity.conduction.nl/screens/board?id=portaliq/PtThemas
+- portaliq/Publicatie Website: publicatie https://identity.conduction.nl/screens/board?id=portaliq/Publicatie
+- portaliq/Toegankelijkheid Site: toegankelijkheidsverklaring https://identity.conduction.nl/screens/board?id=portaliq/Toegankelijkheid
+- portaliq/ZoekenGeenTreffers Site: zoeken zonder treffers https://identity.conduction.nl/screens/board?id=portaliq/ZoekenGeenTreffers
+- portaliq/Inloggen inloggen; also the header for an account without a name, which reads "Ingelogd" https://identity.conduction.nl/screens/board?id=portaliq/Inloggen
+- portaliq/PtPagina pagina-indeling https://identity.conduction.nl/screens/board?id=portaliq/PtPagina
+- huisstijl/Kop Onderdeel: kop en hoofdmenu https://identity.conduction.nl/screens/board?id=huisstijl/Kop
+- huisstijl/Voet Onderdeel: voettekst https://identity.conduction.nl/screens/board?id=huisstijl/Voet
+- portaliq/Zoeken Website: Woo-publicaties zoeken https://identity.conduction.nl/screens/board?id=portaliq/Zoeken
+- wilgenboom/Kop Onderdeel: kop en hoofdmenu https://identity.conduction.nl/screens/board?id=wilgenboom/Kop
+- wilgenboom/Voet Onderdeel: voettekst https://identity.conduction.nl/screens/board?id=wilgenboom/Voet
+- wilgenboom/Home Website: home https://identity.conduction.nl/screens/board?id=wilgenboom/Home
+- wilgenboom/Artikel Website: nieuwsbericht https://identity.conduction.nl/screens/board?id=wilgenboom/Artikel
+- wilgenboom/Contentpagina Website: informatiepagina https://identity.conduction.nl/screens/board?id=wilgenboom/Contentpagina
+- vaartveld/Kop Onderdeel: kop en hoofdmenu https://identity.conduction.nl/screens/board?id=vaartveld/Kop
+- vaartveld/Voet Onderdeel: voettekst https://identity.conduction.nl/screens/board?id=vaartveld/Voet
+- vaartveld/Home Website: home https://identity.conduction.nl/screens/board?id=vaartveld/Home
+- vaartveld/Artikel Website: nieuwsbericht https://identity.conduction.nl/screens/board?id=vaartveld/Artikel
+- vaartveld/Contentpagina Website: informatiepagina https://identity.conduction.nl/screens/board?id=vaartveld/Contentpagina
+- esdoornveen/Artikel Website: opleiding https://identity.conduction.nl/screens/board?id=esdoornveen/Artikel
+- esdoornveen/Contentpagina Website: informatiepagina https://identity.conduction.nl/screens/board?id=esdoornveen/Contentpagina
+- warmtepompacademie/Contentpagina Website: informatiepagina https://identity.conduction.nl/screens/board?id=warmtepompacademie/Contentpagina
+- wilgenboom/Activiteiten activities and events: signing up your own child, the waiting list and the guardian's answer https://identity.conduction.nl/screens/board?id=wilgenboom/Activiteiten
+- learniq/LqActiviteiten the staff side of an activity, specified in learniq: places, roster with photo consent, attendance (decision 286) https://identity.conduction.nl/screens/board?id=learniq/LqActiviteiten
 - opencatalogi/pub-house-style: no opencatalogi screen; the reading room's house style is set in portaliq
-- No screen: caching happens on the server; editors and visitors only notice faster pages (site-content-cache)
-- No screen: a portal whose theme does not resolve renders with the base look; there is no page for the fallback itself (thm-theme-fail-closed)
+- portaliq has no board of its own for row site-content-cache: caching happens on the server; editors and visitors only notice faster pages
+- portaliq has no board of its own for row thm-theme-fail-closed: a portal whose theme does not resolve renders with the base look; there is no page for the fallback itself

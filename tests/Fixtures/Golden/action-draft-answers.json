@@ -1,0 +1,203 @@
+{
+    "no fields": {
+        "answersOf": [],
+        "noData": [],
+        "bodyOf": {
+            "schema": "case",
+            "scopeField": "subjectRef",
+            "subjectRef": "sub-1",
+            "organisation": "org-1",
+            "data": []
+        }
+    },
+    "plain fields": {
+        "answersOf": {
+            "title": "Titel",
+            "description": "Omschrijving"
+        },
+        "noData": [],
+        "bodyOf": {
+            "schema": "case",
+            "scopeField": "subjectRef",
+            "subjectRef": "sub-1",
+            "organisation": "org-1",
+            "data": {
+                "title": "Titel",
+                "description": "Omschrijving"
+            }
+        }
+    },
+    "claims is dropped": {
+        "answersOf": {
+            "title": "Titel"
+        },
+        "noData": [],
+        "bodyOf": {
+            "schema": "case",
+            "scopeField": "subjectRef",
+            "subjectRef": "sub-1",
+            "organisation": "org-1",
+            "data": {
+                "title": "Titel"
+            }
+        }
+    },
+    "file field dropped": {
+        "answersOf": {
+            "title": "Titel"
+        },
+        "noData": [],
+        "bodyOf": {
+            "schema": "case",
+            "scopeField": "subjectRef",
+            "subjectRef": "sub-1",
+            "organisation": "org-1",
+            "data": {
+                "title": "Titel"
+            }
+        }
+    },
+    "non-file config": {
+        "answersOf": {
+            "title": "Titel",
+            "attachment": "file-1"
+        },
+        "noData": [],
+        "bodyOf": {
+            "schema": "case",
+            "scopeField": "subjectRef",
+            "subjectRef": "sub-1",
+            "organisation": "org-1",
+            "data": {
+                "title": "Titel",
+                "attachment": "file-1"
+            }
+        }
+    },
+    "config not an array": {
+        "answersOf": {
+            "title": "Titel",
+            "attachment": "file-1"
+        },
+        "noData": [],
+        "bodyOf": {
+            "schema": "case",
+            "scopeField": "subjectRef",
+            "subjectRef": "sub-1",
+            "organisation": "org-1",
+            "data": {
+                "title": "Titel",
+                "attachment": "file-1"
+            }
+        }
+    },
+    "config without type": {
+        "answersOf": {
+            "attachment": "file-1"
+        },
+        "noData": [],
+        "bodyOf": {
+            "schema": "case",
+            "scopeField": "subjectRef",
+            "subjectRef": "sub-1",
+            "organisation": "org-1",
+            "data": {
+                "attachment": "file-1"
+            }
+        }
+    },
+    "odd field entries": {
+        "answersOf": {
+            "title": "Titel"
+        },
+        "noData": [],
+        "bodyOf": {
+            "schema": "case",
+            "scopeField": "subjectRef",
+            "subjectRef": "sub-1",
+            "organisation": "org-1",
+            "data": {
+                "title": "Titel"
+            }
+        }
+    },
+    "undeclared answer": {
+        "answersOf": {
+            "extra": "not declared",
+            "empty": null,
+            "0": "numeric key"
+        },
+        "noData": [],
+        "bodyOf": {
+            "schema": "case",
+            "scopeField": "subjectRef",
+            "subjectRef": "sub-1",
+            "organisation": "org-1",
+            "data": {
+                "extra": "not declared",
+                "0": "numeric key"
+            }
+        }
+    },
+    "fields not a list": {
+        "answersOf": {
+            "title": "Titel"
+        },
+        "noData": [],
+        "bodyOf": {
+            "schema": "case",
+            "scopeField": "subjectRef",
+            "subjectRef": "sub-1",
+            "organisation": "org-1",
+            "data": {
+                "title": "Titel"
+            }
+        }
+    },
+    "configs not a list": {
+        "answersOf": {
+            "title": "Titel"
+        },
+        "noData": [],
+        "bodyOf": {
+            "schema": "case",
+            "scopeField": "subjectRef",
+            "subjectRef": "sub-1",
+            "organisation": "org-1",
+            "data": {
+                "title": "Titel"
+            }
+        }
+    },
+    "numeric config key": {
+        "answersOf": {
+            "title": "Titel"
+        },
+        "noData": [],
+        "bodyOf": {
+            "schema": "case",
+            "scopeField": "subjectRef",
+            "subjectRef": "sub-1",
+            "organisation": "org-1",
+            "data": {
+                "title": "Titel"
+            }
+        }
+    },
+    "defaults and scope": {
+        "answersOf": {
+            "title": "Titel"
+        },
+        "noData": [],
+        "bodyOf": {
+            "schema": "case",
+            "scopeField": "owner",
+            "subjectRef": "sub-1",
+            "organisation": "org-1",
+            "data": {
+                "title": "Titel",
+                "caseType": "ct-1"
+            }
+        }
+    }
+}

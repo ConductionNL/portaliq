@@ -3310,7 +3310,11 @@ OC.L10N.register(
         "Read receipt": "Leesbevestiging",
         "Legal effect": "Rechtsgevolg",
         "Deadline": "Termijn",
-        "Read by {object.subjectRef}": "Gelezen door {object.subjectRef}"
+        "Read by {object.subjectRef}": "Gelezen door {object.subjectRef}",
+        "Upload": "Uploaden",
+        "Partner": "Partner",
+        "by {decidedBy|user}, {decidedAt|date}": "door {decidedBy|user}, {decidedAt|date}",
+        "Approved": "Goedgekeurd"
     },
     "nplurals=2; plural=(n != 1);"
 )
