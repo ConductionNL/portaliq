@@ -808,7 +808,7 @@ console.log('relevance (search-sort-by-relevance REQ-SSR-001 to REQ-SSR-004)')
 	const ranked = new URL(buildRequestUrl({ ...BASE, query: 'parkeren', sort: RELEVANCE_SORT })).searchParams
 	assertEqual('the relevance order asks for _order[_relevance]=DESC with _fuzzy', [ranked.get('_order[_relevance]'), ranked.get('_fuzzy')], ['DESC', 'true'])
 
-	assertEqual('"Meest relevant" comes first with a term', sortOptionsFor('parkeren', false)[0], { value: RELEVANCE_SORT, label: 'Meest relevant' })
+	assertEqual('"Beste match" comes first with a term', sortOptionsFor('parkeren', false)[0], { value: RELEVANCE_SORT, label: 'Beste match' })
 	assertTrue('no relevance without a term', !sortOptionsFor('  ', false).some((o) => o.value === RELEVANCE_SORT))
 	assertTrue('no relevance once the backend showed it does not rank', !sortOptionsFor('parkeren', true).some((o) => o.value === RELEVANCE_SORT))
 

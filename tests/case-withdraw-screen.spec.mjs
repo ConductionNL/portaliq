@@ -196,7 +196,7 @@ test('site: the case screen uses them, and both locales carry the strings', () =
 	assert.match(screen, /this\.api\.withdrawCitizenCase\(/)
 	assert.doesNotMatch(screen, /undo|reopen/i)
 	const nl = {
-		'Withdraw this request': 'Deze aanvraag intrekken',
+		'Withdraw this request': 'Aanvraag intrekken',
 		'Withdraw this request?': 'Wilt u deze aanvraag intrekken?',
 		'If you withdraw, we stop handling your request. You cannot undo this.':
 			'Als u intrekt, stoppen wij met de behandeling. U kunt dit niet terugdraaien.',

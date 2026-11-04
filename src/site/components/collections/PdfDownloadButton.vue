@@ -37,7 +37,7 @@
 // site's shared bundle, which has a size budget.
 const STRINGS = {
 	nl: {
-		button: 'Download als pdf',
+		button: 'Downloaden als pdf',
 		tooLong: 'Deze lijst is te lang voor één pdf. Filter hem eerst.',
 		failed: 'De pdf kon niet worden gemaakt. Probeer het later opnieuw.',
 	},
