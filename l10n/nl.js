@@ -616,7 +616,7 @@ OC.L10N.register(
         "State": "Status",
         "Status": "Status",
         "Steps": "Stappen",
-        "Store": "Store",
+        "Marketplace": "Marktplaats",
         "Sub-items": "Subitems",
         "Subject": "Onderwerp",
         "Subject id": "Subject-id",

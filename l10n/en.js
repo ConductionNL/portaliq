@@ -1,6 +1,7 @@
 OC.L10N.register(
     "portaliq",
     {
+        "Marketplace": "Marketplace",
         "Choose media": "Choose media",
         "change proposals": "change proposals",
         "A bounded map of extra values the client attached: at most 20 keys, scalar values, 256 characters each.": "A bounded map of extra values the client attached: at most 20 keys, scalar values, 256 characters each.",
