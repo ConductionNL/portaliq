@@ -159,7 +159,7 @@
 							data-testid="federated-search-sort"
 							@change="onSort($event.target.value)">
 							<!--
-								"Meest relevant" only with a term, and only while
+								"Beste match" only with a term, and only while
 								the backend proves it ranks: an unranked answer
 								removes it (search-sort-by-relevance D2).
 							-->
@@ -1142,7 +1142,7 @@ export default {
 		 * The orderings this API actually implements.
 		 *
 		 * Each was checked against the live endpoint on 2026-08-20 and returns
-		 * a different first row. "Meest relevant" joins them with a term.
+		 * a different first row. "Beste match" joins them with a term.
 		 *
 		 * @return {Array<object>} `{value, label}` options.
 		 *

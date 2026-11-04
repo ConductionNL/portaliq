@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Service\Tenancy\ActsForTheOrganisation;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -50,14 +51,10 @@ use Throwable;
  * (inbox-delete-own-messages added the delete).
  */
 class PortalObjectWriter {
+	use ActsForTheOrganisation;
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
 	use PortalScopeMatch;
-
-	/**
-	 * OpenRegister's object service.
-	 */
-	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	/**
 	 * Why the last create or update was refused, as the store said it; ''
@@ -115,7 +112,7 @@ class PortalObjectWriter {
 		array $data,
 	): ?array {
 		$this->lastFailure = '';
-		$objectService = $this->objectService();
+		$objectService = $this->actingObjectService(organisation: $organisation);
 		if ($objectService === null) {
 			return null;
 		}
@@ -259,7 +256,7 @@ class PortalObjectWriter {
 			return null;
 		}
 
-		$objectService = $this->objectService();
+		$objectService = $this->actingObjectService(organisation: $organisation);
 		if ($objectService === null) {
 			return null;
 		}
@@ -372,7 +369,7 @@ class PortalObjectWriter {
 		string $organisation,
 		string $id,
 	): bool {
-		$objectService = $this->objectService();
+		$objectService = $this->actingObjectService(organisation: $organisation);
 		if ($id === '' || $scopeField === '' || $subjectRef === '' || $objectService === null) {
 			return false;
 		}

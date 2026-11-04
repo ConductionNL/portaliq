@@ -1,7 +1,8 @@
 # guardian-message-translation Specification
 
 ## Purpose
-TBD - created by archiving change news-item-translation. Update Purpose after archive.
+
+News items, newsletters and school messages a guardian reads in Mijn Zuiddrecht are translated by AI through hermiq when hermiq is installed, labelled as such, and kept next to the original so the reader is one step from the source text. This spec fixes what is stored, what is shown, and when no translation is offered.
 
 ## Requirements
 

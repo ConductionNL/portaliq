@@ -25,7 +25,7 @@
 			class="pq-account__menu"
 			:groups="menuGroups"
 			:currentRoute="menuRoute"
-			:label="t('My area')"
+			:label="(portal && portal.accountLabel) || t('My area')"
 			:showLabel="(portal && portal.accountLabel) || t('Menu of my area')"
 			:card="menuCard"
 			:newLabel="t('{count} new')"
@@ -35,12 +35,14 @@
 			<!-- The ask for an e-mail address, in the content column and above
 			     the page heading, so it lines up with the page it is about. -->
 			<slot name="prompt" />
-			<!-- Whom the resident acts for, on every signed-in page while it is
-			     not themselves (site-mijn-omgeving-components REQ-SMO-008). -->
+			<!-- For whom the resident acts, on Mijn overzicht; Mijn zaken
+			     shows its own (site-mijn-omgeving REQ-SMO-008). -->
 			<ActingForBar
-				v-if="session && actingForSomeone"
+				v-if="isHome"
 				:t="t"
-				:locale="locale" />
+				:locale="locale"
+				:name="residentName"
+				:href="mandatesHref" />
 			<p v-if="!sessionKnown" class="utrecht-paragraph" role="status">
 				{{ t('Loading…') }}
 			</p>
@@ -199,7 +201,6 @@ import { defineAsyncComponent, markRaw } from 'vue'
 import PlaceholderPage from '../pages/PlaceholderPage.vue'
 import ResidentMenu from './ResidentMenu.vue'
 import WaysIn from './WaysIn.vue'
-import { ACTING_FOR_SELF } from '../../shared/myCases.js'
 import {
 	navKeyFor,
 	OPEN_STORAGE_KEY,
@@ -213,7 +214,7 @@ import {
 import { sectionOf } from '../lib/help.js'
 import { menuCurrentRoute } from '../lib/residentMenu.js'
 import { isFormPage, pageOwnsHeading, sitePageLoader } from '../pages/registry.js'
-import { actingFor } from './e/actingFor.js'
+import { personOf } from './chrome/person.js'
 
 // The sign-in links are button links. Without this stylesheet their classes
 // name nothing and the browser draws its own blue link.
@@ -419,6 +420,22 @@ export default {
 		},
 
 		/**
+		 * @return {string} The resident's name, '' when unknown.
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+		 */
+		residentName() {
+			return personOf(this.session)?.name || ''
+		},
+
+		/**
+		 * @return {string} Where the resident arranges access to cases, '' when the portal names none.
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+		 */
+		mandatesHref() {
+			return String(this.portal?.myCases?.mandatesHref || '')
+		},
+
+		/**
 		 * @return {boolean} Whether the page on screen shows its own h1.
 		 *
 		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
@@ -430,16 +447,6 @@ export default {
 		 * @return {boolean}
 		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
 		 */
-		/**
-		 * Whether the resident acts for someone else right now.
-		 *
-		 * @return {boolean}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
-		 */
-		actingForSomeone() {
-			return actingFor.id !== ACTING_FOR_SELF
-		},
-
 		isHome() {
 			return (
 				Boolean(this.session)

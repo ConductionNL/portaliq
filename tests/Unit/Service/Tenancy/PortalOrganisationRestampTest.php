@@ -1,0 +1,532 @@
+<?php
+
+/**
+ * The organisation restamp reports first and writes only when applied, and
+ * only for rows whose organisation slug resolves.
+ *
+ * @category Test
+ * @package  OCA\Portaliq\Tests\Unit\Service\Tenancy
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * @link https://conduction.nl
+ *
+ * @spec openspec/changes/portal-acts-for-its-organisation/specs/portal-tenancy/spec.md
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Portaliq\Tests\Unit\Service\Tenancy;
+
+use OCA\Portaliq\Service\PortalOrganisationConfigService;
+use OCA\Portaliq\Service\Tenancy\PortalOrganisationRestamp;
+use OCA\Portaliq\Tests\Doubles\ActingObjectService;
+use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
+use Psr\Log\NullLogger;
+use RuntimeException;
+
+/**
+ * @covers \OCA\Portaliq\Service\Tenancy\PortalOrganisationRestamp
+ * @covers \OCA\Portaliq\Service\Tenancy\RestampTally
+ * @uses   \OCA\Portaliq\Service\Tenancy\SchemaTenancy
+ */
+class PortalOrganisationRestampTest extends TestCase {
+
+	private const OS = 'OCA\\OpenRegister\\Service\\ObjectService';
+
+	private const MAPPER = 'OCA\\OpenRegister\\Db\\MagicMapper';
+
+	/**
+	 * Object service.
+	 *
+	 * @var ActingObjectService
+	 */
+	private ActingObjectService $objectService;
+
+	/**
+	 * Entities the restamp found again, per uuid.
+	 *
+	 * @var array<string, object>
+	 */
+	private array $entities = [];
+
+	/**
+	 * Every entity the mapper wrote: [uuid, organisation].
+	 *
+	 * @var array<int, array{0: string, 1: string}>
+	 */
+	private array $updates = [];
+
+	/**
+	 * Whether OpenRegister can name the default organisation.
+	 *
+	 * @var boolean
+	 */
+	private bool $defaultKnown = true;
+
+	/**
+	 * Uuids whose write fails.
+	 *
+	 * @var array<int, string>
+	 */
+	private array $failing = [];
+
+	/**
+	 * Builds the fixture for each test.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->objectService = new ActingObjectService();
+		$this->objectService->rows = [
+			'portalAccount' => [
+				$this->row(uuid: 'acc-1', slug: 'gemeente-a', stored: 'default-org'),
+				$this->row(uuid: 'acc-2', slug: 'gemeente-a', stored: 'uuid-a'),
+				$this->row(uuid: 'acc-3', slug: '', stored: 'default-org'),
+				$this->row(uuid: 'acc-4', slug: 'onbekend', stored: 'default-org'),
+				$this->row(uuid: 'acc-5', slug: 'gemeente-a', stored: 'uuid-b'),
+				$this->row(uuid: 'acc-6', slug: 'gemeente-b', stored: ''),
+			],
+			'portalMessage' => [
+				$this->row(uuid: 'msg-1', slug: 'gemeente-b', stored: 'default-org'),
+				['@self' => ['id' => 'msg-2', 'organisation' => 'default-org'], 'organisation' => ['gemeente-a']],
+				['@self' => ['id' => 'msg-3', 'organisation' => 'default-org']],
+			],
+			// A portal-scoped schema is not restamped, whatever its rows say.
+			'page' => [
+				$this->row(uuid: 'page-1', slug: 'gemeente-a', stored: 'default-org'),
+			],
+		];
+		foreach ($this->objectService->rows as $rows) {
+			foreach ($rows as $row) {
+				$this->entities[$row['@self']['id']] = $this->entity(row: $row);
+			}
+		}
+
+		$this->objectService->found = $this->entities;
+	}//end setUp()
+
+	/**
+	 * The dry run counts per organisation and writes nothing.
+	 *
+	 * @return void
+	 */
+	public function testTheDryRunCountsPerOrganisationAndWritesNothing(): void {
+		$report = $this->restamp()->report();
+
+		$this->assertFalse(condition: $report['apply']);
+		$this->assertSame(
+			expected: [
+				'gemeente-a' => ['uuid' => 'uuid-a', 'already' => 1, 'toRestamp' => 1, 'restamped' => 0, 'failed' => 0],
+				'gemeente-b' => ['uuid' => 'uuid-b', 'already' => 0, 'toRestamp' => 2, 'restamped' => 0, 'failed' => 0],
+			],
+			actual: $report['organisations']
+		);
+		$this->assertSame(expected: [], actual: $this->updates);
+		$this->assertSame(expected: [], actual: $this->objectService->actedFor(method: 'find'));
+	}//end testTheDryRunCountsPerOrganisationAndWritesNothing()
+
+	/**
+	 * The dry run lists every row it cannot resolve.
+	 *
+	 * @return void
+	 */
+	public function testTheDryRunListsEveryRowItCannotResolve(): void {
+		$report = $this->restamp()->report();
+
+		$this->assertSame(
+			expected: [
+				['schema' => 'portalAccount', 'uuid' => 'acc-3', 'organisation' => ''],
+				['schema' => 'portalAccount', 'uuid' => 'acc-4', 'organisation' => 'onbekend'],
+				['schema' => 'portalMessage', 'uuid' => 'msg-2', 'organisation' => '(array)'],
+				['schema' => 'portalMessage', 'uuid' => 'msg-3', 'organisation' => '(none)'],
+			],
+			actual: $report['unresolved']
+		);
+	}//end testTheDryRunListsEveryRowItCannotResolve()
+
+	/**
+	 * The apply restamps only the rows that resolve and differ.
+	 *
+	 * @return void
+	 */
+	public function testTheApplyRestampsOnlyTheRowsThatResolveAndDiffer(): void {
+		$report = $this->restamp()->apply();
+
+		$this->assertTrue(condition: $report['apply']);
+		$this->assertSame(expected: [['acc-1', 'uuid-a'], ['acc-6', 'uuid-b'], ['msg-1', 'uuid-b']], actual: $this->updates);
+		$this->assertSame(expected: 1, actual: $report['organisations']['gemeente-a']['restamped']);
+		$this->assertSame(expected: 1, actual: $report['organisations']['gemeente-a']['already']);
+		$this->assertSame(expected: 2, actual: $report['organisations']['gemeente-b']['restamped']);
+		$this->assertCount(expectedCount: 4, haystack: $report['unresolved']);
+	}//end testTheApplyRestampsOnlyTheRowsThatResolveAndDiffer()
+
+	/**
+	 * Afailed write is counted and the run goes on.
+	 *
+	 * @return void
+	 */
+	public function testAFailedWriteIsCountedAndTheRunGoesOn(): void {
+		$this->failing = ['acc-1'];
+
+		$report = $this->restamp()->apply();
+
+		$this->assertSame(expected: 1, actual: $report['organisations']['gemeente-a']['failed']);
+		$this->assertSame(expected: 0, actual: $report['organisations']['gemeente-a']['restamped']);
+		$this->assertSame(expected: [['acc-6', 'uuid-b'], ['msg-1', 'uuid-b']], actual: $this->updates);
+	}//end testAFailedWriteIsCountedAndTheRunGoesOn()
+
+	/**
+	 * Arow that is gone when written counts as failed.
+	 *
+	 * @return void
+	 */
+	public function testARowThatIsGoneWhenWrittenCountsAsFailed(): void {
+		unset($this->objectService->found['acc-1']);
+
+		$report = $this->restamp()->apply();
+
+		$this->assertSame(expected: 1, actual: $report['organisations']['gemeente-a']['failed']);
+	}//end testARowThatIsGoneWhenWrittenCountsAsFailed()
+
+	/**
+	 * Aschema that cannot be read is reported and the others are done.
+	 *
+	 * @return void
+	 */
+	public function testASchemaThatCannotBeReadIsReportedAndTheOthersAreDone(): void {
+		$objectService = new class extends ActingObjectService {
+			/**
+			 * Find all.
+			 *
+			 * @param array $config The config.
+			 * @param bool $_rbac The _rbac.
+			 * @param bool $_multitenancy The _multitenancy.
+			 *
+			 * @return array
+			 */
+			public function findAll(array $config = [], bool $_rbac = true, bool $_multitenancy = true): array {
+				if ($this->schema === 'portalAccount') {
+					throw new RuntimeException('no such schema');
+				}
+
+				return parent::findAll(config: $config, _rbac: $_rbac, _multitenancy: $_multitenancy);
+			}
+		};
+		$objectService->rows = $this->objectService->rows;
+		$this->objectService = $objectService;
+
+		$report = $this->restamp()->report();
+
+		$this->assertSame(expected: ['portalAccount' => 'no such schema'], actual: $report['unreadable']);
+		$this->assertSame(expected: 1, actual: $report['organisations']['gemeente-b']['toRestamp']);
+	}//end testASchemaThatCannotBeReadIsReportedAndTheOthersAreDone()
+
+	/**
+	 * It lists as the system page by page.
+	 *
+	 * @return void
+	 */
+	public function testItListsAsTheSystemPageByPage(): void {
+		$objectService = new class extends ActingObjectService {
+			/**
+			 * @var array<int, array{config: array<string, mixed>, rbac: bool, multitenancy: bool}>
+			 */
+			public array $queries = [];
+
+			/**
+			 * Find all.
+			 *
+			 * @param array $config The config.
+			 * @param bool $_rbac The _rbac.
+			 * @param bool $_multitenancy The _multitenancy.
+			 *
+			 * @return array
+			 */
+			public function findAll(array $config = [], bool $_rbac = true, bool $_multitenancy = true): array {
+				$this->queries[] = ['config' => $config, 'rbac' => $_rbac, 'multitenancy' => $_multitenancy];
+				if ($this->schema !== 'portalAccount') {
+					return [];
+				}
+
+				$rows = [];
+				$start = (int)$config['offset'];
+				$end = min(($start + (int)$config['limit']), 501);
+				for ($i = $start; $i < $end; $i++) {
+					$rows[] = ['@self' => ['id' => 'acc-'.$i, 'organisation' => 'uuid-a'], 'organisation' => 'gemeente-a'];
+				}
+
+				return $rows;
+			}
+		};
+		$this->objectService = $objectService;
+
+		$report = $this->restamp()->report();
+
+		$this->assertSame(expected: 501, actual: $report['organisations']['gemeente-a']['already']);
+		$accountQueries = array_slice($objectService->queries, 0, 2);
+		$this->assertSame(
+			expected: [
+				['config' => ['limit' => 500, 'offset' => 0], 'rbac' => false, 'multitenancy' => false],
+				['config' => ['limit' => 500, 'offset' => 500], 'rbac' => false, 'multitenancy' => false],
+			],
+			actual: $accountQueries
+		);
+	}//end testItListsAsTheSystemPageByPage()
+
+	/**
+	 * Arow in another real organisation is listed and never moved.
+	 *
+	 * @return void
+	 */
+	public function testARowInAnotherRealOrganisationIsListedAndNeverMoved(): void {
+		$report = $this->restamp()->apply();
+
+		$this->assertSame(
+			expected: [['schema' => 'portalAccount', 'uuid' => 'acc-5', 'organisation' => 'gemeente-a', 'stored' => 'uuid-b']],
+			actual: $report['elsewhere']
+		);
+		$this->assertNotContains(needle: 'acc-5', haystack: array_column($this->updates, 0));
+	}//end testARowInAnotherRealOrganisationIsListedAndNeverMoved()
+
+	/**
+	 * Without the default organisation only rows without one are moved.
+	 *
+	 * @return void
+	 */
+	public function testWithoutTheDefaultOrganisationOnlyRowsWithoutOneAreMoved(): void {
+		$this->defaultKnown = false;
+
+		$report = $this->restamp()->apply();
+
+		$this->assertSame(expected: [['acc-6', 'uuid-b']], actual: $this->updates);
+		$this->assertSame(expected: ['acc-1', 'acc-5', 'msg-1'], actual: array_column($report['elsewhere'], 'uuid'));
+	}//end testWithoutTheDefaultOrganisationOnlyRowsWithoutOneAreMoved()
+
+	/**
+	 * Arow that changed after the listing is not written.
+	 *
+	 * @return void
+	 */
+	public function testARowThatChangedAfterTheListingIsNotWritten(): void {
+		$this->objectService->found['acc-1'] = $this->entity(row: $this->row(uuid: 'acc-1', slug: 'gemeente-b', stored: 'default-org'));
+		$this->objectService->found['msg-1'] = $this->entity(row: $this->row(uuid: 'msg-1', slug: 'gemeente-b', stored: 'uuid-a'));
+
+		$report = $this->restamp()->apply();
+
+		$this->assertSame(expected: [['acc-6', 'uuid-b']], actual: $this->updates);
+		$this->assertSame(expected: 1, actual: $report['organisations']['gemeente-a']['failed']);
+		$this->assertSame(expected: 1, actual: $report['organisations']['gemeente-b']['failed']);
+	}//end testARowThatChangedAfterTheListingIsNotWritten()
+
+	/**
+	 * Without open register nothing is read or written.
+	 *
+	 * @return void
+	 */
+	public function testWithoutOpenRegisterNothingIsReadOrWritten(): void {
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
+		$container->method('get')->willThrowException(new RuntimeException('no openregister'));
+		$restamp = new PortalOrganisationRestamp(container: $container, organisations: $this->organisations(), logger: new NullLogger());
+
+		$this->expectException(exception: RuntimeException::class);
+		$restamp->apply();
+	}//end testWithoutOpenRegisterNothingIsReadOrWritten()
+
+	/**
+	 * Without the mapper nothing is read or written.
+	 *
+	 * @return void
+	 */
+	public function testWithoutTheMapperNothingIsReadOrWritten(): void {
+		$objectService = $this->objectService;
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
+		$container->method('get')->willReturnCallback(
+			static function (string $id) use ($objectService): object {
+				if ($id === self::OS) {
+					return $objectService;
+				}
+
+				throw new RuntimeException('no service: '.$id);
+			}
+		);
+		$restamp = new PortalOrganisationRestamp(container: $container, organisations: $this->organisations(), logger: new NullLogger());
+
+		try {
+			$restamp->report();
+			$this->fail(message: 'the run must refuse');
+		} catch (RuntimeException $e) {
+			$this->assertSame(expected: [], actual: $objectService->calls);
+		}
+	}//end testWithoutTheMapperNothingIsReadOrWritten()
+
+	/**
+	 * The restamp over the object service, a recording mapper and the lookup.
+	 *
+	 * @return PortalOrganisationRestamp
+	 */
+	private function restamp(): PortalOrganisationRestamp {
+		$test = $this;
+		$mapper = new class ($test) {
+			/**
+			 * @param PortalOrganisationRestampTest $test The test.
+			 */
+			public function __construct(private readonly PortalOrganisationRestampTest $test) {
+			}
+
+			/**
+			 * @param object $entity The entity.
+			 *
+			 * @return object
+			 */
+			public function update(object $entity): object {
+				$this->test->recordUpdate(entity: $entity);
+				return $entity;
+			}
+		};
+
+		$objectService = $this->objectService;
+		$defaults = new class ($this->defaultKnown) {
+			/**
+			 * Keeps the collaborators of this double.
+			 *
+			 * @param bool $known The known.
+			 */
+			public function __construct(private readonly bool $known) {
+			}
+
+			/**
+			 * Get default organisation uuid.
+			 *
+			 * @return string|null
+			 */
+			public function getDefaultOrganisationUuid(): ?string {
+				if ($this->known === false) {
+					throw new RuntimeException('no settings');
+				}
+
+				return 'default-org';
+			}
+		};
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
+		$container->method('get')->willReturnCallback(
+			static function (string $id) use ($objectService, $mapper, $defaults): object {
+				return match ($id) {
+					self::OS => $objectService,
+					self::MAPPER => $mapper,
+					'OCA\\OpenRegister\\Service\\OrganisationService' => $defaults,
+				};
+			}
+		);
+
+		return new PortalOrganisationRestamp(container: $container, organisations: $this->organisations(), logger: new NullLogger());
+	}//end restamp()
+
+	/**
+	 * Note a write by the mapper, or fail it.
+	 *
+	 * @param object $entity The entity.
+	 *
+	 * @return void
+	 */
+	public function recordUpdate(object $entity): void {
+		if (in_array($entity->uuid, $this->failing, true) === true) {
+			throw new RuntimeException('write refused');
+		}
+
+		$this->updates[] = [$entity->uuid, $entity->organisation];
+	}//end recordUpdate()
+
+	/**
+	 * The lookup: gemeente-a is uuid-a and gemeente-b is uuid-b. It also
+	 * answers for an empty slug, as a store holding an organisation without
+	 * a slug would, so a row without a slug proves the restamp never asks.
+	 *
+	 * @return PortalOrganisationConfigService
+	 */
+	private function organisations(): PortalOrganisationConfigService {
+		$organisations = $this->createMock(originalClassName: PortalOrganisationConfigService::class);
+		$organisations->method('findOrganisationBySlug')->willReturnCallback(
+			static function (string $slug): ?array {
+				$known = ['gemeente-a' => 'uuid-a', 'gemeente-b' => 'uuid-b', '' => 'uuid-without-slug'];
+				if (isset($known[$slug]) === true) {
+					return ['uuid' => $known[$slug], 'name' => $slug];
+				}
+
+				return null;
+			}
+		);
+
+		return $organisations;
+	}//end organisations()
+
+	/**
+	 * A listed row as OpenRegister renders it.
+	 *
+	 * @param string $uuid   The row uuid.
+	 * @param string $slug   The data organisation slug.
+	 * @param string $stored The stored organisation uuid.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function row(string $uuid, string $slug, string $stored): array {
+		return ['@self' => ['id' => $uuid, 'organisation' => $stored], 'organisation' => $slug, 'subjectRef' => 's-'.$uuid];
+	}//end row()
+
+	/**
+	 * An entity found again by uuid, serialising as OpenRegister renders it.
+	 *
+	 * @param array<string, mixed> $row The row as listed.
+	 *
+	 * @return object
+	 */
+	private function entity(array $row): object {
+		return new class ($row) {
+			/**
+			 * Uuid.
+			 *
+			 * @var string
+			 */
+			public string $uuid;
+
+			/**
+			 * Organisation.
+			 *
+			 * @var string
+			 */
+			public string $organisation;
+
+			/**
+			 * @param array<string, mixed> $row The row.
+			 */
+			public function __construct(private readonly array $row) {
+				$this->uuid = (string)$row['@self']['id'];
+				$this->organisation = (string)$row['@self']['organisation'];
+			}
+
+			/**
+			 * Set organisation.
+			 *
+			 * @param string $organisation The organisation.
+			 *
+			 * @return void
+			 */
+			public function setOrganisation(string $organisation): void {
+				$this->organisation = $organisation;
+			}
+
+			/**
+			 * @return array<string, mixed>
+			 */
+			public function jsonSerialize(): array {
+				return ['@self' => ['id' => $this->uuid, 'organisation' => $this->organisation]] + $this->row;
+			}
+		};
+	}//end entity()
+}//end class

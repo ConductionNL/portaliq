@@ -890,7 +890,7 @@
 						]
 					},
 					{
-						"title": "Zaken en taken",
+						"title": "Mijn zaken en verzoeken",
 						"items": [
 							"cases",
 							"tasks",
@@ -905,7 +905,7 @@
 						]
 					},
 					{
-						"title": "Vragen en meldingen",
+						"title": "Vragen en contact",
 						"items": [
 							"portaliq:meldingen"
 						]

@@ -48,7 +48,8 @@ for (const [label, schema] of [['Media', 'media'], ['Nieuws', 'newsItem'], ['Med
 		assert.ok(tab, `no ${label} tab`)
 		const list = widget(tab.widgetId)
 		assert.ok(list, `the ${label} tab names a widget that is not declared`)
-		assert.equal(list.type, 'object-list')
+		// The notices are a list page's list (PtMededelingenActies); the others stay compact lists.
+		assert.equal(list.type, schema === 'portalNotice' ? 'index-list' : 'object-list')
 		assert.equal(list.content.register, 'portaliq')
 		assert.equal(list.content.schema, schema)
 		assert.deepEqual(list.content.filter, { portal: '@object.slug' })

@@ -36,8 +36,7 @@ passes through Mijn zaken). A block or page that declares none of these MUST ren
 @e2e exclude Static: tests/zuiddrecht-resident-boards.spec.mjs
 - GIVEN the Zuiddrecht pages as dossiq declares them with the keys above
 - WHEN the overview and the case page render
-- THEN Bezwaar maken and Klacht indienen MUST be on the overview
-- AND Mijn wijziging opslaan and Deze aanvraag intrekken MUST be on the case page
+- THEN Bezwaar maken, Klacht indienen, Mijn wijziging opslaan and Aanvraag intrekken MUST be on the case page
 - AND the documents block MUST offer Document toevoegen
 
 ### Requirement: Every other portal renders unchanged

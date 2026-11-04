@@ -69,6 +69,8 @@
 				:breadcrumbs="breadcrumbs"
 				:session="session"
 				:sessionLabel="sessionLabel"
+				:pillLabel="accountPillLabel"
+				:signedInLabel="t('Logged in')"
 				:accountLink="ownAreaLink"
 				:signInRoutes="signInRoutes"
 				:registerRoute="registerRoute"
@@ -85,17 +87,7 @@
 				:menuLabel="t('Menu')"
 				@navigate="go"
 				@search="goSearch"
-				@signout="signOut">
-				<template #account>
-					<ActingForSwitcher :t="t" />
-					<!-- The eHerkenning branch in effect, or the choice of one (REQ-SRP-011). -->
-					<BranchSwitcher
-						v-if="session"
-						:t="t"
-						:api="api"
-						:session="session" />
-				</template>
-			</BrandHeader>
+				@signout="signOut" />
 			<WidgetGrid
 				v-else
 				:widgets="[block]"
@@ -544,7 +536,7 @@ import {
 	shellSections,
 } from '../shared/portalNav.js'
 import { forgetActingFor, learnMandates } from './components/e/actingFor.js'
-import { ActingForSwitcher, ContactPrompt } from './components/e/index.js'
+import { ContactPrompt } from './components/e/index.js'
 import { InstallBanner } from './components/f/index.js'
 import {
 	authoredStatement,
@@ -552,7 +544,12 @@ import {
 	showsGeneratedStatement,
 	withStatementLink,
 } from './lib/accessibilityStatement.js'
-import { accountCrumbs, accountRedirect, loggedInAs } from './lib/accountArea.js'
+import {
+	accountCrumbs,
+	accountRedirect,
+	loggedInAs,
+	pillLabel,
+} from './lib/accountArea.js'
 import { setAssistantAvailable } from './lib/assistantAvailable.js'
 import {
 	adoptSessionToken,
@@ -639,12 +636,6 @@ const SiteEditButton = defineAsyncComponent(
 	() => import('./components/SiteEditButton.vue'),
 )
 
-// The branch line in the header, loaded only for a signed-in session, so an
-// anonymous visitor pays nothing for it (site-reaches-portal-parity REQ-SRP-011).
-const BranchSwitcher = defineAsyncComponent(
-	() => import('./components/BranchSwitcher.vue'),
-)
-
 // Loaded only when a notice is running, so a portal without one pays nothing
 // for it in the site bundle (operate-maintenance-notice).
 const SiteNotices = defineAsyncComponent(
@@ -686,8 +677,6 @@ export default {
 	components: {
 		PageHelp,
 		AccountArea,
-		ActingForSwitcher,
-		BranchSwitcher,
 		ContactPrompt,
 		BrandHeader,
 		FooterColumns,
@@ -1099,6 +1088,7 @@ export default {
 				layout: this.site?.residentMenu?.groups,
 				leaveOut: this.site?.residentMenu?.leaveOut,
 				openTasks: this.openTasks,
+				area: this.site?.accountLabel || '',
 			}
 		},
 
@@ -1547,6 +1537,15 @@ export default {
 		 */
 		sessionLabel() {
 			return loggedInAs(this.session, this.t)
+		},
+
+		/**
+		 * @return {string} The account pill's accessible name: who is signed in, and where it leads.
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-header-must-name-the-signed-in-person-never-their-reference
+		 */
+		accountPillLabel() {
+			const area = this.site?.accountLabel || this.t('My area')
+			return pillLabel(this.session, { t: this.t, area })
 		},
 	},
 

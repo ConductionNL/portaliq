@@ -3525,7 +3525,7 @@
           },
           {
             "id": "portal-notices",
-            "type": "object-list",
+            "type": "index-list",
             "title": "Notices",
             "icon": "BullhornOutline",
             "content": {
@@ -3534,32 +3534,177 @@
               "filter": {
                 "portal": "@object.slug"
               },
-              "sort": {
-                "field": "startsAt",
-                "dir": "desc"
-              },
               "columns": [
                 {
                   "key": "message",
-                  "label": "Notice"
+                  "label": "Announcement",
+                  "width": "193px",
+                  "cellClass": "cn-cell--wrap",
+                  "filterable": false,
+                  "sortable": false,
+                  "secondary": "{level} · shows on {surfaces}",
+                  "secondaryLabels": {
+                    "level": {
+                      "info": "Information",
+                      "warning": "Warning"
+                    },
+                    "surfaces": {
+                      "site": "website",
+                      "portal": "Signed-in portal"
+                    }
+                  }
                 },
                 {
                   "key": "startsAt",
-                  "label": "Visible from"
+                  "label": "Visible from",
+                  "width": "140px",
+                  "widget": "date",
+                  "widgetProps": {
+                    "relative": true,
+                    "showTime": true
+                  },
+                  "filterable": false,
+                  "sortable": true
                 },
                 {
                   "key": "endsAt",
-                  "label": "Until"
+                  "label": "Until",
+                  "width": "122px",
+                  "widget": "date",
+                  "widgetProps": {
+                    "relative": true,
+                    "showTime": true
+                  },
+                  "filterable": false,
+                  "sortable": false
                 },
                 {
                   "key": "status",
-                  "label": "Status"
+                  "label": "Status",
+                  "width": "131px",
+                  "widget": "badge",
+                  "filterable": false,
+                  "sortable": false,
+                  "widgetProps": {
+                    "colorMap": {
+                      "visible": "success",
+                      "published": "info",
+                      "draft": "warning",
+                      "expired": "default"
+                    }
+                  },
+                  "enum": [
+                    "published",
+                    "draft"
+                  ],
+                  "enumLabels": {
+                    "visible": "Visible now",
+                    "published": "Published",
+                    "draft": "Draft",
+                    "expired": "Expired"
+                  },
+                  "valueWhen": [
+                    {
+                      "when": [
+                        {
+                          "field": "status",
+                          "value": "published"
+                        },
+                        {
+                          "field": "startsAt",
+                          "op": "lte",
+                          "value": "@now"
+                        },
+                        {
+                          "field": "endsAt",
+                          "op": "gte",
+                          "value": "@now"
+                        }
+                      ],
+                      "value": "visible"
+                    },
+                    {
+                      "when": [
+                        {
+                          "field": "status",
+                          "value": "published"
+                        },
+                        {
+                          "field": "endsAt",
+                          "op": "lt",
+                          "value": "@now"
+                        }
+                      ],
+                      "value": "expired"
+                    }
+                  ]
                 }
               ],
-              "limit": 25,
-              "rowRoute": "NoticeDetail",
-              "viewAllRoute": "Notices",
-              "emptyText": "This portal has no notices yet"
+              "rowIcon": {
+                "field": "level",
+                "icons": {
+                  "warning": "AlertOutline",
+                  "info": "InformationOutline"
+                },
+                "tones": {
+                  "warning": "warning"
+                },
+                "icon": "InformationOutline"
+              },
+              "quickFilters": [
+                {
+                  "label": "Alles",
+                  "filter": {},
+                  "showCount": true,
+                  "default": true
+                },
+                {
+                  "label": "Visible now",
+                  "filter": {
+                    "status": "published",
+                    "startsAt": {
+                      "lte": "@now"
+                    },
+                    "endsAt": {
+                      "gte": "@now"
+                    }
+                  },
+                  "showCount": true
+                },
+                {
+                  "label": "Upcoming",
+                  "filter": {
+                    "status": "published",
+                    "startsAt": {
+                      "gt": "@now"
+                    }
+                  },
+                  "showCount": true
+                },
+                {
+                  "label": "Concept",
+                  "filter": {
+                    "status": "draft"
+                  },
+                  "showCount": true
+                }
+              ],
+              "filterMenu": true,
+              "viewSwitch": [
+                "table",
+                "cards",
+                "board",
+                "map"
+              ],
+              "selectable": true,
+              "defaultOrder": "-startsAt",
+              "pagination": {
+                "limit": 6
+              },
+              "footerNote": "only published and within the period visible",
+              "showAdd": false,
+              "emptyText": "This portal has no notices yet",
+              "rowRoute": "NoticeDetail"
             }
           },
           {
@@ -4175,7 +4320,59 @@
           "portal-side-status",
           "portal-side-editors",
           "portal-side-traffic"
-        ]
+        ],
+        "headerActions": [
+          {
+            "id": "view-website",
+            "label": "Website bekijken",
+            "icon": "EyeOutline",
+            "href": "/apps/portaliq/site?portal=@object.slug",
+            "target": "_blank"
+          },
+          {
+            "id": "new-notice",
+            "label": "New notice",
+            "icon": "Plus",
+            "type": "navigate",
+            "target": "Notices",
+            "variant": "primary"
+          }
+        ],
+        "quickActions": [
+          "view-website"
+        ],
+        "primaryActionByStage": {
+          "published": {
+            "id": "new-notice",
+            "label": "New notice",
+            "icon": "Plus",
+            "type": "navigate",
+            "target": "Notices",
+            "tabs": [
+              "portal-notices"
+            ]
+          },
+          "draft": {
+            "id": "new-notice",
+            "label": "New notice",
+            "icon": "Plus",
+            "type": "navigate",
+            "target": "Notices",
+            "tabs": [
+              "portal-notices"
+            ]
+          }
+        },
+        "headerMeta": "{domains.0.hostname} · theme {theme} · {count:pages} pages",
+        "headerMetaCounts": {
+          "pages": {
+            "register": "portaliq",
+            "schema": "page",
+            "filter": {
+              "portal": "@object.slug"
+            }
+          }
+        }
       }
     },
     {
@@ -5994,7 +6191,7 @@
       "config": {
         "register": "portaliq",
         "schema": "portalMailTemplate",
-        "_note": "The text of each kind of mail, per portal (mail-templates-admin-screen). A stored active text replaces the default; a text with a variable its kind does not declare is ignored. Preview and the test mail go through MailTemplateAdminController.",
+        "_note": "The text of each kind of mail, per portal (mail-templates-admin-screen). A stored active text replaces the default; a text with a variable its kind does not declare is ignored. Preview and the test mail go through MailTemplateAdminController. 'New mail text' and 'Change' open MailTemplateDialog, where CnMarkdownEditor inserts the kind's variables and names an unknown one; a text with one is not saved. 'Back to the default text' removes the stored row.",
         "columns": [
           {
             "key": "templateKey",
@@ -6031,6 +6228,12 @@
           {
             "action": "export",
             "label": "Download"
+          },
+          {
+            "action": "new-mail-template",
+            "variant": "primary",
+            "label": "New mail text",
+            "icon": "Plus"
           }
         ],
         "quickFilters": [
@@ -6041,7 +6244,32 @@
             "default": true
           }
         ],
-        "showAdd": false
+        "showAdd": false,
+        "headerActions": [
+          {
+            "id": "new-mail-template",
+            "label": "New mail text",
+            "icon": "Plus",
+            "handler": "newMailTemplate"
+          }
+        ],
+        "actions": [
+          {
+            "id": "change-mail-template",
+            "label": "Change",
+            "icon": "Pencil",
+            "type": "handler",
+            "handler": "editMailTemplate"
+          },
+          {
+            "id": "reset-mail-template",
+            "label": "Back to the default text",
+            "icon": "Restore",
+            "type": "handler",
+            "handler": "resetMailTemplate",
+            "destructive": true
+          }
+        ]
       }
     },
     {

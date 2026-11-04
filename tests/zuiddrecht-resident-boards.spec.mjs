@@ -597,8 +597,8 @@ function navFor(t) {
 
 const LAYOUT = [
 	{ title: 'Mijn Zuiddrecht', items: ['overview', 'inbox'] },
-	{ title: 'Zaken en taken', items: ['cases', 'tasks'] },
-	{ title: 'Vragen en meldingen', items: ['portaliq:meldingen'] },
+	{ title: 'Mijn zaken en verzoeken', items: ['cases', 'tasks'] },
+	{ title: 'Vragen en contact', items: ['portaliq:meldingen'] },
 	{ title: 'Uw gegevens', items: ['details', 'account'] },
 ]
 
@@ -612,8 +612,8 @@ test("the resident menu in the portal's own groups, Overzicht first, nothing unr
 	const laid = residentMenuGroups(nav, { t: nl, unread: 2, hrefFor: href, recordRows: {}, layout: LAYOUT })
 	assert.deepEqual(names(laid).slice(0, 4), [
 		['Mijn Zuiddrecht', ['Overzicht', 'Berichten']],
-		['Zaken en taken', ['Mijn zaken', 'Mijn taken', 'Toegang tot zaken']],
-		['Vragen en meldingen', ['Melding indienen']],
+		['Mijn zaken en verzoeken', ['Mijn zaken', 'Mijn taken', 'Toegang tot zaken']],
+		['Vragen en contact', ['Melding indienen']],
 		['Uw gegevens', ['Mijn gegevens', 'Mijn account']],
 	])
 	const overview = laid[0].items[0]
@@ -627,7 +627,6 @@ test("the resident menu in the portal's own groups, Overzicht first, nothing unr
 	for (const route of routes(own)) {
 		assert.ok(routes(laid).includes(route), `${route} stays reachable`)
 	}
-	// Toegang tot zaken, not named by the layout, follows in its own group.
 	// Toegang tot zaken, not named by the layout, joined the declared group
 	// of the same name above, so one heading never stands twice.
 	assert.equal(new Set(laid.map((group) => group.title)).size, laid.length)
@@ -692,10 +691,12 @@ test('Mijn zaken as rows when the portal says so, folder cards otherwise', async
 	assert.doesNotMatch(folders, /denhaag-case-card|pq-case-card--row|pq-cases__list--rows/)
 })
 
-test('the moved controls keep their place: the two ctas on the overview, save and withdraw on the case page', () => {
-	// dossiq declares them (lib/Portal/PortalPages.php); the overview keeps
-	// its cta blocks and the case screen its buttons, which the tests above
-	// render. The data badge knows the info tone the compact card uses.
+test('the moved controls keep their place: Bezwaar maken, Klacht indienen, save and withdraw on the case page', () => {
+	// dossiq declares them (lib/Portal/PortalPages.php): the two ctas sit on
+	// the case page (board Zaak, F1), bound to the open case with
+	// `withRecord`, beside the case screen's save and withdraw, which the
+	// tests above render. The data badge knows the info tone the compact
+	// card uses.
 	const badge = readFileSync(
 		new URL('../src/site/components/mijn/DataBadge.vue', import.meta.url),
 		'utf8',
@@ -706,4 +707,9 @@ test('the moved controls keep their place: the two ctas on the overview, save an
 		'utf8',
 	)
 	assert.match(pages, /record\?\.heading === 'record'/)
+	const cta = readFileSync(
+		new URL('../src/site/components/c/ActionBlock.vue', import.meta.url),
+		'utf8',
+	)
+	assert.match(cta, /this\.block\.withRecord === true/, 'a cta on the case page carries the open case')
 })

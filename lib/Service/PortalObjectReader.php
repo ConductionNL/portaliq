@@ -70,6 +70,7 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use OCA\Portaliq\Event\PortalClaimScopeEvent;
+use OCA\Portaliq\Service\Tenancy\ActsForTheOrganisation;
 use OCA\Portaliq\Service\Tenancy\ClaimScopeCheck;
 use OCA\Portaliq\Service\Tenancy\SchemaTenancy;
 use Psr\Container\ContainerInterface;
@@ -95,6 +96,7 @@ use Throwable;
  * normalising and the projection with the scoped reads, so it lives beside them.
  */
 class PortalObjectReader implements ScopedCollectionReaderInterface {
+	use ActsForTheOrganisation;
 	use PortalScopeMatch;
 
 	/**
@@ -183,7 +185,7 @@ class PortalObjectReader implements ScopedCollectionReaderInterface {
 		mixed $fields = null,
 		array $filter = [],
 	): array {
-		$objectService = $this->objectService();
+		$objectService = $this->actingObjectService(organisation: $organisation);
 		if ($objectService === null) {
 			return [];
 		}
@@ -409,7 +411,7 @@ class PortalObjectReader implements ScopedCollectionReaderInterface {
 		int $limit,
 		int $offset,
 	): ?array {
-		$objectService = $this->objectService();
+		$objectService = $this->actingObjectService(organisation: $organisation);
 		if ($objectService === null) {
 			return null;
 		}
@@ -522,7 +524,7 @@ class PortalObjectReader implements ScopedCollectionReaderInterface {
 			return null;
 		}
 
-		$objectService = $this->objectService();
+		$objectService = $this->actingObjectService(organisation: $organisation);
 		if ($objectService === null) {
 			return null;
 		}
@@ -770,7 +772,7 @@ class PortalObjectReader implements ScopedCollectionReaderInterface {
 			return $subjectRef;
 		}
 
-		$objectService = $this->objectService();
+		$objectService = $this->actingObjectService(organisation: (string)($subject['organisation'] ?? ''));
 		if ($objectService === null) {
 			return null;
 		}

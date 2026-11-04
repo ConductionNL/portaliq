@@ -1,8 +1,10 @@
 # Screens
 
-- BqExport https://identity.conduction.nl/screens/board?id=buildiq/BqExport
-- FormulierNietBeschikbaar https://identity.conduction.nl/screens/board?id=portaliq/FormulierNietBeschikbaar
-- FormulierVerwerken https://identity.conduction.nl/screens/board?id=portaliq/FormulierVerwerken
-- PtFormulierInstellingen https://identity.conduction.nl/screens/board?id=portaliq/PtFormulierInstellingen
-- PtInzending https://identity.conduction.nl/screens/board?id=portaliq/PtInzending
-- PtInzendingen https://identity.conduction.nl/screens/board?id=portaliq/PtInzendingen
+- buildiq/BqExport export https://identity.conduction.nl/screens/board?id=buildiq/BqExport
+- portaliq/FormulierNietBeschikbaar Formulier niet beschikbaar, vier situaties https://identity.conduction.nl/screens/board?id=portaliq/FormulierNietBeschikbaar
+- portaliq/FormulierVerwerken Woo-verzoek, wij verwerken uw aanvraag https://identity.conduction.nl/screens/board?id=portaliq/FormulierVerwerken
+- portaliq/PtFormulierInstellingen instellingen van een formulier https://identity.conduction.nl/screens/board?id=portaliq/PtFormulierInstellingen
+- portaliq/PtInzending inzending https://identity.conduction.nl/screens/board?id=portaliq/PtInzending
+- portaliq/PtInzendingen inzendingen https://identity.conduction.nl/screens/board?id=portaliq/PtInzendingen
+
+Components: CnActionButtons, CnActionsBar, CnActionsMenu, CnAppNav, CnBreadcrumbs, CnBuildiqEditButton, CnDataTable, CnDetailCard, CnDetailGrid, CnDetailPage, CnFilterBar, CnIndexPage, CnNoteCard, CnPagination, CnQuickFilterBar, CnRelatedCollections, CnRowActions, CnSettingsPage, CnSettingsSection, CnSiteEmptyState, CnStatusBadge, CnTabs, CnTalkRoomCreate

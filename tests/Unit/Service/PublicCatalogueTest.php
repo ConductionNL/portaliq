@@ -176,7 +176,7 @@ class PublicCatalogueTest extends TestCase {
 		$this->assertSame(['Plaats', 'Start in'], array_column($query->run($items, [])['facets'], 'label'), 'nothing asked, nothing added');
 		$this->assertSame(['Praktijkhal Zuiddrecht', 'Bij u op de zaak'], array_column(array_column($query->run($items, ['kindFacet' => 'Plaats', 'types' => ['course']])['facets'], 'values', 'label')['Plaats'], 'value'), 'a declared facet is not overwritten by the kind');
 
-		$endpoint = $this->controller(modes: ['public'])->index('warmtepompacademie', facetsBy: '{"kind":"Soort"}');
+		$endpoint = $this->controller(modes: ['public'], query: ['facetsBy' => '{"kind":"Soort"}'])->index('warmtepompacademie');
 		$this->assertContains('Soort', array_column($endpoint->getData()['facets'], 'label'));
 	}
 
@@ -193,8 +193,8 @@ class PublicCatalogueTest extends TestCase {
 	}
 
 	public function testTheEndpointAnswersAVisitorOfAPublicPortalAndRefusesOneThatIsNot(): void {
-		$public = $this->controller(modes: ['public', 'digid']);
-		$answer = $public->index('warmtepompacademie', 'herhaling', 'course');
+		$public = $this->controller(modes: ['public', 'digid'], query: ['search' => 'herhaling', 'types' => 'course']);
+		$answer = $public->index('warmtepompacademie');
 		$this->assertSame(Http::STATUS_OK, $answer->getStatus());
 		$this->assertSame(1, $answer->getData()['total']);
 		$this->assertStringContainsString('public', (string)(\Closure::bind(fn (): ?array => $this->headers, $answer, \OCP\AppFramework\Http\Response::class)()['Cache-Control'] ?? ''));
@@ -212,8 +212,9 @@ class PublicCatalogueTest extends TestCase {
 	 *
 	 * @return ContentCatalogueController
 	 */
-	private function controller(?array $modes): ContentCatalogueController {
+	private function controller(?array $modes, array $query = []): ContentCatalogueController {
 		$request = $this->createMock(IRequest::class);
+		$request->method('getParam')->willReturnCallback(static fn (string $key, mixed $default = null): mixed => ($query[$key] ?? $default));
 		$request->method('getHeader')->willReturn('');
 		$resolver = $this->createMock(PortalResolver::class);
 		$resolver->method('resolve')->willReturn($modes === null ? null : ['slug' => 'warmtepompacademie', 'authentication' => ['modes' => $modes]]);

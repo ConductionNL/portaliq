@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
 
+use OCA\Portaliq\Service\PortalBySlug;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCA\Portaliq\Service\PublishedPortals;
 use OCA\Portaliq\Service\TrafficConfigResolver;
@@ -45,6 +46,7 @@ use Throwable;
  * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
  */
 class TrafficServerToken {
+	use PortalBySlug;
 
 	/**
 	 * OpenRegister's ObjectService FQCN, resolved lazily from the container.
@@ -88,7 +90,7 @@ class TrafficServerToken {
 	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
 	 */
 	public function issue(string $slug): ?string {
-		$portal = $this->portal(slug: $slug);
+		$portal = $this->portalBySlug(slug: $slug);
 		if ($portal === null) {
 			return null;
 		}
@@ -142,23 +144,6 @@ class TrafficServerToken {
 	 */
 	public function hash(string $token): string {
 		return hash('sha256', $token);
-	}
-
-	/**
-	 * The published portal with this slug, or null.
-	 *
-	 * @param string $slug The slug.
-	 *
-	 * @return array<string, mixed>|null The record.
-	 */
-	private function portal(string $slug): ?array {
-		foreach ($this->portals->allPublishedPortals() as $candidate) {
-			if (($candidate['slug'] ?? null) === $slug) {
-				return $candidate;
-			}
-		}
-
-		return null;
 	}
 
 	/**

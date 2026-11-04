@@ -40,7 +40,7 @@ record and SHALL NOT send the BSN or the raw lookup answer to the browser.
 #### Scenario: An account without a BSN shows why nothing is there
 - **GIVEN** a resident whose broker supplied a pseudonym instead of a BSN
 - **WHEN** they open "My details"
-- **THEN** they read that the portal cannot show registered details for this way of signing in, and no lookup is made
+- **THEN** they read "Bij deze manier van inloggen kan het portaal geen geregistreerde gegevens tonen." (board MijnAccountZonderDigid), and no lookup is made
 
 ### Requirement: A business user sees their company's KvK record (REQ-IRD-002)
 
@@ -64,7 +64,7 @@ SHALL NOT contain the identifier.
 #### Scenario: The BRP source is down
 - **GIVEN** the OpenConnector source `brp-haalcentraal` is not reachable
 - **WHEN** a resident opens "My details"
-- **THEN** they read "Your registered details cannot be shown right now." and the log holds the cause without the BSN
+- **THEN** they read "Uw gegevens uit de basisregistratie kunnen nu niet worden getoond." (board MijnGegevens) and the log holds the cause without the BSN
 
 ### Requirement: A resident can ask for a correction (REQ-IRD-004)
 

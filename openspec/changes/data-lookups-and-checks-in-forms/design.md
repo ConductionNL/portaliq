@@ -34,7 +34,7 @@ The communication preferences half of this board belongs to `cmp-id-contact-chan
 
 ### Price options
 
-No board. Until one exists: radio cards (the `choices` widget of `site-multi-step-forms`) with the variant's name, one line and its price, "€ 38,50 per jaar"; the review step repeats the chosen variant and price.
+Board `portaliq/PtFormulierPrijs`: radio cards (the `choices` widget of `site-multi-step-forms`) with the variant's name, one line and its price, "€ 62,40"; the review step repeats the chosen variant and price.
 
 ## Server
 

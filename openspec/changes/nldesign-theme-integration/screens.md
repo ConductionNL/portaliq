@@ -1,5 +1,7 @@
 # Screens
 
-- PtPortalInstellingen https://identity.conduction.nl/screens/board?id=portaliq/PtPortalInstellingen
-- PtThemas https://identity.conduction.nl/screens/board?id=portaliq/PtThemas
-- No screen: the shared theme tokens style every board rather than one (thm-nlds-dual-frontend)
+- portaliq/PtPortalInstellingen portal, instellingen https://identity.conduction.nl/screens/board?id=portaliq/PtPortalInstellingen
+- portaliq/PtThemas thema's https://identity.conduction.nl/screens/board?id=portaliq/PtThemas
+- portaliq has no board of its own for row thm-nlds-dual-frontend: the shared theme tokens style every board rather than one
+
+Components: CnActionButtons, CnActionsMenu, CnAppNav, CnAuditTrailCard, CnBreadcrumbs, CnBuildiqEditButton, CnDataTable, CnDetailCard, CnDetailGrid, CnDetailPage, CnPageHeader, CnRowActions, CnSettingsPage, CnSettingsSection, CnStatusBadge, CnTabs

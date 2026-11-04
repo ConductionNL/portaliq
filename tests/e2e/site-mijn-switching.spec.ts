@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * site-mijn-switching: a guardian switches child on a `records` page, and
- * Linda's acting-for bar on a phone width (site-mijn-omgeving-components
- * REQ-SMO-008). Seeds its own contribution, records and mandate, and
+ * Linda's acting-for bar on a phone width (site-mijn-omgeving REQ-SMO-008,
+ * board huisstijl/NamensBalk). Seeds its own contribution, records and mandate, and
  * deletes them afterwards, so it runs on CI and on a demo instance alike.
  * The children are portalCase rows standing in for a learner collection.
  *
@@ -220,8 +220,8 @@ test.describe('site-mijn-switching', () => {
 		)
 	})
 
-	// @e2e site-mijn-omgeving::linda-acts-for-her-father-dossiqphone-dc-html
-	test('Linda acts for her father: the bar names him on every page, on a phone', async ({
+	// @e2e site-mijn-omgeving::linda-acts-for-her-father-huisstijl-namensbalk
+	test('Linda acts for her father: one bar with "Wissel naar" on Mijn zaken and Mijn overzicht, on a phone', async ({
 		page,
 		request,
 	}) => {
@@ -236,13 +236,15 @@ test.describe('site-mijn-switching', () => {
 		})
 		await page.goto(siteAddress('/mijn/cases'))
 		await expect(page.getByTestId('my-cases')).toBeVisible()
-		await page
-			.locator('#pq-acting-for')
-			.selectOption({ label: 'uw vader, H. Bakker' })
-
 		const bar = page.getByTestId('mijn-acting-for-bar')
 		await expect(bar).toContainText(
-			/U regelt nu zaken voor uw vader, H\. Bakker|You are now acting for uw vader, H\. Bakker/,
+			/U ziet nu de zaken van iedereen voor wie u zaken regelt\.|You now see the cases of everyone you act for\./,
+		)
+		await bar
+			.getByTestId('mijn-acting-for-bar-select')
+			.selectOption({ label: 'uw vader, H. Bakker' })
+		await expect(bar).toContainText(
+			/U regelt nu zaken voor uw vader, H\. Bakker\.|You are now acting for uw vader, H\. Bakker\./,
 		)
 		await expect(
 			page.getByRole('region', {
@@ -252,9 +254,15 @@ test.describe('site-mijn-switching', () => {
 		const box = await bar.boundingBox()
 		expect(box && box.width <= 375, 'the bar fits the phone width').toBeTruthy()
 
+		await page.goto(siteAddress('/mijn'))
+		await expect(bar).toContainText(/uw vader, H\. Bakker/)
+		await bar
+			.getByTestId('mijn-acting-for-bar-select')
+			.selectOption({ index: 0 })
+		await expect(bar).toContainText(
+			/U regelt nu uw eigen zaken\.|You are now handling your own affairs\./,
+		)
 		await page.goto(siteAddress('/mijn/inbox'))
-		await expect(page.getByTestId('mijn-acting-for-bar')).toBeVisible()
-		await page.getByTestId('mijn-acting-for-bar-back').click()
 		await expect(page.getByTestId('mijn-acting-for-bar')).toHaveCount(0)
 	})
 })

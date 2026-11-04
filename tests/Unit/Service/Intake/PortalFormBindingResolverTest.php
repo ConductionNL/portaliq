@@ -197,12 +197,12 @@ class PortalFormBindingResolverTest extends TestCase {
 	public function testFeeRequiresSession(): void {
 		$this->seedForm(audience: 'client', fields: [['name' => 'kenteken', 'order' => 1]]);
 		$reader = $this->createMock(\OCA\Portaliq\Service\CaseTypeReader::class);
-		$reader->method('readCaseType')->willReturn(['portalFee' => ['amount' => '45.00', 'currency' => 'EUR', 'payAction' => 'create-payment']]);
+		$reader->method('readCaseType')->willReturn(['portalFee' => ['amount' => '38.50', 'currency' => 'EUR', 'payAction' => 'create-payment']]);
 		$resolver = new PortalFormBindingResolver($this->fakeReader(), null, new VisibleWhenLocal(), null, new \OCA\Portaliq\Service\Intake\PortalFormCalculator(), new \OCA\Portaliq\Service\Intake\PortalFee($reader));
 
 		$render = $resolver->render(binding: $this->binding());
 
-		$this->assertSame('45.00', $render['fee']['amount']);
+		$this->assertSame(expected: '38.50', actual: $render['fee']['amount']);
 		$this->assertSame('substantial', $resolver->requiredTrust(site: ['slug' => 'gemeente-x'], binding: $this->binding(), render: $render));
 
 		$free = $this->resolver()->render(binding: $this->binding());

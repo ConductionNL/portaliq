@@ -1,7 +1,9 @@
 # Screens
 
-- Berichten https://identity.conduction.nl/screens/board?id=portaliq/Berichten
-- Gesprek https://identity.conduction.nl/screens/board?id=portaliq/Gesprek
-- PtBericht https://identity.conduction.nl/screens/board?id=portaliq/PtBericht
-- Zaak https://identity.conduction.nl/screens/board?id=portaliq/Zaak
-- OuderBerichten https://identity.conduction.nl/screens/board?id=portaliq/OuderBerichten
+- portaliq/Berichten berichten https://identity.conduction.nl/screens/board?id=portaliq/Berichten
+- portaliq/Gesprek gesprek met Mark Jansen https://identity.conduction.nl/screens/board?id=portaliq/Gesprek
+- portaliq/PtBericht bericht https://identity.conduction.nl/screens/board?id=portaliq/PtBericht
+- portaliq/Zaak uw zaak https://identity.conduction.nl/screens/board?id=portaliq/Zaak
+- portaliq/OuderBerichten berichten van school https://identity.conduction.nl/screens/board?id=portaliq/OuderBerichten
+
+Components: CnActionsMenu, CnAppNav, CnAuditTrailCard, CnBreadcrumbs, CnBuildiqEditButton, CnDetailCard, CnDetailGrid, CnPageHeader, CnSiteSearch

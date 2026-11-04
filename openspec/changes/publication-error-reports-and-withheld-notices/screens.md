@@ -1,3 +1,3 @@
 # Screens
 
-- Publicatie https://identity.conduction.nl/screens/board?id=portaliq/Publicatie
+- portaliq/Publicatie Website: publicatie https://identity.conduction.nl/screens/board?id=portaliq/Publicatie

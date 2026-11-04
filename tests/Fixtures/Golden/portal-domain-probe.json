@@ -1,0 +1,487 @@
+{
+    "does not resolve": {
+        "calls": [
+            [
+                "resolve",
+                "www.example.org"
+            ]
+        ],
+        "answer": null,
+        "handlerRestored": true
+    },
+    "public, a certificate": {
+        "calls": [
+            [
+                "resolve",
+                "www.example.org"
+            ],
+            [
+                "context",
+                {
+                    "ssl": {
+                        "capture_peer_cert": true,
+                        "verify_peer": false,
+                        "verify_peer_name": false,
+                        "peer_name": "www.example.org",
+                        "SNI_enabled": true,
+                        "SNI_server_name": "www.example.org"
+                    }
+                }
+            ],
+            [
+                "connect",
+                "ssl://93.184.216.34:443",
+                5,
+                4,
+                true
+            ],
+            [
+                "close"
+            ],
+            [
+                "parse",
+                "certificate"
+            ]
+        ],
+        "answer": 1893456000,
+        "handlerRestored": true
+    },
+    "socket false": {
+        "calls": [
+            [
+                "resolve",
+                "www.example.org"
+            ],
+            [
+                "context",
+                {
+                    "ssl": {
+                        "capture_peer_cert": true,
+                        "verify_peer": false,
+                        "verify_peer_name": false,
+                        "peer_name": "www.example.org",
+                        "SNI_enabled": true,
+                        "SNI_server_name": "www.example.org"
+                    }
+                }
+            ],
+            [
+                "connect",
+                "ssl://93.184.216.34:443",
+                5,
+                4,
+                true
+            ]
+        ],
+        "answer": null,
+        "handlerRestored": true
+    },
+    "socket false, no error": {
+        "calls": [
+            [
+                "resolve",
+                "www.example.org"
+            ],
+            [
+                "context",
+                {
+                    "ssl": {
+                        "capture_peer_cert": true,
+                        "verify_peer": false,
+                        "verify_peer_name": false,
+                        "peer_name": "www.example.org",
+                        "SNI_enabled": true,
+                        "SNI_server_name": "www.example.org"
+                    }
+                }
+            ],
+            [
+                "connect",
+                "ssl://93.184.216.34:443",
+                5,
+                4,
+                true
+            ]
+        ],
+        "answer": null,
+        "handlerRestored": true
+    },
+    "error code and message": {
+        "calls": [
+            [
+                "resolve",
+                "www.example.org"
+            ],
+            [
+                "context",
+                {
+                    "ssl": {
+                        "capture_peer_cert": true,
+                        "verify_peer": false,
+                        "verify_peer_name": false,
+                        "peer_name": "www.example.org",
+                        "SNI_enabled": true,
+                        "SNI_server_name": "www.example.org"
+                    }
+                }
+            ],
+            [
+                "connect",
+                "ssl://93.184.216.34:443",
+                5,
+                4,
+                true
+            ]
+        ],
+        "answer": null,
+        "handlerRestored": true
+    },
+    "error code, no message": {
+        "calls": [
+            [
+                "resolve",
+                "www.example.org"
+            ],
+            [
+                "context",
+                {
+                    "ssl": {
+                        "capture_peer_cert": true,
+                        "verify_peer": false,
+                        "verify_peer_name": false,
+                        "peer_name": "www.example.org",
+                        "SNI_enabled": true,
+                        "SNI_server_name": "www.example.org"
+                    }
+                }
+            ],
+            [
+                "connect",
+                "ssl://93.184.216.34:443",
+                5,
+                4,
+                true
+            ],
+            [
+                "close"
+            ],
+            [
+                "parse",
+                "certificate"
+            ]
+        ],
+        "answer": 1893456000,
+        "handlerRestored": true
+    },
+    "error message, no code": {
+        "calls": [
+            [
+                "resolve",
+                "www.example.org"
+            ],
+            [
+                "context",
+                {
+                    "ssl": {
+                        "capture_peer_cert": true,
+                        "verify_peer": false,
+                        "verify_peer_name": false,
+                        "peer_name": "www.example.org",
+                        "SNI_enabled": true,
+                        "SNI_server_name": "www.example.org"
+                    }
+                }
+            ],
+            [
+                "connect",
+                "ssl://93.184.216.34:443",
+                5,
+                4,
+                true
+            ],
+            [
+                "close"
+            ],
+            [
+                "parse",
+                "certificate"
+            ]
+        ],
+        "answer": 1893456000,
+        "handlerRestored": true
+    },
+    "no certificate": {
+        "calls": [
+            [
+                "resolve",
+                "www.example.org"
+            ],
+            [
+                "context",
+                {
+                    "ssl": {
+                        "capture_peer_cert": true,
+                        "verify_peer": false,
+                        "verify_peer_name": false,
+                        "peer_name": "www.example.org",
+                        "SNI_enabled": true,
+                        "SNI_server_name": "www.example.org"
+                    }
+                }
+            ],
+            [
+                "connect",
+                "ssl://93.184.216.34:443",
+                5,
+                4,
+                true
+            ],
+            [
+                "close"
+            ]
+        ],
+        "answer": null,
+        "handlerRestored": true
+    },
+    "parse fails": {
+        "calls": [
+            [
+                "resolve",
+                "www.example.org"
+            ],
+            [
+                "context",
+                {
+                    "ssl": {
+                        "capture_peer_cert": true,
+                        "verify_peer": false,
+                        "verify_peer_name": false,
+                        "peer_name": "www.example.org",
+                        "SNI_enabled": true,
+                        "SNI_server_name": "www.example.org"
+                    }
+                }
+            ],
+            [
+                "connect",
+                "ssl://93.184.216.34:443",
+                5,
+                4,
+                true
+            ],
+            [
+                "close"
+            ],
+            [
+                "parse",
+                "certificate"
+            ]
+        ],
+        "answer": null,
+        "handlerRestored": true
+    },
+    "parse without an end": {
+        "calls": [
+            [
+                "resolve",
+                "www.example.org"
+            ],
+            [
+                "context",
+                {
+                    "ssl": {
+                        "capture_peer_cert": true,
+                        "verify_peer": false,
+                        "verify_peer_name": false,
+                        "peer_name": "www.example.org",
+                        "SNI_enabled": true,
+                        "SNI_server_name": "www.example.org"
+                    }
+                }
+            ],
+            [
+                "connect",
+                "ssl://93.184.216.34:443",
+                5,
+                4,
+                true
+            ],
+            [
+                "close"
+            ],
+            [
+                "parse",
+                "certificate"
+            ]
+        ],
+        "answer": null,
+        "handlerRestored": true
+    },
+    "parse with a text end": {
+        "calls": [
+            [
+                "resolve",
+                "www.example.org"
+            ],
+            [
+                "context",
+                {
+                    "ssl": {
+                        "capture_peer_cert": true,
+                        "verify_peer": false,
+                        "verify_peer_name": false,
+                        "peer_name": "www.example.org",
+                        "SNI_enabled": true,
+                        "SNI_server_name": "www.example.org"
+                    }
+                }
+            ],
+            [
+                "connect",
+                "ssl://93.184.216.34:443",
+                5,
+                4,
+                true
+            ],
+            [
+                "close"
+            ],
+            [
+                "parse",
+                "certificate"
+            ]
+        ],
+        "answer": 12,
+        "handlerRestored": true
+    },
+    "connection throws": {
+        "calls": [
+            [
+                "resolve",
+                "www.example.org"
+            ],
+            [
+                "context",
+                {
+                    "ssl": {
+                        "capture_peer_cert": true,
+                        "verify_peer": false,
+                        "verify_peer_name": false,
+                        "peer_name": "www.example.org",
+                        "SNI_enabled": true,
+                        "SNI_server_name": "www.example.org"
+                    }
+                }
+            ],
+            [
+                "connect",
+                "ssl://93.184.216.34:443",
+                5,
+                4,
+                true
+            ]
+        ],
+        "answer": "threw connection broke",
+        "handlerRestored": true
+    },
+    "not an address": {
+        "calls": [
+            [
+                "resolve",
+                "www.example.org"
+            ]
+        ],
+        "answer": null,
+        "handlerRestored": true
+    },
+    "a public address as host": {
+        "calls": [
+            [
+                "resolve",
+                "93.184.216.34"
+            ]
+        ],
+        "answer": null,
+        "handlerRestored": true
+    },
+    "refused 127.0.0.1": {
+        "calls": [
+            [
+                "resolve",
+                "www.example.org"
+            ]
+        ],
+        "answer": null,
+        "handlerRestored": true
+    },
+    "refused 10.1.2.3": {
+        "calls": [
+            [
+                "resolve",
+                "www.example.org"
+            ]
+        ],
+        "answer": null,
+        "handlerRestored": true
+    },
+    "refused 172.16.0.1": {
+        "calls": [
+            [
+                "resolve",
+                "www.example.org"
+            ]
+        ],
+        "answer": null,
+        "handlerRestored": true
+    },
+    "refused 192.168.1.1": {
+        "calls": [
+            [
+                "resolve",
+                "www.example.org"
+            ]
+        ],
+        "answer": null,
+        "handlerRestored": true
+    },
+    "refused 169.254.169.254": {
+        "calls": [
+            [
+                "resolve",
+                "www.example.org"
+            ]
+        ],
+        "answer": null,
+        "handlerRestored": true
+    },
+    "refused 0.0.0.0": {
+        "calls": [
+            [
+                "resolve",
+                "www.example.org"
+            ]
+        ],
+        "answer": null,
+        "handlerRestored": true
+    },
+    "refused 240.0.0.1": {
+        "calls": [
+            [
+                "resolve",
+                "www.example.org"
+            ]
+        ],
+        "answer": null,
+        "handlerRestored": true
+    },
+    "refused 255.255.255.255": {
+        "calls": [
+            [
+                "resolve",
+                "www.example.org"
+            ]
+        ],
+        "answer": null,
+        "handlerRestored": true
+    }
+}

@@ -781,7 +781,7 @@ class PortalIntakeControllerTest extends TestCase {
 	 * @return array<string, mixed>
 	 */
 	private function declaredFee(): array {
-		return ['amount' => '45.00', 'currency' => 'EUR', 'description' => 'Parkeervergunning', 'payAction' => 'create-payment'];
+		return ['amount' => '38.50', 'currency' => 'EUR', 'description' => 'Parkeervergunning', 'payAction' => 'create-payment'];
 	}//end declaredFee()
 
 	/**
@@ -824,7 +824,7 @@ class PortalIntakeControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame(['checkoutUrl' => 'https://www.mollie.com/checkout/abc'], $response->getData());
-		$this->assertSame('45.00', $sent['amount']);
+		$this->assertSame(expected: '38.50', actual: $sent['amount']);
 		$this->assertSame('EUR', $sent['currency']);
 		$this->assertSame('2026-0042', $sent['reference']);
 		$this->assertStringContainsString('reference=2026-0042', $sent['returnUrl']);

@@ -37,12 +37,53 @@ export function loggedInAs(session, t) {
 	if (!session) {
 		return ''
 	}
+	const name = shownName(session)
+	return name ? t('Logged in as {name}', { name }) : t('Logged in')
+}
+
+/**
+ * The name the header may show for a session: '' for none, for the subject
+ * reference, and for a number (a BSN is no name).
+ *
+ * @param {object} session The session.
+ * @return {string} The name, or ''.
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-header-must-never-name-a-person-by-a-number
+ */
+function shownName(session) {
 	const name = String(session.displayName || session.name || '').trim()
-	const reference = String(session.subjectRef || '')
-	if (name === '' || name === reference || /^\d+$/.test(name)) {
-		return t('Logged in')
+	return isAName(name, session) ? name : ''
+}
+
+/**
+ * Whether a value may stand as a name: not the subject reference, not a number.
+ *
+ * @param {string} name The value.
+ * @param {object} session The session.
+ * @return {boolean}
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-header-must-never-name-a-person-by-a-number
+ */
+function isAName(name, session) {
+	return name !== String(session.subjectRef || '') && !/^\d+$/.test(name)
+}
+
+/**
+ * The account pill's accessible name: "Ingelogd als {name}, naar {area}", or
+ * "Ingelogd, naar {area}" without a name.
+ *
+ * @param {object|null} session The session.
+ * @param {{t: (key: string, vars?: object) => string, area: string}} words The translator and the own area's name.
+ * @return {string} The name, or '' without a session.
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-header-must-name-the-signed-in-person-never-their-reference
+ */
+export function pillLabel(session, words) {
+	if (!session) {
+		return ''
 	}
-	return t('Logged in as {name}', { name })
+	const name = shownName(session)
+	const area = words.area
+	return name
+		? words.t('Logged in as {name}, to {area}', { name, area })
+		: words.t('Logged in, to {area}', { area })
 }
 
 /**

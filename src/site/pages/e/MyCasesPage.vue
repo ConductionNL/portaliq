@@ -47,38 +47,22 @@
 			{{ intro }}
 		</p>
 
-		<!-- "Zaken van" (board MijnZakenTabel): whose cases the list shows,
-		     for a resident who acts for someone else (mijn-zaken-chooses-whose-cases). -->
-		<div
+		<!-- For whom the resident acts, with "Wissel naar" (board
+		     huisstijl/NamensBalk, site-mijn-omgeving REQ-SMO-008). -->
+		<ActingForBar
 			v-if="choosesParty"
-			class="pq-cases__parties"
-			data-testid="my-cases-parties">
-			<label for="pq-cases-parties" class="utrecht-form-label">{{
-				mt('Cases of')
-			}}</label>
-			<select
-				id="pq-cases-parties"
-				class="utrecht-select pq-cases__parties-select"
-				:value="choice"
-				data-testid="my-cases-parties-select"
-				@change="chooseParty($event.target.value)">
-				<option
-					v-for="option in parties"
-					:key="option.id"
-					:value="option.id"
-					:selected="option.id === choice"
-					:translate="option.own ? null : 'no'">
-					{{ option.label }}
-				</option>
-			</select>
-			<a
-				v-if="mandatesHref"
-				class="utrecht-link"
-				:href="mandatesHref"
-				data-testid="my-cases-parties-manage">
-				{{ mt('Arrange access to cases') }}
-			</a>
-		</div>
+			:t="t"
+			:locale="barLocale"
+			:mandates="held"
+			:value="choice"
+			:name="residentName"
+			:href="mandatesHref"
+			selectId="pq-cases-parties"
+			@change="chooseParty" />
+
+		<!-- "Namens vestiging": the branch in effect, or the choice of one
+		     and "Hele bedrijf" (portal-branch-scope, REQ-SRP-011). -->
+		<BranchSwitcher v-if="session" :t="t" :api="api" :session="session" />
 
 		<p
 			v-if="data === null"
@@ -204,7 +188,9 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
 import UnfinishedForms from '../../components/forms/UnfinishedForms.vue'
+import ActingForBar from '../../components/mijn/ActingForBar.vue'
 import CaseCard from '../../components/mijn/CaseCard.vue'
 import LoadError from '../../components/mijn/LoadError.vue'
 import { casesIntros } from '../../../shared/collectionIntro.js'
@@ -224,13 +210,22 @@ import {
 } from '../../components/e/actingFor.js'
 import { caseCard } from '../../components/mijn/cases.js'
 import { mijnTranslator } from '../../components/mijn/rows.js'
-import { EVERYONE, mergedAnswer, partyOptions, readsFor } from './caseParties.js'
+import { EVERYONE, mergedAnswer, readsFor } from './caseParties.js'
 import { longDate, readerLocale } from './format.js'
 
 export default {
 	name: 'MyCasesPage',
 
-	components: { CaseCard, LoadError, UnfinishedForms },
+	components: {
+		ActingForBar,
+		BranchSwitcher: defineAsyncComponent(
+			() => import('../../components/BranchSwitcher.vue'),
+		),
+
+		CaseCard,
+		LoadError,
+		UnfinishedForms,
+	},
 
 	props: {
 		/** The session as `/portal/api/session` returns it. */
@@ -309,17 +304,27 @@ export default {
 		},
 
 		/**
-		 * The "Zaken van" choices.
-		 *
-		 * @return {Array<{id: string, label: string, own: boolean}>}
+		 * @return {Array<{id: string, label: string}>} The mandates held.
 		 * @spec openspec/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
 		 */
-		parties() {
-			return partyOptions(
-				actingFor.mandates,
-				this.mt,
-				personOf(this.session)?.name || '',
-			)
+		held() {
+			return actingFor.mandates
+		},
+
+		/**
+		 * @return {string} The resident's name, '' when unknown.
+		 * @spec openspec/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+		 */
+		residentName() {
+			return personOf(this.session)?.name || ''
+		},
+
+		/**
+		 * @return {string} The reader's locale.
+		 * @spec openspec/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+		 */
+		barLocale() {
+			return readerLocale(this.locale)
 		},
 
 		/**
@@ -599,21 +604,6 @@ export default {
 
 /* The tab list reads the set's tab roles when it names them
    (thematiq zuiddrecht-website-type-and-controls); else as it was. */
-.pq-cases__parties {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: var(--utrecht-space-block-sm, 0.5rem) var(--utrecht-space-inline-md, 1rem);
-	padding: var(--utrecht-space-block-sm, 0.75rem)
-		var(--utrecht-space-inline-md, 1rem);
-	border-radius: var(--utrecht-border-radius-md, 6px);
-	background-color: var(--utrecht-color-grey-90, #f4f6f9);
-}
-
-.pq-cases__parties-select {
-	min-inline-size: min(100%, 16rem);
-}
-
 .pq-cases__tabs {
 	display: flex;
 	gap: var(--utrecht-space-inline-sm, 0.5rem);

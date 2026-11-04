@@ -40,8 +40,8 @@ contribution or a portal declares; a page or portal that declares none renders a
   switch, CitizenCase's actions display (the closed-window sentence as a green notice, no status
   block, no documents section), ContributionPage's record eyebrow and h1, the breadcrumb's
   Mijn zaken crumb, MyCasesPage's rows and tab roles, the resident menu's Overzicht item.
-- **Every moved thing keeps a route**: Bezwaar maken and Klacht indienen stay on the overview;
-  Mijn wijziging opslaan and Deze aanvraag intrekken stay on the case page under Stukken; Toegang
+- **Every moved thing keeps a route**: Bezwaar maken, Klacht indienen, Mijn wijziging opslaan and
+  Aanvraag intrekken are on the case page, as the board Zaak draws them; Toegang
   tot zaken and Melding indienen stay in the menu (appended in their own groups when the portal's
   layout does not name them). `tests/zuiddrecht-resident-boards.spec.mjs` proves each.
 - **Every other portal renders unchanged**: the same spec renders the blocks without the keys

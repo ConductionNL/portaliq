@@ -52,7 +52,8 @@ test('the acting-for bar marks the party and not the sentence', async () => {
 		value: 'm1',
 	})
 	await bar.flush()
-	assert.deepEqual(marked(bar), ['Bakkerij De Korenaar'])
+	// The party in the sentence, and the party's option in "Wissel naar".
+	assert.deepEqual(marked(bar), ['Bakkerij De Korenaar', 'Bakkerij De Korenaar'])
 })
 
 test('an address list marks each value and not its label', async () => {

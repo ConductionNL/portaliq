@@ -22,12 +22,9 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use OCA\Portaliq\Service\Traffic\GeoResolverInterface;
-use OCA\Portaliq\Service\Traffic\ReferrerClassifier;
-use OCA\Portaliq\Service\Traffic\TrafficEventStore;
+use OCA\Portaliq\Service\Traffic\TrafficIngestPipeline;
 use OCA\Portaliq\Service\Traffic\TrafficMetrics;
-use OCA\Portaliq\Service\Traffic\UserAgentClassifier;
-use OCA\Portaliq\Service\Traffic\VisitorHasher;
+use OCA\Portaliq\Service\Traffic\TrafficRecordDerivers;
 use OCP\AppFramework\Utility\ITimeFactory;
 
 /**
@@ -54,35 +51,33 @@ use OCP\AppFramework\Utility\ITimeFactory;
  * collaborators, injected. Bundling them into a facade would hide which
  * request-derived value comes from where, which is the thing a privacy
  * reviewer reads this file for.
+ *
+ * @psalm-type IngestBatch = array{
+ *     config: array<string, mixed>,
+ *     context: array<string, mixed>,
+ *     serverSide: bool,
+ *     now: DateTimeImmutable,
+ *     slug: string,
+ *     hasConsent: bool,
+ *     derived?: array<string, string>
+ * }
  */
 class TrafficIngestService {
 
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalResolver        $portals   Finds a portal by slug.
-	 * @param TrafficConfigResolver $config    Resolves a portal's measurement configuration.
-	 * @param TrafficEventValidator $validator Validates one event.
-	 * @param TrafficEventStore     $store     Writes the records.
-	 * @param TrafficMetrics        $metrics   Counts what happened.
-	 * @param VisitorHasher         $hasher    Derives the daily visitor hash.
-	 * @param UserAgentClassifier   $agents    Derives device, browser, os and the bot flag.
-	 * @param ReferrerClassifier    $referrers Derives host, channel, campaign and path.
-	 * @param GeoResolverInterface  $geo       Derives a region from the address, offline.
-	 * @param ITimeFactory          $time      The clock.
+	 * @param TrafficIngestPipeline $pipeline Finds the portal, resolves its configuration, validates and stores.
+	 * @param TrafficRecordDerivers $derivers Derive the visitor hash and the record's families.
+	 * @param TrafficMetrics        $metrics  Counts what happened.
+	 * @param ITimeFactory          $time     The clock.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly PortalResolver $portals,
-		private readonly TrafficConfigResolver $config,
-		private readonly TrafficEventValidator $validator,
-		private readonly TrafficEventStore $store,
+		private readonly TrafficIngestPipeline $pipeline,
+		private readonly TrafficRecordDerivers $derivers,
 		private readonly TrafficMetrics $metrics,
-		private readonly VisitorHasher $hasher,
-		private readonly UserAgentClassifier $agents,
-		private readonly ReferrerClassifier $referrers,
-		private readonly GeoResolverInterface $geo,
 		private readonly ITimeFactory $time,
 	) {
 	}
@@ -103,7 +98,7 @@ class TrafficIngestService {
 	 */
 	public function ingest(string $portalSlug, array $events, array $context = []): array {
 		$portal = null;
-		foreach ($this->portals->allPublishedPortals() as $candidate) {
+		foreach ($this->pipeline->portals->allPublishedPortals() as $candidate) {
 			if (($candidate['slug'] ?? null) === $portalSlug) {
 				$portal = $candidate;
 				break;
@@ -130,73 +125,113 @@ class TrafficIngestService {
 	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-roll-up-portal-must-sum-its-members-and-never-count-its-own
 	 */
 	public function ingestForPortal(array $portal, array $events, array $context = []): array {
-		$config = $this->config->resolve(portal: $portal);
-		// A roll-up portal (portal-traffic-reporting) is the sum of others
-		// and has no visitors of its own; a batch aimed at it is refused
-		// whole, whatever it carries.
-		if ($config['rollupOf'] !== []) {
-			return $this->refuseAll(events: $events, reason: 'rollup-portal');
+		$batch = $this->openBatch(portal: $portal, context: $context);
+		if (is_string($batch) === true) {
+			return $this->refuseAll(events: $events, reason: $batch);
 		}
-
-		$serverSide = ($context['serverSide'] ?? false) === true;
-		$agent = $this->agents->classify(userAgent: (string)($context['userAgent'] ?? ''));
-
-		// A crawler is refused as a BATCH, counted under one reason, before
-		// any event is looked at. It is not a visitor and it should not
-		// inflate a page's numbers by reading every link on it.
-		if ($serverSide === false && $agent['bot'] === true) {
-			return $this->refuseAll(events: $events, reason: 'bot');
-		}
-
-		$now = $this->now();
-		$slug = (string)($portal['slug'] ?? '');
-		$hasConsent = ($context['consent'] ?? false) === true;
-		$derived = $this->derivedFromRequest(agent: $agent, context: $context, config: $config);
 
 		$records = [];
 		$refused = [];
 		foreach ($events as $event) {
-			if (is_array($event) === false) {
-				$refused['malformed-event'] = ($refused['malformed-event'] ?? 0) + 1;
+			$admitted = $this->admit(event: $event, batch: $batch);
+			if (is_string($admitted) === true) {
+				$refused[$admitted] = ($refused[$admitted] ?? 0) + 1;
 				continue;
 			}
 
-			$result = $this->validator->validate(
-				event: $event,
-				config: $config,
-				hasConsent: $hasConsent,
-				resolver: $this->config,
-				context: ['serverSide' => $serverSide, 'allowOld' => (($context['allowOld'] ?? false) === true)],
-				now: $now
-			);
-			if ($result['ok'] === false) {
-				$reason = (string)($result['reason'] ?? 'refused');
-				$refused[$reason] = ($refused[$reason] ?? 0) + 1;
-				continue;
-			}
-
-			// A surface the portal declared off-limits leaves no row at all
-			// (a-report-without-an-account REQ-RWA-007). The reporting page is
-			// the case this exists for: a visitor row on it records that
-			// somebody opened the whistleblowing form, which is precisely the
-			// fact that must not exist anywhere.
-			if ($this->isExcluded(event: $result['event'], config: $config) === true) {
-				$refused['excluded-path'] = ($refused['excluded-path'] ?? 0) + 1;
-				continue;
-			}
-
-			$records[] = $this->record(
-				event: $result['event'],
-				slug: $slug,
-				config: $config,
-				derived: $derived,
-				context: $context,
-				now: $now,
-				hasConsent: $hasConsent
-			);
+			$records[] = $admitted;
 		}
 
-		$accepted = $this->store->append(records: $records);
+		return $this->store(records: $records, refused: $refused);
+	}
+
+	/**
+	 * The batch a request opens, or the reason the whole batch is refused.
+	 *
+	 * A roll-up portal (portal-traffic-reporting) is the sum of others and
+	 * has no visitors of its own; a batch aimed at it is refused whole,
+	 * whatever it carries. A crawler is refused as a BATCH, counted under one
+	 * reason, before any event is looked at. It is not a visitor and it
+	 * should not inflate a page's numbers by reading every link on it.
+	 *
+	 * @param array<string, mixed> $portal  The portal record.
+	 * @param array<string, mixed> $context The request context.
+	 *
+	 * @return IngestBatch|string
+	 */
+	private function openBatch(array $portal, array $context): array|string {
+		$config = $this->pipeline->config->resolve(portal: $portal);
+		if ($config['rollupOf'] !== []) {
+			return 'rollup-portal';
+		}
+
+		$serverSide = ($context['serverSide'] ?? false) === true;
+		$agent      = $this->derivers->agents->classify(userAgent: (string)($context['userAgent'] ?? ''));
+		if ($serverSide === false && $agent['bot'] === true) {
+			return 'bot';
+		}
+
+		$batch = [
+			'config' => $config,
+			'context' => $context,
+			'serverSide' => $serverSide,
+			'now' => $this->now(),
+			'slug' => (string)($portal['slug'] ?? ''),
+			'hasConsent' => ($context['consent'] ?? false) === true,
+		];
+		$batch['derived'] = $this->derivedFromRequest(agent: $agent, batch: $batch);
+
+		return $batch;
+	}
+
+	/**
+	 * The record one event becomes, or the reason it is refused.
+	 *
+	 * A surface the portal declared off-limits leaves no row at all
+	 * (a-report-without-an-account REQ-RWA-007). The reporting page is the
+	 * case this exists for: a visitor row on it records that somebody opened
+	 * the whistleblowing form, which is precisely the fact that must not
+	 * exist anywhere.
+	 *
+	 * @param mixed $event The event as posted.
+	 * @param IngestBatch $batch The open batch.
+	 *
+	 * @return array<string, mixed>|string
+	 */
+	private function admit(mixed $event, array $batch): array|string {
+		if (is_array($event) === false) {
+			return 'malformed-event';
+		}
+
+		$result = $this->pipeline->validator->validate(
+			event: $event,
+			config: $batch['config'],
+			hasConsent: $batch['hasConsent'],
+			resolver: $this->pipeline->config,
+			context: ['serverSide' => $batch['serverSide'], 'allowOld' => (($batch['context']['allowOld'] ?? false) === true)],
+			now: $batch['now']
+		);
+		if ($result['ok'] === false) {
+			return (string)($result['reason'] ?? 'refused');
+		}
+
+		if ($this->isExcluded(event: $result['event'], config: $batch['config']) === true) {
+			return 'excluded-path';
+		}
+
+		return $this->record(event: $result['event'], batch: $batch);
+	}
+
+	/**
+	 * Store the admitted records, count what the store did not keep, and report both to the metrics.
+	 *
+	 * @param array<int, array<string, mixed>> $records The admitted records.
+	 * @param array<string, int>               $refused The refusals so far, by reason.
+	 *
+	 * @return array{accepted: int, refused: array<string, int>}
+	 */
+	private function store(array $records, array $refused): array {
+		$accepted = $this->pipeline->store->append(records: $records);
 		if ($accepted < count($records)) {
 			$refused['storage-failed'] = ($refused['storage-failed'] ?? 0) + (count($records) - $accepted);
 		}
@@ -227,7 +262,7 @@ class TrafficIngestService {
 			return false;
 		}
 
-		$path = rtrim($this->referrers->path(location: (string)($event['pageLocation'] ?? '')), '/');
+		$path = rtrim($this->derivers->referrers->path(location: (string)($event['pageLocation'] ?? '')), '/');
 		if ($path === '') {
 			$path = '/';
 		}
@@ -245,60 +280,75 @@ class TrafficIngestService {
 	/**
 	 * One stored record from one validated event.
 	 *
-	 * @param array<string, mixed>  $event      The validated event.
-	 * @param string                $slug       The portal slug.
-	 * @param array<string, mixed>  $config     The resolved configuration.
-	 * @param array<string, string> $derived    Request-level derived dimensions, already filtered.
-	 * @param array<string, mixed>  $context    The request context.
-	 * @param DateTimeImmutable     $now        The clock.
-	 * @param bool                  $hasConsent The visitor's consent state.
+	 * @param array<string, mixed> $event The validated event.
+	 * @param IngestBatch          $batch The open batch.
 	 *
 	 * @return array<string, mixed> The record.
 	 */
-	private function record(
-		array $event,
-		string $slug,
-		array $config,
-		array $derived,
-		array $context,
-		DateTimeImmutable $now,
-		bool $hasConsent,
-	): array {
+	private function record(array $event, array $batch): array {
+		$campaign = $this->campaignOf(event: $event, batch: $batch);
+		$perEvent = $this->perEventDimensions(event: $event, campaign: $campaign);
 		$location = (string)$event['pageLocation'];
-		$campaign = $this->referrers->campaign(location: $location);
-		if (($context['serverSide'] ?? false) === true) {
-			// A mail event carries its attribution in the envelope; the URL
-			// it points at may carry the same, and the envelope wins.
+		$now      = $batch['now'];
+
+		$record = $event + [
+			'portal' => $batch['slug'],
+			'receivedAt' => $now->format('Y-m-d\TH:i:s.v\Z'),
+			'visitorHash' => $this->visitorHash(event: $event, batch: $batch),
+			'pagePath' => $this->derivers->referrers->path(location: $location),
+			'consent' => $batch['hasConsent'],
+			'expires' => $now->modify('+' . (int)$batch['config']['retentionDays'] . ' days')->format('Y-m-d\TH:i:s\Z'),
+		] + $batch['derived'];
+
+		foreach ($perEvent as $key => $value) {
+			if ($value !== '' && in_array($key, $batch['config']['dimensions'], true) === true) {
+				$record[$key] = $value;
+			}
+		}
+
+		return $record + $this->linkedAccount(config: $batch['config'], context: $batch['context']);
+	}
+
+	/**
+	 * The campaign attribution of an event: its URL's, with a mail event's envelope winning.
+	 *
+	 * A mail event carries its attribution in the envelope; the URL it points
+	 * at may carry the same, and the envelope wins.
+	 *
+	 * @param array<string, mixed> $event The validated event.
+	 * @param IngestBatch          $batch The open batch.
+	 *
+	 * @return array<string, string>
+	 */
+	private function campaignOf(array $event, array $batch): array {
+		$campaign = $this->derivers->referrers->campaign(location: (string)$event['pageLocation']);
+		if (($batch['context']['serverSide'] ?? false) === true) {
 			foreach (['campaign', 'source', 'medium', 'content', 'term'] as $key) {
-				if (isset($event[$key]) === true && $event[$key] !== '') {
+				if (($event[$key] ?? '') !== '') {
 					$campaign[$key] = (string)$event[$key];
 				}
 			}
 		}
 
-		$referrerHost = $this->referrers->host(referrer: (string)($event['pageReferrer'] ?? ''));
-		$pageHost = $this->referrers->host(referrer: $location);
-		$perEvent = [
+		return $campaign;
+	}
+
+	/**
+	 * The dimensions read from one event: referrer host, channel and campaign.
+	 *
+	 * @param array<string, mixed>  $event    The validated event.
+	 * @param array<string, string> $campaign The event's campaign attribution.
+	 *
+	 * @return array<string, string>
+	 */
+	private function perEventDimensions(array $event, array $campaign): array {
+		$referrerHost = $this->derivers->referrers->host(referrer: (string)($event['pageReferrer'] ?? ''));
+		$pageHost     = $this->derivers->referrers->host(referrer: (string)$event['pageLocation']);
+
+		return [
 			'referrerHost' => $referrerHost,
-			'channel' => $this->referrers->channel(referrerHost: $referrerHost, pageHost: $pageHost, campaign: $campaign),
+			'channel' => $this->derivers->referrers->channel(referrerHost: $referrerHost, pageHost: $pageHost, campaign: $campaign),
 		] + $campaign;
-
-		$record = $event + [
-			'portal' => $slug,
-			'receivedAt' => $now->format('Y-m-d\TH:i:s.v\Z'),
-			'visitorHash' => $this->visitorHash(slug: $slug, event: $event, context: $context),
-			'pagePath' => $this->referrers->path(location: $location),
-			'consent' => $hasConsent,
-			'expires' => $now->modify('+' . (int)$config['retentionDays'] . ' days')->format('Y-m-d\TH:i:s\Z'),
-		] + $derived;
-
-		foreach ($perEvent as $key => $value) {
-			if ($value !== '' && in_array($key, $config['dimensions'], true) === true) {
-				$record[$key] = $value;
-			}
-		}
-
-		return $record + $this->linkedAccount(config: $config, context: $context);
 	}
 
 	/**
@@ -327,23 +377,23 @@ class TrafficIngestService {
 	/**
 	 * The dimensions derived once per request, kept only when enabled.
 	 *
-	 * @param array<string, mixed> $agent   The classified user agent.
-	 * @param array<string, mixed> $context The request context.
-	 * @param array<string, mixed> $config  The resolved configuration.
+	 * @param array<string, mixed> $agent The classified user agent.
+	 * @param IngestBatch          $batch The batch being opened.
 	 *
 	 * @return array<string, string> Enabled derived dimensions.
 	 */
-	private function derivedFromRequest(array $agent, array $context, array $config): array {
+	private function derivedFromRequest(array $agent, array $batch): array {
+		$config     = $batch['config'];
 		$candidates = [
 			'deviceType' => (string)$agent['deviceType'],
 			'browser' => (string)$agent['browser'],
 			'os' => (string)$agent['os'],
-			'language' => $this->language(header: (string)($context['acceptLanguage'] ?? '')),
+			'language' => $this->language(header: (string)($batch['context']['acceptLanguage'] ?? '')),
 		];
 
 		$granularity = (string)$config['regionGranularity'];
 		if ($granularity !== 'none' && in_array('region', $config['dimensions'], true) === true) {
-			$candidates['region'] = (string)($this->geo->resolve(address: (string)($context['ip'] ?? ''), granularity: $granularity) ?? '');
+			$candidates['region'] = (string)($this->derivers->geo->resolve(address: (string)($batch['context']['ip'] ?? ''), granularity: $granularity) ?? '');
 		}
 
 		$out = [];
@@ -360,19 +410,19 @@ class TrafficIngestService {
 	 * The visitor hash: address and agent for a browser, the contact
 	 * reference for a mail event. Neither input is kept.
 	 *
-	 * @param string               $slug    The portal slug.
-	 * @param array<string, mixed> $event   The validated event.
-	 * @param array<string, mixed> $context The request context.
+	 * @param array<string, mixed> $event The validated event.
+	 * @param IngestBatch          $batch The open batch.
 	 *
 	 * @return string The hash.
 	 */
-	private function visitorHash(string $slug, array $event, array $context): string {
+	private function visitorHash(array $event, array $batch): string {
+		$context = $batch['context'];
 		if (($context['serverSide'] ?? false) === true) {
-			return $this->hasher->hash(portal: $slug, parts: ['contact', (string)($event['contactRef'] ?? '')]);
+			return $this->derivers->hasher->hash(portal: $batch['slug'], parts: ['contact', (string)($event['contactRef'] ?? '')]);
 		}
 
-		return $this->hasher->hash(
-			portal: $slug,
+		return $this->derivers->hasher->hash(
+			portal: $batch['slug'],
 			parts: [(string)($context['ip'] ?? ''), (string)($context['userAgent'] ?? '')]
 		);
 	}

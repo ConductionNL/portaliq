@@ -3,7 +3,7 @@
 // Copyright (C) 2026 Conduction B.V.
 //
 // branch-choice.spec.mjs: a whole-company eHerkenning session narrows to one
-// of the company's branches in the header, and back to the whole company
+// of the company's branches on Mijn zaken, and back to the whole company
 // (signin-eherkenning-branch T06, REQ-SEB-003).
 //
 // Usage:
@@ -206,10 +206,23 @@ test('a chosen branch reloads with the new bearer, and a refusal says so and kee
 	assert.match(refusedSource, /role="alert"[\s\S]*That branch could not be chosen\./)
 })
 
-test('the site header mounts the switcher for a signed-in session', () => {
+test('Mijn zaken mounts the switcher for a signed-in session, the header does not', () => {
+	const page = readFileSync(
+		join(ROOT, 'src', 'site', 'pages', 'e', 'MyCasesPage.vue'),
+		'utf8',
+	)
+	assert.match(page, /import\('\.\.\/\.\.\/components\/BranchSwitcher\.vue'\)/)
+	assert.match(page, /<BranchSwitcher v-if="session" :t="t" :api="api" :session="session" \/>/)
 	const app = readFileSync(join(ROOT, 'src', 'site', 'App.vue'), 'utf8')
-	assert.match(app, /import\('\.\/components\/BranchSwitcher\.vue'\)/)
-	assert.match(app, /<BranchSwitcher\s+v-if="session"\s+:t="t"\s+:api="api"\s+:session="session" \/>/)
+	assert.doesNotMatch(app, /BranchSwitcher/)
+})
+
+test('the choice reads "Namens vestiging" and "Hele bedrijf" in Dutch', () => {
+	const nl = JSON.parse(
+		readFileSync(join(ROOT, 'src', 'shared', 'i18n', 'nl.json'), 'utf8'),
+	)
+	assert.equal(nl['Acting for branch'], 'Namens vestiging')
+	assert.equal(nl['Whole company'], 'Hele bedrijf')
 })
 
 test('the new strings are translated for every locale the portal ships', () => {

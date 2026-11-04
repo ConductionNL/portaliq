@@ -1,6 +1,8 @@
 # Screens
 
-- PtInstellen https://identity.conduction.nl/screens/board?id=portaliq/PtInstellen
-- PtStore https://identity.conduction.nl/screens/board?id=portaliq/PtStore
-- No screen: repair steps run by themselves on install and upgrade (ops-repair-steps)
-- No screen: example data loads on install; the example pages show it (ops-demo-data)
+- portaliq/PtInstellen eerste keer instellen https://identity.conduction.nl/screens/board?id=portaliq/PtInstellen
+- portaliq/PtStore store https://identity.conduction.nl/screens/board?id=portaliq/PtStore
+- portaliq has no board of its own for row ops-repair-steps: repair steps run by themselves on install and upgrade
+- portaliq has no board of its own for row ops-demo-data: example data loads on install; the example pages show it
+
+Components: CnActionButtons, CnActionsMenu, CnAppNav, CnBuildiqEditButton, CnCardGrid, CnDetailCard, CnDetailGrid, CnDetailPage, CnKpiGrid, CnNextStepCard, CnObjectCard, CnSegmentedControl, CnSettingsPage, CnSetupWizard, CnStatsBlock, CnWizardDialog

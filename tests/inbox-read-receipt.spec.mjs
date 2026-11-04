@@ -34,7 +34,7 @@ function message (extra) {
 
 test('a message with a receipt request shows the notice, one without does not', async () => {
 	const asked = await render([message({ readReceiptRequested: true })])
-	assert.match(asked, /data-testid="inbox-row-receipt-notice"[^>]*>\s*The sender sees when you opened this message\./)
+	assert.match(asked, /data-testid="inbox-row-receipt-notice"[^>]*>\s*Read receipt requested/)
 
 	const plain = await render([message({}), message({ id: 'm2', readReceiptRequested: false })])
 	assert.doesNotMatch(plain, /inbox-row-receipt-notice/)
@@ -42,7 +42,7 @@ test('a message with a receipt request shows the notice, one without does not', 
 
 test('the notice is in Dutch for a Dutch page', async () => {
 	const html = await render([message({ readReceiptRequested: true })], 'nl')
-	assert.match(html, /De afzender ziet wanneer u dit bericht hebt geopend\./)
+	assert.match(html, /Leesbevestiging gevraagd/)
 })
 
 test('staff see the recipient, the read state and the read moment in the Portal Messages index', () => {
