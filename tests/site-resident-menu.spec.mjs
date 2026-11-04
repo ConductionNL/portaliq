@@ -103,16 +103,18 @@ test('the blue bar holds the website menus only, never the resident items', () =
 	assert.deepEqual(headerMenusOf(cms).map((menu) => menu.title), ['Hoofdmenu'])
 })
 
-test('the resident items go into groups: cases, one per app, messages, then details', () => {
+test('the resident items go into groups: the own area, cases and requests, one per app, then details', () => {
 	const groups = residentMenuGroups(navFor(nl, { messages: true, news: true }), { t: nl, unread: 0, hrefFor: href })
 	assert.deepEqual(names(groups), [
-		['Zaken en taken', ['Mijn zaken', 'Mijn taken', 'Toegang tot zaken']],
+		['Mijn omgeving', ['Berichten', 'Gesprekken', 'Nieuws']],
+		['Mijn zaken en verzoeken', ['Mijn zaken', 'Mijn taken', 'Toegang tot zaken']],
 		['Dossiq', ['Mijn zaken (Dossiq)', 'Berichten (Dossiq)', 'Mijn verzoeken']],
 		['Open Catalogi', ['Mijn dossiers']],
-		['Berichten en nieuws', ['Berichten', 'Gesprekken', 'Nieuws']],
-		['Uw gegevens en account', ['Mijn gegevens', 'Mijn account']],
+		['Uw gegevens', ['Mijn gegevens', 'Mijn account']],
 	])
-	const dossiers = groups[2].items[0]
+	const area = residentMenuGroups(navFor(nl), { t: nl, unread: 0, hrefFor: href, area: 'Mijn Zuiddrecht' })
+	assert.equal(area[0].title, 'Mijn Zuiddrecht', 'the first group carries the own area\'s name')
+	const dossiers = groups[3].items[0]
 	assert.equal(dossiers.link, '/mijn/opencatalogi/dossiers')
 	assert.equal(dossiers.href, href('/mijn/opencatalogi/dossiers'))
 })
@@ -149,7 +151,7 @@ test('Mijn Zuiddrecht lays out Samenwerken, and its example set switches plans a
 		layout.find((group) => group.title === 'Samenwerken')?.items,
 		['samenwerken', 'contacts'],
 	)
-	assert.ok(layout.find((group) => group.title === 'Zaken en taken').items.includes('access'))
+	assert.ok(layout.find((group) => group.title === 'Mijn zaken en verzoeken').items.includes('access'))
 	const set = JSON.parse(read('lib', 'Settings', 'example-sets', 'zuiddrecht.json'))
 	const change = set.changes.find((entry) => entry.schema === 'portal' && entry.set?.plansEnabled === true)
 	assert.ok(change, 'a change that switches plans on')
@@ -190,8 +192,8 @@ test('no two items read the same, in either language', () => {
 test('an app named only by its id groups under that id, and an empty group is left out', () => {
 	const nav = buildNav([{ app: 'pipelinq', pages: [{ id: 'vragen', label: 'Vragen' }] }], en, {})
 	assert.deepEqual(names(residentMenuGroups(nav, { t: en, unread: 0, hrefFor: href })), [
+		['My area', ['Inbox']],
 		['pipelinq', ['Vragen']],
-		['Messages and news', ['Inbox']],
 	])
 	assert.deepEqual(residentMenuGroups([], { t: en, unread: 0, hrefFor: href }), [])
 	assert.deepEqual(residentMenuGroups(null, { t: en, unread: 0, hrefFor: href }), [])
@@ -226,11 +228,11 @@ test('pages with the same group share one heading across apps, in the order they
 		{},
 	)
 	assert.deepEqual(names(residentMenuGroups(nav, { t: nl, unread: 0, hrefFor: href })), [
+		['Mijn omgeving', ['Berichten']],
 		['Mijn zaken en verzoeken', ['Mijn zaken', 'Mijn verzoeken']],
 		['Dossiq', ['Mijn uren']],
 		['Vragen en contact', ['Mijn vragen']],
 		['Open Catalogi', ['Mijn dossiers']],
-		['Berichten en nieuws', ['Berichten']],
 	])
 })
 
@@ -243,7 +245,7 @@ test('two items of one name in a shared group are told apart by their app', () =
 		nl,
 		{},
 	)
-	assert.deepEqual(names(residentMenuGroups(nav, { t: nl, unread: 0, hrefFor: href }))[0], [
+	assert.deepEqual(names(residentMenuGroups(nav, { t: nl, unread: 0, hrefFor: href }))[1], [
 		'Mijn zaken en verzoeken',
 		['Mijn zaken (Dossiq)', 'Mijn zaken (Pipelinq)'],
 	])

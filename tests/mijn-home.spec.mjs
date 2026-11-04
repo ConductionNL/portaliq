@@ -6,7 +6,7 @@
 // (site-mijn-omgeving-components wave 5: REQ-SMO-006, REQ-SMO-007,
 // REQ-SMO-008, REQ-SMO-020): `menu: false` leaves the menu and keeps its
 // route, `perRecord` lists a page once per record, the menu draws each
-// page's icon, `/mijn` opens the home with "Dit moet u nog doen", and a
+// page's icon, `/mijn` opens the home with "Wat u nog moet doen", and a
 // `records` page switches between records through its route.
 //
 // Usage:
@@ -245,9 +245,9 @@ test('/mijn is the home: a greeting, then what is still to do', async () => {
 	)
 	assert.match(html, /id="site-account-title"/)
 	assert.match(html, /Welkom, Sanne/)
-	assert.ok(html.indexOf('Dit moet u nog doen') > html.indexOf('Welkom, Sanne'))
+	assert.ok(html.indexOf('Wat u nog moet doen') > html.indexOf('Welkom, Sanne'))
 	assert.ok(
-		html.indexOf('Dit moet u nog doen') < html.indexOf('Nieuwe berichten'),
+		html.indexOf('Wat u nog moet doen') < html.indexOf('Nieuwe berichten'),
 		'open work before messages',
 	)
 	assert.match(html, /Beantwoord onze vraag over uw Woo-verzoek/)

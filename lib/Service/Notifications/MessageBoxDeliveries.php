@@ -4,7 +4,7 @@
  * Tells the inbox which messages also reached the resident's government
  * message box.
  *
- * A message gets `_deliveries: [{channel: messageBox, label}]` once its
+ * A message gets `_deliveries: [{channel: messageBox, label, at}]` once its
  * message box send was `delivered` or `read`. A pending, failed or simulated
  * send adds nothing: the resident sees only a real delivery
  * (inbox-berichtenbox-channel, REQ-MBC-004). The log is read only for an
@@ -76,12 +76,11 @@ class MessageBoxDeliveries {
 		}
 
 		$delivered = $this->delivered(subjectRef: (string)($subject['subjectRef'] ?? ''), organisation: $organisation);
-		$line = [['channel' => MessageBoxChannel::CHANNEL, 'label' => $offer['label']]];
 		foreach ($rows as $index => $row) {
 			$rows[$index]['_deliveries'] = [];
 			foreach ($this->keysOf(row: $row) as $key) {
 				if (isset($delivered[$key]) === true) {
-					$rows[$index]['_deliveries'] = $line;
+					$rows[$index]['_deliveries'] = [['channel' => MessageBoxChannel::CHANNEL, 'label' => $offer['label'], 'at' => $delivered[$key]]];
 					break;
 				}
 			}
@@ -92,12 +91,12 @@ class MessageBoxDeliveries {
 
 	/**
 	 * The messages whose message box send was delivered or read, as
-	 * `app|collection|id` keys.
+	 * `app|collection|id` keys, each with the moment it was.
 	 *
 	 * @param string $subjectRef   The resident.
 	 * @param string $organisation The organisation.
 	 *
-	 * @return array<string, true>
+	 * @return array<string, string>
 	 */
 	private function delivered(string $subjectRef, string $organisation): array {
 		if ($subjectRef === '') {
@@ -133,11 +132,30 @@ class MessageBoxDeliveries {
 				continue;
 			}
 
-			$delivered[(string)($link['app'] ?? '').'|'.(string)($link['collection'] ?? '').'|'.(string)($link['id'] ?? '')] = true;
+			$delivered[(string)($link['app'] ?? '').'|'.(string)($link['collection'] ?? '').'|'.(string)($link['id'] ?? '')] = $this->momentOf(row: $row);
 		}
 
 		return $delivered;
 	}//end delivered()
+
+	/**
+	 * When a send was delivered: the moment its log row last changed (the
+	 * status report), else its last attempt; '' when neither is known.
+	 *
+	 * @param array<string, mixed> $row The log row.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-the-resident-sees-only-a-real-delivery-req-mbc-004
+	 */
+	private function momentOf(array $row): string {
+		$self = ($row['@self'] ?? []);
+		if (is_array($self) === true && isset($self['updated']) === true) {
+			return (string)$self['updated'];
+		}
+
+		return (string)($row['lastAttemptAt'] ?? '');
+	}//end momentOf()
 
 	/**
 	 * The keys an inbox row answers to: its app and collection with each id it carries.

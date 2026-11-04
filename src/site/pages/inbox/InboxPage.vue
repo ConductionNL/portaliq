@@ -222,7 +222,7 @@
 						v-if="message.readReceiptRequested === true"
 						class="utrecht-paragraph pq-inbox-row__receipt"
 						data-testid="inbox-row-receipt-notice">
-						{{ tr('The sender sees when you opened this message.') }}
+						{{ tr('Read receipt requested') }}
 					</p>
 
 					<div class="pq-inbox-row__actions">
@@ -664,7 +664,7 @@ export default {
 		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
 		 */
 		delivery(message) {
-			return deliveryLine(message, this.tr)
+			return deliveryLine(message, { t: this.tr, locale: this.lang })
 		},
 
 		/**

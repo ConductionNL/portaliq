@@ -84,7 +84,7 @@ export default {
 		Closed: 'Afgerond',
 		'Welcome, {name}': 'Welkom, {name}',
 		Welcome: 'Welkom',
-		'What you still have to do': 'Dit moet u nog doen',
+		'What you still have to do': 'Wat u nog moet doen',
 		'Running cases': 'Lopende zaken',
 		'New messages': 'Nieuwe berichten',
 		'Choose for whom': 'Kies voor wie',
@@ -97,7 +97,7 @@ export default {
 		'What happened could not be loaded.':
 			'Wat er is gebeurd kon niet worden geladen.',
 		'There are no documents on this case yet.':
-			'Er staan nog geen documenten bij deze zaak.',
+			'Er staan nog geen stukken bij deze zaak.',
 		'Nothing has happened yet.': 'Er is nog niets gebeurd.',
 		'The document could not be opened. Try again.':
 			'Het document kon niet worden geopend. Probeer het opnieuw.',

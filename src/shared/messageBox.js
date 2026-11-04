@@ -10,22 +10,60 @@
 // @spec openspec/specs/portal-message-box-channel/spec.md#requirement-the-resident-sees-only-a-real-delivery-req-mbc-004
 
 /**
- * The line under a message that also reached the message box, or null.
+ * The line under a message that also reached the message box, or null:
+ * "Ook verstuurd naar {label}, op {date} om {time}." when the delivery says
+ * when, else without the moment.
  *
  * @param {object} message The inbox message.
- * @param {Function} t The translator.
+ * @param {{t: Function, locale: string}} words The translator and the reader's locale.
  * @return {string|null}
  */
-export function deliveryLine(message, t) {
+export function deliveryLine(message, words) {
+	const delivery = messageBoxDelivery(message)
+	if (!delivery) {
+		return null
+	}
+	const moment = deliveryMoment(delivery.at, words.locale)
+	const label = delivery.label
+	return moment
+		? words.t('Also sent to {label}, on {date} at {time}.', { label, ...moment })
+		: words.t('Also sent to {label}.', { label })
+}
+
+/**
+ * The message box delivery of a message, or null.
+ *
+ * @param {object} message The inbox message.
+ * @return {{label: string, at?: string}|null}
+ */
+function messageBoxDelivery(message) {
 	const deliveries = Array.isArray(message?._deliveries) ? message._deliveries : []
-	const delivery = deliveries.find(
-		(d) =>
-			d
-			&& d.channel === 'messageBox'
-			&& typeof d.label === 'string'
-			&& d.label !== '',
+	return (
+		deliveries.find(
+			(d) => d && d.channel === 'messageBox' && typeof d.label === 'string' && d.label !== '',
+		) || null
 	)
-	return delivery ? t('Also sent to {label}.', { label: delivery.label }) : null
+}
+
+/**
+ * When a delivery happened, as the line names it: "vrijdag 2 oktober" and
+ * "14:02", in Dutch time. Null without a readable moment.
+ *
+ * @param {string|undefined} at The moment, ISO 8601.
+ * @param {string} locale The reader's locale.
+ * @return {{date: string, time: string}|null}
+ */
+export function deliveryMoment(at, locale) {
+	const when = new Date(typeof at === 'string' ? at : '')
+	if (Number.isNaN(when.getTime())) {
+		return null
+	}
+	const lang = locale || 'nl'
+	const zone = { timeZone: 'Europe/Amsterdam' }
+	return {
+		date: when.toLocaleDateString(lang, { ...zone, weekday: 'long', day: 'numeric', month: 'long' }),
+		time: when.toLocaleTimeString(lang, { ...zone, hour: '2-digit', minute: '2-digit' }),
+	}
 }
 
 /**

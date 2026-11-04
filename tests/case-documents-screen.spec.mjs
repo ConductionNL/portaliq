@@ -132,7 +132,7 @@ test('site: the case screen renders the groups and both locales say it', () => {
 		Decision: 'Besluit',
 		'Sent by you': 'Door u gestuurd',
 		'There are no documents on this case yet.':
-			'Er staan nog geen documenten bij deze zaak.',
+			'Er staan nog geen stukken bij deze zaak.',
 		'The document could not be opened. Try again later.':
 			'Het document kon niet worden geopend. Probeer het later opnieuw.',
 	}

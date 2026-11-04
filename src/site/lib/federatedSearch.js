@@ -643,7 +643,7 @@ export function withoutLocked(fields, locked) {
 export const RELEVANCE_SORT = '_relevance:DESC'
 
 /**
- * The orderings the block offers. "Meest relevant" only with a term, and
+ * The orderings the block offers. "Beste match" only with a term, and
  * not once the backend showed it does not rank.
  *
  * @param {string} query The search term.
@@ -663,7 +663,7 @@ export function sortOptionsFor(query, relevanceUnavailable) {
 	if (String(query || '').trim() === '' || relevanceUnavailable === true) {
 		return options
 	}
-	return [{ value: RELEVANCE_SORT, label: 'Meest relevant' }, ...options]
+	return [{ value: RELEVANCE_SORT, label: 'Beste match' }, ...options]
 }
 
 /**
