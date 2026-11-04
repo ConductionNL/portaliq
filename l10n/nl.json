@@ -3369,7 +3369,17 @@
         "Activate an account": "Account activeren",
         "Confirmation of a question": "Bevestiging contactformulier",
         "Confirmation of a request": "Bevestiging van een aanvraag",
-        "A plan is nearly ending": "Plan verloopt"
+        "A plan is nearly ending": "Plan verloopt",
+        "Columns in My cases": "Kolommen in Mijn zaken",
+        "Per column you choose how the value is shown. A link can be a QR code, with its own text under it.": "Per kolom kiest u hoe de waarde wordt getoond. Een link kan als QR-code, met een eigen tekst eronder.",
+        "The case apps show no columns in My cases yet.": "De zaakapps tonen nog geen kolommen in Mijn zaken.",
+        "Text of the link": "Tekst van de link",
+        "What the resident sees": "Zo ziet de inwoner het",
+        "Save columns": "Kolommen opslaan",
+        "QR code": "QR-code",
+        "As the case app shows it": "Zoals de zaakapp het toont",
+        "The columns are saved.": "De kolommen zijn opgeslagen.",
+        "The columns could not be saved. Try again.": "De kolommen konden niet worden opgeslagen. Probeer het opnieuw."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

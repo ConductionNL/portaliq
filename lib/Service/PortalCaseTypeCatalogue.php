@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Service\CaseTypeColumns\CasesCollections;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 
 /**
@@ -199,21 +200,10 @@ class PortalCaseTypeCatalogue {
 	 */
 	private function declaredSources(): array {
 		$sources = [];
-		foreach ($this->registry->servedAudiences() as $audience) {
-			$aggregate = $this->registry->aggregateFor(
-				subject: ['audience' => $audience, 'trust' => 'high', 'subjectRef' => '', 'organisation' => '']
-			);
-			foreach ((array)($aggregate['contributions'] ?? []) as $contribution) {
-				if (is_array($contribution) === false) {
-					continue;
-				}
-
-				foreach ((array)($contribution['collections'] ?? []) as $collection) {
-					$source = $this->sourceOf(collection: $collection);
-					if ($source !== null) {
-						$sources[$source['register'] . '/' . $source['schema']] = $source;
-					}
-				}
+		foreach ((new CasesCollections(registry: $this->registry))->all() as $collection) {
+			$source = $this->sourceOf(collection: $collection);
+			if ($source !== null) {
+				$sources[$source['register'] . '/' . $source['schema']] = $source;
 			}
 		}
 

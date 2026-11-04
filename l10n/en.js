@@ -3198,7 +3198,17 @@ OC.L10N.register(
         "Activate an account": "Activate an account",
         "Confirmation of a question": "Confirmation of a question",
         "Confirmation of a request": "Confirmation of a request",
-        "A plan is nearly ending": "A plan is nearly ending"
+        "A plan is nearly ending": "A plan is nearly ending",
+        "Columns in My cases": "Columns in My cases",
+        "Per column you choose how the value is shown. A link can be a QR code, with its own text under it.": "Per column you choose how the value is shown. A link can be a QR code, with its own text under it.",
+        "The case apps show no columns in My cases yet.": "The case apps show no columns in My cases yet.",
+        "Text of the link": "Text of the link",
+        "What the resident sees": "What the resident sees",
+        "Save columns": "Save columns",
+        "QR code": "QR code",
+        "As the case app shows it": "As the case app shows it",
+        "The columns are saved.": "The columns are saved.",
+        "The columns could not be saved. Try again.": "The columns could not be saved. Try again."
     },
     "nplurals=2; plural=(n != 1);"
 )
