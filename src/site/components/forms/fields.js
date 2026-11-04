@@ -192,6 +192,8 @@ export const DUTCH = Object.freeze({
 	optional: '(niet verplicht)',
 	optionalNote: 'Een veld zonder "niet verplicht" moet u invullen.',
 	summaryHeading: 'Er ontbreekt nog iets',
+	oneError: 'Er is 1 fout',
+	manyErrors: 'Er zijn {count} fouten',
 	summaryIntro: 'Vul dit aan. Daarna kunt u verder.',
 	titlePrefix: 'Fout: ',
 	required: '{field} is verplicht.',
@@ -227,12 +229,31 @@ export const DUTCH = Object.freeze({
 	paymentFailed: 'De betaling is mislukt',
 	paymentUnknown: 'Wij kunnen de betaling nu nog niet tonen',
 	payUnavailable: 'U kunt nu niet betalen. Probeer het later opnieuw.',
-	signInFee:
-		'Log in om deze aanvraag in te dienen. Er hoort een bedrag van {amount} bij.',
+	signInFee: 'Voor deze aanvraag betaalt u {amount} leges.',
+	signInFirst: 'Log eerst in.',
 	receivedOn: 'Ontvangen op {date}.',
 	termStartsOn: 'De termijn begint op {date}.',
 	decisionBy: 'U krijgt uiterlijk {date} een besluit.',
 })
+
+/**
+ * The error summary's heading: a failed step counts its errors ("Er is 1
+ * fout", "Er zijn 3 fouten"), a failed send reads "Er ontbreekt nog iets".
+ *
+ * @param {{count: number, step: boolean}} failed How many errors, and whether a step failed rather than the send.
+ * @param {{summaryHeading: string, oneError: string, manyErrors: string}} text The form's words.
+ * @return {string} The heading.
+ * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-failed-submit-must-show-an-error-summary-that-takes-focus-req-smf-002
+ */
+export function summaryHeadingOf(failed, text) {
+	if (!failed.step) {
+		return text.summaryHeading
+	}
+	if (failed.count === 1) {
+		return text.oneError
+	}
+	return text.manyErrors.split('{count}').join(String(failed.count))
+}
 
 /**
  * The client-side errors of a form of plain field descriptions: a required
