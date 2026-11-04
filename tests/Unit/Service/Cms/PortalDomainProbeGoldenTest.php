@@ -43,6 +43,7 @@ namespace OCA\Portaliq\Service\Cms {
 		return \stream_context_create($options);
 	}//end stream_context_create()
 
+	// phpcs:disable Squiz.NamingConventions.ValidVariableName -- lib calls PHP's stream_socket_client by these parameter names.
 	/**
 	 * The connection as the world has it, checked for a silenced warning handler.
 	 *
@@ -55,8 +56,16 @@ namespace OCA\Portaliq\Service\Cms {
 	 *
 	 * @return mixed A socket stand-in, or false.
 	 */
-	function stream_socket_client(string $address, &$error_code = null, &$error_message = null, ?float $timeout = null, int $flags = STREAM_CLIENT_CONNECT, $context = null) {
+	function stream_socket_client(
+		string $address,
+		&$error_code = null,
+		&$error_message = null,
+		?float $timeout = null,
+		int $flags = STREAM_CLIENT_CONNECT,
+		$context = null,
+	) {
 		return ProbeNetwork::$active->connect(address: $address, timeout: $timeout, flags: $flags, code: $error_code, message: $error_message);
+		// phpcs:enable Squiz.NamingConventions.ValidVariableName
 	}//end stream_socket_client()
 
 	/**
@@ -181,7 +190,10 @@ namespace OCA\Portaliq\Tests\Unit\Service\Cms {
 		 * @return array<string, mixed> The options.
 		 */
 		public function params(): array {
-			$certificate = array_key_exists('certificate', $this->world) === true ? $this->world['certificate'] : 'certificate';
+			$certificate = 'certificate';
+			if (array_key_exists('certificate', $this->world) === true) {
+				$certificate = $this->world['certificate'];
+			}
 
 			return ['options' => ['ssl' => ['peer_certificate' => $certificate]]];
 		}//end params()
@@ -195,7 +207,11 @@ namespace OCA\Portaliq\Tests\Unit\Service\Cms {
 		 */
 		public function parse($certificate) {
 			$this->note(call: ['parse', $certificate]);
-			return array_key_exists('parsed', $this->world) === true ? $this->world['parsed'] : ['validTo_time_t' => '1893456000'];
+			if (array_key_exists('parsed', $this->world) === true) {
+				return $this->world['parsed'];
+			}
+
+			return ['validTo_time_t' => '1893456000'];
 		}//end parse()
 	}//end class
 
