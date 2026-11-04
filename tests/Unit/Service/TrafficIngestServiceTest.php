@@ -24,7 +24,9 @@ use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\Traffic\GeoResolverInterface;
 use OCA\Portaliq\Service\Traffic\ReferrerClassifier;
 use OCA\Portaliq\Service\Traffic\TrafficEventStore;
+use OCA\Portaliq\Service\Traffic\TrafficIngestPipeline;
 use OCA\Portaliq\Service\Traffic\TrafficMetrics;
+use OCA\Portaliq\Service\Traffic\TrafficRecordDerivers;
 use OCA\Portaliq\Service\Traffic\UserAgentClassifier;
 use OCA\Portaliq\Service\Traffic\VisitorHasher;
 use OCA\Portaliq\Service\TrafficConfigResolver;
@@ -122,15 +124,14 @@ class TrafficIngestServiceTest extends TestCase {
 		$appConfig = $this->config->mock($this);
 
 		return new TrafficIngestService(
-			$resolver,
-			new TrafficConfigResolver(),
-			$validator,
-			$store,
+			new TrafficIngestPipeline(portals: $resolver, config: new TrafficConfigResolver(), validator: $validator, store: $store),
+			new TrafficRecordDerivers(
+				hasher: new VisitorHasher(config: $appConfig, time: $clock),
+				agents: new UserAgentClassifier(),
+				referrers: new ReferrerClassifier(),
+				geo: $geo
+			),
 			new TrafficMetrics($appConfig),
-			new VisitorHasher($appConfig, $clock),
-			new UserAgentClassifier(),
-			new ReferrerClassifier(),
-			$geo,
 			$clock
 		);
 	}//end serviceWith()

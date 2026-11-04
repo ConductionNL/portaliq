@@ -35,10 +35,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\AuditTrailService;
-use OCA\Portaliq\Service\CmsReader;
-use OCA\Portaliq\Service\SettingsService;
-use OCA\Portaliq\Service\Traffic\TrafficMetrics;
+use OCA\Portaliq\Service\MetricsSources;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDisplayResponse;
@@ -98,16 +95,10 @@ class MetricsController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request object
-	 * @param SettingsService $settingsService For OpenRegister availability check
 	 * @param ContainerInterface $container Resolves OpenRegister's ObjectService for the
 	 *                                      count-only notification/fallback metrics.
 	 * @param LoggerInterface $logger The logger
-	 * @param AuditTrailService $auditor Count-only audit-entry totals by verb
-	 *                                   (portal-session-hardening-v2).
-	 * @param TrafficMetrics $traffic The collector's accepted and refused
-	 *                                counters (portal-traffic-analytics).
-	 * @param CmsReader|null $cms The public content reader, for its cache hit and
-	 *                            miss counts (portal-headless-content-api).
+	 * @param MetricsSources $sources The services the figures come from.
 	 *
 	 * @return void
 	 *
@@ -115,12 +106,9 @@ class MetricsController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private SettingsService $settingsService,
 		private ContainerInterface $container,
 		private LoggerInterface $logger,
-		private AuditTrailService $auditor,
-		private TrafficMetrics $traffic,
-		private ?CmsReader $cms=null,
+		private MetricsSources $sources,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -165,7 +153,7 @@ class MetricsController extends Controller {
 	 */
 	private function gaugeLines(): array {
 		$values = [
-			'health_status' => (int)$this->settingsService->isOpenRegisterAvailable(),
+			'health_status' => (int)$this->sources->settingsService->isOpenRegisterAvailable(),
 			'notifications_failed_total' => $this->countObjects(schema: 'portalNotification', filters: ['status' => 'failed']),
 			'accounts_needs_alt_contact' => $this->countObjects(schema: 'portalAccount', filters: ['needsAlternativeContact' => true]),
 		];
@@ -192,7 +180,7 @@ class MetricsController extends Controller {
 	 */
 	private function auditLines(): array {
 		$lines = $this->counterHead(name: 'audit_entries_total', help: 'Portal audit-trail entry count by verb');
-		foreach ($this->auditor->countsByVerb() as $verb => $count) {
+		foreach ($this->sources->auditor->countsByVerb() as $verb => $count) {
 			$lines[] = self::METRIC_PREFIX . '_audit_entries_total{verb="' . $verb . '"} ' . $count;
 		}
 
@@ -212,9 +200,9 @@ class MetricsController extends Controller {
 	 */
 	private function trafficLines(): array {
 		$lines   = $this->counterHead(name: 'traffic_accepted_total', help: 'Traffic events accepted by the collector.');
-		$lines[] = self::METRIC_PREFIX . '_traffic_accepted_total ' . $this->traffic->acceptedTotal();
+		$lines[] = self::METRIC_PREFIX . '_traffic_accepted_total ' . $this->sources->traffic->acceptedTotal();
 		$lines   = array_merge($lines, $this->counterHead(name: 'traffic_refused_total', help: 'Traffic events refused by the collector, by reason.'));
-		foreach ($this->traffic->refusedByReason() as $reason => $count) {
+		foreach ($this->sources->traffic->refusedByReason() as $reason => $count) {
 			$lines[] = self::METRIC_PREFIX . '_traffic_refused_total{reason="' . $reason . '"} ' . $count;
 		}
 
@@ -228,11 +216,11 @@ class MetricsController extends Controller {
 	 * @return array<int, string>
 	 */
 	private function cacheLines(): array {
-		if ($this->cms === null) {
+		if ($this->sources->cms === null) {
 			return [];
 		}
 
-		$cache   = $this->cms->cacheStats();
+		$cache   = $this->sources->cms->cacheStats();
 		$lines   = $this->counterHead(name: 'content_cache_total', help: 'Public content reads by cache outcome.');
 		$lines[] = self::METRIC_PREFIX . '_content_cache_total{outcome="hit"} ' . $cache['hits'];
 		$lines[] = self::METRIC_PREFIX . '_content_cache_total{outcome="miss"} ' . $cache['misses'];

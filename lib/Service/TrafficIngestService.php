@@ -22,12 +22,9 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use OCA\Portaliq\Service\Traffic\GeoResolverInterface;
-use OCA\Portaliq\Service\Traffic\ReferrerClassifier;
-use OCA\Portaliq\Service\Traffic\TrafficEventStore;
+use OCA\Portaliq\Service\Traffic\TrafficIngestPipeline;
 use OCA\Portaliq\Service\Traffic\TrafficMetrics;
-use OCA\Portaliq\Service\Traffic\UserAgentClassifier;
-use OCA\Portaliq\Service\Traffic\VisitorHasher;
+use OCA\Portaliq\Service\Traffic\TrafficRecordDerivers;
 use OCP\AppFramework\Utility\ITimeFactory;
 
 /**
@@ -70,29 +67,17 @@ class TrafficIngestService {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalResolver        $portals   Finds a portal by slug.
-	 * @param TrafficConfigResolver $config    Resolves a portal's measurement configuration.
-	 * @param TrafficEventValidator $validator Validates one event.
-	 * @param TrafficEventStore     $store     Writes the records.
-	 * @param TrafficMetrics        $metrics   Counts what happened.
-	 * @param VisitorHasher         $hasher    Derives the daily visitor hash.
-	 * @param UserAgentClassifier   $agents    Derives device, browser, os and the bot flag.
-	 * @param ReferrerClassifier    $referrers Derives host, channel, campaign and path.
-	 * @param GeoResolverInterface  $geo       Derives a region from the address, offline.
-	 * @param ITimeFactory          $time      The clock.
+	 * @param TrafficIngestPipeline $pipeline Finds the portal, resolves its configuration, validates and stores.
+	 * @param TrafficRecordDerivers $derivers Derive the visitor hash and the record's families.
+	 * @param TrafficMetrics        $metrics  Counts what happened.
+	 * @param ITimeFactory          $time     The clock.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly PortalResolver $portals,
-		private readonly TrafficConfigResolver $config,
-		private readonly TrafficEventValidator $validator,
-		private readonly TrafficEventStore $store,
+		private readonly TrafficIngestPipeline $pipeline,
+		private readonly TrafficRecordDerivers $derivers,
 		private readonly TrafficMetrics $metrics,
-		private readonly VisitorHasher $hasher,
-		private readonly UserAgentClassifier $agents,
-		private readonly ReferrerClassifier $referrers,
-		private readonly GeoResolverInterface $geo,
 		private readonly ITimeFactory $time,
 	) {
 	}
@@ -113,7 +98,7 @@ class TrafficIngestService {
 	 */
 	public function ingest(string $portalSlug, array $events, array $context = []): array {
 		$portal = null;
-		foreach ($this->portals->allPublishedPortals() as $candidate) {
+		foreach ($this->pipeline->portals->allPublishedPortals() as $candidate) {
 			if (($candidate['slug'] ?? null) === $portalSlug) {
 				$portal = $candidate;
 				break;
@@ -175,13 +160,13 @@ class TrafficIngestService {
 	 * @return IngestBatch|string
 	 */
 	private function openBatch(array $portal, array $context): array|string {
-		$config = $this->config->resolve(portal: $portal);
+		$config = $this->pipeline->config->resolve(portal: $portal);
 		if ($config['rollupOf'] !== []) {
 			return 'rollup-portal';
 		}
 
 		$serverSide = ($context['serverSide'] ?? false) === true;
-		$agent      = $this->agents->classify(userAgent: (string)($context['userAgent'] ?? ''));
+		$agent      = $this->derivers->agents->classify(userAgent: (string)($context['userAgent'] ?? ''));
 		if ($serverSide === false && $agent['bot'] === true) {
 			return 'bot';
 		}
@@ -218,11 +203,11 @@ class TrafficIngestService {
 			return 'malformed-event';
 		}
 
-		$result = $this->validator->validate(
+		$result = $this->pipeline->validator->validate(
 			event: $event,
 			config: $batch['config'],
 			hasConsent: $batch['hasConsent'],
-			resolver: $this->config,
+			resolver: $this->pipeline->config,
 			context: ['serverSide' => $batch['serverSide'], 'allowOld' => (($batch['context']['allowOld'] ?? false) === true)],
 			now: $batch['now']
 		);
@@ -246,7 +231,7 @@ class TrafficIngestService {
 	 * @return array{accepted: int, refused: array<string, int>}
 	 */
 	private function store(array $records, array $refused): array {
-		$accepted = $this->store->append(records: $records);
+		$accepted = $this->pipeline->store->append(records: $records);
 		if ($accepted < count($records)) {
 			$refused['storage-failed'] = ($refused['storage-failed'] ?? 0) + (count($records) - $accepted);
 		}
@@ -277,7 +262,7 @@ class TrafficIngestService {
 			return false;
 		}
 
-		$path = rtrim($this->referrers->path(location: (string)($event['pageLocation'] ?? '')), '/');
+		$path = rtrim($this->derivers->referrers->path(location: (string)($event['pageLocation'] ?? '')), '/');
 		if ($path === '') {
 			$path = '/';
 		}
@@ -310,7 +295,7 @@ class TrafficIngestService {
 			'portal' => $batch['slug'],
 			'receivedAt' => $now->format('Y-m-d\TH:i:s.v\Z'),
 			'visitorHash' => $this->visitorHash(event: $event, batch: $batch),
-			'pagePath' => $this->referrers->path(location: $location),
+			'pagePath' => $this->derivers->referrers->path(location: $location),
 			'consent' => $batch['hasConsent'],
 			'expires' => $now->modify('+' . (int)$batch['config']['retentionDays'] . ' days')->format('Y-m-d\TH:i:s\Z'),
 		] + $batch['derived'];
@@ -336,7 +321,7 @@ class TrafficIngestService {
 	 * @return array<string, string>
 	 */
 	private function campaignOf(array $event, array $batch): array {
-		$campaign = $this->referrers->campaign(location: (string)$event['pageLocation']);
+		$campaign = $this->derivers->referrers->campaign(location: (string)$event['pageLocation']);
 		if (($batch['context']['serverSide'] ?? false) === true) {
 			foreach (['campaign', 'source', 'medium', 'content', 'term'] as $key) {
 				if (($event[$key] ?? '') !== '') {
@@ -357,12 +342,12 @@ class TrafficIngestService {
 	 * @return array<string, string>
 	 */
 	private function perEventDimensions(array $event, array $campaign): array {
-		$referrerHost = $this->referrers->host(referrer: (string)($event['pageReferrer'] ?? ''));
-		$pageHost     = $this->referrers->host(referrer: (string)$event['pageLocation']);
+		$referrerHost = $this->derivers->referrers->host(referrer: (string)($event['pageReferrer'] ?? ''));
+		$pageHost     = $this->derivers->referrers->host(referrer: (string)$event['pageLocation']);
 
 		return [
 			'referrerHost' => $referrerHost,
-			'channel' => $this->referrers->channel(referrerHost: $referrerHost, pageHost: $pageHost, campaign: $campaign),
+			'channel' => $this->derivers->referrers->channel(referrerHost: $referrerHost, pageHost: $pageHost, campaign: $campaign),
 		] + $campaign;
 	}
 
@@ -408,7 +393,7 @@ class TrafficIngestService {
 
 		$granularity = (string)$config['regionGranularity'];
 		if ($granularity !== 'none' && in_array('region', $config['dimensions'], true) === true) {
-			$candidates['region'] = (string)($this->geo->resolve(address: (string)($batch['context']['ip'] ?? ''), granularity: $granularity) ?? '');
+			$candidates['region'] = (string)($this->derivers->geo->resolve(address: (string)($batch['context']['ip'] ?? ''), granularity: $granularity) ?? '');
 		}
 
 		$out = [];
@@ -433,10 +418,10 @@ class TrafficIngestService {
 	private function visitorHash(array $event, array $batch): string {
 		$context = $batch['context'];
 		if (($context['serverSide'] ?? false) === true) {
-			return $this->hasher->hash(portal: $batch['slug'], parts: ['contact', (string)($event['contactRef'] ?? '')]);
+			return $this->derivers->hasher->hash(portal: $batch['slug'], parts: ['contact', (string)($event['contactRef'] ?? '')]);
 		}
 
-		return $this->hasher->hash(
+		return $this->derivers->hasher->hash(
 			portal: $batch['slug'],
 			parts: [(string)($context['ip'] ?? ''), (string)($context['userAgent'] ?? '')]
 		);
