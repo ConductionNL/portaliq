@@ -205,3 +205,15 @@ lists them; a portal that did not enable the event reads "not measured".
 - **WHEN** a script on the built-in site throws while the portal enabled `js_error`
 - **THEN** a `js_error` beacon with the message and no stack is posted and stored
 - **AND** after aggregation the rollup lists the error and the Traffic page shows it
+
+### Requirement: An external site MUST be a portal of kind external
+
+An external site MUST be a portal of kind external.
+
+A site portaliq does not serve (a Docusaurus build, a municipal website) that reports its traffic here is a `portal` record with `kind: external`: it has domains and a traffic block, and no content. Everything else in the contract applies to it unchanged.
+
+#### Scenario: An external portal collects and is listed
+@e2e exclude Static: drawn on the boards PtPortals and PtVerkeer
+- **WHEN** a portal of kind external enables measurement
+- **THEN** the collector accepts events for it exactly as for a served site
+- **AND** the portals list shows it with the kind "Extern", and the Traffic page offers it in the Portal choice like any other portal

@@ -153,3 +153,20 @@ no `allow-scripts`.
 - **THEN** the stored chunk holds the text's length, the value's length and the image's box, and none of the three strings
 
 @e2e exclude covered by TrafficRecordingMaskTest and TrafficRecordingServiceTest; the e2e scenario above asserts the absence of the page heading in a real recording
+
+### Requirement: Sensitive measurement MUST be off by default and warned in the admin UI
+
+Sensitive measurement MUST be off by default and warned in the admin UI.
+
+Four switches change what a portal knows about a person rather than how much traffic it counts: `persistClientId`, `accountLinking`, `heatmaps` and `sessionRecording`. Each is off until an operator sets it to literally `true`, and each shows its warning where it is switched.
+
+#### Scenario: A switch is off unless literally true
+@e2e exclude Server: the resolved measurement configuration is unit-tested; nothing renders
+- **WHEN** a portal record carries `sensitive.persistClientId: "true"` or `1`
+- **THEN** the resolved configuration treats it as off
+
+#### Scenario: The warning is shown where the switch is
+@e2e exclude Static: drawn on the boards PtPortalInstellingen and PtVerkeer
+- **WHEN** an editor opens a portal's traffic settings
+- **THEN** each sensitive switch shows the consequence of turning it on, under "Gevoelige metingen"
+- **AND** the Traffic page of a portal with any of them on shows "Deze portal meet meer dan verkeer" above the figures, naming the switches that are on

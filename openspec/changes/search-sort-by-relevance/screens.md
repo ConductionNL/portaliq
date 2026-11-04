@@ -7,6 +7,7 @@
 - portaliq/ZoekenGeenTreffers Site: zoeken zonder treffers https://identity.conduction.nl/screens/board?id=portaliq/ZoekenGeenTreffers
 - wilgenboom/Zoeken Website: nieuws en documenten zoeken https://identity.conduction.nl/screens/board?id=wilgenboom/Zoeken
 - vaartveld/Zoeken Website: nieuws en documenten zoeken https://identity.conduction.nl/screens/board?id=vaartveld/Zoeken
-- opencatalogi/srch-sort: no opencatalogi screen; sorting search results is on portaliq's public search page
+- opencatalogi has no board of its own for row srch-sort: sorting search results is on portaliq's public search page
+- portaliq/PtPortalInstellingen portal, instellingen: "Hoe zoeken rangschikt", the fuzzy and exact rule and what comes after (REQ-SSR-006) https://identity.conduction.nl/screens/board?id=portaliq/PtPortalInstellingen
 
-Components: CnSiteEmptyState, CnSiteSearch
+Components: CnActionButtons, CnActionsMenu, CnAppNav, CnAuditTrailCard, CnBreadcrumbs, CnBuildiqEditButton, CnDataTable, CnDetailCard, CnDetailGrid, CnDetailPage, CnNoteCard, CnRowActions, CnSettingsPage, CnSettingsSection, CnSiteEmptyState, CnSiteSearch, CnStatusBadge, CnTabs

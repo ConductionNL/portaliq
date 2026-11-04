@@ -17,5 +17,6 @@
 - portaliq/FormulierFouten the error summary with focus and an action field's own words (REQ-SMF-002, REQ-SMF-006) https://identity.conduction.nl/screens/board?id=portaliq/FormulierFouten
 - portaliq/FormulierVerwerken an action's own confirmation: "Uw zaaknummer is 2026-0003." and nothing about a term (REQ-SMF-022) https://identity.conduction.nl/screens/board?id=portaliq/FormulierVerwerken
 - vaartveld/Detail Mijn Zuiddrecht: cijfers van een vak: "Kies een tijd" in a stepped action (REQ-SMF-024) https://identity.conduction.nl/screens/board?id=vaartveld/Detail
+- portaliq/MijnZaken mijn zaken: the draft reads "Nog niet ingediend" with "Formulier afmaken" (REQ-SMF-021) https://identity.conduction.nl/screens/board?id=portaliq/MijnZaken
 
 Components: CnActionsMenu, CnAppNav, CnBreadcrumbs, CnBuildiqEditButton, CnDataTable, CnFormBuilder, CnJsonViewer, CnPageHeader, CnSiteEmptyState, CnSiteSearch, CnStatusBadge
