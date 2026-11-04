@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Visitors are counted per day and placed in a region through an offline geography database the operator chose, with account linking only as a pseudonymous reference. This spec fixes the database providers and their refresh, honest visitor counts per measurement mode, the date range and the Visitors widget.
+Visitors are counted per day and placed in a region through an offline geography database the operator chose, with account linking only as a pseudonymous reference. This spec fixes how a visitor and a session are recognised without storing an IP address, the database providers and their refresh, honest visitor counts per measurement mode, the date range and the Visitors widget.
 
 ## Requirements
 
@@ -175,3 +175,107 @@ portal did not enable shows as not measured rather than as an empty list.
 
 - **WHEN** a rollup in the range carries `regions.GB`
 - **THEN** the Visitors widget lists GB with its count
+
+### Requirement: A session MUST be reconstructable into an ordered journey
+
+A session MUST be reconstructable into an ordered journey.
+
+Events carry a monotonically increasing sequence number within the session,
+so the path from page to page can be reconstructed without relying on arrival
+order or server clocks. A session id is carried when the client keeps one;
+otherwise the aggregation step derives the session from the visitor hash and
+the portal's inactivity window.
+
+#### Scenario: Two pages viewed in order
+@e2e exclude covered by TrafficSessioniserTest::testACookielessVisitorsEventsFormOneOrderedSession
+- **WHEN** a visitor views `/` and then `/begrippen` in one session
+- **THEN** the two events share a session (explicit id, or the same visitor hash within the window) and carry increasing sequence numbers
+- **AND** the entrance, the exit and the transition between them are derivable
+
+#### Scenario: Events arrive out of order
+@e2e exclude a delayed beacon cannot be staged reliably in a browser; covered by TrafficSessioniserTest::testAnExplicitSessionIsOrderedBySequenceNotByReceipt
+- **WHEN** a `page_view` beacon is delayed and arrives after the next one
+- **THEN** the reconstructed order follows the sequence number, not the receipt time
+
+A journey rebuilt from receipt timestamps is wrong exactly when it matters,
+on slow connections, which are the ones worth knowing about.
+
+### Requirement: A session MUST end by inactivity, and the timeout MUST be configured
+
+A session MUST end by inactivity, and the timeout MUST be configured.
+
+A session ends after a configured period of inactivity (default 30 minutes, the
+GA4 convention) and a new one begins on the next event.
+
+#### Scenario: A visitor returns after the timeout
+@e2e exclude waiting out a 30 minute window does not fit an e2e run; covered by TrafficSessioniserTest::testAReturnAfterTheTimeoutStartsANewSession
+- **WHEN** a visitor's next event arrives after the inactivity window
+- **THEN** it starts a new session with a new session id
+- **AND** the previous session is closed at its last event, not at the new one
+
+### Requirement: Measurement MUST be cookieless unless the portal persists a client id
+
+Measurement MUST be cookieless unless the portal persists a client id.
+
+By default the client writes NOTHING to the visitor's browser: no cookie, no
+local storage, no session storage. The server identifies a visitor for one day
+only, by a hash of a daily salt, the portal, the address and the user agent.
+The salt rotates every UTC day and is not kept beyond it, so the hash cannot
+be reversed and does not survive the day. A client id and a session id in the
+envelope are OPTIONAL.
+
+A portal MAY switch on `sensitive.persistClientId`. Only then does the client
+generate and store a first-party id scoped to the portal, and only after the
+visitor's consent when the portal requires consent. The id MUST NOT be derived
+from an IP address, a Nextcloud session, or any identifier that exists outside
+the portal. The collector drops a posted client id for a portal that did not
+switch persistence on.
+
+#### Scenario: The default mode stores nothing in the browser
+@e2e exclude covered by tests/e2e/traffic-analytics.spec.ts, still tagged `portal-traffic-analytics::the-default-mode-stores-nothing-in-the-browser`
+- **WHEN** a portal measures traffic with the default configuration
+- **THEN** the served client sends page views and stores no cookie, no local storage key and no session storage key
+- **AND** the stored event carries a visitor hash and no client id
+
+#### Scenario: A stale client sends an id the portal does not persist
+@e2e exclude covered by TrafficEventValidatorTest::testAClientIdIsDroppedUnlessThePortalPersistsIds
+- **WHEN** an event carries a `clientId` for a portal whose `persistClientId` is off
+- **THEN** the event is stored without it
+
+#### Scenario: The same browser visits two portals
+@e2e exclude two portal domains need a second host the rig does not serve; the client keeps its id in localStorage, which a browser scopes to the origin
+- **WHEN** one browser visits two portals on different domains, both persisting ids
+- **THEN** it carries two unrelated client ids
+- **AND** neither portal can tell the visits belong to one browser
+
+### Requirement: Derived dimensions MUST be computed on the server and never accepted from the client
+
+Derived dimensions MUST be computed on the server and never accepted from the client.
+
+Device type, browser, operating system, language, region, referrer host,
+channel and the campaign fields are derived from the request and the page
+location. The address and the user agent are discarded in the same request.
+A client that posts one of these fields directly has it ignored.
+
+#### Scenario: A client posts a region
+@e2e exclude covered by TrafficEventValidatorTest::testADerivedDimensionFromTheClientIsIgnored
+- **WHEN** an event carries `region` from the client
+- **THEN** the stored record's region is the one derived on the server, or empty
+
+### Requirement: An IP address MUST NOT be stored
+
+An IP address MUST NOT be stored.
+
+The request IP MAY be used within the request to derive a coarse region and to
+rate-limit. It MUST NOT be written to any event record, log line or aggregate.
+
+#### Scenario: An event is stored
+@e2e exclude stored fields are not visible in a browser; covered by TrafficIngestServiceTest::testAPageViewIsStoredWithoutTheAddressOrTheAgent
+- **WHEN** an event is accepted
+- **THEN** the stored record contains no IP address and no raw user agent in any field
+- **AND** the derived region is no finer than the level the portal configured
+
+#### Scenario: A bot is not a visitor
+@e2e exclude covered by tests/e2e/traffic-analytics.spec.ts, still tagged `portal-traffic-analytics::a-bot-is-not-a-visitor`
+- **WHEN** the user agent identifies a crawler
+- **THEN** the event is refused with the reason `bot`, and counted
