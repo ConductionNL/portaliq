@@ -86,15 +86,16 @@ The resident menu MUST render each page's declared `icon` before its label, deco
 - WHEN they open `/mijn`
 - THEN the page shows the greeting and an empty state that says there is nothing to do
 
-### Requirement: The resident MUST see and choose for whom they act (REQ-SMO-008)
+### Requirement: The resident MUST see and switch for whom they act (REQ-SMO-008)
 
-A resident who holds a mandate MUST choose on "Mijn zaken" whose cases they see, through the selector "Zaken van" that board `portaliq/MijnZaken` draws. Its options MUST be "Iedereen voor wie ik werk", the resident themselves ("Mijzelf" with their name) and each party they act for, named by its label. Choosing a party MUST show only that party's cases. The selector MUST sit above the link "Toegang tot zaken regelen". A page with `records` MUST show a switcher over the collection's rows as a radio group, with initials, a title and a subtitle. The chosen row MUST be part of the route. Switching MUST move focus to the page heading.
+While a resident acts for someone else, "Mijn overzicht" and "Mijn zaken" MUST show one bar: "U regelt nu zaken voor {party}", with the selector "Wissel naar" inside it (board `huisstijl/NamensBalk`). There is no second selector. The options MUST be the resident themselves ("Uzelf" with their name), each party they act for, named by its label, and "Iedereen voor wie u zaken regelt". The current party MUST be selected. Choosing a party MUST show only that party's cases. The bar MUST hold the link "Toegang tot zaken regelen". A page with `records` MUST show a switcher over the collection's rows as a radio group, with initials, a title and a subtitle. The chosen row MUST be part of the route. Switching MUST move focus to the page heading.
 
-#### Scenario: Linda chooses her father's cases, `portaliq/MijnZaken`
-- GIVEN Linda Bakker holds an active mandate for H. Bakker
-- WHEN she opens "Mijn zaken"
-- THEN the selector "Zaken van" offers "Iedereen voor wie ik werk", "Mijzelf, Linda Bakker" and "H. Bakker"
-- AND choosing "H. Bakker" shows only his cases
+#### Scenario: Linda acts for her father, `huisstijl/NamensBalk`
+- GIVEN Linda Bakker holds an active mandate for H. Bakker and has chosen it
+- WHEN she opens "Mijn overzicht" or "Mijn zaken"
+- THEN the bar reads "U regelt nu zaken voor uw vader, H. Bakker"
+- AND "Wissel naar" offers "Uzelf, Linda Bakker", "Uw vader, H. Bakker" and "Iedereen voor wie u zaken regelt"
+- AND "Mijn zaken" shows only his cases
 
 #### Scenario: A guardian switches child, `Main.dc.html`
 - GIVEN the guardian overview declares `records: parentChildren` and the guardian has Vera and Sami

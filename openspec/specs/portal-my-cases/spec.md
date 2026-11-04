@@ -48,8 +48,8 @@ A case the person may read because of a mandate SHALL show that mandate's label.
 
 ### Requirement: You choose whom you act for (REQ-CMC-004)
 
-When the person holds one or more mandates, the portal header SHALL offer
-"Acting for" with themself and each mandate. The choice SHALL apply to the case
+When the person holds one or more mandates, the acting-for bar (REQ-SMO-008)
+SHALL offer themself and each mandate under "Wissel naar". The choice SHALL apply to the case
 list and to every case screen for the rest of the session. Acting for themself
 SHALL list only their own cases. A case opened under a mandate SHALL be shown
 read-only, naming the mandate, and no write SHALL be accepted under it. A
@@ -58,7 +58,7 @@ message, never shown as a partial list.
 
 #### Scenario: Switching to a mandate
 - **GIVEN** a resident who holds a mandate for their father
-- **WHEN** they choose their father's mandate under "Acting for"
+- **WHEN** they choose their father's mandate under "Wissel naar"
 - **THEN** "My cases" lists the father's cases with the mandate's label, and opening one shows it under that mandate
 
 #### Scenario: A mandated case is read, not changed
@@ -130,17 +130,17 @@ For a `cases` collection that declares `caseTypeSource`, the case list MUST stam
 - THEN the case shows no type
 
 ### Requirement: Mijn zaken lets a representative choose whose cases it lists (REQ-MZC-001)
-Mijn zaken MUST offer "Zaken van" to a resident who holds a mandate, with the options everyone they act for, themself by name, and each party a mandate names. Choosing a party MUST list that party's cases and act for it for the rest of the session. Choosing everyone MUST list the resident's own cases and every mandate's, each case once. A resident without a mandate MUST NOT see the choice.
+Mijn zaken MUST show the acting-for bar (REQ-SMO-008) to a resident who holds a mandate, with the options under "Wissel naar": themself by name, each party a mandate names, and everyone they act for. Choosing a party MUST list that party's cases and act for it for the rest of the session. Choosing everyone MUST list the resident's own cases and every mandate's, each case once. A resident without a mandate MUST NOT see the bar.
 
 #### Scenario: Linda chooses her father's cases
 @e2e exclude Node: tests/my-cases-parties.spec.mjs
 - GIVEN Linda holds a mandate from Henk de Vries
 - WHEN she opens Mijn zaken
-- THEN she sees "Zaken van" with "Iedereen voor wie ik werk", "Mijzelf, Linda de Vries" and "Henk de Vries"
+- THEN "Wissel naar" offers "Uzelf, Linda de Vries", "Henk de Vries" and "Iedereen voor wie u zaken regelt"
 - AND choosing "Henk de Vries" lists Henk's cases
 
 #### Scenario: Everyone lists every case once
 @e2e exclude Node: tests/my-cases-parties.spec.mjs
-- GIVEN Linda chooses "Iedereen voor wie ik werk"
+- GIVEN Linda chooses "Iedereen voor wie u zaken regelt"
 - WHEN the list is read
 - THEN her own cases and Henk's stand in one list, each case once
