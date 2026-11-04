@@ -397,15 +397,16 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.103.0 (portalAction 0.3.0, portal: actionsEnabled): an action's `fileName`, `editedBy` and `editedAt`, and the portal's switch for Mijn acties (personal-action-list T02, T03, T05). Additive.
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalAction']['properties']['editedBy']['type']);
 		// 0.104.0 (portalSubmission 0.3.0): a submission's `actionTitle`, the name the Submissions list shows (board PtInzendingen). Additive.
-		$this->assertSame(expected: '0.104.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.104.0', actual: self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalSubmission']['properties']['actionTitle']['type']);
+		// 0.105.0 (portalPage 0.9.0): a rows block's `statusNoteAtField`, the moment its status was set, and a cta's `labelWhenEmpty` (guardian-pages-follow-the-wilgenboom-boards). Additive.
+		$this->assertSame(expected: '0.105.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.105.0', actual: self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame(expected: 'boolean', actual: self::$register['components']['schemas']['portal']['properties']['actionsEnabled']['type']);
 		$this->assertSame(expected: '0.2.0', actual: self::$register['components']['schemas']['media']['version']);
 		$this->assertSame(expected: 'integer', actual: self::$register['components']['schemas']['media']['properties']['usedOn']['type']);
 		$this->assertSame('0.4.0', self::$register['components']['schemas']['form']['version']);
 		$this->assertSame('object', self::$register['components']['schemas']['form']['properties']['destination']['type']);
-		$this->assertSame('0.8.0', self::$register['components']['schemas']['portalPage']['version']);
+		$this->assertSame('0.9.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame(200, self::$register['components']['schemas']['portalPage']['properties']['actions']['items']['properties']['summary']['maxLength']);
 		$this->assertSame('object', self::$register['components']['schemas']['portalPage']['properties']['actions']['items']['properties']['answerSummary']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimCodeHash']['type']);
@@ -474,7 +475,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalDraft']['authorization']['read']);
 		$this->assertContains('portalDraft', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.18.0', self::$register['components']['schemas']['portalAccount']['version']);
-		$this->assertSame('0.8.0', self::$register['components']['schemas']['portalPage']['version']);
+		$this->assertSame('0.9.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['messageThread']['version']);
 		$this->assertArrayHasKey('recordRef', self::$register['components']['schemas']['messageThread']['properties']);
 		$this->assertSame('0.4.0', self::$register['components']['schemas']['portalSession']['version']);

@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.104.0"
+        "version": "0.105.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.104.0",
+                "version": "0.105.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -1741,7 +1741,7 @@
                     ]
                 },
                 "icon": "WebBox",
-                "version": "0.8.0",
+                "version": "0.9.0",
                 "title": "Portal Page",
                 "description": "A data-provisioned portal contribution (ADR-046, portal-page-provisioning). Mirrors the IPortalContributionProvider manifest shape 1:1 so Portaliq's built-in provider can read this object and hand it to the same PortalManifestNormaliser every PHP provider's output passes through. Owned by the app that provisions the page; never publicly readable — the built-in provider is the only reader, server-side.",
                 "type": "object",
@@ -2438,6 +2438,11 @@
                                                 "type": "boolean",
                                                 "description": "On a call to action: open the page or form for the open record."
                                             },
+                                            "labelWhenEmpty": {
+                                                "title": "Label when a field is empty",
+                                                "type": "string",
+                                                "description": "On a call to action: the label shown when a field the label names is empty on the open record."
+                                            },
                                             "display": {
                                                 "title": "Display",
                                                 "type": "string",
@@ -2492,6 +2497,11 @@
                                                 "title": "statusNoteField",
                                                 "type": "string",
                                                 "description": "On rows: the line under the status pill."
+                                            },
+                                            "statusNoteAtField": {
+                                                "title": "statusNoteAtField",
+                                                "type": "string",
+                                                "description": "On rows: the moment the status was set, added to the line under the status pill (\"Meester Daan, 1 oktober 8:20 uur\")."
                                             },
                                             "noteField": {
                                                 "title": "noteField",

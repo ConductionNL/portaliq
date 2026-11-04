@@ -144,16 +144,19 @@ class ActionOptionsNormaliser {
 	/**
 	 * Validate a `collection` option provider. The dropdown is populated by the
 	 * frontend through the SUBJECT-SCOPED collection endpoint, so it can only
-	 * ever offer values the subject may already read.
+	 * ever offer values the subject may already read. An optional
+	 * `descriptionField` names the row field a choice card shows as its second
+	 * line ("Groep 7 · Meester Daan").
 	 *
 	 * @param array<string, mixed> $provider The provider config.
 	 *
 	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/site-forms/spec.md#requirement-a-choice-card-may-carry-a-second-line
 	 */
 	private function normaliseCollectionProvider(array $provider): ?array {
-		$keys = ['register', 'schema', 'labelField', 'valueField'];
 		$out = ['type' => 'collection'];
-		foreach ($keys as $key) {
+		foreach (['register', 'schema', 'labelField', 'valueField'] as $key) {
 			$value = ($provider[$key] ?? null);
 			if (is_string($value) === false || $value === '') {
 				return null;
@@ -162,6 +165,24 @@ class ActionOptionsNormaliser {
 			$out[$key] = $value;
 		}
 
-		return $out;
+		return $out + $this->descriptionFieldOf(provider: $provider);
 	}//end normaliseCollectionProvider()
+
+	/**
+	 * The provider's `descriptionField`, kept when it names a field.
+	 *
+	 * @param array<string, mixed> $provider The provider config.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/site-forms/spec.md#requirement-a-choice-card-may-carry-a-second-line
+	 */
+	private function descriptionFieldOf(array $provider): array {
+		$field = ($provider['descriptionField'] ?? null);
+		if (is_string($field) === false || $field === '') {
+			return [];
+		}
+
+		return ['descriptionField' => $field];
+	}//end descriptionFieldOf()
 }//end class

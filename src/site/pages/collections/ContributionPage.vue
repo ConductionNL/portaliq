@@ -551,7 +551,7 @@ import { dialogFor } from '../../../shared/signing.js'
 import { rowIdOf } from '../../components/collections/cells.js'
 import { blocks as mijnBlocks } from '../../components/mijn/index.js'
 import { mijnTranslator, siteHref } from '../../components/mijn/rows.js'
-import { ctaLabel, fillTemplate } from '../../components/mijn/template.js'
+import { fillTemplate, recordLabel } from '../../components/mijn/template.js'
 import { keepRecordToOpen, sessionStore as tabStore } from '../inbox/inbox.js'
 import {
 	createCollectionLoader,
@@ -825,6 +825,16 @@ export default {
 
 		recordName() {
 			return recordTitle(this.activeRecord, this.recordPage?.titleFields)
+		},
+
+		/**
+		 * The open record's title and row, for a cta label.
+		 *
+		 * @return {{title: string, record: object|null}}
+		 * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/portal-contribution-contract/spec.md#requirement-a-cta-label-may-name-any-field-of-the-open-record
+		 */
+		labelRecord() {
+			return { title: this.recordName, record: this.activeRecord }
 		},
 
 		recordHeadingId() {
@@ -1186,10 +1196,10 @@ export default {
 				block.withRecord === true && this.recordId
 					? { ...block, record: String(this.recordId) }
 					: block
-			if (!String(block.label || '').includes('{title}')) {
+			if (!/\{\w+\}/.test(String(block.label || ''))) {
 				return withRecord
 			}
-			return { ...withRecord, label: ctaLabel(block.label, this.recordName) }
+			return { ...withRecord, label: recordLabel(block, this.labelRecord) }
 		},
 
 		/**
@@ -1205,7 +1215,7 @@ export default {
 					const target = this.tileTarget(block)
 					return {
 						key: `${item.index}:${i}`,
-						label: ctaLabel(block.label, this.recordName),
+						label: recordLabel(block, this.labelRecord),
 						route: target.route,
 						carriesRecord: target.carriesRecord,
 						block,

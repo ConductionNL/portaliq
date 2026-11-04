@@ -51,6 +51,8 @@ export default {
 			'Uw berichten konden niet worden geladen.',
 		'Today at {time}': 'Vandaag om {time} uur',
 		'{date} at {time}': '{date} om {time} uur',
+		'today {time}': 'vandaag {time} uur',
+		'{date} {time}': '{date} {time} uur',
 		'Try again': 'Opnieuw proberen',
 		'Your tasks could not be loaded.': 'Uw taken konden niet worden geladen.',
 		'Your conversations could not be loaded.':
@@ -149,6 +151,8 @@ export default {
 		'Your messages could not be loaded.': 'Your messages could not be loaded.',
 		'Today at {time}': 'Today at {time}',
 		'{date} at {time}': '{date} at {time}',
+		'today {time}': 'today {time}',
+		'{date} {time}': '{date} {time}',
 		'Try again': 'Try again',
 		'Your tasks could not be loaded.': 'Your tasks could not be loaded.',
 		'Your conversations could not be loaded.':

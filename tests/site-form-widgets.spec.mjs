@@ -16,6 +16,7 @@
 
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { optionOf } from '../src/shared/portalApi.js'
 import { choiceSplit, namedDays } from '../src/site/components/forms/fields.js'
 import { mountSfc } from './support/mount-sfc.mjs'
 
@@ -69,24 +70,30 @@ function fakeApi() {
 	}
 }
 
-test('named days: today and the next working days, named as in the mockup', () => {
-	// Friday 2 October 2026, as in LearniqAbsence.dc.html.
+test('named days: a name over the date, as wilgenboom/MobielDetail draws them', () => {
+	// Friday 2 October 2026: the next working day is Monday, named by its weekday.
 	const friday = new Date(2026, 9, 2, 10, 0)
-	assert.deepEqual(namedDays(friday, 2, 'nl', 'Vandaag'), [
-		{ value: '2026-10-02', label: 'Vandaag, vrijdag 2 oktober' },
-		{ value: '2026-10-05', label: 'Maandag 5 oktober' },
+	assert.deepEqual(namedDays(friday, { count: 2, locale: 'nl' }), [
+		{ value: '2026-10-02', label: 'Vandaag', description: 'Vrijdag 2 oktober' },
+		{ value: '2026-10-05', label: 'Maandag 5 oktober', description: '' },
+	])
+	// Monday 5 October 2026, as on the board: "Vandaag", then "Morgen".
+	const monday = new Date(2026, 9, 5, 8, 0)
+	assert.deepEqual(namedDays(monday, { count: 2, locale: 'nl' }).map((d) => [d.label, d.description]), [
+		['Vandaag', 'Maandag 5 oktober'],
+		['Morgen', 'Dinsdag 6 oktober'],
 	])
 	assert.deepEqual(
-		namedDays(friday, 3, 'nl', 'Vandaag').map((d) => d.value),
+		namedDays(monday, { count: 2, locale: 'en', todayWord: 'Today', tomorrowWord: 'Tomorrow' }).map((d) => d.label),
+		['Today', 'Tomorrow'],
+	)
+	assert.deepEqual(
+		namedDays(friday, { count: 3 }).map((d) => d.value),
 		['2026-10-02', '2026-10-05', '2026-10-06'],
 		'the weekend is skipped',
 	)
-	assert.equal(
-		namedDays(friday, 9, 'nl', 'Vandaag').length,
-		2,
-		'out of range reads 2',
-	)
-	assert.equal(namedDays(friday, 1, 'nl', 'Vandaag').length, 1)
+	assert.equal(namedDays(friday, { count: 9 }).length, 2, 'out of range reads 2')
+	assert.equal(namedDays(friday, { count: 1 }).length, 1)
 })
 
 test('choice split: a subset in its own order, the rest behind the other card', () => {
@@ -159,6 +166,41 @@ test('three cards out of six kinds; the other card reveals a select with the res
 	assert.equal(cards.emitted['update:modelValue'].at(-1)[0], 'family')
 })
 
+test('a child card carries its group and teacher as a second line (wilgenboom/MobielDetail)', async () => {
+	const cards = await mountSfc(CARDS, {
+		id: 'learnerRef',
+		options: [
+			{ value: 'vera', label: 'Vera', description: 'Groep 7 · Meester Daan' },
+			{ value: 'sami', label: 'Sami', description: 'Groep 4 · Juf Esra' },
+			{ value: 'noor', label: 'Noor' },
+		],
+	})
+	assert.deepEqual(cardLabels(cards), ['Vera', 'Sami', 'Noor'])
+	assert.deepEqual(
+		cards
+			.findAll((n) => n.tag === 'span' && n.props.class === 'pq-choice-card__description')
+			.map((n) => cards.textOf(n)),
+		['Groep 7 · Meester Daan', 'Groep 4 · Juf Esra'],
+		'an option without a description draws no empty line',
+	)
+	await cards.fire(cards.find('learnerRef-choice-sami'), 'change')
+	assert.equal(cards.emitted['update:modelValue'].at(-1)[0], 'sami')
+})
+
+test('a collection option carries the row field its provider names as its description', () => {
+	const provider = { valueField: 'id', labelField: 'givenName', descriptionField: 'groupLabel' }
+	assert.deepEqual(optionOf({ id: 'vera', givenName: 'Vera', groupLabel: 'Groep 7 · Meester Daan' }, provider), {
+		value: 'vera',
+		label: 'Vera',
+		description: 'Groep 7 · Meester Daan',
+	})
+	assert.deepEqual(optionOf({ id: 'noor', givenName: 'Noor', groupLabel: '  ' }, provider), { value: 'noor', label: 'Noor' })
+	assert.deepEqual(optionOf({ id: 'sami', givenName: 'Sami', groupLabel: 'Groep 4' }, { valueField: 'id', labelField: 'givenName' }), {
+		value: 'sami',
+		label: 'Sami',
+	})
+})
+
 test('named days: a day sends its date, "Een andere dag" opens the date group', async () => {
 	const days = await mountSfc(DAYS, {
 		id: 'dateFrom',
@@ -167,10 +209,17 @@ test('named days: a day sends its date, "Een andere dag" opens the date group', 
 		locale: 'nl',
 	})
 	assert.deepEqual(cardLabels(days), [
-		'Vandaag, vrijdag 2 oktober',
+		'Vandaag',
 		'Maandag 5 oktober',
 		'Een andere dag',
 	])
+	assert.deepEqual(
+		days
+			.findAll((n) => n.tag === 'span' && n.props.class === 'pq-choice-card__description')
+			.map((n) => days.textOf(n)),
+		['Vrijdag 2 oktober'],
+		'today carries its date as a second line',
+	)
 	await days.fire(days.find('dateFrom-day-1'), 'change')
 	assert.equal(days.emitted['update:modelValue'].at(-1)[0], '2026-10-05')
 

@@ -102,3 +102,24 @@ export function ctaLabel(label, title) {
 	}
 	return text.replace(/\{title\}\s*/g, '').trim()
 }
+
+/**
+ * A cta label filled from the open record: `{title}` with its title, any
+ * other `{field}` with that field's value, as text ("Bericht aan {teacherName}"
+ * reads "Bericht aan Meester Daan"). When a named field is empty the block's
+ * `labelWhenEmpty` is shown instead, if it declares one.
+ *
+ * @param {{label?: string, labelWhenEmpty?: string}} block The cta block.
+ * @param {{title: string, record: object|null}} open The open record's title and row.
+ * @return {string}
+ * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/portal-contribution-contract/spec.md#requirement-a-cta-label-may-name-any-field-of-the-open-record
+ */
+export function recordLabel(block, open) {
+	const label = ctaLabel(block?.label, open.title)
+	const names = [...label.matchAll(PLACEHOLDER)].map((match) => match[1])
+	const empty = names.some((name) => words(open.record?.[name], 'nl') === '')
+	if (empty && block?.labelWhenEmpty) {
+		return block.labelWhenEmpty
+	}
+	return label.replace(PLACEHOLDER, (_, name) => words(open.record?.[name], 'nl')).replace(/\s+/g, ' ').trim()
+}

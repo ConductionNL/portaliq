@@ -122,6 +122,55 @@ export function rowActionFormData(answers, upload) {
 }
 
 /**
+ * One option of a `collection` options provider: the row's value and label,
+ * and its description when the provider names a `descriptionField`.
+ *
+ * @param {object} row The row.
+ * @param {object} provider The provider.
+ * @return {{value: unknown, label: unknown, description?: string}} The option.
+ * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/site-forms/spec.md#requirement-a-choice-card-may-carry-a-second-line
+ */
+export function optionOf(row, provider) {
+	const option = { value: optionValue(row, provider), label: optionLabel(row, provider) }
+	const description = descriptionOf(row, provider.descriptionField)
+	return description ? { ...option, description } : option
+}
+
+/**
+ * An option's value: the provider's value field, else the row's id.
+ *
+ * @param {object} row The row.
+ * @param {object} provider The provider.
+ * @return {unknown}
+ */
+function optionValue(row, provider) {
+	return row[provider.valueField] ?? row.id ?? row['@self']?.id
+}
+
+/**
+ * An option's label: the provider's label field, else a title, name or id.
+ *
+ * @param {object} row The row.
+ * @param {object} provider The provider.
+ * @return {unknown}
+ */
+function optionLabel(row, provider) {
+	return row[provider.labelField] ?? row.title ?? row.name ?? row.id
+}
+
+/**
+ * A row's description: the named field's text, trimmed, or ''.
+ *
+ * @param {object} row The row.
+ * @param {string|undefined} field The provider's `descriptionField`.
+ * @return {string}
+ */
+function descriptionOf(row, field) {
+	const value = field ? row[field] : ''
+	return typeof value === 'string' ? value.trim() : ''
+}
+
+/**
  * Build the adapter bound to a runtime config (`{ apiBase, audience, ... }`).
  * Returned methods read the current token on every call, so a login/logout is
  * picked up without re-creating the adapter.
@@ -1681,17 +1730,15 @@ export function createPortalApi(config, store = {}) {
 		 * through the subject-scoped endpoint, it can only ever offer values the
 		 * subject may already read.
 		 *
-		 * @param {object} provider optionsProvider: `{ register, schema, valueField, labelField }`.
-		 * @return {Promise<Array<object>>} `{ value, label }` pairs.
+		 * @param {object} provider optionsProvider: `{ register, schema, valueField, labelField, descriptionField? }`.
+		 * @return {Promise<Array<object>>} `{ value, label, description? }`; the description is a choice card's second line.
+		 * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/site-forms/spec.md#requirement-a-choice-card-may-carry-a-second-line
 		 */
 		async fetchOptions(provider) {
 			const body = await get(`${col(provider.register, provider.schema)}`)
 			const rows = body && Array.isArray(body.objects) ? body.objects : []
 			return rows
-				.map((r) => ({
-					value: r[provider.valueField] ?? r.id ?? r['@self']?.id,
-					label: r[provider.labelField] ?? r.title ?? r.name ?? r.id,
-				}))
+				.map((r) => optionOf(r, provider))
 				.filter((o) => o.value !== undefined && o.value !== null)
 		},
 

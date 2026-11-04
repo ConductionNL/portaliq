@@ -24,9 +24,12 @@
 				:aria-invalid="invalid ? 'true' : undefined"
 				:data-testid="`${id}-choice-${option.value}`"
 				@change="choose(option)" />
-			<span :id="`${id}-${index}-text`" class="pq-choice-card__label">{{
-				option.label
-			}}</span>
+			<span :id="`${id}-${index}-text`" class="pq-choice-card__text">
+				<span class="pq-choice-card__label">{{ option.label }}</span>
+				<span
+					v-if="option.description"
+					class="pq-choice-card__description">{{ option.description }}</span>
+			</span>
 		</label>
 		<label
 			v-if="hasOther"
@@ -101,7 +104,7 @@ export default {
 	props: {
 		/** The field's id: the radio group's name and the first radio's id. */
 		id: { type: String, required: true },
-		/** The field's options, `[{value, label}]`. */
+		/** The field's options, `[{value, label, description?}]`; a description is the card's second line. */
 		options: { type: Array, default: () => [] },
 		/** The value. */
 		modelValue: { type: String, default: '' },
@@ -251,5 +254,16 @@ export default {
 	gap: var(--utrecht-space-block-3xs, 0.25rem);
 	margin-block-start: var(--utrecht-space-block-xs, 0.5rem);
 	max-inline-size: 32rem;
+}
+
+.pq-choice-card__text {
+	display: flex;
+	flex-direction: column;
+	gap: var(--utrecht-space-block-3xs, 0.125rem);
+}
+
+.pq-choice-card__description {
+	color: var(--utrecht-form-field-description-color, inherit);
+	font-size: var(--utrecht-form-field-description-font-size, 0.875em);
 }
 </style>

@@ -45,14 +45,14 @@
 					</p>
 				</div>
 				<div
-					v-if="entry.status || entry.statusNote"
+					v-if="entry.status || noteOf(entry)"
 					class="pq-date-rows__status">
 					<DataBadge
 						v-if="entry.status"
 						:text="entry.status"
 						:state="entry.tone" />
-					<p v-if="entry.statusNote" class="pq-date-rows__note">
-						{{ entry.statusNote }}
+					<p v-if="noteOf(entry)" class="pq-date-rows__note">
+						{{ noteOf(entry) }}
 					</p>
 				</div>
 			</li>
@@ -66,7 +66,7 @@ import DateTile from './DateTile.vue'
 import EmptyState from './EmptyState.vue'
 import Skeleton from './Skeleton.vue'
 import { dateRows } from './displays.js'
-import { mijnTranslator } from './rows.js'
+import { decidedInWords, mijnTranslator } from './rows.js'
 
 let counter = 0
 
@@ -95,6 +95,8 @@ export default {
 		t: { type: Function, default: null },
 		/** The page language. */
 		locale: { type: String, default: 'nl' },
+		/** Today; a test pins it. */
+		now: { type: Date, default: () => new Date() },
 	},
 
 	data() {
@@ -117,6 +119,22 @@ export default {
 		 */
 		entries() {
 			return dateRows(this.rows, this.block, this.collection)
+		},
+	},
+
+	methods: {
+		/**
+		 * The line under a row's status: who set it and when.
+		 *
+		 * @param {object} entry The row as drawn.
+		 * @return {string} The line, or ''.
+		 * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/portal-contribution-contract/spec.md#requirement-a-dated-row-may-say-when-its-status-was-set
+		 */
+		noteOf(entry) {
+			return decidedInWords(
+				{ who: entry.statusNote, at: entry.statusNoteAt },
+				{ today: this.now, tr: this.tr, locale: this.locale },
+			)
 		},
 	},
 }

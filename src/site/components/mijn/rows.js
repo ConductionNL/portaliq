@@ -309,6 +309,43 @@ export function receivedInWords(value, today, tr, locale = 'nl') {
 }
 
 /**
+ * Who settled a row and when, as wilgenboom/MijnLijst reads it under a
+ * status: "Meester Daan, 1 oktober 8:20 uur", "Juf Esra, vandaag 8:12 uur".
+ * Without a moment it is the name alone; without a name the moment alone.
+ *
+ * @param {{who: string, at: string}} note The name and the ISO moment.
+ * @param {{today: Date, tr: (key: string, vars?: object) => string, locale?: string}} context Today, the translator and the page language.
+ * @return {string}
+ * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/portal-contribution-contract/spec.md#requirement-a-dated-row-may-say-when-its-status-was-set
+ */
+export function decidedInWords(note, context) {
+	const moment = momentInWords(note.at, context)
+	if (!moment) {
+		return note.who
+	}
+	return note.who ? `${note.who}, ${moment}` : moment.charAt(0).toUpperCase() + moment.slice(1)
+}
+
+/**
+ * A moment in words, lower case: "vandaag 8:12 uur", "1 oktober 8:20 uur".
+ *
+ * @param {string} value An ISO date-time.
+ * @param {{today: Date, tr: (key: string, vars?: object) => string, locale?: string}} context Today, the translator and the page language.
+ * @return {string} The words, or '' for no moment.
+ */
+function momentInWords(value, { today, tr, locale }) {
+	const day = localDay(value)
+	if (!day) {
+		return ''
+	}
+	const time = new Date(value).toLocaleTimeString(pageLanguage(locale) === 'en' ? 'en-GB' : 'nl-NL', { hour: 'numeric', minute: '2-digit' })
+	const now = localDay(today || new Date())
+	return day.getTime() === now.getTime()
+		? tr('today {time}', { time })
+		: tr('{date} {time}', { date: dayInWords(day, now, locale), time })
+}
+
+/**
  * A real address for an in-site route, so a link opens in a new tab and works
  * without the bundle; the route itself outside a browser.
  *

@@ -19,7 +19,7 @@ import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { navKeyFor, opensAsRecordPage } from '../src/shared/openRecord.js'
 import { taskRows } from '../src/site/components/mijn/rows.js'
-import { ctaLabel, fillTemplate } from '../src/site/components/mijn/template.js'
+import { ctaLabel, fillTemplate, recordLabel } from '../src/site/components/mijn/template.js'
 import {
 	groupTiles,
 	resolveBlocks,
@@ -468,4 +468,17 @@ test('the shell learns the mandates where the session loads', () => {
 		app.indexOf('forgetAccount()'),
 	)
 	assert.match(load, /learnMandates\(await this\.api\.fetchMyCases\(\)/)
+})
+
+test('a cta label names any field of the open record, or falls back when it is empty (wilgenboom/Detail)', () => {
+	const vera = { title: 'Vera', record: { givenName: 'Vera', teacherName: 'Meester Daan' } }
+	assert.equal(recordLabel({ label: 'Bericht aan {teacherName}' }, vera), 'Bericht aan Meester Daan')
+	assert.equal(recordLabel({ label: '{title} ziek of afwezig melden' }, vera), 'Vera ziek of afwezig melden')
+	const noTeacher = { title: 'Sami', record: { givenName: 'Sami' } }
+	assert.equal(
+		recordLabel({ label: 'Bericht aan {teacherName}', labelWhenEmpty: 'Bericht sturen' }, noTeacher),
+		'Bericht sturen',
+	)
+	assert.equal(recordLabel({ label: 'Bericht aan {teacherName}' }, noTeacher), 'Bericht aan', 'without a fallback the field goes')
+	assert.equal(recordLabel({ label: 'Bericht aan {teacherName}' }, { title: '', record: null }), 'Bericht aan')
 })
