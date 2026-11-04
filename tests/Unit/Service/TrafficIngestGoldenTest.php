@@ -128,7 +128,12 @@ class TrafficIngestGoldenTest extends TestCase {
 		$appConfig->values['portaliq/' . VisitorHasher::SALT_PREFIX . gmdate('Ymd', 1788000000)] = str_repeat('5a', 32);
 
 		$service = new TrafficIngestService(
-			pipeline: new TrafficIngestPipeline(portals: $resolver, config: new TrafficConfigResolver(), validator: new TrafficEventValidator(), store: $store),
+			pipeline: new TrafficIngestPipeline(
+				portals: $resolver,
+				config: new TrafficConfigResolver(),
+				validator: new TrafficEventValidator(),
+				store: $store
+			),
 			derivers: new TrafficRecordDerivers(
 				hasher: new VisitorHasher(config: $appConfig->mock(test: $this), time: $clock),
 				agents: new UserAgentClassifier(),
@@ -269,7 +274,11 @@ class TrafficIngestGoldenTest extends TestCase {
 				'events'  => [['pageLocation' => 'https://zuid.example/woo?utm_medium=url-medium&utm_source=url-source'] + $mail],
 				'context' => ['serverSide' => true],
 			],
-			'server side not strictly'   => ['traffic' => $mailTraffic, 'events' => [$mail], 'context' => ['serverSide' => 'yes', 'userAgent' => self::BOT]],
+			'server side not strictly'   => [
+				'traffic' => $mailTraffic,
+				'events' => [$mail],
+				'context' => ['serverSide' => 'yes', 'userAgent' => self::BOT],
+			],
 			'mail event from browser'    => ['traffic' => $mailTraffic, 'events' => [$mail], 'context' => self::browser()],
 			'two visitors same batch'    => [
 				'traffic' => $wide,

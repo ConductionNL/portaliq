@@ -124,8 +124,13 @@ class TrafficIngestServiceTest extends TestCase {
 		$appConfig = $this->config->mock($this);
 
 		return new TrafficIngestService(
-			new TrafficIngestPipeline($resolver, new TrafficConfigResolver(), $validator, $store),
-			new TrafficRecordDerivers(new VisitorHasher($appConfig, $clock), new UserAgentClassifier(), new ReferrerClassifier(), $geo),
+			new TrafficIngestPipeline(portals: $resolver, config: new TrafficConfigResolver(), validator: $validator, store: $store),
+			new TrafficRecordDerivers(
+				hasher: new VisitorHasher(config: $appConfig, time: $clock),
+				agents: new UserAgentClassifier(),
+				referrers: new ReferrerClassifier(),
+				geo: $geo
+			),
 			new TrafficMetrics($appConfig),
 			$clock
 		);

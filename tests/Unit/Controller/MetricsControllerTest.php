@@ -74,7 +74,12 @@ class MetricsControllerTest extends TestCase {
 			$this->createMock(IRequest::class),
 			$container,
 			$this->createMock(LoggerInterface::class),
-			new MetricsSources($settingsService, ($auditor ?? $this->auditorReturning([])), ($traffic ?? $this->createMock(TrafficMetrics::class)), $cms)
+			new MetricsSources(
+				settingsService: $settingsService,
+				auditor: ($auditor ?? $this->auditorReturning(counts: [])),
+				traffic: ($traffic ?? $this->createMock(originalClassName: TrafficMetrics::class)),
+				cms: $cms
+			)
 		);
 	}//end controller()
 
@@ -128,7 +133,11 @@ class MetricsControllerTest extends TestCase {
 			$this->createMock(IRequest::class),
 			$container,
 			$this->createMock(LoggerInterface::class),
-			new MetricsSources($settings, $this->auditorReturning([]), $this->createMock(TrafficMetrics::class))
+			new MetricsSources(
+				settingsService: $settings,
+				auditor: $this->auditorReturning(counts: []),
+				traffic: $this->createMock(originalClassName: TrafficMetrics::class)
+			)
 		);
 
 		$body = $controller->index()->render();
@@ -167,7 +176,11 @@ class MetricsControllerTest extends TestCase {
 			$this->createMock(IRequest::class),
 			$container,
 			$this->createMock(LoggerInterface::class),
-			new MetricsSources($settingsService, $this->auditorReturning([]), $this->createMock(TrafficMetrics::class))
+			new MetricsSources(
+				settingsService: $settingsService,
+				auditor: $this->auditorReturning(counts: []),
+				traffic: $this->createMock(originalClassName: TrafficMetrics::class)
+			)
 		);
 
 		$response = $controller->index();
