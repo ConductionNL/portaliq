@@ -19,6 +19,7 @@ import {
 	conversationStrings,
 	conversationTranslator,
 	initialsOf,
+	readLine,
 	recordTabs,
 	threadCard,
 	threadsInTab,
@@ -92,6 +93,15 @@ test('the "to" field reads "Meester Daan, over Vera (Groep 7)" and follows the o
 	assert.deepEqual(all.map((o) => o.label), ['Meester Daan, over Vera (Groep 7)', 'Juf Esra, over Sami (Groep 4)'])
 	assert.equal(all[0].value, 'enr-vera|po-leerkracht-09')
 	assert.deepEqual(contactOptions(CONTACTS, tr, 'enr-sami').map((o) => o.staffRef), ['po-leerkracht-07'])
+})
+
+test('her own message says when the other side read it, and nothing while unread', () => {
+	const tr = conversationTranslator(t, 'nl')
+	assert.equal(
+		readLine({ readAt: '2026-10-05T10:12:00' }, { who: 'Juf Esra', locale: 'nl', tr }),
+		'Gelezen door Juf Esra op 5 oktober 2026, 10:12',
+	)
+	assert.equal(readLine({}, { who: 'Juf Esra', locale: 'nl', tr }), '')
 })
 
 test('every word exists in Dutch and English', () => {

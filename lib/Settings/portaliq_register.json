@@ -10879,7 +10879,7 @@
             "guardianMessage": {
                 "slug": "guardianMessage",
                 "icon": "Email",
-                "version": "0.2.0",
+                "version": "0.3.0",
                 "title": "Message",
                 "authorization": {
                     "read": [
@@ -10929,6 +10929,13 @@
                             "type": "string"
                         },
                         "example": []
+                    },
+                    "readAt": {
+                        "title": "Read at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "The moment a participant other than the sender first opened the message. Written once; the sender's reader shows it as \"Gelezen door ... op ...\".",
+                        "example": "2026-10-05T10:12:00+00:00"
                     },
                     "translations": {
                         "title": "Translations",
