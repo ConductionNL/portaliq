@@ -5,3 +5,5 @@
 - portaliq/Publicatie Website: publicatie https://identity.conduction.nl/screens/board?id=portaliq/Publicatie
 - portaliq/Zoeken Website: Woo-publicaties zoeken https://identity.conduction.nl/screens/board?id=portaliq/Zoeken
 - portaliq/ZoekenGeenTreffers Site: zoeken zonder treffers https://identity.conduction.nl/screens/board?id=portaliq/ZoekenGeenTreffers
+
+Components: CnSiteEmptyState, CnSiteSearch

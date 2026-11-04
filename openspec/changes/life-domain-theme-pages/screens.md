@@ -7,3 +7,5 @@
 - portaliq/MijnZakenTabel mijn zaken als tabel https://identity.conduction.nl/screens/board?id=portaliq/MijnZakenTabel
 - portaliq/ThemaOverzicht parkeren https://identity.conduction.nl/screens/board?id=portaliq/ThemaOverzicht
 - portaliq/ZaakAfgerond Uw zaak: parkeervergunning binnenstad, afgerond https://identity.conduction.nl/screens/board?id=portaliq/ZaakAfgerond
+
+Components: CnSiteSearch

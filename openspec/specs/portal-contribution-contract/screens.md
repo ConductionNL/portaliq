@@ -26,3 +26,6 @@ The contract between portaliq and the apps that contribute to it renders on thes
 - esdoornveen/Documenten documenten: the documents block https://identity.conduction.nl/screens/board?id=esdoornveen/Documenten
 - warmtepompacademie/MijnOverzicht overzicht: the card "Eerst dit" https://identity.conduction.nl/screens/board?id=warmtepompacademie/MijnOverzicht
 - warmtepompacademie/MijnLijst inschrijvingen: rows with a date tile, a status and a note https://identity.conduction.nl/screens/board?id=warmtepompacademie/MijnLijst
+- portaliq/Dossiers dossiers: "Stel een vraag" and "Start een Woo-verzoek" as contributed actions (REQ-WJE-004) https://identity.conduction.nl/screens/board?id=portaliq/Dossiers
+
+Components: CnActionsMenu, CnAppNav, CnBreadcrumbs, CnBuildiqEditButton, CnDataTable, CnJsonViewer, CnRowActions, CnSettingsPage, CnSettingsSection, CnStatusBadge

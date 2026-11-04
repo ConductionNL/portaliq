@@ -8,3 +8,5 @@
 - wilgenboom/Zoeken Website: nieuws en documenten zoeken https://identity.conduction.nl/screens/board?id=wilgenboom/Zoeken
 - vaartveld/Zoeken Website: nieuws en documenten zoeken https://identity.conduction.nl/screens/board?id=vaartveld/Zoeken
 - opencatalogi/srch-sort: no opencatalogi screen; sorting search results is on portaliq's public search page
+
+Components: CnSiteEmptyState, CnSiteSearch

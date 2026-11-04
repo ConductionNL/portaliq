@@ -86,7 +86,7 @@ and SHALL be dismissible for the rest of the session.
 #### Scenario: A first DigiD sign-in without an e-mail address
 - **GIVEN** a resident signing in for the first time, with no e-mail address on the account
 - **WHEN** the portal opens
-- **THEN** they see "Add an e-mail address so we can tell you when something changes." with a link to "My account"
+- **THEN** they see "Voeg een e-mailadres toe. Dan laten we u weten als er iets verandert." (board MijnOverzicht) with a link to "Mijn account"
 
 ### Requirement: You can remove your own account and keep your cases (REQ-IPP-006)
 

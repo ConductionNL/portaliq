@@ -9,3 +9,5 @@
 - portaliq/Zaak uw zaak https://identity.conduction.nl/screens/board?id=portaliq/Zaak
 - portaliq/ZoekenGeenTreffers Site: zoeken zonder treffers https://identity.conduction.nl/screens/board?id=portaliq/ZoekenGeenTreffers
 - vaartveld/Berichten berichten https://identity.conduction.nl/screens/board?id=vaartveld/Berichten
+
+Components: CnActionsMenu, CnAppNav, CnAuditTrailCard, CnBreadcrumbs, CnBuildiqEditButton, CnDataTable, CnDetailCard, CnDetailGrid, CnFilterBar, CnIndexPage, CnJsonViewer, CnNoteCard, CnPageHeader, CnPagination, CnQuickFilterBar, CnRowActions, CnSettingsPage, CnSettingsSection, CnSiteEmptyState, CnStatusBadge

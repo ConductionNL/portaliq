@@ -27,7 +27,7 @@ A case card MUST be one link whose name is the case title. It MUST show the case
 #### Scenario: A running Woo request
 - GIVEN a case "Woo-verzoek bomenkap Lindelaan", status "In behandeling", reference "2026-0003", step 2 of 4, answer by 30 October, the resident's turn
 - WHEN the card renders, as in `DossiqOverview.dc.html`
-- THEN it reads "In behandeling", "Zaak 2026-0003", "Stap 2 van 4", "Antwoord uiterlijk 30 oktober" and "U bent aan zet"
+- THEN it reads "In behandeling", "Zaak 2026-0003", "Stap 2 van 4", "Antwoord uiterlijk 30 oktober" and "Wacht op u"
 
 #### Scenario: A case without progress data
 - GIVEN a `cases` collection without `steps`, `dueField` or `turnField`
@@ -73,13 +73,13 @@ The resident menu MUST render each page's declared `icon` before its label, deco
 
 ### Requirement: Mijn MUST open on what the resident still has to do (REQ-SMO-007)
 
-`/mijn` MUST render a home instead of redirecting to the first menu entry. It MUST start with a greeting and, when anything is open, "Dit moet u nog doen", listing open portal tasks and the rows of every `tasks` block on a home page, by deadline. It MUST then render every page a contribution marks `home: true`. Without any home page it MUST show the running cases and the newest messages. It MUST NOT be blank: with nothing to show it MUST show an empty state.
+`/mijn` MUST render a home instead of redirecting to the first menu entry. It MUST start with a greeting and, when anything is open, "Wat u nog moet doen" (board MijnOverzicht), listing open portal tasks and the rows of every `tasks` block on a home page, by deadline. It MUST then render every page a contribution marks `home: true`. Without any home page it MUST show the running cases and the newest messages. It MUST NOT be blank: with nothing to show it MUST show an empty state.
 
 #### Scenario: Sanne's overview in `DossiqOverview.dc.html`
 - GIVEN dossiq marks `overzicht` as `home: true` with a `tasks` block on `vragenAanU`
 - AND one open question with deadline 12 October
 - WHEN Sanne opens `/mijn`
-- THEN the first section is "Dit moet u nog doen" with "Beantwoord onze vraag over uw Woo-verzoek" and "Voor 12 oktober"
+- THEN the first section is "Wat u nog moet doen" with "Beantwoord onze vraag over uw Woo-verzoek" and "Voor 12 oktober"
 
 #### Scenario: A portal with nothing to do
 - GIVEN a resident with no tasks, cases or messages
@@ -88,13 +88,14 @@ The resident menu MUST render each page's declared `icon` before its label, deco
 
 ### Requirement: The resident MUST see and switch for whom they act (REQ-SMO-008)
 
-While a resident acts for someone else, "Mijn overzicht" and "Mijn zaken" MUST show one bar: "U regelt nu zaken voor {party}", with the selector "Wissel naar" inside it (board `huisstijl/NamensBalk`). There is no second selector. The options MUST be the resident themselves ("Uzelf" with their name), each party they act for, named by its label, and "Iedereen voor wie u zaken regelt". The current party MUST be selected. Choosing a party MUST show only that party's cases. The bar MUST hold the link "Toegang tot zaken regelen". A page with `records` MUST show a switcher over the collection's rows as a radio group, with initials, a title and a subtitle. The chosen row MUST be part of the route. Switching MUST move focus to the page heading.
+While a resident acts for someone else, "Mijn overzicht" and "Mijn zaken" MUST show one bar: "U regelt nu zaken voor {party}", with the selector "Wissel naar" inside it (board `huisstijl/NamensBalk`). There is no second selector. The options MUST be the resident themselves ("Uzelf" with their name), each party they act for, named by its label, and "Iedereen voor wie u zaken regelt". The current party MUST be selected. Choosing a party MUST show only that party's cases. For the resident themselves the bar MUST read "U regelt nu uw eigen zaken.", and for everyone "U ziet nu de zaken van iedereen voor wie u zaken regelt." The bar MUST hold the link "Toegang tot zaken regelen". A page with `records` MUST show a switcher over the collection's rows as a radio group, with initials, a title and a subtitle. The chosen row MUST be part of the route. Switching MUST move focus to the page heading.
 
 #### Scenario: Linda acts for her father, `huisstijl/NamensBalk`
 - GIVEN Linda Bakker holds an active mandate for H. Bakker and has chosen it
 - WHEN she opens "Mijn overzicht" or "Mijn zaken"
 - THEN the bar reads "U regelt nu zaken voor uw vader, H. Bakker"
 - AND "Wissel naar" offers "Uzelf, Linda Bakker", "Uw vader, H. Bakker" and "Iedereen voor wie u zaken regelt"
+- AND after "Uzelf" the bar reads "U regelt nu uw eigen zaken.", after "Iedereen" it reads "U ziet nu de zaken van iedereen voor wie u zaken regelt."
 - AND "Mijn zaken" shows only his cases
 
 #### Scenario: A guardian switches child, `Main.dc.html`

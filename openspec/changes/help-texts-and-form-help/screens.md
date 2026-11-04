@@ -14,3 +14,5 @@
 - portaliq/PtStemgedrag Site: stemgedrag en nevenfuncties van een raadslid https://identity.conduction.nl/screens/board?id=portaliq/PtStemgedrag
 - portaliq/WooVerzoekControleren Woo-verzoek: controleren en versturen https://identity.conduction.nl/screens/board?id=portaliq/WooVerzoekControleren
 - portaliq/WooVerzoekGegevens Woo-verzoek: stap 2 van 3, uw gegevens https://identity.conduction.nl/screens/board?id=portaliq/WooVerzoekGegevens
+
+Components: CnActionsMenu, CnAppNav, CnBreadcrumbs, CnBuildiqEditButton, CnDataTable, CnFormBuilder, CnJsonViewer, CnPageHeader, CnSiteEmptyState, CnSiteSearch, CnStatusBadge

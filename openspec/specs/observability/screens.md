@@ -7,3 +7,5 @@
 - portaliq/PtInzendingen inzendingen https://identity.conduction.nl/screens/board?id=portaliq/PtInzendingen
 - portaliq has no board of its own for row ops-health-endpoint: an endpoint an external monitor calls; it has no page
 - portaliq has no board of its own for row ops-metrics-endpoint: a metrics endpoint an operator's Prometheus scrapes; it has no page
+
+Components: CnActionAuthMatrix, CnActionButtons, CnActionsBar, CnActionsMenu, CnAppNav, CnAuditTrailCard, CnBreadcrumbs, CnBuildiqEditButton, CnDataTable, CnDetailCard, CnDetailGrid, CnDetailPage, CnFilterBar, CnIndexPage, CnKpiGrid, CnNoteCard, CnPageHeader, CnPagination, CnQuickFilterBar, CnRowActions, CnSettingsPage, CnSettingsSection, CnStatsBlock, CnStatusBadge, CnTalkRoomCreate

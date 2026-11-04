@@ -17,3 +17,5 @@
 - portaliq/WooVerzoekGegevens Woo-verzoek: stap 2 van 3, uw gegevens https://identity.conduction.nl/screens/board?id=portaliq/WooVerzoekGegevens
 - portaliq/WooVerzoekVerstuurd Woo-verzoek: bevestiging https://identity.conduction.nl/screens/board?id=portaliq/WooVerzoekVerstuurd
 - portaliq/ZaakVolgen een zaak volgen https://identity.conduction.nl/screens/board?id=portaliq/ZaakVolgen
+
+Components: CnActionButtons, CnActionsBar, CnActionsMenu, CnAppNav, CnBreadcrumbs, CnBuildiqEditButton, CnDataTable, CnDetailCard, CnDetailGrid, CnDetailPage, CnFilterBar, CnFormDialog, CnIndexPage, CnJsonViewer, CnNoteCard, CnPagination, CnQuickFilterBar, CnRelatedCollections, CnRowActions, CnSettingsPage, CnSettingsSection, CnSiteEmptyState, CnStatusBadge, CnTabs, CnTalkRoomCreate

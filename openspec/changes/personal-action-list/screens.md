@@ -8,3 +8,5 @@
 - portaliq/Plan plan Schuldhulp op orde https://identity.conduction.nl/screens/board?id=portaliq/Plan
 - portaliq/Plannen samenwerken https://identity.conduction.nl/screens/board?id=portaliq/Plannen
 - portaliq/TaakAfronden Taak: stuur een kopie van uw ID-bewijs https://identity.conduction.nl/screens/board?id=portaliq/TaakAfronden
+
+Components: CnSiteSearch

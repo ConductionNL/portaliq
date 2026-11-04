@@ -2,3 +2,5 @@
 
 - portaliq/PtVerkeer verkeer https://identity.conduction.nl/screens/board?id=portaliq/PtVerkeer
 - portaliq/PtPortalInstellingen portal, instellingen https://identity.conduction.nl/screens/board?id=portaliq/PtPortalInstellingen
+
+Components: CnActionButtons, CnActionsMenu, CnAppNav, CnAuditTrailCard, CnBreadcrumbs, CnBuildiqEditButton, CnChartWidget, CnDataTable, CnDetailCard, CnDetailGrid, CnDetailPage, CnFormDialog, CnKpiGrid, CnPageHeader, CnRowActions, CnSettingsPage, CnSettingsSection, CnStatsBlock, CnStatusBadge, CnTabs

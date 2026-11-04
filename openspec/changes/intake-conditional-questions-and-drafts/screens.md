@@ -14,3 +14,5 @@
 - portaliq/WooVerzoekGegevens Woo-verzoek: stap 2 van 3, uw gegevens https://identity.conduction.nl/screens/board?id=portaliq/WooVerzoekGegevens
 - portaliq/FormulierStart Woo-verzoek indienen, voordat u begint https://identity.conduction.nl/screens/board?id=portaliq/FormulierStart
 - portaliq/PtFormulierInstellingen instellingen van een formulier https://identity.conduction.nl/screens/board?id=portaliq/PtFormulierInstellingen
+
+Components: CnActionButtons, CnActionsMenu, CnAppNav, CnBreadcrumbs, CnBuildiqEditButton, CnDataTable, CnDetailCard, CnDetailGrid, CnDetailPage, CnFormBuilder, CnJsonViewer, CnPageHeader, CnRelatedCollections, CnSettingsPage, CnSettingsSection, CnSiteEmptyState, CnSiteSearch, CnStatusBadge, CnTabs

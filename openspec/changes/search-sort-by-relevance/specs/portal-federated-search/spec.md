@@ -14,7 +14,7 @@ matrix row `srch-sort` and portaliq matrix row `sib-opencatalogi-srch-sort`.
 
 ### Requirement: A search with a term can be sorted by relevance (REQ-SSR-001)
 
-The public search block SHALL offer "Meest relevant" when the search has a
+The public search block SHALL offer "Beste match" (board Zoeken) when the search has a
 term, SHALL use it by default for a new search with a term, and SHALL request
 it as `_order[_relevance]=DESC` with `_fuzzy=true`. Without a term it SHALL
 NOT offer it.
@@ -22,13 +22,13 @@ NOT offer it.
 #### Scenario: A visitor gets the best matches first
 - **GIVEN** a site with publications "Parkeervergunning aanvragen" from last year and "Jaarverslag 2025" from last week
 - **WHEN** a visitor searches for "parkeervergunning"
-- **THEN** the sort control shows "Meest relevant" and "Parkeervergunning aanvragen" is the first result
+- **THEN** the sort control shows "Beste match" and "Parkeervergunning aanvragen" is the first result
 - e2e: `tests/e2e/search-sort-by-relevance.spec.ts`
 
 #### Scenario: No term, no relevance option
 - **GIVEN** a visitor on the search page without a term
 - **WHEN** they open the sort control
-- **THEN** "Meest relevant" is not among the options
+- **THEN** "Beste match" is not among the options
 - e2e: `tests/e2e/search-sort-by-relevance.spec.ts`
 
 ### Requirement: The block never shows a relevance order that was not applied (REQ-SSR-002)
@@ -40,7 +40,7 @@ the default order, and say "Sorting by relevance is not available here." once.
 #### Scenario: A backend without ranking
 - **GIVEN** an installation where OpenRegister has no trigram extension
 - **WHEN** a visitor searches for "parkeervergunning"
-- **THEN** the results come in the default order, "Meest relevant" is not offered, and the page says "Sorting by relevance is not available here."
+- **THEN** the results come in the default order, "Beste match" is not offered, and the page says "Sorting by relevance is not available here."
 - @e2e exclude Needs an instance without pg_trgm; pinned by a Vitest test on the block with a response lacking `@self.relevance`
 
 ### Requirement: The match score is available to assistive technology only (REQ-SSR-003)

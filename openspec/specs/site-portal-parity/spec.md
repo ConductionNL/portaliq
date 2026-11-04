@@ -85,7 +85,7 @@ region. At expiry the site SHALL sign the resident out and say why.
 #### Scenario: Signed out for inactivity
 - **GIVEN** a signed-in resident who does nothing past the idle window
 - **WHEN** the window ends
-- **THEN** the sign-in screen says "You were signed out because you were inactive." in the site's language
+- **THEN** the sign-in screen says "U bent uitgelogd omdat u een tijd niets deed." (board Inloggen) in the site's language
 - test: `tests/idle-session.spec.mjs`
 
 ### Requirement: Sign-out MUST end the session at the edge and at the broker (REQ-SRP-006)

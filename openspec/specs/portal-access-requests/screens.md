@@ -6,3 +6,5 @@
 - portaliq/PtToegangsverzoeken toegangsverzoeken https://identity.conduction.nl/screens/board?id=portaliq/PtToegangsverzoeken
 - portaliq/MijnZaken mijn zaken: the bar offers a granted party (REQ-IAR-003) https://identity.conduction.nl/screens/board?id=portaliq/MijnZaken
 - huisstijl/NamensBalk the acting-for bar that names a granted party (REQ-IAR-003) https://identity.conduction.nl/screens/board?id=huisstijl/NamensBalk
+
+Components: CnActionButtons, CnActionsBar, CnAppNav, CnBuildiqEditButton, CnDashboardGrid, CnDashboardPage, CnDataTable, CnDetailCard, CnDetailGrid, CnDetailPage, CnFilterBar, CnIndexPage, CnKpiGrid, CnNextStepCard, CnNoteCard, CnObjectListWidget, CnPagination, CnQuickFilterBar, CnStatsBlock, CnWidgetWrapper

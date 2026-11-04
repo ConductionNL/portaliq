@@ -9,3 +9,5 @@
 - portaliq/PtFormulierInstellingen instellingen van een formulier https://identity.conduction.nl/screens/board?id=portaliq/PtFormulierInstellingen
 - portaliq/PtFormulierYivi Woo-verzoek indienen, inloggen met Yivi https://identity.conduction.nl/screens/board?id=portaliq/PtFormulierYivi
 - portaliq/WooVerzoekVerstuurd Woo-verzoek: bevestiging https://identity.conduction.nl/screens/board?id=portaliq/WooVerzoekVerstuurd
+
+Components: CnActionButtons, CnActionsMenu, CnAppNav, CnBreadcrumbs, CnBuildiqEditButton, CnDetailCard, CnDetailGrid, CnDetailPage, CnRelatedCollections, CnSettingsPage, CnSettingsSection, CnSiteSearch, CnTabs

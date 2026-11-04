@@ -9,3 +9,5 @@
 - portaliq/PtInzendingen inzendingen https://identity.conduction.nl/screens/board?id=portaliq/PtInzendingen
 - portaliq/TaakAfronden Taak: stuur een kopie van uw ID-bewijs https://identity.conduction.nl/screens/board?id=portaliq/TaakAfronden
 - portaliq/Berichten berichten https://identity.conduction.nl/screens/board?id=portaliq/Berichten
+
+Components: CnActionAuthMatrix, CnActionButtons, CnActionsBar, CnActionsMenu, CnAppNav, CnAuditTrailCard, CnBreadcrumbs, CnBuildiqEditButton, CnDataTable, CnDetailCard, CnDetailGrid, CnDetailPage, CnFilterBar, CnIndexPage, CnKpiGrid, CnNoteCard, CnPageHeader, CnPagination, CnQuickFilterBar, CnRowActions, CnSettingsPage, CnSettingsSection, CnSiteSearch, CnStatsBlock, CnStatusBadge, CnTalkRoomCreate

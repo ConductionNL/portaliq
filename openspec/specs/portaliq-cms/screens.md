@@ -43,3 +43,5 @@
 - opencatalogi/pub-house-style: no opencatalogi screen; the reading room's house style is set in portaliq
 - portaliq has no board of its own for row site-content-cache: caching happens on the server; editors and visitors only notice faster pages
 - portaliq has no board of its own for row thm-theme-fail-closed: a portal whose theme does not resolve renders with the base look; there is no page for the fallback itself
+
+Components: CnActionButtons, CnActionsBar, CnActionsMenu, CnAppNav, CnAuditTrailCard, CnBreadcrumbs, CnBuildiqEditButton, CnDataTable, CnDetailCard, CnDetailGrid, CnDetailPage, CnFilterBar, CnFormDialog, CnIndexPage, CnKpiGrid, CnMassActionBar, CnNoteCard, CnPageHeader, CnPagination, CnPresenceAvatars, CnQuickFilterBar, CnRowActions, CnRowMarkList, CnSegmentedControl, CnSettingsPage, CnSettingsSection, CnSiteEmptyState, CnSiteGlossary, CnSiteSearch, CnStatsBlock, CnStatusBadge, CnTabs, CnToggleTableWidget

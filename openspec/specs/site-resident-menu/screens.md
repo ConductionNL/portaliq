@@ -10,3 +10,5 @@
 - warmtepompacademie/MijnMenu Onderdeel: menu Mijn academie https://identity.conduction.nl/screens/board?id=warmtepompacademie/MijnMenu
 - huisstijl/MijnMenu the menu of Mijn Zuiddrecht: groups from contributions and the doubled label "Mijn afspraken (Dossiq)" (REQ-SRM-002, REQ-SRM-005) https://identity.conduction.nl/screens/board?id=huisstijl/MijnMenu
 - huisstijl/Kop the account pill linking to Mijn Zuiddrecht, and sign-out (REQ-SRM-003) https://identity.conduction.nl/screens/board?id=huisstijl/Kop
+
+Components: CnSiteSearch

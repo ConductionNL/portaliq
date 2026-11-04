@@ -17,3 +17,5 @@
 - warmtepompacademie/Editor Redacteur: pagina bewerken https://identity.conduction.nl/screens/board?id=warmtepompacademie/Editor
 - esdoornveen/Detail mijn BPV: the hours figure "van 480 uur" on the overview https://identity.conduction.nl/screens/board?id=esdoornveen/Detail
 - wilgenboom/Activiteiten activities and events as school blocks https://identity.conduction.nl/screens/board?id=wilgenboom/Activiteiten
+
+Components: CnSiteCard, CnSiteCardGrid, CnSiteSearch

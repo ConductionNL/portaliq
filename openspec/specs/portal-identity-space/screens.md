@@ -6,3 +6,5 @@
 - portaliq/PtSessies sessies https://identity.conduction.nl/screens/board?id=portaliq/PtSessies
 - portaliq/AccountAanmaken account aanmaken https://identity.conduction.nl/screens/board?id=portaliq/AccountAanmaken
 - portaliq has no board of its own for row id-org-scope: every account is tied to one organisation on the server; there is nothing to choose or see
+
+Components: CnActionsBar, CnActionsMenu, CnAppNav, CnAuditTrailCard, CnBreadcrumbs, CnBuildiqEditButton, CnDataTable, CnDetailCard, CnDetailGrid, CnFilterBar, CnFormDialog, CnIndexPage, CnKpiGrid, CnMassActionBar, CnPageHeader, CnPagination, CnQuickFilterBar, CnRowActions, CnStatsBlock, CnStatusBadge
