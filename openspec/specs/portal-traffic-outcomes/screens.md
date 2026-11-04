@@ -1,4 +1,4 @@
 # Screens
 
-- PtVerkeer https://identity.conduction.nl/screens/board?id=portaliq/PtVerkeer
-- PtPortalInstellingen https://identity.conduction.nl/screens/board?id=portaliq/PtPortalInstellingen
+- portaliq/PtVerkeer verkeer https://identity.conduction.nl/screens/board?id=portaliq/PtVerkeer
+- portaliq/PtPortalInstellingen portal, instellingen https://identity.conduction.nl/screens/board?id=portaliq/PtPortalInstellingen

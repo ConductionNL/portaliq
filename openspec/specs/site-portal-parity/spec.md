@@ -504,7 +504,7 @@ selected, also when read under a mandate.
 
 ### Requirement: A resident MUST be able to act for someone else (REQ-SRP-041)
 
-The header SHALL offer "acting for" with the resident and each mandate held,
+The acting-for bar (REQ-SMO-008) SHALL offer the resident and each mandate held,
 kept for the session, applied to "My cases" and every case screen. A refusal
 SHALL NOT forget the mandates.
 
@@ -673,7 +673,7 @@ Every account page (my cases, access to cases, my details, my account, contacts,
 
 ### Requirement: A mandate is named by its party
 
-A mandate's `label` MUST be the name of the party it acts for, as the holder reads it, because the site says "U regelt nu zaken voor {label}". Seeded and demo mandates MUST carry such a name, not a sentence such as "Namens Henk Bakker".
+A mandate's `label` MUST be the name of the party it acts for, as the holder reads it, because the acting-for bar says "U regelt nu zaken voor {label}" and "Wissel naar" lists the party by its label (board `huisstijl/NamensBalk`). Seeded and demo mandates MUST carry such a name, not a sentence such as "Namens Henk Bakker".
 
 #### Scenario: Linda acts for her father
 - GIVEN Linda Bakker holds the example mandate for Henk Bakker

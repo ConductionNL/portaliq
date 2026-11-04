@@ -148,3 +148,6 @@ foreach (['ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent', 'D
 }
 
 unset($integriqStubEvent);
+
+// Nextcloud runtime doubles (OC, Doctrine DBAL constants) for a run without Nextcloud.
+require_once __DIR__ . '/Stubs/Nextcloud/runtime.php';

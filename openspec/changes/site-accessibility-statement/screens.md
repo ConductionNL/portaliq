@@ -1,3 +1,3 @@
 # Screens
 
-- Toegankelijkheid https://identity.conduction.nl/screens/board?id=portaliq/Toegankelijkheid
+- portaliq/Toegankelijkheid Site: toegankelijkheidsverklaring https://identity.conduction.nl/screens/board?id=portaliq/Toegankelijkheid

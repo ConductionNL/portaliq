@@ -111,16 +111,16 @@ class ExampleSiteCommandsTest extends TestCase {
 			[
 				'recorded' => true,
 				'available' => true,
-				'deleted' => ['newsItem' => 4, 'page' => 33, 'menu' => 3],
-				'gone' => ['newsItem' => 0, 'page' => 0, 'menu' => 0],
+				'deleted' => ['menu' => 3, 'page' => 33, 'newsItem' => 4, 'glossaryTerm' => 5, 'form' => 1],
+				'gone' => ['menu' => 0, 'page' => 0, 'newsItem' => 0, 'glossaryTerm' => 0, 'form' => 0],
 				'failed' => [],
 				'portal' => 'deleted',
 			],
 			[
 				'recorded' => true,
 				'available' => true,
-				'deleted' => ['newsItem' => 4, 'page' => 32, 'menu' => 3],
-				'gone' => ['newsItem' => 0, 'page' => 1, 'menu' => 0],
+				'deleted' => ['menu' => 3, 'page' => 32, 'newsItem' => 4, 'glossaryTerm' => 4, 'form' => 1],
+				'gone' => ['menu' => 0, 'page' => 1, 'newsItem' => 0, 'glossaryTerm' => 1, 'form' => 0],
 				'failed' => [],
 				'portal' => 'kept-content',
 			],
@@ -133,11 +133,13 @@ class ExampleSiteCommandsTest extends TestCase {
 		$this->assertSame(0, $command->run(new ArrayInput(['site' => 'zuiddrecht']), $output));
 		$text = $output->fetch();
 		$this->assertStringContainsString('Pages: 33 deleted, 0 already gone', $text);
+		$this->assertStringContainsString('Glossary terms: 5 deleted, 0 already gone', $text);
 		$this->assertStringContainsString('Portal: deleted', $text);
 
 		$this->assertSame(2, $command->run(new ArrayInput(['site' => 'zuiddrecht']), $output));
 		$text = $output->fetch();
 		$this->assertStringContainsString('Pages: 32 deleted, 1 already gone', $text);
+		$this->assertStringContainsString('Glossary terms: 4 deleted, 1 already gone', $text);
 		$this->assertStringContainsString('It still holds menus or pages that are not from the example site', $text);
 
 		$this->assertSame(1, $command->run(new ArrayInput(['site' => 'zuiddrecht']), $output));

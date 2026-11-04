@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Event\PortalClaimScopeEvent;
 use OCA\Portaliq\Service\PortalFieldProjector;
 use OCA\Portaliq\Service\PortalObjectReader;
 use PHPUnit\Framework\TestCase;
+use OCP\EventDispatcher\Event;
+use OCP\EventDispatcher\IEventDispatcher;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -38,6 +41,30 @@ use RuntimeException;
 class PortalObjectReaderTest extends TestCase {
 
 	private const OS = 'OCA\\OpenRegister\\Service\\ObjectService';
+
+	/**
+	 * Every claim check the reader dispatched.
+	 *
+	 * @var list<PortalClaimScopeEvent>
+	 */
+	private array $claimChecks = [];
+
+	/**
+	 * What the owning app answers a claim check; admits by default.
+	 *
+	 * @var \Closure(PortalClaimScopeEvent): void
+	 */
+	private \Closure $claimListener;
+
+	/**
+	 * Every claim is admitted unless a test says otherwise.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->claimListener = static function (PortalClaimScopeEvent $event): void {
+		};
+	}//end setUp()
 
 	public function testReturnsEmptyWhenOpenRegisterUnavailable(): void {
 		$container = $this->createMock(ContainerInterface::class);
@@ -317,6 +344,171 @@ class PortalObjectReaderTest extends TestCase {
 		$this->assertSame('uuid-c1', $objectService->calls[1]['config']['filters']['contact']);
 
 	}//end testClaimScopedReadResolvesTheClaimServerSide()
+
+	/**
+	 * The claim check names the claim, its value and the account's organisation.
+	 *
+	 * @return void
+	 */
+	public function testTheClaimCheckNamesTheClaimAndTheAccountsOrganisation(): void {
+		$reader = $this->employerReader(objectService: $this->companyStore());
+		$this->readBookings(reader: $reader);
+
+		$this->assertCount(expectedCount: 1, haystack: $this->claimChecks);
+		$check = $this->claimChecks[0];
+		$this->assertSame(
+			expected: ['learniq', 'organisationRef', 'co-1', 'org-1'],
+			actual: [$check->getAppId(), $check->getClaimName(), $check->getValue(), $check->getOrganisation()]
+		);
+
+		// A session that names no tenant is checked against the account's own organisation.
+		$this->resolveCompany(reader: $reader, organisation: '');
+		$this->assertSame(expected: 'org-1', actual: $this->claimChecks[1]->getOrganisation());
+
+	}//end testTheClaimCheckNamesTheClaimAndTheAccountsOrganisation()
+
+	/**
+	 * A refused claim reads no rows, no object and no scope value, and the collection is never queried.
+	 *
+	 * @return void
+	 */
+	public function testAClaimItsAppRefusesReadsNothingAndNeverQueriesTheCollection(): void {
+		$this->claimListener = static function (PortalClaimScopeEvent $event): void {
+			$event->refuse();
+		};
+		$objectService = $this->companyStore();
+		$reader        = $this->employerReader(objectService: $objectService);
+
+		$rows   = $this->readBookings(reader: $reader);
+		$object = $reader->readObject(
+			register: 'learniq',
+			schema: 'booking',
+			scopeField: 'organisationRef',
+			subjectRef: 's1',
+			id: 'b-1',
+			organisation: 'org-1',
+			scopeClaim: 'organisationRef',
+			contributingApp: 'learniq',
+			audience: 'employer'
+		);
+		$value  = $this->resolveCompany(reader: $reader, organisation: 'org-1');
+
+		$this->assertSame(expected: [], actual: $rows);
+		$this->assertNull(actual: $object);
+		$this->assertNull(actual: $value);
+		$this->assertSame(expected: ['portalAccount', 'portalAccount', 'portalAccount'], actual: array_column($objectService->calls, 'schema'));
+
+	}//end testAClaimItsAppRefusesReadsNothingAndNeverQueriesTheCollection()
+
+	/**
+	 * Without an event dispatcher the claim cannot be checked, so it is refused.
+	 *
+	 * @return void
+	 */
+	public function testAClaimIsRefusedWhenItCannotBeChecked(): void {
+		$objectService = $this->companyStore();
+		$container     = $this->createMock(originalClassName: ContainerInterface::class);
+		$container->method('get')->willReturnCallback(
+			static function (string $id) use ($objectService): object {
+				if ($id === self::OS) {
+					return $objectService;
+				}
+
+				throw new RuntimeException(message: 'no service: ' . $id);
+			}
+		);
+		$reader = new PortalObjectReader(
+			container: $container,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			projector: $this->projector()
+		);
+
+		$this->assertSame(expected: [], actual: $this->readBookings(reader: $reader));
+		$this->assertNull(actual: $this->resolveCompany(reader: $reader, organisation: 'org-1'));
+
+	}//end testAClaimIsRefusedWhenItCannotBeChecked()
+
+	/**
+	 * An admitted claim reads its rows and resolves its value as before.
+	 *
+	 * @return void
+	 */
+	public function testAnAdmittedClaimStillReadsItsRows(): void {
+		$reader = $this->employerReader(objectService: $this->companyStore());
+
+		$this->assertSame(expected: ['b-1'], actual: array_column($this->readBookings(reader: $reader), 'id'));
+		$this->assertSame(expected: 'co-1', actual: $this->resolveCompany(reader: $reader, organisation: 'org-1'));
+
+	}//end testAnAdmittedClaimStillReadsItsRows()
+
+	/**
+	 * The reader over this object service, with the claim-check dispatcher.
+	 *
+	 * @param object $objectService The object service double.
+	 *
+	 * @return PortalObjectReader
+	 */
+	private function employerReader(object $objectService): PortalObjectReader {
+		return new PortalObjectReader(
+			container: $this->container(objectService: $objectService),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			projector: $this->projector()
+		);
+	}//end employerReader()
+
+	/**
+	 * The employer's bookings, scoped by learniq's organisationRef claim.
+	 *
+	 * @param PortalObjectReader $reader The reader.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function readBookings(PortalObjectReader $reader): array {
+		return $reader->readCollection(
+			register: 'learniq',
+			schema: 'booking',
+			scopeField: 'organisationRef',
+			subjectRef: 's1',
+			organisation: 'org-1',
+			scopeClaim: 'organisationRef',
+			contributingApp: 'learniq',
+			audience: 'employer'
+		);
+	}//end readBookings()
+
+	/**
+	 * The employer's company as the write path resolves it.
+	 *
+	 * @param PortalObjectReader $reader       The reader.
+	 * @param string             $organisation The session's organisation.
+	 *
+	 * @return string|null
+	 */
+	private function resolveCompany(PortalObjectReader $reader, string $organisation): ?string {
+		return $reader->resolveScopeValue(
+			scopeClaim: 'organisationRef',
+			contributingApp: 'learniq',
+			subject: ['subjectRef' => 's1', 'audience' => 'employer', 'organisation' => $organisation]
+		);
+	}//end resolveCompany()
+
+	/**
+	 * An employer account claiming company co-1, and one booking of that company.
+	 *
+	 * @return object
+	 */
+	private function companyStore(): object {
+		return $this->objectService(
+			returnsPerSchema: [
+				'portalAccount' => [
+					['subjectRef' => 's1', 'organisation' => 'org-1', 'audience' => 'employer', 'claims' => ['learniq' => ['organisationRef' => 'co-1']]],
+				],
+				'booking' => [
+					['id' => 'b-1', 'organisationRef' => 'co-1'],
+				],
+			]
+		);
+	}//end companyStore()
 
 	public function testDottedScopeClaimResolvesInTheExplicitNamespace(): void {
 		$objectService = $this->objectService(
@@ -1876,11 +2068,24 @@ class PortalObjectReaderTest extends TestCase {
 	}//end objectService()
 
 	private function container(object $objectService): ContainerInterface {
+		$dispatcher = $this->createMock(originalClassName: IEventDispatcher::class);
+		$dispatcher->method('dispatchTyped')->willReturnCallback(
+			function (Event $event): void {
+				if ($event instanceof PortalClaimScopeEvent === true) {
+					$this->claimChecks[] = $event;
+					($this->claimListener)($event);
+				}
+			}
+		);
 		$mock = $this->createMock(ContainerInterface::class);
 		$mock->method('get')->willReturnCallback(
-			function (string $id) use ($objectService) {
+			function (string $id) use ($objectService, $dispatcher) {
 				if ($id === self::OS) {
 					return $objectService;
+				}
+
+				if ($id === IEventDispatcher::class) {
+					return $dispatcher;
 				}
 
 				throw new RuntimeException('no service: ' . $id);

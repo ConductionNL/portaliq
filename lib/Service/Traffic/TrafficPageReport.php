@@ -48,6 +48,20 @@ class TrafficPageReport {
 	public const DETAIL = ['sessions', 'visitors', 'engagedSessions', 'referrers', 'outbound'];
 
 	/**
+	 * The counts every page row carries.
+	 *
+	 * @var string[]
+	 */
+	private const COUNTS = ['views', 'entrances', 'exits'];
+
+	/**
+	 * The counts only a detailed page row carries.
+	 *
+	 * @var string[]
+	 */
+	private const DETAIL_COUNTS = ['sessions', 'visitors', 'engagedSessions'];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param TrafficPagePath $paths Normalises a stored path to a route.
@@ -72,51 +86,111 @@ class TrafficPageReport {
 	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-endpoint-must-return-one-pages-figures-for-a-period
 	 */
 	public function fold(array $records, string $route): array {
-		$acc = ['views' => 0, 'entrances' => 0, 'exits' => 0, 'sessions' => 0, 'visitors' => 0, 'engagedSessions' => 0];
-		$lists = ['previous' => [], 'next' => [], 'referrers' => [], 'outbound' => []];
-		$detailDays = 0;
+		$state = [
+			'route' => $route,
+			'acc' => ['views' => 0, 'entrances' => 0, 'exits' => 0, 'sessions' => 0, 'visitors' => 0, 'engagedSessions' => 0],
+			'lists' => ['previous' => [], 'next' => [], 'referrers' => [], 'outbound' => []],
+			'detailDays' => 0,
+		];
 		foreach ($records as $record) {
-			$rows = $this->rowsFor(record: $record, route: $route);
-			foreach ($rows as $row) {
-				foreach (['views', 'entrances', 'exits'] as $key) {
-					$acc[$key] += $this->int(value: ($row[$key] ?? 0));
-				}
-			}
+			$state = $this->foldDay(state: $state, record: $record);
+		}
 
-			$lists = $this->addTransitions(lists: $lists, rows: ($record['transitions'] ?? []), route: $route);
-			if ($this->hasDetail(record: $record, rows: $rows) === false) {
-				continue;
-			}
+		return $this->answer(state: $state, recordedDays: count($records));
+	}
 
-			$detailDays++;
-			foreach ($rows as $row) {
-				foreach (['sessions', 'visitors', 'engagedSessions'] as $key) {
-					$acc[$key] += $this->int(value: ($row[$key] ?? 0));
-				}
+	/**
+	 * Fold one day's record into the running state.
+	 *
+	 * @param array<string, mixed> $state  The route, counts, lists and detail days so far.
+	 * @param array<string, mixed> $record The day's record.
+	 *
+	 * @return array<string, mixed> The state.
+	 */
+	private function foldDay(array $state, array $record): array {
+		$rows = $this->rowsFor(record: $record, route: $state['route']);
+		$detail = $this->hasDetail(record: $record, rows: $rows);
+		$state['acc'] = $this->addCounts(acc: $state['acc'], sums: $this->sumRows(rows: $rows, detail: $detail));
+		$state['lists'] = $this->addTransitions(lists: $state['lists'], rows: ($record['transitions'] ?? []), route: $state['route']);
+		if ($detail === false) {
+			return $state;
+		}
 
-				$lists['referrers'] = $this->addRows(into: $lists['referrers'], rows: ($row['referrers'] ?? []), keys: ['host', 'channel']);
-				$lists['outbound'] = $this->addRows(into: $lists['outbound'], rows: ($row['outbound'] ?? []), keys: ['url']);
+		$state['detailDays']++;
+		foreach ($rows as $row) {
+			$state['lists']['referrers'] = $this->addRows(into: $state['lists']['referrers'], rows: ($row['referrers'] ?? []), keys: ['host', 'channel']);
+			$state['lists']['outbound'] = $this->addRows(into: $state['lists']['outbound'], rows: ($row['outbound'] ?? []), keys: ['url']);
+		}
+
+		return $state;
+	}
+
+	/**
+	 * The counts of a day's rows: the per-page counts, and on a detailed day the detail counts too.
+	 *
+	 * @param array<int, array<string, mixed>> $rows   The day's rows for the route.
+	 * @param bool                             $detail Whether the day carries the detail counts.
+	 *
+	 * @return array<string, int> The sums by count.
+	 */
+	private function sumRows(array $rows, bool $detail): array {
+		$keys = self::COUNTS;
+		if ($detail === true) {
+			$keys = array_merge($keys, self::DETAIL_COUNTS);
+		}
+
+		$sums = array_fill_keys($keys, 0);
+		foreach ($rows as $row) {
+			foreach ($keys as $key) {
+				$sums[$key] += $this->int(value: ($row[$key] ?? 0));
 			}
 		}
 
+		return $sums;
+	}
+
+	/**
+	 * Add sums to the running counts.
+	 *
+	 * @param array<string, int> $acc  The running counts.
+	 * @param array<string, int> $sums The sums to add.
+	 *
+	 * @return array<string, int> The counts.
+	 */
+	private function addCounts(array $acc, array $sums): array {
+		foreach ($sums as $key => $sum) {
+			$acc[$key] += $sum;
+		}
+
+		return $acc;
+	}
+
+	/**
+	 * The answer for the folded state; without a detailed day the detail figures are null.
+	 *
+	 * @param array<string, mixed> $state        The folded state.
+	 * @param int                  $recordedDays The number of records folded.
+	 *
+	 * @return array<string, mixed> The answer.
+	 */
+	private function answer(array $state, int $recordedDays): array {
+		$acc = $state['acc'];
 		$out = [
-			'recordedDays' => count($records),
-			'detailDays' => $detailDays,
+			'recordedDays' => $recordedDays,
+			'detailDays' => $state['detailDays'],
 			'pageViews' => $acc['views'],
 			'entrances' => $acc['entrances'],
 			'exits' => $acc['exits'],
 			'sessions' => $acc['sessions'],
 			'visitors' => $acc['visitors'],
 			'engagedSessions' => $acc['engagedSessions'],
-			'previous' => $this->ranked(rows: $lists['previous']),
-			'next' => $this->ranked(rows: $lists['next']),
-			'referrers' => $this->ranked(rows: $lists['referrers']),
-			'outbound' => $this->ranked(rows: $lists['outbound']),
+			'previous' => $this->ranked(rows: $state['lists']['previous']),
+			'next' => $this->ranked(rows: $state['lists']['next']),
+			'referrers' => $this->ranked(rows: $state['lists']['referrers']),
+			'outbound' => $this->ranked(rows: $state['lists']['outbound']),
 		];
-		if ($detailDays === 0) {
-			foreach (self::DETAIL as $key) {
-				$out[$key] = null;
-			}
+		if ($state['detailDays'] === 0) {
+			$out = array_merge($out, array_fill_keys(self::DETAIL, null));
 		}
 
 		return $out;

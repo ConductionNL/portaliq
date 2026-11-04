@@ -225,10 +225,7 @@ class SetupController extends Controller {
 		// run-action step; closing only the second leaves the first outstanding,
 		// and CnAppRoot opens the wizard while ANY optional step is outstanding.
 		if ($actionId === 'skip-demo-data') {
-			$this->appConfig->setValueString(Application::APP_ID, self::DATASET_KEY, DemoDataService::NONE_DATASET);
-			$this->appConfig->setValueString(Application::APP_ID, self::DEMO_DECIDED_KEY, 'skipped');
-
-			return new JSONResponse(data: ['success' => true, 'message' => 'No example data was loaded.']);
+			return $this->skipped();
 		}
 
 		return new JSONResponse(
@@ -310,14 +307,41 @@ class SetupController extends Controller {
 		}
 
 		if ($picked === DemoDataService::NONE_DATASET) {
-			$this->appConfig->setValueString(Application::APP_ID, self::DATASET_KEY, DemoDataService::NONE_DATASET);
-			$this->appConfig->setValueString(Application::APP_ID, self::DEMO_DECIDED_KEY, 'skipped');
-
-			return new JSONResponse(data: ['success' => true, 'message' => 'No example data was loaded.']);
+			return $this->skipped();
 		}
 
+		$imported = $this->import();
+		if ($imported instanceof JSONResponse) {
+			return $imported;
+		}
+
+		// Loading IS choosing the set, so the pick is recorded too.
+		$this->appConfig->setValueString(Application::APP_ID, self::DATASET_KEY, $picked);
+		$this->appConfig->setValueString(Application::APP_ID, self::DEMO_DECIDED_KEY, 'installed');
+
+		return new JSONResponse(data: ['success' => true, 'message' => self::importedMessage(imported: $imported)]);
+	}//end loadDataset()
+
+	/**
+	 * Record that no example data is wanted, closing both the choice and the run step.
+	 *
+	 * @return JSONResponse `{ success, message }`.
+	 */
+	private function skipped(): JSONResponse {
+		$this->appConfig->setValueString(Application::APP_ID, self::DATASET_KEY, DemoDataService::NONE_DATASET);
+		$this->appConfig->setValueString(Application::APP_ID, self::DEMO_DECIDED_KEY, 'skipped');
+
+		return new JSONResponse(data: ['success' => true, 'message' => 'No example data was loaded.']);
+	}//end skipped()
+
+	/**
+	 * Run the import, or answer the logged failure.
+	 *
+	 * @return array<string, mixed>|JSONResponse The import counts, or a 500.
+	 */
+	private function import(): array|JSONResponse {
 		try {
-			$imported = $this->demoDataService->install();
+			return $this->demoDataService->install();
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Setup install-demo-data failed: ' . $e->getMessage(),
@@ -329,36 +353,37 @@ class SetupController extends Controller {
 				statusCode: Http::STATUS_INTERNAL_SERVER_ERROR,
 			);
 		}
+	}//end import()
 
-		// Loading IS choosing the set, so the pick is recorded too.
-		$this->appConfig->setValueString(Application::APP_ID, self::DATASET_KEY, $picked);
-		$this->appConfig->setValueString(Application::APP_ID, self::DEMO_DECIDED_KEY, 'installed');
-
-		// The number that LANDED, against the number the dataset declares: an
-		// operator who asked for demo data and got part of it must see the gap,
-		// not a count that merely repeats their request (WOO-558).
+	/**
+	 * The number that LANDED, against the number the dataset declares.
+	 *
+	 * An operator who asked for demo data and got part of it must see the
+	 * gap, not a count that merely repeats their request (WOO-558).
+	 *
+	 * @param array<string, mixed> $imported The import counts.
+	 *
+	 * @return string
+	 */
+	private static function importedMessage(array $imported): string {
 		$declared = (int)($imported['declared'] ?? $imported['objects']);
 		$skipped  = (int)($imported['skipped'] ?? 0);
 		$present  = (int)($imported['present'] ?? 0);
-		$message  = 'Imported ' . $imported['objects'] . ' of ' . $declared . ' demo object(s).';
 		if ((int)$imported['objects'] === 0 && $present > 0) {
 			// A re-run: OpenRegister left every object alone because it was
 			// already there. Not a failure, and not "skipped" either.
-			$message = 'The demo data was already present: nothing new was imported'
+			return 'The demo data was already present: nothing new was imported'
 				. ' (' . $present . ' object(s) in the demo schemas).';
-		} elseif ($skipped > 0) {
+		}
+
+		$message = 'Imported ' . $imported['objects'] . ' of ' . $declared . ' demo object(s).';
+		if ($skipped > 0) {
 			$message .= ' ' . $skipped . ' skipped: their schema is not installed on this instance,'
 				. ' or OpenRegister rejected them (see the Nextcloud log).';
 		}
 
-		return new JSONResponse(
-			data: [
-				'success' => true,
-				'message' => $message,
-			]
-		);
-
-	}//end loadDataset()
+		return $message;
+	}//end importedMessage()
 
 	/**
 	 * Refuse a dataset id no dataset answers to.
