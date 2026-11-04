@@ -57,11 +57,6 @@ class PortalObjectWriter {
 	use PortalScopeMatch;
 
 	/**
-	 * OpenRegister's object service.
-	 */
-	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
-
-	/**
 	 * Why the last create or update was refused, as the store said it; ''
 	 * when it was not (site-action-forms). Read by WriteRefusal, never sent.
 	 *

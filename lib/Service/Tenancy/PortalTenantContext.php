@@ -49,11 +49,6 @@ final class PortalTenantContext {
 	use ObjectServiceLookup;
 
 	/**
-	 * OpenRegister's object service.
-	 */
-	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
-
-	/**
 	 * The OpenRegister method that runs a callable for an organisation.
 	 */
 	private const ACT_FOR = 'runForOrganisation';

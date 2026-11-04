@@ -52,11 +52,6 @@ class PortalOrganisationRestamp {
 	use ObjectServiceLookup;
 
 	/**
-	 * OpenRegister's object service.
-	 */
-	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
-
-	/**
 	 * OpenRegister's object mapper, which writes an entity as it is.
 	 */
 	private const OBJECT_MAPPER = 'OCA\\OpenRegister\\Db\\MagicMapper';
