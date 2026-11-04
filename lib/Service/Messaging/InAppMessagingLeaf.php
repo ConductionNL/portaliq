@@ -253,7 +253,7 @@ class InAppMessagingLeaf implements GuardianMessagingLeafInterface {
 	 * @spec openspec/changes/message-read-time/specs/guardian-direct-messaging/spec.md#requirement-a-message-records-when-the-other-side-first-read-it
 	 */
 	private function markOneMessageRead(array $message, string $subjectRef): void {
-		$readBy = is_array($message['readBy'] ?? null) === true ? $message['readBy'] : [];
+		$readBy = (array)($message['readBy'] ?? []);
 		$id     = $this->store->rowId(row: $message);
 		if ($id === null || in_array($subjectRef, $readBy, true) === true) {
 			return;
