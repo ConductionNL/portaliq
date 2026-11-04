@@ -26,9 +26,14 @@
 				:aria-invalid="invalid ? 'true' : undefined"
 				:data-testid="`${id}-day-${index}`"
 				@change="choose(day.value)" />
-			<span :id="`${id}-${index}-text`" class="pq-choice-card__label">{{
-				day.label
-			}}</span>
+			<span :id="`${id}-${index}-text`" class="pq-choice-card__text">
+				<span class="pq-choice-card__label">{{ day.label }}</span>
+				<span
+					v-if="day.description"
+					class="pq-choice-card__description">{{
+					day.description
+				}}</span>
+			</span>
 		</label>
 		<label
 			class="pq-choice-card"
@@ -78,8 +83,8 @@ import { namedDays } from './fields.js'
 import '@utrecht/radio-button-css/dist/index.css'
 
 /**
- * A date asked as a few named days: today and the next working days, named
- * in the site's language ("Vandaag, vrijdag 2 oktober", "Maandag 5
+ * A date asked as a few named days: today and the next working days, each
+ * a name over its date in the site's language ("Vandaag" over "Maandag 5
  * oktober"), plus "Een andere dag", which opens the day, month and year
  * group. The value is the same `yyyy-mm-dd` the date group sends.
  *
@@ -103,6 +108,8 @@ export default {
 		now: { type: Date, default: () => new Date() },
 		/** The word for today. */
 		todayWord: { type: String, default: 'Vandaag' },
+		/** The word for tomorrow. */
+		tomorrowWord: { type: String, default: 'Morgen' },
 		/** The card that opens the date group. */
 		otherDayLabel: { type: String, default: 'Een andere dag' },
 		/** The example under the date group. */
@@ -136,7 +143,12 @@ export default {
 		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
 		 */
 		days() {
-			return namedDays(this.now, this.count, this.locale, this.todayWord)
+			return namedDays(this.now, {
+				count: this.count,
+				locale: this.locale,
+				todayWord: this.todayWord,
+				tomorrowWord: this.tomorrowWord,
+			})
 		},
 
 		/**
@@ -235,5 +247,16 @@ export default {
 	flex-direction: column;
 	gap: var(--utrecht-space-block-3xs, 0.25rem);
 	margin-block-start: var(--utrecht-space-block-xs, 0.5rem);
+}
+
+.pq-choice-card__text {
+	display: flex;
+	flex-direction: column;
+	gap: var(--utrecht-space-block-3xs, 0.125rem);
+}
+
+.pq-choice-card__description {
+	color: var(--utrecht-form-field-description-color, inherit);
+	font-size: var(--utrecht-form-field-description-font-size, 0.875em);
 }
 </style>

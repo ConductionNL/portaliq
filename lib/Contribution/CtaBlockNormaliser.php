@@ -73,13 +73,33 @@ class CtaBlockNormaliser {
 			return null;
 		}
 
-		$entry = ['type' => 'cta', $key => $declared[$key], 'label' => trim($label)];
+		return $this->withOptions(entry: ['type' => 'cta', $key => $declared[$key], 'label' => trim($label)], block: $block);
+	}//end normalise()
+
+	/**
+	 * A cta with its optional keys: `withRecord`, and `labelWhenEmpty`, the
+	 * label shown when a field the label names is empty on the open record
+	 * ("Bericht aan {teacherName}" without a teacher reads "Bericht sturen").
+	 *
+	 * @param array<string, mixed> $entry The cta so far.
+	 * @param array<string, mixed> $block The declared block.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/portal-contribution-contract/spec.md#requirement-a-cta-label-may-name-any-field-of-the-open-record
+	 */
+	private function withOptions(array $entry, array $block): array {
 		if (($block['withRecord'] ?? null) === true) {
 			$entry['withRecord'] = true;
 		}
 
+		$fallback = ($block['labelWhenEmpty'] ?? null);
+		if (is_string($fallback) === true && trim($fallback) !== '' && mb_strlen($fallback) <= self::MAX_LABEL_LENGTH) {
+			$entry['labelWhenEmpty'] = trim($fallback);
+		}
+
 		return $entry;
-	}//end normalise()
+	}//end withOptions()
 
 	/**
 	 * Whether a declared target resolves: a known action or page, or a route

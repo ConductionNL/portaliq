@@ -209,6 +209,55 @@ class ActionConfigNormaliserTest extends TestCase {
 	}//end testACollectionFieldKeepsItsSubsetForTheSiteToFilter()
 
 	/**
+	 * A collection provider keeps a `descriptionField` for the card's second
+	 * line, and drops one that is not a field name.
+	 *
+	 * @return void
+	 */
+	public function testACollectionProviderKeepsItsDescriptionField(): void {
+		$provider = [
+			'type'             => 'collection',
+			'register'         => 'learniq',
+			'schema'           => 'learner-profile',
+			'valueField'       => 'id',
+			'labelField'       => 'givenName',
+			'descriptionField' => 'groupLabel',
+		];
+		$kept     = $this->providerOf($provider);
+		$this->assertSame('groupLabel', $kept['descriptionField']);
+
+		$provider['descriptionField'] = ['groupLabel'];
+		$dropped = $this->providerOf($provider);
+		$this->assertArrayNotHasKey('descriptionField', $dropped);
+		$this->assertSame('givenName', $dropped['labelField'], 'the provider itself stays');
+	}//end testACollectionProviderKeepsItsDescriptionField()
+
+	/**
+	 * The normalised `learnerRef` provider of an absence action.
+	 *
+	 * @param array<string, mixed> $provider The declared provider.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function providerOf(array $provider): array {
+		$out = (new PortalManifestNormaliser($this->schemaReader()))->normalise(
+			[
+				'collections' => [],
+				'actions'     => [
+					[
+						'id'               => 'createExcuseRequest',
+						'type'             => 'create',
+						'schema'           => 'excuse-request',
+						'fields'           => ['learnerRef'],
+						'optionsProviders' => ['learnerRef' => $provider],
+					],
+				],
+			]
+		);
+		return $out['actions'][0]['optionsProviders']['learnerRef'];
+	}//end providerOf()
+
+	/**
 	 * A subset is capped at twenty cards and keeps whole numbers as text.
 	 *
 	 * @return void

@@ -112,6 +112,34 @@ test('a page counts the rows of the collection its badge names, once they are kn
 	assert.equal(none.badge, undefined)
 })
 
+test('a portal layout places a per-record page with all its rows, in the board order (wilgenboom/MijnMenu)', () => {
+	const layout = [
+		{ title: 'Mijn Wilgenboom', items: ['overview', 'inbox'] },
+		{ title: 'Mijn kinderen', items: ['learniq:child'] },
+		{ title: 'Regelen', items: ['learniq:conferences'] },
+		{ title: 'Van school', items: ['news'] },
+	]
+	const groups = residentMenuGroups(buildNav([LEARNIQ], t, {}), { t, unread: 0, hrefFor: href, recordRows: ROWS, layout })
+	assert.deepEqual(
+		groups.slice(0, 3).map((group) => group.title),
+		['Mijn Wilgenboom', 'Mijn kinderen', 'Regelen'],
+	)
+	const children = groups[1].items
+	assert.deepEqual(
+		children.map((item) => [item.name, item.subline]),
+		[
+			['Vera', 'Groep 7 · Meester Daan'],
+			['Sami', 'Groep 4'],
+		],
+	)
+	assert.equal(
+		groups.filter((group) => group.title === 'Mijn kinderen').length,
+		1,
+		'the rows are not listed a second time',
+	)
+	assert.equal(groups[2].items[0].badgeLabel, '1 te plannen', 'a laid-out item keeps its count')
+})
+
 test('the badge collection is loaded with the per-record ones', async () => {
 	const asked = []
 	const api = {

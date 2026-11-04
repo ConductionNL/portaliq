@@ -80,12 +80,13 @@ export function toneOf(row, block) {
 
 /**
  * `display: rows`: a date tile, a title, a sub line, a quote, a status pill
- * with a line under it.
+ * with a line under it: who set the status and, with `statusNoteAtField`, when.
  *
  * @param {Array<object>} rows The rows.
  * @param {object} block The block.
  * @param {object} [collection] The collection, for its value labels.
- * @return {Array<object>} `{key, row, date, title, subtitle, quote, status, tone, statusNote}`.
+ * @return {Array<object>} `{key, row, date, title, subtitle, quote, status, tone, statusNote, statusNoteAt}`.
+ * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/portal-contribution-contract/spec.md#requirement-a-dated-row-may-say-when-its-status-was-set
  */
 export function dateRows(rows, block, collection = null) {
 	return (Array.isArray(rows) ? rows : []).map((row, index) => ({
@@ -98,6 +99,7 @@ export function dateRows(rows, block, collection = null) {
 		status: textOf(row, block?.statusField, collection),
 		tone: toneOf(row, block),
 		statusNote: textOf(row, block?.statusNoteField, collection),
+		statusNoteAt: String(row?.[block?.statusNoteAtField] ?? '').trim(),
 	}))
 }
 

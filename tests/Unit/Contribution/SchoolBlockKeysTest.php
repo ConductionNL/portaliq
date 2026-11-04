@@ -34,7 +34,7 @@ class SchoolBlockKeysTest extends TestCase {
 		$out = (new PortalManifestNormaliser())->normalise(
 			[
 				'collections' => [
-					['id' => 'meldingen', 'schema' => 'excuse', 'fields' => ['datum', 'kind', 'reden', 'toelichting', 'status', 'gezien']],
+					['id' => 'meldingen', 'schema' => 'excuse', 'fields' => ['datum', 'kind', 'reden', 'toelichting', 'status', 'gezien', 'besluitOp']],
 					['id' => 'cijfers', 'schema' => 'grade', 'fields' => ['vak', 'cijfer', 'cijfers', 'gemiddelde', 'opmerking']],
 					['id' => 'uren', 'schema' => 'hours', 'fields' => ['goedgekeurd', 'wachtend', 'terug', 'doel']],
 					['id' => 'taken', 'schema' => 'task', 'fields' => ['titel', 'wanneer', 'deadline']],
@@ -68,6 +68,19 @@ class SchoolBlockKeysTest extends TestCase {
 			]])
 		);
 	}//end testRowsKeepTheirProjectedFieldsOnly()
+
+	/**
+	 * A rows block keeps the field of the moment its status was set.
+	 *
+	 * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/portal-contribution-contract/spec.md#requirement-a-dated-row-may-say-when-its-status-was-set
+	 */
+	public function testRowsKeepTheMomentTheStatusWasSet(): void {
+		$block = $this->blocks([[
+			'type' => 'collection', 'collection' => 'meldingen', 'display' => 'rows', 'dateField' => 'datum',
+			'statusField' => 'status', 'statusNoteField' => 'gezien', 'statusNoteAtField' => 'besluitOp',
+		]])[0];
+		$this->assertSame('besluitOp', $block['statusNoteAtField']);
+	}//end testRowsKeepTheMomentTheStatusWasSet()
 
 	public function testBarsAndChipsKeepTheirNumbersWithinBounds(): void {
 		$this->assertSame(

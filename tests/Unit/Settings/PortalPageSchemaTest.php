@@ -130,11 +130,12 @@ class PortalPageSchemaTest extends TestCase {
 			['type' => 'inbox', 'recordField' => 'learnerRef'],
 			['type' => 'cta', 'page' => 'p', 'label' => '{title} ziek melden', 'withRecord' => true],
 			['type' => 'cta', 'route' => '/mijn/messages', 'label' => 'Bericht sturen'],
+			['type' => 'cta', 'route' => '/mijn/messages', 'label' => 'Bericht aan {teacherName}', 'labelWhenEmpty' => 'Bericht sturen', 'withRecord' => true],
 			['type' => 'richText', 'template' => 'U heeft toegang tot {expiresAt}.', 'whenEmpty' => ['expiresAt' => 'U heeft toegang zonder einddatum.']],
 			['type' => 'collection', 'collection' => 'zaken', 'display' => 'cards', 'progress' => ['valueField' => 'a', 'totalField' => 'b', 'label' => 'uur']],
 			// site-school-blocks wave 2.
 			['type' => 'greeting', 'label' => 'Afwezig melden', 'route' => '/mijn/afwezig', 'showDate' => true],
-			['type' => 'collection', 'collection' => 'zaken', 'display' => 'rows', 'dateField' => 'a', 'titleFields' => ['b'], 'subtitleField' => 'c', 'quoteField' => 'd', 'statusField' => 'e', 'statusTones' => ['seen' => 'success'], 'statusNoteField' => 'f'],
+			['type' => 'collection', 'collection' => 'zaken', 'display' => 'rows', 'dateField' => 'a', 'titleFields' => ['b'], 'subtitleField' => 'c', 'quoteField' => 'd', 'statusField' => 'e', 'statusTones' => ['seen' => 'success'], 'statusNoteField' => 'f', 'statusNoteAtField' => 'g'],
 			['type' => 'collection', 'collection' => 'zaken', 'display' => 'bars', 'labelField' => 'a', 'valueField' => 'b', 'max' => 10, 'noteField' => 'c', 'noteLabel' => 'Van de leerkracht', 'captionField' => 'd'],
 			['type' => 'collection', 'collection' => 'zaken', 'display' => 'chips', 'labelField' => 'a', 'valuesField' => 'b', 'averageField' => 'c', 'lowBelow' => 5.5],
 			['type' => 'collection', 'collection' => 'zaken', 'display' => 'cards', 'subtitleFields' => ['a'], 'statusField' => 'b', 'noteField' => 'c', 'soonField' => 'd', 'soonLabel' => 'Binnenkort', 'avatar' => true],

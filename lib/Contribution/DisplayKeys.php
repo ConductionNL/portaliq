@@ -42,7 +42,7 @@ class DisplayKeys {
 	 */
 	private const FIELDS = [
 		'cards' => ['statusField', 'noteField', 'soonField'],
-		'rows'  => ['dateField', 'subtitleField', 'quoteField', 'statusField', 'statusNoteField'],
+		'rows'  => ['dateField', 'subtitleField', 'quoteField', 'statusField', 'statusNoteField', 'statusNoteAtField'],
 		'bars'  => ['labelField', 'valueField', 'noteField', 'captionField'],
 		'chips' => ['labelField', 'valuesField', 'averageField'],
 	];

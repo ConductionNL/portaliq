@@ -26,6 +26,7 @@ import {
 } from '../src/site/components/mijn/displays.js'
 import { firstNameOf, greetingFor } from '../src/site/components/mijn/greeting.js'
 import { homeGreets } from '../src/site/components/mijn/home.js'
+import { decidedInWords, mijnTranslator } from '../src/site/components/mijn/rows.js'
 import { resolveBlocks } from '../src/site/pages/collections/pageBlocks.js'
 
 const COLLECTION = {
@@ -43,6 +44,30 @@ test('a value reads as its word, a missing field as nothing', () => {
 	assert.equal(textOf({ nested: { a: 1 } }, 'nested'), '')
 	assert.equal(textOf({}, 'missing'), '')
 	assert.equal(textOf({ a: 'x' }, ''), '')
+})
+
+test('the line under a status says who set it and when, as wilgenboom/MijnLijst reads it', () => {
+	const [row] = dateRows(
+		[{ id: 'r1', status: 'approved', besluitDoor: 'Meester Daan', besluitOp: '2026-10-01T08:20:00' }],
+		{ statusField: 'status', statusNoteField: 'besluitDoor', statusNoteAtField: 'besluitOp' },
+	)
+	assert.equal(row.statusNoteAt, '2026-10-01T08:20:00')
+	const tr = mijnTranslator(null, 'nl')
+	const today = new Date(2026, 9, 5, 9, 0)
+	assert.equal(
+		decidedInWords({ who: row.statusNote, at: row.statusNoteAt }, { today, tr, locale: 'nl' }),
+		'Meester Daan, 1 oktober 8:20 uur',
+	)
+	assert.equal(
+		decidedInWords({ who: 'Juf Esra', at: '2026-10-05T08:12:00' }, { today, tr, locale: 'nl' }),
+		'Juf Esra, vandaag 8:12 uur',
+	)
+	assert.equal(decidedInWords({ who: 'Juf Esra', at: '' }, { today, tr, locale: 'nl' }), 'Juf Esra', 'no moment: the name alone')
+	assert.equal(decidedInWords({ who: '', at: '2026-10-05T08:12:00' }, { today, tr, locale: 'nl' }), 'Vandaag 8:12 uur')
+	assert.equal(
+		decidedInWords({ who: 'Ms Esra', at: '2026-10-01T08:20:00' }, { today, tr: mijnTranslator(null, 'en'), locale: 'en' }),
+		'Ms Esra, 1 October 8:20',
+	)
 })
 
 test('dated rows carry every part the block names, with the status tone', () => {

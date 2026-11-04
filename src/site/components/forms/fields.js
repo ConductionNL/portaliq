@@ -305,36 +305,68 @@ function localIso(date) {
 
 /**
  * The named days a `dateChoices` field offers: today, then the next working
- * days (Monday to Friday) until there are `count`. Today reads "Vandaag,
- * vrijdag 2 oktober"; the others read "Maandag 5 oktober", in the locale.
+ * days (Monday to Friday) until there are `count`. Each day is a name and
+ * its date, as the wilgenboom/MobielDetail board draws them: "Vandaag" over
+ * "Maandag 5 oktober", "Morgen" over "Dinsdag 6 oktober"; a later day reads
+ * its date alone.
  *
  * @param {Date} now The moment the form opened.
- * @param {number} count How many days, 1 to 5.
- * @param {string} locale The site's language, e.g. `nl`.
- * @param {string} todayWord The word for today, e.g. "Vandaag".
- * @return {Array<{value: string, label: string}>} The days, today first.
+ * @param {{count?: number, locale?: string, todayWord?: string, tomorrowWord?: string}} [ask] How many days (1 to 5), the site's language and the words for today and tomorrow.
+ * @return {Array<{value: string, label: string, description: string}>} The days, today first.
  *
  * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
+ * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/site-forms/spec.md#requirement-a-choice-card-may-carry-a-second-line
  */
-export function namedDays(now, count, locale, todayWord) {
-	const total = Number.isInteger(count) && count >= 1 && count <= 5 ? count : 2
-	const format = new Intl.DateTimeFormat(locale || 'nl', {
-		weekday: 'long',
-		day: 'numeric',
-		month: 'long',
-	})
-	const capital = (text) => text.charAt(0).toUpperCase() + text.slice(1)
-	const day = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-	const days = [
-		{ value: localIso(day), label: `${todayWord}, ${format.format(day)}` },
-	]
+export function namedDays(now, ask = {}) {
+	const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+	return workingDaysFrom(today, dayCount(ask.count)).map((date) => namedDay(date, { today, ask }))
+}
+
+/**
+ * How many named days a field asks for: 1 to 5, else 2.
+ *
+ * @param {unknown} count The declared count.
+ * @return {number}
+ */
+function dayCount(count) {
+	return Number.isInteger(count) && count >= 1 && count <= 5 ? count : 2
+}
+
+/**
+ * Today and the next working days (Monday to Friday), `total` in all.
+ *
+ * @param {Date} today Today at midnight.
+ * @param {number} total How many days.
+ * @return {Array<Date>}
+ */
+function workingDaysFrom(today, total) {
+	const days = [today]
+	const day = new Date(today)
 	while (days.length < total) {
 		day.setDate(day.getDate() + 1)
-		if (day.getDay() !== 0 && day.getDay() !== 6) {
-			days.push({ value: localIso(day), label: capital(format.format(day)) })
+		if (day.getDay() % 6 !== 0) {
+			days.push(new Date(day))
 		}
 	}
 	return days
+}
+
+/**
+ * One named day: its name and its date in the site's language.
+ *
+ * @param {Date} date The day.
+ * @param {{today: Date, ask: object}} context Today and the words asked for.
+ * @return {{value: string, label: string, description: string}} The day.
+ */
+function namedDay(date, { today, ask }) {
+	const capital = (text) => text.charAt(0).toUpperCase() + text.slice(1)
+	const locale = ask.locale || 'nl'
+	const offset = Math.round((date - today) / 86400000)
+	const word = [ask.todayWord || 'Vandaag', ask.tomorrowWord || 'Morgen'][offset]
+	const full = capital(new Intl.DateTimeFormat(locale, { weekday: 'long', day: 'numeric', month: 'long' }).format(date))
+	return word
+		? { value: localIso(date), label: word, description: full }
+		: { value: localIso(date), label: full, description: '' }
 }
 
 /**

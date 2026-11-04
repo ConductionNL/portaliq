@@ -546,13 +546,7 @@ export function laidOut(groups, { layout, t, hrefFor }) {
 	if (!Array.isArray(layout) || layout.length === 0) {
 		return groups
 	}
-	const byName = new Map()
-	for (const item of groups.flatMap((group) => group.items)) {
-		const name = NAMES.get(item)
-		if (name && !byName.has(name)) {
-			byName.set(name, item)
-		}
-	}
+	const byName = itemsByName(groups)
 	const placed = new Set()
 	const out = []
 	layout.forEach((group, index) => {
@@ -562,6 +556,25 @@ export function laidOut(groups, { layout, t, hrefFor }) {
 		}
 	})
 	return withRestOf(out, { groups, placed })
+}
+
+/**
+ * Every item under the name a portal's layout calls it by. A `perRecord`
+ * page has one item per row, all under the page's name.
+ *
+ * @param {Array<{items: Array<object>}>} groups The site's own groups.
+ * @return {Map<string, Array<object>>} The items by name.
+ * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/site-resident-menu/spec.md#requirement-a-portals-layout-may-place-a-per-record-page-with-all-its-rows
+ */
+function itemsByName(groups) {
+	const byName = new Map()
+	for (const item of groups.flatMap((group) => group.items)) {
+		const name = NAMES.get(item)
+		if (name) {
+			byName.set(name, [...(byName.get(name) || []), item])
+		}
+	}
+	return byName
 }
 
 /**
@@ -580,27 +593,22 @@ function plainItem(item) {
  * The items a declared group names, each placed once.
  *
  * @param {{items?: Array<string>}} group The declared group.
- * @param {{byName: Map<string, object>, placed: Set<object>, t: (key: string, vars?: object) => string, hrefFor: (route: string) => string}} found The items by name, the items placed so far (changed in place), the translator and the address of a route.
+ * @param {{byName: Map<string, Array<object>>, placed: Set<object>, t: (key: string, vars?: object) => string, hrefFor: (route: string) => string}} found The items by name, the items placed so far (changed in place), the translator and the address of a route.
  * @return {Array<object>} The items.
  * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
+ * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/site-resident-menu/spec.md#requirement-a-portals-layout-may-place-a-per-record-page-with-all-its-rows
  */
-function declaredItems(group, { byName, placed, t, hrefFor }) {
+function declaredItems(group, found) {
+	const { byName, placed, t, hrefFor } = found
 	const items = []
 	for (const name of Array.isArray(group?.items) ? group.items : []) {
 		if (name === 'overview') {
-			items.push({
-				key: '__overview__',
-				name: t('Overview'),
-				link: ACCOUNT_ROUTE,
-				href: hrefFor(ACCOUNT_ROUTE),
-			})
+			items.push({ key: '__overview__', name: t('Overview'), link: ACCOUNT_ROUTE, href: hrefFor(ACCOUNT_ROUTE) })
 			continue
 		}
-		const item = byName.get(String(name))
-		if (item && !placed.has(item)) {
-			placed.add(item)
-			items.push(plainItem(item))
-		}
+		const fresh = (byName.get(String(name)) || []).filter((item) => !placed.has(item))
+		fresh.forEach((item) => placed.add(item))
+		items.push(...fresh.map(plainItem))
 	}
 	return items
 }
@@ -722,34 +730,49 @@ function titleFieldsOf(page) {
  * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
  * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-a-per-record-page-in-a-group-lists-each-row-with-its-subtitle
  */
-function addPerRecordItems({ groups, entry, rows, grouped = false }, ctx) {
-	const app = entry.contribution?.app || ''
-	const fields = titleFieldsOf(entry.page)
-	for (const row of rows) {
-		const id = String(row?.id || row?.uuid || row?.['@self']?.id || '')
+function addPerRecordItems(target, ctx) {
+	const fields = titleFieldsOf(target.entry.page)
+	for (const row of target.rows) {
+		const id = rowId(row)
 		const title = recordName(row, fields)
-		if (id === '' || title === '') {
-			continue
+		if (id !== '' && title !== '') {
+			addRowItem({ ...target, row: { row, id, title } }, ctx)
 		}
-		const heading = grouped
-			? pageGroupOf(entry)
-			: { key: `record:${app}:${entry.page.perRecord}:${id}`, title }
-		// A row's item never shows a page's `badge` count.
-		const item = itemFor(entry, { ...ctx, recordRows: {}, openTasks: 0 })
-		if (grouped) {
-			nameAfterRow(item, { row, title, entry })
-		}
-		const link = `${item.link}/${encodeURIComponent(id)}`
-		groupIn(groups, heading).items.push({
-			...item,
-			key: `${entry.key}:${id}`,
-			link,
-			href: ctx.hrefFor(link),
-			// One page per row reads the same under each row's heading on
-			// purpose; it never makes another item take its app's name.
-			perRecord: true,
-		})
 	}
+}
+
+/**
+ * A row's id, wherever the envelope keeps it, or ''.
+ *
+ * @param {object} row The row.
+ * @return {string}
+ */
+function rowId(row) {
+	return String(row?.id || row?.uuid || row?.['@self']?.id || '')
+}
+
+/**
+ * One row's item of a `perRecord` page, under the page's group or the row's
+ * own, named after the page so a portal's layout can place it.
+ *
+ * @param {{groups: Array<object>, entry: object, grouped?: boolean, row: {row: object, id: string, title: string}}} target Where it goes and the row with its id and name.
+ * @param {MenuContext} ctx What the items are built from.
+ * @return {void}
+ * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/site-resident-menu/spec.md#requirement-a-portals-layout-may-place-a-per-record-page-with-all-its-rows
+ */
+function addRowItem({ groups, entry, grouped = false, row: { row, id, title } }, ctx) {
+	const app = entry.contribution?.app || ''
+	const heading = grouped ? pageGroupOf(entry) : { key: `record:${app}:${entry.page.perRecord}:${id}`, title }
+	// A row's item never shows a page's `badge` count.
+	const item = itemFor(entry, { ...ctx, recordRows: {}, openTasks: 0 })
+	if (grouped) {
+		nameAfterRow(item, { row, title, entry })
+	}
+	const link = `${item.link}/${encodeURIComponent(id)}`
+	// One page per row reads the same under each row's heading on purpose;
+	// it never makes another item take its app's name.
+	const rowItem = { ...item, key: `${entry.key}:${id}`, link, href: ctx.hrefFor(link), perRecord: true }
+	groupIn(groups, heading).items.push(named(rowItem, `${app}:${entry.page?.id || ''}`))
 }
 
 /**

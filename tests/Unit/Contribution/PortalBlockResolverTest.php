@@ -397,6 +397,23 @@ class PortalBlockResolverTest extends TestCase {
 	}//end testACtaNamesExactlyOneTarget()
 
 	/**
+	 * A cta keeps the label it falls back to when a field its label names is
+	 * empty on the open record, and drops a blank one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/portal-contribution-contract/spec.md#requirement-a-cta-label-may-name-any-field-of-the-open-record
+	 */
+	public function testACtaKeepsTheLabelForAnEmptyField(): void {
+		$declared = ['type' => 'cta', 'route' => '/mijn/messages', 'label' => 'Bericht aan {teacherName}', 'labelWhenEmpty' => ' Bericht sturen '];
+		$this->assertSame(
+			[['type' => 'cta', 'route' => '/mijn/messages', 'label' => 'Bericht aan {teacherName}', 'labelWhenEmpty' => 'Bericht sturen']],
+			$this->blocks([$declared])
+		);
+		$this->assertArrayNotHasKey('labelWhenEmpty', $this->blocks([['labelWhenEmpty' => ' '] + $declared])[0]);
+	}//end testACtaKeepsTheLabelForAnEmptyField()
+
+	/**
 	 * A route outside the portal is refused: a scheme, a host or `//`.
 	 *
 	 * @return void
