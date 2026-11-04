@@ -33,3 +33,5 @@
 - portaliq/MobielHome Telefoon: home: the portal home on a phone (thm-mobile-responsive) https://identity.conduction.nl/screens/board?id=portaliq/MobielHome
 - portaliq/MobielZaak Telefoon: uw zaak: the case page on a phone (thm-mobile-responsive) https://identity.conduction.nl/screens/board?id=portaliq/MobielZaak
 - portaliq/Toegankelijkheid Site: toegankelijkheidsverklaring: the accessibility statement of the portal (dem-tnd-wcag22-portal) https://identity.conduction.nl/screens/board?id=portaliq/Toegankelijkheid
+
+Components: CnActionButtons, CnActionsBar, CnActionsMenu, CnAppNav, CnAuditTrailCard, CnBreadcrumbs, CnBuildiqEditButton, CnDashboardGrid, CnDashboardPage, CnDataTable, CnDetailCard, CnDetailGrid, CnDetailPage, CnFilterBar, CnIndexPage, CnKpiGrid, CnNextStepCard, CnNoteCard, CnObjectListWidget, CnPageHeader, CnPagination, CnQuickFilterBar, CnRelatedCollections, CnRowActions, CnSettingsPage, CnSettingsSection, CnSiteEmptyState, CnSiteSearch, CnStatWidget, CnStatsBlock, CnStatusBadge, CnTabs, CnTalkRoomCreate, CnWidgetWrapper

@@ -24,3 +24,5 @@
 - portaliq/PtFormulierInsluiten formulier insluiten op uw website: the embed frame of a form (REQ-SRP-047) https://identity.conduction.nl/screens/board?id=portaliq/PtFormulierInsluiten
 - huisstijl/NamensBalk the acting-for bar with the selector inside it (REQ-SRP-041, "A mandate is named by its party") https://identity.conduction.nl/screens/board?id=huisstijl/NamensBalk
 - vaartveld/Toets a timed task: the time left, answers saved on each change, and the end screen (REQ-SRP-036) https://identity.conduction.nl/screens/board?id=vaartveld/Toets
+
+Components: CnActionsBar, CnAppNav, CnBuildiqEditButton, CnDataTable, CnFilterBar, CnFormDialog, CnIndexPage, CnJsonViewer, CnPagination, CnQuickFilterBar, CnRowActions, CnSiteSearch, CnStatusBadge

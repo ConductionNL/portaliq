@@ -7,3 +7,5 @@
 - portaliq/ZoekenGeenTreffers Site: zoeken zonder treffers https://identity.conduction.nl/screens/board?id=portaliq/ZoekenGeenTreffers
 - wilgenboom/Zoeken Website: nieuws en documenten zoeken https://identity.conduction.nl/screens/board?id=wilgenboom/Zoeken
 - vaartveld/Zoeken Website: nieuws en documenten zoeken https://identity.conduction.nl/screens/board?id=vaartveld/Zoeken
+
+Components: CnSiteEmptyState, CnSiteSearch

@@ -39,3 +39,5 @@
 - portaliq/WooVerzoek Woo-verzoek: stap 1 van 3 https://identity.conduction.nl/screens/board?id=portaliq/WooVerzoek
 - portaliq/WooVerzoekControleren Woo-verzoek: controleren en versturen https://identity.conduction.nl/screens/board?id=portaliq/WooVerzoekControleren
 - portaliq/PtFormulierInstellingen instellingen van een formulier https://identity.conduction.nl/screens/board?id=portaliq/PtFormulierInstellingen
+
+Components: CnActionAuthMatrix, CnActionButtons, CnActionsBar, CnActionsMenu, CnAppNav, CnAuditTrailCard, CnBreadcrumbs, CnBuildiqEditButton, CnDashboardGrid, CnDashboardPage, CnDataTable, CnDetailCard, CnDetailGrid, CnDetailPage, CnFilterBar, CnIndexPage, CnJsonViewer, CnKpiGrid, CnNextStepCard, CnNoteCard, CnObjectListWidget, CnPageHeader, CnPagination, CnQuickFilterBar, CnRelatedCollections, CnRowActions, CnSettingsPage, CnSettingsSection, CnSiteEmptyState, CnSiteSearch, CnStatsBlock, CnStatusBadge, CnTabs, CnTalkRoomCreate, CnWidgetWrapper

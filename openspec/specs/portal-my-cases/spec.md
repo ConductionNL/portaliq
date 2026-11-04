@@ -23,7 +23,7 @@ read, each row naming the app and organisation it comes from.
 #### Scenario: Nothing to show
 - **GIVEN** a resident with no case in any contribution
 - **WHEN** they open "My cases"
-- **THEN** they read "No cases yet."
+- **THEN** they read "U heeft nog geen zaken." (board MijnZaken)
 
 ### Requirement: Open and closed cases are told apart by a declared field (REQ-CMC-002)
 
@@ -35,7 +35,7 @@ that declares no closed marker SHALL have all its cases shown as open.
 #### Scenario: A decided case moves to Closed
 - **GIVEN** a collection declaring `closedField: endDate` and a case with an end date
 - **WHEN** the resident opens "My cases"
-- **THEN** that case is on the "Closed" tab and not on "Open"
+- **THEN** that case is on the "Afgerond" tab and not on "Open" (board MijnZaken)
 
 ### Requirement: A case you see through a mandate says why (REQ-CMC-003)
 

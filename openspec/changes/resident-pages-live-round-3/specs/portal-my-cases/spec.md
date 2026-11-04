@@ -9,5 +9,5 @@ Mijn zaken SHALL open on "Iedereen voor wie u zaken regelt" unless the page is f
 
 - **GIVEN** Linda holds a mandate from Henk and has not chosen a party this session
 - **WHEN** she opens Mijn zaken
-- **THEN** "Wissel naar" shows "Iedereen voor wie u zaken regelt"
+- **THEN** "Wissel naar" shows "Iedereen voor wie u zaken regelt" and the bar reads "U ziet nu de zaken van iedereen voor wie u zaken regelt." (board huisstijl/NamensBalk; for herself it reads "U regelt nu uw eigen zaken.")
 - **AND** the list holds her own cases and Henk's, each once

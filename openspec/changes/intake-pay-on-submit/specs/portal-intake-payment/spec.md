@@ -61,13 +61,13 @@ these.
 
 The pay route SHALL return a `checkoutUrl` only when it uses `https` and its
 host is in the portal's `paymentHosts`. Any other URL SHALL give 502
-`payment_unavailable`, and the resident SHALL see "You cannot pay right now.
-Try again later."
+`payment_unavailable`, and the resident SHALL see "U kunt nu niet betalen" with
+"Probeer het later opnieuw." (board BetalingResultaat).
 
 #### Scenario: A checkout on an unknown host is refused
 - **GIVEN** a portal whose `paymentHosts` is `["www.mollie.com"]` and a case app that returns `https://pay.example.org/checkout`
 - **WHEN** the resident presses "Pay now"
-- **THEN** they stay on the portal and see "You cannot pay right now. Try again later."
+- **THEN** they stay on the portal and see "U kunt nu niet betalen" and "Probeer het later opnieuw."
 - @e2e exclude Redirect guard; pinned by PortalIntakeControllerTest::testUndeclaredCheckoutHostIsRefused
 
 ### Requirement: The result is read from the payment record (REQ-IPS-005)

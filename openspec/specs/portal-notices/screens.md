@@ -5,3 +5,5 @@
 - portaliq/PtMededelingenActies mededelingen, acties https://identity.conduction.nl/screens/board?id=portaliq/PtMededelingenActies
 - wilgenboom/Home Website: home https://identity.conduction.nl/screens/board?id=wilgenboom/Home
 - vaartveld/Home Website: home https://identity.conduction.nl/screens/board?id=vaartveld/Home
+
+Components: CnActionsBar, CnActionsMenu, CnAppNav, CnBreadcrumbs, CnBuildiqEditButton, CnDataTable, CnDetailCard, CnDetailGrid, CnFilterBar, CnFormDialog, CnIndexPage, CnPagination, CnQuickFilterBar, CnSiteSearch, CnStatusBadge, CnTabs

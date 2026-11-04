@@ -13,3 +13,5 @@
 - portaliq/WooVerzoekControleren Woo-verzoek: controleren en versturen https://identity.conduction.nl/screens/board?id=portaliq/WooVerzoekControleren
 - portaliq/WooVerzoekGegevens Woo-verzoek: stap 2 van 3, uw gegevens https://identity.conduction.nl/screens/board?id=portaliq/WooVerzoekGegevens
 - portaliq has no board of its own for row int-decision-table-logic: the resident sees only the outcome (a filled line or the next step); the table itself is authored on buildiq's BqBeslistabel
+
+Components: CnActionsMenu, CnAppNav, CnBreadcrumbs, CnBuildiqEditButton, CnDataTable, CnFormBuilder, CnJsonViewer, CnPageHeader, CnSiteEmptyState, CnSiteSearch, CnStatusBadge

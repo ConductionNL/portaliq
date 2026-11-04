@@ -30,7 +30,7 @@ With `?record=<id>` the block MUST show the record on the same page, laid out as
 #### Scenario: A stale link
 - GIVEN a link to a person who is no longer listed
 - WHEN a visitor opens it
-- THEN the page says "Dit overzicht bestaat niet (meer)." and answers 404
+- THEN the page says "Deze pagina bestaat niet (meer)." (the portal's not-found page, board NietGevonden) and answers 404
 - @e2e exclude pinned by `PublicRecordControllerTest::testAnUnlistedRecordIsNotFound`
 
 ### Requirement: A named reader MUST find confidential papers in the resident area (REQ-SCR-007)

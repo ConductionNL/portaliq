@@ -7,3 +7,5 @@
 - portaliq/PtPagina pagina-indeling https://identity.conduction.nl/screens/board?id=portaliq/PtPagina
 - portaliq/PtPaginaZoekmachines pagina, zoekmachines https://identity.conduction.nl/screens/board?id=portaliq/PtPaginaZoekmachines
 - portaliq/Home website: a page cell with the shared block "Contact en openingstijden" (REQ-SPB-002) https://identity.conduction.nl/screens/board?id=portaliq/Home
+
+Components: CnActionButtons, CnActionsBar, CnActionsMenu, CnAppNav, CnAuditTrailCard, CnBreadcrumbs, CnBuildiqEditButton, CnConfirmDialog, CnDataTable, CnDetailCard, CnDetailGrid, CnDetailPage, CnFilterBar, CnIndexPage, CnMarkdownEditor, CnMassActionBar, CnNoteCard, CnPageHeader, CnPagination, CnQuickFilterBar, CnRowActions, CnSegmentedControl, CnSiteSearch, CnStatusBadge, CnTabs

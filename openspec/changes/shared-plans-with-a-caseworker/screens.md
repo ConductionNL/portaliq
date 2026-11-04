@@ -9,3 +9,5 @@
 - portaliq/Plannen samenwerken https://identity.conduction.nl/screens/board?id=portaliq/Plannen
 - portaliq/PtPlansjablonen plansjablonen https://identity.conduction.nl/screens/board?id=portaliq/PtPlansjablonen
 - portaliq/TaakAfronden Taak: stuur een kopie van uw ID-bewijs https://identity.conduction.nl/screens/board?id=portaliq/TaakAfronden
+
+Components: CnAppNav, CnBreadcrumbs, CnBuildiqEditButton, CnDataTable, CnPageHeader, CnSiteSearch

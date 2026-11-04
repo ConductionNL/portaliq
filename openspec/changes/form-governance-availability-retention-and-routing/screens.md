@@ -6,3 +6,5 @@
 - portaliq/PtFormulierInstellingen instellingen van een formulier https://identity.conduction.nl/screens/board?id=portaliq/PtFormulierInstellingen
 - portaliq/PtInzending inzending https://identity.conduction.nl/screens/board?id=portaliq/PtInzending
 - portaliq/PtInzendingen inzendingen https://identity.conduction.nl/screens/board?id=portaliq/PtInzendingen
+
+Components: CnActionButtons, CnActionsBar, CnActionsMenu, CnAppNav, CnBreadcrumbs, CnBuildiqEditButton, CnDataTable, CnDetailCard, CnDetailGrid, CnDetailPage, CnFilterBar, CnIndexPage, CnNoteCard, CnPagination, CnQuickFilterBar, CnRelatedCollections, CnRowActions, CnSettingsPage, CnSettingsSection, CnSiteEmptyState, CnStatusBadge, CnTabs, CnTalkRoomCreate

@@ -7,3 +7,5 @@
 - vaartveld/Editor Redacteur: pagina bewerken https://identity.conduction.nl/screens/board?id=vaartveld/Editor
 - esdoornveen/Editor Redacteur: pagina bewerken https://identity.conduction.nl/screens/board?id=esdoornveen/Editor
 - warmtepompacademie/Editor Redacteur: pagina bewerken https://identity.conduction.nl/screens/board?id=warmtepompacademie/Editor
+
+Components: CnMarkdownEditor, CnSiteSearch

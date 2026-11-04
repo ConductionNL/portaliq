@@ -21,7 +21,7 @@ Planninq owns the row that asks for this (`col-read-receipts`) and names portali
 
 - **The sender asks for a receipt per message.** `portalMessage` gains `readReceiptRequested` (boolean, default false), `readAt` (date-time) and `sendingRef` (string). An app that writes a message sets them through OpenRegister, like every other field it writes.
 - **The moment is recorded only when asked.** Mark-read writes `readAt` once, on the first open, and only on a message that asked for a receipt. Without a request it writes `read: true` as before. A second open keeps the first moment.
-- **The resident is told.** A message that asks for a receipt says so in Berichten: "De afzender ziet wanneer u dit bericht hebt geopend."
+- **The resident is told.** A message that asks for a receipt says so in Berichten: "Leesbevestiging gevraagd", and once read, "Leesbevestiging gevraagd: gelezen door de gemeente op {moment}" (board Berichten).
 - **Staff see the moment on the message.** On the message page (board `PtBericht`) the "Gelezen" row shows "nog niet" or the moment, and "Geschiedenis" gets "Gelezen door {ontvanger}".
 - **Staff see who read one sending.** Messages that share a `sendingRef` are one sending. The Portal Messages index filters on it and shows "Gelezen op" per recipient, with a count "18 van 24 gelezen". The sending app reads the same rows through the OpenRegister object API.
 - **An app's own inbox joins in.** `messageFields` may also name `readReceiptRequested`, so an app's inbox shows the same notice, and mark-read keeps the first moment in the app's own `readAt` field.

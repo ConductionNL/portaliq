@@ -8,3 +8,5 @@
 - portaliq/PtDashboard dashboard https://identity.conduction.nl/screens/board?id=portaliq/PtDashboard
 - portaliq/PtPortalInstellingen portal, instellingen https://identity.conduction.nl/screens/board?id=portaliq/PtPortalInstellingen
 - planninq/col-read-receipts: no planninq page; messages belong to portaliq; planninq has no message page (planninq adopts this)
+
+Components: CnActionButtons, CnActionsMenu, CnAppNav, CnAuditTrailCard, CnBreadcrumbs, CnBuildiqEditButton, CnDashboardGrid, CnDashboardPage, CnDataTable, CnDetailCard, CnDetailGrid, CnDetailPage, CnKpiGrid, CnNextStepCard, CnObjectListWidget, CnPageHeader, CnRowActions, CnSettingsPage, CnSettingsSection, CnStatsBlock, CnStatusBadge, CnTabs, CnWidgetWrapper

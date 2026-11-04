@@ -6,3 +6,5 @@
 - portaliq/PtPortalInstellingen portal, instellingen https://identity.conduction.nl/screens/board?id=portaliq/PtPortalInstellingen
 - portaliq/PtUitnodigen iemand uitnodigen https://identity.conduction.nl/screens/board?id=portaliq/PtUitnodigen
 - portaliq/PtUitnodigingen uitnodigingen https://identity.conduction.nl/screens/board?id=portaliq/PtUitnodigingen
+
+Components: CnActionButtons, CnActionsBar, CnActionsMenu, CnAppNav, CnAuditTrailCard, CnBreadcrumbs, CnBuildiqEditButton, CnDataTable, CnDetailCard, CnDetailGrid, CnDetailPage, CnFilterBar, CnFormDialog, CnIndexPage, CnKpiGrid, CnMassActionBar, CnPageHeader, CnPagination, CnQuickFilterBar, CnRowActions, CnSettingsPage, CnSettingsSection, CnStatsBlock, CnStatusBadge, CnTabs

@@ -12,3 +12,5 @@
 - wilgenboom/Inloggen inloggen https://identity.conduction.nl/screens/board?id=wilgenboom/Inloggen
 - vaartveld/Inloggen inloggen https://identity.conduction.nl/screens/board?id=vaartveld/Inloggen
 - esdoornveen/Inloggen inloggen https://identity.conduction.nl/screens/board?id=esdoornveen/Inloggen
+
+Components: CnActionsBar, CnAppNav, CnBuildiqEditButton, CnDataTable, CnFilterBar, CnFormDialog, CnIndexPage, CnPagination, CnQuickFilterBar, CnRowActions, CnStatusBadge

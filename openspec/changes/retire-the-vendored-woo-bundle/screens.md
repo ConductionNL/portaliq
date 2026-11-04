@@ -17,3 +17,5 @@
 - portaliq/Publicatie Website: publicatie https://identity.conduction.nl/screens/board?id=portaliq/Publicatie
 - huisstijl/Voet Onderdeel: voettekst https://identity.conduction.nl/screens/board?id=huisstijl/Voet
 - portaliq/Zoeken Website: Woo-publicaties zoeken https://identity.conduction.nl/screens/board?id=portaliq/Zoeken
+
+Components: CnActionButtons, CnActionsBar, CnActionsMenu, CnAppNav, CnAuditTrailCard, CnBreadcrumbs, CnBuildiqEditButton, CnDataTable, CnDetailCard, CnDetailGrid, CnDetailPage, CnFilterBar, CnFormDialog, CnIndexPage, CnKpiGrid, CnMassActionBar, CnNoteCard, CnPagination, CnQuickFilterBar, CnRowActions, CnSegmentedControl, CnSiteEmptyState, CnSiteGlossary, CnSiteSearch, CnStatsBlock, CnStatusBadge, CnTabs, CnToggleTableWidget

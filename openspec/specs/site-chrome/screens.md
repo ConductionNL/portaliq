@@ -23,3 +23,5 @@
 - warmtepompacademie/Voet Onderdeel: voettekst https://identity.conduction.nl/screens/board?id=warmtepompacademie/Voet
 - warmtepompacademie/Inloggen inloggen https://identity.conduction.nl/screens/board?id=warmtepompacademie/Inloggen
 - warmtepompacademie/MobielHome Telefoon: overzicht https://identity.conduction.nl/screens/board?id=warmtepompacademie/MobielHome
+
+Components: CnSiteSearch
