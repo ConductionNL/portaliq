@@ -60,6 +60,10 @@
 			selectId="pq-cases-parties"
 			@change="chooseParty" />
 
+		<!-- "Namens vestiging": the branch in effect, or the choice of one
+		     and "Hele bedrijf" (portal-branch-scope, REQ-SRP-011). -->
+		<BranchSwitcher v-if="session" :t="t" :api="api" :session="session" />
+
 		<p
 			v-if="data === null"
 			class="utrecht-paragraph"
@@ -184,6 +188,7 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
 import UnfinishedForms from '../../components/forms/UnfinishedForms.vue'
 import ActingForBar from '../../components/mijn/ActingForBar.vue'
 import CaseCard from '../../components/mijn/CaseCard.vue'
@@ -211,7 +216,16 @@ import { longDate, readerLocale } from './format.js'
 export default {
 	name: 'MyCasesPage',
 
-	components: { ActingForBar, CaseCard, LoadError, UnfinishedForms },
+	components: {
+		ActingForBar,
+		BranchSwitcher: defineAsyncComponent(
+			() => import('../../components/BranchSwitcher.vue'),
+		),
+
+		CaseCard,
+		LoadError,
+		UnfinishedForms,
+	},
 
 	props: {
 		/** The session as `/portal/api/session` returns it. */

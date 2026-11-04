@@ -87,16 +87,7 @@
 				:menuLabel="t('Menu')"
 				@navigate="go"
 				@search="goSearch"
-				@signout="signOut">
-				<template #account>
-					<!-- The eHerkenning branch in effect, or the choice of one (REQ-SRP-011). -->
-					<BranchSwitcher
-						v-if="session"
-						:t="t"
-						:api="api"
-						:session="session" />
-				</template>
-			</BrandHeader>
+				@signout="signOut" />
 			<WidgetGrid
 				v-else
 				:widgets="[block]"
@@ -645,12 +636,6 @@ const SiteEditButton = defineAsyncComponent(
 	() => import('./components/SiteEditButton.vue'),
 )
 
-// The branch line in the header, loaded only for a signed-in session, so an
-// anonymous visitor pays nothing for it (site-reaches-portal-parity REQ-SRP-011).
-const BranchSwitcher = defineAsyncComponent(
-	() => import('./components/BranchSwitcher.vue'),
-)
-
 // Loaded only when a notice is running, so a portal without one pays nothing
 // for it in the site bundle (operate-maintenance-notice).
 const SiteNotices = defineAsyncComponent(
@@ -692,7 +677,6 @@ export default {
 	components: {
 		PageHelp,
 		AccountArea,
-		BranchSwitcher,
 		ContactPrompt,
 		BrandHeader,
 		FooterColumns,
