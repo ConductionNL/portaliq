@@ -707,3 +707,67 @@ describe('the recording player applies a stream as recorded', () => {
 		}
 	})
 })
+
+/**
+ * A browser window as much as the client touches: storage, a script tag
+ * that names the portal, and a fetch that answers the site record.
+ *
+ * @param {object} traffic The portal's traffic block.
+ * @return {object} The window.
+ */
+function fakeWindow(traffic) {
+	const store = () => {
+		const values = new Map()
+		return {
+			getItem: (key) => (values.has(key) ? values.get(key) : null),
+			setItem: (key, value) => values.set(key, String(value)),
+			removeItem: (key) => values.delete(key),
+		}
+	}
+	const site = { traffic, collector: 'https://portal.example/apps/portaliq/api/traffic' }
+	return {
+		document: {
+			currentScript: { dataset: { origin: 'https://portal.example', appPath: '/apps/portaliq', portal: 'zuiddrecht' } },
+			getElementById: () => null,
+			addEventListener() {},
+			visibilityState: 'visible',
+			title: 'Home',
+		},
+		navigator: {},
+		location: { href: 'https://portal.example/', host: 'portal.example', pathname: '/', search: '' },
+		history: { pushState() {}, replaceState() {} },
+		localStorage: store(),
+		sessionStorage: store(),
+		crypto: globalThis.crypto,
+		fetch: async () => ({ ok: true, json: async () => site }),
+		addEventListener() {},
+		setTimeout: () => 0,
+		clearTimeout() {},
+	}
+}
+
+describe('portal-traffic-experiments: consent is withdrawn', () => {
+	it('discards the client id and starts no new session after consent(false)', async () => {
+		const { boot } = await import('../src/traffic/client.js')
+		const win = fakeWindow({
+			enabled: true,
+			persistClientId: true,
+			consentRequired: true,
+			events: ['page_view', 'session_start'],
+		})
+		boot(win)
+		await new Promise((resolve) => setTimeout(resolve, 0))
+		const key = 'portaliq-traffic:zuiddrecht'
+
+		win.portaliqTraffic.consent(true)
+		assert.ok(win.localStorage.getItem(key + ':client'), 'consent keeps a client id')
+		assert.ok(win.sessionStorage.getItem(key + ':session'), 'and starts a session')
+
+		win.portaliqTraffic.consent(false)
+		assert.equal(win.localStorage.getItem(key + ':client'), null, 'the client id is discarded')
+		assert.equal(win.sessionStorage.getItem(key + ':session'), null)
+		win.portaliqTraffic.track('page_view')
+		assert.equal(win.sessionStorage.getItem(key + ':session'), null, 'no new session is started')
+		assert.equal(win.localStorage.getItem(key + ':client'), null)
+	})
+})

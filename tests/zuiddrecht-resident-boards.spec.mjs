@@ -692,10 +692,12 @@ test('Mijn zaken as rows when the portal says so, folder cards otherwise', async
 	assert.doesNotMatch(folders, /denhaag-case-card|pq-case-card--row|pq-cases__list--rows/)
 })
 
-test('the moved controls keep their place: the two ctas on the overview, save and withdraw on the case page', () => {
-	// dossiq declares them (lib/Portal/PortalPages.php); the overview keeps
-	// its cta blocks and the case screen its buttons, which the tests above
-	// render. The data badge knows the info tone the compact card uses.
+test('the moved controls keep their place: Bezwaar maken, Klacht indienen, save and withdraw on the case page', () => {
+	// dossiq declares them (lib/Portal/PortalPages.php): the two ctas sit on
+	// the case page (board Zaak, F1), bound to the open case with
+	// `withRecord`, beside the case screen's save and withdraw, which the
+	// tests above render. The data badge knows the info tone the compact
+	// card uses.
 	const badge = readFileSync(
 		new URL('../src/site/components/mijn/DataBadge.vue', import.meta.url),
 		'utf8',
@@ -706,4 +708,9 @@ test('the moved controls keep their place: the two ctas on the overview, save an
 		'utf8',
 	)
 	assert.match(pages, /record\?\.heading === 'record'/)
+	const cta = readFileSync(
+		new URL('../src/site/components/c/ActionBlock.vue', import.meta.url),
+		'utf8',
+	)
+	assert.match(cta, /this\.block\.withRecord === true/, 'a cta on the case page carries the open case')
 })

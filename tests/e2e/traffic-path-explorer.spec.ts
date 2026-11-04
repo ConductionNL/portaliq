@@ -333,7 +333,7 @@ test.describe('traffic path explorer: the Traffic page', () => {
 		}
 	})
 
-	// @e2e portal-traffic-analytics::the-page-shows-the-numbers-for-a-measured-portal
+	// @e2e portal-traffic-kpi-cards::the-page-shows-the-numbers-for-a-measured-portal
 	// @e2e portal-traffic-path-explorer::a-node-is-chosen-by-keyboard
 	// @e2e portal-traffic-path-explorer::the-steps-are-available-as-a-table
 	// @e2e portal-traffic-path-explorer::steps-can-be-added-and-removed
@@ -404,7 +404,7 @@ test.describe('traffic path explorer: the Traffic page', () => {
 		await expect(page.getByTestId('traffic-paths-diagram')).toHaveCount(0)
 	})
 
-	// @e2e portal-traffic-analytics::a-measured-portal-without-figures-is-not-the-same-as-an-unmeasured-one
+	// @e2e portal-traffic-kpi-cards::a-measured-portal-without-figures-is-not-the-same-as-an-unmeasured-one
 	test('a period without daily figures reads "No traffic recorded yet" in the explorer, not "Not measured"', async ({
 		page,
 	}) => {
