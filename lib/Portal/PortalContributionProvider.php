@@ -114,10 +114,10 @@ class PortalContributionProvider implements IPortalContributionProvider {
 	 */
 	public function __construct(
 		private readonly ScopedCollectionReaderInterface $objectReader,
-		ISecureRandom $random,
+		private readonly ISecureRandom $random,
 		private readonly LoggerInterface $logger,
 	) {
-		$this->formActions = new FormSubmitActions(random: $random, logger: $logger);
+		$this->formActions = new FormSubmitActions(random: $this->random, logger: $logger);
 	}//end __construct()
 
 	/**
