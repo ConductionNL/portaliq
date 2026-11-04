@@ -145,6 +145,12 @@
 										:translation="message.translation || null"
 										:t="tr"
 										:locale="lang" />
+									<p
+										v-if="isOwn(message) && readOf(message, thread)"
+										class="pq-message__read"
+										data-testid="messages-read">
+										{{ readOf(message, thread) }}
+									</p>
 								</li>
 							</ol>
 							<form
@@ -262,6 +268,7 @@ import {
 	conversationTranslator,
 	fetchContacts,
 	markRead,
+	readLine,
 	recordTabs,
 	replyTo,
 	startConversation,
@@ -602,6 +609,18 @@ export default {
 		},
 
 		/**
+		 * When the other side read the resident's own message.
+		 *
+		 * @param {object} message The message.
+		 * @param {object} thread Its conversation.
+		 * @return {string} The line, or '' while unread.
+		 * @spec openspec/changes/message-read-time/specs/guardian-direct-messaging/spec.md#requirement-the-sender-sees-when-her-message-was-read
+		 */
+		readOf(message, thread) {
+			return readLine(message, { who: this.cardOf(thread).who, locale: this.lang, tr: this.ct })
+		},
+
+		/**
 		 * @param {string} value An ISO date-time.
 		 * @return {string} The value in the page language.
 		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
@@ -771,5 +790,11 @@ export default {
 .pq-message__header {
 	display: flex;
 	gap: 8px;
+}
+
+.pq-message__read {
+	margin: 4px 0 0;
+	color: var(--utrecht-document-color, inherit);
+	font-size: 0.9375em;
 }
 </style>

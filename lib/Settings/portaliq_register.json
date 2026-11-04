@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.105.0"
+        "version": "0.106.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.105.0",
+                "version": "0.106.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -10829,7 +10829,7 @@
             "guardianMessage": {
                 "slug": "guardianMessage",
                 "icon": "Email",
-                "version": "0.2.0",
+                "version": "0.3.0",
                 "title": "Message",
                 "authorization": {
                     "read": [
@@ -10879,6 +10879,13 @@
                             "type": "string"
                         },
                         "example": []
+                    },
+                    "readAt": {
+                        "title": "Read at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "The moment a participant other than the sender first opened the message. Written once; the sender's reader shows it as \"Gelezen door ... op ...\".",
+                        "example": "2026-10-05T10:12:00+00:00"
                     },
                     "translations": {
                         "title": "Translations",

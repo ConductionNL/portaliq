@@ -399,8 +399,10 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.104.0 (portalSubmission 0.3.0): a submission's `actionTitle`, the name the Submissions list shows (board PtInzendingen). Additive.
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalSubmission']['properties']['actionTitle']['type']);
 		// 0.105.0 (portalPage 0.9.0): a rows block's `statusNoteAtField`, the moment its status was set, and a cta's `labelWhenEmpty` (guardian-pages-follow-the-wilgenboom-boards). Additive.
-		$this->assertSame(expected: '0.105.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.105.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		// 0.106.0 (guardianMessage 0.3.0): a message's `readAt`, when the other side first read it (message-read-time). Additive.
+		$this->assertSame(expected: '0.106.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.106.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		$this->assertSame(expected: 'date-time', actual: self::$register['components']['schemas']['guardianMessage']['properties']['readAt']['format']);
 		$this->assertSame(expected: 'boolean', actual: self::$register['components']['schemas']['portal']['properties']['actionsEnabled']['type']);
 		$this->assertSame(expected: '0.2.0', actual: self::$register['components']['schemas']['media']['version']);
 		$this->assertSame(expected: 'integer', actual: self::$register['components']['schemas']['media']['properties']['usedOn']['type']);
@@ -448,7 +450,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalReporterContact']['version']);
 		$this->assertSame('0.4.0', self::$register['components']['schemas']['portalCaseType']['version']);
 		$this->assertArrayHasKey('handlerGroup', self::$register['components']['schemas']['portalCaseType']['properties']['portalReportDeclaration']['properties']);
-		$this->assertSame('0.2.0', self::$register['components']['schemas']['guardianMessage']['version']);
+		$this->assertSame('0.3.0', self::$register['components']['schemas']['guardianMessage']['version']);
 		$this->assertArrayHasKey('translations', self::$register['components']['schemas']['guardianMessage']['properties']);
 		$this->assertArrayHasKey('messageLanguage', self::$register['components']['schemas']['portalAccount']['properties']);
 		$this->assertSame('0.2.1', self::$register['components']['schemas']['activityOffer']['version']);
