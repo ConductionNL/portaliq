@@ -165,8 +165,31 @@ Four switches change what a portal knows about a person rather than how much tra
 - **WHEN** a portal record carries `sensitive.persistClientId: "true"` or `1`
 - **THEN** the resolved configuration treats it as off
 
+#### Scenario: A switched dimension follows its switch
+@e2e exclude covered by TrafficConfigResolverTest::testSwitchedDimensionsFollowTheirSwitch; nothing renders
+- **WHEN** a portal lists `userRef` among its dimensions without `accountLinking`, or `region` with `regionGranularity: none`
+- **THEN** the dimension is not stored
+
 #### Scenario: The warning is shown where the switch is
 @e2e exclude Static: drawn on the boards PtPortalInstellingen and PtVerkeer
 - **WHEN** an editor opens a portal's traffic settings
 - **THEN** each sensitive switch shows the consequence of turning it on, under "Gevoelige metingen"
 - **AND** the Traffic page of a portal with any of them on shows "Deze portal meet meer dan verkeer" above the figures, naming the switches that are on
+
+### Requirement: Measurement MUST honour the portal's consent posture
+
+Measurement MUST honour the portal's consent posture.
+
+A portal declares whether measurement runs before consent, and which events are
+permitted without it.
+
+#### Scenario: Consent has not been given
+@e2e exclude covered by TrafficConfigResolverTest::testConsentGatesEverythingNotExplicitlyExempted and TrafficIngestServiceTest::testOnlyTheBooleanTrueIsConsent; the visitor reads the posture on the board Cookieverklaring
+- **WHEN** a portal requires consent and the visitor has not given it
+- **THEN** only events on the pre-consent list are accepted
+- **AND** no client id is persisted in the visitor's browser
+
+#### Scenario: Consent is withdrawn
+@e2e exclude the client forgets its identity on `consent(false)` (src/traffic/client.js); no test stages a withdrawal yet
+- **WHEN** a visitor withdraws consent
+- **THEN** the client id is discarded and a new session is not started
