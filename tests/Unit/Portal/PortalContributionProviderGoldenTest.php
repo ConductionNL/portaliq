@@ -68,8 +68,24 @@ class PortalContributionProviderGoldenTest extends TestCase {
 		$log    = [];
 		$reader = $this->createMock(originalClassName: ScopedCollectionReaderInterface::class);
 		$reader->method('readCollection')->willReturnCallback(
-			static function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation = '', int $limit = 200, string $scopeClaim = '', string $contributingApp = '', mixed $via = null, string $audience = '', mixed $fields = null, array $filter = []) use (&$log, $world): array {
-				$log[] = ['read', $register, $schema, $scopeField, $subjectRef, $organisation, $limit, $scopeClaim, $contributingApp, $via, $audience, $fields, $filter];
+			static function (
+				string $register,
+				string $schema,
+				string $scopeField,
+				string $subjectRef,
+				string $organisation = '',
+				int $limit = 200,
+				string $scopeClaim = '',
+				string $contributingApp = '',
+				mixed $via = null,
+				string $audience = '',
+				mixed $fields = null,
+				array $filter = [],
+			) use (&$log, $world): array {
+				$log[] = [
+					'read', $register, $schema, $scopeField, $subjectRef, $organisation, $limit,
+					$scopeClaim, $contributingApp, $via, $audience, $fields, $filter,
+				];
 				return ($world[$schema] ?? []);
 			}
 		);
@@ -89,11 +105,11 @@ class PortalContributionProviderGoldenTest extends TestCase {
 			}
 		);
 
-		$provider     = new PortalContributionProvider($reader, $random, $logger);
+		$provider     = new PortalContributionProvider(objectReader: $reader, random: $random, logger: $logger);
 		$contribution = $provider->getContribution(subject: $world['subject']);
 		foreach (($contribution['actions'] ?? []) as $index => $action) {
 			if (is_array($action) === true && isset($action['server']['submittedAt']) === true) {
-				$this->assertNotFalse(\DateTimeImmutable::createFromFormat(DATE_ATOM, $action['server']['submittedAt']));
+				$this->assertNotFalse(condition: \DateTimeImmutable::createFromFormat(DATE_ATOM, $action['server']['submittedAt']));
 				$contribution['actions'][$index]['server']['submittedAt'] = '<atom>';
 			}
 		}
@@ -136,18 +152,56 @@ class PortalContributionProviderGoldenTest extends TestCase {
 			'empty audience'                      => ['subject' => ['audience' => '']],
 			'no page for the audience'            => ['subject' => ['audience' => 'resident'], 'portalPage' => [['audience' => 'company'] + $page]],
 			'one page'                            => ['subject' => ['audience' => 'resident'], 'portalPage' => [$page]],
-			'two pages, lowest id wins'           => ['subject' => ['audience' => 'resident'], 'portalPage' => [$page, ['@self' => ['id' => 'p-1'], 'label' => 'Eerste'] + $page, ['audience' => 'other'] + $page]],
-			'page without trust or notifications' => ['subject' => ['audience' => 'resident'], 'portalPage' => [['audience' => 'resident', 'id' => 9, 'minTrust' => '', 'notifications' => [], 'collections' => 'x']]],
-			'page with non-string trust'          => ['subject' => ['audience' => 'resident'], 'portalPage' => [['minTrust' => 3, 'notifications' => 'no'] + $page]],
+			'two pages, lowest id wins'           => [
+				'subject' => ['audience' => 'resident'],
+				'portalPage' => [$page, ['@self' => ['id' => 'p-1'], 'label' => 'Eerste'] + $page, ['audience' => 'other'] + $page],
+			],
+			'page without trust or notifications' => [
+				'subject' => ['audience' => 'resident'],
+				'portalPage' => [['audience' => 'resident', 'id' => 9, 'minTrust' => '', 'notifications' => [], 'collections' => 'x']],
+			],
+			'page with non-string trust'          => [
+				'subject' => ['audience' => 'resident'],
+				'portalPage' => [['minTrust' => 3, 'notifications' => 'no'] + $page],
+			],
 			'resident never gets forms'           => ['subject' => ['audience' => 'resident'], 'form' => [$form]],
 			'anonymous without forms or page'     => ['subject' => ['audience' => 'anonymous']],
 			'anonymous with forms only'           => ['subject' => ['audience' => 'anonymous'], 'form' => [$form, $minimal]],
-			'anonymous with page and forms'       => ['subject' => ['audience' => 'anonymous'], 'portalPage' => [['audience' => 'anonymous'] + $page], 'form' => [$minimal]],
-			'anonymous page, no usable form'      => ['subject' => ['audience' => 'anonymous'], 'portalPage' => [['audience' => 'anonymous'] + $page], 'form' => [['fields' => [['id' => 'x']]] + array_diff_key($minimal, ['uuid' => 1])]],
-			'form ids from self'                  => ['subject' => ['audience' => 'anonymous'], 'form' => [['@self' => ['id' => '', 'uuid' => 'self-u']] + array_diff_key($minimal, ['uuid' => 1]), ['@self' => ['id' => 12]] + array_diff_key($minimal, ['uuid' => 1]), ['id' => 0, 'uuid' => 1.5] + array_diff_key($minimal, ['uuid' => 1])]],
-			'form without fields skipped'         => ['subject' => ['audience' => 'anonymous'], 'form' => [['fields' => [['id' => '']]] + $minimal, ['fields' => 'x'] + $minimal]],
-			'form without destination'            => ['subject' => ['audience' => 'anonymous'], 'form' => [['destination' => ['register' => 'r', 'schema' => '  ']] + $minimal, ['destination' => ['schema' => 's']] + $minimal, ['destination' => 'x'] + $minimal, $form]],
-			'form destination not an array'       => ['subject' => ['audience' => 'anonymous'], 'form' => [array_diff_key($minimal, ['destination' => 1])]],
+			'anonymous with page and forms'       => [
+				'subject' => ['audience' => 'anonymous'],
+				'portalPage' => [['audience' => 'anonymous'] + $page],
+				'form' => [$minimal],
+			],
+			'anonymous page, no usable form'      => [
+				'subject' => ['audience' => 'anonymous'],
+				'portalPage' => [['audience' => 'anonymous'] + $page],
+				'form' => [['fields' => [['id' => 'x']]] + array_diff_key($minimal, ['uuid' => 1])],
+			],
+			'form ids from self'                  => [
+				'subject' => ['audience' => 'anonymous'],
+				'form' => [
+					['@self' => ['id' => '', 'uuid' => 'self-u']] + array_diff_key($minimal, ['uuid' => 1]),
+					['@self' => ['id' => 12]] + array_diff_key($minimal, ['uuid' => 1]),
+					['id' => 0, 'uuid' => 1.5] + array_diff_key($minimal, ['uuid' => 1]),
+				],
+			],
+			'form without fields skipped'         => [
+				'subject' => ['audience' => 'anonymous'],
+				'form' => [['fields' => [['id' => '']]] + $minimal, ['fields' => 'x'] + $minimal],
+			],
+			'form without destination'            => [
+				'subject' => ['audience' => 'anonymous'],
+				'form' => [
+					['destination' => ['register' => 'r', 'schema' => '  ']] + $minimal,
+					['destination' => ['schema' => 's']] + $minimal,
+					['destination' => 'x'] + $minimal,
+					$form,
+				],
+			],
+			'form destination not an array'       => [
+				'subject' => ['audience' => 'anonymous'],
+				'form' => [array_diff_key($minimal, ['destination' => 1])],
+			],
 		];
 	}//end worlds()
 }//end class
