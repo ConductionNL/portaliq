@@ -221,10 +221,8 @@ export function detailFields(collection, row) {
 			: Object.keys(row || {}).filter((key) => !ENVELOPE.has(key))
 	return fields.map((field) => {
 		const config = fieldConfigOf(collection, field)
-		const column = rowColumn(
-			byField.get(field) || { field, label: config.label },
-			row,
-		)
+		const own = byField.get(field) || { field, label: config.label }
+		const column = rowColumn(own, row)
 		return {
 			field,
 			label: columnLabel(column),
