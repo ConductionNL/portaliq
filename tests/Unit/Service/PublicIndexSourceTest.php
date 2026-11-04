@@ -102,7 +102,7 @@ class PublicIndexSourceTest extends TestCase {
 		$this->assertSame(['learniq:t1'], array_column($mine->getData()['items'], 'id'), "the visitor's own class");
 
 		$other = $this->controller(subject: ['sub' => 'p-2'], query: $asked + ['app' => 'learniq']);
-		$this->assertSame(2, $other->index('vaartveld')->getData()['total'], 'a person the app cannot place narrows nothing');
+		$this->assertSame(expected: 2, actual: $other->index('vaartveld')->getData()['total'], message: 'a person the app cannot place narrows nothing');
 	}
 
 	/**

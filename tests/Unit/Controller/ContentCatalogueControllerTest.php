@@ -36,7 +36,13 @@ class ContentCatalogueControllerTest extends TestCase {
 	 *
 	 * @return ContentCatalogueController
 	 */
-	private function controller(?array $portal, string $auth='', ?array $subject=null, ?MockObject $catalogue=null, array $query=[]): ContentCatalogueController {
+	private function controller(
+		?array $portal,
+		string $auth='',
+		?array $subject=null,
+		?MockObject $catalogue=null,
+		array $query=[],
+	): ContentCatalogueController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParam')->willReturnCallback(
 			static fn (string $key, mixed $default=null): mixed => ($query[$key] ?? $default)
@@ -122,8 +128,19 @@ class ContentCatalogueControllerTest extends TestCase {
 		$catalogue->method('itemsFor')->with('zuid')->willReturn([]);
 		$catalogue->expects($this->once())->method('visitorValuesFor')->with('zuid', 'myapp', $this->anything())->willReturn(['Group' => ['g1']]);
 		$filters = json_encode(['Group' => ['visitor', 'other'], 'Empty' => ['visitor'], 'Plain' => ['p']]);
-		$query = ['search' => str_repeat('q', 300), 'types' => ' a, ,b ', 'filters' => $filters, 'sort' => 'bogus', 'page' => 1, 'limit' => 10, 'upcoming' => '1', 'app' => 'myapp', 'categories' => 'c1,,c2', 'range' => 'schoolYear'];
-		$c = $this->controller(['slug' => 'zuid'], 'Bearer x', ['subjectRef' => 'abc'], $catalogue, $query);
+		$query = [
+			'search'     => str_repeat('q', 300),
+			'types'      => ' a, ,b ',
+			'filters'    => $filters,
+			'sort'       => 'bogus',
+			'page'       => 1,
+			'limit'      => 10,
+			'upcoming'   => '1',
+			'app'        => 'myapp',
+			'categories' => 'c1,,c2',
+			'range'      => 'schoolYear',
+		];
+		$c = $this->controller(portal: ['slug' => 'zuid'], auth: 'Bearer x', subject: ['subjectRef' => 'abc'], catalogue: $catalogue, query: $query);
 
 		$response = $c->index('zuid');
 
@@ -140,7 +157,13 @@ class ContentCatalogueControllerTest extends TestCase {
 		$catalogue = $this->createMock(PublicCatalogue::class);
 		$catalogue->method('itemsFor')->willReturn([]);
 		$catalogue->expects($this->never())->method('visitorValuesFor');
-		$c = $this->controller(['slug' => 'zuid'], '', null, $catalogue, ['filters' => 'not json', 'app' => 'Bad App!']);
+		$c = $this->controller(
+			portal: ['slug' => 'zuid'],
+			auth: '',
+			subject: null,
+			catalogue: $catalogue,
+			query: ['filters' => 'not json', 'app' => 'Bad App!']
+		);
 
 		$response = $c->index('zuid');
 

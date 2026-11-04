@@ -79,17 +79,33 @@ class ContentCatalogueIndexGoldenTest extends TestCase {
 		$params  = ($world['params'] ?? []);
 		$request = $this->createMock(originalClassName: IRequest::class);
 		$request->method('getParam')->willReturnCallback(
-			static fn (string $key, mixed $default = null): mixed => array_key_exists($key, $params) === true ? $params[$key] : $default
+			static function (string $key, mixed $default = null) use ($params): mixed {
+				if (array_key_exists($key, $params) === true) {
+					return $params[$key];
+				}
+
+				return $default;
+			}
 		);
 		$request->method('getHeader')->willReturnCallback(
-			static fn (string $name): string => ($name === 'Authorization') ? ($world['auth'] ?? '') : ''
+			static function (string $name) use ($world): string {
+				if ($name === 'Authorization') {
+					return ($world['auth'] ?? '');
+				}
+
+				return '';
+			}
 		);
 
 		$resolver = $this->createMock(originalClassName: PortalResolver::class);
 		$resolver->method('resolve')->willReturnCallback(
 			static function ($asked, ?string $portalSlug = null) use (&$log, $world): ?array {
 				$log[] = ['resolver.resolve', $portalSlug];
-				return array_key_exists('portal', $world) === true ? $world['portal'] : ['slug' => 'zuid'];
+				if (array_key_exists('portal', $world) === true) {
+					return $world['portal'];
+				}
+
+				return ['slug' => 'zuid'];
 			}
 		);
 		$session = $this->createMock(originalClassName: PortalSessionService::class);
@@ -113,7 +129,7 @@ class ContentCatalogueIndexGoldenTest extends TestCase {
 			}
 		);
 
-		$controller = new ContentCatalogueController('portaliq', $request, $resolver, $session, $catalogue);
+		$controller = new ContentCatalogueController(appName: 'portaliq', request: $request, resolver: $resolver, session: $session, catalogue: $catalogue);
 
 		return $this->answer(controller: $controller, params: $params, log: $log);
 	}//end trace()
@@ -179,10 +195,44 @@ class ContentCatalogueIndexGoldenTest extends TestCase {
 		$today = date('Y-m-d');
 
 		return [
-			['id' => 'a:1', 'type' => 'news', 'title' => 'Zwembad open', 'kind' => 'Bericht', 'category' => 'c1', 'date' => $today, 'audience' => 'Inwoners', 'facets' => ['Group' => ['g1'], 'Plain' => ['p']]],
-			['id' => 'a:2', 'type' => 'event', 'title' => 'Avondmarkt', 'kind' => 'Markt', 'category' => 'c2', 'date' => '2099-05-01', 'endDate' => '2099-05-02', 'facets' => ['Group' => ['g2']]],
-			['id' => 'b:3', 'type' => 'event', 'title' => 'Beurs', 'kind' => 'Beurs', 'category' => 'c1', 'date' => '2001-01-01', 'facets' => ['Plain' => ['p', 'q']]],
-			['id' => 'myapp:4', 'type' => 'page', 'title' => 'Aanvraag zwemles', 'kind' => 'Dienst', 'summary' => 'zwem', 'category' => 'c3', 'facets' => ['Group' => ['visitor', 'g1']]],
+			[
+				'id' => 'a:1',
+				'type' => 'news',
+				'title' => 'Zwembad open',
+				'kind' => 'Bericht',
+				'category' => 'c1',
+				'date' => $today,
+				'audience' => 'Inwoners',
+				'facets' => ['Group' => ['g1'], 'Plain' => ['p']],
+			],
+			[
+				'id' => 'a:2',
+				'type' => 'event',
+				'title' => 'Avondmarkt',
+				'kind' => 'Markt',
+				'category' => 'c2',
+				'date' => '2099-05-01',
+				'endDate' => '2099-05-02',
+				'facets' => ['Group' => ['g2']],
+			],
+			[
+				'id' => 'b:3',
+				'type' => 'event',
+				'title' => 'Beurs',
+				'kind' => 'Beurs',
+				'category' => 'c1',
+				'date' => '2001-01-01',
+				'facets' => ['Plain' => ['p', 'q']],
+			],
+			[
+				'id' => 'myapp:4',
+				'type' => 'page',
+				'title' => 'Aanvraag zwemles',
+				'kind' => 'Dienst',
+				'summary' => 'zwem',
+				'category' => 'c3',
+				'facets' => ['Group' => ['visitor', 'g1']],
+			],
 			['id' => 'myapp:5', 'type' => 'page', 'title' => 'Apotheek', 'category' => 'c3', 'date' => '2050-01-01'],
 		];
 	}//end items()
@@ -201,7 +251,10 @@ class ContentCatalogueIndexGoldenTest extends TestCase {
 			'nothing asked'                 => [],
 			'unknown portal'                => ['portal' => null, 'params' => ['portal' => 'nope', 'search' => 'zwem']],
 			'portal named'                  => ['params' => ['portal' => 'asked']],
-			'sign-in portal, anonymous'     => ['portal' => ['slug' => 'zuid', 'authentication' => ['modes' => ['digid'], 'public' => false, 'access' => 'signedIn']], 'params' => ['search' => 'zwem']],
+			'sign-in portal, anonymous'     => [
+				'portal' => ['slug' => 'zuid', 'authentication' => ['modes' => ['digid'], 'public' => false, 'access' => 'signedIn']],
+				'params' => ['search' => 'zwem'],
+			],
 			'search'                        => ['params' => ['search' => 'zwem']],
 			'search cut at 200'             => ['params' => ['search' => str_repeat(' ', 200) . 'zwem']],
 			'search just inside 200'        => ['params' => ['search' => str_repeat(' ', 196) . 'zwem']],
@@ -219,7 +272,10 @@ class ContentCatalogueIndexGoldenTest extends TestCase {
 			'page as array'                 => ['params' => ['page' => ['2'], 'limit' => []]],
 			'limit null'                    => ['params' => ['limit' => null]],
 			'limit only'                    => ['params' => ['limit' => '2']],
-			'page only'                     => ['params' => ['page' => '2'], 'more' => array_map(static fn (int $n): array => ['id' => 'more:' . $n, 'type' => 'page', 'title' => 'Item ' . $n], range(1, 8))],
+			'page only'                     => [
+				'params' => ['page' => '2'],
+				'more' => array_map(static fn (int $n): array => ['id' => 'more:' . $n, 'type' => 'page', 'title' => 'Item ' . $n], range(1, 8)),
+			],
 			'upcoming on'                   => ['params' => ['upcoming' => '1']],
 			'upcoming other value'          => ['params' => ['upcoming' => 'true']],
 			'app'                           => ['params' => ['app' => 'myapp']],
@@ -230,13 +286,28 @@ class ContentCatalogueIndexGoldenTest extends TestCase {
 			'range other'                   => ['params' => ['range' => 'calendarYear']],
 			'facetsBy'                      => ['params' => ['facetsBy' => json_encode(['kind' => 'Soort', 'news' => 'Nieuws', 'audience' => 'Voor wie'])]],
 			'facetsBy junk'                 => ['params' => ['facetsBy' => 'x']],
-			'visitor signed in'             => ['params' => ['filters' => $group, 'app' => 'myapp'], 'auth' => $bearer, 'subject' => $anne, 'visitor' => ['Group' => ['g1']]],
+			'visitor signed in'             => [
+				'params' => ['filters' => $group, 'app' => 'myapp'],
+				'auth' => $bearer,
+				'subject' => $anne,
+				'visitor' => ['Group' => ['g1']],
+			],
 			'visitor signed in, no values'  => ['params' => ['filters' => $group, 'app' => 'myapp'], 'auth' => $bearer, 'subject' => $anne],
-			'visitor narrows'               => ['params' => ['filters' => json_encode(['Group' => ['visitor']]), 'app' => 'myapp'], 'auth' => $bearer, 'subject' => $anne, 'visitor' => ['Group' => ['g1']]],
+			'visitor narrows'               => [
+				'params' => ['filters' => json_encode(['Group' => ['visitor']]), 'app' => 'myapp'],
+				'auth' => $bearer,
+				'subject' => $anne,
+				'visitor' => ['Group' => ['g1']],
+			],
 			'visitor anonymous'             => ['params' => ['filters' => $group, 'app' => 'myapp']],
 			'visitor without app'           => ['params' => ['filters' => $group], 'auth' => $bearer, 'subject' => $anne],
 			'visitor with malformed app'    => ['params' => ['filters' => $group, 'app' => 'Bad App!'], 'auth' => $bearer, 'subject' => $anne],
-			'forged subject in the query'   => ['params' => ['filters' => $group, 'app' => 'myapp', 'subject' => 'mallory', 'subjectRef' => 'mallory', 'userId' => 'mallory'], 'auth' => $bearer, 'subject' => $anne, 'visitor' => ['Group' => ['g1']]],
+			'forged subject in the query'   => [
+				'params' => ['filters' => $group, 'app' => 'myapp', 'subject' => 'mallory', 'subjectRef' => 'mallory', 'userId' => 'mallory'],
+				'auth' => $bearer,
+				'subject' => $anne,
+				'visitor' => ['Group' => ['g1']],
+			],
 			'search as array'               => ['params' => ['search' => ['zwem']]],
 			'types as array'                => ['params' => ['types' => ['event']]],
 			'filters as array'              => ['params' => ['filters' => ['Plain' => ['p']]]],
@@ -248,7 +319,12 @@ class ContentCatalogueIndexGoldenTest extends TestCase {
 			'facetsBy as array'             => ['params' => ['facetsBy' => ['kind' => 'x']]],
 			'portal as array'               => ['params' => ['portal' => ['asked']]],
 			'search null'                   => ['params' => ['search' => null]],
-			'everything together'           => ['params' => ['portal' => 'asked', 'search' => 'a', 'types' => 'event,page', 'filters' => '{}', 'sort' => 'title', 'page' => '1', 'limit' => '1', 'upcoming' => '1', 'app' => 'myapp', 'categories' => 'c3', 'range' => '', 'facetsBy' => '{}']],
+			'everything together'           => [
+				'params' => [
+					'portal' => 'asked', 'search' => 'a', 'types' => 'event,page', 'filters' => '{}', 'sort' => 'title', 'page' => '1',
+					'limit' => '1', 'upcoming' => '1', 'app' => 'myapp', 'categories' => 'c3', 'range' => '', 'facetsBy' => '{}',
+				],
+			],
 		];
 	}//end worlds()
 }//end class

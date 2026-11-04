@@ -124,7 +124,13 @@ class ContentNewsCatalogueGoldenTest extends TestCase {
 	private function shared(?array $portal, ?array $subject, string $header): array {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParam')->willReturnCallback(
-			static fn (string $key, mixed $default = null): mixed => ($key === 'search') ? 'zwem' : $default
+			static function (string $key, mixed $default = null): mixed {
+				if ($key === 'search') {
+					return 'zwem';
+				}
+
+				return $default;
+			}
 		);
 		$request->method('getHeader')->willReturnCallback(function (string $name) use ($header): string {
 			$this->log[] = ['getHeader' => $name];
