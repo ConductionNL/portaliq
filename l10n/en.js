@@ -3159,7 +3159,20 @@ OC.L10N.register(
         "Upload": "Upload",
         "Partner": "Partner",
         "by {decidedBy|user}, {decidedAt|date}": "by {decidedBy|user}, {decidedAt|date}",
-        "Approved": "Approved"
+        "Approved": "Approved",
+        "Announcement": "Announcement",
+        "{level} · shows on {surfaces}": "{level} · shows on {surfaces}",
+        "Information": "Information",
+        "Warning": "Warning",
+        "website": "website",
+        "Signed-in portal": "Signed-in portal",
+        "Visible now": "Visible now",
+        "only published and within the period visible": "only published and within the period visible",
+        "{domains.0.hostname} · theme {theme} · {count:pages} pages": "{domains.0.hostname} · theme {theme} · {count:pages} pages",
+        "View theme": "View theme",
+        "Last changed {date}": "Last changed {date}",
+        "_%n page waits to be published_::_%n pages wait to be published_": ["%n page waits to be published","%n pages wait to be published"],
+        "Upcoming": "Upcoming"
     },
     "nplurals=2; plural=(n != 1);"
 )
