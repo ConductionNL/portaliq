@@ -229,7 +229,7 @@ export default {
 		'The portal cannot show registered details for this way of signing in.':
 			'Bij deze manier van inloggen kan het portaal geen geregistreerde gegevens tonen.',
 		'There are no documents on this case yet.':
-			'Er staan nog geen documenten bij deze zaak.',
+			'Er staan nog geen stukken bij deze zaak.',
 		'There is no portal account for this sign-in.':
 			'Er is geen portaalaccount voor deze inlog.',
 		'These are the details the Chamber of Commerce (KvK) holds about your company.':
@@ -253,7 +253,7 @@ export default {
 		'Why are you withdrawing? (optional)': 'Waarom trekt u in? (niet verplicht)',
 		'Why do you need access?': 'Waarom hebt u toegang nodig?',
 		'Withdraw request': 'Aanvraag intrekken',
-		'Withdraw this request': 'Deze aanvraag intrekken',
+		'Withdraw this request': 'Aanvraag intrekken',
 		'Withdraw this request?': 'Wilt u deze aanvraag intrekken?',
 		'Withdrawn on {date}.': 'Ingetrokken op {date}.',
 		'We still need documents from you. Send them before {due}, and we will decide by {legal}.':

@@ -436,11 +436,17 @@ class PortalInboxReaderTest extends TestCase {
 					$this->assertSame(['accountRef', 'account-1'], [$scopeField, $subjectRef], 'only the resident\'s own log');
 					$link = static fn (string $id): array => ['app' => 'dossiq', 'collection' => 'berichten', 'id' => $id];
 					return [
-						['channel' => 'messageBox', 'status' => 'delivered', 'recordLink' => $link('b1')],
+						[
+							'channel'       => 'messageBox',
+							'status'        => 'delivered',
+							'recordLink'    => $link('b1'),
+							'@self'         => ['updated' => '2026-10-02T12:02:00+00:00'],
+							'lastAttemptAt' => '2026-10-02T12:00:00+00:00',
+						],
 						['channel' => 'messageBox', 'status' => 'simulated', 'recordLink' => $link('b2')],
 						['channel' => 'messageBox', 'status' => 'failed', 'recordLink' => $link('b3')],
 						['channel' => 'email', 'status' => 'sent', 'recordLink' => $link('b3')],
-						['channel' => 'messageBox', 'status' => 'read', 'recordLink' => $link('b4')],
+						['channel' => 'messageBox', 'status' => 'read', 'recordLink' => $link('b4'), 'lastAttemptAt' => '2026-09-30T08:15:00+00:00'],
 						['channel' => 'messageBox', 'status' => 'delivered', 'recordLink' => ['app' => 'other', 'collection' => 'berichten', 'id' => 'b3']],
 					];
 				}
@@ -458,8 +464,11 @@ class PortalInboxReaderTest extends TestCase {
 			$shown[(string)$row['subject']] = ($row['_deliveries'] ?? []);
 		}
 
-		$line = [['channel' => 'messageBox', 'label' => 'MijnOverheid Berichtenbox']];
-		$this->assertSame(['Besluit' => $line, 'Gesimuleerd' => [], 'Mislukt' => [], 'Gelezen' => $line], $shown);
+		$line = static fn (string $at): array => [['channel' => 'messageBox', 'label' => 'MijnOverheid Berichtenbox', 'at' => $at]];
+		$this->assertSame(
+			expected: ['Besluit' => $line('2026-10-02T12:02:00+00:00'), 'Gesimuleerd' => [], 'Mislukt' => [], 'Gelezen' => $line('2026-09-30T08:15:00+00:00')],
+			actual: $shown
+		);
 
 		$logReads = 0;
 		$notOffered = $this->createMock(PortalOrganisationConfigService::class);

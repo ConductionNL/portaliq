@@ -4,7 +4,7 @@
   -->
 
 <!--
-	What /mijn opens on (design D4): a greeting, then "Dit moet u nog doen"
+	What /mijn opens on (design D4): a greeting, then "Wat u nog moet doen"
 	(the open portal tasks), then every page a contribution marks
 	`home: true`, each under its app's name when there are several. Without a
 	home page it shows the running cases of every `cases` collection and the
@@ -222,7 +222,7 @@ export default {
 		},
 
 		/**
-		 * "Dit moet u nog doen" shows when the portal has tasks; with home
+		 * "Wat u nog moet doen" shows when the portal has tasks; with home
 		 * pages only when something is open, without them always, so a
 		 * resident with nothing to do reads that.
 		 *
