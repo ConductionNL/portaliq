@@ -148,6 +148,50 @@ class InAppMessagingLeafTest extends TestCase {
 	}//end testMarkThreadReadAppendsAFirstTimeReceipt()
 
 	/**
+	 * The first read by someone other than the sender stamps `readAt` once;
+	 * the sender's own read and a second reader leave it as it is.
+	 *
+	 * @spec openspec/changes/message-read-time/specs/guardian-direct-messaging/spec.md#requirement-a-message-records-when-the-other-side-first-read-it
+	 */
+	public function testTheFirstReadByTheOtherSideRecordsWhen(): void {
+		$saved = $this->savedOnRead(message: ['senderRef' => 'guardian-1', 'readBy' => ['guardian-1']], readerRef: 'staff-1');
+		$this->assertSame(['guardian-1', 'staff-1'], $saved['readBy']);
+		$this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T/', $saved['readAt']);
+
+		$own = $this->savedOnRead(message: ['senderRef' => 'guardian-1', 'readBy' => []], readerRef: 'guardian-1');
+		$this->assertArrayNotHasKey('readAt', $own, 'the sender reading her own message is no receipt');
+
+		$kept = $this->savedOnRead(message: ['senderRef' => 'guardian-1', 'readBy' => ['staff-1'], 'readAt' => '2026-10-05T10:12:00+00:00'], readerRef: 'staff-2');
+		$this->assertSame('2026-10-05T10:12:00+00:00', $kept['readAt'], 'written once');
+	}//end testTheFirstReadByTheOtherSideRecordsWhen()
+
+	/**
+	 * What markThreadRead saves for one message read by one reader.
+	 *
+	 * @param array<string, mixed> $message   The message, without its id and thread.
+	 * @param string               $readerRef The reader.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function savedOnRead(array $message, string $readerRef): array {
+		$access = $this->createMock(MessageThreadAccessGuard::class);
+		$access->method('isParticipant')->willReturn(true);
+		$store = $this->createMock(MessageStore::class);
+		$store->method('findAll')->willReturnMap([
+			['messageThread', [], ['thread-1'], [['id' => 'thread-1', 'kind' => 'direct', 'participantRefs' => ['guardian-1', 'staff-1']]]],
+			['guardianMessage', ['threadRef' => 'thread-1'], null, [['id' => 'msg-1', 'threadRef' => 'thread-1'] + $message]],
+		]);
+		$store->method('rowId')->willReturnCallback(fn (array $row) => $row['id'] ?? null);
+		$saved = [];
+		$store->method('save')->willReturnCallback(function (string $schema, array $object) use (&$saved): string {
+			$saved = $object;
+			return 'msg-1';
+		});
+		(new InAppMessagingLeaf($store, $access))->markThreadRead('thread-1', $readerRef, false);
+		return $saved;
+	}//end savedOnRead()
+
+	/**
 	 * A thread with a proven contact carries the record, the subject line and
 	 * the contact's name, and starts with the resident's message, already
 	 * read by her (site-messages-per-record).

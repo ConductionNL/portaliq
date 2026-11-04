@@ -10,6 +10,8 @@
 //
 // @spec openspec/changes/site-messages-per-record/specs/portal-contribution-contract/spec.md#requirement-the-messages-page-groups-conversations-per-record-and-lets-a-resident-write-and-reply
 
+import { formatMessageMoment } from './inbox.js'
+
 /** The words of the messages page per record, in Dutch and English. */
 export const conversationStrings = {
 	nl: {
@@ -36,6 +38,7 @@ export const conversationStrings = {
 		'No messages about {name} yet.': 'Nog geen berichten over {name}.',
 		New: 'Nieuw',
 		You: 'U',
+		'Read by {name} on {moment}': 'Gelezen door {name} op {moment}',
 	},
 	en: {
 		'All messages': 'All messages',
@@ -61,6 +64,7 @@ export const conversationStrings = {
 		'No messages about {name} yet.': 'No messages about {name} yet.',
 		New: 'New',
 		You: 'You',
+		'Read by {name} on {moment}': 'Read by {name} on {moment}',
 	},
 }
 
@@ -309,4 +313,18 @@ export async function markRead(api, threadId) {
 			{},
 		)
 	}
+}
+
+/**
+ * When the other side read the resident's own message: "Gelezen door juf
+ * Esra op 5 oktober 2026, 10:12" (zuiddrecht/Berichten), or '' while unread.
+ *
+ * @param {{readAt?: string}} message The resident's own message.
+ * @param {{who: string, locale: string, tr: (key: string, vars?: object) => string}} context Who she wrote to, the page language and the translator.
+ * @return {string}
+ * @spec openspec/changes/message-read-time/specs/guardian-direct-messaging/spec.md#requirement-the-sender-sees-when-her-message-was-read
+ */
+export function readLine(message, { who, locale, tr }) {
+	const moment = formatMessageMoment(message?.readAt, locale)
+	return moment ? tr('Read by {name} on {moment}', { name: who, moment }) : ''
 }

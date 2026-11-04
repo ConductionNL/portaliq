@@ -249,29 +249,42 @@ class InAppMessagingLeaf implements GuardianMessagingLeafInterface {
 	 * @param string $subjectRef The reading subject's own subjectRef.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/message-read-time/specs/guardian-direct-messaging/spec.md#requirement-a-message-records-when-the-other-side-first-read-it
 	 */
 	private function markOneMessageRead(array $message, string $subjectRef): void {
-		$readBy = [];
-		if (is_array($message['readBy'] ?? null) === true) {
-			$readBy = $message['readBy'];
-		}
-
-		if (in_array($subjectRef, $readBy, true) === true) {
+		$readBy = is_array($message['readBy'] ?? null) === true ? $message['readBy'] : [];
+		$id     = $this->store->rowId(row: $message);
+		if ($id === null || in_array($subjectRef, $readBy, true) === true) {
 			return;
 		}
 
-		$id = $this->store->rowId(row: $message);
-		if ($id === null) {
-			return;
-		}
-
-		$readBy[] = $subjectRef;
 		$merged = $message;
 		unset($merged['@self']);
-		$merged['readBy'] = $readBy;
-
-		$this->store->save(schema: self::MESSAGE_SCHEMA, object: $merged, uuid: $id);
+		$merged['readBy'] = [...$readBy, $subjectRef];
+		$this->store->save(schema: self::MESSAGE_SCHEMA, object: $this->withReadAt(message: $merged, readerRef: $subjectRef), uuid: $id);
 	}//end markOneMessageRead()
+
+	/**
+	 * The message with `readAt`, the moment someone other than its sender
+	 * first read it, when it has none yet. Written once; the sender's own
+	 * read never sets it.
+	 *
+	 * @param array<string, mixed> $message   The message row.
+	 * @param string               $readerRef The reader.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/message-read-time/specs/guardian-direct-messaging/spec.md#requirement-a-message-records-when-the-other-side-first-read-it
+	 */
+	private function withReadAt(array $message, string $readerRef): array {
+		if ($readerRef === (string)($message['senderRef'] ?? '') || (string)($message['readAt'] ?? '') !== '') {
+			return $message;
+		}
+
+		$message['readAt'] = gmdate('c');
+		return $message;
+	}//end withReadAt()
 
 	/**
 	 * Fetch one thread by id.
