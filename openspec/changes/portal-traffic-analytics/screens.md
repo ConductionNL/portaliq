@@ -9,6 +9,7 @@
 - portaliq/PtSessies sessies https://identity.conduction.nl/screens/board?id=portaliq/PtSessies
 - portaliq/PtVerkeer verkeer https://identity.conduction.nl/screens/board?id=portaliq/PtVerkeer
 - portaliq/SessieVerloopt sessie verloopt https://identity.conduction.nl/screens/board?id=portaliq/SessieVerloopt
+- portaliq/PtPortals portals: an external site as a portal of kind "Extern" beside the served sites https://identity.conduction.nl/screens/board?id=portaliq/PtPortals
 - portaliq has no board of its own for row ana-pixel-pageview: the visitor's browser reports a page view in the background; the figures show on PtVerkeer
 - portaliq has no board of its own for row ana-pixel-fallback: a tracking pixel the browser loads in the background when the script cannot run
 - portaliq has no board of its own for row ana-client-script-served: a script file the portal loads; it has no page

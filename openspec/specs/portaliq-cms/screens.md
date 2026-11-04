@@ -2,7 +2,7 @@
 
 - portaliq/Begrippen Site: begrippenlijst https://identity.conduction.nl/screens/board?id=portaliq/Begrippen
 - portaliq/Contact Site: contact https://identity.conduction.nl/screens/board?id=portaliq/Contact
-- portaliq/Contentpagina Website: informatiepagina https://identity.conduction.nl/screens/board?id=portaliq/Contentpagina
+- portaliq/Contentpagina Website: informatiepagina; also the header without its menu beside a menu block https://identity.conduction.nl/screens/board?id=portaliq/Contentpagina
 - portaliq/Cookieverklaring Site: cookieverklaring https://identity.conduction.nl/screens/board?id=portaliq/Cookieverklaring
 - portaliq/Dossiers Dossiers (opgegaan in Mijn zaken) https://identity.conduction.nl/screens/board?id=portaliq/Dossiers
 - portaliq/EditorMenu Redacteur: menu van het portaal https://identity.conduction.nl/screens/board?id=portaliq/EditorMenu
@@ -20,7 +20,7 @@
 - portaliq/Publicatie Website: publicatie https://identity.conduction.nl/screens/board?id=portaliq/Publicatie
 - portaliq/Toegankelijkheid Site: toegankelijkheidsverklaring https://identity.conduction.nl/screens/board?id=portaliq/Toegankelijkheid
 - portaliq/ZoekenGeenTreffers Site: zoeken zonder treffers https://identity.conduction.nl/screens/board?id=portaliq/ZoekenGeenTreffers
-- portaliq/Inloggen inloggen https://identity.conduction.nl/screens/board?id=portaliq/Inloggen
+- portaliq/Inloggen inloggen; also the header for an account without a name, which reads "Ingelogd" https://identity.conduction.nl/screens/board?id=portaliq/Inloggen
 - portaliq/PtPagina pagina-indeling https://identity.conduction.nl/screens/board?id=portaliq/PtPagina
 - huisstijl/Kop Onderdeel: kop en hoofdmenu https://identity.conduction.nl/screens/board?id=huisstijl/Kop
 - huisstijl/Voet Onderdeel: voettekst https://identity.conduction.nl/screens/board?id=huisstijl/Voet
@@ -38,6 +38,8 @@
 - esdoornveen/Artikel Website: opleiding https://identity.conduction.nl/screens/board?id=esdoornveen/Artikel
 - esdoornveen/Contentpagina Website: informatiepagina https://identity.conduction.nl/screens/board?id=esdoornveen/Contentpagina
 - warmtepompacademie/Contentpagina Website: informatiepagina https://identity.conduction.nl/screens/board?id=warmtepompacademie/Contentpagina
+- wilgenboom/Activiteiten activities and events: signing up your own child, the waiting list and the guardian's answer https://identity.conduction.nl/screens/board?id=wilgenboom/Activiteiten
+- learniq/LqActiviteiten the staff side of an activity, specified in learniq: places, roster with photo consent, attendance (decision 286) https://identity.conduction.nl/screens/board?id=learniq/LqActiviteiten
 - opencatalogi/pub-house-style: no opencatalogi screen; the reading room's house style is set in portaliq
 - portaliq has no board of its own for row site-content-cache: caching happens on the server; editors and visitors only notice faster pages
 - portaliq has no board of its own for row thm-theme-fail-closed: a portal whose theme does not resolve renders with the base look; there is no page for the fallback itself
