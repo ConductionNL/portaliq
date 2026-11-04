@@ -87,6 +87,7 @@ import Pencil from 'vue-material-design-icons/Pencil.vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import PowerPlugOutline from 'vue-material-design-icons/PowerPlugOutline.vue'
 import Pulse from 'vue-material-design-icons/Pulse.vue'
+import Restore from 'vue-material-design-icons/Restore.vue'
 import ShieldAccount from 'vue-material-design-icons/ShieldAccount.vue'
 import ShieldCheckOutline from 'vue-material-design-icons/ShieldCheckOutline.vue'
 import ShieldKeyOutline from 'vue-material-design-icons/ShieldKeyOutline.vue'
@@ -171,6 +172,8 @@ export default {
 	// ADR-077 Tier A: the concept "activity" (the `activityOffer` schema,
 	// extracurricular-activity-offer) is drawn with Pulse.
 	Pulse,
+	// Back to the default text on the Mail templates page.
+	Restore,
 	ShieldAccount,
 	ShieldCheckOutline,
 	ShieldKeyOutline,
