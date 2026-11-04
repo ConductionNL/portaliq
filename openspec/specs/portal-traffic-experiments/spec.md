@@ -190,6 +190,6 @@ permitted without it.
 - **AND** no client id is persisted in the visitor's browser
 
 #### Scenario: Consent is withdrawn
-@e2e exclude the client forgets its identity on `consent(false)` (src/traffic/client.js); no test stages a withdrawal yet
+@e2e exclude the client forgets its identity on `consent(false)` (src/traffic/client.js); pinned by tests/traffic-client.spec.mjs "discards the client id and starts no new session after consent(false)"
 - **WHEN** a visitor withdraws consent
 - **THEN** the client id is discarded and a new session is not started
