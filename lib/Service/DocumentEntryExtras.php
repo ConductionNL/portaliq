@@ -56,9 +56,9 @@ class DocumentEntryExtras {
 	public function of(array $entry): array {
 		$out = [];
 		foreach (self::TEXT_KEYS as $key) {
-			$value = ($entry[$key] ?? null);
-			if (is_string($value) === true && trim($value) !== '' && mb_strlen($value) <= self::MAX_LENGTH) {
-				$out[$key] = trim($value);
+			$text = $this->shortText(value: ($entry[$key] ?? null));
+			if ($text !== '') {
+				$out[$key] = $text;
 			}
 		}
 
@@ -68,4 +68,19 @@ class DocumentEntryExtras {
 
 		return $out;
 	}//end of()
+
+	/**
+	 * A trimmed, non-empty text of at most 200 characters, or ''.
+	 *
+	 * @param mixed $value The provider's value.
+	 *
+	 * @return string
+	 */
+	private function shortText(mixed $value): string {
+		if (is_string($value) === false || mb_strlen(trim($value)) > self::MAX_LENGTH) {
+			return '';
+		}
+
+		return trim($value);
+	}//end shortText()
 }//end class

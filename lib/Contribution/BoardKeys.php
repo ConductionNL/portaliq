@@ -192,7 +192,21 @@ class BoardKeys {
 			$out['groupBy'] = $groupBy;
 		}
 
-		// Authored sentences: under the list, beside the heading, and when there is nothing.
+		return $out + $this->documentsTexts(block: $block);
+	}//end documentsKeys()
+
+	/**
+	 * A documents block's authored sentences: under the list, beside the
+	 * heading, and when there is nothing.
+	 *
+	 * @param array<string, mixed> $block The declared block.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
+	 */
+	private function documentsTexts(array $block): array {
+		$out = [];
 		foreach (self::DOCUMENTS_TEXT_KEYS as $key) {
 			$text = $this->shortText(value: ($block[$key] ?? null));
 			if ($text !== '') {
@@ -201,7 +215,7 @@ class BoardKeys {
 		}
 
 		return $out;
-	}//end documentsKeys()
+	}//end documentsTexts()
 
 	/**
 	 * A trimmed text no longer than a note may be, or ''.
