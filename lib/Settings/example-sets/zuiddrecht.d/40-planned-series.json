@@ -1,0 +1,201 @@
+{
+	"set": "zuiddrecht",
+	"$comment": "The planned series on Sanne's Woo request about the Lindelaan lighting (woo-fietspad), for the planned follow-ups on board DqZaakGerelateerd: \"Kwartaaloverzicht Woo-verzoeken · Reeks · volgende op 1 jan · 3 zaken eerder geopend\". The flow is the graph dossiq's PlannedFollowUpDocument::build() writes for a yearly series planned by Pieter (applicationSlug dossiq-planned-follow-up, one schedule node with runAs, one createSubCase node carrying the series), published and switched on. A schedule flow waits for its first cron date (openregister#5421), so installing the set opens no case. The anchor and the cron are fixed on 1 January (2024-01-01, `0 6 1 1 *`), so the row reads \"volgende op 1 jan\" on any install day; a placeholder can only count days. The three earlier cases are the ones the series opened on 1 January of the three years before the board day (279, 644 and 1010 days back), each closed thirteen days later by Hanna Bos, and each names the series through `handoffSource: planned-series:<flow uuid>` (a change, because the flow is written after the objects). They are advice-request cases: dossiq ships no case type for a periodic report. Each closed within the advice type's 14 days, so the per-type compliance of DqDoorlooptijd stays at 100 %. Only the most recent one falls in the twelve months the boards draw: it adds one to DqDoorlooptijd's closed this year and can move its average and within-norm share by a point. DqProcesanalyse's analysed cases count all three, whatever their date. They carry no statusHistory, so the days per phase and the time per handler of DqProcesanalyse count none of them, and they are not Pieter's, so his work lists stay as drawn. The flow lives in this fragment because an object placeholder only resolves within its own fragment, and woo-fietspad is declared here; it is stored as a portaliq flow, and dossiq finds planned flows by their slug, whichever app stored them. The create node carries no handoffSource: a set cannot name a flow's own uuid inside that flow, so a case the series opens on the next 1 January is not counted among the earlier ones.",
+	"objects": [
+		{
+			"key": "kwartaaloverzicht-woo-eerder-1",
+			"register": "dossiq",
+			"schema": "case",
+			"owner": "{{cast:pieter.uid}}",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "adviesaanvraag"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"data": {
+				"title": "Kwartaaloverzicht Woo-verzoeken",
+				"description": "Overzicht van de Woo-verzoeken over het afgelopen jaar, per kwartaal: hoeveel er binnenkwamen, hoeveel binnen de termijn zijn beslist en welke nog lopen.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"intakeChannel": "manual",
+				"confidentiality": "intern",
+				"assignee": "{{cast:hannabos.uid}}",
+				"assignedGroup": "zuiddrecht-woo-en-informatie",
+				"startDate": "{{date:-279}}",
+				"receivedAt": "{{datetime:-279 06:00}}",
+				"endDate": "{{date:-266}}",
+				"currentStatusEnteredAt": "{{datetime:-266 15:30}}"
+			}
+		},
+		{
+			"key": "kwartaaloverzicht-woo-eerder-2",
+			"register": "dossiq",
+			"schema": "case",
+			"owner": "{{cast:pieter.uid}}",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "adviesaanvraag"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"data": {
+				"title": "Kwartaaloverzicht Woo-verzoeken",
+				"description": "Overzicht van de Woo-verzoeken over het afgelopen jaar, per kwartaal: hoeveel er binnenkwamen, hoeveel binnen de termijn zijn beslist en welke nog lopen.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"intakeChannel": "manual",
+				"confidentiality": "intern",
+				"assignee": "{{cast:hannabos.uid}}",
+				"assignedGroup": "zuiddrecht-woo-en-informatie",
+				"startDate": "{{date:-644}}",
+				"receivedAt": "{{datetime:-644 06:00}}",
+				"endDate": "{{date:-631}}",
+				"currentStatusEnteredAt": "{{datetime:-631 15:30}}"
+			}
+		},
+		{
+			"key": "kwartaaloverzicht-woo-eerder-3",
+			"register": "dossiq",
+			"schema": "case",
+			"owner": "{{cast:pieter.uid}}",
+			"lookups": {
+				"caseType": {
+					"schema": "caseType",
+					"where": {
+						"identifier": "adviesaanvraag"
+					}
+				},
+				"status": {
+					"schema": "statusType",
+					"where": {
+						"caseType": "{{lookup:caseType}}",
+						"name": "Afgehandeld"
+					}
+				}
+			},
+			"data": {
+				"title": "Kwartaaloverzicht Woo-verzoeken",
+				"description": "Overzicht van de Woo-verzoeken over het afgelopen jaar, per kwartaal: hoeveel er binnenkwamen, hoeveel binnen de termijn zijn beslist en welke nog lopen.",
+				"caseType": "{{lookup:caseType}}",
+				"status": "{{lookup:status}}",
+				"intakeChannel": "manual",
+				"confidentiality": "intern",
+				"assignee": "{{cast:hannabos.uid}}",
+				"assignedGroup": "zuiddrecht-woo-en-informatie",
+				"startDate": "{{date:-1010}}",
+				"receivedAt": "{{datetime:-1010 06:00}}",
+				"endDate": "{{date:-997}}",
+				"currentStatusEnteredAt": "{{datetime:-997 15:30}}"
+			}
+		}
+	],
+	"flows": [
+		{
+			"key": "reeks-kwartaaloverzicht-woo",
+			"data": {
+				"name": "Planned follow-up: Kwartaaloverzicht Woo-verzoeken",
+				"description": "Creates a case of type {{object:kwartaaloverzicht-woo-eerder-1.caseType}} every year from 2024-01-01, related to case {{object:woo-fietspad.id}}. Planned by {{cast:pieter.uid}}.",
+				"applicationSlug": "dossiq-planned-follow-up",
+				"trigger": "schedule",
+				"cron": "0 6 1 1 *",
+				"executionMode": "async",
+				"enabled": true,
+				"nodes": [
+					{
+						"id": "when",
+						"type": "openregister.trigger-schedule",
+						"config": {
+							"cron": "0 6 1 1 *",
+							"runAs": "{{cast:pieter.uid}}"
+						}
+					},
+					{
+						"id": "create",
+						"type": "dossiq.createSubCase",
+						"config": {
+							"caseType": "{{object:kwartaaloverzicht-woo-eerder-1.caseType}}",
+							"title": "Kwartaaloverzicht Woo-verzoeken",
+							"relatedCases": [
+								"{{object:woo-fietspad.id}}"
+							],
+							"series": {
+								"recurrence": "yearly",
+								"anchor": "2024-01-01",
+								"until": "",
+								"count": 0
+							}
+						}
+					},
+					{
+						"id": "done",
+						"type": "openregister.end",
+						"config": {}
+					}
+				],
+				"edges": [
+					{
+						"id": "e-create",
+						"from": "when",
+						"to": "create"
+					},
+					{
+						"id": "e-done",
+						"from": "create",
+						"to": "done"
+					}
+				],
+				"limits": {
+					"maxTransitions": 10
+				}
+			}
+		}
+	],
+	"changes": [
+		{
+			"key": "kwartaaloverzicht-woo-eerder-1-uit-de-reeks",
+			"register": "dossiq",
+			"schema": "case",
+			"object": "kwartaaloverzicht-woo-eerder-1",
+			"set": {
+				"handoffSource": "planned-series:{{flow:reeks-kwartaaloverzicht-woo.uuid}}"
+			}
+		},
+		{
+			"key": "kwartaaloverzicht-woo-eerder-2-uit-de-reeks",
+			"register": "dossiq",
+			"schema": "case",
+			"object": "kwartaaloverzicht-woo-eerder-2",
+			"set": {
+				"handoffSource": "planned-series:{{flow:reeks-kwartaaloverzicht-woo.uuid}}"
+			}
+		},
+		{
+			"key": "kwartaaloverzicht-woo-eerder-3-uit-de-reeks",
+			"register": "dossiq",
+			"schema": "case",
+			"object": "kwartaaloverzicht-woo-eerder-3",
+			"set": {
+				"handoffSource": "planned-series:{{flow:reeks-kwartaaloverzicht-woo.uuid}}"
+			}
+		}
+	]
+}
