@@ -289,6 +289,25 @@ class PortalBlockResolverTest extends TestCase {
 	}//end testADocumentsAndATimelineBlockStayOnlyOnTheirRecordPage()
 
 	/**
+	 * A documents block with `eachRecord: true` reads every record of its
+	 * collection itself, so it stays on a page that is no record page, with
+	 * its title and subtitle fields; anything but true keeps the old rule.
+	 *
+	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
+	 *
+	 * @return void
+	 */
+	public function testADocumentsBlockForEachRecordStaysOnAnyPage(): void {
+		$declared = ['type' => 'documents', 'collection' => 'zaken', 'eachRecord' => true, 'titleFields' => ['givenName'], 'subtitleFields' => 'groupLabel', 'subtitle' => 'Voor alle ouders', 'emptyLabel' => 'Nog geen rapporten.'];
+		$this->assertSame(
+			[['type' => 'documents', 'collection' => 'zaken', 'subtitle' => 'Voor alle ouders', 'emptyLabel' => 'Nog geen rapporten.', 'eachRecord' => true, 'titleFields' => ['givenName']]],
+			$this->blocks(blocks: [$declared])
+		);
+		$this->assertSame([], $this->blocks(blocks: [['eachRecord' => 'yes'] + $declared]), 'only true reads every record');
+		$this->assertSame([], $this->blocks(blocks: [['collection' => 'vragenAanU'] + $declared]), 'no provider');
+	}//end testADocumentsBlockForEachRecordStaysOnAnyPage()
+
+	/**
 	 * A collection block keeps a limit of 1 to 50 and a sort on a projected
 	 * field, asc or desc; anything else is dropped and the block stays
 	 * (site-mijn-omgeving-components REQ-SMO-021, T10).

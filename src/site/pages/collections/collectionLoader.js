@@ -16,11 +16,12 @@ import { rowFor } from '../../../shared/openRecord.js'
 
 /**
  * The ids of the collections a page's blocks read: every `collection`,
- * `detail`, `kpi`, `tasks` and `cases` block, every calendar source, and a record page's
- * record collection.
+ * `detail`, `kpi`, `tasks` and `cases` block, a documents block for each
+ * record, every calendar source, and a record page's record collection.
  *
  * @param {object} page The contribution page.
  * @return {Array<string>}
+ * @spec openspec/changes/documents-for-each-record/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
  */
 export function collectionIdsFor(page) {
 	const ids = []
@@ -38,6 +39,7 @@ export function collectionIdsFor(page) {
 	for (const block of page?.blocks || []) {
 		if (
 			['collection', 'detail', 'kpi', 'tasks', 'cases'].includes(block?.type)
+			|| (block?.type === 'documents' && block.eachRecord === true)
 		) {
 			add(block.collection)
 		}

@@ -10,7 +10,8 @@
  * entries and adds nothing (cases-documents-on-the-case, REQ-CDC-001).
  *
  * An entry is `{id, title, kind, date, file: {register, schema, id, fileId},
- * mimeType?, size?}`. The `file` reference is for the server only: the caller
+ * mimeType?, size?}`, plus the site's extras `meta`, `isNew`, `status` and
+ * `statusTone` (DocumentEntryExtras). The `file` reference is for the server only: the caller
  * strips it before anything reaches the browser.
  *
  * Calling it proves nothing about who may see the case. The caller does that
@@ -139,7 +140,7 @@ class PortalCaseDocumentReader {
 			$kept['size'] = $entry['size'];
 		}
 
-		return $kept;
+		return $kept + (new DocumentEntryExtras())->of(entry: $entry);
 	}//end wellFormed()
 
 	/**

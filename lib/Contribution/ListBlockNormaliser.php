@@ -213,6 +213,7 @@ class ListBlockNormaliser {
 	 *
 	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 	 * @spec openspec/changes/steps-as-bars/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-as-a-row-of-bars
+	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
 	 */
 	public function recordBlock(string $type, array $block, array $collections): ?array {
 		$collection = $this->collection(id: ($block['collection'] ?? null), collections: $collections);
@@ -225,8 +226,7 @@ class ListBlockNormaliser {
 
 		$entry = ['type' => $type, 'collection' => $collection['id']] + $this->common(block: $block);
 		if ($type === 'documents') {
-			// The upload button beside the heading (zuiddrecht-resident-pages-match-the-boards).
-			$entry += (new BoardKeys())->documentsKeys(block: $block);
+			$entry += $this->documentsKeys(block: $block, collection: $collection);
 		}
 
 		// The steps as a row of bars, as the school boards draw them (steps-as-bars).
@@ -238,9 +238,39 @@ class ListBlockNormaliser {
 	}//end recordBlock()
 
 	/**
+	 * A documents block's own keys: the board keys, and `eachRecord: true`
+	 * for one group per row of its collection, headed by the row's projected
+	 * `titleFields` and `subtitleFields`.
+	 *
+	 * @param array<string, mixed> $block      The declared block.
+	 * @param array<string, mixed> $collection The block's collection.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
+	 */
+	private function documentsKeys(array $block, array $collection): array {
+		// The upload button beside the heading (zuiddrecht-resident-pages-match-the-boards).
+		$out = (new BoardKeys())->documentsKeys(block: $block);
+		if (($block['eachRecord'] ?? null) !== true) {
+			return $out;
+		}
+
+		$out['eachRecord'] = true;
+		foreach (['titleFields', 'subtitleFields'] as $key) {
+			$names = $this->projectedNames(value: ($block[$key] ?? null), collection: $collection);
+			if ($names !== []) {
+				$out[$key] = $names;
+			}
+		}
+
+		return $out;
+	}//end documentsKeys()
+
+	/**
 	 * The blocks without a `steps`, `documents` or `timeline` block that does
 	 * not read the page's own record collection: each belongs to one open
-	 * record.
+	 * record. A documents block with `eachRecord` reads every record itself.
 	 *
 	 * @param array<int, array<string, mixed>> $blocks            The page's normalised blocks.
 	 * @param array<int, string>               $recordCollections The page's `record` and `records` collections.
@@ -248,6 +278,7 @@ class ListBlockNormaliser {
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
 	 */
 	public function recordPageOnly(array $blocks, array $recordCollections): array {
 		return array_values(
@@ -255,6 +286,7 @@ class ListBlockNormaliser {
 				$blocks,
 				static fn (array $block): bool => in_array(($block['type'] ?? null), self::RECORD_BLOCKS, true) === false
 					|| in_array(($block['collection'] ?? null), $recordCollections, true) === true
+					|| ($block['eachRecord'] ?? null) === true
 			)
 		);
 	}//end recordPageOnly()

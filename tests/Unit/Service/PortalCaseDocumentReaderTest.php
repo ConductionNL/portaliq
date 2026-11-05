@@ -94,6 +94,25 @@ class PortalCaseDocumentReaderTest extends TestCase {
 	}//end testDropsAnEntryWithoutFile()
 
 	/**
+	 * The site's extras travel on: the provider's own line, the new mark and a
+	 * status pill; a value of the wrong type stays behind.
+	 *
+	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-entry-may-carry-its-own-line-a-new-mark-and-a-status
+	 *
+	 * @return void
+	 */
+	public function testKeepsTheLineTheNewMarkAndTheStatus(): void {
+		$file = ['register' => 'learniq', 'schema' => 'report-card', 'id' => 'rc-1', 'fileId' => '9'];
+		$entries = $this->reader([
+			['id' => 'a', 'title' => 'Rapport 1', 'file' => $file, 'meta' => ' Groep 6 ', 'isNew' => true, 'status' => 'Ondertekend', 'statusTone' => 'success', 'secret' => 'x'],
+			['id' => 'b', 'title' => 'Rapport 2', 'file' => $file, 'meta' => ['x'], 'isNew' => 'yes', 'status' => str_repeat('x', 201)],
+		])->entries(appId: 'dossiq', method: 'caseDocuments', caseId: 'case-1');
+
+		$this->assertSame(['meta' => 'Groep 6', 'status' => 'Ondertekend', 'statusTone' => 'success', 'isNew' => true], array_diff_key($entries[0], array_flip(['id', 'title', 'kind', 'date', 'file'])));
+		$this->assertSame(['id', 'title', 'kind', 'date', 'file'], array_keys($entries[1]));
+	}//end testKeepsTheLineTheNewMarkAndTheStatus()
+
+	/**
 	 * A provider that throws or answers something else gives no entries.
 	 *
 	 * @return void

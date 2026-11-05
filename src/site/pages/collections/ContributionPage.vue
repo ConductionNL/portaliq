@@ -431,6 +431,20 @@
 				:today="today || undefined"
 				@navigate="$emit('navigate', $event)" />
 
+			<!-- One group per record the subject may read (documents-for-each-record). -->
+			<template v-else-if="item.kind === 'documents' && item.block.eachRecord">
+				<DocumentsBlock
+					v-for="row in loadedOf(item.collection).objects"
+					:key="`${item.index}-${eachRowKey(row)}`"
+					:block="eachRecordBlockOf(item.block, row)"
+					:collection="item.collection"
+					:record="row"
+					:api="api"
+					:level="sectionLevel"
+					:t="tr"
+					:locale="lang" />
+			</template>
+
 			<DocumentsBlock
 				v-else-if="item.kind === 'documents'"
 				:block="item.block"
@@ -549,6 +563,7 @@ import {
 import { isEndpointRowAction, offersRowAction } from '../../../shared/rowAction.js'
 import { dialogFor } from '../../../shared/signing.js'
 import { rowIdOf } from '../../components/collections/cells.js'
+import { eachRecordBlock } from '../../components/mijn/documents.js'
 import { blocks as mijnBlocks } from '../../components/mijn/index.js'
 import { mijnTranslator, siteHref } from '../../components/mijn/rows.js'
 import { fillTemplate, recordLabel } from '../../components/mijn/template.js'
@@ -1490,6 +1505,27 @@ export default {
 		 */
 		reload(collection) {
 			this.loader?.load(collection)
+		},
+
+		/**
+		 * The block one record of an each-record documents block draws.
+		 *
+		 * @param {object} block The documents block.
+		 * @param {object} row One row of its collection.
+		 * @return {object}
+		 * @spec openspec/changes/documents-for-each-record/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
+		 */
+		eachRecordBlockOf(block, row) {
+			return eachRecordBlock(block, row)
+		},
+
+		/**
+		 * @param {object} row A row.
+		 * @return {string} Its id.
+		 * @spec openspec/changes/documents-for-each-record/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
+		 */
+		eachRowKey(row) {
+			return rowIdOf(row) || ''
 		},
 
 		loadedOf(collection) {
