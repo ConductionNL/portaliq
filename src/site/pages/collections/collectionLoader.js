@@ -37,10 +37,7 @@ export function collectionIdsFor(page) {
 	add(page?.records?.collection)
 	add(page?.records?.subtitleLookup?.collection)
 	for (const block of page?.blocks || []) {
-		if (
-			['collection', 'detail', 'kpi', 'tasks', 'cases'].includes(block?.type)
-			|| (block?.type === 'documents' && block.eachRecord === true)
-		) {
+		if (readsRows(block)) {
 			add(block.collection)
 		}
 		for (const lookup of block?.lookups || []) {
@@ -55,6 +52,22 @@ export function collectionIdsFor(page) {
 		}
 	}
 	return ids
+}
+
+/**
+ * Whether a block reads the rows of its own collection: a `collection`,
+ * `detail`, `kpi`, `tasks` or `cases` block, or a documents block for each
+ * record.
+ *
+ * @param {object} block The block.
+ * @return {boolean}
+ * @spec openspec/changes/documents-for-each-record/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
+ */
+function readsRows(block) {
+	return (
+		['collection', 'detail', 'kpi', 'tasks', 'cases'].includes(block?.type)
+		|| (block?.type === 'documents' && block.eachRecord === true)
+	)
 }
 
 /**
