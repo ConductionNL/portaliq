@@ -311,7 +311,7 @@ function localIso(date) {
  * its date alone.
  *
  * @param {Date} now The moment the form opened.
- * @param {{count?: number, locale?: string, todayWord?: string, tomorrowWord?: string}} [ask] How many days (1 to 5), the site's language and the words for today and tomorrow.
+ * @param {{count?: number, locale?: string, todayWord?: string, tomorrowWord?: string, wholeDayWords?: string}} [ask] How many days (1 to 5), the site's language, the words for today and tomorrow, and the whole-day words after today's date.
  * @return {Array<{value: string, label: string, description: string}>} The days, today first.
  *
  * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
@@ -352,21 +352,50 @@ function workingDaysFrom(today, total) {
 }
 
 /**
- * One named day: its name and its date in the site's language.
+ * One named day: its name and its date in the site's language. Today's date
+ * says it is the whole day ("Maandag 5 oktober, de hele dag").
  *
  * @param {Date} date The day.
  * @param {{today: Date, ask: object}} context Today and the words asked for.
  * @return {{value: string, label: string, description: string}} The day.
+ * @spec openspec/changes/guardian-message-to-and-whole-day/specs/site-forms/spec.md#requirement-today-reads-as-the-whole-day
  */
 function namedDay(date, { today, ask }) {
-	const capital = (text) => text.charAt(0).toUpperCase() + text.slice(1)
-	const locale = ask.locale || 'nl'
 	const offset = Math.round((date - today) / 86400000)
-	const word = [ask.todayWord || 'Vandaag', ask.tomorrowWord || 'Morgen'][offset]
-	const full = capital(new Intl.DateTimeFormat(locale, { weekday: 'long', day: 'numeric', month: 'long' }).format(date))
-	return word
-		? { value: localIso(date), label: word, description: full }
-		: { value: localIso(date), label: full, description: '' }
+	const words = dayWords(ask)
+	const full = fullDate(date, ask.locale)
+	if (!words.names[offset]) {
+		return { value: localIso(date), label: full, description: '' }
+	}
+	const allDay = offset === 0 ? `, ${words.allDay}` : ''
+	return { value: localIso(date), label: words.names[offset], description: full + allDay }
+}
+
+/**
+ * The words of the named days: today and tomorrow, and the whole-day words
+ * after today's date; Dutch unless asked otherwise.
+ *
+ * @param {{todayWord?: string, tomorrowWord?: string, wholeDayWords?: string}} ask The words asked for.
+ * @return {{names: Array<string>, allDay: string}}
+ * @spec openspec/changes/guardian-message-to-and-whole-day/specs/site-forms/spec.md#requirement-today-reads-as-the-whole-day
+ */
+function dayWords(ask) {
+	return {
+		names: [ask.todayWord || 'Vandaag', ask.tomorrowWord || 'Morgen'],
+		allDay: ask.wholeDayWords || 'de hele dag',
+	}
+}
+
+/**
+ * A date as its weekday, day and month, with a capital ("Maandag 5 oktober").
+ *
+ * @param {Date} date The day.
+ * @param {string} [locale] The site's language.
+ * @return {string}
+ */
+function fullDate(date, locale) {
+	const text = new Intl.DateTimeFormat(locale || 'nl', { weekday: 'long', day: 'numeric', month: 'long' }).format(date)
+	return text.charAt(0).toUpperCase() + text.slice(1)
 }
 
 /**

@@ -15,12 +15,15 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
+	chosenContact,
 	contactOptions,
 	conversationStrings,
 	conversationTranslator,
 	initialsOf,
+	keepMessageTo,
 	readLine,
 	recordTabs,
+	takeMessageTo,
 	threadCard,
 	threadsInTab,
 } from '../src/site/pages/inbox/conversations.js'
@@ -202,4 +205,46 @@ test('the page draws the tabs, the "Nieuw" card and the form with its own words'
 
 	const alone = await renderComponent(inState(MessagesPage, { threads: [] }), { api: fakeApi(), t, locale: 'nl' })
 	assert.doesNotMatch(alone, /data-testid="messages-compose"/, 'nobody to write to: no form')
+})
+
+/**
+ * A sessionStorage stand-in.
+ *
+ * @return {object}
+ */
+function memoryStore() {
+	const map = new Map()
+	return {
+		getItem: (key) => (map.has(key) ? map.get(key) : null),
+		setItem: (key, value) => map.set(key, String(value)),
+		removeItem: (key) => map.delete(key),
+	}
+}
+
+test('"Bericht aan meester Daan" opens the form with meester Daan chosen', async () => {
+	const contacts = [
+		{ staffRef: 'daan', name: 'Meester Daan', recordRef: 'vera', recordLabel: 'Vera, groep 5' },
+		{ staffRef: 'esra', name: 'Juf Esra', recordRef: 'vera', recordLabel: 'Vera, groep 5' },
+		{ staffRef: 'esra', name: 'Juf Esra', recordRef: 'sami', recordLabel: 'Sami, groep 3' },
+	]
+	const options = contactOptions(contacts, t)
+	const ContributionPage = await loadSfc('src/site/pages/collections/ContributionPage.vue')
+	const store = memoryStore()
+	globalThis.window = { sessionStorage: store }
+	try {
+		ContributionPage.methods.keepMessageTarget.call(
+			{ recordId: 'vera', activeRecord: { teacherRef: 'daan' } },
+			{ type: 'cta', route: '/mijn/messages', messageTo: 'teacherRef' },
+		)
+	} finally {
+		delete globalThis.window
+	}
+	const kept = takeMessageTo(store)
+	assert.deepEqual(kept, { recordRef: 'vera', staffRef: 'daan' })
+	assert.equal(takeMessageTo(store), null, 'it is taken once')
+	assert.equal(chosenContact(options, kept), 'vera|daan')
+	assert.equal(chosenContact(options, { recordRef: 'sami', staffRef: '' }), 'sami|esra', 'the record\'s only contact without a teacher field')
+	assert.equal(chosenContact(options, { recordRef: 'vera', staffRef: 'onbekend' }), '', 'two contacts and no match chooses no one')
+	assert.equal(chosenContact(options, null), '')
+	keepMessageTo(null, { recordRef: 'vera', staffRef: 'daan' })
 })

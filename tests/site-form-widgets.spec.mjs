@@ -74,15 +74,20 @@ test('named days: a name over the date, as wilgenboom/MobielDetail draws them', 
 	// Friday 2 October 2026: the next working day is Monday, named by its weekday.
 	const friday = new Date(2026, 9, 2, 10, 0)
 	assert.deepEqual(namedDays(friday, { count: 2, locale: 'nl' }), [
-		{ value: '2026-10-02', label: 'Vandaag', description: 'Vrijdag 2 oktober' },
+		{ value: '2026-10-02', label: 'Vandaag', description: 'Vrijdag 2 oktober, de hele dag' },
 		{ value: '2026-10-05', label: 'Maandag 5 oktober', description: '' },
 	])
 	// Monday 5 October 2026, as on the board: "Vandaag", then "Morgen".
 	const monday = new Date(2026, 9, 5, 8, 0)
 	assert.deepEqual(namedDays(monday, { count: 2, locale: 'nl' }).map((d) => [d.label, d.description]), [
-		['Vandaag', 'Maandag 5 oktober'],
+		['Vandaag', 'Maandag 5 oktober, de hele dag'],
 		['Morgen', 'Dinsdag 6 oktober'],
 	])
+	assert.equal(
+		namedDays(monday, { count: 1, locale: 'en', todayWord: 'Today', wholeDayWords: 'the whole day' })[0].description,
+		'Monday, October 5, the whole day',
+		'the whole-day words follow the site language',
+	)
 	assert.deepEqual(
 		namedDays(monday, { count: 2, locale: 'en', todayWord: 'Today', tomorrowWord: 'Tomorrow' }).map((d) => d.label),
 		['Today', 'Tomorrow'],
@@ -217,7 +222,7 @@ test('named days: a day sends its date, "Een andere dag" opens the date group', 
 		days
 			.findAll((n) => n.tag === 'span' && n.props.class === 'pq-choice-card__description')
 			.map((n) => days.textOf(n)),
-		['Vrijdag 2 oktober'],
+		['Vrijdag 2 oktober, de hele dag'],
 		'today carries its date as a second line',
 	)
 	await days.fire(days.find('dateFrom-day-1'), 'change')

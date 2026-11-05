@@ -797,7 +797,7 @@ test('the Zuiddrecht site lays out its own area as the MijnMenu and MijnZaken bo
 		'folders',
 	])
 	assert.equal(portal.version, '0.28.0')
-	assert.equal(register.info.version, '0.107.0')
+	assert.equal(register.info.version, '0.108.0')
 })
 
 // zuiddrecht-site-details: the portal names the organisation of the example

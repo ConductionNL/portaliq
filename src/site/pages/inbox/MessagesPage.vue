@@ -264,6 +264,7 @@ import LoadError from '../../components/mijn/LoadError.vue'
 import Skeleton from '../../components/mijn/Skeleton.vue'
 import { mijnTranslator } from '../../components/mijn/rows.js'
 import {
+	chosenContact,
 	contactOptions,
 	conversationTranslator,
 	fetchContacts,
@@ -272,10 +273,11 @@ import {
 	recordTabs,
 	replyTo,
 	startConversation,
+	takeMessageTo,
 	threadCard,
 	threadsInTab,
 } from './conversations.js'
-import { formatDateTime, rowId } from './inbox.js'
+import { formatDateTime, rowId, sessionStore } from './inbox.js'
 import { PAGE_EMITS, PAGE_PROPS } from './pageProps.js'
 import { pageLocale, withStrings } from './translate.js'
 
@@ -443,6 +445,22 @@ export default {
 			this.contacts = found?.contacts || []
 			this.composeLabel = found?.composeLabel || ''
 			this.composeHint = found?.composeHint || ''
+			this.applyMessageTo()
+		},
+
+		/**
+		 * Open the form for the teacher a "Bericht aan ..." button named.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/guardian-message-to-and-whole-day/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
+		 */
+		applyMessageTo() {
+			const value = chosenContact(this.options, takeMessageTo(sessionStore()))
+			if (value === '') {
+				return
+			}
+			this.draft.to = value
+			this.$nextTick(() => this.focusCompose())
 		},
 
 		/**

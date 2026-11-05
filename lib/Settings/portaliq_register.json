@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.107.0"
+        "version": "0.108.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.107.0",
+                "version": "0.108.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -1741,7 +1741,7 @@
                     ]
                 },
                 "icon": "WebBox",
-                "version": "0.9.0",
+                "version": "0.10.0",
                 "title": "Portal Page",
                 "description": "A data-provisioned portal contribution (ADR-046, portal-page-provisioning). Mirrors the IPortalContributionProvider manifest shape 1:1 so Portaliq's built-in provider can read this object and hand it to the same PortalManifestNormaliser every PHP provider's output passes through. Owned by the app that provisions the page; never publicly readable — the built-in provider is the only reader, server-side.",
                 "type": "object",
@@ -2442,6 +2442,12 @@
                                                 "title": "Label when a field is empty",
                                                 "type": "string",
                                                 "description": "On a call to action: the label shown when a field the label names is empty on the open record."
+                                            },
+                                            "messageTo": {
+                                                "title": "Message to",
+                                                "type": "string",
+                                                "pattern": "^[A-Za-z0-9_]{1,64}$",
+                                                "description": "On a call to action to the messages page: the field of the open record that holds the staff member the message form opens for."
                                             },
                                             "display": {
                                                 "title": "Display",
