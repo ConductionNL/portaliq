@@ -381,7 +381,8 @@ test('zuiddrecht.json puts the business contacts in the business group the porta
 test('zuiddrecht.json keeps the six cases of the Woo journey, the Lindelaan case\'s related cases and the resident boards', () => {
 	const zuiddrecht = fragments.find(({ file }) => file === 'zuiddrecht.json').fragment
 	const cases = zuiddrecht.objects.filter((object) => object.schema === 'case').map((object) => object.data.title)
-	// The Lindelaan Woo case names a subject case and two sub-cases (DqZaakGerelateerd).
+	// The Lindelaan Woo case names a subject case and two sub-cases (DqZaakGerelateerd),
+	// and its planned yearly series has opened three earlier cases.
 	assert.deepEqual(cases, [
 		'Aanleg fietspad Lindelaan',
 		'Advies verlichting fietspad',
@@ -394,6 +395,9 @@ test('zuiddrecht.json keeps the six cases of the Woo journey, the Lindelaan case
 		'Zienswijze Aannemersbedrijf Van Wijk',
 		'Lakken offerte lantaarnpalen',
 		'Parkeervergunning Lindelaan',
+		'Kwartaaloverzicht Woo-verzoeken',
+		'Kwartaaloverzicht Woo-verzoeken',
+		'Kwartaaloverzicht Woo-verzoeken',
 	])
 	assert.deepEqual(zuiddrecht.after, ['dossiq'])
 	assert.equal(zuiddrecht.exampleResident[0].cast, 'sanne')
