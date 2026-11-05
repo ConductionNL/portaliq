@@ -64,6 +64,7 @@ use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\CaseRowMarker;
 use OCA\Portaliq\Service\CaseTypeNames;
 use OCA\Portaliq\Service\CaseTypeVisibility;
+use OCA\Portaliq\Service\CaseTypeColumns\ColumnOverrides;
 use OCA\Portaliq\Service\Identity\ContactConfirmationMailer;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\PortalActionForwarder;
@@ -972,8 +973,26 @@ class ContributionController extends Controller implements PortalProtected {
 		// (site-mijn-omgeving-components REQ-SMO-030).
 		$objects = ($this->typeNames?->stampRows(rows: $objects, collection: $collection) ?? $objects);
 
-		return $objects;
+		return $this->columnsFor(subject: $subject)->rows(rows: $objects, collection: $collection);
 	}//end screenRows()
+
+	/**
+	 * The serving portal's column settings per case type, or none when the
+	 * controller has no case type service.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 *
+	 * @return ColumnOverrides
+	 *
+	 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
+	 */
+	private function columnsFor(array $subject): ColumnOverrides {
+		if ($this->caseTypes === null) {
+			return new ColumnOverrides(byType: [], types: null);
+		}
+
+		return $this->caseTypes->servingColumns(request: $this->request, subject: $subject);
+	}//end columnsFor()
 
 
 	/**
@@ -1191,7 +1210,7 @@ class ContributionController extends Controller implements PortalProtected {
 			return null;
 		}
 
-		return $object;
+		return $this->columnsFor(subject: $subject)->row(row: $object, collection: $collection);
 	}//end screenRow()
 
 	/**

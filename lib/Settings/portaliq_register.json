@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.106.0"
+        "version": "0.107.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.106.0",
+                "version": "0.107.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -2644,7 +2644,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.27.0",
+                "version": "0.28.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -4452,6 +4452,56 @@
                                 "description": "The hash of the token a trusted backend presents to report traffic on a visitor's behalf. Minted by `occ portaliq:traffic:token <portal>`, which shows the token once; only this hash is kept and it cannot be turned back into the token.",
                                 "example": ""
                             }
+                        }
+                    },
+                    "caseTypeColumns": {
+                        "title": "Columns per case type",
+                        "type": "object",
+                        "widget": "json",
+                        "description": "How the columns of each case type read in Mijn zaken in this portal, keyed by case type id: per column the `field`, its `render` (text, link, qr or date) and, for a link or QR code, `linkLabel`, the words shown with it. A case type without an entry reads as its case app declares.",
+                        "additionalProperties": {
+                            "type": "array",
+                            "maxItems": 30,
+                            "items": {
+                                "type": "object",
+                                "required": [
+                                    "field",
+                                    "render"
+                                ],
+                                "properties": {
+                                    "field": {
+                                        "title": "Field",
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 64
+                                    },
+                                    "render": {
+                                        "title": "Render",
+                                        "type": "string",
+                                        "enum": [
+                                            "text",
+                                            "link",
+                                            "qr",
+                                            "date"
+                                        ]
+                                    },
+                                    "linkLabel": {
+                                        "title": "Link text",
+                                        "type": "string",
+                                        "maxLength": 60
+                                    }
+                                }
+                            }
+                        },
+                        "default": {},
+                        "example": {
+                            "parkeervergunning": [
+                                {
+                                    "field": "permitProof",
+                                    "render": "qr",
+                                    "linkLabel": "Toevoegen aan wallet"
+                                }
+                            ]
                         }
                     },
                     "hiddenCaseTypes": {

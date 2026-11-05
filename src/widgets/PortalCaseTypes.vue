@@ -9,6 +9,7 @@
   case app's declared caseTypeSource, and whatever it already hides), each
   with a "Show in this portal" switch. Saving writes the portal's
   hiddenCaseTypes through PortalCaseTypesController, which is admin-only.
+  Each row opens "Columns in My cases" (CaseTypeColumns) for that type.
   Nothing about a case changes: a hidden type's cases leave the resident's
   list in this portal and come back when the type is shown again.
 
@@ -58,6 +59,21 @@
 						@update:modelValue="(value) => setShown(row, value)">
 						{{ t('portaliq', 'Show in this portal') }}
 					</NcCheckboxRadioSwitch>
+					<NcButton
+						variant="tertiary"
+						:aria-expanded="openColumns === row.typeId ? 'true' : 'false'"
+						:data-testid="`case-type-columns-toggle-${row.typeId}`"
+						@click="toggleColumns(row)">
+						{{ t('portaliq', 'Columns in My cases') }}
+					</NcButton>
+					<CaseTypeColumns
+						v-if="openColumns === row.typeId"
+						class="case-types__columns"
+						:slug="slug"
+						:caseType="row"
+						:fields="fields"
+						:stored="columns[row.typeId] || []"
+						@saved="(saved) => (columns = saved)" />
 				</li>
 			</ul>
 
@@ -94,12 +110,14 @@ import {
 	NcLoadingIcon,
 	NcNoteCard,
 } from '@nextcloud/vue'
+import CaseTypeColumns from './CaseTypeColumns.vue'
 import { caseTypesUrl, hiddenFrom, hidesMore } from '../lib/caseTypeVisibility.js'
 
 export default {
 	name: 'PortalCaseTypes',
 
 	components: {
+		CaseTypeColumns,
 		NcButton,
 		NcCheckboxRadioSwitch,
 		NcLoadingIcon,
@@ -118,6 +136,9 @@ export default {
 		return {
 			saved: [],
 			rows: [],
+			columns: {},
+			fields: [],
+			openColumns: '',
 			loading: true,
 			saving: false,
 			error: '',
@@ -205,6 +226,8 @@ export default {
 					caseTypesUrl(this.slug, generateUrl),
 				)
 				this.accept(data.caseTypes || [])
+				this.columns = data.columns || {}
+				this.fields = data.fields || []
 			} catch {
 				this.error = t(
 					'portaliq',
@@ -225,6 +248,17 @@ export default {
 		accept(caseTypes) {
 			this.saved = caseTypes.map((row) => ({ ...row }))
 			this.rows = caseTypes.map((row) => ({ ...row }))
+		},
+
+		/**
+		 * Open or close one case type's columns.
+		 *
+		 * @param {object} row The case type.
+		 * @return {void}
+		 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+		 */
+		toggleColumns(row) {
+			this.openColumns = this.openColumns === row.typeId ? '' : row.typeId
 		},
 
 		/**
@@ -284,11 +318,16 @@ export default {
 
 .case-types__row {
 	display: flex;
+	flex-wrap: wrap;
 	align-items: center;
 	justify-content: space-between;
 	gap: calc(var(--default-grid-baseline) * 4);
 	padding: calc(var(--default-grid-baseline) * 2) 0;
 	border-bottom: 1px solid var(--color-border);
+}
+
+.case-types__columns {
+	flex-basis: 100%;
 }
 
 .case-types__label {

@@ -20,7 +20,7 @@
 import { DAY_AND_MINUTE } from '../../lib/dayAndMinute.js'
 
 /** Keys a row carries for the machine, never shown as a column. */
-const ENVELOPE = new Set(['@self', '_files', 'id', 'uuid'])
+const ENVELOPE = new Set(['@self', '_files', '_columns', 'id', 'uuid'])
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
@@ -177,6 +177,24 @@ function withLabel(column) {
 }
 
 /**
+ * A column as one row reads it: the portal's setting for the row's case type
+ * (`_columns`, stamped by the server) replaces the column's `render` and
+ * `linkLabel`.
+ *
+ * @param {object} column The declared column.
+ * @param {object} row The row.
+ * @return {object} The column for this row.
+ * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
+ */
+export function rowColumn(column, row) {
+	const own = row?._columns?.[column?.field]
+	if (!own || typeof own.render !== 'string') {
+		return column
+	}
+	return { ...column, render: own.render, linkLabel: own.linkLabel }
+}
+
+/**
  * The fields of a detail card with their labels: the app's `detail.fields`,
  * else the row's own fields minus the envelope. A label comes from a column
  * that shows the same field, else the field as words.
@@ -203,7 +221,8 @@ export function detailFields(collection, row) {
 			: Object.keys(row || {}).filter((key) => !ENVELOPE.has(key))
 	return fields.map((field) => {
 		const config = fieldConfigOf(collection, field)
-		const column = byField.get(field) || { field, label: config.label }
+		const own = byField.get(field) || { field, label: config.label }
+		const column = rowColumn(own, row)
 		return {
 			field,
 			label: columnLabel(column),
