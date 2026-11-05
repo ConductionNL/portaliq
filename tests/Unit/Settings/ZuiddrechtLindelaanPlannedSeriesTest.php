@@ -89,6 +89,10 @@ class ZuiddrechtLindelaanPlannedSeriesTest extends TestCase {
 		$this->assertSame(expected: ['{{object:woo-fietspad.id}}'], actual: $nodes['create']['config']['relatedCases']);
 		$this->assertSame(expected: 'Kwartaaloverzicht Woo-verzoeken', actual: $nodes['create']['config']['title']);
 		$this->assertSame(
+			expected: 'planned-series:{{flow:self.uuid}}',
+			actual: $nodes['create']['config']['handoffSource']
+		);
+		$this->assertSame(
 			expected: ['recurrence' => 'yearly', 'anchor' => '2024-01-01', 'until' => '', 'count' => 0],
 			actual: $nodes['create']['config']['series']
 		);
