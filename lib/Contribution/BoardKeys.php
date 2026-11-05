@@ -66,6 +66,12 @@ class BoardKeys {
 	private const MAX_NOTE_LENGTH = 400;
 
 	/**
+	 * The authored sentences a documents block may carry: a note under the
+	 * list, a line beside its heading and the words when it lists nothing.
+	 */
+	private const DOCUMENTS_TEXT_KEYS = ['note', 'subtitle', 'emptyLabel'];
+
+	/**
 	 * How many turn values a cases block may name.
 	 */
 	private const MAX_TURN_VALUES = 10;
@@ -162,7 +168,8 @@ class BoardKeys {
 
 
 	/**
-	 * A documents block's board keys: `upload: true`, `groupBy` and `note`.
+	 * A documents block's board keys: `upload: true`, `groupBy`, `note`,
+	 * `subtitle` and `emptyLabel`.
 	 *
 	 * @param array<string, mixed> $block The declared block.
 	 *
@@ -170,6 +177,7 @@ class BoardKeys {
 	 *
 	 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
 	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-1
+	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
 	 */
 	public function documentsKeys(array $block): array {
 		$out = [];
@@ -184,17 +192,52 @@ class BoardKeys {
 			$out['groupBy'] = $groupBy;
 		}
 
-		// One authored sentence under the list.
-		$note = ($block['note'] ?? null);
-		if (is_string($note) === true) {
-			$note = trim($note);
-			if ($note !== '' && mb_strlen($note) <= self::MAX_NOTE_LENGTH) {
-				$out['note'] = $note;
+		return $out + $this->documentsTexts(block: $block);
+	}//end documentsKeys()
+
+	/**
+	 * A documents block's authored sentences: under the list, beside the
+	 * heading, and when there is nothing.
+	 *
+	 * @param array<string, mixed> $block The declared block.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
+	 */
+	private function documentsTexts(array $block): array {
+		$out = [];
+		foreach (self::DOCUMENTS_TEXT_KEYS as $key) {
+			$text = $this->shortText(value: ($block[$key] ?? null));
+			if ($text !== '') {
+				$out[$key] = $text;
 			}
 		}
 
 		return $out;
-	}//end documentsKeys()
+	}//end documentsTexts()
+
+	/**
+	 * A trimmed text no longer than a note may be, or ''.
+	 *
+	 * @param mixed $value The declared value.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
+	 */
+	private function shortText(mixed $value): string {
+		if (is_string($value) === false) {
+			return '';
+		}
+
+		$text = trim($value);
+		if (mb_strlen($text) > self::MAX_NOTE_LENGTH) {
+			return '';
+		}
+
+		return $text;
+	}//end shortText()
 
 
 	/**

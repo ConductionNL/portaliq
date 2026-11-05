@@ -184,3 +184,43 @@ export function statusState(entry) {
 	const tone = String(entry?.statusTone || '').toLowerCase()
 	return ['success', 'warning', 'error'].includes(tone) ? tone : 'neutral'
 }
+
+/**
+ * The line under a paper that is not a case's: its day and its type and
+ * size, "2 oktober 2026 · PDF, 84 kB". No sender: the school is not the
+ * municipality, and the group heading already says whose it is.
+ *
+ * @param {object} entry The document (`date?`, `mimeType?`, `size?`, `title`).
+ * @param {string} [locale] The page language.
+ * @return {string}
+ * @spec openspec/changes/documents-for-each-record/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
+ */
+export function paperLine(entry, locale = 'nl') {
+	const facts = [fileType(entry), sizeInWords(entry?.size, locale)]
+		.filter(Boolean)
+		.join(', ')
+	return [fullDay(entry?.date, locale), facts].filter(Boolean).join(' · ')
+}
+
+/**
+ * The block one record of an each-record documents block draws: headed by
+ * the row's title fields (else the block's label) and, beside it, the row's
+ * subtitle fields (else the block's subtitle).
+ *
+ * @param {object} block The normalised documents block.
+ * @param {object} row One row of its collection.
+ * @return {object} The block for that row.
+ * @spec openspec/changes/documents-for-each-record/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
+ */
+export function eachRecordBlock(block, row) {
+	const words = (fields) =>
+		(Array.isArray(fields) ? fields : [])
+			.map((field) => row?.[field])
+			.filter((value) => typeof value === 'string' && value.trim() !== '')
+			.join(' ')
+	return {
+		...block,
+		label: words(block?.titleFields) || block?.label || '',
+		subtitle: words(block?.subtitleFields) || block?.subtitle || '',
+	}
+}

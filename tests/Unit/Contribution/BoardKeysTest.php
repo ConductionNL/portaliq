@@ -202,4 +202,21 @@ class BoardKeysTest extends TestCase {
 		$this->assertSame([], $keys->documentsKeys(block: ['groupBy' => ['x'], 'note' => str_repeat('x', 401)]));
 		$this->assertSame(['upload' => true], $keys->documentsKeys(block: ['upload' => true]));
 	}//end testADocumentsBlockKeepsGroupByAndNote()
+
+	/**
+	 * A documents block keeps a short `subtitle` and `emptyLabel`, trimmed.
+	 *
+	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
+	 *
+	 * @return void
+	 */
+	public function testADocumentsBlockKeepsItsSubtitleAndEmptyWords(): void {
+		$keys = new BoardKeys();
+
+		$this->assertSame(
+			['subtitle' => 'Voor alle ouders', 'emptyLabel' => 'Er zijn nog geen rapporten.'],
+			$keys->documentsKeys(block: ['subtitle' => ' Voor alle ouders ', 'emptyLabel' => 'Er zijn nog geen rapporten.'])
+		);
+		$this->assertSame([], $keys->documentsKeys(block: ['subtitle' => ['x'], 'emptyLabel' => str_repeat('x', 401)]));
+	}//end testADocumentsBlockKeepsItsSubtitleAndEmptyWords()
 }//end class
