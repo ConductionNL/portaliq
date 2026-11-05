@@ -30,6 +30,7 @@ namespace OCA\Portaliq\Service\CaseTypeColumns;
 
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use stdClass;
 
 /**
  * The portal's column settings per case type.
@@ -130,11 +131,11 @@ class CaseTypeColumnSettings {
 	 * @param array<string, mixed> $existing The portal as stored.
 	 * @param array{typeId: string, columns: array<int|string, mixed>} $change The case type and its columns.
 	 *
-	 * @return array<string, mixed>|\stdClass An empty object when no type is left, so it stores as `{}`.
+	 * @return array<string, mixed>|stdClass An empty object when no type is left, so it stores as `{}`.
 	 *
 	 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
 	 */
-	private function merged(array $existing, array $change): array|\stdClass {
+	private function merged(array $existing, array $change): array|stdClass {
 		$stored = $this->storedFor(portal: $existing);
 		$typeId = $change['typeId'];
 		unset($stored[$typeId]);
@@ -144,7 +145,7 @@ class CaseTypeColumnSettings {
 		}
 
 		if ($stored === []) {
-			return new \stdClass();
+			return new stdClass();
 		}
 
 		return $stored;
