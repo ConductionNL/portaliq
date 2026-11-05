@@ -53,7 +53,7 @@ class DocumentEntryExtras {
 	 *
 	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-entry-may-carry-its-own-line-a-new-mark-and-a-status
 	 */
-	public function of(array $entry): array {
+	public function extrasOf(array $entry): array {
 		$out = [];
 		foreach (self::TEXT_KEYS as $key) {
 			$text = $this->shortText(value: ($entry[$key] ?? null));
@@ -67,7 +67,7 @@ class DocumentEntryExtras {
 		}
 
 		return $out;
-	}//end of()
+	}//end extrasOf()
 
 	/**
 	 * A trimmed, non-empty text of at most 200 characters, or ''.

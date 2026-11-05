@@ -85,11 +85,11 @@ class ListBlockNormaliser {
 		$collection = ($scopes->withLookupFields(collection: $collection, entry: $entry) ?? $collection);
 
 		$due = ($block['dueField'] ?? null);
-		if (is_string($due) === true && $this->projects(collection: $collection, field: $due) === true) {
+		if (is_string($due) === true && (new CollectionProjection())->projects(collection: $collection, field: $due) === true) {
 			$entry['dueField'] = $due;
 		}
 
-		$titles = $this->projectedNames(value: ($block['titleFields'] ?? null), collection: $collection);
+		$titles = (new CollectionProjection())->projectedNames(value: ($block['titleFields'] ?? null), collection: $collection);
 		if ($titles !== []) {
 			$entry['titleFields'] = $titles;
 		}
@@ -258,7 +258,7 @@ class ListBlockNormaliser {
 
 		$out['eachRecord'] = true;
 		foreach (['titleFields', 'subtitleFields'] as $key) {
-			$names = $this->projectedNames(value: ($block[$key] ?? null), collection: $collection);
+			$names = (new CollectionProjection())->projectedNames(value: ($block[$key] ?? null), collection: $collection);
 			if ($names !== []) {
 				$out[$key] = $names;
 			}
@@ -338,42 +338,4 @@ class ListBlockNormaliser {
 
 		return null;
 	}//end collection()
-
-	/**
-	 * Whether the collection projects this field (any field, when it projects none).
-	 *
-	 * @param array<string, mixed> $collection The collection.
-	 * @param string               $field      The field.
-	 *
-	 * @return bool
-	 */
-	private function projects(array $collection, string $field): bool {
-		if ($field === '') {
-			return false;
-		}
-
-		$fields = ($collection['fields'] ?? null);
-		return is_array($fields) === false || in_array($field, $fields, true) === true;
-	}//end projects()
-
-	/**
-	 * The names of a declared list that the collection projects, in order.
-	 *
-	 * @param mixed                $value      The declared list.
-	 * @param array<string, mixed> $collection The collection.
-	 *
-	 * @return array<int, string>
-	 */
-	private function projectedNames(mixed $value, array $collection): array {
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		return array_values(
-			array_filter(
-				$value,
-				fn ($name): bool => is_string($name) === true && $this->projects(collection: $collection, field: $name) === true
-			)
-		);
-	}//end projectedNames()
 }//end class

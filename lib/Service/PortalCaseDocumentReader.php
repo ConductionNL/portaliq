@@ -140,7 +140,7 @@ class PortalCaseDocumentReader {
 			$kept['size'] = $entry['size'];
 		}
 
-		return $kept + (new DocumentEntryExtras())->of(entry: $entry);
+		return $kept + (new DocumentEntryExtras())->extrasOf(entry: $entry);
 	}//end wellFormed()
 
 	/**
