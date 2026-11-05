@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\CaseTypeColumns\CaseTypeColumnSettings;
 use OCA\Portaliq\Service\PortalCaseTypeCatalogue;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -45,10 +46,12 @@ class PortalCaseTypesController extends Controller {
 	 *
 	 * @param IRequest $request The request.
 	 * @param PortalCaseTypeCatalogue $catalogue The portal's case types.
+	 * @param CaseTypeColumnSettings $columns How each case type's columns read.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalCaseTypeCatalogue $catalogue,
+		private readonly CaseTypeColumnSettings $columns,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -58,13 +61,16 @@ class PortalCaseTypesController extends Controller {
 	 *
 	 * @param string $slug The portal slug.
 	 *
-	 * @return JSONResponse `caseTypes`, or 404 for an unknown portal.
+	 * @return JSONResponse `caseTypes`, the stored `columns` per case type
+	 *                      and the `fields` the case apps show, or 404 for an
+	 *                      unknown portal.
 	 *
 	 * @auth admin-only Which case types residents see is an administrator's
 	 *       choice. Nextcloud expresses admin-only as the ABSENCE of an opt-out
 	 *       attribute, so this tag is the declaration.
 	 *
 	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
+	 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
 	 */
 	public function index(string $slug): JSONResponse {
 		$portal = $this->catalogue->portalBySlug(slug: $slug);
@@ -72,7 +78,13 @@ class PortalCaseTypesController extends Controller {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		return new JSONResponse(['caseTypes' => $this->catalogue->listFor(portal: $portal)]);
+		return new JSONResponse(
+			[
+				'caseTypes' => $this->catalogue->listFor(portal: $portal),
+				'columns'   => (object)$this->columns->storedFor(portal: $portal),
+				'fields'    => $this->columns->fields(),
+			]
+		);
 	}//end index()
 
 	/**
@@ -104,4 +116,37 @@ class PortalCaseTypesController extends Controller {
 
 		return new JSONResponse(['caseTypes' => $this->catalogue->listFor(portal: $saved)]);
 	}//end update()
+
+	/**
+	 * Save how the columns of one case type read in Mijn zaken in this
+	 * portal. The body's `columns` lists `field`, `render` (text, link, qr,
+	 * date) and, for a link or QR code, `linkLabel`; an empty list goes back
+	 * to how the case app shows them.
+	 *
+	 * @param string $slug The portal slug.
+	 * @param string $typeId The case type id.
+	 *
+	 * @return JSONResponse The stored `columns` per case type, 404 for an
+	 *                      unknown portal, or 502 when the write failed.
+	 *
+	 * @auth admin-only How residents read their cases is an administrator's
+	 *       choice. Nextcloud expresses admin-only as the ABSENCE of an opt-out
+	 *       attribute, so this tag is the declaration.
+	 *
+	 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-chooses-how-each-column-of-a-case-type-reads
+	 */
+	public function updateColumns(string $slug, string $typeId): JSONResponse {
+		$portal = $this->catalogue->portalBySlug(slug: $slug);
+		if ($portal === null) {
+			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$columns = $this->request->getParam('columns', []);
+		$saved   = $this->columns->save(portal: $portal, change: ['typeId' => $typeId, 'columns' => (array)$columns]);
+		if ($saved === null) {
+			return new JSONResponse(['error' => 'save_failed'], Http::STATUS_BAD_GATEWAY);
+		}
+
+		return new JSONResponse(['columns' => (object)$this->columns->storedFor(portal: $saved)]);
+	}//end updateColumns()
 }//end class

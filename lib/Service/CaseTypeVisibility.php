@@ -28,6 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Service\CaseTypeColumns\CaseTypeColumnsNormaliser;
+use OCA\Portaliq\Service\CaseTypeColumns\ColumnOverrides;
 use OCP\IRequest;
 
 /**
@@ -162,6 +164,24 @@ class CaseTypeVisibility {
 
 		return $this->hiddenForRequest(request: $request, subject: $subject);
 	}//end hiddenForCollection()
+
+	/**
+	 * The serving portal's column settings per case type, ready to stamp on
+	 * case rows.
+	 *
+	 * @param IRequest $request The request.
+	 * @param array<string, mixed> $subject The resolved subject.
+	 *
+	 * @return ColumnOverrides
+	 *
+	 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
+	 */
+	public function servingColumns(IRequest $request, array $subject): ColumnOverrides {
+		$portal = $this->servingPortal(request: $request, subject: $subject);
+		$byType = (new CaseTypeColumnsNormaliser())->byType(portal: $portal);
+
+		return new ColumnOverrides(byType: $byType, types: $this);
+	}//end servingColumns()
 
 	/**
 	 * Whether a form binding names a case type its own portal hides.
