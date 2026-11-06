@@ -33,7 +33,7 @@ use PHPUnit\Framework\TestCase;
  *
  * WHY THE RULES ARE SPELLED OUT HERE RATHER THAN IMPORTED
  *
- * The authoritative validator is `OCA\OpenRegister\Service\Mcp\McpAnnotationValidator`,
+ * The authoritative validator is `OCA\OpenRegister\Mcp\Service\Mcp\McpAnnotationValidator`,
  * in a DIFFERENT app that is not a composer dependency of this one — it is not
  * loadable from this suite. Re-deriving the shape from our own register file
  * would be worse than useless: an instrument built from the same source as the
