@@ -6023,6 +6023,8 @@
       "type": "flow",
       "title": "Flow",
       "config": {
+        "listMode": true,
+        "testPayload": true,
         "app": "portaliq"
       },
       "sidebarComponent": "FlowDetailSidebar",
