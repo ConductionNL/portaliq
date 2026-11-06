@@ -39,6 +39,8 @@ class PortalRegisteredDetailsServiceTest extends TestCase {
 
 	private const KVK = 'OCA\\OpenRegister\\Service\\Integration\\Providers\\KvkProvider';
 
+	private const COUNT = 'countResidentsAtAddressObject';
+
 	/**
 	 * A BSN that passes the eleven test.
 	 */
@@ -200,15 +202,53 @@ class PortalRegisteredDetailsServiceTest extends TestCase {
 
 	}//end testNoRecordFoundSaysNotFound()
 
-	public function testTheCountOfResidentsIsNotClaimedWhileOpenRegisterCannotAnswerIt(): void {
-		$brp = $this->provider(self::BRP, 'lookupByBsn');
+	public function testTheResidentSeesHowManyPeopleLiveAtTheirOwnAddressAndNoOneElse(): void {
+		$brp = $this->provider(self::BRP, 'lookupByBsn', self::COUNT);
 		$brp->method('lookupByBsn')->willReturn(['results' => [$this->haalCentraalPerson()], 'total' => 1]);
+		$brp->expects($this->once())->method(self::COUNT)->with('0344010000012345')->willReturn(
+			['total' => 3, 'meta' => ['correlationId' => 'c-2', 'durationMs' => 9, 'status' => 200]]
+		);
+
+		$result = $this->service(['identityType' => 'digid', 'identityRef' => self::BSN], [self::BRP => $brp])->forSubject('subject-1');
+
+		$this->assertSame(3, $result['person']['residentsAtAddress']);
+		$encoded = (string)json_encode($result);
+		$this->assertStringNotContainsString('0344010000012345', $encoded);
+		$this->assertStringNotContainsString('c-2', $encoded);
+
+	}//end testTheResidentSeesHowManyPeopleLiveAtTheirOwnAddressAndNoOneElse()
+
+	public function testTheCountIsNotClaimedWhenOpenRegisterCannotGiveIt(): void {
+		$brp = $this->provider(self::BRP, 'lookupByBsn', self::COUNT);
+		$brp->method('lookupByBsn')->willReturn(['results' => [$this->haalCentraalPerson()], 'total' => 1]);
+		$brp->method(self::COUNT)->willReturnOnConsecutiveCalls(
+			['unavailable' => true, 'cause' => 'resident-count-not-enabled'],
+			['unavailable' => true, 'cause' => 'upstream-service-down'],
+			['total' => '3'],
+			$this->throwException(new RuntimeException('down'))
+		);
+		$service = $this->service(['identityType' => 'digid', 'identityRef' => self::BSN], [self::BRP => $brp]);
+
+		for ($call = 1; $call <= 4; $call++) {
+			$result = $service->forSubject('subject-1');
+			$this->assertTrue($result['available'], 'the record itself still shows (call ' . $call . ')');
+			$this->assertNull($result['person']['residentsAtAddress'], 'call ' . $call);
+		}
+
+	}//end testTheCountIsNotClaimedWhenOpenRegisterCannotGiveIt()
+
+	public function testAPersonWithoutAnAddressObjectIsNotCounted(): void {
+		$person = $this->haalCentraalPerson();
+		unset($person['verblijfplaats']['adresseerbaarObjectIdentificatie']);
+		$brp = $this->provider(self::BRP, 'lookupByBsn', self::COUNT);
+		$brp->method('lookupByBsn')->willReturn(['results' => [$person], 'total' => 1]);
+		$brp->expects($this->never())->method(self::COUNT);
 
 		$result = $this->service(['identityType' => 'digid', 'identityRef' => self::BSN], [self::BRP => $brp])->forSubject('subject-1');
 
 		$this->assertNull($result['person']['residentsAtAddress']);
 
-	}//end testTheCountOfResidentsIsNotClaimedWhileOpenRegisterCannotAnswerIt()
+	}//end testAPersonWithoutAnAddressObjectIsNotCounted()
 
 	/**
 	 * The service over one account and a container holding the given providers.
@@ -274,18 +314,24 @@ class PortalRegisteredDetailsServiceTest extends TestCase {
 	 * A double of OpenRegister's real provider class on its real lookup method.
 	 *
 	 * @param string $class  The provider class.
-	 * @param string $method The lookup method.
+	 * @param string ...$methods The lookup methods.
 	 *
 	 * @return mixed
 	 */
-	private function provider(string $class, string $method): mixed {
+	private function provider(string $class, string ...$methods): mixed {
 		if (class_exists($class) === false) {
 			$this->markTestSkipped($class . ' is not loadable: set PORTALIQ_OPENREGISTER_LIB to an openregister checkout\'s lib/.');
 		}
 
+		foreach ($methods as $method) {
+			if (method_exists($class, $method) === false) {
+				$this->markTestSkipped($class . '::' . $method . ' arrives with ConductionNL/openregister brp-residents-at-address-count.');
+			}
+		}
+
 		return $this->getMockBuilder($class)
 			->disableOriginalConstructor()
-			->onlyMethods([$method])
+			->onlyMethods($methods)
 			->getMock();
 	}//end provider()
 
