@@ -37,7 +37,7 @@ use OCA\Portaliq\Service\Intake\DestinationIntake;
 use OCA\Portaliq\Service\Intake\PortalEmbedGuard;
 use OCA\Portaliq\Service\Intake\PortalEmbedThrottle;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
-use OCA\Portaliq\Service\Intake\PortalFormValidator;
+use OCA\Portaliq\Service\Intake\PortalSubmissionGate;
 use OCA\Portaliq\Service\PortalResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -57,7 +57,7 @@ use OCP\IURLGenerator;
  *
  * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- one dependency per step:
  * resolve the portal, the binding, the origin guard, the throttle, the
- * validator and the destination submit.
+ * submission gate and the destination submit.
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)  -- see above.
  */
 class PortalEmbedController extends Controller {
@@ -70,7 +70,7 @@ class PortalEmbedController extends Controller {
 	 * @param PortalFormBindingResolver $bindings Resolves the binding.
 	 * @param PortalEmbedGuard $guard Decides who may frame this form.
 	 * @param PortalEmbedThrottle $throttle Counts frame traffic per origin.
-	 * @param PortalFormValidator $validator Validates a submission.
+	 * @param PortalSubmissionGate $gate The pipeline the portal's own submit runs too.
 	 * @param DestinationIntake $intake Submits into the binding's destination (decision 179).
 	 * @param IURLGenerator $urls Builds the follow link.
 	 */
@@ -80,7 +80,7 @@ class PortalEmbedController extends Controller {
 		private readonly PortalFormBindingResolver $bindings,
 		private readonly PortalEmbedGuard $guard,
 		private readonly PortalEmbedThrottle $throttle,
-		private readonly PortalFormValidator $validator,
+		private readonly PortalSubmissionGate $gate,
 		private readonly DestinationIntake $intake,
 		private readonly IURLGenerator $urls,
 	) {
@@ -153,9 +153,21 @@ class PortalEmbedController extends Controller {
 	/**
 	 * A submission from the frame.
 	 *
+	 * The submission runs the same gate as the portal's own submit
+	 * (PortalSubmissionGate): the `Origin` check above is a browser control a
+	 * script sets at will, so the anti-bot challenge, the e-mail proofs, the
+	 * statements and the server-side calculations and decisions are what keep a
+	 * direct POST honest.
+	 *
 	 * @param string $route The form page submitted.
 	 * @param array<string, mixed> $answers What the visitor answered.
 	 * @param string $_hp The honeypot: a field the frame keeps hidden and empty.
+	 * @param string $nonce The challenge nonce, when one was issued.
+	 * @param string $solution The solution to it.
+	 * @param int $expiresAt The expiry issued with the nonce.
+	 * @param string $signature This instance's signature over the nonce.
+	 * @param array<int, string> $statements The keys of the statements the visitor ticked.
+	 * @param array<string, string> $verifiedEmails Proofs of verified e-mail addresses, by address.
 	 *
 	 * @return JSONResponse The reference and its follow link, or a refusal.
 	 *
@@ -168,7 +180,17 @@ class PortalEmbedController extends Controller {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 30, period: 60)]
-	public function submit(string $route, array $answers = [], string $_hp = ''): JSONResponse {
+	public function submit(
+		string $route,
+		array $answers = [],
+		string $_hp = '',
+		string $nonce = '',
+		string $solution = '',
+		int $expiresAt = 0,
+		string $signature = '',
+		array $statements = [],
+		array $verifiedEmails = [],
+	): JSONResponse {
 		$site = $this->portals->resolve(request: $this->request);
 		if ($site === null) {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
@@ -204,12 +226,21 @@ class PortalEmbedController extends Controller {
 			return new JSONResponse(['error' => 'identified_intake'], Http::STATUS_FORBIDDEN);
 		}
 
-		$validated = $this->validator->validate(fields: (array)($render['fields'] ?? []), answers: $answers);
-		if ($validated['valid'] === false) {
-			return new JSONResponse(['errors' => $validated['errors']], Http::STATUS_BAD_REQUEST);
+		$admitted = $this->gate->admit(
+			site: $site,
+			render: $render,
+			route: $route,
+			answers: $answers,
+			subject: null,
+			challenge: ['nonce' => $nonce, 'solution' => $solution, 'expiresAt' => $expiresAt, 'signature' => $signature],
+			statements: $statements,
+			verifiedEmails: $verifiedEmails
+		);
+		if ($admitted instanceof JSONResponse) {
+			return $admitted;
 		}
 
-		return $this->send(site: $site, binding: $binding, render: $render, answers: $validated['answers'], origin: $origin);
+		return $this->send(site: $site, binding: $binding, render: $render, admitted: $admitted, origin: $origin);
 	}//end submit()
 
 	/**
@@ -218,7 +249,7 @@ class PortalEmbedController extends Controller {
 	 * @param array<string, mixed> $site    The portal.
 	 * @param array<string, mixed> $binding The binding.
 	 * @param array<string, mixed> $render  What the binding renders to.
-	 * @param array<string, mixed> $answers The answers the portal's checks accepted.
+	 * @param array{answers: array<string, mixed>, server: array<string, mixed>} $admitted What the gate accepted.
 	 * @param string               $origin  The framing origin.
 	 *
 	 * @return JSONResponse The reference, its moments and follow link, or the refusal.
@@ -228,14 +259,14 @@ class PortalEmbedController extends Controller {
 	 * @SuppressWarnings(PHPMD.StaticAccess) -- DestinationIntake::refusal is the one
 	 * refusal shape the intake and the embed submit share.
 	 */
-	private function send(array $site, array $binding, array $render, array $answers, string $origin): JSONResponse {
+	private function send(array $site, array $binding, array $render, array $admitted, string $origin): JSONResponse {
 		// Nothing here reads a bearer: a submission from the frame is
 		// anonymous even when the visitor is signed in elsewhere.
 		$submitted = $this->intake->submit(
 			binding: $binding,
 			render: $render,
-			answers: $answers,
-			server: ['portal' => (string)($site['slug'] ?? ''), 'origin' => $origin],
+			answers: $admitted['answers'],
+			server: array_merge(['portal' => (string)($site['slug'] ?? ''), 'origin' => $origin], $admitted['server']),
 			idempotencyKey: (string)$this->request->getHeader('Idempotency-Key')
 		);
 		if ($submitted['ok'] === false) {
