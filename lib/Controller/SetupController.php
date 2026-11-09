@@ -325,7 +325,9 @@ class SetupController extends Controller {
 			);
 
 			return new JSONResponse(
-				data: ['success' => false, 'message' => 'Could not import the demo data: ' . $e->getMessage()],
+				// The cause is in the log line above; a raw exception message can
+				// carry SQL or paths and never goes to the client (ADR-050).
+				data: ['success' => false, 'message' => 'Could not import the demo data. The Nextcloud log has the details.'],
 				statusCode: Http::STATUS_INTERNAL_SERVER_ERROR,
 			);
 		}

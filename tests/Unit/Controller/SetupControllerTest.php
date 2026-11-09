@@ -345,7 +345,9 @@ class SetupControllerTest extends TestCase {
 
 		$this->assertSame(500, $response->getStatus());
 		$this->assertFalse($response->getData()['success']);
-		$this->assertStringContainsString('OpenRegister is not installed.', $response->getData()['message']);
+		// The cause is logged (above), not echoed to the client (ADR-050, pq-f4).
+		$this->assertStringContainsString('Could not import the demo data', $response->getData()['message']);
+		$this->assertStringNotContainsString('OpenRegister is not installed.', $response->getData()['message']);
 	}
 
 	/**
@@ -417,5 +419,18 @@ class SetupControllerTest extends TestCase {
 		$response = $this->controllerPosting(['dataset' => 'demo'])->runAction('load-demo-data');
 
 		$this->assertSame(500, $response->getStatus());
+	}
+
+	public function testAFailedImportDoesNotEchoTheExceptionText(): void {
+		// pq-f4 (ADR-050): the cause goes to the log, the client gets a fixed
+		// sentence. An exception message can carry SQL or file paths.
+		$this->appConfig->method('getValueString')->willReturn('');
+		$this->demoData->method('install')->willThrowException(new RuntimeException('SQLSTATE[42S02] /var/www/html/secret.sql'));
+
+		$data = $this->controller->runAction('install-demo-data')->getData();
+
+		$this->assertFalse($data['success']);
+		$this->assertStringNotContainsString('SQLSTATE', $data['message']);
+		$this->assertStringNotContainsString('/var/www', $data['message']);
 	}
 }
