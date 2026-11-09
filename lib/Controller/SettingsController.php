@@ -204,7 +204,10 @@ class SettingsController extends Controller {
 	 * Forces a fresh import regardless of version, auto-configuring
 	 * all schema and register IDs from the import result.
 	 *
-	 * @NoCSRFRequired
+	 * CSRF is checked: the forced import resets schema authorization to the
+	 * seed, so a cross-site form POST in an admin's browser must not reach it.
+	 * The non-browser callers (tests/e2e/ci-seed.sh, the Playwright admin
+	 * suite) use Basic auth with `OCS-APIRequest: true`, which passes the check.
 	 *
 	 * @return JSONResponse
 	 *
