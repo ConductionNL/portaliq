@@ -360,7 +360,14 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		$answer    = $submitted['answer'];
 		$reference = (string)($answer['reference'] ?? '');
 		$moments   = (array)($answer['confirmation'] ?? []);
-		$mailedTo  = $this->confirmation->send(site: $site, render: $render, answers: $prepared['answers'], reference: $reference, moments: $moments);
+		$mailedTo  = $this->confirmation->send(
+			site: $site,
+			render: $render,
+			answers: $prepared['answers'],
+			reference: $reference,
+			moments: $moments,
+			verified: array_column((array)($prepared['server']['verifiedEmails'] ?? []), 'address')
+		);
 
 		return new JSONResponse(
 			array_merge(
