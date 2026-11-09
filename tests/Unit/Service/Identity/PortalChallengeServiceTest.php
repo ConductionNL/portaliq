@@ -6,6 +6,8 @@ namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 
 use OCA\Portaliq\Service\Identity\PortalChallengeService;
 use DateTimeImmutable;
+use OCP\ICache;
+use OCP\ICacheFactory;
 use OCP\Security\ICrypto;
 use OCP\Security\ISecureRandom;
 use PHPUnit\Framework\TestCase;
@@ -27,6 +29,13 @@ use PHPUnit\Framework\TestCase;
  */
 class PortalChallengeServiceTest extends TestCase {
 
+	/**
+	 * The cache factory every service in one test shares.
+	 *
+	 * @var ICacheFactory|null
+	 */
+	private ?ICacheFactory $cacheFactory = null;
+
 	public function testASubmissionWithoutASolvedChallengeIsRefused(): void {
 		$service = $this->service();
 		$site = $this->site(difficulty: 8);
@@ -44,6 +53,51 @@ class PortalChallengeServiceTest extends TestCase {
 		$this->assertTrue($this->acceptsSigned(service: $service, site: $site, surface: 'form', submission: [], nonce: 'nonce-1', solution: $solution));
 
 	}//end testASolvedChallengeIsAccepted()
+
+	/**
+	 * aud-f1: a solved nonce carries ONE submission through. The same nonce,
+	 * solution and signature a second time are refused, also by another
+	 * service instance (another web server) over the same distributed cache.
+	 *
+	 * @return void
+	 */
+	public function testASolvedNonceIsSpentOnItsFirstSubmission(): void {
+		$service = $this->service();
+		$site = $this->site(difficulty: 8);
+		$solution = $this->solve(nonce: 'nonce-1', difficulty: 8);
+		$issued = $service->issue(site: $site, surface: 'form');
+		$submit = static fn (PortalChallengeService $on): bool => $on->accepts(
+			site: $site,
+			surface: 'form',
+			submission: [],
+			nonce: 'nonce-1',
+			solution: $solution,
+			expiresAt: $issued['expiresAt'],
+			signature: $issued['signature']
+		);
+
+		$this->assertTrue($submit($service));
+		$this->assertFalse($submit($service), 'a replay on the same server');
+		$this->assertFalse($submit($this->service()), 'a replay on another server');
+
+	}//end testASolvedNonceIsSpentOnItsFirstSubmission()
+
+	/**
+	 * aud-f1: a refused submission (unsolved work) does not burn the nonce;
+	 * the visitor's real solution still goes through once.
+	 *
+	 * @return void
+	 */
+	public function testARefusedAttemptDoesNotSpendTheNonce(): void {
+		$service = $this->service();
+		$site = $this->site(difficulty: 8);
+		$issued = $service->issue(site: $site, surface: 'form');
+		$args = ['site' => $site, 'surface' => 'form', 'submission' => [], 'nonce' => 'nonce-1', 'expiresAt' => $issued['expiresAt'], 'signature' => $issued['signature']];
+
+		$this->assertFalse($service->accepts(...$args, solution: 'nonsense'));
+		$this->assertTrue($service->accepts(...$args, solution: $this->solve(nonce: 'nonce-1', difficulty: 8)));
+
+	}//end testARefusedAttemptDoesNotSpendTheNonce()
 
 	public function testTheWorkFactorIsPerSurface(): void {
 		$service = $this->service();
@@ -277,7 +331,35 @@ class PortalChallengeServiceTest extends TestCase {
 			}
 		);
 
-		return new PortalChallengeService($random, $crypto);
+		return new PortalChallengeService($random, $crypto, $this->caches());
 	}//end service()
+
+	/**
+	 * A cache factory over one in-memory store, shared by every service this
+	 * test builds, the way a distributed cache is shared by web servers.
+	 *
+	 * @return ICacheFactory
+	 */
+	private function caches(): ICacheFactory {
+		if ($this->cacheFactory !== null) {
+			return $this->cacheFactory;
+		}
+
+		$entries = [];
+		$cache   = $this->createMock(ICache::class);
+		$cache->method('hasKey')->willReturnCallback(static function (string $key) use (&$entries): bool {
+			return array_key_exists($key, $entries);
+		});
+		$cache->method('set')->willReturnCallback(static function (string $key, $value, int $ttl = 0) use (&$entries): bool {
+			$entries[$key] = $value;
+			return true;
+		});
+
+		$this->cacheFactory = $this->createMock(ICacheFactory::class);
+		$this->cacheFactory->method('isAvailable')->willReturn(true);
+		$this->cacheFactory->method('createDistributed')->willReturn($cache);
+
+		return $this->cacheFactory;
+	}//end caches()
 
 }//end class

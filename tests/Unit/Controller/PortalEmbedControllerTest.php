@@ -27,6 +27,7 @@ use OCP\AppFramework\Http;
 use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IURLGenerator;
+use OCP\ICacheFactory;
 use OCP\Security\ICrypto;
 use OCP\Security\ISecureRandom;
 use PHPUnit\Framework\TestCase;
@@ -567,7 +568,7 @@ class PortalEmbedControllerTest extends TestCase {
 			new PortalEmbedGuard(),
 			$throttle,
 			new PortalSubmissionGate(
-				challenge: new PortalChallengeService($this->createMock(ISecureRandom::class), $this->createMock(ICrypto::class)),
+				challenge: new PortalChallengeService($this->createMock(ISecureRandom::class), $this->createMock(ICrypto::class), $this->createMock(ICacheFactory::class)),
 				checks: new PortalSubmissionChecks(
 					validator: new PortalFormValidator($l10n),
 					calculator: $calculator,

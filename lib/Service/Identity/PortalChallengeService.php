@@ -20,6 +20,11 @@
  * it once, and send the same pair for as long as they liked. Signing it is
  * what makes solving the work again the only way through.
  *
+ * A nonce is also single-use: the first submission it carries through is
+ * remembered, by the nonce's hash, in the distributed cache until the nonce
+ * expires, and a second submission with the same nonce is refused. Without
+ * that one solved nonce was a pass for every submission in its window.
+ *
  * @category Service
  * @package  OCA\Portaliq\Service\Identity
  *
@@ -40,6 +45,9 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use DateTimeImmutable;
+use OCP\ICache;
+use OCP\ICacheFactory;
+use OCP\IMemcache;
 use OCP\Security\ICrypto;
 use OCP\Security\ISecureRandom;
 
@@ -68,14 +76,28 @@ class PortalChallengeService {
 	public const TTL_SECONDS = 900;
 
 	/**
+	 * The cache prefix under which spent nonces are remembered.
+	 */
+	private const SPENT_PREFIX = 'portaliq-challenge-spent';
+
+	/**
+	 * The store of spent nonces, built on first use.
+	 *
+	 * @var ICache|null
+	 */
+	private ?ICache $spent = null;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ISecureRandom $random Mints the nonce.
 	 * @param ICrypto $crypto Signs the nonce with the instance secret.
+	 * @param ICacheFactory $caches Holds the spent nonces until they expire.
 	 */
 	public function __construct(
 		private readonly ISecureRandom $random,
 		private readonly ICrypto $crypto,
+		private readonly ICacheFactory $caches,
 	) {
 	}//end __construct()
 
@@ -241,8 +263,65 @@ class PortalChallengeService {
 			return false;
 		}
 
-		return $this->solves(nonce: $nonce, solution: $solution, difficulty: $this->difficultyFor(site: $site, surface: $surface));
+		if ($this->solves(nonce: $nonce, solution: $solution, difficulty: $this->difficultyFor(site: $site, surface: $surface)) === false) {
+			return false;
+		}
+
+		// Spent last, so only a nonce that carried a submission through is
+		// burned; the same nonce a second time is refused.
+		return $this->spend(nonce: $nonce, surface: $surface, expiresAt: $expiresAt, now: $now);
 	}//end accepts()
+
+	/**
+	 * Mark a nonce used, or report that it already was.
+	 *
+	 * Remembered by its hash until it expires, which is as long as it could be
+	 * replayed. A memcache adds atomically, so two submissions racing with one
+	 * nonce cannot both get through.
+	 *
+	 * @param string $nonce The nonce, already proven ours and solved.
+	 * @param string $surface The surface it was issued for.
+	 * @param int $expiresAt The unix second it stops counting.
+	 * @param DateTimeImmutable|null $now The moment to count the remaining window from.
+	 *
+	 * @return bool True when this was the nonce's first use.
+	 *
+	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	private function spend(string $nonce, string $surface, int $expiresAt, ?DateTimeImmutable $now): bool {
+		$key = hash('sha256', ($surface . ':' . $nonce));
+		$ttl = max(1, ($expiresAt - ($now ?? new DateTimeImmutable())->getTimestamp()));
+
+		$store = $this->spentStore();
+		if ($store instanceof IMemcache) {
+			return (bool)$store->add($key, 1, $ttl);
+		}
+
+		if ($store->hasKey($key) === true) {
+			return false;
+		}
+
+		$store->set($key, 1, $ttl);
+
+		return true;
+	}//end spend()
+
+	/**
+	 * The distributed cache, so a nonce spent on one web server is spent on
+	 * all; the local cache when the instance has no distributed one.
+	 *
+	 * @return ICache
+	 */
+	private function spentStore(): ICache {
+		if ($this->spent === null) {
+			$this->spent = $this->caches->createDistributed(self::SPENT_PREFIX);
+			if ($this->caches->isAvailable() === false) {
+				$this->spent = $this->caches->createLocal(self::SPENT_PREFIX);
+			}
+		}
+
+		return $this->spent;
+	}//end spentStore()
 
 	/**
 	 * Whether the honeypot field was left alone.
