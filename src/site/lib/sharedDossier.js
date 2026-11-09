@@ -60,11 +60,13 @@ export function sharedDossierToken(route) {
 
 /**
  * A link the page may render: https or http, or a path on this instance.
+ * Anything else (`javascript:`, `data:`, a protocol-relative `//host`) is ''.
+ * The federated search reuses it for the links a peer catalogue hands out.
  *
  * @param {unknown} value The link.
  * @return {string} The link, or ''.
  */
-function safeHref(value) {
+export function safeHref(value) {
 	if (typeof value !== 'string') {
 		return ''
 	}

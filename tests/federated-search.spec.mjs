@@ -244,6 +244,27 @@ assertEqual(
 	},
 )
 
+// A PEER'S ADDRESS IS NOT TRUSTED (pq-f5). Only http(s) or a path on this
+// instance becomes a link; a `javascript:` or `data:` address is skipped for
+// the next address the row carries, and with none left the card has no link.
+assertEqual(
+	'drops a javascript: landing page for the next safe address',
+	toResult({ name: 'x', landingUrl: 'javascript:alert(1)', url: 'https://example.org/x', '@self': { id: '1' } }).href,
+	'https://example.org/x',
+)
+
+assertEqual(
+	'gives a row with only unsafe addresses no link',
+	toResult({ name: 'x', landingUrl: ' JavaScript:alert(1)', url: 'data:text/html,<b>x</b>', '@self': { id: '1', uri: '//evil.example/x' } }).href,
+	'',
+)
+
+assertEqual(
+	'keeps a path on this instance',
+	toResult({ name: 'x', '@self': { id: '1', uri: '/apps/opencatalogi/x' } }).href,
+	'/apps/opencatalogi/x',
+)
+
 // A ROW OF THIS PORTAL NAMES NO SOURCE (search-names-only-a-foreign-source
 // REQ-SNF-001). No directory, or the API's own word `local`, is this
 // instance; the card drew "Bron: local" for it.
