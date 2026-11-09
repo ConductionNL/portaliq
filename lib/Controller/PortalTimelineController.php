@@ -40,6 +40,7 @@ use OCA\Portaliq\Contribution\StepsProviderMethod;
 use OCA\Portaliq\Service\MandatedCaseReader;
 use OCA\Portaliq\Service\PortalItemReader;
 use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\PortalRowScreen;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PortalTimelineReader;
 use OCP\AppFramework\Controller;
@@ -70,6 +71,7 @@ class PortalTimelineController extends Controller implements PortalProtected {
 	 * @param PortalTimelineReader $timelines Calls the declared provider method.
 	 * @param PortalItemReader|null $items Calls the item-list provider method (my-dossiers).
 	 * @param MandatedCaseReader|null $mandatedCases Reads a case the person sees under a mandate.
+	 * @param PortalRowScreen|null $rows The shared per-row proof; built over the reader when absent.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -79,6 +81,7 @@ class PortalTimelineController extends Controller implements PortalProtected {
 		private readonly PortalTimelineReader $timelines,
 		private readonly ?PortalItemReader $items = null,
 		private readonly ?MandatedCaseReader $mandatedCases = null,
+		private readonly ?PortalRowScreen $rows = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -219,18 +222,14 @@ class PortalTimelineController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$owned = $this->reader->readObject(
-			register: $register,
-			schema: $schema,
-			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			id: $id,
-			organisation: (string)($subject['organisation'] ?? ''),
-			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
-			contributingApp: $match['app'],
-			via: ($collection['via'] ?? null),
-			audience: (string)($subject['audience'] ?? ''),
-			fields: ($collection['fields'] ?? null)
+		// The same proof as `contribution#object`: the scoped read plus the
+		// branch, waiting-row and hidden-case-type gates.
+		$owned = $this->rowScreen()->row(
+			request: $this->request,
+			subject: $subject,
+			collection: $collection,
+			app: $match['app'],
+			target: ['register' => $register, 'schema' => $schema, 'id' => $id]
 		);
 		// A case the person sees under the mandate they name is read by the
 		// same reader that lists it on "My cases" (cases-my-cases-page
@@ -253,6 +252,18 @@ class PortalTimelineController extends Controller implements PortalProtected {
 
 		return ['app' => $match['app'], 'declared' => $declared];
 	}//end provenObject()
+
+	/**
+	 * The shared per-row proof (PortalRowScreen): the scoped read plus the
+	 * branch, waiting-row and hidden-case-type gates `contribution#object`
+	 * applies. Built over this controller's reader when it was not injected,
+	 * never skipped, because it is a guard.
+	 *
+	 * @return PortalRowScreen
+	 */
+	private function rowScreen(): PortalRowScreen {
+		return ($this->rows ?? new PortalRowScreen(reader: $this->reader));
+	}//end rowScreen()
 
 	/**
 	 * The subject's own collection for a register and schema, with its app.

@@ -1818,6 +1818,7 @@ class ContributionControllerTest extends TestCase {
 		$reader->expects($this->once())->method('resolveScopeValue')
 			->with('costCenter', 'portaliq', self::SUBJECT)
 			->willReturn('CC-100');
+		$reader->method('readObject')->willReturn(['id' => 't-1', 'costCenter' => 'CC-100']);
 
 		$controller = $this->controller(aggregate: $aggregate, reader: $reader, writer: $writer);
 		$response = $controller->update('hrmq', 'timesheet', 't-1');
@@ -2510,6 +2511,53 @@ class ContributionControllerTest extends TestCase {
 	}//end testDownloadForeignOrAbsentObjectIs404BeforeAnyStream()
 
 	/**
+	 * pq-f2: download, upload and update prove the row through the same
+	 * function as object(). A branch-restricted session whose scope reads a
+	 * row of another branch, and any session asking for a row still waiting
+	 * for its moment, get the one 404 and nothing is streamed, attached or
+	 * written.
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T04
+	 */
+	public function testPerObjectRoutesRefuseARowTheListWouldNotShow(): void {
+		$cases = [
+			'another branch' => [
+				self::SUBJECT + ['branch' => '000012345678', 'branchRestricted' => true],
+				['branchField' => 'vestiging'],
+				['id' => 'd-1', 'subjectRef' => 's1', 'vestiging' => '000087654321'],
+			],
+			'still waiting' => [
+				self::SUBJECT,
+				['visibleFromField' => 'releaseAt'],
+				['id' => 'd-1', 'subjectRef' => 's1', 'releaseAt' => '2999-01-01T00:00:00+00:00'],
+			],
+		];
+		foreach ($cases as $label => [$subject, $gates, $row]) {
+			$aggregate = $this->aggregate(
+				collections: [['id' => 'c1', 'register' => 'portaliq', 'schema' => 'exampleDocument', 'scopeField' => 'subjectRef', 'filesDownload' => true, 'filesUpload' => true] + $gates],
+				actions: [['id' => 'u1', 'type' => 'update', 'register' => 'portaliq', 'schema' => 'exampleDocument', 'fields' => ['title']]]
+			);
+
+			$reader = $this->createMock(PortalObjectReader::class);
+			$reader->method('readObject')->willReturn($row);
+			$reader->method('resolveScopeValue')->willReturn('s1');
+			$fileReader = $this->createMock(PortalFileReader::class);
+			$fileReader->expects($this->never())->method('streamFile');
+			$fileWriter = $this->createMock(PortalFileWriter::class);
+			$fileWriter->expects($this->never())->method('attachFile');
+			$writer = $this->createMock(PortalObjectWriter::class);
+			$writer->expects($this->never())->method('updateObject');
+
+			$controller = $this->controller(aggregate: $aggregate, subject: $subject, reader: $reader, writer: $writer, fileWriter: $fileWriter, fileReader: $fileReader);
+
+			$this->assertSame(Http::STATUS_NOT_FOUND, $controller->downloadFile('portaliq', 'exampleDocument', 'd-1', 'f-1')->getStatus(), $label . ': download');
+			$this->assertSame(Http::STATUS_NOT_FOUND, $controller->uploadFile('portaliq', 'exampleDocument', 'd-1')->getStatus(), $label . ': upload');
+			$this->assertSame(Http::STATUS_NOT_FOUND, $controller->update('portaliq', 'exampleDocument', 'd-1')->getStatus(), $label . ': update');
+			$this->assertSame(Http::STATUS_NOT_FOUND, $controller->object('portaliq', 'exampleDocument', 'd-1')->getStatus(), $label . ': object');
+		}
+	}//end testPerObjectRoutesRefuseARowTheListWouldNotShow()
+
+	/**
 	 * A `fileId` that does not resolve (non-existent, or foreign to the owned
 	 * object's folder) is the SAME 404 as the two refusals above — no oracle.
 	 */
@@ -2717,6 +2765,11 @@ class ContributionControllerTest extends TestCase {
 		// real no-scopeClaim behaviour) so update()'s ownership resolution passes.
 		$defaultReader = $this->createMock(PortalObjectReader::class);
 		$defaultReader->method('resolveScopeValue')->willReturn((string)($subject['subjectRef'] ?? ''));
+		// ...and the scoped read finds the row, as the writer's own ownership
+		// re-check would: update() proves the row visible before it writes.
+		$defaultReader->method('readObject')->willReturnCallback(
+			static fn (string $register, string $schema, string $scopeField, string $subjectRef, string $id): array => ['id' => $id, $scopeField => $subjectRef]
+		);
 
 		return new ContributionController(
 			$request,

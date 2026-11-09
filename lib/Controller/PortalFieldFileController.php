@@ -41,6 +41,7 @@ use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalFileFieldPolicy;
 use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\PortalRowScreen;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
@@ -86,6 +87,7 @@ class PortalFieldFileController extends Controller implements PortalProtected {
 	 * @param PortalFileFieldPolicy $policy The upload rules.
 	 * @param AuditTrailService $auditor Records the write.
 	 * @param LoggerInterface $logger Records the cause of a failed write.
+	 * @param PortalRowScreen|null $rows The shared per-row proof; built over the reader when absent.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -97,6 +99,7 @@ class PortalFieldFileController extends Controller implements PortalProtected {
 		private readonly PortalFileFieldPolicy $policy,
 		private readonly AuditTrailService $auditor,
 		private readonly LoggerInterface $logger,
+		private readonly ?PortalRowScreen $rows = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -173,6 +176,21 @@ class PortalFieldFileController extends Controller implements PortalProtected {
 		$scope = $this->ownershipScope(action: $match['action'], app: $match['app'], subject: $subject);
 		$owned = $this->ownedObject(target: $target, scope: $scope, subject: $subject);
 		if ($scope === null || $owned === null) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		// Owning the row is not enough: the subject's own collection must show
+		// it (branch, waiting-row and hidden-case-type gates of
+		// `contribution#object`). Same 404, nothing attached.
+		$visible = $this->rowScreen()->admitsForAction(
+			request: $this->request,
+			subject: $subject,
+			aggregate: $this->registry->aggregateFor($subject),
+			match: $match,
+			target: $target,
+			row: $owned
+		);
+		if ($visible === false) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
@@ -342,6 +360,18 @@ class PortalFieldFileController extends Controller implements PortalProtected {
 			organisation: (string)($subject['organisation'] ?? '')
 		);
 	}//end ownedObject()
+
+	/**
+	 * The shared per-row proof (PortalRowScreen): the scoped read plus the
+	 * branch, waiting-row and hidden-case-type gates `contribution#object`
+	 * applies. Built over this controller's reader when it was not injected,
+	 * never skipped, because it is a guard.
+	 *
+	 * @return PortalRowScreen
+	 */
+	private function rowScreen(): PortalRowScreen {
+		return ($this->rows ?? new PortalRowScreen(reader: $this->reader));
+	}//end rowScreen()
 
 	/**
 	 * Write the reference through the ownership-checking writer and record it.

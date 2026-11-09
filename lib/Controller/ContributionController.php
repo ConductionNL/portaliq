@@ -81,6 +81,7 @@ use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\Tenancy\SchemaTenancy;
 use OCA\Portaliq\Service\PortalTaskGateway;
 use OCA\Portaliq\Service\VisibleFromGate;
+use OCA\Portaliq\Service\PortalRowScreen;
 use OCA\Portaliq\Service\PortalUserDisplayNames;
 use OCA\Portaliq\Service\PortalRateLimit;
 use OCA\Portaliq\Service\RequiredFieldsGuard;
@@ -1165,37 +1166,27 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t03
 	 */
 	private function screenRow(array $subject, array $match, string $register, string $schema, string $id): ?array {
-		$collection = $match['collection'];
-		if ($this->withoutTenant(subject: $subject, schema: $schema) === true) {
-			return null;
-		}
-
-		$object = $this->reader->readObject(
-			register: $register,
-			schema: $schema,
-			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			id: $id,
-			organisation: (string)($subject['organisation'] ?? ''),
-			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
-			contributingApp: $match['app'],
-			via: ($collection['via'] ?? null),
-			audience: (string)($subject['audience'] ?? ''),
-			fields: ($collection['fields'] ?? null),
-			filter: (array)($collection['filter'] ?? [])
+		return $this->rowScreen()->row(
+			request: $this->request,
+			subject: $subject,
+			collection: $match['collection'],
+			app: $match['app'],
+			target: ['register' => $register, 'schema' => $schema, 'id' => $id]
 		);
-
-		$hidden = ($this->caseTypes?->hiddenForCollection(request: $this->request, subject: $subject, collection: $collection) ?? []);
-		if ($object === null
-			|| (new VisibleFromGate())->rows(rows: [$object], collection: $collection) === []
-			|| $this->branches->admits(subject: $subject, collection: $collection, row: $object) === false
-			|| $this->caseTypes?->rowIsHidden(row: $object, collection: $collection, hidden: $hidden) === true
-		) {
-			return null;
-		}
-
-		return $object;
 	}//end screenRow()
+
+	/**
+	 * The shared per-row proof, over this controller's own reader and gates.
+	 *
+	 * Built here rather than injected so every per-object route of this
+	 * controller proves its row through the same function as object(), and the
+	 * gates cannot drift per route.
+	 *
+	 * @return PortalRowScreen
+	 */
+	private function rowScreen(): PortalRowScreen {
+		return new PortalRowScreen(reader: $this->reader, caseTypes: $this->caseTypes, branches: $this->branches);
+	}//end rowScreen()
 
 	/**
 	 * Attach an uploaded file to an object the subject owns (the file-upload
@@ -1243,21 +1234,10 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		// Re-verify ownership with the full scope resolution — 404 (no oracle)
-		// when the object is not the subject's or does not exist.
-		$owned = $this->reader->readObject(
-			register: $register,
-			schema: $schema,
-			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			id: $id,
-			organisation: (string)($subject['organisation'] ?? ''),
-			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
-			contributingApp: $match['app'],
-			via: ($collection['via'] ?? null),
-			audience: (string)($subject['audience'] ?? ''),
-			fields: ($collection['fields'] ?? null)
-		);
+		// Re-verify ownership with the full scope resolution, and the branch,
+		// waiting-row and hidden-case-type gates object() applies — 404 (no
+		// oracle) when the subject may not see the object or it does not exist.
+		$owned = $this->screenRow(subject: $subject, match: $match, register: $register, schema: $schema, id: $id);
 		if ($owned === null) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
@@ -1369,22 +1349,11 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		// Re-verify ownership with the full scope resolution BEFORE the file is
-		// ever resolved — a foreign or non-existent object never reaches the
-		// file layer.
-		$owned = $this->reader->readObject(
-			register: $register,
-			schema: $schema,
-			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			id: $id,
-			organisation: (string)($subject['organisation'] ?? ''),
-			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
-			contributingApp: $match['app'],
-			via: ($collection['via'] ?? null),
-			audience: (string)($subject['audience'] ?? ''),
-			fields: ($collection['fields'] ?? null)
-		);
+		// Re-verify ownership with the full scope resolution, and the gates
+		// object() applies, BEFORE the file is ever resolved — a foreign,
+		// non-existent, waiting, other-branch or hidden object never reaches
+		// the file layer.
+		$owned = $this->screenRow(subject: $subject, match: $match, register: $register, schema: $schema, id: $id);
 		if ($owned === null) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
@@ -1939,6 +1908,30 @@ class ContributionController extends Controller implements PortalProtected {
 			subject: $subject
 		);
 		if ($scopeValue === null || $scopeValue === '') {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		// The row must be one the subject's own collection shows: the branch,
+		// waiting-row and hidden-case-type gates of object() hold for a write
+		// too. The read is the one the writer re-checks ownership with. Same
+		// 404 as a foreign id, and nothing is written.
+		$owned = $this->reader->readObject(
+			register: $register,
+			schema: $schema,
+			scopeField: (string)($action['scopeField'] ?? 'subjectRef'),
+			subjectRef: $scopeValue,
+			id: $id,
+			organisation: (string)($subject['organisation'] ?? '')
+		);
+		if ($owned === null || $this->rowScreen()->admitsForAction(
+			request: $this->request,
+			subject: $subject,
+			aggregate: $this->registry->aggregateFor($subject),
+			match: $match,
+			target: ['register' => $register, 'schema' => $schema, 'id' => $id],
+			row: $owned
+		) === false
+		) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
