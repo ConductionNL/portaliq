@@ -65,6 +65,8 @@ use Throwable;
  * of the upload (who, which action, whose object, attach, write, record) plus
  * the framework attributes every portal endpoint carries; folding them into a
  * facade would hide which boundary each step crosses.
+ * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the same steps, plus the
+ * shared per-row proof (PortalRowScreen) every per-object route uses.
  */
 class PortalFieldFileController extends Controller implements PortalProtected {
 	/**

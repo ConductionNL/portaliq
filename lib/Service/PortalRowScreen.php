@@ -149,19 +149,7 @@ class PortalRowScreen {
 			return false;
 		}
 
-		$collectionId = (string)$request->getParam('collection', '');
-		$candidates   = [];
-		foreach (($aggregate['contributions'] ?? []) as $contribution) {
-			foreach (($contribution['collections'] ?? []) as $collection) {
-				if (($collection['register'] ?? '') === $target['register']
-					&& ($collection['schema'] ?? '') === $target['schema']
-					&& ($collectionId === '' || ($collection['id'] ?? '') === $collectionId)
-				) {
-					$candidates[] = $collection;
-				}
-			}
-		}
-
+		$candidates = $this->collectionsOver(request: $request, aggregate: $aggregate, target: $target);
 		if ($candidates === []) {
 			$candidates[] = ['branchField' => (string)($match['action']['branchField'] ?? '')];
 		}
@@ -174,4 +162,31 @@ class PortalRowScreen {
 
 		return false;
 	}//end admitsForAction()
+
+	/**
+	 * The subject's own collections over a register and schema, honouring
+	 * `?collection=` when the request names one.
+	 *
+	 * @param IRequest                                            $request   The request.
+	 * @param array<string, mixed>                                $aggregate The subject's aggregated contributions.
+	 * @param array{register: string, schema: string, id: string} $target    The register, schema and id.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function collectionsOver(IRequest $request, array $aggregate, array $target): array {
+		$collectionId = (string)$request->getParam('collection', '');
+		$found        = [];
+		foreach (($aggregate['contributions'] ?? []) as $contribution) {
+			foreach (($contribution['collections'] ?? []) as $collection) {
+				if (($collection['register'] ?? '') === $target['register']
+					&& ($collection['schema'] ?? '') === $target['schema']
+					&& ($collectionId === '' || ($collection['id'] ?? '') === $collectionId)
+				) {
+					$found[] = $collection;
+				}
+			}
+		}
+
+		return $found;
+	}//end collectionsOver()
 }//end class

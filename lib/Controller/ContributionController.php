@@ -1911,27 +1911,10 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		// The row must be one the subject's own collection shows: the branch,
-		// waiting-row and hidden-case-type gates of object() hold for a write
-		// too. The read is the one the writer re-checks ownership with. Same
+		// The row must be one the subject's own collection shows (pq-f2). Same
 		// 404 as a foreign id, and nothing is written.
-		$owned = $this->reader->readObject(
-			register: $register,
-			schema: $schema,
-			scopeField: (string)($action['scopeField'] ?? 'subjectRef'),
-			subjectRef: $scopeValue,
-			id: $id,
-			organisation: (string)($subject['organisation'] ?? '')
-		);
-		if ($owned === null || $this->rowScreen()->admitsForAction(
-			request: $this->request,
-			subject: $subject,
-			aggregate: $this->registry->aggregateFor($subject),
-			match: $match,
-			target: ['register' => $register, 'schema' => $schema, 'id' => $id],
-			row: $owned
-		) === false
-		) {
+		$target = ['register' => $register, 'schema' => $schema, 'id' => $id];
+		if ($this->visibleForUpdate(subject: $subject, match: $match, target: $target, scopeValue: $scopeValue) === false) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
@@ -1991,6 +1974,44 @@ class ContributionController extends Controller implements PortalProtected {
 
 		return new JSONResponse(['object' => $updated]);
 	}//end update()
+
+	/**
+	 * Whether the row an update targets is one the subject's own collection
+	 * shows: the branch, waiting-row and hidden-case-type gates of object()
+	 * hold for a write too. The read is the one the writer re-checks
+	 * ownership with, by the action's scope field and the resolved value.
+	 *
+	 * @param array<string, mixed>                                $subject    The resolved subject.
+	 * @param array{action: array<string, mixed>, app: string}    $match      The authorised update action.
+	 * @param array{register: string, schema: string, id: string} $target     The register, schema and id.
+	 * @param string                                              $scopeValue The resolved ownership scope value.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t03
+	 */
+	private function visibleForUpdate(array $subject, array $match, array $target, string $scopeValue): bool {
+		$owned = $this->reader->readObject(
+			register: $target['register'],
+			schema: $target['schema'],
+			scopeField: (string)($match['action']['scopeField'] ?? 'subjectRef'),
+			subjectRef: $scopeValue,
+			id: $target['id'],
+			organisation: (string)($subject['organisation'] ?? '')
+		);
+		if ($owned === null) {
+			return false;
+		}
+
+		return $this->rowScreen()->admitsForAction(
+			request: $this->request,
+			subject: $subject,
+			aggregate: $this->registry->aggregateFor($subject),
+			match: $match,
+			target: $target,
+			row: $owned
+		);
+	}//end visibleForUpdate()
 
 	/**
 	 * Find a `type: update` action for (register, schema) in the subject's
