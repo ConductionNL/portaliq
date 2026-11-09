@@ -211,6 +211,10 @@ class SettingsController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
+	 * @auth admin-only Forced re-import that resets schema authorization to the
+	 *       seed (REQ-CFG-003). Nextcloud expresses admin-only as the absence of
+	 *       an opt-out attribute, so this tag is the declaration.
+	 *
 	 * @spec openspec/specs/settings-management/spec.md#REQ-CFG-003
 	 */
 	public function load(): JSONResponse {
