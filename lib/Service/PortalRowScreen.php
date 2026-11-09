@@ -128,9 +128,10 @@ class PortalRowScreen {
 	/**
 	 * Whether a row the subject already owns through an action (update, a file
 	 * field) passes the gates of ANY of the subject's own collections over this
-	 * register and schema, honouring `?collection=`. Without such a collection
-	 * the action's own declaration stands in, so the tenant and branch gates
-	 * still hold. The owned row is the full row the writer re-checks, so every
+	 * register and schema, honouring `?collection=`. A named collection that is
+	 * not one of them is refused. When the request names none and the subject
+	 * has no such collection, the action's own declaration stands in, so the
+	 * tenant and branch gates still hold. The owned row is the full row the writer re-checks, so every
 	 * gate field is on it.
 	 *
 	 * @param IRequest                                            $request   The request.
@@ -150,6 +151,12 @@ class PortalRowScreen {
 		}
 
 		$candidates = $this->collectionsOver(request: $request, aggregate: $aggregate, target: $target);
+		if ($candidates === [] && (string)$request->getParam('collection', '') !== '') {
+			// A named collection that is not the subject's own over this schema
+			// proves nothing; falling back would skip its waiting and case-type gates.
+			return false;
+		}
+
 		if ($candidates === []) {
 			$candidates[] = ['branchField' => (string)($match['action']['branchField'] ?? '')];
 		}

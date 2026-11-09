@@ -8,6 +8,7 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\PortalCollectionDocumentsController;
 use OCA\Portaliq\Service\CollectionDocuments;
 use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\PortalRowScreen;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\StreamResponse;
@@ -52,7 +53,7 @@ class PortalCollectionDocumentsControllerTest extends TestCase {
 		$l10n            = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
 
-		return new PortalCollectionDocumentsController($request, $registry, $session, $this->reader, $this->documents, $l10n);
+		return new PortalCollectionDocumentsController($request, $registry, $session, $this->reader, $this->documents, $l10n, new PortalRowScreen(reader: $this->reader));
 	}
 
 	private function collection(string $minTrust='substantial'): array {

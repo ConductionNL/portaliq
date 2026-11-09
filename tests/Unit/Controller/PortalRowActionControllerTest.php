@@ -11,6 +11,7 @@ use OCA\Portaliq\Controller\PortalRowActionController;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\PortalRowScreen;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
 use OCP\Http\Client\IResponse;
@@ -137,13 +138,16 @@ class PortalRowActionControllerTest extends TestCase {
 		$session = $this->createMock(PortalSessionService::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 
+		$reader = ($reader ?? $this->createMock(PortalObjectReader::class));
+
 		return new PortalRowActionController(
 			$request,
 			$registry,
 			$session,
-			($reader ?? $this->createMock(PortalObjectReader::class)),
+			$reader,
 			($forwarder ?? $this->forwarderThatMustNotForward()),
 			($auditor ?? $this->createMock(AuditTrailService::class)),
+			new PortalRowScreen(reader: $reader),
 		);
 	}//end controller()
 
@@ -654,7 +658,7 @@ class PortalRowActionControllerTest extends TestCase {
 		$session = $this->createMock(PortalSessionService::class);
 		$session->method('resolveFromBearer')->willReturn(self::SUBJECT);
 
-		return new PortalRowActionController($request, $registry, $session, $reader, $forwarder, $this->createMock(AuditTrailService::class));
+		return new PortalRowActionController($request, $registry, $session, $reader, $forwarder, $this->createMock(AuditTrailService::class), new PortalRowScreen(reader: $reader));
 	}//end dossierController()
 
 	/**
@@ -776,7 +780,7 @@ class PortalRowActionControllerTest extends TestCase {
 		$session = $this->createMock(PortalSessionService::class);
 		$session->method('resolveFromBearer')->willReturn(self::SUBJECT);
 
-		return new PortalRowActionController($request, $registry, $session, $reader, $forwarder, $this->createMock(AuditTrailService::class));
+		return new PortalRowActionController($request, $registry, $session, $reader, $forwarder, $this->createMock(AuditTrailService::class), new PortalRowScreen(reader: $reader));
 	}//end questionController()
 
 	/**

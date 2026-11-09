@@ -63,7 +63,7 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 	 * @param PortalObjectReader $reader The scoped single-object read.
 	 * @param CollectionDocuments $documents Lists and opens the documents.
 	 * @param IL10N $l10n The sentence a refused opening is given with.
-	 * @param PortalRowScreen|null $rows The shared per-row proof; built over the reader when absent.
+	 * @param PortalRowScreen $rows The shared per-row proof, with the hidden-case-type gate; required so no route builds one without it.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -72,7 +72,7 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 		private readonly PortalObjectReader $reader,
 		private readonly CollectionDocuments $documents,
 		private readonly IL10N $l10n,
-		private readonly ?PortalRowScreen $rows = null,
+		private readonly PortalRowScreen $rows,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -194,13 +194,12 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 	/**
 	 * The shared per-row proof (PortalRowScreen): the scoped read plus the
 	 * branch, waiting-row and hidden-case-type gates `contribution#object`
-	 * applies. Built over this controller's reader when it was not injected,
-	 * never skipped, because it is a guard.
+	 * applies. Injected and never optional, because it is a guard.
 	 *
 	 * @return PortalRowScreen
 	 */
 	private function rowScreen(): PortalRowScreen {
-		return ($this->rows ?? new PortalRowScreen(reader: $this->reader));
+		return $this->rows;
 	}//end rowScreen()
 
 	/**

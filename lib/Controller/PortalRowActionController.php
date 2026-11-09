@@ -78,7 +78,7 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	 * @param PortalObjectReader $reader The scoped single-object read.
 	 * @param PortalActionForwarder $forwarder The signed server-to-server forward.
 	 * @param AuditTrailService $auditor Records the forward.
-	 * @param PortalRowScreen|null $rows The shared per-row proof; built over the reader when absent.
+	 * @param PortalRowScreen $rows The shared per-row proof, with the hidden-case-type gate; required so no route builds one without it.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -87,7 +87,7 @@ class PortalRowActionController extends Controller implements PortalProtected {
 		private readonly PortalObjectReader $reader,
 		private readonly PortalActionForwarder $forwarder,
 		private readonly AuditTrailService $auditor,
-		private readonly ?PortalRowScreen $rows = null,
+		private readonly PortalRowScreen $rows,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -429,13 +429,12 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	/**
 	 * The shared per-row proof (PortalRowScreen): the scoped read plus the
 	 * branch, waiting-row and hidden-case-type gates `contribution#object`
-	 * applies. Built over this controller's reader when it was not injected,
-	 * never skipped, because it is a guard.
+	 * applies. Injected and never optional, because it is a guard.
 	 *
 	 * @return PortalRowScreen
 	 */
 	private function rowScreen(): PortalRowScreen {
-		return ($this->rows ?? new PortalRowScreen(reader: $this->reader));
+		return $this->rows;
 	}//end rowScreen()
 
 	/**

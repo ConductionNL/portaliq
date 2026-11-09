@@ -134,6 +134,36 @@ class PortalRowScreenTest extends TestCase {
 	}//end testAnActionRowMustPassTheGatesOfOneOfTheSubjectsCollections()
 
 	/**
+	 * pq-f3: a `?collection=` naming no collection of the subject's over the
+	 * schema is refused, so it cannot swap the waiting and hidden-case-type
+	 * gates for the action's bare declaration.
+	 *
+	 * @return void
+	 */
+	public function testAnUnknownCollectionParamIsRefusedNotFallenBackFrom(): void {
+		$screen    = $this->screen(row: []);
+		$subject   = ['subjectRef' => 'bsn-1', 'organisation' => 'org-1'];
+		$aggregate = ['contributions' => [['app' => 'zaakiq', 'collections' => [
+			['id' => 'mine', 'register' => 'zaken', 'schema' => 'zaak', 'kind' => 'cases', 'visibleFromField' => 'publishFrom'],
+		]]]];
+		$match     = ['action' => ['type' => 'update'], 'app' => 'zaakiq'];
+		$target    = ['register' => 'zaken', 'schema' => 'zaak', 'id' => 'c-1'];
+		$waiting   = ['id' => 'c-1', 'caseType' => 'shown-type', 'publishFrom' => '2999-01-01T00:00:00+00:00'];
+		$hidden    = ['id' => 'c-1', 'caseType' => 'hidden-type', 'publishFrom' => '2001-01-01T00:00:00+00:00'];
+		$shown     = ['id' => 'c-1', 'caseType' => 'shown-type', 'publishFrom' => '2001-01-01T00:00:00+00:00'];
+
+		foreach (['', 'does-not-exist'] as $collectionId) {
+			$request = $this->request(collection: $collectionId);
+			$this->assertFalse($screen->admitsForAction(request: $request, subject: $subject, aggregate: $aggregate, match: $match, target: $target, row: $waiting), 'waiting, ?collection='.$collectionId);
+			$this->assertFalse($screen->admitsForAction(request: $request, subject: $subject, aggregate: $aggregate, match: $match, target: $target, row: $hidden), 'hidden, ?collection='.$collectionId);
+		}
+
+		// Unknown name refuses even a row the subject's own collection shows.
+		$this->assertFalse($screen->admitsForAction(request: $this->request(collection: 'does-not-exist'), subject: $subject, aggregate: $aggregate, match: $match, target: $target, row: $shown));
+		$this->assertTrue($screen->admitsForAction(request: $this->request(collection: 'mine'), subject: $subject, aggregate: $aggregate, match: $match, target: $target, row: $shown));
+	}//end testAnUnknownCollectionParamIsRefusedNotFallenBackFrom()
+
+	/**
 	 * A screen whose scoped read returns the row given.
 	 *
 	 * @param array<string, mixed> $row The row.
@@ -165,13 +195,17 @@ class PortalRowScreenTest extends TestCase {
 	}//end caseTypes()
 
 	/**
-	 * A request with no `?collection=`.
+	 * A request, with `?collection=` when one is given.
+	 *
+	 * @param string $collection The `?collection=` value; empty sends none.
 	 *
 	 * @return IRequest
 	 */
-	private function request(): IRequest {
+	private function request(string $collection=''): IRequest {
 		$request = $this->createMock(IRequest::class);
-		$request->method('getParam')->willReturnCallback(static fn (string $key, $default = null) => $default);
+		$request->method('getParam')->willReturnCallback(
+			static fn (string $key, $default = null) => ($key === 'collection' && $collection !== '' ? $collection : $default)
+		);
 
 		return $request;
 	}//end request()

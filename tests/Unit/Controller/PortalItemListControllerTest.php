@@ -8,6 +8,7 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\PortalTimelineController;
 use OCA\Portaliq\Service\PortalItemReader;
 use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\PortalRowScreen;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PortalTimelineReader;
 use OCP\AppFramework\Http;
@@ -116,6 +117,6 @@ class PortalItemListControllerTest extends TestCase {
 		$timelines = $this->getMockBuilder(PortalTimelineReader::class)->disableOriginalConstructor()->onlyMethods(['entries'])->getMock();
 		$this->items = $this->getMockBuilder(PortalItemReader::class)->disableOriginalConstructor()->onlyMethods(['items'])->getMock();
 
-		return new PortalTimelineController($request, $registry, $session, $reader, $timelines, $this->items);
+		return new PortalTimelineController($request, $registry, $session, $reader, $timelines, new PortalRowScreen(reader: $reader), $this->items);
 	}//end controller()
 }//end class

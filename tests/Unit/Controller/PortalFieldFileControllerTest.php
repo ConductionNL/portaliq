@@ -10,6 +10,7 @@ use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalFileFieldPolicy;
 use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\PortalRowScreen;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -448,16 +449,19 @@ class PortalFieldFileControllerTest extends TestCase {
 		$schemaReader = $this->createMock(PortalSchemaReader::class);
 		$schemaReader->method('readSchema')->willReturn(['properties' => ['attachmentRefs' => ['type' => 'array']]]);
 
+		$reader = ($reader ?? $this->createMock(PortalObjectReader::class));
+
 		return new PortalFieldFileController(
 			$request,
 			$registry,
 			$session,
-			($reader ?? $this->createMock(PortalObjectReader::class)),
+			$reader,
 			($writer ?? $this->createMock(PortalObjectWriter::class)),
 			($fileWriter ?? $this->createMock(PortalFileWriter::class)),
 			new PortalFileFieldPolicy($time, $schemaReader),
 			($auditor ?? $this->createMock(AuditTrailService::class)),
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			new PortalRowScreen(reader: $reader)
 		);
 	}//end controller()
 }//end class

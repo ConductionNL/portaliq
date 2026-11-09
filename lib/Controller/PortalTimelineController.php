@@ -69,9 +69,9 @@ class PortalTimelineController extends Controller implements PortalProtected {
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
 	 * @param PortalObjectReader $reader The scoped single-object read.
 	 * @param PortalTimelineReader $timelines Calls the declared provider method.
+	 * @param PortalRowScreen $rows The shared per-row proof, with the hidden-case-type gate; required so no route builds one without it.
 	 * @param PortalItemReader|null $items Calls the item-list provider method (my-dossiers).
 	 * @param MandatedCaseReader|null $mandatedCases Reads a case the person sees under a mandate.
-	 * @param PortalRowScreen|null $rows The shared per-row proof; built over the reader when absent.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -79,9 +79,9 @@ class PortalTimelineController extends Controller implements PortalProtected {
 		private readonly PortalSessionService $session,
 		private readonly PortalObjectReader $reader,
 		private readonly PortalTimelineReader $timelines,
+		private readonly PortalRowScreen $rows,
 		private readonly ?PortalItemReader $items = null,
 		private readonly ?MandatedCaseReader $mandatedCases = null,
-		private readonly ?PortalRowScreen $rows = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -256,13 +256,12 @@ class PortalTimelineController extends Controller implements PortalProtected {
 	/**
 	 * The shared per-row proof (PortalRowScreen): the scoped read plus the
 	 * branch, waiting-row and hidden-case-type gates `contribution#object`
-	 * applies. Built over this controller's reader when it was not injected,
-	 * never skipped, because it is a guard.
+	 * applies. Injected and never optional, because it is a guard.
 	 *
 	 * @return PortalRowScreen
 	 */
 	private function rowScreen(): PortalRowScreen {
-		return ($this->rows ?? new PortalRowScreen(reader: $this->reader));
+		return $this->rows;
 	}//end rowScreen()
 
 	/**
