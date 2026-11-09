@@ -171,6 +171,42 @@ class PortalRowScreen {
 	}//end admitsForAction()
 
 	/**
+	 * Whether the subject's own case, read through a citizen write action, may
+	 * open on the case screen: the action's own branch gate, the gates of
+	 * admitsForAction(), and the case types the serving portal hides read off
+	 * the action's own type field, so a hidden type stays shut even where no
+	 * `cases` collection declares it.
+	 *
+	 * @param IRequest                                            $request   The request.
+	 * @param array<string, mixed>                                $subject   The resolved subject.
+	 * @param array<string, mixed>                                $aggregate The subject's aggregated contributions.
+	 * @param array{action: array<string, mixed>, app: string}    $match     The citizen write action and its app.
+	 * @param array{register: string, schema: string, id: string} $target    The register, schema and id.
+	 * @param array<string, mixed>                                $row       The case the action's scope owns.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 */
+	public function admitsOwnCase(IRequest $request, array $subject, array $aggregate, array $match, array $target, array $row): bool {
+		$action = $match['action'];
+		if ($this->branches->admits(subject: $subject, collection: $action, row: $row) === false
+			|| $this->admitsForAction(request: $request, subject: $subject, aggregate: $aggregate, match: $match, target: $target, row: $row) === false
+		) {
+			return false;
+		}
+
+		if ($this->caseTypes === null) {
+			return true;
+		}
+
+		$typeField = (string)($action['caseTypeField'] ?? ($action['citizenWrite']['typeField'] ?? ''));
+		$hidden    = $this->caseTypes->hiddenForRequest(request: $request, subject: $subject);
+
+		return $this->caseTypes->rowIsHidden(row: $row, collection: ['caseTypeField' => $typeField], hidden: $hidden) === false;
+	}//end admitsOwnCase()
+
+	/**
 	 * The subject's own collections over a register and schema, honouring
 	 * `?collection=` when the request names one.
 	 *
