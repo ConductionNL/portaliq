@@ -7,12 +7,14 @@ namespace OCA\Portaliq\Tests\Unit\Service;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\Identity\PortalMandateService;
 use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
+use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\MandatedCaseReader;
 use OCA\Portaliq\Service\PortalCaseListReader;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
+use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -97,14 +99,40 @@ class MandatedCaseReaderTest extends TestCase {
 	}//end testOnlyANotYoursRefusalBecomesTheReadOnlyScreen()
 
 	/**
+	 * A case type the serving portal hides is not opened by its id under a
+	 * mandate either, the same rule the mandated list on "My cases" follows.
+	 *
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 */
+	public function testAHiddenCaseTypeDoesNotOpenUnderAMandate(): void {
+		$hiding = $this->getMockBuilder(CaseTypeVisibility::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['hiddenForRequest'])
+			->getMock();
+		$hiding->method('hiddenForRequest')->willReturn(['vergunning']);
+
+		$reader = $this->reader(caseTypes: $hiding);
+		$this->assertNull($reader->read(subject: self::SUBJECT, mandateId: 'mandate-1', register: 'dossiq', schema: 'case', id: 'zaak-9'));
+
+		$showing = $this->getMockBuilder(CaseTypeVisibility::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['hiddenForRequest'])
+			->getMock();
+		$showing->method('hiddenForRequest')->willReturn(['other-type']);
+
+		$this->assertNotNull($this->reader(caseTypes: $showing)->read(subject: self::SUBJECT, mandateId: 'mandate-1', register: 'dossiq', schema: 'case', id: 'zaak-9'));
+	}//end testAHiddenCaseTypeDoesNotOpenUnderAMandate()
+
+	/**
 	 * The reader over one dossiq case collection that declares its party
 	 * field, one held mandate for the company, and the company's one case.
 	 *
 	 * @param array<string, mixed>|null $scope What the party tree answers.
+	 * @param CaseTypeVisibility|null $caseTypes The serving portal's hidden case types.
 	 *
 	 * @return MandatedCaseReader
 	 */
-	private function reader(?array $scope = null): MandatedCaseReader {
+	private function reader(?array $scope = null, ?CaseTypeVisibility $caseTypes = null): MandatedCaseReader {
 		$objects = $this->getMockBuilder(PortalObjectReader::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['readCollection'])
@@ -164,6 +192,6 @@ class MandatedCaseReaderTest extends TestCase {
 			],
 		]);
 
-		return new MandatedCaseReader($registry, new PortalCaseListReader($objects, $mandates), $mandates, $tree);
+		return new MandatedCaseReader($registry, new PortalCaseListReader($objects, $mandates), $mandates, $tree, $caseTypes, $this->createMock(IRequest::class));
 	}//end reader()
 }//end class
