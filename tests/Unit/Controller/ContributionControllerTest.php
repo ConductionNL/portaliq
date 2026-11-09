@@ -2225,6 +2225,50 @@ class ContributionControllerTest extends TestCase {
 	}//end testDeleteMessageOfAnotherResidentIs404()
 
 	/**
+	 * pq-f5: markRead and deleteMessage on a message the inbox list still holds
+	 * back (`visibleFromField` in the future) answer the 404 a foreign message
+	 * gets, and write nothing. Past its moment both go through.
+	 *
+	 * @return void
+	 */
+	public function testMarkReadAndDeleteOfAMessageStillWaitingAre404WithNoWrite(): void {
+		$aggregate = $this->aggregate(
+			collections: [
+				['id' => 'meldingen', 'kind' => 'inbox', 'register' => 'learniq', 'schema' => 'notice', 'deletable' => true, 'visibleFromField' => 'zichtbaarVanaf'],
+			]
+		);
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('resolveScopeValue')->willReturn('s1');
+		$reader->method('readObject')->willReturnCallback(
+			static fn (string $register, string $schema, string $scopeField, string $subjectRef, string $id): array => ['id' => $id, 'zichtbaarVanaf' => ($id === 'waiting' ? '2999-01-01T00:00:00+00:00' : '2001-01-01T00:00:00+00:00')]
+		);
+		$writes = [];
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('updateObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id) use (&$writes): array {
+				$writes[] = 'read:' . $id;
+				return ['id' => $id];
+			}
+		);
+		$writer->method('deleteObject')->willReturnCallback(
+			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation, string $id) use (&$writes): bool {
+				$writes[] = 'delete:' . $id;
+				return true;
+			}
+		);
+
+		$controller = $this->controller(aggregate: $aggregate, reader: $reader, writer: $writer);
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->markRead('learniq', 'notice', 'waiting')->getStatus());
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->deleteMessage('learniq', 'notice', 'waiting')->getStatus());
+		$this->assertSame([], $writes);
+
+		$this->assertSame(Http::STATUS_OK, $controller->markRead('learniq', 'notice', 'past')->getStatus());
+		$this->assertSame(Http::STATUS_OK, $controller->deleteMessage('learniq', 'notice', 'past')->getStatus());
+		$this->assertSame(['read:past', 'delete:past'], $writes);
+	}//end testMarkReadAndDeleteOfAMessageStillWaitingAre404WithNoWrite()
+
+	/**
 	 * An app's inbox is the app's record: a resident deletes from it only
 	 * when the collection declares `deletable: true`. A collection that is
 	 * no inbox, or that asks more trust than the session has, stays 403.

@@ -564,7 +564,8 @@ class ContributionController extends Controller implements PortalProtected {
 			contributingApp: $match['app'],
 			subject: $subject
 		);
-		if ($scopeValue === null || $scopeValue === '') {
+		$target = ['register' => $register, 'schema' => $schema, 'id' => $id];
+		if ($this->inboxTargetRefused(scopeValue: $scopeValue, subject: $subject, match: $match, target: $target) === true) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
@@ -639,7 +640,8 @@ class ContributionController extends Controller implements PortalProtected {
 			contributingApp: $match['app'],
 			subject: $subject
 		);
-		if ($scopeValue === null || $scopeValue === '') {
+		$target = ['register' => $register, 'schema' => $schema, 'id' => $id];
+		if ($this->inboxTargetRefused(scopeValue: $scopeValue, subject: $subject, match: $match, target: $target) === true) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
@@ -756,18 +758,45 @@ class ContributionController extends Controller implements PortalProtected {
 	}//end createReply()
 
 	/**
-	 * The resident's inbox message, read through the scope of its collection.
+	 * Whether a per-message inbox write (markRead, deleteMessage) answers 404
+	 * before writing: the ownership scope did not resolve, or the inbox list
+	 * still holds the message back (its collection's `visibleFromField` lies
+	 * in the future). Only a collection that declares the field is read; the
+	 * writer re-proves ownership either way.
+	 *
+	 * @param string|null $scopeValue The resolved ownership scope value.
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array<string, mixed> $match The authorised inbox collection and its app.
+	 * @param array{register: string, schema: string, id: string} $target The requested register, schema and message id.
+	 *
+	 * @return bool True when the write must answer 404.
+	 */
+	private function inboxTargetRefused(?string $scopeValue, array $subject, array $match, array $target): bool {
+		if ($scopeValue === null || $scopeValue === '') {
+			return true;
+		}
+
+		if ((string)($match['collection']['visibleFromField'] ?? '') === '') {
+			return false;
+		}
+
+		return $this->readReplyMessage(subject: $subject, match: $match, target: $target) === null;
+	}//end inboxTargetRefused()
+
+	/**
+	 * The resident's inbox message, read through the scope of its collection,
+	 * past the waiting-row gate the inbox list applies (`visibleFromField`).
 	 *
 	 * @param array<string, mixed> $subject The resolved subject.
 	 * @param array<string, mixed> $match The authorised inbox collection and its app.
 	 * @param array{register: string, schema: string, id: string} $target The requested register, schema and message id.
 	 *
-	 * @return array<string, mixed>|null The message, or null when it is not the resident's or not there.
+	 * @return array<string, mixed>|null The message, or null when it is not the resident's, not there or still waiting.
 	 */
 	private function readReplyMessage(array $subject, array $match, array $target): ?array {
 		$collection = $match['collection'];
 
-		return $this->reader->readObject(
+		$message = $this->reader->readObject(
 			register: $target['register'],
 			schema: $target['schema'],
 			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
@@ -780,6 +809,11 @@ class ContributionController extends Controller implements PortalProtected {
 			audience: (string)($subject['audience'] ?? ''),
 			fields: ($collection['fields'] ?? null)
 		);
+		if ($message === null || (new VisibleFromGate())->rows(rows: [$message], collection: $collection) === []) {
+			return null;
+		}
+
+		return $message;
 	}//end readReplyMessage()
 
 	/**

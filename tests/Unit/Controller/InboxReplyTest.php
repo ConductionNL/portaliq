@@ -177,4 +177,30 @@ class InboxReplyTest extends TestCase {
 		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->reply('dossiq', 'portaalBericht', 'm1')->getStatus());
 
 	}//end testAReplyActionThatIsNotHeldIs404()
+
+	/**
+	 * pq-f5: a message the inbox list still holds back (`visibleFromField` in
+	 * the future) answers the 404 a foreign one does; nothing is carried into a
+	 * reply and nothing is created. Past its moment the reply goes through.
+	 *
+	 * @return void
+	 */
+	public function testAMessageStillWaitingForItsMomentIs404(): void {
+		$controller = $this->controller(collection: ['visibleFromField' => 'zichtbaarVanaf'], params: ['content' => 'x']);
+		$this->reader->method('readObject')->willReturnCallback(
+			static fn (string $register, string $schema, string $scopeField, string $subjectRef, string $id): array => ['id' => $id, 'caseId' => 'Z/1', 'zichtbaarVanaf' => ($id === 'waiting' ? '2999-01-01T00:00:00+00:00' : '2001-01-01T00:00:00+00:00')]
+		);
+		$created = 0;
+		$this->writer->method('createObject')->willReturnCallback(
+			function () use (&$created): array {
+				$created++;
+				return ['id' => 'r1'];
+			}
+		);
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->reply('dossiq', 'portaalBericht', 'waiting')->getStatus());
+		$this->assertSame(0, $created);
+		$this->assertSame(Http::STATUS_OK, $controller->reply('dossiq', 'portaalBericht', 'past')->getStatus());
+		$this->assertSame(1, $created);
+	}//end testAMessageStillWaitingForItsMomentIs404()
 }//end class
