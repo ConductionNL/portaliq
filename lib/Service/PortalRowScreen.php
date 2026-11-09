@@ -5,8 +5,12 @@
  *
  * The one proof that a subject may see one row by its id: the scoped read,
  * then the tenant, waiting-row, branch and hidden-case-type gates the list
- * applies. Every per-object portal route proves its row here, so a known id
- * never reaches a row the list would not show.
+ * applies. The per-object collection routes (object, export, files, update,
+ * field files, row actions, timeline, documents) and the citizen's own case
+ * screen prove their row here, so a known id never reaches a row the list
+ * would not show. The inbox per-message routes apply the waiting-row gate in
+ * ContributionController itself; other surfaces (proposals, reports) do not
+ * read collection rows and do not use this class.
  *
  * @category Service
  * @package  OCA\Portaliq\Service

@@ -8,6 +8,7 @@ use OCA\Portaliq\Service\Identity\PortalChallengeService;
 use DateTimeImmutable;
 use OCP\ICache;
 use OCP\ICacheFactory;
+use OCP\IMemcache;
 use OCP\Security\ICrypto;
 use OCP\Security\ISecureRandom;
 use PHPUnit\Framework\TestCase;
@@ -81,6 +82,52 @@ class PortalChallengeServiceTest extends TestCase {
 		$this->assertFalse($submit($this->service()), 'a replay on another server');
 
 	}//end testASolvedNonceIsSpentOnItsFirstSubmission()
+
+	/**
+	 * pp-f2: production backends are all IMemcache, so spend() adds
+	 * atomically. The first add wins; a replay's add finds the key and is
+	 * refused. The key is the nonce's hash (never the nonce) and the TTL is
+	 * the nonce's remaining window.
+	 *
+	 * @return void
+	 */
+	public function testAMemcacheAddsTheNonceOnceAndRefusesTheReplay(): void {
+		$added  = [];
+		$memory = $this->createMock(IMemcache::class);
+		$memory->expects($this->never())->method('set');
+		$memory->method('add')->willReturnCallback(
+			static function ($key, $value, $ttl = 0) use (&$added): bool {
+				if (array_key_exists($key, $added) === true) {
+					return false;
+				}
+
+				$added[$key] = $ttl;
+				return true;
+			}
+		);
+		$this->cacheFactory = $this->createMock(ICacheFactory::class);
+		$this->cacheFactory->method('createDistributed')->willReturn($memory);
+
+		$service  = $this->service();
+		$site     = $this->site(difficulty: 8);
+		$solution = $this->solve(nonce: 'nonce-1', difficulty: 8);
+		$issued   = $service->issue(site: $site, surface: 'form', now: new DateTimeImmutable('@1000000000'));
+		$submit   = static fn (): bool => $service->accepts(
+			site: $site,
+			surface: 'form',
+			submission: [],
+			nonce: 'nonce-1',
+			solution: $solution,
+			expiresAt: $issued['expiresAt'],
+			signature: $issued['signature'],
+			now: new DateTimeImmutable('@1000000100')
+		);
+
+		$this->assertTrue($submit());
+		$this->assertFalse($submit(), 'the replay');
+		$this->assertSame([hash('sha256', 'form:nonce-1') => (PortalChallengeService::TTL_SECONDS - 100)], $added);
+
+	}//end testAMemcacheAddsTheNonceOnceAndRefusesTheReplay()
 
 	/**
 	 * aud-f1: a refused submission (unsolved work) does not burn the nonce;

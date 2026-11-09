@@ -20,10 +20,15 @@
  * it once, and send the same pair for as long as they liked. Signing it is
  * what makes solving the work again the only way through.
  *
- * A nonce is also single-use: the first submission it carries through is
- * remembered, by the nonce's hash, in the distributed cache until the nonce
- * expires, and a second submission with the same nonce is refused. Without
- * that one solved nonce was a pass for every submission in its window.
+ * A nonce is also single-use where the instance has a memcache: the first
+ * submission it carries through is remembered, by the nonce's hash, in the
+ * distributed cache until the nonce expires, and a second submission with
+ * the same nonce is refused. Single-use needs a configured memcache: APCu
+ * covers one web server, several web servers need a shared one (Redis or
+ * Memcached), because with APCu alone each server keeps its own store. With
+ * no memcache at all Nextcloud hands out a NullCache and the check fails
+ * open, as it did before: refusing every registration and report filing on
+ * such an instance would refuse the visitor rather than the bot.
  *
  * @category Service
  * @package  OCA\Portaliq\Service\Identity
@@ -308,16 +313,16 @@ class PortalChallengeService {
 
 	/**
 	 * The distributed cache, so a nonce spent on one web server is spent on
-	 * all; the local cache when the instance has no distributed one.
+	 * all. Nextcloud already falls back to the local cache when no
+	 * distributed one is configured (so with APCu only, each web server has
+	 * its own store), and to a NullCache when there is no memcache at all, in
+	 * which case nothing is remembered and single-use does not hold.
 	 *
 	 * @return ICache
 	 */
 	private function spentStore(): ICache {
 		if ($this->spent === null) {
 			$this->spent = $this->caches->createDistributed(self::SPENT_PREFIX);
-			if ($this->caches->isAvailable() === false) {
-				$this->spent = $this->caches->createLocal(self::SPENT_PREFIX);
-			}
 		}
 
 		return $this->spent;
