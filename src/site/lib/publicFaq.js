@@ -9,31 +9,18 @@
 //
 // @spec openspec/changes/public-faq-and-product-finder/tasks.md#t03
 
-import { resolveApiBase } from './contentApi.js'
+import { getContent, unlessMissing } from './contentRequest.js'
 
 /**
- * GET a content path as JSON; a non-2xx is an error carrying its status.
+ * GET a content path as JSON, without a bearer; a non-2xx is an error
+ * carrying its status.
  *
  * @param {string} path The path under the content API.
  * @param {object} query The query.
  * @return {Promise<object>} The body.
  */
-async function get(path, query) {
-	const url = new URL(resolveApiBase() + path, window.location.origin)
-	for (const [key, value] of Object.entries(query)) {
-		if (value !== undefined && value !== null && value !== '') {
-			url.searchParams.set(key, String(value))
-		}
-	}
-	const response = await fetch(url.toString(), {
-		headers: { Accept: 'application/json' },
-	})
-	if (!response.ok) {
-		const error = new Error(`content api ${response.status} for ${path}`)
-		error.status = response.status
-		throw error
-	}
-	return response.json()
+function get(path, query) {
+	return getContent({ path, query, headers: { Accept: 'application/json' } })
 }
 
 /**
@@ -60,13 +47,6 @@ export async function fetchFaq(portal, filter = {}) {
  * @return {Promise<object|null>} The finder.
  */
 export async function fetchFinder(portal, id) {
-	try {
-		const body = await get('/finder', { portal, finder: id })
-		return body?.finder || null
-	} catch (error) {
-		if (error.status === 404) {
-			return null
-		}
-		throw error
-	}
+	const body = await unlessMissing(() => get('/finder', { portal, finder: id }))
+	return body?.finder || null
 }
