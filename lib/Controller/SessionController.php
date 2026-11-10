@@ -623,13 +623,6 @@ class SessionController extends Controller {
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T08
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
 	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) -- one fail-closed guard
-	 * per step of the OIDC flow (state, config, discovery, exchange, ID-token
-	 * validation, claim mapping, account resolution, session issuance), every
-	 * one returning the IDENTICAL generic error (ADR-005, design.md);
-	 * collapsing them would trade auditability for a score, mirroring
-	 * PortalSessionService's identical rationale.
-	 * @SuppressWarnings(PHPMD.NPathComplexity)      -- same rationale.
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -639,97 +632,229 @@ class SessionController extends Controller {
 			return $this->brokerErrorAnswer(state: $state, error: $error);
 		}
 
-		if ($state === '' || $code === '') {
+		$run = $this->oidcLoginRun(state: $state, code: $code);
+		if ($run === null) {
 			return $this->oidcGenericError();
+		}
+
+		$issued = $this->oidcLoginSession(run: $run);
+		if ($issued === null) {
+			return $this->oidcGenericError();
+		}
+
+		return $this->oidcSessionRedirect(pending: $run->pending, token: $issued['token']);
+	}//end oidcCallback()
+
+	/**
+	 * The callback's run: the consumed state row when it was written for an
+	 * OIDC login, with the organisation's provider resolved and discovered;
+	 * null on any failure. The state is consumed only when a state and a
+	 * code were both returned.
+	 *
+	 * @param string $state The OIDC `state` returned by the broker.
+	 * @param string $code  The authorization code.
+	 *
+	 * @return OidcLoginRun|null
+	 */
+	private function oidcLoginRun(string $state, string $code): ?OidcLoginRun {
+		if ($state === '' || $code === '') {
+			return null;
 		}
 
 		$pending = $this->stateStore->consume(state: $state);
 		// A row written for the integriq broker route cannot complete an OIDC
 		// login (signin-integriq-broker-login, design D3).
-		if ($pending === null || $pending['route'] !== 'oidc' || $pending['codeVerifier'] === '') {
-			return $this->oidcGenericError();
+		if ($this->isOidcLoginState(pending: $pending) === false) {
+			return null;
 		}
 
-		$config = $this->orgConfig->resolveOidcConfig(orgSlug: $pending['org'], provider: $pending['provider']);
+		return $this->withOidcProvider(run: new OidcLoginRun(pending: $pending, code: $code));
+	}//end oidcLoginRun()
+
+	/**
+	 * Whether a consumed state row can complete an OIDC login: it exists, was
+	 * written for the OIDC route and carries a PKCE verifier.
+	 *
+	 * @param array<string, mixed>|null $pending The consumed state row.
+	 *
+	 * @return bool
+	 */
+	private function isOidcLoginState(?array $pending): bool {
+		return $pending !== null && $pending['route'] === 'oidc' && $pending['codeVerifier'] !== '';
+	}//end isOidcLoginState()
+
+	/**
+	 * The run with the organisation's provider configuration and discovered
+	 * endpoints filled in, or null when either cannot be resolved.
+	 *
+	 * @param OidcLoginRun $run The callback's run.
+	 *
+	 * @return OidcLoginRun|null
+	 */
+	private function withOidcProvider(OidcLoginRun $run): ?OidcLoginRun {
+		$config = $this->orgConfig->resolveOidcConfig(orgSlug: $run->pending['org'], provider: $run->pending['provider']);
 		if ($config === null) {
-			return $this->oidcGenericError();
+			return null;
 		}
 
 		$endpoints = $this->oidc->discover(issuer: (string)$config['issuer']);
 		if ($endpoints === null) {
-			return $this->oidcGenericError();
+			return null;
 		}
 
+		$run->config    = $config;
+		$run->endpoints = $endpoints;
+		return $run;
+	}//end withOidcProvider()
+
+	/**
+	 * The portal session the callback mints: the verified claims, mapped onto
+	 * an account found or created for them; null on any failure.
+	 *
+	 * @param OidcLoginRun $run The callback's run.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function oidcLoginSession(OidcLoginRun $run): ?array {
+		$claims = $this->verifiedIdTokenClaims(run: $run);
+		if ($claims === null) {
+			return null;
+		}
+
+		$mapped = $this->claimMapper->mapClaims(claims: $claims, config: $run->config);
+		if ($mapped === null) {
+			return null;
+		}
+
+		$run->claims = $claims;
+		$run->mapped = $mapped;
+		$account     = $this->oidcLoginAccount(run: $run);
+		if ($account === null) {
+			return null;
+		}
+
+		return $this->issueOidcSession(run: $run, account: $account);
+	}//end oidcLoginSession()
+
+	/**
+	 * The ID token's claims after exchanging the code and FULLY validating
+	 * the token ({@see OidcClientService::verifyIdToken()}), or null.
+	 *
+	 * @param OidcLoginRun $run The callback's run.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function verifiedIdTokenClaims(OidcLoginRun $run): ?array {
+		$idToken = $this->exchangedIdToken(run: $run);
+		if ($idToken === '') {
+			return null;
+		}
+
+		return $this->oidc->verifyIdToken(
+			idToken: $idToken,
+			jwksUri: $run->endpoints['jwks_uri'],
+			issuer: (string)$run->config['issuer'],
+			clientId: (string)$run->config['clientId'],
+			expectedNonce: $run->pending['nonce']
+		);
+	}//end verifiedIdTokenClaims()
+
+	/**
+	 * The ID token the token endpoint returns for the code, or '' when the
+	 * exchange failed or returned none.
+	 *
+	 * @param OidcLoginRun $run The callback's run.
+	 *
+	 * @return string
+	 */
+	private function exchangedIdToken(OidcLoginRun $run): string {
 		$tokenResponse = $this->oidc->exchangeCode(
-			tokenEndpoint: $endpoints['token_endpoint'],
-			code: $code,
-			codeVerifier: $pending['codeVerifier'],
-			clientId: (string)$config['clientId'],
-			clientSecret: (string)$config['clientSecret'],
+			tokenEndpoint: $run->endpoints['token_endpoint'],
+			code: $run->code,
+			codeVerifier: $run->pending['codeVerifier'],
+			clientId: (string)$run->config['clientId'],
+			clientSecret: (string)$run->config['clientSecret'],
 			redirectUri: $this->oidcRedirectUri()
 		);
-		$idToken = (string)($tokenResponse['id_token'] ?? '');
-		if ($idToken === '') {
-			return $this->oidcGenericError();
-		}
+		return (string)($tokenResponse['id_token'] ?? '');
+	}//end exchangedIdToken()
 
-		$claims = $this->oidc->verifyIdToken(
-			idToken: $idToken,
-			jwksUri: $endpoints['jwks_uri'],
-			issuer: (string)$config['issuer'],
-			clientId: (string)$config['clientId'],
-			expectedNonce: $pending['nonce']
+	/**
+	 * The portal account for the mapped identity, found or created, or null.
+	 *
+	 * @param OidcLoginRun $run The callback's run, with its claims mapped.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function oidcLoginAccount(OidcLoginRun $run): ?array {
+		return $this->accounts->findOrCreate(
+			identityType: $run->mapped['identityType'],
+			identityRef: $run->mapped['identityRef'],
+			organisation: $run->pending['org'],
+			audience: $run->mapped['audience'],
+			subjectRefOverride: $run->mapped['subjectRef'],
+			verifiedEmail: $this->verifiedEmailOf(claims: $run->claims)
 		);
-		if ($claims === null) {
-			return $this->oidcGenericError();
-		}
+	}//end oidcLoginAccount()
 
-		$mapped = $this->claimMapper->mapClaims(claims: $claims, config: $config);
-		if ($mapped === null) {
-			return $this->oidcGenericError();
-		}
-
-		$account = $this->accounts->findOrCreate(
-			identityType: $mapped['identityType'],
-			identityRef: $mapped['identityRef'],
-			organisation: $pending['org'],
-			audience: $mapped['audience'],
-			subjectRefOverride: $mapped['subjectRef'],
-			verifiedEmail: $this->verifiedEmailOf(claims: $claims)
-		);
-		if ($account === null) {
-			return $this->oidcGenericError();
-		}
-
-		$trust = $this->claimMapper->mapLoaToTrust(claims: $claims, config: $config);
+	/**
+	 * Mints the EXISTING HS256 portal session for the account, with the trust
+	 * the LoA maps to; null when issuance fails.
+	 *
+	 * @param OidcLoginRun         $run     The callback's run, with its claims mapped.
+	 * @param array<string, mixed> $account The resolved portal account.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function issueOidcSession(OidcLoginRun $run, array $account): ?array {
+		$trust = $this->claimMapper->mapLoaToTrust(claims: $run->claims, config: $run->config);
 		// The account's own audience wins over the claim map's (the-account-names-the-audience-and-the-company).
-		$audience = (string)($account['audience'] ?? $mapped['audience']);
-		$issued   = $this->session->issueSession(
+		$audience = (string)($account['audience'] ?? $run->mapped['audience']);
+		return $this->session->issueSession(
 			subjectRef: $account['subjectRef'],
 			audience: $audience,
-			organisation: $pending['org'],
+			organisation: $run->pending['org'],
 			trust: $trust,
 			roles: [$audience . ':read'],
-			branch: (string)($mapped['branch'] ?? ''),
-			provider: $pending['provider']
+			branch: (string)($run->mapped['branch'] ?? ''),
+			provider: $run->pending['provider']
 		);
-		if ($issued === null) {
-			return $this->oidcGenericError();
-		}
+	}//end issueOidcSession()
 
+	/**
+	 * The 302 back to the portal with the minted bearer.
+	 *
+	 * @param array<string, mixed> $pending The consumed OIDC state row.
+	 * @param string               $token   The minted bearer.
+	 *
+	 * @return RedirectResponse
+	 */
+	private function oidcSessionRedirect(array $pending, string $token): RedirectResponse {
+		// The bearer travels in the URL FRAGMENT, never a query string — a
+		// fragment is never sent to the server (no access/Referer-header
+		// leak) and never appears in server logs.
+		$redirectUrl = $this->urlGenerator->getAbsoluteURL($this->pendingReturnTo(pending: $pending)) . '#token=' . rawurlencode($token);
+
+		// Explicit 302 (design.md) — RedirectResponse's own default is 303.
+		return new RedirectResponse($redirectUrl, Http::STATUS_FOUND);
+	}//end oidcSessionRedirect()
+
+	/**
+	 * Where a consumed login returns: the address stored with its state, else
+	 * the plain portal address.
+	 *
+	 * @param array<string, mixed> $pending The consumed OIDC state row.
+	 *
+	 * @return string
+	 */
+	private function pendingReturnTo(array $pending): string {
 		$returnTo = $this->portalReturnTo();
 		if ($pending['returnTo'] !== '') {
 			$returnTo = $pending['returnTo'];
 		}
 
-		// The bearer travels in the URL FRAGMENT, never a query string — a
-		// fragment is never sent to the server (no access/Referer-header
-		// leak) and never appears in server logs.
-		$redirectUrl = $this->urlGenerator->getAbsoluteURL($returnTo) . '#token=' . rawurlencode($issued['token']);
-
-		// Explicit 302 (design.md) — RedirectResponse's own default is 303.
-		return new RedirectResponse($redirectUrl, Http::STATUS_FOUND);
-	}//end oidcCallback()
+		return $returnTo;
+	}//end pendingReturnTo()
 
 	/**
 	 * The answer to a broker that returned an error instead of a code. A silent
@@ -751,12 +876,7 @@ class SessionController extends Controller {
 			return $this->oidcGenericError();
 		}
 
-		$returnTo = $this->portalReturnTo();
-		if ($pending['returnTo'] !== '') {
-			$returnTo = $pending['returnTo'];
-		}
-
-		return new RedirectResponse($this->urlGenerator->getAbsoluteURL($returnTo), Http::STATUS_FOUND);
+		return new RedirectResponse($this->urlGenerator->getAbsoluteURL($this->pendingReturnTo(pending: $pending)), Http::STATUS_FOUND);
 	}//end brokerErrorAnswer()
 
 	/**
