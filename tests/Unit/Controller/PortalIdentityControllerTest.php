@@ -162,6 +162,40 @@ class PortalIdentityControllerTest extends TestCase {
 	}//end testAnAcceptedRegistrationWaitsAndSaysSo()
 
 	/**
+	 * A host no portal claims registers nothing; an account the store will
+	 * not provision is a bare refusal that holds and mails nothing; the
+	 * account is provisioned as an unverified self-registration with the
+	 * name given.
+	 *
+	 * @return void
+	 */
+	public function testARegistrationWithoutAPortalOrAnAccountCreatesNothing(): void {
+		$controller = $this->controller(site: null);
+		$this->doubles['policy']->expects($this->never())->method('isOffered');
+
+		$response = $controller->register(email: 'ans@example.org');
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+		$this->assertSame(['error' => 'portal_not_found'], $response->getData());
+
+		$controller = $this->controller(site: ['organisation' => 'gemeente-x']);
+		$this->doubles['policy']->method('isOffered')->willReturn(true);
+		$this->doubles['challenge']->method('accepts')->willReturn(true);
+		$this->doubles['policy']->method('decide')->willReturn(['accepted' => true, 'reason' => 'activation', 'status' => 'pending']);
+		$this->doubles['accounts']->expects($this->once())->method('provision')
+			->with('client', 'gemeente-x', '', '', 'ans@example.org', false, PortalAccountService::SELF_REGISTRATION, 'Ans')
+			->willReturn(null);
+		$this->doubles['contacts']->expects($this->never())->method('holdForRegistration');
+		$this->doubles['activation']->expects($this->never())->method('issue');
+
+		$response = $controller->register(email: 'ans@example.org', displayName: 'Ans', contactInvitation: 'invite-1');
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame(['error' => 'refused'], $response->getData());
+
+	}//end testARegistrationWithoutAPortalOrAnAccountCreatesNothing()
+
+	/**
 	 * own-contacts T05: a registration through a contact invitation holds it
 	 * for the new account, in the visited portal's tenant; one without
 	 * holds nothing.
