@@ -181,4 +181,16 @@ class PollCreateGoldenTest extends TestCase {
 		$this->assertSame([['uuid' => 'p-1', 'myResponse' => null]], $service->forSubject(['audience' => 'parent', 'organisation' => 'school-x']));
 		$this->assertCount(1, $this->reads);
 	}//end testASubjectWithoutAReferenceSeesNoAnswers()
+
+	/**
+	 * A subject whose audience has no polls still has its answers read.
+	 *
+	 * @return void
+	 */
+	public function testASubjectWithNoPollsStillReadsItsAnswers(): void {
+		$service = $this->service(rows: ['portalPoll' => [], 'portalPollResponse' => [['pollId' => 'p-1', 'optionId' => 'a']]]);
+
+		$this->assertSame([], $service->forSubject(['audience' => 'parent', 'organisation' => 'school-x', 'subjectRef' => 'sub-1']));
+		$this->assertCount(2, $this->reads);
+	}//end testASubjectWithNoPollsStillReadsItsAnswers()
 }//end class
