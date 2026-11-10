@@ -11,7 +11,7 @@
 
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { DEFAULT_REGIONS, pageRegionsOf, resolveRegions } from '../src/site/lib/regions.js'
+import { DEFAULT_REGIONS, pageRegionsOf, regionOf, resolveRegions } from '../src/site/lib/regions.js'
 
 const A = { id: 'a', slot: 'hero' }
 const B = { id: 'b', slot: 'body' }
@@ -64,4 +64,16 @@ test('every region resolves page first, then portal, then the default, in render
 	assert.notEqual(resolved.header, DEFAULT_REGIONS.header, 'a copy, never the default itself')
 	assert.deepEqual(resolveRegions(null, [A]), { ...DEFAULT_REGIONS })
 	assert.deepEqual(resolveRegions(undefined, null), { ...DEFAULT_REGIONS })
+})
+
+test('a slot names its region; none, empty and body mean main', () => {
+	for (const slot of [undefined, null, '', 'body', 'main']) {
+		assert.equal(regionOf(slot), 'main', String(slot))
+	}
+	for (const region of ['header', 'hero', 'aside', 'footer']) {
+		assert.equal(regionOf(region), region)
+	}
+	for (const slot of ['Body', 'sidebar', 0, false, ' ']) {
+		assert.equal(regionOf(slot), null, String(slot))
+	}
 })
