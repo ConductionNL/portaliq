@@ -241,6 +241,37 @@ class PortalIdentityControllerTest extends TestCase {
 	}//end testACaseTypeThePortalNeverDeclaredIsNeverRead()
 
 	/**
+	 * A host no portal claims reads nothing, and a link the service will not
+	 * issue mails nothing: the first is a 404, the second a bare refusal.
+	 *
+	 * @return void
+	 */
+	public function testNoPortalReadsNothingAndAnUnissuedLinkMailsNothing(): void {
+		$controller = $this->controller(site: null);
+		$this->doubles['bindings']->expects($this->never())->method('caseTypeIsInPortalScope');
+		$this->doubles['caseTypes']->expects($this->never())->method('readCaseType');
+
+		$response = $controller->requestReferenceLink(register: 'portaliq', schema: 'portalCaseType', caseType: 'melding', caseReference: 'ZAAK-1', email: 'ans@example.org');
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+		$this->assertSame(['error' => 'portal_not_found'], $response->getData());
+
+		$controller = $this->controller(site: ['organisation' => 'gemeente-x', 'slug' => 'gemeente-x']);
+		$this->doubles['caseTypes']->method('readCaseType')->willReturn(['portalIdentityKind' => ['reference']]);
+		$this->doubles['references']->method('admitsReference')->willReturn(true);
+		$this->doubles['references']->expects($this->once())->method('issue')
+			->with(['portalIdentityKind' => ['reference']], 'ZAAK-1', 'ans@example.org', 'gemeente-x', $this->linkable['register'], $this->linkable['schema'])
+			->willReturn(null);
+		$this->doubles['mailer']->expects($this->never())->method('send');
+
+		$response = $controller->requestReferenceLink(register: 'portaliq', schema: 'portalCaseType', caseType: 'melding', caseReference: 'ZAAK-1', email: 'ans@example.org');
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame(['error' => 'refused'], $response->getData());
+
+	}//end testNoPortalReadsNothingAndAnUnissuedLinkMailsNothing()
+
+	/**
 	 * The three refusals are deliberately one answer. Out of the portal's
 	 * scope and `account` only must be indistinguishable, or the status code
 	 * tells an anonymous caller which registers hold which case types.
