@@ -173,7 +173,10 @@ function baseResult(row) {
 		// instance. A peer catalogue is not trusted to hand out only such
 		// addresses, and this one becomes a link and a navigation target, so
 		// a `javascript:` or `data:` address is dropped rather than rendered.
-		href: [(row || {}).landingUrl, (row || {}).url, self.uri].map(safeHref).find((link) => link !== '') || '',
+		href:
+			[(row || {}).landingUrl, (row || {}).url, self.uri]
+				.map(safeHref)
+				.find((link) => link !== '') || '',
 		// The directory of a row from ANOTHER catalogue, else ''. `local` is
 		// the API's word for a row this instance owns, and so is no
 		// directory at all; a visitor on the portal's own site reads that as
