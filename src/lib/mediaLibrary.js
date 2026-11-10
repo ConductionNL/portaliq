@@ -19,6 +19,46 @@
 const PREFIX = 'media:'
 
 /**
+ * The library's address for a portal's published items.
+ *
+ * @param {string} portal The portal slug.
+ * @return {string} The path relative to the Nextcloud root.
+ */
+function mediaPath(portal) {
+	const query = new URLSearchParams({ portal, status: 'published', _limit: '200' })
+	return '/apps/openregister/api/objects/portaliq/media?' + query.toString()
+}
+
+/**
+ * An item as the dialog lists it.
+ *
+ * @param {object} item The stored item.
+ * @return {{id: string, title: string, alt: string, kind: string}} The listed item.
+ */
+function listedItem(item) {
+	return {
+		id: String(item.id ?? item['@self']?.id ?? ''),
+		title: item.title || '',
+		alt: item.alt || '',
+		kind: item.kind || 'file',
+	}
+}
+
+/**
+ * The portal's published items with an id, from the library's answer.
+ *
+ * @param {object} data The answer's data.
+ * @param {string} portal The portal slug.
+ * @return {Array} The listed items.
+ */
+function publishedItems(data, portal) {
+	return (Array.isArray(data?.results) ? data.results : [])
+		.filter((item) => item.portal === portal && item.status === 'published')
+		.map(listedItem)
+		.filter((item) => item.id !== '')
+}
+
+/**
  * The library reader over an injected transport.
  *
  * @param {object} deps The collaborators.
@@ -40,27 +80,8 @@ export function createMediaLibrary({ get }) {
 				return { state: 'empty', items: [] }
 			}
 			try {
-				const query = new URLSearchParams({
-					portal,
-					status: 'published',
-					_limit: '200',
-				})
-				const { data } = await get(
-					'/apps/openregister/api/objects/portaliq/media?'
-						+ query.toString(),
-				)
-				const items = (Array.isArray(data?.results) ? data.results : [])
-					.filter(
-						(item) =>
-							item.portal === portal && item.status === 'published',
-					)
-					.map((item) => ({
-						id: String(item.id ?? item['@self']?.id ?? ''),
-						title: item.title || '',
-						alt: item.alt || '',
-						kind: item.kind || 'file',
-					}))
-					.filter((item) => item.id !== '')
+				const { data } = await get(mediaPath(portal))
+				const items = publishedItems(data, portal)
 				return { state: items.length ? 'ready' : 'empty', items }
 			} catch {
 				return { state: 'error', items: [] }
