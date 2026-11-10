@@ -184,6 +184,57 @@ class PortalIntakeQueueTest extends TestCase {
 	}//end testASubmissionThatCouldNotBeRecordedIsNotAcknowledged()
 
 	/**
+	 * The exact row a submission writes: every extra it carries, the computed
+	 * names re-indexed, and nothing for the extras it does not carry.
+	 *
+	 * @return void
+	 */
+	public function testTheRecordedRowCarriesEachExtraOnlyWhenGiven(): void {
+		$queue = $this->queue();
+
+		$accepted = $queue->accept(
+			portal: 'gemeente-x',
+			route: 'woo',
+			answers: ['a' => 1],
+			subjectRef: 'subject-1',
+			origin: 'https://example.org',
+			statements: [['key' => 'truth']],
+			computed: [3 => 'fee', 7 => 'total'],
+			decisions: ['step-1' => 'yes'],
+			verifiedEmails: [['address' => 'a@example.org', 'at' => 'now']]
+		);
+		$queue->accept(portal: 'gemeente-x', route: 'kort', answers: []);
+
+		$this->assertSame(['reference' => 'AANVRAAG-SECRET-1', 'state' => 'queued'], $accepted);
+		[$full, $bare] = $this->storedRows('portalIntakeSubmission');
+		$this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T/', $full['submittedAt']);
+		unset($full['submittedAt'], $full['uuid'], $full['_schema'], $bare['submittedAt'], $bare['uuid'], $bare['_schema']);
+		$this->assertSame(
+			[
+				'reference' => 'AANVRAAG-SECRET-1',
+				'portal' => 'gemeente-x',
+				'route' => 'woo',
+				'subjectRef' => 'subject-1',
+				'origin' => 'https://example.org',
+				'answers' => ['a' => 1],
+				'state' => 'queued',
+				'statements' => [['key' => 'truth']],
+				'computed' => ['fee', 'total'],
+				'decisions' => ['step-1' => 'yes'],
+				'verifiedEmails' => [['address' => 'a@example.org', 'at' => 'now']],
+			],
+			$full
+		);
+		$this->assertSame(
+			['reference' => 'AANVRAAG-SECRET-2', 'portal' => 'gemeente-x', 'route' => 'kort', 'subjectRef' => '', 'origin' => '', 'answers' => [], 'state' => 'queued'],
+			$bare
+		);
+		$this->assertNull($queue->accept(portal: '', route: 'woo', answers: []));
+		$this->assertCount(2, $this->storedRows('portalIntakeSubmission'));
+
+	}//end testTheRecordedRowCarriesEachExtraOnlyWhenGiven()
+
+	/**
 	 * The queue over the fake store.
 	 *
 	 * @return PortalIntakeQueue
