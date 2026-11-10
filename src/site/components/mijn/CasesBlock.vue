@@ -93,6 +93,16 @@ import { caseCard, casesOnScreen } from './cases.js'
 import { mijnTranslator, siteHref } from './rows.js'
 
 /**
+ * A case row's id.
+ *
+ * @param {object} row The row.
+ * @return {string} Its id, uuid or `@self` id, or ''.
+ */
+function caseIdOf(row) {
+	return String(row.id || row.uuid || row['@self']?.id || '')
+}
+
+/**
  * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
  */
 export default {
@@ -194,22 +204,22 @@ export default {
 		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
 		 */
 		entries() {
-			return this.shown.rows.map((row, index) => {
-				const id = String(row.id || row.uuid || row['@self']?.id || '')
-				const link = { app: this.app, collection: this.block.collection, id }
-				return {
-					id: id || String(index),
-					link,
-					route: id ? recordRoute(this.nav, link) || '' : '',
-					card: caseCard(row, this.collection, {
-						tr: this.tr,
-						locale: this.locale,
-						today: this.today || new Date(),
-						steps: this.steps[id]?.steps || null,
-						yourTurn: this.block?.yourTurn || [],
-					}),
-				}
-			})
+			return this.shown.rows.map((row, index) => this.entryOf(row, index))
+		},
+
+		/**
+		 * What every card of the block reads besides its row and its steps.
+		 *
+		 * @return {{tr: (key: string, vars?: object) => string, locale: string, today: Date, yourTurn: Array<string>}} The context.
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+		 */
+		cardContext() {
+			return {
+				tr: this.tr,
+				locale: this.locale,
+				today: this.today || new Date(),
+				yourTurn: this.block?.yourTurn || [],
+			}
 		},
 
 		/**
@@ -250,6 +260,28 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * One card, with the route of the page that shows the case.
+		 *
+		 * @param {object} row The case row.
+		 * @param {number} index Its place, the key of a row without an id.
+		 * @return {object} `{id, link, route, card}`.
+		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+		 */
+		entryOf(row, index) {
+			const id = caseIdOf(row)
+			const link = { app: this.app, collection: this.block.collection, id }
+			return {
+				id: id || String(index),
+				link,
+				route: id ? recordRoute(this.nav, link) || '' : '',
+				card: caseCard(row, this.collection, {
+					...this.cardContext,
+					steps: this.steps[id]?.steps || null,
+				}),
+			}
+		},
+
 		/**
 		 * Read the steps of every card on screen that has none yet, when the
 		 * collection declares a steps provider. A failed read leaves the card
