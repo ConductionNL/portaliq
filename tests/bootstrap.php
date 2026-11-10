@@ -201,6 +201,12 @@ foreach ([
 	'Service\\Integration\\IntegrationProvider' => 'Service/Integration/IntegrationProvider.php',
 	'Service\\Integration\\LeafDescriptor' => 'Service/Integration/LeafDescriptor.php',
 	'Event\\RegisterLeafProvidersEvent' => 'Event/RegisterLeafProvidersEvent.php',
+	// The form submit and draft value objects (openregister #7788, #7964):
+	// DraftOwner first, the others name it.
+	'Service\\Object\\DraftOwner' => 'Service/Object/DraftOwner.php',
+	'Service\\Object\\DiscardDraftRequest' => 'Service/Object/DiscardDraftRequest.php',
+	'Service\\Form\\FormSubmitter' => 'Service/Form/FormSubmitter.php',
+	'Service\\Form\\FormSubmission' => 'Service/Form/FormSubmission.php',
 ] as $orStubClass => $orStubFile) {
 	if (class_exists('\\OCP\\EventDispatcher\\Event') === true
 		&& class_exists('\\OCA\\OpenRegister\\' . $orStubClass) === false

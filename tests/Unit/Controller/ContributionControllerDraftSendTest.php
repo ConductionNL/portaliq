@@ -80,7 +80,7 @@ class ContributionControllerDraftSendTest extends TestCase {
 		$this->assertSame('d-1', $response->getData()['object']['id']);
 		$this->assertSame('2026-0042', $response->getData()['object']['reference']);
 		$this->assertSame('d-1', $sent['draftId']);
-		$this->assertSame('portal:sanne', $sent['owner']->value);
+		$this->assertSame('portal:sanne', $sent['owner']->value());
 		$this->assertSame('key-7', $sent['idempotencyKey']);
 		$this->assertSame(['title' => 'Whole', 'caseType' => 'ct-1', 'subjectRef' => 'sanne'], $sent['payload']);
 	}//end testALiveDraftIsSentAndNoSecondObjectIsWritten()

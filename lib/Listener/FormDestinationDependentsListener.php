@@ -31,6 +31,7 @@ namespace OCA\Portaliq\Listener;
 
 use OCA\OpenRegister\Event\FormDestinationDependentsEvent;
 use OCA\OpenRegister\Service\Form\FormDependent;
+use OCA\OpenRegister\Service\Form\PublishedForm;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\Intake\DestinationMapping;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
@@ -131,9 +132,14 @@ class FormDestinationDependentsListener implements IEventListener {
 		$portal = (string)($binding['portal'] ?? '');
 
 		return new FormDependent(
-			id: $bindingId,
-			app: Application::APP_ID,
-			title: $this->titleOf(binding: $binding, render: $render),
+			// Every portal submit reaches OpenRegister as an anonymous write
+			// (DestinationSubmit), so the form is judged as a public one.
+			form: new PublishedForm(
+				id: $bindingId,
+				app: Application::APP_ID,
+				title: $this->titleOf(binding: $binding, render: $render),
+				audience: 'public'
+			),
 			author: $this->authorOf(binding: $binding),
 			mapping: $this->mapping->mappingFor(
 				binding: $binding,
@@ -143,10 +149,7 @@ class FormDestinationDependentsListener implements IEventListener {
 			),
 			unpublish: function () use ($bindingId, $portal): void {
 				$this->unpublish(bindingId: $bindingId, portal: $portal);
-			},
-			// Every portal submit reaches OpenRegister as an anonymous write
-			// (DestinationSubmit), so the form is judged as a public one.
-			audience: 'public',
+			}
 		);
 	}//end formFor()
 
