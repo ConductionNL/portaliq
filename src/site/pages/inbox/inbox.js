@@ -677,7 +677,8 @@ export function inboxTabs(messages) {
 		{ key: 'unread', kind: 'unread' },
 	]
 	const seen = new Set()
-	for (const value of (messages || []).map(tabValueOf)) {
+	for (const message of messages || []) {
+		const value = tabValueOf(message)
 		if (value !== '' && !seen.has(value)) {
 			seen.add(value)
 			tabs.push({ key: `tab:${value}`, kind: 'value', value })
