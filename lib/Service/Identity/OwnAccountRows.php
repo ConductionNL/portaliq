@@ -80,9 +80,9 @@ final class OwnAccountRows {
 	}//end find()
 
 	/**
-	 * Write fields on the account row with this id.
+	 * Write fields on the account row with this id; an empty id is never written.
 	 *
-	 * @param string               $id   The row's id.
+	 * @param string               $id   The row's id, '' when the row has none.
 	 * @param array<string, mixed> $data The fields to write.
 	 *
 	 * @return bool Whether the row was written.
@@ -90,6 +90,10 @@ final class OwnAccountRows {
 	* @spec openspec/changes/archive/2026-09-30-identity-profile-page/specs/portal-profile/spec.md
 	 */
 	public function update(string $id, array $data): bool {
+		if ($id === '') {
+			return false;
+		}
+
 		return $this->writer->updateObject(
 			register: self::REGISTER,
 			schema: self::SCHEMA,

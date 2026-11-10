@@ -122,19 +122,38 @@ class PortalSelfServiceService {
 		?bool $emailNotifications = null,
 		?string $messageLanguage = null,
 	): ?array {
-		$account = $this->ownAccount(subjectRef: $subjectRef);
-		$asked   = ['displayName' => $displayName, 'email' => $email, 'emailNotifications' => $emailNotifications, 'messageLanguage' => $messageLanguage];
-		if ($account === null || $this->nothingAsked(asked: $asked) === true) {
-			return null;
-		}
-
-		$change = $this->detailsChange(account: $account, asked: $asked);
-		if ($change === null || $this->write(account: $account, data: $change['data']) === false) {
+		$asked  = ['displayName' => $displayName, 'email' => $email, 'emailNotifications' => $emailNotifications, 'messageLanguage' => $messageLanguage];
+		$change = $this->ownDetailsChange(subjectRef: $subjectRef, asked: $asked);
+		if ($change === null || $this->write(account: $change['account'], data: $change['data']) === false) {
 			return null;
 		}
 
 		return ['updated' => true, 'confirmationToken' => $change['token']];
 	}//end updateDetails()
+
+	/**
+	 * The account an `updateDetails()` call changes and what it writes there,
+	 * or null when there is no such account, nothing was asked, or what was
+	 * asked is refused.
+	 *
+	 * @param string $subjectRef The account.
+	 * @param array{displayName: string, email: string, emailNotifications: bool|null, messageLanguage: string|null} $asked What the call carried.
+	 *
+	 * @return array{account: array<string, mixed>, data: array<string, mixed>, token: string}|null
+	 */
+	private function ownDetailsChange(string $subjectRef, array $asked): ?array {
+		$account = $this->rows()->find(subjectRef: $subjectRef);
+		if ($account === null || $this->nothingAsked(asked: $asked) === true) {
+			return null;
+		}
+
+		$change = $this->detailsChange(account: $account, asked: $asked);
+		if ($change === null) {
+			return null;
+		}
+
+		return ['account' => $account] + $change;
+	}//end ownDetailsChange()
 
 	/**
 	 * The fields an `updateDetails()` call writes, and the confirmation secret
@@ -180,7 +199,7 @@ class PortalSelfServiceService {
 	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
 	 */
 	public function details(string $subjectRef): ?array {
-		$account = $this->ownAccount(subjectRef: $subjectRef);
+		$account = $this->rows()->find(subjectRef: $subjectRef);
 		if ($account === null) {
 			return null;
 		}
@@ -220,7 +239,7 @@ class PortalSelfServiceService {
 	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
 	 */
 	public function notificationPreferences(string $subjectRef): ?array {
-		$account = $this->ownAccount(subjectRef: $subjectRef);
+		$account = $this->rows()->find(subjectRef: $subjectRef);
 		if ($account === null) {
 			return null;
 		}
@@ -244,7 +263,7 @@ class PortalSelfServiceService {
 	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
 	 */
 	public function updateNotificationPreferences(string $subjectRef, array $asked): ?array {
-		$account = $this->ownAccount(subjectRef: $subjectRef);
+		$account = $this->rows()->find(subjectRef: $subjectRef);
 		if ($account === null) {
 			return null;
 		}
@@ -435,7 +454,7 @@ class PortalSelfServiceService {
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function removeAccount(string $subjectRef): bool {
-		$account = $this->ownAccount(subjectRef: $subjectRef);
+		$account = $this->rows()->find(subjectRef: $subjectRef);
 		if ($account === null) {
 			return false;
 		}
@@ -462,18 +481,6 @@ class PortalSelfServiceService {
 	}//end removeAccount()
 
 	/**
-	 * The account behind a subjectRef, when it is one a citizen may still act
-	 * on.
-	 *
-	 * @param string $subjectRef The account.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function ownAccount(string $subjectRef): ?array {
-		return $this->rows()->find(subjectRef: $subjectRef);
-	}//end ownAccount()
-
-	/**
 	 * The account rows this service reads and writes.
 	 *
 	 * @return OwnAccountRows
@@ -495,10 +502,6 @@ class PortalSelfServiceService {
 		if ($id === '') {
 			$self = (array)($account['@self'] ?? []);
 			$id = (string)($self['uuid'] ?? $self['id'] ?? '');
-		}
-
-		if ($id === '') {
-			return false;
 		}
 
 		return $this->rows()->update(id: $id, data: $data);

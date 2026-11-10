@@ -78,7 +78,7 @@ class PortalContactAddressService {
 	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T03
 	 */
 	public function addAddress(string $subjectRef, string $kind, string $value): array {
-		$account = $this->ownAccount(subjectRef: $subjectRef);
+		$account = $this->rows()->find(subjectRef: $subjectRef);
 		if ($account === null) {
 			return $this->refused(refusal: 'no_account');
 		}
@@ -121,7 +121,7 @@ class PortalContactAddressService {
 	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T03
 	 */
 	public function preferAddress(string $subjectRef, string $kind, string $value): string {
-		$account = $this->ownAccount(subjectRef: $subjectRef);
+		$account = $this->rows()->find(subjectRef: $subjectRef);
 		if ($account === null) {
 			return 'no_account';
 		}
@@ -147,7 +147,7 @@ class PortalContactAddressService {
 	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T03
 	 */
 	public function removeAddress(string $subjectRef, string $kind, string $value): string {
-		$account = $this->ownAccount(subjectRef: $subjectRef);
+		$account = $this->rows()->find(subjectRef: $subjectRef);
 		if ($account === null) {
 			return 'no_account';
 		}
@@ -179,7 +179,7 @@ class PortalContactAddressService {
 	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T04
 	 */
 	public function chooseChannel(string $subjectRef, string $channel): string {
-		$account = $this->ownAccount(subjectRef: $subjectRef);
+		$account = $this->rows()->find(subjectRef: $subjectRef);
 		if ($account === null) {
 			return 'no_account';
 		}
@@ -247,17 +247,6 @@ class PortalContactAddressService {
 	}//end refused()
 
 	/**
-	 * The account behind a subjectRef, while it is not removed.
-	 *
-	 * @param string $subjectRef The account.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function ownAccount(string $subjectRef): ?array {
-		return $this->rows()->find(subjectRef: $subjectRef);
-	}//end ownAccount()
-
-	/**
 	 * The account rows this service reads and writes.
 	 *
 	 * @return OwnAccountRows
@@ -277,10 +266,6 @@ class PortalContactAddressService {
 	private function write(array $account, array $data): bool {
 		$self = (array)($account['@self'] ?? []);
 		$id   = (string)($account['uuid'] ?? $account['id'] ?? $self['uuid'] ?? $self['id'] ?? '');
-		if ($id === '') {
-			return false;
-		}
-
 		return $this->rows()->update(id: $id, data: $data);
 	}//end write()
 }//end class
