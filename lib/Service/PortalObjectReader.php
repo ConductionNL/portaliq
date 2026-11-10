@@ -95,6 +95,8 @@ use Throwable;
  * @SuppressWarnings(PHPMD.TooManyMethods)          -- the same boundary: the
  * public read of an `anonymous` collection shares the tenant check, the row
  * normalising and the projection with the scoped reads, so it lives beside them.
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)  -- the thirteenth is
+ * OpenRegister's ObjectFindOptions, the request object its find() takes.
  */
 class PortalObjectReader implements ScopedCollectionReaderInterface {
 	use ActsForTheOrganisation;
