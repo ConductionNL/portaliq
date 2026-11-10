@@ -112,6 +112,21 @@ function provisionBody(fields) {
 }
 
 /**
+ * What the invitation route is sent for the dialog's fields: trimmed, the
+ * audience a client unless the dialog says otherwise.
+ *
+ * @param {object|null} fields The dialog's fields.
+ * @return {{email: string, organisation: string, audience: string}} The body.
+ */
+function invitationBody(fields) {
+	return {
+		email: text(fields?.email),
+		organisation: text(fields?.organisation),
+		audience: text(fields?.audience) || 'client',
+	}
+}
+
+/**
  * What an issue still lacks before it may be sent: the organisation, then an
  * identity reference or an e-mail address; '' when nothing.
  *
@@ -187,6 +202,24 @@ export function createStaffAccountActions({
 		}
 	}
 
+	/**
+	 * What the desk is told after an invitation went out: to whom, and until
+	 * when it is valid.
+	 *
+	 * @param {string} email The invited address.
+	 * @param {object} data The invitation route's answer.
+	 * @return {{ok: boolean, message: string}} The outcome.
+	 */
+	function invitedOutcome(email, data) {
+		return {
+			ok: true,
+			message: translate('Invitation sent to {email}. It is valid until {date}.', {
+				email,
+				date: formatDate(String(data.expiresAt || '')),
+			}),
+		}
+	}
+
 	return {
 		/**
 		 * Issue an account at the desk, through the provision route.
@@ -220,11 +253,7 @@ export function createStaffAccountActions({
 		 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-invite-an-address-and-portaliq-mails-it-req-isa-001
 		 */
 		async invite(fields) {
-			const body = {
-				email: text(fields?.email),
-				organisation: text(fields?.organisation),
-				audience: text(fields?.audience) || 'client',
-			}
+			const body = invitationBody(fields)
 			if (body.email === '' || body.organisation === '') {
 				return {
 					ok: false,
@@ -235,16 +264,7 @@ export function createStaffAccountActions({
 			if (sent.ok === false) {
 				return sent
 			}
-			return {
-				ok: true,
-				message: translate(
-					'Invitation sent to {email}. It is valid until {date}.',
-					{
-						email: body.email,
-						date: formatDate(String(sent.data.expiresAt || '')),
-					},
-				),
-			}
+			return invitedOutcome(body.email, sent.data)
 		},
 
 		/**
