@@ -51,6 +51,7 @@ use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
+use OCA\Portaliq\Service\RowIdLookup;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\QueuedJob;
 use OCP\IConfig;
@@ -240,7 +241,7 @@ class NotificationDispatchJob extends QueuedJob {
 		$wantsEmail = $channels->wants(account: $account, kind: $kind, channel: NotificationChannels::CHANNEL_EMAIL);
 		$wantsPush = $channels->wants(account: $account, kind: $kind, channel: NotificationChannels::CHANNEL_PUSH);
 
-		$accountId = $this->rowId(row: $account);
+		$accountId = RowIdLookup::firstUuidOrId(row: $account);
 		if ($accountId === null) {
 			return;
 		}
@@ -493,7 +494,10 @@ class NotificationDispatchJob extends QueuedJob {
 
 		$account = ($rows[0] ?? null);
 		if (($account['status'] ?? '') === self::STATUS_VOID) {
-			$this->logger->info('Portaliq: NotificationDispatchJob skips a withdrawn portalAccount', ['account' => (string)$this->rowId(row: $account)]);
+			$this->logger->info(
+				'Portaliq: NotificationDispatchJob skips a withdrawn portalAccount',
+				['account' => (string)RowIdLookup::firstUuidOrId(row: $account)]
+			);
 			return null;
 		}
 
@@ -646,30 +650,4 @@ class NotificationDispatchJob extends QueuedJob {
 			);
 		}
 	}//end flagNeedsAlternativeContact()
-
-	/**
-	 * Extract a row's identifier (`id`/`uuid`, flat or in `@self`), or null.
-	 *
-	 * @param array<string, mixed> $row The normalised row.
-	 *
-	 * @return string|null
-	 */
-	private function rowId(array $row): ?string {
-		$self = ($row['@self'] ?? null);
-		$selfUuid = null;
-		$selfId = null;
-		if (is_array($self) === true) {
-			$selfUuid = ($self['uuid'] ?? null);
-			$selfId = ($self['id'] ?? null);
-		}
-
-		$candidates = [($row['uuid'] ?? null), ($row['id'] ?? null), $selfUuid, $selfId];
-		foreach ($candidates as $candidate) {
-			if ((is_string($candidate) === true || is_int($candidate) === true) && (string)$candidate !== '') {
-				return (string)$candidate;
-			}
-		}
-
-		return null;
-	}//end rowId()
 }//end class

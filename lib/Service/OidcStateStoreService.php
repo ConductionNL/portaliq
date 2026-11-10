@@ -208,7 +208,7 @@ class OidcStateStoreService {
 			return null;
 		}
 
-		$uuid = $this->rowId(row: $row);
+		$uuid = RowIdLookup::firstUuidOrId(row: $row);
 		if ($uuid === null) {
 			return null;
 		}
@@ -282,30 +282,4 @@ class OidcStateStoreService {
 
 		return ($rows[0] ?? null);
 	}//end findByState()
-
-	/**
-	 * Extract a row's identifier (`id`/`uuid`, flat or in `@self`), or null.
-	 *
-	 * @param array<string, mixed> $row The normalised row.
-	 *
-	 * @return string|null
-	 */
-	private function rowId(array $row): ?string {
-		$self = ($row['@self'] ?? null);
-		$selfUuid = null;
-		$selfId = null;
-		if (is_array($self) === true) {
-			$selfUuid = ($self['uuid'] ?? null);
-			$selfId = ($self['id'] ?? null);
-		}
-
-		$candidates = [($row['uuid'] ?? null), ($row['id'] ?? null), $selfUuid, $selfId];
-		foreach ($candidates as $candidate) {
-			if ((is_string($candidate) === true || is_int($candidate) === true) && (string)$candidate !== '') {
-				return (string)$candidate;
-			}
-		}
-
-		return null;
-	}//end rowId()
 }//end class
