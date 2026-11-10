@@ -536,27 +536,84 @@ class PortalSessionService {
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.3
 	 */
 	public function resolveFromBearer(?string $authorizationHeader): ?array {
+		$claims = $this->sessionClaimsFromHeader(authorizationHeader: $authorizationHeader);
+		if ($claims === null) {
+			return null;
+		}
+
+		return $this->subjectFromClaims(claims: $claims);
+	}//end resolveFromBearer()
+
+	/**
+	 * The claims of the live portal session the header carries, or null when
+	 * no signing secret is configured or the bearer is absent, malformed,
+	 * forged, expired, special-use or revoked.
+	 *
+	 * @param string|null $authorizationHeader The raw Authorization header value.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function sessionClaimsFromHeader(?string $authorizationHeader): ?array {
 		if ($this->jwt === null) {
 			return null;
 		}
 
-		if ($authorizationHeader === null || str_starts_with($authorizationHeader, self::BEARER_PREFIX) === false) {
-			return null;
-		}
-
-		$token = substr($authorizationHeader, strlen(self::BEARER_PREFIX));
+		$token = $this->bearerTokenOf(authorizationHeader: $authorizationHeader);
 		if ($token === '') {
 			return null;
 		}
 
+		$claims = $this->validatedClaims(jwt: $this->jwt, token: $token);
+		if ($claims === null) {
+			return null;
+		}
+
+		return $this->activeSessionClaims(claims: $claims);
+	}//end sessionClaimsFromHeader()
+
+	/**
+	 * The token after the bearer prefix, or '' when the header is absent or
+	 * names another scheme.
+	 *
+	 * @param string|null $authorizationHeader The raw Authorization header value.
+	 *
+	 * @return string
+	 */
+	private function bearerTokenOf(?string $authorizationHeader): string {
+		if ($authorizationHeader === null || str_starts_with($authorizationHeader, self::BEARER_PREFIX) === false) {
+			return '';
+		}
+
+		return substr($authorizationHeader, strlen(self::BEARER_PREFIX));
+	}//end bearerTokenOf()
+
+	/**
+	 * The token's claims when its signature and expiry validate, else null.
+	 *
+	 * @param PortalJwtService $jwt   The configured signer.
+	 * @param string           $token The bearer token.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function validatedClaims(PortalJwtService $jwt, string $token): ?array {
 		try {
-			$claims = $this->jwt->validate($token);
+			return $jwt->validate($token);
 		} catch (Throwable $e) {
 			// Fail closed — never leak why. Debug-level only.
 			$this->logger->debug('Portaliq: bearer rejected', ['reason' => $e->getMessage()]);
 			return null;
 		}
+	}//end validatedClaims()
 
+	/**
+	 * The claims when they are a portal session whose `jti` is still live,
+	 * else null.
+	 *
+	 * @param array<string, mixed> $claims The validated token claims.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function activeSessionClaims(array $claims): ?array {
 		// Token-confusion guard (contract v2, A6): a subject assertion — or any
 		// future special-use token — is NOT a portal session. A relayed or
 		// leaked X-Portal-Subject assertion can never be replayed as a bearer.
@@ -565,33 +622,55 @@ class PortalSessionService {
 			return null;
 		}
 
-		$jti = (string)($claims['jti'] ?? '');
-		if ($this->isJtiActive(jti: $jti) === false) {
+		if ($this->isJtiActive(jti: (string)($claims['jti'] ?? '')) === false) {
 			$this->logger->debug('Portaliq: bearer rejected', ['reason' => 'revoked or unknown jti']);
 			return null;
 		}
 
+		return $claims;
+	}//end activeSessionClaims()
+
+	/**
+	 * The server-derived subject of a live session's claims.
+	 *
+	 * @param array<string, mixed> $claims The live session's claims.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function subjectFromClaims(array $claims): array {
 		return [
 			'subjectRef' => (string)($claims['sub'] ?? ''),
 			'audience' => (string)($claims['audience'] ?? ''),
 			'organisation' => (string)($claims['organisation'] ?? ''),
 			'trust' => self::normaliseTrust(trust: ($claims['trust'] ?? '')),
 			'roles' => (array)($claims['roles'] ?? []),
-			'jti' => $jti,
+			'jti' => (string)($claims['jti'] ?? ''),
 			// The ORIGIN login's timestamp (portal-session-hardening-v2) — 0
 			// for a token minted before this claim existed, which refreshSession()
 			// treats as "cannot establish an origin" and refuses (fail-closed).
 			'authTime' => (int)($claims['authTime'] ?? 0),
-			// Change signin-eherkenning-branch: the branch in effect ('' for none)
-			// and whether the login restricted the session to it.
-			'branch' => (new BranchNumber())->normalise(value: ($claims['branch'] ?? null)),
-			'branchRestricted' => (($claims['branchRestricted'] ?? false) === true && ($claims['branch'] ?? '') !== ''),
+		] + $this->branchOfClaims(claims: $claims) + [
 			// Change signin-session-idle-warning-and-sso: the OIDC provider
 			// ('' for none) and when this bearer expires.
 			'provider' => (string)($claims['provider'] ?? ''),
 			'expiresAt' => (int)($claims['exp'] ?? 0),
 		];
-	}//end resolveFromBearer()
+	}//end subjectFromClaims()
+
+	/**
+	 * Change signin-eherkenning-branch: the branch in effect ('' for none)
+	 * and whether the login restricted the session to it.
+	 *
+	 * @param array<string, mixed> $claims The live session's claims.
+	 *
+	 * @return array{branch: string, branchRestricted: bool}
+	 */
+	private function branchOfClaims(array $claims): array {
+		return [
+			'branch' => (new BranchNumber())->normalise(value: ($claims['branch'] ?? null)),
+			'branchRestricted' => (($claims['branchRestricted'] ?? false) === true && ($claims['branch'] ?? '') !== ''),
+		];
+	}//end branchOfClaims()
 
 	/**
 	 * Mint the short, read-only session a redeemed reference link opens
