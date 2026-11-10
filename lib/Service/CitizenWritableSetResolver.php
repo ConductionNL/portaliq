@@ -157,20 +157,12 @@ class CitizenWritableSetResolver {
 	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	private function resolveOpen(array $action, array $case, string $audience): array {
-		$config = ($action[CitizenWriteConfigNormaliser::KEY] ?? null);
-		if (is_array($config) === false) {
-			return $this->closedSet(reason: $this->l10n->t('This case is not open for changes from the portal.'));
-		}
-
-		$status = (string)($case[$config['statusField']] ?? '');
-		$caseType = $this->caseTypes->readCaseType(
-			register: (string)$config['typeRegister'],
-			schema: (string)$config['typeSchema'],
-			id: (string)($case[$config['typeField']] ?? '')
-		);
+		$caseType = $this->actionCaseType(action: $action, caseRow: $case);
 		if ($caseType === null) {
 			return $this->closedSet(reason: $this->l10n->t('This case is not open for changes from the portal.'));
 		}
+
+		$status = $this->caseStatusOf(action: $action, caseRow: $case);
 
 		$window = $this->window(caseType: $caseType, property: self::WINDOW_PROPERTY, status: $status);
 		$documents = $this->window(caseType: $caseType, property: self::DOCUMENTS_PROPERTY, status: $status);
@@ -182,6 +174,23 @@ class CitizenWritableSetResolver {
 			window: $window
 		);
 
+		return [
+			'fields' => $fields,
+			'writable' => $this->writableFieldsOf(fields: $fields),
+			'window' => $window,
+			'documents' => $documents,
+			'status' => (new CaseStatusView())->status(caseType: $caseType, status: $status),
+		];
+	}//end resolveOpen()
+
+	/**
+	 * The names of the fields that may be written now.
+	 *
+	 * @param array<string, array<string, mixed>> $fields The field states.
+	 *
+	 * @return array<int, string>
+	 */
+	private function writableFieldsOf(array $fields): array {
 		$writable = [];
 		foreach ($fields as $field => $state) {
 			if (($state['writable'] ?? false) === true) {
@@ -189,14 +198,8 @@ class CitizenWritableSetResolver {
 			}
 		}
 
-		return [
-			'fields' => $fields,
-			'writable' => $writable,
-			'window' => $window,
-			'documents' => $documents,
-			'status' => (new CaseStatusView())->status(caseType: $caseType, status: $status),
-		];
-	}//end resolveOpen()
+		return $writable;
+	}//end writableFieldsOf()
 
 	/**
 	 * Whether this case may be withdrawn right now, and onto what.
@@ -225,66 +228,127 @@ class CitizenWritableSetResolver {
 			'confirmText' => '',
 		];
 
-		$config = ($action[CitizenWriteConfigNormaliser::KEY] ?? null);
-		if (is_array($config) === false) {
+		$declared = $this->declaredWithdrawal(action: $action, caseRow: $case);
+		if ($declared === null) {
 			return $closed;
 		}
 
-		$caseType = $this->caseTypes->readCaseType(
-			register: (string)$config['typeRegister'],
-			schema: (string)$config['typeSchema'],
-			id: (string)($case[$config['typeField']] ?? '')
-		);
+		return $this->withdrawalState(declared: $declared, ended: (new CaseRowMarker())->hasEnded(row: $case, closedField: $closedField));
+	}//end withdrawal()
+
+	/**
+	 * The withdrawal the case's type declares, with the case's status and
+	 * the withdrawal window for it; null when the action carries no citizen
+	 * write declaration, the case type cannot be read or declares none.
+	 *
+	 * @param array<string, mixed> $action  The matched `type: update` action.
+	 * @param array<string, mixed> $caseRow The citizen's own case row.
+	 *
+	 * @return array{status: string, targetStatus: string, confirmText: string, window: array<string, mixed>}|null
+	 */
+	private function declaredWithdrawal(array $action, array $caseRow): ?array {
+		$caseType = $this->actionCaseType(action: $action, caseRow: $caseRow);
 		if ($caseType === null) {
-			return $closed;
+			return null;
 		}
 
+		$declared = $this->withdrawalDeclarationOf(caseType: $caseType);
+		if ($declared === null) {
+			return null;
+		}
+
+		$status = $this->caseStatusOf(action: $action, caseRow: $caseRow);
+		return [
+			'status' => $status,
+			'targetStatus' => (string)$declared['targetStatus'],
+			'confirmText' => (string)($declared['confirmText'] ?? ''),
+			'window' => $this->window(caseType: $caseType, property: self::WITHDRAWAL_PROPERTY, status: $status),
+		];
+	}//end declaredWithdrawal()
+
+	/**
+	 * The case type's withdrawal declaration, or null when it declares none
+	 * or names no status to land on.
+	 *
+	 * @param array<string, mixed> $caseType The case type.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function withdrawalDeclarationOf(array $caseType): ?array {
 		$declared = ($caseType[self::WITHDRAWAL_PROPERTY] ?? null);
 		if (is_array($declared) === false) {
-			return $closed;
+			return null;
 		}
 
-		$targetStatus = (string)($declared['targetStatus'] ?? '');
-		if ($targetStatus === '') {
+		if ((string)($declared['targetStatus'] ?? '') === '') {
 			// A declaration with nowhere to land is not a declaration: the
 			// portal will not invent the status a withdrawal lands on.
-			return $closed;
+			return null;
 		}
 
-		$status = (string)($case[$config['statusField']] ?? '');
-		$window = $this->window(caseType: $caseType, property: self::WITHDRAWAL_PROPERTY, status: $status);
-		$confirmText = (string)($declared['confirmText'] ?? '');
+		return $declared;
+	}//end withdrawalDeclarationOf()
 
-		if ($status === $targetStatus) {
+	/**
+	 * Whether a declared withdrawal is open for the case now, and why not.
+	 *
+	 * @param array{status: string, targetStatus: string, confirmText: string, window: array<string, mixed>} $declared The declared withdrawal.
+	 * @param bool $ended Whether the case's collection marks it closed.
+	 *
+	 * @return array<string, mixed> `declared`, `open`, `reason`, `targetStatus` and `confirmText`.
+	 */
+	private function withdrawalState(array $declared, bool $ended): array {
+		$target = ['targetStatus' => $declared['targetStatus'], 'confirmText' => $declared['confirmText']];
+		if ($declared['status'] === $declared['targetStatus']) {
 			// Already withdrawn. Not an error yet, but never open again.
-			return [
-				'declared' => true,
-				'open' => false,
-				'reason' => $this->l10n->t('This request has already been withdrawn.'),
-				'targetStatus' => $targetStatus,
-				'confirmText' => $confirmText,
-			];
+			return ['declared' => true, 'open' => false, 'reason' => $this->l10n->t('This request has already been withdrawn.')] + $target;
 		}
 
-		if ((new CaseRowMarker())->hasEnded(row: $case, closedField: $closedField) === true) {
+		if ($ended === true) {
 			// A closed case is not withdrawn: there is nothing left to stop.
-			return [
-				'declared' => true,
-				'open' => false,
-				'reason' => $this->l10n->t('This request cannot be withdrawn from the portal.'),
-				'targetStatus' => $targetStatus,
-				'confirmText' => $confirmText,
-			];
+			return ['declared' => true, 'open' => false, 'reason' => $this->l10n->t('This request cannot be withdrawn from the portal.')] + $target;
 		}
 
-		return [
-			'declared' => true,
-			'open' => ($window['open'] === true),
-			'reason' => (string)$window['reason'],
-			'targetStatus' => $targetStatus,
-			'confirmText' => $confirmText,
-		];
-	}//end withdrawal()
+		$window = $declared['window'];
+		return ['declared' => true, 'open' => ($window['open'] === true), 'reason' => (string)$window['reason']] + $target;
+	}//end withdrawalState()
+
+	/**
+	 * The case type the action's citizen write declaration names for the
+	 * case, or null when the action carries no declaration or the type
+	 * cannot be read.
+	 *
+	 * @param array<string, mixed> $action  The matched `type: update` action.
+	 * @param array<string, mixed> $caseRow The citizen's own case row.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function actionCaseType(array $action, array $caseRow): ?array {
+		$config = ($action[CitizenWriteConfigNormaliser::KEY] ?? null);
+		if (is_array($config) === false) {
+			return null;
+		}
+
+		return $this->caseTypes->readCaseType(
+			register: (string)$config['typeRegister'],
+			schema: (string)$config['typeSchema'],
+			id: (string)($caseRow[$config['typeField']] ?? '')
+		);
+	}//end actionCaseType()
+
+	/**
+	 * The case's status, read from the field the action's citizen write
+	 * declaration names.
+	 *
+	 * @param array<string, mixed> $action  The matched action, carrying its declaration.
+	 * @param array<string, mixed> $caseRow The citizen's own case row.
+	 *
+	 * @return string
+	 */
+	private function caseStatusOf(array $action, array $caseRow): string {
+		$config = (array)$action[CitizenWriteConfigNormaliser::KEY];
+		return (string)($caseRow[$config['statusField']] ?? '');
+	}//end caseStatusOf()
 
 	/**
 	 * Whether one field may be written right now, without rebuilding the whole
