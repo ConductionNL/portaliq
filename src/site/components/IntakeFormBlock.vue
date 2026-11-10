@@ -472,6 +472,212 @@ function intakeConnection(portal) {
 	}
 }
 
+/**
+ * A calculated field's value as the answer holds it: the value as text, or
+ * '' when the calculation gave none.
+ *
+ * @param {Record<string, number|string>} now The calculated values.
+ * @param {string} name The field's name.
+ * @return {string} The answer.
+ */
+function calculatedAnswer(now, name) {
+	if (!Object.hasOwn(now, name)) {
+		return ''
+	}
+	return String(now[name])
+}
+
+/**
+ * An e-mail address as the verified-address map keys it: trimmed and in
+ * lower case.
+ *
+ * @param {string|null|undefined} address The address as typed, or nothing.
+ * @return {string} The key, or ''.
+ */
+function addressKey(address) {
+	return String(address ?? '')
+		.trim()
+		.toLowerCase()
+}
+
+/**
+ * Check the shown fields and the statements of a form before it is sent,
+ * and show what is wrong.
+ *
+ * @param {object} block The form block.
+ * @return {boolean} True when the answers may not be sent yet.
+ */
+function stopBeforeSending(block) {
+	const wrong = block.checkFields(
+		block.fields
+			.filter((field) => block.isShownField(field.name))
+			.map((field) => field.name),
+	)
+	if (Object.keys(wrong).length > 0) {
+		block.showErrors(wrong)
+		return true
+	}
+	block.errors = {}
+	return markMissingStatements(block)
+}
+
+/**
+ * Mark every required statement of a form that is not ticked.
+ *
+ * @param {object} block The form block.
+ * @return {boolean} True when one is missing.
+ */
+function markMissingStatements(block) {
+	const missing = missingStatements(block.render.statements, block.accepted)
+	block.statementErrors = Object.fromEntries(
+		missing.map((key) => [key, block.text.statementRequired]),
+	)
+	return missing.length > 0
+}
+
+/**
+ * The verified addresses without one that changed after it was verified.
+ *
+ * @param {Record<string, string>} verified The proof per address key.
+ * @param {string} address The address key to drop.
+ * @return {Record<string, string>} A new map without it.
+ */
+function withoutAddress(verified, address) {
+	const rest = { ...verified }
+	delete rest[address]
+	return rest
+}
+
+/**
+ * One server message as text: a list of messages joined, anything that is
+ * not text left out.
+ *
+ * @param {string|Array<string|object>|object} message The server's message for one field.
+ * @return {string} The text, or ''.
+ */
+function messageText(message) {
+	if (Array.isArray(message)) {
+		return message.filter((m) => typeof m === 'string').join(' ')
+	}
+	return typeof message === 'string' ? message : ''
+}
+
+/**
+ * Split the server's field messages into the field errors and the statement
+ * errors, which arrive as `statement-<key>`.
+ *
+ * @param {Record<string, string>} messages The message per field; the statement ones are taken out.
+ * @return {Record<string, string>} The message per statement key.
+ */
+function takeStatementMessages(messages) {
+	const statements = {}
+	for (const key of Object.keys(messages)) {
+		if (key.startsWith('statement-')) {
+			statements[key.slice(10)] = messages[key]
+			delete messages[key]
+		}
+	}
+	return statements
+}
+
+/** A date as the date field stores it: `YYYY-MM-DD`. */
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/
+
+/**
+ * The review's answer for the field types that do not hold plain text, by
+ * type: each takes the field and its answer.
+ */
+const TYPED_ANSWERS = {
+	signature: (field, value) => signatureAnswer(value),
+	addressNL: (field, value) => addressLine(value),
+	familyMembers: (field, value) => (value || []).length + '',
+	group: groupAnswer,
+}
+
+/**
+ * A signature as the review shows it: that one was set, or ''.
+ *
+ * @param {string} value The signature, or ''.
+ * @return {string} The text.
+ */
+function signatureAnswer(value) {
+	if (!value) {
+		return ''
+	}
+	return identityWords(document.documentElement?.lang).signatureSet
+}
+
+/**
+ * A repeating group as the review shows it: each item's lines on one line,
+ * the items separated by semicolons.
+ *
+ * @param {object} field The group field.
+ * @param {Array<object>} items The group's items, or nothing.
+ * @return {string} The text.
+ */
+function groupAnswer(field, items) {
+	return (items || [])
+		.map((item) => {
+			const lines = itemLines(field, item)
+			return [lines.first, lines.rest].filter(Boolean).join(', ')
+		})
+		.join('; ')
+}
+
+/**
+ * The option of a choice field the answer picks, if any.
+ *
+ * @param {object} field The field.
+ * @param {string} value The answer as text.
+ * @return {object|string|undefined} The option, or undefined.
+ */
+function chosenOption(field, value) {
+	return (Array.isArray(field.options) ? field.options : []).find(
+		(entry) => String(entry?.value ?? entry) === value,
+	)
+}
+
+/**
+ * What the review shows for a chosen option: its label, else the option.
+ *
+ * @param {object|string} option The option.
+ * @return {string} The text.
+ */
+function optionLabel(option) {
+	return String(option?.label ?? option)
+}
+
+/**
+ * A `YYYY-MM-DD` date written in Dutch: `4 maart 2026`.
+ *
+ * @param {string} value The date.
+ * @return {string} The written date.
+ */
+function dutchDay(value) {
+	const [year, month, day] = value.split('-').map(Number)
+	return new Intl.DateTimeFormat('nl', {
+		day: 'numeric',
+		month: 'long',
+		year: 'numeric',
+	}).format(new Date(year, month - 1, day))
+}
+
+/**
+ * The plain check of one field: what `plainFieldErrors` reads of it.
+ *
+ * @param {object} field The field.
+ * @return {{name: string, label: string, required: boolean, date: boolean, format: string}} The check.
+ */
+function plainCheck(field) {
+	return {
+		name: field.name,
+		label: field.label || field.name,
+		required: field.required === true,
+		date: field.type === 'date',
+		format: typeof field.format === 'string' ? field.format : '',
+	}
+}
+
 export default {
 	name: 'IntakeFormBlock',
 
@@ -929,9 +1135,7 @@ export default {
 		calculated(now) {
 			for (const field of this.fields) {
 				if (field.calculate) {
-					this.values[field.name] = Object.hasOwn(now, field.name)
-						? String(now[field.name])
-						: ''
+					this.values[field.name] = calculatedAnswer(now, field.name)
 				}
 			}
 		},
@@ -961,10 +1165,7 @@ export default {
 		 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-applicant-block-is-prefilled-from-the-signed-in-identity-only-req-pifo-003
 		 */
 		async load() {
-			this.state = 'loading'
-			this.reference = ''
-			this.errors = {}
-			this.sendFailed = false
+			this.startLoading()
 			if (this.bindingRoute === '') {
 				this.state = 'notFound'
 				return
@@ -972,16 +1173,40 @@ export default {
 
 			try {
 				const view = await loadForm(intakeConnection(this.portal), this.bindingRoute)
-				this.render = view.render
-				this.values = initialValues(view.render.fields, view.render.prefill)
-				this.state =
-					view.state === 'form' && introView(view.render.settings?.intro)
-						? 'intro'
-						: view.state
+				this.showLoaded(view)
 				await this.showReturnedPayment()
 			} catch {
 				this.state = 'notFound'
 			}
+		},
+
+		/**
+		 * Forget a previous form's reference, errors and failed send while the
+		 * next one loads.
+		 *
+		 * @return {void}
+		 */
+		startLoading() {
+			this.state = 'loading'
+			this.reference = ''
+			this.errors = {}
+			this.sendFailed = false
+		},
+
+		/**
+		 * Show a loaded form: its answers so far, and its intro first when it
+		 * has one.
+		 *
+		 * @param {{state: string, render: object}} view The loaded form.
+		 * @return {void}
+		 */
+		showLoaded(view) {
+			this.render = view.render
+			this.values = initialValues(view.render.fields, view.render.prefill)
+			this.state =
+				view.state === 'form' && introView(view.render.settings?.intro)
+					? 'intro'
+					: view.state
 		},
 
 		/**
@@ -994,63 +1219,74 @@ export default {
 		async submit() {
 			this.sendFailed = false
 			this.formError = ''
-			const wrong = this.checkFields(
-				this.fields
-					.filter((field) => this.isShownField(field.name))
-					.map((field) => field.name),
-			)
-			if (Object.keys(wrong).length > 0) {
-				this.showErrors(wrong)
-				return
-			}
-			this.errors = {}
-			const missing = missingStatements(this.render.statements, this.accepted)
-			this.statementErrors = Object.fromEntries(
-				missing.map((key) => [key, this.text.statementRequired]),
-			)
-			if (missing.length > 0) {
+			if (stopBeforeSending(this)) {
 				return
 			}
 
 			this.submitting = true
 			try {
-				const outcome = await submitIntake(intakeConnection(this.portal), {
-					route: this.bindingRoute,
-					answers: this.values,
-					statements: this.accepted,
-					verifiedEmails: this.verifiedEmails,
-				})
-				if (outcome.reference === '') {
-					const { _form: formLevel, ...fieldErrors } = outcome.errors || {}
-					this.formError = String(formLevel || '')
-					const messages = this.messagesOf(fieldErrors)
-					this.statementErrors = {}
-					for (const key of Object.keys(messages)) {
-						if (key.startsWith('statement-')) {
-							this.statementErrors[key.slice(10)] = messages[key]
-							delete messages[key]
-						}
-					}
-					this.showErrors(messages)
-					return
-				}
-
-				this.reference = outcome.reference
-				this.confirmationText = outcome.confirmationText
-				this.confirmation = outcome.confirmation
-				this.mailedTo = outcome.mailedTo
-				this.moments = outcome.moments || {}
-				this.state = 'done'
-				this.$nextTick(() => {
-					if (this.$refs.doneHeading) {
-						this.$refs.doneHeading.focus()
-					}
-				})
+				await this.send()
 			} catch {
 				this.sendFailed = true
 			} finally {
 				this.submitting = false
 			}
+		},
+
+		/**
+		 * Send the answers, the ticked statements and the verified addresses,
+		 * and show the refusal or the reference.
+		 *
+		 * @return {Promise<void>} Resolves when answered; rejects when sending failed.
+		 */
+		async send() {
+			const outcome = await submitIntake(intakeConnection(this.portal), {
+				route: this.bindingRoute,
+				answers: this.values,
+				statements: this.accepted,
+				verifiedEmails: this.verifiedEmails,
+			})
+			if (outcome.reference === '') {
+				this.showRefusal(outcome.errors)
+				return
+			}
+			this.showSent(outcome)
+		},
+
+		/**
+		 * Show the server's refusal: the form-level error, the statement
+		 * errors and the field errors.
+		 *
+		 * @param {object} errors The server's `errors`, or nothing.
+		 * @return {void}
+		 */
+		showRefusal(errors) {
+			const { _form: formLevel, ...fieldErrors } = errors || {}
+			this.formError = String(formLevel || '')
+			const messages = this.messagesOf(fieldErrors)
+			this.statementErrors = takeStatementMessages(messages)
+			this.showErrors(messages)
+		},
+
+		/**
+		 * Show the reference and the confirmation of a sent request, and move
+		 * focus to its heading.
+		 *
+		 * @param {object} outcome The sent request's outcome.
+		 * @return {void}
+		 */
+		showSent(outcome) {
+			this.reference = outcome.reference
+			this.confirmationText = outcome.confirmationText
+			this.confirmation = outcome.confirmation
+			this.mailedTo = outcome.mailedTo
+			this.moments = outcome.moments || {}
+			this.state = 'done'
+			this.$nextTick(() => {
+				if (this.$refs.doneHeading) {
+					this.$refs.doneHeading.focus()
+				}
+			})
 		},
 
 		/**
@@ -1062,10 +1298,8 @@ export default {
 		 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t05
 		 */
 		async showReturnedPayment() {
-			const reference = returnedReference(
-				typeof window === 'undefined' ? '' : window.location.search,
-			)
-			if (this.state !== 'form' || reference === '' || !this.render.fee) {
+			const reference = this.returnedPaymentReference()
+			if (reference === '') {
 				return
 			}
 			const status = await lookUpStatus(
@@ -1075,10 +1309,37 @@ export default {
 			if (!status || !status.reference) {
 				return
 			}
+			this.showPaidStatus(status)
+		},
+
+		/**
+		 * Show the reference, the confirmation and the payment of a request
+		 * the resident came back to from the payment page.
+		 *
+		 * @param {object} status The request's status.
+		 * @return {void}
+		 */
+		showPaidStatus(status) {
 			this.reference = status.reference
 			this.moments = status.confirmation || {}
 			this.payment = status.payment || null
 			this.state = 'done'
+		},
+
+		/**
+		 * The reference the payment page sent the resident back with, when the
+		 * form asks a fee and is still showing; else ''.
+		 *
+		 * @return {string} The reference, or ''.
+		 */
+		returnedPaymentReference() {
+			const reference = returnedReference(
+				typeof window === 'undefined' ? '' : window.location.search,
+			)
+			if (this.state !== 'form' || reference === '' || !this.render.fee) {
+				return ''
+			}
+			return reference
 		},
 
 		/**
@@ -1125,11 +1386,7 @@ export default {
 		messagesOf(errors) {
 			const out = {}
 			for (const [name, message] of Object.entries(errors || {})) {
-				const text = Array.isArray(message)
-					? message.filter((m) => typeof m === 'string').join(' ')
-					: typeof message === 'string'
-						? message
-						: ''
+				const text = messageText(message)
 				if (text !== '') {
 					out[name] = text
 				}
@@ -1165,36 +1422,65 @@ export default {
 		 */
 		checkFields(names) {
 			const asked = this.fields.filter((field) => names.includes(field.name))
-			const addresses = asked.filter((field) => field.type === 'addressNL')
 			const errors = this.checkPlainFields(names)
 			Object.assign(errors, groupCountErrors(asked, this.values))
-			for (const field of addresses) {
-				const block = this.values[field.name]
-				const problem = addressProblem(block)
-				if (
-					problem !== ''
-					&& (field.required === true || addressLine(block) !== '')
-				) {
-					errors[field.name] = problem
-				}
+			for (const field of asked.filter((entry) => entry.type === 'addressNL')) {
+				this.checkAddress(field, errors)
 			}
+			this.checkVerifications(asked, errors)
+			return errors
+		},
+
+		/**
+		 * Ask for the code of every e-mail address that must be verified first.
+		 *
+		 * @param {Array<object>} asked The fields being checked.
+		 * @param {Record<string, string>} errors The errors so far, added to.
+		 * @return {void}
+		 */
+		checkVerifications(asked, errors) {
 			for (const field of asked) {
-				const address = String(this.values[field.name] ?? '')
-					.trim()
-					.toLowerCase()
-				if (
-					field.type === 'email'
-					&& field.verify === true
-					&& address !== ''
-					&& !errors[field.name]
-					&& !this.verifiedEmails[address]
-				) {
+				if (this.waitsForVerification(field, errors)) {
 					errors[field.name] = identityWords(
 						document.documentElement?.lang,
 					).emailVerifyFirst
 				}
 			}
-			return errors
+		},
+
+		/**
+		 * Add an address field's problem to the errors when it is required or
+		 * partly filled in.
+		 *
+		 * @param {object} field The address field.
+		 * @param {Record<string, string>} errors The errors so far, added to.
+		 * @return {void}
+		 */
+		checkAddress(field, errors) {
+			const block = this.values[field.name]
+			const problem = addressProblem(block)
+			if (problem === '') {
+				return
+			}
+			if (field.required === true || addressLine(block) !== '') {
+				errors[field.name] = problem
+			}
+		},
+
+		/**
+		 * Whether an e-mail field that asks for verification holds an address
+		 * that is otherwise fine but not verified yet.
+		 *
+		 * @param {object} field The field.
+		 * @param {Record<string, string>} errors The errors so far.
+		 * @return {boolean} True when the resident must verify it first.
+		 */
+		waitsForVerification(field, errors) {
+			if (field.type !== 'email' || field.verify !== true) {
+				return false
+			}
+			const address = addressKey(this.values[field.name])
+			return address !== '' && !errors[field.name] && !this.verifiedEmails[address]
 		},
 
 		/**
@@ -1206,9 +1492,7 @@ export default {
 		 * @spec openspec/changes/resident-identity-in-forms/tasks.md#t03
 		 */
 		onVerified(verified) {
-			const address = String(verified?.address ?? '')
-				.trim()
-				.toLowerCase()
+			const address = addressKey(verified?.address)
 			if (address === '') {
 				return
 			}
@@ -1219,9 +1503,7 @@ export default {
 				}
 				return
 			}
-			const rest = { ...this.verifiedEmails }
-			delete rest[address]
-			this.verifiedEmails = rest
+			this.verifiedEmails = withoutAddress(this.verifiedEmails, address)
 		},
 
 		/**
@@ -1233,6 +1515,25 @@ export default {
 		 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t02
 		 */
 		checkPlainFields(names) {
+			return plainFieldErrors(
+				this.fields
+					.filter((field) => names.includes(field.name))
+					.filter(
+						(field) =>
+							field.type !== 'group' && !this.isComputedField(field),
+					)
+					.map(plainCheck),
+				this.plainValues(),
+			)
+		},
+
+		/**
+		 * The answers as the plain checks read them: an address as its line,
+		 * family members as one comma-separated text.
+		 *
+		 * @return {Record<string, string|object>} The answers.
+		 */
+		plainValues() {
 			const values = { ...this.values }
 			for (const field of this.fields) {
 				if (field.type === 'addressNL') {
@@ -1242,22 +1543,7 @@ export default {
 					values[field.name] = (values[field.name] || []).join(',')
 				}
 			}
-			return plainFieldErrors(
-				this.fields
-					.filter((field) => names.includes(field.name))
-					.filter(
-						(field) =>
-							field.type !== 'group' && !this.isComputedField(field),
-					)
-					.map((field) => ({
-						name: field.name,
-						label: field.label || field.name,
-						required: field.required === true,
-						date: this.isDate(field),
-						format: typeof field.format === 'string' ? field.format : '',
-					})),
-				values,
-			)
+			return values
 		},
 
 		/**
@@ -1270,41 +1556,15 @@ export default {
 		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-form-with-steps-must-end-with-a-review-and-a-confirmation-req-smf-011
 		 */
 		answerText(field) {
-			if (field.type === 'signature') {
-				return this.values[field.name]
-					? identityWords(document.documentElement?.lang).signatureSet
-					: ''
-			}
-			if (field.type === 'addressNL') {
-				return addressLine(this.values[field.name])
-			}
-			if (field.type === 'familyMembers') {
-				return (this.values[field.name] || []).length + ''
-			}
-			if (field.type === 'group') {
-				return (this.values[field.name] || [])
-					.map((item) => {
-						const lines = itemLines(field, item)
-						return [lines.first, lines.rest].filter(Boolean).join(', ')
-					})
-					.join('; ')
+			if (Object.hasOwn(TYPED_ANSWERS, field.type)) {
+				return TYPED_ANSWERS[field.type](field, this.values[field.name])
 			}
 			const value = String(this.values[field.name] ?? '')
-			const option = (Array.isArray(field.options) ? field.options : []).find(
-				(entry) => String(entry?.value ?? entry) === value,
-			)
+			const option = chosenOption(field, value)
 			if (option !== undefined) {
-				return String(option?.label ?? option)
+				return optionLabel(option)
 			}
-			if (this.isDate(field) && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
-				const [year, month, day] = value.split('-').map(Number)
-				return new Intl.DateTimeFormat('nl', {
-					day: 'numeric',
-					month: 'long',
-					year: 'numeric',
-				}).format(new Date(year, month - 1, day))
-			}
-			return value
+			return this.isDate(field) && ISO_DAY.test(value) ? dutchDay(value) : value
 		},
 
 		/**
