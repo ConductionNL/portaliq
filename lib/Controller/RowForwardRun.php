@@ -31,6 +31,8 @@ use OCA\Portaliq\Contribution\RowActionInputs;
 
 /**
  * One row-scoped forward in progress.
+ *
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
  */
 final class RowForwardRun {
 
