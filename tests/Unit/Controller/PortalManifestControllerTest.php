@@ -23,6 +23,9 @@ use ReflectionProperty;
  */
 class PortalManifestControllerTest extends TestCase {
 
+	private const MANIFEST = '{"name":"Gemeente X","short_name":"Gemeente X","start_url":"/index.php/apps/portaliq/route/portaliq.portalPage.site?org=gemeente-x","scope":"/index.php/apps/portaliq/route/portaliq.portalPage.site?","display":"standalone","background_color":"#ffffff","theme_color":"#ffffff","icons":[{"src":"/index.php/apps/portaliq/img/app.svg","sizes":"any","type":"image/svg+xml"}]}';
+
+
 	/**
 	 * The slug the resolver was asked for.
 	 *
@@ -47,6 +50,18 @@ class PortalManifestControllerTest extends TestCase {
 	 * @var list<string>
 	 */
 	private array $cleanUp = [];
+
+	/**
+	 * The whole manifest body and status, key order included, as recorded.
+	 *
+	 * @return void
+	 */
+	public function testTheWholeManifestIsAsRecorded(): void {
+		$response = $this->controller(orgSlug: 'gemeente-x', resolved: ['organisationName' => 'Gemeente X'])->manifest();
+
+		$this->assertSame(200, $response->getStatus());
+		$this->assertSame(self::MANIFEST, (string)$response->getData());
+	}//end testTheWholeManifestIsAsRecorded()
 
 	public function testManifestNamesTheResolvedOrganisation(): void {
 		$controller = $this->controller(orgSlug: 'gemeente-x', resolved: ['organisationName' => 'Gemeente X']);
