@@ -11,7 +11,7 @@
 
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { tasksOfCase } from '../src/shared/casePage.js'
+import { bannerSentence, dayWords, nextStepView, tasksOfCase } from '../src/shared/casePage.js'
 
 const COLLECTION = { id: 'taken', caseField: 'zaak', closedField: 'done', label: 'Taak' }
 
@@ -85,4 +85,46 @@ test('tasks come soonest due first, undated and unreadable last, ties in read or
 		tasksOfCase(reads, ['Z1']).map((task) => task.id),
 		['early', 'late', 'late2', 'none', 'bad'],
 	)
+})
+
+test('a day reads in the page language, with the year when asked, and nothing for no date', () => {
+	assert.equal(dayWords('2026-10-18', 'nl'), '18 oktober')
+	assert.equal(dayWords('2026-10-18', 'en'), '18 October')
+	assert.equal(dayWords('2026-10-18', 'en-US', true), '18 October 2026')
+	assert.equal(dayWords('2026-10-18', '', true), '18 oktober 2026')
+	assert.equal(dayWords('', 'nl'), '')
+	assert.equal(dayWords('someday', 'nl'), '')
+})
+
+test('the banner names what it knows and leaves the rest out', () => {
+	const echo = (key, vars) => `${key}|${JSON.stringify(vars ?? null)}`
+	const tasks = [{ due: '' }, { due: '2026-10-18' }]
+	assert.equal(bannerSentence(null, '2026-11-01', echo, 'nl'), '')
+	assert.equal(
+		bannerSentence(tasks, '2026-11-01', echo, 'nl'),
+		'We still need documents from you. Send them before {due}, and we will decide by {legal}.|{"due":"18 oktober","legal":"1 november"}',
+	)
+	assert.equal(
+		bannerSentence(tasks, '', echo, 'nl'),
+		'We still need documents from you. Send them before {due}.|{"due":"18 oktober"}',
+	)
+	assert.equal(bannerSentence([{ due: '' }], '2026-11-01', echo, 'nl'), 'We still need documents from you.|null')
+})
+
+test('the step button follows its kind, and the next step its label', () => {
+	const task = { type: 'upload' }
+	const view = (action, offered = () => true) =>
+		nextStepView({ action, next: { label: 'Besluit' } }, [{ type: 'x' }, task], offered)
+	assert.deepEqual(view({ label: 'Upload', kind: 'task', target: 'upload' }), {
+		button: { label: 'Upload', kind: 'task', task },
+		next: 'Besluit',
+	})
+	assert.equal(view({ label: 'Upload', kind: 'task', target: 'sign' }).button, null)
+	assert.deepEqual(view({ label: 'Hulp', kind: 'page', target: '/hulp' }).button, { label: 'Hulp', kind: 'page', route: '/hulp' })
+	assert.deepEqual(view({ label: 'Trek in', kind: 'action', target: 'withdraw' }).button, { label: 'Trek in', kind: 'action', id: 'withdraw' })
+	assert.equal(view({ label: 'Trek in', kind: 'action', target: 'withdraw' }, () => 'yes').button, null)
+	assert.equal(view({ label: 'Iets', kind: 'other', target: 'x' }).button, null)
+	assert.equal(view({ label: 3, kind: 'page', target: '/x' }).button, null)
+	assert.deepEqual(nextStepView(null, null, () => true), { button: null, next: '' })
+	assert.equal(nextStepView({ action: { label: 'U', kind: 'task', target: 'upload' } }, null, () => true).button, null)
 })
