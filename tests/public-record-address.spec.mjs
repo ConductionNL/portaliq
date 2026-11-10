@@ -31,8 +31,8 @@ function recording(body) {
 
 test('a list and a record are read from their encoded address', async () => {
 	const send = recording({ entries: [{ id: 1 }], record: { id: 1 } })
-	assert.deepEqual(await fetchRecordList('/api/content/', 'deci diq', 'list/1', send), [{ id: 1 }])
-	await fetchRecord('/apps/portaliq/api/content', 'decidiq', 'l', 'r/1 2', send)
+	assert.deepEqual(await fetchRecordList({ apiBase: '/api/content/', app: 'deci diq', list: 'list/1' }, send), [{ id: 1 }])
+	await fetchRecord({ apiBase: '/apps/portaliq/api/content', app: 'decidiq', list: 'l', id: 'r/1 2' }, send)
 	assert.deepEqual(send.urls, [
 		'/api/public-records/deci%20diq/list%2F1',
 		'/apps/portaliq/api/public-records/decidiq/l/r%2F1%202',

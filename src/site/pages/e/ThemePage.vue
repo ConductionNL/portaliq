@@ -404,13 +404,12 @@ export default {
 				product.rows.length > PRODUCT_LIMIT
 				|| sortedProducts(product.rows, product.collection, this.day).some(
 					(row) =>
-						productView(
-							row,
-							product.collection,
-							this.day,
-							(d) => d,
-							this.t,
-						).state === 'expired',
+						productView(row, {
+							collection: product.collection,
+							today: this.day,
+							format: (d) => d,
+							t: this.t,
+						}).state === 'expired',
 				)
 			)
 		},
@@ -427,13 +426,12 @@ export default {
 			const list = this.allProducts ? sorted : sorted.slice(0, PRODUCT_LIMIT)
 			return list.map((row) => ({
 				row,
-				view: productView(
-					row,
-					product.collection,
-					this.day,
-					(date) => this.dateOf(date),
-					this.t,
-				),
+				view: productView(row, {
+					collection: product.collection,
+					today: this.day,
+					format: (date) => this.dateOf(date),
+					t: this.t,
+				}),
 				actions: rowActions(row, product, this.gathered.actions),
 			}))
 		},

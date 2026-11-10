@@ -262,13 +262,12 @@ export default {
 			this.sending = true
 			this.failed = false
 			this.errors = {}
-			const result = await sendReply(
-				this.api,
-				this.message,
-				this.reply,
-				this.values,
-				this.files,
-			)
+			const result = await sendReply(this.api, {
+				message: this.message,
+				reply: this.reply,
+				values: this.values,
+				filesByField: this.files,
+			})
 			this.sending = false
 			if (!result.ok) {
 				this.errors = result.errors
