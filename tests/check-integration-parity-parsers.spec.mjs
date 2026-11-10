@@ -138,28 +138,30 @@ test('splitTopLevel splits on depth-zero commas only', () => {
 })
 
 test('resolvePhp reads literals, translations, constants and arrays', () => {
-	const locals = { LABEL: 'Local', LIST: ['x'] }
-	const globals = { 'Other::NAME': 'Global' }
-	assert.equal(P.resolvePhp(" 'it\\'s' ", locals, globals), "it's")
-	assert.equal(P.resolvePhp('"say \\"hi\\""', locals, globals), 'say "hi"')
-	assert.equal(P.resolvePhp("$this->l10n->t('Hello', [$a])", locals, globals), 'Hello')
-	assert.equal(P.resolvePhp('$this->l->t("Dq")', locals, globals), 'Dq')
-	assert.equal(P.resolvePhp('self::LABEL', locals, globals), 'Local')
-	assert.deepEqual(P.resolvePhp('static::LIST', locals, globals), ['x'])
-	assert.equal(P.resolvePhp('self::MISSING', locals, globals), null)
-	assert.equal(P.resolvePhp('Other::NAME', locals, globals), 'Global')
-	assert.equal(P.resolvePhp('Other::NONE', locals, globals), null)
+	const consts = {
+		local: { LABEL: 'Local', LIST: ['x'] },
+		global: { 'Other::NAME': 'Global' },
+	}
+	assert.equal(P.resolvePhp(" 'it\\'s' ", consts), "it's")
+	assert.equal(P.resolvePhp('"say \\"hi\\""', consts), 'say "hi"')
+	assert.equal(P.resolvePhp("$this->l10n->t('Hello', [$a])", consts), 'Hello')
+	assert.equal(P.resolvePhp('$this->l->t("Dq")', consts), 'Dq')
+	assert.equal(P.resolvePhp('self::LABEL', consts), 'Local')
+	assert.deepEqual(P.resolvePhp('static::LIST', consts), ['x'])
+	assert.equal(P.resolvePhp('self::MISSING', consts), null)
+	assert.equal(P.resolvePhp('Other::NAME', consts), 'Global')
+	assert.equal(P.resolvePhp('Other::NONE', consts), null)
 	assert.equal(
-		P.resolvePhp('LeafDescriptor::RENDER_MODE_MOUNT', locals, globals),
+		P.resolvePhp('LeafDescriptor::RENDER_MODE_MOUNT', consts),
 		'mount',
 	)
-	assert.deepEqual(P.resolvePhp("['a', self::LABEL]", locals, globals), [
+	assert.deepEqual(P.resolvePhp("['a', self::LABEL]", consts), [
 		'a',
 		'Local',
 	])
-	assert.equal(P.resolvePhp("['a', $b]", locals, globals), null)
-	assert.equal(P.resolvePhp("['a', ['b']]", locals, globals), null)
-	assert.equal(P.resolvePhp('$dynamic', locals, globals), null)
+	assert.equal(P.resolvePhp("['a', $b]", consts), null)
+	assert.equal(P.resolvePhp("['a', ['b']]", consts), null)
+	assert.equal(P.resolvePhp('$dynamic', consts), null)
 })
 
 test('resolveJs reads literals, t() calls, arrays and local names', () => {
