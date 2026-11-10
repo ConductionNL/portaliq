@@ -137,6 +137,18 @@ class PortalEmbedController extends Controller {
 			);
 		}
 
+		if ($this->needsPortalSteps(render: $render) === true) {
+			// The frame has no anti-bot challenge, statements or e-mail code step,
+			// and the embed submit refuses a form that asks for them. Rendering its
+			// fields would let the visitor fill in a form that can never be sent,
+			// so the frame offers the portal's own page instead (pq-f6).
+			return $this->refusal(
+				binding: $binding,
+				reason: 'portal_steps_required',
+				extra: ['portalUrl' => $this->urls->linkToRouteAbsolute('portaliq.portalPage.site') . '?route=' . rawurlencode($route)]
+			);
+		}
+
 		return $this->framed(
 			binding: $binding,
 			payload: [
@@ -322,6 +334,56 @@ class PortalEmbedController extends Controller {
 
 		return $response;
 	}//end framed()
+
+	/**
+	 * Whether the form asks for a step only the portal's own page has: the
+	 * anti-bot challenge, statements, or an e-mail address confirmed with a code.
+	 *
+	 * @param array<string, mixed> $render What render() returned for the form.
+	 *
+	 * @return bool True when the frame cannot complete this form.
+	 *
+	 * @spec openspec/changes/embedded-intake-form/specs/embedded-intake-form/spec.md
+	 */
+	private function needsPortalSteps(array $render): bool {
+		$settings = (array)($render['settings'] ?? []);
+		if (($settings['challenge'] ?? false) === true) {
+			return true;
+		}
+
+		if (empty($settings['statementsDeclared']) === false) {
+			return true;
+		}
+
+		return $this->hasVerifiedEmailField(fields: (array)($render['fields'] ?? []));
+	}//end needsPortalSteps()
+
+	/**
+	 * Whether any field, nested ones included, is an e-mail field with `verify: true`.
+	 *
+	 * @param array<int|string, mixed> $fields The form's fields.
+	 *
+	 * @return bool True when one asks for an e-mail code.
+	 *
+	 * @spec openspec/changes/embedded-intake-form/specs/embedded-intake-form/spec.md
+	 */
+	private function hasVerifiedEmailField(array $fields): bool {
+		foreach ($fields as $field) {
+			if (is_array($field) === false) {
+				continue;
+			}
+
+			if (($field['type'] ?? '') === 'email' && ($field['verify'] ?? false) === true) {
+				return true;
+			}
+
+			if (is_array($field['fields'] ?? null) === true && $this->hasVerifiedEmailField(fields: $field['fields']) === true) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end hasVerifiedEmailField()
 
 	/**
 	 * A frame that renders a message and no form.

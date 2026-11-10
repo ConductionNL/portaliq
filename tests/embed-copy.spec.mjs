@@ -34,7 +34,7 @@ test('a payload carrying a form produces no refusal', () => {
 
 test('every refusal the controller can return has its own sentence', () => {
 	// The reasons PortalEmbedController::refusal() passes, by name.
-	for (const reason of ['form_not_found', 'origin_not_allowed', 'form_not_published', 'identified_intake']) {
+	for (const reason of ['form_not_found', 'origin_not_allowed', 'form_not_published', 'identified_intake', 'portal_steps_required']) {
 		const said = refusalSentence({ refused: reason })
 
 		assert.ok(said, `${reason} must say something`)

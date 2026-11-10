@@ -345,6 +345,66 @@ class PortalEmbedControllerTest extends TestCase {
 	}//end testAChallengeTheFormAsksForCannotBeSkippedThroughTheFrame()
 
 	/**
+	 * pq-f6: a form that asks for a step the frame does not have (the anti-bot
+	 * challenge, statements, an e-mail code) is not framed: the visitor is sent to
+	 * the portal's own page instead of filling in a form the submit refuses.
+	 *
+	 * @return array<string, array{0: callable(array<string, mixed>): array<string, mixed>}>
+	 */
+	public static function portalOnlyStepForms(): array {
+		return [
+			'challenge' => [static function (array $render): array {
+				$render['settings']['challenge'] = true;
+				return $render;
+			}],
+			'statements' => [static function (array $render): array {
+				$render['settings']['statementsDeclared'] = ['privacy' => ['required' => true]];
+				return $render;
+			}],
+			'verified e-mail' => [static function (array $render): array {
+				$render['fields'][] = ['name' => 'email', 'type' => 'email', 'verify' => true];
+				return $render;
+			}],
+			'verified e-mail in a group' => [static function (array $render): array {
+				$render['fields'][] = ['name' => 'contact', 'type' => 'group', 'fields' => [['name' => 'email', 'type' => 'email', 'verify' => true]]];
+				return $render;
+			}],
+		];
+	}//end portalOnlyStepForms()
+
+	/**
+	 * @dataProvider portalOnlyStepForms
+	 *
+	 * @param callable(array<string, mixed>): array<string, mixed> $shape Adds the portal-only step.
+	 */
+	public function testAFormWithAPortalOnlyStepLinksToThePortal(callable $shape): void {
+		$controller = $this->controller(origin: 'https://www.gemeente.nl', render: $shape($this->plainForm()));
+
+		$params = $controller->frame(route: 'aanvragen/verhuizing')->getParams()['embed'];
+
+		$this->assertSame('portal_steps_required', $params['refused']);
+		$this->assertSame([], $params['fields']);
+		$this->assertStringContainsString('https://portaal.example.org/site', $params['portalUrl']);
+		$this->assertStringContainsString('route=aanvragen%2Fverhuizing', $params['portalUrl']);
+	}//end testAFormWithAPortalOnlyStepLinksToThePortal()
+
+	/**
+	 * pq-f6: an e-mail field without `verify` and an empty statements list stay framed.
+	 */
+	public function testAnUnverifiedEmailFieldAndNoStatementsStayFramed(): void {
+		$render = $this->plainForm();
+		$render['fields'][] = ['name' => 'email', 'type' => 'email'];
+		$render['settings']['statementsDeclared'] = [];
+		$render['settings']['challenge'] = false;
+		$controller = $this->controller(origin: 'https://www.gemeente.nl', render: $render);
+
+		$params = $controller->frame(route: 'aanvragen/verhuizing')->getParams()['embed'];
+
+		$this->assertArrayNotHasKey('refused', $params);
+		$this->assertSame(['postcode', 'email'], array_column($params['fields'], 'name'));
+	}//end testAnUnverifiedEmailFieldAndNoStatementsStayFramed()
+
+	/**
 	 * pq-f1: a calculated value and a rule-engine outcome the browser sent are
 	 * replaced by the server's own before anything reaches the destination,
 	 * exactly as on the portal's own submit (REQ-FFL-002/003).
