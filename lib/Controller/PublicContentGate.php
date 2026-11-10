@@ -29,8 +29,8 @@ use OCP\AppFramework\Http\JSONResponse;
 /**
  * Who may read a portal's public content, and the answers that refuse it.
  *
- * The using controller provides `$request` and `$session`
- * (PortalSessionService).
+ * The using controller provides `$request`, `$session`
+ * (PortalSessionService) and `$resolver` (PortalResolver).
  *
  * @SuppressWarnings(PHPMD.StaticAccess) -- PortalSessionService::trustSatisfies is the single
  * trust comparator, called statically everywhere so the ordering cannot fork (as in ContentController).
@@ -38,6 +38,24 @@ use OCP\AppFramework\Http\JSONResponse;
  * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-news-item-shows-on-a-portals-public-website-only-when-staff-put-it-there
  */
 trait PublicContentGate {
+	/**
+	 * The portal of this request when this caller may read its content, else
+	 * the answer that refuses: the shared 404 for an unknown portal, or the
+	 * gate's 401 / 403.
+	 *
+	 * @param string|null $portal The portal slug; else resolved from the request.
+	 *
+	 * @return array<string, mixed>|JSONResponse The resolved portal, or the refusal.
+	 */
+	private function permittedPortal(string|null $portal): array|JSONResponse {
+		$resolved = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
+		if ($resolved === null) {
+			return $this->notFound();
+		}
+
+		return ($this->refuseUnlessPermitted(portal: $resolved) ?? $resolved);
+	}//end permittedPortal()
+
 	/**
 	 * Refuse a CONTENT read the resolved portal does not allow this caller.
 	 *
