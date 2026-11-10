@@ -45,23 +45,4 @@ final class NoticeQuery {
 		public readonly DateTimeImmutable $now,
 	) {
 	}//end __construct()
-
-	/**
-	 * Whether a window holds now: started, and not yet ended. A window with
-	 * a missing or unreadable end point holds never.
-	 *
-	 * @param DateTimeImmutable|null $starts When the notice starts.
-	 * @param DateTimeImmutable|null $ends   When the notice ends.
-	 *
-	 * @return bool
-	 *
-	 * @spec openspec/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
-	 */
-	public function covers(?DateTimeImmutable $starts, ?DateTimeImmutable $ends): bool {
-		if ($starts === null || $ends === null) {
-			return false;
-		}
-
-		return $starts <= $this->now && $ends > $this->now;
-	}//end covers()
 }//end class

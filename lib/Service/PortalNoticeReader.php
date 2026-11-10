@@ -168,13 +168,30 @@ class PortalNoticeReader {
 	 * @return bool
 	 */
 	private static function isActive(array $row, NoticeQuery $query): bool {
-		$starts = self::time(value: ($row['startsAt'] ?? null));
-		$ends   = self::time(value: ($row['endsAt'] ?? null));
-
 		return self::idOf(row: $row) !== ''
-			&& $query->covers(starts: $starts, ends: $ends) === true
+			&& self::isRunning(row: $row, now: $query->now) === true
 			&& self::isShown(row: $row, query: $query) === true;
 	}//end isActive()
+
+
+	/**
+	 * Whether a row's window holds now: started, and not yet ended. A window
+	 * with a missing or unreadable end point holds never.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 * @param DateTimeImmutable    $now Now.
+	 *
+	 * @return bool
+	 */
+	private static function isRunning(array $row, DateTimeImmutable $now): bool {
+		$starts = self::time(value: ($row['startsAt'] ?? null));
+		$ends   = self::time(value: ($row['endsAt'] ?? null));
+		if ($starts === null || $ends === null) {
+			return false;
+		}
+
+		return $starts <= $now && $ends > $now;
+	}//end isRunning()
 
 
 	/**
