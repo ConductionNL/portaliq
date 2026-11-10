@@ -538,6 +538,39 @@ class SessionController extends Controller {
 			return $this->toBroker(org: $org, provider: $provider, siteReturn: $siteReturn, site: $site);
 		}
 
+		$run = new OidcStartRun(org: $org, provider: $provider);
+		$run->site       = $site;
+		$run->siteReturn = $siteReturn;
+		$run->prompt     = $this->brokerPrompt(silent: $silent);
+		return $this->startOidcLogin(run: $run);
+	}//end oidcStart()
+
+	/**
+	 * The broker prompt a start asks for: a silent start asks for no prompt
+	 * (signin-session-idle-warning-and-sso D5).
+	 *
+	 * @param string $silent `1` for a silent start.
+	 *
+	 * @return string
+	 */
+	private function brokerPrompt(string $silent): string {
+		if ($silent === '1') {
+			return 'none';
+		}
+
+		return '';
+	}//end brokerPrompt()
+
+	/**
+	 * Start the OIDC login once the organisation's policy allows the
+	 * provider: resolve and discover it, store the single-use state and
+	 * redirect to the broker; the generic error on any failure.
+	 *
+	 * @param OidcStartRun $run The start, with its organisation and provider.
+	 *
+	 * @return Response
+	 */
+	private function startOidcLogin(OidcStartRun $run): Response {
 		// THE AUTHORISATION DECISION, MADE EXPLICITLY AND BEFORE ANY SECRET IS
 		// TOUCHED. `resolveOidcConfig()` answers two different questions at
 		// once — "may this org+provider start a login" and "give me the client
@@ -545,56 +578,91 @@ class SessionController extends Controller {
 		// the public entry point states its policy in one named predicate that
 		// can be tested on its own, and the secret-bearing resolver is only
 		// reached once that policy has said yes.
-		if ($this->orgConfig->isLoginProviderAllowed(orgSlug: $org, provider: $provider) === false) {
+		if ($this->orgConfig->isLoginProviderAllowed(orgSlug: $run->org, provider: $run->provider) === false) {
 			return $this->oidcGenericError();
 		}
 
+		$provider = $this->discoveredProvider(org: $run->org, provider: $run->provider);
+		if ($provider === null) {
+			return $this->oidcGenericError();
+		}
+
+		$run->config    = $provider['config'];
+		$run->endpoints = $provider['endpoints'];
+		if ($this->storeStartState(run: $run) === false) {
+			return $this->oidcGenericError();
+		}
+
+		// Explicit 302 (design.md) — RedirectResponse's own default is 303.
+		return new RedirectResponse($this->authorizationUrl(run: $run), Http::STATUS_FOUND);
+	}//end startOidcLogin()
+
+	/**
+	 * The organisation's provider configuration and its discovered
+	 * endpoints, or null when either cannot be resolved.
+	 *
+	 * @param string $org      The organisation slug.
+	 * @param string $provider The login provider.
+	 *
+	 * @return array{config: array<string, mixed>, endpoints: array<string, string>}|null
+	 */
+	private function discoveredProvider(string $org, string $provider): ?array {
 		$config = $this->orgConfig->resolveOidcConfig(orgSlug: $org, provider: $provider);
 		if ($config === null) {
-			return $this->oidcGenericError();
+			return null;
 		}
 
 		$endpoints = $this->oidc->discover(issuer: (string)$config['issuer']);
 		if ($endpoints === null) {
-			return $this->oidcGenericError();
+			return null;
 		}
 
-		$state = $this->oidc->generateToken();
-		$nonce = $this->oidc->generateToken();
-		$pkce = $this->oidc->generatePkce();
-		// A silent start asks the broker for no prompt (signin-session-idle-warning-and-sso D5).
-		$prompt = '';
-		if ($silent === '1') {
-			$prompt = 'none';
-		}
+		return ['config' => $config, 'endpoints' => $endpoints];
+	}//end discoveredProvider()
 
-		$stored = $this->stateStore->create(
-			state: $state,
-			nonce: $nonce,
-			codeVerifier: $pkce['verifier'],
-			org: $org,
-			provider: $provider,
-			returnTo: $this->returnAddress(siteReturn: $siteReturn, site: $site),
-			silent: ($prompt === 'none')
+	/**
+	 * Mint the state, nonce and PKCE pair and store them single-use and
+	 * TTL-bounded with where the login returns.
+	 *
+	 * @param OidcStartRun $run The start, with its provider resolved.
+	 *
+	 * @return bool Whether the state was stored.
+	 */
+	private function storeStartState(OidcStartRun $run): bool {
+		$run->state = $this->oidc->generateToken();
+		$run->nonce = $this->oidc->generateToken();
+		$run->pkce  = $this->oidc->generatePkce();
+
+		return $this->stateStore->create(
+			state: $run->state,
+			nonce: $run->nonce,
+			codeVerifier: $run->pkce['verifier'],
+			org: $run->org,
+			provider: $run->provider,
+			returnTo: $this->returnAddress(siteReturn: $run->siteReturn, site: $run->site),
+			silent: ($run->prompt === 'none')
 		);
-		if ($stored === false) {
-			return $this->oidcGenericError();
-		}
+	}//end storeStartState()
 
-		$url = $this->oidc->buildAuthorizationUrl(
-			authorizeEndpoint: $endpoints['authorization_endpoint'],
-			clientId: (string)$config['clientId'],
+	/**
+	 * The broker's authorization URL for a stored start.
+	 *
+	 * @param OidcStartRun $run The start, with its state stored.
+	 *
+	 * @return string
+	 */
+	private function authorizationUrl(OidcStartRun $run): string {
+		return $this->oidc->buildAuthorizationUrl(
+			authorizeEndpoint: $run->endpoints['authorization_endpoint'],
+			clientId: (string)$run->config['clientId'],
 			redirectUri: $this->oidcRedirectUri(),
-			scopes: (array)$config['scopes'],
-			state: $state,
-			nonce: $nonce,
-			codeChallenge: $pkce['challenge'],
-			prompt: $prompt
+			scopes: (array)$run->config['scopes'],
+			state: $run->state,
+			nonce: $run->nonce,
+			codeChallenge: $run->pkce['challenge'],
+			prompt: $run->prompt
 		);
-
-		// Explicit 302 (design.md) — RedirectResponse's own default is 303.
-		return new RedirectResponse($url, Http::STATUS_FOUND);
-	}//end oidcStart()
+	}//end authorizationUrl()
 
 
 	/**
@@ -692,18 +760,13 @@ class SessionController extends Controller {
 	 * @return OidcLoginRun|null
 	 */
 	private function withOidcProvider(OidcLoginRun $run): ?OidcLoginRun {
-		$config = $this->orgConfig->resolveOidcConfig(orgSlug: $run->pending['org'], provider: $run->pending['provider']);
-		if ($config === null) {
+		$provider = $this->discoveredProvider(org: $run->pending['org'], provider: $run->pending['provider']);
+		if ($provider === null) {
 			return null;
 		}
 
-		$endpoints = $this->oidc->discover(issuer: (string)$config['issuer']);
-		if ($endpoints === null) {
-			return null;
-		}
-
-		$run->config    = $config;
-		$run->endpoints = $endpoints;
+		$run->config    = $provider['config'];
+		$run->endpoints = $provider['endpoints'];
 		return $run;
 	}//end withOidcProvider()
 
