@@ -122,87 +122,156 @@ class PortalContributionRegistry {
 	 * @spec openspec/changes/update-row-action-condition/specs/portal-contribution-contract/spec.md#requirement-a-malformed-row-condition-must-be-dropped-with-a-warning-req-urc-002
 	 */
 	public function aggregateFor(array $subject): array {
-		$audience = (string)($subject['audience'] ?? '');
-		$trust = PortalSessionService::normaliseTrust(trust: ($subject['trust'] ?? ''));
-		$contributions = [];
-		$stepUp = [];
-
+		$run = new AggregateRun(subject: $subject, trust: PortalSessionService::normaliseTrust(trust: ($subject['trust'] ?? '')));
 		foreach ($this->appManager->getInstalledApps() as $appId) {
-			$provider = $this->resolveProvider(appId: (string)$appId);
-			// The method_exists checks narrow for static analysis; duck typing
-			// means a contributing app does NOT need to implement (and thus
-			// hard-depend on) Portaliq's interface — only the two methods.
-			if ($provider === null || method_exists($provider, 'getContribution') === false) {
-				continue;
-			}
-
-			if ($this->servesAudience(provider: $provider, audience: $audience) === false) {
-				continue;
-			}
-
-			try {
-				$contribution = $this->locator->contributionOf(provider: $provider, subject: $subject);
-			} catch (Throwable $e) {
-				$this->logger->error('Portaliq: contribution provider failed', ['app' => $appId, 'reason' => $e->getMessage()]);
-				continue;
-			}
-
-			if (is_array($contribution) === false) {
-				continue;
-			}
-
-			$contribution['app'] = $appId;
-			$contribution = (new PublicRecordsNormaliser())->attach(contribution: $contribution, provider: $provider, appId: (string)$appId);
-			$stepUp = array_merge($stepUp, $this->droppedForTrust(contribution: $contribution, trust: $trust, appId: (string)$appId));
-			$filtered = $this->filterByTrust(contribution: $contribution, trust: $trust);
-
-			// Sanitise the v3 UI-configuration vocabulary AFTER trust filtering,
-			// so a surviving page can never reference a trust-dropped entry. The
-			// normaliser is fail-closed and never throws; guard anyway so a
-			// provider config bug degrades to the un-normalised (but trust-
-			// filtered) manifest rather than a 500.
-			// The audiences the provider serves bound a start tile's
-			// `audiences` (site-nlds-widget-palette D6); input only.
-			$filtered['servedAudiences'] = $this->providerAudiences(provider: $provider);
-			try {
-				$filtered = $this->normaliser->normalise(contribution: $filtered);
-			} catch (Throwable $e) {
-				$this->logger->error('Portaliq: manifest normalisation failed', ['app' => $appId, 'reason' => $e->getMessage()]);
-			}
-
-			unset($filtered['servedAudiences']);
-
-			// A row action's `rowWhen` (update-row-action-condition): an
-			// unknown operator or a malformed update condition is dropped and
-			// logged with the app that declared it.
-			$filtered = (new RowWhenNormaliser())->normaliseContribution(
-				contribution: $filtered,
-				appId: (string)$appId,
-				logger: $this->logger
-			);
-
-			$contributions[] = (new NotificationRuleNormaliser())->normaliseContribution(
-				contribution: $filtered,
-				appId: (string)$appId,
-				logger: $this->logger
-			);
-		}//end foreach
+			$this->collectContribution(run: $run, appId: (string)$appId);
+		}
 
 		// Actions that attach to another app's collection (woo-journey-entry-
 		// points D3) resolve across contributions, so only once all are in.
-		$contributions = (new AttachedActionResolver())->resolve(contributions: $contributions);
+		$contributions = (new AttachedActionResolver())->resolve(contributions: $run->contributions);
 
 		$aggregate = [
-			'audience' => $audience,
+			'audience' => $run->audience,
 			'organisation' => (string)($subject['organisation'] ?? ''),
 			'contributions' => $contributions,
-			'stepUp' => $stepUp,
+			'stepUp' => $run->stepUp,
 		];
 
 		// The pages a clerk hid for this account, and the collections only
 		// those pages showed (operate-pages-per-portal-and-client REQ-PGC-002).
 		return (new PageChoice())->withoutHidden(aggregate: $aggregate, hidden: $this->hidden->forSubject(subject: $subject));
 	}//end aggregateFor()
+
+	/**
+	 * Add one installed app's contribution to the aggregate, when the app
+	 * provides one for the subject's audience.
+	 *
+	 * @param AggregateRun $run   The aggregate.
+	 * @param string       $appId The installed app.
+	 *
+	 * @return void
+	 */
+	private function collectContribution(AggregateRun $run, string $appId): void {
+		$run->appId    = $appId;
+		$run->provider = $this->contributingProvider(run: $run);
+		if ($run->provider === null) {
+			return;
+		}
+
+		$contribution = $this->providedContribution(run: $run, provider: $run->provider);
+		if ($contribution === null) {
+			return;
+		}
+
+		$run->contributions[] = $this->withNormalisedRules(run: $run, contribution: $this->normalisedManifest(run: $run, contribution: $contribution));
+	}//end collectContribution()
+
+	/**
+	 * The app's provider when it contributes and serves the subject's
+	 * audience, else null.
+	 *
+	 * @param AggregateRun $run The aggregate, at the app being read.
+	 *
+	 * @return object|null
+	 */
+	private function contributingProvider(AggregateRun $run): ?object {
+		$provider = $this->resolveProvider(appId: $run->appId);
+		// The method_exists checks narrow for static analysis; duck typing
+		// means a contributing app does NOT need to implement (and thus
+		// hard-depend on) Portaliq's interface — only the two methods.
+		if ($provider === null || method_exists($provider, 'getContribution') === false) {
+			return null;
+		}
+
+		if ($this->servesAudience(provider: $provider, audience: $run->audience) === false) {
+			return null;
+		}
+
+		return $provider;
+	}//end contributingProvider()
+
+	/**
+	 * The provider's contribution for the subject, stamped with its app and
+	 * its public records, or null when the provider fails or gives none.
+	 *
+	 * @param AggregateRun $run      The aggregate, at the app being read.
+	 * @param object       $provider The app's provider.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function providedContribution(AggregateRun $run, object $provider): ?array {
+		try {
+			$contribution = $this->locator->contributionOf(provider: $provider, subject: $run->subject);
+		} catch (Throwable $e) {
+			$this->logger->error('Portaliq: contribution provider failed', ['app' => $run->appId, 'reason' => $e->getMessage()]);
+			return null;
+		}
+
+		if (is_array($contribution) === false) {
+			return null;
+		}
+
+		$contribution['app'] = $run->appId;
+		return (new PublicRecordsNormaliser())->attach(contribution: $contribution, provider: $provider, appId: $run->appId);
+	}//end providedContribution()
+
+	/**
+	 * The contribution filtered to the subject's trust, with the step-up
+	 * hints for what was dropped recorded, and its v3 UI-configuration
+	 * vocabulary sanitised.
+	 *
+	 * Sanitised AFTER trust filtering, so a surviving page can never
+	 * reference a trust-dropped entry. The normaliser is fail-closed and
+	 * never throws; guarded anyway so a provider config bug degrades to the
+	 * un-normalised (but trust-filtered) manifest rather than a 500.
+	 *
+	 * @param AggregateRun         $run          The aggregate, at the app being read.
+	 * @param array<string, mixed> $contribution The provided contribution.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function normalisedManifest(AggregateRun $run, array $contribution): array {
+		$run->stepUp = array_merge($run->stepUp, $this->droppedForTrust(contribution: $contribution, trust: $run->trust, appId: $run->appId));
+		$filtered    = $this->filterByTrust(contribution: $contribution, trust: $run->trust);
+
+		// The audiences the provider serves bound a start tile's
+		// `audiences` (site-nlds-widget-palette D6); input only.
+		$filtered['servedAudiences'] = $this->providerAudiences(provider: $run->provider);
+		try {
+			$filtered = $this->normaliser->normalise(contribution: $filtered);
+		} catch (Throwable $e) {
+			$this->logger->error('Portaliq: manifest normalisation failed', ['app' => $run->appId, 'reason' => $e->getMessage()]);
+		}
+
+		unset($filtered['servedAudiences']);
+		return $filtered;
+	}//end normalisedManifest()
+
+	/**
+	 * The contribution with its row conditions and notification rules
+	 * normalised: an unknown operator or a malformed condition or rule is
+	 * dropped and logged with the app that declared it
+	 * (update-row-action-condition).
+	 *
+	 * @param AggregateRun         $run          The aggregate, at the app being read.
+	 * @param array<string, mixed> $contribution The sanitised contribution.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withNormalisedRules(AggregateRun $run, array $contribution): array {
+		$contribution = (new RowWhenNormaliser())->normaliseContribution(
+			contribution: $contribution,
+			appId: $run->appId,
+			logger: $this->logger
+		);
+
+		return (new NotificationRuleNormaliser())->normaliseContribution(
+			contribution: $contribution,
+			appId: $run->appId,
+			logger: $this->logger
+		);
+	}//end withNormalisedRules()
 
 	/**
 	 * Aggregate the ANONYMOUS-reachable surface across every installed
