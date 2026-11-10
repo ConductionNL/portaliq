@@ -199,6 +199,9 @@ if (interface_exists(\OCA\OpenRegister\Mcp\IMcpToolProvider::class) === false) {
 foreach ([
 	'Exception\\NotImplementedException' => 'Exception/NotImplementedException.php',
 	'Service\\Integration\\IntegrationProvider' => 'Service/Integration/IntegrationProvider.php',
+	'Service\\Integration\\LeafIdentity' => 'Service/Integration/LeafIdentity.php',
+	'Service\\Integration\\LeafAvailability' => 'Service/Integration/LeafAvailability.php',
+	'Service\\Integration\\LeafRendering' => 'Service/Integration/LeafRendering.php',
 	'Service\\Integration\\LeafDescriptor' => 'Service/Integration/LeafDescriptor.php',
 	'Event\\RegisterLeafProvidersEvent' => 'Event/RegisterLeafProvidersEvent.php',
 	// The form submit and draft value objects (openregister #7788, #7964):
