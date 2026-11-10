@@ -82,10 +82,11 @@ function browser(setup) {
 	const docListeners = {}
 	const winListeners = {}
 	const marker = { found: null }
+	const location = { href: setup.href || 'https://site.example/afval?q=papier', host: 'site.example' }
 	const history = {
 		state: { s: 1 },
 		pushState(state, title, url) { seen.requests.push(['history.push', String(url)]); return 'pushed' },
-		replaceState(state, title, url) { seen.requests.push(['history.replace', String(url)]); win.location.href = new URL(String(url), win.location.href).href; return 'replaced' },
+		replaceState(state, title, url) { seen.requests.push(['history.replace', String(url)]); location.href = new URL(String(url), location.href).href; return 'replaced' },
 	}
 	const nodes = { '.hero h1': [{ textContent: 'Welkom' }, { textContent: 'Hallo' }] }
 	const doc = {
@@ -115,7 +116,7 @@ function browser(setup) {
 				return setup.beaconRefused !== true
 			},
 		},
-		location: { href: setup.href || 'https://site.example/afval?q=papier', host: 'site.example' },
+		location,
 		history,
 		innerHeight: 800,
 		innerWidth: 1280,
