@@ -123,6 +123,35 @@ import {
 	verdictState,
 } from '../lib/portalThemeChoice.js'
 
+/**
+ * The contrast findings of a verdict, or none.
+ *
+ * @param {{findings?: Array<object>}} verdict The verdict.
+ * @return {Array<object>} The findings.
+ */
+function findingsOf(verdict) {
+	return Array.isArray(verdict.findings) ? verdict.findings : []
+}
+
+/**
+ * What a save the theme app did not take says: refused with its reason, a
+ * house style it no longer offers, or a failure.
+ *
+ * @param {{outcome: string, refusal?: string}} result The save's outcome.
+ * @return {string} The notice.
+ */
+function refusalNotice(result) {
+	if (result.outcome === 'refused') {
+		return t('portaliq', 'The theme app refused this house style: {reason}', {
+			reason: result.refusal,
+		})
+	}
+	if (result.outcome === 'unknown') {
+		return t('portaliq', 'The theme app no longer offers this house style.')
+	}
+	return t('portaliq', 'The house style could not be saved.')
+}
+
 export default {
 	name: 'PortalTheme',
 
@@ -263,29 +292,13 @@ export default {
 			this.saving = false
 			this.findings = []
 			if (result.outcome === 'contrast') {
-				this.findings = Array.isArray(result.verdict.findings)
-					? result.verdict.findings
-					: []
+				this.findings = findingsOf(result.verdict)
 				this.notice = ''
 				return
 			}
 			if (result.outcome !== 'saved') {
 				this.noticeType = 'error'
-				this.notice =
-					result.outcome === 'refused'
-						? t(
-								'portaliq',
-								'The theme app refused this house style: {reason}',
-								{
-									reason: result.refusal,
-								},
-							)
-						: result.outcome === 'unknown'
-							? t(
-									'portaliq',
-									'The theme app no longer offers this house style.',
-								)
-							: t('portaliq', 'The house style could not be saved.')
+				this.notice = refusalNotice(result)
 				return
 			}
 			this.noticeType = 'success'
