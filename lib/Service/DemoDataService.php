@@ -370,14 +370,7 @@ class DemoDataService {
 	 * @spec exclude Demo-data presence probe; ADR-111 rule 1 has no per-app behavioural spec.
 	 */
 	private function presentObjects(array $objects): int {
-		$slugs = [];
-		foreach ($objects as $object) {
-			$slug = (string)($object['@self']['schema'] ?? '');
-			if ($slug !== '') {
-				$slugs[$slug] = true;
-			}
-		}
-
+		$slugs = $this->schemaSlugs(objects: $objects);
 		if ($slugs === []) {
 			return 0;
 		}
@@ -390,20 +383,53 @@ class DemoDataService {
 		}
 
 		$present = 0;
-		foreach (array_keys($slugs) as $slug) {
-			try {
-				if ($this->registerContext->apply(objectService: $objectService, schemaSlug: $slug) === false) {
-					continue;
-				}
-
-				$present += (int)$objectService->count(config: []);
-			} catch (Throwable $countFailed) {
-				$this->logger->warning('[DemoDataService] count failed for schema ' . $slug . ': ' . $countFailed->getMessage());
-			}
+		foreach ($slugs as $slug) {
+			$present += $this->countIn(objectService: $objectService, slug: $slug);
 		}
 
 		return $present;
 	}//end presentObjects()
+
+	/**
+	 * The distinct schema slugs of the declared objects, in first-seen order.
+	 *
+	 * @param array<int, mixed> $objects The descriptor's `components.objects`.
+	 *
+	 * @return array<int, string>
+	 */
+	private function schemaSlugs(array $objects): array {
+		$slugs = [];
+		foreach ($objects as $object) {
+			$slug = (string)($object['@self']['schema'] ?? '');
+			if ($slug !== '') {
+				$slugs[$slug] = true;
+			}
+		}
+
+		return array_keys($slugs);
+	}//end schemaSlugs()
+
+	/**
+	 * How many objects one of this app's schemas holds; 0 for a schema this
+	 * app does not own, or a count that failed (logged).
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $slug          The schema slug.
+	 *
+	 * @return int
+	 */
+	private function countIn(object $objectService, string $slug): int {
+		try {
+			if ($this->registerContext->apply(objectService: $objectService, schemaSlug: $slug) === false) {
+				return 0;
+			}
+
+			return (int)$objectService->count(config: []);
+		} catch (Throwable $countFailed) {
+			$this->logger->warning('[DemoDataService] count failed for schema ' . $slug . ': ' . $countFailed->getMessage());
+			return 0;
+		}
+	}//end countIn()
 
 	/**
 	 * Absolute path to the shipped descriptor.
