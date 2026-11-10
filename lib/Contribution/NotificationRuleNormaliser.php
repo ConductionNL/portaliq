@@ -136,49 +136,76 @@ class NotificationRuleNormaliser {
 	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
 	 */
 	public function normalise(mixed $notifications, array $collections, string $appId = ''): array {
-		$kept = [];
-		$dropped = [];
 		if (is_array($notifications) === false) {
-			return ['kept' => $kept, 'dropped' => $dropped];
+			return ['kept' => [], 'dropped' => []];
 		}
 
-		$plainKeys = [];
+		$run = new NotificationNormaliseRun(collections: $collections, appId: $appId);
 		foreach ($notifications as $entry) {
-			if (is_string($entry) === true) {
-				if ($entry !== '') {
-					// Placed now, judged once the change rules are known.
-					$kept[] = $entry;
-					$plainKeys[array_key_last($kept)] = $entry;
-				}
-
-				continue;
-			}
-
-			if (is_array($entry) === false) {
-				continue;
-			}
-
-			$reason = $this->refusal(rule: $entry, collections: $collections, appId: $appId);
-			if ($reason !== null) {
-				$dropped[] = $reason;
-				continue;
-			}
-
-			$kept[] = $this->shape(rule: $entry, collection: $this->collection(id: (string)$entry['collection'], collections: $collections))
-				+ (new NoticeRecipientNormaliser())->shape(rule: $entry, appId: $appId);
-		}//end foreach
-
-		$ruleKeys = array_column(array_filter($kept, 'is_array'), 'ruleKey');
-		foreach ($plainKeys as $index => $key) {
-			$reason = $this->keyRefusal(key: $key, appId: $appId, ruleKeys: $ruleKeys);
-			if ($reason !== null) {
-				$dropped[] = $reason;
-				unset($kept[$index]);
-			}
+			$this->place(run: $run, entry: $entry);
 		}
 
-		return ['kept' => array_values($kept), 'dropped' => $dropped];
+		$this->dropUnfiredKeys(run: $run);
+
+		return ['kept' => array_values($run->kept), 'dropped' => $run->dropped];
 	}//end normalise()
+
+	/**
+	 * Place one entry of the list: a plain key, a change rule, or nothing.
+	 *
+	 * @param NotificationNormaliseRun $run   The pass.
+	 * @param mixed                    $entry The entry.
+	 *
+	 * @return void
+	 */
+	private function place(NotificationNormaliseRun $run, mixed $entry): void {
+		if (is_string($entry) === true && $entry !== '') {
+			// Placed now, judged once the change rules are known.
+			$run->kept[] = $entry;
+			$run->plainKeys[array_key_last($run->kept)] = $entry;
+		}
+
+		if (is_array($entry) === true) {
+			$this->placeRule(run: $run, rule: $entry);
+		}
+	}//end place()
+
+	/**
+	 * Keep a change rule shaped, or drop it with its reason.
+	 *
+	 * @param NotificationNormaliseRun $run  The pass.
+	 * @param array<string, mixed>     $rule The declared rule.
+	 *
+	 * @return void
+	 */
+	private function placeRule(NotificationNormaliseRun $run, array $rule): void {
+		$reason = $this->refusal(rule: $rule, collections: $run->collections, appId: $run->appId);
+		if ($reason !== null) {
+			$run->dropped[] = $reason;
+			return;
+		}
+
+		$run->kept[] = $this->shape(rule: $rule, collection: $this->collection(id: (string)$rule['collection'], collections: $run->collections))
+			+ (new NoticeRecipientNormaliser())->shape(rule: $rule, appId: $run->appId);
+	}//end placeRule()
+
+	/**
+	 * Drop the plain keys nothing fires, now that the kept rules are known.
+	 *
+	 * @param NotificationNormaliseRun $run The pass.
+	 *
+	 * @return void
+	 */
+	private function dropUnfiredKeys(NotificationNormaliseRun $run): void {
+		$ruleKeys = array_column(array_filter($run->kept, 'is_array'), 'ruleKey');
+		foreach ($run->plainKeys as $index => $key) {
+			$reason = $this->keyRefusal(key: $key, appId: $run->appId, ruleKeys: $ruleKeys);
+			if ($reason !== null) {
+				$run->dropped[] = $reason;
+				unset($run->kept[$index]);
+			}
+		}
+	}//end dropUnfiredKeys()
 
 	/**
 	 * Why a plain rule key can never fire, or null when something fires it.
