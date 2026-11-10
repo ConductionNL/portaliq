@@ -94,3 +94,9 @@ test('the entries: open rows, their own page first, else the record they belong 
 	file.check('no rows', contributedTaskEntries(vragen, null, NAV_OWN))
 	file.save()
 })
+
+test('blocks that are no list are read the way a loop reads them', () => {
+	const contribution = { app: 'a', collections: [{ id: 'x' }], pages: [{ blocks: 'tasks' }] }
+	assert.deepEqual(contributedTaskSources([contribution]), [])
+	assert.throws(() => contributedTaskSources([{ ...contribution, pages: [{ blocks: 5 }] }]), TypeError)
+})
