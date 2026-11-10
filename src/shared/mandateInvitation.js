@@ -10,6 +10,16 @@
 //
 // @spec openspec/changes/site-mandates-the-represented-manage/tasks.md#t4
 
+import {
+	acceptedNotice,
+	forgetSecret,
+	heldInvitation,
+	keepInvitationSecret,
+	noLongerValid,
+	refusedNotice,
+	settlesInvitation,
+} from './invitationSecret.js'
+
 export const MANDATE_INVITATION_KEY = 'portaliq.mandateInvitation'
 
 const LINK = /^#mandate-invitation=([^&]+)$/
@@ -23,33 +33,10 @@ const LINK = /^#mandate-invitation=([^&]+)$/
  * @return {string} The secret, or '' when the page was not opened from the link.
  */
 export function keepMandateInvitation(location, history, storage) {
-	const match = String(location?.hash || '').match(LINK)
-	if (!match) {
-		return ''
-	}
-	let secret
-	try {
-		secret = decodeURIComponent(match[1])
-	} catch {
-		secret = ''
-	}
-	try {
-		history?.replaceState(
-			null,
-			'',
-			`${location.pathname || ''}${location.search || ''}`,
-		)
-	} catch {
-		// An address bar that cannot be rewritten still keeps the secret.
-	}
-	if (secret !== '') {
-		try {
-			storage?.setItem(MANDATE_INVITATION_KEY, secret)
-		} catch {
-			// Without storage the link in the mail still works afterwards.
-		}
-	}
-	return secret
+	return keepInvitationSecret(
+		{ pattern: LINK, key: MANDATE_INVITATION_KEY },
+		{ location, history, storage },
+	)
 }
 
 /**
@@ -67,51 +54,34 @@ export function keepMandateInvitation(location, history, storage) {
  * @return {Promise<{role: string, text: string, claimed: boolean}|null>}
  */
 export async function redeemKeptMandateInvitation({ api, session, t, storage }) {
-	let secret
-	try {
-		secret = storage?.getItem(MANDATE_INVITATION_KEY) || ''
-	} catch {
-		secret = ''
-	}
-	if (secret === '') {
-		return null
-	}
-	if (!session) {
-		return {
-			role: 'status',
-			text: t('Sign in to accept your invitation.'),
-			claimed: false,
-		}
+	const { secret, notice } = heldInvitation({ session, t, storage }, MANDATE_INVITATION_KEY)
+	if (notice !== false) {
+		return notice
 	}
 	const answer = await api.request('POST', '/mandates/invitations/accept', {
 		token: secret,
 	})
-	if (answer.ok || (answer.status >= 400 && answer.status < 500)) {
-		try {
-			storage?.removeItem(MANDATE_INVITATION_KEY)
-		} catch {
-			// Nothing more to do.
-		}
+	if (settlesInvitation(answer)) {
+		forgetSecret(storage, MANDATE_INVITATION_KEY)
 	}
+	return mandateOutcome(answer, t)
+}
+
+/**
+ * What the shell shows after the accept route answered.
+ *
+ * @param {{ok: boolean, status: number}} answer The answer.
+ * @param {(key: string) => string} t The translator.
+ * @return {{role: string, text: string, claimed: boolean}}
+ */
+function mandateOutcome(answer, t) {
 	if (answer.ok) {
-		return {
-			role: 'status',
-			text: t(
-				'You may now arrange matters on behalf of the person who invited you.',
-			),
-			claimed: true,
-		}
+		return acceptedNotice(
+			t('You may now arrange matters on behalf of the person who invited you.'),
+		)
 	}
 	if (answer.status === 409) {
-		return {
-			role: 'alert',
-			text: t('You cannot accept your own invitation.'),
-			claimed: false,
-		}
+		return refusedNotice(t('You cannot accept your own invitation.'))
 	}
-	return {
-		role: 'alert',
-		text: t('This invitation is no longer valid. Ask for a new one.'),
-		claimed: false,
-	}
+	return noLongerValid(t)
 }
