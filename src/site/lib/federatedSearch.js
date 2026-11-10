@@ -40,78 +40,143 @@ export function buildRequestUrl(state) {
 
 	url.searchParams.set('_limit', String(state.pageSize))
 	url.searchParams.set('_page', String(state.page))
+	setTermParameters(url.searchParams, state)
+	setFacetParameters(url.searchParams, state)
+	setPeriodParameters(url.searchParams, state)
+	setOrderParameter(url.searchParams, state.sort)
 
-	// An empty term is OMITTED rather than sent as `_search=`. The two are not
-	// the same request: one asks for everything, the other asks the backend to
-	// match the empty string, and which of those a given backend does is not
-	// something this portal should be betting on.
-	if (state.query) {
-		url.searchParams.set('_search', state.query)
+	return url.toString()
+}
 
-		// THE TEXT INSIDE PUBLIC DOCUMENTS (REQ-PFS-CONTENT-001). The opt-in
-		// opencatalogi's document content search defines; sent whenever there
-		// is a term, unless the portal switched it off. Only the published,
-		// redacted copy of a document is searched on the other side.
-		if (state.searchInsideDocuments !== false) {
-			url.searchParams.set('_content', 'true')
-		}
-
-		// A misspelt title is still found, and the relevance order has a
-		// score to sort on (search-sort-by-relevance REQ-SSR-001, REQ-SSR-004).
-		url.searchParams.set('_fuzzy', 'true')
+/**
+ * The search term and the matching it asks for.
+ *
+ * An empty term is OMITTED rather than sent as `_search=`. The two are not
+ * the same request: one asks for everything, the other asks the backend to
+ * match the empty string, and which of those a given backend does is not
+ * something this portal should be betting on.
+ *
+ * @param {URLSearchParams} params The request's parameters.
+ * @param {object} state The search state.
+ * @return {void}
+ */
+function setTermParameters(params, state) {
+	if (!state.query) {
+		return
 	}
 
-	// ONE FACET PER FIELD, IN THE SAME REQUEST (woo-search-and-detail D1).
-	// `facetFields` with a `facets` map is the current shape; a caller that
-	// still passes the single `facetField` with `selectedFacets` gets exactly
-	// the request it got before.
-	// A LOCKED FILTER IS ALWAYS SENT and is not a facet: it is neither asked
-	// for as a facet nor taken from what the visitor ticked (REQ-HTL-001).
+	params.set('_search', state.query)
+
+	// THE TEXT INSIDE PUBLIC DOCUMENTS (REQ-PFS-CONTENT-001). The opt-in
+	// opencatalogi's document content search defines; sent whenever there
+	// is a term, unless the portal switched it off. Only the published,
+	// redacted copy of a document is searched on the other side.
+	if (state.searchInsideDocuments !== false) {
+		params.set('_content', 'true')
+	}
+
+	// A misspelt title is still found, and the relevance order has a
+	// score to sort on (search-sort-by-relevance REQ-SSR-001, REQ-SSR-004).
+	params.set('_fuzzy', 'true')
+}
+
+/**
+ * The facets asked for, the values ticked and the locked filters.
+ *
+ * ONE FACET PER FIELD, IN THE SAME REQUEST (woo-search-and-detail D1).
+ * `facetFields` with a `facets` map is the current shape; a caller that
+ * still passes the single `facetField` with `selectedFacets` gets exactly
+ * the request it got before.
+ * A LOCKED FILTER IS ALWAYS SENT and is not a facet: it is neither asked
+ * for as a facet nor taken from what the visitor ticked (REQ-HTL-001).
+ *
+ * @param {URLSearchParams} params The request's parameters.
+ * @param {object} state The search state.
+ * @return {void}
+ */
+function setFacetParameters(params, state) {
 	const locked = lockedFiltersOf(state)
 	const fields = withoutLocked(facetFieldsOf(state), locked)
 	for (const field of fields) {
-		url.searchParams.set(`_facets[${field}][type]`, 'terms')
+		params.set(`_facets[${field}][type]`, 'terms')
 	}
 
-	const selected = state.facets || { [fields[0]]: state.selectedFacets || [] }
+	const selected = selectedFacetsOf(state, fields)
 	for (const field of fields) {
-		for (const value of selected[field] || []) {
-			url.searchParams.append(field, value)
-		}
+		appendValues(params, [field, selected[field] || []])
 	}
 
-	for (const [field, values] of Object.entries(locked)) {
-		for (const value of values) {
-			url.searchParams.append(field, value)
-		}
+	for (const entry of Object.entries(locked)) {
+		appendValues(params, entry)
 	}
+}
 
-	// THE PERIOD AS A RANGE (D2). OpenRegister reads `<field>[gte]` and
-	// `<field>[lte]`; the to date covers its whole day. A date that does not
-	// parse is left out: a filter nobody can read back is not sent.
+/**
+ * The ticked values per field: the `facets` map, else the single field's
+ * `selectedFacets`.
+ *
+ * @param {object} state The search state.
+ * @param {Array<string>} fields The facet fields the visitor may filter on.
+ * @return {Record<string, Array<string>>} Field to ticked values.
+ */
+function selectedFacetsOf(state, fields) {
+	return state.facets || { [fields[0]]: state.selectedFacets || [] }
+}
+
+/**
+ * Append each value of one field.
+ *
+ * @param {URLSearchParams} params The request's parameters.
+ * @param {Array} entry The field name and its values.
+ * @return {void}
+ */
+function appendValues(params, entry) {
+	for (const value of entry[1]) {
+		params.append(entry[0], value)
+	}
+}
+
+/**
+ * THE PERIOD AS A RANGE (D2). OpenRegister reads `<field>[gte]` and
+ * `<field>[lte]`; the to date covers its whole day. A date that does not
+ * parse is left out: a filter nobody can read back is not sent.
+ *
+ * @param {URLSearchParams} params The request's parameters.
+ * @param {object} state The search state.
+ * @return {void}
+ */
+function setPeriodParameters(params, state) {
 	const periodField = state.periodField || 'publicationDate'
 	const from = validDate(state.periodFrom)
 	const to = validDate(state.periodTo)
 	if (from) {
-		url.searchParams.set(`${periodField}[gte]`, from)
+		params.set(`${periodField}[gte]`, from)
 	}
 	if (to) {
-		url.searchParams.set(`${periodField}[lte]`, `${to}T23:59:59Z`)
+		params.set(`${periodField}[lte]`, `${to}T23:59:59Z`)
+	}
+}
+
+/**
+ * `_order[<field>]=ASC|DESC`. Verified against the live endpoint on
+ * 2026-08-20: title ASC/DESC and publicationDate ASC/DESC each return a
+ * different first row, so the control changes something. `_relevance`
+ * is OpenRegister's trigram score, present only with a term; the block
+ * checks every relevance answer for it (relevanceApplied).
+ *
+ * @param {URLSearchParams} params The request's parameters.
+ * @param {string} sort The `field:direction` sort, may be empty.
+ * @return {void}
+ */
+function setOrderParameter(params, sort) {
+	if (!sort) {
+		return
 	}
 
-	// `_order[<field>]=ASC|DESC`. Verified against the live endpoint on
-	// 2026-08-20: title ASC/DESC and publicationDate ASC/DESC each return a
-	// different first row, so the control changes something. `_relevance`
-	// is OpenRegister's trigram score, present only with a term; the block
-	// checks every relevance answer for it (relevanceApplied).
-	if (state.sort) {
-		const [field, direction] = String(state.sort).split(':')
-		if (field && direction) {
-			url.searchParams.set(`_order[${field}]`, direction)
-		}
+	const [field, direction] = String(sort).split(':')
+	if (field && direction) {
+		params.set(`_order[${field}]`, direction)
 	}
-
-	return url.toString()
 }
 
 /**
@@ -153,7 +218,6 @@ export function toResult(row) {
 function baseResult(row) {
 	const source = row || {}
 	const self = source['@self'] || {}
-	const summary = self.summary || source.description || ''
 	const kind = resultKind(row)
 
 	return {
@@ -163,12 +227,10 @@ function baseResult(row) {
 		// The publication a document belongs to, so a hit inside a PDF still
 		// says where it lives. Empty for a row that is not a document.
 		publication: kind === 'document' ? publicationName(row) : '',
-		key: self.id || source.id || source.sha || source.name || '',
-		title: source.name || self.name || self.title || 'Zonder titel',
-		// Truncated here rather than by CSS: an ellipsis that hides text still
-		// ships every byte of it to a mobile connection.
-		summary: typeof summary === 'string' ? summary.slice(0, 280) : '',
-		href: source.landingUrl || source.url || self.uri || '',
+		key: firstFilled([self.id, source.id, source.sha, source.name]),
+		title: firstFilled([source.name, self.name, self.title]) || 'Zonder titel',
+		summary: shortSummary(firstFilled([self.summary, source.description])),
+		href: firstFilled([source.landingUrl, source.url, self.uri]),
 		// The directory of a row from ANOTHER catalogue, else ''. `local` is
 		// the API's word for a row this instance owns, and so is no
 		// directory at all; a visitor on the portal's own site reads that as
@@ -177,8 +239,8 @@ function baseResult(row) {
 		directory: foreignDirectory(self.directory),
 		// The id the portal's own detail route addresses. Falls back through
 		// the same chain as `key` so a row from an older peer still links.
-		id: self.id || source.id || '',
-		date: formatDutchDate(source.publicationDate || self.published || ''),
+		id: firstFilled([self.id, source.id]),
+		date: formatDutchDate(firstFilled([source.publicationDate, self.published])),
 		// THE TYPE IS OFTEN NOT KNOWABLE FROM THIS ENVELOPE.
 		//
 		// The reference shows a type chip reading "Publiccode" — the SCHEMA
@@ -188,6 +250,29 @@ function baseResult(row) {
 		// read; a page that knows its corpus supplies `typeLabel` instead.
 		type: self.schemaTitle || '',
 	}
+}
+
+/**
+ * The first value that is filled in, else ''.
+ *
+ * @param {Array<string|undefined>} values The candidates, in order of preference.
+ * @return {string} The first filled value, or ''.
+ */
+function firstFilled(values) {
+	return values.find((value) => value) || ''
+}
+
+/**
+ * The summary cut to 280 characters, '' when it is not text.
+ *
+ * Truncated here rather than by CSS: an ellipsis that hides text still
+ * ships every byte of it to a mobile connection.
+ *
+ * @param {string|object} summary The row's summary or description.
+ * @return {string} The shortened summary.
+ */
+function shortSummary(summary) {
+	return typeof summary === 'string' ? summary.slice(0, 280) : ''
 }
 
 /**
