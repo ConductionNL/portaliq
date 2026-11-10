@@ -24,7 +24,6 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\Mail\MailLog;
-use OCA\Portaliq\Service\Mail\RecipientMask;
 use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
 use OCA\Portaliq\Settings\PortaliqAdmin;
 use OCP\AppFramework\Controller;
@@ -36,7 +35,6 @@ use OCP\IRequest;
 use OCP\IUserSession;
 use OCP\Mail\IMailer;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * The admin's side of the mail templates screen: the kinds of mail, a check
@@ -140,47 +138,10 @@ class MailTemplateAdminController extends Controller {
 			return new JSONResponse(['error' => 'no_admin_address'], Http::STATUS_CONFLICT);
 		}
 
-		try {
-			$mail = $this->mailer->createEMailTemplate('portaliq.mail.test', []);
-			$label = (string)MailTemplateRenderer::TEMPLATES[$templateKey]['label'];
-			$line = $this->renderer->preview(key: $templateKey, text: $this->orElse(text: $subject, fallback: $label));
-			$mail->setSubject(trim((string)preg_replace('/\s+/', ' ', $line)));
-			$mail->addHeader();
-			$mail->addBodyText($this->renderer->preview(key: $templateKey, text: $this->orElse(text: $body, fallback: $label)));
-			$mail->addFooter();
+		$sender = new SampleMailSender(mailer: $this->mailer, renderer: $this->renderer, logger: $this->logger);
 
-			$message = $this->mailer->createMessage();
-			$message->setTo([$email]);
-			$message->useTemplate($mail);
-			$failed = $this->mailer->send($message);
-		} catch (Throwable $failure) {
-			$this->logger->warning('Portaliq: test mail not sent', ['exception' => get_class($failure)]);
-
-			return new JSONResponse(['error' => 'not_sent'], Http::STATUS_BAD_GATEWAY);
-		}
-
-		if (count($failed) > 0) {
-			return new JSONResponse(['error' => 'not_sent'], Http::STATUS_BAD_GATEWAY);
-		}
-
-		return new JSONResponse(['sent' => true, 'to' => (new RecipientMask())->mask(email: $email)]);
+		return $sender->send(sample: new SampleMail(templateKey: $templateKey, subject: $subject, body: $body, email: $email));
 	}//end test()
-
-	/**
-	 * A text, or the fallback when it is empty.
-	 *
-	 * @param string $text     The text.
-	 * @param string $fallback What to use instead.
-	 *
-	 * @return string
-	 */
-	private function orElse(string $text, string $fallback): string {
-		if (trim($text) === '') {
-			return $fallback;
-		}
-
-		return $text;
-	}//end orElse()
 
 	/**
 	 * Send a failed mail again: queue a new row that points back at it.
