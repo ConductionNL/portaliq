@@ -475,6 +475,26 @@ class PortalIdentityControllerTest extends TestCase {
 	}//end testARedeemedLinkOpensASessionScopedToItsOneCase()
 
 	/**
+	 * A redeemed link whose session cannot be minted is a 503 that hands out
+	 * no bearer.
+	 *
+	 * @return void
+	 */
+	public function testARedeemedLinkWithoutASessionIs503(): void {
+		$controller = $this->controller(site: ['organisation' => 'gemeente-x']);
+		$this->doubles['references']->method('redeem')->willReturn(
+			['caseReference' => 'Z-2026-0042', 'organisation' => 'gemeente-x', 'register' => 'dossiq', 'schema' => 'case', 'linkId' => 'link-1']
+		);
+		$this->doubles['sessions']->method('issueReferenceSession')->willReturn(null);
+
+		$response = $controller->redeemReferenceLink(token: 'secret-1');
+
+		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
+		$this->assertSame(['error' => 'session_unavailable'], $response->getData());
+
+	}//end testARedeemedLinkWithoutASessionIs503()
+
+	/**
 	 * portaliq#796. The address must be the one recorded on the case. A
 	 * mismatch issues no link and sends no mail, and answers exactly like a
 	 * link that was sent, so the endpoint is no oracle for case numbers.
