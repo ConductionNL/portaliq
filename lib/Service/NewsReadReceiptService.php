@@ -29,6 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -139,9 +141,7 @@ class NewsReadReceiptService {
 		try {
 			$objectService->saveObject(
 				object: $merged,
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				uuid: $id,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA), uuid: $id),
 				_rbac: false,
 				_multitenancy: false
 			);

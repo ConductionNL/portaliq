@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCA\Portaliq\Controller\NewsController;
 use OCA\Portaliq\Service\NewsAudienceOptions;
 use OCP\AppFramework\Http;
@@ -99,7 +100,10 @@ class NewsControllerTest extends TestCase {
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ?ObjectSaveOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = ($options?->target->register ?? null);
+				$schema = ($options?->target->schema ?? null);
+				$uuid = ($options?->uuid ?? null);
 				$this->saved = $object;
 				return array_merge($object, ['id' => 'n1']);
 			}//end saveObject()
@@ -141,7 +145,10 @@ class NewsControllerTest extends TestCase {
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ?ObjectSaveOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = ($options?->target->register ?? null);
+				$schema = ($options?->target->schema ?? null);
+				$uuid = ($options?->uuid ?? null);
 				$this->saved = $object;
 				return $object;
 			}//end saveObject()
@@ -180,7 +187,10 @@ class NewsControllerTest extends TestCase {
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ?ObjectSaveOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = ($options?->target->register ?? null);
+				$schema = ($options?->target->schema ?? null);
+				$uuid = ($options?->uuid ?? null);
 				$this->saved = $object;
 				$this->row = $object;
 				return $object;
@@ -228,7 +238,10 @@ class NewsControllerTest extends TestCase {
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ?ObjectSaveOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = ($options?->target->register ?? null);
+				$schema = ($options?->target->schema ?? null);
+				$uuid = ($options?->uuid ?? null);
 				$this->saved = $object;
 				return $object;
 			}//end saveObject()
@@ -261,7 +274,10 @@ class NewsControllerTest extends TestCase {
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ?ObjectSaveOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = ($options?->target->register ?? null);
+				$schema = ($options?->target->schema ?? null);
+				$uuid = ($options?->uuid ?? null);
 				$this->saved = $object;
 				return $object;
 			}//end saveObject()
@@ -298,7 +314,10 @@ class NewsControllerTest extends TestCase {
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ?ObjectSaveOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = ($options?->target->register ?? null);
+				$schema = ($options?->target->schema ?? null);
+				$uuid = ($options?->uuid ?? null);
 				$this->saved = $object;
 				return $object;
 			}//end saveObject()
@@ -339,7 +358,10 @@ class NewsControllerTest extends TestCase {
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ?ObjectSaveOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = ($options?->target->register ?? null);
+				$schema = ($options?->target->schema ?? null);
+				$uuid = ($options?->uuid ?? null);
 				$this->saved = $object;
 				return $object;
 			}//end saveObject()
@@ -439,7 +461,10 @@ class NewsControllerTest extends TestCase {
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ?ObjectSaveOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = ($options?->target->register ?? null);
+				$schema = ($options?->target->schema ?? null);
+				$uuid = ($options?->uuid ?? null);
 				$this->saved = $object;
 				return array_merge($object, ['id' => 'n1']);
 			}//end saveObject()

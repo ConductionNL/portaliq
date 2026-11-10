@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Availability;
 
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCA\Portaliq\Service\Availability\AvailabilityStore;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -51,7 +52,11 @@ class AvailabilityStoreTest extends TestCase {
 		$service = $this->objectService();
 		$saved = [];
 		$service->method('saveObject')->willReturnCallback(
-			function (array $object, ?array $extend = [], $register = null, $schema = null, ?string $uuid = null, bool $_rbac = true) use (&$saved): object {
+			function (array $object, ?ObjectSaveOptions $options = null, bool $_rbac = true) use (&$saved): object {
+				$extend = ($options?->extend ?? []);
+				$register = ($options?->target->register ?? null);
+				$schema = ($options?->target->schema ?? null);
+				$uuid = ($options?->uuid ?? null);
 				$saved[] = [$object, $schema, $uuid, $_rbac];
 				return $this->getMockBuilder('OCA\\OpenRegister\\Db\\ObjectEntity')->disableOriginalConstructor()->getMock();
 			}

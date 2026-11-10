@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCA\Portaliq\Service\EventFeedReader;
 use OCA\Portaliq\Service\EventRsvpService;
 use PHPUnit\Framework\TestCase;
@@ -71,7 +72,10 @@ class EventRsvpServiceTest extends TestCase {
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ?ObjectSaveOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = ($options?->target->register ?? null);
+				$schema = ($options?->target->schema ?? null);
+				$uuid = ($options?->uuid ?? null);
 				$this->saved = $object;
 				$this->uuid = $uuid;
 				return $object;
@@ -129,7 +133,10 @@ class EventRsvpServiceTest extends TestCase {
 			/**
 			 * @param array<string,mixed> $object
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ?ObjectSaveOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = ($options?->target->register ?? null);
+				$schema = ($options?->target->schema ?? null);
+				$uuid = ($options?->uuid ?? null);
 				$this->saved = $object;
 				$this->uuid = $uuid;
 				return $object;
@@ -186,7 +193,10 @@ class EventRsvpServiceTest extends TestCase {
 				}));
 			}//end findAll()
 
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ?ObjectSaveOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = ($options?->target->register ?? null);
+				$schema = ($options?->target->schema ?? null);
+				$uuid = ($options?->uuid ?? null);
 				if ($uuid !== null) {
 					foreach ($this->rows as $i => $row) {
 						if ($row['id'] === $uuid) {

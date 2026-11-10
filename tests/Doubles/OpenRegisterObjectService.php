@@ -29,6 +29,7 @@ namespace OCA\Portaliq\Tests\Doubles;
 use LogicException;
 use OCA\OpenRegister\Db\Register;
 use OCA\OpenRegister\Db\Schema;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCP\IUser;
 
 /**
@@ -62,20 +63,19 @@ class OpenRegisterObjectService {
 	 */
 	public function saveObject(
 		array|OpenRegisterObjectEntity $object,
-		?array $extend = [],
-		Register|string|int|null $register = null,
-		Schema|string|int|null $schema = null,
-		?string $uuid = null,
+		?ObjectSaveOptions $options = null,
 		bool $_rbac = true,
 		bool $_multitenancy = true,
-		bool $silent = false,
-		bool $_validation = true,
-		?array $uploadedFiles = null,
-		?IUser $currentUser = null,
-		bool $failIfExists = false,
-		bool $_unowned = false,
-		bool $_dedupOverride = false,
 	): OpenRegisterObjectEntity {
+		$extend = ($options?->extend ?? []);
+		$register = ($options?->target->register ?? null);
+		$schema = ($options?->target->schema ?? null);
+		$uuid = ($options?->uuid ?? null);
+		$silent = ($options?->policy->silent ?? false);
+		$_validation = ($options?->policy->validation ?? true);
+		$uploadedFiles = ($options?->uploadedFiles ?? null);
+		$currentUser = ($options?->actor->currentUser ?? null);
+		$failIfExists = ($options?->policy->failIfExists ?? false);
 		throw new LogicException('Stub: replace with a test double.');
 	}//end saveObject()
 }//end class

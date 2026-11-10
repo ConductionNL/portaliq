@@ -33,6 +33,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Repair;
 
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCP\Migration\IOutput;
@@ -186,7 +188,12 @@ class BackfillCmsPortalReference implements IRepairStep {
 
 			unset($row['@self']);
 			$row['portal'] = $portal;
-			$objectService->saveObject(object: $row, register: self::REGISTER, schema: $schema, uuid: $uuid, _rbac: false, _multitenancy: false);
+			$objectService->saveObject(
+				object: $row,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: self::REGISTER, schema: $schema), uuid: $uuid),
+				_rbac: false,
+				_multitenancy: false
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: content could not be given its portal', ['uuid' => $uuid, 'schema' => $schema, 'reason' => $e->getMessage()]);
 

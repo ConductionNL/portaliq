@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCA\Portaliq\Controller\EventController;
 use OCA\Portaliq\Controller\NewsController;
 use OCA\Portaliq\Controller\NewsletterController;
@@ -170,7 +171,10 @@ class StaffRowWriteGoldenTest extends TestCase {
 					return $this->store[0];
 				}
 
-				public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				public function saveObject(array $object, ?ObjectSaveOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+					$register = ($options?->target->register ?? null);
+					$schema = ($options?->target->schema ?? null);
+					$uuid = ($options?->uuid ?? null);
 					$this->asked[] = ['saveObject' => [$object, $register, $schema, $uuid, $_rbac, $_multitenancy]];
 					if ($this->store[1] instanceof \Throwable) {
 						throw $this->store[1];

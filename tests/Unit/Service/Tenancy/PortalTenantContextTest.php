@@ -23,6 +23,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Tenancy;
 
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\Tenancy\OrganisationScopedObjectService;
 use OCA\Portaliq\Service\Tenancy\PortalTenantContext;
@@ -78,7 +80,11 @@ class PortalTenantContextTest extends TestCase {
 		$objectService = new ActingObjectService();
 		$scoped = $this->context(objectService: $objectService)->objectServiceFor(organisation: 'gemeente-a');
 
-		$saved = $scoped->saveObject(object: ['title' => 'X'], register: 'portaliq', schema: 'portalMessage', uuid: 'row-1', _rbac: false);
+		$saved = $scoped->saveObject(
+			object: ['title' => 'X'],
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: 'portaliq', schema: 'portalMessage'), uuid: 'row-1'),
+			_rbac: false
+		);
 		$positional = $scoped->saveObject(['title' => 'Y']);
 
 		$this->assertSame(expected: ['title' => 'X', 'id' => 'row-1'], actual: $saved);

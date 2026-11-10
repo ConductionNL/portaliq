@@ -28,6 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCA\Portaliq\Service\ObjectRowNormaliser;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use DateTimeImmutable;
@@ -96,8 +98,7 @@ class PendingPushService {
 					'deliverAfter' => $deliverAfter->format('c'),
 					'delivered' => false,
 				],
-				register: self::REGISTER,
-				schema: self::SCHEMA,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA)),
 				_rbac: false,
 				_multitenancy: false
 			);
@@ -211,9 +212,7 @@ class PendingPushService {
 		try {
 			$objectService->saveObject(
 				object: $merged,
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				uuid: $id,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA), uuid: $id),
 				_rbac: false,
 				_multitenancy: false
 			);

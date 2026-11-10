@@ -18,6 +18,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Traffic;
 
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCA\Portaliq\Service\Traffic\TrafficEventStore;
 use PHPUnit\Framework\TestCase;
@@ -138,7 +139,10 @@ class TrafficEventStoreTest extends TestCase {
 				return [['@self' => ['uuid' => 'u-1'], 'portal' => 'p', 'date' => '2026-09-04', 'pageViews' => 3]];
 			}
 
-			public function saveObject(array $object, ?string $register = null, ?string $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ?ObjectSaveOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = ($options?->target->register ?? null);
+				$schema = ($options?->target->schema ?? null);
+				$uuid = ($options?->uuid ?? null);
 				$this->saves[] = ['uuid' => $uuid, 'schema' => $schema, 'object' => $object];
 				return $object;
 			}

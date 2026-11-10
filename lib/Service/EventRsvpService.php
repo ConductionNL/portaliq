@@ -29,6 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -196,9 +198,7 @@ class EventRsvpService {
 		try {
 			$objectService->saveObject(
 				object: $object,
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				uuid: $existingId,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA), uuid: $existingId),
 				_rbac: false,
 				_multitenancy: false
 			);

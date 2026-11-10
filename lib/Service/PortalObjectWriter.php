@@ -35,6 +35,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCA\Portaliq\Service\Tenancy\ActsForTheOrganisation;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -122,8 +124,7 @@ class PortalObjectWriter {
 		try {
 			$saved = $this->insideWriteContext(write: static fn () => $objectService->saveObject(
 				object: $data,
-				register: $register,
-				schema: $schema,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema)),
 				_rbac: false,
 				_multitenancy: false
 			));
@@ -164,8 +165,7 @@ class PortalObjectWriter {
 		try {
 			$saved = $this->insideWriteContext(write: static fn () => $objectService->saveObject(
 				object: $data,
-				register: $register,
-				schema: $schema,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema)),
 				_rbac: false,
 				_multitenancy: false
 			));
@@ -314,9 +314,7 @@ class PortalObjectWriter {
 		try {
 			$saved = $this->insideWriteContext(write: static fn () => $objectService->saveObject(
 				object: $merged,
-				register: $register,
-				schema: $schema,
-				uuid: $id,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $id),
 				_rbac: false,
 				_multitenancy: false
 			));

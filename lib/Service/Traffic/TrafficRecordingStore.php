@@ -20,6 +20,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
 
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCA\Portaliq\Service\RowAsArray;
@@ -125,9 +127,7 @@ class TrafficRecordingStore {
 
 			$objectService->saveObject(
 				object: $recording,
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				uuid: $uuid,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA), uuid: $uuid),
 				_rbac: false,
 				_multitenancy: false
 			);

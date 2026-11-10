@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCA\Portaliq\BackgroundJob\ActionReminderJob;
 use OCA\Portaliq\Service\ActionReminderService;
 use OCA\Portaliq\Service\PortalAccountService;
@@ -58,7 +59,10 @@ class ActionReminderServiceTest extends TestCase {
 				return $this->actions;
 			}
 
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ?ObjectSaveOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = ($options?->target->register ?? null);
+				$schema = ($options?->target->schema ?? null);
+				$uuid = ($options?->uuid ?? null);
 				$this->saved[] = ['schema' => (string)$schema, 'uuid' => $uuid, 'object' => $object];
 				if ($schema === 'portalAction') {
 					foreach ($this->actions as $i => $action) {

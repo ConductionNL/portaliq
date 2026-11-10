@@ -33,6 +33,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -183,9 +185,7 @@ class ActivityStore {
 		try {
 			$saved = $objectService->saveObject(
 				object: $data,
-				register: self::REGISTER,
-				schema: $schema,
-				uuid: $uuid,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: self::REGISTER, schema: $schema), uuid: $uuid),
 				_rbac: false,
 				_multitenancy: false
 			);
