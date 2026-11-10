@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Intake\Fakes;
 
+use OCA\OpenRegister\Service\Object\DraftOwner;
 use OCA\Portaliq\Service\Intake\DestinationDraft;
 
 /**
@@ -19,13 +20,13 @@ class PortalOwnerDraft extends DestinationDraft {
 	 *
 	 * @param string $subjectRef The subject.
 	 *
-	 * @return object|null
+	 * @return DraftOwner|null
 	 */
-	protected function ownerOf(string $subjectRef): ?object {
+	protected function ownerOf(string $subjectRef): ?DraftOwner {
 		if ($subjectRef === '') {
 			return null;
 		}
 
-		return (object)['value' => 'portal:' . $subjectRef];
+		return DraftOwner::portalSubject(subjectRef: $subjectRef);
 	}//end ownerOf()
 }//end class

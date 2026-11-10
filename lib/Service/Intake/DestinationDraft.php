@@ -29,6 +29,13 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use InvalidArgumentException;
+use OCA\OpenRegister\Service\Form\FormSubmission;
+use OCA\OpenRegister\Service\Form\FormSubmitService;
+use OCA\OpenRegister\Service\Form\FormSubmitter;
+use OCA\OpenRegister\Service\Object\DiscardDraftRequest;
+use OCA\OpenRegister\Service\Object\DraftDiscard;
+use OCA\OpenRegister\Service\Object\DraftOwner;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -42,17 +49,17 @@ class DestinationDraft {
 	/**
 	 * OpenRegister's submit service.
 	 */
-	private const SUBMIT_SERVICE = 'OCA\\OpenRegister\\Service\\Form\\FormSubmitService';
+	private const SUBMIT_SERVICE = FormSubmitService::class;
 
 	/**
 	 * OpenRegister's draft discard (decision 195).
 	 */
-	private const DRAFT_DISCARD = 'OCA\\OpenRegister\\Service\\Object\\DraftDiscard';
+	private const DRAFT_DISCARD = DraftDiscard::class;
 
 	/**
 	 * OpenRegister's draft owner, built as `portal:<subjectRef>` (decision 195).
 	 */
-	private const DRAFT_OWNER = 'OCA\\OpenRegister\\Service\\Object\\DraftOwner';
+	private const DRAFT_OWNER = DraftOwner::class;
 
 
 	/**
@@ -95,14 +102,13 @@ class DestinationDraft {
 		}
 
 		try {
+			// One unmapped write: the payload lands on the destination as filled in.
 			$answer = $service->saveDraft(
-				destination: $destination,
-				mapping: null,
-				payload: $payload,
-				subject: null,
-				draftId: self::orNull(value: $draftId),
-				scope: $scope,
-				owner: $owner
+				submission: new FormSubmission(
+					writes: [$destination],
+					payload: $payload,
+					submitter: new FormSubmitter(subject: null, scope: $scope, draftId: self::orNull(value: $draftId), owner: $owner)
+				)
 			);
 		} catch (Throwable $exception) {
 			return $this->submit->refusalOf(exception: $exception, destination: $destination);
@@ -134,7 +140,11 @@ class DestinationDraft {
 		}
 
 		try {
-			$draft = $service->findDraft(destination: $destination, subject: null, owner: $owner, match: $match);
+			$draft = $service->findDraft(
+				destination: $destination,
+				submitter: new FormSubmitter(subject: null, owner: $owner),
+				match: $match
+			);
 		} catch (Throwable $exception) {
 			$this->logger->warning('Portaliq: a draft could not be looked up', ['reason' => $exception->getMessage()]);
 			return null;
@@ -169,13 +179,12 @@ class DestinationDraft {
 
 		try {
 			$answer = $service->submit(
-				destination: $destination,
-				mapping: null,
-				payload: $payload,
-				subject: null,
-				idempotencyKey: self::orNull(value: $idempotencyKey),
-				draftId: $draftId,
-				owner: $owner
+				submission: new FormSubmission(
+					writes: [$destination],
+					payload: $payload,
+					submitter: new FormSubmitter(subject: null, draftId: $draftId, owner: $owner)
+				),
+				idempotencyKey: self::orNull(value: $idempotencyKey)
 			);
 		} catch (Throwable $exception) {
 			return $this->submit->refusalOf(exception: $exception, destination: $destination);
@@ -207,7 +216,9 @@ class DestinationDraft {
 		}
 
 		try {
-			return $discard->discard(destination: $destination, draftId: $draftId, owner: $owner) === true;
+			return $discard->discard(
+				request: new DiscardDraftRequest(destination: $destination, draftId: $draftId, owner: $owner)
+			) === true;
 		} catch (Throwable $exception) {
 			$this->logger->warning('Portaliq: a draft could not be discarded', ['reason' => $exception->getMessage()]);
 			return false;
@@ -222,27 +233,24 @@ class DestinationDraft {
 	 *
 	 * @param string $subjectRef The signed-in subject.
 	 *
-	 * @return object|null The owner.
+	 * @return DraftOwner|null The owner.
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) DraftOwner has a private constructor;
+	 *   portalSubject() is OpenRegister's one way to a portal owner.
 	 *
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
 	 */
-	protected function ownerOf(string $subjectRef): ?object {
-		$factory = [self::DRAFT_OWNER, 'portalSubject'];
-		if ($subjectRef === '' || is_callable($factory) === false) {
+	protected function ownerOf(string $subjectRef): ?DraftOwner {
+		if ($subjectRef === '' || class_exists(self::DRAFT_OWNER) === false) {
 			return null;
 		}
 
 		try {
-			$owner = $factory($subjectRef);
-		} catch (Throwable) {
+			return DraftOwner::portalSubject(subjectRef: $subjectRef);
+		} catch (InvalidArgumentException) {
+			// Too long or a control character: not a reference an owner can carry.
 			return null;
 		}
-
-		if (is_object($owner) === false) {
-			return null;
-		}
-
-		return $owner;
 	}//end ownerOf()
 
 	/**

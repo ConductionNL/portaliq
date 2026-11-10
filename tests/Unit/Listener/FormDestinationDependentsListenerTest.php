@@ -17,6 +17,7 @@ namespace OCA\Portaliq\Tests\Unit\Listener;
 use OCA\OpenRegister\Db\Schema;
 use OCA\OpenRegister\Event\FormDestinationDependentsEvent;
 use OCA\OpenRegister\Service\Form\FormDependentsCheck;
+use OCA\OpenRegister\Service\Form\FormDependentsSignals;
 use OCA\OpenRegister\Service\Form\FormDestinationValidator;
 use OCA\OpenRegister\Service\Form\FormFieldRules;
 use OCA\Portaliq\Listener\FormDestinationDependentsListener;
@@ -168,7 +169,12 @@ final class FormDestinationDependentsListenerTest extends TestCase {
 		$config = $this->createMock(IAppConfig::class);
 		$config->method('getValueString')->willReturnArgument(2);
 
-		return new FormDependentsCheck($dispatcher, new FormDestinationValidator($l10n, new FormFieldRules()), $config, $this->createMock(IManager::class), $this->createMock(LoggerInterface::class));
+		return new FormDependentsCheck(
+			signals: new FormDependentsSignals(dispatcher: $dispatcher, notifications: $this->createMock(IManager::class)),
+			validator: new FormDestinationValidator($l10n, new FormFieldRules()),
+			appConfig: $config,
+			logger: $this->createMock(LoggerInterface::class)
+		);
 	}//end check()
 
 	/**

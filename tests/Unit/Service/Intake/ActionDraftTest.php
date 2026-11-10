@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Intake;
 
+use OCA\OpenRegister\Service\Object\DiscardDraftRequest;
 use DateTimeImmutable;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\Intake\ActionDraft;
@@ -65,7 +66,8 @@ class ActionDraftTest extends TestCase {
 		$this->discard = new class {
 			public array $asked = [];
 
-			public function discard(array $destination, string $draftId, object $owner): bool {
+			public function discard(DiscardDraftRequest $request): bool {
+				[$destination, $draftId, $owner] = [$request->destination, $request->draftId, $request->owner];
 				$this->asked[] = $draftId;
 				return true;
 			}

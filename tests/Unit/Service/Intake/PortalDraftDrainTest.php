@@ -67,7 +67,7 @@ class PortalDraftDrainTest extends TestCase {
 		$saved = $this->fake->calls[1];
 		$this->assertTrue($saved['saveDraft']);
 		$this->assertSame(['title' => 'Half', 'subjectRef' => 'sanne'], $saved['payload']);
-		$this->assertSame('portal:sanne', $saved['owner']->value);
+		$this->assertSame('portal:sanne', $saved['owner']->value());
 	}//end testRowsBecomeOpenRegisterDraftsAndOnlyConvertedOrExpiredRowsGo()
 
 	public function testATypeInvalidRowIsReportedAndKept(): void {

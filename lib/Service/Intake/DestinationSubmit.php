@@ -27,6 +27,11 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\OpenRegister\Db\SchemaMapper;
+use OCA\OpenRegister\Service\Form\FormDestinationValidator;
+use OCA\OpenRegister\Service\Form\FormSubmission;
+use OCA\OpenRegister\Service\Form\FormSubmitService;
+use OCA\OpenRegister\Service\Form\FormSubmitter;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -44,17 +49,17 @@ class DestinationSubmit {
 	/**
 	 * OpenRegister's submit service.
 	 */
-	private const SUBMIT_SERVICE = 'OCA\\OpenRegister\\Service\\Form\\FormSubmitService';
+	private const SUBMIT_SERVICE = FormSubmitService::class;
 
 	/**
 	 * OpenRegister's build-time destination validator.
 	 */
-	private const VALIDATOR = 'OCA\\OpenRegister\\Service\\Form\\FormDestinationValidator';
+	private const VALIDATOR = FormDestinationValidator::class;
 
 	/**
 	 * OpenRegister's schema mapper, to hand the validator a schema entity.
 	 */
-	private const SCHEMA_MAPPER = 'OCA\\OpenRegister\\Db\\SchemaMapper';
+	private const SCHEMA_MAPPER = SchemaMapper::class;
 
 	/**
 	 * Constructor.
@@ -101,13 +106,14 @@ class DestinationSubmit {
 		}
 
 		try {
+			// One write: the destination pair with the binding's mapping.
 			$answer = $service->submit(
-				destination: $destination,
-				mapping: $mapping,
-				payload: $payload,
-				subject: null,
-				idempotencyKey: $key,
-				scope: $scope
+				submission: new FormSubmission(
+					writes: [array_merge($destination, ['mapping' => $mapping])],
+					payload: $payload,
+					submitter: new FormSubmitter(subject: null, scope: $scope)
+				),
+				idempotencyKey: $key
 			);
 		} catch (Throwable $exception) {
 			return $this->refusalOf(exception: $exception, destination: $destination);
