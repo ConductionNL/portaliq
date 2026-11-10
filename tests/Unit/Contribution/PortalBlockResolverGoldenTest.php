@@ -45,7 +45,7 @@ class PortalBlockResolverGoldenTest extends TestCase {
 				['id' => 'messages', 'kind' => 'inbox', 'fields' => ['subject']],
 			],
 			'blocks' => [
-			'junk',
+				'junk',
 				['type' => 'unknown'],
 				['type' => 'collection', 'collection' => 'cases', 'limit' => 5, 'sort' => 'title'],
 				['type' => 'collection', 'collection' => 'nope'],
