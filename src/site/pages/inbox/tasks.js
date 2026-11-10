@@ -104,25 +104,58 @@ export function acceptAttribute(accepted) {
  * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
  */
 export function validateFiles(task, chosen, t) {
-	const rules = uploadRules(task)
+	const check = { rules: uploadRules(task), t }
 	const files = chosen || []
+	return countProblem(check, files) ?? filesProblem(check, files)
+}
+
+/**
+ * @param {{rules: object, t: (key: string, vars?: object) => string}} check The task's upload rules and the translator.
+ * @param {Array<object>} files The chosen files.
+ * @return {string|null} The message when a file is missing or there are too many.
+ */
+function countProblem(check, files) {
+	const { rules, t } = check
 	if (rules.required && files.length === 0) {
 		return t('A file is required for this task.')
 	}
 	if (files.length > rules.maxFiles) {
 		return t('You can add at most {count} file(s).', { count: rules.maxFiles })
 	}
+	return null
+}
+
+/**
+ * @param {{rules: object, t: (key: string, vars?: object) => string}} check The task's upload rules and the translator.
+ * @param {Array<object>} files The chosen files.
+ * @return {string|null} The first rule a file breaks, as a sentence.
+ */
+function filesProblem(check, files) {
 	for (const file of files) {
-		if (rules.maxSizeBytes > 0 && file.size > rules.maxSizeBytes) {
-			return t('This file is too large. The limit is {size} MB.', {
-				size: sizeInMb(rules.maxSizeBytes),
-			})
+		const problem = fileProblem(check, file)
+		if (problem !== null) {
+			return problem
 		}
-		if (!typeAccepted(file, rules.acceptedTypes)) {
-			return t('This file type is not accepted. Allowed: {types}.', {
-				types: rules.acceptedTypes.join(', '),
-			})
-		}
+	}
+	return null
+}
+
+/**
+ * @param {{rules: object, t: (key: string, vars?: object) => string}} check The task's upload rules and the translator.
+ * @param {{name: string, type: string, size: number}} file One chosen file.
+ * @return {string|null} The rule it breaks, as a sentence: its size first, then its type.
+ */
+function fileProblem(check, file) {
+	const { rules, t } = check
+	if (rules.maxSizeBytes > 0 && file.size > rules.maxSizeBytes) {
+		return t('This file is too large. The limit is {size} MB.', {
+			size: sizeInMb(rules.maxSizeBytes),
+		})
+	}
+	if (!typeAccepted(file, rules.acceptedTypes)) {
+		return t('This file type is not accepted. Allowed: {types}.', {
+			types: rules.acceptedTypes.join(', '),
+		})
 	}
 	return null
 }
@@ -165,27 +198,69 @@ export function refusalKey(code) {
  */
 export function completeViaAction(task, aggregate) {
 	const via = task?.metadata?.completeVia
-	const app = typeof via?.app === 'string' ? via.app.trim() : ''
-	const id = typeof via?.action === 'string' ? via.action.trim() : ''
+	const app = trimmedName(via?.app)
+	const id = trimmedName(via?.action)
 	if (app === '' || id === '') {
 		return { named: false, app: '', action: null, taskField: TASK_FIELD }
 	}
+	const action = completingAction(aggregate, { app, id })
+	return { named: true, app, action, taskField: taskFieldOf(action) }
+}
+
+/**
+ * @param {unknown} value A name from the task's `completeVia`.
+ * @return {string} The name trimmed, or '' when it is no text.
+ */
+function trimmedName(value) {
+	return typeof value === 'string' ? value.trim() : ''
+}
+
+/**
+ * The endpoint action of the named app with the named id, from the subject's
+ * own contributions.
+ *
+ * @param {object|null} aggregate The contributions aggregate.
+ * @param {{app: string, id: string}} via The app and the action's id.
+ * @return {object|null} The action, or null.
+ */
+function completingAction(aggregate, via) {
 	const contribution = (aggregate?.contributions || []).find(
-		(c) => c && c.app === app,
+		(c) => c && c.app === via.app,
 	)
-	const action =
-		(contribution?.actions || []).find(
-			(a) =>
-				a
-				&& a.id === id
-				&& a.type !== 'create'
-				&& a.type !== 'update'
-				&& typeof a.endpoint === 'string'
-				&& a.endpoint !== '',
-		) || null
-	const taskField =
-		typeof action?.taskField === 'string' && action.taskField !== ''
-			? action.taskField
-			: TASK_FIELD
-	return { named: true, app, action, taskField }
+	return (
+		(contribution?.actions || []).find((a) => isCompletingAction(a, via.id))
+		|| null
+	)
+}
+
+/**
+ * @param {object|null} action An action of the contribution.
+ * @param {string} id The id the task names.
+ * @return {boolean} Whether it is that action, and one that calls an endpoint.
+ */
+function isCompletingAction(action, id) {
+	return Boolean(action) && action.id === id && callsEndpoint(action)
+}
+
+/**
+ * @param {object} action An action of the contribution.
+ * @return {boolean} Whether it is no create or update, and names an endpoint.
+ */
+function callsEndpoint(action) {
+	return (
+		action.type !== 'create'
+		&& action.type !== 'update'
+		&& typeof action.endpoint === 'string'
+		&& action.endpoint !== ''
+	)
+}
+
+/**
+ * @param {object|null} action The completing action.
+ * @return {string} The field it reads the task id from.
+ */
+function taskFieldOf(action) {
+	return typeof action?.taskField === 'string' && action.taskField !== ''
+		? action.taskField
+		: TASK_FIELD
 }
