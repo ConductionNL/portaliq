@@ -85,7 +85,20 @@ class PortalDraftControllerGoldenTest extends TestCase {
 			return 14;
 		});
 
+		$actions->method('liveDrafts')->willReturnCallback(function (array $subject) use ($world) {
+			$this->calls[] = 'liveDrafts ' . $subject['subjectRef'];
+			if (($world['fails'] ?? false) === true) {
+				throw new RuntimeException('down');
+			}
+
+			return [['app' => 'dossiq']];
+		});
+
 		$drafts = $this->createMock(DestinationDraft::class);
+		$drafts->method('discardDraft')->willReturnCallback(function (array $destination, string $subjectRef, string $draftId) {
+			$this->calls[] = "discardDraft $subjectRef $draftId";
+			return true;
+		});
 		$drafts->method('saveDraft')->willReturnCallback(function (array $destination, array $payload, string $subjectRef, string $draftId = '', string $scope = '') use ($world) {
 			$this->calls[] = "saveDraft $subjectRef [$draftId] $scope " . json_encode($payload);
 			return $world['saved'];
@@ -183,4 +196,32 @@ class PortalDraftControllerGoldenTest extends TestCase {
 		$this->assertSame([401, ['authenticated' => false]], [$signedOut->getStatus(), $signedOut->getData()]);
 		$this->assertSame([], $this->calls);
 	}//end testSavingADraftAnswersAsRecorded()
+
+	/**
+	 * Listing and discarding drafts: signed out, a failure below, and the
+	 * recorded calls.
+	 *
+	 * @return void
+	 */
+	public function testListingAndDiscardingDraftsAnswerAsRecorded(): void {
+		$listed = $this->controller([])->index();
+		$this->assertSame([200, ['drafts' => [['app' => 'dossiq']]]], [$listed->getStatus(), $listed->getData()]);
+		$this->assertSame(['liveDrafts sanne'], $this->calls);
+		$this->assertSame([503, ['error' => 'try_again_later']], [$this->controller(['fails' => true])->index()->getStatus(), $this->controller(['fails' => true])->index()->getData()]);
+		$this->assertSame([401, ['authenticated' => false]], [$this->controller(['subjectRef' => ''])->index()->getStatus(), $this->controller(['subjectRef' => ''])->index()->getData()]);
+		$this->assertSame([], $this->calls);
+
+		$match = ['action' => ['id' => 'request']];
+		$this->assertSame(['deleted' => false], $this->controller(['match' => null])->discard('dossiq', 'request')->getData());
+		$this->assertSame(['actionFor dossiq/request'], $this->calls);
+		$this->assertSame(['deleted' => false], $this->controller(['match' => $match])->discard('dossiq', 'request')->getData());
+		$this->assertSame(['actionFor dossiq/request', 'find sanne'], $this->calls);
+		$this->assertSame(['deleted' => true], $this->controller(['match' => $match, 'draft' => ['id' => 5]])->discard('dossiq', 'request')->getData());
+		$this->assertSame(['actionFor dossiq/request', 'find sanne', 'destinationOf', 'discardDraft sanne 5'], $this->calls);
+		$down = $this->controller(['fails' => true])->discard('dossiq', 'request');
+		$this->assertSame([503, ['error' => 'try_again_later']], [$down->getStatus(), $down->getData()]);
+		$signedOut = $this->controller(['subjectRef' => ''])->discard('dossiq', 'request');
+		$this->assertSame([401, ['authenticated' => false]], [$signedOut->getStatus(), $signedOut->getData()]);
+		$this->assertSame([], $this->calls);
+	}//end testListingAndDiscardingDraftsAnswerAsRecorded()
 }//end class
