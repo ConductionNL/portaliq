@@ -93,6 +93,42 @@ function text(value) {
 }
 
 /**
+ * What the provision route is sent for the dialog's fields: trimmed, the
+ * audience a client unless the dialog says otherwise.
+ *
+ * @param {object|null} fields The dialog's fields.
+ * @return {object} The body.
+ */
+function provisionBody(fields) {
+	return {
+		audience: text(fields?.audience) || 'client',
+		organisation: text(fields?.organisation),
+		identityType: text(fields?.identityType),
+		identityRef: text(fields?.identityRef),
+		email: text(fields?.email),
+		verifiedEmail: fields?.verifiedEmail === true,
+		displayName: text(fields?.displayName),
+	}
+}
+
+/**
+ * What an issue still lacks before it may be sent: the organisation, then an
+ * identity reference or an e-mail address; '' when nothing.
+ *
+ * @param {object} body The provision body.
+ * @return {string} The English source sentence, or ''.
+ */
+function missingForIssue(body) {
+	if (body.organisation === '') {
+		return 'Give the organisation the account belongs to.'
+	}
+	if (body.identityRef === '' && body.email === '') {
+		return 'Give an identity reference or an e-mail address.'
+	}
+	return ''
+}
+
+/**
  * The calls behind the dialogs and row actions.
  *
  * @param {object} deps Collaborators.
@@ -127,6 +163,30 @@ export function createStaffAccountActions({
 		}
 	}
 
+	/**
+	 * What the desk is told after the provision answered: issued, or refused
+	 * because the identity already has an account.
+	 *
+	 * @param {object} data The provision's answer.
+	 * @return {{ok: boolean, message: string}} The outcome.
+	 */
+	function issuedOutcome(data) {
+		if (data.isNew === false) {
+			return {
+				ok: false,
+				message: translate(
+					'An account for this identity already exists, so no second account was made.',
+				),
+			}
+		}
+		return {
+			ok: true,
+			message: translate(
+				'The account is issued. It becomes active when its owner signs in for the first time.',
+			),
+		}
+	}
+
 	return {
 		/**
 		 * Issue an account at the desk, through the provision route.
@@ -136,30 +196,10 @@ export function createStaffAccountActions({
 		 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-issue-and-withdraw-accounts-through-the-validated-actions-req-isa-003
 		 */
 		async issue(fields) {
-			const body = {
-				audience: text(fields?.audience) || 'client',
-				organisation: text(fields?.organisation),
-				identityType: text(fields?.identityType),
-				identityRef: text(fields?.identityRef),
-				email: text(fields?.email),
-				verifiedEmail: fields?.verifiedEmail === true,
-				displayName: text(fields?.displayName),
-			}
-			if (body.organisation === '') {
-				return {
-					ok: false,
-					message: translate(
-						'Give the organisation the account belongs to.',
-					),
-				}
-			}
-			if (body.identityRef === '' && body.email === '') {
-				return {
-					ok: false,
-					message: translate(
-						'Give an identity reference or an e-mail address.',
-					),
-				}
+			const body = provisionBody(fields)
+			const missing = missingForIssue(body)
+			if (missing !== '') {
+				return { ok: false, message: translate(missing) }
 			}
 			const sent = await send(
 				'/apps/portaliq/api/accounts/provision',
@@ -169,20 +209,7 @@ export function createStaffAccountActions({
 			if (sent.ok === false) {
 				return sent
 			}
-			if (sent.data.isNew === false) {
-				return {
-					ok: false,
-					message: translate(
-						'An account for this identity already exists, so no second account was made.',
-					),
-				}
-			}
-			return {
-				ok: true,
-				message: translate(
-					'The account is issued. It becomes active when its owner signs in for the first time.',
-				),
-			}
+			return issuedOutcome(sent.data)
 		},
 
 		/**
