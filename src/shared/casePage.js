@@ -170,12 +170,25 @@ export function dayWords(value, locale, withYear = false) {
 	if (!date || Number.isNaN(date.getTime())) {
 		return ''
 	}
-	return date.toLocaleDateString(
-		String(locale || 'nl').startsWith('en') ? 'en-GB' : 'nl-NL',
-		withYear
-			? { day: 'numeric', month: 'long', year: 'numeric' }
-			: { day: 'numeric', month: 'long' },
-	)
+	return date.toLocaleDateString(dateLocale(locale), dayFormat(withYear))
+}
+
+/**
+ * @param {string} locale The page language.
+ * @return {string} The date locale: English for an English page, else Dutch.
+ */
+function dateLocale(locale) {
+	return String(locale || 'nl').startsWith('en') ? 'en-GB' : 'nl-NL'
+}
+
+/**
+ * @param {boolean} withYear Add the year.
+ * @return {object} The day-and-month format, with the year when asked.
+ */
+function dayFormat(withYear) {
+	return withYear
+		? { day: 'numeric', month: 'long', year: 'numeric' }
+		: { day: 'numeric', month: 'long' }
 }
 
 /**
@@ -195,8 +208,24 @@ export function bannerSentence(tasks, legalDecisionDate, t, locale) {
 	if (!Array.isArray(tasks) || tasks.length === 0) {
 		return ''
 	}
-	const due = dayWords(tasks.find((task) => task.due)?.due, locale)
-	const legal = dayWords(legalDecisionDate, locale)
+	return documentsSentence(
+		{
+			due: dayWords(tasks.find((task) => task.due)?.due, locale),
+			legal: dayWords(legalDecisionDate, locale),
+		},
+		t,
+	)
+}
+
+/**
+ * The banner sentence with the halves whose day is known.
+ *
+ * @param {{due: string, legal: string}} days The earliest due day and the legal decision day, in words.
+ * @param {(key: string, vars?: object) => string} t The translator.
+ * @return {string} The sentence.
+ */
+function documentsSentence(days, t) {
+	const { due, legal } = days
 	if (due && legal) {
 		return t(
 			'We still need documents from you. Send them before {due}, and we will decide by {legal}.',
@@ -249,18 +278,44 @@ export function decisionDateRows(caseRow, t, locale) {
  */
 export function nextStepView(status, tasks, offered) {
 	const action = status?.action
-	let button = null
-	if (action && typeof action.label === 'string') {
-		if (action.kind === 'task') {
-			const task = (tasks || []).find((entry) => entry.type === action.target)
-			button = task ? { label: action.label, kind: 'task', task } : null
-		} else if (action.kind === 'page') {
-			button = { label: action.label, kind: 'page', route: action.target }
-		} else if (action.kind === 'action' && offered(action.target) === true) {
-			button = { label: action.label, kind: 'action', id: action.target }
-		}
-	}
+	const button =
+		action && typeof action.label === 'string'
+			? stepButton(action, { tasks, offered })
+			: null
 	return { button, next: status?.next?.label || '' }
+}
+
+/**
+ * A button to the first open task of the action's target type.
+ *
+ * @param {{label: string, target: string}} action The step's action.
+ * @param {Array<object>|null} tasks The open tasks of the case.
+ * @return {object|null} The button, or null when no such task is open.
+ */
+function taskButton(action, tasks) {
+	const task = (tasks || []).find((entry) => entry.type === action.target)
+	return task ? { label: action.label, kind: 'task', task } : null
+}
+
+/**
+ * The button a status step's action draws, or null when it has nothing to
+ * lead to.
+ *
+ * @param {{label: string, kind: string, target: string}} action The step's action.
+ * @param {{tasks: Array<object>, offered: (id: string) => boolean}} screen The open tasks and the case actions the screen offers.
+ * @return {object|null} The button.
+ */
+function stepButton(action, screen) {
+	if (action.kind === 'task') {
+		return taskButton(action, screen.tasks)
+	}
+	if (action.kind === 'page') {
+		return { label: action.label, kind: 'page', route: action.target }
+	}
+	if (action.kind === 'action' && screen.offered(action.target) === true) {
+		return { label: action.label, kind: 'action', id: action.target }
+	}
+	return null
 }
 
 /**
