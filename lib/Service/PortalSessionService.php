@@ -554,56 +554,50 @@ class PortalSessionService {
 	 * @return array<string, mixed>|null
 	 */
 	private function sessionClaimsFromHeader(?string $authorizationHeader): ?array {
-		if ($this->jwt === null) {
+		if ($this->jwt === null || $this->hasBearer(authorizationHeader: $authorizationHeader) === false) {
 			return null;
 		}
 
-		$token = $this->bearerTokenOf(authorizationHeader: $authorizationHeader);
-		if ($token === '') {
-			return null;
-		}
-
-		$claims = $this->validatedClaims(jwt: $this->jwt, token: $token);
-		if ($claims === null) {
-			return null;
-		}
-
-		return $this->activeSessionClaims(claims: $claims);
+		return $this->sessionClaimsOf(jwt: $this->jwt, token: substr($authorizationHeader, strlen(self::BEARER_PREFIX)));
 	}//end sessionClaimsFromHeader()
 
 	/**
-	 * The token after the bearer prefix, or '' when the header is absent or
-	 * names another scheme.
+	 * Whether the header carries a bearer.
 	 *
 	 * @param string|null $authorizationHeader The raw Authorization header value.
 	 *
-	 * @return string
+	 * @return bool
+	 *
+	 * @phpstan-assert-if-true string $authorizationHeader
 	 */
-	private function bearerTokenOf(?string $authorizationHeader): string {
-		if ($authorizationHeader === null || str_starts_with($authorizationHeader, self::BEARER_PREFIX) === false) {
-			return '';
-		}
-
-		return substr($authorizationHeader, strlen(self::BEARER_PREFIX));
-	}//end bearerTokenOf()
+	private function hasBearer(?string $authorizationHeader): bool {
+		return $authorizationHeader !== null && str_starts_with($authorizationHeader, self::BEARER_PREFIX) === true;
+	}//end hasBearer()
 
 	/**
-	 * The token's claims when its signature and expiry validate, else null.
+	 * The claims of a bearer token when it validates as a live portal
+	 * session, else null.
 	 *
 	 * @param PortalJwtService $jwt   The configured signer.
 	 * @param string           $token The bearer token.
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	private function validatedClaims(PortalJwtService $jwt, string $token): ?array {
+	private function sessionClaimsOf(PortalJwtService $jwt, string $token): ?array {
+		if ($token === '') {
+			return null;
+		}
+
 		try {
-			return $jwt->validate($token);
+			$claims = $jwt->validate($token);
 		} catch (Throwable $e) {
 			// Fail closed — never leak why. Debug-level only.
 			$this->logger->debug('Portaliq: bearer rejected', ['reason' => $e->getMessage()]);
 			return null;
 		}
-	}//end validatedClaims()
+
+		return $this->activeSessionClaims(claims: $claims);
+	}//end sessionClaimsOf()
 
 	/**
 	 * The claims when they are a portal session whose `jti` is still live,
@@ -752,12 +746,25 @@ class PortalSessionService {
 	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
 	 */
 	public function resolveReferenceFromBearer(?string $authorizationHeader): ?array {
-		if ($this->jwt === null || $authorizationHeader === null || str_starts_with($authorizationHeader, self::BEARER_PREFIX) === false) {
+		if ($this->jwt === null || $this->hasBearer(authorizationHeader: $authorizationHeader) === false) {
 			return null;
 		}
 
+		return $this->referenceOfToken(jwt: $this->jwt, token: substr($authorizationHeader, strlen(self::BEARER_PREFIX)));
+	}//end resolveReferenceFromBearer()
+
+	/**
+	 * The reference a bearer token carries when it validates as a live
+	 * reference session, else null.
+	 *
+	 * @param PortalJwtService $jwt   The configured signer.
+	 * @param string           $token The bearer token.
+	 *
+	 * @return array{subjectRef: string, organisation: string, caseReference: string, register: string, schema: string, jti: string}|null
+	 */
+	private function referenceOfToken(PortalJwtService $jwt, string $token): ?array {
 		try {
-			$claims = $this->jwt->validate(substr($authorizationHeader, strlen(self::BEARER_PREFIX)));
+			$claims = $jwt->validate($token);
 		} catch (Throwable $e) {
 			$this->logger->debug('Portaliq: reference bearer rejected', ['reason' => $e->getMessage()]);
 			return null;
@@ -767,25 +774,47 @@ class PortalSessionService {
 			return null;
 		}
 
-		$jti = (string)($claims['jti'] ?? '');
-		if ($this->isJtiActive(jti: $jti) === false) {
+		return $this->liveReference(claims: $claims);
+	}//end referenceOfToken()
+
+	/**
+	 * The reference of a reference session's claims when its `jti` is live
+	 * and every field is present, else null.
+	 *
+	 * @param array<string, mixed> $claims The reference session's claims.
+	 *
+	 * @return array{subjectRef: string, organisation: string, caseReference: string, register: string, schema: string, jti: string}|null
+	 */
+	private function liveReference(array $claims): ?array {
+		if ($this->isJtiActive(jti: (string)($claims['jti'] ?? '')) === false) {
 			return null;
 		}
 
-		$reference = [
-			'subjectRef' => (string)($claims['sub'] ?? ''),
-			'organisation' => (string)($claims['organisation'] ?? ''),
-			'caseReference' => (string)($claims['caseReference'] ?? ''),
-			'register' => (string)($claims['register'] ?? ''),
-			'schema' => (string)($claims['schema'] ?? ''),
-			'jti' => $jti,
-		];
+		$reference = $this->referenceOfClaims(claims: $claims);
 		if (in_array('', $reference, true) === true) {
 			return null;
 		}
 
 		return $reference;
-	}//end resolveReferenceFromBearer()
+	}//end liveReference()
+
+	/**
+	 * The reference fields of a reference session's claims.
+	 *
+	 * @param array<string, mixed> $claims The reference session's claims.
+	 *
+	 * @return array{subjectRef: string, organisation: string, caseReference: string, register: string, schema: string, jti: string}
+	 */
+	private function referenceOfClaims(array $claims): array {
+		return [
+			'subjectRef' => (string)($claims['sub'] ?? ''),
+			'organisation' => (string)($claims['organisation'] ?? ''),
+			'caseReference' => (string)($claims['caseReference'] ?? ''),
+			'register' => (string)($claims['register'] ?? ''),
+			'schema' => (string)($claims['schema'] ?? ''),
+			'jti' => (string)($claims['jti'] ?? ''),
+		];
+	}//end referenceOfClaims()
 
 	/**
 	 * Rotate a valid, unexpired, not-yet-revoked bearer into a NEW session with
