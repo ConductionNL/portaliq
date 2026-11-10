@@ -71,3 +71,50 @@ test('refused: a second account, no organisation, no identity, and a refused pro
 	assert.match(answer.message, /^t:/)
 	assert.equal(Object.keys(answer).length, 2)
 })
+
+test('an invitation: the trimmed body, the expiry in the sentence, refused before sending, refused by the server', async () => {
+	const sent = desk({ data: { expiresAt: '2026-12-01' } })
+	assert.deepEqual(await sent.actions.invite({ email: ' a@x.nl ', organisation: ' o ' }), {
+		ok: true,
+		message: 't:Invitation sent to {email}. It is valid until {date}.',
+	})
+	assert.deepEqual(sent.calls, [{ url: '/nc/apps/portaliq/api/invitations', body: { email: 'a@x.nl', organisation: 'o', audience: 'client' } }])
+	const staff = desk({ data: {} })
+	await staff.actions.invite({ email: 'b@x.nl', organisation: 'o', audience: 'staff' })
+	assert.equal(staff.calls[0].body.audience, 'staff')
+	const none = desk({ data: {} })
+	for (const fields of [null, { email: 'a@x.nl' }, { organisation: 'o' }, { email: ' ', organisation: 'o' }]) {
+		assert.deepEqual(await none.actions.invite(fields), { ok: false, message: 't:Give the address and the organisation.' })
+	}
+	assert.equal(none.calls.length, 0)
+	const refused = desk({ reject: { response: { status: 503, data: { error: 'mail_not_sent' } } } })
+	const answer = await refused.actions.invite({ email: 'a@x.nl', organisation: 'o' })
+	assert.equal(answer.ok, false)
+	assert.match(answer.message, /^t:/)
+})
+
+test('the invitation sentence carries the address and the formatted expiry', async () => {
+	const words = []
+	const actions = createStaffAccountActions({
+		post: async () => ({ data: { expiresAt: '2026-12-01T10:00:00Z' } }),
+		generateUrl: (path) => path,
+		translate: (text, vars) => {
+			words.push(vars)
+			return text
+		},
+		formatDate: (iso) => `on ${iso}`,
+	})
+	await actions.invite({ email: 'a@x.nl', organisation: 'o' })
+	assert.deepEqual(words.at(-1), { email: 'a@x.nl', date: 'on 2026-12-01T10:00:00Z' })
+	const noExpiry = createStaffAccountActions({
+		post: async () => ({ data: {} }),
+		generateUrl: (path) => path,
+		translate: (text, vars) => {
+			words.push(vars)
+			return text
+		},
+		formatDate: (iso) => `on ${iso}`,
+	})
+	await noExpiry.invite({ email: 'a@x.nl', organisation: 'o' })
+	assert.deepEqual(words.at(-1), { email: 'a@x.nl', date: 'on ' })
+})
