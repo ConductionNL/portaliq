@@ -83,6 +83,17 @@ use Psr\Log\LoggerInterface;
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)   -- see ExcessiveParameterList.
  */
 class CitizenCaseController extends Controller implements PortalProtected {
+
+	/**
+	 * The field names a citizen write declaration may configure, with the
+	 * name used when it does not.
+	 *
+	 * @var array<string, string>
+	 */
+	private const WRITE_CONFIG_DEFAULTS = [
+		'statusField' => 'status',
+		'recordField' => 'portalWrites',
+	];
 	/**
 	 * The lazily built action lookup, see writeActions().
 	 *
@@ -228,40 +239,85 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 20, period: 60)]
 	public function amend(string $register, string $schema, string $id): JSONResponse {
-		$context = $this->context(register: $register, schema: $schema, id: $id);
-		if ($context instanceof JSONResponse) {
-			return $context;
+		$write = $this->writableCase(target: ['register' => $register, 'schema' => $schema, 'id' => $id]);
+		if ($write instanceof JSONResponse) {
+			return $write;
 		}
 
-		$refusal = $this->guardWrite(context: $context, id: $id);
+		$refusal = $this->amendmentWindowRefusal(set: $write->context['set']);
 		if ($refusal !== null) {
 			return $refusal;
 		}
 
-		$set = $context['set'];
-		if (($set['window']['open'] ?? false) !== true) {
-			return $this->refuse(
-				message: (string)($set['window']['reason'] ?? ''),
-				slug: 'amendment-window-closed',
-				status: Http::STATUS_CONFLICT
-			);
-		}
-
-		$submitted = $this->submittedFields(set: $set);
+		$submitted = $this->changedFields(set: $write->context['set']);
 		if ($submitted instanceof JSONResponse) {
 			return $submitted;
 		}
 
-		if ($submitted === []) {
-			return $this->refuse(
-				message: $this->l10n->t('There is nothing to change.'),
-				slug: 'nothing-to-change',
-				status: Http::STATUS_BAD_REQUEST
-			);
+		return $this->applyAmendment(write: $write, submitted: $submitted);
+	}//end amend()
+
+	/**
+	 * The case the route names, once the citizen may write on it: the
+	 * resolved context, past the throttle. Else the refusal.
+	 *
+	 * @param array{register: string, schema: string, id: string} $target The case the route names.
+	 *
+	 * @return CaseWriteRun|JSONResponse
+	 */
+	private function writableCase(array $target): CaseWriteRun|JSONResponse {
+		$context = $this->context(register: $target['register'], schema: $target['schema'], id: $target['id']);
+		if ($context instanceof JSONResponse) {
+			return $context;
 		}
 
-		return $this->applyAmendment(context: $context, register: $register, schema: $schema, id: $id, submitted: $submitted);
-	}//end amend()
+		$refusal = $this->guardWrite(context: $context, id: $target['id']);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return new CaseWriteRun(context: $context, target: $target);
+	}//end writableCase()
+
+	/**
+	 * The refusal when the amendment window is closed, else null.
+	 *
+	 * @param array<string, mixed> $set The resolved writable set.
+	 *
+	 * @return JSONResponse|null
+	 */
+	private function amendmentWindowRefusal(array $set): ?JSONResponse {
+		if (($set['window']['open'] ?? false) === true) {
+			return null;
+		}
+
+		return $this->refuse(
+			message: (string)($set['window']['reason'] ?? ''),
+			slug: 'amendment-window-closed',
+			status: Http::STATUS_CONFLICT
+		);
+	}//end amendmentWindowRefusal()
+
+	/**
+	 * The fields the request changes, or the refusal when one is not writable
+	 * or none is named.
+	 *
+	 * @param array<string, mixed> $set The resolved writable set.
+	 *
+	 * @return array<string, mixed>|JSONResponse
+	 */
+	private function changedFields(array $set): array|JSONResponse {
+		$submitted = $this->submittedFields(set: $set);
+		if ($submitted !== []) {
+			return $submitted;
+		}
+
+		return $this->refuse(
+			message: $this->l10n->t('There is nothing to change.'),
+			slug: 'nothing-to-change',
+			status: Http::STATUS_BAD_REQUEST
+		);
+	}//end changedFields()
 
 	/**
 	 * Add a document to the running case, through the file surface the case app
@@ -281,47 +337,71 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 20, period: 60)]
 	public function addDocument(string $register, string $schema, string $id): JSONResponse {
-		$context = $this->context(register: $register, schema: $schema, id: $id);
-		if ($context instanceof JSONResponse) {
-			return $context;
+		$write = $this->writableCase(target: ['register' => $register, 'schema' => $schema, 'id' => $id]);
+		if ($write instanceof JSONResponse) {
+			return $write;
 		}
 
-		$refusal = $this->guardWrite(context: $context, id: $id);
+		$refusal = $this->documentsClosedRefusal(set: $write->context['set']);
 		if ($refusal !== null) {
 			return $refusal;
 		}
 
-		$set = $context['set'];
-		if (($set['documents']['open'] ?? false) !== true) {
-			return $this->refuse(
-				message: (string)($set['documents']['reason'] ?? ''),
-				slug: 'documents-closed',
-				status: Http::STATUS_CONFLICT
-			);
+		$upload = $this->uploadedDocument();
+		if ($upload instanceof JSONResponse) {
+			return $upload;
 		}
 
-		$upload = $this->upload->read($this->request->getUploadedFile('file'));
-		if ($upload === null) {
-			return $this->refuse(
-				message: $this->l10n->t('There is no file to add.'),
-				slug: 'no-file',
-				status: Http::STATUS_BAD_REQUEST
-			);
+		return $this->attachDocument(write: $write, upload: $upload);
+	}//end addDocument()
+
+	/**
+	 * The refusal when the case takes no documents now, else null.
+	 *
+	 * @param array<string, mixed> $set The resolved writable set.
+	 *
+	 * @return JSONResponse|null
+	 */
+	private function documentsClosedRefusal(array $set): ?JSONResponse {
+		if (($set['documents']['open'] ?? false) === true) {
+			return null;
 		}
 
-		$attached = $this->fileWriter->attachFile(
-			register: $register,
-			schema: $schema,
-			id: $id,
-			fileName: $this->upload->uniqueName(
-				existing: $this->fileReader->listFiles(register: $register, schema: $schema, id: $id),
-				fileName: $upload['name']
-			),
-			content: $upload['content'],
-			// Tagged, so the case screen lists it under "Sent by you" and
-			// nothing else from the folder (cases-documents-on-the-case).
-			tags: [PortalFileWriter::TAG_FROM_APPLICANT]
+		return $this->refuse(
+			message: (string)($set['documents']['reason'] ?? ''),
+			slug: 'documents-closed',
+			status: Http::STATUS_CONFLICT
 		);
+	}//end documentsClosedRefusal()
+
+	/**
+	 * The uploaded `file`, or the refusal when there is none.
+	 *
+	 * @return array{name: string, content: string}|JSONResponse
+	 */
+	private function uploadedDocument(): array|JSONResponse {
+		$upload = $this->upload->read($this->request->getUploadedFile('file'));
+		if ($upload !== null) {
+			return $upload;
+		}
+
+		return $this->refuse(
+			message: $this->l10n->t('There is no file to add.'),
+			slug: 'no-file',
+			status: Http::STATUS_BAD_REQUEST
+		);
+	}//end uploadedDocument()
+
+	/**
+	 * Attach the upload to the case and announce it.
+	 *
+	 * @param CaseWriteRun                        $write  The write, on a case that takes documents.
+	 * @param array{name: string, content: string} $upload The uploaded file.
+	 *
+	 * @return JSONResponse The added document, or the refusal.
+	 */
+	private function attachDocument(CaseWriteRun $write, array $upload): JSONResponse {
+		$attached = $this->attachedUpload(write: $write, upload: $upload);
 		if ($attached === null) {
 			return $this->refuse(
 				message: $this->l10n->t('The document could not be added. Please try again.'),
@@ -330,19 +410,37 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			);
 		}
 
-		$this->recorder->announce(
-			register: $register,
-			schema: $schema,
-			caseId: $id,
-			act: PortalClientWriteEvent::ACT_DOCUMENT,
-			fields: [(string)($attached['name'] ?? '')],
-			subject: $context['subject'],
-			action: $context['action'],
-			occurredAt: $this->recorder->now()
-		);
+		$write->act        = PortalClientWriteEvent::ACT_DOCUMENT;
+		$write->occurredAt = $this->recorder->now();
+		$this->announceWrite(write: $write, fields: [(string)($attached['name'] ?? '')]);
 
 		return new JSONResponse(['document' => $attached]);
-	}//end addDocument()
+	}//end attachDocument()
+
+	/**
+	 * Attach the upload under a name nothing on the case already has, or
+	 * null when the case app does not take it.
+	 *
+	 * @param CaseWriteRun                        $write  The write, on a case that takes documents.
+	 * @param array{name: string, content: string} $upload The uploaded file.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function attachedUpload(CaseWriteRun $write, array $upload): ?array {
+		return $this->fileWriter->attachFile(
+			register: $write->register,
+			schema: $write->schema,
+			id: $write->id,
+			fileName: $this->upload->uniqueName(
+				existing: $this->fileReader->listFiles(register: $write->register, schema: $write->schema, id: $write->id),
+				fileName: $upload['name']
+			),
+			content: $upload['content'],
+			// Tagged, so the case screen lists it under "Sent by you" and
+			// nothing else from the folder (cases-documents-on-the-case).
+			tags: [PortalFileWriter::TAG_FROM_APPLICANT]
+		);
+	}//end attachedUpload()
 
 	/**
 	 * Withdraw the citizen's own request, where the case type allows it.
@@ -364,132 +462,278 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 10, period: 60)]
 	public function withdraw(string $register, string $schema, string $id): JSONResponse {
-		$context = $this->context(register: $register, schema: $schema, id: $id);
-		if ($context instanceof JSONResponse) {
-			return $context;
+		$write = $this->writableCase(target: ['register' => $register, 'schema' => $schema, 'id' => $id]);
+		if ($write instanceof JSONResponse) {
+			return $write;
 		}
 
-		$refusal = $this->guardWrite(context: $context, id: $id);
-		if ($refusal !== null) {
-			return $refusal;
+		$withdrawal = $this->openWithdrawal(context: $write->context);
+		if ($withdrawal instanceof JSONResponse) {
+			return $withdrawal;
 		}
 
+		return $this->applyWithdrawal(write: $write, withdrawal: $withdrawal);
+	}//end withdraw()
+
+	/**
+	 * The case's withdrawal state when a withdrawal is open, else the refusal.
+	 *
+	 * @param array<string, mixed> $context The resolved context.
+	 *
+	 * @return array<string, mixed>|JSONResponse
+	 */
+	private function openWithdrawal(array $context): array|JSONResponse {
 		$withdrawal = $this->writableSet->withdrawal(
 			action: $context['action'],
 			case: $context['case'],
 			closedField: (string)($context['closedField'] ?? '')
 		);
-		if (($withdrawal['open'] ?? false) !== true) {
-			return $this->refuse(
-				message: (string)($withdrawal['reason'] ?? ''),
-				slug: 'withdrawal-not-open',
-				status: Http::STATUS_CONFLICT
-			);
+		if (($withdrawal['open'] ?? false) === true) {
+			return $withdrawal;
 		}
 
-		return $this->applyWithdrawal(
-			context: $context,
-			withdrawal: $withdrawal,
-			register: $register,
-			schema: $schema,
-			id: $id
+		return $this->refuse(
+			message: (string)($withdrawal['reason'] ?? ''),
+			slug: 'withdrawal-not-open',
+			status: Http::STATUS_CONFLICT
 		);
-	}//end withdraw()
+	}//end openWithdrawal()
 
 	/**
 	 * Write the withdrawal, record it beside the answers and announce it.
 	 *
-	 * @param array<string, mixed> $context The resolved context.
+	 * @param CaseWriteRun         $write      The write, on a case that may be withdrawn.
 	 * @param array<string, mixed> $withdrawal The resolved withdrawal state.
-	 * @param string $register The register the case lives in.
-	 * @param string $schema The schema the case lives in.
-	 * @param string $id The case id.
 	 *
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/changes/withdrawing-your-own-case-from-the-portal/specs/withdrawing-your-own-case/spec.md
 	 */
-	private function applyWithdrawal(
-		array $context,
-		array $withdrawal,
-		string $register,
-		string $schema,
-		string $id,
-	): JSONResponse {
-		$action = $context['action'];
-		$config = (array)($action[CitizenWriteConfigNormaliser::KEY] ?? []);
-		$statusField = (string)($config['statusField'] ?? 'status');
-		$recordField = (string)($config['recordField'] ?? 'portalWrites');
-		$occurredAt = $this->recorder->now();
-		$reason = trim((string)$this->request->getParam('reason', ''));
-		$target = (string)$withdrawal['targetStatus'];
-
-		// The status is the case app's, whatever the body says: the request's
-		// own `status` is never read here, so there is nothing to tamper with.
-		$data = [
-			$statusField => $target,
-			'withdrawnAt' => $occurredAt,
-			'withdrawalReason' => $reason,
-		];
-		$data[$recordField] = $this->recorder->append(
-			existing: ($context['case'][$recordField] ?? null),
-			record: $this->recorder->buildRecord(
-				act: 'withdrawal',
-				subject: $context['subject'],
-				action: $action,
-				changes: [
-					$statusField => ['from' => ($context['case'][$statusField] ?? null), 'to' => $target],
-					'reason' => ['from' => null, 'to' => $reason],
-				],
-				occurredAt: $occurredAt
-			)
-		);
-
+	private function applyWithdrawal(CaseWriteRun $write, array $withdrawal): JSONResponse {
+		$change = $this->startWithdrawal(write: $write, withdrawal: $withdrawal);
+		$data   = $this->withdrawalData(write: $write, withdrawal: $change);
 		try {
-			$updated = $this->writer->updateObject(
-				register: $register,
-				schema: $schema,
-				scopeField: (string)($action['scopeField'] ?? 'subjectRef'),
-				subjectRef: (string)($context['subject']['subjectRef'] ?? ''),
-				organisation: (string)($context['subject']['organisation'] ?? ''),
-				id: $id,
-				data: $data
-			);
+			$updated = $this->updateCase(write: $write, data: $data);
 		} catch (\Throwable $e) {
-			$this->logger->error('Citizen withdrawal failed: ' . $e->getMessage(), ['exception' => $e]);
-			return $this->refuse(
-				message: $this->l10n->t('The request could not be withdrawn. Please try again.'),
-				slug: 'withdrawal-not-saved',
-				status: Http::STATUS_INTERNAL_SERVER_ERROR
-			);
+			return $this->withdrawalNotSaved(error: $e);
 		}
 
 		if ($updated === null) {
-			return $this->refuse(
-				message: $this->l10n->t('This case is not yours.'),
-				slug: 'case-not-yours',
-				status: Http::STATUS_FORBIDDEN
-			);
+			return $this->caseNotYours();
 		}
 
-		$this->recorder->announceWithdrawal(
-			register: $register,
-			schema: $schema,
-			caseId: $id,
-			status: $target,
-			reason: $reason,
-			subject: $context['subject'],
-			action: $action,
-			occurredAt: $occurredAt
+		$this->announceWithdrawal(write: $write, withdrawal: $change);
+
+		return $this->withdrawnAnswer(write: $write, updated: $updated);
+	}//end applyWithdrawal()
+
+	/**
+	 * Start the withdrawal now: the status the case type declares and the
+	 * reason the applicant gave.
+	 *
+	 * @param CaseWriteRun         $write      The write, on a case that may be withdrawn.
+	 * @param array<string, mixed> $withdrawal The resolved withdrawal state.
+	 *
+	 * @return CaseWithdrawal
+	 */
+	private function startWithdrawal(CaseWriteRun $write, array $withdrawal): CaseWithdrawal {
+		$write->act        = 'withdrawal';
+		$write->occurredAt = $this->recorder->now();
+		return new CaseWithdrawal(
+			status: (string)$withdrawal['targetStatus'],
+			reason: trim((string)$this->request->getParam('reason', ''))
+		);
+	}//end startWithdrawal()
+
+	/**
+	 * What a withdrawal writes: the declared status, the moment and the
+	 * reason, then the record of the change beside the answers.
+	 *
+	 * @param CaseWriteRun   $write      The withdrawal being written.
+	 * @param CaseWithdrawal $withdrawal Its status and reason.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withdrawalData(CaseWriteRun $write, CaseWithdrawal $withdrawal): array {
+		$statusField = $this->writeConfigField(write: $write, key: 'statusField');
+		// The status is the case app's, whatever the body says: the request's
+		// own `status` is never read here, so there is nothing to tamper with.
+		$data = [
+			$statusField => $withdrawal->status,
+			'withdrawnAt' => $write->occurredAt,
+			'withdrawalReason' => $withdrawal->reason,
+		];
+		$data[$this->writeConfigField(write: $write, key: 'recordField')] = $this->writeRecord(
+			write: $write,
+			changes: $this->withdrawalChanges(write: $write, withdrawal: $withdrawal)
 		);
 
-		// Nothing is deleted and no undo is offered: the answers stay
-		// readable, with the withdrawal beside them.
+		return $data;
+	}//end withdrawalData()
+
+	/**
+	 * What a withdrawal changes: the status, from the case's own to the
+	 * declared one, and the reason.
+	 *
+	 * @param CaseWriteRun   $write      The withdrawal being written.
+	 * @param CaseWithdrawal $withdrawal Its status and reason.
+	 *
+	 * @return array<string, array{from: mixed, to: mixed}>
+	 */
+	private function withdrawalChanges(CaseWriteRun $write, CaseWithdrawal $withdrawal): array {
+		$statusField = $this->writeConfigField(write: $write, key: 'statusField');
+		return [
+			$statusField => ['from' => ($write->context['case'][$statusField] ?? null), 'to' => $withdrawal->status],
+			'reason' => ['from' => null, 'to' => $withdrawal->reason],
+		];
+	}//end withdrawalChanges()
+
+	/**
+	 * The refusal for a withdrawal the store did not save, logged.
+	 *
+	 * @param \Throwable $error Why it was not saved.
+	 *
+	 * @return JSONResponse
+	 */
+	private function withdrawalNotSaved(\Throwable $error): JSONResponse {
+		$this->logger->error('Citizen withdrawal failed: ' . $error->getMessage(), ['exception' => $error]);
+		return $this->refuse(
+			message: $this->l10n->t('The request could not be withdrawn. Please try again.'),
+			slug: 'withdrawal-not-saved',
+			status: Http::STATUS_INTERNAL_SERVER_ERROR
+		);
+	}//end withdrawalNotSaved()
+
+	/**
+	 * Raise the withdrawal's own event.
+	 *
+	 * @param CaseWriteRun   $write      The withdrawal written.
+	 * @param CaseWithdrawal $withdrawal Its status and reason.
+	 *
+	 * @return void
+	 */
+	private function announceWithdrawal(CaseWriteRun $write, CaseWithdrawal $withdrawal): void {
+		$this->recorder->announceWithdrawal(
+			register: $write->register,
+			schema: $write->schema,
+			caseId: $write->id,
+			status: $withdrawal->status,
+			reason: $withdrawal->reason,
+			subject: $write->context['subject'],
+			action: $write->context['action'],
+			occurredAt: $write->occurredAt
+		);
+	}//end announceWithdrawal()
+
+	/**
+	 * The withdrawn case and its withdrawal state. Nothing is deleted and no
+	 * undo is offered: the answers stay readable, with the withdrawal beside
+	 * them.
+	 *
+	 * @param CaseWriteRun         $write   The withdrawal written.
+	 * @param array<string, mixed> $updated The case as saved.
+	 *
+	 * @return JSONResponse
+	 */
+	private function withdrawnAnswer(CaseWriteRun $write, array $updated): JSONResponse {
+		$context = $write->context;
 		return new JSONResponse([
 			'case' => (new CitizenCaseProjection(logger: $this->logger))->visible(context: $context, case: $updated),
-			'withdrawal' => $this->writableSet->withdrawal(action: $action, case: $updated, closedField: (string)($context['closedField'] ?? '')),
+			'withdrawal' => $this->writableSet->withdrawal(action: $context['action'], case: $updated, closedField: (string)($context['closedField'] ?? '')),
 		]);
-	}//end applyWithdrawal()
+	}//end withdrawnAnswer()
+
+	/**
+	 * A field name the citizen write declaration configures, or its default.
+	 *
+	 * @param CaseWriteRun $write The write.
+	 * @param string       $key   `statusField` or `recordField`.
+	 *
+	 * @return string
+	 */
+	private function writeConfigField(CaseWriteRun $write, string $key): string {
+		$config = (array)($write->context['action'][CitizenWriteConfigNormaliser::KEY] ?? []);
+		return (string)($config[$key] ?? self::WRITE_CONFIG_DEFAULTS[$key]);
+	}//end writeConfigField()
+
+	/**
+	 * The case's write history with the record of this write appended,
+	 * naming the citizen and both answers.
+	 *
+	 * @param CaseWriteRun                                      $write   The write.
+	 * @param array<string, array{from: mixed, to: mixed}> $changes What changed.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function writeRecord(CaseWriteRun $write, array $changes): array {
+		$recordField = $this->writeConfigField(write: $write, key: 'recordField');
+		return $this->recorder->append(
+			existing: ($write->context['case'][$recordField] ?? null),
+			record: $this->recorder->buildRecord(
+				act: $write->act,
+				subject: $write->context['subject'],
+				action: $write->context['action'],
+				changes: $changes,
+				occurredAt: $write->occurredAt
+			)
+		);
+	}//end writeRecord()
+
+	/**
+	 * Save the write on the case under the action's scope. Null when the
+	 * scoped write finds no case.
+	 *
+	 * @param CaseWriteRun         $write The write.
+	 * @param array<string, mixed> $data  What to write.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function updateCase(CaseWriteRun $write, array $data): ?array {
+		$subject = $write->context['subject'];
+		return $this->writer->updateObject(
+			register: $write->register,
+			schema: $write->schema,
+			scopeField: (string)($write->context['action']['scopeField'] ?? 'subjectRef'),
+			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			organisation: (string)($subject['organisation'] ?? ''),
+			id: $write->id,
+			data: $data
+		);
+	}//end updateCase()
+
+	/**
+	 * The refusal for a case that is not the citizen's.
+	 *
+	 * @return JSONResponse
+	 */
+	private function caseNotYours(): JSONResponse {
+		return $this->refuse(
+			message: $this->l10n->t('This case is not yours.'),
+			slug: 'case-not-yours',
+			status: Http::STATUS_FORBIDDEN
+		);
+	}//end caseNotYours()
+
+	/**
+	 * Raise the citizen write event naming the fields or file written.
+	 *
+	 * @param CaseWriteRun      $write  The write.
+	 * @param array<int, string> $fields The fields or file written.
+	 *
+	 * @return void
+	 */
+	private function announceWrite(CaseWriteRun $write, array $fields): void {
+		$this->recorder->announce(
+			register: $write->register,
+			schema: $write->schema,
+			caseId: $write->id,
+			act: $write->act,
+			fields: $fields,
+			subject: $write->context['subject'],
+			action: $write->context['action'],
+			occurredAt: $write->occurredAt
+		);
+	}//end announceWrite()
 
 	/**
 	 * Resolve the subject, the citizen write action, the case and its writable
@@ -616,102 +860,98 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		foreach ($body as $field => $value) {
 			$field = (string)$field;
 			if ($this->writableSet->isWritable(set: $set, field: $field) === false) {
-				$reason = (string)($set['fields'][$field]['reason'] ?? '');
-				if ($reason === '') {
-					$reason = $this->l10n->t('This answer cannot be changed from the portal.');
-				}
-
-				return $this->refuse(message: $reason, slug: 'field-not-writable', status: Http::STATUS_UNPROCESSABLE_ENTITY);
+				return $this->fieldNotWritable(set: $set, field: $field);
 			}
 
 			$submitted[$field] = $value;
-		}//end foreach
+		}
 
 		return $submitted;
 	}//end submittedFields()
+
+	/**
+	 * The refusal naming a field that is not open, with the writable set's
+	 * reason or the general one.
+	 *
+	 * @param array<string, mixed> $set   The resolved writable set.
+	 * @param string               $field The field the request names.
+	 *
+	 * @return JSONResponse
+	 */
+	private function fieldNotWritable(array $set, string $field): JSONResponse {
+		$reason = (string)($set['fields'][$field]['reason'] ?? '');
+		if ($reason === '') {
+			$reason = $this->l10n->t('This answer cannot be changed from the portal.');
+		}
+
+		return $this->refuse(message: $reason, slug: 'field-not-writable', status: Http::STATUS_UNPROCESSABLE_ENTITY);
+	}//end fieldNotWritable()
 
 	/**
 	 * Write the amendment, append the record naming the citizen, and announce
 	 * it. The record carries both answers, so a case worker sees what the
 	 * answer was before the correction and what it is now.
 	 *
-	 * @param array<string, mixed> $context The resolved context.
-	 * @param string $register The register the case lives in.
-	 * @param string $schema The schema the case lives in.
-	 * @param string $id The case id.
+	 * @param CaseWriteRun         $write     The write, inside the amendment window.
 	 * @param array<string, mixed> $submitted The accepted fields.
 	 *
 	 * @return JSONResponse
 	 */
-	private function applyAmendment(
-		array $context,
-		string $register,
-		string $schema,
-		string $id,
-		array $submitted,
-	): JSONResponse {
-		$action = $context['action'];
-		$config = (array)($action[CitizenWriteConfigNormaliser::KEY] ?? []);
-		$recordField = (string)($config['recordField'] ?? 'portalWrites');
-		$occurredAt = $this->recorder->now();
-
-		$changes = [];
-		foreach ($submitted as $field => $value) {
-			$changes[$field] = ['from' => ($context['case'][$field] ?? null), 'to' => $value];
-		}
-
-		$data = $submitted;
-		$data[$recordField] = $this->recorder->append(
-			existing: ($context['case'][$recordField] ?? null),
-			record: $this->recorder->buildRecord(
-				act: PortalClientWriteEvent::ACT_AMENDMENT,
-				subject: $context['subject'],
-				action: $action,
-				changes: $changes,
-				occurredAt: $occurredAt
-			)
-		);
-
+	private function applyAmendment(CaseWriteRun $write, array $submitted): JSONResponse {
+		$write->act        = PortalClientWriteEvent::ACT_AMENDMENT;
+		$write->occurredAt = $this->recorder->now();
+		$data = $this->amendmentData(write: $write, submitted: $submitted);
 		try {
-			$updated = $this->writer->updateObject(
-				register: $register,
-				schema: $schema,
-				scopeField: (string)($action['scopeField'] ?? 'subjectRef'),
-				subjectRef: (string)($context['subject']['subjectRef'] ?? ''),
-				organisation: (string)($context['subject']['organisation'] ?? ''),
-				id: $id,
-				data: $data
-			);
+			$updated = $this->updateCase(write: $write, data: $data);
 		} catch (\Throwable $e) {
-			$this->logger->error('Citizen amendment failed: ' . $e->getMessage(), ['exception' => $e]);
-			return $this->refuse(
-				message: $this->l10n->t('The change could not be saved. Please try again.'),
-				slug: 'amendment-not-saved',
-				status: Http::STATUS_INTERNAL_SERVER_ERROR
-			);
+			return $this->amendmentNotSaved(error: $e);
 		}
 
 		if ($updated === null) {
-			return $this->refuse(
-				message: $this->l10n->t('This case is not yours.'),
-				slug: 'case-not-yours',
-				status: Http::STATUS_FORBIDDEN
-			);
+			return $this->caseNotYours();
 		}
 
-		$this->recorder->announce(
-			register: $register,
-			schema: $schema,
-			caseId: $id,
-			act: PortalClientWriteEvent::ACT_AMENDMENT,
-			fields: array_map(strval(...), array_keys($submitted)),
-			subject: $context['subject'],
-			action: $action,
-			occurredAt: $occurredAt
-		);
+		$this->announceWrite(write: $write, fields: array_map(strval(...), array_keys($submitted)));
 
-		return new JSONResponse(['case' => (new CitizenCaseProjection(logger: $this->logger))->visible(context: $context, case: $updated)]);
+		return new JSONResponse(['case' => (new CitizenCaseProjection(logger: $this->logger))->visible(context: $write->context, case: $updated)]);
 	}//end applyAmendment()
+
+	/**
+	 * What an amendment writes: the accepted fields, then the record carrying
+	 * both answers of each.
+	 *
+	 * @param CaseWriteRun         $write     The amendment being written.
+	 * @param array<string, mixed> $submitted The accepted fields.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function amendmentData(CaseWriteRun $write, array $submitted): array {
+		$changes = [];
+		foreach ($submitted as $field => $value) {
+			$changes[$field] = ['from' => ($write->context['case'][$field] ?? null), 'to' => $value];
+		}
+
+		$data = $submitted;
+		$data[$this->writeConfigField(write: $write, key: 'recordField')] = $this->writeRecord(write: $write, changes: $changes);
+
+		return $data;
+	}//end amendmentData()
+
+	/**
+	 * The refusal for an amendment the store did not save, logged.
+	 *
+	 * @param \Throwable $error Why it was not saved.
+	 *
+	 * @return JSONResponse
+	 */
+	private function amendmentNotSaved(\Throwable $error): JSONResponse {
+		$this->logger->error('Citizen amendment failed: ' . $error->getMessage(), ['exception' => $error]);
+		return $this->refuse(
+			message: $this->l10n->t('The change could not be saved. Please try again.'),
+			slug: 'amendment-not-saved',
+			status: Http::STATUS_INTERNAL_SERVER_ERROR
+		);
+	}//end amendmentNotSaved()
 
 	/**
 	 * A refusal the citizen can read: one sentence, plus a slug the portal
@@ -747,27 +987,8 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			return $subject;
 		}
 
-		$held = $this->mandates->mandatesFor(
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			organisation: (string)($subject['organisation'] ?? ''),
-			holders: (new MandateParties())->holdersOf(subject: $subject)
-		);
-		$active = $this->mandates->activeMandate(mandates: $held, mandateId: (string)$this->request->getParam('mandate', ''));
-		if ($active === null) {
-			return $subject;
-		}
-
-		$described = $this->mandates->describe(mandate: $active);
-		$party = $described['onBehalfOf'];
-		if ($party === '') {
-			$party = $described['organisation'];
-		}
-
-		$scope = $this->tree->entitiesFor(
-			root: $party,
-			reachesDown: ($this->mandates->reachOf(mandate: $active) === PortalMandateService::REACH_TREE)
-		);
-		if ($scope['refused'] === true || in_array($entity, $scope['entities'], true) === false) {
+		$described = $this->mandateReaching(subject: $subject, entity: $entity);
+		if ($described === null) {
 			return $subject;
 		}
 
@@ -779,6 +1000,68 @@ class CitizenCaseController extends Controller implements PortalProtected {
 
 		return $subject;
 	}//end actingAs()
+
+	/**
+	 * The described mandate the request names when the identity holds it and
+	 * it reaches the named entity at this moment, else null.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param string               $entity  The entity the request names.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function mandateReaching(array $subject, string $entity): ?array {
+		$active = $this->heldMandate(subject: $subject);
+		if ($active === null) {
+			return null;
+		}
+
+		$described = $this->mandates->describe(mandate: $active);
+		$scope     = $this->mandateScope(mandate: $active, described: $described);
+		if ($scope['refused'] === true || in_array($entity, $scope['entities'], true) === false) {
+			return null;
+		}
+
+		return $described;
+	}//end mandateReaching()
+
+	/**
+	 * The active mandate the request names among those the identity holds,
+	 * or null.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function heldMandate(array $subject): ?array {
+		$held = $this->mandates->mandatesFor(
+			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			organisation: (string)($subject['organisation'] ?? ''),
+			holders: (new MandateParties())->holdersOf(subject: $subject)
+		);
+		return $this->mandates->activeMandate(mandates: $held, mandateId: (string)$this->request->getParam('mandate', ''));
+	}//end heldMandate()
+
+	/**
+	 * The entities a mandate reaches: from the party it is held on behalf of,
+	 * else its organisation, down the tree when its reach says so.
+	 *
+	 * @param array<string, mixed> $mandate   The active mandate.
+	 * @param array<string, mixed> $described The mandate, described.
+	 *
+	 * @return array{entities: array<int, string>, refused: bool}
+	 */
+	private function mandateScope(array $mandate, array $described): array {
+		$party = $described['onBehalfOf'];
+		if ($party === '') {
+			$party = $described['organisation'];
+		}
+
+		return $this->tree->entitiesFor(
+			root: $party,
+			reachesDown: ($this->mandates->reachOf(mandate: $mandate) === PortalMandateService::REACH_TREE)
+		);
+	}//end mandateScope()
 	/**
 	 * Which contributed action admits a citizen write here.
 	 *
