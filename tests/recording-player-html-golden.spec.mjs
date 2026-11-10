@@ -22,14 +22,15 @@ const PLAYER = await loadSfc('src/modals/TrafficRecordingPlayer.vue', {
 })
 
 /**
- * The player with its builder and escaping bound, and the stylesheets sent.
+ * The player with its methods bound, and the stylesheets sent.
  *
  * @return {object} The player.
  */
 function player() {
 	const vm = { styles: { abc: 'body{color:red}</style><script>x()</script>' } }
-	vm.escape = PLAYER.methods.escape.bind(vm)
-	vm.html = PLAYER.methods.html.bind(vm)
+	for (const [name, method] of Object.entries(PLAYER.methods)) {
+		vm[name] = method.bind(vm)
+	}
 	return vm
 }
 

@@ -147,6 +147,20 @@ const MASK_STYLE =
 	+ '.pq-box{display:inline-block;background:rgba(127,127,127,.25);min-width:1em;min-height:1em}'
 	+ 'input,textarea,select{color:rgba(127,127,127,.7)}'
 
+/**
+ * A masked text node as a run of blocks of its length, at most 400; nothing
+ * for an empty one.
+ *
+ * @param {{l: number}} node The masked text node.
+ * @return {string} The HTML.
+ */
+function maskedText(node) {
+	const length = Math.min(400, Math.max(0, Number(node.l) || 0))
+	return length === 0
+		? ''
+		: '<span class="pq-mask">' + '░'.repeat(length) + '</span>'
+}
+
 export default {
 	name: 'TrafficRecordingPlayer',
 
@@ -533,15 +547,28 @@ export default {
 				return ''
 			}
 			if (typeof node.n !== 'string') {
-				const length = Math.min(400, Math.max(0, Number(node.l) || 0))
-				return length === 0
-					? ''
-					: '<span class="pq-mask">' + '░'.repeat(length) + '</span>'
+				return maskedText(node)
 			}
 			const tag = node.n.replace(/[^a-z0-9-]/g, '')
 			if (tag === '' || tag === 'script') {
 				return ''
 			}
+			const attributes = this.attributesOf(node, tag)
+			if (VOID.includes(tag)) {
+				return '<' + tag + attributes + '>'
+			}
+			return '<' + tag + attributes + '>' + this.innerOf(node, tag) + '</' + tag + '>'
+		},
+
+		/**
+		 * An element's attributes as HTML: only plain names that are no event
+		 * handler, every value escaped; a box marked as one, a value as dots.
+		 *
+		 * @param {object} node The masked element.
+		 * @param {string} tag Its safe tag.
+		 * @return {string} The attributes, each with a leading space.
+		 */
+		attributesOf(node, tag) {
 			let attributes = ''
 			const given = node.a && typeof node.a === 'object' ? node.a : {}
 			Object.keys(given).forEach((name) => {
@@ -557,22 +584,28 @@ export default {
 			if (typeof node.v === 'number' && node.v > 0) {
 				attributes += ' value="' + '•'.repeat(Math.min(200, node.v)) + '"'
 			}
-			if (VOID.includes(tag)) {
-				return '<' + tag + attributes + '>'
-			}
-			let inner = ''
+			return attributes
+		},
+
+		/**
+		 * An element's content as HTML: a stylesheet without anything that
+		 * could close it, else its children.
+		 *
+		 * @param {object} node The masked element.
+		 * @param {string} tag Its safe tag.
+		 * @return {string} The content.
+		 */
+		innerOf(node, tag) {
 			if (tag === 'style') {
 				const sheet =
 					typeof node.s === 'string'
 						? node.s
 						: this.styles[String(node.h || '')] || ''
-				inner = sheet.replace(/<\/style/gi, '')
-			} else {
-				;(Array.isArray(node.c) ? node.c : []).forEach((child) => {
-					inner += this.html(child)
-				})
+				return sheet.replace(/<\/style/gi, '')
 			}
-			return '<' + tag + attributes + '>' + inner + '</' + tag + '>'
+			return (Array.isArray(node.c) ? node.c : [])
+				.map((child) => this.html(child))
+				.join('')
 		},
 
 		/**
