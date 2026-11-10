@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Availability;
 
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
 use OCA\Portaliq\Service\Availability\AvailabilityStore;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -35,8 +36,8 @@ class AvailabilityStoreTest extends TestCase {
 		);
 		$deleted = [];
 		$service->method('deleteObject')->willReturnCallback(
-			static function (string $uuid, $register = null, $schema = null, bool $_rbac = true, bool $_multitenancy = true) use (&$deleted): bool {
-				$deleted[] = [$uuid, $schema, $_rbac];
+			static function (ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true) use (&$deleted): bool {
+				$deleted[] = [$deletion->uuid, $deletion->target->schema, $_rbac];
 				return true;
 			}
 		);

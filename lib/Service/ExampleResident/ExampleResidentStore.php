@@ -29,6 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\ExampleResident;
 
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
 use OCA\Portaliq\Service\ObjectRowNormaliser;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\RowIdOf;
@@ -219,7 +221,11 @@ class ExampleResidentStore {
 		}
 
 		try {
-			$deleted = $objectService->deleteObject(uuid: $id, register: $register, schema: $schema, _rbac: false, _multitenancy: false);
+			$deleted = $objectService->deleteObject(
+				deletion: new ObjectDeletion(uuid: $id, target: new ObjectFindTarget(register: $register, schema: $schema)),
+				_rbac: false,
+				_multitenancy: false
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: example resident delete failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return false;

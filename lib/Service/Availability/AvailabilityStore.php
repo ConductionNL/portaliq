@@ -27,6 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Availability;
 
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use Psr\Container\ContainerInterface;
@@ -225,7 +227,11 @@ class AvailabilityStore {
 
 		try {
 			$this->context->apply(objectService: $objectService, schemaSlug: $schema);
-			$objectService->deleteObject(uuid: $uuid, register: self::REGISTER, schema: $schema, _rbac: false, _multitenancy: false);
+			$objectService->deleteObject(
+				deletion: new ObjectDeletion(uuid: $uuid, target: new ObjectFindTarget(register: self::REGISTER, schema: $schema)),
+				_rbac: false,
+				_multitenancy: false
+			);
 
 			return true;
 		} catch (Throwable $e) {

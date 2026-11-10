@@ -18,6 +18,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\ExampleSite;
 
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
 use JsonSerializable;
 use OCA\Portaliq\Service\ExampleSite\ExampleSiteStore;
 use OCA\Portaliq\Service\PortalObjectWriter;
@@ -204,7 +205,8 @@ class ExampleSiteStoreTest extends TestCase {
 			 *
 			 * @return bool
 			 */
-			public function deleteObject(string $uuid, string $register, string $schema, bool $_rbac = true, bool $_multitenancy = true): bool {
+			public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true): bool {
+				[$uuid, $register, $schema] = [$deletion->uuid, $deletion->target->register, $deletion->target->schema];
 				if ($this->fail === true) {
 					throw new RuntimeException('delete failed');
 				}
