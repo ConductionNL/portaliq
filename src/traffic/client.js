@@ -56,6 +56,108 @@ const FLUSH_AFTER = 2000
 const FLUSH_AT = 20
 
 /**
+ * The state of one client in a window: nothing measured, nothing queued,
+ * no identity, and the random half of a cookieless experiment seed.
+ *
+ * @param {Window} win The window.
+ * @return {object} The state.
+ */
+function newClientState(win) {
+return {
+	traffic: null,
+	collector: '',
+	consent: false,
+	disabled: false,
+	sequence: 0,
+	queue: [],
+	timer: null,
+	clientId: '',
+	sessionId: '',
+	scrolled: false,
+	location: '',
+	// Form analytics (portal-traffic-outcomes): the forms started on
+	// this page, by id, each with the field in focus and when it got
+	// it. Ids and times only; no field's value is ever read.
+	forms: {},
+	// Custom dimensions the page set, by id, attached to what is sent.
+	dimensions: {},
+	notFound: false,
+	// Page experiments (portal-traffic-experiments): the experiment
+	// and variant this session was put on, once, and the random half
+	// of the seed that makes a cookieless pick sticky for the page
+	// load. Stored nowhere: a cookieless client writes nothing.
+	experiment: null,
+	loadId: randomId(win.crypto),
+	changes: null,
+	// Heatmaps: the deepest scroll of the current page view.
+	heatDepth: 0,
+	// Session recording: whether the recorder script was asked for.
+	recorderLoaded: false,
+}
+}
+
+/**
+ * The portal's site record, where the traffic configuration lives.
+ *
+ * @param {{origin: string, appPath: string, portal: string}} config The client's config.
+ * @return {string} The address.
+ */
+function siteUrlOf(config) {
+	return (
+		config.origin
+		+ config.appPath
+		+ '/api/content/site'
+		+ (config.portal ? '?portal=' + encodeURIComponent(config.portal) : '')
+	)
+}
+
+/**
+ * Whether the site record says this portal measures, and where to.
+ *
+ * @param {object|null} site The site record.
+ * @return {boolean} True to start.
+ */
+function isMeasured(site) {
+	return Boolean(
+		site && site.traffic && site.traffic.enabled === true && site.collector,
+	)
+}
+
+/**
+ * The page's handle on a client that measures nothing (yet): every call is
+ * a no-op until the portal says what to measure.
+ *
+ * @return {object} The handle: `track`, `consent`, `disable` and `dimension` doing nothing, no `recording`.
+ */
+function idleApi() {
+	return {
+		track() {},
+		consent() {},
+		disable() {},
+		dimension() {},
+		recording: null,
+	}
+}
+
+/**
+ * The link a click landed on: the nearest anchor up from its target, when
+ * it has an address.
+ *
+ * @param {Node|null} target The click's target.
+ * @return {Element|null} The anchor, or null.
+ */
+function anchorOf(target) {
+	let node = target
+	while (node && node.nodeType === 1 && node.tagName !== 'A') {
+		node = node.parentNode
+	}
+	if (!node || node.nodeType !== 1 || !node.href) {
+		return null
+	}
+	return node
+}
+
+/**
  * Boot the client in a window.
  *
  * Exported for the bundle's own entry below; a test that wants the pure
@@ -66,13 +168,7 @@ const FLUSH_AT = 20
  */
 export function boot(win) {
 	const doc = win.document
-	const api = {
-		track() {},
-		consent() {},
-		disable() {},
-		dimension() {},
-		recording: null,
-	}
+	const api = idleApi()
 	win.portaliqTraffic = api
 
 	if (optedOut(win.navigator)) {
@@ -84,37 +180,7 @@ export function boot(win) {
 		return
 	}
 
-	const state = {
-		traffic: null,
-		collector: '',
-		consent: false,
-		disabled: false,
-		sequence: 0,
-		queue: [],
-		timer: null,
-		clientId: '',
-		sessionId: '',
-		scrolled: false,
-		location: '',
-		// Form analytics (portal-traffic-outcomes): the forms started on
-		// this page, by id, each with the field in focus and when it got
-		// it. Ids and times only; no field's value is ever read.
-		forms: {},
-		// Custom dimensions the page set, by id, attached to what is sent.
-		dimensions: {},
-		notFound: false,
-		// Page experiments (portal-traffic-experiments): the experiment
-		// and variant this session was put on, once, and the random half
-		// of the seed that makes a cookieless pick sticky for the page
-		// load. Stored nowhere: a cookieless client writes nothing.
-		experiment: null,
-		loadId: randomId(win.crypto),
-		changes: null,
-		// Heatmaps: the deepest scroll of the current page view.
-		heatDepth: 0,
-		// Session recording: whether the recorder script was asked for.
-		recorderLoaded: false,
-	}
+	const state = newClientState(win)
 
 	// A page sets its dimensions while this client is still asking the
 	// portal what to measure, so the setter works from the first moment
@@ -123,29 +189,27 @@ export function boot(win) {
 		state.dimensions[String(id || '')] = value
 	}
 
-	const siteUrl =
-		config.origin
-		+ config.appPath
-		+ '/api/content/site'
-		+ (config.portal ? '?portal=' + encodeURIComponent(config.portal) : '')
-
-	win.fetch(siteUrl, { credentials: 'omit', mode: 'cors' })
+	win.fetch(siteUrlOf(config), { credentials: 'omit', mode: 'cors' })
 		.then((response) => (response.ok ? response.json() : null))
-		.then((site) => {
-			if (
-				!site
-				|| !site.traffic
-				|| site.traffic.enabled !== true
-				|| !site.collector
-			) {
-				return
-			}
-			state.traffic = site.traffic
-			state.collector = String(site.collector)
-			state.consent = site.traffic.consentRequired !== true
-			start()
-		})
+		.then(measure)
 		.catch(() => {})
+
+	/**
+	 * Start measuring when the site record says this portal measures, under
+	 * the consent it asks for.
+	 *
+	 * @param {object|null} site The site record.
+	 * @return {void}
+	 */
+	function measure(site) {
+		if (!isMeasured(site)) {
+			return
+		}
+		state.traffic = site.traffic
+		state.collector = String(site.collector)
+		state.consent = site.traffic.consentRequired !== true
+		start()
+	}
 
 	/**
 	 * Wire the listeners and send the first page view.
@@ -154,7 +218,18 @@ export function boot(win) {
 	 */
 	function start() {
 		restoreIdentity()
+		exposeApi()
+		listen()
+		pageView()
+	}
 
+	/**
+	 * The page's handle on the client: track an event, give or withdraw
+	 * consent, switch the client off.
+	 *
+	 * @return {void}
+	 */
+	function exposeApi() {
 		api.track = (name, params) => record(String(name || ''), params || {})
 		api.consent = (granted) => {
 			state.consent = granted === true
@@ -173,7 +248,15 @@ export function boot(win) {
 				api.recording.stop()
 			}
 		}
+	}
 
+	/**
+	 * Wire the listeners: links, forms, errors, scrolling, heatmaps, the
+	 * recorder, the not-found marker, the page going away and navigation.
+	 *
+	 * @return {void}
+	 */
+	function listen() {
 		doc.addEventListener('click', onClick, true)
 		doc.addEventListener('submit', onSubmit, true)
 		doc.addEventListener('focusin', onFocusIn, true)
@@ -198,8 +281,6 @@ export function boot(win) {
 		})
 		win.addEventListener('popstate', () => pageView())
 		patchHistory()
-
-		pageView()
 	}
 
 	/**
@@ -284,11 +365,8 @@ export function boot(win) {
 	 * @return {void}
 	 */
 	function onClick(event) {
-		let node = event.target
-		while (node && node.nodeType === 1 && node.tagName !== 'A') {
-			node = node.parentNode
-		}
-		if (!node || node.nodeType !== 1 || !node.href) {
+		const node = anchorOf(event.target)
+		if (!node) {
 			return
 		}
 		const link = classifyLink(String(node.href), win.location.host)
@@ -409,19 +487,8 @@ export function boot(win) {
 	 */
 	function applyExperiment(location) {
 		const route = siteRoute(location)
-		if (state.experiment === null) {
-			const experiment = experimentFor(state.traffic, route)
-			if (!experiment) {
-				return false
-			}
-			const variant = pickVariant(
-				experiment.variants,
-				experiment.id + ':' + (state.clientId || state.loadId),
-			)
-			if (!variant) {
-				return false
-			}
-			state.experiment = { id: String(experiment.id), variant }
+		if (state.experiment === null && !joinExperiment(route)) {
+			return false
 		}
 		const variant = state.experiment.variant
 		const page = experimentFor(state.traffic, route)
@@ -430,22 +497,64 @@ export function boot(win) {
 			return false
 		}
 		if (variant.pageRoute && siteRoute(variant.pageRoute) !== route) {
-			const target = variantUrl(location, String(variant.pageRoute))
-			win.history.replaceState(win.history.state, '', target)
-			let event
-			try {
-				event = new win.PopStateEvent('popstate', {
-					state: win.history.state,
-				})
-			} catch {
-				event = doc.createEvent('Event')
-				event.initEvent('popstate', false, false)
-			}
-			win.dispatchEvent(event)
+			moveToVariant(location, variant)
 			return true
 		}
 		watchChanges(Array.isArray(variant.changes) ? variant.changes : null)
 		return false
+	}
+
+	/**
+	 * Put this session on a variant of the experiment running on a route.
+	 *
+	 * @param {string} route The in-site route.
+	 * @return {boolean} True when the session is now in an experiment.
+	 */
+	function joinExperiment(route) {
+		const experiment = experimentFor(state.traffic, route)
+		if (!experiment) {
+			return false
+		}
+		const variant = pickVariant(
+			experiment.variants,
+			experiment.id + ':' + (state.clientId || state.loadId),
+		)
+		if (!variant) {
+			return false
+		}
+		state.experiment = { id: String(experiment.id), variant }
+		return true
+	}
+
+	/**
+	 * Move to the variant's page without a reload, so the site's own
+	 * router renders it.
+	 *
+	 * @param {string} location The page URL.
+	 * @param {object} variant The variant with its `pageRoute`.
+	 * @return {void}
+	 */
+	function moveToVariant(location, variant) {
+		const target = variantUrl(location, String(variant.pageRoute))
+		win.history.replaceState(win.history.state, '', target)
+		win.dispatchEvent(popStateEvent())
+	}
+
+	/**
+	 * A popstate event, also where the browser has no PopStateEvent.
+	 *
+	 * @return {Event} The event.
+	 */
+	function popStateEvent() {
+		try {
+			return new win.PopStateEvent('popstate', {
+				state: win.history.state,
+			})
+		} catch {
+			const event = doc.createEvent('Event')
+			event.initEvent('popstate', false, false)
+			return event
+		}
 	}
 
 	/**
@@ -468,22 +577,31 @@ export function boot(win) {
 		if (typeof win.MutationObserver !== 'function' || !doc.documentElement) {
 			return
 		}
-		const observer = new win.MutationObserver(() => {
-			if (state.changes && state.changes.timer === null) {
-				state.changes.timer = win.setTimeout(() => {
-					if (state.changes) {
-						state.changes.timer = null
-						applyChanges()
-					}
-				}, 50)
-			}
-		})
+		const observer = new win.MutationObserver(scheduleChanges)
 		observer.observe(doc.documentElement, {
 			childList: true,
 			subtree: true,
 			characterData: true,
 		})
 		state.changes.observer = observer
+	}
+
+	/**
+	 * Apply the variant's changes again soon after the page changed,
+	 * coalescing a burst of changes into one pass.
+	 *
+	 * @return {void}
+	 */
+	function scheduleChanges() {
+		if (!state.changes || state.changes.timer !== null) {
+			return
+		}
+		state.changes.timer = win.setTimeout(() => {
+			if (state.changes) {
+				state.changes.timer = null
+				applyChanges()
+			}
+		}, 50)
 	}
 
 	/**
@@ -685,7 +803,24 @@ export function boot(win) {
 		if (state.disabled || !allowedEvent(state.traffic, name, state.consent)) {
 			return
 		}
-		const event = {
+		const event = newEvent(name)
+		event.params = eventParams(event, fields)
+		if (state.clientId) {
+			event.clientId = state.clientId
+			event.sessionId = state.sessionId
+			persistSequence()
+		}
+		enqueue(event)
+	}
+
+	/**
+	 * A new event of this page, numbered in the session's sequence.
+	 *
+	 * @param {string} name The event name.
+	 * @return {object} The event, without its params yet.
+	 */
+	function newEvent(name) {
+		return {
 			name,
 			timestamp: new Date().toISOString(),
 			sequence: state.sequence++,
@@ -697,6 +832,18 @@ export function boot(win) {
 			pageTitle: String(doc.title || '').substring(0, 256),
 			params: {},
 		}
+	}
+
+	/**
+	 * An event's params: the custom dimensions, the fields that are not
+	 * dimension-shaped (those go on the event itself), and the experiment
+	 * the session is on.
+	 *
+	 * @param {object} event The event, given its dimension-shaped fields.
+	 * @param {object} fields Dimension fields and params.
+	 * @return {object} The params.
+	 */
+	function eventParams(event, fields) {
 		const params = dimensionParams(state.traffic, state.dimensions)
 		Object.keys(fields).forEach((key) => {
 			if (key === 'searchTerm' || key === 'linkUrl' || key === 'fileName') {
@@ -709,12 +856,16 @@ export function boot(win) {
 			params.experiment = state.experiment.id
 			params.variant = String(state.experiment.variant.id)
 		}
-		event.params = params
-		if (state.clientId) {
-			event.clientId = state.clientId
-			event.sessionId = state.sessionId
-			persistSequence()
-		}
+		return params
+	}
+
+	/**
+	 * Queue an event: post at once when the queue is full, else soon.
+	 *
+	 * @param {object} event The event.
+	 * @return {void}
+	 */
+	function enqueue(event) {
 		state.queue.push(event)
 		if (state.queue.length >= FLUSH_AT) {
 			flush()
@@ -742,28 +893,38 @@ export function boot(win) {
 		const batches = chunk(state.queue)
 		state.queue = []
 		const bearer = linkedBearer()
-		batches.forEach((events) => {
-			const body = envelope(config.portal, state.consent, events)
-			if (
-				bearer === ''
-				&& win.navigator.sendBeacon
-				&& win.navigator.sendBeacon(state.collector, body)
-			) {
-				return
-			}
-			const headers = { 'Content-Type': 'text/plain' }
-			if (bearer !== '') {
-				headers.Authorization = 'Bearer ' + bearer
-			}
-			win.fetch(state.collector, {
-				method: 'POST',
-				body,
-				headers,
-				mode: 'cors',
-				credentials: 'omit',
-				keepalive: true,
-			}).catch(() => {})
-		})
+		batches.forEach((events) => sendBatch(events, bearer))
+	}
+
+	/**
+	 * Post one batch: by beacon when no bearer goes along and the browser
+	 * takes it, else by fetch, with the bearer of a linked account.
+	 *
+	 * @param {Array<object>} events The batch.
+	 * @param {string} bearer The bearer, or ''.
+	 * @return {void}
+	 */
+	function sendBatch(events, bearer) {
+		const body = envelope(config.portal, state.consent, events)
+		if (
+			bearer === ''
+			&& win.navigator.sendBeacon
+			&& win.navigator.sendBeacon(state.collector, body)
+		) {
+			return
+		}
+		const headers = { 'Content-Type': 'text/plain' }
+		if (bearer !== '') {
+			headers.Authorization = 'Bearer ' + bearer
+		}
+		win.fetch(state.collector, {
+			method: 'POST',
+			body,
+			headers,
+			mode: 'cors',
+			credentials: 'omit',
+			keepalive: true,
+		}).catch(() => {})
 	}
 
 	/**
@@ -802,32 +963,55 @@ export function boot(win) {
 		}
 		const key = storageKey()
 		try {
-			let clientId = win.localStorage.getItem(key + ':client')
-			let first = false
-			if (!clientId) {
-				clientId = randomId(win.crypto)
-				win.localStorage.setItem(key + ':client', clientId)
-				first = true
-			}
-			let sessionId = win.sessionStorage.getItem(key + ':session')
+			const client = storedClient(key)
+			const sessionId = win.sessionStorage.getItem(key + ':session')
 			if (!sessionId) {
-				sessionId = randomId(win.crypto)
-				win.sessionStorage.setItem(key + ':session', sessionId)
-				win.sessionStorage.setItem(key + ':sequence', '0')
-				state.sequence = 0
-				state.clientId = clientId
-				state.sessionId = sessionId
-				record('session_start', { visitorType: first ? 'new' : 'returning' })
+				startSession(key, client)
 				return
 			}
 			state.sequence =
 				parseInt(win.sessionStorage.getItem(key + ':sequence') || '0', 10)
 				|| 0
-			state.clientId = clientId
+			state.clientId = client.id
 			state.sessionId = sessionId
 		} catch {
 			// Storage refused (private mode, a blocking policy): cookieless it is.
 		}
+	}
+
+	/**
+	 * The portal's client id from local storage, created and kept the first
+	 * time.
+	 *
+	 * @param {string} key The storage key prefix.
+	 * @return {{id: string, first: boolean}} The id, and whether it is new.
+	 */
+	function storedClient(key) {
+		const kept = win.localStorage.getItem(key + ':client')
+		if (kept) {
+			return { id: kept, first: false }
+		}
+		const id = randomId(win.crypto)
+		win.localStorage.setItem(key + ':client', id)
+		return { id, first: true }
+	}
+
+	/**
+	 * Start a session for the client: a new session id, the sequence from
+	 * zero, and a `session_start` saying whether the visitor is new.
+	 *
+	 * @param {string} key The storage key prefix.
+	 * @param {{id: string, first: boolean}} client The client id.
+	 * @return {void}
+	 */
+	function startSession(key, client) {
+		const sessionId = randomId(win.crypto)
+		win.sessionStorage.setItem(key + ':session', sessionId)
+		win.sessionStorage.setItem(key + ':sequence', '0')
+		state.sequence = 0
+		state.clientId = client.id
+		state.sessionId = sessionId
+		record('session_start', { visitorType: client.first ? 'new' : 'returning' })
 	}
 
 	/**
