@@ -284,6 +284,28 @@ class CitizenCaseControllerTest extends TestCase {
 	}//end testAWriteUnderAMandateRecordsTheMandatesLabel()
 
 	/**
+	 * A request may name an entity but never grant itself one: an entity the
+	 * held mandate does not reach, or a mandate the identity does not hold,
+	 * leaves the write recorded as the citizen's own.
+	 */
+	public function testAWriteNamingAnEntityItCannotReachIsRecordedAsTheirOwn(): void {
+		$outside = $this->controller(
+			fields: ['omschrijving' => 'x'],
+			params: ['actingFor' => 'kvk-elsewhere', 'mandate' => 'mandate-1'],
+			actingMandate: ['id' => 'mandate-1', 'label' => 'Kramer voor Slagerij Van der Berg'],
+		);
+		$this->assertSame(Http::STATUS_OK, $outside->amend('zaken', 'zaak', self::CASE_ID)->getStatus());
+		$this->assertArrayNotHasKey('actingFor', $this->writes[0]['data']['portalWrites'][0]['mandate']);
+
+		$unheld = $this->controller(
+			fields: ['omschrijving' => 'x'],
+			params: ['actingFor' => 'kvk-subsidiary', 'mandate' => 'mandate-9'],
+		);
+		$this->assertSame(Http::STATUS_OK, $unheld->amend('zaken', 'zaak', self::CASE_ID)->getStatus());
+		$this->assertArrayNotHasKey('actingFor', $this->writes[1]['data']['portalWrites'][0]['mandate']);
+	}//end testAWriteNamingAnEntityItCannotReachIsRecordedAsTheirOwn()
+
+	/**
 	 * The same write, with the window closed: refused with a status and the
 	 * case type's own sentence, and nothing is written or raised.
 	 */
@@ -1057,7 +1079,7 @@ class CitizenCaseControllerTest extends TestCase {
 		$data = $this->writes[0]['data'];
 		$this->assertSame(['status', 'withdrawnAt', 'withdrawalReason', 'portalWrites'], array_keys($data));
 		$this->assertSame('Verhuisd.', $data['withdrawalReason']);
-		$this->assertSame($data['withdrawnAt'], $data['portalWrites'][0]['occurredAt'] ?? $data['withdrawnAt']);
+		$this->assertSame($data['withdrawnAt'], $data['portalWrites'][0]['at']);
 		$record = $data['portalWrites'][0];
 		$this->assertSame('withdrawal', $record['act']);
 		$this->assertSame(['status' => ['from' => 'ontvangen', 'to' => 'ingetrokken'], 'reason' => ['from' => null, 'to' => 'Verhuisd.']], $record['changes']);
