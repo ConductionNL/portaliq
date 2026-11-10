@@ -11,7 +11,13 @@
 
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { guestStrings, previewState, takeGuestLink } from '../src/site/lib/guestAction.js'
+import {
+	actOutcome,
+	guestPreview,
+	guestStrings,
+	previewState,
+	takeGuestLink,
+} from '../src/site/lib/guestAction.js'
 
 const strings = guestStrings('en')
 
@@ -79,4 +85,20 @@ test('without an answer, or with a failed one, the link cannot be used', () => {
 	const first = previewState({ ok: false, status: 400, body: { preview: { message: 'Binnen' }, message: 'Bovenop' } }, strings)
 	assert.equal(first.reason, 'Binnen')
 	assert.equal(previewState({ ok: false, status: 0 }, strings).reason, strings.unusable)
+})
+
+test('an answer without readable JSON is an empty body, and the status goes along', async () => {
+	const link = { app: 'app', action: 'act', token: 't' }
+	const broken = await guestPreview('/b', link, '', async () => ({ ok: false, status: 502, json: async () => { throw new Error('html') } }))
+	assert.deepEqual(broken, { ok: false, status: 502, body: {} })
+	const empty = await guestPreview('/b', link, '', async () => ({ ok: true, status: 204, json: async () => null }))
+	assert.deepEqual(empty, { ok: true, status: 204, body: {} })
+	const truthy = await guestPreview('/b', link, '', async () => ({ ok: 1, status: 200, json: async () => ({ a: 1 }) }))
+	assert.deepEqual(truthy, { ok: false, status: 200, body: { a: 1 } })
+})
+
+test('the act outcome without an answer or a declaration', () => {
+	assert.deepEqual(actOutcome(null, null, strings), { kind: 'refused', message: strings.unusable })
+	assert.deepEqual(actOutcome({ ok: true }, null, strings), { kind: 'done', message: strings.done })
+	assert.deepEqual(actOutcome({ ok: true, body: { redirectUrl: ' https://x' } }, {}, strings), { kind: 'done', message: strings.done })
 })
