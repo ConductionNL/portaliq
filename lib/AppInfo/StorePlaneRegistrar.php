@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\AppInfo;
 
+use OCA\OpenRegister\AppHost\LeafAdoption;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\Server;
@@ -135,6 +136,7 @@ final class StorePlaneRegistrar {
 		}
 
 		if (class_exists('OCA\\OpenRegister\\AppHost\\Bootstrap') === false
+			|| class_exists('OCA\\OpenRegister\\AppHost\\LeafAdoption') === false
 			// The hydra-gates stub scanned by phpstan declares aliasStoreController(), so
 			// static analysis sees this check as always-true. At runtime it is not:
 			// OpenRegister <= 2.0.12 ships Bootstrap without the method (see docblock).
@@ -144,10 +146,16 @@ final class StorePlaneRegistrar {
 			return false;
 		}
 
+		// One typed request object: the app id and the namespace the routed
+		// `store#…` names resolve under. A named `appId:` / `controllerNs:` call
+		// raises an Error on OpenRegister since the LeafAdoption change, which
+		// aborts the rest of Application::register().
 		\OCA\OpenRegister\AppHost\Bootstrap::aliasStoreController(
 			context: $context,
-			appId: Application::APP_ID,
-			controllerNs: self::CONTROLLER_NAMESPACE
+			adoption: new LeafAdoption(
+				appId: Application::APP_ID,
+				options: ['controllerNamespace' => self::CONTROLLER_NAMESPACE]
+			)
 		);
 
 		return true;

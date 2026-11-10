@@ -23,8 +23,10 @@
         <!-- OpenRegister's AppHost composition root, for the store-plane alias in
              lib/AppInfo/StorePlaneRegistrar.php (WOO-559). openregister is a sibling
              app, not a composer dependency; the stub carries the engine's public
-             surface so the guarded call is type-checked instead of read as dead code. -->
-        <file name="vendor/conduction/hydra-gates/hydra-gates/stubs/openregister-apphost-bootstrap.stub.php" />
+             surface so the guarded call is type-checked instead of read as dead code.
+             They follow openregister #9078 (aliasStoreController takes a LeafAdoption). -->
+        <file name="tests/Stubs/OpenRegister/AppHost/LeafAdoption.php" />
+        <file name="tests/Stubs/OpenRegister/AppHost/Bootstrap.php" />
         <!-- Integriq's connection-registry events (adopt-connection-registry).
              ConnectionReporter names them by string behind class_exists
              (ADR-041). The stubs mirror integriq/lib/Event/ on development, so
