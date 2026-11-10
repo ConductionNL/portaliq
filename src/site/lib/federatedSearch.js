@@ -120,7 +120,13 @@ function setFacetParameters(params, state) {
  * @return {Record<string, Array<string>>} Field to ticked values.
  */
 function selectedFacetsOf(state, fields) {
-	return state.facets || { [fields[0]]: state.selectedFacets || [] }
+	if (state.facets) {
+		return state.facets
+	}
+
+	const selected = {}
+	selected[fields[0]] = state.selectedFacets || []
+	return selected
 }
 
 /**
