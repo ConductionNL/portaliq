@@ -536,30 +536,17 @@ class PortalSessionService {
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#2.3
 	 */
 	public function resolveFromBearer(?string $authorizationHeader): ?array {
-		$claims = $this->sessionClaimsFromHeader(authorizationHeader: $authorizationHeader);
-		if ($claims === null) {
-			return null;
-		}
-
-		return $this->subjectFromClaims(claims: $claims);
-	}//end resolveFromBearer()
-
-	/**
-	 * The claims of the live portal session the header carries, or null when
-	 * no signing secret is configured or the bearer is absent, malformed,
-	 * forged, expired, special-use or revoked.
-	 *
-	 * @param string|null $authorizationHeader The raw Authorization header value.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function sessionClaimsFromHeader(?string $authorizationHeader): ?array {
 		if ($this->jwt === null || $this->hasBearer(authorizationHeader: $authorizationHeader) === false) {
 			return null;
 		}
 
-		return $this->sessionClaimsOf(jwt: $this->jwt, token: substr($authorizationHeader, strlen(self::BEARER_PREFIX)));
-	}//end sessionClaimsFromHeader()
+		$claims = $this->sessionClaimsOf(jwt: $this->jwt, token: substr($authorizationHeader, strlen(self::BEARER_PREFIX)));
+		if ($claims === null) {
+			return null;
+		}
+
+		return (new SessionClaims())->subject(claims: $claims, trust: self::normaliseTrust(trust: ($claims['trust'] ?? '')));
+	}//end resolveFromBearer()
 
 	/**
 	 * Whether the header carries a bearer.
@@ -623,48 +610,6 @@ class PortalSessionService {
 
 		return $claims;
 	}//end activeSessionClaims()
-
-	/**
-	 * The server-derived subject of a live session's claims.
-	 *
-	 * @param array<string, mixed> $claims The live session's claims.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function subjectFromClaims(array $claims): array {
-		return [
-			'subjectRef' => (string)($claims['sub'] ?? ''),
-			'audience' => (string)($claims['audience'] ?? ''),
-			'organisation' => (string)($claims['organisation'] ?? ''),
-			'trust' => self::normaliseTrust(trust: ($claims['trust'] ?? '')),
-			'roles' => (array)($claims['roles'] ?? []),
-			'jti' => (string)($claims['jti'] ?? ''),
-			// The ORIGIN login's timestamp (portal-session-hardening-v2) — 0
-			// for a token minted before this claim existed, which refreshSession()
-			// treats as "cannot establish an origin" and refuses (fail-closed).
-			'authTime' => (int)($claims['authTime'] ?? 0),
-		] + $this->branchOfClaims(claims: $claims) + [
-			// Change signin-session-idle-warning-and-sso: the OIDC provider
-			// ('' for none) and when this bearer expires.
-			'provider' => (string)($claims['provider'] ?? ''),
-			'expiresAt' => (int)($claims['exp'] ?? 0),
-		];
-	}//end subjectFromClaims()
-
-	/**
-	 * Change signin-eherkenning-branch: the branch in effect ('' for none)
-	 * and whether the login restricted the session to it.
-	 *
-	 * @param array<string, mixed> $claims The live session's claims.
-	 *
-	 * @return array{branch: string, branchRestricted: bool}
-	 */
-	private function branchOfClaims(array $claims): array {
-		return [
-			'branch' => (new BranchNumber())->normalise(value: ($claims['branch'] ?? null)),
-			'branchRestricted' => (($claims['branchRestricted'] ?? false) === true && ($claims['branch'] ?? '') !== ''),
-		];
-	}//end branchOfClaims()
 
 	/**
 	 * Mint the short, read-only session a redeemed reference link opens
@@ -790,31 +735,13 @@ class PortalSessionService {
 			return null;
 		}
 
-		$reference = $this->referenceOfClaims(claims: $claims);
+		$reference = (new SessionClaims())->reference(claims: $claims);
 		if (in_array('', $reference, true) === true) {
 			return null;
 		}
 
 		return $reference;
 	}//end liveReference()
-
-	/**
-	 * The reference fields of a reference session's claims.
-	 *
-	 * @param array<string, mixed> $claims The reference session's claims.
-	 *
-	 * @return array{subjectRef: string, organisation: string, caseReference: string, register: string, schema: string, jti: string}
-	 */
-	private function referenceOfClaims(array $claims): array {
-		return [
-			'subjectRef' => (string)($claims['sub'] ?? ''),
-			'organisation' => (string)($claims['organisation'] ?? ''),
-			'caseReference' => (string)($claims['caseReference'] ?? ''),
-			'register' => (string)($claims['register'] ?? ''),
-			'schema' => (string)($claims['schema'] ?? ''),
-			'jti' => (string)($claims['jti'] ?? ''),
-		];
-	}//end referenceOfClaims()
 
 	/**
 	 * Rotate a valid, unexpired, not-yet-revoked bearer into a NEW session with
