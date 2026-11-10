@@ -200,15 +200,7 @@ class CitizenWriteRecorder {
 		array $action,
 		string $occurredAt,
 	): void {
-		$this->auditor->record(
-			verb: 'update',
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			organisation: (string)($subject['organisation'] ?? ''),
-			register: $register,
-			schema: $schema,
-			id: $caseId,
-			jti: (string)($subject['jti'] ?? '')
-		);
+		$this->recordUpdate(subject: $subject, target: ['register' => $register, 'schema' => $schema, 'id' => $caseId]);
 
 		$this->dispatcher->dispatchTyped(
 			new PortalClientWriteEvent(
@@ -258,15 +250,7 @@ class CitizenWriteRecorder {
 		array $action,
 		string $occurredAt,
 	): void {
-		$this->auditor->record(
-			verb: 'update',
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			organisation: (string)($subject['organisation'] ?? ''),
-			register: $register,
-			schema: $schema,
-			id: $caseId,
-			jti: (string)($subject['jti'] ?? '')
-		);
+		$this->recordUpdate(subject: $subject, target: ['register' => $register, 'schema' => $schema, 'id' => $caseId]);
 
 		$this->dispatcher->dispatchTyped(
 			new PortalClientWithdrawalEvent(
@@ -281,6 +265,26 @@ class CitizenWriteRecorder {
 			)
 		);
 	}//end announceWithdrawal()
+
+	/**
+	 * Record a citizen's act on their case in the audit trail as an update.
+	 *
+	 * @param array<string, mixed>                              $subject The resolved portal session.
+	 * @param array{register: string, schema: string, id: string} $target  The case the act landed on.
+	 *
+	 * @return void
+	 */
+	private function recordUpdate(array $subject, array $target): void {
+		$this->auditor->record(
+			verb: 'update',
+			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			organisation: (string)($subject['organisation'] ?? ''),
+			register: $target['register'],
+			schema: $target['schema'],
+			id: $target['id'],
+			jti: (string)($subject['jti'] ?? '')
+		);
+	}//end recordUpdate()
 
 	/**
 	 * The moment a write happened, ISO 8601.
