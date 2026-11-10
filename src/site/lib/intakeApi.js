@@ -261,33 +261,61 @@ export function initialValues(fields, prefill) {
 	const values = {}
 	for (const field of Array.isArray(fields) ? fields : []) {
 		const name = String(field?.name || '')
-		if (name === '') {
-			continue
-		}
-
-		const own =
-			prefill && Object.hasOwn(prefill, name) ? prefill[name] : undefined
-		if (own !== undefined && own !== null && own !== '') {
-			values[name] = String(own)
-		} else if (field.type === 'familyMembers' || field.type === 'group') {
-			values[name] = []
-		} else if (field.type === 'addressNL') {
-			values[name] = {
-				postcode: '',
-				number: '',
-				letter: '',
-				addition: '',
-				street: '',
-				town: '',
-			}
-		} else if (field.preset !== undefined && field.preset !== null) {
-			values[name] = String(field.preset)
-		} else {
-			values[name] = ''
+		if (name !== '') {
+			values[name] = startValue(field, ownValue(prefill, name))
 		}
 	}
 
 	return values
+}
+
+/**
+ * The empty value of the field types that do not hold text, by type; each
+ * call makes a new one, so no two fields share it.
+ */
+const TYPED_START_VALUES = {
+	familyMembers: () => [],
+	group: () => [],
+	addressNL: () => ({
+		postcode: '',
+		number: '',
+		letter: '',
+		addition: '',
+		street: '',
+		town: '',
+	}),
+}
+
+/**
+ * The visitor's own detail for one field, when the prefill holds one.
+ *
+ * @param {object|null} prefill The prefill the endpoint answered.
+ * @param {string} name The field's name.
+ * @return {string|number|boolean|object|null|undefined} The detail, or undefined.
+ */
+function ownValue(prefill, name) {
+	return prefill && Object.hasOwn(prefill, name) ? prefill[name] : undefined
+}
+
+/**
+ * One field's start value: the visitor's own detail, else the empty value
+ * its type needs, else its preset, else ''.
+ *
+ * @param {object} field The rendered field.
+ * @param {string|number|boolean|object|null|undefined} own The visitor's own detail.
+ * @return {string|Array|object} The value.
+ */
+function startValue(field, own) {
+	if (own !== undefined && own !== null && own !== '') {
+		return String(own)
+	}
+	if (Object.hasOwn(TYPED_START_VALUES, field.type)) {
+		return TYPED_START_VALUES[field.type]()
+	}
+	if (field.preset !== undefined && field.preset !== null) {
+		return String(field.preset)
+	}
+	return ''
 }
 
 /**
@@ -420,6 +448,44 @@ function readableDate(value) {
 }
 
 /**
+ * The view of a Woo request whose statutory term runs: registered, with the
+ * receiving app's reference and the date it armed; null otherwise, and
+ * never without that date.
+ *
+ * @param {object} status The status.
+ * @param {string} reference The request's reference.
+ * @return {{tone: string, sentence: string}|null} The view, or null.
+ */
+function termView(status, reference) {
+	const dueDate = status.state === 'registered' ? readableDate(status.dueAt) : ''
+	if (!dueDate || !status.externalReference) {
+		return null
+	}
+	return {
+		tone: 'success',
+		sentence: `Uw verzoek ${reference} is ontvangen onder kenmerk ${status.externalReference}. U krijgt uiterlijk ${dueDate} een besluit.`,
+	}
+}
+
+/**
+ * The view of a request by its state; any other state reads as queued.
+ */
+const STATE_VIEWS = {
+	registered: (reference) => ({
+		tone: 'success',
+		sentence: `Uw aanvraag ${reference} is geregistreerd. U vindt de zaak terug in uw eigen omgeving.`,
+	}),
+	failed: (reference) => ({
+		tone: 'error',
+		sentence: `Uw aanvraag ${reference} is nog niet geregistreerd. Neem contact met ons op en noem uw kenmerk ${reference}.`,
+	}),
+	queued: (reference) => ({
+		tone: 'info',
+		sentence: `Uw aanvraag ${reference} is ontvangen en wordt verwerkt. Kijk later nog eens met hetzelfde kenmerk.`,
+	}),
+}
+
+/**
  * The sentence a status reads as, and its tone.
  *
  * A queued request never claims a case: the case does not exist yet. A failed
@@ -442,35 +508,15 @@ export function statusView(status) {
 	}
 
 	const reference = String(status.reference || '')
-
-	const dueDate = status.state === 'registered' ? readableDate(status.dueAt) : ''
-	if (dueDate && status.externalReference) {
-		// A Woo request whose statutory term runs. The date is the one the
-		// receiving app armed; without one this sentence is never shown.
-		return {
-			tone: 'success',
-			sentence: `Uw verzoek ${reference} is ontvangen onder kenmerk ${status.externalReference}. U krijgt uiterlijk ${dueDate} een besluit.`,
-		}
+	const term = termView(status, reference)
+	if (term !== null) {
+		return term
 	}
 
-	if (status.state === 'registered') {
-		return {
-			tone: 'success',
-			sentence: `Uw aanvraag ${reference} is geregistreerd. U vindt de zaak terug in uw eigen omgeving.`,
-		}
-	}
-
-	if (status.state === 'failed') {
-		return {
-			tone: 'error',
-			sentence: `Uw aanvraag ${reference} is nog niet geregistreerd. Neem contact met ons op en noem uw kenmerk ${reference}.`,
-		}
-	}
-
-	return {
-		tone: 'info',
-		sentence: `Uw aanvraag ${reference} is ontvangen en wordt verwerkt. Kijk later nog eens met hetzelfde kenmerk.`,
-	}
+	const view = Object.hasOwn(STATE_VIEWS, status.state)
+		? STATE_VIEWS[status.state]
+		: STATE_VIEWS.queued
+	return view(reference)
 }
 
 /**

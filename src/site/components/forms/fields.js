@@ -271,22 +271,41 @@ export function plainFieldErrors(fields, values, text = DUTCH) {
 	const errors = {}
 	for (const field of Array.isArray(fields) ? fields : []) {
 		const value = String((values || {})[field.name] ?? '').trim()
-		if (value === '') {
-			if (field.required === true) {
-				errors[field.name] = text.required.split('{field}').join(field.label)
-			}
-			continue
-		}
-		if (field.date === true && dateProblem(value)) {
-			errors[field.name] = text.date.split('{field}').join(field.label)
-			continue
-		}
-		const problem = formatProblem(field.format, value)
+		const problem = plainFieldProblem(field, { value, text })
 		if (problem) {
 			errors[field.name] = problem
 		}
 	}
 	return errors
+}
+
+/**
+ * What is wrong with one plain field's value: required and empty, not a
+ * real date, or not in its format; '' or null when it is fine.
+ *
+ * @param {{name: string, label: string, required: boolean, date: boolean, format?: string}} field The field.
+ * @param {{value: string, text: {required: string, date: string}}} check The trimmed value and the messages.
+ * @return {string|null} The message, or '' / null.
+ */
+function plainFieldProblem(field, check) {
+	if (check.value === '') {
+		return field.required === true ? withField(check.text.required, field.label) : ''
+	}
+	if (field.date === true && dateProblem(check.value)) {
+		return withField(check.text.date, field.label)
+	}
+	return formatProblem(field.format, check.value)
+}
+
+/**
+ * A message with the field's label in every `{field}`.
+ *
+ * @param {string} message The message.
+ * @param {string} label The field's label.
+ * @return {string} The message.
+ */
+function withField(message, label) {
+	return message.split('{field}').join(label)
 }
 
 /**
