@@ -331,13 +331,13 @@ export function formIdOf(form) {
 	if (!form || typeof form.getAttribute !== 'function') {
 		return ''
 	}
-	const id =
-		form.getAttribute(FORM_ATTRIBUTE)
-		|| form.id
-		|| form.getAttribute('name')
-		|| form.getAttribute('action')
-		|| ''
-	return String(id).substring(0, 256)
+	const id = [
+		form.getAttribute(FORM_ATTRIBUTE),
+		form.id,
+		form.getAttribute('name'),
+		form.getAttribute('action'),
+	].find(Boolean)
+	return String(id || '').substring(0, 256)
 }
 
 /**
@@ -351,18 +351,35 @@ export function fieldIdOf(field) {
 	if (!field || !field.tagName) {
 		return ''
 	}
-	const tag = String(field.tagName).toUpperCase()
-	if (tag !== 'INPUT' && tag !== 'SELECT' && tag !== 'TEXTAREA') {
+	if (!isReportedField(String(field.tagName).toUpperCase(), field)) {
 		return ''
 	}
-	if (
-		tag === 'INPUT'
-		&& (String(field.type).toLowerCase() === 'hidden'
-			|| String(field.type).toLowerCase() === 'submit'
-			|| String(field.type).toLowerCase() === 'button')
-	) {
-		return ''
-	}
+	return boundedId(field)
+}
+
+/** The elements a field event may name. */
+const REPORTED_FIELD_TAGS = ['INPUT', 'SELECT', 'TEXTAREA']
+
+/** The input types that hold no answer, so no field event names them. */
+const UNREPORTED_INPUT_TYPES = ['hidden', 'submit', 'button']
+
+/**
+ * @param {string} tag The field's tag, upper case.
+ * @param {object} field The field element.
+ * @return {boolean} Whether a field event may name it.
+ */
+function isReportedField(tag, field) {
+	return (
+		REPORTED_FIELD_TAGS.includes(tag)
+		&& !(tag === 'INPUT' && UNREPORTED_INPUT_TYPES.includes(String(field.type).toLowerCase()))
+	)
+}
+
+/**
+ * @param {object} field The field element.
+ * @return {string} Its id, else its name, at most 256 characters, or ''.
+ */
+function boundedId(field) {
 	return String(field.id || field.name || '').substring(0, 256)
 }
 
@@ -376,23 +393,46 @@ export function fieldIdOf(field) {
  * @return {object} The params.
  */
 export function dimensionParams(traffic, values) {
-	const declared = (traffic && traffic.customDimensions) || []
+	const declared = declaredDimensions(traffic)
 	const out = {}
 	if (!Array.isArray(declared) || !values) {
 		return out
 	}
-	for (let i = 0; i < declared.length; i++) {
-		const id = declared[i] && declared[i].id
-		if (!id) {
-			continue
-		}
-		const value = values[id]
-		if (value === '' || value === null || value === undefined) {
-			continue
-		}
-		out[DIMENSION_PREFIX + id] = String(value).substring(0, 256)
+	for (const dimension of declared) {
+		addDimension(out, { dimension, values })
 	}
 	return out
+}
+
+/**
+ * @param {object|null} traffic The resolved `traffic` block.
+ * @return {unknown} The custom dimensions it declares, or none.
+ */
+function declaredDimensions(traffic) {
+	return (traffic && traffic.customDimensions) || []
+}
+
+/**
+ * Add one declared dimension's param when the page set a value for it.
+ *
+ * @param {object} out The params so far.
+ * @param {{dimension: object|null, values: object}} entry The declared dimension and the page's values.
+ * @return {void}
+ */
+function addDimension(out, entry) {
+	const id = entry.dimension && entry.dimension.id
+	if (!id || isUnset(entry.values[id])) {
+		return
+	}
+	out[DIMENSION_PREFIX + id] = String(entry.values[id]).substring(0, 256)
+}
+
+/**
+ * @param {unknown} value A dimension value.
+ * @return {boolean} Whether it is empty, null or absent.
+ */
+function isUnset(value) {
+	return value === '' || value === null || value === undefined
 }
 
 /**
@@ -424,20 +464,47 @@ export function errorParams(error) {
 		return null
 	}
 	const message = String(error.message || '').substring(0, 256)
-	const stack = error.error && error.error.stack ? String(error.error.stack) : ''
+	const stack = stackOf(error)
 	if (message === '' && stack === '') {
 		return null
 	}
-	const params = {
-		message: message || 'Script error',
+	return errorReport(error, { message, stack })
+}
+
+/**
+ * @param {object} error The ErrorEvent-shaped object.
+ * @return {string} The error's stack, or ''.
+ */
+function stackOf(error) {
+	return error.error && error.error.stack ? String(error.error.stack) : ''
+}
+
+/**
+ * The params of a script error: its message, where it happened, and a hash
+ * of the stack when there is one.
+ *
+ * @param {object} error The ErrorEvent-shaped object.
+ * @param {{message: string, stack: string}} found The bounded message and the stack.
+ * @return {object} The params.
+ */
+function errorReport(error, found) {
+	const params = { message: found.message || 'Script error', ...errorPlace(error) }
+	if (found.stack !== '') {
+		params.stackHash = hashOf(found.stack)
+	}
+	return params
+}
+
+/**
+ * @param {object} error The ErrorEvent-shaped object.
+ * @return {{source: string, line: number, column: number}} The script, line and column.
+ */
+function errorPlace(error) {
+	return {
 		source: sourceOf(String(error.filename || '')),
 		line: Number(error.lineno) || 0,
 		column: Number(error.colno) || 0,
 	}
-	if (stack !== '') {
-		params.stackHash = hashOf(stack)
-	}
-	return params
 }
 
 /**
@@ -608,24 +675,64 @@ export function mayRecord(traffic, consent) {
  * @return {object|null} The params, or null off the page.
  */
 export function heatClickParams(click, size) {
-	if (!click || !size || !(size.width > 0) || !(size.height > 0)) {
+	if (!click || !hasArea(size)) {
 		return null
 	}
+	const at = positionOf(click, size)
+	return at
+		? {
+				x: fourDecimals(at.x),
+				y: fourDecimals(at.y),
+				vw: widthBucket(size.viewport),
+				tag: tagOf(click.target),
+				selector: safeSelector(click.target),
+			}
+		: null
+}
+
+/**
+ * @param {object} click The click: `{ pageX, pageY }`.
+ * @param {object} size The document: `{ width, height }`.
+ * @return {{x: number, y: number}|null} Where on the document, as fractions, or null off the page.
+ */
+function positionOf(click, size) {
 	const x = Number(click.pageX) / size.width
 	const y = Number(click.pageY) / size.height
-	if (!(x >= 0 && x <= 1 && y >= 0 && y <= 1)) {
-		return null
-	}
-	const target = click.target
-	return {
-		x: Math.round(x * 10000) / 10000,
-		y: Math.round(y * 10000) / 10000,
-		vw: widthBucket(size.viewport),
-		tag: String((target && target.tagName) || '')
-			.toLowerCase()
-			.substring(0, 32),
-		selector: safeSelector(target),
-	}
+	return isFraction(x) && isFraction(y) ? { x, y } : null
+}
+
+/**
+ * @param {number} value A fraction.
+ * @return {number} The fraction rounded to four decimals.
+ */
+function fourDecimals(value) {
+	return Math.round(value * 10000) / 10000
+}
+
+/**
+ * @param {object|null} size The document: `{ width, height }`.
+ * @return {boolean} Whether it has a width and a height.
+ */
+function hasArea(size) {
+	return Boolean(size) && size.width > 0 && size.height > 0
+}
+
+/**
+ * @param {number} value A position as a fraction of the document.
+ * @return {boolean} Whether it lies on the document.
+ */
+function isFraction(value) {
+	return value >= 0 && value <= 1
+}
+
+/**
+ * @param {object|null} target The clicked element.
+ * @return {string} Its tag, lower case, at most 32 characters.
+ */
+function tagOf(target) {
+	return String((target && target.tagName) || '')
+		.toLowerCase()
+		.substring(0, 32)
 }
 
 /**
@@ -656,22 +763,41 @@ export function safeSelector(element) {
 	const parts = []
 	let node = element
 	while (node && node.nodeType === 1 && parts.length < 3) {
-		let part = String(node.tagName || '').toLowerCase()
-		const classes = String(
-			node.className && node.className.baseVal !== undefined
-				? node.className.baseVal
-				: node.className || '',
-		)
-			.split(/\s+/)
-			.filter((name) => name !== '' && !/\d/.test(name))
-			.slice(0, 2)
-		if (classes.length > 0) {
-			part += '.' + classes.join('.')
-		}
-		parts.unshift(part)
+		parts.unshift(selectorPart(node))
 		node = node.parentNode
 	}
 	return parts.join(' > ').substring(0, 128)
+}
+
+/**
+ * @param {object} node An element.
+ * @return {string} Its tag with up to two of its safe class names.
+ */
+function selectorPart(node) {
+	const part = String(node.tagName || '').toLowerCase()
+	const classes = safeClasses(node)
+	return classes.length > 0 ? part + '.' + classes.join('.') : part
+}
+
+/**
+ * @param {object} node An element.
+ * @return {Array<string>} Up to two of its class names without digits.
+ */
+function safeClasses(node) {
+	return String(classNameOf(node))
+		.split(/\s+/)
+		.filter((name) => name !== '' && !/\d/.test(name))
+		.slice(0, 2)
+}
+
+/**
+ * @param {object} node An element, an SVG one included.
+ * @return {string} Its class attribute.
+ */
+function classNameOf(node) {
+	return node.className && node.className.baseVal !== undefined
+		? node.className.baseVal
+		: node.className || ''
 }
 
 /**
