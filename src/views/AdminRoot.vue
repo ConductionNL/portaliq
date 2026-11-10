@@ -445,6 +445,19 @@ import {
 } from '@nextcloud/vue'
 import { loadGrants, saveGrants } from '../lib/actionGrants.js'
 
+/**
+ * The geography database's status as the screen shows it.
+ *
+ * @param {object|undefined} status The stored status.
+ * @return {{present: boolean, metadata: object}} Whether a database is there, and its metadata.
+ */
+function geoStatusOf(status) {
+	return {
+		present: Boolean(status && status.present),
+		metadata: (status && status.metadata) || {},
+	}
+}
+
 export default {
 	name: 'AdminRoot',
 	components: {
@@ -586,24 +599,31 @@ export default {
 					generateUrl('/apps/portaliq/api/settings'),
 				)
 				this.groupOptions = data.availableGroups || []
-				const configured = data.editor_groups || []
-				// Shown as the picker's own option objects where the group
-				// still exists, and as a bare id where it does not — a group
-				// that was deleted must stay visible as configured rather than
-				// silently dropping out of the setting on the next save.
-				this.editorGroups = configured.map(
-					(id) =>
-						this.groupOptions.find((option) => option.id === id) || {
-							id,
-							label: id,
-						},
-				)
+				this.editorGroups = (data.editor_groups || []).map(this.editorGroupChoice)
 			} catch {
 				this.groupsError = t(
 					'portaliq',
 					'The editor groups could not be loaded.',
 				)
 			}
+		},
+
+		/**
+		 * One configured editor group as the picker shows it: its own option
+		 * where the group still exists, a bare id where it does not. A group
+		 * that was deleted must stay visible as configured rather than
+		 * silently dropping out of the setting on the next save.
+		 *
+		 * @param {string} id The group id.
+		 * @return {{id: string, label: string}} The choice.
+		 */
+		editorGroupChoice(id) {
+			return (
+				this.groupOptions.find((option) => option.id === id) || {
+					id,
+					label: id,
+				}
+			)
 		},
 
 		/**
@@ -694,19 +714,7 @@ export default {
 				const { data } = await axios.get(
 					generateUrl('/apps/portaliq/api/settings'),
 				)
-				const geo = data.traffic_geo || {}
-				this.geoProvider =
-					this.geoProviderOptions.find((o) => o.id === geo.provider)
-					|| this.geoProviderOptions[1]
-				this.geoAccountId = String(geo.maxmindAccountId || '')
-				this.geoLicenseKeySet = geo.maxmindLicenseKeySet === true
-				this.geoEdition =
-					this.geoEditionOptions.find((o) => o.id === geo.maxmindEdition)
-					|| this.geoEditionOptions[0]
-				this.geoStatus = {
-					present: Boolean(geo.status && geo.status.present),
-					metadata: (geo.status && geo.status.metadata) || {},
-				}
+				this.showGeo(data.traffic_geo || {})
 				this.internalBaseUrl = String(data.internal_base_url || '')
 				this.emailLinkEnabled = data.email_link_signin_enabled === true
 			} catch {
@@ -715,6 +723,26 @@ export default {
 					'The geography settings could not be loaded.',
 				)
 			}
+		},
+
+		/**
+		 * Show the stored geography: the provider (DB-IP when unknown), the
+		 * account, whether a key is stored, the edition and the database
+		 * status.
+		 *
+		 * @param {object} geo The stored `traffic_geo` block.
+		 * @return {void}
+		 */
+		showGeo(geo) {
+			this.geoProvider =
+				this.geoProviderOptions.find((o) => o.id === geo.provider)
+				|| this.geoProviderOptions[1]
+			this.geoAccountId = String(geo.maxmindAccountId || '')
+			this.geoLicenseKeySet = geo.maxmindLicenseKeySet === true
+			this.geoEdition =
+				this.geoEditionOptions.find((o) => o.id === geo.maxmindEdition)
+				|| this.geoEditionOptions[0]
+			this.geoStatus = geoStatusOf(geo.status)
 		},
 
 		/**
@@ -762,16 +790,7 @@ export default {
 			this.savingGeo = true
 			this.geoSaved = false
 			this.geoError = ''
-			const block = {
-				provider: this.geoProvider.id,
-				maxmindAccountId: this.geoAccountId,
-				maxmindEdition: this.geoEdition
-					? this.geoEdition.id
-					: 'GeoLite2-City',
-			}
-			if (this.geoLicenseKey !== '') {
-				block.maxmindLicenseKey = this.geoLicenseKey
-			}
+			const block = this.geoBlock()
 			try {
 				await axios.put(generateUrl('/apps/portaliq/api/settings'), {
 					traffic_geo: block,
@@ -787,6 +806,25 @@ export default {
 			} finally {
 				this.savingGeo = false
 			}
+		},
+
+		/**
+		 * The geography as it is saved. The key travels only when typed.
+		 *
+		 * @return {object} The `traffic_geo` block.
+		 */
+		geoBlock() {
+			const block = {
+				provider: this.geoProvider.id,
+				maxmindAccountId: this.geoAccountId,
+				maxmindEdition: this.geoEdition
+					? this.geoEdition.id
+					: 'GeoLite2-City',
+			}
+			if (this.geoLicenseKey !== '') {
+				block.maxmindLicenseKey = this.geoLicenseKey
+			}
+			return block
 		},
 
 		/**
@@ -806,16 +844,7 @@ export default {
 					generateUrl('/apps/portaliq/api/settings'),
 					{ internal_base_url: this.internalBaseUrl.trim() },
 				)
-				const config = (data && data.config) || {}
-				if (config.internal_base_url_refused === true) {
-					this.internalBaseUrlError = t(
-						'portaliq',
-						'This address is not valid. Use http or https, without a password, a query or "..".',
-					)
-					return
-				}
-				this.internalBaseUrl = String(config.internal_base_url || '')
-				this.internalBaseUrlSaved = true
+				this.showInternalBaseUrl((data && data.config) || {})
 			} catch {
 				this.internalBaseUrlError = t(
 					'portaliq',
@@ -824,6 +853,25 @@ export default {
 			} finally {
 				this.savingInternalBaseUrl = false
 			}
+		},
+
+		/**
+		 * Show what the server kept of the internal address: the stored one,
+		 * or why it refused the one typed (the typed one stays in the field).
+		 *
+		 * @param {object} config The settings the server answered.
+		 * @return {void}
+		 */
+		showInternalBaseUrl(config) {
+			if (config.internal_base_url_refused === true) {
+				this.internalBaseUrlError = t(
+					'portaliq',
+					'This address is not valid. Use http or https, without a password, a query or "..".',
+				)
+				return
+			}
+			this.internalBaseUrl = String(config.internal_base_url || '')
+			this.internalBaseUrlSaved = true
 		},
 
 		/**
