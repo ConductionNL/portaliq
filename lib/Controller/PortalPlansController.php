@@ -426,18 +426,7 @@ class PortalPlansController extends Controller implements PortalProtected {
 	 * @return JSONResponse
 	 */
 	private function answer(string $result): JSONResponse {
-		$status = match ($result) {
-			PortalPlanService::OK => Http::STATUS_OK,
-			PortalPlanService::NOT_FOUND => Http::STATUS_NOT_FOUND,
-			PortalPlanService::FORBIDDEN => Http::STATUS_FORBIDDEN,
-			PortalPlanService::INVALID => Http::STATUS_BAD_REQUEST,
-			default => Http::STATUS_INTERNAL_SERVER_ERROR,
-		};
-		if ($status === Http::STATUS_OK) {
-			return new JSONResponse(['ok' => true]);
-		}
-
-		return new JSONResponse(['error' => $result], $status);
+		return PlanOutcomeAnswer::for(result: $result);
 	}//end answer()
 
 	/**
@@ -477,7 +466,7 @@ class PortalPlansController extends Controller implements PortalProtected {
 	 * @return JSONResponse
 	 */
 	private function unauthenticated(): JSONResponse {
-		return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		return SignedInSubject::unauthenticated();
 	}//end unauthenticated()
 
 	/**
@@ -486,11 +475,6 @@ class PortalPlansController extends Controller implements PortalProtected {
 	 * @return array<string, mixed>|null
 	 */
 	private function subject(): ?array {
-		$subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
-		if ($subject === null || (string)($subject['subjectRef'] ?? '') === '') {
-			return null;
-		}
-
-		return $subject;
+		return SignedInSubject::of(session: $this->session, request: $this->request);
 	}//end subject()
 }//end class
