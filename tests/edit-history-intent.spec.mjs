@@ -11,7 +11,7 @@
 
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { historyIntent } from '../src/editor/editHistory.js'
+import { createEditHistory, historyIntent } from '../src/editor/editHistory.js'
 
 const press = (over = {}) => ({ ctrlKey: true, key: 'z', target: { tagName: 'DIV' }, ...over })
 
@@ -46,4 +46,24 @@ test('z undoes, shift-z and y redo, shift-y and other keys do nothing', () => {
 	assert.equal(historyIntent(press({ key: 's' })), null)
 	assert.equal(historyIntent(press({ key: undefined })), null)
 	assert.equal(historyIntent(press({ metaKey: true, ctrlKey: false, key: 'y' })), 'redo')
+})
+
+test('records with the same coalescing key make one step, and an undo ends the step', () => {
+	const history = createEditHistory()
+	history.record({ n: 1 }, 'title')
+	history.record({ n: 2 }, 'title')
+	history.record({ n: 3 }, null)
+	history.record({ n: 4 }, null)
+	assert.deepEqual(history.undo({ n: 5 }), { n: 4 })
+	history.record({ n: 6 }, 'body')
+	history.record({ n: 7 }, 'body')
+	assert.deepEqual(history.undo({ n: 8 }), { n: 6 })
+	assert.deepEqual(history.undo({ n: 9 }), { n: 3 })
+	assert.deepEqual(history.undo({ n: 10 }), { n: 1 })
+	assert.equal(history.undo({ n: 11 }), null)
+	const fresh = createEditHistory()
+	fresh.record({ n: 1 }, 'a')
+	fresh.undo({ n: 2 })
+	fresh.record({ n: 3 }, 'a')
+	assert.deepEqual(fresh.undo({ n: 4 }), { n: 3 }, 'a step after an undo is new even with the same key')
 })
