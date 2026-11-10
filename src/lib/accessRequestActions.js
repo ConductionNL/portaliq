@@ -76,13 +76,11 @@ export function createAccessRequestHandlers({
 	/**
 	 * Post one answer and report it.
 	 *
-	 * @param {object} row The request row.
-	 * @param {string} verb `grant` or `refuse`.
-	 * @param {object} body Extra fields.
-	 * @param {string} doneKey The success sentence.
-	 * @return {Promise<boolean>} Whether it landed.
+	 * @param {object} row The request's row.
+	 * @param {{verb: string, body: object, done: string}} decision `grant` or `refuse`, the extra fields and the success sentence.
+	 * @return {Promise<boolean>} Whether the answer was taken.
 	 */
-	async function answer(row, verb, body, doneKey) {
+	async function answer(row, decision) {
 		const id = idOf(row)
 		if (id === '') {
 			notifyError(translate(failureKey(0)))
@@ -92,15 +90,15 @@ export function createAccessRequestHandlers({
 			await post(
 				generateUrl('/apps/portaliq/api/access-requests/{id}/{verb}', {
 					id,
-					verb,
+					verb: decision.verb,
 				}),
-				{ ...body, organisation: row?.organisation || '' },
+				{ ...decision.body, organisation: row?.organisation || '' },
 			)
 		} catch (error) {
 			notifyError(translate(failureKey(error?.response?.status ?? 0)))
 			return false
 		}
-		notify(translate(doneKey))
+		notify(translate(decision.done))
 		reload()
 		return true
 	}
@@ -117,7 +115,7 @@ export function createAccessRequestHandlers({
 			if ((await confirmGrant(item)) !== true) {
 				return false
 			}
-			return answer(item, 'grant', {}, 'Access granted.')
+			return answer(item, { verb: 'grant', body: {}, done: 'Access granted.' })
 		},
 
 		/**
@@ -132,12 +130,11 @@ export function createAccessRequestHandlers({
 			if (typeof reason !== 'string' || reason.trim() === '') {
 				return false
 			}
-			return answer(
-				item,
-				'refuse',
-				{ reason: reason.trim() },
-				'Request refused.',
-			)
+			return answer(item, {
+				verb: 'refuse',
+				body: { reason: reason.trim() },
+				done: 'Request refused.',
+			})
 		},
 	}
 }
