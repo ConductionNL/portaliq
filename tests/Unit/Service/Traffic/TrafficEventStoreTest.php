@@ -18,6 +18,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Traffic;
 
+use OCA\OpenRegister\Service\Object\BulkSaveOptions;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCA\Portaliq\Service\Traffic\TrafficEventStore;
 use PHPUnit\Framework\TestCase;
@@ -90,17 +91,19 @@ class TrafficEventStoreTest extends TestCase {
 
 			public function saveObjects(
 				array $objects,
-				?string $register = null,
-				?string $schema = null,
+				BulkSaveOptions $options = new BulkSaveOptions(),
 				bool $_rbac = true,
 				bool $_multitenancy = true,
-				bool $validation = false,
-				bool $events = false,
-				bool $deduplicateIds = true,
-				bool $enrich = true,
-				bool $_audit = true,
 			): array {
-				$this->calls[] = compact('register', 'schema', '_rbac', '_multitenancy', 'validation', 'events', 'enrich', '_audit');
+				$this->calls[] = [
+					'register' => $options->defaults->register,
+					'schema' => $options->defaults->schema,
+					'_rbac' => $_rbac,
+					'_multitenancy' => $_multitenancy,
+					'validation' => $options->validation,
+					'events' => $options->events,
+					'audit' => $options->audit,
+				];
 				return $objects;
 			}
 		};
@@ -116,8 +119,7 @@ class TrafficEventStoreTest extends TestCase {
 				'_multitenancy' => false,
 				'validation' => false,
 				'events' => false,
-				'enrich' => false,
-				'_audit' => false,
+				'audit' => false,
 			],
 			$fake->calls[0]
 		);

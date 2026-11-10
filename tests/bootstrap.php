@@ -201,6 +201,9 @@ foreach ([
 	'Service\\Integration\\IntegrationProvider' => 'Service/Integration/IntegrationProvider.php',
 	'Service\\Integration\\LeafDescriptor' => 'Service/Integration/LeafDescriptor.php',
 	'Event\\RegisterLeafProvidersEvent' => 'Event/RegisterLeafProvidersEvent.php',
+	// What ObjectService::saveObjects() takes (openregister #9108): the defaults first.
+	'Service\\Object\\BulkBatchDefaults' => 'Service/Object/BulkBatchDefaults.php',
+	'Service\\Object\\BulkSaveOptions' => 'Service/Object/BulkSaveOptions.php',
 ] as $orStubClass => $orStubFile) {
 	if (class_exists('\\OCP\\EventDispatcher\\Event') === true
 		&& class_exists('\\OCA\\OpenRegister\\' . $orStubClass) === false
