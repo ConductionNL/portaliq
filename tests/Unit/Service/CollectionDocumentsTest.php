@@ -51,6 +51,14 @@ class FakeOpenedProvider {
 
 		return $this->answer;
 	}
+
+	private function privateHook(string $objectId, string $documentId, array $subject): bool {
+		return true;
+	}
+
+	public static function staticHook(string $objectId, string $documentId, array $subject): bool {
+		return true;
+	}
 }
 
 /**
@@ -73,6 +81,13 @@ class CollectionDocumentsTest extends TestCase {
 
 	private MockObject $audit;
 
+	/**
+	 * The warnings logged, in order.
+	 *
+	 * @var array<int, string>
+	 */
+	private array $warnings = [];
+
 	private function service(bool $listed=true): CollectionDocuments {
 		$this->provider = new FakeOpenedProvider();
 		$published      = $this->createMock(PortalCaseDocumentReader::class);
@@ -83,7 +98,13 @@ class CollectionDocumentsTest extends TestCase {
 		$locator     = $this->createMock(PortalProviderLocator::class);
 		$locator->method('locate')->willReturn($this->provider);
 
-		return new CollectionDocuments($published, $this->files, $this->audit, $locator, $this->createMock(LoggerInterface::class));
+		$this->warnings = [];
+		$logger         = $this->createMock(LoggerInterface::class);
+		$logger->method('warning')->willReturnCallback(function (string $message, array $context): void {
+			$this->warnings[] = $message . ' ' . json_encode($context);
+		});
+
+		return new CollectionDocuments($published, $this->files, $this->audit, $locator, $logger);
 	}
 
 	public function testTheListNeverSaysWhereAFileLives(): void {
@@ -148,4 +169,51 @@ class CollectionDocumentsTest extends TestCase {
 		$this->assertSame(CollectionDocuments::REFUSED, $result);
 
 	}//end testAHookThatCannotBeCalledRefuses()
+
+	/**
+	 * The download is recorded for the session's subject and the proven
+	 * object; a file that cannot be streamed is not found and not recorded;
+	 * each failed hook logs why.
+	 *
+	 * @return void
+	 */
+	public function testTheAuditAndTheHookWarningsAreAsRecorded(): void {
+		$service = $this->service();
+		$this->audit->expects($this->once())->method('download')->with('bsn-1', 'org', 'decidiq', 'agendaItem', 'a1');
+		$service->open(subject: self::SUBJECT, app: 'decidiq', documents: self::DOCUMENTS, object: self::OBJECT, documentId: 'd1');
+		$this->assertSame([], $this->warnings);
+
+		$gone = $this->service();
+		$this->files = $this->createMock(PortalFileReader::class);
+		$gone        = new CollectionDocuments(
+			$this->createConfiguredMock(PortalCaseDocumentReader::class, ['entries' => [['id' => 'd1', 'file' => ['register' => 'r', 'schema' => 's', 'id' => 'o', 'fileId' => 'f1']]]]),
+			$this->files,
+			$this->audit = $this->createMock(PortalAuditHook::class),
+			$this->createConfiguredMock(PortalProviderLocator::class, ['locate' => $this->provider]),
+			$this->createMock(LoggerInterface::class)
+		);
+		$this->files->method('streamFile')->willReturn(null);
+		$this->audit->expects($this->never())->method('download');
+		$this->assertSame(CollectionDocuments::NOT_FOUND, $gone->open(subject: self::SUBJECT, app: 'decidiq', documents: self::DOCUMENTS, object: self::OBJECT, documentId: 'd1'));
+
+		$cases = [
+			'refused' => [false, 'Portaliq: the opened hook refused {"app":"decidiq"}'],
+			'failed'  => [new RuntimeException('down'), 'Portaliq: the opened hook failed {"app":"decidiq"}'],
+		];
+		foreach ($cases as $label => [$answer, $warning]) {
+			$service = $this->service();
+			$this->provider->answer = $answer;
+			$service->open(subject: self::SUBJECT, app: 'decidiq', documents: self::DOCUMENTS, object: self::OBJECT, documentId: 'd1');
+			$this->assertSame([$warning], $this->warnings, $label);
+		}
+
+		$service = $this->service();
+		$service->open(subject: self::SUBJECT, app: 'decidiq', documents: ['provider' => 'papers', 'opened' => 'nope'], object: self::OBJECT, documentId: 'd1');
+		$this->assertSame(['Portaliq: the opened hook cannot be called {"app":"decidiq"}'], $this->warnings);
+
+		$service = $this->service();
+		$this->assertSame(CollectionDocuments::REFUSED, $service->open(subject: self::SUBJECT, app: 'decidiq', documents: ['provider' => 'papers', 'opened' => 'privateHook'], object: self::OBJECT, documentId: 'd1'));
+		$this->assertSame(CollectionDocuments::REFUSED, $service->open(subject: self::SUBJECT, app: 'decidiq', documents: ['provider' => 'papers', 'opened' => 'staticHook'], object: self::OBJECT, documentId: 'd1'));
+		$this->assertSame([], $this->warnings, 'a hook that is not a public instance method refuses without a warning');
+	}//end testTheAuditAndTheHookWarningsAreAsRecorded()
 }//end class
