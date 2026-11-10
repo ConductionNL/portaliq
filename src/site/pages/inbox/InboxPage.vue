@@ -772,8 +772,27 @@ export default {
 		 */
 		async confirmDelete() {
 			const ids = [...this.confirming]
-			const deleted = []
 			this.deleting = true
+			const deleted = await this.deleteChosen(ids)
+			this.deleting = false
+			this.confirming = []
+			this.messages = withoutMessages(this.messages, deleted)
+			this.selected = this.selected.filter((id) => !deleted.includes(id))
+			this.failed = deleted.length < ids.length
+			this.notice = this.deletedNotice(deleted.length)
+			if (deleted.length > 0) {
+				this.$emit('unread', this.unread)
+			}
+		},
+
+		/**
+		 * Delete the chosen messages one by one.
+		 *
+		 * @param {Array<string>} ids The chosen messages' ids.
+		 * @return {Promise<Array<string>>} The ids the server deleted.
+		 */
+		async deleteChosen(ids) {
+			const deleted = []
 			for (const message of this.messages.filter((m) =>
 				ids.includes(rowId(m)),
 			)) {
@@ -782,22 +801,20 @@ export default {
 					deleted.push(rowId(message))
 				}
 			}
-			this.deleting = false
-			this.confirming = []
-			this.messages = withoutMessages(this.messages, deleted)
-			this.selected = this.selected.filter((id) => !deleted.includes(id))
-			this.failed = deleted.length < ids.length
-			this.notice =
-				deleted.length === 1
-					? this.tr('The message is deleted.')
-					: deleted.length > 1
-						? this.tr('{count} messages are deleted.', {
-								count: deleted.length,
-							})
-						: ''
-			if (deleted.length > 0) {
-				this.$emit('unread', this.unread)
+			return deleted
+		},
+
+		/**
+		 * What the page says after deleting: one, several, or nothing.
+		 *
+		 * @param {number} count How many were deleted.
+		 * @return {string} The notice.
+		 */
+		deletedNotice(count) {
+			if (count === 1) {
+				return this.tr('The message is deleted.')
 			}
+			return count > 1 ? this.tr('{count} messages are deleted.', { count }) : ''
 		},
 
 		/**
