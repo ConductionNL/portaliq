@@ -12,6 +12,141 @@ import { adoptSessionToken } from './authApi.js'
 import { resolveApiBase } from './contentApi.js'
 
 /**
+ * The bearer of this tab's resident session goes along when it holds one.
+ *
+ * @return {Record<string, string>} The request headers.
+ */
+function requestHeaders() {
+	const headers = { Accept: 'application/json' }
+	const token = adoptSessionToken()
+	if (token) {
+		headers.Authorization = `Bearer ${token}`
+	}
+	return headers
+}
+
+/**
+ * @param {string} path The endpoint path below the content API.
+ * @return {URL} The endpoint's address at this origin.
+ */
+function catalogueUrl(path) {
+	return new URL(resolveApiBase() + path, window.location.origin)
+}
+
+/**
+ * Put every value that says something on the address; empty ones stay off.
+ *
+ * @param {URL} url The address.
+ * @param {Record<string, unknown>} params The values by name.
+ */
+function setPresentParams(url, params) {
+	for (const [key, value] of Object.entries(params)) {
+		if (value !== undefined && value !== null && value !== '') {
+			url.searchParams.set(key, String(value))
+		}
+	}
+}
+
+/**
+ * The error a non-2xx content answer throws.
+ *
+ * @param {number} status The answer's status.
+ * @param {string} path The endpoint path.
+ * @return {Error} The error, carrying the status.
+ */
+function contentApiError(status, path) {
+	const error = new Error(`content api ${status} for ${path}`)
+	error.status = status
+	return error
+}
+
+/**
+ * @param {Array<string>|undefined} list A list of names.
+ * @return {string} The names joined by commas.
+ */
+function commaList(list) {
+	return (list || []).join(',')
+}
+
+/**
+ * @param {object|undefined} map A map of choices.
+ * @return {string} The map as JSON, or empty for no choices.
+ */
+function jsonMap(map) {
+	return map && Object.keys(map).length > 0 ? JSON.stringify(map) : ''
+}
+
+/**
+ * What is searched for: the words, the types, the choices and the page.
+ *
+ * @param {string} portal The portal slug.
+ * @param {object} query The query, as fetchCatalogue takes it.
+ * @return {Record<string, unknown>} The parameters.
+ */
+function searchParams(portal, query) {
+	return {
+		portal,
+		search: query.q || '',
+		types: commaList(query.types),
+		filters: jsonMap(query.filters),
+		sort: query.sort || '',
+		page: query.page || '',
+		limit: query.limit || '',
+	}
+}
+
+/**
+ * Where the results come from: still to come, one app, categories, a range.
+ *
+ * @param {object} query The query, as fetchCatalogue takes it.
+ * @return {Record<string, unknown>} The parameters.
+ */
+function scopeParams(query) {
+	return {
+		upcoming: query.upcoming ? '1' : '',
+		app: query.app || '',
+		categories: commaList(query.categories),
+		range: query.range || '',
+		// The facets the block asks for besides the declared ones
+		// (site-catalogue-follows-the-school-boards).
+		facetsBy: jsonMap(query.facetsBy),
+	}
+}
+
+/**
+ * @param {unknown} value A value that should be a list.
+ * @return {Array} The value, or an empty list when it is not one.
+ */
+function listOr(value) {
+	return Array.isArray(value) ? value : []
+}
+
+/**
+ * @param {unknown} value A value that should be a number.
+ * @param {number} fallback The number for a missing or zero value.
+ * @return {number} The number.
+ */
+function numberOr(value, fallback) {
+	return Number(value) || fallback
+}
+
+/**
+ * One catalogue page as the widgets read it, whatever the server sent.
+ *
+ * @param {object|null} body The parsed answer.
+ * @return {{items: Array<object>, total: number, page: number, pages: number, facets: Array<object>}}
+ */
+function cataloguePage(body) {
+	return {
+		items: listOr(body?.items),
+		total: numberOr(body?.total, 0),
+		page: numberOr(body?.page, 1),
+		pages: numberOr(body?.pages, 1),
+		facets: listOr(body?.facets),
+	}
+}
+
+/**
  * One page of the catalogue.
  *
  * @param {string} portal The portal slug.
@@ -27,53 +162,13 @@ import { resolveApiBase } from './contentApi.js'
  * @return {Promise<{items: Array<object>, total: number, page: number, pages: number, facets: Array<object>}>}
  */
 export async function fetchCatalogue(portal, query = {}) {
-	const url = new URL(resolveApiBase() + '/catalogue', window.location.origin)
-	const params = {
-		portal,
-		search: query.q || '',
-		types: (query.types || []).join(','),
-		filters:
-			query.filters && Object.keys(query.filters).length > 0
-				? JSON.stringify(query.filters)
-				: '',
-		sort: query.sort || '',
-		page: query.page || '',
-		limit: query.limit || '',
-		upcoming: query.upcoming ? '1' : '',
-		app: query.app || '',
-		categories: (query.categories || []).join(','),
-		range: query.range || '',
-		// The facets the block asks for besides the declared ones
-		// (site-catalogue-follows-the-school-boards).
-		facetsBy:
-			query.facetsBy && Object.keys(query.facetsBy).length > 0
-				? JSON.stringify(query.facetsBy)
-				: '',
-	}
-	for (const [key, value] of Object.entries(params)) {
-		if (value !== undefined && value !== null && value !== '') {
-			url.searchParams.set(key, String(value))
-		}
-	}
-	const headers = { Accept: 'application/json' }
-	const token = adoptSessionToken()
-	if (token) {
-		headers.Authorization = `Bearer ${token}`
-	}
-	const response = await fetch(url.toString(), { headers })
+	const url = catalogueUrl('/catalogue')
+	setPresentParams(url, { ...searchParams(portal, query), ...scopeParams(query) })
+	const response = await fetch(url.toString(), { headers: requestHeaders() })
 	if (!response.ok) {
-		const error = new Error(`content api ${response.status} for /catalogue`)
-		error.status = response.status
-		throw error
+		throw contentApiError(response.status, '/catalogue')
 	}
-	const body = await response.json()
-	return {
-		items: Array.isArray(body?.items) ? body.items : [],
-		total: Number(body?.total) || 0,
-		page: Number(body?.page) || 1,
-		pages: Number(body?.pages) || 1,
-		facets: Array.isArray(body?.facets) ? body.facets : [],
-	}
+	return cataloguePage(await response.json())
 }
 
 /**
@@ -85,25 +180,28 @@ export async function fetchCatalogue(portal, query = {}) {
  * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-4
  */
 export async function fetchCatalogueKinds(portal) {
-	const url = new URL(
-		resolveApiBase() + '/catalogue/kinds',
-		window.location.origin,
-	)
+	const url = catalogueUrl('/catalogue/kinds')
 	if (portal) {
 		url.searchParams.set('portal', portal)
 	}
-	const headers = { Accept: 'application/json' }
-	const token = adoptSessionToken()
-	if (token) {
-		headers.Authorization = `Bearer ${token}`
-	}
+	return readKinds(url, requestHeaders())
+}
+
+/**
+ * Read the kinds; a failed or broken read is none.
+ *
+ * @param {URL} url The kinds address.
+ * @param {Record<string, string>} headers The request headers.
+ * @return {Promise<Array<object>>} The kinds.
+ */
+async function readKinds(url, headers) {
 	try {
 		const response = await fetch(url.toString(), { headers })
 		if (!response.ok) {
 			return []
 		}
 		const body = await response.json()
-		return Array.isArray(body?.kinds) ? body.kinds : []
+		return listOr(body?.kinds)
 	} catch {
 		return []
 	}
@@ -118,30 +216,14 @@ export async function fetchCatalogueKinds(portal) {
  * @spec openspec/changes/public-detail-page-for-a-provider-item/tasks.md#task-3
  */
 export async function fetchCatalogueDetail(portal, address) {
-	const url = new URL(
-		resolveApiBase() + '/catalogue/detail',
-		window.location.origin,
-	)
-	for (const [key, value] of Object.entries({ portal, ...address })) {
-		if (value !== undefined && value !== null && value !== '') {
-			url.searchParams.set(key, String(value))
-		}
-	}
-	const headers = { Accept: 'application/json' }
-	const token = adoptSessionToken()
-	if (token) {
-		headers.Authorization = `Bearer ${token}`
-	}
-	const response = await fetch(url.toString(), { headers })
+	const url = catalogueUrl('/catalogue/detail')
+	setPresentParams(url, { portal, ...address })
+	const response = await fetch(url.toString(), { headers: requestHeaders() })
 	if (response.status === 404) {
 		return null
 	}
 	if (!response.ok) {
-		const error = new Error(
-			`content api ${response.status} for /catalogue/detail`,
-		)
-		error.status = response.status
-		throw error
+		throw contentApiError(response.status, '/catalogue/detail')
 	}
 	const body = await response.json()
 	return body?.detail ? { item: body.item || {}, detail: body.detail } : null
