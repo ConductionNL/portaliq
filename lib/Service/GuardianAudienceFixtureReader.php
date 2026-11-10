@@ -53,7 +53,6 @@ use Throwable;
 class GuardianAudienceFixtureReader {
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
-	use PagedObjectReads;
 
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
@@ -136,12 +135,7 @@ class GuardianAudienceFixtureReader {
 			return $empty;
 		}
 
-		return [
-			'schoolRef' => (string)($row['schoolRef'] ?? ''),
-			'groupRefs' => $this->stringList(value: $row['groupRefs'] ?? []),
-			'childRefs' => $this->stringList(value: $row['childRefs'] ?? []),
-			'photoConsent' => $this->nestedBoolMap(value: $row['photoConsent'] ?? []),
-		];
+		return $this->audienceOf(row: $row) + ['photoConsent' => $this->nestedBoolMap(value: $row['photoConsent'] ?? [])];
 	}//end resolveAudience()
 
 	/**
@@ -203,22 +197,39 @@ class GuardianAudienceFixtureReader {
 			return false;
 		}
 
-		$objectService = $this->objectService();
-		if ($objectService === null) {
+		$rows = $this->everyFixtureRow(failure: 'Portaliq: guardian audience fixture consent lookup failed');
+		if ($rows === null) {
 			return false;
 		}
 
-		try {
-			$rows = $this->readEveryPage(objectService: $objectService, register: self::REGISTER, schema: self::SCHEMA);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: guardian audience fixture consent lookup failed', ['reason' => $e->getMessage()]);
-			return false;
-		}
+		return $this->consentGrantedIn(rows: $rows, consent: ['childRef' => $childRef, 'purpose' => $purpose]);
+	}//end childPhotoConsentGranted()
 
-		if (is_array($rows) === false) {
-			return false;
-		}
+	/**
+	 * Every guardian audience fixture row, or null when they cannot be read.
+	 *
+	 * @param string $failure The warning a failed read is logged under.
+	 *
+	 * @return array<int, mixed>|null
+	 */
+	private function everyFixtureRow(string $failure): ?array {
+		return (new FixtureRowReader(objectService: $this->objectService(), logger: $this->logger))->everyRow(
+			source: ['register' => self::REGISTER, 'schema' => self::SCHEMA],
+			failure: $failure
+		);
+	}//end everyFixtureRow()
 
+	/**
+	 * Whether the rows mention the child and none of them withholds the
+	 * purpose: one guardian withholding withholds for the child, and no row
+	 * mentioning the child at all fails closed.
+	 *
+	 * @param array<int, mixed>                        $rows    The fixture rows.
+	 * @param array{childRef: string, purpose: string} $consent The child and the consent purpose.
+	 *
+	 * @return bool
+	 */
+	private function consentGrantedIn(array $rows, array $consent): bool {
 		$mentioned = false;
 		foreach ($rows as $row) {
 			$normalised = $this->normalise(row: $row);
@@ -226,13 +237,12 @@ class GuardianAudienceFixtureReader {
 				continue;
 			}
 
-			$childRefs = $this->stringList(value: $normalised['childRefs'] ?? []);
-			if (in_array($childRef, $childRefs, true) === false) {
+			if (in_array($consent['childRef'], (new NonEmptyStrings())->from(value: $normalised['childRefs'] ?? []), true) === false) {
 				continue;
 			}
 
-			$consent = $this->nestedBoolMap(value: $normalised['photoConsent'] ?? []);
-			if (($consent[$childRef][$purpose] ?? false) !== true) {
+			$granted = $this->nestedBoolMap(value: $normalised['photoConsent'] ?? []);
+			if (($granted[$consent['childRef']][$consent['purpose']] ?? false) !== true) {
 				// One guardian withholding withholds for the child.
 				return false;
 			}
@@ -242,7 +252,7 @@ class GuardianAudienceFixtureReader {
 
 		// No fixture row mentions this child at all — fail closed.
 		return $mentioned;
-	}//end childPhotoConsentGranted()
+	}//end consentGrantedIn()
 
 	/**
 	 * Every guardian subjectRef whose audience intersects a target (school OR
@@ -285,21 +295,9 @@ class GuardianAudienceFixtureReader {
 	 * @return array{matched: array<int, string>, covered: array<int, string>}
 	 */
 	private function fixtureGuardiansMatching(array $target): array {
-		$none = ['matched' => [], 'covered' => []];
-		$objectService = $this->objectService();
-		if ($objectService === null) {
-			return $none;
-		}
-
-		try {
-			$rows = $this->readEveryPage(objectService: $objectService, register: self::REGISTER, schema: self::SCHEMA);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: guardian audience fixture enumeration failed', ['reason' => $e->getMessage()]);
-			return $none;
-		}
-
-		if (is_array($rows) === false) {
-			return $none;
+		$rows = $this->everyFixtureRow(failure: 'Portaliq: guardian audience fixture enumeration failed');
+		if ($rows === null) {
+			return ['matched' => [], 'covered' => []];
 		}
 
 		$matched = [];
@@ -310,18 +308,12 @@ class GuardianAudienceFixtureReader {
 				continue;
 			}
 
-			$covered[] = (string)($normalised['guardianRef'] ?? '');
-			$audience = [
-				'schoolRef' => (string)($normalised['schoolRef'] ?? ''),
-				'groupRefs' => $this->stringList(value: $normalised['groupRefs'] ?? []),
-				'childRefs' => $this->stringList(value: $normalised['childRefs'] ?? []),
-			];
-
-			if (NewsAudienceMatcher::matches(target: $target, audience: $audience) === true) {
-				$guardianRef = (string)($normalised['guardianRef'] ?? '');
-				if ($guardianRef !== '' && in_array($guardianRef, $matched, true) === false) {
-					$matched[] = $guardianRef;
-				}
+			$guardianRef = (string)($normalised['guardianRef'] ?? '');
+			$covered[]   = $guardianRef;
+			if (NewsAudienceMatcher::matches(target: $target, audience: $this->audienceOf(row: $normalised)) === true
+				&& $this->isNewGuardian(matched: $matched, guardianRef: $guardianRef) === true
+			) {
+				$matched[] = $guardianRef;
 			}
 		}
 
@@ -329,26 +321,31 @@ class GuardianAudienceFixtureReader {
 	}//end fixtureGuardiansMatching()
 
 	/**
-	 * Coerce a value to a list of strings, dropping anything else.
+	 * The audience a fixture row grants: school, groups and children.
 	 *
-	 * @param mixed $value The raw value.
+	 * @param array<string, mixed> $row The normalised fixture row.
 	 *
-	 * @return array<int, string>
+	 * @return array{schoolRef: string, groupRefs: array<int, string>, childRefs: array<int, string>}
 	 */
-	private function stringList(mixed $value): array {
-		if (is_array($value) === false) {
-			return [];
-		}
+	private function audienceOf(array $row): array {
+		return [
+			'schoolRef' => (string)($row['schoolRef'] ?? ''),
+			'groupRefs' => (new NonEmptyStrings())->from(value: $row['groupRefs'] ?? []),
+			'childRefs' => (new NonEmptyStrings())->from(value: $row['childRefs'] ?? []),
+		];
+	}//end audienceOf()
 
-		$list = [];
-		foreach ($value as $item) {
-			if (is_string($item) === true && $item !== '') {
-				$list[] = $item;
-			}
-		}
-
-		return $list;
-	}//end stringList()
+	/**
+	 * Whether a guardian is one not matched yet.
+	 *
+	 * @param array<int, string> $matched     The guardians matched so far.
+	 * @param string             $guardianRef The guardian.
+	 *
+	 * @return bool
+	 */
+	private function isNewGuardian(array $matched, string $guardianRef): bool {
+		return $guardianRef !== '' && in_array($guardianRef, $matched, true) === false;
+	}//end isNewGuardian()
 
 	/**
 	 * Coerce a value to a map of string => (map of string => bool) — the

@@ -39,7 +39,6 @@ use Throwable;
 class GroupStaffFixtureReader {
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
-	use PagedObjectReads;
 
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
@@ -101,7 +100,7 @@ class GroupStaffFixtureReader {
 			return [];
 		}
 
-		return $this->stringList(value: $row['staffRefs'] ?? []);
+		return (new NonEmptyStrings())->from(value: $row['staffRefs'] ?? []);
 	}//end staffForGroup()
 
 	/**
@@ -136,22 +135,26 @@ class GroupStaffFixtureReader {
 			return [];
 		}
 
-		$objectService = $this->objectService();
-		if ($objectService === null) {
+		$rows = (new FixtureRowReader(objectService: $this->objectService(), logger: $this->logger))->everyRow(
+			source: ['register' => self::REGISTER, 'schema' => self::SCHEMA],
+			failure: 'Portaliq: group staff fixture enumeration failed'
+		);
+		if ($rows === null) {
 			return [];
 		}
 
-		try {
-			$rows = $this->readEveryPage(objectService: $objectService, register: self::REGISTER, schema: self::SCHEMA);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: group staff fixture enumeration failed', ['reason' => $e->getMessage()]);
-			return [];
-		}
+		return $this->groupsOf(rows: $rows, staffRef: $staffRef);
+	}//end groupsTaughtBy()
 
-		if (is_array($rows) === false) {
-			return [];
-		}
-
+	/**
+	 * The groups of the fixture rows that list the staff member.
+	 *
+	 * @param array<int, mixed> $rows     The fixture rows.
+	 * @param string            $staffRef The staff subjectRef.
+	 *
+	 * @return array<int, string>
+	 */
+	private function groupsOf(array $rows, string $staffRef): array {
 		$groups = [];
 		foreach ($rows as $row) {
 			$normalised = $this->normalise(row: $row);
@@ -159,7 +162,7 @@ class GroupStaffFixtureReader {
 				continue;
 			}
 
-			$staffRefs = $this->stringList(value: $normalised['staffRefs'] ?? []);
+			$staffRefs = (new NonEmptyStrings())->from(value: $normalised['staffRefs'] ?? []);
 			$groupRef = (string)($normalised['groupRef'] ?? '');
 			if ($groupRef !== '' && in_array($staffRef, $staffRefs, true) === true) {
 				$groups[] = $groupRef;
@@ -167,27 +170,5 @@ class GroupStaffFixtureReader {
 		}
 
 		return $groups;
-	}//end groupsTaughtBy()
-
-	/**
-	 * Coerce a value to a list of strings, dropping anything else.
-	 *
-	 * @param mixed $value The raw value.
-	 *
-	 * @return array<int, string>
-	 */
-	private function stringList(mixed $value): array {
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		$list = [];
-		foreach ($value as $item) {
-			if (is_string($item) === true && $item !== '') {
-				$list[] = $item;
-			}
-		}
-
-		return $list;
-	}//end stringList()
+	}//end groupsOf()
 }//end class
