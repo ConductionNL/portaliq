@@ -41,8 +41,8 @@
 
 <script>
 import { CnDialog } from '@conduction/nextcloud-vue'
-import { translate as t } from '@nextcloud/l10n'
 import { NcButton, NcTextArea } from '@nextcloud/vue'
+import { reasonDialog } from './reasonDialog.js'
 
 export default {
 	name: 'RevealDecisionDialog',
@@ -65,33 +65,7 @@ export default {
 
 	emits: ['close'],
 
-	data() {
-		return {
-			reason: '',
-			missing: false,
-		}
-	},
-
-	methods: {
-		t,
-
-		/**
-		 * Close with the reason, or say that one is needed.
-		 *
-		 * @return {void}
-		 *
-		 * @spec openspec/changes/intake-report-pages/specs/report-pages/spec.md#requirement-the-custodian-decides-a-reveal-on-a-screen-of-their-own-req-irp-006
-		 */
-		confirm() {
-			const reason = this.reason.trim()
-			if (reason === '') {
-				this.missing = true
-				return
-			}
-
-			this.$emit('close', reason)
-		},
-	},
+	...reasonDialog,
 }
 </script>
 
