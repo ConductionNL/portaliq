@@ -109,20 +109,53 @@ class LandingPageSubmissionDispatchListener implements IEventListener {
 	 * @return void
 	 */
 	private function relay(ObjectCreatedEvent $event): void {
+		$data = $this->submissionOf(event: $event);
+		if ($data === null) {
+			return;
+		}
+
+		$eventClass = $this->consumerEventClassFor(data: $data);
+		if ($eventClass === null) {
+			return;
+		}
+
+		$this->dispatcher->dispatchTyped(new $eventClass(...self::eventArguments(data: $data)));
+	}//end relay()
+
+	/**
+	 * The data of a `landingPageSubmission` write, or null for any other write.
+	 *
+	 * @param ObjectCreatedEvent $event The OpenRegister create event.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function submissionOf(ObjectCreatedEvent $event): ?array {
 		$entity = $event->getObject();
 		if ($entity->getRegister() !== self::REGISTER || $entity->getSchema() !== self::SCHEMA) {
-			return;
+			return null;
 		}
 
 		$data = $entity->getObject();
 		if (is_array($data) === false) {
-			return;
+			return null;
 		}
 
+		return $data;
+	}//end submissionOf()
+
+	/**
+	 * The consumer event class for a submission's `sourceApp`, or null (logged)
+	 * when it names none or its app has no such event.
+	 *
+	 * @param array<string, mixed> $data The submission.
+	 *
+	 * @return class-string|null
+	 */
+	private function consumerEventClassFor(array $data): ?string {
 		$sourceApp = trim((string)($data['sourceApp'] ?? ''));
 		if ($sourceApp === '') {
 			$this->logger->warning('Portaliq: landing page submission has no sourceApp, cannot relay');
-			return;
+			return null;
 		}
 
 		$eventClass = $this->resolveConsumerEventClass(sourceApp: $sourceApp);
@@ -135,27 +168,29 @@ class LandingPageSubmissionDispatchListener implements IEventListener {
 				'Portaliq: no landing page submission consumer registered yet',
 				['sourceApp' => $sourceApp]
 			);
-			return;
 		}
 
-		$consumerEvent = new $eventClass(
-			$sourceApp,
-			(string)($data['formId'] ?? ''),
-			(string)($data['pageId'] ?? ''),
-			(string)($data['pageRoute'] ?? ''),
-			(string)($data['portal'] ?? ''),
-			(string)($data['externalReference'] ?? ''),
-			(array)($data['values'] ?? []),
-			(array)($data['utmFirstTouch'] ?? []),
-			(array)($data['utmLastTouch'] ?? []),
-			(string)($data['referrer'] ?? ''),
-			(string)($data['submittedAt'] ?? ''),
-			(string)($data['nonce'] ?? ''),
-			(string)($data['externalReference'] ?? '')
-		);
+		return $eventClass;
+	}//end consumerEventClassFor()
 
-		$this->dispatcher->dispatchTyped($consumerEvent);
-	}//end relay()
+	/**
+	 * The consumer event's constructor arguments, in its order; the external
+	 * reference doubles as the correlation id.
+	 *
+	 * @param array<string, mixed> $data The submission.
+	 *
+	 * @return list<mixed>
+	 */
+	private static function eventArguments(array $data): array {
+		$text = static fn (string $key): string => (string)($data[$key] ?? '');
+		$list = static fn (string $key): array => (array)($data[$key] ?? []);
+
+		return [
+			trim($text('sourceApp')), $text('formId'), $text('pageId'), $text('pageRoute'), $text('portal'),
+			$text('externalReference'), $list('values'), $list('utmFirstTouch'), $list('utmLastTouch'),
+			$text('referrer'), $text('submittedAt'), $text('nonce'), $text('externalReference'),
+		];
+	}//end eventArguments()
 
 	/**
 	 * Resolve the consumer app's `LandingPageFormSubmittedEvent` FQCN by its
