@@ -40,7 +40,6 @@ use OCA\Portaliq\Contribution\ActionScopeResolver;
 use OCA\Portaliq\Contribution\AttachedActionResolver;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Contribution\RowActionFiles;
-use OCA\Portaliq\Contribution\RowActionInputs;
 use OCA\Portaliq\Contribution\RowActionResolver;
 use OCA\Portaliq\Contribution\RowIdentifier;
 use OCA\Portaliq\Service\AuditTrailService;
@@ -128,47 +127,74 @@ class PortalRowActionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$inputs  = new RowActionInputs();
-		$refusal = $this->notOffered(inputs: $inputs, match: $match, row: $row);
+		$run = new RowForwardRun(subject: $subject, match: $match);
+		$run->row         = $row;
+		$run->requestedId = $id;
+		$run->actionId    = $actionId;
+		return $this->forwardProvenRow(run: $run);
+	}//end forward()
+
+	/**
+	 * Forward the action for a row the subject's scope proved: refused when
+	 * the row does not offer it, then the whitelisted body with the row's
+	 * declared inputs, then the action's files.
+	 *
+	 * @param RowForwardRun $run The forward, with its proven row.
+	 *
+	 * @return JSONResponse The relayed answer, or 403 / 409 / 422 / 502.
+	 */
+	private function forwardProvenRow(RowForwardRun $run): JSONResponse {
+		$refusal = $this->notOffered(run: $run);
 		if ($refusal !== null) {
 			return $refusal;
 		}
 
-		$rowId = (new RowIdentifier())->idFor(row: $row, fallback: $id);
-		$body = $this->forwardBody(match: $match, subject: $subject, rowId: $rowId);
+		$run->rowId = (new RowIdentifier())->idFor(row: $run->row, fallback: $run->requestedId);
+		$body       = $this->forwardBody(run: $run);
 		if ($body === null) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$body = $this->withRowInputs(inputs: $inputs, match: $match, row: $row, body: $body);
+		$body = $this->withRowInputs(run: $run, body: $body);
 		if ($body instanceof JSONResponse) {
 			return $body;
 		}
 
-		// The files the action lets the resident add, checked before the
-		// audit and the forward (row-action-carries-files REQ-RAF-001).
-		$files = (new RowActionFiles())->collect(action: $match['action'], request: $this->request);
+		return $this->relayWithFiles(run: $run, body: $body);
+	}//end forwardProvenRow()
+
+	/**
+	 * Add the files the action lets the resident add, checked before the
+	 * audit and the forward (row-action-carries-files REQ-RAF-001), and relay.
+	 *
+	 * @param RowForwardRun                                          $run  The forward, with its proven row.
+	 * @param array{body: array<string, mixed>, scopeValue: string} $body The forward body and assertion scope value.
+	 *
+	 * @return JSONResponse The relayed answer, or 422 / 502.
+	 */
+	private function relayWithFiles(RowForwardRun $run, array $body): JSONResponse {
+		$files = (new RowActionFiles())->collect(action: $run->match['action'], request: $this->request);
 		if ($files['error'] !== null) {
 			return new JSONResponse(['error' => $files['error']], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
 
 		$body['files'] = $files['files'];
 
-		return $this->relay(match: $match, subject: $subject, body: $body, ids: ['row' => $rowId, 'action' => $actionId]);
-	}//end forward()
+		return $this->relay(run: $run, body: $body);
+	}//end relayWithFiles()
 
 	/**
 	 * Refuse a body without the action's required fields, audit the forward and
 	 * relay the leaf app's answer.
 	 *
-	 * @param array{collection: array<string, mixed>, action: array<string, mixed>, app: string, rowApp?: string} $match The authorised row action.
-	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param RowForwardRun                                          $run  The forward, with its proven row id and the action id.
 	 * @param array{body: array<string, mixed>, scopeValue: string} $body The forward body and assertion scope value.
-	 * @param array{row: string, action: string} $ids The proven row id and the action id, for the audit.
 	 *
 	 * @return JSONResponse The relayed answer, or 422 / 502.
 	 */
-	private function relay(array $match, array $subject, array $body, array $ids): JSONResponse {
+	private function relay(RowForwardRun $run, array $body): JSONResponse {
+		$match   = $run->match;
+		$subject = $run->subject;
 		// The action's required fields (REQ-SMF-024): refused before the audit
 		// and the forward.
 		$missing = (new RequiredFieldsGuard())->refusal(action: $match['action'], body: $body['body']);
@@ -184,8 +210,8 @@ class PortalRowActionController extends Controller implements PortalProtected {
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
 			organisation: (string)($subject['organisation'] ?? ''),
 			register: $match['app'],
-			schema: $ids['action'],
-			id: $ids['row'],
+			schema: $run->actionId,
+			id: $run->rowId,
 			jti: (string)($subject['jti'] ?? '')
 		);
 
@@ -213,18 +239,16 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	 * absence is a convenience, this is the rule
 	 * (case-actions-row-inputs-and-conditions REQ-RAI-004).
 	 *
-	 * @param RowActionInputs      $inputs The row-action input rules.
-	 * @param array<string, mixed> $match  The authorised collection, action and app.
-	 * @param array<string, mixed> $row    The row.
+	 * @param RowForwardRun $run The forward, with its proven row.
 	 *
 	 * @return JSONResponse|null The 409, or null when the row offers the action.
 	 */
-	private function notOffered(RowActionInputs $inputs, array $match, array $row): ?JSONResponse {
-		if ((new RowActionResolver())->rowMatches(action: $match['action'], row: $row) === false) {
+	private function notOffered(RowForwardRun $run): ?JSONResponse {
+		if ((new RowActionResolver())->rowMatches(action: $run->match['action'], row: $run->row) === false) {
 			return new JSONResponse(['error' => 'not_offered'], Http::STATUS_CONFLICT);
 		}
 
-		$availability = $inputs->availability(action: $match['action'], row: $row);
+		$availability = $run->inputs->availability(action: $run->match['action'], row: $run->row);
 		if ($availability['available'] === false) {
 			return new JSONResponse(['error' => 'not_available', 'message' => $availability['reason']], Http::STATUS_CONFLICT);
 		}
@@ -237,20 +261,18 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	 * names it declares (REQ-RAI-002): a name it does not declare is dropped
 	 * here, and a required one left empty is a 422 that forwards nothing.
 	 *
-	 * @param RowActionInputs      $inputs The row-action input rules.
-	 * @param array<string, mixed> $match  The authorised collection, action and app.
-	 * @param array<string, mixed> $row    The row.
-	 * @param array<string, mixed> $body   The forward body and scope value.
+	 * @param RowForwardRun        $run  The forward, with its proven row.
+	 * @param array<string, mixed> $body The forward body and scope value.
 	 *
 	 * @return array<string, mixed>|JSONResponse The body, or the 422.
 	 */
-	private function withRowInputs(RowActionInputs $inputs, array $match, array $row, array $body): array|JSONResponse {
-		$into = ($match['action']['rowInputs']['into'] ?? null);
+	private function withRowInputs(RowForwardRun $run, array $body): array|JSONResponse {
+		$into = ($run->match['action']['rowInputs']['into'] ?? null);
 		if (is_string($into) === false) {
 			return $body;
 		}
 
-		$collected = $inputs->collect(action: $match['action'], row: $row, submitted: $this->request->getParam($into));
+		$collected = $run->inputs->collect(action: $run->match['action'], row: $run->row, submitted: $this->request->getParam($into));
 		if ($collected['errors'] !== []) {
 			return new JSONResponse(['error' => 'invalid', 'errors' => $collected['errors']], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
@@ -435,14 +457,12 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	 * under a declared `subjectField`, with the declared `scopeClaim`'s value
 	 * for the assertion. Null when either does not resolve.
 	 *
-	 * @param array{collection: array<string, mixed>, action: array<string, mixed>, app: string, rowApp?: string} $match The authorised row action.
-	 * @param array<string, mixed> $subject The resolved subject.
-	 * @param string $rowId The proven row id.
+	 * @param RowForwardRun $run The forward, with its proven row id.
 	 *
 	 * @return array{body: array<string, mixed>|null, scopeValue: string}|null The body and assertion scope value, or null (403).
 	 */
-	private function forwardBody(array $match, array $subject, string $rowId): ?array {
-		$action = $match['action'];
+	private function forwardBody(RowForwardRun $run): ?array {
+		$action = $run->match['action'];
 		$body = [];
 		foreach ((array)($action['fields'] ?? []) as $field) {
 			if (is_string($field) === false) {
@@ -455,13 +475,13 @@ class PortalRowActionController extends Controller implements PortalProtected {
 			}
 		}
 
-		$body[(string)$action['rowField']] = $rowId;
+		$body[(string)$action['rowField']] = $run->rowId;
 
 		// A declared `subjectField` is stamped from the subject's scope and a
 		// declared `scopeClaim` rides in the signed assertion (the way
 		// filinq's `sign` receives its `signerEmail`); either one that does
 		// not resolve stops the forward.
 		return (new ActionScopeResolver(reader: $this->reader))
-			->prepare(action: $action, subject: $subject, appId: $match['app'], body: $body);
+			->prepare(action: $action, subject: $run->subject, appId: $run->match['app'], body: $body);
 	}//end forwardBody()
 }//end class
