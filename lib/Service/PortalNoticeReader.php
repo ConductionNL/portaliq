@@ -138,32 +138,13 @@ class PortalNoticeReader {
 	 * @spec openspec/specs/portal-notices/spec.md#requirement-a-notice-shows-on-every-page-during-its-window-req-omn-001
 	 */
 	public static function select(array $rows, string $portal, string $surface, DateTimeImmutable $now): array {
+		$query  = new NoticeQuery(portal: $portal, surface: $surface, now: $now);
 		$active = [];
 		foreach ($rows as $row) {
-			$starts = self::time(value: ($row['startsAt'] ?? null));
-			$ends   = self::time(value: ($row['endsAt'] ?? null));
-			$id     = (string)($row['@self']['id'] ?? $row['id'] ?? '');
-			if ($id === '' || $starts === null || $ends === null || $starts > $now || $ends <= $now
-				|| self::isShown(row: $row, portal: $portal, surface: $surface) === false
-			) {
-				continue;
+			if (self::isActive(row: $row, query: $query) === true) {
+				$active[] = self::shaped(row: $row);
 			}
-
-			$level = 'info';
-			if (($row['level'] ?? '') === 'warning') {
-				$level = 'warning';
-			}
-
-			$active[] = [
-				'id'        => $id,
-				'message'   => (string)($row['message'] ?? ''),
-				'level'     => $level,
-				'linkLabel' => (string)($row['linkLabel'] ?? ''),
-				'linkUrl'   => self::httpsOnly(url: (string)($row['linkUrl'] ?? '')),
-				'endsAt'    => $ends->format(DATE_ATOM),
-				'startsAt'  => $starts->getTimestamp(),
-			];
-		}//end foreach
+		}
 
 		usort($active, static fn (array $a, array $b): int => $b['startsAt'] <=> $a['startsAt']);
 
@@ -178,18 +159,73 @@ class PortalNoticeReader {
 
 
 	/**
+	 * Whether a row has an id, a window that holds now, and may show on
+	 * this portal and surface.
+	 *
+	 * @param array<string, mixed> $row   The row.
+	 * @param NoticeQuery          $query The portal, surface and moment.
+	 *
+	 * @return bool
+	 */
+	private static function isActive(array $row, NoticeQuery $query): bool {
+		$starts = self::time(value: ($row['startsAt'] ?? null));
+		$ends   = self::time(value: ($row['endsAt'] ?? null));
+
+		return self::idOf(row: $row) !== ''
+			&& $query->covers(starts: $starts, ends: $ends) === true
+			&& self::isShown(row: $row, query: $query) === true;
+	}//end isActive()
+
+
+	/**
+	 * An active row shaped for the client, with its start kept for sorting.
+	 *
+	 * @param array<string, mixed> $row An active row.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private static function shaped(array $row): array {
+		$level = 'info';
+		if (($row['level'] ?? '') === 'warning') {
+			$level = 'warning';
+		}
+
+		return [
+			'id'        => self::idOf(row: $row),
+			'message'   => (string)($row['message'] ?? ''),
+			'level'     => $level,
+			'linkLabel' => (string)($row['linkLabel'] ?? ''),
+			'linkUrl'   => self::httpsOnly(url: (string)($row['linkUrl'] ?? '')),
+			'endsAt'    => self::time(value: $row['endsAt'])->format(DATE_ATOM),
+			'startsAt'  => self::time(value: $row['startsAt'])->getTimestamp(),
+		];
+	}//end shaped()
+
+
+	/**
+	 * A row's id: its `@self` id, else its own.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return string The id, or ''.
+	 */
+	private static function idOf(array $row): string {
+		return (string)($row['@self']['id'] ?? $row['id'] ?? '');
+	}//end idOf()
+
+
+	/**
 	 * Whether a row is a published notice of this portal for this surface.
 	 *
-	 * @param array<string, mixed> $row     The row.
-	 * @param string               $portal  The portal slug.
-	 * @param string               $surface `site` or `portal`.
+	 * @param array<string, mixed> $row   The row.
+	 * @param NoticeQuery          $query The portal and surface.
 	 *
 	 * @return bool True when it may show here.
 	 */
-	private static function isShown(array $row, string $portal, string $surface): bool {
-		return (string)($row['portal'] ?? '') === $portal
+	private static function isShown(array $row, NoticeQuery $query): bool {
+		return (string)($row['portal'] ?? '') === $query->portal
 			&& ($row['status'] ?? '') === 'published'
-			&& in_array($surface, (array)($row['surfaces'] ?? []), true) === true;
+			&& in_array($query->surface, (array)($row['surfaces'] ?? []), true) === true;
 	}//end isShown()
 
 
@@ -237,19 +273,56 @@ class PortalNoticeReader {
 	 * @return array<int, array> The rows.
 	 */
 	private function published(string $portal): array {
-		$hit = $this->cache->get($portal);
-		if (is_string($hit) === true) {
-			$decoded = json_decode($hit, true);
-			if (is_array($decoded) === true) {
-				return $decoded;
-			}
+		$hit = $this->cached(portal: $portal);
+		if ($hit !== null) {
+			return $hit;
 		}
 
-		$rows = [];
+		$rows = $this->readPublished(portal: $portal);
+		if ($rows === null) {
+			return [];
+		}
+
+		$this->cache->set($portal, json_encode($rows), self::TTL);
+
+		return $rows;
+	}//end published()
+
+
+	/**
+	 * The cached published notices of one portal, or null on a miss.
+	 *
+	 * @param string $portal The portal slug.
+	 *
+	 * @return array<int, array>|null
+	 */
+	private function cached(string $portal): ?array {
+		$hit = $this->cache->get($portal);
+		if (is_string($hit) === false) {
+			return null;
+		}
+
+		$decoded = json_decode($hit, true);
+		if (is_array($decoded) === false) {
+			return null;
+		}
+
+		return $decoded;
+	}//end cached()
+
+
+	/**
+	 * Read the published notices of one portal from OpenRegister.
+	 *
+	 * @param string $portal The portal slug.
+	 *
+	 * @return array<int, array>|null The rows, or null when they could not be read.
+	 */
+	private function readPublished(string $portal): ?array {
 		try {
 			$objects = $this->container->get(self::OBJECT_SERVICE);
 			if ($this->context->apply(objectService: $objects, schemaSlug: self::SCHEMA) === false) {
-				return [];
+				return null;
 			}
 
 			$found = $objects->findAll(
@@ -257,20 +330,32 @@ class PortalNoticeReader {
 				_rbac: false,
 				_multitenancy: false
 			);
-			foreach ((array)$found as $row) {
-				if (is_array($row) === false) {
-					$row = (array)$row->jsonSerialize();
-				}
 
-				$rows[] = $row;
-			}
+			return self::asRows(found: $found);
 		} catch (Throwable $e) {
 			$this->logger->error('Portaliq: notice read failed', ['portal' => $portal, 'reason' => $e->getMessage()]);
-			return [];
+			return null;
 		}//end try
+	}//end readPublished()
 
-		$this->cache->set($portal, json_encode($rows), self::TTL);
+
+	/**
+	 * The found objects as plain rows.
+	 *
+	 * @param mixed $found What the object service found.
+	 *
+	 * @return array<int, array>
+	 */
+	private static function asRows(mixed $found): array {
+		$rows = [];
+		foreach ((array)$found as $row) {
+			if (is_array($row) === false) {
+				$row = (array)$row->jsonSerialize();
+			}
+
+			$rows[] = $row;
+		}
 
 		return $rows;
-	}//end published()
+	}//end asRows()
 }//end class
