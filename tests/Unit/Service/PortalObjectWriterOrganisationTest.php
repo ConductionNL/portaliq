@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Tests\Doubles\OpenRegisterObjectEntity;
 use OCA\Portaliq\Tests\Doubles\OpenRegisterObjectService;
@@ -171,7 +172,11 @@ class PortalObjectWriterOrganisationTest extends TestCase {
 		);
 
 		$objectService->method('saveObject')->willReturnCallback(
-			function (array $object, ?array $extend = [], mixed $register = null, mixed $schema = null, ?string $uuid = null): object {
+			function (array $object, ?ObjectSaveOptions $options = null): object {
+				$extend = ($options?->extend ?? []);
+				$register = ($options?->target->register ?? null);
+				$schema = ($options?->target->schema ?? null);
+				$uuid = ($options?->uuid ?? null);
 				$this->saves[] = ['object' => $object, 'uuid' => $uuid];
 				return $this->entity(row: $object);
 			}

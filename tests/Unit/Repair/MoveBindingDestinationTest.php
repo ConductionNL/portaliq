@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Repair;
 
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCA\Portaliq\Repair\MoveBindingDestination;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCP\Migration\IOutput;
@@ -132,7 +133,10 @@ class MoveBindingDestinationTest extends TestCase {
 				return array_slice($this->rows, (int)($config['offset'] ?? 0), (int)($config['limit'] ?? 100));
 			}
 
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ?ObjectSaveOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = ($options?->target->register ?? null);
+				$schema = ($options?->target->schema ?? null);
+				$uuid = ($options?->uuid ?? null);
 				$this->saves[] = ['uuid' => $uuid, 'schema' => $schema, 'object' => $object];
 				foreach ($this->rows as $index => $row) {
 					if (($row['@self']['uuid'] ?? null) === $uuid) {

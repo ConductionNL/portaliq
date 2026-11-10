@@ -29,6 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\ExampleResident;
 
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCA\Portaliq\Service\ObjectRowNormaliser;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\RowIdOf;
@@ -192,7 +194,12 @@ class ExampleResidentStore {
 		unset($merged['@self'], $merged['id']);
 
 		try {
-			$objectService->saveObject(object: $merged, register: $register, schema: $schema, uuid: $id, _rbac: false, _multitenancy: false);
+			$objectService->saveObject(
+				object: $merged,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: $register, schema: $schema), uuid: $id),
+				_rbac: false,
+				_multitenancy: false
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: example resident update failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return false;

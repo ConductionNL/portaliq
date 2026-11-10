@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use PHPUnit\Framework\TestCase;
@@ -54,13 +55,14 @@ class PortalObjectWriterTest extends TestCase {
 			 */
 			public function saveObject(
 				array $object,
-				?array $extend = null,
-				mixed $register = null,
-				mixed $schema = null,
-				?string $uuid = null,
+				?ObjectSaveOptions $options = null,
 				bool $_rbac = true,
 				bool $_multitenancy = true,
 			): array {
+				$extend = ($options?->extend ?? null);
+				$register = ($options?->target->register ?? null);
+				$schema = ($options?->target->schema ?? null);
+				$uuid = ($options?->uuid ?? null);
 				$this->saved = $object;
 				$this->register = $register;
 				$this->schema = $schema;
@@ -440,13 +442,14 @@ class PortalObjectWriterTest extends TestCase {
 			 */
 			public function saveObject(
 				array $object,
-				?array $extend = null,
-				mixed $register = null,
-				mixed $schema = null,
-				?string $uuid = null,
+				?ObjectSaveOptions $options = null,
 				bool $_rbac = true,
 				bool $_multitenancy = true,
 			): array {
+				$extend = ($options?->extend ?? null);
+				$register = ($options?->target->register ?? null);
+				$schema = ($options?->target->schema ?? null);
+				$uuid = ($options?->uuid ?? null);
 				if ($this->throwOnSave === true) {
 					throw new RuntimeException('OR write failed');
 				}

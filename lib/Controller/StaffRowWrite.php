@@ -22,6 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -79,7 +81,12 @@ trait StaffRowWrite {
 		}
 
 		try {
-			$saved = $objectService->saveObject(object: $object, register: self::REGISTER, schema: self::SCHEMA, _rbac: false, _multitenancy: false);
+			$saved = $objectService->saveObject(
+				object: $object,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA)),
+				_rbac: false,
+				_multitenancy: false
+			);
 		} catch (Throwable $e) {
 			$this->logger->error($failure, ['reason' => $e->getMessage()]);
 			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);

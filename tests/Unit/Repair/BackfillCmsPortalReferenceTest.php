@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Repair;
 
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCA\Portaliq\Repair\BackfillCmsPortalReference;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCP\Migration\IOutput;
@@ -53,7 +54,10 @@ class BackfillCmsPortalReferenceTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ?ObjectSaveOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = ($options?->target->register ?? null);
+				$schema = ($options?->target->schema ?? null);
+				$uuid = ($options?->uuid ?? null);
 				$this->saves[] = ['schema' => (string)$schema, 'uuid' => $uuid, 'object' => $object];
 				foreach ($this->bySchema[(string)$schema] as $i => $row) {
 					if (($row['@self']['uuid'] ?? null) === $uuid) {

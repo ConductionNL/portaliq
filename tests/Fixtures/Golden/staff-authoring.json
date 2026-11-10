@@ -46,8 +46,26 @@
                                 ],
                                 "authorRef": "staff-anna"
                             },
-                            "register": "portaliq",
-                            "schema": "schoolEvent",
+                            "options": {
+                                "target": {
+                                    "register": "portaliq",
+                                    "schema": "schoolEvent"
+                                },
+                                "uuid": null,
+                                "extend": [],
+                                "uploadedFiles": null,
+                                "policy": {
+                                    "silent": false,
+                                    "validation": true,
+                                    "failIfExists": false,
+                                    "dedupOverride": false
+                                },
+                                "actor": {
+                                    "currentUser": null,
+                                    "owner": null,
+                                    "unowned": false
+                                }
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -82,8 +100,26 @@
                                 ],
                                 "authorRef": "staff-anna"
                             },
-                            "register": "portaliq",
-                            "schema": "schoolEvent",
+                            "options": {
+                                "target": {
+                                    "register": "portaliq",
+                                    "schema": "schoolEvent"
+                                },
+                                "uuid": null,
+                                "extend": [],
+                                "uploadedFiles": null,
+                                "policy": {
+                                    "silent": false,
+                                    "validation": true,
+                                    "failIfExists": false,
+                                    "dedupOverride": false
+                                },
+                                "actor": {
+                                    "currentUser": null,
+                                    "owner": null,
+                                    "unowned": false
+                                }
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -225,8 +261,26 @@
                                 "signupRoles": [],
                                 "authorRef": "staff-anna"
                             },
-                            "register": "portaliq",
-                            "schema": "schoolEvent",
+                            "options": {
+                                "target": {
+                                    "register": "portaliq",
+                                    "schema": "schoolEvent"
+                                },
+                                "uuid": null,
+                                "extend": [],
+                                "uploadedFiles": null,
+                                "policy": {
+                                    "silent": false,
+                                    "validation": true,
+                                    "failIfExists": false,
+                                    "dedupOverride": false
+                                },
+                                "actor": {
+                                    "currentUser": null,
+                                    "owner": null,
+                                    "unowned": false
+                                }
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -286,8 +340,26 @@
                                 "signupRoles": [],
                                 "authorRef": "staff-anna"
                             },
-                            "register": "portaliq",
-                            "schema": "schoolEvent",
+                            "options": {
+                                "target": {
+                                    "register": "portaliq",
+                                    "schema": "schoolEvent"
+                                },
+                                "uuid": null,
+                                "extend": [],
+                                "uploadedFiles": null,
+                                "policy": {
+                                    "silent": false,
+                                    "validation": true,
+                                    "failIfExists": false,
+                                    "dedupOverride": false
+                                },
+                                "actor": {
+                                    "currentUser": null,
+                                    "owner": null,
+                                    "unowned": false
+                                }
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -347,8 +419,26 @@
                                 "signupRoles": [],
                                 "authorRef": "staff-anna"
                             },
-                            "register": "portaliq",
-                            "schema": "schoolEvent",
+                            "options": {
+                                "target": {
+                                    "register": "portaliq",
+                                    "schema": "schoolEvent"
+                                },
+                                "uuid": null,
+                                "extend": [],
+                                "uploadedFiles": null,
+                                "policy": {
+                                    "silent": false,
+                                    "validation": true,
+                                    "failIfExists": false,
+                                    "dedupOverride": false
+                                },
+                                "actor": {
+                                    "currentUser": null,
+                                    "owner": null,
+                                    "unowned": false
+                                }
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -400,8 +490,26 @@
                                 "signupRoles": [],
                                 "authorRef": "staff-anna"
                             },
-                            "register": "portaliq",
-                            "schema": "schoolEvent",
+                            "options": {
+                                "target": {
+                                    "register": "portaliq",
+                                    "schema": "schoolEvent"
+                                },
+                                "uuid": null,
+                                "extend": [],
+                                "uploadedFiles": null,
+                                "policy": {
+                                    "silent": false,
+                                    "validation": true,
+                                    "failIfExists": false,
+                                    "dedupOverride": false
+                                },
+                                "actor": {
+                                    "currentUser": null,
+                                    "owner": null,
+                                    "unowned": false
+                                }
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -434,8 +542,26 @@
                                 "signupRoles": [],
                                 "authorRef": "staff-anna"
                             },
-                            "register": "portaliq",
-                            "schema": "schoolEvent",
+                            "options": {
+                                "target": {
+                                    "register": "portaliq",
+                                    "schema": "schoolEvent"
+                                },
+                                "uuid": null,
+                                "extend": [],
+                                "uploadedFiles": null,
+                                "policy": {
+                                    "silent": false,
+                                    "validation": true,
+                                    "failIfExists": false,
+                                    "dedupOverride": false
+                                },
+                                "actor": {
+                                    "currentUser": null,
+                                    "owner": null,
+                                    "unowned": false
+                                }
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -488,8 +614,26 @@
                                 "signupRoles": [],
                                 "authorRef": "staff-anna"
                             },
-                            "register": "portaliq",
-                            "schema": "schoolEvent",
+                            "options": {
+                                "target": {
+                                    "register": "portaliq",
+                                    "schema": "schoolEvent"
+                                },
+                                "uuid": null,
+                                "extend": [],
+                                "uploadedFiles": null,
+                                "policy": {
+                                    "silent": false,
+                                    "validation": true,
+                                    "failIfExists": false,
+                                    "dedupOverride": false
+                                },
+                                "actor": {
+                                    "currentUser": null,
+                                    "owner": null,
+                                    "unowned": false
+                                }
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -523,8 +667,26 @@
                                 "signupRoles": [],
                                 "authorRef": "staff-anna"
                             },
-                            "register": "portaliq",
-                            "schema": "schoolEvent",
+                            "options": {
+                                "target": {
+                                    "register": "portaliq",
+                                    "schema": "schoolEvent"
+                                },
+                                "uuid": null,
+                                "extend": [],
+                                "uploadedFiles": null,
+                                "policy": {
+                                    "silent": false,
+                                    "validation": true,
+                                    "failIfExists": false,
+                                    "dedupOverride": false
+                                },
+                                "actor": {
+                                    "currentUser": null,
+                                    "owner": null,
+                                    "unowned": false
+                                }
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -730,8 +892,26 @@
                                 "audienceLabel": "All",
                                 "eventRef": "e-1"
                             },
-                            "register": "portaliq",
-                            "schema": "newsItem",
+                            "options": {
+                                "target": {
+                                    "register": "portaliq",
+                                    "schema": "newsItem"
+                                },
+                                "uuid": null,
+                                "extend": [],
+                                "uploadedFiles": null,
+                                "policy": {
+                                    "silent": false,
+                                    "validation": true,
+                                    "failIfExists": false,
+                                    "dedupOverride": false
+                                },
+                                "actor": {
+                                    "currentUser": null,
+                                    "owner": null,
+                                    "unowned": false
+                                }
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -766,8 +946,26 @@
                                 "audienceLabel": "All",
                                 "eventRef": "e-1"
                             },
-                            "register": "portaliq",
-                            "schema": "newsItem",
+                            "options": {
+                                "target": {
+                                    "register": "portaliq",
+                                    "schema": "newsItem"
+                                },
+                                "uuid": null,
+                                "extend": [],
+                                "uploadedFiles": null,
+                                "policy": {
+                                    "silent": false,
+                                    "validation": true,
+                                    "failIfExists": false,
+                                    "dedupOverride": false
+                                },
+                                "actor": {
+                                    "currentUser": null,
+                                    "owner": null,
+                                    "unowned": false
+                                }
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -860,8 +1058,26 @@
                                 "audienceLabel": "",
                                 "eventRef": ""
                             },
-                            "register": "portaliq",
-                            "schema": "newsItem",
+                            "options": {
+                                "target": {
+                                    "register": "portaliq",
+                                    "schema": "newsItem"
+                                },
+                                "uuid": null,
+                                "extend": [],
+                                "uploadedFiles": null,
+                                "policy": {
+                                    "silent": false,
+                                    "validation": true,
+                                    "failIfExists": false,
+                                    "dedupOverride": false
+                                },
+                                "actor": {
+                                    "currentUser": null,
+                                    "owner": null,
+                                    "unowned": false
+                                }
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -896,8 +1112,26 @@
                                 "audienceLabel": "",
                                 "eventRef": ""
                             },
-                            "register": "portaliq",
-                            "schema": "newsItem",
+                            "options": {
+                                "target": {
+                                    "register": "portaliq",
+                                    "schema": "newsItem"
+                                },
+                                "uuid": null,
+                                "extend": [],
+                                "uploadedFiles": null,
+                                "policy": {
+                                    "silent": false,
+                                    "validation": true,
+                                    "failIfExists": false,
+                                    "dedupOverride": false
+                                },
+                                "actor": {
+                                    "currentUser": null,
+                                    "owner": null,
+                                    "unowned": false
+                                }
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -1004,8 +1238,26 @@
                                 "audienceLabel": "",
                                 "eventRef": ""
                             },
-                            "register": "portaliq",
-                            "schema": "newsItem",
+                            "options": {
+                                "target": {
+                                    "register": "portaliq",
+                                    "schema": "newsItem"
+                                },
+                                "uuid": null,
+                                "extend": [],
+                                "uploadedFiles": null,
+                                "policy": {
+                                    "silent": false,
+                                    "validation": true,
+                                    "failIfExists": false,
+                                    "dedupOverride": false
+                                },
+                                "actor": {
+                                    "currentUser": null,
+                                    "owner": null,
+                                    "unowned": false
+                                }
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -1069,8 +1321,26 @@
                                 "audienceLabel": "",
                                 "eventRef": ""
                             },
-                            "register": "portaliq",
-                            "schema": "newsItem",
+                            "options": {
+                                "target": {
+                                    "register": "portaliq",
+                                    "schema": "newsItem"
+                                },
+                                "uuid": null,
+                                "extend": [],
+                                "uploadedFiles": null,
+                                "policy": {
+                                    "silent": false,
+                                    "validation": true,
+                                    "failIfExists": false,
+                                    "dedupOverride": false
+                                },
+                                "actor": {
+                                    "currentUser": null,
+                                    "owner": null,
+                                    "unowned": false
+                                }
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -1134,8 +1404,26 @@
                                 "audienceLabel": "",
                                 "eventRef": ""
                             },
-                            "register": "portaliq",
-                            "schema": "newsItem",
+                            "options": {
+                                "target": {
+                                    "register": "portaliq",
+                                    "schema": "newsItem"
+                                },
+                                "uuid": null,
+                                "extend": [],
+                                "uploadedFiles": null,
+                                "policy": {
+                                    "silent": false,
+                                    "validation": true,
+                                    "failIfExists": false,
+                                    "dedupOverride": false
+                                },
+                                "actor": {
+                                    "currentUser": null,
+                                    "owner": null,
+                                    "unowned": false
+                                }
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -1519,8 +1807,26 @@
                                 "sentAt": null,
                                 "archived": false
                             },
-                            "register": "portaliq",
-                            "schema": "newsletter",
+                            "options": {
+                                "target": {
+                                    "register": "portaliq",
+                                    "schema": "newsletter"
+                                },
+                                "uuid": null,
+                                "extend": [],
+                                "uploadedFiles": null,
+                                "policy": {
+                                    "silent": false,
+                                    "validation": true,
+                                    "failIfExists": false,
+                                    "dedupOverride": false
+                                },
+                                "actor": {
+                                    "currentUser": null,
+                                    "owner": null,
+                                    "unowned": false
+                                }
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -1549,8 +1855,26 @@
                                 "sentAt": null,
                                 "archived": false
                             },
-                            "register": "portaliq",
-                            "schema": "newsletter",
+                            "options": {
+                                "target": {
+                                    "register": "portaliq",
+                                    "schema": "newsletter"
+                                },
+                                "uuid": null,
+                                "extend": [],
+                                "uploadedFiles": null,
+                                "policy": {
+                                    "silent": false,
+                                    "validation": true,
+                                    "failIfExists": false,
+                                    "dedupOverride": false
+                                },
+                                "actor": {
+                                    "currentUser": null,
+                                    "owner": null,
+                                    "unowned": false
+                                }
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -1651,8 +1975,26 @@
                                 "sentAt": null,
                                 "archived": false
                             },
-                            "register": "portaliq",
-                            "schema": "newsletter",
+                            "options": {
+                                "target": {
+                                    "register": "portaliq",
+                                    "schema": "newsletter"
+                                },
+                                "uuid": null,
+                                "extend": [],
+                                "uploadedFiles": null,
+                                "policy": {
+                                    "silent": false,
+                                    "validation": true,
+                                    "failIfExists": false,
+                                    "dedupOverride": false
+                                },
+                                "actor": {
+                                    "currentUser": null,
+                                    "owner": null,
+                                    "unowned": false
+                                }
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -1710,8 +2052,26 @@
                                 "sentAt": null,
                                 "archived": false
                             },
-                            "register": "portaliq",
-                            "schema": "newsletter",
+                            "options": {
+                                "target": {
+                                    "register": "portaliq",
+                                    "schema": "newsletter"
+                                },
+                                "uuid": null,
+                                "extend": [],
+                                "uploadedFiles": null,
+                                "policy": {
+                                    "silent": false,
+                                    "validation": true,
+                                    "failIfExists": false,
+                                    "dedupOverride": false
+                                },
+                                "actor": {
+                                    "currentUser": null,
+                                    "owner": null,
+                                    "unowned": false
+                                }
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -1769,8 +2129,26 @@
                                 "sentAt": null,
                                 "archived": false
                             },
-                            "register": "portaliq",
-                            "schema": "newsletter",
+                            "options": {
+                                "target": {
+                                    "register": "portaliq",
+                                    "schema": "newsletter"
+                                },
+                                "uuid": null,
+                                "extend": [],
+                                "uploadedFiles": null,
+                                "policy": {
+                                    "silent": false,
+                                    "validation": true,
+                                    "failIfExists": false,
+                                    "dedupOverride": false
+                                },
+                                "actor": {
+                                    "currentUser": null,
+                                    "owner": null,
+                                    "unowned": false
+                                }
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }

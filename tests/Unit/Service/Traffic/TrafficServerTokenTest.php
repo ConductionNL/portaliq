@@ -18,6 +18,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Traffic;
 
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCA\Portaliq\Service\PublishedPortals;
 use OCA\Portaliq\Service\Traffic\TrafficServerToken;
@@ -58,7 +59,10 @@ class TrafficServerTokenTest extends TestCase {
 			public function __construct(private TrafficServerTokenTest $test) {
 			}
 
-			public function saveObject(array $object, string $register, string $schema, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ?ObjectSaveOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = ($options?->target->register ?? '');
+				$schema = ($options?->target->schema ?? '');
+				$uuid = ($options?->uuid ?? null);
 				$this->test->record(saved: ['uuid' => $uuid, 'schema' => $schema] + $object);
 
 				return $object;

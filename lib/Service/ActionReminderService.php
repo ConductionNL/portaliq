@@ -30,6 +30,8 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -190,16 +192,13 @@ class ActionReminderService {
 					'receivedAt' => gmdate('c'),
 					'ruleKey' => self::RULE_KEY,
 				],
-				register: self::REGISTER,
-				schema: 'portalMessage',
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: self::REGISTER, schema: 'portalMessage')),
 				_rbac: false,
 				_multitenancy: false
 			);
 			$objectService->saveObject(
 				object: ['reminderSentAt' => gmdate('c'), 'reminderForEndDate' => substr((string)$action['endDate'], 0, 10)],
-				register: self::REGISTER,
-				schema: 'portalAction',
-				uuid: $id,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: self::REGISTER, schema: 'portalAction'), uuid: $id),
 				_rbac: false,
 				_multitenancy: false
 			);

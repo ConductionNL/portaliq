@@ -23,6 +23,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Doubles;
 
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
+
 /**
  * ObjectService stand-in that acts for organisations.
  *
@@ -169,13 +171,14 @@ class ActingObjectService {
 	 */
 	public function saveObject(
 		array $object,
-		?array $extend = [],
-		mixed $register = null,
-		mixed $schema = null,
-		?string $uuid = null,
+		?ObjectSaveOptions $options = null,
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): array {
+		$extend = ($options?->extend ?? []);
+		$register = ($options?->target->register ?? null);
+		$schema = ($options?->target->schema ?? null);
+		$uuid = ($options?->uuid ?? null);
 		$this->record(method: 'saveObject');
 		$this->saves[] = $object;
 		return $object + ['id' => ($uuid ?? 'new-1')];

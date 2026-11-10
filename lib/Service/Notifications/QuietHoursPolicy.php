@@ -32,6 +32,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCA\Portaliq\Service\ObjectRowNormaliser;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use DateInterval;
@@ -112,9 +114,7 @@ class QuietHoursPolicy {
 		try {
 			$objectService->saveObject(
 				object: ['subjectRef' => $subjectRef, 'startTime' => $start, 'endTime' => $end],
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				uuid: $existingId,
+				options: new ObjectSaveOptions(target: new ObjectFindTarget(register: self::REGISTER, schema: self::SCHEMA), uuid: $existingId),
 				_rbac: false,
 				_multitenancy: false
 			);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\OpenRegister\Service\Object\ObjectSaveOptions;
 use OCA\Portaliq\Service\ActivityStore;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -77,7 +78,10 @@ class ActivityStoreTest extends TestCase {
 			 *
 			 * @return array<string, mixed>
 			 */
-			public function saveObject(array $object, string $register, string $schema, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ?ObjectSaveOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = ($options?->target->register ?? '');
+				$schema = ($options?->target->schema ?? '');
+				$uuid = ($options?->uuid ?? null);
 				if ($this->throw === true) {
 					throw new RuntimeException('database gone');
 				}
