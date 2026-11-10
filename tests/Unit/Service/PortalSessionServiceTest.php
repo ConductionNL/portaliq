@@ -195,6 +195,53 @@ class PortalSessionServiceTest extends TestCase {
 
 	}//end testRealSessionBearerStillResolves()
 
+	/**
+	 * Every header that does not carry a valid session bearer resolves to no
+	 * subject: absent, empty, another scheme, an empty bearer, garbage and a
+	 * session token whose signature was tampered with.
+	 */
+	public function testAMalformedOrForgedBearerResolvesToNoSubject(): void {
+		$service = $this->service();
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1', trust: 'high');
+
+		$this->assertNotNull($service->resolveFromBearer('Bearer ' . $issued['token']));
+		$this->assertNull($service->resolveFromBearer(null));
+		$this->assertNull($service->resolveFromBearer(''));
+		$this->assertNull($service->resolveFromBearer('Basic ' . $issued['token']));
+		$this->assertNull($service->resolveFromBearer('bearer ' . $issued['token']));
+		$this->assertNull($service->resolveFromBearer('Bearer '));
+		$this->assertNull($service->resolveFromBearer('Bearer not-a-jwt'));
+		$this->assertNull($service->resolveFromBearer('Bearer ' . $issued['token'] . 'x'));
+
+	}//end testAMalformedOrForgedBearerResolvesToNoSubject()
+
+	/**
+	 * The resolved subject has exactly these fields, in this order.
+	 */
+	public function testAResolvedSubjectHasItsFieldsInOrder(): void {
+		$service = $this->service();
+		$issued = $service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1', trust: 'substantial', roles: ['supplier:read'], branch: '000012345678', provider: 'eherkenning');
+
+		$subject = $service->resolveFromBearer('Bearer ' . $issued['token']);
+
+		$this->assertSame(
+			['subjectRef', 'audience', 'organisation', 'trust', 'roles', 'jti', 'authTime', 'branch', 'branchRestricted', 'provider', 'expiresAt'],
+			array_keys($subject)
+		);
+		$this->assertSame('s1', $subject['subjectRef']);
+		$this->assertSame('supplier', $subject['audience']);
+		$this->assertSame('org-1', $subject['organisation']);
+		$this->assertSame('substantial', $subject['trust']);
+		$this->assertSame(['supplier:read'], $subject['roles']);
+		$this->assertSame($issued['jti'], $subject['jti']);
+		$this->assertGreaterThan(0, $subject['authTime']);
+		$this->assertSame('000012345678', $subject['branch']);
+		$this->assertTrue($subject['branchRestricted']);
+		$this->assertSame('eherkenning', $subject['provider']);
+		$this->assertGreaterThan($subject['authTime'], $subject['expiresAt']);
+
+	}//end testAResolvedSubjectHasItsFieldsInOrder()
+
 	public function testNoDedicatedSecretRefusesIssuanceAndResolution(): void {
 		// Empty app config → NEVER falls back to a system/instance secret
 		// (portal-auth-edge-session-hardening) — the edge fails closed.
