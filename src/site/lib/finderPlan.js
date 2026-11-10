@@ -50,21 +50,41 @@ export function planFinder(finder, answers) {
 	for (const question of Array.isArray(finder?.questions)
 		? finder.questions
 		: []) {
-		const answer = answers[question.id]
-		if (!canChange(question, remaining)) {
-			// Neither answer could rule anything out: skipped, answered or not.
-			continue
-		}
-		if (answer === 'yes' || answer === 'no') {
-			steps.push({ question, answer })
-			for (const route of excludedBy(question, answer)) {
-				remaining.delete(route)
-			}
-		} else {
-			steps.push({ question, answer: null })
+		// A question neither answer could rule anything out with is skipped,
+		// answered or not.
+		if (canChange(question, remaining)) {
+			steps.push(takeStep(question, { answers, remaining }))
 		}
 	}
+	return planOf(steps, { products, remaining })
+}
 
+/**
+ * One question that counts, as a step; an answer to it rules out its
+ * products.
+ *
+ * @param {object} question The question.
+ * @param {{answers: Record<string, string>, remaining: Set<string>}} walk The answers, and the routes still possible.
+ * @return {{question: object, answer: string|null}} The step.
+ */
+function takeStep(question, walk) {
+	const answer = walk.answers[question.id]
+	if (answer !== 'yes' && answer !== 'no') {
+		return { question, answer: null }
+	}
+	for (const route of excludedBy(question, answer)) {
+		walk.remaining.delete(route)
+	}
+	return { question, answer }
+}
+
+/**
+ * @param {Array<{question: object, answer: string|null}>} steps The questions that count.
+ * @param {{products: Array<object>, remaining: Set<string>}} outcome The products and the routes that remain.
+ * @return {object} The plan.
+ */
+function planOf(steps, outcome) {
+	const { products, remaining } = outcome
 	return {
 		steps,
 		current: steps.findIndex((step) => step.answer === null),
