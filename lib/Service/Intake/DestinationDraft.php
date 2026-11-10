@@ -235,6 +235,9 @@ class DestinationDraft {
 	 *
 	 * @return DraftOwner|null The owner.
 	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) DraftOwner has a private constructor;
+	 *   portalSubject() is OpenRegister's one way to a portal owner.
+	 *
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
 	 */
 	protected function ownerOf(string $subjectRef): ?DraftOwner {
