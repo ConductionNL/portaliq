@@ -48,6 +48,7 @@ test('documents, dossiers, bodies and suggestions', async () => {
 		dossierCollectionOf(manifest, 'dossiq', 'none'),
 		dossierCollectionOf(null, 'dossiq', 'dossier'),
 		dossierCollectionOf({ contributions: [{ app: 'a', collections: [{ schema: 0 }] }] }, 'a', 0),
+		dossierCollectionOf({ contributions: 'dossiq' }, 'dossiq', 'dossier'),
 	])
 	file.check('addToCollectionBody', [
 		{ collection: 'c1', publication: 'p', attachment: 0 },
