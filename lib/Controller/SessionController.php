@@ -710,7 +710,7 @@ class SessionController extends Controller {
 			return $this->oidcGenericError();
 		}
 
-		return $this->oidcSessionRedirect(pending: $run->pending, token: $issued['token']);
+		return $this->tokenRedirect(target: $this->pendingReturnTo(pending: $run->pending), token: $issued['token']);
 	}//end oidcCallback()
 
 	/**
@@ -887,20 +887,20 @@ class SessionController extends Controller {
 	/**
 	 * The 302 back to the portal with the minted bearer.
 	 *
-	 * @param array<string, mixed> $pending The consumed OIDC state row.
-	 * @param string               $token   The minted bearer.
+	 * @param string $target The address to land on.
+	 * @param string $token  The minted bearer.
 	 *
 	 * @return RedirectResponse
 	 */
-	private function oidcSessionRedirect(array $pending, string $token): RedirectResponse {
+	private function tokenRedirect(string $target, string $token): RedirectResponse {
 		// The bearer travels in the URL FRAGMENT, never a query string — a
 		// fragment is never sent to the server (no access/Referer-header
 		// leak) and never appears in server logs.
-		$redirectUrl = $this->urlGenerator->getAbsoluteURL($this->pendingReturnTo(pending: $pending)) . '#token=' . rawurlencode($token);
+		$redirectUrl = $this->urlGenerator->getAbsoluteURL($target) . '#token=' . rawurlencode($token);
 
 		// Explicit 302 (design.md) — RedirectResponse's own default is 303.
 		return new RedirectResponse($redirectUrl, Http::STATUS_FOUND);
-	}//end oidcSessionRedirect()
+	}//end tokenRedirect()
 
 	/**
 	 * Where a consumed login returns: the address stored with its state, else
@@ -1023,18 +1023,49 @@ class SessionController extends Controller {
 	public function nextcloud(string $portal = '', string $returnTo = ''): Response {
 		$uid = $this->currentNextcloudUid();
 		if ($uid === '') {
-			// Not signed in to Nextcloud yet: hand the visitor to the platform's
-			// own login form and come back here. The password is Nextcloud's
-			// business, never ours.
-			return new RedirectResponse(
-				$this->urlGenerator->linkToRoute(
-					'core.login.showLoginForm',
-					['redirect_url' => $this->request->getRequestUri()]
-				),
-				Http::STATUS_FOUND
-			);
+			return $this->toNextcloudLogin();
 		}
 
+		$site = $this->nextcloudPortal(portal: $portal);
+		if ($site instanceof JSONResponse) {
+			return $site;
+		}
+
+		$issued = $this->nextcloudSession(site: $site, uid: $uid);
+		if ($issued instanceof JSONResponse) {
+			return $issued;
+		}
+
+		// Same hand-off as the OIDC callback: the bearer travels in the URL
+		// FRAGMENT, which is never sent to a server and never reaches a log.
+		return $this->tokenRedirect(target: $this->nextcloudReturnTo(site: $site, returnTo: $returnTo), token: $issued['token']);
+	}//end nextcloud()
+
+	/**
+	 * Not signed in to Nextcloud yet: hand the visitor to the platform's own
+	 * login form and come back here. The password is Nextcloud's business,
+	 * never ours.
+	 *
+	 * @return RedirectResponse
+	 */
+	private function toNextcloudLogin(): RedirectResponse {
+		return new RedirectResponse(
+			$this->urlGenerator->linkToRoute(
+				'core.login.showLoginForm',
+				['redirect_url' => $this->request->getRequestUri()]
+			),
+			Http::STATUS_FOUND
+		);
+	}//end toNextcloudLogin()
+
+	/**
+	 * The named portal when it offers the `nextcloud` mode, else the 404.
+	 *
+	 * @param string $portal The portal's slug.
+	 *
+	 * @return array<string, mixed>|JSONResponse
+	 */
+	private function nextcloudPortal(string $portal): array|JSONResponse {
 		$site = $this->portalFor(slug: $portal);
 		if ($site === null) {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
@@ -1048,13 +1079,43 @@ class SessionController extends Controller {
 			return new JSONResponse(['error' => 'mode_not_offered'], Http::STATUS_NOT_FOUND);
 		}
 
+		return $site;
+	}//end nextcloudPortal()
+
+	/**
+	 * The portal session for a Nextcloud user with an active account on the
+	 * portal: 403 without one, 503 when no session can be minted.
+	 *
+	 * @param array<string, mixed> $site The portal offering the mode.
+	 * @param string               $uid  The signed-in Nextcloud user.
+	 *
+	 * @return array<string, mixed>|JSONResponse
+	 */
+	private function nextcloudSession(array $site, string $uid): array|JSONResponse {
 		$account = $this->accountOf(site: $site, uid: $uid);
 		if ($account === null || ($account['status'] ?? 'active') !== 'active') {
 			return new JSONResponse(['error' => 'no_portal_account'], Http::STATUS_FORBIDDEN);
 		}
 
+		$issued = $this->issueNextcloudSession(uid: $uid, account: $account);
+		if ($issued === null) {
+			return new JSONResponse(['error' => 'not_configured'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		return $issued;
+	}//end nextcloudSession()
+
+	/**
+	 * Mint the low-trust portal session for a Nextcloud user's account.
+	 *
+	 * @param string               $uid     The signed-in Nextcloud user.
+	 * @param array<string, mixed> $account The user's active portal account.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function issueNextcloudSession(string $uid, array $account): ?array {
 		$audience = (string)($account['audience'] ?? 'client');
-		$issued = $this->session->issueSession(
+		return $this->session->issueSession(
 			subjectRef: $uid,
 			audience: $audience,
 			organisation: (string)($account['organisation'] ?? 'dev-org'),
@@ -1065,23 +1126,25 @@ class SessionController extends Controller {
 			trust: 'low',
 			roles: [$audience . ':read']
 		);
+	}//end issueNextcloudSession()
 
-		if ($issued === null) {
-			return new JSONResponse(['error' => 'not_configured'], Http::STATUS_SERVICE_UNAVAILABLE);
-		}
-
-		// Same hand-off as the OIDC callback: the bearer travels in the URL
-		// FRAGMENT, which is never sent to a server and never reaches a log.
+	/**
+	 * Where a Nextcloud sign-in returns: the given address, else the portal's
+	 * own site page.
+	 *
+	 * @param array<string, mixed> $site     The portal signed in to.
+	 * @param string               $returnTo The requested return address, or ''.
+	 *
+	 * @return string
+	 */
+	private function nextcloudReturnTo(array $site, string $returnTo): string {
 		$target = $returnTo;
 		if ($target === '') {
 			$target = '/apps/portaliq/site?portal=' . rawurlencode((string)($site['slug'] ?? ''));
 		}
 
-		return new RedirectResponse(
-			$this->urlGenerator->getAbsoluteURL($target) . '#token=' . rawurlencode($issued['token']),
-			Http::STATUS_FOUND
-		);
-	}//end nextcloud()
+		return $target;
+	}//end nextcloudReturnTo()
 
 	/**
 	 * The user's portal account; for a resident without one, written first.
