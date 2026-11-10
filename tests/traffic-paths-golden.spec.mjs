@@ -39,6 +39,9 @@ test('the drawing for forward, backward and empty answers', () => {
 	file.check('measures', layoutPaths(ANSWER, { columnWidth: 100, gap: 10, minNode: 4, header: 0, maxBandHeight: 100, dropWidth: 2 }))
 	file.check('no links', layoutPaths({ columns: ANSWER.columns }))
 	file.check('empty', [layoutPaths(null), layoutPaths({ columns: 'x' }), layoutPaths({ columns: [] })])
-	file.check('band', [band(0, 10, 100, 40, 5), band(1.005, 2.333, 3.999, 4, 0.125)])
+	file.check('band', [
+		band({ x0: 0, y0: 10, x1: 100, y1: 40, thickness: 5 }),
+		band({ x0: 1.005, y0: 2.333, x1: 3.999, y1: 4, thickness: 0.125 }),
+	])
 	file.save()
 })
