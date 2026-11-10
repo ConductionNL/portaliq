@@ -30,6 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Service\UploadedFile;
+
 /**
  * Reads the citizen's upload and names it so it adds rather than replaces.
  *
@@ -48,22 +50,7 @@ class CitizenDocumentUpload {
 	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function read(?array $uploaded): ?array {
-		$tmpName = (string)($uploaded['tmp_name'] ?? '');
-		if ((int)($uploaded['error'] ?? 1) !== 0 || $tmpName === '' || is_readable($tmpName) === false) {
-			return null;
-		}
-
-		$content = file_get_contents($tmpName);
-		if ($content === false) {
-			return null;
-		}
-
-		$fileName = basename((string)($uploaded['name'] ?? 'upload'));
-		if ($fileName === '' || $fileName === '.' || $fileName === '..') {
-			$fileName = 'upload';
-		}
-
-		return ['name' => $fileName, 'content' => $content];
+		return (new UploadedFile())->read(uploaded: $uploaded);
 	}//end read()
 
 	/**
