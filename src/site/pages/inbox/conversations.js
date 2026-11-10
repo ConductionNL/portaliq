@@ -146,12 +146,20 @@ export function recordTabs(threads, contacts, tr) {
  * @spec openspec/changes/site-messages-per-record/specs/portal-contribution-contract/spec.md#requirement-the-messages-page-groups-conversations-per-record-and-lets-a-resident-write-and-reply
  */
 export function threadsInTab(threads, key) {
-	const moment = (thread) =>
-		String(thread?.summary?.lastSentAt || thread?.createdAt || '')
 	return (threads || [])
 		.filter((thread) => !key || String(thread?.recordRef || '') === key)
 		.slice()
-		.sort((a, b) => moment(b).localeCompare(moment(a)))
+		.sort((a, b) => threadMoment(b).localeCompare(threadMoment(a)))
+}
+
+/**
+ * When a conversation last moved: its last message, else its start.
+ *
+ * @param {object|null} thread The thread with its `summary`.
+ * @return {string} The moment, or ''.
+ */
+function threadMoment(thread) {
+	return String(thread?.summary?.lastSentAt || thread?.createdAt || '')
 }
 
 /**
@@ -163,20 +171,42 @@ export function threadsInTab(threads, key) {
  * @spec openspec/changes/site-messages-per-record/specs/portal-contribution-contract/spec.md#requirement-the-messages-page-groups-conversations-per-record-and-lets-a-resident-write-and-reply
  */
 export function threadCard(thread, tr) {
-	const fallback =
-		thread?.kind === 'group'
-			? tr('Group conversation')
-			: tr('Conversation with school')
 	const who = String(thread?.staffName || '').trim()
 	const name = shortName(thread?.recordLabel)
 	return {
-		title: String(thread?.title || '').trim() || fallback,
+		title: String(thread?.title || '').trim() || untitledThread(thread, tr),
 		who: who || tr('School'),
 		initials: initialsOf(who || tr('School')),
 		about: name ? tr('about {name}', { name }) : '',
-		when: String(thread?.summary?.lastSentAt || thread?.createdAt || ''),
-		preview: String(thread?.summary?.lastBody || ''),
-		isNew: Number(thread?.summary?.unread || 0) > 0,
+		when: threadMoment(thread),
+		...lastMessage(thread?.summary),
+	}
+}
+
+/**
+ * The title of a conversation that has none: a group conversation, else a
+ * conversation with the school.
+ *
+ * @param {object|null} thread The thread.
+ * @param {(key: string, vars?: object) => string} tr The translator.
+ * @return {string} The title.
+ */
+function untitledThread(thread, tr) {
+	return thread?.kind === 'group'
+		? tr('Group conversation')
+		: tr('Conversation with school')
+}
+
+/**
+ * The card's preview of the last message and whether any is unread.
+ *
+ * @param {object|undefined} summary The thread's summary.
+ * @return {{preview: string, isNew: boolean}} The preview and the unread mark.
+ */
+function lastMessage(summary) {
+	return {
+		preview: String(summary?.lastBody || ''),
+		isNew: Number(summary?.unread || 0) > 0,
 	}
 }
 
