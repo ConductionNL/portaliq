@@ -122,6 +122,7 @@ import {
 	isSelectable,
 	verdictState,
 } from '../lib/portalThemeChoice.js'
+import portalWidgetMixin from './portalWidgetMixin.js'
 
 /**
  * The contrast findings of a verdict, or none.
@@ -162,13 +163,7 @@ export default {
 		NcNoteCard,
 	},
 
-	props: {
-		/** The portal the detail page shows. */
-		objectData: {
-			type: Object,
-			default: null,
-		},
-	},
+	mixins: [portalWidgetMixin],
 
 	data() {
 		return {
@@ -185,15 +180,6 @@ export default {
 	},
 
 	computed: {
-		/**
-		 * The portal's slug.
-		 *
-		 * @return {string}
-		 * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
-		 */
-		slug() {
-			return String(this.objectData?.slug || '')
-		},
 	},
 
 	/**

@@ -137,6 +137,7 @@ import {
 	measureRun,
 	SITE_ROOT,
 } from '../lib/accessibilityMeasure.js'
+import portalWidgetMixin from './portalWidgetMixin.js'
 
 /** How long a page may take to show its site root, in milliseconds. */
 const PAGE_TIMEOUT = 20000
@@ -182,13 +183,7 @@ export default {
 		NcTextField,
 	},
 
-	props: {
-		/** The portal the detail page shows. */
-		objectData: {
-			type: Object,
-			default: null,
-		},
-	},
+	mixins: [portalWidgetMixin],
 
 	data() {
 		return {
@@ -207,14 +202,6 @@ export default {
 	},
 
 	computed: {
-		/**
-		 * @return {string} The portal's slug.
-		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
-		 */
-		slug() {
-			return String(this.objectData?.slug || '')
-		},
-
 		/**
 		 * @return {string} The site's address on this instance.
 		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
