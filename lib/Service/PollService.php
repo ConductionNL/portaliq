@@ -145,11 +145,11 @@ class PollService {
 	 * @spec openspec/changes/parent-polls/specs/parent-polls/spec.md#requirement-a-portal-subject-sees-only-polls-for-their-own-audience-and-organisation
 	 */
 	public function forSubject(array $subject): array {
-		$polls = $this->forSubjectRaw(subject: $subject);
-		if ($polls === []) {
+		if ($this->hasAudience(subject: $subject) === false) {
 			return [];
 		}
 
+		$polls     = $this->forSubjectRaw(subject: $subject);
 		$responses = $this->responsesBySubject(subjectRef: (string)($subject['subjectRef'] ?? ''));
 
 		$out = [];
@@ -302,9 +302,7 @@ class PollService {
 	 * @return array<int, array<string, mixed>>
 	 */
 	private function forSubjectRaw(array $subject): array {
-		$audience = (string)($subject['audience'] ?? '');
-		$organisation = (string)($subject['organisation'] ?? '');
-		if ($audience === '' || $organisation === '') {
+		if ($this->hasAudience(subject: $subject) === false) {
 			return [];
 		}
 
@@ -313,11 +311,23 @@ class PollService {
 			schema: self::POLL_SCHEMA,
 			scopeField: '',
 			subjectRef: '',
-			organisation: $organisation,
+			organisation: (string)$subject['organisation'],
 			limit: 200,
-			filter: ['audience' => $audience]
+			filter: ['audience' => (string)$subject['audience']]
 		);
 	}//end forSubjectRaw()
+
+	/**
+	 * Whether the subject names both the audience and the organisation its
+	 * polls are read for.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 *
+	 * @return bool
+	 */
+	private function hasAudience(array $subject): bool {
+		return (string)($subject['audience'] ?? '') !== '' && (string)($subject['organisation'] ?? '') !== '';
+	}//end hasAudience()
 
 	/**
 	 * Whether a poll's `closesAt` is in the past.
