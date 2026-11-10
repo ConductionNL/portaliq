@@ -38,6 +38,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -93,37 +94,67 @@ class EmergencyPushController extends Controller {
 			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		try {
-			$this->actionAuth->requireAction(user: $user, action: self::ACTION);
-		} catch (OCSForbiddenException $exception) {
+		if ($this->maySend(user: $user) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$staffRef = $user->getUID();
+		$message    = ['title' => $title, 'body' => $body];
 		$recipients = $this->audienceReader->guardiansMatching(target: $target);
+		$counts     = [
+			'recipientCount' => count($recipients),
+			'deliveredCount' => count(array_filter($recipients, fn (string $ref): bool => $this->deliverOne(message: $message, guardianRef: $ref))),
+		];
 
-		$delivered = 0;
-		foreach ($recipients as $guardianRef) {
-			// One failing delivery must not stop the noodmelding to the rest.
-			try {
-				$sent = $this->delivery->deliver(subjectRef: $guardianRef, title: $title, body: $body, emergency: true);
-			} catch (Throwable $e) {
-				$this->logger->warning('Portaliq: emergency push delivery failed', ['reason' => $e->getMessage()]);
-				$sent = false;
-			}
+		return $this->reported(counts: $counts, staffRef: $user->getUID());
+	}//end send()
 
-			if ($sent === true) {
-				$delivered++;
-			}
+	/**
+	 * Whether this staff user may send an emergency push.
+	 *
+	 * @param IUser $user The signed-in user.
+	 *
+	 * @return bool
+	 */
+	private function maySend(IUser $user): bool {
+		try {
+			$this->actionAuth->requireAction(user: $user, action: self::ACTION);
+		} catch (OCSForbiddenException $exception) {
+			return false;
 		}
 
-		$context = [
-			'sentBy' => $staffRef,
-			'recipientCount' => count($recipients),
-			'deliveredCount' => $delivered,
-		];
-		$answer = new JSONResponse(['recipientCount' => count($recipients), 'deliveredCount' => $delivered]);
-		if ($delivered < count($recipients)) {
+		return true;
+	}//end maySend()
+
+	/**
+	 * Push to one guardian. One failing delivery must not stop the noodmelding
+	 * to the rest, so a throw is logged and counts as not delivered.
+	 *
+	 * @param array{title: string, body: string} $message     The notification title and body.
+	 * @param string                             $guardianRef The guardian.
+	 *
+	 * @return bool Whether the push reached them.
+	 */
+	private function deliverOne(array $message, string $guardianRef): bool {
+		try {
+			return $this->delivery->deliver(subjectRef: $guardianRef, title: $message['title'], body: $message['body'], emergency: true) === true;
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: emergency push delivery failed', ['reason' => $e->getMessage()]);
+			return false;
+		}
+	}//end deliverOne()
+
+	/**
+	 * Log how far the push reached and answer the counts.
+	 *
+	 * @param array{recipientCount: int, deliveredCount: int} $counts   Whom the target reaches, and how many a push reached.
+	 * @param string                                          $staffRef Who sent it.
+	 *
+	 * @return JSONResponse `{recipientCount, deliveredCount}`.
+	 */
+	private function reported(array $counts, string $staffRef): JSONResponse {
+		$context = ['sentBy' => $staffRef] + $counts;
+		$answer  = new JSONResponse($counts);
+		if ($counts['deliveredCount'] < $counts['recipientCount']) {
 			// Never "sent" for a push that did not arrive: with the interim
 			// logging transport nothing does.
 			$this->logger->warning('Portaliq: emergency push not delivered to every recipient', $context);
@@ -132,5 +163,5 @@ class EmergencyPushController extends Controller {
 
 		$this->logger->info('Portaliq: emergency push sent', $context);
 		return $answer;
-	}//end send()
+	}//end reported()
 }//end class
