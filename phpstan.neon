@@ -22,10 +22,13 @@ parameters:
 
     # OpenRegister's AppHost composition root, for the store-plane alias in
     # lib/AppInfo/StorePlaneRegistrar.php (WOO-559). openregister is a sibling
-    # app, not a composer dependency; the stub carries the engine's public
-    # surface so the guarded call is checked against a signature.
+    # app, not a composer dependency; the stubs carry the engine's public
+    # surface so the guarded call is checked against a signature. They follow
+    # openregister #9078 (aliasStoreController takes a LeafAdoption); the
+    # hydra-gates copy still has the old appId/controllerNs signature.
     scanFiles:
-        - vendor/conduction/hydra-gates/hydra-gates/stubs/openregister-apphost-bootstrap.stub.php
+        - tests/Stubs/OpenRegister/AppHost/LeafAdoption.php
+        - tests/Stubs/OpenRegister/AppHost/Bootstrap.php
         # Integriq's digital post events (inbox-berichtenbox-channel): verbatim
         # copies of integriq's classes on development. The message box sender
         # and the delivered listener use them behind class_exists / instanceof.
