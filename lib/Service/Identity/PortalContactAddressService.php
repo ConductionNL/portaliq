@@ -41,16 +41,6 @@ use OCP\Security\ISecureRandom;
  */
 class PortalContactAddressService {
 	/**
-	 * The register the account lives in.
-	 */
-	private const REGISTER = 'portaliq';
-
-	/**
-	 * The account schema.
-	 */
-	private const SCHEMA = 'portalAccount';
-
-	/**
 	 * Constructor.
 	 *
 	 * @param PortalAccountService $accounts Finds the account by subjectRef.
@@ -264,17 +254,17 @@ class PortalContactAddressService {
 	 * @return array<string, mixed>|null
 	 */
 	private function ownAccount(string $subjectRef): ?array {
-		if ($subjectRef === '') {
-			return null;
-		}
-
-		$account = $this->accounts->findBySubjectRef(subjectRef: $subjectRef);
-		if ($account === null || ($account['status'] ?? '') === 'removed') {
-			return null;
-		}
-
-		return $account;
+		return $this->rows()->find(subjectRef: $subjectRef);
 	}//end ownAccount()
+
+	/**
+	 * The account rows this service reads and writes.
+	 *
+	 * @return OwnAccountRows
+	 */
+	private function rows(): OwnAccountRows {
+		return new OwnAccountRows(accounts: $this->accounts, writer: $this->writer);
+	}//end rows()
 
 	/**
 	 * Write on the account row.
@@ -291,14 +281,6 @@ class PortalContactAddressService {
 			return false;
 		}
 
-		return $this->writer->updateObject(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: '',
-			subjectRef: '',
-			organisation: '',
-			id: $id,
-			data: $data
-		) !== null;
+		return $this->rows()->update(id: $id, data: $data);
 	}//end write()
 }//end class
