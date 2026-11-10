@@ -145,6 +145,30 @@ import { detailFields, formatCell, rowIdOf } from './cells.js'
 let uploadCounter = 0
 
 /**
+ * The file a change event chose, if any.
+ *
+ * @param {Event} event The change event.
+ * @return {File|undefined} The first chosen file.
+ */
+function chosenFile(event) {
+	return event?.target?.files?.[0]
+}
+
+/**
+ * The name to report for an upload, or null when it did not work.
+ *
+ * @param {object|null} result The upload's answer.
+ * @param {File} file The chosen file.
+ * @return {string|null} The stored name, else the chosen one; null on a refusal.
+ */
+function addedName(result, file) {
+	if (!result || !result.ok) {
+		return null
+	}
+	return result.file?.name || file.name
+}
+
+/**
  * One record of a collection (slice b, b4): its fields with their labels, its
  * files with upload and download when the collection opts in, the place for
  * its change proposals and another app's actions, its item list and its
@@ -345,26 +369,23 @@ export default {
 		 * @return {Promise<void>}
 		 */
 		async onUpload(event) {
-			const file = event?.target?.files && event.target.files[0]
+			const file = chosenFile(event)
 			const id = this.rowId
 			if (!file || !id) {
 				return
 			}
 			this.upload = { busy: true, message: '' }
-			const result = await this.api.uploadFile(this.collection, id, file)
+			const name = addedName(await this.api.uploadFile(this.collection, id, file), file)
 			this.upload = {
 				busy: false,
-				message:
-					result && result.ok
-						? this.t('File added: {name}', {
-								name: result.file?.name || file.name,
-							})
-						: this.t('The upload did not work.'),
+				message: name === null
+					? this.t('The upload did not work.')
+					: this.t('File added: {name}', { name }),
 			}
 			if (this.$refs.upload) {
 				this.$refs.upload.value = ''
 			}
-			if (result && result.ok) {
+			if (name !== null) {
 				await this.readFull()
 			}
 		},
