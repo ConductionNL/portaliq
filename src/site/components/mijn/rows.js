@@ -254,27 +254,43 @@ export function taskRows(rows, block, collection) {
  */
 export function inboxRows(messages, block, app) {
 	const wanted = block?.collection || ''
-	const time = (message) => {
-		const ms = new Date(message?.receivedAt || 0).getTime()
-		return Number.isNaN(ms) ? 0 : ms
-	}
 	return (Array.isArray(messages) ? messages : [])
 		.filter(Boolean)
-		.filter(
-			(message) =>
-				!wanted
-				|| (message._source?.collection === wanted
-					&& message._source?.appId === app),
-		)
+		.filter((message) => !wanted || isFromInbox(message, { collection: wanted, app }))
 		.map((message, index) => ({ message, index }))
 		.sort(
 			(a, b) =>
 				Number(a.message.read === true) - Number(b.message.read === true)
-				|| time(b.message) - time(a.message)
+				|| receivedMs(b.message) - receivedMs(a.message)
 				|| a.index - b.index,
 		)
 		.map(({ message }) => message)
 		.slice(0, limitOf(block))
+}
+
+/**
+ * Whether a message came from one app's inbox collection.
+ *
+ * @param {object} message The message, with its `_source`.
+ * @param {{collection: string, app: string}} inbox The collection and its app.
+ * @return {boolean} True when it came from there.
+ */
+function isFromInbox(message, inbox) {
+	return (
+		message._source?.collection === inbox.collection
+		&& message._source?.appId === inbox.app
+	)
+}
+
+/**
+ * When a message came in, in milliseconds; 0 when it does not say.
+ *
+ * @param {object} message The message.
+ * @return {number} The moment.
+ */
+function receivedMs(message) {
+	const ms = new Date(message?.receivedAt || 0).getTime()
+	return Number.isNaN(ms) ? 0 : ms
 }
 
 /**
@@ -295,17 +311,29 @@ export function receivedInWords(value, today, tr, locale = 'nl') {
 	if (!at || !day || !now) {
 		return ''
 	}
+	const time = clockTime(at, locale)
+	if (day.getTime() === now.getTime()) {
+		return tr('Today at {time}', { time })
+	}
+	return tr('{date} at {time}', { date: dayInWords(day, now, locale), time })
+}
+
+/**
+ * A time of day as the page language writes it: "14.20" in Dutch, "14:20"
+ * in English.
+ *
+ * @param {Date} at The moment.
+ * @param {string} locale The page language.
+ * @return {string} The time.
+ */
+function clockTime(at, locale) {
 	const english = pageLanguage(locale) === 'en'
-	const time = at
+	return at
 		.toLocaleTimeString(english ? 'en-GB' : 'nl-NL', {
 			hour: '2-digit',
 			minute: '2-digit',
 		})
 		.replace(':', english ? ':' : '.')
-	if (day.getTime() === now.getTime()) {
-		return tr('Today at {time}', { time })
-	}
-	return tr('{date} at {time}', { date: dayInWords(day, now, locale), time })
 }
 
 /**
