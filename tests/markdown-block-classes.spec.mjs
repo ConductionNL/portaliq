@@ -15,7 +15,9 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { loadSfc } from './support/render-sfc.mjs'
 
-const MarkdownBlock = await loadSfc('src/site/components/MarkdownBlock.vue')
+const MarkdownBlock = await loadSfc('src/site/components/MarkdownBlock.vue', {
+	'@conduction/nextcloud-vue': 'export const cnRenderMarkdown = (source) => source\n',
+})
 
 test('each bare element gets its class, in the map order; an own class stays', () => {
 	const asked = []
