@@ -75,11 +75,11 @@ final class RowForwardRun {
 	 * Constructor.
 	 *
 	 * @param array<string, mixed> $subject The resolved subject.
-	 * @param array{collection: array<string, mixed>, action: array<string, mixed>, app: string, rowApp?: string} $match The authorised row action.
+	 * @param array{collection: array<string, mixed>, action: array<string, mixed>, app: string, rowApp?: string} $authorised The authorised row action.
 	 */
 	public function __construct(
 		public readonly array $subject,
-		public readonly array $match,
+		public readonly array $authorised,
 	) {
 		$this->inputs = new RowActionInputs();
 	}//end __construct()

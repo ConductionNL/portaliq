@@ -127,7 +127,7 @@ class PortalRowActionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$run = new RowForwardRun(subject: $subject, match: $match);
+		$run = new RowForwardRun(subject: $subject, authorised: $match);
 		$run->row         = $row;
 		$run->requestedId = $id;
 		$run->actionId    = $actionId;
@@ -173,7 +173,7 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	 * @return JSONResponse The relayed answer, or 422 / 502.
 	 */
 	private function relayWithFiles(RowForwardRun $run, array $body): JSONResponse {
-		$files = (new RowActionFiles())->collect(action: $run->match['action'], request: $this->request);
+		$files = (new RowActionFiles())->collect(action: $run->authorised['action'], request: $this->request);
 		if ($files['error'] !== null) {
 			return new JSONResponse(['error' => $files['error']], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
@@ -195,7 +195,7 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	private function relay(RowForwardRun $run, array $body): JSONResponse {
 		// The action's required fields (REQ-SMF-024): refused before the audit
 		// and the forward.
-		$missing = (new RequiredFieldsGuard())->refusal(action: $run->match['action'], body: $body['body']);
+		$missing = (new RequiredFieldsGuard())->refusal(action: $run->authorised['action'], body: $body['body']);
 		if ($missing !== null) {
 			return $missing;
 		}
@@ -203,7 +203,7 @@ class PortalRowActionController extends Controller implements PortalProtected {
 		$this->recordForward(run: $run);
 
 		$response = $this->forwarder->forward(
-			action: $run->match['action'],
+			action: $run->authorised['action'],
 			subject: $run->subject,
 			whitelisted: $body['body'],
 			scopeValue: $body['scopeValue'],
@@ -233,7 +233,7 @@ class PortalRowActionController extends Controller implements PortalProtected {
 			verb: 'forward',
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
 			organisation: (string)($subject['organisation'] ?? ''),
-			register: $run->match['app'],
+			register: $run->authorised['app'],
 			schema: $run->actionId,
 			id: $run->rowId,
 			jti: (string)($subject['jti'] ?? '')
@@ -253,11 +253,11 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	 * @return JSONResponse|null The 409, or null when the row offers the action.
 	 */
 	private function notOffered(RowForwardRun $run): ?JSONResponse {
-		if ((new RowActionResolver())->rowMatches(action: $run->match['action'], row: $run->row) === false) {
+		if ((new RowActionResolver())->rowMatches(action: $run->authorised['action'], row: $run->row) === false) {
 			return new JSONResponse(['error' => 'not_offered'], Http::STATUS_CONFLICT);
 		}
 
-		$availability = $run->inputs->availability(action: $run->match['action'], row: $run->row);
+		$availability = $run->inputs->availability(action: $run->authorised['action'], row: $run->row);
 		if ($availability['available'] === false) {
 			return new JSONResponse(['error' => 'not_available', 'message' => $availability['reason']], Http::STATUS_CONFLICT);
 		}
@@ -276,12 +276,12 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	 * @return array<string, mixed>|JSONResponse The body, or the 422.
 	 */
 	private function withRowInputs(RowForwardRun $run, array $body): array|JSONResponse {
-		$into = ($run->match['action']['rowInputs']['into'] ?? null);
+		$into = ($run->authorised['action']['rowInputs']['into'] ?? null);
 		if (is_string($into) === false) {
 			return $body;
 		}
 
-		$collected = $run->inputs->collect(action: $run->match['action'], row: $run->row, submitted: $this->request->getParam($into));
+		$collected = $run->inputs->collect(action: $run->authorised['action'], row: $run->row, submitted: $this->request->getParam($into));
 		if ($collected['errors'] !== []) {
 			return new JSONResponse(['error' => 'invalid', 'errors' => $collected['errors']], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
@@ -471,7 +471,7 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	 * @return array{body: array<string, mixed>|null, scopeValue: string}|null The body and assertion scope value, or null (403).
 	 */
 	private function forwardBody(RowForwardRun $run): ?array {
-		$action = $run->match['action'];
+		$action = $run->authorised['action'];
 		$body = [];
 		foreach ((array)($action['fields'] ?? []) as $field) {
 			if (is_string($field) === false) {
@@ -491,6 +491,6 @@ class PortalRowActionController extends Controller implements PortalProtected {
 		// filinq's `sign` receives its `signerEmail`); either one that does
 		// not resolve stops the forward.
 		return (new ActionScopeResolver(reader: $this->reader))
-			->prepare(action: $action, subject: $run->subject, appId: $run->match['app'], body: $body);
+			->prepare(action: $action, subject: $run->subject, appId: $run->authorised['app'], body: $body);
 	}//end forwardBody()
 }//end class
