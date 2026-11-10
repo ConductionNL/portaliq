@@ -401,16 +401,6 @@ class PageEditorService {
 	 * @return object|null The mapper, or null.
 	 */
 	private function schemaMapper(): ?object {
-		try {
-			$service = $this->container->get(self::SCHEMA_MAPPER);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
+		return (new ContainerService(container: $this->container))->get(id: self::SCHEMA_MAPPER);
 	}//end schemaMapper()
 }//end class
