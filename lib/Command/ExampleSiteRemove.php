@@ -106,18 +106,48 @@ class ExampleSiteRemove extends Command {
 		}
 
 		$report = $this->remover->remove(site: $id, slug: (string)$site['portal']['slug']);
-		if ($report['recorded'] === false) {
-			$output->writeln('<error>Nothing is recorded for "' . $id . '": it was not installed with this command, or it is already removed.</error>');
+		$refusal = $this->refusalOf(id: $id, report: $report);
+		if ($refusal !== null) {
+			$output->writeln('<error>' . $refusal . '</error>');
 
 			return 1;
+		}
+
+		$this->writeReport(output: $output, report: $report);
+
+		return $this->exitCodeOf(report: $report);
+	}//end execute()
+
+	/**
+	 * Why nothing was deleted, or null when the removal ran.
+	 *
+	 * @param string               $id     The example site.
+	 * @param array<string, mixed> $report The remover's report.
+	 *
+	 * @return string|null
+	 */
+	private function refusalOf(string $id, array $report): ?string {
+		if ($report['recorded'] === false) {
+			return 'Nothing is recorded for "' . $id . '": it was not installed with this command, or it is already removed.';
 		}
 
 		if ($report['available'] === false) {
-			$output->writeln('<error>OpenRegister is not available, so nothing was deleted.</error>');
-
-			return 1;
+			return 'OpenRegister is not available, so nothing was deleted.';
 		}
 
+		return null;
+	}//end refusalOf()
+
+	/**
+	 * Write the counts per kind, what happened to the portal, and what could
+	 * not be deleted.
+	 *
+	 * @param OutputInterface      $output The command output.
+	 * @param array<string, mixed> $report The remover's report.
+	 *
+	 * @return void
+	 */
+	private function writeReport(OutputInterface $output, array $report): void {
 		foreach (self::WORDS as $schema => $word) {
 			$output->writeln(
 				sprintf('%s: %d deleted, %d already gone', $word, $report['deleted'][$schema], $report['gone'][$schema])
@@ -128,11 +158,21 @@ class ExampleSiteRemove extends Command {
 		foreach ($report['failed'] as $failed) {
 			$output->writeln('<error>Could not be deleted: ' . $failed . '</error>');
 		}
+	}//end writeReport()
 
+	/**
+	 * 2 when something could not be deleted or the portal was kept for its
+	 * own content or failed, else 0.
+	 *
+	 * @param array<string, mixed> $report The remover's report.
+	 *
+	 * @return int
+	 */
+	private function exitCodeOf(array $report): int {
 		if ($report['failed'] !== [] || $report['portal'] === 'failed' || $report['portal'] === 'kept-content') {
 			return 2;
 		}
 
 		return 0;
-	}//end execute()
+	}//end exitCodeOf()
 }//end class
