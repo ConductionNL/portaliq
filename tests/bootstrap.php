@@ -201,6 +201,10 @@ foreach ([
 	'Service\\Integration\\IntegrationProvider' => 'Service/Integration/IntegrationProvider.php',
 	'Service\\Integration\\LeafDescriptor' => 'Service/Integration/LeafDescriptor.php',
 	'Event\\RegisterLeafProvidersEvent' => 'Event/RegisterLeafProvidersEvent.php',
+	// AppHost's store-controller alias (openregister #9078): LeafAdoption first,
+	// Bootstrap's signature names it.
+	'AppHost\\LeafAdoption' => 'AppHost/LeafAdoption.php',
+	'AppHost\\Bootstrap' => 'AppHost/Bootstrap.php',
 ] as $orStubClass => $orStubFile) {
 	if (class_exists('\\OCP\\EventDispatcher\\Event') === true
 		&& class_exists('\\OCA\\OpenRegister\\' . $orStubClass) === false
