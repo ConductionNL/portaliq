@@ -135,7 +135,7 @@ class PublicCatalogueQuery {
 	 * @return bool
 	 */
 	private function isWanted(array $item, CatalogueScope $scope): bool {
-		return $scope->holds(item: $item)
+		return (new CatalogueScopeFilter())->holds(item: $item, scope: $scope)
 			&& $this->matches(item: $item, words: $scope->words)
 			&& ($scope->upcoming === false || $this->isUpcoming(item: $item, today: $scope->today));
 	}//end isWanted()
