@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Doubles;
 
 use LogicException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCA\OpenRegister\Db\Register;
 use OCA\OpenRegister\Db\Schema;
 use OCP\IUser;
@@ -42,14 +43,9 @@ class OpenRegisterObjectService {
 	 */
 	public function find(
 		int|string $id,
-		?array $_extend = [],
-		bool $files = false,
-		Register|string|int|null $register = null,
-		Schema|string|int|null $schema = null,
+		?ObjectFindOptions $options = null,
 		bool $_rbac = true,
 		bool $_multitenancy = true,
-		bool $_render = true,
-		bool $_audit = true,
 	): ?OpenRegisterObjectEntity {
 		throw new LogicException('Stub: replace with a test double.');
 	}//end find()

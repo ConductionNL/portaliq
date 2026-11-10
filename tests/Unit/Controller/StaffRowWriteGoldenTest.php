@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCA\Portaliq\Controller\EventController;
 use OCA\Portaliq\Controller\NewsController;
 use OCA\Portaliq\Controller\NewsletterController;
@@ -161,7 +162,9 @@ class StaffRowWriteGoldenTest extends TestCase {
 				public function __construct(private array $store, private array &$asked) {
 				}
 
-				public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+					$register = ($options?->register ?? null);
+					$schema   = ($options?->schema ?? null);
 					$this->asked[] = ['find' => [$id, $register, $schema, $_rbac, $_multitenancy]];
 					if ($this->store[0] instanceof \Throwable) {
 						throw $this->store[0];

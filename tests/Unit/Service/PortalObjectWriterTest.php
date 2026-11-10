@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use PHPUnit\Framework\TestCase;
@@ -423,7 +424,9 @@ class PortalObjectWriterTest extends TestCase {
 			 *
 			 * @return array<string,mixed>|null
 			 */
-			public function find(string $id, string $register = '', string $schema = '', bool $_rbac = true, bool $_multitenancy = true): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = ($options?->register ?? '');
+				$schema   = ($options?->schema ?? '');
 				foreach (($this->rows[$schema] ?? []) as $row) {
 					if (in_array($id, [($row['id'] ?? null), ($row['uuid'] ?? null)], true) === true) {
 						return $row;

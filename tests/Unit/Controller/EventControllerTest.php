@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCA\Portaliq\Controller\EventController;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
@@ -93,7 +94,9 @@ class EventControllerTest extends TestCase {
 
 	public function testPublishReturns404ForAMissingId(): void {
 		$objectService = new class {
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = ($options?->register ?? null);
+				$schema   = ($options?->schema ?? null);
 				return null;
 			}//end find()
 		};
@@ -111,7 +114,9 @@ class EventControllerTest extends TestCase {
 			 */
 			public array $saved = [];
 
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = ($options?->register ?? null);
+				$schema   = ($options?->schema ?? null);
 				return ['id' => $id, 'title' => 'X', 'status' => 'draft'];
 			}//end find()
 

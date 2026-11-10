@@ -574,8 +574,14 @@
                     {
                         "find": {
                             "id": "e-1",
-                            "register": "portaliq",
-                            "schema": "schoolEvent",
+                            "options": {
+                                "register": "portaliq",
+                                "schema": "schoolEvent",
+                                "extend": [],
+                                "files": false,
+                                "render": true,
+                                "audit": true
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -625,8 +631,14 @@
                     {
                         "find": {
                             "id": "missing",
-                            "register": "portaliq",
-                            "schema": "schoolEvent",
+                            "options": {
+                                "register": "portaliq",
+                                "schema": "schoolEvent",
+                                "extend": [],
+                                "files": false,
+                                "render": true,
+                                "audit": true
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -1188,8 +1200,14 @@
                     {
                         "find": {
                             "id": "n-1",
-                            "register": "portaliq",
-                            "schema": "newsItem",
+                            "options": {
+                                "register": "portaliq",
+                                "schema": "newsItem",
+                                "extend": [],
+                                "files": false,
+                                "render": true,
+                                "audit": true
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -1242,8 +1260,14 @@
                     {
                         "find": {
                             "id": "missing",
-                            "register": "portaliq",
-                            "schema": "newsItem",
+                            "options": {
+                                "register": "portaliq",
+                                "schema": "newsItem",
+                                "extend": [],
+                                "files": false,
+                                "render": true,
+                                "audit": true
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -1348,8 +1372,14 @@
                     {
                         "find": {
                             "id": "n-1",
-                            "register": "portaliq",
-                            "schema": "newsItem",
+                            "options": {
+                                "register": "portaliq",
+                                "schema": "newsItem",
+                                "extend": [],
+                                "files": false,
+                                "render": true,
+                                "audit": true
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -1402,8 +1432,14 @@
                     {
                         "find": {
                             "id": "n-1",
-                            "register": "portaliq",
-                            "schema": "newsItem",
+                            "options": {
+                                "register": "portaliq",
+                                "schema": "newsItem",
+                                "extend": [],
+                                "files": false,
+                                "render": true,
+                                "audit": true
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -1459,8 +1495,14 @@
                     {
                         "find": {
                             "id": "missing",
-                            "register": "portaliq",
-                            "schema": "newsItem",
+                            "options": {
+                                "register": "portaliq",
+                                "schema": "newsItem",
+                                "extend": [],
+                                "files": false,
+                                "render": true,
+                                "audit": true
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -1820,8 +1862,14 @@
                     {
                         "find": {
                             "id": "l-1",
-                            "register": "portaliq",
-                            "schema": "newsletter",
+                            "options": {
+                                "register": "portaliq",
+                                "schema": "newsletter",
+                                "extend": [],
+                                "files": false,
+                                "render": true,
+                                "audit": true
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -1876,8 +1924,14 @@
                     {
                         "find": {
                             "id": "missing",
-                            "register": "portaliq",
-                            "schema": "newsletter",
+                            "options": {
+                                "register": "portaliq",
+                                "schema": "newsletter",
+                                "extend": [],
+                                "files": false,
+                                "render": true,
+                                "audit": true
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -1935,8 +1989,14 @@
                     {
                         "find": {
                             "id": "l-1",
-                            "register": "portaliq",
-                            "schema": "newsletter",
+                            "options": {
+                                "register": "portaliq",
+                                "schema": "newsletter",
+                                "extend": [],
+                                "files": false,
+                                "render": true,
+                                "audit": true
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }
@@ -1991,8 +2051,14 @@
                     {
                         "find": {
                             "id": "missing",
-                            "register": "portaliq",
-                            "schema": "newsletter",
+                            "options": {
+                                "register": "portaliq",
+                                "schema": "newsletter",
+                                "extend": [],
+                                "files": false,
+                                "render": true,
+                                "audit": true
+                            },
                             "_rbac": false,
                             "_multitenancy": false
                         }

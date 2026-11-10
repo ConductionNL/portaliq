@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalFileWriter;
 use OCP\AppFramework\Db\DoesNotExistException;
@@ -156,7 +157,9 @@ class PortalFileGoldenTest extends TestCase {
 			public function __construct(private PortalFileGoldenTest $test, private string $situation) {
 			}
 
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = ($options?->register ?? null);
+				$schema   = ($options?->schema ?? null);
 				$this->test->note(['find' => compact('id', 'register', 'schema', '_rbac', '_multitenancy')]);
 				if ($this->situation === 'objectMissing') {
 					throw new DoesNotExistException('Object not found');

@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCA\Portaliq\Service\Tenancy\ActsForTheOrganisation;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -438,8 +439,7 @@ class PortalObjectWriter {
 		try {
 			$entity = $objectService->find(
 				id: $id,
-				register: $register,
-				schema: $schema,
+				options: new ObjectFindOptions(register: $register, schema: $schema),
 				_rbac: false,
 				_multitenancy: false
 			);

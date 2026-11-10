@@ -69,6 +69,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCA\Portaliq\Event\PortalClaimScopeEvent;
 use OCA\Portaliq\Service\Tenancy\ActsForTheOrganisation;
 use OCA\Portaliq\Service\Tenancy\ClaimScopeCheck;
@@ -94,6 +95,8 @@ use Throwable;
  * @SuppressWarnings(PHPMD.TooManyMethods)          -- the same boundary: the
  * public read of an `anonymous` collection shares the tenant check, the row
  * normalising and the projection with the scoped reads, so it lives beside them.
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)  -- the thirteenth is
+ * OpenRegister's ObjectFindOptions, the request object its find() takes.
  */
 class PortalObjectReader implements ScopedCollectionReaderInterface {
 	use ActsForTheOrganisation;
@@ -669,8 +672,7 @@ class PortalObjectReader implements ScopedCollectionReaderInterface {
 		try {
 			$entity = $objectService->find(
 				id: $id,
-				register: $register,
-				schema: $schema,
+				options: new ObjectFindOptions(register: $register, schema: $schema),
 				_rbac: $rbac,
 				_multitenancy: false
 			);

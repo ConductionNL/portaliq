@@ -23,6 +23,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Doubles;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+
 /**
  * ObjectService stand-in that acts for organisations.
  *
@@ -124,31 +126,20 @@ class ActingObjectService {
 	}//end findAll()
 
 	/**
-	 * @param int|string $id            The id.
-	 * @param array|null $_extend       Unused.
-	 * @param bool       $files         Unused.
-	 * @param mixed      $register      Unused.
-	 * @param mixed      $schema        Unused.
-	 * @param bool       $_rbac         Unused.
-	 * @param bool       $_multitenancy Unused.
-	 * @param bool       $_render       Unused.
-	 * @param bool       $_audit        Unused.
+	 * @param int|string             $id            The id.
+	 * @param ObjectFindOptions|null $options       Unused.
+	 * @param bool                   $_rbac         Unused.
+	 * @param bool                   $_multitenancy Unused.
 	 *
 	 * @return mixed
 	 *
-	 * @SuppressWarnings(PHPMD.ExcessiveParameterList)
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
 	 */
 	public function find(
 		int|string $id,
-		?array $_extend = [],
-		bool $files = false,
-		mixed $register = null,
-		mixed $schema = null,
+		?ObjectFindOptions $options = null,
 		bool $_rbac = true,
 		bool $_multitenancy = true,
-		bool $_render = true,
-		bool $_audit = true,
 	): mixed {
 		$this->record(method: 'find');
 		return ($this->found[(string)$id] ?? null);
