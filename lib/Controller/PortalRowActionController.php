@@ -193,31 +193,18 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	 * @return JSONResponse The relayed answer, or 422 / 502.
 	 */
 	private function relay(RowForwardRun $run, array $body): JSONResponse {
-		$match   = $run->match;
-		$subject = $run->subject;
 		// The action's required fields (REQ-SMF-024): refused before the audit
 		// and the forward.
-		$missing = (new RequiredFieldsGuard())->refusal(action: $match['action'], body: $body['body']);
+		$missing = (new RequiredFieldsGuard())->refusal(action: $run->match['action'], body: $body['body']);
 		if ($missing !== null) {
 			return $missing;
 		}
 
-		// Recorded once the forward is authorised, whatever the leaf app then
-		// answers: the audited fact is that the subject invoked it (as
-		// ContributionController::action()).
-		$this->auditor->record(
-			verb: 'forward',
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			organisation: (string)($subject['organisation'] ?? ''),
-			register: $match['app'],
-			schema: $run->actionId,
-			id: $run->rowId,
-			jti: (string)($subject['jti'] ?? '')
-		);
+		$this->recordForward(run: $run);
 
 		$response = $this->forwarder->forward(
-			action: $match['action'],
-			subject: $subject,
+			action: $run->match['action'],
+			subject: $run->subject,
 			whitelisted: $body['body'],
 			scopeValue: $body['scopeValue'],
 			files: ($body['files'] ?? [])
@@ -230,6 +217,28 @@ class PortalRowActionController extends Controller implements PortalProtected {
 
 		return new JSONResponse($this->forwarder->decodeBody(response: $response), $response->getStatusCode());
 	}//end relay()
+
+	/**
+	 * Audit the forward. Recorded once the forward is authorised, whatever the
+	 * leaf app then answers: the audited fact is that the subject invoked it
+	 * (as ContributionController::action()).
+	 *
+	 * @param RowForwardRun $run The forward, with its proven row id and the action id.
+	 *
+	 * @return void
+	 */
+	private function recordForward(RowForwardRun $run): void {
+		$subject = $run->subject;
+		$this->auditor->record(
+			verb: 'forward',
+			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			organisation: (string)($subject['organisation'] ?? ''),
+			register: $run->match['app'],
+			schema: $run->actionId,
+			id: $run->rowId,
+			jti: (string)($subject['jti'] ?? '')
+		);
+	}//end recordForward()
 
 	/**
 	 * The refusal when the row does not offer the action: not among the rows
