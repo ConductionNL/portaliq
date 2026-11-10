@@ -35,7 +35,6 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
-use OCA\Portaliq\Service\PortalJwtService;
 use OCA\Portaliq\Service\PortalSchemaReader;
 
 /**
@@ -43,9 +42,6 @@ use OCA\Portaliq\Service\PortalSchemaReader;
  *
  * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
  * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
- *
- * @SuppressWarnings(PHPMD.StaticAccess) -- PortalJwtService::isReservedScopeClaim() is a pure check on
- *                                         the frozen assertion claims, with no state to inject.
  */
 class ActionConfigNormaliser {
 	/**
@@ -230,53 +226,8 @@ class ActionConfigNormaliser {
 	 * @return array<string, mixed>|null The action, or null when a guard cannot be honoured.
 	 */
 	private function guarded(array $action, array $whitelist): ?array {
-		// A server-stamped subject field (portal-take-assessment) is a
-		// guard too: an action whose field name cannot be read is removed
-		// rather than forwarded without its stamp.
-		if ($this->subjectFieldIsMalformed(action: $action) === true) {
-			return null;
-		}
-
-		// A declared scope claim rides in the signed assertion; one that
-		// names a frozen assertion claim (`sub`, `iss`, ...) is removed with
-		// its action, so it can never stand in for that claim.
-		if (PortalJwtService::isReservedScopeClaim(scopeClaim: ($action['scopeClaim'] ?? null)) === true) {
-			return null;
-		}
-
-		// The cross-reference guard, and the one normaliser that can
-		// remove an action rather than a key: a create whose guard could
-		// not be read must not be offered without it.
-		$guarded = ($this->crossRefs ?? new CrossRefConfigNormaliser())
-			->normaliseAction(action: $action, whitelist: $whitelist);
-		if ($guarded === null) {
-			return null;
-		}
-
-		// A guest action (identity-guest-page-for-signed-links) without a
-		// token field, local endpoints and `low` trust is removed whole.
-		return (new GuestActionConfigNormaliser())->normaliseAction(action: $guarded);
+		return (new ActionGuards($this->crossRefs ?? new CrossRefConfigNormaliser()))->guard(action: $action, whitelist: $whitelist);
 	}//end guarded()
-
-	/**
-	 * Whether an action declares a `subjectField` that is not a plain field
-	 * name. Absent is fine; anything declared must match
-	 * `^[a-zA-Z][a-zA-Z0-9_]*$`.
-	 *
-	 * @param array<string, mixed> $action The action.
-	 *
-	 * @return bool
-	 *
-	 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
-	 */
-	private function subjectFieldIsMalformed(array $action): bool {
-		if (array_key_exists('subjectField', $action) === false) {
-			return false;
-		}
-
-		return is_string($action['subjectField']) === false
-			|| preg_match('/^[a-zA-Z][a-zA-Z0-9_]*$/', $action['subjectField']) !== 1;
-	}//end subjectFieldIsMalformed()
 
 	/**
 	 * Drop a non-string `submitLabel` / `successMessage`.
