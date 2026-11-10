@@ -1453,6 +1453,92 @@ class SessionControllerTest extends TestCase {
 	}//end testNextcloudSignInHandsTheTokenBackInTheFragment()
 
 	/**
+	 * An unknown portal is a 404 and an inactive account a 403; neither mints
+	 * a session.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
+	 */
+	public function testNextcloudSignInRefusesAnUnknownPortalAndAnInactiveAccount(): void {
+		$session = $this->createMock(originalClassName: PortalSessionService::class);
+		$session->expects($this->never())->method('issueSession');
+		$portals = $this->createMock(originalClassName: PortalResolver::class);
+		$portals->method('resolve')->willReturn(null);
+
+		$unknown = $this->controller(
+			session: $session,
+			userSession: $this->signedIn(uid: 'alice'),
+			portals: $portals
+		)->nextcloud(portal: 'nope');
+
+		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $unknown->getStatus());
+		$this->assertSame(expected: ['error' => 'portal_not_found'], actual: $unknown->getData());
+
+		$accounts = $this->createMock(originalClassName: PortalAccountService::class);
+		$accounts->method('findBySubjectRef')->willReturn(
+			['subjectRef' => 'alice', 'audience' => 'client', 'organisation' => 'org-1', 'status' => 'suspended']
+		);
+
+		$inactive = $this->controller(
+			session: $session,
+			accounts: $accounts,
+			userSession: $this->signedIn(uid: 'alice'),
+			portals: $this->portalOffering(mode: 'nextcloud')
+		)->nextcloud(portal: 'demo');
+
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $inactive->getStatus());
+		$this->assertSame(expected: ['error' => 'no_portal_account'], actual: $inactive->getData());
+
+	}//end testNextcloudSignInRefusesAnUnknownPortalAndAnInactiveAccount()
+
+	/**
+	 * Without a configured signing secret the sign-in is a 503; with one and
+	 * no return address it lands on the portal's own site page.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
+	 */
+	public function testNextcloudSignInWithoutASecretIs503AndWithoutReturnToLandsOnThePortal(): void {
+		$accounts = $this->createMock(originalClassName: PortalAccountService::class);
+		$accounts->method('findBySubjectRef')->willReturn(['subjectRef' => 'alice']);
+		$urlGenerator = $this->createMock(originalClassName: IURLGenerator::class);
+		$urlGenerator->method('getAbsoluteURL')->willReturnCallback(static fn (string $url): string => 'https://nc.example' . $url);
+
+		$unconfigured = $this->createMock(originalClassName: PortalSessionService::class);
+		$unconfigured->method('issueSession')->willReturn(null);
+		$refused = $this->controller(
+			session: $unconfigured,
+			accounts: $accounts,
+			userSession: $this->signedIn(uid: 'alice'),
+			portals: $this->portalOffering(mode: 'nextcloud')
+		)->nextcloud(portal: 'demo');
+
+		$this->assertSame(expected: Http::STATUS_SERVICE_UNAVAILABLE, actual: $refused->getStatus());
+		$this->assertSame(expected: ['error' => 'not_configured'], actual: $refused->getData());
+
+		$session = $this->createMock(originalClassName: PortalSessionService::class);
+		$session->expects($this->once())
+			->method('issueSession')
+			->with('alice', 'client', 'dev-org', 'low', ['client:read'])
+			->willReturn(['token' => 't']);
+		$response = $this->controller(
+			session: $session,
+			accounts: $accounts,
+			urlGenerator: $urlGenerator,
+			userSession: $this->signedIn(uid: 'alice'),
+			portals: $this->portalOffering(mode: 'nextcloud')
+		)->nextcloud(portal: 'demo');
+
+		$this->assertInstanceOf(expected: RedirectResponse::class, actual: $response);
+		$this->assertSame(expected: Http::STATUS_FOUND, actual: $response->getStatus());
+		$this->assertStringStartsWith('https://nc.example/apps/portaliq/site?portal=', $response->getRedirectURL());
+		$this->assertStringEndsWith('#token=t', $response->getRedirectURL());
+
+	}//end testNextcloudSignInWithoutASecretIs503AndWithoutReturnToLandsOnThePortal()
+
+	/**
 	 * The Nextcloud sign-in route requires a Nextcloud session, not anonymity.
 	 *
 	 * The caller's Nextcloud session is the credential being exchanged for a
