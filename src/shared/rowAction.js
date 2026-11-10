@@ -265,28 +265,42 @@ function pageOrigin() {
  * @spec openspec/changes/my-dossiers/specs/portal-contribution-contract/spec.md#requirement-a-link-in-an-actions-answer-must-be-shown-to-the-resident-req-myd-004
  */
 export function answerLink(result, origin = pageOrigin()) {
-	if (
-		!result
-		|| !result.ok
-		|| !result.body
-		|| typeof result.body.link !== 'string'
-	) {
-		return ''
-	}
-	const link = result.body.link.trim()
+	const link = linkInAnswer(result)
 	if (/^https:\/\/\S+$/i.test(link) || /^\/(?!\/)\S*$/.test(link)) {
 		return link
 	}
 	if (origin !== '' && /^http:\/\/\S+$/i.test(link)) {
-		let url
-		try {
-			url = new URL(link)
-		} catch {
-			return ''
-		}
-		return url.origin === origin ? link : ''
+		return onOrigin(link, origin) ? link : ''
 	}
 	return ''
+}
+
+/**
+ * The trimmed link a successful answer carries, else ''.
+ *
+ * @param {object|null} result `{ok, body}` from a forward.
+ * @return {string} The link, or ''.
+ */
+function linkInAnswer(result) {
+	if (!result || !result.ok || !result.body || typeof result.body.link !== 'string') {
+		return ''
+	}
+	return result.body.link.trim()
+}
+
+/**
+ * Whether an absolute link lies on the given origin; a malformed one does not.
+ *
+ * @param {string} link The link.
+ * @param {string} origin The page's own origin.
+ * @return {boolean} True on that origin.
+ */
+function onOrigin(link, origin) {
+	try {
+		return new URL(link).origin === origin
+	} catch {
+		return false
+	}
 }
 
 /**
