@@ -311,3 +311,35 @@ test('answerText writes each kind of answer for the review', () => {
 	assert.equal(BLOCK.methods.answerText.call(vm, { name: 'loose', options: 'nope' }), 'zomaar')
 	assert.equal(BLOCK.methods.answerText.call(vm, { name: 'missing' }), '')
 })
+
+test('load: no route is not found, a failed read is not found, a form with an intro starts on the intro', async () => {
+	const noRoute = instance({ bindingRoute: '', reference: 'old', errors: { a: 'x' }, sendFailed: true })
+	await BLOCK.methods.load.call(noRoute)
+	assert.equal(noRoute.state, 'notFound')
+	assert.equal(noRoute.reference, '')
+	assert.deepEqual(noRoute.errors, {})
+	assert.equal(noRoute.sendFailed, false)
+
+	serve({ throws: true })
+	const broken = instance({})
+	await BLOCK.methods.load.call(broken)
+	assert.equal(broken.state, 'notFound')
+
+	const calls = serve({ status: 200, body: { fields: [{ name: 'name' }], settings: { intro: { blocks: [{ title: 'Vooraf' }] } } } })
+	const intro = instance({})
+	await BLOCK.methods.load.call(intro)
+	assert.equal(intro.state, 'intro')
+	assert.deepEqual(Object.keys(intro.values), ['name'])
+	assert.equal(intro.render.fields.length, 1)
+	assert.match(calls[0].url, /\/intake\/form\?route=parkeren&portal=gemeente-x/)
+
+	serve({ status: 200, body: { fields: [] } })
+	const plain = instance({})
+	await BLOCK.methods.load.call(plain)
+	assert.equal(plain.state, 'form')
+
+	serve({ status: 403, body: { fee: null } })
+	const signIn = instance({})
+	await BLOCK.methods.load.call(signIn)
+	assert.equal(signIn.state, 'signIn')
+})
