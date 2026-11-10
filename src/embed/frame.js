@@ -25,35 +25,59 @@ export const MOUNT_ID = 'portaliq-embed'
  * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-embed-frame-must-render-its-form-from-a-small-entry-req-srp-047
  */
 export function readEmbedConfig(doc) {
-	const fallback = {
-		payload: { refused: 'form_not_found' },
-		submitUrl: '',
-		locale: 'nl',
-	}
-	let parsed
-	try {
-		parsed = JSON.parse(doc?.getElementById(CONFIG_ID)?.textContent || 'null')
-	} catch {
-		parsed = null
-	}
-
-	if (
-		parsed === null
-		|| typeof parsed !== 'object'
-		|| typeof parsed.payload !== 'object'
-		|| parsed.payload === null
-	) {
-		return fallback
+	const parsed = parsedConfig(doc)
+	if (!hasPayload(parsed)) {
+		return {
+			payload: { refused: 'form_not_found' },
+			submitUrl: '',
+			locale: 'nl',
+		}
 	}
 
 	return {
 		payload: parsed.payload,
 		submitUrl: typeof parsed.submitUrl === 'string' ? parsed.submitUrl : '',
-		locale:
-			typeof parsed.locale === 'string' && parsed.locale !== ''
-				? parsed.locale
-				: 'nl',
+		locale: configLocale(parsed.locale),
 	}
+}
+
+/**
+ * The config block's JSON, or null when it is missing or broken.
+ *
+ * @param {Document|null} doc The document.
+ * @return {object|string|number|boolean|null} The parsed block, or null.
+ */
+function parsedConfig(doc) {
+	try {
+		return JSON.parse(doc?.getElementById(CONFIG_ID)?.textContent || 'null')
+	} catch {
+		return null
+	}
+}
+
+/**
+ * Whether the parsed block is an object with an object payload.
+ *
+ * @param {object|string|number|boolean|null} parsed The parsed block.
+ * @return {boolean} True when it can be used.
+ */
+function hasPayload(parsed) {
+	return (
+		parsed !== null
+		&& typeof parsed === 'object'
+		&& typeof parsed.payload === 'object'
+		&& parsed.payload !== null
+	)
+}
+
+/**
+ * The frame's language: the block's, else Dutch.
+ *
+ * @param {string|number|boolean|object|null|undefined} locale The block's locale.
+ * @return {string} The language tag.
+ */
+function configLocale(locale) {
+	return typeof locale === 'string' && locale !== '' ? locale : 'nl'
 }
 
 /**
@@ -68,17 +92,22 @@ export function readEmbedConfig(doc) {
 export function initialAnswers(fields) {
 	const answers = {}
 	for (const field of Array.isArray(fields) ? fields : []) {
-		if (
-			field?.name
-			&& field.preset !== undefined
-			&& field.preset !== null
-			&& field.preset !== ''
-		) {
+		if (field?.name && hasPreset(field)) {
 			answers[field.name] = String(field.preset)
 		}
 	}
 
 	return answers
+}
+
+/**
+ * Whether a field carries a preset: anything but undefined, null or ''.
+ *
+ * @param {object} field The field.
+ * @return {boolean} True with a preset.
+ */
+function hasPreset(field) {
+	return field.preset !== undefined && field.preset !== null && field.preset !== ''
 }
 
 /**
@@ -128,13 +157,12 @@ export async function submitAnswers({
  */
 export function submissionErrors(result) {
 	const raw = result?.errors
+	if (Array.isArray(raw)) {
+		return { fields: {}, messages: raw.map(String) }
+	}
 	const fields = {}
 	const messages = []
-	if (Array.isArray(raw)) {
-		for (const message of raw) {
-			messages.push(String(message))
-		}
-	} else if (raw !== null && typeof raw === 'object') {
+	if (raw !== null && typeof raw === 'object') {
 		for (const [name, message] of Object.entries(raw)) {
 			fields[name] = String(message)
 			messages.push(String(message))

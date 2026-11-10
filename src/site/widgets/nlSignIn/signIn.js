@@ -50,37 +50,75 @@ export function safeWays(ways) {
  * @param {(key: string, vars?: object) => string} options.say The widget's words.
  * @return {{label: string, href: string, route: string, id: string}} The button.
  */
-export function cardButton({
-	ways,
-	signedIn,
-	heading,
-	buttonLabel,
-	signInHref,
-	say,
-}) {
-	const page = /^\/(?!\/)/.test(signInHref || '') ? signInHref : '/mijn'
-	if (signedIn) {
-		return {
-			id: 'own-area',
-			label: heading ? say('goTo', { name: heading }) : say('ownArea'),
-			href: '/mijn',
-			route: '/mijn',
-		}
+export function cardButton(options) {
+	if (options.signedIn) {
+		return ownAreaButton(options)
 	}
-	if (ways.length === 1) {
-		return {
-			id: ways[0].id,
-			label: buttonLabel || ways[0].label,
-			href: ways[0].href,
-			route: '',
-		}
+	if (options.ways.length === 1) {
+		return wayButton(options)
 	}
+	return chooseButton(options)
+}
+
+/**
+ * The button of a signed-in visitor: to their own area.
+ *
+ * @param {object} options What the card knows (`heading`, `say`).
+ * @return {{label: string, href: string, route: string, id: string}} The button.
+ */
+function ownAreaButton(options) {
+	return {
+		id: 'own-area',
+		label: options.heading
+			? options.say('goTo', { name: options.heading })
+			: options.say('ownArea'),
+		href: '/mijn',
+		route: '/mijn',
+	}
+}
+
+/**
+ * The button of a portal with one way in: straight to it, in its own words
+ * unless the page words it.
+ *
+ * @param {object} options What the card knows (`ways`, `buttonLabel`).
+ * @return {{label: string, href: string, route: string, id: string}} The button.
+ */
+function wayButton(options) {
+	const way = options.ways[0]
+	return {
+		id: way.id,
+		label: options.buttonLabel || way.label,
+		href: way.href,
+		route: '',
+	}
+}
+
+/**
+ * The button to the sign-in page, where the visitor chooses a way in.
+ *
+ * @param {object} options What the card knows (`buttonLabel`, `signInHref`, `say`).
+ * @return {{label: string, href: string, route: string, id: string}} The button.
+ */
+function chooseButton(options) {
+	const page = signInPage(options.signInHref)
 	return {
 		id: 'choose',
-		label: buttonLabel || say('signIn'),
+		label: options.buttonLabel || options.say('signIn'),
 		href: page,
 		route: page,
 	}
+}
+
+/**
+ * The sign-in page's route: the portal's when it is a path inside this
+ * site, else the resident's own area, which asks for a sign-in itself.
+ *
+ * @param {string} signInHref The sign-in page route.
+ * @return {string} The route.
+ */
+function signInPage(signInHref) {
+	return /^\/(?!\/)/.test(signInHref || '') ? signInHref : '/mijn'
 }
 
 /**
