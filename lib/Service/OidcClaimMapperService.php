@@ -134,40 +134,72 @@ class OidcClaimMapperService {
 			return null;
 		}
 
+		return ['provider' => $provider] + self::clientPart(preset: $preset, rawConfig: $rawConfig)
+			+ ['identityType' => $identityType] + self::claimPart(preset: $preset, rawConfig: $rawConfig);
+	}//end applyPreset()
+
+	/**
+	 * The client half of a merged config: label, issuer, credentials and scopes.
+	 *
+	 * @param array<string, mixed> $preset    The provider preset.
+	 * @param array<string, mixed> $rawConfig The org's raw override.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private static function clientPart(array $preset, array $rawConfig): array {
 		$scopes = ($rawConfig['scopes'] ?? null);
 		if (is_array($scopes) === false || $scopes === []) {
 			$scopes = $preset['scopes'];
 		}
 
-		$claimMap = ($rawConfig['claimMap'] ?? []);
-		if (is_array($claimMap) === false) {
-			$claimMap = [];
-		}
-
-		$loaMap = ($rawConfig['loaMap'] ?? []);
-		if (is_array($loaMap) === false) {
-			$loaMap = [];
-		}
-
 		return [
-			'provider' => $provider,
 			'label' => (string)($rawConfig['label'] ?? $preset['label']),
 			'issuer' => (string)($rawConfig['issuer'] ?? ''),
 			'clientId' => (string)($rawConfig['clientId'] ?? ''),
 			'clientSecret' => (string)($rawConfig['clientSecret'] ?? ''),
 			'scopes' => array_values($scopes),
-			'identityType' => $identityType,
+		];
+	}//end clientPart()
+
+	/**
+	 * The claim half of a merged config: which claims carry the identity,
+	 * subject, audience, level of assurance and branch.
+	 *
+	 * @param array<string, mixed> $preset    The provider preset.
+	 * @param array<string, mixed> $rawConfig The org's raw override.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private static function claimPart(array $preset, array $rawConfig): array {
+		$claimMap = self::arrayOrEmpty(value: ($rawConfig['claimMap'] ?? []));
+
+		return [
 			'identityRefClaim' => (string)($claimMap['identityRef'] ?? 'sub'),
 			'subjectRefMap' => (string)($claimMap['subjectRef'] ?? self::SUBJECT_REF_DERIVE),
 			'audienceMap' => (string)($claimMap['audience'] ?? $preset['audience']),
 			'loaClaim' => (string)($rawConfig['loaClaim'] ?? $preset['loaClaim']),
-			'loaMap' => $loaMap,
+			'loaMap' => self::arrayOrEmpty(value: ($rawConfig['loaMap'] ?? [])),
 			// Change signin-eherkenning-branch: the claim that carries the
 			// vestigingsnummer. No preset names one, because brokers name it
 			// differently; an organisation sets it in its claimMap.
 			'branchClaim' => (string)($claimMap['branch'] ?? ''),
 		];
-	}//end applyPreset()
+	}//end claimPart()
+
+	/**
+	 * A value when it is an array, else an empty one.
+	 *
+	 * @param mixed $value The value.
+	 *
+	 * @return array<mixed>
+	 */
+	private static function arrayOrEmpty(mixed $value): array {
+		if (is_array($value) === false) {
+			return [];
+		}
+
+		return $value;
+	}//end arrayOrEmpty()
 
 	/**
 	 * Resolve the fixed `identityType` for a provider: the preset's own value,
