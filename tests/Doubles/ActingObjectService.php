@@ -23,6 +23,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Doubles;
 
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
+
 /**
  * ObjectService stand-in that acts for organisations.
  *
@@ -182,20 +184,16 @@ class ActingObjectService {
 	}//end saveObject()
 
 	/**
-	 * @param string $uuid          The uuid.
-	 * @param mixed  $register      Unused.
-	 * @param mixed  $schema        Unused.
-	 * @param bool   $_rbac         Unused.
-	 * @param bool   $_multitenancy Unused.
+	 * @param ObjectDeletion $deletion      The object and its register and schema.
+	 * @param bool           $_rbac         Unused.
+	 * @param bool           $_multitenancy Unused.
 	 *
 	 * @return bool
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
 	 */
 	public function deleteObject(
-		string $uuid,
-		mixed $register = null,
-		mixed $schema = null,
+		ObjectDeletion $deletion,
 		bool $_rbac = true,
 		bool $_multitenancy = true,
 	): bool {

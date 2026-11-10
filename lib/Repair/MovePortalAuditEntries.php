@@ -32,6 +32,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Repair;
 
 use DateTime;
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
+use OCA\OpenRegister\Service\Object\ObjectFindTarget;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCP\Migration\IOutput;
@@ -147,7 +149,11 @@ class MovePortalAuditEntries implements IRepairStep {
 				$this->trail->append(fact: $row, uuid: $uuid, created: $created);
 			}
 
-			$this->objectService()->deleteObject(uuid: $uuid, register: self::REGISTER, schema: self::OLD_SCHEMA, _rbac: false, _multitenancy: false);
+			$this->objectService()->deleteObject(
+				deletion: new ObjectDeletion(uuid: $uuid, target: new ObjectFindTarget(register: self::REGISTER, schema: self::OLD_SCHEMA)),
+				_rbac: false,
+				_multitenancy: false
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: a proof record could not be moved into the audit trail', ['uuid' => $uuid, 'reason' => $e->getMessage()]);
 

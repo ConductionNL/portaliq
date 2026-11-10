@@ -18,6 +18,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Traffic;
 
+use OCA\OpenRegister\Service\Object\ObjectDeletion;
 use JsonSerializable;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCA\Portaliq\Service\Traffic\TrafficEventStore;
@@ -288,7 +289,8 @@ class TrafficStoresGoldenTest extends TestCase {
 				 *
 				 * @return bool
 				 */
-				public function deleteObject(string $uuid, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): bool {
+				public function deleteObject(ObjectDeletion $deletion, bool $_rbac = true, bool $_multitenancy = true): bool {
+					[$uuid, $register, $schema] = [$deletion->uuid, $deletion->target->register, $deletion->target->schema];
 					$this->asked[] = ['deleteObject' => [$uuid, $register, $schema, $_rbac, $_multitenancy]];
 					if (($this->world['delete'] ?? null) instanceof \Throwable) {
 						throw $this->world['delete'];
