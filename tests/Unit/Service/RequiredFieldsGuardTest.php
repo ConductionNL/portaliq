@@ -69,6 +69,31 @@ class RequiredFieldsGuardTest extends TestCase {
 	}//end testWhatCountsAsEmpty()
 
 	/**
+	 * Only a string field whose config is an array with `required` exactly
+	 * true and no file type is checked; a message that is not a string
+	 * gives no words; configs that are not a list require nothing.
+	 *
+	 * @return void
+	 */
+	public function testOnlyAWellFormedRequiredFieldIsCheckedAsRecorded(): void {
+		$guard  = new RequiredFieldsGuard();
+		$action = [
+			'fields'       => [7, 'loose', 'yes', 'words', 'plain', 'missingConfig'],
+			'fieldConfigs' => [
+				7       => ['required' => true],
+				'loose' => 'required',
+				'yes'   => ['required' => 'yes'],
+				'words' => ['required' => true, 'requiredMessage' => ['not', 'words']],
+				'plain' => ['required' => true, 'type' => 'text'],
+			],
+		];
+
+		$this->assertSame(['words' => '', 'plain' => ''], $guard->missing(action: $action, body: []));
+		$this->assertSame([], $guard->missing(action: ['fields' => ['a'], 'fieldConfigs' => 'a'], body: []));
+		$this->assertSame([], $guard->missing(action: ['fieldConfigs' => ['a' => ['required' => true]]], body: []));
+	}//end testOnlyAWellFormedRequiredFieldIsCheckedAsRecorded()
+
+	/**
 	 * The refusal is a 400 naming every missing field; a full body goes on.
 	 *
 	 * @return void
