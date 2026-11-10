@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\AppInfo;
 
+use OCA\OpenRegister\AppHost\LeafAdoption;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\Server;
@@ -151,7 +152,7 @@ final class StorePlaneRegistrar {
 		// aborts the rest of Application::register().
 		\OCA\OpenRegister\AppHost\Bootstrap::aliasStoreController(
 			context: $context,
-			adoption: new \OCA\OpenRegister\AppHost\LeafAdoption(
+			adoption: new LeafAdoption(
 				appId: Application::APP_ID,
 				options: ['controllerNamespace' => self::CONTROLLER_NAMESPACE]
 			)
