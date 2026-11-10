@@ -133,21 +133,8 @@ function guestLinkOf(rest) {
  */
 async function post(url, body, fetchImpl) {
 	try {
-		const response = await fetchImpl(url, {
-			method: 'POST',
-			headers: {
-				Accept: 'application/json',
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify(body),
-		})
-		let parsed = {}
-		try {
-			parsed = (await response.json()) || {}
-		} catch {
-			parsed = {}
-		}
-
+		const response = await fetchImpl(url, jsonPostInit(body))
+		const parsed = await jsonBodyOf(response)
 		return { ok: response.ok === true, status: response.status, body: parsed }
 	} catch {
 		return { ok: false, status: 0, body: {} }
@@ -155,28 +142,54 @@ async function post(url, body, fetchImpl) {
 }
 
 /**
+ * @param {object} body The body.
+ * @return {object} The request: a JSON POST, without a bearer.
+ */
+function jsonPostInit(body) {
+	return {
+		method: 'POST',
+		headers: {
+			Accept: 'application/json',
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify(body),
+	}
+}
+
+/**
+ * @param {Response|object} response A guest route's response.
+ * @return {Promise<object>} Its JSON body, or an empty one when it has none.
+ */
+async function jsonBodyOf(response) {
+	try {
+		return (await response.json()) || {}
+	} catch {
+		return {}
+	}
+}
+
+/**
  * The route of one guest action.
  *
- * @param {string} authBase The portal API base (`.../portal/api`).
- * @param {object} link     `{app, action}`.
+ * @param {{authBase: string, link: object}} call The portal API base (`.../portal/api`) and `{app, action}`.
  * @return {string} The route.
  */
-function routeOf(authBase, link) {
+function routeOf(call) {
+	const { authBase, link } = call
 	return `${authBase}/guest/${encodeURIComponent(link.app)}/${encodeURIComponent(link.action)}`
 }
 
 /**
  * The body for a route: the fields, then the token and the serving portal.
  *
+ * @param {{link: object, portal: string}} call The link and the serving portal's slug, or ''.
  * @param {object} fields The visitor's field values.
- * @param {string} token  The signed token.
- * @param {string} portal The serving portal's slug, or ''.
  * @return {object} The body.
  */
-function bodyOf(fields, token, portal) {
-	const body = { ...fields, token }
-	if (portal) {
-		body.portal = portal
+function bodyOf(call, fields) {
+	const body = { ...fields, token: call.link.token }
+	if (call.portal) {
+		body.portal = call.portal
 	}
 
 	return body
@@ -185,40 +198,27 @@ function bodyOf(fields, token, portal) {
 /**
  * Ask what the link is for.
  *
- * @param {string}   authBase  The portal API base.
- * @param {object}   link      `{app, action, token}`.
- * @param {string}   portal    The serving portal's slug, or ''.
- * @param {Function} fetchImpl `fetch`, replaceable in tests.
+ * @param {{authBase: string, link: object, portal: string}} call The portal API base, `{app, action, token}` and the serving portal's slug, or ''.
+ * @param {typeof fetch} fetchImpl `fetch`, replaceable in tests.
  * @return {Promise<object>} `{ok, status, body}`.
  *
  * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T04
  */
-export function guestPreview(authBase, link, portal, fetchImpl = fetch) {
-	return post(
-		`${routeOf(authBase, link)}/preview`,
-		bodyOf({}, link.token, portal),
-		fetchImpl,
-	)
+export function guestPreview(call, fetchImpl = fetch) {
+	return post(`${routeOf(call)}/preview`, bodyOf(call, {}), fetchImpl)
 }
 
 /**
  * Do the confirmed act.
  *
- * @param {string}   authBase  The portal API base.
- * @param {object}   link      `{app, action, token}`.
- * @param {object}   fields    The declared fields' values.
- * @param {string}   portal    The serving portal's slug, or ''.
- * @param {Function} fetchImpl `fetch`, replaceable in tests.
+ * @param {{authBase: string, link: object, portal: string, fields: object}} call The portal API base, `{app, action, token}`, the serving portal's slug or '', and the declared fields' values.
+ * @param {typeof fetch} fetchImpl `fetch`, replaceable in tests.
  * @return {Promise<object>} `{ok, status, body}`.
  *
  * @spec openspec/changes/archive/2026-10-01-identity-guest-page-for-signed-links/tasks.md#T04
  */
-export function guestAct(authBase, link, fields, portal, fetchImpl = fetch) {
-	return post(
-		routeOf(authBase, link),
-		bodyOf(fields || {}, link.token, portal),
-		fetchImpl,
-	)
+export function guestAct(call, fetchImpl = fetch) {
+	return post(routeOf(call), bodyOf(call, call.fields || {}), fetchImpl)
 }
 
 /**
@@ -360,21 +360,24 @@ function failureMessage(body) {
  * @spec openspec/specs/portal-guest-actions/spec.md#requirement-the-page-shows-the-apps-answer-req-gst-004
  */
 export function actOutcome(answer, declaration, strings) {
-	const body = (answer && answer.body) || {}
-	if (answer && answer.ok) {
+	const body = answerBody(answer)
+	if (isOk(answer)) {
 		const url = text(body.redirectUrl)
 		if (url.startsWith('https://')) {
 			return { kind: 'redirect', url, message: strings.redirecting }
 		}
 
-		return {
-			kind: 'done',
-			message:
-				text(body.message)
-				|| text((declaration || {}).successText)
-				|| strings.done,
-		}
+		return { kind: 'done', message: doneMessage(body, declaration) || strings.done }
 	}
 
 	return { kind: 'refused', message: text(body.message) || strings.unusable }
+}
+
+/**
+ * @param {object} body The act route's body.
+ * @param {object|null} declaration The action's declaration from the preview.
+ * @return {string} The app's message, else the action's success text, or ''.
+ */
+function doneMessage(body, declaration) {
+	return text(body.message) || text((declaration || {}).successText)
 }

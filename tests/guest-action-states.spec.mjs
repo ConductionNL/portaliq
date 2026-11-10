@@ -89,11 +89,11 @@ test('without an answer, or with a failed one, the link cannot be used', () => {
 
 test('an answer without readable JSON is an empty body, and the status goes along', async () => {
 	const link = { app: 'app', action: 'act', token: 't' }
-	const broken = await guestPreview('/b', link, '', async () => ({ ok: false, status: 502, json: async () => { throw new Error('html') } }))
+	const broken = await guestPreview({ authBase: '/b', link, portal: '' }, async () => ({ ok: false, status: 502, json: async () => { throw new Error('html') } }))
 	assert.deepEqual(broken, { ok: false, status: 502, body: {} })
-	const empty = await guestPreview('/b', link, '', async () => ({ ok: true, status: 204, json: async () => null }))
+	const empty = await guestPreview({ authBase: '/b', link, portal: '' }, async () => ({ ok: true, status: 204, json: async () => null }))
 	assert.deepEqual(empty, { ok: true, status: 204, body: {} })
-	const truthy = await guestPreview('/b', link, '', async () => ({ ok: 1, status: 200, json: async () => ({ a: 1 }) }))
+	const truthy = await guestPreview({ authBase: '/b', link, portal: '' }, async () => ({ ok: 1, status: 200, json: async () => ({ a: 1 }) }))
 	assert.deepEqual(truthy, { ok: false, status: 200, body: { a: 1 } })
 })
 
