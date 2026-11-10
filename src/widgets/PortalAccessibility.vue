@@ -141,6 +141,35 @@ import {
 /** How long a page may take to show its site root, in milliseconds. */
 const PAGE_TIMEOUT = 20000
 
+/** The refusals the widget words itself, by code. */
+const AUDIT_MESSAGES = {
+	incomplete: () =>
+		t(
+			'portaliq',
+			'Status A or B needs the party, the date and an https link to the audit report.',
+		),
+	expired: () =>
+		t(
+			'portaliq',
+			'This audit is older than three years. It no longer supports status A or B.',
+		),
+	register_url_invalid: () =>
+		t('portaliq', 'The register entry must be an https address.'),
+}
+
+/**
+ * The pages typed one per line, trimmed, without empty lines.
+ *
+ * @param {string} text What the field holds.
+ * @return {Array<string>} The pages.
+ */
+function typedPages(text) {
+	return text
+		.split('\n')
+		.map((line) => line.trim())
+		.filter(Boolean)
+}
+
 export default {
 	name: 'PortalAccessibility',
 
@@ -311,10 +340,7 @@ export default {
 			const result = await this.api.save(this.slug, {
 				audit: this.audit,
 				registerUrl: this.registerUrl,
-				pages: this.addedPages
-					.split('\n')
-					.map((line) => line.trim())
-					.filter(Boolean),
+				pages: typedPages(this.addedPages),
 			})
 			this.saving = false
 			if (result.ok) {
@@ -334,28 +360,11 @@ export default {
 		 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
 		 */
 		auditMessage(error) {
-			switch (String(error).replace(/^audit_/, '')) {
-				case 'incomplete':
-					return t(
-						'portaliq',
-						'Status A or B needs the party, the date and an https link to the audit report.',
-					)
-				case 'expired':
-					return t(
-						'portaliq',
-						'This audit is older than three years. It no longer supports status A or B.',
-					)
-				case 'register_url_invalid':
-					return t(
-						'portaliq',
-						'The register entry must be an https address.',
-					)
-				default:
-					return t(
-						'portaliq',
-						'The accessibility settings could not be saved.',
-					)
-			}
+			const code = String(error).replace(/^audit_/, '')
+			const message = Object.hasOwn(AUDIT_MESSAGES, code)
+				? AUDIT_MESSAGES[code]
+				: () => t('portaliq', 'The accessibility settings could not be saved.')
+			return message()
 		},
 
 		/**
