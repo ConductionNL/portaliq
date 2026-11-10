@@ -152,24 +152,48 @@ class AuditTrailService {
 	 * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T01
 	 */
 	public function append(array $fact, string $uuid, DateTime $created): void {
-		$verb = (string)($fact['verb'] ?? '');
 		$subject = (string)($fact['subjectRef'] ?? '');
-		$target = (string)($fact['targetId'] ?? '');
 
 		$class = $this->trailEntityClass();
 		$row = new $class();
 		$row->setUuid($uuid);
-		$row->setAction(self::ACTION_PREFIX . $verb);
+		$row->setAction(self::ACTION_PREFIX . (string)($fact['verb'] ?? ''));
 		$row->setUser($subject);
 		$row->setUserName($subject);
-		$row->setChanged(
-			[
-				'appId' => (string)($fact['appId'] ?? Application::APP_ID),
-				'register' => (string)($fact['register'] ?? ''),
-				'schema' => (string)($fact['schema'] ?? ''),
-				'targetId' => $target,
-			] + $this->detailOf(fact: $fact)
-		);
+		$row->setChanged($this->changedOf(fact: $fact));
+		$this->stampContext(row: $row, fact: $fact);
+		$row->setCreated($created);
+
+		$this->mapper()->insertAuditTrails([$row]);
+	}//end append()
+
+	/**
+	 * What a fact changed: its app, register, schema and target, and its
+	 * detail when it has one. Never the object's payload.
+	 *
+	 * @param array<string, mixed> $fact The fact fields.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function changedOf(array $fact): array {
+		return [
+			'appId' => (string)($fact['appId'] ?? Application::APP_ID),
+			'register' => (string)($fact['register'] ?? ''),
+			'schema' => (string)($fact['schema'] ?? ''),
+			'targetId' => (string)($fact['targetId'] ?? ''),
+		] + $this->detailOf(fact: $fact);
+	}//end changedOf()
+
+	/**
+	 * Stamp the session, the organisation and the object uuid on a row, each
+	 * only when the fact has one.
+	 *
+	 * @param object               $row  The audit-trail row.
+	 * @param array<string, mixed> $fact The fact fields.
+	 *
+	 * @return void
+	 */
+	private function stampContext(object $row, array $fact): void {
 		if ((string)($fact['jti'] ?? '') !== '') {
 			$row->setSession((string)$fact['jti']);
 		}
@@ -178,14 +202,11 @@ class AuditTrailService {
 			$row->setOrganisationId((string)$fact['organisation']);
 		}
 
+		$target = (string)($fact['targetId'] ?? '');
 		if (preg_match(self::UUID_PATTERN, $target) === 1) {
 			$row->setObjectUuid($target);
 		}
-
-		$row->setCreated($created);
-
-		$this->mapper()->insertAuditTrails([$row]);
-	}//end append()
+	}//end stampContext()
 
 	/**
 	 * The detail of a fact as the `detail` key of its changed record, or
