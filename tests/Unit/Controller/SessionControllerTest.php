@@ -873,6 +873,109 @@ class SessionControllerTest extends TestCase {
 	}//end testOidcCallbackMintsASessionAndRedirectsWithTheBearerInTheFragment()
 
 	/**
+	 * A state row written for the OIDC route but carrying no PKCE verifier is
+	 * refused with the generic error, and no code is exchanged.
+	 */
+	public function testOidcCallbackRefusesAnOidcStateWithoutACodeVerifier(): void {
+		$stateStore = $this->createMock(OidcStateStoreService::class);
+		$stateStore->method('consume')->willReturn(['codeVerifier' => ''] + $this->pendingFixture());
+
+		$oidc = $this->createMock(OidcClientService::class);
+		$oidc->expects($this->never())->method('exchangeCode');
+
+		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
+		$orgConfig->expects($this->never())->method('resolveOidcConfig');
+
+		$response = $this->controller(
+			session: $this->createMock(PortalSessionService::class),
+			orgConfig: $orgConfig,
+			oidc: $oidc,
+			stateStore: $stateStore
+		)->oidcCallback(state: 's', code: 'c');
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame(['error' => 'oidc_failed'], $response->getData());
+
+	}//end testOidcCallbackRefusesAnOidcStateWithoutACodeVerifier()
+
+	/**
+	 * A callback without a code never consumes the state, so the row stays
+	 * for the broker's real answer.
+	 */
+	public function testOidcCallbackWithoutACodeLeavesTheStateUnconsumed(): void {
+		$stateStore = $this->createMock(OidcStateStoreService::class);
+		$stateStore->expects($this->never())->method('consume');
+
+		$response = $this->controller(
+			session: $this->createMock(PortalSessionService::class),
+			stateStore: $stateStore
+		)->oidcCallback(state: 's', code: '');
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame(['error' => 'oidc_failed'], $response->getData());
+
+	}//end testOidcCallbackWithoutACodeLeavesTheStateUnconsumed()
+
+	/**
+	 * The full hand-off: the code, verifier and redirect URI go to the token
+	 * endpoint, the ID token is verified against the stored nonce, the
+	 * verified e-mail address reaches the account, the session carries the
+	 * branch and the provider, and the login returns to the stored address.
+	 */
+	public function testOidcCallbackHandsEveryValueToTheRightStep(): void {
+		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
+		$orgConfig->expects($this->once())->method('resolveOidcConfig')
+			->with('gemeente-x', 'eherkenning')
+			->willReturn($this->oidcConfigFixture());
+
+		$oidc = $this->createMock(OidcClientService::class);
+		$oidc->expects($this->once())->method('discover')->with('https://broker.example')->willReturn($this->discoveryFixture());
+		$oidc->expects($this->once())->method('exchangeCode')
+			->with('https://broker.example/token', 'the-code', 'verifier-1', 'rp-client-1', 'super-secret-value', 'https://nc.example/callback')
+			->willReturn(['id_token' => 'x.y.z']);
+		$oidc->expects($this->once())->method('verifyIdToken')
+			->with('x.y.z', 'https://broker.example/jwks', 'https://broker.example', 'rp-client-1', 'nonce-1')
+			->willReturn(['sub' => 'abc', 'email' => 'a@example.org', 'email_verified' => 'true']);
+
+		$claimMapper = $this->createMock(OidcClaimMapperService::class);
+		$claimMapper->method('mapClaims')->willReturn($this->mappedFixture() + ['branch' => '000012345678']);
+		$claimMapper->method('mapLoaToTrust')->willReturn('substantial');
+
+		$stateStore = $this->createMock(OidcStateStoreService::class);
+		$stateStore->expects($this->once())->method('consume')->with('the-state')
+			->willReturn(['returnTo' => '/portal/site/school'] + $this->pendingFixture());
+
+		$accounts = $this->createMock(PortalAccountService::class);
+		$accounts->expects($this->once())->method('findOrCreate')
+			->with('eherkenning', 'kvk-1', 'gemeente-x', 'supplier', null, 'a@example.org')
+			->willReturn(['subjectRef' => 'sub-9', 'isNew' => false]);
+
+		$session = $this->createMock(PortalSessionService::class);
+		$session->expects($this->once())->method('issueSession')
+			->with('sub-9', 'supplier', 'gemeente-x', 'substantial', ['supplier:read'], '000012345678', 'eherkenning')
+			->willReturn(['token' => 'tok/en', 'jti' => 'j']);
+
+		$urlGenerator = $this->createMock(IURLGenerator::class);
+		$urlGenerator->method('linkToRouteAbsolute')->willReturn('https://nc.example/callback');
+		$urlGenerator->method('getAbsoluteURL')->willReturnCallback(fn (string $url) => 'https://portal.example' . $url);
+
+		$response = $this->controller(
+			session: $session,
+			orgConfig: $orgConfig,
+			oidc: $oidc,
+			claimMapper: $claimMapper,
+			stateStore: $stateStore,
+			accounts: $accounts,
+			urlGenerator: $urlGenerator
+		)->oidcCallback(state: 'the-state', code: 'the-code');
+
+		$this->assertInstanceOf(RedirectResponse::class, $response);
+		$this->assertSame(Http::STATUS_FOUND, $response->getStatus());
+		$this->assertSame('https://portal.example/portal/site/school#token=' . rawurlencode('tok/en'), $response->getRedirectURL());
+
+	}//end testOidcCallbackHandsEveryValueToTheRightStep()
+
+	/**
 	 * REQ-SIS-001: the session answer says when it ends.
 	 *
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T02
