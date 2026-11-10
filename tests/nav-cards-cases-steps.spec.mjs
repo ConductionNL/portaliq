@@ -11,7 +11,7 @@
 
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { stepUpEntries } from '../src/shared/portalNav.js'
+import { navEntryForRoute, stepUpEntries } from '../src/shared/portalNav.js'
 import { mergedAnswer } from '../src/site/pages/e/caseParties.js'
 import { threadCard } from '../src/site/pages/inbox/conversations.js'
 
@@ -102,4 +102,21 @@ test('mergedAnswer: the first answer stands for a failure, later failures are le
 			{ title: 'loose 2' },
 		],
 	})
+})
+
+test('navEntryForRoute: exact, a record of a record page, and none', () => {
+	const records = { contribution: { app: 'school' }, page: { id: 'kinderen', records: true } }
+	const record = { contribution: { app: 'school' }, page: { id: 'kind', record: true } }
+	const plain = { contribution: { app: 'school' }, page: { id: 'nieuws' } }
+	const special = { special: 'school' }
+	const nav = [special, plain, records, record]
+	assert.equal(navEntryForRoute(nav, '/elders'), null)
+	assert.equal(navEntryForRoute(nav, '/mijn/school/nieuws'), plain)
+	assert.equal(navEntryForRoute(nav, '/mijn/school/kinderen/k%201'), records)
+	assert.equal(navEntryForRoute(nav, '/mijn/school/kind/k1'), record)
+	assert.equal(navEntryForRoute(nav, '/mijn/school/nieuws/n1'), null, 'a page without records chooses none')
+	assert.equal(navEntryForRoute([special], '/mijn/school/x/1'), null)
+	assert.equal(navEntryForRoute(nav, '/mijn/school/onbekend'), null)
+	assert.equal(navEntryForRoute(null, '/mijn/school/kind/k1'), null)
+	assert.equal(navEntryForRoute(nav, '/mijn'), null)
 })
