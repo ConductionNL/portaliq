@@ -17,6 +17,16 @@ import { startAttempt, submitAttempt } from '../src/shared/timedTask.js'
 const BLOCK = { start: 'startTest', submit: 'submitTest' }
 
 /**
+ * The task's actions over an api.
+ *
+ * @param {object} api The portal api.
+ * @return {{api: object, app: string, block: object}}
+ */
+function taskActions(api) {
+	return { api, app: 'learniq', block: BLOCK }
+}
+
+/**
  * A portal api that answers each call in turn and records it.
  *
  * @param {Array<object>} answers The answers, in order.
@@ -41,9 +51,9 @@ test('a start sends the task and, only when given, its access code', async () =>
 		{ ok: true, status: 200, body: {} },
 		{ ok: false, status: 500, body: null },
 	])
-	assert.deepEqual(await startAttempt(api, 'learniq', BLOCK, 't1', 'CODE'), { ok: false, error: 'access_code_wrong', message: 'Nee' })
-	assert.deepEqual(await startAttempt(api, 'learniq', BLOCK, 't2'), { ok: false, error: '', message: '' })
-	assert.deepEqual(await startAttempt(api, 'learniq', BLOCK, 't3', ''), { ok: false, error: '', message: '' })
+	assert.deepEqual(await startAttempt(taskActions(api), { taskId: 't1', accessCode: 'CODE' }), { ok: false, error: 'access_code_wrong', message: 'Nee' })
+	assert.deepEqual(await startAttempt(taskActions(api), { taskId: 't2' }), { ok: false, error: '', message: '' })
+	assert.deepEqual(await startAttempt(taskActions(api), { taskId: 't3', accessCode: '' }), { ok: false, error: '', message: '' })
 	assert.deepEqual(calls, [
 		['learniq', 'startTest', { taskId: 't1', accessCode: 'CODE' }],
 		['learniq', 'startTest', { taskId: 't2' }],
@@ -69,9 +79,9 @@ test('a hand-in flushes first; one already handed in counts as handed in', async
 		order.push('submit')
 		return record(...args)
 	}
-	assert.deepEqual(await submitAttempt(api, 'learniq', BLOCK, 'a1', queue(true)), { ok: true, allSaved: true })
-	assert.deepEqual(await submitAttempt(api, 'learniq', BLOCK, 'a1', queue(false)), { ok: true, allSaved: false })
-	assert.deepEqual(await submitAttempt(api, 'learniq', BLOCK, 'a1', queue(true)), { ok: false, allSaved: true })
+	assert.deepEqual(await submitAttempt(taskActions(api), { attemptId: 'a1', queue: queue(true) }), { ok: true, allSaved: true })
+	assert.deepEqual(await submitAttempt(taskActions(api), { attemptId: 'a1', queue: queue(false) }), { ok: true, allSaved: false })
+	assert.deepEqual(await submitAttempt(taskActions(api), { attemptId: 'a1', queue: queue(true) }), { ok: false, allSaved: true })
 	assert.deepEqual(calls, [
 		['learniq', 'submitTest', { attemptId: 'a1' }],
 		['learniq', 'submitTest', { attemptId: 'a1' }],
