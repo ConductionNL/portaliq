@@ -39,7 +39,6 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Contribution\StepsProviderMethod;
 use OCA\Portaliq\Service\MandatedCaseReader;
 use OCA\Portaliq\Service\PortalItemReader;
-use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalRowScreen;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PortalTimelineReader;
@@ -67,7 +66,6 @@ class PortalTimelineController extends Controller implements PortalProtected {
 	 * @param IRequest $request The request.
 	 * @param PortalContributionRegistry $registry The subject's contributions.
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalObjectReader $reader The scoped single-object read.
 	 * @param PortalTimelineReader $timelines Calls the declared provider method.
 	 * @param PortalRowScreen $rows The shared per-row proof, with the hidden-case-type gate; required so no route builds one without it.
 	 * @param PortalItemReader|null $items Calls the item-list provider method (my-dossiers).
@@ -77,7 +75,6 @@ class PortalTimelineController extends Controller implements PortalProtected {
 		IRequest $request,
 		private readonly PortalContributionRegistry $registry,
 		private readonly PortalSessionService $session,
-		private readonly PortalObjectReader $reader,
 		private readonly PortalTimelineReader $timelines,
 		private readonly PortalRowScreen $rows,
 		private readonly ?PortalItemReader $items = null,

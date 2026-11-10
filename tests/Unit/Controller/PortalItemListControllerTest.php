@@ -117,6 +117,6 @@ class PortalItemListControllerTest extends TestCase {
 		$timelines = $this->getMockBuilder(PortalTimelineReader::class)->disableOriginalConstructor()->onlyMethods(['entries'])->getMock();
 		$this->items = $this->getMockBuilder(PortalItemReader::class)->disableOriginalConstructor()->onlyMethods(['items'])->getMock();
 
-		return new PortalTimelineController($request, $registry, $session, $reader, $timelines, new PortalRowScreen(reader: $reader), $this->items);
+		return new PortalTimelineController($request, $registry, $session, $timelines, new PortalRowScreen(reader: $reader), $this->items);
 	}//end controller()
 }//end class

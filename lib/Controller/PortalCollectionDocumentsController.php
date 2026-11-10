@@ -29,7 +29,6 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\CollectionDocuments;
-use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalRowScreen;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
@@ -60,7 +59,6 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 	 * @param IRequest $request The request.
 	 * @param PortalContributionRegistry $registry The subject's contributions.
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalObjectReader $reader The scoped single-object read.
 	 * @param CollectionDocuments $documents Lists and opens the documents.
 	 * @param IL10N $l10n The sentence a refused opening is given with.
 	 * @param PortalRowScreen $rows The shared per-row proof, with the hidden-case-type gate; required so no route builds one without it.
@@ -69,7 +67,6 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 		IRequest $request,
 		private readonly PortalContributionRegistry $registry,
 		private readonly PortalSessionService $session,
-		private readonly PortalObjectReader $reader,
 		private readonly CollectionDocuments $documents,
 		private readonly IL10N $l10n,
 		private readonly PortalRowScreen $rows,

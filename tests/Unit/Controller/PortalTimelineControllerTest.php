@@ -283,7 +283,7 @@ class PortalTimelineControllerTest extends TestCase {
 
 		$this->doubles = ['reader' => $reader, 'timelines' => $timelines];
 
-		return new PortalTimelineController($request, $registry, $session, $reader, $timelines, new PortalRowScreen(reader: $reader), null, $mandatedCases);
+		return new PortalTimelineController($request, $registry, $session, $timelines, new PortalRowScreen(reader: $reader), null, $mandatedCases);
 
 	}//end controller()
 
