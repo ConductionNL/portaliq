@@ -11,6 +11,7 @@
 //   node --test tests/inbox-steps-golden.spec.mjs
 //   GOLDEN_RECORD=1 node --test tests/inbox-steps-golden.spec.mjs
 
+import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { actionOf, bodyParts, inboxTabs } from '../src/site/pages/inbox/inbox.js'
 import { completeViaAction, validateFiles } from '../src/site/pages/inbox/tasks.js'
@@ -107,4 +108,9 @@ test('the action that completes a task and the files a task refuses', () => {
 		validateFiles(null, [pdf], t),
 	])
 	file.save()
+})
+
+test('messages that are no list are read the way a loop reads them', () => {
+	assert.deepEqual(inboxTabs('ab').map((tab) => tab.key), ['all', 'unread'])
+	assert.throws(() => inboxTabs(5), TypeError)
 })
