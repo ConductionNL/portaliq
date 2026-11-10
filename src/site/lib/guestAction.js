@@ -82,13 +82,34 @@ export function takeGuestLink(location, history) {
 		return null
 	}
 
+	clearAddressFragment(location, history)
+	return guestLinkOf(hash.slice(PREFIX.length))
+}
+
+/**
+ * Take the fragment off the address bar, keeping the path and the query.
+ *
+ * @param {object} location `window.location`.
+ * @param {object} history  `window.history`.
+ * @return {void}
+ */
+function clearAddressFragment(location, history) {
 	history.replaceState(
 		null,
 		'',
 		String(location.pathname || '') + String(location.search || ''),
 	)
+}
 
-	const parts = hash.slice(PREFIX.length).split('/')
+/**
+ * The link a `<app>/<action>/<token>` fragment names, when each part is well
+ * formed.
+ *
+ * @param {string} rest The fragment after `#guest/`.
+ * @return {object|null} `{app, action, token}`, or null.
+ */
+function guestLinkOf(rest) {
+	const parts = rest.split('/')
 	if (parts.length !== 3) {
 		return null
 	}
@@ -222,42 +243,109 @@ function text(value) {
  * @spec openspec/specs/portal-guest-actions/spec.md#requirement-the-page-shows-the-apps-answer-req-gst-004
  */
 export function previewState(answer, strings) {
-	const body = (answer && answer.body) || {}
-	const action = (answer && answer.ok && body.action) || {}
-	const state = {
-		usable: true,
-		summary: '',
-		reason: '',
-		label: text(action.label) || strings.continue,
-		confirmText: text(action.confirmText) || strings.confirm,
-		fields: Array.isArray(action.fields)
-			? action.fields.filter((f) => typeof f === 'string')
-			: [],
-		fieldConfigs:
-			action.fieldConfigs && typeof action.fieldConfigs === 'object'
-				? action.fieldConfigs
-				: {},
+	const body = answerBody(answer)
+	const state = declarationState(declaredAction(answer), strings)
+	if (isOk(answer)) {
+		return { ...state, ...availability(body, strings) }
 	}
 
-	if (answer && answer.ok) {
-		const preview = body.preview || {}
-		state.summary = text(preview.summary)
-		if (preview.available === false) {
-			state.usable = false
-			state.reason = text(preview.reason) || strings.unusable
-		}
-
-		return state
-	}
-
-	if (answer && answer.status === 404) {
+	if (answer?.status === 404) {
 		return state
 	}
 
 	// The route wraps the app's own answer as `preview`; a bare answer
 	// (a 400 or 502 of the route itself) carries its message on top.
-	const message = text((body.preview || {}).message) || text(body.message)
-	return { ...state, usable: false, reason: message || strings.unusable }
+	return { ...state, usable: false, reason: failureMessage(body) || strings.unusable }
+}
+
+/**
+ * @param {object|null} answer `{ok, status, body}` of a guest route.
+ * @return {object} Its body, or an empty one.
+ */
+function answerBody(answer) {
+	return (answer && answer.body) || {}
+}
+
+/**
+ * @param {object|null} answer `{ok, status, body}` of a guest route.
+ * @return {boolean} Whether the route answered with success.
+ */
+function isOk(answer) {
+	return Boolean(answer && answer.ok)
+}
+
+/**
+ * @param {object|null} answer `{ok, status, body}` of the preview route.
+ * @return {object} The action's declaration from a good answer, or an empty one.
+ */
+function declaredAction(answer) {
+	return (isOk(answer) && answerBody(answer).action) || {}
+}
+
+/**
+ * The state the page starts from: usable, with the declaration's button
+ * texts and fields.
+ *
+ * @param {object} action  The action's declaration.
+ * @param {object} strings The page's strings.
+ * @return {object} `{usable, summary, reason, label, confirmText, fields, fieldConfigs}`.
+ */
+function declarationState(action, strings) {
+	return {
+		usable: true,
+		summary: '',
+		reason: '',
+		label: text(action.label) || strings.continue,
+		confirmText: text(action.confirmText) || strings.confirm,
+		fields: declaredFields(action),
+		fieldConfigs: declaredFieldConfigs(action),
+	}
+}
+
+/**
+ * @param {object} action The action's declaration.
+ * @return {Array<string>} The names of the fields it declares.
+ */
+function declaredFields(action) {
+	return Array.isArray(action.fields)
+		? action.fields.filter((f) => typeof f === 'string')
+		: []
+}
+
+/**
+ * @param {object} action The action's declaration.
+ * @return {object} The configuration of its fields, or none.
+ */
+function declaredFieldConfigs(action) {
+	return action.fieldConfigs && typeof action.fieldConfigs === 'object'
+		? action.fieldConfigs
+		: {}
+}
+
+/**
+ * What a good preview says: its summary, and the reason when the action is
+ * not available.
+ *
+ * @param {object} body    The preview route's body.
+ * @param {object} strings The page's strings.
+ * @return {object} `{summary}`, or `{summary, usable: false, reason}`.
+ */
+function availability(body, strings) {
+	const preview = body.preview || {}
+	const summary = text(preview.summary)
+	if (preview.available !== false) {
+		return { summary }
+	}
+
+	return { summary, usable: false, reason: text(preview.reason) || strings.unusable }
+}
+
+/**
+ * @param {object} body The failed route's body.
+ * @return {string} The app's message inside `preview`, else the route's own, or ''.
+ */
+function failureMessage(body) {
+	return text((body.preview || {}).message) || text(body.message)
 }
 
 /**
