@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
+use Closure;
 use DateTimeImmutable;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\Intake\ActionDraft;
@@ -80,17 +81,10 @@ class PortalDraftController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 60, period: 60)]
 	public function index(): JSONResponse {
-		$subject = $this->subject();
-		if ($subject === null) {
-			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
-		}
-
-		try {
-			return new JSONResponse(['drafts' => $this->actions->liveDrafts(subject: $subject)]);
-		} catch (Throwable) {
-			// A destination could not be reached: the page lists nothing and says nothing went wrong.
-			return new JSONResponse(['error' => 'try_again_later'], Http::STATUS_SERVICE_UNAVAILABLE);
-		}
+		// A destination that could not be reached answers try-again-later.
+		return $this->forSubject(
+			answer: fn (array $subject): JSONResponse => new JSONResponse(['drafts' => $this->actions->liveDrafts(subject: $subject)])
+		);
 	}//end index()
 
 	/**
@@ -110,43 +104,46 @@ class PortalDraftController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 60, period: 60)]
 	public function show(string $appId, string $actionId): JSONResponse {
-		$subject = $this->subject();
-		if ($subject === null) {
-			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
-		}
+		return $this->forSubject(
+			answer: function (array $subject) use ($appId, $actionId): JSONResponse {
+				$match = $this->actions->actionFor(subject: $subject, appId: $appId, actionId: $actionId);
+				if ($match === null) {
+					return new JSONResponse(['found' => false], Http::STATUS_NOT_FOUND);
+				}
 
-		try {
-			$match = $this->actions->actionFor(subject: $subject, appId: $appId, actionId: $actionId);
-			$draft = null;
-			if ($match !== null) {
 				$draft = $this->actions->find(action: $match['action'], subjectRef: (string)$subject['subjectRef']);
-			}
 
-			if ($match === null) {
-				return new JSONResponse(['found' => false], Http::STATUS_NOT_FOUND);
+				return $this->shownDraft(match: $match, draft: $draft);
 			}
-
-			// No draft yet is the common answer on every form open, not an
-			// error: a quiet 200, so the browser logs no 404 (REQ-RR3-005).
-			if ($draft === null) {
-				return new JSONResponse(['found' => false]);
-			}
-
-			return new JSONResponse(
-				[
-					'id' => (string)$draft['id'],
-					'status' => 'draft',
-					'step' => '',
-					'updatedAt' => (string)($draft['updatedAt'] ?? ''),
-					'expiresAt' => (string)$draft['expiresAt'],
-					'answers' => $this->actions->answersOf(action: $match['action'], draft: $draft),
-				]
-			);
-		} catch (Throwable) {
-			// The destination could not be reached: the page keeps the answers and says to try again.
-			return new JSONResponse(['error' => 'try_again_later'], Http::STATUS_SERVICE_UNAVAILABLE);
-		}
+		);
 	}//end show()
+
+	/**
+	 * The answer to showing a draft of a known action.
+	 *
+	 * @param array<string, mixed>      $match The matched action.
+	 * @param array<string, mixed>|null $draft The live draft, or null for none.
+	 *
+	 * @return JSONResponse
+	 */
+	private function shownDraft(array $match, ?array $draft): JSONResponse {
+		// No draft yet is the common answer on every form open, not an
+		// error: a quiet 200, so the browser logs no 404 (REQ-RR3-005).
+		if ($draft === null) {
+			return new JSONResponse(['found' => false]);
+		}
+
+		return new JSONResponse(
+			[
+				'id' => (string)$draft['id'],
+				'status' => 'draft',
+				'step' => '',
+				'updatedAt' => (string)($draft['updatedAt'] ?? ''),
+				'expiresAt' => (string)$draft['expiresAt'],
+				'answers' => $this->actions->answersOf(action: $match['action'], draft: $draft),
+			]
+		);
+	}//end shownDraft()
 
 	/**
 	 * Save the bearer's draft of an action: start it, or update the one there is.
@@ -168,54 +165,80 @@ class PortalDraftController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 30, period: 60)]
 	public function save(string $appId, string $actionId, array $answers = []): JSONResponse {
-		$subject = $this->subject();
-		if ($subject === null) {
-			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
-		}
+		return $this->forSubject(
+			answer: function (array $subject) use ($appId, $actionId, $answers): JSONResponse {
+				$match = $this->actions->actionFor(subject: $subject, appId: $appId, actionId: $actionId);
+				if ($match === null) {
+					return new JSONResponse(['found' => false], Http::STATUS_NOT_FOUND);
+				}
 
-		try {
-			$match = $this->actions->actionFor(subject: $subject, appId: $appId, actionId: $actionId);
-			if ($match === null) {
-				return new JSONResponse(['found' => false], Http::STATUS_NOT_FOUND);
-			}
+				$body = $this->actions->bodyOf(match: $match, subject: $subject, answers: $answers);
+				if ($body === null) {
+					return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+				}
 
-			$body = $this->actions->bodyOf(match: $match, subject: $subject, answers: $answers);
-			if ($body === null) {
-				return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
-			}
-
-			$subjectRef = (string)$subject['subjectRef'];
-			$existing   = $this->actions->find(action: $match['action'], subjectRef: $subjectRef);
-			$saved      = $this->drafts->saveDraft(
-				destination: $this->actions->destinationOf(action: $match['action']),
-				payload: $body,
-				subjectRef: $subjectRef,
-				draftId: (string)($existing['id'] ?? ''),
-				scope: $appId . '/' . $actionId
-			);
-			if ($saved['ok'] === false) {
-				return new JSONResponse(
-					['saved' => false, 'error' => 'invalid', 'errors' => $this->drafts->errorsOf(findings: $saved['findings'])],
-					$saved['status']
+				$save = new DraftSave(
+					match: $match,
+					subjectRef: (string)$subject['subjectRef'],
+					body: $body,
+					scope: $appId . '/' . $actionId
 				);
+
+				return $this->savedDraft(save: $save, saved: $this->storeDraft(save: $save));
 			}
-
-			$expiresAt = (new DateTimeImmutable())->modify('+' . $this->actions->retentionDays(action: $match['action']) . ' days');
-
-			return new JSONResponse(
-				[
-					'id' => (string)$saved['answer']['id'],
-					'status' => 'draft',
-					'step' => '',
-					'expiresAt' => $expiresAt->format(DATE_ATOM),
-					'answers' => $this->actions->answersOf(action: $match['action'], draft: ['data' => $body]),
-				]
-			);
-		} catch (Throwable) {
-			// The destination could not be reached: the page keeps the answers and says to try again.
-			return new JSONResponse(['error' => 'try_again_later'], Http::STATUS_SERVICE_UNAVAILABLE);
-		}
+		);
 	}//end save()
+
+	/**
+	 * Store the draft: start it, or update the live one there is.
+	 *
+	 * @param DraftSave $save The save.
+	 *
+	 * @return array<string, mixed> DestinationDraft::saveDraft()'s outcome.
+	 */
+	private function storeDraft(DraftSave $save): array {
+		$action   = $save->match['action'];
+		$existing = $this->actions->find(action: $action, subjectRef: $save->subjectRef);
+
+		return $this->drafts->saveDraft(
+			destination: $this->actions->destinationOf(action: $action),
+			payload: $save->body,
+			subjectRef: $save->subjectRef,
+			draftId: (string)($existing['id'] ?? ''),
+			scope: $save->scope
+		);
+	}//end storeDraft()
+
+	/**
+	 * The answer to a stored draft: its refused answers, or the saved draft
+	 * with the moment it expires.
+	 *
+	 * @param DraftSave            $save  The save.
+	 * @param array<string, mixed> $saved DestinationDraft::saveDraft()'s outcome.
+	 *
+	 * @return JSONResponse
+	 */
+	private function savedDraft(DraftSave $save, array $saved): JSONResponse {
+		if ($saved['ok'] === false) {
+			return new JSONResponse(
+				['saved' => false, 'error' => 'invalid', 'errors' => $this->drafts->errorsOf(findings: $saved['findings'])],
+				$saved['status']
+			);
+		}
+
+		$action    = $save->match['action'];
+		$expiresAt = (new DateTimeImmutable())->modify('+' . $this->actions->retentionDays(action: $action) . ' days');
+
+		return new JSONResponse(
+			[
+				'id' => (string)$saved['answer']['id'],
+				'status' => 'draft',
+				'step' => '',
+				'expiresAt' => $expiresAt->format(DATE_ATOM),
+				'answers' => $this->actions->answersOf(action: $action, draft: ['data' => $save->body]),
+			]
+		);
+	}//end savedDraft()
 
 	/**
 	 * Discard the bearer's draft of an action.
@@ -232,32 +255,60 @@ class PortalDraftController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 30, period: 60)]
 	public function discard(string $appId, string $actionId): JSONResponse {
+		return $this->forSubject(
+			answer: function (array $subject) use ($appId, $actionId): JSONResponse {
+				$match = $this->actions->actionFor(subject: $subject, appId: $appId, actionId: $actionId);
+				if ($match === null) {
+					return new JSONResponse(['deleted' => false]);
+				}
+
+				return new JSONResponse(['deleted' => $this->discardLive(match: $match, subjectRef: (string)$subject['subjectRef'])]);
+			}
+		);
+	}//end discard()
+
+	/**
+	 * Discard the resident's live draft of a matched action, if there is one.
+	 *
+	 * @param array<string, mixed> $match      The matched action.
+	 * @param string               $subjectRef The resident.
+	 *
+	 * @return bool Whether a draft was removed.
+	 */
+	private function discardLive(array $match, string $subjectRef): bool {
+		$draft = $this->actions->find(action: $match['action'], subjectRef: $subjectRef);
+		if ($draft === null) {
+			return false;
+		}
+
+		return $this->drafts->discardDraft(
+			destination: $this->actions->destinationOf(action: $match['action']),
+			subjectRef: $subjectRef,
+			draftId: (string)$draft['id']
+		);
+	}//end discardLive()
+
+	/**
+	 * Answer for the bearer's subject: 401 for a visitor who is not signed
+	 * in, and try-again-later when the destination could not be reached (the
+	 * page keeps the answers and says to try again).
+	 *
+	 * @param Closure(array<string, mixed>): JSONResponse $answer The answer for the signed-in subject.
+	 *
+	 * @return JSONResponse
+	 */
+	private function forSubject(Closure $answer): JSONResponse {
 		$subject = $this->subject();
 		if ($subject === null) {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
 		try {
-			$match   = $this->actions->actionFor(subject: $subject, appId: $appId, actionId: $actionId);
-			$deleted = false;
-			if ($match !== null) {
-				$subjectRef = (string)$subject['subjectRef'];
-				$draft      = $this->actions->find(action: $match['action'], subjectRef: $subjectRef);
-				if ($draft !== null) {
-					$deleted = $this->drafts->discardDraft(
-						destination: $this->actions->destinationOf(action: $match['action']),
-						subjectRef: $subjectRef,
-						draftId: (string)$draft['id']
-					);
-				}
-			}
-
-			return new JSONResponse(['deleted' => $deleted]);
+			return $answer($subject);
 		} catch (Throwable) {
-			// The destination could not be reached: the page keeps the answers and says to try again.
 			return new JSONResponse(['error' => 'try_again_later'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
-	}//end discard()
+	}//end forSubject()
 
 	/**
 	 * The bearer's subject, or null for a visitor who is not signed in.
