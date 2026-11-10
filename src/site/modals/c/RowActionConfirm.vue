@@ -137,6 +137,39 @@ import { rowInputsOf, rowNotice, runRowAction } from '../../../shared/rowAction.
 import { translatorOr } from '../../components/c/forms.js'
 
 /**
+ * What the confirm step sends: the row, the action, the answers and, with a
+ * file slot, the chosen files.
+ *
+ * @param {object} step The confirm step.
+ * @return {object} The row action's request.
+ */
+function rowRequest(step) {
+	return {
+		collection: step.collection,
+		row: step.row,
+		action: step.action,
+		answers: step.answers(),
+		files: step.fileSlot ? step.files : [],
+	}
+}
+
+/**
+ * The sentence once the action ran: the target's own, else the
+ * contribution's success text, else ours.
+ *
+ * @param {object} step The confirm step.
+ * @param {{messageKey: string, message?: string}} outcome The row action's outcome.
+ * @return {string} The sentence.
+ */
+function doneMessage(step, outcome) {
+	return (
+		outcome.message
+		|| (outcome.messageKey === 'Done.' ? step.action.successText : '')
+		|| step.translate(outcome.messageKey)
+	)
+}
+
+/**
  * The browser navigation, kept apart so a caller or test can pass its own.
  *
  * @param {string} url An absolute https URL, already checked by redirectTarget.
@@ -256,32 +289,20 @@ export default {
 			}
 			this.busy = true
 			this.errors = {}
-			const answers = this.answers()
-			const { redirect, messageKey, link, message, errors } =
-				await runRowAction(this.api, {
-					collection: this.collection,
-					row: this.row,
-					action: this.action,
-					answers,
-					files: this.fileSlot ? this.files : [],
-				})
-			if (redirect) {
-				this.navigate(redirect)
+			const outcome = await runRowAction(this.api, rowRequest(this))
+			if (outcome.redirect) {
+				this.navigate(outcome.redirect)
 				return
 			}
 			this.busy = false
 			// A refusal that names inputs shows under each and keeps the dialog
 			// open (REQ-RAI-003).
-			if (errors) {
-				this.errors = this.said(errors)
+			if (outcome.errors) {
+				this.errors = this.said(outcome.errors)
 				return
 			}
-			// The target's own sentence, else the contribution's, else ours.
-			this.message =
-				message
-				|| (messageKey === 'Done.' ? this.action.successText : '')
-				|| this.translate(messageKey)
-			this.link = link || ''
+			this.message = doneMessage(this, outcome)
+			this.link = outcome.link || ''
 			this.$emit('done')
 		},
 
