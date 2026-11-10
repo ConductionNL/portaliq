@@ -240,7 +240,7 @@ class RevealService {
 			register: self::REGISTER,
 			schema: self::CONTACT_SCHEMA,
 			scopeField: 'reportRef',
-			subjectRef: $this->idOf(row: $report),
+			subjectRef: ReportRowId::of(row: $report),
 			organisation: '',
 			limit: 5
 		);
@@ -279,7 +279,7 @@ class RevealService {
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- see decide().
 	 */
 	private function close(array $request, string $state, string $custodian, string $reason, array $fields, string $occurredAt): void {
-		$id = $this->idOf(row: $request);
+		$id = ReportRowId::of(row: $request);
 		if ($id === '') {
 			return;
 		}
@@ -301,23 +301,4 @@ class RevealService {
 			]
 		);
 	}//end close()
-
-	/**
-	 * A row's own identifier.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string
-	 */
-	private function idOf(array $row): string {
-		$self = (array)($row['@self'] ?? []);
-		$candidates = [($row['uuid'] ?? null), ($row['id'] ?? null), ($self['uuid'] ?? null), ($self['id'] ?? null)];
-		foreach ($candidates as $candidate) {
-			if ((is_string($candidate) === true || is_int($candidate) === true) && (string)$candidate !== '') {
-				return (string)$candidate;
-			}
-		}
-
-		return '';
-	}//end idOf()
 }//end class
