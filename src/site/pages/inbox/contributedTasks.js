@@ -58,7 +58,9 @@ function taskCollectionOf(contribution, block) {
  */
 function taskBlocksOfPage(contribution, page) {
 	const recordCollection = recordCollectionOf(page)
-	return (page?.blocks || [])
+	// Spread, not `.map` on the value itself: blocks are read the way a loop
+	// reads them, whatever the page holds.
+	return [...(page?.blocks || [])]
 		.map((block) => ({
 			contribution,
 			block,
