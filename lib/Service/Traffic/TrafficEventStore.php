@@ -20,6 +20,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
 
+use OCA\OpenRegister\Service\Object\BulkBatchDefaults;
+use OCA\OpenRegister\Service\Object\BulkSaveOptions;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCA\Portaliq\Service\RowAsArray;
@@ -151,14 +153,14 @@ class TrafficEventStore {
 
 			$saved = $objectService->saveObjects(
 				objects: $records,
-				register: self::REGISTER,
-				schema: self::EVENT_SCHEMA,
+				options: new BulkSaveOptions(
+					defaults: new BulkBatchDefaults(register: self::REGISTER, schema: self::EVENT_SCHEMA),
+					validation: false,
+					events: false,
+					audit: false
+				),
 				_rbac: false,
-				_multitenancy: false,
-				validation: false,
-				events: false,
-				enrich: false,
-				_audit: false
+				_multitenancy: false
 			);
 
 			if (is_array($saved) === true) {
