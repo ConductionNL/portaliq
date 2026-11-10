@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCA\Portaliq\Controller\NewsController;
 use OCA\Portaliq\Service\NewsAudienceOptions;
 use OCP\AppFramework\Http;
@@ -116,7 +117,9 @@ class NewsControllerTest extends TestCase {
 
 	public function testPublishReturns404ForAMissingId(): void {
 		$objectService = new class {
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = ($options?->register ?? null);
+				$schema   = ($options?->schema ?? null);
 				return null;
 			}//end find()
 		};
@@ -134,7 +137,9 @@ class NewsControllerTest extends TestCase {
 			 */
 			public array $saved = [];
 
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = ($options?->register ?? null);
+				$schema   = ($options?->schema ?? null);
 				return ['id' => $id, 'title' => 'X', 'status' => 'draft'];
 			}//end find()
 
@@ -173,7 +178,9 @@ class NewsControllerTest extends TestCase {
 			 */
 			public array $row = ['title' => 'X', 'status' => 'draft', 'publishedAt' => null];
 
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = ($options?->register ?? null);
+				$schema   = ($options?->schema ?? null);
 				return ['id' => $id] + $this->row;
 			}//end find()
 
@@ -203,7 +210,9 @@ class NewsControllerTest extends TestCase {
 
 	public function testUnpublishReturns404ForAMissingId(): void {
 		$objectService = new class {
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				$register = ($options?->register ?? null);
+				$schema   = ($options?->schema ?? null);
 				return null;
 			}//end find()
 		};
@@ -221,7 +230,9 @@ class NewsControllerTest extends TestCase {
 			 */
 			public array $saved = [];
 
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = ($options?->register ?? null);
+				$schema   = ($options?->schema ?? null);
 				return ['id' => $id, 'title' => 'X', 'status' => 'published'];
 			}//end find()
 
@@ -254,7 +265,9 @@ class NewsControllerTest extends TestCase {
 			 */
 			public array $saved = [];
 
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = ($options?->register ?? null);
+				$schema   = ($options?->schema ?? null);
 				return ['id' => $id, 'title' => 'Old', 'body' => 'Old body', 'target' => ['schoolRef' => 's'], 'status' => 'published', 'authorRef' => 'po-leerkracht-09'];
 			}//end find()
 
@@ -332,7 +345,9 @@ class NewsControllerTest extends TestCase {
 			 */
 			public array $saved = [];
 
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = ($options?->register ?? null);
+				$schema   = ($options?->schema ?? null);
 				return ['id' => $id, 'title' => 'Old', 'body' => 'B', 'target' => ['schoolRef' => 's'], 'status' => 'published', 'public' => true, 'portal' => 'wilgenboom'];
 			}//end find()
 
@@ -432,7 +447,9 @@ class NewsControllerTest extends TestCase {
 			 */
 			public array $saved = [];
 
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = ($options?->register ?? null);
+				$schema   = ($options?->schema ?? null);
 				return ['id' => $id, 'title' => 'Old', 'body' => 'B', 'target' => ['schoolRef' => 's'], 'status' => 'published', 'eventRef' => 'ev1'];
 			}//end find()
 

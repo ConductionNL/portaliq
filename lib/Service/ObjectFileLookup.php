@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use Throwable;
 
 /**
@@ -76,8 +77,7 @@ trait ObjectFileLookup {
 
 			$entity = $objectService->find(
 				id: $id,
-				register: $register,
-				schema: $schema,
+				options: new ObjectFindOptions(register: $register, schema: $schema),
 				_rbac: false,
 				_multitenancy: false
 			);

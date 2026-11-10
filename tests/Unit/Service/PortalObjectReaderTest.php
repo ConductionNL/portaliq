@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCA\Portaliq\Event\PortalClaimScopeEvent;
 use OCA\Portaliq\Service\PortalFieldProjector;
 use OCA\Portaliq\Service\PortalObjectReader;
@@ -2047,7 +2048,9 @@ class PortalObjectReaderTest extends TestCase {
 			 *
 			 * @return array<string,mixed>|null
 			 */
-			public function find(string $id, string $register = '', string $schema = '', bool $_rbac = true, bool $_multitenancy = true): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = ($options?->register ?? '');
+				$schema   = ($options?->schema ?? '');
 				$this->calls[] = [
 					'register' => $register,
 					'schema' => $schema,

@@ -201,6 +201,8 @@ foreach ([
 	'Service\\Integration\\IntegrationProvider' => 'Service/Integration/IntegrationProvider.php',
 	'Service\\Integration\\LeafDescriptor' => 'Service/Integration/LeafDescriptor.php',
 	'Event\\RegisterLeafProvidersEvent' => 'Event/RegisterLeafProvidersEvent.php',
+	// What ObjectService::find() takes besides the id (openregister #9116).
+	'Kernel\\Contracts\\Value\\ObjectFindOptions' => 'Kernel/Contracts/Value/ObjectFindOptions.php',
 ] as $orStubClass => $orStubFile) {
 	if (class_exists('\\OCP\\EventDispatcher\\Event') === true
 		&& class_exists('\\OCA\\OpenRegister\\' . $orStubClass) === false

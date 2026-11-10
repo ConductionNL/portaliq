@@ -69,6 +69,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCA\Portaliq\Event\PortalClaimScopeEvent;
 use OCA\Portaliq\Service\Tenancy\ActsForTheOrganisation;
 use OCA\Portaliq\Service\Tenancy\ClaimScopeCheck;
@@ -669,8 +670,7 @@ class PortalObjectReader implements ScopedCollectionReaderInterface {
 		try {
 			$entity = $objectService->find(
 				id: $id,
-				register: $register,
-				schema: $schema,
+				options: new ObjectFindOptions(register: $register, schema: $schema),
 				_rbac: $rbac,
 				_multitenancy: false
 			);

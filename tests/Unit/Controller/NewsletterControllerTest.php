@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCA\Portaliq\Controller\NewsletterController;
 use OCA\Portaliq\Service\NewsletterPreflightService;
 use OCP\AppFramework\Http;
@@ -86,7 +87,9 @@ class NewsletterControllerTest extends TestCase {
 			) {
 			}//end __construct()
 
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = ($options?->register ?? null);
+				$schema   = ($options?->schema ?? null);
 				return $this->newsletter;
 			}//end find()
 

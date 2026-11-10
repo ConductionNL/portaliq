@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -41,7 +42,9 @@ class PortalObjectWriterDeleteTest extends TestCase {
 			/**
 			 * @return array<string, mixed>|null
 			 */
-			public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = ($options?->register ?? null);
+				$schema   = ($options?->schema ?? null);
 				foreach ($this->rows as $row) {
 					if (($row['@self']['id'] ?? null) === $id) {
 						return $row;

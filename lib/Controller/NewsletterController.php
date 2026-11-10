@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\NewsletterPreflightService;
@@ -196,7 +197,12 @@ class NewsletterController extends Controller {
 		}
 
 		try {
-			$entity = $objectService->find(id: $id, register: self::REGISTER, schema: self::SCHEMA, _rbac: false, _multitenancy: false);
+			$entity = $objectService->find(
+				id: $id,
+				options: new ObjectFindOptions(register: self::REGISTER, schema: self::SCHEMA),
+				_rbac: false,
+				_multitenancy: false
+			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: newsletter fetch failed', ['reason' => $e->getMessage()]);
 			return null;

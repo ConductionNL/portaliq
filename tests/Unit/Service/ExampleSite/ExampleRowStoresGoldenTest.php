@@ -18,6 +18,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\ExampleSite;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use JsonSerializable;
 use OCA\Portaliq\Service\ExampleResident\ExampleResidentStore;
 use OCA\Portaliq\Service\ExampleSite\ExampleSiteStore;
@@ -222,7 +223,9 @@ class ExampleRowStoresGoldenTest extends TestCase {
 				 *
 				 * @return mixed
 				 */
-				public function find(string $id, mixed $register = null, mixed $schema = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): mixed {
+					$register = ($options?->register ?? null);
+					$schema   = ($options?->schema ?? null);
 					if ($this->rows instanceof \Throwable) {
 						throw $this->rows;
 					}

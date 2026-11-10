@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\ExampleResident;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCA\Portaliq\Service\ObjectRowNormaliser;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCA\Portaliq\Service\RowIdOf;
@@ -156,7 +157,7 @@ class ExampleResidentStore {
 		}
 
 		try {
-			$row = $objectService->find(id: $id, register: $register, schema: $schema, _rbac: false, _multitenancy: false);
+			$row = $objectService->find(id: $id, options: new ObjectFindOptions(register: $register, schema: $schema), _rbac: false, _multitenancy: false);
 		} catch (Throwable) {
 			return null;
 		}
