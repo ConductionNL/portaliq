@@ -69,13 +69,13 @@ final class CssStatements {
 	 *
 	 * @spec openspec/changes/nldesign-theme-integration/tasks.md
 	 */
-	public function of(string $body): array {
+	public function statementsOf(string $body): array {
 		foreach (str_split($body) as $char) {
 			$this->read(char: $char);
 		}
 
 		return $this->statements;
-	}//end of()
+	}//end statementsOf()
 
 	/**
 	 * Read one character: a quote opens or closes, a top-level semicolon

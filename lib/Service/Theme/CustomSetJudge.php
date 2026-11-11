@@ -110,7 +110,7 @@ final class CustomSetJudge {
 	 */
 	private function declarations(string $css): array {
 		$declarations = [];
-		foreach ((new CssStatements())->of(body: $this->blockBody(css: $css)) as $statement) {
+		foreach ((new CssStatements())->statementsOf(body: $this->blockBody(css: $css)) as $statement) {
 			$colon = strpos($statement, ':');
 			if ($colon === false) {
 				continue;
