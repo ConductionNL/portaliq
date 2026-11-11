@@ -116,4 +116,23 @@ class CitizenWriteConfigNormaliserTest extends TestCase {
 
 		$this->assertSame($action, (new CitizenWriteConfigNormaliser())->normaliseAction(action: $action));
 	}//end testAnActionWithoutADeclarationIsUntouched()
+
+	/**
+	 * The kept config lists the required keys, then the defaulted ones, in
+	 * a fixed order; an empty or non-string override keeps the default; an
+	 * extra key is dropped.
+	 *
+	 * @return void
+	 */
+	public function testTheKeptConfigIsInTheRecordedOrder(): void {
+		$action = (new CitizenWriteConfigNormaliser())->normaliseAction(action: [
+			'type' => 'update',
+			CitizenWriteConfigNormaliser::KEY => ['documentsField' => 7, 'typeSchema' => 's', 'extra' => 'x', 'statusField' => '', 'typeRegister' => 'r', 'recordField' => 'writes', 'typeField' => 't'],
+		]);
+
+		$this->assertSame(
+			['typeField' => 't', 'typeRegister' => 'r', 'typeSchema' => 's', 'statusField' => 'status', 'recordField' => 'writes', 'documentsField' => 'portalDocuments'],
+			$action[CitizenWriteConfigNormaliser::KEY]
+		);
+	}
 }//end class
