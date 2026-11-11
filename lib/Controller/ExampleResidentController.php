@@ -101,19 +101,56 @@ class ExampleResidentController extends Controller {
 	#[BruteForceProtection(action: 'portaliq_example_resident_login')]
 	public function signIn(string $id = '', string $portal = '', string $returnTo = '', string $resident = ''): Response {
 		$userId  = $this->residentUser(id: $id, portal: $portal, resident: $resident);
-		$account = null;
-		if ($userId !== '') {
-			$account = $this->accounts->findBySubjectRef(subjectRef: $userId);
-		}
-
-		if ($account === null || ($account['status'] ?? 'active') !== 'active') {
+		$account = $this->activeAccount(userId: $userId);
+		if ($account === null) {
 			$response = new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 			$response->throttle(['reason' => 'example_resident_login_closed']);
 			return $response;
 		}
 
+		$issued = $this->issuedSession(userId: $userId, account: $account);
+		if ($issued === null) {
+			return new JSONResponse(['error' => 'not_configured'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		return new RedirectResponse(
+			$this->urlGenerator->getAbsoluteURL($this->landing(portal: $portal, returnTo: $returnTo)) . '#token=' . rawurlencode(string: $issued['token']),
+			Http::STATUS_FOUND
+		);
+	}//end signIn()
+
+	/**
+	 * The resident's portal account when it is active, else null (also for
+	 * no resident at all).
+	 *
+	 * @param string $userId The resident's account id, '' for none.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function activeAccount(string $userId): ?array {
+		if ($userId === '') {
+			return null;
+		}
+
+		$account = $this->accounts->findBySubjectRef(subjectRef: $userId);
+		if ($account === null || ($account['status'] ?? 'active') !== 'active') {
+			return null;
+		}
+
+		return $account;
+	}//end activeAccount()
+
+	/**
+	 * A session for the resident's account, or null when none can be issued.
+	 *
+	 * @param string               $userId  The resident's account id.
+	 * @param array<string, mixed> $account The active account.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function issuedSession(string $userId, array $account): ?array {
 		$audience = (string)($account['audience'] ?? 'client');
-		$issued   = $this->session->issueSession(
+		return $this->session->issueSession(
 			subjectRef: $userId,
 			audience: $audience,
 			organisation: (string)($account['organisation'] ?? 'dev-org'),
@@ -122,19 +159,23 @@ class ExampleResidentController extends Controller {
 			trust: 'low',
 			roles: [$audience . ':read']
 		);
-		if ($issued === null) {
-			return new JSONResponse(['error' => 'not_configured'], Http::STATUS_SERVICE_UNAVAILABLE);
+	}//end issuedSession()
+
+	/**
+	 * Where the signed-in resident lands: the given path, else the portal's
+	 * site.
+	 *
+	 * @param string $portal   The portal slug.
+	 * @param string $returnTo The asked return path, '' for none.
+	 *
+	 * @return string
+	 */
+	private function landing(string $portal, string $returnTo): string {
+		if ($returnTo !== '') {
+			return $returnTo;
 		}
 
-		$target = $returnTo;
-		if ($target === '') {
-			$target = '/apps/portaliq/site?portal=' . rawurlencode(string: $portal);
-		}
-
-		return new RedirectResponse(
-			$this->urlGenerator->getAbsoluteURL($target) . '#token=' . rawurlencode(string: $issued['token']),
-			Http::STATUS_FOUND
-		);
+		return '/apps/portaliq/site?portal=' . rawurlencode(string: $portal);
 	}//end signIn()
 
 	/**
