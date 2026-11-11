@@ -215,8 +215,18 @@ export function foreignDirectory(directory) {
  * @spec openspec/changes/search-filter-by-kind/specs/portal-federated-search/spec.md#requirement-each-kind-links-to-its-own-page-req-sfk-002
  */
 export function subjectSlug(row) {
-	const slug = String((row || {}).slug || ((row || {})['@self'] || {}).slug || '')
+	const slug = String(slugOf(row || {}))
 	return /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/.test(slug) ? slug : ''
+}
+
+/**
+ * The slug a row carries, or its envelope's.
+ *
+ * @param {object} row The result row.
+ * @return {unknown} The slug as given, or ''.
+ */
+function slugOf(row) {
+	return row.slug || (row['@self'] || {}).slug || ''
 }
 
 /** The facet field the endpoint counts the kinds of record in. */
@@ -249,17 +259,26 @@ export function withKindField(fields, hideKind = false) {
  * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-a-visitors-search-reaches-the-text-inside-public-documents-req-pfs-content-001
  */
 export function resultKind(row) {
-	const self = (row || {})['@self'] || {}
-	const word = String(
-		(row || {}).resultType || self.resultType || self.schema || '',
-	)
-		.toLowerCase()
-		.trim()
+	const word = kindWordOf(row || {})
 	if (word === 'document' || word === 'subject') {
 		return word
 	}
 
 	return 'publication'
+}
+
+/**
+ * The word a row names its kind with: its `resultType`, else the one on
+ * `@self`, else the schema word; lower case.
+ *
+ * @param {object} row One API result.
+ * @return {string} The word, or ''.
+ */
+function kindWordOf(row) {
+	const self = row['@self'] || {}
+	return String(row.resultType || self.resultType || self.schema || '')
+		.toLowerCase()
+		.trim()
 }
 
 /**
@@ -269,15 +288,37 @@ export function resultKind(row) {
  * @return {string} The name, or ''.
  */
 function publicationName(row) {
-	const publication = (row || {}).publication
+	const of = row || {}
+	const publication = of.publication
 	if (publication && typeof publication === 'object') {
-		return String(publication.title || publication.name || '')
+		return recordName(publication)
 	}
 
-	return String(
-		(typeof publication === 'string' ? publication : '')
-			|| (row || {}).publicationTitle
-			|| '',
+	return String(publicationTitleOf(of))
+}
+
+/**
+ * A publication record's name: its title, else its name.
+ *
+ * @param {object} publication The publication record.
+ * @return {string} The name, or ''.
+ */
+function recordName(publication) {
+	return String(publication.title || publication.name || '')
+}
+
+/**
+ * The publication a document row names as text: the `publication` string,
+ * else its `publicationTitle`.
+ *
+ * @param {object} row One API result.
+ * @return {unknown} The name as given, or ''.
+ */
+function publicationTitleOf(row) {
+	return (
+		(typeof row.publication === 'string' ? row.publication : '')
+		|| row.publicationTitle
+		|| ''
 	)
 }
 
@@ -305,12 +346,32 @@ export function toBuckets(facets, facetField) {
 	const raw = (facet.data || {}).buckets || facet.buckets || []
 
 	return raw
-		.map((bucket) => ({
-			value: String(bucket.value ?? bucket.key ?? ''),
-			label: String(bucket.label ?? bucket.value ?? bucket.key ?? ''),
-			count: Number(bucket.count ?? bucket.results ?? 0),
-		}))
+		.map(toBucket)
 		.filter((bucket) => bucket.value !== '')
+}
+
+/**
+ * One bucket in either shape as `{value, label, count}`.
+ *
+ * @param {object} bucket The bucket as the API answered it.
+ * @return {{value: string, label: string, count: number}} The bucket.
+ */
+function toBucket(bucket) {
+	return {
+		value: String(bucketValue(bucket)),
+		label: String(bucket.label ?? bucketValue(bucket)),
+		count: Number(bucket.count ?? bucket.results ?? 0),
+	}
+}
+
+/**
+ * A bucket's value: `value` in the first shape, `key` in the second.
+ *
+ * @param {object} bucket The bucket as the API answered it.
+ * @return {unknown} The value, or ''.
+ */
+function bucketValue(bucket) {
+	return bucket.value ?? bucket.key ?? ''
 }
 
 /**
@@ -355,6 +416,18 @@ export function paginationItems(page, pages) {
 		return [1]
 	}
 
+	return withGaps(shownPages(page, pages))
+}
+
+/**
+ * The page numbers shown, in order: the first and the last, and a run
+ * around the current one.
+ *
+ * @param {number} page  Current 1-based page.
+ * @param {number} pages Total pages.
+ * @return {Array<number>} The page numbers.
+ */
+function shownPages(page, pages) {
 	const shown = new Set([1, pages])
 
 	// Five consecutive pages at the start, matching the reference; once the
@@ -366,9 +439,18 @@ export function paginationItems(page, pages) {
 		shown.add(index)
 	}
 
-	const ordered = [...shown]
+	return [...shown]
 		.filter((n) => n >= 1 && n <= pages)
 		.sort((a, b) => a - b)
+}
+
+/**
+ * Page numbers with a `'gap'` wherever the sequence skips.
+ *
+ * @param {Array<number>} ordered The page numbers, in order.
+ * @return {Array<number|string>} The pagination row.
+ */
+function withGaps(ordered) {
 	const out = []
 
 	for (const [index, number] of ordered.entries()) {
@@ -497,21 +579,7 @@ export function termParameter(params) {
  */
 export function readSearchState(search, facetFields) {
 	const params = new URLSearchParams(search || '')
-	const split = (value) => (value ? value.split(',').filter(Boolean) : [])
-	const facets = {}
-
-	for (const field of facetFields) {
-		facets[field] = split(params.get(`f.${field}`))
-	}
-
-	const legacy = split(params.get('_facets'))
-	if (
-		legacy.length > 0
-		&& facetFields.length > 0
-		&& facets[facetFields[0]].length === 0
-	) {
-		facets[facetFields[0]] = legacy
-	}
+	const facets = facetsFrom(params, facetFields)
 
 	return {
 		query: params.get(termParameter(params)) || '',
@@ -521,6 +589,43 @@ export function readSearchState(search, facetFields) {
 		periodFrom: validDate(params.get('periodFrom')),
 		periodTo: validDate(params.get('periodTo')),
 	}
+}
+
+/**
+ * The facet values an address names, by field; the older `_facets`
+ * parameter fills the FIRST field when that names none of its own.
+ *
+ * @param {URLSearchParams} params The address's query.
+ * @param {Array<string>} facetFields The block's facet fields.
+ * @return {Record<string, Array<string>>} The values by field.
+ */
+function facetsFrom(params, facetFields) {
+	const facets = {}
+
+	for (const field of facetFields) {
+		facets[field] = listParameter(params.get(`f.${field}`))
+	}
+
+	const legacy = listParameter(params.get('_facets'))
+	if (
+		legacy.length > 0
+		&& facetFields.length > 0
+		&& facets[facetFields[0]].length === 0
+	) {
+		facets[facetFields[0]] = legacy
+	}
+
+	return facets
+}
+
+/**
+ * A comma-separated parameter as its non-empty values.
+ *
+ * @param {string|null} value The parameter.
+ * @return {Array<string>} The values.
+ */
+function listParameter(value) {
+	return value ? value.split(',').filter(Boolean) : []
 }
 
 /**
@@ -575,20 +680,42 @@ export function writeSearchState(url, state, facetFields) {
  * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-block-must-describe-its-search-as-the-saved-search-query-req-wsd-004
  */
 export function searchQuery(state, catalog = '') {
-	const facets = (state && state.facets) || {}
+	const of = state || {}
 
 	return {
-		text: String((state && state.query) || ''),
-		filters: {
-			informatiecategorie: [
-				...(facets.wooCategory || facets.informatiecategorie || []),
-			],
-			organisation: [...(facets.organization || facets.organisation || [])],
-			periodFrom: validDate(state && state.periodFrom),
-			periodTo: validDate(state && state.periodTo),
-		},
+		text: String(of.query || ''),
+		filters: queryFilters(of),
 		catalog: String(catalog || ''),
 	}
+}
+
+/**
+ * The C2 filters of a search state, each from the publication schema's
+ * field name or C2's own.
+ *
+ * @param {object} state The search state.
+ * @return {{informatiecategorie: Array<string>, organisation: Array<string>, periodFrom: string, periodTo: string}} The filters.
+ */
+function queryFilters(state) {
+	const facets = state.facets || {}
+
+	return {
+		informatiecategorie: copyOfFirst(facets.wooCategory, facets.informatiecategorie),
+		organisation: copyOfFirst(facets.organization, facets.organisation),
+		periodFrom: validDate(state.periodFrom),
+		periodTo: validDate(state.periodTo),
+	}
+}
+
+/**
+ * A copy of the first list given, or none.
+ *
+ * @param {Array<string>|undefined} list The list under the schema's name.
+ * @param {Array<string>|undefined} alias The list under C2's name.
+ * @return {Array<string>} The copy.
+ */
+function copyOfFirst(list, alias) {
+	return [...(list || alias || [])]
 }
 
 /**
@@ -606,20 +733,42 @@ export function searchQuery(state, catalog = '') {
 export function lockedFiltersOf(state) {
 	const raw = state && state.lockedFilters
 	const locked = {}
-	if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+	if (!isFieldMap(raw)) {
 		return locked
 	}
 
-	for (const [field, value] of Object.entries(raw)) {
-		const values = (Array.isArray(value) ? value : [value])
-			.map((entry) => String(entry ?? ''))
-			.filter((entry) => entry !== '')
-		if (field !== '' && values.length > 0) {
-			locked[field] = values
-		}
+	for (const entry of Object.entries(raw)) {
+		addLock(locked, entry)
 	}
 
 	return locked
+}
+
+/**
+ * Whether locked filters arrive as a map of field to values.
+ *
+ * @param {unknown} raw The state's `lockedFilters`.
+ * @return {boolean}
+ */
+function isFieldMap(raw) {
+	return Boolean(raw) && typeof raw === 'object' && !Array.isArray(raw)
+}
+
+/**
+ * Lock one field on its non-empty values, when it is named and has any.
+ *
+ * @param {Record<string, Array<string>>} locked The locks so far.
+ * @param {Array} entry The field and its value or values.
+ * @return {void}
+ */
+function addLock(locked, entry) {
+	const field = entry[0]
+	const values = (Array.isArray(entry[1]) ? entry[1] : [entry[1]])
+		.map((value) => String(value ?? ''))
+		.filter((value) => value !== '')
+	if (field !== '' && values.length > 0) {
+		locked[field] = values
+	}
 }
 
 /**
