@@ -115,4 +115,28 @@ class TrafficFormStatsTest extends TestCase {
 		$this->assertSame(0.0, $rows[0]['completionRate']);
 		$this->assertSame([], $rows[0]['fields']);
 	}//end testASubmitWithoutAStartHasNoRate()
+
+	/**
+	 * Events that are not form events, and params that are not a list,
+	 * leave the tallies alone; a form event without params has no id.
+	 *
+	 * @return void
+	 */
+	public function testOtherEventsAndBrokenParamsAreIgnored(): void {
+		$rows = (new TrafficFormStats())->rows(sessions: [
+			['visitor' => 'h1', 'explicit' => false, 'events' => [
+				$this->event('page_view', ['formId' => 'contact']),
+				['name' => 'form_start', 'pagePath' => '/campagne', 'params' => 'contact'],
+				['name' => 'form_submit', 'pagePath' => '/campagne'],
+				$this->event('form_start', ['formId' => ' contact ']),
+				$this->event('form_abandon', ['formId' => 'contact']),
+			]],
+		]);
+
+		$this->assertCount(1, $rows);
+		$this->assertSame('contact', $rows[0]['formId']);
+		$this->assertSame(1, $rows[0]['starts']);
+		$this->assertSame(0, $rows[0]['submits']);
+		$this->assertSame(1, $rows[0]['abandons']);
+	}//end testOtherEventsAndBrokenParamsAreIgnored()
 }

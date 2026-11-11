@@ -50,41 +50,34 @@ class TrafficDimensionCounts {
 	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
 	 */
 	public function perSession(array $sessions, array $keys, array $names, string $countKey): array {
-		$rows = [];
-		$counts = [];
-		foreach ($sessions as $session) {
-			$first = $session['events'][0] ?? [];
-			$values = [];
-			$any = false;
-			foreach ($keys as $key) {
-				$value = trim((string)($first[$key] ?? ''));
-				$any = $any || ($value !== '');
-				$values[] = $value;
-			}
-
-			if ($any === false) {
-				continue;
-			}
-
-			$id = implode("\0", $values);
-			$counts[$id] = ($counts[$id] ?? 0) + 1;
-			$rows[$id] = $values;
-		}
-
 		$out = [];
-		foreach ($rows as $id => $values) {
-			$row = [];
-			foreach ($names as $index => $name) {
-				$row[$name] = $values[$index] ?? '';
-			}
-
-			$row[$countKey] = $counts[$id];
+		foreach ((new TrafficFirstEventTally())->tally(sessions: $sessions, keys: $keys) as $entry) {
+			$row = $this->namedRow(values: $entry['values'], names: $names);
+			$row[$countKey] = $entry['count'];
 			$out[] = $row;
 		}
 
 		usort($out, static fn (array $a, array $b): int => (int)$b[$countKey] <=> (int)$a[$countKey]);
 
 		return array_slice($out, 0, self::TOP);
+	}
+
+	/**
+	 * A row with the values written under their names; a name without a
+	 * value gets ''.
+	 *
+	 * @param array<int, string> $values The values, in key order.
+	 * @param array<int, string> $names  The row keys.
+	 *
+	 * @return array<string, string> The row.
+	 */
+	private function namedRow(array $values, array $names): array {
+		$row = [];
+		foreach ($names as $index => $name) {
+			$row[$name] = $values[$index] ?? '';
+		}
+
+		return $row;
 	}
 
 	/**
@@ -144,29 +137,59 @@ class TrafficDimensionCounts {
 	 */
 	public function perEvent(array $sessions, string $name, array $keys, string $label, string $countKey = 'count'): array {
 		$counts = [];
-		foreach ($sessions as $session) {
-			foreach ($session['events'] as $event) {
-				if (($event['name'] ?? '') !== $name) {
-					continue;
-				}
-
-				$value = $this->firstOf(event: $event, keys: $keys);
-				if ($value === '') {
-					continue;
-				}
-
+		foreach ($this->eventsNamed(sessions: $sessions, name: $name) as $event) {
+			$value = $this->firstOf(event: $event, keys: $keys);
+			if ($value !== '') {
 				$counts[$value] = ($counts[$value] ?? 0) + 1;
 			}
 		}
 
 		$out = [];
-		foreach ($counts as $value => $count) {
-			$out[] = [$label => (string)$value, $countKey => $count];
+		foreach ($this->ranked(counts: $counts) as [$value, $count]) {
+			$out[] = [$label => $value, $countKey => $count];
 		}
 
-		usort($out, static fn (array $a, array $b): int => [$b[$countKey], $a[$label]] <=> [$a[$countKey], $b[$label]]);
+		return $out;
+	}
 
-		return array_slice($out, 0, self::TOP);
+	/**
+	 * Every event of the given name, session by session.
+	 *
+	 * @param array<int, array<string, mixed>> $sessions The sessions.
+	 * @param string                           $name     The event name.
+	 *
+	 * @return array<int, array<string, mixed>> The events, in order.
+	 */
+	private function eventsNamed(array $sessions, string $name): array {
+		$events = [];
+		foreach ($sessions as $session) {
+			foreach ($session['events'] as $event) {
+				if (($event['name'] ?? '') === $name) {
+					$events[] = $event;
+				}
+			}
+		}
+
+		return $events;
+	}
+
+	/**
+	 * Counted values as `[value, count]` pairs, most counted first, ties by
+	 * value, cut to the top.
+	 *
+	 * @param array<int|string, int> $counts Value => count.
+	 *
+	 * @return array<int, array{0: string, 1: int}> The ranked pairs.
+	 */
+	private function ranked(array $counts): array {
+		$pairs = [];
+		foreach ($counts as $value => $count) {
+			$pairs[] = [(string)$value, $count];
+		}
+
+		usort($pairs, static fn (array $a, array $b): int => [$b[1], $a[0]] <=> [$a[1], $b[0]]);
+
+		return array_slice($pairs, 0, self::TOP);
 	}
 
 	/**
@@ -183,40 +206,36 @@ class TrafficDimensionCounts {
 	 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-roll-up-counts-searches-that-found-nothing-req-pzr-001
 	 */
 	public function zeroResults(array $sessions): array {
-		$counts  = [];
-		$without = 0;
-		foreach ($sessions as $session) {
-			foreach ($session['events'] as $event) {
-				if (($event['name'] ?? '') !== 'search') {
-					continue;
-				}
+		$searches = $this->searches(sessions: $sessions);
+		$without = count(array_filter($searches, static fn (array $search): bool => $search[1] === null));
+		$zero = array_filter($searches, static fn (array $search): bool => $search[1] === 0);
+		$rows = [];
+		foreach ($this->ranked(counts: array_count_values(array_column($zero, 0))) as [$term, $count]) {
+			$rows[] = ['term' => $term, 'count' => $count];
+		}
 
-				$term = $this->firstOf(event: $event, keys: ['searchTerm', 'params.search_term']);
-				if ($term === '') {
-					continue;
-				}
+		return ['rows' => $rows, 'withoutCount' => $without];
+	}//end zeroResults()
 
-				$results = $this->resultCount(event: $event);
-				if ($results === null) {
-					$without++;
-					continue;
-				}
-
-				if ($results === 0) {
-					$counts[$term] = ($counts[$term] ?? 0) + 1;
-				}
+	/**
+	 * The day's searches that carried a term, as `[term, result count]`
+	 * pairs, the count null when the event carried none.
+	 *
+	 * @param array<int, array<string, mixed>> $sessions The sessions.
+	 *
+	 * @return array<int, array{0: string, 1: int|null}> The searches, in order.
+	 */
+	private function searches(array $sessions): array {
+		$searches = [];
+		foreach ($this->eventsNamed(sessions: $sessions, name: 'search') as $event) {
+			$term = $this->firstOf(event: $event, keys: ['searchTerm', 'params.search_term']);
+			if ($term !== '') {
+				$searches[] = [$term, $this->resultCount(event: $event)];
 			}
 		}
 
-		$rows = [];
-		foreach ($counts as $term => $count) {
-			$rows[] = ['term' => (string)$term, 'count' => $count];
-		}
-
-		usort($rows, static fn (array $a, array $b): int => [$b['count'], $a['term']] <=> [$a['count'], $b['term']]);
-
-		return ['rows' => array_slice($rows, 0, self::TOP), 'withoutCount' => $without];
-	}//end zeroResults()
+		return $searches;
+	}
 
 	/**
 	 * The result count of a search event as an integer, or null when it
@@ -260,33 +279,64 @@ class TrafficDimensionCounts {
 	public function custom(array $sessions, array $definitions): array {
 		$out = [];
 		foreach ($definitions as $definition) {
-			$id = (string)($definition['id'] ?? '');
-			$key = 'cd_' . $id;
-			$perSession = (($definition['scope'] ?? 'event') === 'session');
-			$map = [];
-			foreach ($sessions as $session) {
-				foreach (($session['events'] ?? []) as $event) {
-					$value = $this->firstOf(event: $event, keys: ['params.' . $key]);
-					if ($value === '') {
-						continue;
-					}
-
-					$map[$value] = ($map[$value] ?? 0) + 1;
-					if ($perSession === true) {
-						break;
-					}
-				}
-			}
-
+			$map = $this->dimensionMap(sessions: $sessions, definition: $definition);
 			if ($map === []) {
 				continue;
 			}
 
 			ksort($map);
-			$out[$id] = array_slice($map, 0, self::TOP, true);
+			$out[(string)($definition['id'] ?? '')] = array_slice($map, 0, self::TOP, true);
 		}
 
 		return $out;
+	}
+
+	/**
+	 * One custom dimension's value => count map, unsorted: every carrying
+	 * event counts, or only a session's first value when it is
+	 * session-scoped.
+	 *
+	 * @param array<int, array<string, mixed>> $sessions   The sessions.
+	 * @param array<string, string>            $definition The declared dimension, `{id, name, scope}`.
+	 *
+	 * @return array<string, int> Value => count.
+	 */
+	private function dimensionMap(array $sessions, array $definition): array {
+		$field = 'params.cd_' . (string)($definition['id'] ?? '');
+		$perSession = (($definition['scope'] ?? 'event') === 'session');
+		$map = [];
+		foreach ($sessions as $session) {
+			$values = $this->valuesIn(session: $session, field: $field);
+			if ($perSession === true) {
+				$values = array_slice($values, 0, 1);
+			}
+
+			foreach ($values as $value) {
+				$map[$value] = ($map[$value] ?? 0) + 1;
+			}
+		}
+
+		return $map;
+	}
+
+	/**
+	 * The non-empty values of one field across a session's events, in order.
+	 *
+	 * @param array<string, mixed> $session The session.
+	 * @param string               $field   The field, `params.x` reaching into params.
+	 *
+	 * @return array<int, string> The values.
+	 */
+	private function valuesIn(array $session, string $field): array {
+		$values = [];
+		foreach (($session['events'] ?? []) as $event) {
+			$value = $this->firstOf(event: $event, keys: [$field]);
+			if ($value !== '') {
+				$values[] = $value;
+			}
+		}
+
+		return $values;
 	}
 
 	/**
