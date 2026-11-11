@@ -92,4 +92,29 @@ class StartTileCollectorTest extends TestCase {
 		$this->assertCount(2, $tiles->all());
 		$this->assertSame(['citizen', 'business'], $tiles->all()[0]['audiences']);
 	}//end testTheSameActionForTwoAudiencesIsOneTile()
+
+	/**
+	 * An action is a tile only with an app, a string summary and label, and
+	 * a page that places it; the first page placing it wins; a repeat merges
+	 * its string audiences without duplicates.
+	 *
+	 * @return void
+	 */
+	public function testEveryTileRuleIsAsRecorded(): void {
+		$tiles = new StartTileCollector();
+		$pages = ['junk', ['id' => ''], ['id' => 'first', 'blocks' => [['type' => 'action', 'action' => 'go'], ['type' => 'text', 'action' => 'other']]], ['id' => 'second', 'blocks' => [['type' => 'action', 'action' => 'go'], ['type' => 'action', 'action' => 'late']]]];
+		$tiles->add(['app' => 'dossiq', 'pages' => $pages, 'actions' => [
+			'junk',
+			['id' => 'go', 'label' => 'Ga', 'summary' => 'S', 'audiences' => ['citizen', 3, 'citizen']],
+			['id' => 'late', 'label' => 'Laat', 'summary' => 7],
+			['id' => 'other', 'label' => 'O', 'summary' => 'S'],
+			['id' => 'go', 'label' => 'Tweede', 'summary' => 'T', 'audiences' => ['business', 'citizen']],
+		]]);
+		$tiles->add(['pages' => $pages, 'actions' => [['id' => 'go', 'label' => 'L', 'summary' => 'S']]]);
+
+		$this->assertSame(
+			[['label' => 'Ga', 'summary' => 'S', 'audiences' => ['citizen', 'business'], 'route' => '/mijn/dossiq/first']],
+			$tiles->all()
+		);
+	}
 }//end class
