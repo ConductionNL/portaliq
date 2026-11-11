@@ -49,22 +49,49 @@ class TaskTitleTemplate {
 	 * @spec openspec/changes/lookup-by-row-field/specs/portal-contribution-contract/spec.md#requirement-a-task-may-be-titled-by-a-sentence-with-fields
 	 */
 	public function keys(mixed $declared, array $collection): array {
-		if (is_string($declared) === false || trim($declared) === '' || mb_strlen($declared) > self::MAX_LENGTH) {
+		if ($this->isSentence(declared: $declared) === false) {
 			return [];
 		}
 
 		preg_match_all('/\{([A-Za-z_][A-Za-z0-9_]*)\}/', $declared, $names);
-		if ($names[1] === []) {
+		if ($names[1] === [] || $this->namesKnown(names: $names[1], fields: ($collection['fields'] ?? null)) === false) {
 			return [];
-		}
-
-		$fields = ($collection['fields'] ?? null);
-		foreach ($names[1] as $name) {
-			if (is_array($fields) === true && in_array($name, $fields, true) === false) {
-				return [];
-			}
 		}
 
 		return ['titleTemplate' => trim($declared)];
 	}//end keys()
+
+	/**
+	 * Whether every name is among the collection's fields; any name is known
+	 * when the collection lists no fields.
+	 *
+	 * @param array<int, string> $names  The names in the sentence.
+	 * @param mixed              $fields The collection's declared fields.
+	 *
+	 * @return bool
+	 */
+	private function namesKnown(array $names, mixed $fields): bool {
+		if (is_array($fields) === false) {
+			return true;
+		}
+
+		foreach ($names as $name) {
+			if (in_array($name, $fields, true) === false) {
+				return false;
+			}
+		}
+
+		return true;
+	}//end namesKnown()
+
+	/**
+	 * Whether a declared template is non-blank text of at most the longest length.
+	 *
+	 * @param mixed $declared The declared template.
+	 *
+	 * @return bool
+	 */
+	private function isSentence(mixed $declared): bool {
+		return is_string($declared) === true && trim($declared) !== '' && mb_strlen($declared) <= self::MAX_LENGTH;
+	}//end isSentence()
 }//end class
