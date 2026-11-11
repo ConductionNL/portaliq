@@ -189,26 +189,57 @@ class PortalAuthMiddleware extends Middleware {
 	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
 	 */
 	private function anonymousCreateActionMatches(array $contributions): bool {
-		$register = (string)$this->request->getParam('register', '');
-		$schema = (string)$this->request->getParam('schema', '');
-		if ($register === '' || $schema === '') {
+		$target = [
+			'register' => (string)$this->request->getParam('register', ''),
+			'schema' => (string)$this->request->getParam('schema', ''),
+		];
+		if ($target['register'] === '' || $target['schema'] === '') {
 			return false;
 		}
 
 		foreach ($contributions as $contribution) {
-			foreach ((array)($contribution['actions'] ?? []) as $action) {
-				if (($action['type'] ?? '') === 'create'
-					&& ($action['anonymous'] ?? false) === true
-					&& ($action['register'] ?? '') === $register
-					&& ($action['schema'] ?? '') === $schema
-				) {
-					return true;
-				}
+			if ($this->hasAnonymousCreateFor(contribution: $contribution, target: $target) === true) {
+				return true;
 			}
 		}
 
 		return false;
 	}//end anonymousCreateActionMatches()
+
+	/**
+	 * Whether one contribution declares an anonymous create action for the
+	 * request's register and schema.
+	 *
+	 * @param mixed                 $contribution One anonymous-only contribution.
+	 * @param array<string, string> $target       The request's `register` and `schema`.
+	 *
+	 * @return bool
+	 */
+	private function hasAnonymousCreateFor(mixed $contribution, array $target): bool {
+		foreach ((array)($contribution['actions'] ?? []) as $action) {
+			if ($this->isAnonymousCreateFor(action: $action, target: $target) === true) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end hasAnonymousCreateFor()
+
+	/**
+	 * Whether an action is a `type: create` with `anonymous` exactly true for
+	 * the request's exact register and schema.
+	 *
+	 * @param mixed                 $action The declared action.
+	 * @param array<string, string> $target The request's `register` and `schema`.
+	 *
+	 * @return bool
+	 */
+	private function isAnonymousCreateFor(mixed $action, array $target): bool {
+		return ($action['type'] ?? '') === 'create'
+			&& ($action['anonymous'] ?? false) === true
+			&& ($action['register'] ?? '') === $target['register']
+			&& ($action['schema'] ?? '') === $target['schema'];
+	}//end isAnonymousCreateFor()
 
 	/**
 	 * Convert a portal auth failure to a 401 JSON response, and a refused

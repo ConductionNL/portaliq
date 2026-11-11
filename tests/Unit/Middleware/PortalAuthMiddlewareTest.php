@@ -237,6 +237,35 @@ class PortalAuthMiddlewareTest extends TestCase {
 	}//end testNoBearerCreateToAnonymousDeclaredRoutePassesThrough()
 
 	/**
+	 * Only a `type: create` action with `anonymous` exactly true and the
+	 * request's exact register and schema lets a no-bearer create through,
+	 * wherever in the aggregate it is; a missing route parameter never does.
+	 */
+	public function testEveryAnonymousCreateMatchIsAsRecorded(): void {
+		$open  = ['id' => 'openIntake', 'type' => 'create', 'register' => 'openbuild', 'schema' => 'melding', 'anonymous' => true];
+		$cases = [
+			'a match after junk'   => [[['actions' => 'none'], ['actions' => [['type' => 'create'], $open]]], ['register' => 'openbuild', 'schema' => 'melding'], true],
+			'anonymous not true'   => [[['actions' => [['anonymous' => 'yes'] + $open]]], ['register' => 'openbuild', 'schema' => 'melding'], false],
+			'another register'     => [[['actions' => [$open]]], ['register' => 'other', 'schema' => 'melding'], false],
+			'no schema parameter'  => [[['actions' => [['schema' => ''] + $open]]], ['register' => 'openbuild'], false],
+			'no register parameter' => [[['actions' => [['register' => ''] + $open]]], ['schema' => 'melding'], false],
+		];
+
+		$passed = [];
+		foreach ($cases as $name => [$contributions, $params, $expected]) {
+			$mw = $this->middleware($this->session(null), $this->registry(['contributions' => $contributions]), $params);
+			try {
+				$mw->beforeController($this->protectedController(), 'create');
+				$passed[$name] = true;
+			} catch (PortalUnauthorizedException $e) {
+				$passed[$name] = false;
+			}
+
+			$this->assertSame($expected, $passed[$name], $name);
+		}
+	}//end testEveryAnonymousCreateMatchIsAsRecorded()
+
+	/**
 	 * A `type: update` action flagged `anonymous: true` is NOT part of the
 	 * anonymous surface for `create()` — only an exact `type: create` match
 	 * counts (design.md Non-Goals).
