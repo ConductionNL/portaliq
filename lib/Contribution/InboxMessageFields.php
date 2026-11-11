@@ -163,39 +163,8 @@ class InboxMessageFields {
 	 * @spec openspec/changes/a-message-names-its-record-and-links-its-action/tasks.md#task-1
 	 */
 	public static function sameSiteAction(mixed $action): ?array {
-		if (is_array($action) === false || self::isSameSiteLink(action: $action) === false) {
-			return null;
-		}
-
-		return ['label' => trim($action['label']), 'href' => $action['href']];
+		return (new InboxActionLink())->sameSite(action: $action);
 	}//end sameSiteAction()
-
-	/**
-	 * Whether a projected action is a label and an address on this portal.
-	 *
-	 * @param array<string, mixed> $action The projected action.
-	 *
-	 * @return bool
-	 */
-	private static function isSameSiteLink(array $action): bool {
-		$label = $action['label'] ?? null;
-		$href  = $action['href'] ?? null;
-
-		return is_string($label) === true && trim($label) !== '' && is_string($href) === true && self::isSameSiteHref(href: $href) === true;
-	}//end isSameSiteLink()
-
-	/**
-	 * Whether an address stays on this portal: a path (never protocol-relative,
-	 * never with a backslash or a control character) or an in-page hash.
-	 *
-	 * @param string $href The address.
-	 *
-	 * @return bool
-	 */
-	private static function isSameSiteHref(string $href): bool {
-		$isPath = (preg_match('#^/(?!/)#', $href) === 1 && str_contains($href, '\\') === false && preg_match('/[[:cntrl:]]/', $href) === 0);
-		return $isPath === true || preg_match('/^#[A-Za-z0-9_\/=.-]+$/', $href) === 1;
-	}//end isSameSiteHref()
 
 	/**
 	 * Copy the app's own fields onto the inbox row, under the inbox's names.
