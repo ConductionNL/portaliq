@@ -91,6 +91,37 @@ export function portalWithRegistration(portal, choice) {
 }
 
 /**
+ * The English source sentence for a decision the server did not take: not
+ * allowed, already decided by someone else, or failed.
+ *
+ * @param {object} error The rejected request.
+ * @return {string} The sentence.
+ */
+function decisionFailure(error) {
+	if ((error?.response?.status ?? 0) === 403) {
+		return 'You may not decide on registrations. Ask an administrator for this right.'
+	}
+	if (error?.response?.data?.error === 'not_pending') {
+		return 'Someone already decided on this registration.'
+	}
+	return 'The decision could not be saved. Try again.'
+}
+
+/**
+ * The English source sentence for registration settings the server did not
+ * save: not allowed, or failed.
+ *
+ * @param {object} error The rejected request.
+ * @return {string} The sentence.
+ */
+function saveFailure(error) {
+	if (error?.response?.status === 403) {
+		return 'Only an administrator can change who may register.'
+	}
+	return 'The registration settings could not be saved. Try again.'
+}
+
+/**
  * The widget's calls over an injected transport.
  *
  * @param {object} deps Collaborators.
@@ -107,44 +138,22 @@ export function createRegistrationSettings({ get, put, post, url, translate }) {
 	 * Answer a decision on one registration.
 	 *
 	 * @param {object} row The account row.
-	 * @param {string} verb `approve` or `refuse`.
-	 * @param {object} body Extra fields.
-	 * @param {string} done The success sentence.
+	 * @param {{verb: string, body: object, done: string}} decision `approve` or `refuse`, the extra fields and the success sentence.
 	 * @return {Promise<{ok: boolean, message: string}>}
 	 */
-	async function decide(row, verb, body, done) {
+	async function decide(row, decision) {
 		try {
 			await post(
 				url('/apps/portaliq/api/accounts/{subjectRef}/{verb}', {
 					subjectRef: String(row?.subjectRef || ''),
-					verb,
+					verb: decision.verb,
 				}),
-				body,
+				decision.body,
 			)
 		} catch (error) {
-			const status = error?.response?.status ?? 0
-			if (status === 403) {
-				return {
-					ok: false,
-					message: translate(
-						'You may not decide on registrations. Ask an administrator for this right.',
-					),
-				}
-			}
-			if (error?.response?.data?.error === 'not_pending') {
-				return {
-					ok: false,
-					message: translate(
-						'Someone already decided on this registration.',
-					),
-				}
-			}
-			return {
-				ok: false,
-				message: translate('The decision could not be saved. Try again.'),
-			}
+			return { ok: false, message: translate(decisionFailure(error)) }
 		}
-		return { ok: true, message: translate(done) }
+		return { ok: true, message: translate(decision.done) }
 	}
 
 	return {
@@ -165,20 +174,7 @@ export function createRegistrationSettings({ get, put, post, url, translate }) {
 				const { data } = await get(address)
 				await put(address, portalWithRegistration(data, choice))
 			} catch (error) {
-				if (error?.response?.status === 403) {
-					return {
-						ok: false,
-						message: translate(
-							'Only an administrator can change who may register.',
-						),
-					}
-				}
-				return {
-					ok: false,
-					message: translate(
-						'The registration settings could not be saved. Try again.',
-					),
-				}
+				return { ok: false, message: translate(saveFailure(error)) }
 			}
 			return { ok: true, message: translate('Your choices are saved.') }
 		},
@@ -217,7 +213,11 @@ export function createRegistrationSettings({ get, put, post, url, translate }) {
 		 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-set-the-registration-policy-and-approve-registrations-req-isa-004
 		 */
 		async approve(row) {
-			return decide(row, 'approve', {}, 'The registration is approved.')
+			return decide(row, {
+				verb: 'approve',
+				body: {},
+				done: 'The registration is approved.',
+			})
 		},
 
 		/**
@@ -233,12 +233,11 @@ export function createRegistrationSettings({ get, put, post, url, translate }) {
 			if (why === '') {
 				return { ok: false, message: translate('Give a reason.') }
 			}
-			return decide(
-				row,
-				'refuse',
-				{ reason: why },
-				'The registration is refused.',
-			)
+			return decide(row, {
+				verb: 'refuse',
+				body: { reason: why },
+				done: 'The registration is refused.',
+			})
 		},
 	}
 }
