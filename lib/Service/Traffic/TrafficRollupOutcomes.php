@@ -108,7 +108,7 @@ final class TrafficRollupOutcomes {
 		foreach ($experiments as $experiment) {
 			$variants = [];
 			foreach ($experiment['variants'] as $variant) {
-				$variant['rate'] = $this->values->rate(numerator: (float)$variant['conversions'], denominator: (int)$variant['sessions'], decimals: 3);
+				$variant['rate'] = round($this->values->ratio(numerator: (float)$variant['conversions'], denominator: (int)$variant['sessions']), 3);
 				$variants[] = $variant;
 			}
 
@@ -223,7 +223,7 @@ final class TrafficRollupOutcomes {
 			foreach ($form['fields'] as $field) {
 				$fields[] = [
 					'fieldId' => $field['fieldId'],
-					'avgMs' => (int)$this->values->rate(numerator: (float)$field['ms'], denominator: (int)$field['members'], decimals: 0),
+					'avgMs' => (int)round($this->values->ratio(numerator: (float)$field['ms'], denominator: (int)$field['members']), 0),
 					'abandonedHere' => $field['abandonedHere'],
 				];
 			}
@@ -234,7 +234,7 @@ final class TrafficRollupOutcomes {
 				'starts' => $starts,
 				'submits' => $form['submits'],
 				'abandons' => $form['abandons'],
-				'completionRate' => $this->values->rate(numerator: (float)$form['submits'], denominator: $starts, decimals: 3),
+				'completionRate' => round($this->values->ratio(numerator: (float)$form['submits'], denominator: $starts), 3),
 				'fields' => $fields,
 			];
 		}

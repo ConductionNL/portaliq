@@ -22,30 +22,30 @@ namespace OCA\Portaliq\Service\Traffic;
 
 /**
  * The number readings a roll-up sum shares: a non-negative integer or
- * float from a stored value, and a rounded ratio.
+ * float from a stored value, and a ratio.
  *
  * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-roll-up-portal-must-sum-its-members-and-never-count-its-own
  */
 final class TrafficRollupValues {
 
 	/**
-	 * A ratio rounded, or 0 when there is nothing to divide by.
+	 * A ratio, or 0 when there is nothing to divide by.
 	 *
 	 * @param float $numerator   The top.
 	 * @param int   $denominator The bottom.
-	 * @param int   $decimals    The decimals kept.
 	 *
 	 * @return float The ratio.
 	 *
 	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-roll-up-portal-must-sum-its-members-and-never-count-its-own
 	 */
-	public function rate(float $numerator, int $denominator, int $decimals): float {
+	public function ratio(float $numerator, int $denominator): float {
 		if ($denominator <= 0) {
 			return 0.0;
 		}
 
-		return round($numerator / $denominator, $decimals);
+		return $numerator / $denominator;
 	}
+
 	/**
 	 * A non-negative integer.
 	 *

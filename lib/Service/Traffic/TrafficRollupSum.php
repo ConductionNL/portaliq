@@ -122,8 +122,14 @@ class TrafficRollupSum {
 			$acc = $this->addRecord(acc: $acc, record: $record);
 		}
 
-		$day = new TrafficRollupDay(portal: $portal, date: $date, members: $members, memberRecords: count($records), aggregatedAt: $aggregatedAt);
-		return $this->finish(acc: $acc, day: $day);
+		$heading = [
+			'portal' => $portal,
+			'date' => $date,
+			'segment' => '',
+			'rollupOf' => array_values($members),
+			'members' => count($records),
+		];
+		return $heading + $this->finish(acc: $acc) + ['aggregatedAt' => $aggregatedAt, 'lastEventAt' => $acc['last']];
 	}
 
 	/**
@@ -249,28 +255,20 @@ class TrafficRollupSum {
 	}
 
 	/**
-	 * The accumulator as the roll-up's record.
+	 * The accumulator as the roll-up's record, up to the e-mail figures:
+	 * sum() puts the heading before it and the times after it.
 	 *
 	 * @param array<string, mixed> $acc The accumulator.
-	 * @param TrafficRollupDay     $day Which roll-up, which day, how many members, computed when.
 	 *
-	 * @return array<string, mixed> The `portalTrafficDaily` fields.
+	 * @return array<string, mixed> The summed `portalTrafficDaily` fields.
 	 */
-	private function finish(array $acc, TrafficRollupDay $day): array {
+	private function finish(array $acc): array {
 		// A roll-up carries no heatmap: its members' pages are on different
 		// sites, and a click grid summed across sites draws nothing true.
-		$heading = [
-			'portal' => $day->portal,
-			'date' => $day->date,
-			'segment' => '',
-			'rollupOf' => array_values($day->members),
-			'members' => $day->memberRecords,
-		];
-		return $heading
-			+ $this->summedFields(acc: $acc)
+		return $this->summedFields(acc: $acc)
 			+ $this->rates(acc: $acc)
 			+ $this->rankedShapes(acc: $acc)
-			+ ['heatmaps' => [], 'emails' => $acc['emails'], 'aggregatedAt' => $day->aggregatedAt, 'lastEventAt' => $acc['last']];
+			+ ['heatmaps' => [], 'emails' => $acc['emails']];
 	}
 
 	/**
@@ -299,9 +297,9 @@ class TrafficRollupSum {
 	private function rates(array $acc): array {
 		$sessions = (int)$acc['sessions'];
 		return [
-			'avgEngagementSeconds' => $this->values()->rate(numerator: (float)$acc['seconds'], denominator: $sessions, decimals: 1),
-			'bounceRate' => $this->values()->rate(numerator: (float)($sessions - (int)$acc['engagedSessions']), denominator: $sessions, decimals: 3),
-			'conversionRate' => $this->values()->rate(numerator: (float)$acc['converted'], denominator: $sessions, decimals: 3),
+			'avgEngagementSeconds' => round($this->values()->ratio(numerator: (float)$acc['seconds'], denominator: $sessions), 1),
+			'bounceRate' => round($this->values()->ratio(numerator: (float)($sessions - (int)$acc['engagedSessions']), denominator: $sessions), 3),
+			'conversionRate' => round($this->values()->ratio(numerator: (float)$acc['converted'], denominator: $sessions), 3),
 		];
 	}
 
@@ -565,7 +563,7 @@ class TrafficRollupSum {
 				'views' => $views,
 				'entrances' => $page['entrances'],
 				'exits' => $page['exits'],
-				'avgEngagementSeconds' => $this->values()->rate(numerator: (float)$page['seconds'], denominator: $views, decimals: 1),
+				'avgEngagementSeconds' => round($this->values()->ratio(numerator: (float)$page['seconds'], denominator: $views), 1),
 			];
 			if ($page['detail'] === true) {
 				$row['sessions'] = $page['sessions'];
