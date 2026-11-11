@@ -94,6 +94,13 @@
 </template>
 
 <script>
+/** The entries that open the app, each where the context carries its address. */
+const LINK_ACTIONS = Object.freeze([
+	{ key: 'designer', label: 'In de beheeromgeving openen', field: 'designerUrl' },
+	{ key: 'pages', label: 'Alle pagina’s', field: 'pagesUrl' },
+	{ key: 'new', label: 'Nieuwe pagina', field: 'newPageUrl' },
+])
+
 /**
  * The site's editing entry point.
  *
@@ -149,42 +156,16 @@ export default {
 		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
 		 */
 		actions() {
-			const actions = []
-			if (this.context?.pageId) {
-				// In place, on this page (portal-in-place-editing). The site
-				// loads the editor only when this is chosen.
-				actions.push({
-					key: 'page',
-					label: 'Deze pagina bewerken',
-					emit: 'edit',
-				})
-			}
-
-			if (this.context?.designerUrl) {
-				actions.push({
-					key: 'designer',
-					label: 'In de beheeromgeving openen',
-					href: this.context.designerUrl,
-				})
-			}
-
-			if (this.context?.pagesUrl) {
-				actions.push({
-					key: 'pages',
-					label: 'Alle pagina’s',
-					href: this.context.pagesUrl,
-				})
-			}
-
-			if (this.context?.newPageUrl) {
-				actions.push({
-					key: 'new',
-					label: 'Nieuwe pagina',
-					href: this.context.newPageUrl,
-				})
-			}
-
-			return actions
+			const context = this.context || {}
+			// In place, on this page (portal-in-place-editing). The site
+			// loads the editor only when this is chosen.
+			const inPlace = context.pageId
+				? [{ key: 'page', label: 'Deze pagina bewerken', emit: 'edit' }]
+				: []
+			const links = LINK_ACTIONS.filter((link) => context[link.field]).map(
+				(link) => ({ key: link.key, label: link.label, href: context[link.field] }),
+			)
+			return [...inPlace, ...links]
 		},
 	},
 
