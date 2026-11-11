@@ -141,8 +141,7 @@ class PublicRecordReader {
 	 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t2
 	 */
 	public function record(string $app, string $list, string $id): ?array {
-		$entries = $this->entries(app: $app, list: $list);
-		if ($entries === null || in_array($id, array_column($entries, 'id'), true) === false) {
+		if ($this->isListed(entries: $this->entries(app: $app, list: $list), id: $id) === false) {
 			return null;
 		}
 
@@ -152,20 +151,47 @@ class PublicRecordReader {
 			return $cached;
 		}
 
-		$declared = $this->declared(app: $app, list: $list);
+		$record = $this->fetchedRecord(declared: $this->declared(app: $app, list: $list), id: $id);
+		if ($record !== null) {
+			$this->cache->set($key, $record, self::TTL);
+		}
+
+		return $record;
+	}//end record()
+
+	/**
+	 * Whether a list's entries hold an id; no list holds none.
+	 *
+	 * @param array<int, array<string, string>>|null $entries The list's entries, or null.
+	 * @param string                                 $id      The record id.
+	 *
+	 * @return bool
+	 */
+	private function isListed(?array $entries, string $id): bool {
+		return $entries !== null && in_array($id, array_column($entries, 'id'), true) === true;
+	}//end isListed()
+
+	/**
+	 * One record as the declared record provider answers it, held to the
+	 * contract's shape; null when the list is not declared or the answer is no record.
+	 *
+	 * @param array{provider: object, entry: array<string, string>, app: string}|null $declared The list's declaration.
+	 * @param string                                                                   $id       The record id.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function fetchedRecord(?array $declared, string $id): ?array {
 		if ($declared === null) {
 			return null;
 		}
 
-		$answer = $this->call(provider: $declared['provider'], method: $declared['entry']['recordProvider'], argument: $id, app: $app);
+		$answer = $this->call(provider: $declared['provider'], method: $declared['entry']['recordProvider'], argument: $id, app: $declared['app']);
 		if (is_array($answer) === false) {
 			return null;
 		}
 
-		$record = $this->shape->record(answer: $answer);
-		$this->cache->set($key, $record, self::TTL);
-		return $record;
-	}//end record()
+		return $this->shape->record(answer: $answer);
+	}//end fetchedRecord()
 
 	/**
 	 * The provider and the validated declaration of one list.
@@ -173,7 +199,7 @@ class PublicRecordReader {
 	 * @param string $app The app.
 	 * @param string $list The list id.
 	 *
-	 * @return array{provider: object, entry: array<string, string>}|null
+	 * @return array{provider: object, entry: array<string, string>, app: string}|null
 	 */
 	private function declared(string $app, string $list): ?array {
 		$provider = $this->locator->locate(appId: $app);
@@ -185,7 +211,7 @@ class PublicRecordReader {
 		$kept         = (new PublicRecordsNormaliser())->normalise(entries: ($contribution['publicRecords'] ?? null), provider: $provider);
 		foreach ($kept as $entry) {
 			if ($entry['id'] === $list) {
-				return ['provider' => $provider, 'entry' => $entry];
+				return ['provider' => $provider, 'entry' => $entry, 'app' => $app];
 			}
 		}
 
@@ -269,23 +295,11 @@ class PublicRecordReader {
 	private function listEntries(array $answer): array {
 		$entries = [];
 		foreach ($answer as $row) {
-			if (is_array($row) === false) {
+			if (is_array($row) === false || $this->hasIdAndTitle(row: $row) === false) {
 				continue;
 			}
 
-			if ($this->shape->text(value: ($row['id'] ?? null)) === '' || $this->shape->text(value: ($row['title'] ?? null)) === '') {
-				continue;
-			}
-
-			$entry = [];
-			foreach (self::LIST_KEYS as $key) {
-				$value = $this->shape->text(value: ($row[$key] ?? null));
-				if ($value !== '') {
-					$entry[$key] = $value;
-				}
-			}
-
-			$entries[] = $entry;
+			$entries[] = $this->plainKeys(row: $row);
 			if (count($entries) >= self::MAX_ENTRIES) {
 				break;
 			}
@@ -293,5 +307,35 @@ class PublicRecordReader {
 
 		return $entries;
 	}//end listEntries()
+
+	/**
+	 * Whether a list row has an id and a title as plain text.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return bool
+	 */
+	private function hasIdAndTitle(array $row): bool {
+		return $this->shape->text(value: ($row['id'] ?? null)) !== '' && $this->shape->text(value: ($row['title'] ?? null)) !== '';
+	}//end hasIdAndTitle()
+
+	/**
+	 * The contract's list keys of a row, each as plain text when it has any.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return array<string, string>
+	 */
+	private function plainKeys(array $row): array {
+		$entry = [];
+		foreach (self::LIST_KEYS as $key) {
+			$value = $this->shape->text(value: ($row[$key] ?? null));
+			if ($value !== '') {
+				$entry[$key] = $value;
+			}
+		}
+
+		return $entry;
+	}//end plainKeys()
 
 }//end class
