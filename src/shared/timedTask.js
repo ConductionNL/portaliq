@@ -47,6 +47,82 @@ function options(list) {
 }
 
 /**
+ * A string field, or the fallback when the field is not a string.
+ *
+ * @param {unknown} value The field.
+ * @param {string|null} fallback The value for a missing or mistyped field.
+ * @return {string|null} The field or the fallback.
+ */
+function stringOr(value, fallback) {
+	return typeof value === 'string' ? value : fallback
+}
+
+/**
+ * Whether a start response names its attempt.
+ *
+ * @param {object} payload The leaf app's start response.
+ * @return {boolean} Whether it carries a non-empty attempt id.
+ */
+function hasAttemptId(payload) {
+	if (!payload) {
+		return false
+	}
+	return typeof payload.attemptId === 'string' && payload.attemptId !== ''
+}
+
+/**
+ * Whether an item names itself.
+ *
+ * @param {object} item A declared item.
+ * @return {boolean} Whether it carries a non-empty item id.
+ */
+function hasItemId(item) {
+	return item && typeof item.itemId === 'string' && item.itemId !== ''
+}
+
+/**
+ * One declared item in the shape the screen renders.
+ *
+ * @param {object} item A declared item with an id.
+ * @return {object} The normalised item.
+ */
+function normaliseItem(item) {
+	return {
+		itemId: item.itemId,
+		type: stringOr(item.type, 'text'),
+		prompt: stringOr(item.prompt, ''),
+		points: typeof item.points === 'number' ? item.points : null,
+		choices: options(item.choices),
+		sources: options(item.sources),
+		targets: options(item.targets),
+	}
+}
+
+/**
+ * The attempt's items that have an id, normalised.
+ *
+ * @param {object} payload The leaf app's start response.
+ * @return {Array<object>} The items.
+ */
+function attemptItems(payload) {
+	return (Array.isArray(payload.items) ? payload.items : [])
+		.filter(hasItemId)
+		.map(normaliseItem)
+}
+
+/**
+ * The answers the attempt already saved, or none.
+ *
+ * @param {object} payload The leaf app's start response.
+ * @return {object} The saved responses by item id.
+ */
+function savedResponses(payload) {
+	return payload.responses && typeof payload.responses === 'object'
+		? payload.responses
+		: {}
+}
+
+/**
  * Sanitise a `start` response into the attempt the screen runs. Items without
  * an id are dropped; unknown types keep their type and render as text.
  *
@@ -54,36 +130,16 @@ function options(list) {
  * @return {object|null} The attempt, or null when it has no id.
  */
 export function normaliseAttempt(payload) {
-	if (
-		!payload
-		|| typeof payload.attemptId !== 'string'
-		|| payload.attemptId === ''
-	) {
+	if (!hasAttemptId(payload)) {
 		return null
 	}
-	const items = (Array.isArray(payload.items) ? payload.items : [])
-		.filter(
-			(item) => item && typeof item.itemId === 'string' && item.itemId !== '',
-		)
-		.map((item) => ({
-			itemId: item.itemId,
-			type: typeof item.type === 'string' ? item.type : 'text',
-			prompt: typeof item.prompt === 'string' ? item.prompt : '',
-			points: typeof item.points === 'number' ? item.points : null,
-			choices: options(item.choices),
-			sources: options(item.sources),
-			targets: options(item.targets),
-		}))
-	const responses =
-		payload.responses && typeof payload.responses === 'object'
-			? payload.responses
-			: {}
+	const items = attemptItems(payload)
+	const responses = savedResponses(payload)
 	return {
 		attemptId: payload.attemptId,
-		title: typeof payload.title === 'string' ? payload.title : '',
-		serverNow: typeof payload.serverNow === 'string' ? payload.serverNow : null,
-		deadlineAt:
-			typeof payload.deadlineAt === 'string' ? payload.deadlineAt : null,
+		title: stringOr(payload.title, ''),
+		serverNow: stringOr(payload.serverNow, null),
+		deadlineAt: stringOr(payload.deadlineAt, null),
 		items,
 		responses: { ...responses },
 	}
@@ -112,6 +168,46 @@ export function initialResponse(item, saved) {
 }
 
 /**
+ * Whether an order answer puts at least one option in place.
+ *
+ * @param {Array<string>} value The current answer.
+ * @return {boolean} Answered or not.
+ */
+function isOrdered(value) {
+	return Array.isArray(value) && value.length > 0
+}
+
+/**
+ * Whether a match answer pairs at least one source.
+ *
+ * @param {Object<string, string>} value The current answer.
+ * @return {boolean} Answered or not.
+ */
+function isMatched(value) {
+	return (
+		value !== null
+		&& typeof value === 'object'
+		&& Object.keys(value).length > 0
+	)
+}
+
+/**
+ * Whether a text answer holds more than whitespace.
+ *
+ * @param {string} value The current answer.
+ * @return {boolean} Answered or not.
+ */
+function isWritten(value) {
+	return typeof value === 'string' && value.trim() !== ''
+}
+
+/** How each control with its own answer shape tells an answer apart. */
+const ANSWERED_BY_SHAPE = {
+	order: isOrdered,
+	match: isMatched,
+}
+
+/**
  * Whether an item has an answer worth counting.
  *
  * @param {object} item A normalised item.
@@ -119,18 +215,8 @@ export function initialResponse(item, saved) {
  * @return {boolean} Answered or not.
  */
 export function isAnswered(item, value) {
-	const as = renderAs(item)
-	if (as === 'order') {
-		return Array.isArray(value) && value.length > 0
-	}
-	if (as === 'match') {
-		return (
-			value !== null
-			&& typeof value === 'object'
-			&& Object.keys(value).length > 0
-		)
-	}
-	return typeof value === 'string' && value.trim() !== ''
+	const answered = ANSWERED_BY_SHAPE[renderAs(item)] || isWritten
+	return answered(value)
 }
 
 /**
@@ -215,29 +301,59 @@ export function createSaveQueue(send, onState = () => {}) {
 	const state = () => ({ unsaved: [...unsaved], failed: [...failed], closed })
 
 	/**
+	 * Send one answer; a save that throws counts as no answer.
+	 *
+	 * @param {string} itemId The question.
+	 * @param {string|Array<string>|Object<string, string>} value The answer.
+	 * @return {Promise<object|null>} The save's outcome, or null.
+	 */
+	async function sendOne(itemId, value) {
+		try {
+			return await send(itemId, value)
+		} catch {
+			return null
+		}
+	}
+
+	/**
+	 * Close the queue when the attempt is closed (409).
+	 *
+	 * @param {object|null} result The save's outcome.
+	 */
+	function closeWhenRefused(result) {
+		if (result && result.status === 409) {
+			closed = true
+		}
+	}
+
+	/**
+	 * Mark a question saved or failed, unless a newer answer is waiting.
+	 *
+	 * @param {string} itemId The question.
+	 * @param {object|null} result The save's outcome.
+	 */
+	function settle(itemId, result) {
+		if (waiting.has(itemId)) {
+			return
+		}
+		if (result && result.ok) {
+			unsaved.delete(itemId)
+			failed.delete(itemId)
+			return
+		}
+		failed.add(itemId)
+	}
+
+	/**
 	 * Send everything waiting, oldest question first.
 	 */
 	async function run() {
 		while (waiting.size > 0 && !closed) {
 			const [itemId, value] = waiting.entries().next().value
 			waiting.delete(itemId)
-			let result
-			try {
-				result = await send(itemId, value)
-			} catch {
-				result = null
-			}
-			if (result && result.status === 409) {
-				closed = true
-			}
-			if (!waiting.has(itemId)) {
-				if (result && result.ok) {
-					unsaved.delete(itemId)
-					failed.delete(itemId)
-				} else {
-					failed.add(itemId)
-				}
-			}
+			const result = await sendOne(itemId, value)
+			closeWhenRefused(result)
+			settle(itemId, result)
 			onState(state())
 		}
 		running = null
@@ -286,6 +402,31 @@ export function createSaveQueue(send, onState = () => {}) {
 }
 
 /**
+ * The start call's body: the task, and the access code when there is one.
+ *
+ * @param {{taskId: string, accessCode?: string}} start The task to start.
+ * @return {{taskId: string, accessCode?: string}} The body.
+ */
+function startBody(start) {
+	const { taskId, accessCode = '' } = start
+	return accessCode ? { taskId, accessCode } : { taskId }
+}
+
+/**
+ * A refused start, carrying the leaf app's error and message.
+ *
+ * @param {{body?: object}} result The start call's outcome.
+ * @return {{ok: false, error: string, message: string}} The outcome.
+ */
+function startRefusal(result) {
+	return {
+		ok: false,
+		error: result.body?.error || '',
+		message: result.body?.message || '',
+	}
+}
+
+/**
  * Start (or resume) a task and return the sanitised attempt.
  *
  * @param {{api: object, app: string, block: object}} actions The portal api adapter (`forwardAction`), the contributing app and the collection's `timedTask` block.
@@ -293,16 +434,11 @@ export function createSaveQueue(send, onState = () => {}) {
  * @return {Promise<{ok: boolean, attempt?: object, error?: string, message?: string}>} The outcome.
  */
 export async function startAttempt(actions, start) {
-	const { taskId, accessCode = '' } = start
-	const body = accessCode ? { taskId, accessCode } : { taskId }
+	const body = startBody(start)
 	const result = await actions.api.forwardAction(actions.app, actions.block.start, body)
 	const attempt = result.ok ? normaliseAttempt(result.body) : null
 	if (!attempt) {
-		return {
-			ok: false,
-			error: result.body?.error || '',
-			message: result.body?.message || '',
-		}
+		return startRefusal(result)
 	}
 	return { ok: true, attempt }
 }
