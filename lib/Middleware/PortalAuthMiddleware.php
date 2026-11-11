@@ -45,7 +45,7 @@ use OCA\Portaliq\Auth\PortalReadOnlySessionException;
 use OCA\Portaliq\Auth\PortalUnauthorizedException;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\PortalRateLimit;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\BearerSessionResolver;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\Response;
@@ -81,7 +81,7 @@ class PortalAuthMiddleware extends Middleware {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request object.
-	 * @param PortalSessionService $session The session resolver.
+	 * @param BearerSessionResolver $session The session resolver.
 	 * @param PortalContributionRegistry $registry Resolves the anonymous-reachable
 	 *                                             surface
 	 *                                             (portal-page-provisioning).
@@ -91,7 +91,7 @@ class PortalAuthMiddleware extends Middleware {
 	 */
 	public function __construct(
 		private readonly IRequest $request,
-		private readonly PortalSessionService $session,
+		private readonly BearerSessionResolver $session,
 		private readonly PortalContributionRegistry $registry,
 		private readonly IL10N $l10n,
 		private readonly ?PortalRateLimit $rateLimit = null,
