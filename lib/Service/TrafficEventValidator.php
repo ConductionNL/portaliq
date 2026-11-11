@@ -133,23 +133,50 @@ class TrafficEventValidator {
 		array $context = [],
 		?DateTimeImmutable $now = null,
 	): array {
-		$serverSide = ($context['serverSide'] ?? false) === true;
-		$reason = $this->refusal(event: $event, config: $config, hasConsent: $hasConsent, resolver: $resolver, serverSide: $serverSide);
+		$check = new TrafficEventCheck(event: $event, resolver: $resolver);
+		$check->config     = $config;
+		$check->hasConsent = $hasConsent;
+		$check->serverSide = ($context['serverSide'] ?? false) === true;
+		$reason = $this->refusal(check: $check);
 		if ($reason !== null) {
 			return ['ok' => false, 'reason' => $reason];
 		}
 
-		$maxAge = self::MAX_AGE_SECONDS;
-		if (($context['allowOld'] ?? false) === true) {
-			$maxAge = PHP_INT_MAX;
-		}
-
-		$occurredAt = $this->occurredAt(value: ($event['timestamp'] ?? null), now: ($now ?? $this->now()), maxAge: $maxAge);
+		$occurredAt = $this->occurredAt(value: ($event['timestamp'] ?? null), now: ($now ?? $this->now()), maxAge: $this->maxAgeFor(context: $context));
 		if ($occurredAt === null) {
 			return ['ok' => false, 'reason' => 'timestamp-out-of-range'];
 		}
 
-		$normalised = [
+		return ['ok' => true, 'event' => $this->withDimensions(check: $check, normalised: $this->normalised(check: $check, occurredAt: $occurredAt))];
+	}
+
+	/**
+	 * How old an event may be: any age for a log import, else the collector's
+	 * window.
+	 *
+	 * @param array<string, mixed> $context `allowOld` => true for a log import.
+	 *
+	 * @return int Seconds.
+	 */
+	private function maxAgeFor(array $context): int {
+		if (($context['allowOld'] ?? false) === true) {
+			return PHP_INT_MAX;
+		}
+
+		return self::MAX_AGE_SECONDS;
+	}
+
+	/**
+	 * The stored shape of an accepted event, every field bounded.
+	 *
+	 * @param TrafficEventCheck $check      The accepted event.
+	 * @param DateTimeImmutable $occurredAt When it happened.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function normalised(TrafficEventCheck $check, DateTimeImmutable $occurredAt): array {
+		$event = $check->event;
+		return [
 			'name' => $this->string(value: $event['name'], max: 64),
 			'sequence' => $event['sequence'],
 			'occurredAt' => $occurredAt->format('Y-m-d\TH:i:s.v\Z'),
@@ -160,26 +187,36 @@ class TrafficEventValidator {
 			// step sessionises by visitor hash when it is empty. A client id
 			// is only kept when the PORTAL allowed it to exist.
 			'sessionId' => $this->string(value: ($event['sessionId'] ?? null), max: 64),
-			'clientId' => $this->clientId(event: $event, config: $config, hasConsent: $hasConsent),
+			'clientId' => $this->clientId(event: $event, config: $check->config, hasConsent: $check->hasConsent),
 			'params' => $this->outcomeParams->filter(
 				name: $this->string(value: $event['name'], max: 64),
-				params: $this->params(value: ($event['params'] ?? null)),
-				config: $config
+				params: (new TrafficEventParams())->bounded(value: ($event['params'] ?? null)),
+				config: $check->config
 			),
 		];
+	}
 
-		// Dimensions the portal did not enable are STRIPPED, and the event is
-		// still stored. Refusing the whole event would lose a real page view
-		// because a client sent one field too many.
-		foreach ($this->dimensionsOf(event: $event, serverSide: $serverSide) as $key => $value) {
-			if (in_array($key, ($config['dimensions'] ?? []), true) === false) {
+	/**
+	 * The event with the dimensions the portal enabled. Dimensions the portal
+	 * did not enable are STRIPPED, and the event is still stored. Refusing
+	 * the whole event would lose a real page view because a client sent one
+	 * field too many.
+	 *
+	 * @param TrafficEventCheck    $check      The accepted event.
+	 * @param array<string, mixed> $normalised Its stored shape so far.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withDimensions(TrafficEventCheck $check, array $normalised): array {
+		foreach ($this->dimensionsOf(event: $check->event, serverSide: $check->serverSide) as $key => $value) {
+			if (in_array($key, ($check->config['dimensions'] ?? []), true) === false) {
 				continue;
 			}
 
 			$normalised[$key] = $this->string(value: $value, max: self::MAX_STRING);
 		}
 
-		return ['ok' => true, 'event' => $normalised];
+		return $normalised;
 	}
 
 	/**
@@ -188,51 +225,81 @@ class TrafficEventValidator {
 	 * Ordered from "who is asking" to "what did they send": the caller check
 	 * comes first, the portal's configuration second, the envelope last.
 	 *
-	 * @param array<string, mixed>  $event      The posted event.
-	 * @param array<string, mixed>  $config     The resolved configuration.
-	 * @param bool                  $hasConsent Whether the visitor consented.
-	 * @param TrafficConfigResolver $resolver   The configuration resolver.
-	 * @param bool                  $serverSide Whether the caller is server-side.
+	 * @param TrafficEventCheck $check The posted event.
 	 *
 	 * @return string|null The refusal reason, or null.
 	 *
 	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
 	 */
-	private function refusal(
-		array $event,
-		array $config,
-		bool $hasConsent,
-		TrafficConfigResolver $resolver,
-		bool $serverSide,
-	): ?string {
-		$name = $this->string(value: ($event['name'] ?? null), max: 64);
+	private function refusal(TrafficEventCheck $check): ?string {
+		$name = $this->string(value: ($check->event['name'] ?? null), max: 64);
 		if ($name === '') {
 			return 'missing-event-name';
 		}
 
+		$refusal = $this->eventRefusal(check: $check, name: $name);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->envelopeRefusal(event: $check->event);
+	}
+
+	/**
+	 * Why the named event is refused for this caller and portal, or null.
+	 *
+	 * @param TrafficEventCheck $check The posted event.
+	 * @param string            $name  The event's name.
+	 *
+	 * @return string|null
+	 */
+	private function eventRefusal(TrafficEventCheck $check, string $name): ?string {
 		// Checked BEFORE the portal's own list. A portal that enabled
 		// `email_open` for its mail integration has not thereby invited
 		// every browser on the internet to report opening its mail.
-		if ($resolver->allowsCaller(event: $name, serverSide: $serverSide) === false) {
+		if ($check->resolver->allowsCaller(event: $name, serverSide: $check->serverSide) === false) {
 			return 'event-server-side-only';
 		}
 
-		// A heatmap event on a portal whose operator did not accept that
-		// warning (portal-traffic-experiments). Named separately from
-		// "not enabled" because the remedy is a different switch, with a
-		// consent consequence the events list does not carry.
-		if (in_array($name, TrafficConfigResolver::HEAT_EVENTS, true) === true && ($config['sensitive']['heatmaps'] ?? false) !== true) {
+		if ($this->isHeatmapOff(check: $check, name: $name) === true) {
 			return 'sensitive-off';
 		}
 
-		if ($resolver->acceptsEvent(config: $config, event: $name, hasConsent: $hasConsent) === false) {
-			return $this->configurationRefusal(name: $name, config: $config);
+		if ($check->resolver->acceptsEvent(config: $check->config, event: $name, hasConsent: $check->hasConsent) === false) {
+			return $this->configurationRefusal(name: $name, config: $check->config);
 		}
 
-		// THE SEQUENCE IS WHAT MAKES A JOURNEY RECONSTRUCTABLE. Ordering by
-		// arrival is wrong exactly when it matters, on a slow connection
-		// where a delayed beacon lands after the next page's, so an event
-		// without a usable sequence is refused rather than stored unorderable.
+		return null;
+	}
+
+	/**
+	 * Whether this is a heatmap event on a portal whose operator did not
+	 * accept that warning (portal-traffic-experiments). Named separately from
+	 * "not enabled" because the remedy is a different switch, with a consent
+	 * consequence the events list does not carry.
+	 *
+	 * @param TrafficEventCheck $check The posted event.
+	 * @param string            $name  The event's name.
+	 *
+	 * @return bool
+	 */
+	private function isHeatmapOff(TrafficEventCheck $check, string $name): bool {
+		return in_array($name, TrafficConfigResolver::HEAT_EVENTS, true) === true && ($check->config['sensitive']['heatmaps'] ?? false) !== true;
+	}
+
+	/**
+	 * Why the event's envelope is refused, or null.
+	 *
+	 * THE SEQUENCE IS WHAT MAKES A JOURNEY RECONSTRUCTABLE. Ordering by
+	 * arrival is wrong exactly when it matters, on a slow connection where a
+	 * delayed beacon lands after the next page's, so an event without a
+	 * usable sequence is refused rather than stored unorderable.
+	 *
+	 * @param array<string, mixed> $event The posted event.
+	 *
+	 * @return string|null
+	 */
+	private function envelopeRefusal(array $event): ?string {
 		$sequence = $event['sequence'] ?? null;
 		if (is_int($sequence) === false || $sequence < 0) {
 			return 'missing-sequence';
@@ -350,58 +417,6 @@ class TrafficEventValidator {
 	 */
 	private function now(): DateTimeImmutable {
 		return new DateTimeImmutable('now', new DateTimeZone('UTC'));
-	}
-
-	/**
-	 * The bounded `params` map: at most MAX_PARAMS scalar entries with short
-	 * keys and short values. Everything else is dropped, never refused.
-	 *
-	 * @param mixed $value The posted map.
-	 *
-	 * @return array<string, string|int|float|bool> The bounded map.
-	 */
-	private function params(mixed $value): array {
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		$out = [];
-		foreach ($value as $key => $item) {
-			if (count($out) >= self::MAX_PARAMS) {
-				break;
-			}
-
-			if (is_string($key) === false || preg_match('/^[A-Za-z0-9_.-]{1,64}$/', $key) !== 1) {
-				continue;
-			}
-
-			$scalar = $this->scalar(item: $item);
-			if ($scalar !== null) {
-				$out[$key] = $scalar;
-			}
-		}
-
-		return $out;
-	}
-
-	/**
-	 * A param value as stored: a bounded string, a number or a boolean. Null
-	 * for anything else, which the caller drops.
-	 *
-	 * @param mixed $item The posted value.
-	 *
-	 * @return string|int|float|bool|null The storable value, or null.
-	 */
-	private function scalar(mixed $item): string|int|float|bool|null {
-		if (is_string($item) === true) {
-			return mb_substr($item, 0, self::MAX_PARAM_VALUE);
-		}
-
-		if (is_int($item) === true || is_float($item) === true || is_bool($item) === true) {
-			return $item;
-		}
-
-		return null;
 	}
 
 	/**
