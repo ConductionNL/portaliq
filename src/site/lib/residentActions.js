@@ -93,22 +93,47 @@ export function saveVisible(signedIn, offered, actionId) {
  * @spec openspec/changes/woo-journey-entry-points/specs/portal-federated-search/spec.md#requirement-a-resident-must-be-able-to-keep-a-publication-or-one-document-in-a-dossier-req-wje-002
  */
 export function dossierCollectionOf(manifest, appId, schema) {
-	for (const contribution of (manifest && manifest.contributions) || []) {
-		if (!contribution || contribution.app !== appId) {
-			continue
-		}
-		for (const collection of contribution.collections || []) {
-			if (collection && collection.schema === schema) {
-				return {
-					id: String(collection.id || ''),
-					register: String(collection.register || ''),
-					schema: String(collection.schema),
-				}
+	for (const contribution of contributionsOf(manifest, appId)) {
+		const collection = collectionWithSchema(contribution, schema)
+		if (collection !== null) {
+			return {
+				id: String(collection.id || ''),
+				register: String(collection.register || ''),
+				schema: String(collection.schema),
 			}
 		}
 	}
 
 	return null
+}
+
+/**
+ * @param {object} contribution One contribution.
+ * @param {string} schema The schema.
+ * @return {object|null} Its first collection of that schema, or null.
+ */
+function collectionWithSchema(contribution, schema) {
+	for (const collection of contribution.collections || []) {
+		if (collection && collection.schema === schema) {
+			return collection
+		}
+	}
+	return null
+}
+
+/**
+ * The contributions of one app in the manifest, in manifest order.
+ *
+ * @param {object|null} manifest The manifest.
+ * @param {string} appId The contributing app.
+ * @yields {object} Each of its contributions.
+ */
+function* contributionsOf(manifest, appId) {
+	for (const contribution of (manifest && manifest.contributions) || []) {
+		if (contribution && contribution.app === appId) {
+			yield contribution
+		}
+	}
 }
 
 /**
@@ -121,17 +146,25 @@ export function dossierCollectionOf(manifest, appId, schema) {
  * @spec openspec/changes/woo-journey-entry-points/specs/portal-federated-search/spec.md#requirement-a-resident-must-be-able-to-keep-a-publication-or-one-document-in-a-dossier-req-wje-002
  */
 export function addToCollectionBody(input) {
-	const attachment =
-		input.attachment === null
-		|| input.attachment === undefined
-		|| input.attachment === ''
-			? null
-			: String(input.attachment)
 	const target = input.collection
 		? { collection: String(input.collection) }
 		: { title: String(input.title || '').trim() }
 
-	return { ...target, publication: String(input.publication || ''), attachment }
+	return {
+		...target,
+		publication: String(input.publication || ''),
+		attachment: attachmentOf(input.attachment),
+	}
+}
+
+/**
+ * @param {unknown} attachment The document to keep, if one.
+ * @return {string|null} Its id, or null to keep the whole publication.
+ */
+function attachmentOf(attachment) {
+	return attachment === null || attachment === undefined || attachment === ''
+		? null
+		: String(attachment)
 }
 
 /**
@@ -188,15 +221,11 @@ function headersFor(token) {
  * @spec openspec/changes/woo-journey-entry-points/specs/portal-federated-search/spec.md#requirement-a-resident-must-be-able-to-keep-a-publication-or-one-document-in-a-dossier-req-wje-002
  */
 export async function postAction(request, fetchImpl = fetch) {
-	const { authBase, appId, actionId, body, token, options = {} } = request
+	const { authBase, appId, actionId } = request
 	try {
 		const response = await fetchImpl(
 			`${authBase}/actions/${encodeURIComponent(appId)}/${encodeURIComponent(actionId)}`,
-			{
-				method: 'POST',
-				headers: { ...headersFor(token), ...submissionHeaders(options) },
-				body: JSON.stringify(body || {}),
-			},
+			actionInit(request),
 		)
 		const answer = await response.json().catch(() => ({}))
 		return {
@@ -206,6 +235,22 @@ export async function postAction(request, fetchImpl = fetch) {
 		}
 	} catch {
 		return { ok: false, status: 0, body: {} }
+	}
+}
+
+/**
+ * The POST of one resident action: the bearer, the form's submission key and
+ * the body as JSON.
+ *
+ * @param {{body: object, token: string, options?: {submissionKey?: string}}} request The action to run.
+ * @return {object} The request options.
+ */
+function actionInit(request) {
+	const { body, token, options = {} } = request
+	return {
+		method: 'POST',
+		headers: { ...headersFor(token), ...submissionHeaders(options) },
+		body: JSON.stringify(body || {}),
 	}
 }
 
