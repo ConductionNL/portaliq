@@ -78,6 +78,23 @@ class ActivityDraft {
 	 * @return array<string, mixed>
 	 */
 	private function optionalFields(array $params): array {
+		return $this->texts(params: $params) + $this->switches(params: $params) + [
+			'childrenPerSupervisor' => max(0, (int)($params['childrenPerSupervisor'] ?? 0)),
+			'supervisorRefs' => array_values(
+				array_unique(array_filter((array)($params['supervisorRefs'] ?? []), static fn ($ref) => is_string($ref) === true && $ref !== ''))
+			),
+			'sessions' => $this->sessions(declared: ($params['sessions'] ?? [])),
+		];
+	}//end optionalFields()
+
+	/**
+	 * The activity's optional texts, each only as a non-empty string.
+	 *
+	 * @param array<string, mixed> $params The request parameters.
+	 *
+	 * @return array<string, string>
+	 */
+	private function texts(array $params): array {
 		$fields = [];
 		foreach (['termEnd', 'signupDeadline', 'description', 'location', 'consentStatement'] as $key) {
 			$value = ($params[$key] ?? null);
@@ -86,19 +103,24 @@ class ActivityDraft {
 			}
 		}
 
+		return $fields;
+	}//end texts()
+
+	/**
+	 * The activity's four switches, each on only for true, 'true', 1 or '1'.
+	 *
+	 * @param array<string, mixed> $params The request parameters.
+	 *
+	 * @return array<string, bool>
+	 */
+	private function switches(array $params): array {
+		$fields = [];
 		foreach (['waitlistEnabled', 'paymentRequested', 'consentRequired', 'photosTaken'] as $key) {
-			$value = ($params[$key] ?? null);
-			$fields[$key] = ($value === true || $value === 'true' || $value === 1 || $value === '1');
+			$fields[$key] = in_array(($params[$key] ?? null), [true, 'true', 1, '1'], true);
 		}
 
-		$fields['childrenPerSupervisor'] = max(0, (int)($params['childrenPerSupervisor'] ?? 0));
-		$fields['supervisorRefs'] = array_values(
-			array_unique(array_filter((array)($params['supervisorRefs'] ?? []), static fn ($ref) => is_string($ref) === true && $ref !== ''))
-		);
-		$fields['sessions'] = $this->sessions(declared: ($params['sessions'] ?? []));
-
 		return $fields;
-	}//end optionalFields()
+	}//end switches()
 
 	/**
 	 * Keep the well-formed sessions: a unique string id and a start.
