@@ -96,49 +96,110 @@ class PortalCaseListReader {
 	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
 	public function listCases(array $subject, array $aggregate, array $hiddenCaseTypes = []): array {
+		$run  = new CaseListRun(subject: $subject, hidden: $hiddenCaseTypes);
 		$rows = [];
 		foreach (($aggregate['contributions'] ?? []) as $contribution) {
 			if (is_array($contribution) === false) {
 				continue;
 			}
 
-			$appId = (string)($contribution['app'] ?? '');
-			$label = (string)($contribution['label'] ?? $appId);
+			$rows = array_merge($rows, $this->ownRowsOfContribution(run: $run, contribution: $contribution));
+		}
 
-			foreach (($contribution['collections'] ?? []) as $collection) {
-				if (is_array($collection) === false || ($collection['kind'] ?? '') !== self::KIND) {
-					continue;
-				}
+		return $this->newestFirst(rows: $rows);
+	}//end listCases()
 
-				if (PortalSessionService::trustSatisfies((string)($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
-					// Defence in depth: the aggregate is trust-filtered
-					// already, and a case list is exactly the surface where a
-					// second check is worth its line.
-					continue;
-				}
+	/**
+	 * The subject's own case rows one contributing app's case collections
+	 * yield.
+	 *
+	 * @param CaseListRun          $run          The listing.
+	 * @param array<string, mixed> $contribution One app's contribution.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function ownRowsOfContribution(CaseListRun $run, array $contribution): array {
+		$rows = [];
+		foreach (($contribution['collections'] ?? []) as $collection) {
+			if ($this->isListedCollection(run: $run, collection: $collection) === false) {
+				continue;
+			}
 
-				foreach ($this->readCases(subject: $subject, collection: $collection, contributingApp: $appId) as $row) {
-					$caseType = $this->typeOf(row: $row, collection: $collection);
-					if (in_array($caseType, $hiddenCaseTypes, true) === true) {
-						continue;
-					}
+			$source = new CaseListSource(contribution: $contribution, collection: $collection);
+			$rows   = array_merge($rows, $this->ownRowsOfCollection(run: $run, source: $source));
+		}
 
-					$row['_source'] = [
-						'appId' => $appId,
-						'label' => $label,
-						'register' => (string)($collection['register'] ?? ''),
-						'schema' => (string)($collection['schema'] ?? ''),
-						'collection' => (string)($collection['id'] ?? ''),
-					];
-					$row['_closed'] = (new CaseRowMarker())->isClosed(row: $row, collection: $collection);
-					$row = (new CaseStatusLabelField())->stamp(row: $row, collection: $collection);
-					$row = ($this->typeNames?->stamp(row: $row, collection: $collection, typeId: $caseType) ?? $row);
+		return $rows;
+	}//end ownRowsOfContribution()
 
-					$rows[] = $row;
-				}
-			}//end foreach
-		}//end foreach
+	/**
+	 * Whether a collection is a case collection the subject's trust meets.
+	 *
+	 * Defence in depth: the aggregate is trust-filtered already, and a case
+	 * list is exactly the surface where a second check is worth its line.
+	 *
+	 * @param CaseListRun $run        The listing.
+	 * @param mixed       $collection One declared collection.
+	 *
+	 * @return bool
+	 */
+	private function isListedCollection(CaseListRun $run, mixed $collection): bool {
+		if (is_array($collection) === false || ($collection['kind'] ?? '') !== self::KIND) {
+			return false;
+		}
 
+		return PortalSessionService::trustSatisfies((string)($run->subject['trust'] ?? ''), ($collection['minTrust'] ?? null));
+	}//end isListedCollection()
+
+	/**
+	 * The subject's own rows of one case collection, the hidden case types
+	 * left out, each stamped with where it came from.
+	 *
+	 * @param CaseListRun    $run    The listing.
+	 * @param CaseListSource $source The case collection and its app.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function ownRowsOfCollection(CaseListRun $run, CaseListSource $source): array {
+		$rows = [];
+		foreach ($this->readCases(subject: $run->subject, collection: $source->collection, contributingApp: $source->appId) as $row) {
+			if (in_array($this->typeOf(row: $row, collection: $source->collection), $run->hidden, true) === true) {
+				continue;
+			}
+
+			$rows[] = $this->stampedRow(row: $row, source: $source);
+		}
+
+		return $rows;
+	}//end ownRowsOfCollection()
+
+	/**
+	 * A case row stamped with its source, whether it is closed, its status
+	 * label and its case type's name.
+	 *
+	 * @param array<string, mixed> $row    The case row.
+	 * @param CaseListSource       $source The case collection and its app.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function stampedRow(array $row, CaseListSource $source): array {
+		$collection = $source->collection;
+		$caseType   = $this->typeOf(row: $row, collection: $collection);
+
+		$row['_source'] = $source->stamp();
+		$row['_closed'] = (new CaseRowMarker())->isClosed(row: $row, collection: $collection);
+		$row = (new CaseStatusLabelField())->stamp(row: $row, collection: $collection);
+		return ($this->typeNames?->stamp(row: $row, collection: $collection, typeId: $caseType) ?? $row);
+	}//end stampedRow()
+
+	/**
+	 * The rows, newest first.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The case rows.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function newestFirst(array $rows): array {
 		$marker = new CaseRowMarker();
 		usort(
 			$rows,
@@ -148,7 +209,7 @@ class PortalCaseListReader {
 		);
 
 		return $rows;
-	}//end listCases()
+	}//end newestFirst()
 
 	/**
 	 * The cases a mandate opens, on top of the subject's own.
@@ -178,18 +239,15 @@ class PortalCaseListReader {
 			return [];
 		}
 
+		$run = new CaseListRun(subject: $subject, hidden: $hiddenCaseTypes);
+		$run->mandates = $mandates;
 		$rows = [];
 		foreach (($aggregate['contributions'] ?? []) as $contribution) {
 			if (is_array($contribution) === false) {
 				continue;
 			}
 
-			$rows = array_merge($rows, $this->mandatedRowsOfContribution(
-				subject: $subject,
-				contribution: $contribution,
-				mandates: $mandates,
-				hidden: $hiddenCaseTypes
-			));
+			$rows = array_merge($rows, $this->mandatedRowsOfContribution(run: $run, contribution: $contribution));
 		}
 
 		return $rows;
@@ -226,26 +284,17 @@ class PortalCaseListReader {
 	 * so an app that never thought about mandates cannot leak its rows
 	 * through one.
 	 *
-	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param CaseListRun          $run          The mandated listing.
 	 * @param array<string, mixed> $contribution One app's contribution.
-	 * @param array<int, array<string, mixed>> $mandates The live mandates.
-	 * @param array<int, string> $hidden The case type ids the serving portal hides.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
-	private function mandatedRowsOfContribution(array $subject, array $contribution, array $mandates, array $hidden): array {
-		$appId = (string)($contribution['app'] ?? '');
-		$label = (string)($contribution['label'] ?? $appId);
-
+	private function mandatedRowsOfContribution(CaseListRun $run, array $contribution): array {
 		$rows = [];
 		foreach (($contribution['collections'] ?? []) as $collection) {
-			if (is_array($collection) === false || ($collection['kind'] ?? '') !== self::KIND) {
-				continue;
-			}
-
-			if (PortalSessionService::trustSatisfies((string)($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
+			if ($this->isListedCollection(run: $run, collection: $collection) === false) {
 				continue;
 			}
 
@@ -253,24 +302,34 @@ class PortalCaseListReader {
 				continue;
 			}
 
-			foreach ($mandates as $mandate) {
-				$mandated = $this->mandatedRowsOfMandate(
-					subject: $subject,
-					collection: $collection,
-					appId: $appId,
-					label: $label,
-					mandate: $mandate
-				);
-				foreach ($mandated as $row) {
-					if (in_array($this->typeOf(row: $row, collection: $collection), $hidden, true) === false) {
-						$rows[] = $row;
-					}
+			$source = new CaseListSource(contribution: $contribution, collection: $collection);
+			$rows   = array_merge($rows, $this->mandatedRowsOfCollection(run: $run, source: $source));
+		}
+
+		return $rows;
+	}//end mandatedRowsOfContribution()
+
+	/**
+	 * The rows every live mandate opens on one case collection, the hidden
+	 * case types left out.
+	 *
+	 * @param CaseListRun    $run    The mandated listing.
+	 * @param CaseListSource $source The case collection and its app.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function mandatedRowsOfCollection(CaseListRun $run, CaseListSource $source): array {
+		$rows = [];
+		foreach ($run->mandates as $mandate) {
+			foreach ($this->mandatedRowsOfMandate(run: $run, source: $source, mandate: $mandate) as $row) {
+				if (in_array($this->typeOf(row: $row, collection: $source->collection), $run->hidden, true) === false) {
+					$rows[] = $row;
 				}
 			}
 		}
 
 		return $rows;
-	}//end mandatedRowsOfContribution()
+	}//end mandatedRowsOfCollection()
 
 	/**
 	 * The rows one mandate opens on one collection.
@@ -279,125 +338,149 @@ class PortalCaseListReader {
 	 * tree at request time (REQ-PTV-003). A flat mandate reaches the entity it
 	 * names and no other.
 	 *
-	 * @param array<string, mixed> $subject The resolved subject.
-	 * @param array<string, mixed> $collection The declared case collection.
-	 * @param string $appId The contributing app.
-	 * @param string $label The contributing app's label.
+	 * @param CaseListRun          $run     The mandated listing.
+	 * @param CaseListSource       $source  The case collection and its app.
 	 * @param array<string, mixed> $mandate The mandate being spent.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/changes/portal-visibility-follows-the-party-tree/specs/portal-visibility-and-the-party-tree/spec.md
 	 */
-	private function mandatedRowsOfMandate(array $subject, array $collection, string $appId, string $label, array $mandate): array {
+	private function mandatedRowsOfMandate(CaseListRun $run, CaseListSource $source, array $mandate): array {
 		$described = $this->mandates?->describe(mandate: $mandate);
 		if ($described === null) {
 			return [];
 		}
 
-		$party = $described['onBehalfOf'];
-		if ($party === '') {
-			$party = $described['organisation'];
-		}
-
-		if ($party === '') {
+		$read = new MandatedRead(source: $source, mandate: $mandate);
+		$read->described = $described;
+		$read->party     = $this->mandateParty(described: $described);
+		if ($read->party === '') {
 			return [];
 		}
 
-		$entities = array_values((array)($mandate['_entities'] ?? []));
-		if ($entities === []) {
-			$entities = [$party];
-		}
-
 		$rows = [];
-		foreach ($entities as $entity) {
+		foreach ($this->reachedEntities(mandate: $mandate, party: $read->party) as $entity) {
 			if ((string)$entity === '') {
 				continue;
 			}
 
-			$partyRows = $this->readParty(
-				collection: $collection,
-				contributingApp: $appId,
-				mandateField: (string)($collection['mandateField'] ?? ''),
-				party: (string)$entity,
-				organisation: $described['organisation'],
-				audience: (string)($subject['audience'] ?? '')
-			);
-
-			$rows = array_merge($rows, $this->stampMandatedRows(
-				partyRows: $partyRows,
-				collection: $collection,
-				source: ['appId' => $appId, 'label' => $label],
-				mandate: $mandate,
-				described: $described,
-				entity: (string)$entity,
-				party: $party
-			));
+			$read->entity = (string)$entity;
+			$rows = array_merge($rows, $this->mandatedRowsOfEntity(run: $run, read: $read));
 		}
 
 		return $rows;
 	}//end mandatedRowsOfMandate()
 
 	/**
+	 * The rows one entity a mandate reaches holds in the collection, those
+	 * the mandate covers, stamped.
+	 *
+	 * @param CaseListRun  $run  The mandated listing.
+	 * @param MandatedRead $read The mandate's read, at the entity being read.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function mandatedRowsOfEntity(CaseListRun $run, MandatedRead $read): array {
+		$collection = $read->source->collection;
+		$partyRows  = $this->readParty(
+			collection: $collection,
+			contributingApp: $read->source->appId,
+			mandateField: (string)($collection['mandateField'] ?? ''),
+			party: $read->entity,
+			organisation: $read->described['organisation'],
+			audience: (string)($run->subject['audience'] ?? '')
+		);
+
+		return $this->stampMandatedRows(partyRows: $partyRows, read: $read);
+	}//end mandatedRowsOfEntity()
+
+	/**
+	 * The party a described mandate is held for: the entity it names, else
+	 * its tenant.
+	 *
+	 * @param array<string, mixed> $described The mandate, described.
+	 *
+	 * @return string
+	 */
+	private function mandateParty(array $described): string {
+		$party = $described['onBehalfOf'];
+		if ($party === '') {
+			$party = $described['organisation'];
+		}
+
+		return $party;
+	}//end mandateParty()
+
+	/**
+	 * The entities a mandate reaches, resolved by the caller from the party
+	 * tree; a flat mandate reaches the party it names and no other.
+	 *
+	 * @param array<string, mixed> $mandate The mandate being spent.
+	 * @param string               $party   The party it is held for.
+	 *
+	 * @return array<int, mixed>
+	 */
+	private function reachedEntities(array $mandate, string $party): array {
+		$entities = array_values((array)($mandate['_entities'] ?? []));
+		if ($entities === []) {
+			return [$party];
+		}
+
+		return $entities;
+	}//end reachedEntities()
+
+	/**
 	 * The rows of one party that this mandate really covers, each stamped
 	 * with where it came from and what granted it.
 	 *
-	 * @param array<int, array<string, mixed>> $partyRows The rows read for the party.
-	 * @param array<string, mixed> $collection The declared case collection.
-	 * @param array{appId: string, label: string} $source The contributing app.
-	 * @param array<string, mixed> $mandate The mandate being spent.
-	 * @param array<string, mixed> $described The mandate, described.
-	 * @param string $entity The entity the rows belong to.
-	 * @param string $party The party the mandate names itself.
+	 * @param array<int, array<string, mixed>> $partyRows The rows read for the entity.
+	 * @param MandatedRead                     $read      The mandate's read, at the entity being read.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/changes/portal-visibility-follows-the-party-tree/specs/portal-visibility-and-the-party-tree/spec.md
 	 */
-	private function stampMandatedRows(
-		array $partyRows,
-		array $collection,
-		array $source,
-		array $mandate,
-		array $described,
-		string $entity,
-		string $party,
-	): array {
+	private function stampMandatedRows(array $partyRows, MandatedRead $read): array {
 		$rows = [];
 		foreach ($partyRows as $row) {
-			$caseType = $this->typeOf(row: $row, collection: $collection);
-			if ($this->mandates?->covers(mandate: $mandate, caseType: $caseType) !== true) {
-				// A mandate narrower than the organisation lists only what it
-				// names.
+			if ($this->isCoveredRow(read: $read, row: $row) === false) {
 				continue;
 			}
 
-			if ($entity !== $party && $this->reachableThroughAParent(collection: $collection, caseType: $caseType) === false) {
-				// REQ-PTV-002: a case type that says nothing about parent
-				// access is not reachable that way, whatever the mandate says.
-				continue;
-			}
-
-			$row['_source'] = [
-				'appId' => $source['appId'],
-				'label' => $source['label'],
-				'register' => (string)($collection['register'] ?? ''),
-				'schema' => (string)($collection['schema'] ?? ''),
-				'collection' => (string)($collection['id'] ?? ''),
-			];
-			$row['_closed'] = (new CaseRowMarker())->isClosed(row: $row, collection: $collection);
-			$row = (new CaseStatusLabelField())->stamp(row: $row, collection: $collection);
-			$row = ($this->typeNames?->stamp(row: $row, collection: $collection, typeId: $caseType) ?? $row);
-			$row['_mandate'] = $described;
+			$row = $this->stampedRow(row: $row, source: $read->source);
+			$row['_mandate'] = $read->described;
 			// The case is the subsidiary's, and says so: it is never presented
 			// as the parent's own (REQ-PTV-005).
-			$row['_entity'] = $entity;
+			$row['_entity'] = $read->entity;
 
 			$rows[] = $row;
 		}
 
 		return $rows;
 	}//end stampMandatedRows()
+
+	/**
+	 * Whether the mandate really covers a row of the entity being read.
+	 *
+	 * @param MandatedRead         $read The mandate's read, at the entity being read.
+	 * @param array<string, mixed> $row  The row read for the entity.
+	 *
+	 * @return bool
+	 */
+	private function isCoveredRow(MandatedRead $read, array $row): bool {
+		$collection = $read->source->collection;
+		$caseType   = $this->typeOf(row: $row, collection: $collection);
+		if ($this->mandates?->covers(mandate: $read->mandate, caseType: $caseType) !== true) {
+			// A mandate narrower than the organisation lists only what it
+			// names.
+			return false;
+		}
+
+		// REQ-PTV-002: a case type that says nothing about parent access is
+		// not reachable that way, whatever the mandate says.
+		return $read->entity === $read->party || $this->reachableThroughAParent(collection: $collection, caseType: $caseType) === true;
+	}//end isCoveredRow()
 
 	/**
 	 * Whether the contribution declares this case type reachable through a
