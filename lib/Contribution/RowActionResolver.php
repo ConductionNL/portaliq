@@ -180,6 +180,26 @@ class RowActionResolver {
 	 * @return array<string, mixed>
 	 */
 	private function resolveCollection(array $collection, array $rowIds): array {
+		$entries = $this->declaredEntries(collection: $collection);
+		unset($collection['rowAction'], $collection['rowActions']);
+
+		$resolved = $this->resolvedIds(entries: $entries, rowIds: $rowIds);
+		if ($resolved !== []) {
+			$collection['rowActions'] = $resolved;
+		}
+
+		return $collection;
+	}//end resolveCollection()
+
+	/**
+	 * The collection's declared row action entries: its `rowActions` list,
+	 * then its singular `rowAction`.
+	 *
+	 * @param array<string, mixed> $collection The sanitised collection.
+	 *
+	 * @return array<int|string, mixed>
+	 */
+	private function declaredEntries(array $collection): array {
 		$entries = [];
 		if (array_key_exists('rowActions', $collection) === true && is_array($collection['rowActions']) === true) {
 			$entries = $collection['rowActions'];
@@ -187,9 +207,20 @@ class RowActionResolver {
 
 		if (array_key_exists('rowAction', $collection) === true) {
 			$entries[] = $collection['rowAction'];
-			unset($collection['rowAction']);
 		}
 
+		return $entries;
+	}//end declaredEntries()
+
+	/**
+	 * The entries' ids that resolve, each once, in their first order.
+	 *
+	 * @param array<int|string, mixed> $entries The declared entries.
+	 * @param array<int, string>       $rowIds  The resolvable ids.
+	 *
+	 * @return array<int, string>
+	 */
+	private function resolvedIds(array $entries, array $rowIds): array {
 		$resolved = [];
 		foreach ($entries as $entry) {
 			$id = $this->entryId(entry: $entry);
@@ -198,13 +229,8 @@ class RowActionResolver {
 			}
 		}
 
-		unset($collection['rowActions']);
-		if ($resolved !== []) {
-			$collection['rowActions'] = $resolved;
-		}
-
-		return $collection;
-	}//end resolveCollection()
+		return $resolved;
+	}//end resolvedIds()
 
 	/**
 	 * The id an entry names: a string, or an object's string `id`. Anything
