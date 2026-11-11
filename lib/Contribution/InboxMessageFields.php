@@ -81,20 +81,45 @@ class InboxMessageFields {
 			return $collection;
 		}
 
-		$kept = [];
-		foreach (self::KEYS as $key) {
-			$field = ($declared[$key] ?? null);
-			if (is_string($field) === true && preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $field) === 1) {
-				$kept[$key] = $field;
-			}
-		}
-
+		$kept = $this->keptFields(declared: $declared);
 		if ($kept !== []) {
 			$collection['messageFields'] = $kept;
 		}
 
 		return $collection;
 	}//end normalise()
+
+	/**
+	 * The inbox fields a declaration names with a plain field name.
+	 *
+	 * @param array<string, mixed> $declared The declared `messageFields`.
+	 *
+	 * @return array<string, string> The kept field names, by inbox key.
+	 *
+	 * @spec openspec/changes/inbox-reads-each-apps-message-fields/specs/supplier-portal/spec.md#requirement-an-inbox-collection-names-its-own-message-fields-req-imf-001
+	 */
+	private function keptFields(array $declared): array {
+		$kept = [];
+		foreach (self::KEYS as $key) {
+			$field = ($declared[$key] ?? null);
+			if ($this->isFieldName(value: $field) === true) {
+				$kept[$key] = $field;
+			}
+		}
+
+		return $kept;
+	}//end keptFields()
+
+	/**
+	 * Whether a declared value is a plain field name.
+	 *
+	 * @param mixed $value The declared value.
+	 *
+	 * @return bool
+	 */
+	private function isFieldName(mixed $value): bool {
+		return is_string($value) === true && preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $value) === 1;
+	}//end isFieldName()
 
 	/**
 	 * Keep the plain field names of `senderRoleField`, `aboutField`,
@@ -116,7 +141,7 @@ class InboxMessageFields {
 
 			$field = $collection[$key];
 			unset($collection[$key]);
-			if ($isInbox === true && is_string($field) === true && preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $field) === 1) {
+			if ($isInbox === true && $this->isFieldName(value: $field) === true) {
 				$collection[$key] = $field;
 			}
 		}
@@ -138,18 +163,26 @@ class InboxMessageFields {
 	 * @spec openspec/changes/a-message-names-its-record-and-links-its-action/tasks.md#task-1
 	 */
 	public static function sameSiteAction(mixed $action): ?array {
-		if (is_array($action) === false) {
+		if (is_array($action) === false || self::isSameSiteLink(action: $action) === false) {
 			return null;
 		}
 
+		return ['label' => trim($action['label']), 'href' => $action['href']];
+	}//end sameSiteAction()
+
+	/**
+	 * Whether a projected action is a label and an address on this portal.
+	 *
+	 * @param array<string, mixed> $action The projected action.
+	 *
+	 * @return bool
+	 */
+	private static function isSameSiteLink(array $action): bool {
 		$label = $action['label'] ?? null;
 		$href  = $action['href'] ?? null;
-		if (is_string($label) === false || trim($label) === '' || is_string($href) === false || self::isSameSiteHref(href: $href) === false) {
-			return null;
-		}
 
-		return ['label' => trim($label), 'href' => $href];
-	}//end sameSiteAction()
+		return is_string($label) === true && trim($label) !== '' && is_string($href) === true && self::isSameSiteHref(href: $href) === true;
+	}//end isSameSiteLink()
 
 	/**
 	 * Whether an address stays on this portal: a path (never protocol-relative,
@@ -186,10 +219,24 @@ class InboxMessageFields {
 			return $row;
 		}
 
+		return $this->withMessageFields(row: $row, fields: $fields);
+	}//end apply()
+
+	/**
+	 * Copy each named field onto the row under its inbox name, in the
+	 * declared order; `readAt` sets `read` from that field alone.
+	 *
+	 * @param array<string, mixed> $row    The row.
+	 * @param array<string, mixed> $fields The collection's `messageFields`.
+	 *
+	 * @return array<string, mixed> The row.
+	 *
+	 * @spec openspec/changes/inbox-reads-each-apps-message-fields/specs/supplier-portal/spec.md#requirement-an-inbox-collection-names-its-own-message-fields-req-imf-001
+	 */
+	private function withMessageFields(array $row, array $fields): array {
 		foreach ($fields as $key => $field) {
 			if ($key === 'readAt') {
-				$value = ($row[$field] ?? null);
-				$row['read'] = ($value !== null && $value !== '' && $value !== false);
+				$row['read'] = $this->filled(value: ($row[$field] ?? null));
 				continue;
 			}
 
@@ -199,7 +246,7 @@ class InboxMessageFields {
 		}
 
 		return $row;
-	}//end apply()
+	}//end withMessageFields()
 
 	/**
 	 * Copy the extra fields onto the row; the action only when it stays in the portal.
@@ -219,11 +266,7 @@ class InboxMessageFields {
 			}
 
 			if ($rowKey === 'action') {
-				$action = self::sameSiteAction(action: $row[$field]);
-				if ($action !== null) {
-					$row['action'] = $action;
-				}
-
+				$row = $this->withAction(row: $row, value: $row[$field]);
 				continue;
 			}
 
@@ -232,6 +275,25 @@ class InboxMessageFields {
 
 		return $row;
 	}//end applyExtra()
+
+	/**
+	 * The row with the projected action, only when it stays in the portal.
+	 *
+	 * @param array<string, mixed> $row   The row.
+	 * @param mixed                $value The projected action.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/a-message-names-its-record-and-links-its-action/tasks.md#task-1
+	 */
+	private function withAction(array $row, mixed $value): array {
+		$action = self::sameSiteAction(action: $value);
+		if ($action !== null) {
+			$row['action'] = $action;
+		}
+
+		return $row;
+	}//end withAction()
 
 	/**
 	 * The literal payload of a mark-read.
@@ -264,12 +326,27 @@ class InboxMessageFields {
 			return [$field => $now];
 		}
 
+		return $this->ownReadPayload(row: $row, now: $now);
+	}//end readPayload()
+
+	/**
+	 * The mark-read payload of a message that names no read field: the
+	 * moment only when the sender asked for a receipt and none is kept yet.
+	 *
+	 * @param array<string, mixed> $row The stored message.
+	 * @param string               $now The current time, ISO 8601.
+	 *
+	 * @return array<string, mixed> The fields to write.
+	 *
+	 * @spec openspec/changes/inbox-read-receipt-on-request/tasks.md#t03
+	 */
+	private function ownReadPayload(array $row, string $now): array {
 		if (($row['readReceiptRequested'] ?? false) === true && $this->filled(value: ($row['readAt'] ?? null)) === false) {
 			return ['read' => true, 'readAt' => $now];
 		}
 
 		return ['read' => true];
-	}//end readPayload()
+	}//end ownReadPayload()
 
 	/**
 	 * Whether a stored value is set.
