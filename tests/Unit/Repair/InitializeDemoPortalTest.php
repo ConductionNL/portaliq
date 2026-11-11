@@ -41,6 +41,7 @@ namespace OCA\Portaliq\Tests\Unit\Repair;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Repair\InitializeDemoPortal;
+use OCA\Portaliq\Service\PortalObjectCounter;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
@@ -53,6 +54,13 @@ use Psr\Log\LoggerInterface;
 class InitializeDemoPortalTest extends TestCase {
 
 	/**
+	 * The number of portals the counter double reports as already present.
+	 *
+	 * @var integer
+	 */
+	private int $existing = 0;
+
+	/**
 	 * Build the step with mocked collaborators.
 	 *
 	 * @param PortalObjectWriter $writer The writer double.
@@ -61,10 +69,14 @@ class InitializeDemoPortalTest extends TestCase {
 	 * @return InitializeDemoPortal The step under test.
 	 */
 	private function step(PortalObjectWriter $writer, IAppConfig $config): InitializeDemoPortal {
+		$counter = $this->createMock(PortalObjectCounter::class);
+		$counter->method('countObjects')->willReturnCallback(fn (): int => $this->existing);
+
 		return new InitializeDemoPortal(
 			$writer,
 			$config,
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			$counter
 		);
 	}//end step()
 
@@ -98,8 +110,8 @@ class InitializeDemoPortalTest extends TestCase {
 	 * @return PortalObjectWriter The double.
 	 */
 	private function writer(int $existing, array &$writes): PortalObjectWriter {
+		$this->existing = $existing;
 		$writer = $this->createMock(PortalObjectWriter::class);
-		$writer->method('countObjects')->willReturn($existing);
 		$writer->method('createAnonymousObject')
 			->willReturnCallback(
 				static function (string $register, string $schema, array $data) use (&$writes): array {
@@ -266,7 +278,6 @@ class InitializeDemoPortalTest extends TestCase {
 	 */
 	public function testAFailedWriteDoesNotAbortTheInstall(): void {
 		$writer = $this->createMock(PortalObjectWriter::class);
-		$writer->method('countObjects')->willReturn(0);
 		$writer->method('createAnonymousObject')->willReturn(null);
 
 		$config = $this->createMock(IAppConfig::class);
@@ -356,7 +367,6 @@ class InitializeDemoPortalTest extends TestCase {
 	 */
 	private function writerFailingAt(int $failAt, array &$writes): PortalObjectWriter {
 		$writer = $this->createMock(PortalObjectWriter::class);
-		$writer->method('countObjects')->willReturn(0);
 		$writer->method('createAnonymousObject')
 			->willReturnCallback(
 				static function (string $register, string $schema, array $data) use (&$writes, $failAt): ?array {
@@ -385,7 +395,6 @@ class InitializeDemoPortalTest extends TestCase {
 	public function testAPortalWithoutAnIdStopsBeforeWritingPages(): void {
 		$writes = [];
 		$writer = $this->createMock(PortalObjectWriter::class);
-		$writer->method('countObjects')->willReturn(0);
 		$writer->method('createAnonymousObject')
 			->willReturnCallback(
 				static function (string $register, string $schema, array $data) use (&$writes): array {

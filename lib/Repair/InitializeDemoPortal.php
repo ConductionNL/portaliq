@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Repair;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\PortalObjectCounter;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCP\IAppConfig;
@@ -302,6 +303,7 @@ class InitializeDemoPortal implements IRepairStep {
 	 * @param PortalObjectWriter $writer Writes portal and page objects.
 	 * @param IAppConfig $appConfig App configuration.
 	 * @param LoggerInterface $logger Logger.
+	 * @param PortalObjectCounter $counter Counts the portals already present.
 	 *
 	 * @return void
 	 */
@@ -309,6 +311,7 @@ class InitializeDemoPortal implements IRepairStep {
 		private readonly PortalObjectWriter $writer,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
+		private readonly PortalObjectCounter $counter,
 	) {
 	}//end __construct()
 
@@ -369,7 +372,7 @@ class InitializeDemoPortal implements IRepairStep {
 			return 'Demo portal was already provisioned once — not provisioning again.';
 		}
 
-		$existing = $this->writer->countObjects(register: PortalRegisterContext::REGISTER, schema: 'portal');
+		$existing = $this->counter->countObjects(register: PortalRegisterContext::REGISTER, schema: 'portal');
 		if ($existing > 0) {
 			return sprintf('%d portal(s) already present — leaving content untouched.', $existing);
 		}

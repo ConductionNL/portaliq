@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
-use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\PortalObjectCounter;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -57,10 +57,10 @@ class PortalObjectCounterTest extends TestCase {
 	 * @param ContainerInterface $container The container.
 	 * @param LoggerInterface    $logger    The logger.
 	 *
-	 * @return PortalObjectWriter
+	 * @return PortalObjectCounter
 	 */
-	private function counter(ContainerInterface $container, LoggerInterface $logger): PortalObjectWriter {
-		return new PortalObjectWriter($container, $logger);
+	private function counter(ContainerInterface $container, LoggerInterface $logger): PortalObjectCounter {
+		return new PortalObjectCounter($container, $logger);
 	}
 
 	/**
