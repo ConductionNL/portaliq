@@ -79,18 +79,45 @@ class MessageContactsKeys {
 			return $collection;
 		}
 
-		$out       = ['provider' => $declared['provider']];
-		$projected = (array)($collection['fields'] ?? []);
-		$fields    = array_values(
+		$collection['contacts'] = ['provider' => $declared['provider']]
+			+ $this->labelFields(declared: $declared, projected: (array)($collection['fields'] ?? []))
+			+ $this->words(declared: $declared);
+		return $collection;
+	}//end normalise()
+
+	/**
+	 * The record label fields as `['recordLabelFields' => …]`: the declared
+	 * ones the collection projects, at most MAX_LABEL_FIELDS, or nothing.
+	 *
+	 * @param array<string, mixed> $declared  The declared contacts.
+	 * @param array<int, mixed>    $projected The collection's projected fields.
+	 *
+	 * @return array<string, array<int, string>>
+	 */
+	private function labelFields(array $declared, array $projected): array {
+		$fields = array_values(
 			array_filter(
 				(array)($declared['recordLabelFields'] ?? []),
 				static fn ($field): bool => is_string($field) === true && in_array($field, $projected, true) === true
 			)
 		);
-		if ($fields !== []) {
-			$out['recordLabelFields'] = array_slice($fields, 0, self::MAX_LABEL_FIELDS);
+		if ($fields === []) {
+			return [];
 		}
 
+		return ['recordLabelFields' => array_slice($fields, 0, self::MAX_LABEL_FIELDS)];
+	}//end labelFields()
+
+	/**
+	 * The compose label and hint, each trimmed and only when it is a short
+	 * text.
+	 *
+	 * @param array<string, mixed> $declared The declared contacts.
+	 *
+	 * @return array<string, string>
+	 */
+	private function words(array $declared): array {
+		$out = [];
 		foreach (['composeLabel', 'composeHint'] as $key) {
 			$text = $this->text(value: ($declared[$key] ?? null));
 			if ($text !== null) {
@@ -98,9 +125,8 @@ class MessageContactsKeys {
 			}
 		}
 
-		$collection['contacts'] = $out;
-		return $collection;
-	}//end normalise()
+		return $out;
+	}//end words()
 
 	/**
 	 * A provider's answer for one row, held to `{staffRef, name, role}`: an
