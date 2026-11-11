@@ -11,7 +11,7 @@
  *
  * Under-privilege on ambiguity (ADR-005, design.md): an unmapped or missing
  * LoA maps to `low`, never higher — the final safety net is
- * {@see PortalSessionService::normaliseTrust()} itself, so even a malformed
+ * {@see SessionTrust::normaliseTrust()} itself, so even a malformed
  * `loaMap` VALUE in the org's own config cannot mint a session above `low`.
  * `subjectRef` is either the literal keyword `derive` (the caller — {@see
  * PortalAccountService} — mints/reuses a stable server-side reference) or a
@@ -37,6 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Service\Session\SessionTrust;
 use OCA\Portaliq\Service\Branch\BranchNumber;
 
 /**
@@ -313,7 +314,7 @@ class OidcClaimMapperService {
 	 * @spec openspec/specs/supplier-portal/spec.md#broker-loa-maps-to-portal-trust-under-privileging-on-ambiguity
 	 *
 	 * @SuppressWarnings(PHPMD.StaticAccess) -- deliberate reuse of the ONE
-	 * canonical trust-normalisation point (PortalSessionService's own
+	 * canonical trust-normalisation point (SessionTrust's own
 	 * docblock: "the single normalisation point used by the session edge,
 	 * the registry, and the contribution controller") — duplicating it here
 	 * would risk the trust vocabulary drifting between call sites.
@@ -329,7 +330,7 @@ class OidcClaimMapperService {
 
 		$mapped = ($loaMap[$loaValue] ?? 'low');
 
-		return PortalSessionService::normaliseTrust(trust: $mapped);
+		return SessionTrust::normaliseTrust(trust: $mapped);
 	}//end mapLoaToTrust()
 
 	/**

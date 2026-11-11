@@ -21,12 +21,14 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Session;
 
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\SessionTrust;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Pins the trust ranking of the session edge, allowed and refused outcomes:
  * every subject trust against every declared minimum, plus the values that
- * normalise to `low` and the minimums no subject can meet.
+ * normalise to `low` and the minimums no subject can meet. The delegates
+ * left on PortalSessionService answer the same.
  *
  * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
  */
@@ -48,29 +50,40 @@ class SessionTrustGoldenTest extends TestCase {
 	public function testEverySubjectTrustAgainstEveryMinimum(): void {
 		foreach (self::MATRIX as $subject => $row) {
 			foreach ($row as $min => $expected) {
-				$this->assertSame($expected, PortalSessionService::trustSatisfies($subject, $min), "{$subject} vs {$min}");
+				$this->assertSame($expected, SessionTrust::trustSatisfies($subject, $min), "{$subject} vs {$min}");
 			}
 		}
 
 	}//end testEverySubjectTrustAgainstEveryMinimum()
 
 	public function testAMissingOrMalformedMinimum(): void {
-		$this->assertTrue(PortalSessionService::trustSatisfies('low', null));
-		$this->assertFalse(PortalSessionService::trustSatisfies('high', ['high']));
-		$this->assertFalse(PortalSessionService::trustSatisfies('high', 3));
-		$this->assertFalse(PortalSessionService::trustSatisfies('high', 'High'));
-		$this->assertFalse(PortalSessionService::trustSatisfies(['high'], 'substantial'));
+		$this->assertTrue(SessionTrust::trustSatisfies('low', null));
+		$this->assertFalse(SessionTrust::trustSatisfies('high', ['high']));
+		$this->assertFalse(SessionTrust::trustSatisfies('high', 3));
+		$this->assertFalse(SessionTrust::trustSatisfies('high', 'High'));
+		$this->assertFalse(SessionTrust::trustSatisfies(['high'], 'substantial'));
 
 	}//end testAMissingOrMalformedMinimum()
 
 	public function testNormalisation(): void {
 		foreach (['low', 'substantial', 'high'] as $known) {
-			$this->assertSame($known, PortalSessionService::normaliseTrust(trust: $known));
+			$this->assertSame($known, SessionTrust::normaliseTrust(trust: $known));
 		}
 
 		foreach (['', 'dev', 'EH3', 'HIGH', null, 3, ['high']] as $unknown) {
-			$this->assertSame('low', PortalSessionService::normaliseTrust(trust: $unknown));
+			$this->assertSame('low', SessionTrust::normaliseTrust(trust: $unknown));
 		}
 
 	}//end testNormalisation()
+
+	public function testTheSessionServiceDelegatesAnswerTheSame(): void {
+		foreach (self::MATRIX as $subject => $row) {
+			foreach (array_keys($row) as $min) {
+				$this->assertSame(SessionTrust::trustSatisfies($subject, $min), PortalSessionService::trustSatisfies($subject, $min));
+			}
+
+			$this->assertSame(SessionTrust::normaliseTrust(trust: $subject), PortalSessionService::normaliseTrust(trust: $subject));
+		}
+
+	}//end testTheSessionServiceDelegatesAnswerTheSame()
 }//end class

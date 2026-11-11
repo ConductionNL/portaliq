@@ -51,6 +51,7 @@ use DateInterval;
 use DateTimeImmutable;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\Branch\BranchNumber;
+use OCA\Portaliq\Service\Session\SessionTrust;
 use OCP\IAppConfig;
 use OCP\IConfig;
 use OCP\Security\ISecureRandom;
@@ -79,17 +80,6 @@ class PortalSessionService {
 	 * The bearer scheme prefix, case-sensitive per RFC 6750.
 	 */
 	private const BEARER_PREFIX = 'Bearer ';
-
-	/**
-	 * The eIDAS-aligned trust vocabulary, ordered ascending (contract v2, A3).
-	 * Any subject trust outside this map normalises to `low`; any entry
-	 * `minTrust` outside it is unsatisfiable (fail-closed both ways).
-	 */
-	private const TRUST_ORDER = [
-		'low' => 1,
-		'substantial' => 2,
-		'high' => 3,
-	];
 
 	/**
 	 * The OpenRegister register the `portalSession` schema lives in.
@@ -232,12 +222,8 @@ class PortalSessionService {
 	}//end isConfigured()
 
 	/**
-	 * Normalise a subject trust value to the eIDAS-aligned vocabulary.
-	 *
-	 * Any value outside `low|substantial|high` — including empty, legacy `dev`
-	 * or `EH3` — normalises to `low` (fail-closed; ADR-005). This is the single
-	 * normalisation point used by the session edge, the registry, and the
-	 * contribution controller.
+	 * Normalise a subject trust value; kept for the callers not yet moved to
+	 * {@see SessionTrust::normaliseTrust()}.
 	 *
 	 * @param mixed $trust The raw trust value (session claim or config).
 	 *
@@ -246,23 +232,14 @@ class PortalSessionService {
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
 	 */
 	public static function normaliseTrust(mixed $trust): string {
-		if (is_string($trust) === true && isset(self::TRUST_ORDER[$trust]) === true) {
-			return $trust;
-		}
-
-		return 'low';
+		return SessionTrust::normaliseTrust(trust: $trust);
 	}//end normaliseTrust()
 
 	/**
-	 * Whether a subject trust level satisfies an entry's `minTrust`.
+	 * Whether a subject trust level satisfies an entry's `minTrust`; kept for
+	 * the callers not yet moved to {@see SessionTrust::trustSatisfies()}.
 	 *
-	 * Ordering is `low < substantial < high`. A missing `minTrust` (null or
-	 * empty string) defaults to `low`; an unrecognised `minTrust` value makes
-	 * the entry unsatisfiable for EVERY subject — a typo must never widen
-	 * access (fail-closed; ADR-005). The subject side is normalised first, so
-	 * unknown subject trust is compared as `low`.
-	 *
-	 * @param mixed $subjectTrust The subject's trust value (normalised here).
+	 * @param mixed $subjectTrust The subject's trust value (normalised there).
 	 * @param mixed $minTrust The entry's declared minimum, or null/'' when absent.
 	 *
 	 * @return bool True when the subject meets the threshold.
@@ -270,16 +247,7 @@ class PortalSessionService {
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
 	 */
 	public static function trustSatisfies(mixed $subjectTrust, mixed $minTrust): bool {
-		if ($minTrust === null || $minTrust === '') {
-			$minTrust = 'low';
-		}
-
-		if (is_string($minTrust) === false || isset(self::TRUST_ORDER[$minTrust]) === false) {
-			// Unrecognised minTrust → unsatisfiable for everyone.
-			return false;
-		}
-
-		return self::TRUST_ORDER[self::normaliseTrust(trust: $subjectTrust)] >= self::TRUST_ORDER[$minTrust];
+		return SessionTrust::trustSatisfies(subjectTrust: $subjectTrust, minTrust: $minTrust);
 	}//end trustSatisfies()
 
 	/**
@@ -545,7 +513,7 @@ class PortalSessionService {
 			return null;
 		}
 
-		return (new SessionClaims())->subject(claims: $claims, trust: self::normaliseTrust(trust: ($claims['trust'] ?? '')));
+		return (new SessionClaims())->subject(claims: $claims, trust: SessionTrust::normaliseTrust(trust: ($claims['trust'] ?? '')));
 	}//end resolveFromBearer()
 
 	/**
@@ -1125,7 +1093,7 @@ class PortalSessionService {
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
 			audience: (string)($subject['audience'] ?? ''),
 			organisation: (string)($subject['organisation'] ?? ''),
-			trust: self::normaliseTrust(trust: ($subject['trust'] ?? '')),
+			trust: SessionTrust::normaliseTrust(trust: ($subject['trust'] ?? '')),
 			jti: (string)($subject['jti'] ?? ''),
 			scopeClaim: $scopeClaim,
 			scopeValue: $scopeValue,
