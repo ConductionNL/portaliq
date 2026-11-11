@@ -157,7 +157,11 @@ export default {
 			return
 		}
 
-		const answer = await guestPreview(this.authBase, this.link, this.portal)
+		const answer = await guestPreview({
+			authBase: this.authBase,
+			link: this.link,
+			portal: this.portal,
+		})
 		this.state = previewState(answer, this.strings)
 		this.declaration = (answer.ok && answer.body && answer.body.action) || {}
 		this.phase = 'ready'
@@ -188,12 +192,12 @@ export default {
 		 */
 		async act() {
 			this.busy = true
-			const answer = await guestAct(
-				this.authBase,
-				this.link,
-				this.values,
-				this.portal,
-			)
+			const answer = await guestAct({
+				authBase: this.authBase,
+				link: this.link,
+				portal: this.portal,
+				fields: this.values,
+			})
 			this.outcome = actOutcome(answer, this.declaration, this.strings)
 			this.busy = false
 			if (this.outcome.kind === 'redirect') {
