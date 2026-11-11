@@ -895,24 +895,8 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
-		// The optional `collection` query param disambiguates multiple
-		// collections that share a register+schema (contract v2 — scopeClaim /
-		// via views over the same schema). Absent → first-by-(register,schema),
-		// preserving the pre-existing behaviour.
-		$collectionId = (string)$this->request->getParam('collection', '');
-
-		$match = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
+		$match = $this->trustedCollection(subject: $subject, target: ['register' => $register, 'schema' => $schema]);
 		if ($match === null) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
-		}
-
-		$collection = $match['collection'];
-
-		// Defense in depth (contract v2, A3): the aggregate is already
-		// trust-filtered, but the matched entry's minTrust is re-checked here
-		// so a direct request can never slip below the threshold — 403 before
-		// any OpenRegister call.
-		if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -920,6 +904,37 @@ class ContributionController extends Controller implements PortalProtected {
 
 		return new JSONResponse(['register' => $register, 'schema' => $schema, 'objects' => $objects]);
 	}//end collection()
+
+	/**
+	 * The subject's own collection for (register, schema), or null (403).
+	 *
+	 * The optional `collection` query param disambiguates multiple
+	 * collections that share a register+schema (contract v2 — scopeClaim /
+	 * via views over the same schema). Absent → first-by-(register,schema),
+	 * preserving the pre-existing behaviour. Defense in depth (contract v2,
+	 * A3): the aggregate is already trust-filtered, but the matched entry's
+	 * minTrust is re-checked here so a direct request can never slip below
+	 * the threshold — refused before any OpenRegister call.
+	 *
+	 * @param array<string, mixed>                  $subject The resolved subject.
+	 * @param array{register: string, schema: string} $target  The requested register and schema.
+	 *
+	 * @return array{collection: array<string, mixed>, app: string}|null
+	 */
+	private function trustedCollection(array $subject, array $target): ?array {
+		$collectionId = (string)$this->request->getParam('collection', '');
+		$match        = $this->authorisedCollection(
+			subject: $subject,
+			register: $target['register'],
+			schema: $target['schema'],
+			collectionId: $collectionId
+		);
+		if ($match === null || PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+			return null;
+		}
+
+		return $match;
+	}//end trustedCollection()
 
 	/**
 	 * The rows a collection's screen shows this subject: the scoped read, then
@@ -1792,10 +1807,58 @@ class ContributionController extends Controller implements PortalProtected {
 	 */
 	private function submitIntoDestination(array $action, array $answers): JSONResponse {
 		if ($this->intake === null) {
-			$refusal = DestinationIntake::refusal(submitted: null);
-			return new JSONResponse($refusal['body'], $refusal['status']);
+			return $this->intakeRefusal(submitted: null);
 		}
 
+		$submitted = $this->intake->submit(
+			binding: $this->intakeBinding(action: $action),
+			render: ['fields' => $this->intakeFields(action: $action)],
+			answers: $answers,
+			server: (array)($action['server'] ?? []),
+			idempotencyKey: (string)$this->request->getHeader('Idempotency-Key')
+		);
+		if ($submitted['ok'] === false) {
+			return $this->intakeRefusal(submitted: $submitted);
+		}
+
+		return new JSONResponse(['object' => $submitted['answer']]);
+	}//end submitIntoDestination()
+
+	/**
+	 * The destination intake's refusal as a response.
+	 *
+	 * @param array<string, mixed>|null $submitted What the intake answered, or null when it is not wired.
+	 *
+	 * @return JSONResponse
+	 */
+	private function intakeRefusal(?array $submitted): JSONResponse {
+		$refusal = DestinationIntake::refusal(submitted: $submitted);
+
+		return new JSONResponse($refusal['body'], $refusal['status']);
+	}//end intakeRefusal()
+
+	/**
+	 * The binding an action submits through: its destination, and its
+	 * `intakeScope` split into the portal and the route.
+	 *
+	 * @param array<string, mixed> $action The matched action.
+	 *
+	 * @return array{destination: mixed, portal: string, route: string}
+	 */
+	private function intakeBinding(array $action): array {
+		$scope = explode('/', (string)($action['intakeScope'] ?? ''), 2);
+
+		return ['destination' => $action['destination'], 'portal' => $scope[0], 'route' => ($scope[1] ?? '')];
+	}//end intakeBinding()
+
+	/**
+	 * The action's field names as the form's fields.
+	 *
+	 * @param array<string, mixed> $action The matched action.
+	 *
+	 * @return array<int, array{name: string}>
+	 */
+	private function intakeFields(array $action): array {
 		$fields = [];
 		foreach ((array)($action['fields'] ?? []) as $field) {
 			if (is_string($field) === true && $field !== '') {
@@ -1803,21 +1866,8 @@ class ContributionController extends Controller implements PortalProtected {
 			}
 		}
 
-		$scope     = explode('/', (string)($action['intakeScope'] ?? ''), 2);
-		$submitted = $this->intake->submit(
-			binding: ['destination' => $action['destination'], 'portal' => $scope[0], 'route' => ($scope[1] ?? '')],
-			render: ['fields' => $fields],
-			answers: $answers,
-			server: (array)($action['server'] ?? []),
-			idempotencyKey: (string)$this->request->getHeader('Idempotency-Key')
-		);
-		if ($submitted['ok'] === false) {
-			$refusal = DestinationIntake::refusal(submitted: $submitted);
-			return new JSONResponse($refusal['body'], $refusal['status']);
-		}
-
-		return new JSONResponse(['object' => $submitted['answer']]);
-	}//end submitIntoDestination()
+		return $fields;
+	}//end intakeFields()
 
 	/**
 	 * Find the `anonymous: true`, `type: create` action for (register, schema)
