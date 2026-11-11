@@ -11,7 +11,12 @@
 
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createSaveQueue, normaliseAttempt } from '../src/shared/timedTask.js'
+import {
+	createSaveQueue,
+	isAnswered,
+	normaliseAttempt,
+	startAttempt,
+} from '../src/shared/timedTask.js'
 
 test('an attempt without a usable id is no attempt', () => {
 	assert.equal(normaliseAttempt(null), null)
@@ -154,4 +159,55 @@ test('an answer changed while its save is in flight stays unsaved', async () => 
 	await queue.flush()
 	assert.deepEqual(sent, [['q1', 'A'], ['q1', 'B']])
 	assert.deepEqual(queue.state(), { unsaved: [], failed: [], closed: false })
+})
+
+test('an answer counts by the shape of its control', () => {
+	assert.equal(isAnswered({ type: 'order' }, ['a']), true)
+	assert.equal(isAnswered({ type: 'order' }, []), false)
+	assert.equal(isAnswered({ type: 'order' }, 'a'), false)
+	assert.equal(isAnswered({ type: 'match' }, {}), false)
+	assert.equal(isAnswered({ type: 'match' }, null), false)
+	assert.equal(isAnswered({ type: 'match' }, 'a'), false)
+	assert.equal(isAnswered({ type: 'match' }, { s: 't' }), true)
+	assert.equal(isAnswered({ type: 'choice' }, 'A'), true)
+	assert.equal(isAnswered({ type: 'gapMatch' }, ['a']), false)
+	assert.equal(isAnswered({ type: 'textEntry' }, ' x '), true)
+})
+
+test('a start sends the access code only when there is one and reads a refusal', async () => {
+	const calls = []
+	const actions = (result) => ({
+		app: 'learniq',
+		block: { start: 'startTest' },
+		api: {
+			forwardAction: (app, actionId, body) => {
+				calls.push([app, actionId, body])
+				return Promise.resolve(result)
+			},
+		},
+	})
+	const plain = await startAttempt(actions({ ok: true, body: { attemptId: 'a' } }), { taskId: 't' })
+	assert.equal(plain.ok, true)
+	assert.equal(plain.attempt.attemptId, 'a')
+	await startAttempt(actions({ ok: false }), { taskId: 't', accessCode: '' })
+	await startAttempt(actions({ ok: false }), { taskId: 't', accessCode: 'K' })
+	assert.deepEqual(calls.map((c) => c[2]), [
+		{ taskId: 't' },
+		{ taskId: 't' },
+		{ taskId: 't', accessCode: 'K' },
+	])
+	assert.deepEqual(calls[0].slice(0, 2), ['learniq', 'startTest'])
+	assert.deepEqual(await startAttempt(actions({ ok: false }), { taskId: 't' }), {
+		ok: false,
+		error: '',
+		message: '',
+	})
+	assert.deepEqual(
+		await startAttempt(actions({ ok: true, body: { error: 'e', message: 'm' } }), { taskId: 't' }),
+		{ ok: false, error: 'e', message: 'm' },
+	)
+	assert.deepEqual(
+		await startAttempt(actions({ ok: false, body: null }), { taskId: 't' }),
+		{ ok: false, error: '', message: '' },
+	)
 })
