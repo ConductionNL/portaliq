@@ -166,6 +166,18 @@ class EventSignupService {
 			return null;
 		}
 
+		return $this->roleWithId(roles: $roles, roleId: $roleId);
+	}//end findRole()
+
+	/**
+	 * The first declared role with this id.
+	 *
+	 * @param array<int|string, mixed> $roles  The event's declared roles.
+	 * @param string                   $roleId The role id.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function roleWithId(array $roles, string $roleId): ?array {
 		foreach ($roles as $role) {
 			if (is_array($role) === true && (string)($role['id'] ?? '') === $roleId) {
 				return $role;
@@ -173,7 +185,7 @@ class EventSignupService {
 		}
 
 		return null;
-	}//end findRole()
+	}//end roleWithId()
 
 	/**
 	 * Count existing sign-ups for one role on one event, immediately before
