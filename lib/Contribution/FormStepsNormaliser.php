@@ -45,11 +45,6 @@ class FormStepsNormaliser {
 	public const LOOSE_STEP = 'more';
 
 	/**
-	 * The longest title, description or confirmation text kept.
-	 */
-	private const MAX_TEXT = 2000;
-
-	/**
 	 * Keep `steps`, `draft` and `confirmation` on a create action or on an
 	 * endpoint action with `fields`, sanitised; drop them anywhere else.
 	 *
@@ -61,14 +56,54 @@ class FormStepsNormaliser {
 	 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
 	 */
 	public function applyToAction(array $action, array $whitelist): array {
-		$flows = (($action['type'] ?? '') === 'create')
+		$flows    = $this->flows(action: $action, whitelist: $whitelist);
+		$declared = $this->declared(action: $action);
+		$action   = $this->withoutDeclarations(action: $action);
+		if ($flows === false) {
+			return $action;
+		}
+
+		return $this->withClean(action: $action, clean: $this->cleaned(declared: $declared, whitelist: $whitelist));
+	}//end applyToAction()
+
+	/**
+	 * Whether the action runs as a form: a create action, or an endpoint
+	 * action with `fields`.
+	 *
+	 * @param array<string, mixed> $action    The action.
+	 * @param array<int, string>   $whitelist The action's `fields`.
+	 *
+	 * @return bool True when steps, a draft and a confirmation may stay.
+	 */
+	private function flows(array $action, array $whitelist): bool {
+		return (($action['type'] ?? '') === 'create')
 			|| (isset($action['endpoint']) === true && $whitelist !== []);
-		$declared = [
+	}//end flows()
+
+	/**
+	 * The form declarations as the action carries them.
+	 *
+	 * @param array<string, mixed> $action The action.
+	 *
+	 * @return array{steps: mixed, draft: mixed, confirmation: mixed, answerSummary: mixed}
+	 */
+	private function declared(array $action): array {
+		return [
 			'steps'         => ($action['steps'] ?? null),
 			'draft'         => ($action['draft'] ?? null),
 			'confirmation'  => ($action['confirmation'] ?? null),
 			'answerSummary' => $this->declaredAnswerSummary(action: $action),
 		];
+	}//end declared()
+
+	/**
+	 * The action without its form declarations.
+	 *
+	 * @param array<string, mixed> $action The action.
+	 *
+	 * @return array<string, mixed> The action.
+	 */
+	private function withoutDeclarations(array $action): array {
 		unset($action['steps'], $action['draft'], $action['confirmation'], $action['answerSummary']);
 		// `summary` is the start tile's string now (decision 127); an object
 		// there is the old sentence shape, read above as `answerSummary`.
@@ -76,17 +111,36 @@ class FormStepsNormaliser {
 			unset($action['summary']);
 		}
 
-		if ($flows === false) {
-			return $action;
-		}
+		return $action;
+	}//end withoutDeclarations()
 
-		$clean = [
+	/**
+	 * The declarations sanitised.
+	 *
+	 * @param array<string, mixed> $declared  The declarations as the action carries them.
+	 * @param array<int, string>   $whitelist The action's `fields`.
+	 *
+	 * @return array<string, mixed> The clean declarations; null or [] where one is dropped.
+	 */
+	private function cleaned(array $declared, array $whitelist): array {
+		return [
 			'steps'         => $this->steps(steps: $declared['steps'], known: $whitelist),
 			'draft'         => $this->draft(draft: $declared['draft']),
 			'confirmation'  => $this->confirmation(confirmation: $declared['confirmation']),
 			// One sentence from the answers (action-summary-sentence).
 			'answerSummary' => (new ActionSummaryNormaliser())->summary(summary: $declared['answerSummary'], whitelist: $whitelist),
 		];
+	}//end cleaned()
+
+	/**
+	 * The action with every clean declaration that is not dropped.
+	 *
+	 * @param array<string, mixed> $action The action without its declarations.
+	 * @param array<string, mixed> $clean  The clean declarations.
+	 *
+	 * @return array<string, mixed> The action.
+	 */
+	private function withClean(array $action, array $clean): array {
 		foreach ($clean as $key => $value) {
 			if ($value !== null && $value !== []) {
 				$action[$key] = $value;
@@ -94,7 +148,7 @@ class FormStepsNormaliser {
 		}
 
 		return $action;
-	}//end applyToAction()
+	}//end withClean()
 
 	/**
 	 * The answer sentence an action declares: `answerSummary`, or the object
@@ -129,58 +183,8 @@ class FormStepsNormaliser {
 			return [];
 		}
 
-		$kept    = [];
-		$placed  = [];
-		$reviews = [];
-		foreach (array_values($steps) as $index => $step) {
-			$clean = $this->step(step: $step, index: $index, known: $known, placed: $placed);
-			if ($clean === null) {
-				continue;
-			}
-
-			if (($clean['review'] ?? false) === true) {
-				$reviews[] = $clean;
-				continue;
-			}
-
-			$placed = array_merge($placed, $clean['fields']);
-			$kept[] = $clean;
-		}
-
-		if ($kept === []) {
-			return [];
-		}
-
-		$loose = array_values(array_diff($known, $placed));
-		if ($loose !== []) {
-			$kept[] = ['id' => self::LOOSE_STEP, 'title' => '', 'fields' => $loose];
-		}
-
-		$all = array_merge($kept, array_slice($reviews, 0, 1));
-
-		return $this->withKnownTargets(steps: $all);
+		return (new FormStepsRun(known: $known))->kept(steps: $steps);
 	}//end steps()
-
-	/**
-	 * Keep a decision's `nextStep` entries only where they name a step the form has.
-	 *
-	 * @param array<int, array<string, mixed>> $steps The kept steps.
-	 *
-	 * @return array<int, array<string, mixed>> The steps.
-	 */
-	private function withKnownTargets(array $steps): array {
-		$ids = array_column($steps, 'id');
-		foreach ($steps as $index => $step) {
-			if (isset($step['decision']) === true) {
-				$steps[$index]['decision']['nextStep'] = array_filter(
-					$step['decision']['nextStep'],
-					static fn (string $target): bool => in_array($target, $ids, true)
-				);
-			}
-		}
-
-		return $steps;
-	}//end withKnownTargets()
 
 	/**
 	 * An action's draft declaration: `{ retentionDays }` clamped to 1 to 90.
@@ -214,14 +218,7 @@ class FormStepsNormaliser {
 			return null;
 		}
 
-		$out = [];
-		foreach (['title', 'body', 'next'] as $key) {
-			$text = $this->text(value: ($confirmation[$key] ?? null));
-			if ($text !== '') {
-				$out[$key] = $text;
-			}
-		}
-
+		$out = $this->confirmationTexts(confirmation: $confirmation);
 		if (isset($out['title']) === false) {
 			return null;
 		}
@@ -230,103 +227,22 @@ class FormStepsNormaliser {
 	}//end confirmation()
 
 	/**
-	 * One clean step, or null when it is dropped: not an array, a review step
-	 * that names fields, or a step naming a field the form does not know or a
-	 * field an earlier step already holds.
+	 * The confirmation's title, body and next steps that are text.
 	 *
-	 * @param mixed $step The declared step.
-	 * @param int $index Its place, for a missing id.
-	 * @param array<int, string> $known The known field names.
-	 * @param array<int, string> $placed The fields earlier steps hold.
+	 * @param array<string, mixed> $confirmation The declared confirmation.
 	 *
-	 * @return array<string, mixed>|null The step.
+	 * @return array<string, string> The texts by key.
 	 */
-	private function step(mixed $step, int $index, array $known, array $placed): ?array {
-		if (is_array($step) === false) {
-			return null;
-		}
-
-		$fields = ($step['fields'] ?? []);
-		$review = (($step['review'] ?? false) === true);
-		if ($this->fieldsFit(fields: $fields, review: $review, known: $known, placed: $placed) === false) {
-			return null;
-		}
-
-		$clean = [
-			'id'     => $this->stepId(value: ($step['id'] ?? null), index: $index),
-			'title'  => $this->text(value: ($step['title'] ?? null)),
-			'fields' => array_values(array_unique($fields)),
-		];
-		$description = $this->text(value: ($step['description'] ?? null));
-		if ($description !== '') {
-			$clean['description'] = $description;
-		}
-
-		if ($review === true) {
-			$clean['review'] = true;
-		}
-
-		$decision = (new FormStepDecision())->normalise(decision: ($step['decision'] ?? null), known: $known);
-		if ($decision !== null && $review === false) {
-			$clean['decision'] = $decision;
-		}
-
-		return $clean;
-	}//end step()
-
-	/**
-	 * Whether a step's fields can be kept: a review names none, any other
-	 * step names at least one, every one known and not held by an earlier step.
-	 *
-	 * @param mixed $fields The declared fields.
-	 * @param bool $review Whether the step is the review.
-	 * @param array<int, string> $known The known field names.
-	 * @param array<int, string> $placed The fields earlier steps hold.
-	 *
-	 * @return bool True when the step may stay.
-	 */
-	private function fieldsFit(mixed $fields, bool $review, array $known, array $placed): bool {
-		if (is_array($fields) === false || $review !== ($fields === [])) {
-			return false;
-		}
-
-		foreach ($fields as $field) {
-			if (is_string($field) === false || in_array($field, $known, true) === false || in_array($field, $placed, true) === true) {
-				return false;
+	private function confirmationTexts(array $confirmation): array {
+		$text = new FormText();
+		$out  = [];
+		foreach (['title', 'body', 'next'] as $key) {
+			$value = $text->clean(value: ($confirmation[$key] ?? null));
+			if ($value !== '') {
+				$out[$key] = $value;
 			}
 		}
 
-		return true;
-	}//end fieldsFit()
-
-	/**
-	 * A step id: the declared one when it is a plain token, else `step-N`.
-	 *
-	 * @param mixed $value The declared id.
-	 * @param int $index The step's place.
-	 *
-	 * @return string The id.
-	 */
-	private function stepId(mixed $value, int $index): string {
-		if (is_string($value) === true && preg_match('/^[A-Za-z][A-Za-z0-9_-]{0,63}$/', $value) === 1 && $value !== self::LOOSE_STEP) {
-			return $value;
-		}
-
-		return 'step-' . ($index + 1);
-	}//end stepId()
-
-	/**
-	 * A trimmed text, or '' when it is not text or too long.
-	 *
-	 * @param mixed $value The value.
-	 *
-	 * @return string The text.
-	 */
-	private function text(mixed $value): string {
-		if (is_string($value) === false || mb_strlen($value) > self::MAX_TEXT) {
-			return '';
-		}
-
-		return trim($value);
-	}//end text()
+		return $out;
+	}//end confirmationTexts()
 }//end class
