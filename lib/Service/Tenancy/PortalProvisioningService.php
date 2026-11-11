@@ -74,57 +74,98 @@ class PortalProvisioningService {
 	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t06
 	 */
 	public function provision(string $organisation, string $slug, string $title, string $host): array {
-		$organisation = trim($organisation);
-		$slug         = trim($slug);
-		$title        = trim($title);
-		$host         = strtolower(trim($host));
-		if ($organisation === '' || $title === '' || preg_match('/^[a-z0-9][a-z0-9-]{1,62}$/', $slug) !== 1 || $this->isHostname(host: $host) === false) {
-			return ['status' => self::INVALID, 'dns' => null];
+		$wanted  = new PortalProvisionRequest(organisation: trim($organisation), slug: trim($slug), title: trim($title), host: strtolower(trim($host)));
+		$refused = $this->refusal(wanted: $wanted);
+		if ($refused !== null) {
+			return ['status' => $refused, 'dns' => null];
+		}
+
+		$token = 'portaliq-site-verification='.bin2hex(random_bytes(16));
+		if ($this->createPortal(wanted: $wanted, token: $token) === null) {
+			return ['status' => self::FAILED, 'dns' => null];
+		}
+
+		$this->createMenuAndHome(wanted: $wanted);
+
+		return ['status' => self::CREATED, 'dns' => ['name' => PortalDomainVerifier::PREFIX.$wanted->host, 'value' => $token]];
+	}//end provision()
+
+	/**
+	 * Why the portal cannot be created, before anything is written, or null.
+	 *
+	 * @param PortalProvisionRequest $wanted The portal asked for.
+	 *
+	 * @return string|null INVALID, UNAVAILABLE, SLUG_TAKEN, HOST_TAKEN, or null.
+	 */
+	private function refusal(PortalProvisionRequest $wanted): ?string {
+		if ($this->isValid(wanted: $wanted) === false) {
+			return self::INVALID;
 		}
 
 		if ($this->store->available() === false) {
-			return ['status' => self::UNAVAILABLE, 'dns' => null];
+			return self::UNAVAILABLE;
 		}
 
-		$taken = $this->takenBy(slug: $slug, host: $host);
-		if ($taken !== null) {
-			return ['status' => $taken, 'dns' => null];
-		}
+		return $this->takenBy(slug: $wanted->slug, host: $wanted->host);
+	}//end refusal()
 
-		$token   = 'portaliq-site-verification='.bin2hex(random_bytes(16));
-		$created = $this->store->create(
+	/**
+	 * Whether the request names an organisation, a title, a plain slug and a plain host.
+	 *
+	 * @param PortalProvisionRequest $wanted The portal asked for.
+	 *
+	 * @return bool
+	 */
+	private function isValid(PortalProvisionRequest $wanted): bool {
+		return $wanted->organisation !== '' && $wanted->title !== ''
+			&& preg_match('/^[a-z0-9][a-z0-9-]{1,62}$/', $wanted->slug) === 1 && $this->isHostname(host: $wanted->host) === true;
+	}//end isValid()
+
+	/**
+	 * Write the draft portal with its unverified host.
+	 *
+	 * @param PortalProvisionRequest $wanted The portal asked for.
+	 * @param string                 $token  The host's verification token.
+	 *
+	 * @return string|null The new portal's id; null when nothing was written.
+	 */
+	private function createPortal(PortalProvisionRequest $wanted, string $token): ?string {
+		return $this->store->create(
 			schema: 'portal',
 			data: [
-				'title'          => $title,
-				'slug'           => $slug,
+				'title'          => $wanted->title,
+				'slug'           => $wanted->slug,
 				'status'         => 'draft',
 				'kind'           => 'site',
-				'organisation'   => $organisation,
-				'domains'        => [['hostname' => $host, 'verified' => false, 'verificationToken' => $token]],
+				'organisation'   => $wanted->organisation,
+				'domains'        => [['hostname' => $wanted->host, 'verified' => false, 'verificationToken' => $token]],
 				'authentication' => ['modes' => ['public']],
 				'locales'        => ['nl'],
 			]
 		);
-		if ($created === null) {
-			return ['status' => self::FAILED, 'dns' => null];
-		}
+	}//end createPortal()
 
-		// A portal without a menu and a home page opens on nothing.
-		$this->store->create(schema: 'menu', data: ['title' => 'Hoofdmenu', 'position' => 0, 'items' => [], 'portal' => $slug]);
+	/**
+	 * Write the portal's menu and home page: a portal without them opens on nothing.
+	 *
+	 * @param PortalProvisionRequest $wanted The portal asked for.
+	 *
+	 * @return void
+	 */
+	private function createMenuAndHome(PortalProvisionRequest $wanted): void {
+		$this->store->create(schema: 'menu', data: ['title' => 'Hoofdmenu', 'position' => 0, 'items' => [], 'portal' => $wanted->slug]);
 		$this->store->create(
 			schema: 'page',
 			data: [
-				'title'  => $title,
+				'title'  => $wanted->title,
 				'route'  => '/',
 				'status' => 'published',
 				'locale' => 'nl',
 				'body'   => ['type' => 'grid', 'widgets' => []],
-				'portal' => $slug,
+				'portal' => $wanted->slug,
 			]
 		);
-
-		return ['status' => self::CREATED, 'dns' => ['name' => PortalDomainVerifier::PREFIX.$host, 'value' => $token]];
-	}//end provision()
+	}//end createMenuAndHome()
 
 	/**
 	 * Whether a portal already holds the slug or lists the host.
@@ -140,15 +181,31 @@ class PortalProvisioningService {
 				return self::SLUG_TAKEN;
 			}
 
-			foreach ((array)($portal['domains'] ?? []) as $domain) {
-				if (strtolower((string)($domain['hostname'] ?? '')) === $host) {
-					return self::HOST_TAKEN;
-				}
+			if ($this->listsHost(portal: $portal, host: $host) === true) {
+				return self::HOST_TAKEN;
 			}
 		}
 
 		return null;
 	}//end takenBy()
+
+	/**
+	 * Whether a portal lists a host among its domains, in any case.
+	 *
+	 * @param array<string, mixed> $portal The portal.
+	 * @param string               $host   The wanted host.
+	 *
+	 * @return bool
+	 */
+	private function listsHost(array $portal, string $host): bool {
+		foreach ((array)($portal['domains'] ?? []) as $domain) {
+			if (strtolower((string)($domain['hostname'] ?? '')) === $host) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end listsHost()
 
 	/**
 	 * Whether a value is a plain hostname: labels of letters, digits and hyphens.
