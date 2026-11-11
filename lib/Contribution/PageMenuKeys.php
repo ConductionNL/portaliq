@@ -59,8 +59,30 @@ class PageMenuKeys {
 	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
 	 */
 	public function keys(array $page, array $entry, array $collectionIds): array {
-		$out = [];
+		$out     = $this->flags(page: $page);
+		$records = $this->records(declared: ($page['records'] ?? null), collectionIds: $collectionIds);
+		if ($records !== null) {
+			$out['records'] = $records;
+		}
 
+		$out += $this->perRecord(
+			declared: ($page['perRecord'] ?? null),
+			recordCollections: [($entry['record']['collection'] ?? null), ($records['collection'] ?? null)]
+		);
+
+		return $out + $this->badge(declared: ($page['badge'] ?? null), collectionIds: $collectionIds);
+	}//end keys()
+
+	/**
+	 * The page's menu flags: `menu` only when it is false, `home` only when
+	 * it is true.
+	 *
+	 * @param array<string, mixed> $page The declared page.
+	 *
+	 * @return array<string, bool>
+	 */
+	private function flags(array $page): array {
+		$out = [];
 		if (array_key_exists('menu', $page) === true && $page['menu'] === false) {
 			$out['menu'] = false;
 		}
@@ -69,25 +91,26 @@ class PageMenuKeys {
 			$out['home'] = true;
 		}
 
-		$records = $this->records(declared: ($page['records'] ?? null), collectionIds: $collectionIds);
-		if ($records !== null) {
-			$out['records'] = $records;
+		return $out;
+	}//end flags()
+
+	/**
+	 * The `perRecord` key, kept only when it names the page's record
+	 * collection or its records collection.
+	 *
+	 * @param mixed             $declared          The declared value.
+	 * @param array<int, mixed> $recordCollections The page's record collection and records collection.
+	 *
+	 * @return array<string, string>
+	 */
+	private function perRecord(mixed $declared, array $recordCollections): array {
+		$named = array_filter($recordCollections, static fn ($id): bool => is_string($id) === true && $id !== '');
+		if (is_string($declared) === false || in_array($declared, $named, true) === false) {
+			return [];
 		}
 
-		$perRecord = ($page['perRecord'] ?? null);
-		$recordCollections = array_filter(
-			[
-				($entry['record']['collection'] ?? null),
-				($records['collection'] ?? null),
-			],
-			static fn ($id): bool => is_string($id) === true && $id !== ''
-		);
-		if (is_string($perRecord) === true && in_array($perRecord, $recordCollections, true) === true) {
-			$out['perRecord'] = $perRecord;
-		}
-
-		return $out + $this->badge(declared: ($page['badge'] ?? null), collectionIds: $collectionIds);
-	}//end keys()
+		return ['perRecord' => $declared];
+	}//end perRecord()
 
 	/**
 	 * The `badge` declaration: a count in the menu entry of how many rows a
@@ -135,7 +158,21 @@ class PageMenuKeys {
 			return null;
 		}
 
-		$out = ['collection' => $declared['collection']];
+		return ['collection' => $declared['collection']]
+			+ $this->fieldLists(declared: $declared)
+			+ $this->subtitleLookup(lookup: ($declared['subtitleLookup'] ?? null), collectionIds: $collectionIds);
+	}//end records()
+
+	/**
+	 * The records' title and subtitle field lists, each only when it names a
+	 * field.
+	 *
+	 * @param array<string, mixed> $declared The declared records.
+	 *
+	 * @return array<string, array<int, string>>
+	 */
+	private function fieldLists(array $declared): array {
+		$out = [];
 		foreach (['titleFields', 'subtitleFields'] as $listKey) {
 			$names = $this->names(value: ($declared[$listKey] ?? null));
 			if ($names !== []) {
@@ -143,21 +180,29 @@ class PageMenuKeys {
 			}
 		}
 
-		// A subtitle from one related record: the child's group (REQ-SMO-026).
-		$lookup = ($declared['subtitleLookup'] ?? null);
-		if (is_array($lookup) === true
-			&& in_array(($lookup['collection'] ?? null), $collectionIds, true) === true
-			&& count($this->names(value: [($lookup['matchField'] ?? null), ($lookup['valueField'] ?? null)])) === 2
+		return $out;
+	}//end fieldLists()
+
+	/**
+	 * A subtitle from one related record, the child's group (REQ-SMO-026):
+	 * kept only when it names a collection of the contribution and both of
+	 * its fields.
+	 *
+	 * @param mixed              $lookup        The declared lookup.
+	 * @param array<int, string> $collectionIds The contribution's collection ids.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function subtitleLookup(mixed $lookup, array $collectionIds): array {
+		if (is_array($lookup) === false
+			|| in_array(($lookup['collection'] ?? null), $collectionIds, true) === false
+			|| count($this->names(value: [($lookup['matchField'] ?? null), ($lookup['valueField'] ?? null)])) !== 2
 		) {
-			$out['subtitleLookup'] = [
-				'collection' => $lookup['collection'],
-				'matchField' => $lookup['matchField'],
-				'valueField' => $lookup['valueField'],
-			];
+			return [];
 		}
 
-		return $out;
-	}//end records()
+		return ['subtitleLookup' => ['collection' => $lookup['collection'], 'matchField' => $lookup['matchField'], 'valueField' => $lookup['valueField']]];
+	}//end subtitleLookup()
 
 	/**
 	 * The non-empty strings of a list, in order.

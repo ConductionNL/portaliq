@@ -345,6 +345,30 @@ const MAGNIFIER =
 const CHEVRON = 'M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z'
 
 /**
+ * What the catalogue block asks the server for one page: its words, types,
+ * filters and sort, a page size kept between 5 and 20, and its facets.
+ *
+ * @param {object} block The catalogue block.
+ * @param {number} page The page.
+ * @return {object} The query for `fetchCatalogue`.
+ */
+function pageQuery(block, page) {
+	return {
+		q: block.q,
+		types: block.types,
+		filters: block.filters,
+		sort: block.sortBy,
+		page,
+		limit: Math.min(20, Math.max(5, Number(block.pageSize) || 10)),
+		facetsBy: facetsByOf({
+			kindFacet: block.kindFacet,
+			audienceFacet: block.audienceFacet,
+			lang: block.lang,
+		}),
+	}
+}
+
+/**
  * @spec openspec/changes/portal-public-catalogue/specs/portaliq-cms/spec.md#requirement-a-catalogue-block-searches-and-filters-the-portals-public-catalogue
  */
 export default {
@@ -525,19 +549,7 @@ export default {
 			this.loading = true
 			this.failed = false
 			try {
-				this.result = await fetchCatalogue(this.portal, {
-					q: this.q,
-					types: this.types,
-					filters: this.filters,
-					sort: this.sortBy,
-					page,
-					limit: Math.min(20, Math.max(5, Number(this.pageSize) || 10)),
-					facetsBy: facetsByOf({
-						kindFacet: this.kindFacet,
-						audienceFacet: this.audienceFacet,
-						lang: this.lang,
-					}),
-				})
+				this.result = await fetchCatalogue(this.portal, pageQuery(this, page))
 			} catch {
 				// Unavailable is not "nothing found".
 				this.failed = true

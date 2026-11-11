@@ -169,43 +169,59 @@ class PortalRecordChangeListener implements IEventListener {
 			return;
 		}
 
-		$newData = $new->getObject();
-		$oldData = $old->getObject();
-		$recordId = (string)($new->getUuid() ?? '');
-		$record   = ['id' => $recordId, 'organisation' => (string)($new->getOrganisation() ?? '')];
+		$change = new RecordChange(
+			newData: $new->getObject(),
+			oldData: $old->getObject(),
+			recordId: (string)($new->getUuid() ?? ''),
+			organisation: (string)($new->getOrganisation() ?? '')
+		);
 		foreach ($rules as $rule) {
-			$field = $rule['field'];
-			if (($newData[$field] ?? null) === ($oldData[$field] ?? null)) {
-				continue;
-			}
-
-			// A rule that declares its own words speaks only for the values
-			// it has words for (claim-addressed-change-notices).
-			$messages = $this->rules->details(entry: $rule)['messages'];
-			$value = $this->text(data: $newData, field: $field);
-			if ($messages !== [] && isset($messages[$value]) === false) {
-				continue;
-			}
-
-			foreach ($this->recipients(rule: $rule, data: $newData, record: $record) as $recipient) {
-				$this->tell(rule: $rule, account: $recipient['account'], row: $recipient['row'], recordId: $recordId, value: $value);
-			}
-		}//end foreach
+			$this->tellRule(change: $change, rule: $rule);
+		}
 	}//end onUpdated()
+
+	/**
+	 * Tell each recipient about one rule, when its field differs and, for a
+	 * rule that declares its own words, when it has words for the new value.
+	 *
+	 * @param RecordChange          $change The record update.
+	 * @param array<string, string> $rule   The rule.
+	 *
+	 * @return void
+	 */
+	private function tellRule(RecordChange $change, array $rule): void {
+		$field = $rule['field'];
+		if (($change->newData[$field] ?? null) === ($change->oldData[$field] ?? null)) {
+			return;
+		}
+
+		// A rule that declares its own words speaks only for the values
+		// it has words for (claim-addressed-change-notices).
+		$messages = $this->rules->details(entry: $rule)['messages'];
+		$value = $this->text(data: $change->newData, field: $field);
+		if ($messages !== [] && isset($messages[$value]) === false) {
+			return;
+		}
+
+		$notice = new ChangeNotice(rule: $rule, recordId: $change->recordId, value: $value);
+		foreach ($this->recipients(rule: $rule, change: $change) as $recipient) {
+			$this->tell(notice: $notice, recipient: $recipient);
+		}
+	}//end tellRule()
 
 	/**
 	 * Who hears about a change: the accounts a claim-addressed rule reaches,
 	 * else the resident whose reference the record holds at the scope field.
 	 *
-	 * @param array<string, string> $rule     The rule.
-	 * @param array<string, mixed>  $data   The record after the change.
-	 * @param array{id: string, organisation: string} $record The record's uuid and organisation uuid.
+	 * @param array<string, string> $rule   The rule.
+	 * @param RecordChange          $change The record update.
 	 *
 	 * @return array<int, array<string, array<string, mixed>>> Each with `account` and `row`.
 	 *
 	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
 	 */
-	private function recipients(array $rule, array $data, array $record): array {
+	private function recipients(array $rule, RecordChange $change): array {
+		$data = $change->newData;
 		if (($rule['recipientClaim'] ?? '') !== '') {
 			return ($this->ruleNotices?->recipients(
 				appId: $rule['app'],
@@ -213,7 +229,7 @@ class PortalRecordChangeListener implements IEventListener {
 				claim: $rule['recipientClaim'],
 				collection: $this->rules->details(entry: $rule)['collection'],
 				data: $data,
-				record: $record
+				record: ['id' => $change->recordId, 'organisation' => $change->organisation]
 			) ?? []);
 		}
 
@@ -228,39 +244,52 @@ class PortalRecordChangeListener implements IEventListener {
 	/**
 	 * Write one resident's inbox message and dispatch the rule's key.
 	 *
-	 * @param array<string, string> $rule     The rule.
-	 * @param array<string, mixed>  $account  The resident's account.
-	 * @param array<string, mixed>  $row      The record as the resident may read it.
-	 * @param string                $recordId The record's uuid.
-	 * @param string                $value    The field's new value.
+	 * @param ChangeNotice                        $notice    The fired rule.
+	 * @param array<string, array<string, mixed>> $recipient The resident's `account` and the `row` they may read.
 	 *
 	 * @return void
 	 */
-	private function tell(array $rule, array $account, array $row, string $recordId, string $value): void {
-		$text = null;
-		$messages = $this->rules->details(entry: $rule)['messages'];
-		if ($messages !== []) {
-			$text = $this->ruleNotices?->text(
-				messages: $messages,
-				value: $value,
-				row: $row,
-				language: $this->language->languageFor(organisation: (string)($account['organisation'] ?? ''))
-			);
-		}
-
-		$this->writeMessage(
+	private function tell(ChangeNotice $notice, array $recipient): void {
+		$rule = $notice->rule;
+		$account = $recipient['account'];
+		(new ChangeMessageWriter(writer: $this->writer, language: $this->language, logger: $this->logger))->write(
 			account: $account,
-			title: $this->title(data: $row, rule: $rule),
-			recordLink: ['app' => $rule['app'], 'collection' => $rule['collection'], 'id' => $recordId],
-			text: $text
+			message: new ChangeMessage(
+				title: $this->title(data: $recipient['row'], rule: $rule),
+				recordLink: ['app' => $rule['app'], 'collection' => $rule['collection'], 'id' => $notice->recordId],
+				text: $this->ownWords(notice: $notice, recipient: $recipient)
+			)
 		);
 		$this->dispatch->dispatch(
 			ruleKey: $rule['ruleKey'],
 			appId: $rule['app'],
 			subject: $this->subject(account: $account),
-			record: ['app' => $rule['app'], 'collection' => $rule['collection'], 'id' => $recordId, 'label' => $rule['label']]
+			record: ['app' => $rule['app'], 'collection' => $rule['collection'], 'id' => $notice->recordId, 'label' => $rule['label']]
 		);
 	}//end tell()
+
+	/**
+	 * The rule's own words for the new value, in the resident's language, or
+	 * null when the rule declares none.
+	 *
+	 * @param ChangeNotice                        $notice    The fired rule.
+	 * @param array<string, array<string, mixed>> $recipient The resident's `account` and the `row` they may read.
+	 *
+	 * @return array<string, string>|null
+	 */
+	private function ownWords(ChangeNotice $notice, array $recipient): ?array {
+		$messages = $this->rules->details(entry: $notice->rule)['messages'];
+		if ($messages === []) {
+			return null;
+		}
+
+		return $this->ruleNotices?->text(
+			messages: $messages,
+			value: $notice->value,
+			row: $recipient['row'],
+			language: $this->language->languageFor(organisation: (string)($recipient['account']['organisation'] ?? ''))
+		);
+	}//end ownWords()
 
 	/**
 	 * A scalar field value of the record as text; anything else is ''.
@@ -302,34 +331,46 @@ class PortalRecordChangeListener implements IEventListener {
 			return;
 		}
 
-		$data = $object->getObject();
-		$told = [];
+		$created = new CreatedRecord(data: $object->getObject(), recordId: (string)($object->getUuid() ?? ''));
 		foreach ($this->rules->inboxesFor(register: $register, schema: $schema) as $inbox) {
-			$account = $this->account(data: $data, scopeField: $inbox['scopeField']);
-			if ($account === null) {
-				continue;
-			}
-
-			// One message is one nudge, however many audiences list the inbox.
-			$key = $inbox['app'].'|'.(string)($account['subjectRef'] ?? '');
-			if (isset($told[$key]) === true) {
-				continue;
-			}
-
-			$told[$key] = true;
-			if ($inbox['nudge'] === '1') {
-				$this->dispatch->dispatch(
-					ruleKey: NotificationDispatchService::RULE_MESSAGE_CREATED,
-					appId: $inbox['app'],
-					subject: $this->subject(account: $account)
-				);
-			}
-
-			// The same message may also go to the government message box
-			// (inbox-berichtenbox-channel); the channel decides whether it may.
-			$this->messageBox?->enqueue(account: $account, inbox: $inbox, recordId: (string)($object->getUuid() ?? ''));
-		}//end foreach
+			$this->reachInbox(created: $created, inbox: $inbox);
+		}
 	}//end onCreated()
+
+	/**
+	 * Nudge the resident of one inbox the new record belongs to, once per
+	 * app and resident, and queue the government message box send.
+	 *
+	 * @param CreatedRecord        $created The created record.
+	 * @param array<string, mixed> $inbox   The inbox that lists it.
+	 *
+	 * @return void
+	 */
+	private function reachInbox(CreatedRecord $created, array $inbox): void {
+		$account = $this->account(data: $created->data, scopeField: $inbox['scopeField']);
+		if ($account === null) {
+			return;
+		}
+
+		// One message is one nudge, however many audiences list the inbox.
+		$key = $inbox['app'].'|'.(string)($account['subjectRef'] ?? '');
+		if (isset($created->told[$key]) === true) {
+			return;
+		}
+
+		$created->told[$key] = true;
+		if ($inbox['nudge'] === '1') {
+			$this->dispatch->dispatch(
+				ruleKey: NotificationDispatchService::RULE_MESSAGE_CREATED,
+				appId: $inbox['app'],
+				subject: $this->subject(account: $account)
+			);
+		}
+
+		// The same message may also go to the government message box
+		// (inbox-berichtenbox-channel); the channel decides whether it may.
+		$this->messageBox?->enqueue(account: $account, inbox: $inbox, recordId: $created->recordId);
+	}//end reachInbox()
 
 	/**
 	 * Send the email for a portalMessage another app wrote with a `ruleKey`.
@@ -424,44 +465,4 @@ class PortalRecordChangeListener implements IEventListener {
 		return $rule['label'];
 	}//end title()
 
-	/**
-	 * Write the inbox message in the portal's language.
-	 *
-	 * @param array<string, mixed>  $account    The account.
-	 * @param string                $title      The record's title.
-	 * @param array<string, string> $recordLink The record the message is about.
-	 * @param array<string, string>|null $text The app's own words, or null for portaliq's.
-	 *
-	 * @return void
-	 */
-	private function writeMessage(array $account, string $title, array $recordLink, ?array $text = null): void {
-		$l10n = $this->language->forOrganisation(organisation: (string)($account['organisation'] ?? ''));
-		$subject = ($text['subject'] ?? '');
-		if ($subject === '') {
-			$subject = $l10n->t(self::SUBJECT_KEY, [$title]);
-		}
-
-		$body = ($text['body'] ?? '');
-		if ($body === '') {
-			$body = $l10n->t(self::BODY_KEY);
-		}
-
-		$written = $this->writer->createObject(
-			register: 'portaliq',
-			schema: 'portalMessage',
-			scopeField: 'subjectRef',
-			subjectRef: (string)($account['subjectRef'] ?? ''),
-			organisation: (string)($account['organisation'] ?? ''),
-			data: [
-				'subject' => $subject,
-				'body' => $body,
-				'read' => false,
-				'receivedAt' => gmdate('c'),
-				'recordLink' => $recordLink,
-			]
-		);
-		if ($written === null) {
-			$this->logger->warning('Portaliq: change message was not written', ['app' => $recordLink['app'], 'collection' => $recordLink['collection']]);
-		}
-	}//end writeMessage()
 }//end class

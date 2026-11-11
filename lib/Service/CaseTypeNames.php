@@ -129,32 +129,63 @@ class CaseTypeNames {
 	 * @return array<string, string>
 	 */
 	private function namesFor(array $collection): array {
-		$source = ($collection['caseTypeSource'] ?? null);
-		if (is_array($source) === false) {
+		$source = $this->sourceOf(collection: $collection);
+		if ($source === null) {
 			return [];
 		}
 
-		$register = (string)($source['register'] ?? '');
-		$schema = (string)($source['schema'] ?? '');
-		$labelField = (string)($source['labelField'] ?? '');
-		if ($register === '' || $schema === '') {
-			return [];
-		}
-
-		$key = $register . '/' . $schema . '/' . $labelField;
+		$key = implode('/', $source);
 		if (isset($this->names[$key]) === false) {
-			$names = [];
-			foreach ($this->reader->listCaseTypes(register: $register, schema: $schema) as $type) {
-				$typeId = (string)($type['id'] ?? $type['uuid'] ?? ($type['@self']['id'] ?? ''));
-				$label = $this->labelOf(type: $type, labelField: $labelField);
-				if ($typeId !== '' && $label !== '') {
-					$names[$typeId] = $label;
-				}
-			}
-
-			$this->names[$key] = $names;
+			$this->names[$key] = $this->readNames(source: $source);
 		}
 
 		return $this->names[$key];
 	}//end namesFor()
+
+	/**
+	 * The register, schema and label field a collection's case types come
+	 * from, or null without a register or a schema.
+	 *
+	 * @param array<string, mixed> $collection The `cases` collection.
+	 *
+	 * @return array{register: string, schema: string, labelField: string}|null
+	 */
+	private function sourceOf(array $collection): ?array {
+		$source = ($collection['caseTypeSource'] ?? null);
+		if (is_array($source) === false) {
+			return null;
+		}
+
+		$read = [
+			'register' => (string)($source['register'] ?? ''),
+			'schema' => (string)($source['schema'] ?? ''),
+			'labelField' => (string)($source['labelField'] ?? ''),
+		];
+		if ($read['register'] === '' || $read['schema'] === '') {
+			return null;
+		}
+
+		return $read;
+	}//end sourceOf()
+
+	/**
+	 * The names of the source's case types by id, each with an id and a
+	 * label.
+	 *
+	 * @param array{register: string, schema: string, labelField: string} $source The case type source.
+	 *
+	 * @return array<string, string>
+	 */
+	private function readNames(array $source): array {
+		$names = [];
+		foreach ($this->reader->listCaseTypes(register: $source['register'], schema: $source['schema']) as $type) {
+			$typeId = (string)($type['id'] ?? $type['uuid'] ?? ($type['@self']['id'] ?? ''));
+			$label  = $this->labelOf(type: $type, labelField: $source['labelField']);
+			if ($typeId !== '' && $label !== '') {
+				$names[$typeId] = $label;
+			}
+		}
+
+		return $names;
+	}//end readNames()
 }//end class

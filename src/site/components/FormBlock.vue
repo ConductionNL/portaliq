@@ -152,6 +152,35 @@ import {
 } from './forms/fields.js'
 
 /**
+ * The plain checks for the declared fields.
+ *
+ * @param {Array<object>} fields The declared form fields.
+ * @return {Array<object>} One rule per field: name, label, required, date.
+ */
+function fieldRules(fields) {
+	return fields.map((field) => ({
+		name: field.id,
+		label: field.label,
+		required: !!field.required,
+		date: field.type === 'date',
+	}))
+}
+
+/**
+ * The campaign attribution this visitor arrived with on the portal.
+ *
+ * @param {string} portal The portal slug.
+ * @return {{utmFirstTouch: object|null, utmLastTouch: object|null, referrer: string}} The tracking.
+ */
+function campaignOf(portal) {
+	return {
+		utmFirstTouch: firstTouch(portal),
+		utmLastTouch: lastTouch(portal),
+		referrer: capturedReferrer(portal),
+	}
+}
+
+/**
  * Renders a landing page's bound lead-capture form and submits it through
  * Portaliq's EXISTING anonymous contribution-create endpoint — no new HTTP
  * route (landing-page-provisioning).
@@ -353,15 +382,7 @@ export default {
 		 */
 		async submit() {
 			this.status = null
-			this.errors = plainFieldErrors(
-				this.fields.map((field) => ({
-					name: field.id,
-					label: field.label,
-					required: !!field.required,
-					date: field.type === 'date',
-				})),
-				this.values,
-			)
+			this.errors = plainFieldErrors(fieldRules(this.fields), this.values)
 			if (Object.keys(this.errors).length > 0) {
 				this.$nextTick(() => {
 					if (this.$refs.summary) {
@@ -374,15 +395,7 @@ export default {
 			this.submitting = true
 
 			try {
-				await submitLandingPageForm(
-					this.values,
-					{
-						utmFirstTouch: firstTouch(this.portal),
-						utmLastTouch: lastTouch(this.portal),
-						referrer: capturedReferrer(this.portal),
-					},
-					this.formId,
-				)
+				await submitLandingPageForm(this.values, campaignOf(this.portal), this.formId)
 				this.status = 'success'
 				this.values = {}
 			} catch {

@@ -66,6 +66,18 @@ class GuestActionConfigNormaliser {
 			return null;
 		}
 
+		return $this->withTextsOnly(action: $action);
+	}//end normaliseAction()
+
+	/**
+	 * The action without a label, confirmation or success text that is not
+	 * a string.
+	 *
+	 * @param array<string, mixed> $action The usable guest action.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withTextsOnly(array $action): array {
 		foreach (self::TEXT_KEYS as $key) {
 			if (array_key_exists($key, $action) === true && is_string($action[$key]) === false) {
 				unset($action[$key]);
@@ -73,7 +85,7 @@ class GuestActionConfigNormaliser {
 		}
 
 		return $action;
-	}//end normaliseAction()
+	}//end withTextsOnly()
 
 	/**
 	 * Whether a guest declaration can be served: a well-formed `tokenField`,

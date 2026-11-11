@@ -142,7 +142,7 @@ class InstanceLoopback {
 				throw $failure;
 			}
 
-			return $this->retryOnLoopback(method: $method, absolute: $absolute, options: $options, failure: $failure);
+			return $this->retryOnLoopback(retry: new LoopbackRetry(method: $method, absolute: $absolute, options: $options, failure: $failure));
 		}
 
 		$this->workingRoute = 'absolute';
@@ -154,10 +154,7 @@ class InstanceLoopback {
 	 * absolute URL. The next origin is tried only after a connect-phase
 	 * failure, so a request that reached a server is never sent twice.
 	 *
-	 * @param string $method The HTTP method.
-	 * @param string $absolute The absolute URL that failed.
-	 * @param array<string, mixed> $options The client options.
-	 * @param Throwable $failure The transport failure on the absolute URL.
+	 * @param LoopbackRetry $retry The request and its failure on the absolute URL.
 	 *
 	 * @return IResponse
 	 *
@@ -165,44 +162,80 @@ class InstanceLoopback {
 	 *
 	 * @spec openspec/changes/loopback-tries-the-address-php-was-reached-on/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
 	 */
-	private function retryOnLoopback(string $method, string $absolute, array $options, Throwable $failure): IResponse {
-		$failures = [];
-		foreach ($this->loopbackOrigins(absolute: $absolute) as $origin) {
-			try {
-				$response = $this->sendLoopback(origin: $origin, method: $method, absolute: $absolute, options: $this->rewound(options: $options));
-			} catch (Throwable $next) {
-				$failures[$origin] = $next->getMessage();
-				if ($this->isConnectPhaseFailure(failure: $next) === true) {
-					continue;
-				}
-
-				break;
+	private function retryOnLoopback(LoopbackRetry $retry): IResponse {
+		foreach ($this->loopbackOrigins(absolute: $retry->absolute) as $origin) {
+			$response = $this->tryOrigin(retry: $retry, origin: $origin);
+			if ($response !== null) {
+				$this->remember(retry: $retry, origin: $origin);
+				return $response;
 			}
 
-			// Remembered for the rest of this request, so this runs, and logs,
-			// at most once per request.
-			$this->workingRoute = $origin;
-			$this->logger->info(
-				'[InstanceLoopback] The absolute URL did not answer from inside the server; calls to this instance use ' . $origin . ' for this request.'
-				. ' Set internal_base_url to skip the failed attempt.',
-				['app' => Application::APP_ID, 'reason' => $failure->getMessage(), 'origin' => $origin]
-			);
+			if ($retry->stopped === true) {
+				break;
+			}
+		}
 
-			return $response;
-		}//end foreach
+		$this->giveUp(retry: $retry);
+	}//end retryOnLoopback()
 
+	/**
+	 * Send the request to one loopback origin, or record why it failed.
+	 *
+	 * @param LoopbackRetry $retry  The retry.
+	 * @param string        $origin The loopback origin.
+	 *
+	 * @return IResponse|null The answer, or null when the origin failed.
+	 */
+	private function tryOrigin(LoopbackRetry $retry, string $origin): ?IResponse {
+		try {
+			return $this->sendLoopback(origin: $origin, method: $retry->method, absolute: $retry->absolute, options: $this->rewound(options: $retry->options));
+		} catch (Throwable $next) {
+			$retry->failures[$origin] = $next->getMessage();
+			$retry->stopped = ($this->isConnectPhaseFailure(failure: $next) === false);
+			return null;
+		}
+	}//end tryOrigin()
+
+	/**
+	 * Remember the origin that answered for the rest of this request, so
+	 * this runs, and logs, at most once per request.
+	 *
+	 * @param LoopbackRetry $retry  The retry.
+	 * @param string        $origin The origin that answered.
+	 *
+	 * @return void
+	 */
+	private function remember(LoopbackRetry $retry, string $origin): void {
+		$this->workingRoute = $origin;
+		$this->logger->info(
+			'[InstanceLoopback] The absolute URL did not answer from inside the server; calls to this instance use ' . $origin . ' for this request.'
+			. ' Set internal_base_url to skip the failed attempt.',
+			['app' => Application::APP_ID, 'reason' => $retry->failure->getMessage(), 'origin' => $origin]
+		);
+	}//end remember()
+
+	/**
+	 * Log that no address answered, and throw the original failure.
+	 *
+	 * @param LoopbackRetry $retry The retry.
+	 *
+	 * @return never
+	 *
+	 * @throws Throwable The original failure on the absolute URL.
+	 */
+	private function giveUp(LoopbackRetry $retry): never {
 		$this->logger->warning(
 			'[InstanceLoopback] This instance could not be reached at its absolute URL nor on the loopback.'
 			. ' Set internal_base_url to the address the server reaches itself on.',
 			[
 				'app' => Application::APP_ID,
-				'absolute' => $failure->getMessage(),
-				'loopback' => $failures,
+				'absolute' => $retry->failure->getMessage(),
+				'loopback' => $retry->failures,
 			]
 		);
 
-		throw $failure;
-	}//end retryOnLoopback()
+		throw $retry->failure;
+	}//end giveUp()
 
 	/**
 	 * The origins to retry on, in order.

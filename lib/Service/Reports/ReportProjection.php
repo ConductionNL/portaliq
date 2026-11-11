@@ -64,7 +64,7 @@ class ReportProjection {
 	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
 	 */
 	public function one(array $report): array {
-		$out = ['id' => $this->idOf(row: $report)];
+		$out = ['id' => ReportRowId::of(row: $report)];
 		foreach (self::CARRIED as $key) {
 			if (array_key_exists($key, $report) === true) {
 				$out[$key] = $report[$key];
@@ -106,23 +106,4 @@ class ReportProjection {
 
 		return $out;
 	}//end many()
-
-	/**
-	 * A row's own identifier.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string
-	 */
-	private function idOf(array $row): string {
-		$self = (array)($row['@self'] ?? []);
-		$candidates = [($row['uuid'] ?? null), ($row['id'] ?? null), ($self['uuid'] ?? null), ($self['id'] ?? null)];
-		foreach ($candidates as $candidate) {
-			if ((is_string($candidate) === true || is_int($candidate) === true) && (string)$candidate !== '') {
-				return (string)$candidate;
-			}
-		}
-
-		return '';
-	}//end idOf()
 }//end class

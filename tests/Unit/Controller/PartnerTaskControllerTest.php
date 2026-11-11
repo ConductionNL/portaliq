@@ -73,6 +73,38 @@ class PartnerTaskControllerTest extends TestCase {
 
 	}//end testAHandlerWithWriteRaisesTheAskAsThemselves()
 
+	/**
+	 * The guard is asked about the case the route names, and the ask and the
+	 * handler reach the service whole.
+	 *
+	 * @return void
+	 */
+	public function testTheAskAndTheHandlerReachTheServiceWhole(): void {
+		$controller = $this->controller(mayAsk: true, user: $this->user('handler-anna'));
+		$this->asks->expects($this->once())
+			->method('ask')
+			->with(
+				['uid' => 'handler-anna', 'subjectRef' => 'handler-anna', 'audience' => 'handler', 'organisation' => 'gemeente-x', 'trust' => 'high'],
+				['subjectRef' => 'partner-1'],
+				['title' => 'T', 'description' => 'D', 'dueAt' => '2026-12-01', 'uploadRules' => [['name' => 'plan']], 'register' => 'dossiq', 'schema' => 'zaak', 'caseId' => 'zaak-1']
+			)
+			->willReturn(['subjectRef' => 'partner-1', 'provisioned' => false, 'task' => ['uuid' => 'task-1']]);
+
+		$response = $controller->ask(
+			register: 'dossiq',
+			schema: 'zaak',
+			caseId: 'zaak-1',
+			title: 'T',
+			description: 'D',
+			dueAt: '2026-12-01',
+			partner: ['subjectRef' => 'partner-1'],
+			uploadRules: [['name' => 'plan']]
+		);
+
+		$this->assertSame(['subjectRef' => 'partner-1', 'provisioned' => false, 'task' => ['uuid' => 'task-1']], $response->getData());
+
+	}//end testTheAskAndTheHandlerReachTheServiceWhole()
+
 	public function testAnAskThatCouldNotBeRaisedIsABadRequest(): void {
 		$controller = $this->controller(mayAsk: true, user: $this->user('handler-anna'));
 		$this->asks->method('ask')->willReturn(null);

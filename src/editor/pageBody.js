@@ -124,19 +124,29 @@ export function bodyFor(state) {
 		return { type: 'markdown', markdown: String(state.markdown || '') }
 	}
 	const source = sourceBodyOf(state.page)
-	const kept =
-		source.type === 'markdown' || !Array.isArray(source.widgets)
-			? []
-			: source.widgets
-					.filter((widget) => !isMainWidget(widget))
-					.map((widget) => JSON.parse(JSON.stringify(widget)))
 	const rest = source.type === 'markdown' ? {} : { ...source }
 	delete rest.markdown
 	return {
 		...rest,
 		type: 'grid',
-		widgets: [...kept, ...(state.widgets || []).map(storedWidget)],
+		widgets: [...keptWidgets(source), ...(state.widgets || []).map(storedWidget)],
 	}
+}
+
+/**
+ * The stored widgets outside `main`, copied untouched; none from a markdown
+ * body or one without widgets.
+ *
+ * @param {object} source The body the editor opened.
+ * @return {Array<object>} The widgets.
+ */
+function keptWidgets(source) {
+	if (source.type === 'markdown' || !Array.isArray(source.widgets)) {
+		return []
+	}
+	return source.widgets
+		.filter((widget) => !isMainWidget(widget))
+		.map((widget) => JSON.parse(JSON.stringify(widget)))
 }
 
 /**

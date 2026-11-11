@@ -53,6 +53,15 @@ use Throwable;
 class GeoRefreshService {
 
 	/**
+	 * The outcome when the provider is none.
+	 */
+	private const DISABLED = [
+		'status' => 'disabled',
+		'provider' => 'none',
+		'message' => 'Geography is disabled: the provider is set to none, so no database is fetched and no region is stored.',
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param GeoSettings       $settings The provider choice and credentials.
@@ -125,11 +134,7 @@ class GeoRefreshService {
 	private function refreshDatabase(): array {
 		$provider = $this->provider();
 		if ($provider === null) {
-			return [
-				'status' => 'disabled',
-				'provider' => 'none',
-				'message' => 'Geography is disabled: the provider is set to none, so no database is fetched and no region is stored.',
-			];
+			return self::DISABLED;
 		}
 
 		$download = $this->temp->getTemporaryFile('.mmdb');
@@ -137,21 +142,22 @@ class GeoRefreshService {
 			return $this->failed(provider: $provider, reason: 'no temporary file could be created');
 		}
 
+		return $this->install(provider: $provider, download: $download);
+	}
+
+	/**
+	 * Fetch into the downloaded file, verify it and install it; a download
+	 * that fails on the way is removed.
+	 *
+	 * @param GeoDatabaseProvider $provider The provider.
+	 * @param string              $download The temporary file.
+	 *
+	 * @return array{status: string, provider: string, message: string} `refreshed` or `failed`, and why.
+	 */
+	private function install(GeoDatabaseProvider $provider, string $download): array {
 		try {
-			$source = $provider->fetch(targetPath: $download);
-			$verified = $this->verify(path: $download);
-			$installed = $this->store->install(
-				verifiedPath: $download,
-				metadata: [
-					'provider' => $provider->providerId(),
-					'attribution' => $provider->attribution(),
-					'source' => $source,
-					'databaseType' => $verified['databaseType'],
-					'buildEpoch' => $verified['buildEpoch'],
-					'fetchedAt' => gmdate('Y-m-d\TH:i:s\Z', $this->time->getTime()),
-				]
-			);
-			if ($installed === false) {
+			$fetched = $this->fetchAndInstall(provider: $provider, download: $download);
+			if ($fetched['installed'] === false) {
 				return $this->failed(provider: $provider, reason: 'the verified database could not be moved into the app data directory');
 			}
 		} catch (Throwable $e) {
@@ -162,12 +168,46 @@ class GeoRefreshService {
 			return $this->failed(provider: $provider, reason: $e->getMessage());
 		}
 
-		$this->logger->info('Portaliq: geography database refreshed', ['provider' => $provider->providerId(), 'source' => $source]);
+		return $this->refreshed(provider: $provider, fetched: $fetched);
+	}
+
+	/**
+	 * Fetch, verify and hand the file to the store with its provenance.
+	 *
+	 * @param GeoDatabaseProvider $provider The provider.
+	 * @param string              $download The temporary file.
+	 *
+	 * @return array{source: string, verified: array{databaseType: string, buildEpoch: int}, installed: bool}
+	 *
+	 * @throws Throwable When the fetch fails or the file is not a database the reader opens.
+	 */
+	private function fetchAndInstall(GeoDatabaseProvider $provider, string $download): array {
+		$source    = $provider->fetch(targetPath: $download);
+		$verified  = $this->verify(path: $download);
+		$installed = $this->store->install(
+			verifiedPath: $download,
+			metadata: ['provider' => $provider->providerId(), 'attribution' => $provider->attribution(), 'source' => $source] + $verified
+				+ ['fetchedAt' => gmdate('Y-m-d\TH:i:s\Z', $this->time->getTime())]
+		);
+
+		return ['source' => $source, 'verified' => $verified, 'installed' => $installed];
+	}
+
+	/**
+	 * A refresh that installed, logged.
+	 *
+	 * @param GeoDatabaseProvider                                                                  $provider The provider.
+	 * @param array{source: string, verified: array{databaseType: string, buildEpoch: int}} $fetched  What was fetched.
+	 *
+	 * @return array{status: string, provider: string, message: string} The outcome.
+	 */
+	private function refreshed(GeoDatabaseProvider $provider, array $fetched): array {
+		$this->logger->info('Portaliq: geography database refreshed', ['provider' => $provider->providerId(), 'source' => $fetched['source']]);
 
 		return [
 			'status' => 'refreshed',
 			'provider' => $provider->providerId(),
-			'message' => 'Fetched ' . $source . ' (' . $verified['databaseType'] . ').',
+			'message' => 'Fetched ' . $fetched['source'] . ' (' . $fetched['verified']['databaseType'] . ').',
 		];
 	}
 
@@ -200,10 +240,21 @@ class GeoRefreshService {
 	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
 	 */
 	public function queueFirstDownload(): bool {
-		if ($this->provider() === null) {
+		if ($this->provider() === null || $this->queueOnce() === false) {
 			return false;
 		}
 
+		$this->logger->info('Portaliq: a portal wants a region and no geography database exists; the first download is queued for the background job');
+
+		return true;
+	}
+
+	/**
+	 * Add the first-download job unless one already waits.
+	 *
+	 * @return bool True when it was added now.
+	 */
+	private function queueOnce(): bool {
 		try {
 			if ($this->jobs->has(TrafficGeoFirstDownloadJob::class, null) === true) {
 				return false;
@@ -215,8 +266,6 @@ class GeoRefreshService {
 
 			return false;
 		}
-
-		$this->logger->info('Portaliq: a portal wants a region and no geography database exists; the first download is queued for the background job');
 
 		return true;
 	}

@@ -99,34 +99,65 @@ const SEARCH_PARAMS = ['q', 'zoek', 'search', 'query', 'zoekterm']
  * @return {{origin: string, appPath: string, portal: string}|null} The configuration, or null.
  */
 export function readConfig(tag, siteConfig) {
-	const dataset = (tag && tag.dataset) || {}
-	let origin = String(dataset.origin || '').replace(/\/+$/, '')
-	let appPath = String(dataset.appPath || dataset.apppath || '').replace(
-		/\/+$/,
-		'',
-	)
-	let portal = String(dataset.portal || '')
-
-	if (origin === '' && tag && tag.src) {
-		const match =
-			/^(https?:\/\/[^/]+)(.*?)\/api\/traffic-client\.js(?:[?#].*)?$/i.exec(
-				String(tag.src),
-			)
-		if (match) {
-			origin = match[1]
-			appPath = match[2].replace(/\/+$/, '')
-		}
-	}
-
-	if (portal === '' && siteConfig && typeof siteConfig.portal === 'string') {
-		portal = siteConfig.portal
-	}
-
+	const declared = declaredConfig(tag)
+	const fromSrc = declared.origin === '' ? srcConfig(tag) : null
+	const { origin, appPath } = fromSrc || declared
+	const portal = declared.portal === '' ? sitePortal(siteConfig) : declared.portal
 	if (origin === '') {
 		return null
 	}
 
 	return { origin, appPath, portal }
+}
+
+/**
+ * @param {unknown} value A configured address or path.
+ * @return {string} The value as text, without trailing slashes.
+ */
+function trimSlashes(value) {
+	return String(value || '').replace(/\/+$/, '')
+}
+
+/**
+ * What the tag's data attributes say.
+ *
+ * @param {object|null} tag The `<script>` element.
+ * @return {{origin: string, appPath: string, portal: string}} The declared values, '' where absent.
+ */
+function declaredConfig(tag) {
+	const dataset = (tag && tag.dataset) || {}
+	return {
+		origin: trimSlashes(dataset.origin),
+		appPath: trimSlashes(dataset.appPath || dataset.apppath),
+		portal: String(dataset.portal || ''),
+	}
+}
+
+/**
+ * The origin and app path the tag's `src` was served from.
+ *
+ * @param {object|null} tag The `<script>` element.
+ * @return {{origin: string, appPath: string}|null} The values, or null when the `src` says neither.
+ */
+function srcConfig(tag) {
+	if (!tag || !tag.src) {
+		return null
+	}
+	const match =
+		/^(https?:\/\/[^/]+)(.*?)\/api\/traffic-client\.js(?:[?#].*)?$/i.exec(
+			String(tag.src),
+		)
+	return match ? { origin: match[1], appPath: trimSlashes(match[2]) } : null
+}
+
+/**
+ * @param {object|null} siteConfig The renderer's site config.
+ * @return {string} Its portal, or ''.
+ */
+function sitePortal(siteConfig) {
+	return siteConfig && typeof siteConfig.portal === 'string'
+		? siteConfig.portal
+		: ''
 }
 
 /**
@@ -203,19 +234,41 @@ export function classifyLink(href, pageHost) {
 	if (!match) {
 		return null
 	}
-	const host = match[2].toLowerCase()
-	const path = match[3] || '/'
-	const file = path.substring(path.lastIndexOf('/') + 1)
-	const dot = file.lastIndexOf('.')
-	const extension = dot === -1 ? '' : file.substring(dot + 1).toLowerCase()
-
-	if (extension !== '' && DOWNLOAD_EXTENSIONS.indexOf(extension) !== -1) {
+	const file = fileNameOf(match[3])
+	if (isDownload(file)) {
 		return { name: 'file_download', linkUrl: href, fileName: decodeSafe(file) }
 	}
-	if (host !== String(pageHost || '').toLowerCase()) {
+	if (isOtherHost(match[2], pageHost)) {
 		return { name: 'outbound_click', linkUrl: href }
 	}
 	return null
+}
+
+/**
+ * @param {string} path A link's path.
+ * @return {string} Its last segment.
+ */
+function fileNameOf(path) {
+	return path.substring(path.lastIndexOf('/') + 1)
+}
+
+/**
+ * @param {string} file A link's last path segment.
+ * @return {boolean} Whether it ends in a document extension.
+ */
+function isDownload(file) {
+	const dot = file.lastIndexOf('.')
+	const extension = dot === -1 ? '' : file.substring(dot + 1).toLowerCase()
+	return extension !== '' && DOWNLOAD_EXTENSIONS.indexOf(extension) !== -1
+}
+
+/**
+ * @param {string} host A link's host.
+ * @param {string} pageHost The current page's host.
+ * @return {boolean} Whether the link leaves the page's host.
+ */
+function isOtherHost(host, pageHost) {
+	return host.toLowerCase() !== String(pageHost || '').toLowerCase()
 }
 
 /**
@@ -229,25 +282,28 @@ export function searchTermFrom(location) {
 	if (!query) {
 		return ''
 	}
-	const pairs = query[1].split('&')
-	for (let i = 0; i < pairs.length; i++) {
-		const eq = pairs[i].indexOf('=')
-		const key = decodeSafe(
-			eq === -1 ? pairs[i] : pairs[i].substring(0, eq),
-		).toLowerCase()
-		if (SEARCH_PARAMS.indexOf(key) !== -1) {
-			const value =
-				eq === -1
-					? ''
-					: decodeSafe(
-							pairs[i].substring(eq + 1).replace(/\+/g, ' '),
-						).trim()
-			if (value !== '') {
-				return value.substring(0, 256)
-			}
+	for (const pair of query[1].split('&')) {
+		const value = searchValueOf(pair)
+		if (value !== '') {
+			return value.substring(0, 256)
 		}
 	}
 	return ''
+}
+
+/**
+ * The value of one query pair when its key is a search parameter.
+ *
+ * @param {string} pair A `key=value` pair, still encoded.
+ * @return {string} The decoded, trimmed value, or ''.
+ */
+function searchValueOf(pair) {
+	const eq = pair.indexOf('=')
+	const key = decodeSafe(eq === -1 ? pair : pair.substring(0, eq)).toLowerCase()
+	if (SEARCH_PARAMS.indexOf(key) === -1 || eq === -1) {
+		return ''
+	}
+	return decodeSafe(pair.substring(eq + 1).replace(/\+/g, ' ')).trim()
 }
 
 /**
@@ -331,13 +387,13 @@ export function formIdOf(form) {
 	if (!form || typeof form.getAttribute !== 'function') {
 		return ''
 	}
-	const id =
-		form.getAttribute(FORM_ATTRIBUTE)
-		|| form.id
-		|| form.getAttribute('name')
-		|| form.getAttribute('action')
-		|| ''
-	return String(id).substring(0, 256)
+	const id = [
+		form.getAttribute(FORM_ATTRIBUTE),
+		form.id,
+		form.getAttribute('name'),
+		form.getAttribute('action'),
+	].find(Boolean)
+	return String(id || '').substring(0, 256)
 }
 
 /**
@@ -351,18 +407,35 @@ export function fieldIdOf(field) {
 	if (!field || !field.tagName) {
 		return ''
 	}
-	const tag = String(field.tagName).toUpperCase()
-	if (tag !== 'INPUT' && tag !== 'SELECT' && tag !== 'TEXTAREA') {
+	if (!isReportedField(String(field.tagName).toUpperCase(), field)) {
 		return ''
 	}
-	if (
-		tag === 'INPUT'
-		&& (String(field.type).toLowerCase() === 'hidden'
-			|| String(field.type).toLowerCase() === 'submit'
-			|| String(field.type).toLowerCase() === 'button')
-	) {
-		return ''
-	}
+	return boundedId(field)
+}
+
+/** The elements a field event may name. */
+const REPORTED_FIELD_TAGS = ['INPUT', 'SELECT', 'TEXTAREA']
+
+/** The input types that hold no answer, so no field event names them. */
+const UNREPORTED_INPUT_TYPES = ['hidden', 'submit', 'button']
+
+/**
+ * @param {string} tag The field's tag, upper case.
+ * @param {object} field The field element.
+ * @return {boolean} Whether a field event may name it.
+ */
+function isReportedField(tag, field) {
+	return (
+		REPORTED_FIELD_TAGS.includes(tag)
+		&& !(tag === 'INPUT' && UNREPORTED_INPUT_TYPES.includes(String(field.type).toLowerCase()))
+	)
+}
+
+/**
+ * @param {object} field The field element.
+ * @return {string} Its id, else its name, at most 256 characters, or ''.
+ */
+function boundedId(field) {
 	return String(field.id || field.name || '').substring(0, 256)
 }
 
@@ -376,23 +449,46 @@ export function fieldIdOf(field) {
  * @return {object} The params.
  */
 export function dimensionParams(traffic, values) {
-	const declared = (traffic && traffic.customDimensions) || []
+	const declared = declaredDimensions(traffic)
 	const out = {}
 	if (!Array.isArray(declared) || !values) {
 		return out
 	}
-	for (let i = 0; i < declared.length; i++) {
-		const id = declared[i] && declared[i].id
-		if (!id) {
-			continue
-		}
-		const value = values[id]
-		if (value === '' || value === null || value === undefined) {
-			continue
-		}
-		out[DIMENSION_PREFIX + id] = String(value).substring(0, 256)
+	for (const dimension of declared) {
+		addDimension(out, { dimension, values })
 	}
 	return out
+}
+
+/**
+ * @param {object|null} traffic The resolved `traffic` block.
+ * @return {unknown} The custom dimensions it declares, or none.
+ */
+function declaredDimensions(traffic) {
+	return (traffic && traffic.customDimensions) || []
+}
+
+/**
+ * Add one declared dimension's param when the page set a value for it.
+ *
+ * @param {object} out The params so far.
+ * @param {{dimension: object|null, values: object}} entry The declared dimension and the page's values.
+ * @return {void}
+ */
+function addDimension(out, entry) {
+	const id = entry.dimension && entry.dimension.id
+	if (!id || isUnset(entry.values[id])) {
+		return
+	}
+	out[DIMENSION_PREFIX + id] = String(entry.values[id]).substring(0, 256)
+}
+
+/**
+ * @param {unknown} value A dimension value.
+ * @return {boolean} Whether it is empty, null or absent.
+ */
+function isUnset(value) {
+	return value === '' || value === null || value === undefined
 }
 
 /**
@@ -424,20 +520,47 @@ export function errorParams(error) {
 		return null
 	}
 	const message = String(error.message || '').substring(0, 256)
-	const stack = error.error && error.error.stack ? String(error.error.stack) : ''
+	const stack = stackOf(error)
 	if (message === '' && stack === '') {
 		return null
 	}
-	const params = {
-		message: message || 'Script error',
+	return errorReport(error, { message, stack })
+}
+
+/**
+ * @param {object} error The ErrorEvent-shaped object.
+ * @return {string} The error's stack, or ''.
+ */
+function stackOf(error) {
+	return error.error && error.error.stack ? String(error.error.stack) : ''
+}
+
+/**
+ * The params of a script error: its message, where it happened, and a hash
+ * of the stack when there is one.
+ *
+ * @param {object} error The ErrorEvent-shaped object.
+ * @param {{message: string, stack: string}} found The bounded message and the stack.
+ * @return {object} The params.
+ */
+function errorReport(error, found) {
+	const params = { message: found.message || 'Script error', ...errorPlace(error) }
+	if (found.stack !== '') {
+		params.stackHash = hashOf(found.stack)
+	}
+	return params
+}
+
+/**
+ * @param {object} error The ErrorEvent-shaped object.
+ * @return {{source: string, line: number, column: number}} The script, line and column.
+ */
+function errorPlace(error) {
+	return {
 		source: sourceOf(String(error.filename || '')),
 		line: Number(error.lineno) || 0,
 		column: Number(error.colno) || 0,
 	}
-	if (stack !== '') {
-		params.stackHash = hashOf(stack)
-	}
-	return params
 }
 
 /**
@@ -450,9 +573,16 @@ function sourceOf(url) {
 	if (url === '') {
 		return ''
 	}
+	return withoutQuery(url).replace(/^[a-z]+:\/\//i, '').substring(0, 256)
+}
+
+/**
+ * @param {string} url A URL.
+ * @return {string} The URL without its query and fragment.
+ */
+function withoutQuery(url) {
 	const cut = url.search(/[?#]/)
-	const clean = cut === -1 ? url : url.substring(0, cut)
-	return clean.replace(/^[a-z]+:\/\//i, '').substring(0, 256)
+	return cut === -1 ? url : url.substring(0, cut)
 }
 
 /**
@@ -487,28 +617,50 @@ const WIDTH_BUCKETS = [480, 768, 1024, 1280, 1600]
  */
 export function siteRoute(location) {
 	const url = String(location || '')
+	const route = routeParam(url)
+	return normalisedRoute(route === '' ? pathOf(url) : route)
+}
+
+/**
+ * @param {string} pair A `key=value` query pair.
+ * @return {boolean} Whether it is the `route` parameter.
+ */
+function isRoutePair(pair) {
+	return pair.indexOf('route=') === 0
+}
+
+/**
+ * @param {string} url The page URL.
+ * @return {string} Its first `route` query parameter, decoded, or ''.
+ */
+function routeParam(url) {
 	const query = /\?([^#]*)/.exec(url)
-	let route = ''
-	if (query) {
-		const pairs = query[1].split('&')
-		for (let i = 0; i < pairs.length; i++) {
-			if (pairs[i].indexOf('route=') === 0) {
-				route = decodeSafe(pairs[i].substring(6))
-				break
-			}
-		}
+	const pair = query ? query[1].split('&').find(isRoutePair) : undefined
+	return pair ? decodeSafe(pair.substring(6)) : ''
+}
+
+/**
+ * @param {string} url The page URL.
+ * @return {string} Its path, or the URL without its query and fragment.
+ */
+function pathOf(url) {
+	const path = /^[a-z]+:\/\/[^/?#]+([^?#]*)/i.exec(url)
+	return path ? path[1] : url.replace(/[?#].*$/, '')
+}
+
+/**
+ * @param {string} route A route as read.
+ * @return {string} The route with a leading slash and without trailing ones.
+ */
+function normalisedRoute(route) {
+	let normal = route
+	if (normal === '' || normal.charAt(0) !== '/') {
+		normal = '/' + normal
 	}
-	if (route === '') {
-		const path = /^[a-z]+:\/\/[^/?#]+([^?#]*)/i.exec(url)
-		route = path ? path[1] : url.replace(/[?#].*$/, '')
+	if (normal.length > 1) {
+		normal = normal.replace(/\/+$/, '')
 	}
-	if (route === '' || route.charAt(0) !== '/') {
-		route = '/' + route
-	}
-	if (route.length > 1) {
-		route = route.replace(/\/+$/, '')
-	}
-	return route === '' ? '/' : route
+	return normal === '' ? '/' : normal
 }
 
 /**
@@ -524,19 +676,29 @@ export function experimentFor(traffic, route) {
 	if (!Array.isArray(experiments)) {
 		return null
 	}
-	for (let i = 0; i < experiments.length; i++) {
-		const experiment = experiments[i]
-		if (
-			experiment
-			&& experiment.status === 'running'
-			&& siteRoute(String(experiment.page || '')) === route
-			&& Array.isArray(experiment.variants)
-			&& experiment.variants.length > 1
-		) {
-			return experiment
-		}
-	}
-	return null
+	return experiments.find((experiment) => isRunningOn(experiment, route)) || null
+}
+
+/**
+ * @param {object|null} experiment A declared experiment.
+ * @param {string} route The current in-site route.
+ * @return {boolean} Whether it runs on the route with more than one variant.
+ */
+function isRunningOn(experiment, route) {
+	return (
+		Boolean(experiment)
+		&& experiment.status === 'running'
+		&& siteRoute(String(experiment.page || '')) === route
+		&& hasVariants(experiment)
+	)
+}
+
+/**
+ * @param {object} experiment A declared experiment.
+ * @return {boolean} Whether it has more than one variant to pick from.
+ */
+function hasVariants(experiment) {
+	return Array.isArray(experiment.variants) && experiment.variants.length > 1
 }
 
 /**
@@ -608,24 +770,64 @@ export function mayRecord(traffic, consent) {
  * @return {object|null} The params, or null off the page.
  */
 export function heatClickParams(click, size) {
-	if (!click || !size || !(size.width > 0) || !(size.height > 0)) {
+	if (!click || !hasArea(size)) {
 		return null
 	}
+	const at = positionOf(click, size)
+	return at
+		? {
+				x: fourDecimals(at.x),
+				y: fourDecimals(at.y),
+				vw: widthBucket(size.viewport),
+				tag: tagOf(click.target),
+				selector: safeSelector(click.target),
+			}
+		: null
+}
+
+/**
+ * @param {object} click The click: `{ pageX, pageY }`.
+ * @param {object} size The document: `{ width, height }`.
+ * @return {{x: number, y: number}|null} Where on the document, as fractions, or null off the page.
+ */
+function positionOf(click, size) {
 	const x = Number(click.pageX) / size.width
 	const y = Number(click.pageY) / size.height
-	if (!(x >= 0 && x <= 1 && y >= 0 && y <= 1)) {
-		return null
-	}
-	const target = click.target
-	return {
-		x: Math.round(x * 10000) / 10000,
-		y: Math.round(y * 10000) / 10000,
-		vw: widthBucket(size.viewport),
-		tag: String((target && target.tagName) || '')
-			.toLowerCase()
-			.substring(0, 32),
-		selector: safeSelector(target),
-	}
+	return isFraction(x) && isFraction(y) ? { x, y } : null
+}
+
+/**
+ * @param {number} value A fraction.
+ * @return {number} The fraction rounded to four decimals.
+ */
+function fourDecimals(value) {
+	return Math.round(value * 10000) / 10000
+}
+
+/**
+ * @param {object|null} size The document: `{ width, height }`.
+ * @return {boolean} Whether it has a width and a height.
+ */
+function hasArea(size) {
+	return Boolean(size) && size.width > 0 && size.height > 0
+}
+
+/**
+ * @param {number} value A position as a fraction of the document.
+ * @return {boolean} Whether it lies on the document.
+ */
+function isFraction(value) {
+	return value >= 0 && value <= 1
+}
+
+/**
+ * @param {object|null} target The clicked element.
+ * @return {string} Its tag, lower case, at most 32 characters.
+ */
+function tagOf(target) {
+	return String((target && target.tagName) || '')
+		.toLowerCase()
+		.substring(0, 32)
 }
 
 /**
@@ -656,22 +858,41 @@ export function safeSelector(element) {
 	const parts = []
 	let node = element
 	while (node && node.nodeType === 1 && parts.length < 3) {
-		let part = String(node.tagName || '').toLowerCase()
-		const classes = String(
-			node.className && node.className.baseVal !== undefined
-				? node.className.baseVal
-				: node.className || '',
-		)
-			.split(/\s+/)
-			.filter((name) => name !== '' && !/\d/.test(name))
-			.slice(0, 2)
-		if (classes.length > 0) {
-			part += '.' + classes.join('.')
-		}
-		parts.unshift(part)
+		parts.unshift(selectorPart(node))
 		node = node.parentNode
 	}
 	return parts.join(' > ').substring(0, 128)
+}
+
+/**
+ * @param {object} node An element.
+ * @return {string} Its tag with up to two of its safe class names.
+ */
+function selectorPart(node) {
+	const part = String(node.tagName || '').toLowerCase()
+	const classes = safeClasses(node)
+	return classes.length > 0 ? part + '.' + classes.join('.') : part
+}
+
+/**
+ * @param {object} node An element.
+ * @return {Array<string>} Up to two of its class names without digits.
+ */
+function safeClasses(node) {
+	return String(classNameOf(node))
+		.split(/\s+/)
+		.filter((name) => name !== '' && !/\d/.test(name))
+		.slice(0, 2)
+}
+
+/**
+ * @param {object} node An element, an SVG one included.
+ * @return {string} Its class attribute.
+ */
+function classNameOf(node) {
+	return node.className && node.className.baseVal !== undefined
+		? node.className.baseVal
+		: node.className || ''
 }
 
 /**
@@ -705,21 +926,30 @@ export function scrollDepth(scrollTop, viewport, pageHeight) {
  */
 export function variantUrl(location, pageRoute) {
 	const url = String(location || '')
-	const cut = url.search(/[?#]/)
-	const base = cut === -1 ? url : url.substring(0, cut)
-	const query = /\?([^#]*)/.exec(url)
-	const pairs = query && query[1] !== '' ? query[1].split('&') : []
-	let replaced = false
-	for (let i = 0; i < pairs.length; i++) {
-		if (pairs[i].indexOf('route=') === 0) {
-			pairs[i] = 'route=' + encodeURIComponent(pageRoute)
-			replaced = true
-		}
-	}
-	if (replaced) {
-		return base + '?' + pairs.join('&')
+	const base = withoutQuery(url)
+	const pairs = queryPairs(url)
+	if (pairs.some(isRoutePair)) {
+		const routed = 'route=' + encodeURIComponent(pageRoute)
+		return withQuery(base, pairs.map((pair) => (isRoutePair(pair) ? routed : pair)))
 	}
 	const origin = /^([a-z]+:\/\/[^/?#]+)/i.exec(base)
-	const path = origin ? origin[1] + pageRoute : pageRoute
+	return withQuery(origin ? origin[1] + pageRoute : pageRoute, pairs)
+}
+
+/**
+ * @param {string} url A URL.
+ * @return {Array<string>} Its query pairs, still encoded.
+ */
+function queryPairs(url) {
+	const query = /\?([^#]*)/.exec(url)
+	return query && query[1] !== '' ? query[1].split('&') : []
+}
+
+/**
+ * @param {string} path A URL without a query.
+ * @param {Array<string>} pairs The query pairs.
+ * @return {string} The URL with the pairs as its query, when there are any.
+ */
+function withQuery(path, pairs) {
 	return pairs.length > 0 ? path + '?' + pairs.join('&') : path
 }

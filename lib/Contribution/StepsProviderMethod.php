@@ -98,28 +98,54 @@ class StepsProviderMethod {
 	public function steps(array $entries): array {
 		$out = [];
 		foreach ($entries as $entry) {
-			if (is_array($entry) === false) {
-				continue;
+			$step = $this->stepOf(entry: $entry);
+			if ($step !== null) {
+				$out[] = $step;
 			}
-
-			$label = ($entry['label'] ?? null);
-			$state = ($entry['state'] ?? null);
-			if (is_string($label) === false || trim($label) === '' || in_array($state, self::STATES, true) === false) {
-				continue;
-			}
-
-			$step = ['label' => trim($label), 'state' => $state];
-			foreach (['description', 'date'] as $optional) {
-				if (is_string($entry[$optional] ?? null) === true && $entry[$optional] !== '') {
-					$step[$optional] = $entry[$optional];
-				}
-			}
-
-			$out[] = $step;
 		}
 
 		return $out;
 	}//end steps()
+
+	/**
+	 * One step `{label, state, description?, date?}`, or null when it has no
+	 * label or a state other than done, current or todo.
+	 *
+	 * @param mixed $entry One entry of the provider's answer.
+	 *
+	 * @return array<string, string>|null
+	 */
+	private function stepOf(mixed $entry): ?array {
+		if (is_array($entry) === false) {
+			return null;
+		}
+
+		$label = ($entry['label'] ?? null);
+		$state = ($entry['state'] ?? null);
+		if (is_string($label) === false || trim($label) === '' || in_array($state, self::STATES, true) === false) {
+			return null;
+		}
+
+		return ['label' => trim($label), 'state' => $state] + $this->optionalParts(entry: $entry);
+	}//end stepOf()
+
+	/**
+	 * A step's description and date, each only as a non-empty string.
+	 *
+	 * @param array<string, mixed> $entry One entry of the provider's answer.
+	 *
+	 * @return array<string, string>
+	 */
+	private function optionalParts(array $entry): array {
+		$parts = [];
+		foreach (['description', 'date'] as $optional) {
+			if (is_string($entry[$optional] ?? null) === true && $entry[$optional] !== '') {
+				$parts[$optional] = $entry[$optional];
+			}
+		}
+
+		return $parts;
+	}//end optionalParts()
 
 	/**
 	 * Whether a declared field name is one the collection projects (any

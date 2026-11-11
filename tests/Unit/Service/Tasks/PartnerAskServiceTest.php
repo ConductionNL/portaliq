@@ -252,4 +252,92 @@ class PartnerAskServiceTest extends TestCase {
 		return new PartnerAskService(($accounts ?? $this->accountsAnsweringAnyone()), $tasks);
 	}//end service()
 
+	/**
+	 * Every ask and partner is raised, provisioned or refused exactly as recorded.
+	 *
+	 * @return void
+	 */
+	public function testEveryAskIsAsRecorded(): void {
+		$calls    = [];
+		$accounts = $this->accounts();
+		$accounts->method('findBySubjectRef')->willReturnCallback(
+			static function (string $subjectRef) use (&$calls): ?array {
+				$calls[] = 'find ' . $subjectRef;
+				return match ($subjectRef) {
+					'known' => ['subjectRef' => 'known', 'status' => 'active'],
+					'void' => ['subjectRef' => 'void', 'status' => PortalAccountService::STATUS_VOID],
+					default => null,
+				};
+			}
+		);
+		$accounts->method('provision')->willReturnCallback(
+			static function (...$args) use (&$calls): ?array {
+				$calls[] = 'provision ' . json_encode($args);
+				return match ($args[3] . '|' . $args[4]) {
+					'|only@mail.example' => ['subjectRef' => 'mail-only', 'isNew' => false, 'status' => 'pending'],
+					'99999999|' => ['subjectRef' => 'gone', 'isNew' => true, 'status' => PortalAccountService::STATUS_VOID],
+					'00000000|' => null,
+					default => ['subjectRef' => 'new-one', 'isNew' => true, 'status' => 'pending'],
+				};
+			}
+		);
+		$tasks = $this->getMockBuilder(PortalTaskGateway::class)->disableOriginalConstructor()->onlyMethods(['createTask'])->getMock();
+		$tasks->method('createTask')->willReturnCallback(
+			static function (array $handler, string $subjectRef, array $task) use (&$calls): ?array {
+				$calls[] = 'raise ' . $subjectRef . ' ' . json_encode($task);
+				return match ($task['title']) {
+					'Refused' => ['status' => 422, 'body' => ['error' => 'x']],
+					'Lost' => null,
+					'Bare' => ['status' => 200],
+					default => ['status' => 201, 'body' => ['uuid' => 't']],
+				};
+			}
+		);
+		$service = new PartnerAskService($accounts, $tasks);
+		$handler = ['uid' => 'h-uid', 'subjectRef' => 'h-ref', 'organisation' => 'org'];
+		$ask     = ['title' => ' Advies ', 'description' => 'D', 'dueAt' => 'soon', 'uploadRules' => 'x', 'register' => 'r', 'schema' => 's', 'caseId' => 'c-1'];
+
+		$results = [
+			$service->ask(handler: $handler, partner: ['subjectRef' => 'known'], ask: $ask),
+			$service->ask(handler: $handler, partner: ['subjectRef' => 'void'], ask: $ask),
+			$service->ask(handler: $handler, partner: ['subjectRef' => 'nobody', 'kvk' => '12345678'], ask: $ask),
+			$service->ask(handler: $handler, partner: ['kvk' => ' 12345678 ', 'email' => ' a@b.example ', 'name' => 'Partner'], ask: $ask),
+			$service->ask(handler: ['subjectRef' => 'h-ref'], partner: ['email' => 'only@mail.example'], ask: ['title' => 'T', 'caseId' => 'c']),
+			$service->ask(handler: [], partner: ['kvk' => '99999999'], ask: $ask),
+			$service->ask(handler: $handler, partner: ['kvk' => '00000000'], ask: $ask),
+			$service->ask(handler: $handler, partner: ['kvk' => ' ', 'email' => ' '], ask: $ask),
+			$service->ask(handler: $handler, partner: ['subjectRef' => 'known'], ask: ['title' => ' ', 'caseId' => 'c']),
+			$service->ask(handler: $handler, partner: ['subjectRef' => 'known'], ask: ['title' => 'T']),
+			$service->ask(handler: $handler, partner: ['subjectRef' => 'known'], ask: ['title' => 'Refused', 'caseId' => 'c']),
+			$service->ask(handler: $handler, partner: ['subjectRef' => 'known'], ask: ['title' => 'Lost', 'caseId' => 'c']),
+			$service->ask(handler: $handler, partner: ['subjectRef' => 'known'], ask: ['title' => 'Bare', 'caseId' => 'c']),
+		];
+
+		$this->assertSame(
+			'[{"subjectRef":"known","provisioned":false,"task":{"uuid":"t"}},null,null,{"subjectRef":"new-one","provisioned":true,"task":{"uuid":"t"}},{"subjectRef":"mail-only","provisioned":false,"task":{"uuid":"t"}},null,null,null,null,null,null,null,{"subjectRef":"known","provisioned":false,"task":[]}]',
+			json_encode($results)
+		);
+		$this->assertSame(
+			[
+				'find known',
+				'raise known {"title":"Advies","description":"D","dueAt":"soon","uploadRules":["x"],"object":{"register":"r","schema":"s","id":"c-1"},"audience":"partner","raisedBy":"h-ref"}',
+				'find void',
+				'find nobody',
+				'provision ["partner","org","eherkenning","12345678","a@b.example",false,"h-uid","Partner"]',
+				'raise new-one {"title":"Advies","description":"D","dueAt":"soon","uploadRules":["x"],"object":{"register":"r","schema":"s","id":"c-1"},"audience":"partner","raisedBy":"h-ref"}',
+				'provision ["partner","","","","only@mail.example",false,"h-ref",""]',
+				'raise mail-only {"title":"T","description":"","dueAt":"","uploadRules":[],"object":{"register":"","schema":"","id":"c"},"audience":"partner","raisedBy":"h-ref"}',
+				'provision ["partner","","eherkenning","99999999","",false,"",""]',
+				'provision ["partner","org","eherkenning","00000000","",false,"h-uid",""]',
+				'find known',
+				'raise known {"title":"Refused","description":"","dueAt":"","uploadRules":[],"object":{"register":"","schema":"","id":"c"},"audience":"partner","raisedBy":"h-ref"}',
+				'find known',
+				'raise known {"title":"Lost","description":"","dueAt":"","uploadRules":[],"object":{"register":"","schema":"","id":"c"},"audience":"partner","raisedBy":"h-ref"}',
+				'find known',
+				'raise known {"title":"Bare","description":"","dueAt":"","uploadRules":[],"object":{"register":"","schema":"","id":"c"},"audience":"partner","raisedBy":"h-ref"}',
+			],
+			array_map(static fn (string $call): string => str_replace('\\/', '/', $call), $calls)
+		);
+	}//end testEveryAskIsAsRecorded()
+
 }//end class

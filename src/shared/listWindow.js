@@ -23,13 +23,53 @@ function comparable(value) {
 		return value
 	}
 	const text = String(value)
-	if (/^\d{4}-\d{2}-\d{2}/.test(text)) {
-		const time = Date.parse(text)
-		if (!Number.isNaN(time)) {
-			return time
-		}
+	return dateTimeOf(text) ?? text.toLocaleLowerCase()
+}
+
+/**
+ * @param {string} text A value as text.
+ * @return {number|null} Its time when it starts with a readable date, else null.
+ */
+function dateTimeOf(text) {
+	if (!/^\d{4}-\d{2}-\d{2}/.test(text)) {
+		return null
 	}
-	return text.toLocaleLowerCase()
+	const time = Date.parse(text)
+	return Number.isNaN(time) ? null : time
+}
+
+/**
+ * Rows without a value come last; else the order they came in.
+ *
+ * @param {{value: unknown, index: number}} a One row's entry.
+ * @param {{value: unknown, index: number}} b The other's.
+ * @return {number} The order.
+ */
+function emptiesLast(a, b) {
+	return (a.value === null) - (b.value === null) || a.index - b.index
+}
+
+/**
+ * @param {{value: unknown}} a One row's entry.
+ * @param {{value: unknown}} b The other's.
+ * @return {number} -1, 1, or 0 when neither value comes first.
+ */
+function valueOrder(a, b) {
+	if (a.value < b.value) {
+		return -1
+	}
+	return a.value > b.value ? 1 : 0
+}
+
+/**
+ * @param {number} sign 1 for ascending, -1 for descending.
+ * @return {(a: object, b: object) => number} The comparison of two row entries.
+ */
+function byValue(sign) {
+	return (a, b) =>
+		a.value === null || b.value === null
+			? emptiesLast(a, b)
+			: valueOrder(a, b) * sign || a.index - b.index
 }
 
 /**
@@ -48,18 +88,7 @@ export function sortRows(rows, sort) {
 	const sign = sort.direction === 'desc' ? -1 : 1
 	return list
 		.map((row, index) => ({ row, index, value: comparable(row?.[sort.field]) }))
-		.sort((a, b) => {
-			if (a.value === null || b.value === null) {
-				return (a.value === null) - (b.value === null) || a.index - b.index
-			}
-			if (a.value < b.value) {
-				return -sign
-			}
-			if (a.value > b.value) {
-				return sign
-			}
-			return a.index - b.index
-		})
+		.sort(byValue(sign))
 		.map(({ row }) => row)
 }
 
@@ -113,6 +142,50 @@ export function windowRows(rows, block) {
 }
 
 /**
+ * @param {Date} day A day at midnight.
+ * @return {{from: Date, to: Date}} That day.
+ */
+function daySpan(day) {
+	return {
+		from: day,
+		to: new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1),
+	}
+}
+
+/**
+ * Monday is the first day of the week here, Sunday the last.
+ *
+ * @param {Date} day A day at midnight.
+ * @return {{from: Date, to: Date}} Its week.
+ */
+function weekSpan(day) {
+	const back = (day.getDay() + 6) % 7
+	const from = new Date(day.getFullYear(), day.getMonth(), day.getDate() - back)
+	return {
+		from,
+		to: new Date(from.getFullYear(), from.getMonth(), from.getDate() + 7),
+	}
+}
+
+/**
+ * @param {Date} day A day at midnight.
+ * @return {{from: Date, to: Date}} Its month.
+ */
+function monthSpan(day) {
+	return {
+		from: new Date(day.getFullYear(), day.getMonth(), 1),
+		to: new Date(day.getFullYear(), day.getMonth() + 1, 1),
+	}
+}
+
+/** The span each range covers around a day. */
+const RANGE_SPANS = new Map([
+	['day', daySpan],
+	['week', weekSpan],
+	['month', monthSpan],
+])
+
+/**
  * The start and end (exclusive) of a range around today.
  *
  * @param {string} range `day`, `week` or `month`.
@@ -120,33 +193,10 @@ export function windowRows(rows, block) {
  * @return {{from: Date, to: Date}|null} The span, null for no range.
  */
 export function rangeSpan(range, today) {
-	const day = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-	if (range === 'day') {
-		return {
-			from: day,
-			to: new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1),
-		}
-	}
-	if (range === 'week') {
-		// Monday is the first day of the week here, Sunday the last.
-		const back = (day.getDay() + 6) % 7
-		const from = new Date(
-			day.getFullYear(),
-			day.getMonth(),
-			day.getDate() - back,
-		)
-		return {
-			from,
-			to: new Date(from.getFullYear(), from.getMonth(), from.getDate() + 7),
-		}
-	}
-	if (range === 'month') {
-		return {
-			from: new Date(day.getFullYear(), day.getMonth(), 1),
-			to: new Date(day.getFullYear(), day.getMonth() + 1, 1),
-		}
-	}
-	return null
+	const span = RANGE_SPANS.get(range)
+	return span
+		? span(new Date(today.getFullYear(), today.getMonth(), today.getDate()))
+		: null
 }
 
 /**

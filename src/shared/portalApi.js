@@ -102,23 +102,87 @@ export function setToken(token) {
  * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
  */
 export function rowActionFormData(answers, upload) {
-	if (!upload || !upload.field || !upload.files || upload.files.length === 0) {
+	if (!hasFiles(upload)) {
 		return null
 	}
 	const form = new FormData()
-	for (const [key, value] of Object.entries(answers || {})) {
-		if (value !== null && typeof value === 'object') {
-			for (const [name, inner] of Object.entries(value)) {
-				form.append(`${key}[${name}]`, String(inner))
-			}
-		} else if (value !== undefined && value !== null) {
-			form.append(key, String(value))
-		}
+	for (const entry of Object.entries(answers || {})) {
+		appendAnswer(form, entry)
 	}
 	for (const file of upload.files) {
 		form.append(`${upload.field}[]`, file, file.name)
 	}
 	return form
+}
+
+/**
+ * Whether an upload names its field and carries at least one file.
+ *
+ * @param {{field: string, files: Array<File>}|null} upload The upload.
+ * @return {boolean} True with files.
+ */
+function hasFiles(upload) {
+	return Boolean(upload && upload.field && upload.files && upload.files.length > 0)
+}
+
+/**
+ * One answer as form fields: an object answer as `key[name]` fields, any
+ * other value as one field, nothing for null or undefined.
+ *
+ * @param {FormData} form The body, appended to.
+ * @param {Array} entry The answer's key and value.
+ * @return {void}
+ */
+function appendAnswer(form, entry) {
+	const key = entry[0]
+	const value = entry[1]
+	if (value !== null && typeof value === 'object') {
+		for (const [name, inner] of Object.entries(value)) {
+			form.append(`${key}[${name}]`, String(inner))
+		}
+	} else if (value !== undefined && value !== null) {
+		form.append(key, String(value))
+	}
+}
+
+/**
+ * Save a Blob URL under a name by clicking a link to it. The cleanup is
+ * deferred: revoking the object URL synchronously after click() can cancel
+ * the download before the browser has started streaming it.
+ *
+ * @param {string} objectUrl The Blob URL.
+ * @param {string} name The name to save it under.
+ * @return {void}
+ */
+function clickDownload(objectUrl, name) {
+	const link = document.createElement('a')
+	link.href = objectUrl
+	link.download = name
+	document.body.appendChild(link)
+	link.click()
+	setTimeout(() => {
+		link.remove()
+		window.URL.revokeObjectURL(objectUrl)
+	}, 10000)
+}
+
+/**
+ * The "my cases" answer as the pages read it: the cases only when the
+ * answer is ok, the mandates and the one acted under, and the refusal.
+ *
+ * @param {{ok: boolean, status: number}} res The response.
+ * @param {object} json Its body, `{}` when it was not JSON.
+ * @return {{ok: boolean, status: number, cases: Array, mandates: Array, activeMandate: object|null, error: string}} The answer.
+ */
+function myCasesAnswer(res, json) {
+	return {
+		ok: res.ok,
+		status: res.status,
+		cases: res.ok && Array.isArray(json?.cases) ? json.cases : [],
+		mandates: Array.isArray(json?.mandates) ? json.mandates : [],
+		activeMandate: json?.activeMandate || null,
+		error: res.ok ? '' : String(json?.error || ''),
+	}
 }
 
 /**
@@ -389,25 +453,49 @@ export function createPortalApi(config, store = {}) {
 	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-every-listed-document-opens-from-the-case-screen-req-cdc-002
 	 */
 	async function saveDocument(url, entry) {
+		return saveDownload(url, entry.title || 'download')
+	}
+
+	/**
+	 * Fetch a file with the bearer and save it under a name, through a Blob
+	 * URL and a clicked link.
+	 *
+	 * @param {string} url The file's route.
+	 * @param {string} name The name to save it under.
+	 * @return {Promise<object>} `{ ok }`, or `{ ok: false, status }`; `status` 0 on a network error.
+	 */
+	async function saveDownload(url, name) {
 		try {
 			const res = await fetch(url, { headers: { ...authHeaders() } })
 			if (!res.ok) {
 				return { ok: false, status: res.status }
 			}
-			const blob = await res.blob()
-			const objectUrl = window.URL.createObjectURL(blob)
-			const link = document.createElement('a')
-			link.href = objectUrl
-			link.download = entry.title || 'download'
-			document.body.appendChild(link)
-			link.click()
-			setTimeout(() => {
-				link.remove()
-				window.URL.revokeObjectURL(objectUrl)
-			}, 10000)
+			clickDownload(window.URL.createObjectURL(await res.blob()), name)
 			return { ok: true }
 		} catch {
 			return { ok: false, status: 0 }
+		}
+	}
+
+	/**
+	 * GET a list from the app with the bearer; anything but a list, a
+	 * refusal or a failure reads as an empty list.
+	 *
+	 * @param {string} path The path under the app root.
+	 * @return {Promise<Array<object>>} The list, or `[]`.
+	 */
+	async function fetchList(path) {
+		try {
+			const res = await fetch(`${appRoot}${path}`, {
+				headers: { Accept: 'application/json', ...authHeaders() },
+			})
+			if (!res.ok) {
+				return []
+			}
+			const json = await res.json()
+			return Array.isArray(json) ? json : []
+		} catch {
+			return []
 		}
 	}
 
@@ -458,24 +546,9 @@ export function createPortalApi(config, store = {}) {
 						...authHeaders(),
 					},
 				})
-				const json = await res.json().catch(() => ({}))
-				return {
-					ok: res.ok,
-					status: res.status,
-					cases: res.ok && Array.isArray(json?.cases) ? json.cases : [],
-					mandates: Array.isArray(json?.mandates) ? json.mandates : [],
-					activeMandate: json?.activeMandate || null,
-					error: res.ok ? '' : String(json?.error || ''),
-				}
+				return myCasesAnswer(res, await res.json().catch(() => ({})))
 			} catch {
-				return {
-					ok: false,
-					status: 0,
-					cases: [],
-					mandates: [],
-					activeMandate: null,
-					error: '',
-				}
+				return myCasesAnswer({ ok: false, status: 0 }, {})
 			}
 		},
 
@@ -885,18 +958,7 @@ export function createPortalApi(config, store = {}) {
 		 * @return {Promise<Array<object>>} The published items, or `[]`.
 		 */
 		async fetchNewsFeed() {
-			try {
-				const res = await fetch(`${appRoot}/api/news/feed`, {
-					headers: { Accept: 'application/json', ...authHeaders() },
-				})
-				if (!res.ok) {
-					return []
-				}
-				const json = await res.json()
-				return Array.isArray(json) ? json : []
-			} catch {
-				return []
-			}
+			return fetchList('/api/news/feed')
 		},
 
 		/**
@@ -908,18 +970,7 @@ export function createPortalApi(config, store = {}) {
 		 * @return {Promise<Array<object>>} The newsletters, or `[]`.
 		 */
 		async fetchNewsletterArchive() {
-			try {
-				const res = await fetch(`${appRoot}/api/newsletters/archive`, {
-					headers: { Accept: 'application/json', ...authHeaders() },
-				})
-				if (!res.ok) {
-					return []
-				}
-				const json = await res.json()
-				return Array.isArray(json) ? json : []
-			} catch {
-				return []
-			}
+			return fetchList('/api/newsletters/archive')
 		},
 
 		/**
@@ -1405,26 +1456,10 @@ export function createPortalApi(config, store = {}) {
 					? 'export.pdf'
 					: `${encodeURIComponent(id)}/export.pdf`
 			const url = `${base}${col(collection.register, collection.schema)}/${path}?collection=${encodeURIComponent(collection.id)}`
-			try {
-				const res = await fetch(url, { headers: { ...authHeaders() } })
-				if (!res.ok) {
-					return { ok: false, status: res.status }
-				}
-				const blob = await res.blob()
-				const objectUrl = window.URL.createObjectURL(blob)
-				const link = document.createElement('a')
-				link.href = objectUrl
-				link.download = `${(collection.label || 'export').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`
-				document.body.appendChild(link)
-				link.click()
-				setTimeout(() => {
-					link.remove()
-					window.URL.revokeObjectURL(objectUrl)
-				}, 10000)
-				return { ok: true }
-			} catch {
-				return { ok: false, status: 0 }
-			}
+			return saveDownload(
+				url,
+				`${(collection.label || 'export').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`,
+			)
 		},
 
 		/**
@@ -1700,28 +1735,7 @@ export function createPortalApi(config, store = {}) {
 		 */
 		async downloadFile(collection, id, file) {
 			const url = `${base}${col(collection.register, collection.schema)}/${encodeURIComponent(id)}/files/${encodeURIComponent(file.id)}?collection=${encodeURIComponent(collection.id)}`
-			try {
-				const res = await fetch(url, { headers: { ...authHeaders() } })
-				if (!res.ok) {
-					return { ok: false, status: res.status }
-				}
-				const blob = await res.blob()
-				const objectUrl = window.URL.createObjectURL(blob)
-				const link = document.createElement('a')
-				link.href = objectUrl
-				link.download = file.name || 'download'
-				document.body.appendChild(link)
-				link.click()
-				// Defer cleanup: revoking the object URL synchronously after click()
-				// can cancel the download before the browser has started streaming it.
-				setTimeout(() => {
-					link.remove()
-					window.URL.revokeObjectURL(objectUrl)
-				}, 10000)
-				return { ok: true }
-			} catch {
-				return { ok: false, status: 0 }
-			}
+			return saveDownload(url, file.name || 'download')
 		},
 
 		/**

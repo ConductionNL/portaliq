@@ -76,6 +76,25 @@ class CmsRows {
 			return [];
 		}
 
+		$rows = $this->readRows(schema: $schema, filters: $filters);
+		if (is_array($rows) === false) {
+			return [];
+		}
+
+		return $this->asRows(rows: $rows);
+	}//end query()
+
+	/**
+	 * The schema's rows matching the filters, as the object service answers
+	 * them; null when the register context cannot be set or the read fails,
+	 * which is logged.
+	 *
+	 * @param string               $schema  The schema slug.
+	 * @param array<string, mixed> $filters The property filters.
+	 *
+	 * @return mixed
+	 */
+	private function readRows(string $schema, array $filters): mixed {
 		try {
 			$objectService = $this->container->get(self::OBJECT_SERVICE);
 			// Through the context helper, never through two slug setters: the
@@ -84,26 +103,44 @@ class CmsRows {
 			// read here down with a slug this app does not own. See
 			// PortalRegisterContext.
 			if ($this->context->apply(objectService: $objectService, schemaSlug: $schema) === false) {
-				return [];
+				return null;
 			}
 
-			$rows = $objectService->findAll(
-				config: ['filters' => $filters, 'limit' => 500, 'offset' => 0],
-				_rbac: false,
-				_multitenancy: false
-			);
+			return $this->findRows(objectService: $objectService, filters: $filters);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Portaliq: CMS read failed',
 				['schema' => $schema, 'reason' => $e->getMessage()]
 			);
-			return [];
+			return null;
 		}
+	}//end readRows()
 
-		if (is_array($rows) === false) {
-			return [];
-		}
+	/**
+	 * The object service's read of the filtered rows: never through RBAC or
+	 * multitenancy, at most 500 rows.
+	 *
+	 * @param object               $objectService OpenRegister's object service, its register context set.
+	 * @param array<string, mixed> $filters       The property filters.
+	 *
+	 * @return mixed
+	 */
+	private function findRows(object $objectService, array $filters): mixed {
+		return $objectService->findAll(
+			config: ['filters' => $filters, 'limit' => 500, 'offset' => 0],
+			_rbac: false,
+			_multitenancy: false
+		);
+	}//end findRows()
 
+	/**
+	 * Every row as a plain array, an entity through its jsonSerialize().
+	 *
+	 * @param array<int, mixed> $rows The rows the object service answered.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function asRows(array $rows): array {
 		return array_map(
 			static function ($row) {
 				if (is_array($row) === true) {
@@ -130,22 +167,6 @@ class CmsRows {
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-public-content-reads-must-be-cached-keyed-by-audience
 	 */
 	public function rowId(array $row): ?string {
-		$self = ($row['@self'] ?? null);
-		$candidates = [
-			($row['id'] ?? null),
-			($row['uuid'] ?? null),
-		];
-		if (is_array($self) === true) {
-			$candidates[] = ($self['id'] ?? null);
-			$candidates[] = ($self['uuid'] ?? null);
-		}
-
-		foreach ($candidates as $candidate) {
-			if ((is_string($candidate) === true || is_int($candidate) === true) && (string)$candidate !== '') {
-				return (string)$candidate;
-			}
-		}
-
-		return null;
+		return (new RowIdLookup())->firstIdOrUuid(row: $row);
 	}//end rowId()
 }//end class

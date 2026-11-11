@@ -94,6 +94,18 @@ class ExampleSiteInstall extends Command {
 			return 1;
 		}
 
+		return $this->installSite(output: $output, site: $site);
+	}//end execute()
+
+	/**
+	 * Install the site and report what arrived.
+	 *
+	 * @param OutputInterface      $output The command output.
+	 * @param array<string, mixed> $site   The example site.
+	 *
+	 * @return int 0, 1 or 2; see the class.
+	 */
+	private function installSite(OutputInterface $output, array $site): int {
 		$report = $this->installer->install(site: $site);
 		if ($report['available'] === false) {
 			$output->writeln('<error>OpenRegister is not available, so nothing was written. Enable openregister and run this again.</error>');
@@ -101,7 +113,27 @@ class ExampleSiteInstall extends Command {
 			return 1;
 		}
 
-		foreach ($report['types'] as $schema => $counts) {
+		$this->writeCounts(output: $output, types: $report['types']);
+		if ($report['themeOffered'] === false) {
+			$this->writeThemeMissing(output: $output, site: $site);
+		}
+
+		$this->writeLosses(output: $output, report: $report);
+
+		return $this->finish(output: $output, report: $report);
+	}//end installSite()
+
+	/**
+	 * One line per record type: declared, created, already there and found
+	 * afterwards.
+	 *
+	 * @param OutputInterface                       $output The command output.
+	 * @param array<string, array<string, int>>     $types  The counts per schema.
+	 *
+	 * @return void
+	 */
+	private function writeCounts(OutputInterface $output, array $types): void {
+		foreach ($types as $schema => $counts) {
 			$output->writeln(
 				sprintf(
 					'%s: %d declared, %d created, %d already there, %d found afterwards',
@@ -113,14 +145,32 @@ class ExampleSiteInstall extends Command {
 				)
 			);
 		}
+	}//end writeCounts()
 
-		if ($report['themeOffered'] === false) {
-			$output->writeln(
-				'<comment>The theme app does not offer the set "' . (string)($site['portal']['theme'] ?? '')
-				. '". The site shows without its house style until the theme app (thematiq) with that set is installed.</comment>'
-			);
-		}
+	/**
+	 * The warning that the theme app does not offer the site's set.
+	 *
+	 * @param OutputInterface      $output The command output.
+	 * @param array<string, mixed> $site   The example site.
+	 *
+	 * @return void
+	 */
+	private function writeThemeMissing(OutputInterface $output, array $site): void {
+		$output->writeln(
+			'<comment>The theme app does not offer the set "' . (string)($site['portal']['theme'] ?? '')
+			. '". The site shows without its house style until the theme app (thematiq) with that set is installed.</comment>'
+		);
+	}//end writeThemeMissing()
 
+	/**
+	 * What is not on the instance, and what was written but not kept.
+	 *
+	 * @param OutputInterface      $output The command output.
+	 * @param array<string, mixed> $report The install report.
+	 *
+	 * @return void
+	 */
+	private function writeLosses(OutputInterface $output, array $report): void {
 		foreach ($report['missing'] as $missing) {
 			$output->writeln('<error>Not on the instance: ' . $missing . '</error>');
 		}
@@ -128,7 +178,18 @@ class ExampleSiteInstall extends Command {
 		foreach ($report['lost'] as $lost) {
 			$output->writeln('<error>Written but not kept: ' . $lost . '</error>');
 		}
+	}//end writeLosses()
 
+	/**
+	 * The closing line and exit code: 2 for an incomplete site, else 0 with
+	 * the address it opens at.
+	 *
+	 * @param OutputInterface      $output The command output.
+	 * @param array<string, mixed> $report The install report.
+	 *
+	 * @return int
+	 */
+	private function finish(OutputInterface $output, array $report): int {
 		if ($report['ok'] === false) {
 			$output->writeln(
 				'<error>The site is not complete. A key that is not kept usually means the portaliq register is older than this app:'
@@ -141,5 +202,5 @@ class ExampleSiteInstall extends Command {
 		$output->writeln('The site is installed. Open it at /index.php/apps/portaliq/site?portal=' . $report['portal']);
 
 		return 0;
-	}//end execute()
+	}//end finish()
 }//end class

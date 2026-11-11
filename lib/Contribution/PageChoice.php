@@ -71,47 +71,32 @@ class PageChoice {
 			return $aggregate;
 		}
 
-		$rank = array_flip(array_keys($listed));
+		$run  = new ArrangeRun(listed: $listed, rank: array_flip(array_keys($listed)));
 		$best = [];
 		foreach ($aggregate['contributions'] as $i => $contribution) {
-			$app   = (string)($contribution['app'] ?? '');
-			$pages = [];
-			foreach ((array)($contribution['pages'] ?? []) as $page) {
-				$key = self::keyOf(app: $app, pageId: (string)($page['id'] ?? ''));
-				if (($listed[$key] ?? false) === true) {
-					continue;
-				}
-
-				$pages[] = $page;
-			}
-
-			// Named pages first, in the listed order; the others after, as they came.
-			usort(
-				$pages,
-				static function (array $a, array $b) use ($rank, $app): int {
-					$left  = $rank[self::keyOf(app: $app, pageId: (string)($a['id'] ?? ''))] ?? PHP_INT_MAX;
-					$right = $rank[self::keyOf(app: $app, pageId: (string)($b['id'] ?? ''))] ?? PHP_INT_MAX;
-
-					return $left <=> $right;
-				}
-			);
-
-			if (array_key_exists('pages', $contribution) === true) {
-				$aggregate['contributions'][$i]['pages'] = $pages;
-			}
-
-			$best[$i] = PHP_INT_MAX;
-			foreach ($pages as $page) {
-				$best[$i] = min($best[$i], ($rank[self::keyOf(app: $app, pageId: (string)($page['id'] ?? ''))] ?? PHP_INT_MAX));
-			}
+			$aggregate['contributions'][$i] = $run->arranged(contribution: $contribution);
+			$best[$i] = $run->bestOf(contribution: $aggregate['contributions'][$i]);
 		}
 
-		$order = array_keys($aggregate['contributions']);
-		usort($order, static fn (int $a, int $b): int => [$best[$a], $a] <=> [$best[$b], $b]);
-		$aggregate['contributions'] = array_values(array_map(static fn (int $position): array => $aggregate['contributions'][$position], $order));
+		$aggregate['contributions'] = self::byBestRank(contributions: $aggregate['contributions'], best: $best);
 
 		return $aggregate;
 	}//end arrange()
+
+	/**
+	 * The contributions ordered by their best listed page; ties keep their order.
+	 *
+	 * @param array<int, mixed> $contributions The contributions.
+	 * @param array<int, int>   $best          Each contribution's best place.
+	 *
+	 * @return array<int, mixed>
+	 */
+	private static function byBestRank(array $contributions, array $best): array {
+		$order = array_keys($contributions);
+		usort($order, static fn (int $a, int $b): int => [$best[$a], $a] <=> [$best[$b], $b]);
+
+		return array_values(array_map(static fn (int $position): mixed => $contributions[$position], $order));
+	}//end byBestRank()
 
 	/**
 	 * Remove the pages an account may not see and the collections only those

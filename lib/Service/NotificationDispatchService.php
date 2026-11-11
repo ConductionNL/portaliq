@@ -102,7 +102,7 @@ class NotificationDispatchService {
 	 */
 	public function dispatch(string $ruleKey, string $appId, array $subject, array $record = []): void {
 		try {
-			$this->doDispatch(ruleKey: $ruleKey, appId: $appId, subject: $subject, record: $record);
+			$this->doDispatch(trigger: new NotificationTrigger(ruleKey: $ruleKey, appId: $appId, subject: $subject, record: $record));
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Portaliq: notification dispatch matching failed — no email will be sent for this trigger',
@@ -115,55 +115,77 @@ class NotificationDispatchService {
 	 * The actual matching + enqueue logic, isolated so dispatch() can wrap it
 	 * in a single fail-safe try/catch.
 	 *
-	 * @param string $ruleKey The trigger's rule key.
-	 * @param string $appId The contributing app.
-	 * @param array<string, mixed> $subject The resolved subject.
-	 * @param array<string, string> $record The record the trigger is about, or [].
+	 * @param NotificationTrigger $trigger The trigger.
 	 *
 	 * @return void
 	 */
-	private function doDispatch(string $ruleKey, string $appId, array $subject, array $record): void {
-		if ($ruleKey === '' || $appId === '') {
-			return;
-		}
-
-		$subjectRef = (string)($subject['subjectRef'] ?? '');
-		if ($subjectRef === '') {
+	private function doDispatch(NotificationTrigger $trigger): void {
+		if ($this->isAddressed(trigger: $trigger) === false) {
 			return;
 		}
 
 		// Aggregate through the ONE path every authorisation lookup flows
 		// through — the same manifest the controller/registry already trust.
-		$aggregate = $this->registry->aggregateFor(subject: $subject);
+		$contribution = $this->contributionOf(aggregate: $this->registry->aggregateFor(subject: $trigger->subject), appId: $trigger->appId);
 
-		foreach (($aggregate['contributions'] ?? []) as $contribution) {
-			if (is_array($contribution) === false || (string)($contribution['app'] ?? '') !== $appId) {
-				continue;
-			}
-
-			if ($this->declaresRuleKey(contribution: $contribution, ruleKey: $ruleKey) === false) {
-				// Fail-closed: no matching (or malformed/missing) declaration
-				// means this contribution gets no email for this trigger.
-				return;
-			}
-
-			$this->jobList->add(
-				NotificationDispatchJob::class,
-				[
-					'subjectRef' => $subjectRef,
-					'organisation' => (string)($subject['organisation'] ?? ''),
-					'audience' => (string)($subject['audience'] ?? ''),
-					'appId' => $appId,
-					'ruleKey' => $ruleKey,
-					// The record a change rule is about ({app, collection, id,
-					// label}); the job links to it and names its label.
-					'record' => $record,
-				]
-			);
-
-			return;
-		}//end foreach
+		// Fail-closed: no matching (or malformed/missing) declaration means
+		// this contribution gets no email for this trigger.
+		if ($contribution !== null && $this->declaresRuleKey(contribution: $contribution, ruleKey: $trigger->ruleKey) === true) {
+			$this->enqueue(trigger: $trigger);
+		}
 	}//end doDispatch()
+
+	/**
+	 * Whether the trigger names a rule key, an app and a subject.
+	 *
+	 * @param NotificationTrigger $trigger The trigger.
+	 *
+	 * @return bool
+	 */
+	private function isAddressed(NotificationTrigger $trigger): bool {
+		return $trigger->ruleKey !== '' && $trigger->appId !== '' && (string)($trigger->subject['subjectRef'] ?? '') !== '';
+	}//end isAddressed()
+
+	/**
+	 * The app's first contribution in the aggregate, or null.
+	 *
+	 * @param array<string, mixed> $aggregate The subject's aggregate.
+	 * @param string               $appId     The contributing app.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function contributionOf(array $aggregate, string $appId): ?array {
+		foreach (($aggregate['contributions'] ?? []) as $contribution) {
+			if (is_array($contribution) === true && (string)($contribution['app'] ?? '') === $appId) {
+				return $contribution;
+			}
+		}
+
+		return null;
+	}//end contributionOf()
+
+	/**
+	 * Enqueue the dispatch job with a content-free payload.
+	 *
+	 * @param NotificationTrigger $trigger The trigger.
+	 *
+	 * @return void
+	 */
+	private function enqueue(NotificationTrigger $trigger): void {
+		$this->jobList->add(
+			NotificationDispatchJob::class,
+			[
+				'subjectRef' => (string)($trigger->subject['subjectRef'] ?? ''),
+				'organisation' => (string)($trigger->subject['organisation'] ?? ''),
+				'audience' => (string)($trigger->subject['audience'] ?? ''),
+				'appId' => $trigger->appId,
+				'ruleKey' => $trigger->ruleKey,
+				// The record a change rule is about ({app, collection, id,
+				// label}); the job links to it and names its label.
+				'record' => $trigger->record,
+			]
+		);
+	}//end enqueue()
 
 	/**
 	 * Whether a contribution's `notifications` list declares the exact rule

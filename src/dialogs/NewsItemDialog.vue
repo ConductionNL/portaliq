@@ -149,6 +149,7 @@ import {
 	NcTextField,
 } from '@nextcloud/vue'
 import { emptyForm, formFromItem, missingFields } from '../lib/newsAuthoring.js'
+import { closeOrRefuse } from './submitDialog.js'
 
 export default {
 	name: 'NewsItemDialog',
@@ -311,12 +312,7 @@ export default {
 			}
 			this.busy = true
 			const outcome = await this.submit({ ...this.form })
-			this.busy = false
-			if (outcome.ok) {
-				this.$emit('close', outcome.message)
-				return
-			}
-			this.refusal = outcome.message
+			closeOrRefuse(this, outcome)
 		},
 	},
 }

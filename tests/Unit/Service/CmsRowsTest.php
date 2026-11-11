@@ -102,4 +102,19 @@ class CmsRowsTest extends TestCase {
 		$this->assertSame('su', $r->rowId(['@self' => ['uuid' => 'su']]));
 		$this->assertNull($r->rowId(['@self' => 'x', 'id' => []]));
 	}//end testRowId()
+
+	/**
+	 * The flat id wins over the flat uuid, and both over `@self`'s id and
+	 * uuid, in that order.
+	 *
+	 * @return void
+	 */
+	public function testRowIdPrefersTheFlatIdThenUuidThenSelf(): void {
+		$r = $this->rows([]);
+
+		$this->assertSame('i', $r->rowId(['uuid' => 'u', 'id' => 'i', '@self' => ['id' => 'si', 'uuid' => 'su']]));
+		$this->assertSame('u', $r->rowId(['uuid' => 'u', '@self' => ['id' => 'si', 'uuid' => 'su']]));
+		$this->assertSame('si', $r->rowId(['@self' => ['uuid' => 'su', 'id' => 'si']]));
+		$this->assertNull($r->rowId(['id' => 1.5, 'uuid' => '', '@self' => ['id' => '', 'uuid' => null]]));
+	}//end testRowIdPrefersTheFlatIdThenUuidThenSelf()
 }//end class

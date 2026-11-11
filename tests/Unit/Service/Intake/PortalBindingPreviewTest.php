@@ -230,4 +230,118 @@ class PortalBindingPreviewTest extends TestCase {
 		$this->assertTrue($broken->needsAttention(binding: []));
 		$this->assertFalse($fine->needsAttention(binding: []));
 	}//end testNeedsAttentionIsTrueOnlyWhenItResolvesToNone()
+
+	/**
+	 * Every resolution is described exactly as recorded.
+	 *
+	 * @return void
+	 */
+	public function testEveryResolutionIsDescribedAsRecorded(): void {
+		$cases = [
+			[['kind' => 'external', 'resolvesToNoForm' => false, 'destination' => 'example.org'], []],
+			[['kind' => 'external', 'resolvesToNoForm' => false], []],
+			[['kind' => 'hosted', 'resolvesToNoForm' => false, 'formName' => 'Bezwaar'], ['formName' => 'Other']],
+			[['resolvesToNoForm' => false], []],
+			[['kind' => 'hosted', 'resolvesToNoForm' => true, 'reason' => 'hiddenCaseType'], ['formName' => ' Asked ']],
+			[['kind' => 'hosted', 'resolvesToNoForm' => true, 'reason' => 'unsupportedCondition'], []],
+			[['kind' => 'external', 'resolvesToNoForm' => true, 'reason' => 'x'], ['formName' => 'Asked']],
+			[['kind' => 'hosted', 'resolvesToNoForm' => true], ['formName' => ' Asked ']],
+			[['kind' => 'hosted', 'resolvesToNoForm' => true], ['formName' => '  ']],
+			[['resolvesToNoForm' => 'yes'], []],
+		];
+
+		$described = [];
+		foreach ($cases as [$render, $binding]) {
+			$described[] = $this->previewAnswering(render: $render)->describe(binding: $binding);
+		}
+
+		$this->assertSame(
+			[
+				[
+					'state' => 'external',
+					'formName' => null,
+					'reason' => null,
+					'askedFor' => null,
+					'destination' => 'example.org',
+					'message' => 'This entry sends people to example.org. Nothing is filled in here, so nothing arrives here either.',
+				],
+				[
+					'state' => 'external',
+					'formName' => null,
+					'reason' => null,
+					'askedFor' => null,
+					'destination' => '',
+					'message' => 'This entry sends people to another website. Nothing is filled in here, so nothing arrives here either.',
+				],
+				[
+					'findings' => [],
+					'state' => 'resolved',
+					'formName' => 'Bezwaar',
+					'reason' => null,
+					'askedFor' => null,
+					'destination' => null,
+					'message' => 'This entry opens "Bezwaar" today.',
+				],
+				[
+					'findings' => [],
+					'state' => 'resolved',
+					'formName' => '',
+					'reason' => null,
+					'askedFor' => null,
+					'destination' => null,
+					'message' => 'This entry opens "" today.',
+				],
+				[
+					'state' => 'resolves_to_none',
+					'formName' => null,
+					'reason' => 'hidden_case_type',
+					'askedFor' => 'Asked',
+					'destination' => null,
+					'message' => 'This entry opens no form: this portal does not show its case type. Show it again under Case types on the portal\'s page.',
+				],
+				[
+					'state' => 'resolves_to_none',
+					'formName' => null,
+					'reason' => 'unsupported_condition',
+					'askedFor' => null,
+					'destination' => null,
+					'message' => 'This form uses a condition the portal cannot check. Change it to a condition on another answer.',
+				],
+				[
+					'state' => 'resolves_to_none',
+					'formName' => null,
+					'reason' => 'external_without_address',
+					'askedFor' => 'Asked',
+					'destination' => null,
+					'message' => 'This entry is set to send people to another website, but no address is filled in, so nobody can start it.',
+				],
+				[
+					'state' => 'resolves_to_none',
+					'formName' => null,
+					'reason' => 'named_form_not_published',
+					'askedFor' => 'Asked',
+					'destination' => null,
+					'message' => 'This entry opens no form today. It asks for "Asked", and no form of that name is published to this audience. Publish it, or point the entry at a form that is.',
+				],
+				[
+					'state' => 'resolves_to_none',
+					'formName' => null,
+					'reason' => 'no_form_for_type_and_audience',
+					'askedFor' => null,
+					'destination' => null,
+					'message' => 'This entry opens no form today. No published form matches its type and audience, so a citizen who reaches it sees nothing to fill in.',
+				],
+				[
+					'findings' => [],
+					'state' => 'resolved',
+					'formName' => '',
+					'reason' => null,
+					'askedFor' => null,
+					'destination' => null,
+					'message' => 'This entry opens "" today.',
+				],
+			],
+			$described
+		);
+	}//end testEveryResolutionIsDescribedAsRecorded()
 }//end class

@@ -259,28 +259,63 @@ class EmailLinkController extends Controller {
 			return $this->refusal(outcome: EmailLinkTokens::NOT_VALID);
 		}
 
-		$subjectRef = (string)$account['subjectRef'];
-		$audience   = (string)($account['audience'] ?? 'client');
-		$session    = $this->sessions->issueSession(
-			subjectRef: $subjectRef,
+		$session = $this->sessionFor(account: $account, organisation: $organisation);
+		if ($session === null) {
+			return new JSONResponse(['error' => 'session_unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		$this->announceSignIn(account: $account, organisation: $organisation);
+
+		return $this->sessionAnswer(session: $session);
+	}//end signIn()
+
+	/**
+	 * A fresh `low` session for the account, read-only in its audience.
+	 *
+	 * @param array<string, mixed> $account      The account, still eligible.
+	 * @param string               $organisation The link's organisation.
+	 *
+	 * @return array<string, mixed>|null The session, or null when none could be made.
+	 */
+	private function sessionFor(array $account, string $organisation): ?array {
+		$audience = (string)($account['audience'] ?? 'client');
+
+		return $this->sessions->issueSession(
+			subjectRef: (string)$account['subjectRef'],
 			audience: $audience,
 			organisation: $organisation,
 			trust: 'low',
 			roles: [$audience . ':read'],
 			provider: EmailLinkSetting::MODE
 		);
-		if ($session === null) {
-			return new JSONResponse(['error' => 'session_unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
-		}
+	}//end sessionFor()
 
+	/**
+	 * Tell the account's sign-in address that it signed in, and log it.
+	 *
+	 * @param array<string, mixed> $account      The account.
+	 * @param string               $organisation The link's organisation.
+	 *
+	 * @return void
+	 */
+	private function announceSignIn(array $account, string $organisation): void {
 		$this->mailer->sendSignedInNotice(
 			email: (string)($account['signInAddress'] ?? ''),
 			organisation: $organisation,
 			portal: null,
 			moment: new DateTimeImmutable()
 		);
-		$this->logger->info('Portaliq: signed in with an e-mail link', ['subjectRef' => $subjectRef]);
+		$this->logger->info('Portaliq: signed in with an e-mail link', ['subjectRef' => (string)$account['subjectRef']]);
+	}//end announceSignIn()
 
+	/**
+	 * The session's bearer and moments, with the page cookie cleared.
+	 *
+	 * @param array<string, mixed> $session The session.
+	 *
+	 * @return JSONResponse
+	 */
+	private function sessionAnswer(array $session): JSONResponse {
 		$answer = new JSONResponse([
 			'bearer'        => $session['token'],
 			'expiresAt'     => $session['expiresAt'],
@@ -290,7 +325,7 @@ class EmailLinkController extends Controller {
 		$answer->invalidateCookie(self::COOKIE);
 
 		return $answer;
-	}//end signIn()
+	}//end sessionAnswer()
 
 	/**
 	 * The answer to a spend that did not go through. A missing address is a

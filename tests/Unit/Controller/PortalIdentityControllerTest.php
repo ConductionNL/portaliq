@@ -162,6 +162,40 @@ class PortalIdentityControllerTest extends TestCase {
 	}//end testAnAcceptedRegistrationWaitsAndSaysSo()
 
 	/**
+	 * A host no portal claims registers nothing; an account the store will
+	 * not provision is a bare refusal that holds and mails nothing; the
+	 * account is provisioned as an unverified self-registration with the
+	 * name given.
+	 *
+	 * @return void
+	 */
+	public function testARegistrationWithoutAPortalOrAnAccountCreatesNothing(): void {
+		$controller = $this->controller(site: null);
+		$this->doubles['policy']->expects($this->never())->method('isOffered');
+
+		$response = $controller->register(email: 'ans@example.org');
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+		$this->assertSame(['error' => 'portal_not_found'], $response->getData());
+
+		$controller = $this->controller(site: ['organisation' => 'gemeente-x']);
+		$this->doubles['policy']->method('isOffered')->willReturn(true);
+		$this->doubles['challenge']->method('accepts')->willReturn(true);
+		$this->doubles['policy']->method('decide')->willReturn(['accepted' => true, 'reason' => 'activation', 'status' => 'pending']);
+		$this->doubles['accounts']->expects($this->once())->method('provision')
+			->with('client', 'gemeente-x', '', '', 'ans@example.org', false, PortalAccountService::SELF_REGISTRATION, 'Ans')
+			->willReturn(null);
+		$this->doubles['contacts']->expects($this->never())->method('holdForRegistration');
+		$this->doubles['activation']->expects($this->never())->method('issue');
+
+		$response = $controller->register(email: 'ans@example.org', displayName: 'Ans', contactInvitation: 'invite-1');
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame(['error' => 'refused'], $response->getData());
+
+	}//end testARegistrationWithoutAPortalOrAnAccountCreatesNothing()
+
+	/**
 	 * own-contacts T05: a registration through a contact invitation holds it
 	 * for the new account, in the visited portal's tenant; one without
 	 * holds nothing.
@@ -239,6 +273,37 @@ class PortalIdentityControllerTest extends TestCase {
 		$this->assertSame(['error' => 'route_not_offered'], $response->getData());
 
 	}//end testACaseTypeThePortalNeverDeclaredIsNeverRead()
+
+	/**
+	 * A host no portal claims reads nothing, and a link the service will not
+	 * issue mails nothing: the first is a 404, the second a bare refusal.
+	 *
+	 * @return void
+	 */
+	public function testNoPortalReadsNothingAndAnUnissuedLinkMailsNothing(): void {
+		$controller = $this->controller(site: null);
+		$this->doubles['bindings']->expects($this->never())->method('caseTypeIsInPortalScope');
+		$this->doubles['caseTypes']->expects($this->never())->method('readCaseType');
+
+		$response = $controller->requestReferenceLink(register: 'portaliq', schema: 'portalCaseType', caseType: 'melding', caseReference: 'ZAAK-1', email: 'ans@example.org');
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+		$this->assertSame(['error' => 'portal_not_found'], $response->getData());
+
+		$controller = $this->controller(site: ['organisation' => 'gemeente-x', 'slug' => 'gemeente-x']);
+		$this->doubles['caseTypes']->method('readCaseType')->willReturn(['portalIdentityKind' => ['reference']]);
+		$this->doubles['references']->method('admitsReference')->willReturn(true);
+		$this->doubles['references']->expects($this->once())->method('issue')
+			->with(['portalIdentityKind' => ['reference']], 'ZAAK-1', 'ans@example.org', 'gemeente-x', $this->linkable['register'], $this->linkable['schema'])
+			->willReturn(null);
+		$this->doubles['mailer']->expects($this->never())->method('send');
+
+		$response = $controller->requestReferenceLink(register: 'portaliq', schema: 'portalCaseType', caseType: 'melding', caseReference: 'ZAAK-1', email: 'ans@example.org');
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame(['error' => 'refused'], $response->getData());
+
+	}//end testNoPortalReadsNothingAndAnUnissuedLinkMailsNothing()
 
 	/**
 	 * The three refusals are deliberately one answer. Out of the portal's
@@ -442,6 +507,26 @@ class PortalIdentityControllerTest extends TestCase {
 		);
 
 	}//end testARedeemedLinkOpensASessionScopedToItsOneCase()
+
+	/**
+	 * A redeemed link whose session cannot be minted is a 503 that hands out
+	 * no bearer.
+	 *
+	 * @return void
+	 */
+	public function testARedeemedLinkWithoutASessionIs503(): void {
+		$controller = $this->controller(site: ['organisation' => 'gemeente-x']);
+		$this->doubles['references']->method('redeem')->willReturn(
+			['caseReference' => 'Z-2026-0042', 'organisation' => 'gemeente-x', 'register' => 'dossiq', 'schema' => 'case', 'linkId' => 'link-1']
+		);
+		$this->doubles['sessions']->method('issueReferenceSession')->willReturn(null);
+
+		$response = $controller->redeemReferenceLink(token: 'secret-1');
+
+		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
+		$this->assertSame(['error' => 'session_unavailable'], $response->getData());
+
+	}//end testARedeemedLinkWithoutASessionIs503()
 
 	/**
 	 * portaliq#796. The address must be the one recorded on the case. A

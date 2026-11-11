@@ -35,7 +35,10 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Listener;
 
 use OCA\OpenRegister\Event\RegisterLeafProvidersEvent;
+use OCA\OpenRegister\Service\Integration\LeafAvailability;
 use OCA\OpenRegister\Service\Integration\LeafDescriptor;
+use OCA\OpenRegister\Service\Integration\LeafIdentity;
+use OCA\OpenRegister\Service\Integration\LeafRendering;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\Proposals\ChangeProposalsProvider;
 use OCP\EventDispatcher\Event;
@@ -103,30 +106,36 @@ class RegisterProposalLeavesListener implements IEventListener {
 		try {
 			$event->registerLeaf(
 				new LeafDescriptor(
-					id: ChangeProposalsProvider::ID,
-					label: $this->l10n->t('Change proposals'),
-					icon: ChangeProposalsProvider::ICON,
+					identity: new LeafIdentity(
+						id: ChangeProposalsProvider::ID,
+						label: $this->l10n->t('Change proposals'),
+						icon: ChangeProposalsProvider::ICON,
+						group: ChangeProposalsProvider::GROUP,
+					),
 					kinds: [LeafDescriptor::KIND_DATA_PROVIDER],
-					requiredApp: Application::APP_ID,
-					group: ChangeProposalsProvider::GROUP,
+					availability: new LeafAvailability(requiredApp: Application::APP_ID),
 				),
 				$this->provider
 			);
 
 			$event->registerLeaf(
 				new LeafDescriptor(
-					id: self::QUEUE_LEAF_ID,
-					label: $this->l10n->t('Change proposals'),
-					icon: ChangeProposalsProvider::ICON,
+					identity: new LeafIdentity(
+						id: self::QUEUE_LEAF_ID,
+						label: $this->l10n->t('Change proposals'),
+						icon: ChangeProposalsProvider::ICON,
+						group: ChangeProposalsProvider::GROUP,
+					),
 					kinds: [LeafDescriptor::KIND_RENDER_SURFACE],
-					requiredApp: Application::APP_ID,
-					group: ChangeProposalsProvider::GROUP,
-					surfaces: self::QUEUE_SURFACES,
+					availability: new LeafAvailability(requiredApp: Application::APP_ID),
 					// Portaliq is Vue 3 and a host may be Vue 2.7: the JS half
 					// roots its own app on a bare element. Both halves name the
 					// same mode, or the host renders the leaf the wrong way.
-					renderMode: LeafDescriptor::RENDER_MODE_MOUNT,
-					loadStrategy: LeafDescriptor::LOADS_VIA_SHARED_ENTRY,
+					rendering: new LeafRendering(
+						surfaces: self::QUEUE_SURFACES,
+						renderMode: LeafDescriptor::RENDER_MODE_MOUNT,
+						loadStrategy: LeafDescriptor::LOADS_VIA_SHARED_ENTRY,
+					),
 				),
 				null
 			);

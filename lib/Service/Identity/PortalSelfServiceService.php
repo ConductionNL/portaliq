@@ -122,39 +122,71 @@ class PortalSelfServiceService {
 		?bool $emailNotifications = null,
 		?string $messageLanguage = null,
 	): ?array {
-		$account = $this->ownAccount(subjectRef: $subjectRef);
-		$asked   = ['displayName' => $displayName, 'email' => $email, 'emailNotifications' => $emailNotifications, 'messageLanguage' => $messageLanguage];
+		$asked  = ['displayName' => $displayName, 'email' => $email, 'emailNotifications' => $emailNotifications, 'messageLanguage' => $messageLanguage];
+		$change = $this->ownDetailsChange(subjectRef: $subjectRef, asked: $asked);
+		if ($change === null || $this->write(account: $change['account'], data: $change['data']) === false) {
+			return null;
+		}
+
+		return ['updated' => true, 'confirmationToken' => $change['token']];
+	}//end updateDetails()
+
+	/**
+	 * The account an `updateDetails()` call changes and what it writes there,
+	 * or null when there is no such account, nothing was asked, or what was
+	 * asked is refused.
+	 *
+	 * @param string $subjectRef The account.
+	 * @param array{displayName: string, email: string, emailNotifications: bool|null, messageLanguage: string|null} $asked What the call carried.
+	 *
+	 * @return array{account: array<string, mixed>, data: array<string, mixed>, token: string}|null
+	 */
+	private function ownDetailsChange(string $subjectRef, array $asked): ?array {
+		$account = $this->rows()->find(subjectRef: $subjectRef);
 		if ($account === null || $this->nothingAsked(asked: $asked) === true) {
 			return null;
 		}
 
-		$data = $this->preferenceData(account: $account, emailNotifications: $emailNotifications, messageLanguage: $messageLanguage);
+		$change = $this->detailsChange(account: $account, asked: $asked);
+		if ($change === null) {
+			return null;
+		}
+
+		return ['account' => $account] + $change;
+	}//end ownDetailsChange()
+
+	/**
+	 * The fields an `updateDetails()` call writes, and the confirmation secret
+	 * for a new address ('' when it asked for none), or null when the language
+	 * or the address it asked for is refused.
+	 *
+	 * @param array<string, mixed> $account The account as it stands.
+	 * @param array{displayName: string, email: string, emailNotifications: bool|null, messageLanguage: string|null} $asked What the call carried.
+	 *
+	 * @return array{data: array<string, mixed>, token: string}|null
+	 */
+	private function detailsChange(array $account, array $asked): ?array {
+		$data = $this->preferenceData(account: $account, asked: $asked);
 		if ($data === null) {
 			return null;
 		}
 
-		if ($displayName !== '') {
-			$data['displayName'] = $displayName;
+		if ($asked['displayName'] !== '') {
+			$data['displayName'] = $asked['displayName'];
 		}
 
-		$token = '';
-		if ($email !== '') {
-			$token = $this->random->generate(48, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS));
-			$pending = $this->addressChange->changedFields(account: $account, email: $email, token: $token);
-			if ($pending === null) {
-				return null;
-			}
-
-			$data = $data + $pending;
+		if ($asked['email'] === '') {
+			return ['data' => $data, 'token' => ''];
 		}
 
-		$written = $this->write(account: $account, data: $data);
-		if ($written === false) {
+		$token   = $this->random->generate(48, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS));
+		$pending = $this->addressChange->changedFields(account: $account, email: $asked['email'], token: $token);
+		if ($pending === null) {
 			return null;
 		}
 
-		return ['updated' => true, 'confirmationToken' => $token];
-	}//end updateDetails()
+		return ['data' => $data + $pending, 'token' => $token];
+	}//end detailsChange()
 
 	/**
 	 * The holder's own details, as the details page shows them.
@@ -167,7 +199,7 @@ class PortalSelfServiceService {
 	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
 	 */
 	public function details(string $subjectRef): ?array {
-		$account = $this->ownAccount(subjectRef: $subjectRef);
+		$account = $this->rows()->find(subjectRef: $subjectRef);
 		if ($account === null) {
 			return null;
 		}
@@ -207,7 +239,7 @@ class PortalSelfServiceService {
 	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
 	 */
 	public function notificationPreferences(string $subjectRef): ?array {
-		$account = $this->ownAccount(subjectRef: $subjectRef);
+		$account = $this->rows()->find(subjectRef: $subjectRef);
 		if ($account === null) {
 			return null;
 		}
@@ -231,7 +263,7 @@ class PortalSelfServiceService {
 	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-resident-chooses-per-kind-and-per-channel-req-nap-007
 	 */
 	public function updateNotificationPreferences(string $subjectRef, array $asked): ?array {
-		$account = $this->ownAccount(subjectRef: $subjectRef);
+		$account = $this->rows()->find(subjectRef: $subjectRef);
 		if ($account === null) {
 			return null;
 		}
@@ -272,14 +304,16 @@ class PortalSelfServiceService {
 	 * the language it asked for is not a language tag.
 	 *
 	 * @param array<string, mixed> $account The account as it stands.
-	 * @param bool|null $emailNotifications The email channel, or null to leave it.
-	 * @param string|null $messageLanguage The message language, '' for none, or null to leave it.
+	 * @param array{emailNotifications: bool|null, messageLanguage: string|null} $asked The email
+	 *        channel and the message language ('' for none); null leaves either.
 	 *
 	 * @return array<string, mixed>|null The fields to write, or null to refuse.
 	 *
 	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
 	 */
-	private function preferenceData(array $account, ?bool $emailNotifications, ?string $messageLanguage): ?array {
+	private function preferenceData(array $account, array $asked): ?array {
+		$emailNotifications = $asked['emailNotifications'];
+		$messageLanguage    = $asked['messageLanguage'];
 		$data = [];
 		if ($emailNotifications !== null) {
 			$data['notificationChannels'] = $this->withEmailChannel(account: $account, emailNotifications: $emailNotifications);
@@ -420,7 +454,7 @@ class PortalSelfServiceService {
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function removeAccount(string $subjectRef): bool {
-		$account = $this->ownAccount(subjectRef: $subjectRef);
+		$account = $this->rows()->find(subjectRef: $subjectRef);
 		if ($account === null) {
 			return false;
 		}
@@ -447,25 +481,13 @@ class PortalSelfServiceService {
 	}//end removeAccount()
 
 	/**
-	 * The account behind a subjectRef, when it is one a citizen may still act
-	 * on.
+	 * The account rows this service reads and writes.
 	 *
-	 * @param string $subjectRef The account.
-	 *
-	 * @return array<string, mixed>|null
+	 * @return OwnAccountRows
 	 */
-	private function ownAccount(string $subjectRef): ?array {
-		if ($subjectRef === '') {
-			return null;
-		}
-
-		$account = $this->accounts->findBySubjectRef(subjectRef: $subjectRef);
-		if ($account === null || ($account['status'] ?? '') === 'removed') {
-			return null;
-		}
-
-		return $account;
-	}//end ownAccount()
+	private function rows(): OwnAccountRows {
+		return new OwnAccountRows(accounts: $this->accounts, writer: $this->writer);
+	}//end rows()
 
 	/**
 	 * Write on the account row.
@@ -482,18 +504,6 @@ class PortalSelfServiceService {
 			$id = (string)($self['uuid'] ?? $self['id'] ?? '');
 		}
 
-		if ($id === '') {
-			return false;
-		}
-
-		return $this->writer->updateObject(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: '',
-			subjectRef: '',
-			organisation: '',
-			id: $id,
-			data: $data
-		) !== null;
+		return $this->rows()->update(id: $id, data: $data);
 	}//end write()
 }//end class

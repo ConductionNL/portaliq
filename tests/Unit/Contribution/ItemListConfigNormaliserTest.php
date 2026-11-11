@@ -47,6 +47,20 @@ class ItemListConfigNormaliserTest extends TestCase {
 	}//end dossiers()
 
 	/**
+	 * Junk collections and collections without the key pass untouched; a
+	 * non-string label reads as empty; the kept key moves to the end of the
+	 * collection.
+	 *
+	 * @return void
+	 */
+	public function testEveryCollectionIsAsRecorded(): void {
+		$collection = ['itemList' => ['label' => 7, 'provider' => 'dossierItems', 'extra' => 1], 'id' => 'mijnDossiers', 'rowActions' => []];
+		$out        = (new ItemListConfigNormaliser())->resolve(collections: ['junk', ['id' => 'plain'], $collection], actions: [$this->remove()]);
+
+		self::assertSame(['junk', ['id' => 'plain'], ['id' => 'mijnDossiers', 'rowActions' => [], 'itemList' => ['label' => '', 'provider' => 'dossierItems']]], $out);
+	}//end testEveryCollectionIsAsRecorded()
+
+	/**
 	 * A well-formed declaration survives, label defaulting to ''.
 	 *
 	 * @return void

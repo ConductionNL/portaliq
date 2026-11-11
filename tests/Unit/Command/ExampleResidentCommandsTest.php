@@ -65,6 +65,41 @@ class ExampleResidentCommandsTest extends TestCase {
 	}//end testRemoveReportsWhatWasDeleted()
 
 	/**
+	 * Without OpenRegister nothing is deleted and the command exits 1; a
+	 * removal that leaves nothing behind exits 0 without the archive note.
+	 *
+	 * @return void
+	 */
+	public function testAnUnavailableStoreExitsOneAndACleanRemovalExitsZero(): void {
+		$base = [
+			'id'        => 'zuiddrecht',
+			'recorded'  => true,
+			'available' => true,
+			'userId'    => 'sanne.devries',
+			'types'     => ['dossiq case' => ['deleted' => 2, 'gone' => 0]],
+			'failed'    => [],
+			'account'   => 'deleted',
+			'signIn'    => 'kept-not-ours',
+			'user'      => 'deleted',
+		];
+		$remover = $this->createMock(ExampleResidentRemover::class);
+		$remover->method('remove')->willReturnOnConsecutiveCalls(['available' => false] + $base, $base);
+
+		$output = new BufferedOutput();
+		$this->assertSame(1, (new ExampleResidentRemove($remover))->run(new ArrayInput(['site' => 'zuiddrecht']), $output));
+		$text = $output->fetch();
+		$this->assertStringContainsString('OpenRegister is not available, so nothing was deleted.', $text);
+		$this->assertStringNotContainsString('deleted, ', $text);
+
+		$output = new BufferedOutput();
+		$this->assertSame(0, (new ExampleResidentRemove($remover))->run(new ArrayInput(['site' => 'zuiddrecht']), $output));
+		$text = $output->fetch();
+		$this->assertStringContainsString('dossiq case: 2 deleted, 0 already gone', $text);
+		$this->assertStringContainsString('occ openregister:example-set:install zuiddrecht', $text);
+		$this->assertStringNotContainsString('archive record', $text);
+	}//end testAnUnavailableStoreExitsOneAndACleanRemovalExitsZero()
+
+	/**
 	 * Without a record the command exits 1 and points at the example set.
 	 *
 	 * @return void

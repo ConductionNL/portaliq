@@ -129,4 +129,53 @@ class CaseTypeVisibilityTest extends TestCase {
 
 		return $request;
 	}//end request()
+
+	/**
+	 * Every request and subject is served from exactly the portal recorded,
+	 * through exactly the resolver calls recorded.
+	 *
+	 * @return void
+	 */
+	public function testEveryServingPortalIsAsRecorded(): void {
+		$ours   = ['slug' => 'ours', 'organisation' => 'org-a'];
+		$theirs = ['slug' => 'theirs', 'organisation' => 'org-b'];
+		$host   = ['slug' => 'host', 'organisation' => 'org-a'];
+		$single = ['slug' => 'single', 'organisation' => 'org-a'];
+		$cases  = [
+			[['ours', null], ['organisation' => 'org-a'], $ours, ['resolve:ours']],
+			[['theirs', $host], ['organisation' => 'org-a'], $single, ['resolve:theirs', 'byOrganisation:org-a']],
+			[['ghost', $host], ['organisation' => 'org-a'], $host, ['resolve:ghost', 'resolve:-']],
+			[['', $host], ['organisation' => 'org-a'], $host, ['resolve:-']],
+			[['', $theirs], ['organisation' => 'org-a'], $single, ['resolve:-', 'byOrganisation:org-a']],
+			[['', null], ['organisation' => 'org-a'], $single, ['resolve:-', 'byOrganisation:org-a']],
+			[['theirs', null], [], $theirs, ['resolve:theirs']],
+			[['', null], [], null, ['resolve:-']],
+			[['', ['slug' => 'bare']], ['organisation' => 'org-a'], $single, ['resolve:-', 'byOrganisation:org-a']],
+		];
+		foreach ($cases as [[$slug, $hostPortal], $subject, $expected, $calls]) {
+			$log     = [];
+			$named   = ['ours' => $ours, 'theirs' => $theirs];
+			$portals = $this->createMock(PortalResolver::class);
+			$portals->method('resolve')->willReturnCallback(
+				static function (IRequest $request, ?string $portalSlug = null) use (&$log, $named, $hostPortal): ?array {
+					$log[] = 'resolve:' . ($portalSlug ?? '-');
+					if ($portalSlug === null) {
+						return $hostPortal;
+					}
+
+					return ($named[$portalSlug] ?? null);
+				}
+			);
+			$portals->method('resolveByOrganisation')->willReturnCallback(
+				static function (string $organisation) use (&$log, $single): ?array {
+					$log[] = 'byOrganisation:' . $organisation;
+					return $single;
+				}
+			);
+
+			$served = (new CaseTypeVisibility($portals))->servingPortal(request: $this->request(header: $slug), subject: $subject);
+			$this->assertSame($expected, $served);
+			$this->assertSame($calls, $log);
+		}
+	}//end testEveryServingPortalIsAsRecorded()
 }//end class

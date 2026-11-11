@@ -113,12 +113,32 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$updated = $this->selfService->updateDetails(
+		$change = new DetailsChange(
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			organisation: (string)($subject['organisation'] ?? ''),
 			displayName: $displayName,
 			email: $email,
 			emailNotifications: $emailNotifications,
 			messageLanguage: $messageLanguage
+		);
+
+		return $this->applyDetails(change: $change);
+	}//end updateDetails()
+
+	/**
+	 * Apply a change to the resident's own details and answer how it landed.
+	 *
+	 * @param DetailsChange $change The change.
+	 *
+	 * @return JSONResponse
+	 */
+	private function applyDetails(DetailsChange $change): JSONResponse {
+		$updated = $this->selfService->updateDetails(
+			subjectRef: $change->subjectRef,
+			displayName: $change->displayName,
+			email: $change->email,
+			emailNotifications: $change->emailNotifications,
+			messageLanguage: $change->messageLanguage
 		);
 		if ($updated === null) {
 			return new JSONResponse(['error' => 'refused'], Http::STATUS_BAD_REQUEST);
@@ -129,19 +149,32 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 			return new JSONResponse(['updated' => true, 'confirmationPending' => false]);
 		}
 
-		// The confirmation secret goes to the NEW address by mail; the answer
-		// only says one is waiting and whether the mail left, so the old
-		// session cannot read it. A mail that did not leave can be asked for
-		// again by saving the address once more.
+		return $this->confirmationAnswer(change: $change, token: $token);
+	}//end applyDetails()
+
+	/**
+	 * Mail the confirmation secret of a new address and say it is waiting.
+	 *
+	 * The confirmation secret goes to the NEW address by mail; the answer
+	 * only says one is waiting and whether the mail left, so the old session
+	 * cannot read it. A mail that did not leave can be asked for again by
+	 * saving the address once more.
+	 *
+	 * @param DetailsChange $change The change that asked for a new address.
+	 * @param string        $token  The confirmation secret.
+	 *
+	 * @return JSONResponse
+	 */
+	private function confirmationAnswer(DetailsChange $change, string $token): JSONResponse {
 		$sent = $this->mailer->send(
 			template: PortalIdentityMailer::TEMPLATE_EMAIL_CONFIRMATION,
-			email: $email,
+			email: $change->email,
 			secret: $token,
-			organisation: (string)($subject['organisation'] ?? '')
+			organisation: $change->organisation
 		);
 
 		return new JSONResponse(['updated' => true, 'confirmationPending' => true, 'confirmationSent' => $sent]);
-	}//end updateDetails()
+	}//end confirmationAnswer()
 
 	/**
 	 * The bearer's own notification choices (REQ-NAP-007, REQ-NAP-008).

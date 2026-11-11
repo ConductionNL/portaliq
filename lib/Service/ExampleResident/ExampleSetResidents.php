@@ -101,26 +101,9 @@ class ExampleSetResidents {
 		}
 
 		$found = [];
-		foreach ($this->declared() as $set => $residents) {
-			$record = null;
-			foreach ($residents as $resident) {
-				if ($resident['portal'] !== $portal) {
-					continue;
-				}
-
-				$record ??= $this->read(records: $records, set: $set);
-				$account  = $this->installedAccount(record: $record, resident: $resident);
-				if ($account === null) {
-					continue;
-				}
-
-				$found[] = [
-					'set'  => $set,
-					'key'  => $resident['key'],
-					'uid'  => $account['uid'],
-					'name' => $account['name'],
-					'card' => $resident['card'],
-				];
+		foreach ($this->declaredFor(portal: $portal) as $set => $residents) {
+			foreach ($this->installed(record: $this->read(records: $records, set: $set), residents: $residents) as $row) {
+				$found[] = ['set' => $set] + $row;
 			}
 		}
 
@@ -128,47 +111,100 @@ class ExampleSetResidents {
 	}//end residentsOf()
 
 	/**
+	 * The declared residents of one portal, by set id; a set without one is left out.
+	 *
+	 * @param string $portal The portal's slug.
+	 *
+	 * @return array<string, list<array{portal: string, key: string, account: string, card: array<string, string>}>>
+	 */
+	private function declaredFor(string $portal): array {
+		$mine = [];
+		foreach ($this->declared() as $set => $residents) {
+			$ofPortal = array_values(array_filter($residents, static fn (array $resident): bool => $resident['portal'] === $portal));
+			if ($ofPortal !== []) {
+				$mine[$set] = $ofPortal;
+			}
+		}
+
+		return $mine;
+	}//end declaredFor()
+
+	/**
+	 * The residents whose portal account the set installed, with that account's id and name.
+	 *
+	 * @param array<string, mixed>                                                                  $record    The set's install record.
+	 * @param list<array{portal: string, key: string, account: string, card: array<string, string>}> $residents The set's residents of one portal.
+	 *
+	 * @return list<array{key: string, uid: string, name: string, card: array<string, string>}>
+	 */
+	private function installed(array $record, array $residents): array {
+		$rows = [];
+		foreach ($residents as $resident) {
+			$account = $this->installedAccount(record: $record, resident: $resident);
+			if ($account !== null) {
+				$rows[] = ['key' => $resident['key'], 'uid' => $account['uid'], 'name' => $account['name'], 'card' => $resident['card']];
+			}
+		}
+
+		return $rows;
+	}//end installed()
+
+	/**
 	 * The `exampleResident` entries of every shipped fragment, by set id.
 	 *
 	 * @return array<string, list<array{portal: string, key: string, account: string, card: array<string, string>}>>
 	 */
 	private function declared(): array {
-		$folder = $this->folder;
-		if ($folder === '') {
-			$folder = dirname(__DIR__, 2).'/Settings/example-sets';
-		}
-
 		$declared = [];
-		$files    = glob($folder.'/*.json');
+		$files    = glob($this->fragmentFolder().'/*.json');
 		if ($files === false) {
 			return [];
 		}
 
 		foreach ($files as $file) {
-			$fragment = json_decode((string)file_get_contents($file), true);
-			$entries  = ($fragment['exampleResident'] ?? []);
-			if (is_array($entries) === false) {
-				continue;
+			$entries = $this->entriesOf(file: $file);
+			if ($entries !== null) {
+				$declared[basename($file, '.json')] = array_values(array_filter(array_map(fn (mixed $entry) => $this->entry(entry: $entry), $entries)));
 			}
-
-			// One resident may be written as an object, several as a list.
-			if (array_is_list($entries) === false) {
-				$entries = [$entries];
-			}
-
-			$residents = [];
-			foreach ($entries as $entry) {
-				$resident = $this->entry(entry: $entry);
-				if ($resident !== null) {
-					$residents[] = $resident;
-				}
-			}
-
-			$declared[basename($file, '.json')] = $residents;
 		}
 
 		return $declared;
 	}//end declared()
+
+	/**
+	 * Where the fragments are: the configured folder, or the shipped one.
+	 *
+	 * @return string
+	 */
+	private function fragmentFolder(): string {
+		if ($this->folder === '') {
+			return dirname(__DIR__, 2).'/Settings/example-sets';
+		}
+
+		return $this->folder;
+	}//end fragmentFolder()
+
+	/**
+	 * A fragment's `exampleResident` entries as a list, or null when it declares none.
+	 * One resident may be written as an object, several as a list.
+	 *
+	 * @param string $file The fragment file.
+	 *
+	 * @return array<mixed>|null
+	 */
+	private function entriesOf(string $file): ?array {
+		$fragment = json_decode((string)file_get_contents($file), true);
+		$entries  = ($fragment['exampleResident'] ?? []);
+		if (is_array($entries) === false) {
+			return null;
+		}
+
+		if (array_is_list($entries) === false) {
+			return [$entries];
+		}
+
+		return $entries;
+	}//end entriesOf()
 
 	/**
 	 * One declared resident, or null when it names no portal or no portal account.
@@ -182,6 +218,17 @@ class ExampleSetResidents {
 			return null;
 		}
 
+		return ['portal' => $entry['portal'], 'key' => $this->keyOf(entry: $entry), 'account' => $entry['account'], 'card' => $this->cardOf(entry: $entry)];
+	}//end entry()
+
+	/**
+	 * The demo card's title, text and button, each when it is non-blank text.
+	 *
+	 * @param array<string, mixed> $entry One entry of `exampleResident`.
+	 *
+	 * @return array<string, string>
+	 */
+	private function cardOf(array $entry): array {
 		$card = [];
 		foreach (['title', 'text', 'button'] as $field) {
 			if (is_string($entry['card'][$field] ?? null) === true && trim($entry['card'][$field]) !== '') {
@@ -189,13 +236,23 @@ class ExampleSetResidents {
 			}
 		}
 
-		$key = $entry['account'];
+		return $card;
+	}//end cardOf()
+
+	/**
+	 * A resident's key: its cast key, else its portal account.
+	 *
+	 * @param array{account: string} $entry One entry of `exampleResident`.
+	 *
+	 * @return string
+	 */
+	private function keyOf(array $entry): string {
 		if (is_string($entry['cast'] ?? null) === true && $entry['cast'] !== '') {
-			$key = $entry['cast'];
+			return $entry['cast'];
 		}
 
-		return ['portal' => $entry['portal'], 'key' => $key, 'account' => $entry['account'], 'card' => $card];
-	}//end entry()
+		return $entry['account'];
+	}//end keyOf()
 
 	/**
 	 * The account id and name of the recorded portal account, when the set
@@ -207,24 +264,67 @@ class ExampleSetResidents {
 	 * @return array{uid: string, name: string}|null
 	 */
 	private function installedAccount(array $record, array $resident): ?array {
-		$held = ($record['objects'][self::APP.'/'.$resident['account']] ?? null);
-		if (is_array($held) === false || ($held['schema'] ?? '') !== 'portalAccount') {
+		$held = $this->heldAccount(record: $record, resident: $resident);
+		if ($held === []) {
 			return null;
 		}
 
-		$account = $this->store->get(register: (string)$held['register'], schema: 'portalAccount', id: (string)$held['id']);
-		$uid     = (string)($account['subjectRef'] ?? '');
+		return $this->setAccount(
+			record: $record,
+			account: $this->store->get(register: (string)$held['register'], schema: 'portalAccount', id: (string)$held['id'])
+		);
+	}//end installedAccount()
+
+	/**
+	 * Where the set recorded the resident's portal account, or [] when it recorded none.
+	 *
+	 * @param array<string, mixed>   $record   The set's install record.
+	 * @param array{account: string} $resident One declared resident.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function heldAccount(array $record, array $resident): array {
+		$held = ($record['objects'][self::APP.'/'.$resident['account']] ?? null);
+		if (is_array($held) === false || ($held['schema'] ?? '') !== 'portalAccount') {
+			return [];
+		}
+
+		return $held;
+	}//end heldAccount()
+
+	/**
+	 * The account id and name of a portal account, when the set created or adopted that account id.
+	 *
+	 * @param array<string, mixed>      $record  The set's install record.
+	 * @param array<string, mixed>|null $account The portal account, or null.
+	 *
+	 * @return array{uid: string, name: string}|null
+	 */
+	private function setAccount(array $record, ?array $account): ?array {
+		$uid = (string)($account['subjectRef'] ?? '');
 		if ($uid === '' || isset($record['users'][$uid]) === false) {
 			return null;
 		}
 
+		return ['uid' => $uid, 'name' => $this->displayName(account: $account, uid: $uid)];
+	}//end setAccount()
+
+	/**
+	 * The name on a portal account; its account id when it has none.
+	 *
+	 * @param array<string, mixed>|null $account The portal account.
+	 * @param string                    $uid     Its account id.
+	 *
+	 * @return string
+	 */
+	private function displayName(?array $account, string $uid): string {
 		$name = trim((string)($account['displayName'] ?? ''));
 		if ($name === '') {
-			$name = $uid;
+			return $uid;
 		}
 
-		return ['uid' => $uid, 'name' => $name];
-	}//end installedAccount()
+		return $name;
+	}//end displayName()
 
 	/**
 	 * One set's install record, or an empty one.

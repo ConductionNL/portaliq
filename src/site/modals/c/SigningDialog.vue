@@ -218,20 +218,9 @@ export default {
 }
 </script>
 
+<style scoped src="./rowActionDialog.css"></style>
+
 <style scoped>
-.pq-rowaction {
-	margin-block: var(--utrecht-space-block-md, 1rem);
-	padding: var(--utrecht-space-block-md, 1rem);
-	border: var(--utrecht-border-width-sm, 1px) solid
-		var(--utrecht-color-grey-60, currentcolor);
-}
-
-.pq-rowaction__buttons {
-	display: flex;
-	flex-wrap: wrap;
-	gap: var(--utrecht-space-inline-sm, 0.5rem);
-}
-
 .pq-rowaction__status:empty {
 	display: none;
 }

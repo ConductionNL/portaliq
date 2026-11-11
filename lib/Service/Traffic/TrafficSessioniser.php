@@ -54,40 +54,95 @@ class TrafficSessioniser {
 	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-session-must-end-by-inactivity-and-the-timeout-must-be-configured
 	 */
 	public function sessions(array $events, int $timeoutMinutes): array {
+		$sessions = [];
+		foreach ($this->groups(events: $events) as $group) {
+			foreach ($this->groupSessions(group: $group, timeoutSeconds: $timeoutMinutes * 60) as $session) {
+				$sessions[] = $session;
+			}
+		}
+
+		return $sessions;
+	}
+
+	/**
+	 * Gather the events by the session they belong to: the client-kept
+	 * session id when there is one, else the visitor.
+	 *
+	 * @param array<int, array<string, mixed>> $events The raw events, any order.
+	 *
+	 * @return array<string, array<string, mixed>> The groups, each `{visitor, explicit, events}`,
+	 *                                             in order of first appearance.
+	 */
+	private function groups(array $events): array {
 		$groups = [];
 		foreach ($events as $event) {
 			$visitor = $this->visitor(event: $event);
 			$sessionId = trim((string)($event['sessionId'] ?? ''));
-			$explicit = ($sessionId !== '');
-			$key = 'v:' . $visitor;
-			if ($explicit === true) {
-				$key = 's:' . $sessionId;
-			}
-
+			$key = $this->groupKey(visitor: $visitor, sessionId: $sessionId);
 			if (isset($groups[$key]) === false) {
-				$groups[$key] = ['visitor' => $visitor, 'explicit' => $explicit, 'events' => []];
+				$groups[$key] = ['visitor' => $visitor, 'explicit' => ($sessionId !== ''), 'events' => []];
 			}
 
-			$event['_at'] = $this->seconds(value: ($event['occurredAt'] ?? null));
-			$event['_seq'] = (int)($event['sequence'] ?? 0);
-			$groups[$key]['events'][] = $event;
+			$groups[$key]['events'][] = $this->stamped(event: $event);
+		}
+
+		return $groups;
+	}
+
+	/**
+	 * The key a group hangs on: the session id when the client kept one,
+	 * else the visitor.
+	 *
+	 * @param string $visitor   The visitor key.
+	 * @param string $sessionId The trimmed client session id, '' when none.
+	 *
+	 * @return string The group key.
+	 */
+	private function groupKey(string $visitor, string $sessionId): string {
+		if ($sessionId !== '') {
+			return 's:' . $sessionId;
+		}
+
+		return 'v:' . $visitor;
+	}
+
+	/**
+	 * The event with its ordering fields worked out: `_at` (client clock in
+	 * seconds) and `_seq` (the client sequence number).
+	 *
+	 * @param array<string, mixed> $event The raw event.
+	 *
+	 * @return array<string, mixed> The event with `_at` and `_seq`.
+	 */
+	private function stamped(array $event): array {
+		$event['_at'] = $this->seconds(value: ($event['occurredAt'] ?? null));
+		$event['_seq'] = (int)($event['sequence'] ?? 0);
+		return $event;
+	}
+
+	/**
+	 * Order one group's events, drop repeated sequence numbers of a
+	 * client-kept session and cut the journey on inactivity.
+	 *
+	 * @param array<string, mixed> $group          The group, `{visitor, explicit, events}`.
+	 * @param int                  $timeoutSeconds Inactivity after which a new session starts.
+	 *
+	 * @return array<int, array<string, mixed>> The group's sessions.
+	 */
+	private function groupSessions(array $group, int $timeoutSeconds): array {
+		usort($group['events'], $this->comparator(explicit: $group['explicit']));
+		$repeats = 0;
+		if ($group['explicit'] === true) {
+			$kept = $this->withoutRepeats(events: $group['events']);
+			$repeats = (count($group['events']) - count($kept));
+			$group['events'] = $kept;
 		}
 
 		$sessions = [];
-		foreach ($groups as $group) {
-			usort($group['events'], $this->comparator(explicit: $group['explicit']));
+		foreach ($this->split(events: $group['events'], timeoutSeconds: $timeoutSeconds) as $run) {
+			$sessions[] = ['visitor' => $group['visitor'], 'explicit' => $group['explicit'], 'events' => $run, 'repeats' => $repeats];
+			// Counted once per group, not once per cut run.
 			$repeats = 0;
-			if ($group['explicit'] === true) {
-				$kept = $this->withoutRepeats(events: $group['events']);
-				$repeats = (count($group['events']) - count($kept));
-				$group['events'] = $kept;
-			}
-
-			foreach ($this->split(events: $group['events'], timeoutSeconds: $timeoutMinutes * 60) as $run) {
-				$sessions[] = ['visitor' => $group['visitor'], 'explicit' => $group['explicit'], 'events' => $run, 'repeats' => $repeats];
-				// Counted once per group, not once per cut run.
-				$repeats = 0;
-			}
 		}
 
 		return $sessions;

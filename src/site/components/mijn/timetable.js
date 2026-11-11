@@ -25,27 +25,39 @@ const MINUTE_MS = 60 * 1000
  * @spec openspec/changes/calendar-timetable-display/specs/portal-contribution-contract/spec.md#requirement-a-calendar-block-may-draw-a-day-as-a-timetable
  */
 export function weekDays(items, today) {
+	const monday = mondayOf(today)
+	const list = Array.isArray(items) ? items : []
+	const days = []
+	for (let i = 0; i < 7; i++) {
+		const tile = dayTile(list, new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i))
+		if (i < 5 || tile.count > 0) {
+			days.push(tile)
+		}
+	}
+	return days
+}
+
+/**
+ * @param {Date} today Today.
+ * @return {Date} The Monday of its week, at midnight.
+ */
+function mondayOf(today) {
 	const day = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-	const monday = new Date(
+	return new Date(
 		day.getFullYear(),
 		day.getMonth(),
 		day.getDate() - ((day.getDay() + 6) % 7),
 	)
-	const list = Array.isArray(items) ? items : []
-	const days = []
-	for (let i = 0; i < 7; i++) {
-		const date = new Date(
-			monday.getFullYear(),
-			monday.getMonth(),
-			monday.getDate() + i,
-		)
-		const key = dayKey(date)
-		const count = list.filter((item) => dayKey(item.start) === key).length
-		if (i < 5 || count > 0) {
-			days.push({ key, date, count })
-		}
-	}
-	return days
+}
+
+/**
+ * @param {Array<object>} items The calendar items.
+ * @param {Date} date A day of the week.
+ * @return {{key: string, date: Date, count: number}} Its tile: the day and how many items fall on it.
+ */
+function dayTile(items, date) {
+	const key = dayKey(date)
+	return { key, date, count: items.filter((item) => dayKey(item.start) === key).length }
 }
 
 /**
@@ -81,30 +93,49 @@ export function dayRows(items, key) {
 	const onDay = (Array.isArray(items) ? items : [])
 		.filter((item) => item.allDay !== true && dayKey(item.start) === key)
 		.sort((a, b) => a.start - b.start)
-	const rows = []
-	let firstMarked = false
-	let previousEnd = null
-	onDay.forEach((item, i) => {
-		if (previousEnd) {
-			const minutes = Math.round((item.start - previousEnd) / MINUTE_MS)
-			if (minutes >= BREAK_FROM_MINUTES) {
-				rows.push({
-					type: 'break',
-					key: `break:${item.key}`,
-					from: previousEnd,
-					to: item.start,
-					minutes,
-				})
-			}
-		}
-		const first = !firstMarked && !item.cancelled
-		firstMarked = firstMarked || first
-		rows.push({ type: 'item', key: item.key, number: i + 1, first, item })
-		if (!previousEnd || item.end > previousEnd) {
-			previousEnd = item.end
-		}
-	})
-	return rows
+	const run = { rows: [], firstMarked: false, previousEnd: null }
+	onDay.forEach((item, i) => addDayRow(run, { item, number: i + 1 }))
+	return run.rows
+}
+
+/**
+ * Add one item's row, after a break when it starts long enough after the
+ * items before it end.
+ *
+ * @param {{rows: Array<object>, firstMarked: boolean, previousEnd: Date|null}} run The rows so far, whether an item is marked first, and when the items so far end.
+ * @param {{item: object, number: number}} at The item and its number.
+ * @return {void}
+ */
+function addDayRow(run, at) {
+	const { item, number } = at
+	addBreakBefore(run, item)
+	const first = !run.firstMarked && !item.cancelled
+	run.firstMarked = run.firstMarked || first
+	run.rows.push({ type: 'item', key: item.key, number, first, item })
+	if (!run.previousEnd || item.end > run.previousEnd) {
+		run.previousEnd = item.end
+	}
+}
+
+/**
+ * @param {{rows: Array<object>, previousEnd: Date|null}} run The rows so far and when the items so far end.
+ * @param {object} item The next item.
+ * @return {void}
+ */
+function addBreakBefore(run, item) {
+	if (!run.previousEnd) {
+		return
+	}
+	const minutes = Math.round((item.start - run.previousEnd) / MINUTE_MS)
+	if (minutes >= BREAK_FROM_MINUTES) {
+		run.rows.push({
+			type: 'break',
+			key: `break:${item.key}`,
+			from: run.previousEnd,
+			to: item.start,
+			minutes,
+		})
+	}
 }
 
 /**

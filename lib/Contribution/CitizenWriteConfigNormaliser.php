@@ -105,6 +105,23 @@ class CitizenWriteConfigNormaliser {
 	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	private function normaliseConfig(array $declared): ?array {
+		$config = $this->requiredKeys(declared: $declared);
+		if ($config === null) {
+			return null;
+		}
+
+		return $config + $this->defaultedKeys(declared: $declared);
+	}//end normaliseConfig()
+
+	/**
+	 * The keys the declaration must name, or null when one is missing or
+	 * empty.
+	 *
+	 * @param array<string, mixed> $declared The declaration as authored.
+	 *
+	 * @return array<string, string>|null
+	 */
+	private function requiredKeys(array $declared): ?array {
 		$config = [];
 		foreach (self::REQUIRED as $key) {
 			$value = ($declared[$key] ?? null);
@@ -115,8 +132,21 @@ class CitizenWriteConfigNormaliser {
 			$config[$key] = $value;
 		}
 
+		return $config;
+	}//end requiredKeys()
+
+	/**
+	 * The keys with a default: the declared value when it is a non-empty
+	 * string, else the default.
+	 *
+	 * @param array<string, mixed> $declared The declaration as authored.
+	 *
+	 * @return array<string, string>
+	 */
+	private function defaultedKeys(array $declared): array {
+		$config = [];
 		foreach (self::DEFAULTS as $key => $fallback) {
-			$value = ($declared[$key] ?? null);
+			$value        = ($declared[$key] ?? null);
 			$config[$key] = $fallback;
 			if (is_string($value) === true && $value !== '') {
 				$config[$key] = $value;
@@ -124,5 +154,5 @@ class CitizenWriteConfigNormaliser {
 		}
 
 		return $config;
-	}//end normaliseConfig()
+	}//end defaultedKeys()
 }//end class

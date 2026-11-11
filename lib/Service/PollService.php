@@ -96,11 +96,7 @@ class PollService {
 			return ['error' => 'needs_two_options'];
 		}
 
-		$created = $this->writer->createObject(
-			register: self::REGISTER,
-			schema: self::POLL_SCHEMA,
-			scopeField: '',
-			subjectRef: '',
+		return $this->stored(
 			organisation: $organisation,
 			data: [
 				'question' => $question,
@@ -112,12 +108,31 @@ class PollService {
 				'createdAt' => (new DateTimeImmutable())->format(DATE_ATOM),
 			]
 		);
+	}//end create()
+
+	/**
+	 * Write a new poll within its organisation.
+	 *
+	 * @param string               $organisation The tenant the poll is addressed within.
+	 * @param array<string, mixed> $data         The poll.
+	 *
+	 * @return array{poll: array<string, mixed>}|array{error: string}
+	 */
+	private function stored(string $organisation, array $data): array {
+		$created = $this->writer->createObject(
+			register: self::REGISTER,
+			schema: self::POLL_SCHEMA,
+			scopeField: '',
+			subjectRef: '',
+			organisation: $organisation,
+			data: $data
+		);
 		if ($created === null) {
 			return ['error' => 'not_created'];
 		}
 
 		return ['poll' => $created];
-	}//end create()
+	}//end stored()
 
 	/**
 	 * Every poll for the subject's own audience and organisation, each
@@ -130,24 +145,12 @@ class PollService {
 	 * @spec openspec/changes/parent-polls/specs/parent-polls/spec.md#requirement-a-portal-subject-sees-only-polls-for-their-own-audience-and-organisation
 	 */
 	public function forSubject(array $subject): array {
-		$audience = (string)($subject['audience'] ?? '');
-		$organisation = (string)($subject['organisation'] ?? '');
-		$subjectRef = (string)($subject['subjectRef'] ?? '');
-		if ($audience === '' || $organisation === '') {
+		if ($this->hasAudience(subject: $subject) === false) {
 			return [];
 		}
 
-		$polls = $this->reader->readCollection(
-			register: self::REGISTER,
-			schema: self::POLL_SCHEMA,
-			scopeField: '',
-			subjectRef: '',
-			organisation: $organisation,
-			limit: 200,
-			filter: ['audience' => $audience]
-		);
-
-		$responses = $this->responsesBySubject(subjectRef: $subjectRef);
+		$polls     = $this->forSubjectRaw(subject: $subject);
+		$responses = $this->responsesBySubject(subjectRef: (string)($subject['subjectRef'] ?? ''));
 
 		$out = [];
 		foreach ($polls as $poll) {
@@ -299,9 +302,7 @@ class PollService {
 	 * @return array<int, array<string, mixed>>
 	 */
 	private function forSubjectRaw(array $subject): array {
-		$audience = (string)($subject['audience'] ?? '');
-		$organisation = (string)($subject['organisation'] ?? '');
-		if ($audience === '' || $organisation === '') {
+		if ($this->hasAudience(subject: $subject) === false) {
 			return [];
 		}
 
@@ -310,11 +311,23 @@ class PollService {
 			schema: self::POLL_SCHEMA,
 			scopeField: '',
 			subjectRef: '',
-			organisation: $organisation,
+			organisation: (string)$subject['organisation'],
 			limit: 200,
-			filter: ['audience' => $audience]
+			filter: ['audience' => (string)$subject['audience']]
 		);
 	}//end forSubjectRaw()
+
+	/**
+	 * Whether the subject names both the audience and the organisation its
+	 * polls are read for.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 *
+	 * @return bool
+	 */
+	private function hasAudience(array $subject): bool {
+		return (string)($subject['audience'] ?? '') !== '' && (string)($subject['organisation'] ?? '') !== '';
+	}//end hasAudience()
 
 	/**
 	 * Whether a poll's `closesAt` is in the past.

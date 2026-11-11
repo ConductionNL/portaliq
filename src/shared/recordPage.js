@@ -298,36 +298,88 @@ export function dayKey(date) {
 }
 
 /**
+ * @param {unknown} data A row or an element of a row's list.
+ * @return {boolean} Whether it is an object to read fields from.
+ */
+function isFieldBag(data) {
+	return Boolean(data) && typeof data === 'object'
+}
+
+/**
+ * @param {object} data The row or element.
+ * @param {object} fields `titleField` and the fallback `title`.
+ * @return {string} The row's own title, else the declared one, or ''.
+ */
+function itemTitle(data, fields) {
+	const own = fields.titleField ? data[fields.titleField] : ''
+	return typeof own === 'string' && own.trim() !== '' ? own : fields.title || ''
+}
+
+/**
+ * @param {object} data The row or element.
+ * @param {object} fields `endField`.
+ * @return {Date|null} The declared end, or null.
+ */
+function declaredEndOf(data, fields) {
+	return fields.endField ? toDate(data[fields.endField]) : null
+}
+
+/**
+ * @param {Date|null} declaredEnd The declared end.
+ * @param {Date} start The start.
+ * @return {Date} The declared end, or the start when there is none or it lies before it.
+ */
+function itemEnd(declaredEnd, start) {
+	return declaredEnd && declaredEnd >= start ? declaredEnd : start
+}
+
+/**
+ * The line under the title in a tiles display (site-school-blocks).
+ *
+ * @param {object} data The row or element.
+ * @param {object} fields `metaField`.
+ * @return {string} The line, or ''.
+ */
+function itemMeta(data, fields) {
+	const meta = fields.metaField ? data[fields.metaField] : ''
+	return typeof meta === 'string' ? meta.trim() : ''
+}
+
+/**
  * One calendar item from a row (or an element of a row's list).
  *
  * @param {object} data The row or element.
- * @param {object} fields `startField`, `endField`, `titleField`, `title`.
- * @param {string} kind The kind label.
- * @param {string} key A stable key.
+ * @param {{fields: object, kind: string, key: string}} spot The fields to read (`startField`, `endField`, `titleField`, `title`), the kind label and a stable key.
  * @return {object|null}
  */
-function itemOf(data, fields, kind, key) {
-	if (!data || typeof data !== 'object') {
+function itemOf(data, spot) {
+	if (!isFieldBag(data)) {
 		return null
 	}
-	const start = toDate(data[fields.startField])
-	const own = fields.titleField ? data[fields.titleField] : ''
-	const title =
-		typeof own === 'string' && own.trim() !== '' ? own : fields.title || ''
+	const start = toDate(data[spot.fields.startField])
+	const title = itemTitle(data, spot.fields)
 	if (!start || title.trim() === '') {
 		return null
 	}
-	const declaredEnd = fields.endField ? toDate(data[fields.endField]) : null
-	const end = declaredEnd && declaredEnd >= start ? declaredEnd : start
-	// The line under the title in a tiles display (site-school-blocks).
-	const meta = fields.metaField ? data[fields.metaField] : ''
+	return calendarItem(data, { ...spot, start, title: title.trim() })
+}
+
+/**
+ * The calendar item of a row with a start and a title.
+ *
+ * @param {object} data The row or element.
+ * @param {{fields: object, kind: string, key: string, start: Date, title: string}} found The fields to read, the kind label, the key, the start and the title.
+ * @return {object} The item.
+ */
+function calendarItem(data, found) {
+	const { fields, start } = found
 	return {
-		key,
+		key: found.key,
 		start,
-		end,
-		title: title.trim(),
-		meta: typeof meta === 'string' ? meta.trim() : '',
-		kind: kind || '',
+		end: itemEnd(declaredEndOf(data, fields), start),
+		title: found.title,
+		meta: itemMeta(data, fields),
+		kind: found.kind || '',
 		allDay: DATE_ONLY.test(String(data[fields.startField])),
 		...timetableParts(data, fields),
 	}
@@ -347,25 +399,47 @@ function itemOf(data, fields, kind, key) {
 export function timetableParts(data, fields) {
 	const note = fields.noteField ? data[fields.noteField] : ''
 	const value = fields.statusField ? data[fields.statusField] : null
-	const labels = fields.statusLabels
-	const word =
+	const word = statusWord(value, fields.statusLabels)
+	return {
+		note: typeof note === 'string' ? note.trim() : '',
+		status: typeof word === 'string' ? word.trim() : '',
+		cancelled: isCancelled(fields.cancelledWhen, data),
+	}
+}
+
+/**
+ * @param {unknown} value A row's status value.
+ * @param {object|undefined} labels The words of the status values.
+ * @return {unknown} The value's word, or '' for a value without one.
+ */
+function statusWord(value, labels) {
+	return isLabelled(value, labels) ? labels[String(value)] : ''
+}
+
+/**
+ * @param {unknown} value A row's status value.
+ * @param {object|undefined} labels The words of the status values.
+ * @return {boolean} Whether the value is text or a number with a word.
+ */
+function isLabelled(value, labels) {
+	return (
 		(typeof value === 'string' || typeof value === 'number')
-		&& labels
-		&& typeof labels === 'object'
+		&& isFieldBag(labels)
 		&& Object.hasOwn(labels, String(value))
-			? labels[String(value)]
-			: ''
-	const rule = fields.cancelledWhen
-	const cancelled = Boolean(
+	)
+}
+
+/**
+ * @param {{field: string, in: Array<string>}|undefined} rule The source's `cancelledWhen`.
+ * @param {object} data The row or element.
+ * @return {boolean} Whether the rule calls the row cancelled.
+ */
+function isCancelled(rule, data) {
+	return Boolean(
 		rule
 		&& Array.isArray(rule.in)
 		&& rule.in.includes(String(data[rule.field] ?? '')),
 	)
-	return {
-		note: typeof note === 'string' ? note.trim() : '',
-		status: typeof word === 'string' ? word.trim() : '',
-		cancelled,
-	}
 }
 
 /**
@@ -389,46 +463,74 @@ export function calendarItems(block, store, record, groups = null) {
 			groups,
 		)
 		rows.forEach((row, r) => {
-			const only = source.only
-			if (only && !only.in.includes(String(row?.[only.field] ?? ''))) {
-				return
-			}
 			const base = `${s}:${idOf(row) || r}`
-			if (source.expand) {
-				const list = Array.isArray(row?.[source.expand.field])
-					? row[source.expand.field]
-					: []
-				list.forEach((element, e) => {
-					const item = itemOf(
-						element,
-						source.expand,
-						source.kind,
-						`${base}:${e}`,
-					)
-					if (item) {
-						items.push(item)
-					}
-				})
-				return
-			}
-			const item = itemOf(row, source, source.kind, base)
-			if (item) {
-				items.push(item)
-			}
+			items.push(...sourceRowItems(source, { row, base }))
 		})
 	})
+	return onceEach(
+		items.sort((a, b) => a.start - b.start || a.title.localeCompare(b.title)),
+	)
+}
+
+/**
+ * The items one row of a source makes: none when the source's `only` leaves
+ * the row out, one per element of its `expand` list, or the row itself.
+ *
+ * @param {object} source The calendar source.
+ * @param {{row: object, base: string}} entry The row and its key.
+ * @return {Array<object>} The items.
+ */
+function sourceRowItems(source, entry) {
+	const { row, base } = entry
+	const only = source.only
+	if (only && !only.in.includes(String(row?.[only.field] ?? ''))) {
+		return []
+	}
+	if (source.expand) {
+		return expandedItems(source, entry)
+	}
+	const item = itemOf(row, { fields: source, kind: source.kind, key: base })
+	return item ? [item] : []
+}
+
+/**
+ * One item per element of a row's `expand` list.
+ *
+ * @param {object} source The calendar source.
+ * @param {{row: object, base: string}} entry The row and its key.
+ * @return {Array<object>} The items.
+ */
+function expandedItems(source, entry) {
+	const value = entry.row?.[source.expand.field]
+	const list = Array.isArray(value) ? value : []
+	return list
+		.map((element, e) =>
+			itemOf(element, {
+				fields: source.expand,
+				kind: source.kind,
+				key: `${entry.base}:${e}`,
+			}),
+		)
+		.filter((item) => item)
+}
+
+/**
+ * The items without repeats: the same holiday held on two report periods is
+ * one item.
+ *
+ * @param {Array<object>} items The items in order.
+ * @return {Array<object>} The first of each.
+ */
+function onceEach(items) {
 	const seen = new Set()
-	return items
-		.sort((a, b) => a.start - b.start || a.title.localeCompare(b.title))
-		.filter((item) => {
-			// The same holiday held on two report periods is one item.
-			const same = `${dayKey(item.start)}|${dayKey(item.end)}|${item.title}|${item.kind}`
-			if (seen.has(same)) {
-				return false
-			}
-			seen.add(same)
-			return true
-		})
+	return items.filter((item) => {
+		const same = `${dayKey(item.start)}|${dayKey(item.end)}|${item.title}|${item.kind}`
+		if (seen.has(same)) {
+			return false
+		}
+		seen.add(same)
+		return true
+	})
 }
 
 /**

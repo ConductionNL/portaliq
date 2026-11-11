@@ -89,25 +89,33 @@ class PublicIndexItems {
 			return [];
 		}
 
-		$out  = [];
-		$seen = [];
+		$out = [];
 		foreach (array_slice(array_values($entries), 0, self::MAX_ITEMS) as $entry) {
 			$item = $this->item(entry: $entry);
-			if ($item === null) {
-				continue;
+			if ($item !== null) {
+				$item['id'] = $appId . ':' . $item['id'];
+				$out[]      = $item;
 			}
-
-			$item['id'] = $appId . ':' . $item['id'];
-			if (isset($seen[$item['id']]) === true) {
-				continue;
-			}
-
-			$seen[$item['id']] = true;
-			$out[]             = $item;
 		}
 
-		return $out;
+		return $this->firstOfEachId(items: $out);
 	}//end items()
+
+	/**
+	 * The items in order, each id only the first time it appears.
+	 *
+	 * @param array<int, array<string, mixed>> $items The items.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function firstOfEachId(array $items): array {
+		$out = [];
+		foreach ($items as $item) {
+			$out[$item['id']] = ($out[$item['id']] ?? $item);
+		}
+
+		return array_values($out);
+	}//end firstOfEachId()
 
 	/**
 	 * One item, or null without an id, a type, a kind or a title.
@@ -121,21 +129,44 @@ class PublicIndexItems {
 			return null;
 		}
 
-		$id    = $this->clean->short(value: ($entry['id'] ?? null));
-		$type  = ($entry['type'] ?? null);
-		$kind  = $this->clean->short(value: ($entry['kind'] ?? null));
-		$title = $this->clean->short(value: ($entry['title'] ?? null));
-		if ($id === null || is_string($type) === false || preg_match('/^[a-z][A-Za-z0-9]{0,39}$/', $type) !== 1 || $kind === null || $title === null) {
+		$item = $this->head(entry: $entry);
+		if (in_array(null, $item, true) === true || $this->isType(type: $item['type']) === false) {
 			return null;
 		}
 
-		$item = ['id' => $id, 'type' => $type, 'kind' => $kind, 'title' => $title];
 		$item = $this->withText(item: $item, entry: $entry);
 		$item = $this->withDates(item: $item, entry: $entry);
 		$item = $this->withLists(item: $item, entry: $entry);
 
 		return $this->withLink(item: $item, entry: $entry);
 	}//end item()
+
+	/**
+	 * The id, type, kind and title of an entry, each null when it does not fit.
+	 *
+	 * @param array<mixed> $entry The entry.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function head(array $entry): array {
+		return [
+			'id'    => $this->clean->short(value: ($entry['id'] ?? null)),
+			'type'  => ($entry['type'] ?? null),
+			'kind'  => $this->clean->short(value: ($entry['kind'] ?? null)),
+			'title' => $this->clean->short(value: ($entry['title'] ?? null)),
+		];
+	}//end head()
+
+	/**
+	 * Whether a declared type is a short camel-case name.
+	 *
+	 * @param mixed $type The declared type.
+	 *
+	 * @return bool
+	 */
+	private function isType(mixed $type): bool {
+		return is_string($type) === true && preg_match('/^[a-z][A-Za-z0-9]{0,39}$/', $type) === 1;
+	}//end isType()
 
 	/**
 	 * The summary, note, note tone, badge and date label, each when it fits.
@@ -153,6 +184,18 @@ class PublicIndexItems {
 			$item['summary'] = $summary;
 		}
 
+		return $this->withLabels(item: $item, entry: $entry);
+	}//end withText()
+
+	/**
+	 * The note, badge and date label, each when it fits, and a note's tone.
+	 *
+	 * @param array<string, mixed> $item  The item so far.
+	 * @param array<string, mixed> $entry The entry.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withLabels(array $item, array $entry): array {
 		foreach (['note', 'badge', 'dateLabel'] as $key) {
 			$value = $this->clean->short(value: ($entry[$key] ?? null));
 			if ($value !== null) {
@@ -161,14 +204,26 @@ class PublicIndexItems {
 		}
 
 		if (isset($item['note']) === true) {
-			$item['noteTone'] = 'neutral';
-			if (in_array(($entry['noteTone'] ?? null), self::TONES, true) === true) {
-				$item['noteTone'] = $entry['noteTone'];
-			}
+			$item['noteTone'] = $this->noteTone(declared: ($entry['noteTone'] ?? null));
 		}
 
 		return $item;
-	}//end withText()
+	}//end withLabels()
+
+	/**
+	 * The declared tone of a note when it is one of the tones, else neutral.
+	 *
+	 * @param mixed $declared The declared tone.
+	 *
+	 * @return string
+	 */
+	private function noteTone(mixed $declared): string {
+		if (in_array($declared, self::TONES, true) === true) {
+			return $declared;
+		}
+
+		return 'neutral';
+	}//end noteTone()
 
 	/**
 	 * The slug, category and table cells of an item, each when it fits.

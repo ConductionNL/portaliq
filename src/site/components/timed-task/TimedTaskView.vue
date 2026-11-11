@@ -447,11 +447,8 @@ export default {
 		async start(task) {
 			this.error = null
 			const outcome = await startAttempt(
-				this.api,
-				this.app,
-				this.block,
-				task.taskId,
-				this.codes[task.taskId] || '',
+				{ api: this.api, app: this.app, block: this.block },
+				{ taskId: task.taskId, accessCode: this.codes[task.taskId] || '' },
 			)
 			if (!outcome.ok) {
 				this.error =
@@ -552,11 +549,8 @@ export default {
 			}
 			this.submitting = true
 			const outcome = await submitAttempt(
-				this.api,
-				this.app,
-				this.block,
-				this.attempt.attemptId,
-				this.queue,
+				{ api: this.api, app: this.app, block: this.block },
+				{ attemptId: this.attempt.attemptId, queue: this.queue },
 			)
 			if (!outcome.allSaved) {
 				this.notice = this.tr(

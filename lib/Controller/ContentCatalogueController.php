@@ -124,14 +124,9 @@ class ContentCatalogueController extends Controller {
 	#[AnonRateLimit(limit: 240, period: 60)]
 	public function index(?string $portal = null): JSONResponse {
 		$asked    = $this->askedQuery();
-		$resolved = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
-		if ($resolved === null) {
-			return $this->notFound();
-		}
-
-		$refusal = $this->refuseUnlessPermitted(portal: $resolved);
-		if ($refusal !== null) {
-			return $refusal;
+		$resolved = $this->permittedPortal(portal: $portal);
+		if ($resolved instanceof JSONResponse) {
+			return $resolved;
 		}
 
 		$slug   = (string)$resolved['slug'];
@@ -296,14 +291,9 @@ class ContentCatalogueController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 60, period: 60)]
 	public function kinds(?string $portal = null): JSONResponse {
-		$resolved = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
-		if ($resolved === null) {
-			return $this->notFound();
-		}
-
-		$refusal = $this->refuseUnlessPermitted(portal: $resolved);
-		if ($refusal !== null) {
-			return $refusal;
+		$resolved = $this->permittedPortal(portal: $portal);
+		if ($resolved instanceof JSONResponse) {
+			return $resolved;
 		}
 
 		return $this->publicJson(payload: ['kinds' => $this->catalogue->kindsFor(portal: (string)$resolved['slug'])]);
@@ -328,14 +318,9 @@ class ContentCatalogueController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 120, period: 60)]
 	public function detail(?string $portal = null, string $app = '', string $kind = '', string $slug = ''): JSONResponse {
-		$resolved = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
-		if ($resolved === null) {
-			return $this->notFound();
-		}
-
-		$refusal = $this->refuseUnlessPermitted(portal: $resolved);
-		if ($refusal !== null) {
-			return $refusal;
+		$resolved = $this->permittedPortal(portal: $portal);
+		if ($resolved instanceof JSONResponse) {
+			return $resolved;
 		}
 
 		$found = $this->catalogue->detailFor(portal: (string)$resolved['slug'], appId: $app, kind: $kind, slug: $slug);

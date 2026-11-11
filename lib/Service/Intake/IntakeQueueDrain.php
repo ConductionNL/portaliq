@@ -63,7 +63,24 @@ class IntakeQueueDrain {
 	 * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#4.1
 	 */
 	public function drain(int $limit = 200): array {
-		$pending   = $this->queue->pending(limit: $limit);
+		$pass = $this->deliverAll(pending: $this->queue->pending(limit: $limit));
+
+		return [
+			'delivered' => $pass['delivered'],
+			'refused' => count($pass['reasons']),
+			'waiting' => count($this->queue->pending(limit: $limit)),
+			'reasons' => $pass['reasons'],
+		];
+	}//end drain()
+
+	/**
+	 * Send every waiting entry: how many arrived, and why each refused one did not.
+	 *
+	 * @param array<int, array<string, mixed>> $pending The waiting entries.
+	 *
+	 * @return array{delivered: int, reasons: array<string, string>}
+	 */
+	private function deliverAll(array $pending): array {
 		$delivered = 0;
 		$reasons   = [];
 		foreach ($pending as $entry) {
@@ -76,13 +93,8 @@ class IntakeQueueDrain {
 			$reasons[(string)($entry['reference'] ?? '')] = $reason;
 		}
 
-		return [
-			'delivered' => $delivered,
-			'refused' => count($reasons),
-			'waiting' => count($this->queue->pending(limit: $limit)),
-			'reasons' => $reasons,
-		];
-	}//end drain()
+		return ['delivered' => $delivered, 'reasons' => $reasons];
+	}//end deliverAll()
 
 	/**
 	 * How many entries wait, sending nothing.
@@ -110,44 +122,87 @@ class IntakeQueueDrain {
 			return $this->refuse(entry: $entry, reason: 'The form this request came from is no longer published.');
 		}
 
-		$reference = (string)($entry['reference'] ?? '');
-
-		$submitted = $this->intake->submit(
-			binding: $binding,
-			render: $this->bindings->render(binding: $binding),
-			answers: (array)($entry['answers'] ?? []),
-			subjectRef: (string)($entry['subjectRef'] ?? ''),
-			server: [
-				'externalReference' => $reference,
-				'portal' => (string)($entry['portal'] ?? ''),
-				'origin' => (string)($entry['origin'] ?? ''),
-				'statements' => (array)($entry['statements'] ?? []),
-				'decisions' => (array)($entry['decisions'] ?? []),
-				'verifiedEmails' => (array)($entry['verifiedEmails'] ?? []),
-				'fieldMeta' => (new DestinationMapping())->fieldMeta(computed: (array)($entry['computed'] ?? [])),
-			],
-			idempotencyKey: $reference
-		);
-
+		$submitted = $this->submit(binding: $binding, entry: $entry);
 		if ($submitted['ok'] === false) {
-			$reason = $submitted['message'];
-			if ($submitted['errors'] !== []) {
-				$reason .= ' ' . json_encode($submitted['errors']);
-			}
-
-			return $this->refuse(entry: $entry, reason: trim($reason));
+			return $this->refuse(entry: $entry, reason: $this->refusalOf(submitted: $submitted));
 		}
 
-		$answer = $submitted['answer'];
+		$this->registered(entry: $entry, answer: $submitted['answer']);
+
+		return null;
+	}//end deliver()
+
+	/**
+	 * Mark an entry registered with the case the destination created and its deadline.
+	 *
+	 * @param array<string, mixed> $entry  The queue entry.
+	 * @param array<string, mixed> $answer The destination's answer.
+	 *
+	 * @return void
+	 */
+	private function registered(array $entry, array $answer): void {
 		$this->queue->markRegistered(
 			submission: $entry,
 			caseId: (string)($answer['id'] ?? ''),
 			externalReference: (string)($answer['reference'] ?? ''),
 			dueAt: $this->dueAt(confirmation: (array)($answer['confirmation'] ?? []))
 		);
+	}//end registered()
 
-		return null;
-	}//end deliver()
+	/**
+	 * Submit an entry into its form's destination, keyed by its reference so a
+	 * second pass creates nothing twice.
+	 *
+	 * @param array<string, mixed> $binding The form the entry came from.
+	 * @param array<string, mixed> $entry   The queue entry.
+	 *
+	 * @return array<string, mixed> The destination's outcome.
+	 */
+	private function submit(array $binding, array $entry): array {
+		return $this->intake->submit(
+			binding: $binding,
+			render: $this->bindings->render(binding: $binding),
+			answers: (array)($entry['answers'] ?? []),
+			subjectRef: (string)($entry['subjectRef'] ?? ''),
+			server: $this->serverValues(entry: $entry),
+			idempotencyKey: (string)($entry['reference'] ?? '')
+		);
+	}//end submit()
+
+	/**
+	 * What the portal itself knows about an entry, for the destination.
+	 *
+	 * @param array<string, mixed> $entry The queue entry.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function serverValues(array $entry): array {
+		return [
+			'externalReference' => (string)($entry['reference'] ?? ''),
+			'portal' => (string)($entry['portal'] ?? ''),
+			'origin' => (string)($entry['origin'] ?? ''),
+			'statements' => (array)($entry['statements'] ?? []),
+			'decisions' => (array)($entry['decisions'] ?? []),
+			'verifiedEmails' => (array)($entry['verifiedEmails'] ?? []),
+			'fieldMeta' => (new DestinationMapping())->fieldMeta(computed: (array)($entry['computed'] ?? [])),
+		];
+	}//end serverValues()
+
+	/**
+	 * Why the destination refused: its message, and its errors when it named any.
+	 *
+	 * @param array<string, mixed> $submitted The destination's outcome.
+	 *
+	 * @return string
+	 */
+	private function refusalOf(array $submitted): string {
+		$reason = $submitted['message'];
+		if ($submitted['errors'] !== []) {
+			$reason .= ' ' . json_encode($submitted['errors']);
+		}
+
+		return trim($reason);
+	}//end refusalOf()
 
 	/**
 	 * Mark an entry failed with the reason, and answer the reason.

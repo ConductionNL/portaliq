@@ -126,6 +126,31 @@ const STRINGS = {
 /**
  * @spec openspec/changes/search-assistant-from-public-content/tasks.md#t05
  */
+/**
+ * How the block asks: its override, else the content API.
+ *
+ * @param {object} assistant The block.
+ * @return {(body: object) => Promise<object>} The asker.
+ */
+function askerOf(assistant) {
+	return (
+		assistant.askOverride || ((body) => askAssistant(resolveApiBase(), body))
+	)
+}
+
+/**
+ * Count one question with the traffic client, when the page has one. A
+ * count only: the question and the answer never go with it.
+ *
+ * @return {void}
+ */
+function countQuestion() {
+	const client = typeof window !== 'undefined' ? window.portaliqTraffic : null
+	if (client && typeof client.track === 'function') {
+		client.track('assistant_asked', {})
+	}
+}
+
 export default {
 	name: 'AssistantBlock',
 	props: {
@@ -180,10 +205,7 @@ export default {
 			this.failed = false
 			this.reply = null
 			try {
-				const send =
-					this.askOverride
-					|| ((body) => askAssistant(resolveApiBase(), body))
-				const reply = await send({
+				const reply = await askerOf(this)({
 					portal: this.portal,
 					question,
 					locale: pageLocale(this.locale),
@@ -192,12 +214,7 @@ export default {
 				this.reply = reply
 				this.removed = reply.removed === true
 				this.conversationId = reply.conversationId || this.conversationId
-				const client =
-					typeof window !== 'undefined' ? window.portaliqTraffic : null
-				if (client && typeof client.track === 'function') {
-					// A count only: the question and the answer never go with it.
-					client.track('assistant_asked', {})
-				}
+				countQuestion()
 			} catch {
 				this.failed = true
 			} finally {

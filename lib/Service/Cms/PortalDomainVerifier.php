@@ -252,12 +252,26 @@ class PortalDomainVerifier {
 	 */
 	private static function publicAddress(string $host): ?string {
 		$address = gethostbyname($host);
-		if ($address === $host || filter_var($address, FILTER_VALIDATE_IP, (FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) === false) {
+		if ($address === $host || self::isGlobalAddress(address: $address) === false) {
 			return null;
 		}
 
 		return $address;
 	}//end publicAddress()
+
+	/**
+	 * Whether an address is globally routable: not private, reserved, shared
+	 * (CGNAT), benchmarking or documentation space.
+	 *
+	 * @param string $address The IP address.
+	 *
+	 * @return bool
+	 */
+	private static function isGlobalAddress(string $address): bool {
+		$flags = (FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE | FILTER_FLAG_GLOBAL_RANGE);
+
+		return filter_var($address, FILTER_VALIDATE_IP, $flags) !== false;
+	}//end isGlobalAddress()
 
 	/**
 	 * The certificate a host presents on port 443 of an address already checked.

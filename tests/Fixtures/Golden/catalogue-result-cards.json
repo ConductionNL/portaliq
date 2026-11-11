@@ -1,0 +1,9 @@
+{
+	"full": {"key":"learniq:course:1","kind":"Cursus","title":"F-gassen","summary":"Een dag","date":"2026-10-08","meta":["1 dag"],"note":"Nog 1 plek","tone":"warning","badge":"Nieuw","link":{"href":"/cursus/1","route":"/cursus/1"}},
+	"positive tone, external": {"key":"learniq:course:1","kind":"Cursus","title":"F-gassen","summary":"Een dag","date":"2026-10-08","meta":["1 dag"],"note":"Nog 1 plek","tone":"positive","badge":"Nieuw","link":{"href":"https://example.org/x","route":""}},
+	"unknown tone, no href": {"key":"learniq:course:1","kind":"Cursus","title":"F-gassen","summary":"Een dag","date":"2026-10-08","meta":[],"note":"Nog 1 plek","tone":"neutral","badge":"Nieuw","link":null},
+	"news with id": {"key":"","kind":"Nieuws","title":"","summary":"","date":"","meta":[],"note":"","tone":"neutral","badge":"","link":{"href":"/school/nieuws/n%201","route":"/school/nieuws/n%201"}},
+	"news without route": {"key":"","kind":"News","title":"","summary":"","date":"","meta":[],"note":"","tone":"neutral","badge":"","link":{"href":"/nieuws/n1","route":"/nieuws/n1"}},
+	"news without id": {"key":"","kind":"News","title":"","summary":"","date":"","meta":[],"note":"","tone":"neutral","badge":"","link":{"href":"/n","route":"/n"}},
+	"nothing": {"key":"","kind":"","title":"","summary":"","date":"","meta":[],"note":"","tone":"neutral","badge":"","link":null}
+}

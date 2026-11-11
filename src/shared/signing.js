@@ -76,28 +76,49 @@ export function tableRowActions(actions) {
  * @spec openspec/specs/portal-document-signing/spec.md#requirement-the-resident-reads-the-document-before-signing-it-req-sgn-004
  */
 export function documentView(result) {
-	const body = result && result.body
-	const content =
-		body && typeof body.contentBase64 === 'string' ? body.contentBase64 : ''
+	const content = documentContent(result)
 	if (!result || !result.ok || content === '') {
 		return { state: 'unavailable' }
 	}
 
-	const declared =
-		typeof body.mimeType === 'string' ? body.mimeType.toLowerCase() : ''
+	const declared = declaredType(result.body)
 	const renderable = INLINE_TYPES.includes(declared)
 	const mimeType = renderable ? declared : 'application/octet-stream'
 
 	return {
 		state: 'shown',
-		name:
-			typeof body.documentName === 'string' && body.documentName !== ''
-				? body.documentName
-				: 'document',
+		name: documentName(result.body),
 		mimeType,
 		href: `data:${mimeType};base64,${content}`,
 		inline: renderable && content.length <= INLINE_LIMIT,
 	}
+}
+
+/**
+ * @param {{body: object}|null} result The forward's answer.
+ * @return {string} The document's base64 content, or ''.
+ */
+function documentContent(result) {
+	const body = result && result.body
+	return body && typeof body.contentBase64 === 'string' ? body.contentBase64 : ''
+}
+
+/**
+ * @param {object} body The answer's body.
+ * @return {string} The type the receiver declared, lower case, or ''.
+ */
+function declaredType(body) {
+	return typeof body.mimeType === 'string' ? body.mimeType.toLowerCase() : ''
+}
+
+/**
+ * @param {object} body The answer's body.
+ * @return {string} The document's name, or `document`.
+ */
+function documentName(body) {
+	return typeof body.documentName === 'string' && body.documentName !== ''
+		? body.documentName
+		: 'document'
 }
 
 /**

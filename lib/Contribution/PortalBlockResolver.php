@@ -38,13 +38,6 @@ namespace OCA\Portaliq\Contribution;
  */
 class PortalBlockResolver {
 	/**
-	 * The page ids of the contribution whose blocks are being resolved.
-	 *
-	 * @var array<int, string>
-	 */
-	private array $pageIds = [];
-
-	/**
 	 * The block-type registry. A block of any other type is dropped.
 	 */
 	private const BLOCK_TYPES = [
@@ -76,6 +69,11 @@ class PortalBlockResolver {
 	private const COLLECTION_BLOCK_TYPES = ['collection', 'detail', 'citizenCase'];
 
 	/**
+	 * The block types a normaliser of their own resolves.
+	 */
+	private const OWN_RULES_BLOCK_TYPES = ['kpi', 'calendar', 'news', 'tasks', 'inbox', 'cases', 'steps', 'documents', 'timeline'];
+
+	/**
 	 * Filter a page's blocks to the registry with resolvable references.
 	 *
 	 * @param mixed $blocks The declared blocks.
@@ -93,19 +91,14 @@ class PortalBlockResolver {
 	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 	 */
 	public function normaliseBlocks(mixed $blocks, array $collectionIds, array $actionIds, array $collections=[], array $pageIds=[]): array {
-		$this->pageIds = $pageIds;
 		if (is_array($blocks) === false) {
 			return [];
 		}
 
+		$run = new BlockResolveRun(collectionIds: $collectionIds, actionIds: $actionIds, collections: $collections, pageIds: $pageIds);
 		$out = [];
 		foreach ($blocks as $block) {
-			$entry = $this->normaliseBlock(
-				block: $block,
-				collectionIds: $collectionIds,
-				actionIds: $actionIds,
-				collections: $collections
-			);
+			$entry = $this->normaliseBlock(run: $run, block: $block);
 			if ($entry !== null) {
 				$out[] = $entry;
 			}
@@ -118,14 +111,12 @@ class PortalBlockResolver {
 	 * Resolve ONE block against the surviving references, or null when its type
 	 * is outside the registry or its reference does not resolve.
 	 *
-	 * @param mixed $block The declared block.
-	 * @param array<int, string> $collectionIds The valid collection ids.
-	 * @param array<int, string> $actionIds The valid action ids.
-	 * @param array<int, array<string, mixed>> $collections The sanitised collections.
+	 * @param BlockResolveRun $run   The pass.
+	 * @param mixed           $block The declared block.
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	private function normaliseBlock(mixed $block, array $collectionIds, array $actionIds, array $collections): ?array {
+	private function normaliseBlock(BlockResolveRun $run, mixed $block): ?array {
 		if (is_array($block) === false) {
 			return null;
 		}
@@ -136,97 +127,148 @@ class PortalBlockResolver {
 		}
 
 		if (in_array($type, self::COLLECTION_BLOCK_TYPES, true) === true) {
-			$entry = $this->referenceBlock(
-				type: $type,
-				key: 'collection',
-				ref: ($block['collection'] ?? null),
-				allowed: $collectionIds
-			);
-			if ($entry === null) {
-				return null;
-			}
-
-			return $this->collectionBlock(type: $type, block: $block, entry: $entry, collectionIds: $collectionIds, collections: $collections);
+			return $this->collectionBlock(run: $run, block: $block);
 		}
 
-		if (in_array($type, ['kpi', 'calendar', 'news', 'tasks', 'inbox', 'cases', 'steps', 'documents', 'timeline'], true) === true) {
-			return $this->ownRulesBlock(type: $type, block: $block, collectionIds: $collectionIds, collections: $collections);
+		if (in_array($type, self::OWN_RULES_BLOCK_TYPES, true) === true) {
+			return $this->ownRulesBlock(run: $run, block: $block);
 		}
 
+		return $this->linkBlock(run: $run, block: $block);
+	}//end normaliseBlock()
+
+	/**
+	 * An `action`, `cta`, `greeting` or `richText` block, or null when what
+	 * it names does not resolve.
+	 *
+	 * @param BlockResolveRun      $run   The pass.
+	 * @param array<string, mixed> $block The declared block, of one of those types.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function linkBlock(BlockResolveRun $run, array $block): ?array {
+		$type = $block['type'];
 		if ($type === 'action') {
 			return $this->referenceBlock(
 				type: 'action',
 				key: 'action',
 				ref: ($block['action'] ?? null),
-				allowed: $actionIds
+				allowed: $run->actionIds
 			);
 		}
 
 		if ($type === 'cta') {
-			return (new CtaBlockNormaliser())->normalise(block: $block, actionIds: $actionIds, pageIds: $this->pageIds);
+			return (new CtaBlockNormaliser())->normalise(block: $block, actionIds: $run->actionIds, pageIds: $run->pageIds);
 		}
 
 		if ($type === 'greeting') {
-			return (new SchoolBlockKeys())->greetingBlock(block: $block, actionIds: $actionIds, pageIds: $this->pageIds);
+			return (new SchoolBlockKeys())->greetingBlock(block: $block, actionIds: $run->actionIds, pageIds: $run->pageIds);
 		}
 
 		return $this->richTextBlock(block: $block);
-	}//end normaliseBlock()
+	}//end linkBlock()
 
 	/**
-	 * A `collection`, `detail` or `citizenCase` block whose reference
-	 * resolved: the record scope and lookups (contribution-record-page), and
-	 * on a `collection` block its `limit` and `sort`
-	 * (site-mijn-omgeving-components REQ-SMO-021).
+	 * A `collection`, `detail` or `citizenCase` block, or null when its
+	 * reference does not resolve: the record scope and lookups
+	 * (contribution-record-page), and on a `collection` block its `limit`
+	 * and `sort` (site-mijn-omgeving-components REQ-SMO-021).
 	 *
-	 * @param string $type The block type.
-	 * @param array<string, mixed> $block The declared block.
-	 * @param array<string, mixed> $entry The block as resolved so far.
-	 * @param array<int, string> $collectionIds The valid collection ids.
-	 * @param array<int, array<string, mixed>> $collections The sanitised collections.
+	 * @param BlockResolveRun      $run   The pass.
+	 * @param array<string, mixed> $block The declared block, of one of those types.
 	 *
-	 * @return array<string, mixed>
+	 * @return array<string, mixed>|null
 	 *
 	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 	 * @spec openspec/changes/card-status-today/specs/portal-contribution-contract/spec.md#requirement-a-card-may-say-where-its-record-stands-today
 	 */
-	private function collectionBlock(string $type, array $block, array $entry, array $collectionIds, array $collections): array {
+	private function collectionBlock(BlockResolveRun $run, array $block): ?array {
+		$entry = $this->scopedReference(run: $run, block: $block);
+		if ($entry === null) {
+			return null;
+		}
+
+		if ($entry['type'] !== 'collection') {
+			return $entry + $this->boardKeys(block: $block);
+		}
+
+		// A looked-up value may stand where the block names a field
+		// (lookup-by-row-field).
+		$collection = (new RecordScopeNormaliser())->withLookupFields(collection: $this->collectionOf(run: $run, entry: $entry), entry: $entry);
+
+		// Where a card's record stands today, from another collection of
+		// this contribution (card-status-today).
+		return $entry + (new CollectionListKeys())->collectionKeys(block: $block, collection: $collection)
+			+ (new CardStatusKeys())->keys(block: $block, collectionIds: $run->collectionIds, collections: $run->collections);
+	}//end collectionBlock()
+
+	/**
+	 * The block's collection reference, narrowed to the open record and its
+	 * lookups when the block asks (contribution-record-page), or null when
+	 * the reference does not resolve.
+	 *
+	 * @param BlockResolveRun      $run   The pass.
+	 * @param array<string, mixed> $block The declared block.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function scopedReference(BlockResolveRun $run, array $block): ?array {
+		$entry = $this->referenceBlock(
+			type: $block['type'],
+			key: 'collection',
+			ref: ($block['collection'] ?? null),
+			allowed: $run->collectionIds
+		);
+		if ($entry === null) {
+			return null;
+		}
+
 		// A block on a record page may narrow its rows to the open record
 		// (contribution-record-page).
 		$scopes = new RecordScopeNormaliser();
 		$entry = $scopes->scope(declared: $block, entry: $entry);
-		$entry = $scopes->lookups(declared: $block, entry: $entry, collectionIds: $collectionIds);
 
-		// The board keys of a detail card and of the case screen
-		// (zuiddrecht-resident-pages-match-the-boards).
-		if ($type === 'detail') {
-			return $entry + (new BoardKeys())->detailKeys(block: $block);
+		return $scopes->lookups(declared: $block, entry: $entry, collectionIds: $run->collectionIds);
+	}//end scopedReference()
+
+	/**
+	 * The board keys of a detail card and of the case screen
+	 * (zuiddrecht-resident-pages-match-the-boards); none for another block.
+	 *
+	 * @param array<string, mixed> $block The declared block.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function boardKeys(array $block): array {
+		if ($block['type'] === 'detail') {
+			return (new BoardKeys())->detailKeys(block: $block);
 		}
 
-		if ($type === 'citizenCase') {
-			return $entry + (new BoardKeys())->citizenCaseKeys(block: $block);
+		if ($block['type'] === 'citizenCase') {
+			return (new BoardKeys())->citizenCaseKeys(block: $block);
 		}
 
-		if ($type !== 'collection') {
-			return $entry;
-		}
+		return [];
+	}//end boardKeys()
 
+	/**
+	 * The last sanitised collection whose id the entry names, or null.
+	 *
+	 * @param BlockResolveRun      $run   The pass.
+	 * @param array<string, mixed> $entry The resolved entry.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function collectionOf(BlockResolveRun $run, array $entry): ?array {
 		$collection = null;
-		foreach ($collections as $candidate) {
+		foreach ($run->collections as $candidate) {
 			if (($candidate['id'] ?? null) === $entry['collection']) {
 				$collection = $candidate;
 			}
 		}
 
-		// A looked-up value may stand where the block names a field
-		// (lookup-by-row-field).
-		$collection = $scopes->withLookupFields(collection: $collection, entry: $entry);
-
-		// Where a card's record stands today, from another collection of
-		// this contribution (card-status-today).
-		return $entry + (new CollectionListKeys())->collectionKeys(block: $block, collection: $collection)
-			+ (new CardStatusKeys())->keys(block: $block, collectionIds: $collectionIds, collections: $collections);
-	}//end collectionBlock()
+		return $collection;
+	}//end collectionOf()
 
 	/**
 	 * A block whose type has a normaliser of its own, or null when its
@@ -237,16 +279,16 @@ class PortalBlockResolver {
 	 * their cases, and where one case stands, its documents and its history
 	 * (site-mijn-omgeving-components REQ-SMO-021).
 	 *
-	 * @param string $type The block type.
-	 * @param array<string, mixed> $block The declared block.
-	 * @param array<int, string> $collectionIds The valid collection ids.
-	 * @param array<int, array<string, mixed>> $collections The sanitised collections.
+	 * @param BlockResolveRun      $run   The pass.
+	 * @param array<string, mixed> $block The declared block, of one of those types.
 	 *
 	 * @return array<string, mixed>|null
 	 *
 	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 	 */
-	private function ownRulesBlock(string $type, array $block, array $collectionIds, array $collections): ?array {
+	private function ownRulesBlock(BlockResolveRun $run, array $block): ?array {
+		$type = $block['type'];
+		$collections = $run->collections;
 		$lists = new ListBlockNormaliser();
 		$builders = [
 			'tasks' => static fn (): ?array => $lists->tasksBlock(block: $block, collections: $collections),
@@ -261,28 +303,28 @@ class PortalBlockResolver {
 			$entry = $lists->recordBlock(type: $type, block: $block, collections: $collections);
 			// The step that matters now as a highlight (steps-highlight).
 			if ($entry !== null && $type === 'steps') {
-				$entry = (new StepsHighlightKeys())->keys(block: $block, pageIds: $this->pageIds) + $entry;
+				$entry = (new StepsHighlightKeys())->keys(block: $block, pageIds: $run->pageIds) + $entry;
 			}
 
 			return $entry;
 		}
 
-		return $this->recordPageBlock(type: $type, block: $block, collectionIds: $collectionIds);
+		return $this->recordPageBlock(block: $block, collectionIds: $run->collectionIds);
 	}//end ownRulesBlock()
 
 	/**
 	 * A `kpi`, `calendar` or `news` block (contribution-record-page), or null
 	 * when its collections do not resolve.
 	 *
-	 * @param string $type The block type.
-	 * @param array<string, mixed> $block The declared block.
-	 * @param array<int, string> $collectionIds The valid collection ids.
+	 * @param array<string, mixed> $block         The declared block, of one of those types.
+	 * @param array<int, string>   $collectionIds The valid collection ids.
 	 *
 	 * @return array<string, mixed>|null
 	 *
 	 * @spec openspec/changes/contribution-record-page/tasks.md#T1
 	 */
-	private function recordPageBlock(string $type, array $block, array $collectionIds): ?array {
+	private function recordPageBlock(array $block, array $collectionIds): ?array {
+		$type = $block['type'];
 		$blocks = new RecordBlockNormaliser();
 		if ($type === 'kpi') {
 			return $blocks->kpiBlock(block: $block, collectionIds: $collectionIds);

@@ -471,19 +471,6 @@ class LandingPageProvisioningService {
 			return '';
 		}
 
-		$self = ($row['@self'] ?? null);
-		$candidates = [($row['id'] ?? null), ($row['uuid'] ?? null)];
-		if (is_array($self) === true) {
-			$candidates[] = ($self['id'] ?? null);
-			$candidates[] = ($self['uuid'] ?? null);
-		}
-
-		foreach ($candidates as $candidate) {
-			if ((is_string($candidate) === true || is_int($candidate) === true) && (string)$candidate !== '') {
-				return (string)$candidate;
-			}
-		}
-
-		return '';
+		return ((new RowIdLookup())->firstIdOrUuid(row: $row) ?? '');
 	}//end rowId()
 }//end class

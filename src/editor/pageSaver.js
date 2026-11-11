@@ -48,6 +48,36 @@ export function isConflict(error) {
 }
 
 /**
+ * The headers of a checked write: refuses when the stored page moved on.
+ *
+ * @param {() => Promise<{data: object}>} read Reads the stored page.
+ * @param {string} version The marker read at load.
+ * @return {Promise<object>} `If-Match` on the version.
+ * @throws {PageConflictError} When someone else saved in between.
+ */
+async function checkedHeaders(read, version) {
+	const { data } = await read()
+	const current = versionOf(data)
+	if (current && current !== version) {
+		throw new PageConflictError(current)
+	}
+	return { 'If-Match': version }
+}
+
+/**
+ * A failed write as the designer reads it: a 409 is a version conflict.
+ *
+ * @param {object} error The write's failure.
+ * @return {Error|object} A `PageConflictError` for a 409, else the failure itself.
+ */
+function asConflict(error) {
+	if (error?.response?.status === 409) {
+		return new PageConflictError(String(error.response.data?.currentUpdated || ''))
+	}
+	return error
+}
+
+/**
  * A page loader and saver over injected HTTP calls.
  *
  * @param {object} deps The collaborators.
@@ -80,25 +110,13 @@ export function createPageSaver({ get, put, url }) {
 		 * @throws {PageConflictError} When someone else saved in between.
 		 */
 		async save(pageId, payload, version) {
-			const headers = {}
-			if (version) {
-				const { data } = await get(url(pageId))
-				const current = versionOf(data)
-				if (current && current !== version) {
-					throw new PageConflictError(current)
-				}
-				headers['If-Match'] = version
-			}
-
+			const headers = version
+				? await checkedHeaders(() => get(url(pageId)), version)
+				: {}
 			try {
 				await put(url(pageId), payload, { headers })
 			} catch (error) {
-				if (error?.response?.status === 409) {
-					throw new PageConflictError(
-						String(error.response.data?.currentUpdated || ''),
-					)
-				}
-				throw error
+				throw asConflict(error)
 			}
 		},
 	}

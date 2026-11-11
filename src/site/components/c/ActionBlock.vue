@@ -8,73 +8,29 @@
 		v-if="resolved"
 		class="pq-action-block"
 		:data-testid="`action-block-${resolved.id}`">
-		<template v-if="isForm">
-			<h2 v-if="headed" class="utrecht-heading-2">
-				{{ resolved.label || resolved.id }}
-			</h2>
-			<SchemaForm
-				:action="resolved"
-				:api="api"
-				:t="t"
-				cancellable
-				:portalHelp="portalHelp"
-				@cancel="leave"
-				@submitted="(object) => $emit('created', object, resolved)" />
-		</template>
-		<!-- A call to action that creates something about the open record
-		     (a bezwaar, a klacht on a case page): a button that opens the
-		     action's form, with the record already in its `recordField`
-		     (case-actions-on-the-case-page). -->
-		<template v-else-if="isRecordForm">
-			<div class="pq-action-button">
-				<button
-					ref="opener"
-					type="button"
-					class="utrecht-button utrecht-button--primary-action"
-					:aria-expanded="String(open)"
-					:aria-controls="`pq-action-form-${resolved.id}`"
-					:data-testid="`action-open-${resolved.id}`"
-					@click="open = !open">
-					{{ block.label || resolved.label || resolved.id }}
-				</button>
-			</div>
-			<div
-				v-if="open"
-				:id="`pq-action-form-${resolved.id}`"
-				class="pq-action-block__form">
-				<h2 class="utrecht-heading-3">
-					{{ block.label || resolved.label || resolved.id }}
-				</h2>
-				<SchemaForm
-					:action="resolved"
-					:api="api"
-					:t="t"
-					:preset="{ [resolved.recordField]: block.record }"
-					cancellable
-					@cancel="close"
-					@submitted="(object) => $emit('created', object, resolved)" />
-			</div>
-		</template>
-		<!-- An endpoint action that needs input, on an `action` block: its
-		     form, sent to the app's endpoint (site-action-forms). -->
-		<template v-else-if="isEndpointForm">
-			<h2 v-if="headed" class="utrecht-heading-2">
-				{{ resolved.label || resolved.id }}
-			</h2>
-			<SchemaForm
-				:action="resolved"
-				:api="api"
-				:t="t"
-				:send="sendForward"
-				cancellable
-				:portalHelp="portalHelp"
-				@cancel="leave"
-				@submitted="(object) => $emit('created', object, resolved)" />
-		</template>
-		<!-- A call to action (a cta, a greeting's button) whose action needs
-		     input: the button opens the form instead of sending nothing
+		<!-- An action block's form: a create or update action, or an endpoint
+		     action that needs input, sent to the app's endpoint
 		     (site-action-forms). -->
-		<template v-else-if="opensForm">
+		<template v-if="isForm || isEndpointForm">
+			<h2 v-if="headed" class="utrecht-heading-2">
+				{{ resolved.label || resolved.id }}
+			</h2>
+			<SchemaForm
+				:action="resolved"
+				:api="api"
+				:t="t"
+				:send="isForm ? null : sendForward"
+				cancellable
+				:portalHelp="portalHelp"
+				@cancel="leave"
+				@submitted="(object) => $emit('created', object, resolved)" />
+		</template>
+		<!-- A call to action whose action needs input: a button that opens the
+		     form instead of sending nothing (site-action-forms). One that
+		     creates something about the open record (a bezwaar, a klacht on a
+		     case page) carries the record in its `recordField`
+		     (case-actions-on-the-case-page). -->
+		<template v-else-if="isRecordForm || opensForm">
 			<div class="pq-action-button">
 				<button
 					ref="opener"
@@ -92,13 +48,14 @@
 				:id="`pq-action-form-${resolved.id}`"
 				class="pq-action-block__form">
 				<h2 class="utrecht-heading-3">
-					{{ resolved.label || block.label || resolved.id }}
+					{{ formHeading }}
 				</h2>
 				<SchemaForm
 					:action="resolved"
 					:api="api"
 					:t="t"
-					:send="endpoint ? sendForward : null"
+					:preset="recordPreset"
+					:send="!isRecordForm && endpoint ? sendForward : null"
 					cancellable
 					@cancel="close"
 					@submitted="(object) => $emit('created', object, resolved)" />
@@ -251,6 +208,32 @@ export default {
 				&& (this.resolved.type === 'create'
 					|| this.resolved.type === 'update')
 			)
+		},
+
+		/**
+		 * The heading over a call to action's open form: the block's label
+		 * first on the open record's form, the action's label first otherwise.
+		 *
+		 * @return {string} The heading.
+		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
+		 */
+		formHeading() {
+			const labels = this.isRecordForm
+				? [this.block.label, this.resolved.label]
+				: [this.resolved.label, this.block.label]
+			return labels.find(Boolean) || this.resolved.id
+		},
+
+		/**
+		 * The open record in its field, for the form on the open record; none otherwise.
+		 *
+		 * @return {object|undefined} The preset, or undefined for the form's own default.
+		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
+		 */
+		recordPreset() {
+			return this.isRecordForm
+				? Object.fromEntries([[this.resolved.recordField, this.block.record]])
+				: undefined
 		},
 
 		/**

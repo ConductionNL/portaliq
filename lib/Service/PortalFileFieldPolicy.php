@@ -338,23 +338,7 @@ class PortalFileFieldPolicy {
 	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
 	 */
 	public function readUpload(IRequest $request): ?array {
-		$uploaded = $request->getUploadedFile('file');
-		$tmpName = (string)($uploaded['tmp_name'] ?? '');
-		if ((int)($uploaded['error'] ?? 1) !== 0 || $tmpName === '' || is_readable($tmpName) === false) {
-			return null;
-		}
-
-		$content = file_get_contents($tmpName);
-		if ($content === false) {
-			return null;
-		}
-
-		$fileName = basename((string)($uploaded['name'] ?? 'upload'));
-		if ($fileName === '' || $fileName === '.' || $fileName === '..') {
-			$fileName = 'upload';
-		}
-
-		return ['name' => $fileName, 'content' => $content];
+		return (new UploadedFile())->read(uploaded: $request->getUploadedFile('file'));
 	}//end readUpload()
 
 	/**

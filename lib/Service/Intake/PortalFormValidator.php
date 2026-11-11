@@ -80,54 +80,100 @@ class PortalFormValidator {
 	 * @spec openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md#requirement-the-server-skips-a-hidden-field-req-icq-002
 	 */
 	public function validate(array $fields, array $answers): array {
-		$errors = [];
-		$accepted = [];
 		// What a condition reads: every answer, less each field found hidden.
 		// Taken in declared order, so a question that hangs on a hidden one
 		// hides too, while a condition on a later field reads its answer, as
 		// the screen's form data holds every answer at once.
-		$shown = $answers;
+		$run = new FormValidationRun(answers: $answers);
 		foreach ($fields as $field) {
-			$name = '';
-			if (is_array($field) === true) {
-				$name = (string)($field['name'] ?? '');
-			}
+			$this->check(field: $field, run: $run);
+		}
 
-			if ($name === '') {
-				continue;
-			}
-
-			if ($this->isHiddenOrComputed(field: $field, shown: $shown) === true) {
-				// Not shown, so neither required nor accepted (REQ-ICQ-002); a
-				// calculated or decided field is the server's to fill, never
-				// the browser's (REQ-FFL-002).
-				unset($shown[$name]);
-				continue;
-			}
-
-			if ((string)($field['type'] ?? '') === 'group') {
-				$group = $this->group(field: $field, name: $name, value: ($answers[$name] ?? null));
-				$errors = array_merge($errors, $group['errors']);
-				if ($group['items'] !== null) {
-					$accepted[$name] = $group['items'];
-				}
-
-				continue;
-			}
-
-			$single = $this->single(field: $field, value: ($answers[$name] ?? null));
-			if ($single['error'] !== null) {
-				$errors[$name] = $single['error'];
-				continue;
-			}
-
-			if ($single['kept'] === true) {
-				$accepted[$name] = $single['value'];
-			}
-		}//end foreach
-
-		return ['valid' => ($errors === []), 'errors' => $errors, 'answers' => $accepted];
+		return ['valid' => ($run->errors === []), 'errors' => $run->errors, 'answers' => $run->accepted];
 	}//end validate()
+
+	/**
+	 * Check one declared field: skip it when hidden or computed, else check it as a group or a single answer.
+	 *
+	 * @param mixed             $field The declared field.
+	 * @param FormValidationRun $run   The pass so far.
+	 *
+	 * @return void
+	 */
+	private function check(mixed $field, FormValidationRun $run): void {
+		$name = $this->nameOf(field: $field);
+		if ($name === '') {
+			return;
+		}
+
+		if ($this->isHiddenOrComputed(field: $field, shown: $run->shown) === true) {
+			// Not shown, so neither required nor accepted (REQ-ICQ-002); a
+			// calculated or decided field is the server's to fill, never
+			// the browser's (REQ-FFL-002).
+			unset($run->shown[$name]);
+			return;
+		}
+
+		if ((string)($field['type'] ?? '') === 'group') {
+			$this->checkGroup(field: $field, run: $run);
+			return;
+		}
+
+		$this->checkSingle(field: $field, run: $run);
+	}//end check()
+
+	/**
+	 * A declared field's name, or '' when it is no field.
+	 *
+	 * @param mixed $field The declared field.
+	 *
+	 * @return string
+	 */
+	private function nameOf(mixed $field): string {
+		if (is_array($field) === false) {
+			return '';
+		}
+
+		return (string)($field['name'] ?? '');
+	}//end nameOf()
+
+	/**
+	 * Check a repeating group: its errors, and its items when it has any.
+	 *
+	 * @param array<string, mixed> $field The declared group.
+	 * @param FormValidationRun    $run   The pass so far.
+	 *
+	 * @return void
+	 */
+	private function checkGroup(array $field, FormValidationRun $run): void {
+		$name        = $this->nameOf(field: $field);
+		$group       = $this->group(field: $field, name: $name, value: ($run->answers[$name] ?? null));
+		$run->errors = array_merge($run->errors, $group['errors']);
+		if ($group['items'] !== null) {
+			$run->accepted[$name] = $group['items'];
+		}
+	}//end checkGroup()
+
+	/**
+	 * Check a single answer: its error, or its value when it is kept.
+	 *
+	 * @param array<string, mixed> $field The declared field.
+	 * @param FormValidationRun    $run   The pass so far.
+	 *
+	 * @return void
+	 */
+	private function checkSingle(array $field, FormValidationRun $run): void {
+		$name   = $this->nameOf(field: $field);
+		$single = $this->single(field: $field, value: ($run->answers[$name] ?? null));
+		if ($single['error'] !== null) {
+			$run->errors[$name] = $single['error'];
+			return;
+		}
+
+		if ($single['kept'] === true) {
+			$run->accepted[$name] = $single['value'];
+		}
+	}//end checkSingle()
 
 	/**
 	 * Whether a field is not shown by its condition, or is one the server fills.

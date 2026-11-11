@@ -181,40 +181,65 @@ class PortalResolver {
 			return null;
 		}
 
-		$matches = [];
-		foreach ($this->allPublishedPortals() as $site) {
-			$value = ($site['organisation'] ?? null);
-			if (is_string($value) === false || trim($value) !== $organisation) {
-				continue;
-			}
-
-			$matches[] = $site;
-		}
-
+		$matches = $this->portalsOf(organisation: $organisation);
 		if (count($matches) === 1) {
 			return $matches[0];
 		}
 
 		if ($matches !== []) {
-			// Worth a log line rather than silence: an ambiguous `?org=` is a
-			// deployment that has outgrown the alias, and the neutral default
-			// the visitor gets looks like a bug from the outside.
-			$this->logger->info(
-				'Portaliq: ?org= matched several published portals; refusing to guess a brand',
-				[
-					'organisation' => $organisation,
-					'portals' => array_map(
-						static function (array $site): string {
-							return (string)($site['slug'] ?? '');
-						},
-						$matches
-					),
-				]
-			);
+			$this->logAmbiguous(organisation: $organisation, matches: $matches);
 		}
 
 		return null;
 	}//end resolveByOrganisation()
+
+
+	/**
+	 * The published portals whose organisation is this one, trimmed.
+	 *
+	 * @param string $organisation The trimmed `?org=` value.
+	 *
+	 * @return array<int, array> The matching portals.
+	 */
+	private function portalsOf(string $organisation): array {
+		$matches = [];
+		foreach ($this->allPublishedPortals() as $site) {
+			$value = ($site['organisation'] ?? null);
+			if (is_string($value) === true && trim($value) === $organisation) {
+				$matches[] = $site;
+			}
+		}
+
+		return $matches;
+	}//end portalsOf()
+
+
+	/**
+	 * Log an organisation that matched several portals.
+	 *
+	 * Worth a log line rather than silence: an ambiguous `?org=` is a
+	 * deployment that has outgrown the alias, and the neutral default the
+	 * visitor gets looks like a bug from the outside.
+	 *
+	 * @param string            $organisation The trimmed `?org=` value.
+	 * @param array<int, array> $matches      The matching portals.
+	 *
+	 * @return void
+	 */
+	private function logAmbiguous(string $organisation, array $matches): void {
+		$this->logger->info(
+			'Portaliq: ?org= matched several published portals; refusing to guess a brand',
+			[
+				'organisation' => $organisation,
+				'portals' => array_map(
+					static function (array $site): string {
+						return (string)($site['slug'] ?? '');
+					},
+					$matches
+				),
+			]
+		);
+	}//end logAmbiguous()
 
 
 	/**

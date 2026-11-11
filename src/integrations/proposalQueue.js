@@ -55,6 +55,24 @@ export function formatValue(value) {
 }
 
 /**
+ * A refused decision: drifted (409), with what drifted, or refused with the
+ * server's error.
+ *
+ * @param {object} error The rejected request.
+ * @return {object} `{outcome: 'drifted', drift}` or `{outcome: 'refused', error}`.
+ */
+function refusedDecision(error) {
+	const data = error?.response?.data || {}
+	if (statusOf(error) === 409 && data.error === 'drifted') {
+		return {
+			outcome: 'drifted',
+			drift: Array.isArray(data.drift) ? data.drift : [],
+		}
+	}
+	return { outcome: 'refused', error: String(data.error || '') }
+}
+
+/**
  * The review surface's actions over an injected transport.
  *
  * @param {object} deps The collaborators.
@@ -65,27 +83,18 @@ export function formatValue(value) {
  */
 export function createProposalQueue({ get, post, url }) {
 	/**
-	 * Post one decision and say how it went.
+	 * Send a decision on one proposal and say how it went.
 	 *
-	 * @param {string} path The route, relative to the app.
 	 * @param {object} proposal The proposal.
-	 * @param {object} body The request body.
-	 * @param {string} done The outcome on success.
-	 * @return {Promise<object>}
+	 * @param {{path: string, body: object, done: string}} decision The route, the body and the outcome on success.
+	 * @return {Promise<object>} `{outcome}`, with `drift` or `error` when refused.
 	 */
-	async function decide(path, proposal, body, done) {
+	async function decide(proposal, decision) {
 		try {
-			await post(url(path, { id: idOf(proposal) }), body)
-			return { outcome: done }
+			await post(url(decision.path, { id: idOf(proposal) }), decision.body)
+			return { outcome: decision.done }
 		} catch (error) {
-			const data = error?.response?.data || {}
-			if (statusOf(error) === 409 && data.error === 'drifted') {
-				return {
-					outcome: 'drifted',
-					drift: Array.isArray(data.drift) ? data.drift : [],
-				}
-			}
-			return { outcome: 'refused', error: String(data.error || '') }
+			return refusedDecision(error)
 		}
 	}
 
@@ -112,10 +121,10 @@ export function createProposalQueue({ get, post, url }) {
 					: []
 				return { state: proposals.length > 0 ? 'ready' : 'empty', proposals }
 			} catch (error) {
-				if (statusOf(error) === 403) {
-					return { state: 'forbidden', proposals: [] }
+				return {
+					state: statusOf(error) === 403 ? 'forbidden' : 'error',
+					proposals: [],
 				}
-				return { state: 'error', proposals: [] }
 			}
 		},
 
@@ -127,7 +136,11 @@ export function createProposalQueue({ get, post, url }) {
 		 * @return {Promise<object>}
 		 */
 		accept(proposal) {
-			return decide('/api/proposals/{id}/accept', proposal, {}, 'accepted')
+			return decide(proposal, {
+				path: '/api/proposals/{id}/accept',
+				body: {},
+				done: 'accepted',
+			})
 		},
 
 		/**
@@ -137,12 +150,11 @@ export function createProposalQueue({ get, post, url }) {
 		 * @return {Promise<object>}
 		 */
 		acceptAnyway(proposal) {
-			return decide(
-				'/api/proposals/{id}/accept-confirming-drift',
-				proposal,
-				{},
-				'accepted',
-			)
+			return decide(proposal, {
+				path: '/api/proposals/{id}/accept-confirming-drift',
+				body: {},
+				done: 'accepted',
+			})
 		},
 
 		/**
@@ -157,12 +169,11 @@ export function createProposalQueue({ get, post, url }) {
 			if (why === '') {
 				return { outcome: 'reasonRequired' }
 			}
-			return decide(
-				'/api/proposals/{id}/reject',
-				proposal,
-				{ reason: why },
-				'rejected',
-			)
+			return decide(proposal, {
+				path: '/api/proposals/{id}/reject',
+				body: { reason: why },
+				done: 'rejected',
+			})
 		},
 	}
 }

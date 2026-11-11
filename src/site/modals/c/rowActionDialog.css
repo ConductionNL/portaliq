@@ -1,0 +1,21 @@
+/* SPDX-License-Identifier: EUPL-1.2 */
+/* SPDX-FileCopyrightText: 2026 Conduction B.V. */
+
+/*
+ * The frame and the button row every row action dialog draws (the confirm,
+ * the form, the signing and the decline dialog). Each dialog includes it with
+ * `<style scoped src>`, so the rules stay scoped to that dialog as before.
+ */
+
+.pq-rowaction {
+	margin-block: var(--utrecht-space-block-md, 1rem);
+	padding: var(--utrecht-space-block-md, 1rem);
+	border: var(--utrecht-border-width-sm, 1px) solid
+		var(--utrecht-color-grey-60, currentcolor);
+}
+
+.pq-rowaction__buttons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--utrecht-space-inline-sm, 0.5rem);
+}

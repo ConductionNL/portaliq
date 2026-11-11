@@ -159,25 +159,62 @@ export function countText(lang, total, q, countLabel = '') {
  * @spec openspec/changes/portal-public-catalogue/specs/portaliq-cms/spec.md#requirement-a-catalogue-block-searches-and-filters-the-portals-public-catalogue
  */
 export function resultCard(item, { lang, newsRoute }) {
-	const isNews = item?.type === 'news'
-	let href = String(item?.href || '')
-	if (isNews && item?.newsId) {
-		href = `${String(newsRoute || '/nieuws').replace(/\/$/, '')}/${encodeURIComponent(item.newsId)}`
-	}
+	const href = cardHref(item, newsRoute)
 	return {
-		key: String(item?.id || ''),
-		kind: isNews ? word(lang, 'news') : String(item?.kind || ''),
-		title: String(item?.title || ''),
-		summary: String(item?.summary || ''),
-		date: String(item?.date || ''),
+		key: textOf(item?.id),
+		kind: cardKind(item, lang),
+		title: textOf(item?.title),
+		summary: textOf(item?.summary),
+		date: textOf(item?.date),
 		meta: Array.isArray(item?.meta) ? item.meta : [],
-		note: String(item?.note || ''),
-		tone: ['positive', 'warning'].includes(item?.noteTone)
-			? item.noteTone
-			: 'neutral',
-		badge: String(item?.badge || ''),
+		note: textOf(item?.note),
+		tone: noteToneOf(item),
+		badge: textOf(item?.badge),
 		link: href ? authoredLink(href) : null,
 	}
+}
+
+/**
+ * @param {unknown} value A field of an item.
+ * @return {string} The value as text, or '' for none.
+ */
+function textOf(value) {
+	return String(value || '')
+}
+
+/**
+ * @param {object|null} item The item.
+ * @param {string} lang The page language.
+ * @return {string} "News" for a news item, else the item's own kind.
+ */
+function cardKind(item, lang) {
+	return item?.type === 'news' ? word(lang, 'news') : textOf(item?.kind)
+}
+
+/**
+ * Where a card links: the article route with its id for a news item, else
+ * the app's own address.
+ *
+ * @param {object|null} item The item.
+ * @param {string} newsRoute The route of the news article page.
+ * @return {string} The address, or ''.
+ */
+function cardHref(item, newsRoute) {
+	if (item?.type === 'news' && item?.newsId) {
+		return `${String(newsRoute || '/nieuws').replace(/\/$/, '')}/${encodeURIComponent(item.newsId)}`
+	}
+	return textOf(item?.href)
+}
+
+/** The note tones a card draws; any other is neutral. */
+const NOTE_TONES = ['positive', 'warning']
+
+/**
+ * @param {object|null} item The item.
+ * @return {string} The tone of its note.
+ */
+function noteToneOf(item) {
+	return NOTE_TONES.includes(item?.noteTone) ? item.noteTone : 'neutral'
 }
 
 /**
@@ -192,16 +229,42 @@ export function resultCard(item, { lang, newsRoute }) {
 export function eventItemsOf(items) {
 	return (Array.isArray(items) ? items : [])
 		.filter((item) => item?.date && item?.title)
-		.map((item) => ({
-			date: String(item.date).slice(0, 10),
-			endDate: item.endDate ? String(item.endDate).slice(0, 10) : '',
-			dateLabel: item.dateLabel || '',
-			title: item.title,
-			href: item.href || '',
-			meta: Array.isArray(item.meta) ? item.meta.join(' · ') : '',
-			note: item.note || '',
-			noteTone: item.noteTone || 'neutral',
-		}))
+		.map(eventRowOf)
+}
+
+/**
+ * @param {unknown} value A date or a moment.
+ * @return {string} Its day (`YYYY-MM-DD`), or '' for none.
+ */
+function dayOf(value) {
+	return value ? String(value).slice(0, 10) : ''
+}
+
+/**
+ * @param {unknown} meta An item's meta lines.
+ * @return {string} The lines on one line, or ''.
+ */
+function joinedMeta(meta) {
+	return Array.isArray(meta) ? meta.join(' · ') : ''
+}
+
+/**
+ * One dated catalogue item as a row of a dated list.
+ *
+ * @param {object} item The item, with a date and a title.
+ * @return {object} The row.
+ */
+function eventRowOf(item) {
+	return {
+		date: dayOf(item.date),
+		endDate: dayOf(item.endDate),
+		dateLabel: item.dateLabel || '',
+		title: item.title,
+		href: item.href || '',
+		meta: joinedMeta(item.meta),
+		note: item.note || '',
+		noteTone: item.noteTone || 'neutral',
+	}
 }
 
 /**
@@ -214,36 +277,82 @@ export function eventItemsOf(items) {
  * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-2
  */
 export function sourceQuery(source) {
-	const app = typeof source?.app === 'string' ? source.app.trim() : ''
-	const kind = typeof source?.kind === 'string' ? source.kind.trim() : ''
+	const app = trimmedText(source?.app)
+	const kind = trimmedText(source?.kind)
 	if (app === '' || kind === '') {
 		return null
 	}
-	const query = { app, types: [kind], sort: 'date' }
-	const categories = Array.isArray(source.categories)
-		? source.categories.filter((c) => typeof c === 'string' && c !== '')
+	return { app, types: [kind], sort: 'date', ...sourceScope(source) }
+}
+
+/**
+ * The part of a source's query that narrows it: its categories, the school
+ * year, the number of rows and its filters, each only when declared.
+ *
+ * @param {object} source The block's declared source.
+ * @return {object} The query fields.
+ */
+function sourceScope(source) {
+	return {
+		...whenFilled('categories', filledTexts(source.categories)),
+		...(source.range === 'schoolYear' ? { range: 'schoolYear' } : {}),
+		limit: sourceLimit(source.limit),
+		...whenFilled('filters', sourceFilters(source.filters)),
+	}
+}
+
+/**
+ * @param {string} name A query field.
+ * @param {Array|object} value Its list or map.
+ * @return {object} The field with its value, or nothing when the value is empty.
+ */
+function whenFilled(name, value) {
+	return Object.keys(value).length > 0 ? { [name]: value } : {}
+}
+
+/**
+ * @param {unknown} value A declared value.
+ * @return {string} The value trimmed when it is text, else ''.
+ */
+function trimmedText(value) {
+	return typeof value === 'string' ? value.trim() : ''
+}
+
+/**
+ * @param {unknown} values A declared list.
+ * @return {Array<string>} Its non-empty texts, or none when it is no list.
+ */
+function filledTexts(values) {
+	return Array.isArray(values)
+		? values.filter((value) => typeof value === 'string' && value !== '')
 		: []
-	if (categories.length > 0) {
-		query.categories = categories
-	}
-	if (source.range === 'schoolYear') {
-		query.range = 'schoolYear'
-	}
-	const limit = Math.trunc(Number(source.limit))
-	query.limit = limit >= 1 ? Math.min(limit, 50) : 20
+}
+
+/**
+ * @param {unknown} limit The declared number of rows.
+ * @return {number} The number, at most 50, or 20 when none is declared.
+ */
+function sourceLimit(limit) {
+	const rows = Math.trunc(Number(limit))
+	return rows >= 1 ? Math.min(rows, 50) : 20
+}
+
+/**
+ * The declared filters as lists of their non-empty texts, without the empty
+ * ones.
+ *
+ * @param {object|undefined} declared The filters by label: a value or a list.
+ * @return {Record<string, Array<string>>} The filters.
+ */
+function sourceFilters(declared) {
 	const filters = {}
-	for (const [label, values] of Object.entries(source.filters || {})) {
-		const list = (Array.isArray(values) ? values : [values]).filter(
-			(value) => typeof value === 'string' && value !== '',
-		)
+	for (const [label, values] of Object.entries(declared || {})) {
+		const list = filledTexts(Array.isArray(values) ? values : [values])
 		if (list.length > 0) {
 			filters[label] = list
 		}
 	}
-	if (Object.keys(filters).length > 0) {
-		query.filters = filters
-	}
-	return query
+	return filters
 }
 
 /**
@@ -257,14 +366,7 @@ export function sourceQuery(source) {
  */
 export function tableOf(items, columns) {
 	const chosen = (Array.isArray(columns) ? columns : [])
-		.map((column) =>
-			typeof column === 'string'
-				? { key: column, label: column }
-				: {
-						key: String(column?.key ?? ''),
-						label: String(column?.label ?? column?.key ?? ''),
-					},
-		)
+		.map(tableColumnOf)
 		.filter((column) => column.key !== '')
 	return {
 		columns: chosen.map((column) => column.label),
@@ -272,6 +374,19 @@ export function tableOf(items, columns) {
 			chosen.map((column) => String(item?.cells?.[column.key] ?? '')),
 		),
 	}
+}
+
+/**
+ * @param {string|{key: string, label: string}|null} column A declared column.
+ * @return {{key: string, label: string}} The column, its key as its label for a bare key.
+ */
+function tableColumnOf(column) {
+	return typeof column === 'string'
+		? { key: column, label: column }
+		: {
+				key: String(column?.key ?? ''),
+				label: String(column?.label ?? column?.key ?? ''),
+			}
 }
 
 /** How a facet may be chosen from: several values, one value, or a menu. */

@@ -92,119 +92,188 @@ class PortalSessionRevoker {
 			return ['revoked' => 0, 'failed' => 0, 'complete' => true];
 		}
 
-		$rows = $this->liveSessionsOf(organisation: $organisation, subjectRef: $subjectRef);
+		$run = new SessionRevokeRun(organisation: $organisation, admin: $admin);
+		$run->subjectRef = $subjectRef;
+		$rows = $this->liveSessionsOf(run: $run);
 		if ($rows === null) {
-			$this->recordAdminRevoke(admin: $admin, organisation: $organisation, revoked: 0, complete: false, subjectRef: $subjectRef);
+			$this->recordAdminRevoke(run: $run, complete: false);
 			return ['revoked' => 0, 'failed' => 0, 'complete' => false];
 		}
 
-		$revoked = 0;
-		$failed  = 0;
 		foreach ($rows as $row) {
-			$uuid = $this->rowId(row: $row);
-			$updated = null;
-			if ($uuid !== null) {
-				$updated = $this->writer->updateObject(
-					register: PortalSessionService::SESSION_REGISTER,
-					schema: PortalSessionService::SESSION_SCHEMA,
-					scopeField: '',
-					subjectRef: '',
-					organisation: '',
-					id: $uuid,
-					data: ['revoked' => true]
-				);
-			}
+			$this->revokeRow(run: $run, row: $row);
+		}
 
-			if ($updated === null) {
-				$failed++;
-				continue;
-			}
+		$this->recordAdminRevoke(run: $run, complete: $run->failed === 0);
 
-			$revoked++;
-			$this->auditor->record(
-				verb: 'admin-revoke',
-				subjectRef: (string)($row['subjectRef'] ?? ''),
-				organisation: $organisation,
-				register: PortalSessionService::SESSION_REGISTER,
-				schema: PortalSessionService::SESSION_SCHEMA,
-				id: (string)($row['jti'] ?? ''),
-				jti: (string)($row['jti'] ?? ''),
-				detail: ['admin' => $admin]
-			);
-		}//end foreach
-
-		$this->recordAdminRevoke(admin: $admin, organisation: $organisation, revoked: $revoked, complete: $failed === 0, subjectRef: $subjectRef);
-
-		return ['revoked' => $revoked, 'failed' => $failed, 'complete' => $failed === 0];
+		return ['revoked' => $run->revoked, 'failed' => $run->failed, 'complete' => $run->failed === 0];
 	}//end revokeAll()
+
+	/**
+	 * Revoke one live session and audit it as `admin-revoke` naming the
+	 * admin; count it as failed when it cannot be written.
+	 *
+	 * @param SessionRevokeRun     $run The revoke-all.
+	 * @param array<string, mixed> $row The live session row.
+	 *
+	 * @return void
+	 */
+	private function revokeRow(SessionRevokeRun $run, array $row): void {
+		if ($this->revokedRow(row: $row) === null) {
+			$run->failed++;
+			return;
+		}
+
+		$run->revoked++;
+		$this->recordSessionRevoke(run: $run, row: $row);
+	}//end revokeRow()
+
+	/**
+	 * Audit one revoked session as `admin-revoke` naming the admin.
+	 *
+	 * @param SessionRevokeRun     $run The revoke-all.
+	 * @param array<string, mixed> $row The revoked session row.
+	 *
+	 * @return void
+	 */
+	private function recordSessionRevoke(SessionRevokeRun $run, array $row): void {
+		$this->auditor->record(
+			verb: 'admin-revoke',
+			subjectRef: (string)($row['subjectRef'] ?? ''),
+			organisation: $run->organisation,
+			register: PortalSessionService::SESSION_REGISTER,
+			schema: PortalSessionService::SESSION_SCHEMA,
+			id: (string)($row['jti'] ?? ''),
+			jti: (string)($row['jti'] ?? ''),
+			detail: ['admin' => $run->admin]
+		);
+	}//end recordSessionRevoke()
+
+	/**
+	 * Write the revoked flag on a session row; null when the row names no id
+	 * or the write fails.
+	 *
+	 * @param array<string, mixed> $row The live session row.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function revokedRow(array $row): ?array {
+		$uuid = $this->rowId(row: $row);
+		if ($uuid === null) {
+			return null;
+		}
+
+		return $this->writer->updateObject(
+			register: PortalSessionService::SESSION_REGISTER,
+			schema: PortalSessionService::SESSION_SCHEMA,
+			scopeField: '',
+			subjectRef: '',
+			organisation: '',
+			id: $uuid,
+			data: ['revoked' => true]
+		);
+	}//end revokedRow()
 
 	/**
 	 * Every not-yet-revoked session row of an organisation, read to the end,
 	 * or null when OpenRegister could not be read.
 	 *
-	 * @param string $organisation The tenant.
-	 * @param string $subjectRef   One account only, or ''.
+	 * @param SessionRevokeRun $run The revoke-all.
 	 *
 	 * @return array<int, array<string, mixed>>|null
 	 *
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.2
 	 */
-	private function liveSessionsOf(string $organisation, string $subjectRef = ''): ?array {
-		$scope  = ['organisation', $organisation];
-		if ($subjectRef !== '') {
-			$scope = ['subjectRef', $subjectRef];
-		}
-
-		$live   = [];
-		$offset = 0;
+	private function liveSessionsOf(SessionRevokeRun $run): ?array {
+		$live = [];
 		for ($pages = 0; $pages < self::REVOKE_MAX_PAGES; $pages++) {
-			$page = $this->reader->readScopedPage(
-				register: PortalSessionService::SESSION_REGISTER,
-				schema: PortalSessionService::SESSION_SCHEMA,
-				scopeField: $scope[0],
-				scopeValue: $scope[1],
-				organisation: $organisation,
-				filter: ['revoked' => false],
-				limit: self::REVOKE_PAGE,
-				offset: $offset
-			);
+			$page = $this->sessionPage(run: $run);
 			if ($page === null) {
 				return null;
 			}
 
-			foreach ($page['rows'] as $row) {
-				// The filter narrows; the row's own flag decides (fail closed),
-				// and a per-account run never reaches another account's row.
-				if ($this->isRevoked(row: $row) === false && ($subjectRef === '' || ($row['subjectRef'] ?? null) === $subjectRef)) {
-					$live[] = $row;
-				}
-			}
-
-			$offset += $page['read'];
+			$live = array_merge($live, $this->liveRowsOf(run: $run, rows: $page['rows']));
+			$run->offset += $page['read'];
 			if ($page['read'] < self::REVOKE_PAGE) {
 				return $live;
 			}
 		}
 
 		// More pages than the cap: report it as incomplete rather than done.
-		$this->logger->warning('Portaliq: revoke-all stopped at the page cap', ['organisation' => $organisation]);
+		$this->logger->warning('Portaliq: revoke-all stopped at the page cap', ['organisation' => $run->organisation]);
 		return null;
 	}//end liveSessionsOf()
 
 	/**
+	 * The next page of not-yet-revoked session rows in the run's scope: the
+	 * one account of a per-account run, else the organisation.
+	 *
+	 * @param SessionRevokeRun $run The revoke-all, at its read offset.
+	 *
+	 * @return array{rows: array<int, array<string, mixed>>, read: int}|null
+	 */
+	private function sessionPage(SessionRevokeRun $run): ?array {
+		$scope = $this->revokeScope(run: $run);
+		return $this->reader->readScopedPage(
+			register: PortalSessionService::SESSION_REGISTER,
+			schema: PortalSessionService::SESSION_SCHEMA,
+			scopeField: $scope[0],
+			scopeValue: $scope[1],
+			organisation: $run->organisation,
+			filter: ['revoked' => false],
+			limit: self::REVOKE_PAGE,
+			offset: $run->offset
+		);
+	}//end sessionPage()
+
+	/**
+	 * The scope field and value a run reads: the one account of a
+	 * per-account run, else the organisation.
+	 *
+	 * @param SessionRevokeRun $run The revoke-all.
+	 *
+	 * @return array{0: string, 1: string}
+	 */
+	private function revokeScope(SessionRevokeRun $run): array {
+		if ($run->subjectRef !== '') {
+			return ['subjectRef', $run->subjectRef];
+		}
+
+		return ['organisation', $run->organisation];
+	}//end revokeScope()
+
+	/**
+	 * The rows of a page that are live and in the run's scope. The filter
+	 * narrows; the row's own flag decides (fail closed), and a per-account
+	 * run never reaches another account's row.
+	 *
+	 * @param SessionRevokeRun                 $run  The revoke-all.
+	 * @param array<int, array<string, mixed>> $rows The page's rows.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function liveRowsOf(SessionRevokeRun $run, array $rows): array {
+		$live = [];
+		foreach ($rows as $row) {
+			if ($this->isRevoked(row: $row) === false && ($run->subjectRef === '' || ($row['subjectRef'] ?? null) === $run->subjectRef)) {
+				$live[] = $row;
+			}
+		}
+
+		return $live;
+	}//end liveRowsOf()
+
+	/**
 	 * Record one `admin-revoke` entry for a revoke-all call.
 	 *
-	 * @param string $admin The acting admin's user id.
-	 * @param string $organisation The tenant.
-	 * @param int $revoked How many sessions were revoked.
-	 * @param bool $complete Whether every live session was reached and revoked.
-	 * @param string $subjectRef The one account of a per-account run, or ''.
+	 * @param SessionRevokeRun $run      The revoke-all, with how many sessions it revoked.
+	 * @param bool             $complete Whether every live session was reached and revoked.
 	 *
 	 * @return void
 	 */
-	private function recordAdminRevoke(string $admin, string $organisation, int $revoked, bool $complete, string $subjectRef = ''): void {
+	private function recordAdminRevoke(SessionRevokeRun $run, bool $complete): void {
 		// A per-account revoke is audited per session only.
-		if ($subjectRef !== '') {
+		if ($run->subjectRef !== '') {
 			return;
 		}
 
@@ -215,12 +284,12 @@ class PortalSessionRevoker {
 
 		$this->auditor->record(
 			verb: 'admin-revoke',
-			subjectRef: $admin,
-			organisation: $organisation,
+			subjectRef: $run->admin,
+			organisation: $run->organisation,
 			register: PortalSessionService::SESSION_REGISTER,
 			schema: PortalSessionService::SESSION_SCHEMA,
 			id: '',
-			detail: ['admin' => $admin, 'revoked' => (string)$revoked, 'complete' => $state]
+			detail: ['admin' => $run->admin, 'revoked' => (string)$run->revoked, 'complete' => $state]
 		);
 	}//end recordAdminRevoke()
 
@@ -258,21 +327,6 @@ class PortalSessionRevoker {
 			return null;
 		}
 
-		$self = ($row['@self'] ?? null);
-		$selfUuid = null;
-		$selfId = null;
-		if (is_array($self) === true) {
-			$selfUuid = ($self['uuid'] ?? null);
-			$selfId = ($self['id'] ?? null);
-		}
-
-		$candidates = [($row['uuid'] ?? null), ($row['id'] ?? null), $selfUuid, $selfId];
-		foreach ($candidates as $candidate) {
-			if ((is_string($candidate) === true || is_int($candidate) === true) && (string)$candidate !== '') {
-				return (string)$candidate;
-			}
-		}
-
-		return null;
+		return (new RowIdLookup())->firstUuidOrId(row: $row);
 	}//end rowId()
 }//end class

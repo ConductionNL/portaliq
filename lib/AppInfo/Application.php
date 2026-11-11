@@ -42,6 +42,7 @@ use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
+use OCA\OpenRegister\Event\ObjectLeavingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCA\Portaliq\Event\LandingPageRequestedEvent;
@@ -273,7 +274,8 @@ class Application extends App implements IBootstrap {
 			$context->registerEventListener($event, CmsCacheInvalidationListener::class);
 		}
 
-		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class, ObjectDeletingEvent::class] as $event) {
+		// A move out of the register takes the row away like a delete.
+		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class, ObjectDeletingEvent::class, ObjectLeavingEvent::class] as $event) {
 			$context->registerEventListener($event, MediaWriteGuardListener::class);
 		}
 

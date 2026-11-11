@@ -153,6 +153,31 @@ class ExampleSiteCommandsTest extends TestCase {
 	}//end testRemoveReportsWhatWasDeleted()
 
 	/**
+	 * A deletion that failed is named and exits two, as does a portal that
+	 * could not be deleted.
+	 *
+	 * @return void
+	 */
+	public function testRemoveExitsTwoAndNamesWhatCouldNotBeDeleted(): void {
+		$counts  = ['menu' => 0, 'page' => 0, 'newsItem' => 0, 'glossaryTerm' => 0, 'form' => 0];
+		$remover = $this->createMock(ExampleSiteRemover::class);
+		$remover->method('remove')->willReturnOnConsecutiveCalls(
+			['recorded' => true, 'available' => true, 'deleted' => $counts, 'gone' => $counts, 'failed' => ['page /home', 'menu Hoofd'], 'portal' => 'deleted'],
+			['recorded' => true, 'available' => true, 'deleted' => $counts, 'gone' => $counts, 'failed' => [], 'portal' => 'failed'],
+		);
+		$command = new ExampleSiteRemove(new ExampleSiteCatalogue(), $remover);
+
+		$output = new BufferedOutput();
+		$this->assertSame(2, $command->run(new ArrayInput(['site' => 'zuiddrecht']), $output));
+		$text = $output->fetch();
+		$this->assertStringContainsString("Could not be deleted: page /home\nCould not be deleted: menu Hoofd", $text);
+		$this->assertStringStartsWith('Menus: 0 deleted, 0 already gone', $text);
+
+		$this->assertSame(2, $command->run(new ArrayInput(['site' => 'zuiddrecht']), $output));
+		$this->assertStringNotContainsString('Could not be deleted', $output->fetch());
+	}//end testRemoveExitsTwoAndNamesWhatCouldNotBeDeleted()
+
+	/**
 	 * A complete install report for the shipped site.
 	 *
 	 * @return array<string, mixed>

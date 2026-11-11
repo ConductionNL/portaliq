@@ -128,11 +128,29 @@ class PortalReferenceLinkService {
 		string $caseRegister = '',
 		string $caseSchema = '',
 	): ?array {
-		if ($this->admitsReference(caseType: $caseType) === false) {
-			return null;
-		}
+		$request = new ReferenceLinkRequest(
+			caseType: $caseType,
+			caseReference: $caseReference,
+			email: $email,
+			organisation: $organisation,
+			caseRegister: $caseRegister,
+			caseSchema: $caseSchema
+		);
+		return $this->issueLink(request: $request);
+	}//end issue()
 
-		if ($caseReference === '' || $email === '' || $organisation === '') {
+	/**
+	 * Issue a one-time link for a case, or refuse.
+	 *
+	 * @param ReferenceLinkRequest $request The case, the address and the tenant.
+	 *
+	 * @return array{token: string, expiresAt: string}|null Null when the case
+	 *         type does not admit the reference route, or the call is empty.
+	 *
+	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	public function issueLink(ReferenceLinkRequest $request): ?array {
+		if ($this->refuses(request: $request) === true) {
 			return null;
 		}
 
@@ -141,33 +159,60 @@ class PortalReferenceLinkService {
 			return null;
 		}
 
-		$now = new DateTimeImmutable();
+		$now    = new DateTimeImmutable();
 		$expiry = $now->add(new DateInterval(self::TTL));
+		$sent   = ['tokenHash' => hash('sha256', $token), 'issuedAt' => $now->format(DATE_ATOM), 'expiresAt' => $expiry->format(DATE_ATOM)];
+		if ($this->storeLink(request: $request, sent: $sent) === false) {
+			return null;
+		}
 
-		$created = $this->writer->createObject(
+		return ['token' => $token, 'expiresAt' => $sent['expiresAt']];
+	}//end issueLink()
+
+	/**
+	 * Whether a link request is refused: the case type does not admit the
+	 * reference route, or the case, the address or the tenant is missing.
+	 *
+	 * @param ReferenceLinkRequest $request The case, the address and the tenant.
+	 *
+	 * @return bool
+	 */
+	private function refuses(ReferenceLinkRequest $request): bool {
+		if ($this->admitsReference(caseType: $request->caseType) === false) {
+			return true;
+		}
+
+		return $request->caseReference === '' || $request->email === '' || $request->organisation === '';
+	}//end refuses()
+
+	/**
+	 * Write the link row.
+	 *
+	 * @param ReferenceLinkRequest $request The case, the address and the tenant.
+	 * @param array{tokenHash: string, issuedAt: string, expiresAt: string} $sent The secret's hash and the link's moments.
+	 *
+	 * @return bool Whether the row was written.
+	 */
+	private function storeLink(ReferenceLinkRequest $request, array $sent): bool {
+		return $this->writer->createObject(
 			register: self::REGISTER,
 			schema: self::SCHEMA,
 			scopeField: '',
 			subjectRef: '',
-			organisation: $organisation,
+			organisation: $request->organisation,
 			data: [
-				'caseReference' => $caseReference,
-				'caseRegister' => $caseRegister,
-				'caseSchema' => $caseSchema,
-				'email' => $email,
-				'organisation' => $organisation,
-				'tokenHash' => hash('sha256', $token),
+				'caseReference' => $request->caseReference,
+				'caseRegister' => $request->caseRegister,
+				'caseSchema' => $request->caseSchema,
+				'email' => $request->email,
+				'organisation' => $request->organisation,
+				'tokenHash' => $sent['tokenHash'],
 				'state' => 'sent',
-				'issuedAt' => $now->format(DATE_ATOM),
-				'expiresAt' => $expiry->format(DATE_ATOM),
+				'issuedAt' => $sent['issuedAt'],
+				'expiresAt' => $sent['expiresAt'],
 			]
-		);
-		if ($created === null) {
-			return null;
-		}
-
-		return ['token' => $token, 'expiresAt' => $expiry->format(DATE_ATOM)];
-	}//end issue()
+		) !== null;
+	}//end storeLink()
 
 	/**
 	 * Follow a link once.
@@ -195,7 +240,7 @@ class PortalReferenceLinkService {
 			return null;
 		}
 
-		$id = $this->identifierOf(row: $row);
+		$id = TokenRows::identifierOf(row: $row);
 		if ($id === '') {
 			return null;
 		}
@@ -260,14 +305,7 @@ class PortalReferenceLinkService {
 			limit: 5
 		);
 
-		$row = null;
-		foreach ($rows as $candidate) {
-			if (is_array($candidate) === true && hash_equals((string)($candidate['tokenHash'] ?? ''), $hash) === true) {
-				$row = $candidate;
-				break;
-			}
-		}
-
+		$row = TokenRows::matching(rows: $rows, hash: $hash);
 		if ($row === null || (string)($row['state'] ?? '') !== 'sent') {
 			return null;
 		}
@@ -279,22 +317,4 @@ class PortalReferenceLinkService {
 
 		return $row;
 	}//end liveRowFor()
-
-	/**
-	 * The stored identifier of a row, wherever OpenRegister put it.
-	 *
-	 * @param array<string, mixed> $row The link row.
-	 *
-	 * @return string The identifier, or '' when the row carries none.
-	 */
-	private function identifierOf(array $row): string {
-		$id = (string)($row['uuid'] ?? $row['id'] ?? '');
-		if ($id !== '') {
-			return $id;
-		}
-
-		$self = (array)($row['@self'] ?? []);
-
-		return (string)($self['uuid'] ?? $self['id'] ?? '');
-	}//end identifierOf()
 }//end class

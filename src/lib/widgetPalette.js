@@ -124,6 +124,39 @@ export function paletteLabel(entry) {
 }
 
 /**
+ * The entries that match what the author typed, each with its palette label.
+ *
+ * @param {Array<object>|null} entries The catalogue.
+ * @param {string} query What the author typed.
+ * @return {Array<object>} The matching entries.
+ */
+function matchingEntries(entries, query) {
+	return (entries || [])
+		.map((entry) => ({ ...entry, label: paletteLabel(entry) }))
+		.filter((entry) => matchesQuery(entry, query))
+}
+
+/**
+ * The public entries under their declared groups, in declared order, with
+ * the ungrouped under "Overig" and empty groups left out.
+ *
+ * @param {Array<object>} matching The matching entries.
+ * @return {Array<{group: string, label: string, entries: Array<object>}>} The groups.
+ */
+function publicGroups(matching) {
+	return [...PALETTE_GROUPS, OTHER_GROUP]
+		.map(({ group, label }) => ({
+			group,
+			label,
+			entries: matching.filter(
+				(entry) =>
+					entry.publicSafe && (entry.group || OTHER_GROUP.group) === group,
+			),
+		}))
+		.filter((inGroup) => inGroup.entries.length > 0)
+}
+
+/**
  * The palette, grouped and filtered, in the order the groups are declared.
  *
  * A group with no matching entry is left out rather than shown empty: an
@@ -135,22 +168,8 @@ export function paletteLabel(entry) {
  * @return {Array<{group: string, label: string, entries: Array<object>}>} The groups.
  */
 export function paletteGroups(entries, query = '') {
-	const matching = (entries || [])
-		.filter((entry) =>
-			matchesQuery({ ...entry, label: paletteLabel(entry) }, query),
-		)
-		.map((entry) => ({ ...entry, label: paletteLabel(entry) }))
-
-	const groups = []
-	for (const { group, label } of [...PALETTE_GROUPS, OTHER_GROUP]) {
-		const inGroup = matching.filter(
-			(entry) =>
-				entry.publicSafe && (entry.group || OTHER_GROUP.group) === group,
-		)
-		if (inGroup.length > 0) {
-			groups.push({ group, label, entries: inGroup })
-		}
-	}
+	const matching = matchingEntries(entries, query)
+	const groups = publicGroups(matching)
 
 	// Last, and under their own heading: what a published page will not mount
 	// (REQ-SNW-001). They stay marked entry by entry as they were.

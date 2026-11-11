@@ -198,7 +198,19 @@ class RecordBlockNormaliser {
 			return null;
 		}
 
-		$out  = ['field' => $card['field'], 'label' => $card['label']];
+		return ['field' => $card['field'], 'label' => $card['label']] + $this->cardExtras(card: $card);
+	}//end card()
+
+	/**
+	 * A kpi card's unit, details and highlight, each only when well formed,
+	 * in that order.
+	 *
+	 * @param array<string, mixed> $card The declared card.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function cardExtras(array $card): array {
+		$out  = [];
 		$unit = $this->countedWord(value: ($card['unit'] ?? null));
 		if ($unit !== null) {
 			$out['unit'] = $unit;
@@ -214,7 +226,7 @@ class RecordBlockNormaliser {
 		}
 
 		return $out;
-	}//end card()
+	}//end cardExtras()
 
 	/**
 	 * A card's details: the well-formed `{field, label}` entries.

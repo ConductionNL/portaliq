@@ -94,6 +94,7 @@ import {
 	audienceOptions,
 	audienceValue,
 } from '../lib/audienceOptions.js'
+import { closeOrRefuse } from './submitDialog.js'
 
 export default {
 	name: 'InviteDialog',
@@ -162,12 +163,7 @@ export default {
 			this.busy = true
 			this.refusal = ''
 			const outcome = await this.submit({ ...this.fields })
-			this.busy = false
-			if (outcome.ok) {
-				this.$emit('close', outcome.message)
-				return
-			}
-			this.refusal = outcome.message
+			closeOrRefuse(this, outcome)
 		},
 	},
 }
