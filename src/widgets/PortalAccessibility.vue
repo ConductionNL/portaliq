@@ -141,6 +141,18 @@ import {
 /** How long a page may take to show its site root, in milliseconds. */
 const PAGE_TIMEOUT = 20000
 
+/**
+ * What the widget says once a run was handed to the server.
+ *
+ * @param {boolean} stored Whether the server stored it.
+ * @return {[string, string]} The notice type and its words.
+ */
+function storeNotice(stored) {
+	return stored
+		? ['success', t('portaliq', 'The measurement is stored. The statement now follows it.')]
+		: ['error', t('portaliq', 'The measurement could not be stored.')]
+}
+
 /** The frame's page refused to load in a frame. */
 const REFUSED = Symbol('refused')
 
@@ -423,21 +435,10 @@ export default {
 			this.closeFrame()
 			const result = await this.api.store(this.slug, run)
 			this.measuring = false
-			if (!result.ok) {
-				this.say(
-					'error',
-					t('portaliq', 'The measurement could not be stored.'),
-				)
-				return
+			this.say(...storeNotice(result.ok))
+			if (result.ok) {
+				await this.load()
 			}
-			this.say(
-				'success',
-				t(
-					'portaliq',
-					'The measurement is stored. The statement now follows it.',
-				),
-			)
-			await this.load()
 		},
 
 		/**
