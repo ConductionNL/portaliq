@@ -30,7 +30,16 @@ export function isClosedCase(row, collection) {
 	if (!field) {
 		return false
 	}
-	const value = row?.[field]
+	return isFilledMark(row?.[field])
+}
+
+/**
+ * Whether a closed field holds a mark: anything but nothing, '' or false.
+ *
+ * @param {unknown} value The field's value.
+ * @return {boolean}
+ */
+function isFilledMark(value) {
 	return value !== undefined && value !== null && value !== '' && value !== false
 }
 
@@ -119,8 +128,17 @@ export function turnSentence(row, collection) {
 	if (!field) {
 		return ''
 	}
-	const value = row?.[field]
-	const labels = collection?.fieldConfigs?.[field]?.valueLabels
+	return wordsFor(row?.[field], collection?.fieldConfigs?.[field]?.valueLabels)
+}
+
+/**
+ * The words the labels give a value, or '' without them.
+ *
+ * @param {unknown} value The turn field's value.
+ * @param {Record<string, string>|undefined} labels The field's value labels.
+ * @return {string}
+ */
+function wordsFor(value, labels) {
 	if (value === undefined || value === null || !labels) {
 		return ''
 	}
