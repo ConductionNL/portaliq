@@ -276,21 +276,32 @@ class NewsAudienceOptions {
 			return [];
 		}
 
-		try {
-			$objectService->setRegister(register: $source['register']);
-			$objectService->setSchema(schema: $source['schema']);
-			$rows = $objectService->findAll(config: ['filters' => [], 'limit' => self::LIMIT, 'offset' => 0]);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: news audience options read failed', ['schema' => $source['schema'], 'reason' => $e->getMessage()]);
-			return [];
-		}
-
+		$rows = $this->readRows(objectService: $objectService, source: $source);
 		if (is_array($rows) === false) {
 			return [];
 		}
 
 		return $rows;
 	}//end sourceRows()
+
+	/**
+	 * Read one source's rows; null when the read fails, which is logged.
+	 *
+	 * @param object                                  $objectService OpenRegister's ObjectService.
+	 * @param array{register: string, schema: string} $source        The source.
+	 *
+	 * @return mixed What the read returned, or null.
+	 */
+	private function readRows(object $objectService, array $source): mixed {
+		try {
+			$objectService->setRegister(register: $source['register']);
+			$objectService->setSchema(schema: $source['schema']);
+			return $objectService->findAll(config: ['filters' => [], 'limit' => self::LIMIT, 'offset' => 0]);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: news audience options read failed', ['schema' => $source['schema'], 'reason' => $e->getMessage()]);
+			return null;
+		}
+	}//end readRows()
 
 	/**
 	 * The `{id, label}` options of the rows that carry an id, in their order.
