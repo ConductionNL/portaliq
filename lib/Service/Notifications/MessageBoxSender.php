@@ -247,16 +247,31 @@ class MessageBoxSender {
 
 		$out = [];
 		foreach (['app', 'collection', 'id'] as $key) {
-			$value = ($record[$key] ?? null);
-			if (is_string($value) === false || $value === '') {
+			$out[$key] = $this->recordPart(record: $record, key: $key);
+			if ($out[$key] === '') {
 				return null;
 			}
-
-			$out[$key] = $value;
 		}
 
 		return $out;
 	}//end record()
+
+	/**
+	 * One part of the message's reference, or '' when it is not a non-empty string.
+	 *
+	 * @param array<string, mixed> $record The job's record.
+	 * @param string               $key    The part: `app`, `collection` or `id`.
+	 *
+	 * @return string
+	 */
+	private function recordPart(array $record, string $key): string {
+		$value = ($record[$key] ?? null);
+		if (is_string($value) === false) {
+			return '';
+		}
+
+		return $value;
+	}//end recordPart()
 
 	/**
 	 * The message, read the way the resident's own inbox reads it.
@@ -291,13 +306,26 @@ class MessageBoxSender {
 	 * @return string|null
 	 */
 	private function recipient(array $record, string $method): ?string {
+		return $this->trimmedRecipient(value: $this->providedRecipient(record: $record, method: $method));
+	}//end recipient()
+
+	/**
+	 * What the case app's recipient method answers for this message; null
+	 * when the app or the method is missing or the method fails.
+	 *
+	 * @param array<string, string> $record The message's reference.
+	 * @param string                $method The declared recipient method.
+	 *
+	 * @return mixed
+	 */
+	private function providedRecipient(array $record, string $method): mixed {
 		$provider = $this->locator->locate(appId: $record['app']);
 		if ($provider === null || (new TimelineProviderMethod())->callableOn(provider: $provider, method: $method) === false) {
 			return null;
 		}
 
 		try {
-			$recipient = $provider->{$method}($record['id']);
+			return $provider->{$method}($record['id']);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Portaliq: message box recipient method failed',
@@ -305,13 +333,22 @@ class MessageBoxSender {
 			);
 			return null;
 		}
+	}//end providedRecipient()
 
-		if (is_string($recipient) === false || trim($recipient) === '') {
+	/**
+	 * The answered recipient, trimmed; null when it is not non-blank text.
+	 *
+	 * @param mixed $value What the recipient method answered.
+	 *
+	 * @return string|null
+	 */
+	private function trimmedRecipient(mixed $value): ?string {
+		if (is_string($value) === false || trim($value) === '') {
 			return null;
 		}
 
-		return trim($recipient);
-	}//end recipient()
+		return trim($value);
+	}//end trimmedRecipient()
 
 	/**
 	 * The letter from the message: the text and subject from the fields the
@@ -382,13 +419,32 @@ class MessageBoxSender {
 
 		$out = [];
 		foreach ($value as $attachment) {
-			if (is_array($attachment) === true) {
-				$out[] = $attachment;
-			} elseif (is_string($attachment) === true && $attachment !== '') {
-				$out[] = ['id' => $attachment];
+			$reference = $this->attachmentReference(attachment: $attachment);
+			if ($reference !== null) {
+				$out[] = $reference;
 			}
 		}
 
 		return $out;
 	}//end attachments()
+
+	/**
+	 * One attachment as integriq takes it: an array as it is, a non-empty id
+	 * as `{id}`, anything else null.
+	 *
+	 * @param mixed $attachment The attachment.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function attachmentReference(mixed $attachment): ?array {
+		if (is_array($attachment) === true) {
+			return $attachment;
+		}
+
+		if (is_string($attachment) === true && $attachment !== '') {
+			return ['id' => $attachment];
+		}
+
+		return null;
+	}//end attachmentReference()
 }//end class
