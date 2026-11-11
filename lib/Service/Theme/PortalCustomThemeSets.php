@@ -51,13 +51,6 @@ class PortalCustomThemeSets {
 	public const ID_PREFIX = 'custom-';
 
 	/**
-	 * How a character changes the bracket depth.
-	 *
-	 * @var array<string, int>
-	 */
-	private const NESTING = ['(' => 1, ')' => -1];
-
-	/**
 	 * The theme app's custom-set store, under its current and former name.
 	 *
 	 * @var string[]
@@ -104,28 +97,53 @@ class PortalCustomThemeSets {
 			return [];
 		}
 
-		try {
-			$listed = (array)$store->list();
-		} catch (Throwable) {
-			return [];
-		}
-
 		$sets = [];
-		foreach ($listed as $entry) {
-			if (is_array($entry) === false) {
-				continue;
+		foreach ($this->listed(store: $store) as $entry) {
+			$set = $this->customSet(entry: $entry);
+			if ($set !== null) {
+				$sets[] = $set;
 			}
-
-			$id = (string)($entry['id'] ?? '');
-			if ($this->isCustomId(id: $id) === false) {
-				continue;
-			}
-
-			$sets[] = ['id' => $id, 'name' => (string)($entry['name'] ?? $id), 'custom' => true];
 		}
 
 		return $sets;
 	}//end all()
+
+
+	/**
+	 * What the store lists; nothing when it fails.
+	 *
+	 * @param object $store The theme app's CustomTokenSetService.
+	 *
+	 * @return array<int|string, mixed>
+	 */
+	private function listed(object $store): array {
+		try {
+			return (array)$store->list();
+		} catch (Throwable) {
+			return [];
+		}
+	}//end listed()
+
+
+	/**
+	 * One listed entry as a custom set, or null when it is not one.
+	 *
+	 * @param mixed $entry The listed entry.
+	 *
+	 * @return array{id: string, name: string, custom: true}|null
+	 */
+	private function customSet(mixed $entry): ?array {
+		if (is_array($entry) === false) {
+			return null;
+		}
+
+		$id = (string)($entry['id'] ?? '');
+		if ($this->isCustomId(id: $id) === false) {
+			return null;
+		}
+
+		return ['id' => $id, 'name' => (string)($entry['name'] ?? $id), 'custom' => true];
+	}//end customSet()
 
 
 	/**
@@ -188,137 +206,11 @@ class PortalCustomThemeSets {
 		}
 
 		try {
-			return $this->judge(validator: $validator, id: $id, css: $css);
+			return (new CustomSetJudge(validator: $validator))->verdict(id: $id, css: $css);
 		} catch (Throwable) {
 			return 'the theme app could not check this house style';
 		}
 	}//end refusal()
-
-
-	/**
-	 * The validator's verdict on one file: null when it passes.
-	 *
-	 * @param object $validator The theme app's CustomTokenSetValidator.
-	 * @param string $id        The set id.
-	 * @param string $css       The file.
-	 *
-	 * @return string|null The reason.
-	 */
-	private function judge(object $validator, string $id, string $css): ?string {
-		if (method_exists($validator, 'hasDisallowedSelector') === true
-			&& $validator->hasDisallowedSelector($css) === true
-		) {
-			return 'the file holds more than one :root block of tokens';
-		}
-
-		$declarations = $this->declarations(css: $css);
-		if ($declarations === []) {
-			return 'the file declares no tokens';
-		}
-
-		if ($validator->validateDeclarations($declarations, substr($id, strlen(self::ID_PREFIX))) !== null) {
-			return null;
-		}
-
-		$last = null;
-		if (method_exists($validator, 'getLastError') === true) {
-			$last = $validator->getLastError();
-		}
-
-		if (is_array($last) === true && is_string($last['message'] ?? null) === true) {
-			return $last['message'];
-		}
-
-		return 'a declaration was refused';
-	}//end judge()
-
-
-	/**
-	 * Every custom-property declaration in a file, name to value.
-	 *
-	 * Every name is passed on, also one the validator's name pattern would
-	 * skip: its value is judged there all the same.
-	 *
-	 * @param string $css The file.
-	 *
-	 * @return array<string, string>
-	 */
-	private function declarations(string $css): array {
-		$body = (string)preg_replace('#/\*.*?\*/#s', '', $css);
-		$open = strpos($body, '{');
-		$close = strrpos($body, '}');
-		if ($open !== false && $close !== false && $close > $open) {
-			$body = substr($body, ($open + 1), ($close - $open - 1));
-		}
-
-		$declarations = [];
-		foreach ($this->statements(body: $body) as $statement) {
-			$colon = strpos($statement, ':');
-			if ($colon === false) {
-				continue;
-			}
-
-			$name = trim(substr($statement, 0, $colon));
-			if (str_starts_with($name, '--') === true) {
-				$declarations[$name] = trim(substr($statement, ($colon + 1)));
-			}
-		}
-
-		return $declarations;
-	}//end declarations()
-
-
-	/**
-	 * A block body split on the semicolons that end a declaration, not the
-	 * ones inside `url(...)` or a quoted string (a `data:` logo has one).
-	 *
-	 * @param string $body The declarations of one block.
-	 *
-	 * @return array<int, string>
-	 */
-	private function statements(string $body): array {
-		$statements = [''];
-		$depth = 0;
-		$quote = '';
-		foreach (str_split($body) as $char) {
-			if ($quote !== '' || $char === '"' || $char === "'") {
-				$quote = $this->quoteAfter(quote: $quote, char: $char);
-			} else if ($char === ';' && $depth === 0) {
-				$statements[] = '';
-				continue;
-			}
-
-			if ($quote === '') {
-				$depth = max(0, ($depth + (self::NESTING[$char] ?? 0)));
-			}
-
-			$statements[(count($statements) - 1)] .= $char;
-		}
-
-		return $statements;
-	}//end statements()
-
-
-	/**
-	 * The open quote after one character: a quote opens, the same quote closes.
-	 *
-	 * @param string $quote The quote open before it, or ''.
-	 * @param string $char  The character.
-	 *
-	 * @return string
-	 */
-	private function quoteAfter(string $quote, string $char): string {
-		if ($quote === '') {
-			return $char;
-		}
-
-		if ($char === $quote) {
-			return '';
-		}
-
-		return $quote;
-	}//end quoteAfter()
-
 
 
 	/**
@@ -331,12 +223,7 @@ class PortalCustomThemeSets {
 	 */
 	private function service(array $ids, string $method): ?object {
 		foreach ($ids as $id) {
-			try {
-				$service = $this->container->get($id);
-			} catch (Throwable) {
-				continue;
-			}
-
+			$service = $this->registered(id: $id);
 			if (is_object($service) === true && method_exists($service, $method) === true) {
 				return $service;
 			}
@@ -344,4 +231,20 @@ class PortalCustomThemeSets {
 
 		return null;
 	}//end service()
+
+
+	/**
+	 * The service registered under one name, or null when none is.
+	 *
+	 * @param string $id The class name.
+	 *
+	 * @return mixed
+	 */
+	private function registered(string $id): mixed {
+		try {
+			return $this->container->get($id);
+		} catch (Throwable) {
+			return null;
+		}
+	}//end registered()
 }//end class
