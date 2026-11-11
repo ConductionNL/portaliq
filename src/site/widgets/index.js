@@ -166,6 +166,83 @@ export const WIDGET_GROUPS = [
 ]
 
 /**
+ * @param {object} meta The candidate.
+ * @param {string} key The key it is registered under.
+ * @return {Array<string>} A problem when its key is not the registered one.
+ */
+function keyProblems(meta, key) {
+	return meta.key === key ? [] : [`${key}: meta.key is ${JSON.stringify(meta.key)}`]
+}
+
+/**
+ * @param {object} meta The candidate.
+ * @param {string} key The key it is registered under.
+ * @return {Array<string>} A problem when its group is not one of the palette's.
+ */
+function groupProblems(meta, key) {
+	return WIDGET_GROUPS.some((entry) => entry.group === meta.group)
+		? []
+		: [`${key}: group ${JSON.stringify(meta.group)} is not one of the six`]
+}
+
+/**
+ * @param {object} meta The candidate.
+ * @param {string} key The key it is registered under.
+ * @return {Array<string>} A problem for its label and its NL Design System name, each when empty.
+ */
+function textProblems(meta, key) {
+	return ['label', 'nlds']
+		.filter((field) => typeof meta[field] !== 'string' || meta[field].trim() === '')
+		.map((field) => `${key}: ${field} is empty`)
+}
+
+/**
+ * @param {object} meta The candidate.
+ * @param {string} key The key it is registered under.
+ * @return {Array<string>} A problem for its synonyms and its fields, each when not a list.
+ */
+function listProblems(meta, key) {
+	return ['synonyms', 'fields']
+		.filter((field) => !Array.isArray(meta[field]))
+		.map((field) => `${key}: ${field} is not a list`)
+}
+
+/**
+ * @param {object} meta The candidate.
+ * @param {string} key The key it is registered under.
+ * @return {Array<string>} A problem when its default size is not two whole numbers.
+ */
+function sizeProblems(meta, key) {
+	const size = meta.defaultSize
+	const whole =
+		Boolean(size)
+		&& Number.isInteger(size.gridWidth)
+		&& Number.isInteger(size.gridHeight)
+	return whole ? [] : [`${key}: defaultSize is not two whole numbers`]
+}
+
+/**
+ * @param {object} meta The candidate.
+ * @param {string} key The key it is registered under.
+ * @return {Array<string>} A problem when its scope is neither public nor signed in.
+ */
+function scopeProblems(meta, key) {
+	return ['public', 'signedIn'].includes(meta.scope)
+		? []
+		: [`${key}: scope ${JSON.stringify(meta.scope)} is neither public nor signedIn`]
+}
+
+/** The checks of a meta, in the order their problems are reported. */
+const META_CHECKS = [
+	keyProblems,
+	groupProblems,
+	textProblems,
+	listProblems,
+	sizeProblems,
+	scopeProblems,
+]
+
+/**
  * Whether a value is a sound widget meta.
  *
  * Checked rather than trusted, because a meta is the only description the
@@ -178,51 +255,11 @@ export const WIDGET_GROUPS = [
  * @return {Array<string>} What is wrong with it, empty when nothing is.
  */
 export function metaProblems(meta, key) {
-	const problems = []
 	if (!meta || typeof meta !== 'object') {
 		return [`${key}: no meta`]
 	}
 
-	if (meta.key !== key) {
-		problems.push(`${key}: meta.key is ${JSON.stringify(meta.key)}`)
-	}
-
-	if (!WIDGET_GROUPS.some((entry) => entry.group === meta.group)) {
-		problems.push(
-			`${key}: group ${JSON.stringify(meta.group)} is not one of the six`,
-		)
-	}
-
-	for (const field of ['label', 'nlds']) {
-		if (typeof meta[field] !== 'string' || meta[field].trim() === '') {
-			problems.push(`${key}: ${field} is empty`)
-		}
-	}
-
-	if (!Array.isArray(meta.synonyms)) {
-		problems.push(`${key}: synonyms is not a list`)
-	}
-
-	if (!Array.isArray(meta.fields)) {
-		problems.push(`${key}: fields is not a list`)
-	}
-
-	const size = meta.defaultSize
-	if (
-		!size
-		|| !Number.isInteger(size.gridWidth)
-		|| !Number.isInteger(size.gridHeight)
-	) {
-		problems.push(`${key}: defaultSize is not two whole numbers`)
-	}
-
-	if (meta.scope !== 'public' && meta.scope !== 'signedIn') {
-		problems.push(
-			`${key}: scope ${JSON.stringify(meta.scope)} is neither public nor signedIn`,
-		)
-	}
-
-	return problems
+	return META_CHECKS.flatMap((check) => check(meta, key))
 }
 
 /**
