@@ -63,6 +63,14 @@ class GeoRefreshServiceTest extends TestCase {
 	 */
 	private array $files = [];
 
+	private bool $installs = true;
+
+	private bool $tempFiles = true;
+
+	private bool $jobsFail = false;
+
+	private array $logged = [];
+
 
 	/**
 	 * @return void
@@ -95,7 +103,7 @@ class GeoRefreshServiceTest extends TestCase {
 			function (string $verifiedPath, array $metadata): bool {
 				$this->installed[] = [$verifiedPath, $metadata];
 
-				return true;
+				return $this->installs;
 			}
 		);
 		$store->method('databasePath')->willReturn(null);
@@ -122,7 +130,11 @@ class GeoRefreshServiceTest extends TestCase {
 
 		$temp = $this->createMock(ITempManager::class);
 		$temp->method('getTemporaryFile')->willReturnCallback(
-			function (): string {
+			function (): string|false {
+				if ($this->tempFiles === false) {
+					return false;
+				}
+
 				$path = (string)tempnam(sys_get_temp_dir(), 'geo');
 				$this->files[] = $path;
 
@@ -131,7 +143,15 @@ class GeoRefreshServiceTest extends TestCase {
 		);
 
 		$jobs = $this->createMock(IJobList::class);
-		$jobs->method('has')->willReturn($queuedYet);
+		$jobs->method('has')->willReturnCallback(
+			function () use ($queuedYet): bool {
+				if ($this->jobsFail === true) {
+					throw new RuntimeException('the job list is down');
+				}
+
+				return $queuedYet;
+			}
+		);
 		$jobs->method('add')->willReturnCallback(
 			function (string $job): void {
 				$this->queued[] = $job;
@@ -149,7 +169,7 @@ class GeoRefreshServiceTest extends TestCase {
 			$temp,
 			$jobs,
 			$clock,
-			$this->createMock(LoggerInterface::class)
+			$this->logger()
 		);
 	}//end service()
 
@@ -160,6 +180,20 @@ class GeoRefreshServiceTest extends TestCase {
 	 *
 	 * @return void
 	 */
+	private function logger(): LoggerInterface {
+		$logger = $this->createMock(LoggerInterface::class);
+		foreach (['info', 'warning', 'error'] as $level) {
+			$logger->method($level)->willReturnCallback(
+				function (string $message, array $context = []) use ($level): void {
+					$this->logged[] = [$level, $message, $context];
+				}
+			);
+		}
+
+		return $logger;
+	}//end logger()
+
+
 	public function testProviderNoneIsDisabled(): void {
 		$service = $this->service(provider: 'none');
 
@@ -237,4 +271,64 @@ class GeoRefreshServiceTest extends TestCase {
 		$this->assertFalse($this->service(queuedYet: true)->queueFirstDownload());
 		$this->assertSame([], $this->queued);
 	}//end testTheFirstDownloadIsQueuedOnce()
+
+	/**
+	 * Every refresh outcome, its metadata, its log line and the temporary file, exactly as recorded.
+	 *
+	 * @return void
+	 */
+	public function testEveryRefreshIsAsRecorded(): void {
+		$source = 'https://download.db-ip.com/free/dbip-city-lite-2026-09.mmdb.gz';
+
+		$this->assertSame(
+			['status' => 'disabled', 'provider' => 'none', 'message' => 'Geography is disabled: the provider is set to none, so no database is fetched and no region is stored.'],
+			$this->service(provider: 'none')->refresh()
+		);
+
+		$this->assertSame(['status' => 'refreshed', 'provider' => 'dbip', 'message' => 'Fetched ' . $source . ' (GeoIP2-City).'], $this->service()->refresh());
+		$this->assertSame(
+			['provider' => 'dbip', 'attribution' => 'IP Geolocation by DB-IP', 'source' => $source, 'databaseType' => 'GeoIP2-City', 'buildEpoch' => $this->installed[0][1]['buildEpoch'], 'fetchedAt' => '2026-08-29T10:40:00Z'],
+			$this->installed[0][1]
+		);
+		$this->assertIsInt($this->installed[0][1]['buildEpoch']);
+		$this->assertSame([['info', 'Portaliq: geography database refreshed', ['provider' => 'dbip', 'source' => $source]]], $this->logged);
+
+		$this->logged   = [];
+		$this->installs = false;
+		$this->assertSame(
+			['status' => 'failed', 'provider' => 'dbip', 'message' => 'Refresh from dbip failed: the verified database could not be moved into the app data directory The previous database, if any, stays in use.'],
+			$this->service()->refresh()
+		);
+		$this->assertSame('error', $this->logged[0][0]);
+		$this->assertCount(1, $this->logged);
+
+		$this->installs = true;
+		$this->service(payload: false)->refresh();
+		$this->assertFileDoesNotExist(end($this->files), 'a failed download is removed');
+
+		$this->tempFiles = false;
+		$this->assertSame(
+			['status' => 'failed', 'provider' => 'dbip', 'message' => 'Refresh from dbip failed: no temporary file could be created The previous database, if any, stays in use.'],
+			$this->service()->refresh()
+		);
+	}//end testEveryRefreshIsAsRecorded()
+
+
+	/**
+	 * A job list that fails queues nothing and says so.
+	 *
+	 * @return void
+	 */
+	public function testAFailingJobListQueuesNothing(): void {
+		$this->jobsFail = true;
+
+		$this->assertFalse($this->service()->queueFirstDownload());
+		$this->assertSame([], $this->queued);
+		$this->assertSame([['warning', 'Portaliq: the first geography download could not be queued', ['reason' => 'the job list is down']]], $this->logged);
+
+		$this->jobsFail = false;
+		$this->logged   = [];
+		$this->assertTrue($this->service()->queueFirstDownload());
+		$this->assertSame('info', $this->logged[0][0]);
+	}//end testAFailingJobListQueuesNothing()
 }//end class
