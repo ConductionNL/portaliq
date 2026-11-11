@@ -166,4 +166,46 @@ class InitializeActionsTest extends TestCase {
 			$seed['actions']
 		);
 	}//end seedActions()
+
+	/**
+	 * What the repair says and logs: the preserving line for a complete
+	 * matrix, and the added actions, in seed order after the stored ones,
+	 * on the output and in the log.
+	 *
+	 * @return void
+	 */
+	public function testTheMessagesAndTheOrderAreAsRecorded(): void {
+		$said   = [];
+		$output = $this->createMock(IOutput::class);
+		$output->method('info')->willReturnCallback(function (string $message) use (&$said) {
+			$said[] = 'info ' . $message;
+		});
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->method('info')->willReturnCallback(function (string $message) use (&$said) {
+			$said[] = 'log ' . $message;
+		});
+		$run = function (string $stored) use ($output, $logger): void {
+			$this->stored = $stored;
+			$appConfig    = $this->createMock(IAppConfig::class);
+			$appConfig->method('getValueString')->willReturnCallback(fn () => $this->stored);
+			$appConfig->method('setValueString')->willReturnCallback(function (string $app, string $key, string $value): bool {
+				$this->stored = $value;
+				return true;
+			});
+			(new InitializeActions(new ActionAuthService($appConfig, $this->createMock(IGroupManager::class)), $logger))->run($output);
+		};
+
+		$seed   = $this->seedActions();
+		$first  = (string)array_key_first($seed);
+		$others = array_keys(array_slice($seed, 1, null, true));
+		$run(json_encode([$first => ['admin'], 'portal.retired' => ['x']], JSON_THROW_ON_ERROR));
+
+		$this->assertSame(array_merge([$first, 'portal.retired'], $others), array_keys($this->storedMatrix()));
+		$added = sprintf('Added %d seeded action(s) to the action matrix: %s', count($others), implode(', ', $others));
+		$this->assertSame(['info ' . $added, 'log [portaliq] ADR-023 ' . $added], $said);
+
+		$said = [];
+		$run($this->stored);
+		$this->assertSame([sprintf('info Action matrix already holds every seeded action (%d) — preserving.', count($seed) + 1)], $said);
+	}
 }//end class
