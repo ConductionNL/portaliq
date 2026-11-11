@@ -175,6 +175,37 @@ import '@utrecht/paragraph-css/dist/index.css'
 
 let instances = 0
 
+/** The fields once a report is filed: the report leaves the form. */
+const FILED_FORM = Object.freeze({ body: '', whenWhere: '', name: '', reach: '' })
+
+/**
+ * The report as filed: the trimmed body, and when and where only when given.
+ *
+ * @param {object} form The block's fields.
+ * @return {{body: string, whenWhere?: string}} The report.
+ */
+function reportOf(form) {
+	const report = { body: form.body.trim() }
+	if (form.whenWhere.trim() !== '') {
+		report.whenWhere = form.whenWhere.trim()
+	}
+	return report
+}
+
+/**
+ * What the form says about an answer: nothing when a code came back.
+ *
+ * @param {object} words The block's words.
+ * @param {object} answer The filing's answer.
+ * @return {string} The problem to show, or ''.
+ */
+function answerProblem(words, answer) {
+	if (answer.ok && answer.code !== '') {
+		return ''
+	}
+	return answer.error === 'challenge_failed' ? words.challengeFailed : words.failed
+}
+
 /**
  * @spec openspec/changes/intake-report-pages/tasks.md#t05
  */
@@ -276,32 +307,22 @@ export default {
 				this.problem = this.words.empty
 				return
 			}
-			const report = { body: this.body.trim() }
-			if (this.whenWhere.trim() !== '') {
-				report.whenWhere = this.whenWhere.trim()
-			}
 			this.busy = true
 			const answer = await this.api.file({
 				caseType: this.caseType,
 				register: this.register,
 				schema: this.schema,
-				report,
+				report: reportOf(this),
 				contact: contactOf(this.name, this.reach),
 				trap: this.trap,
 			})
 			this.busy = false
-			if (!answer.ok || answer.code === '') {
-				this.problem =
-					answer.error === 'challenge_failed'
-						? this.words.challengeFailed
-						: this.words.failed
+			this.problem = answerProblem(this.words, answer)
+			if (this.problem !== '') {
 				return
 			}
 			this.code = answer.code
-			this.body = ''
-			this.whenWhere = ''
-			this.name = ''
-			this.reach = ''
+			Object.assign(this, FILED_FORM)
 		},
 
 		/**
