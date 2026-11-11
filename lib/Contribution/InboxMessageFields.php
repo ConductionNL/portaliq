@@ -144,18 +144,25 @@ class InboxMessageFields {
 
 		$label = $action['label'] ?? null;
 		$href  = $action['href'] ?? null;
-		if (is_string($label) === false || trim($label) === '' || is_string($href) === false) {
-			return null;
-		}
-
-		$isPath = (preg_match('#^/(?!/)#', $href) === 1 && str_contains($href, '\\') === false && preg_match('/[[:cntrl:]]/', $href) === 0);
-		$isHash = (preg_match('/^#[A-Za-z0-9_\/=.-]+$/', $href) === 1);
-		if ($isPath === false && $isHash === false) {
+		if (is_string($label) === false || trim($label) === '' || is_string($href) === false || self::isSameSiteHref(href: $href) === false) {
 			return null;
 		}
 
 		return ['label' => trim($label), 'href' => $href];
 	}//end sameSiteAction()
+
+	/**
+	 * Whether an address stays on this portal: a path (never protocol-relative,
+	 * never with a backslash or a control character) or an in-page hash.
+	 *
+	 * @param string $href The address.
+	 *
+	 * @return bool
+	 */
+	private static function isSameSiteHref(string $href): bool {
+		$isPath = (preg_match('#^/(?!/)#', $href) === 1 && str_contains($href, '\\') === false && preg_match('/[[:cntrl:]]/', $href) === 0);
+		return $isPath === true || preg_match('/^#[A-Za-z0-9_\/=.-]+$/', $href) === 1;
+	}//end isSameSiteHref()
 
 	/**
 	 * Copy the app's own fields onto the inbox row, under the inbox's names.
