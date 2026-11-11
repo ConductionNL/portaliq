@@ -202,21 +202,9 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 	 * @return array{collection: array<string, mixed>, app: string}|null
 	 */
 	private function collectionOf(array $subject, string $register, string $schema): ?array {
-		$collectionId = (string)$this->request->getParam('collection', '');
-		foreach (($this->registry->aggregateFor($subject)['contributions'] ?? []) as $contribution) {
-			foreach (($contribution['collections'] ?? []) as $collection) {
-				if (($collection['register'] ?? '') !== $register || ($collection['schema'] ?? '') !== $schema) {
-					continue;
-				}
-
-				if ($collectionId !== '' && ($collection['id'] ?? '') !== $collectionId) {
-					continue;
-				}
-
-				return ['collection' => $collection, 'app' => (string)($contribution['app'] ?? '')];
-			}
-		}
-
-		return null;
+		return (new SubjectCollectionFinder(registry: $this->registry))->find(
+			subject: $subject,
+			requested: ['register' => $register, 'schema' => $schema, 'collection' => (string)$this->request->getParam('collection', '')]
+		);
 	}//end collectionOf()
 }//end class
