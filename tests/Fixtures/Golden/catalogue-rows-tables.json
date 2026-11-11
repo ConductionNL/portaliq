@@ -1,0 +1,6 @@
+{
+	"event rows": [{"date":"2026-10-08","endDate":"","dateLabel":"","title":"F-gassen","href":"/cursus/1","meta":"1 dag","note":"Nog 1 plek","noteTone":"warning"},{"date":"2026-10-08","endDate":"2026-10-09","dateLabel":"Wo","title":"T","href":"","meta":"a · b","note":"","noteTone":"positive"}],
+	"event rows of nothing": [],
+	"table": {"columns":["a","Bee","c"],"rows":[["A","2",""],["","",""],["","",""]]},
+	"table of nothing": {"columns":[],"rows":[]}
+}
