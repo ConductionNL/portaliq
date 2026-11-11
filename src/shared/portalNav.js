@@ -124,16 +124,27 @@ function contributionEntries(contributions) {
 	const nav = []
 	for (const contribution of contributions || []) {
 		for (const page of contribution.pages || []) {
-			nav.push({
-				key: `${contribution.app}:${page.id}`,
-				label: page.label || page.id,
-				icon: page.icon,
-				page,
-				contribution,
-			})
+			nav.push(pageEntry(contribution, page))
 		}
 	}
 	return nav
+}
+
+/**
+ * The entry of one contributed page, tagged with its contribution.
+ *
+ * @param {object} contribution The contribution.
+ * @param {object} page One of its pages.
+ * @return {{key: string, label: string, icon: string, page: object, contribution: object}} The entry.
+ */
+function pageEntry(contribution, page) {
+	return {
+		key: `${contribution.app}:${page.id}`,
+		label: page.label || page.id,
+		icon: page.icon,
+		page,
+		contribution,
+	}
 }
 
 /**
@@ -176,15 +187,25 @@ function ownAreaEntries(enabled, t) {
  */
 export function stepUpEntries(stepUp, nav = []) {
 	const taken = new Set((nav || []).map((entry) => entry.key))
-	const entries = []
-	for (const item of Array.isArray(stepUp) ? stepUp : []) {
-		const entry = stepUpEntry(item)
-		if (entry !== null && !taken.has(entry.key)) {
-			taken.add(entry.key)
-			entries.push(entry)
-		}
+	return (Array.isArray(stepUp) ? stepUp : [])
+		.map(stepUpEntry)
+		.filter((entry) => claimsRoute(entry, taken))
+}
+
+/**
+ * Whether an entry takes a route no entry holds yet; one that does is
+ * marked taken.
+ *
+ * @param {object|null} entry The entry, or null.
+ * @param {Set<string>} taken The keys held so far (changed in place).
+ * @return {boolean}
+ */
+function claimsRoute(entry, taken) {
+	if (entry === null || taken.has(entry.key)) {
+		return false
 	}
-	return entries
+	taken.add(entry.key)
+	return true
 }
 
 /**
@@ -287,11 +308,29 @@ export function routeForNav(entry) {
 	if (entry.special) {
 		return `${ACCOUNT_ROUTE}/${entry.special}`
 	}
-	const app = encodeURIComponent(
-		entry.contribution?.app || entry.stepUp?.app || '',
-	)
-	const page = encodeURIComponent(entry.page?.id || entry.stepUp?.collection || '')
+	const app = encodeURIComponent(entryApp(entry))
+	const page = encodeURIComponent(entryPage(entry))
 	return `${ACCOUNT_ROUTE}/${app}/${page}`
+}
+
+/**
+ * The app an entry belongs to: its contribution's, else its step-up's.
+ *
+ * @param {object} entry A navigation entry.
+ * @return {string} The app, or ''.
+ */
+function entryApp(entry) {
+	return entry.contribution?.app || entry.stepUp?.app || ''
+}
+
+/**
+ * The page an entry opens: its page's id, else its step-up's collection.
+ *
+ * @param {object} entry A navigation entry.
+ * @return {string} The page, or ''.
+ */
+function entryPage(entry) {
+	return entry.page?.id || entry.stepUp?.collection || ''
 }
 
 /**
