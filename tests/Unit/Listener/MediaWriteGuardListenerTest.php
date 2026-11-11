@@ -34,6 +34,10 @@ class MediaWriteGuardListenerTest extends TestCase {
 	private const MEDIA_SCHEMA = 77;
 
 	public function testAnImageWithoutAlternativeTextIsRefused(): void {
+		if (class_exists(ObjectCreatingEvent::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
 		$event = new ObjectCreatingEvent($this->item(['kind' => 'image', 'alt' => '  ']));
 
 		$this->listener(pages: [])->handle($event);
@@ -43,6 +47,10 @@ class MediaWriteGuardListenerTest extends TestCase {
 	}//end testAnImageWithoutAlternativeTextIsRefused()
 
 	public function testAnImageWithAlternativeTextAndAFileWithoutOnePass(): void {
+		if (class_exists(ObjectUpdatingEvent::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
 		$image = new ObjectUpdatingEvent($this->item(['kind' => 'image', 'alt' => 'Het stadhuis']));
 		$file  = new ObjectCreatingEvent($this->item(['kind' => 'file']));
 
@@ -54,6 +62,10 @@ class MediaWriteGuardListenerTest extends TestCase {
 	}//end testAnImageWithAlternativeTextAndAFileWithoutOnePass()
 
 	public function testAUsedItemIsNotDeletedAndThePagesAreNamed(): void {
+		if (class_exists(ObjectDeletingEvent::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
 		$event = new ObjectDeletingEvent($this->item(['kind' => 'image', 'alt' => 'Het stadhuis']));
 
 		$this->listener(pages: ['/about', '/contact'])->handle($event);
@@ -63,6 +75,10 @@ class MediaWriteGuardListenerTest extends TestCase {
 	}//end testAUsedItemIsNotDeletedAndThePagesAreNamed()
 
 	public function testAnUnusedItemIsDeleted(): void {
+		if (class_exists(ObjectDeletingEvent::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
 		$event = new ObjectDeletingEvent($this->item(['kind' => 'image', 'alt' => 'x']));
 
 		$this->listener(pages: [])->handle($event);
@@ -71,6 +87,10 @@ class MediaWriteGuardListenerTest extends TestCase {
 	}//end testAnUnusedItemIsDeleted()
 
 	public function testAnotherSchemasObjectIsLeftAlone(): void {
+		if (class_exists(ObjectEntity::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
 		$entity = $this->item(['kind' => 'image']);
 		$entity->setSchema('12');
 		$event = new ObjectCreatingEvent($entity);

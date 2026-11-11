@@ -67,6 +67,10 @@ class LandingPageSubmissionRelayGoldenTest extends TestCase {
 	 * @return void
 	 */
 	public function testACompleteRowRelaysEveryField(): void {
+		if (class_exists(ObjectEntity::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
 		$row = [
 			'sourceApp'         => '  pqtestconsumer ',
 			'formId'            => 'form-1',
@@ -92,6 +96,10 @@ class LandingPageSubmissionRelayGoldenTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnIncompleteRowRelaysEmptyValues(): void {
+		if (class_exists(ObjectEntity::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
 		$expected = [
 			'sourceApp'         => 'pqtestconsumer',
 			'formId'            => '',
@@ -117,6 +125,10 @@ class LandingPageSubmissionRelayGoldenTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheRowsThatAreNotRelayed(): void {
+		if (class_exists(ObjectEntity::class) === false) {
+			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		}
+
 		$none = ['events' => [], 'logs' => []];
 		$this->assertSame($none, $this->relay(data: ['sourceApp' => 'pqtestconsumer'], register: 'other'));
 		$this->assertSame($none, $this->relay(data: ['sourceApp' => 'pqtestconsumer'], schema: 'page'));
