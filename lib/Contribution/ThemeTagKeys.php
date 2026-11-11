@@ -49,6 +49,11 @@ class ThemeTagKeys {
 	private const OPERATORS = ['eq', 'neq', 'in'];
 
 	/**
+	 * The field-name keys a `kind: products` collection may carry.
+	 */
+	private const FIELD_KEYS = ['titleField', 'validFromField', 'validUntilField'];
+
+	/**
 	 * Normalise a collection: `theme`, and for `kind: products` the product keys.
 	 *
 	 * @param array<string, mixed> $collection The collection.
@@ -60,25 +65,58 @@ class ThemeTagKeys {
 	 */
 	public function collection(array $collection): array {
 		$collection = $this->theme(entry: $collection);
-		$fieldKeys  = ['titleField', 'validFromField', 'validUntilField'];
 		if (($collection['kind'] ?? null) !== 'products') {
-			foreach (array_merge($fieldKeys, ['metaFields', 'countLabel']) as $key) {
-				unset($collection[$key]);
-			}
-
-			return $collection;
+			return $this->withoutProductKeys(collection: $collection);
 		}
 
-		foreach ($fieldKeys as $key) {
-			if (array_key_exists($key, $collection) === true && (is_string($collection[$key]) === false || preg_match(self::FIELD, $collection[$key]) !== 1)) {
-				unset($collection[$key]);
-			}
-		}
-
+		$collection = $this->fieldKeys(collection: $collection);
 		$collection = $this->metaFields(collection: $collection);
 
 		return $this->countLabel(collection: $collection);
 	}//end collection()
+
+	/**
+	 * Drop the keys only a `kind: products` collection may carry.
+	 *
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withoutProductKeys(array $collection): array {
+		foreach (array_merge(self::FIELD_KEYS, ['metaFields', 'countLabel']) as $key) {
+			unset($collection[$key]);
+		}
+
+		return $collection;
+	}//end withoutProductKeys()
+
+	/**
+	 * Keep each field-name key only when it names a field.
+	 *
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function fieldKeys(array $collection): array {
+		foreach (self::FIELD_KEYS as $key) {
+			if (array_key_exists($key, $collection) === true && $this->namesField(field: $collection[$key]) === false) {
+				unset($collection[$key]);
+			}
+		}
+
+		return $collection;
+	}//end fieldKeys()
+
+	/**
+	 * Whether a value is a field name the portal may read.
+	 *
+	 * @param mixed $field The value.
+	 *
+	 * @return bool
+	 */
+	private function namesField(mixed $field): bool {
+		return is_string($field) === true && preg_match(self::FIELD, $field) === 1;
+	}//end namesField()
 
 	/**
 	 * Keep `metaFields` as a list of plain field names; drop it when none is left.
@@ -92,12 +130,7 @@ class ThemeTagKeys {
 			return $collection;
 		}
 
-		$declared = $collection['metaFields'];
-		if (is_array($declared) === false) {
-			$declared = [];
-		}
-
-		$meta = array_values(array_filter($declared, fn ($field): bool => is_string($field) === true && preg_match(self::FIELD, $field) === 1));
+		$meta = $this->fieldNames(declared: $collection['metaFields']);
 		if ($meta === []) {
 			unset($collection['metaFields']);
 			return $collection;
@@ -107,6 +140,21 @@ class ThemeTagKeys {
 
 		return $collection;
 	}//end metaFields()
+
+	/**
+	 * The field names in a declared list, in order; none when it is not a list.
+	 *
+	 * @param mixed $declared The declared `metaFields`.
+	 *
+	 * @return list<mixed>
+	 */
+	private function fieldNames(mixed $declared): array {
+		if (is_array($declared) === false) {
+			return [];
+		}
+
+		return array_values(array_filter($declared, fn ($field): bool => $this->namesField(field: $field)));
+	}//end fieldNames()
 
 	/**
 	 * Normalise an action: `theme` and `when`.
@@ -124,12 +172,7 @@ class ThemeTagKeys {
 		}
 
 		$when = $action['when'];
-		$valid = is_array($when) === true
-			&& is_string($when['field'] ?? null) === true && preg_match(self::FIELD, $when['field']) === 1
-			&& in_array($when['op'] ?? null, self::OPERATORS, true) === true
-			&& array_key_exists('value', $when) === true
-			&& $this->valueFits(op: $when['op'], value: $when['value']) === true;
-		if ($valid === false) {
+		if (is_array($when) === false || $this->soundWhen(when: $when) === false) {
 			unset($action['when']);
 			return $action;
 		}
@@ -138,6 +181,21 @@ class ThemeTagKeys {
 
 		return $action;
 	}//end action()
+
+	/**
+	 * Whether a condition names a field, a known operator and a value that suits it.
+	 *
+	 * @param array<mixed> $when The condition.
+	 *
+	 * @return bool
+	 */
+	private function soundWhen(array $when): bool {
+		if ($this->namesField(field: $when['field'] ?? null) === false || in_array($when['op'] ?? null, self::OPERATORS, true) === false) {
+			return false;
+		}
+
+		return array_key_exists('value', $when) === true && $this->valueFits(op: $when['op'], value: $when['value']) === true;
+	}//end soundWhen()
 
 	/**
 	 * Keep `theme` only as a slug.
@@ -167,8 +225,8 @@ class ThemeTagKeys {
 		}
 
 		$label = $collection['countLabel'];
-		if (is_array($label) === false || is_string($label['singular'] ?? null) === false || is_string($label['plural'] ?? null) === false
-			|| trim($label['singular']) === '' || trim($label['plural']) === ''
+		if (is_array($label) === false || $this->isText(value: $label['singular'] ?? null) === false
+			|| $this->isText(value: $label['plural'] ?? null) === false
 		) {
 			unset($collection['countLabel']);
 			return $collection;
@@ -178,6 +236,17 @@ class ThemeTagKeys {
 
 		return $collection;
 	}//end countLabel()
+
+	/**
+	 * Whether a value is a string with something besides whitespace in it.
+	 *
+	 * @param mixed $value The value.
+	 *
+	 * @return bool
+	 */
+	private function isText(mixed $value): bool {
+		return is_string($value) === true && trim($value) !== '';
+	}//end isText()
 
 	/**
 	 * Whether a condition's value suits its operator: a list for `in`, a scalar otherwise.
