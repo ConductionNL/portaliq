@@ -302,13 +302,31 @@ class InAppMessagingLeaf implements GuardianMessagingLeafInterface {
 		// id is still compared here, and a miss falls back to the full read,
 		// so a store that does not narrow by id never hides a thread.
 		foreach ([[$threadId], null] as $ids) {
-			foreach ($this->store->findAll(schema: self::THREAD_SCHEMA, filters: [], ids: $ids) as $thread) {
-				if ($this->store->rowId(row: $thread) === $threadId) {
-					return $thread;
-				}
+			$thread = $this->threadAmong(ids: $ids, threadId: $threadId);
+			if ($thread !== null) {
+				return $thread;
 			}
 		}
 
 		return null;
 	}//end findThread()
+
+	/**
+	 * The thread with this id among the threads read by these ids, or among
+	 * every thread when no ids are given.
+	 *
+	 * @param array<int, string>|null $ids      The ids to read by, or null for the full read.
+	 * @param string                  $threadId The thread id.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function threadAmong(?array $ids, string $threadId): ?array {
+		foreach ($this->store->findAll(schema: self::THREAD_SCHEMA, filters: [], ids: $ids) as $thread) {
+			if ($this->store->rowId(row: $thread) === $threadId) {
+				return $thread;
+			}
+		}
+
+		return null;
+	}//end threadAmong()
 }//end class
