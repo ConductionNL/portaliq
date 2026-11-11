@@ -11,28 +11,64 @@
  * citizen's page runs, and says which form the binding opens today. When it
  * opens none, it says so as a warning and says why, and it never names a form.
  *
- * WHY THIS MODULE IMPORTS NOTHING. The POST, the URL generator, the toasts and
- * the translator are handed in by `src/customComponents.js`, so
- * `tests/form-binding-preview.spec.mjs` runs it as a plain node script.
+ * WHY THIS MODULE IMPORTS ONLY ITS REQUEST STEP. The POST, the URL generator,
+ * the toasts and the translator are handed in by `src/customComponents.js`,
+ * so `tests/form-binding-preview.spec.mjs` runs it as a plain node script.
  *
  * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-portal-page-binds-to-a-published-form-not-to-a-field-list-req-pifo-001
  */
 
+import { postBindingOrSay } from './formBindingRequest.js'
+
 /**
- * The binding fields the preview reads, without the row's metadata.
- *
- * @param {object} row The binding row.
- * @return {object}
+ * @param {(text: string, vars?: object) => string} translate Translator.
+ * @return {string} The sentence for an external entry without an address.
  */
-function bindingOf(row) {
-	const binding = {}
-	for (const [key, value] of Object.entries(row || {})) {
-		if (!key.startsWith('@') && key !== 'id' && key !== 'uuid') {
-			binding[key] = value
-		}
-	}
-	return binding
+function externalWithoutAddress(translate) {
+	return translate(
+		'This entry sends people to another website, but has no address. Nobody can start it.',
+	)
 }
+
+/**
+ * @param {(text: string, vars?: object) => string} translate Translator.
+ * @return {string} The sentence for a case type this portal does not show.
+ */
+function hiddenCaseType(translate) {
+	return translate(
+		"This entry opens no form: this portal does not show its case type. Show it again under Case types on the portal's page.",
+	)
+}
+
+/**
+ * @param {(text: string, vars?: object) => string} translate Translator.
+ * @return {string} The sentence for a condition the portal cannot check.
+ */
+function unsupportedCondition(translate) {
+	return translate(
+		'This form uses a condition the portal cannot check. Change it to a condition on another answer.',
+	)
+}
+
+/**
+ * @param {(text: string, vars?: object) => string} translate Translator.
+ * @param {object} answer The preview.
+ * @return {string} The sentence for a named form that is not published.
+ */
+function namedFormNotPublished(translate, answer) {
+	return translate(
+		'This entry opens no form today. It asks for "{form}", and no form of that name is published to its audience.',
+		{ form: answer?.askedFor || '' },
+	)
+}
+
+/** The sentence for each reason a binding opens no form. */
+const NO_FORM_SENTENCES = new Map([
+	['external_without_address', externalWithoutAddress],
+	['hidden_case_type', hiddenCaseType],
+	['unsupported_condition', unsupportedCondition],
+	['named_form_not_published', namedFormNotPublished],
+])
 
 /**
  * The sentence for a binding that opens no form, by reason.
@@ -43,30 +79,72 @@ function bindingOf(row) {
  * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-portal-page-binds-to-a-published-form-not-to-a-field-list-req-pifo-001
  */
 export function noFormSentence(answer, translate) {
-	if (answer?.reason === 'external_without_address') {
-		return translate(
-			'This entry sends people to another website, but has no address. Nobody can start it.',
-		)
-	}
-	if (answer?.reason === 'hidden_case_type') {
-		return translate(
-			"This entry opens no form: this portal does not show its case type. Show it again under Case types on the portal's page.",
-		)
-	}
-	if (answer?.reason === 'unsupported_condition') {
-		return translate(
-			'This form uses a condition the portal cannot check. Change it to a condition on another answer.',
-		)
-	}
-	if (answer?.reason === 'named_form_not_published') {
-		return translate(
-			'This entry opens no form today. It asks for "{form}", and no form of that name is published to its audience.',
-			{ form: answer?.askedFor || '' },
-		)
+	const sentence = NO_FORM_SENTENCES.get(answer?.reason)
+	if (sentence) {
+		return sentence(translate, answer)
 	}
 	return translate(
 		'This entry opens no form today. No published form matches its case type and audience.',
 	)
+}
+
+/**
+ * The findings that stop a resolved form being published, as one line.
+ *
+ * @param {Array<object>} findings The findings.
+ * @return {string} Their messages, or codes, joined.
+ */
+function findingsLine(findings) {
+	return findings
+		.map((finding) => String(finding?.message || finding?.code || ''))
+		.filter((text) => text !== '')
+		.join(' ')
+}
+
+/**
+ * What a resolved binding says: the form it opens today, or what stops it
+ * being published (submit-creates-the-case-directly REQ-PIFO-007).
+ *
+ * @param {object} answer The preview.
+ * @param {(text: string, vars?: object) => string} translate Translator.
+ * @return {{warn: boolean, text: string}} The announcement.
+ */
+function resolvedAnnouncement(answer, translate) {
+	const findings = Array.isArray(answer.findings) ? answer.findings : []
+	const form = answer.formName || ''
+	if (findings.length > 0) {
+		return {
+			warn: true,
+			text: translate(
+				'This entry opens "{form}", but it cannot be published yet: {findings}',
+				{ form, findings: findingsLine(findings) },
+			),
+		}
+	}
+	return { warn: false, text: translate('This entry opens "{form}" today.', { form }) }
+}
+
+/**
+ * What the preview says, and whether it is a warning.
+ *
+ * @param {object} answer The preview.
+ * @param {(text: string, vars?: object) => string} translate Translator.
+ * @return {{warn: boolean, text: string}} The announcement.
+ */
+function announcementOf(answer, translate) {
+	if (answer.state === 'resolved') {
+		return resolvedAnnouncement(answer, translate)
+	}
+	if (answer.state === 'external') {
+		return {
+			warn: false,
+			text: translate(
+				'This entry sends people to {destination}. Nothing arrives here.',
+				{ destination: answer.destination || '' },
+			),
+		}
+	}
+	return { warn: true, text: noFormSentence(answer, translate) }
 }
 
 /**
@@ -82,14 +160,7 @@ export function noFormSentence(answer, translate) {
  * @return {{previewFormBinding: (payload: {item: object}) => Promise<boolean>}}
  * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-portal-page-binds-to-a-published-form-not-to-a-field-list-req-pifo-001
  */
-export function createFormBindingPreview({
-	post,
-	generateUrl,
-	notify,
-	notifyWarning,
-	notifyError,
-	translate,
-}) {
+export function createFormBindingPreview(deps) {
 	return {
 		/**
 		 * Say which form the row's binding opens today.
@@ -99,59 +170,18 @@ export function createFormBindingPreview({
 		 * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-portal-page-binds-to-a-published-form-not-to-a-field-list-req-pifo-001
 		 */
 		async previewFormBinding({ item }) {
-			let answer
-			try {
-				const response = await post(
-					generateUrl('/apps/portaliq/api/form-bindings/preview'),
-					{
-						binding: bindingOf(item),
-					},
-				)
-				answer = response?.data || {}
-			} catch {
-				notifyError(
-					translate(
-						'Could not check which form this entry opens. Try again.',
-					),
-				)
+			const answer = await postBindingOrSay(deps, {
+				path: '/apps/portaliq/api/form-bindings/preview',
+				item,
+				failure: (translate) =>
+					translate('Could not check which form this entry opens. Try again.'),
+			})
+			if (answer === null) {
 				return false
 			}
-
-			const findings = Array.isArray(answer.findings) ? answer.findings : []
-			if (answer.state === 'resolved' && findings.length > 0) {
-				// submit-creates-the-case-directly REQ-PIFO-007: what stops it being published.
-				notifyWarning(
-					translate(
-						'This entry opens "{form}", but it cannot be published yet: {findings}',
-						{
-							form: answer.formName || '',
-							findings: findings
-								.map((finding) =>
-									String(finding?.message || finding?.code || ''),
-								)
-								.filter((text) => text !== '')
-								.join(' '),
-						},
-					),
-				)
-			} else if (answer.state === 'resolved') {
-				notify(
-					translate('This entry opens "{form}" today.', {
-						form: answer.formName || '',
-					}),
-				)
-			} else if (answer.state === 'external') {
-				notify(
-					translate(
-						'This entry sends people to {destination}. Nothing arrives here.',
-						{
-							destination: answer.destination || '',
-						},
-					),
-				)
-			} else {
-				notifyWarning(noFormSentence(answer, translate))
-			}
+			const { warn, text } = announcementOf(answer, deps.translate)
+			const announce = warn ? deps.notifyWarning : deps.notify
+			announce(text)
 			return true
 		},
 	}
