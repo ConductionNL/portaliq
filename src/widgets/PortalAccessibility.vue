@@ -141,49 +141,6 @@ import {
 /** How long a page may take to show its site root, in milliseconds. */
 const PAGE_TIMEOUT = 20000
 
-/**
- * What the widget says once a run was handed to the server.
- *
- * @param {boolean} stored Whether the server stored it.
- * @return {[string, string]} The notice type and its words.
- */
-function storeNotice(stored) {
-	return stored
-		? ['success', t('portaliq', 'The measurement is stored. The statement now follows it.')]
-		: ['error', t('portaliq', 'The measurement could not be stored.')]
-}
-
-/** The frame's page refused to load in a frame. */
-const REFUSED = Symbol('refused')
-
-/** The frame's page showed no site root in time. */
-const TIMED_OUT = Symbol('timed out')
-
-/**
- * Where a frame's page stands: its site root, refused, timed out, or null
- * while it is still coming.
- *
- * @param {HTMLIFrameElement} frame The frame.
- * @param {number} started When loading began, in milliseconds.
- * @return {Element|symbol|null} The site root, `REFUSED`, `TIMED_OUT` or null.
- */
-function frameState(frame, started) {
-	let doc
-	try {
-		doc = frame.contentDocument
-	} catch {
-		doc = null
-	}
-	if (!doc) {
-		return REFUSED
-	}
-	const root = doc.querySelector(SITE_ROOT)
-	if (root) {
-		return root
-	}
-	return Date.now() - started > PAGE_TIMEOUT ? TIMED_OUT : null
-}
-
 export default {
 	name: 'PortalAccessibility',
 
@@ -461,9 +418,9 @@ export default {
 			return new Promise((resolve, reject) => {
 				const look = () => {
 					const state = frameState(frame, started)
-					if (state === REFUSED) {
+					if (state === 'refused') {
 						reject(new Error(t('portaliq', 'The page refused to load in a frame.')))
-					} else if (state === TIMED_OUT) {
+					} else if (state === 'timed-out') {
 						reject(new Error(t('portaliq', 'The page showed no site content within 20 seconds.')))
 					} else if (state) {
 						resolve(state)
@@ -515,6 +472,43 @@ export default {
 			}
 		},
 	},
+}
+
+/**
+ * What the widget says once a run was handed to the server.
+ *
+ * @param {boolean} stored Whether the server stored it.
+ * @return {[string, string]} The notice type and its words.
+ */
+function storeNotice(stored) {
+	return stored
+		? ['success', t('portaliq', 'The measurement is stored. The statement now follows it.')]
+		: ['error', t('portaliq', 'The measurement could not be stored.')]
+}
+
+/**
+ * Where a frame's page stands: its site root, refused, timed out, or null
+ * while it is still coming.
+ *
+ * @param {HTMLIFrameElement} frame The frame.
+ * @param {number} started When loading began, in milliseconds.
+ * @return {Element|string|null} The site root, 'refused', 'timed-out' or null.
+ */
+function frameState(frame, started) {
+	let doc
+	try {
+		doc = frame.contentDocument
+	} catch {
+		doc = null
+	}
+	if (!doc) {
+		return 'refused'
+	}
+	const root = doc.querySelector(SITE_ROOT)
+	if (root) {
+		return root
+	}
+	return Date.now() - started > PAGE_TIMEOUT ? 'timed-out' : null
 }
 </script>
 
