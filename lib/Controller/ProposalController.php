@@ -44,6 +44,7 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 
 /**
@@ -399,42 +400,56 @@ class ProposalController extends Controller {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$register = (string)($proposal['subjectRegister'] ?? '');
-		$schema = (string)($proposal['subjectSchema'] ?? '');
-		$subjectId = (string)($proposal['subjectId'] ?? '');
-
 		// Deciding is a write on somebody's record, so it is gated before
 		// anything is read or written: a reviewer without write rights gets
 		// the same refusal whether the proposal exists or not.
-		$mayReview = $this->guard->mayAct(
-			user: $user,
-			register: $register,
-			schema: $schema,
-			id: $subjectId,
-			action: PortalCaseAccessGuard::ACTION_REVIEW_PROPOSAL
-		);
-		if ($mayReview === false) {
+		if ($this->mayReview(user: $user, proposal: $proposal) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
+		return ['proposal' => $proposal, 'subjectRow' => $this->subjectRowOf(proposal: $proposal), 'reviewer' => $user->getUID()];
+	}//end decidable()
+
+	/**
+	 * Whether this user may review a proposal on its record.
+	 *
+	 * @param IUser                $user     The signed-in user.
+	 * @param array<string, mixed> $proposal The proposal.
+	 *
+	 * @return bool
+	 */
+	private function mayReview(IUser $user, array $proposal): bool {
+		return $this->guard->mayAct(
+			user: $user,
+			register: (string)($proposal['subjectRegister'] ?? ''),
+			schema: (string)($proposal['subjectSchema'] ?? ''),
+			id: (string)($proposal['subjectId'] ?? ''),
+			action: PortalCaseAccessGuard::ACTION_REVIEW_PROPOSAL
+		);
+	}//end mayReview()
+
+	/**
+	 * The record a proposal is on, or an empty record when it is gone.
+	 *
+	 * @param array<string, mixed> $proposal The proposal.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function subjectRowOf(array $proposal): array {
 		$subjectRow = $this->reader->readObject(
-			register: $register,
-			schema: $schema,
+			register: (string)($proposal['subjectRegister'] ?? ''),
+			schema: (string)($proposal['subjectSchema'] ?? ''),
 			scopeField: '',
 			subjectRef: '',
-			id: $subjectId,
+			id: (string)($proposal['subjectId'] ?? ''),
 			organisation: '',
 			scopeClaim: '',
 			contributingApp: '',
 			audience: ''
 		);
 
-		return [
-			'proposal' => $proposal,
-			'subjectRow' => (array)($subjectRow ?? []),
-			'reviewer' => $user->getUID(),
-		];
-	}//end decidable()
+		return (array)($subjectRow ?? []);
+	}//end subjectRowOf()
 
 	/**
 	 * One proposal by id, or null.
