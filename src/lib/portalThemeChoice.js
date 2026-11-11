@@ -49,6 +49,60 @@ export function isSelectable(set) {
 }
 
 /**
+ * A portal whose theme could not be read.
+ *
+ * @return {{state: string, current: string, currentResolves: boolean, sets: Array<object>}} The empty view.
+ */
+function noTheme() {
+	return {
+		state: 'error',
+		current: '',
+		currentResolves: false,
+		sets: [],
+	}
+}
+
+/**
+ * A portal's theme and the sets it can adopt, as the widget reads them.
+ *
+ * @param {object|null} data The theme endpoint's answer.
+ * @return {{state: string, current: string, currentResolves: boolean, sets: Array<object>}} The view.
+ */
+function themeView(data) {
+	return {
+		state: 'ready',
+		current: String(data?.current || ''),
+		currentResolves: data?.currentResolves === true,
+		sets: Array.isArray(data?.sets) ? data.sets : [],
+	}
+}
+
+/**
+ * What a refused save says, by the server's error.
+ */
+const SAVE_REFUSALS = {
+	contrast: (data) => ({ outcome: 'contrast', verdict: data.verdict || {} }),
+	unknown_theme: () => ({ outcome: 'unknown' }),
+	refused: (data) => ({
+		outcome: 'refused',
+		refusal: String(data.refusal || ''),
+	}),
+}
+
+/**
+ * The outcome of a save the server refused.
+ *
+ * @param {object} data The refusal's body.
+ * @return {object} `contrast`, `unknown`, `refused` or `failed`.
+ */
+function saveRefusal(data) {
+	if (Object.hasOwn(SAVE_REFUSALS, data.error)) {
+		return SAVE_REFUSALS[data.error](data)
+	}
+	return { outcome: 'failed' }
+}
+
+/**
  * The widget's actions over an injected transport.
  *
  * @param {object} deps The collaborators.
@@ -69,30 +123,15 @@ export function createPortalThemeChoice({ get, put, url }) {
 		 */
 		async load(slug) {
 			if (!slug) {
-				return {
-					state: 'error',
-					current: '',
-					currentResolves: false,
-					sets: [],
-				}
+				return noTheme()
 			}
 			try {
 				const { data } = await get(
 					url('/api/portals/{slug}/theme', { slug }),
 				)
-				return {
-					state: 'ready',
-					current: String(data?.current || ''),
-					currentResolves: data?.currentResolves === true,
-					sets: Array.isArray(data?.sets) ? data.sets : [],
-				}
+				return themeView(data)
 			} catch {
-				return {
-					state: 'error',
-					current: '',
-					currentResolves: false,
-					sets: [],
-				}
+				return noTheme()
 			}
 		},
 
@@ -117,20 +156,7 @@ export function createPortalThemeChoice({ get, put, url }) {
 				)
 				return { outcome: 'saved', data }
 			} catch (error) {
-				const data = error?.response?.data || {}
-				if (data.error === 'contrast') {
-					return { outcome: 'contrast', verdict: data.verdict || {} }
-				}
-				if (data.error === 'unknown_theme') {
-					return { outcome: 'unknown' }
-				}
-				if (data.error === 'refused') {
-					return {
-						outcome: 'refused',
-						refusal: String(data.refusal || ''),
-					}
-				}
-				return { outcome: 'failed' }
+				return saveRefusal(error?.response?.data || {})
 			}
 		},
 	}
