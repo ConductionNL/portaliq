@@ -72,6 +72,21 @@ class PortalAccountSelfControllerTest extends TestCase {
 	 *
 	 * @return void
 	 */
+	/**
+	 * A change the service refuses answers 400 and mails nothing.
+	 *
+	 * @return void
+	 */
+	public function testARefusedChangeIsABadRequestAndSendsNoMail(): void {
+		$controller = $this->controller(subject: ['subjectRef' => 'subject-1', 'organisation' => 'gemeente-x']);
+		$this->doubles['selfService']->method('updateDetails')->willReturn(null);
+		$this->doubles['mailer']->expects($this->never())->method('send');
+
+		$response = $controller->updateDetails(email: 'nieuw@example.org');
+
+		$this->assertSame([Http::STATUS_BAD_REQUEST, ['error' => 'refused']], [$response->getStatus(), $response->getData()]);
+	}//end testARefusedChangeIsABadRequestAndSendsNoMail()
+
 	public function testTheConfirmationSecretIsMailedToTheNewAddress(): void {
 		$controller = $this->controller(subject: ['subjectRef' => 'subject-1', 'organisation' => 'gemeente-x']);
 		$this->doubles['selfService']->method('updateDetails')->willReturn(['updated' => true, 'confirmationToken' => 'secret-1']);
