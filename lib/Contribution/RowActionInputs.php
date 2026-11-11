@@ -139,32 +139,62 @@ class RowActionInputs {
 		$out  = [];
 		$seen = [];
 		foreach (array_slice(array_values((array)($row[$config['from']] ?? [])), 0, self::MAX_INPUTS) as $descriptor) {
-			$name = null;
-			if (is_array($descriptor) === true) {
-				$name = ($descriptor['name'] ?? null);
-			}
-
-			if (is_string($name) === false || preg_match(self::FIELD_NAME, $name) !== 1 || isset($seen[$name]) === true) {
+			$name = $this->inputName(descriptor: $descriptor);
+			if ($name === null || isset($seen[$name]) === true) {
 				continue;
 			}
 
 			$seen[$name] = true;
-			$type        = ($descriptor['type'] ?? 'text');
-			$label       = $name;
-			if (is_string($descriptor['label'] ?? null) === true) {
-				$label = mb_substr((string)$descriptor['label'], 0, 120);
-			}
-
-			if (in_array($type, self::TYPES, true) === false) {
-				$type = 'text';
-			}
-
-
-			$out[]       = ['name' => $name, 'label' => $label, 'required' => (($descriptor['required'] ?? false) === true), 'type' => $type];
+			$out[]       = $this->input(descriptor: $descriptor, name: $name);
 		}
 
 		return $out;
 	}//end declaredInputs()
+
+	/**
+	 * The field name a descriptor declares, or null when it is not a map or
+	 * the name is not a field name.
+	 *
+	 * @param mixed $descriptor One declared input.
+	 *
+	 * @return string|null
+	 */
+	private function inputName(mixed $descriptor): ?string {
+		$name = null;
+		if (is_array($descriptor) === true) {
+			$name = ($descriptor['name'] ?? null);
+		}
+
+		if (is_string($name) === false || preg_match(self::FIELD_NAME, $name) !== 1) {
+			return null;
+		}
+
+		return $name;
+	}//end inputName()
+
+	/**
+	 * One input as the site asks for it: its label (the name without one, at
+	 * most 120 characters), whether it is required, and its type (text
+	 * unless it says date).
+	 *
+	 * @param array<string, mixed> $descriptor One declared input.
+	 * @param string               $name       Its field name.
+	 *
+	 * @return array{name: string, label: string, required: bool, type: string}
+	 */
+	private function input(array $descriptor, string $name): array {
+		$label = $name;
+		if (is_string($descriptor['label'] ?? null) === true) {
+			$label = mb_substr((string)$descriptor['label'], 0, 120);
+		}
+
+		$type = ($descriptor['type'] ?? 'text');
+		if (in_array($type, self::TYPES, true) === false) {
+			$type = 'text';
+		}
+
+		return ['name' => $name, 'label' => $label, 'required' => (($descriptor['required'] ?? false) === true), 'type' => $type];
+	}//end input()
 
 	/**
 	 * The body value for `into`: the submitted values for exactly the names
