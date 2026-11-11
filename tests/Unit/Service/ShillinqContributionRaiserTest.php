@@ -95,4 +95,35 @@ class ShillinqContributionRaiserTest extends TestCase {
 		$this->assertSame(['error' => 'raise_failed'], $this->raiser($odd)->raise([]));
 		$this->assertSame('ctb-1', $this->raiser($good)->raise(['kind' => 'activity'])['batchId']);
 	}//end testShillinqAnswersAreMapped()
+
+	/**
+	 * Only a failure that is neither invalid input nor a 403 is logged, with
+	 * its exception; the invalid answer carries the message, and an answer
+	 * that is not a map fails without a log line.
+	 *
+	 * @return void
+	 */
+	public function testTheLogLinesAndTheMessageAreAsRecorded(): void {
+		$logged = [];
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->method('error')->willReturnCallback(function (string $message, array $context) use (&$logged) {
+			$logged[] = $message . ' ' . get_class($context['exception']);
+		});
+		$raise = function (callable $behaviour) use ($logger): array {
+			$container = $this->createMock(ContainerInterface::class);
+			$container->method('has')->willReturn(true);
+			$container->method('get')->willReturn($this->service($behaviour));
+			return (new ShillinqContributionRaiser($container, $logger, \stdClass::class))->raise([]);
+		};
+
+		$this->assertSame(['error' => 'invalid_charge', 'message' => 'No description.'], $raise(static fn () => throw new InvalidArgumentException('No description.')));
+		$this->assertSame(['error' => 'forbidden'], $raise(static fn () => throw new RuntimeException('403')));
+		$this->assertSame(['error' => 'raise_failed'], $raise(static fn () => 'raised'));
+		$this->assertSame(['error' => 'raise_failed'], $raise(static fn () => ['results' => 'all']));
+		$this->assertSame([], $logged);
+
+		$this->assertSame(['error' => 'raise_failed'], $raise(static fn () => throw new RuntimeException('database gone 403')));
+		$this->assertSame(['error' => 'raise_failed'], $raise(static fn () => throw new \LogicException('bug')));
+		$this->assertSame(['Portaliq: shillinq contribution raise failed RuntimeException', 'Portaliq: shillinq contribution raise failed LogicException'], $logged);
+	}//end testTheLogLinesAndTheMessageAreAsRecorded()
 }//end class
