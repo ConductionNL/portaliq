@@ -121,23 +121,49 @@ class TrafficBackfillService {
 		$written = [];
 		$kept = 0;
 		[$own, $rollups] = $this->portalWalk();
-		foreach ($own as [$slug, $config]) {
-			if ($only !== null && $slug !== $only) {
-				continue;
-			}
-
+		foreach ($this->selectedPortals(own: $own, only: $only) as [$slug, $config]) {
 			$written[$slug] = $this->backfillPortal(slug: $slug, config: $config, now: $now);
 			$kept += ((int)$config['retentionDays'] + 1) - count($written[$slug]);
 		}
 
 		$rollupDays = 0;
-		foreach ($rollups as $slug => $members) {
-			if ($only === null || in_array($only, $members, true) === true) {
-				$rollupDays += $this->aggregation->aggregateRollup(slug: $slug, members: $members, written: $written, now: $now);
-			}
+		foreach ($this->rollupsHolding(rollups: $rollups, only: $only) as $slug => $members) {
+			$rollupDays += $this->aggregation->aggregateRollup(slug: $slug, members: $members, written: $written, now: $now);
 		}
 
 		return ['portals' => count($written), 'days' => (int)array_sum(array_map('count', $written)), 'kept' => $kept, 'rollupDays' => $rollupDays];
+	}
+
+	/**
+	 * The ordinary portals to rebuild, in walk order: every one, or the one asked for.
+	 *
+	 * @param array<int, array{0: string, 1: array<string, mixed>}> $own  The ordinary portals and their configuration.
+	 * @param string|null                                           $only One portal slug, or null for every portal.
+	 *
+	 * @return array<int, array{0: string, 1: array<string, mixed>}>
+	 */
+	private function selectedPortals(array $own, ?string $only): array {
+		if ($only === null) {
+			return $own;
+		}
+
+		return array_filter($own, static fn (array $portal): bool => $portal[0] === $only);
+	}
+
+	/**
+	 * The roll-up portals to re-sum: every one, or those with the asked portal among their members.
+	 *
+	 * @param array<string, array<int, string>> $rollups The roll-up portals and their members.
+	 * @param string|null                       $only    One portal slug, or null for every portal.
+	 *
+	 * @return array<string, array<int, string>>
+	 */
+	private function rollupsHolding(array $rollups, ?string $only): array {
+		if ($only === null) {
+			return $rollups;
+		}
+
+		return array_filter($rollups, static fn (array $members): bool => in_array($only, $members, true) === true);
 	}
 
 	/**
