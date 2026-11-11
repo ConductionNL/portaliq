@@ -406,7 +406,8 @@ class DemoDataService {
 			}
 		}
 
-		return array_keys($slugs);
+		// A numeric slug comes back from array_keys as an int.
+		return array_map(callback: 'strval', array: array_keys($slugs));
 	}//end schemaSlugs()
 
 	/**
