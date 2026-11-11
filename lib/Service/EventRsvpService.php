@@ -279,18 +279,42 @@ class EventRsvpService {
 	 * @return array<int, array<string, mixed>>
 	 */
 	private function answersOf(object $objectService, string $eventId): array {
-		try {
-			$rows = $this->readEveryPage(objectService: $objectService, register: self::REGISTER, schema: self::SCHEMA, filters: ['eventRef' => $eventId]);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: event RSVP count failed', ['reason' => $e->getMessage()]);
-			return [];
-		}
-
-		$out = [];
+		$rows = $this->everyAnswer(objectService: $objectService, eventId: $eventId);
 		if (is_array($rows) === false) {
 			return [];
 		}
 
+		return $this->answersFor(rows: $rows, eventId: $eventId);
+	}//end answersOf()
+
+	/**
+	 * Every stored answer on one event, read page by page; [] when the read
+	 * fails, which is logged.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $eventId       The event id.
+	 *
+	 * @return mixed What the read returned.
+	 */
+	private function everyAnswer(object $objectService, string $eventId): mixed {
+		try {
+			return $this->readEveryPage(objectService: $objectService, register: self::REGISTER, schema: self::SCHEMA, filters: ['eventRef' => $eventId]);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: event RSVP count failed', ['reason' => $e->getMessage()]);
+			return [];
+		}
+	}//end everyAnswer()
+
+	/**
+	 * The rows that are answers on this event, as arrays.
+	 *
+	 * @param array<int|string, mixed> $rows    The rows read.
+	 * @param string                   $eventId The event id.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function answersFor(array $rows, string $eventId): array {
+		$out = [];
 		foreach ($rows as $row) {
 			$row = $this->normalise(row: $row);
 			if ($row !== null && (string)($row['eventRef'] ?? '') === $eventId) {
@@ -299,7 +323,7 @@ class EventRsvpService {
 		}
 
 		return $out;
-	}//end answersOf()
+	}//end answersFor()
 
 	/**
 	 * The existing answer for this child on this event, whoever gave it.
@@ -336,11 +360,21 @@ class EventRsvpService {
 			return (string)$row['uuid'];
 		}
 
-		$self = $row['@self'] ?? [];
-		if (is_array($self) === true && (isset($self['id']) === true || isset($self['uuid']) === true)) {
-			return (string)($self['id'] ?? $self['uuid']);
+		return $this->envelopeId(envelope: ($row['@self'] ?? []));
+	}//end rowId()
+
+	/**
+	 * The id, else the uuid, of a row's `@self` envelope, or null.
+	 *
+	 * @param mixed $envelope The `@self` envelope.
+	 *
+	 * @return string|null
+	 */
+	private function envelopeId(mixed $envelope): ?string {
+		if (is_array($envelope) === false || (isset($envelope['id']) === false && isset($envelope['uuid']) === false)) {
+			return null;
 		}
 
-		return null;
-	}//end rowId()
+		return (string)($envelope['id'] ?? $envelope['uuid']);
+	}//end envelopeId()
 }//end class
