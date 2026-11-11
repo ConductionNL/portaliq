@@ -86,7 +86,20 @@ class PortalCatalogueReader {
 			return [];
 		}
 
-		$rows = $this->reader->readCollection(
+		$rows = $this->listedRows(rows: $this->publishedRows(portal: $portal), portal: $portal);
+
+		return array_values($this->byTopic(rows: $rows));
+	}//end topicsFor()
+
+	/**
+	 * The portal's catalogue rows the register holds as published.
+	 *
+	 * @param string $portal The portal slug.
+	 *
+	 * @return array<mixed>
+	 */
+	private function publishedRows(string $portal): array {
+		return $this->reader->readCollection(
 			register: self::REGISTER,
 			schema: self::SCHEMA,
 			scopeField: 'portal',
@@ -95,43 +108,80 @@ class PortalCatalogueReader {
 			limit: self::ROW_LIMIT,
 			filter: ['status' => 'published']
 		);
+	}//end publishedRows()
 
-		// An entry that starts a form for a case type this portal hides is
-		// left out (operate-show-per-case-type REQ-OSC-002).
+	/**
+	 * The rows of this portal that are published and do not start a form for
+	 * a case type the portal hides (operate-show-per-case-type REQ-OSC-002).
+	 * A withdrawn entry is simply not listed. Nothing is deleted here,
+	 * because nothing was kept.
+	 *
+	 * @param array<mixed> $rows   The rows read.
+	 * @param string       $portal The portal slug.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function listedRows(array $rows, string $portal): array {
 		$hiddenRoutes = $this->hiddenRoutes(portal: $portal);
+		$listed       = [];
+		foreach ($rows as $row) {
+			if ($this->isPublishedOn(row: $row, portal: $portal) === true && in_array((string)($row['route'] ?? ''), $hiddenRoutes, true) === false) {
+				$listed[] = $row;
+			}
+		}
 
+		return $listed;
+	}//end listedRows()
+
+	/**
+	 * Whether a row is a published entry of this portal.
+	 *
+	 * @param mixed  $row    The row.
+	 * @param string $portal The portal slug.
+	 *
+	 * @return bool
+	 */
+	private function isPublishedOn(mixed $row, string $portal): bool {
+		return is_array($row) === true && ($row['portal'] ?? '') === $portal && (string)($row['status'] ?? '') === 'published';
+	}//end isPublishedOn()
+
+	/**
+	 * The rows grouped by topic, each topic where its first entry was.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The listed rows.
+	 *
+	 * @return array<string, array{topic: string, entries: array<int, array<string, string>>}>
+	 */
+	private function byTopic(array $rows): array {
 		$topics = [];
 		foreach ($rows as $row) {
-			if (is_array($row) === false || ($row['portal'] ?? '') !== $portal) {
-				continue;
-			}
-
-			if (in_array((string)($row['route'] ?? ''), $hiddenRoutes, true) === true) {
-				continue;
-			}
-
-			if ((string)($row['status'] ?? '') !== 'published') {
-				// A withdrawn entry is simply not listed. Nothing is deleted
-				// here, because nothing was kept.
-				continue;
-			}
-
 			$topic = (string)($row['topic'] ?? '');
 			if (isset($topics[$topic]) === false) {
 				$topics[$topic] = ['topic' => $topic, 'entries' => []];
 			}
 
-			$topics[$topic]['entries'][] = [
-				'title' => (string)($row['title'] ?? ''),
-				'summary' => (string)($row['summary'] ?? ''),
-				// The route is what starts the form: the entry point hands the
-				// visitor to the binding, it does not describe the form itself.
-				'route' => (string)($row['route'] ?? ''),
-			];
-		}//end foreach
+			$topics[$topic]['entries'][] = $this->entry(row: $row);
+		}
 
-		return array_values($topics);
-	}//end topicsFor()
+		return $topics;
+	}//end byTopic()
+
+	/**
+	 * One entry: its title, its summary and the route that starts its form.
+	 * The entry point hands the visitor to the binding, it does not describe
+	 * the form itself.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return array{title: string, summary: string, route: string}
+	 */
+	private function entry(array $row): array {
+		return [
+			'title' => (string)($row['title'] ?? ''),
+			'summary' => (string)($row['summary'] ?? ''),
+			'route' => (string)($row['route'] ?? ''),
+		];
+	}//end entry()
 
 	/**
 	 * The routes of a portal whose published binding names a case type the
