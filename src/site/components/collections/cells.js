@@ -80,7 +80,17 @@ export function rowIdOf(row) {
 	if (!row || typeof row !== 'object') {
 		return undefined
 	}
-	return row.id || row.uuid || row['@self']?.id || undefined
+	return ownIdOf(row) || undefined
+}
+
+/**
+ * A row's id, its uuid, else its envelope's id.
+ *
+ * @param {object} row The row.
+ * @return {string|undefined} The id as given.
+ */
+function ownIdOf(row) {
+	return row.id || row.uuid || row['@self']?.id
 }
 
 /**
@@ -92,21 +102,32 @@ export function rowIdOf(row) {
  * @return {boolean}
  */
 function onlyIdentifiers(objects, field) {
-	let filled = 0
-	for (const row of objects) {
-		const value = row?.[field]
-		const values = Array.isArray(value) ? value : [value]
-		for (const item of values) {
-			if (item === null || item === undefined || item === '') {
-				continue
-			}
-			filled++
-			if (!isIdentifier(item)) {
-				return false
-			}
-		}
-	}
-	return filled > 0
+	const filled = objects
+		.flatMap((row) => valuesIn(row, field))
+		.filter(isFilled)
+	return filled.length > 0 && filled.every((item) => isIdentifier(item))
+}
+
+/**
+ * A row's values of one field: each item of a list, else the one value.
+ *
+ * @param {object|null} row The row.
+ * @param {string} field The field.
+ * @return {Array<unknown>} The values.
+ */
+function valuesIn(row, field) {
+	const value = row?.[field]
+	return Array.isArray(value) ? value : [value]
+}
+
+/**
+ * Whether a value is filled: not null, undefined or ''.
+ *
+ * @param {unknown} item The value.
+ * @return {boolean}
+ */
+function isFilled(item) {
+	return item !== null && item !== undefined && item !== ''
 }
 
 /**
@@ -123,33 +144,12 @@ function onlyIdentifiers(objects, field) {
  * @spec openspec/changes/collection-column-labels/specs/portal-contribution-contract/spec.md#requirement-a-collection-field-must-read-under-its-schema-title-when-the-app-gave-no-label
  */
 export function deriveColumns(collection, objects) {
-	const declared = Array.isArray(collection?.columns)
-		? collection.columns.filter(
-				(c) => c && typeof c.field === 'string' && c.field !== '',
-			)
-		: []
+	const declared = declaredColumns(collection)
 	if (declared.length > 0) {
-		return declared.map((c) => {
-			const config = fieldConfigOf(collection, c.field)
-			const valueLabels = c.valueLabels || config.valueLabels
-			return {
-				...c,
-				label: columnLabel({ label: config.label, ...withLabel(c) }),
-				render: c.render || 'text',
-				...(valueLabels ? { valueLabels } : {}),
-			}
-		})
+		return declared.map((c) => declaredColumn(collection, c))
 	}
 	const rows = Array.isArray(objects) ? objects : []
-	const fields = []
-	for (const row of rows) {
-		for (const key of Object.keys(row || {})) {
-			if (!ENVELOPE.has(key) && !fields.includes(key)) {
-				fields.push(key)
-			}
-		}
-	}
-	return fields
+	return rowFields(rows)
 		.filter((field) => !onlyIdentifiers(rows, field))
 		.map((field) => ({
 			field,
@@ -159,6 +159,75 @@ export function deriveColumns(collection, objects) {
 			}),
 			render: 'text',
 		}))
+}
+
+/**
+ * The columns the app declared that name a field.
+ *
+ * @param {object} collection The collection.
+ * @return {Array<object>} The columns.
+ */
+function declaredColumns(collection) {
+	return Array.isArray(collection?.columns)
+		? collection.columns.filter(namesField)
+		: []
+}
+
+/**
+ * Whether a declared column names a field.
+ *
+ * @param {object|null} column The declared column.
+ * @return {boolean}
+ */
+function namesField(column) {
+	return Boolean(column) && typeof column.field === 'string' && column.field !== ''
+}
+
+/**
+ * A declared column with its heading, render and value labels: its own,
+ * else the field config's.
+ *
+ * @param {object} collection The collection.
+ * @param {object} column The declared column.
+ * @return {object} The column.
+ */
+function declaredColumn(collection, column) {
+	const config = fieldConfigOf(collection, column.field)
+	const valueLabels = column.valueLabels || config.valueLabels
+	return {
+		...column,
+		label: columnLabel({ label: config.label, ...withLabel(column) }),
+		render: column.render || 'text',
+		...(valueLabels ? { valueLabels } : {}),
+	}
+}
+
+/**
+ * Every field the rows carry, in the order first met, minus the envelope.
+ *
+ * @param {Array<object>} rows The rows.
+ * @return {Array<string>} The fields.
+ */
+function rowFields(rows) {
+	const fields = []
+	for (const row of rows) {
+		for (const key of ownFields(row)) {
+			if (!fields.includes(key)) {
+				fields.push(key)
+			}
+		}
+	}
+	return fields
+}
+
+/**
+ * A row's own fields, minus the envelope.
+ *
+ * @param {object|null} row The row.
+ * @return {Array<string>} The fields.
+ */
+function ownFields(row) {
+	return Object.keys(row || {}).filter((key) => !ENVELOPE.has(key))
 }
 
 /**
@@ -204,17 +273,8 @@ export function rowColumn(column, row) {
  * @return {Array<{field: string, label: string, render: string, valueLabels?: object, declared: boolean}>}
  */
 export function detailFields(collection, row) {
-	const byField = new Map()
-	for (const column of Array.isArray(collection?.columns)
-		? collection.columns
-		: []) {
-		if (column && typeof column.field === 'string') {
-			byField.set(column.field, column)
-		}
-	}
-	const declared = Array.isArray(collection?.detail?.fields)
-		? collection.detail.fields.filter((f) => typeof f === 'string' && f !== '')
-		: []
+	const byField = columnsByField(collection)
+	const declared = declaredDetailFields(collection)
 	const fields =
 		declared.length > 0
 			? declared
@@ -235,6 +295,36 @@ export function detailFields(collection, row) {
 }
 
 /**
+ * The collection's columns by the field they show.
+ *
+ * @param {object} collection The collection.
+ * @return {Map<string, object>} The columns.
+ */
+function columnsByField(collection) {
+	const byField = new Map()
+	for (const column of Array.isArray(collection?.columns)
+		? collection.columns
+		: []) {
+		if (column && typeof column.field === 'string') {
+			byField.set(column.field, column)
+		}
+	}
+	return byField
+}
+
+/**
+ * The fields the app declared for the detail card.
+ *
+ * @param {object} collection The collection.
+ * @return {Array<string>} The fields.
+ */
+function declaredDetailFields(collection) {
+	return Array.isArray(collection?.detail?.fields)
+		? collection.detail.fields.filter((f) => typeof f === 'string' && f !== '')
+		: []
+}
+
+/**
  * The collection's own config for one field (`fieldConfigs.<field>`): a
  * `label` and `valueLabels` for a field the detail card shows that is no
  * column. A column's own label and value labels win.
@@ -246,11 +336,22 @@ export function detailFields(collection, row) {
  */
 export function fieldConfigOf(collection, field) {
 	const configs = collection?.fieldConfigs
-	if (!configs || typeof configs !== 'object' || !Object.hasOwn(configs, field)) {
+	if (!hasOwnConfig(configs, field)) {
 		return {}
 	}
 	const config = configs[field]
 	return config && typeof config === 'object' ? config : {}
+}
+
+/**
+ * Whether the field configs carry one of their own for a field.
+ *
+ * @param {unknown} configs The collection's `fieldConfigs`.
+ * @param {string} field The field.
+ * @return {boolean}
+ */
+function hasOwnConfig(configs, field) {
+	return Boolean(configs) && typeof configs === 'object' && Object.hasOwn(configs, field)
 }
 
 /**
@@ -316,11 +417,34 @@ function scalarText(value, { locale, t }) {
 		return value ? t('Yes') : t('No')
 	}
 	if (typeof value === 'number') {
-		return Number.isFinite(value) ? value.toLocaleString(locale) : ''
+		return numberText(value, locale)
 	}
 	if (typeof value !== 'string') {
 		return ''
 	}
+	return stringText(value, locale)
+}
+
+/**
+ * A number in the language's notation; nothing for one that is not finite.
+ *
+ * @param {number} value The number.
+ * @param {string} locale The language.
+ * @return {string}
+ */
+function numberText(value, locale) {
+	return Number.isFinite(value) ? value.toLocaleString(locale) : ''
+}
+
+/**
+ * A string written for a person: a date as a date, an identifier as
+ * nothing, else itself.
+ *
+ * @param {string} value The string.
+ * @param {string} locale The language.
+ * @return {string}
+ */
+function stringText(value, locale) {
 	const text = value.trim()
 	if (isIdentifier(text)) {
 		return ''
@@ -380,14 +504,33 @@ export function valueLabel(value, valueLabels) {
 	if (!valueLabels || typeof valueLabels !== 'object') {
 		return undefined
 	}
-	if (typeof value !== 'string' && typeof value !== 'number') {
+	if (!isLabelKey(value)) {
 		return undefined
 	}
 	const key = String(value)
 	if (!Object.hasOwn(valueLabels, key)) {
 		return undefined
 	}
-	const label = valueLabels[key]
+	return filledLabel(valueLabels[key])
+}
+
+/**
+ * Whether a value can carry a declared label: a string or a number.
+ *
+ * @param {unknown} value The value.
+ * @return {boolean}
+ */
+function isLabelKey(value) {
+	return typeof value === 'string' || typeof value === 'number'
+}
+
+/**
+ * A declared label that is text and not blank, else undefined.
+ *
+ * @param {unknown} label The declared label.
+ * @return {string|undefined}
+ */
+function filledLabel(label) {
 	return typeof label === 'string' && label.trim() !== '' ? label : undefined
 }
 
@@ -499,7 +642,18 @@ export function qrHref(value, origin = '') {
 	if (QR_SCHEMES.test(href) && /^[!-~]+$/.test(href)) {
 		return href
 	}
-	const safe = safeHref(href)
+	return onOrigin(safeHref(href), origin)
+}
+
+/**
+ * A safe address with a site-relative path made absolute on the site's
+ * origin; a path without an origin is no address.
+ *
+ * @param {string} safe The safe address, or ''.
+ * @param {string} origin The site's origin, or ''.
+ * @return {string} The address, or ''.
+ */
+function onOrigin(safe, origin) {
 	if (safe.startsWith('/') && origin !== '') {
 		return `${String(origin).replace(/\/$/, '')}${safe}`
 	}
