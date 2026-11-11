@@ -94,29 +94,67 @@ class ActivityAttendanceService {
 	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-mark-attendance-per-session
 	 */
 	public function mark(string $activityId, string $sessionId, string $childRef, string $status, string $markedByRef): array {
-		$activity = $this->store->lookup(schema: ActivityStore::OFFER, id: $activityId);
+		return $this->record(
+			mark: new AttendanceMark(activityId: $activityId, sessionId: $sessionId, childRef: $childRef, status: $status, markedByRef: $markedByRef)
+		);
+	}//end mark()
+
+	/**
+	 * Write one mark, over the existing one for the same session and child.
+	 *
+	 * @param AttendanceMark $mark The mark.
+	 *
+	 * @return array{attendance?: array<string, mixed>, error?: string}
+	 *
+	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-mark-attendance-per-session
+	 */
+	private function record(AttendanceMark $mark): array {
+		$activity = $this->store->lookup(schema: ActivityStore::OFFER, id: $mark->activityId);
 		if ($activity === null) {
 			return ['error' => self::REASON_NOT_FOUND];
 		}
 
-		$refusal = $this->refusal(activity: $activity, sessionId: $sessionId, childRef: $childRef, status: $status);
+		$refusal = $this->refusal(activity: $activity, mark: $mark);
 		if ($refusal !== null) {
 			return ['error' => $refusal];
 		}
 
-		$existing = $this->existingMark(activity: $activity, sessionId: $sessionId, childRef: $childRef);
+		$existing = $this->existingMark(activity: $activity, mark: $mark);
 		if ($existing === false) {
 			return ['error' => self::REASON_UNAVAILABLE];
 		}
 
-		$data = [
+		return $this->saveOver(existing: $existing, data: $this->markData(activity: $activity, mark: $mark));
+	}//end record()
+
+	/**
+	 * The stored shape of a mark, stamped now.
+	 *
+	 * @param array<string, mixed> $activity The activity row.
+	 * @param AttendanceMark       $mark     The mark.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function markData(array $activity, AttendanceMark $mark): array {
+		return [
 			'activityRef' => $this->store->idOf(row: $activity),
-			'sessionId' => $sessionId,
-			'childRef' => $childRef,
-			'status' => $status,
-			'markedByRef' => $markedByRef,
+			'sessionId' => $mark->sessionId,
+			'childRef' => $mark->childRef,
+			'status' => $mark->status,
+			'markedByRef' => $mark->markedByRef,
 			'markedAt' => gmdate('c', $this->time->getTime()),
 		];
+	}//end markData()
+
+	/**
+	 * Save a mark over the existing one, or as a new one.
+	 *
+	 * @param array<string, mixed>|null $existing The existing mark, or null.
+	 * @param array<string, mixed>      $data     The mark's stored shape.
+	 *
+	 * @return array{attendance?: array<string, mixed>, error?: string}
+	 */
+	private function saveOver(?array $existing, array $data): array {
 		$id = '';
 		if ($existing !== null) {
 			$data = array_merge($existing, $data);
@@ -129,27 +167,38 @@ class ActivityAttendanceService {
 		}
 
 		return ['attendance' => $saved];
-	}//end mark()
+	}//end saveOver()
 
 	/**
 	 * Why this mark may not be written, or null when it may.
 	 *
 	 * @param array<string, mixed> $activity The activity row.
-	 * @param string $sessionId The session id.
-	 * @param string $childRef The child.
-	 * @param string $status The status.
+	 * @param AttendanceMark       $mark     The mark.
 	 *
 	 * @return string|null
 	 */
-	private function refusal(array $activity, string $sessionId, string $childRef, string $status): ?string {
-		if (in_array($status, self::STATUSES, true) === false) {
+	private function refusal(array $activity, AttendanceMark $mark): ?string {
+		if (in_array($mark->status, self::STATUSES, true) === false) {
 			return self::REASON_INVALID_STATUS;
 		}
 
-		if ($this->hasSession(activity: $activity, sessionId: $sessionId) === false) {
+		if ($this->hasSession(activity: $activity, sessionId: $mark->sessionId) === false) {
 			return self::REASON_UNKNOWN_SESSION;
 		}
 
+		return $this->signupRefusal(activity: $activity, childRef: $mark->childRef);
+	}//end refusal()
+
+	/**
+	 * Why the child holds no confirmed place on the activity, or null when
+	 * they do.
+	 *
+	 * @param array<string, mixed> $activity The activity row.
+	 * @param string               $childRef The child.
+	 *
+	 * @return string|null
+	 */
+	private function signupRefusal(array $activity, string $childRef): ?string {
 		$signups = $this->store->rows(schema: ActivityStore::SIGNUP);
 		if ($signups === null) {
 			return self::REASON_UNAVAILABLE;
@@ -162,7 +211,7 @@ class ActivityAttendanceService {
 		}
 
 		return null;
-	}//end refusal()
+	}//end signupRefusal()
 
 	/**
 	 * Whether the session is one the activity declares.
@@ -191,12 +240,11 @@ class ActivityAttendanceService {
 	 * is none, false when the rows could not be read.
 	 *
 	 * @param array<string, mixed> $activity The activity row.
-	 * @param string $sessionId The session id.
-	 * @param string $childRef The child.
+	 * @param AttendanceMark       $mark     The mark.
 	 *
 	 * @return array<string, mixed>|false|null
 	 */
-	private function existingMark(array $activity, string $sessionId, string $childRef): array|false|null {
+	private function existingMark(array $activity, AttendanceMark $mark): array|false|null {
 		$rows = $this->store->rows(schema: ActivityStore::ATTENDANCE);
 		if ($rows === null) {
 			return false;
@@ -205,8 +253,8 @@ class ActivityAttendanceService {
 		$keys = $this->store->keys(row: $activity);
 		foreach ($rows as $row) {
 			if (in_array((string)($row['activityRef'] ?? ''), $keys, true) === true
-				&& (string)($row['sessionId'] ?? '') === $sessionId
-				&& (string)($row['childRef'] ?? '') === $childRef
+				&& (string)($row['sessionId'] ?? '') === $mark->sessionId
+				&& (string)($row['childRef'] ?? '') === $mark->childRef
 			) {
 				return $row;
 			}
