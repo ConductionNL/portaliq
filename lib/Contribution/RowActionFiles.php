@@ -116,18 +116,36 @@ class RowActionFiles {
 		}
 
 		$files = $this->uploads(uploaded: $request->getUploadedFile($declared['field']));
-		if (count($files) > (int)$declared['max']) {
-			return ['files' => [], 'error' => 'too_many_files'];
-		}
-
-		foreach ($files as $file) {
-			if ($file['size'] > (int)$declared['maxBytes']) {
-				return ['files' => [], 'error' => 'file_too_large'];
-			}
+		$error = $this->refusal(files: $files, declared: $declared);
+		if ($error !== null) {
+			return ['files' => [], 'error' => $error];
 		}
 
 		return ['files' => $files, 'error' => null];
 	}//end collect()
+
+	/**
+	 * Why the uploads are refused: more files, or a larger one, than the
+	 * declaration allows; null when they fit.
+	 *
+	 * @param list<array{name: string, type: string, tmp_name: string, size: int}> $files    The uploads.
+	 * @param array<string, mixed>                                               $declared The `files` declaration.
+	 *
+	 * @return string|null
+	 */
+	private function refusal(array $files, array $declared): ?string {
+		if (count($files) > (int)$declared['max']) {
+			return 'too_many_files';
+		}
+
+		foreach ($files as $file) {
+			if ($file['size'] > (int)$declared['maxBytes']) {
+				return 'file_too_large';
+			}
+		}
+
+		return null;
+	}//end refusal()
 
 	/**
 	 * Flatten one upload or PHP's parallel-array shape into a list; unreadable entries are left out.
@@ -141,37 +159,64 @@ class RowActionFiles {
 			return [];
 		}
 
-		$entries = [$uploaded];
-		if (is_array($uploaded['tmp_name']) === true) {
-			$entries = [];
-			foreach (array_keys($uploaded['tmp_name']) as $key) {
-				$entries[] = [
-					'name' => ($uploaded['name'][$key] ?? ''),
-					'type' => ($uploaded['type'][$key] ?? ''),
-					'tmp_name' => ($uploaded['tmp_name'][$key] ?? ''),
-					'size' => ($uploaded['size'][$key] ?? 0),
-					'error' => ($uploaded['error'][$key] ?? UPLOAD_ERR_OK),
-				];
-			}
-		}
-
 		$files = [];
-		foreach ($entries as $entry) {
-			$tmpName = (string)($entry['tmp_name'] ?? '');
-			if ($tmpName === '' || (int)($entry['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
-				continue;
+		foreach ($this->entriesOf(uploaded: $uploaded) as $entry) {
+			$file = $this->readableFile(entry: $entry);
+			if ($file !== null) {
+				$files[] = $file;
 			}
-
-			$files[] = [
-				'name' => basename((string)($entry['name'] ?? 'upload')),
-				'type' => (string)($entry['type'] ?? 'application/octet-stream'),
-				'tmp_name' => $tmpName,
-				'size' => (int)($entry['size'] ?? 0),
-			];
 		}
 
 		return $files;
 	}//end uploads()
+
+	/**
+	 * One upload as a list of itself, or PHP's parallel-array shape as one
+	 * entry per key.
+	 *
+	 * @param array<string, mixed> $uploaded An upload with a `tmp_name`.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function entriesOf(array $uploaded): array {
+		if (is_array($uploaded['tmp_name']) === false) {
+			return [$uploaded];
+		}
+
+		$entries = [];
+		foreach (array_keys($uploaded['tmp_name']) as $key) {
+			$entries[] = [
+				'name' => ($uploaded['name'][$key] ?? ''),
+				'type' => ($uploaded['type'][$key] ?? ''),
+				'tmp_name' => ($uploaded['tmp_name'][$key] ?? ''),
+				'size' => ($uploaded['size'][$key] ?? 0),
+				'error' => ($uploaded['error'][$key] ?? UPLOAD_ERR_OK),
+			];
+		}
+
+		return $entries;
+	}//end entriesOf()
+
+	/**
+	 * One entry as a file, or null when it has no temporary file or an error.
+	 *
+	 * @param array<string, mixed> $entry The entry.
+	 *
+	 * @return array{name: string, type: string, tmp_name: string, size: int}|null
+	 */
+	private function readableFile(array $entry): ?array {
+		$tmpName = (string)($entry['tmp_name'] ?? '');
+		if ($tmpName === '' || (int)($entry['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
+			return null;
+		}
+
+		return [
+			'name' => basename((string)($entry['name'] ?? 'upload')),
+			'type' => (string)($entry['type'] ?? 'application/octet-stream'),
+			'tmp_name' => $tmpName,
+			'size' => (int)($entry['size'] ?? 0),
+		];
+	}//end readableFile()
 
 	/**
 	 * A positive integer up to a ceiling, or the default.
