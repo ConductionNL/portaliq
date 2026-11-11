@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
+use Closure;
 use OCA\Portaliq\Contribution\PortalContributionFilter;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\Assistant\PublicAssistantChannel;
@@ -220,24 +221,19 @@ class ContentController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 240, period: 60)]
 	public function menus(?string $portal = null, ?string $locale = null): JSONResponse {
-		$portal = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
-		if ($portal === null) {
-			return $this->notFound();
-		}
-
-		$refusal = $this->refuseUnlessPermitted(portal: $portal);
-		if ($refusal !== null) {
-			return $refusal;
-		}
-
-		return $this->publicJson(
-			payload: [
-				'menus' => $this->reader->menus(
-					portal: (string)$portal['slug'],
-					locale: $this->locale(portal: $portal, requested: $locale),
-					audience: $this->audience()
-				),
-			]
+		return $this->forPermittedPortal(
+			portal: $portal,
+			answer: function (array $portal) use ($locale): JSONResponse {
+				return $this->publicJson(
+					payload: [
+						'menus' => $this->reader->menus(
+							portal: (string)$portal['slug'],
+							locale: $this->locale(portal: $portal, requested: $locale),
+							audience: $this->audience()
+						),
+					]
+				);
+			}
 		);
 	}//end menus()
 
@@ -256,24 +252,19 @@ class ContentController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 240, period: 60)]
 	public function pages(?string $portal = null, ?string $locale = null): JSONResponse {
-		$portal = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
-		if ($portal === null) {
-			return $this->notFound();
-		}
-
-		$refusal = $this->refuseUnlessPermitted(portal: $portal);
-		if ($refusal !== null) {
-			return $refusal;
-		}
-
-		return $this->publicJson(
-			payload: [
-				'pages' => $this->reader->pages(
-					portal: (string)$portal['slug'],
-					locale: $this->locale(portal: $portal, requested: $locale),
-					audience: $this->audience()
-				),
-			]
+		return $this->forPermittedPortal(
+			portal: $portal,
+			answer: function (array $portal) use ($locale): JSONResponse {
+				return $this->publicJson(
+					payload: [
+						'pages' => $this->reader->pages(
+							portal: (string)$portal['slug'],
+							locale: $this->locale(portal: $portal, requested: $locale),
+							audience: $this->audience()
+						),
+					]
+				);
+			}
 		);
 	}//end pages()
 
@@ -293,31 +284,26 @@ class ContentController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 240, period: 60)]
 	public function page(?string $route = null, ?string $portal = null, ?string $locale = null): JSONResponse {
-		$portal = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
-		if ($portal === null) {
-			return $this->notFound();
-		}
+		return $this->forPermittedPortal(
+			portal: $portal,
+			answer: function (array $portal) use ($route, $locale): JSONResponse {
+				$normalised = '/'.ltrim((string)($route ?? ''), '/');
+				$page = $this->reader->page(
+					portal: (string)$portal['slug'],
+					route: $normalised,
+					locale: $this->locale(portal: $portal, requested: $locale),
+					audience: $this->audience(),
+					organisation: (string)($portal['organisation'] ?? '')
+				);
 
-		$refusal = $this->refuseUnlessPermitted(portal: $portal);
-		if ($refusal !== null) {
-			return $refusal;
-		}
+				if ($page === null) {
+					// Identical to an unknown route on purpose — see the class docblock.
+					return $this->notFound();
+			}
 
-		$normalised = '/'.ltrim((string)($route ?? ''), '/');
-		$page = $this->reader->page(
-			portal: (string)$portal['slug'],
-			route: $normalised,
-			locale: $this->locale(portal: $portal, requested: $locale),
-			audience: $this->audience(),
-			organisation: (string)($portal['organisation'] ?? '')
+			return $this->publicJson(payload: $page);
+			}
 		);
-
-		if ($page === null) {
-			// Identical to an unknown route on purpose — see the class docblock.
-			return $this->notFound();
-		}
-
-		return $this->publicJson(payload: $page);
 	}//end page()
 
 
@@ -335,24 +321,19 @@ class ContentController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 240, period: 60)]
 	public function glossary(?string $portal = null, ?string $locale = null): JSONResponse {
-		$portal = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
-		if ($portal === null) {
-			return $this->notFound();
-		}
-
-		$refusal = $this->refuseUnlessPermitted(portal: $portal);
-		if ($refusal !== null) {
-			return $refusal;
-		}
-
-		return $this->publicJson(
-			payload: [
-				'terms' => $this->reader->glossary(
-					portal: (string)$portal['slug'],
-					locale: $this->locale(portal: $portal, requested: $locale),
-					audience: $this->audience()
-				),
-			]
+		return $this->forPermittedPortal(
+			portal: $portal,
+			answer: function (array $portal) use ($locale): JSONResponse {
+				return $this->publicJson(
+					payload: [
+						'terms' => $this->reader->glossary(
+							portal: (string)$portal['slug'],
+							locale: $this->locale(portal: $portal, requested: $locale),
+							audience: $this->audience()
+						),
+					]
+				);
+			}
 		);
 	}//end glossary()
 
@@ -373,26 +354,21 @@ class ContentController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 240, period: 60)]
 	public function faq(?string $portal=null, ?string $locale=null, ?string $page=null, ?string $topic=null): JSONResponse {
-		$portal = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
-		if ($portal === null) {
-			return $this->notFound();
-		}
-
-		$refusal = $this->refuseUnlessPermitted(portal: $portal);
-		if ($refusal !== null) {
-			return $refusal;
-		}
-
-		return $this->publicJson(
-			payload: [
-				'entries' => $this->reader->faq(
-					portal: (string)$portal['slug'],
-					locale: $this->locale(portal: $portal, requested: $locale),
-					audience: $this->audience(),
-					page: trim((string)$page),
-					topic: trim((string)$topic)
-				),
-			]
+		return $this->forPermittedPortal(
+			portal: $portal,
+			answer: function (array $portal) use ($locale, $page, $topic): JSONResponse {
+				return $this->publicJson(
+					payload: [
+						'entries' => $this->reader->faq(
+							portal: (string)$portal['slug'],
+							locale: $this->locale(portal: $portal, requested: $locale),
+							audience: $this->audience(),
+							page: trim((string)$page),
+							topic: trim((string)$topic)
+						),
+					]
+				);
+			}
 		);
 	}//end faq()
 
@@ -411,27 +387,22 @@ class ContentController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 240, period: 60)]
 	public function finder(?string $portal=null, ?string $locale=null, ?string $finder=null): JSONResponse {
-		$portal = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
-		if ($portal === null) {
-			return $this->notFound();
-		}
+		return $this->forPermittedPortal(
+			portal: $portal,
+			answer: function (array $portal) use ($locale, $finder): JSONResponse {
+				$found = $this->reader->finder(
+					portal: (string)$portal['slug'],
+					id: trim((string)$finder),
+					locale: $this->locale(portal: $portal, requested: $locale),
+					audience: $this->audience()
+				);
+				if ($found === null) {
+					return $this->notFound();
+			}
 
-		$refusal = $this->refuseUnlessPermitted(portal: $portal);
-		if ($refusal !== null) {
-			return $refusal;
-		}
-
-		$found = $this->reader->finder(
-			portal: (string)$portal['slug'],
-			id: trim((string)$finder),
-			locale: $this->locale(portal: $portal, requested: $locale),
-			audience: $this->audience()
+			return $this->publicJson(payload: ['finder' => $found]);
+			}
 		);
-		if ($found === null) {
-			return $this->notFound();
-		}
-
-		return $this->publicJson(payload: ['finder' => $found]);
 	}//end finder()
 
 	/**
@@ -462,39 +433,54 @@ class ContentController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 240, period: 60)]
 	public function contributions(?string $portal = null): JSONResponse {
-		$portal = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
-		if ($portal === null) {
+		return $this->forPermittedPortal(
+			portal: $portal,
+			answer: function (array $portal): JSONResponse {
+				// A provider is third-party code reached through a duck-typed call
+				// (ADR-046). One that throws must not take the portal's whole content
+				// API down with it — the registry already logs and skips per provider,
+				// and this is the outer belt for anything that escapes it.
+				try {
+					$aggregate = $this->registry->aggregateAnonymous();
+				} catch (\Throwable $e) {
+					$this->logger->error(
+						'Portaliq: anonymous contribution aggregation failed',
+						['reason' => $e->getMessage()]
+					);
+					$aggregate = ['contributions' => []];
+			}
+
+			return $this->publicJson(
+				payload: [
+					'contributions' => $this->contribFilter->forPortal(
+						contributions: (array)($aggregate['contributions'] ?? []),
+						portalSlug: (string)$portal['slug']
+					),
+				]
+			);
+			}
+		);
+	}//end contributions()
+
+
+	/**
+	 * Answer for the portal of this request when this caller may read its
+	 * content: the shared 404 for an unknown portal, the gate's 401 / 403
+	 * before anything is read, else the answer.
+	 *
+	 * @param string|null                                $portal Explicit portal slug; else resolved from the request.
+	 * @param Closure(array<string, mixed>): JSONResponse $answer The answer for the resolved, permitted portal.
+	 *
+	 * @return JSONResponse
+	 */
+	private function forPermittedPortal(?string $portal, Closure $answer): JSONResponse {
+		$resolved = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
+		if ($resolved === null) {
 			return $this->notFound();
 		}
 
-		$refusal = $this->refuseUnlessPermitted(portal: $portal);
-		if ($refusal !== null) {
-			return $refusal;
-		}
-
-		// A provider is third-party code reached through a duck-typed call
-		// (ADR-046). One that throws must not take the portal's whole content
-		// API down with it — the registry already logs and skips per provider,
-		// and this is the outer belt for anything that escapes it.
-		try {
-			$aggregate = $this->registry->aggregateAnonymous();
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Portaliq: anonymous contribution aggregation failed',
-				['reason' => $e->getMessage()]
-			);
-			$aggregate = ['contributions' => []];
-		}
-
-		return $this->publicJson(
-			payload: [
-				'contributions' => $this->contribFilter->forPortal(
-					contributions: (array)($aggregate['contributions'] ?? []),
-					portalSlug: (string)$portal['slug']
-				),
-			]
-		);
-	}//end contributions()
+		return ($this->refuseUnlessPermitted(portal: $resolved) ?? $answer($resolved));
+	}//end forPermittedPortal()
 
 
 	/**
