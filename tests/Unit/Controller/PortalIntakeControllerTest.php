@@ -468,6 +468,32 @@ class PortalIntakeControllerTest extends TestCase {
 	}//end testTheFamilyRouteNeedsASessionAndOffersOnlyWhatTheBrpBacks()
 
 	/**
+	 * `sameAddressOnly` absent or true asks for the members at the resident's
+	 * address, anything the framework casts to false asks for all of them;
+	 * a BRP that cannot answer is 404.
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t04
+	 */
+	public function testTheFamilyRouteReadsSameAddressOnlyAsABoundBool(): void {
+		$family = $this->double(\OCA\Portaliq\Service\Intake\PortalFamilyMembers::class, ['forSubject', 'allForSubject']);
+		$family->method('forSubject')->willReturnCallback(static fn (string $subjectRef): array => [['ref' => 'same-' . $subjectRef]]);
+		$family->method('allForSubject')->willReturnCallback(static fn (string $subjectRef): array => [['ref' => 'all-' . $subjectRef]]);
+
+		foreach ([[null, 'same'], ['true', 'same'], ['1', 'same'], ['yes', 'same'], ['false', 'all'], ['0', 'all'], ['', 'all']] as [$raw, $which]) {
+			$controller = $this->controller(render: [], subject: ['subjectRef' => 'sub-1'], family: $family);
+			$request    = $this->createMock(IRequest::class);
+			$request->method('getParam')->willReturnCallback(static fn (string $key): mixed => ($key === 'sameAddressOnly' ? $raw : null));
+			(new \ReflectionProperty(\OCP\AppFramework\Controller::class, 'request'))->setValue($controller, $request);
+
+			$this->assertSame(['members' => [['ref' => $which . '-sub-1']]], $controller->family()->getData(), var_export($raw, true));
+		}
+
+		$unanswered = $this->double(\OCA\Portaliq\Service\Intake\PortalFamilyMembers::class, ['forSubject']);
+		$unanswered->method('forSubject')->willReturn(null);
+		$this->assertSame(Http::STATUS_NOT_FOUND, $this->controller(render: [], subject: ['subjectRef' => 'sub-1'], family: $unanswered)->family()->getStatus());
+	}//end testTheFamilyRouteReadsSameAddressOnlyAsABoundBool()
+
+	/**
 	 * A forged family reference stops the submission before anything is recorded.
 	 *
 	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t04
