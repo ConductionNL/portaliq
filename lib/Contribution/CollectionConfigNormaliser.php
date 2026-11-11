@@ -78,42 +78,89 @@ class CollectionConfigNormaliser {
 	public function normaliseCollections(array $collections): array {
 		$out = [];
 		foreach ($collections as $collection) {
-			if (is_array($collection) === false) {
-				continue;
+			if (is_array($collection) === true) {
+				$out[] = $this->normaliseCollection(collection: $collection);
 			}
-
-			$collection = (new CollectionColumnsNormaliser(values: $this->values))->normaliseColumns(collection: $collection);
-			$collection = $this->normaliseDetail(collection: $collection);
-			$collection = (new CollectionFieldConfigNormaliser())->normalise(collection: $collection);
-			$collection = (new TimelineProviderMethod())->normaliseTimeline(collection: $collection);
-			$collection = (new DocumentsProviderMethod())->normalise(collection: $collection);
-			$collection = $this->normaliseDefaults(collection: $collection);
-			$collection = $this->normaliseFileFlags(collection: $collection);
-			$collection = $this->normaliseKind(collection: $collection);
-			// The life domain a collection belongs to, and a product's validity (life-domain-theme-pages).
-			$collection = (new ThemeTagKeys())->collection(collection: $collection);
-			// Steps, answer date and whose turn, on a cases collection only
-			// (site-mijn-omgeving-components REQ-SMO-022).
-			$collection = (new StepsProviderMethod())->normalise(collection: $collection);
-			// Who a resident may write to about each row (site-messages-per-record).
-			$collection = (new MessageContactsKeys())->normalise(collection: $collection);
-			$collection = $this->normaliseClosedField(collection: $collection);
-			// The field holding the case a task belongs to (case-page-tasks-decision-dates-and-next-step).
-			$collection = (new CaseFieldKey())->normalise(collection: $collection);
-			$collection = (new CaseStatusLabelField())->normalise(collection: $collection);
-			$collection = (new CollectionIntroKey())->normalise(collection: $collection);
-			$collection = $this->normaliseGroupByField(collection: $collection);
-			$collection = (new PortalBranchScope())->normalise(collection: $collection);
-			$collection = (new MessageBoxConfigNormaliser())->normalise(collection: $collection);
-			$collection = (new InboxMessageFields())->normalise(collection: $collection);
-			$collection = (new RowActionResolver())->normaliseNoticeField(collection: $collection);
-			$collection = $this->values->normaliseAnonymousFlag(entry: $collection);
-
-			$out[] = $collection;
-		}//end foreach
+		}
 
 		return $out;
 	}//end normaliseCollections()
+
+	/**
+	 * Sanitise one collection, key group by key group.
+	 *
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function normaliseCollection(array $collection): array {
+		$collection = $this->normaliseDisplay(collection: $collection);
+		$collection = $this->normaliseCaseKeys(collection: $collection);
+		$collection = $this->normaliseInboxKeys(collection: $collection);
+
+		return $this->values->normaliseAnonymousFlag(entry: $collection);
+	}//end normaliseCollection()
+
+	/**
+	 * What a collection shows and offers: columns, detail, field configs,
+	 * timeline, documents, defaults, file flags, kind and theme tags.
+	 *
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function normaliseDisplay(array $collection): array {
+		$collection = (new CollectionColumnsNormaliser(values: $this->values))->normaliseColumns(collection: $collection);
+		$collection = $this->normaliseDetail(collection: $collection);
+		$collection = (new CollectionFieldConfigNormaliser())->normalise(collection: $collection);
+		$collection = (new TimelineProviderMethod())->normaliseTimeline(collection: $collection);
+		$collection = (new DocumentsProviderMethod())->normalise(collection: $collection);
+		$collection = $this->normaliseDefaults(collection: $collection);
+		$collection = $this->normaliseFileFlags(collection: $collection);
+		$collection = $this->normaliseKind(collection: $collection);
+		// The life domain a collection belongs to, and a product's validity (life-domain-theme-pages).
+		return (new ThemeTagKeys())->collection(collection: $collection);
+	}//end normaliseDisplay()
+
+	/**
+	 * The keys of a cases collection and its rows: steps, message contacts,
+	 * the closed field, the case field, the status label, the intro and the
+	 * grouping.
+	 *
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function normaliseCaseKeys(array $collection): array {
+		// Steps, answer date and whose turn, on a cases collection only
+		// (site-mijn-omgeving-components REQ-SMO-022).
+		$collection = (new StepsProviderMethod())->normalise(collection: $collection);
+		// Who a resident may write to about each row (site-messages-per-record).
+		$collection = (new MessageContactsKeys())->normalise(collection: $collection);
+		$collection = $this->normaliseClosedField(collection: $collection);
+		// The field holding the case a task belongs to (case-page-tasks-decision-dates-and-next-step).
+		$collection = (new CaseFieldKey())->normalise(collection: $collection);
+		$collection = (new CaseStatusLabelField())->normalise(collection: $collection);
+		$collection = (new CollectionIntroKey())->normalise(collection: $collection);
+
+		return $this->normaliseGroupByField(collection: $collection);
+	}//end normaliseCaseKeys()
+
+	/**
+	 * Where a collection's rows come from and go: the branch scope, the
+	 * message box, the inbox message fields and the notice field.
+	 *
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function normaliseInboxKeys(array $collection): array {
+		$collection = (new PortalBranchScope())->normalise(collection: $collection);
+		$collection = (new MessageBoxConfigNormaliser())->normalise(collection: $collection);
+		$collection = (new InboxMessageFields())->normalise(collection: $collection);
+
+		return (new RowActionResolver())->normaliseNoticeField(collection: $collection);
+	}//end normaliseInboxKeys()
 
 	/**
 	 * Resolve each collection's `rowActions` (and the singular `rowAction`)
