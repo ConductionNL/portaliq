@@ -102,31 +102,59 @@ class RowWhenNormaliser {
 				continue;
 			}
 
-			$label = (string)($action['id'] ?? '?');
-			$isUpdate = (($action['type'] ?? null) === 'update');
-			$condition = $action['rowWhen'];
-
-			if (is_array($condition) === true) {
-				foreach (array_keys($condition) as $key) {
-					if (in_array($key, self::KNOWN_KEYS, true) === false) {
-						unset($condition[$key]);
-						$dropped[] = sprintf('action "%s": unknown rowWhen operator "%s"', $label, (string)$key);
-					}
-				}
-
-				$action['rowWhen'] = $condition;
-			}
-
-			if ($isUpdate === true && $this->isWellFormed(condition: $condition) === false) {
-				unset($action['rowWhen']);
-				$dropped[] = sprintf('action "%s": rowWhen needs a field name and a non-empty list of values', $label);
-			}
-
-			$actions[$index] = $action;
-		}//end foreach
+			$checked         = $this->checkedAction(action: $action);
+			$actions[$index] = $checked['action'];
+			$dropped         = array_merge($dropped, $checked['dropped']);
+		}
 
 		return ['actions' => $actions, 'dropped' => $dropped];
 	}//end normalise()
+
+	/**
+	 * One action with its row condition held to the known operators, and
+	 * dropped from an update action when it is not well formed.
+	 *
+	 * @param array<string, mixed> $action The action, declaring `rowWhen`.
+	 *
+	 * @return array{action: array<string, mixed>, dropped: array<int, string>}
+	 */
+	private function checkedAction(array $action): array {
+		$label = (string)($action['id'] ?? '?');
+		$known = $this->knownOperators(condition: $action['rowWhen'], label: $label);
+
+		$action['rowWhen'] = $known['condition'];
+		$dropped           = $known['dropped'];
+		if (($action['type'] ?? null) === 'update' && $this->isWellFormed(condition: $known['condition']) === false) {
+			unset($action['rowWhen']);
+			$dropped[] = sprintf('action "%s": rowWhen needs a field name and a non-empty list of values', $label);
+		}
+
+		return ['action' => $action, 'dropped' => $dropped];
+	}//end checkedAction()
+
+	/**
+	 * A row condition without the operators the contract does not know, and
+	 * the reason for each one dropped. A condition that is not a map is
+	 * returned as it came.
+	 *
+	 * @param mixed  $condition The declared `rowWhen`.
+	 * @param string $label     The action, named for the reason.
+	 *
+	 * @return array{condition: mixed, dropped: array<int, string>}
+	 */
+	private function knownOperators(mixed $condition, string $label): array {
+		$dropped = [];
+		if (is_array($condition) === true) {
+			foreach (array_keys($condition) as $key) {
+				if (in_array($key, self::KNOWN_KEYS, true) === false) {
+					unset($condition[$key]);
+					$dropped[] = sprintf('action "%s": unknown rowWhen operator "%s"', $label, (string)$key);
+				}
+			}
+		}
+
+		return ['condition' => $condition, 'dropped' => $dropped];
+	}//end knownOperators()
 
 	/**
 	 * Whether a condition is a field name and a non-empty list of scalars.
