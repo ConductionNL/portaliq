@@ -24,6 +24,7 @@ use Psr\Log\LoggerInterface;
 #[UsesClass(ManifestValueNormaliser::class)]
 #[UsesClass(ValueLabelsNormaliser::class)]
 #[UsesClass(PublicRecordsNormaliser::class)]
+#[UsesClass(\OCA\Portaliq\Contribution\AnonymousRead::class)]
 class AnonymousColumnsTest extends TestCase {
 	/**
 	 * Build the aggregator over doubles.

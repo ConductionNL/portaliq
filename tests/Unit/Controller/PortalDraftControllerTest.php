@@ -39,6 +39,7 @@ use Psr\Log\LoggerInterface;
 #[UsesClass(\OCA\Portaliq\Contribution\ActionScopeResolver::class)]
 #[UsesClass(\OCA\Portaliq\Contribution\CreateBody::class)]
 #[UsesClass(PortalSessionService::class)]
+#[UsesClass(\OCA\Portaliq\Controller\DraftSave::class)]
 class PortalDraftControllerTest extends TestCase {
 
 	private const ACTION = [
