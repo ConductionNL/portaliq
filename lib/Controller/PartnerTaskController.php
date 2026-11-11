@@ -34,6 +34,7 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 
 /**
@@ -95,36 +96,59 @@ class PartnerTaskController extends Controller {
 			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		// The write check comes first: a user without it must not be able to
-		// tell, by the shape of the refusal, whether the case even exists or
-		// whether the partner is known.
-		if ($this->guard->mayAsk(user: $user, register: $register, schema: $schema, id: $caseId) === false) {
+		$run      = new PartnerAskRun(user: $user, partner: $partner);
+		$run->ask = [
+			'title' => $title,
+			'description' => $description,
+			'dueAt' => $dueAt,
+			'uploadRules' => $uploadRules,
+			'register' => $register,
+			'schema' => $schema,
+			'caseId' => $caseId,
+		];
+		return $this->askPartner(run: $run);
+	}//end ask()
+
+	/**
+	 * Raise the ask when the handler may write on the case.
+	 *
+	 * The write check comes first: a user without it must not be able to
+	 * tell, by the shape of the refusal, whether the case even exists or
+	 * whether the partner is known.
+	 *
+	 * @param PartnerAskRun $run The ask.
+	 *
+	 * @return JSONResponse The task and the account it went to, or a refusal.
+	 */
+	private function askPartner(PartnerAskRun $run): JSONResponse {
+		$ask = $run->ask;
+		if ($this->guard->mayAsk(user: $run->user, register: $ask['register'], schema: $ask['schema'], id: $ask['caseId']) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$asked = $this->asks->ask(
-			handler: [
-				'uid' => $user->getUID(),
-				'subjectRef' => $user->getUID(),
-				'audience' => 'handler',
-				'organisation' => (string)$this->request->getParam('organisation', ''),
-				'trust' => 'high',
-			],
-			partner: $partner,
-			ask: [
-				'title' => $title,
-				'description' => $description,
-				'dueAt' => $dueAt,
-				'uploadRules' => $uploadRules,
-				'register' => $register,
-				'schema' => $schema,
-				'caseId' => $caseId,
-			]
-		);
+		$asked = $this->asks->ask(handler: $this->handlerOf(user: $run->user), partner: $run->partner, ask: $ask);
 		if ($asked === null) {
 			return new JSONResponse(['error' => 'not_raised'], Http::STATUS_BAD_REQUEST);
 		}
 
 		return new JSONResponse($asked);
-	}//end ask()
+	}//end askPartner()
+
+	/**
+	 * The handler as the ask names them: themselves, at high trust, in the
+	 * organisation the request names.
+	 *
+	 * @param IUser $user The handler.
+	 *
+	 * @return array<string, string>
+	 */
+	private function handlerOf(IUser $user): array {
+		return [
+			'uid' => $user->getUID(),
+			'subjectRef' => $user->getUID(),
+			'audience' => 'handler',
+			'organisation' => (string)$this->request->getParam('organisation', ''),
+			'trust' => 'high',
+		];
+	}//end handlerOf()
 }//end class
