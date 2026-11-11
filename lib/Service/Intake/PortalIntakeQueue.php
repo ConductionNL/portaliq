@@ -110,52 +110,102 @@ class PortalIntakeQueue {
 		array $decisions = [],
 		array $verifiedEmails = [],
 	): ?array {
-		if ($portal === '') {
+		$submission = new QueuedSubmission(
+			portal: $portal,
+			route: $route,
+			answers: $answers,
+			subjectRef: $subjectRef,
+			origin: $origin,
+			statements: $statements,
+			computed: $computed,
+			decisions: $decisions,
+			verifiedEmails: $verifiedEmails
+		);
+		return $this->acceptSubmission(submission: $submission);
+	}//end accept()
+
+	/**
+	 * Accept a validated submission and hand back its reference.
+	 *
+	 * @param QueuedSubmission $submission The submission and what was checked along the way.
+	 *
+	 * @return array{reference: string, state: string}|null Null when the
+	 *         submission could not be recorded, in which case nothing is
+	 *         acknowledged: a reference nobody can look up is worse than none.
+	 *
+	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 */
+	public function acceptSubmission(QueuedSubmission $submission): ?array {
+		if ($submission->portal === '') {
 			return null;
 		}
 
 		$reference = 'AANVRAAG-' . strtoupper($this->random->generate(8, (ISecureRandom::CHAR_UPPER . ISecureRandom::CHAR_DIGITS)));
-		$data = [
-			'reference' => $reference,
-			'portal' => $portal,
-			'route' => $route,
-			'subjectRef' => $subjectRef,
-			'origin' => $origin,
-			'answers' => $answers,
-			'state' => self::STATE_QUEUED,
-			'submittedAt' => (new DateTimeImmutable())->format(DATE_ATOM),
-		];
-		if ($statements !== []) {
-			$data['statements'] = $statements;
-		}
-
-		// The fields the portal worked out or a decision filled, so delivery can say so.
-		if ($computed !== []) {
-			$data['computed'] = array_values($computed);
-		}
-
-		if ($decisions !== []) {
-			$data['decisions'] = $decisions;
-		}
-
-		if ($verifiedEmails !== []) {
-			$data['verifiedEmails'] = $verifiedEmails;
-		}
-
-		$created = $this->writer->createObject(
+		$created   = $this->writer->createObject(
 			register: self::REGISTER,
 			schema: self::SCHEMA,
 			scopeField: '',
 			subjectRef: '',
 			organisation: '',
-			data: $data
+			data: $this->submissionRow(submission: $submission, reference: $reference)
 		);
 		if ($created === null) {
 			return null;
 		}
 
 		return ['reference' => $reference, 'state' => self::STATE_QUEUED];
-	}//end accept()
+	}//end acceptSubmission()
+
+	/**
+	 * The fields of a newly queued submission.
+	 *
+	 * @param QueuedSubmission $submission The submission.
+	 * @param string           $reference  The reference minted for it.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function submissionRow(QueuedSubmission $submission, string $reference): array {
+		$data = [
+			'reference' => $reference,
+			'portal' => $submission->portal,
+			'route' => $submission->route,
+			'subjectRef' => $submission->subjectRef,
+			'origin' => $submission->origin,
+			'answers' => $submission->answers,
+			'state' => self::STATE_QUEUED,
+			'submittedAt' => (new DateTimeImmutable())->format(DATE_ATOM),
+		];
+		return $this->withCheckedExtras(data: $data, submission: $submission);
+	}//end submissionRow()
+
+	/**
+	 * Add what the portal checked along the way, each only when there is any.
+	 *
+	 * @param array<string, mixed> $data       The row so far.
+	 * @param QueuedSubmission     $submission The submission.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withCheckedExtras(array $data, QueuedSubmission $submission): array {
+		if ($submission->statements !== []) {
+			$data['statements'] = $submission->statements;
+		}
+
+		// The fields the portal worked out or a decision filled, so delivery can say so.
+		if ($submission->computed !== []) {
+			$data['computed'] = array_values($submission->computed);
+		}
+
+		if ($submission->decisions !== []) {
+			$data['decisions'] = $submission->decisions;
+		}
+
+		if ($submission->verifiedEmails !== []) {
+			$data['verifiedEmails'] = $submission->verifiedEmails;
+		}
+
+		return $data;
+	}//end withCheckedExtras()
 
 	/**
 	 * What the reference page may say about a submission.
