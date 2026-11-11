@@ -44,6 +44,16 @@ class TrafficFormStats {
 	private const TOP = 50;
 
 	/**
+	 * The event names that belong to a form.
+	 */
+	private const FORM_EVENTS = ['form_start', 'form_field', 'form_abandon', 'form_submit'];
+
+	/**
+	 * The form events that only add one to a counter, and that counter.
+	 */
+	private const COUNTED = ['form_start' => 'starts', 'form_submit' => 'submits'];
+
+	/**
 	 * The form rows for the rollup, ranked by starts.
 	 *
 	 * @param array<int, array<string, mixed>> $sessions The day's sessions.
@@ -105,13 +115,9 @@ class TrafficFormStats {
 	 */
 	private function count(array &$forms, array $event): void {
 		$name = (string)($event['name'] ?? '');
-		$params = $event['params'] ?? [];
-		if (is_array($params) === false) {
-			$params = [];
-		}
-
+		$params = $this->paramsOf(event: $event);
 		$formId = trim((string)($params['formId'] ?? ''));
-		if ($formId === '' || in_array($name, ['form_start', 'form_field', 'form_abandon', 'form_submit'], true) === false) {
+		if ($formId === '' || in_array($name, self::FORM_EVENTS, true) === false) {
 			return;
 		}
 
@@ -119,14 +125,40 @@ class TrafficFormStats {
 			$forms[$formId] = ['starts' => 0, 'submits' => 0, 'abandons' => 0, 'fields' => []];
 		}
 
-		$form = &$forms[$formId];
-		if ($name === 'form_start') {
-			$form['starts']++;
-			return;
+		$this->tally(form: $forms[$formId], event: $event);
+	}
+
+	/**
+	 * The event's params, or an empty list when they are not a list.
+	 *
+	 * @param array<string, mixed> $event The stored event.
+	 *
+	 * @return array<string, mixed> The params.
+	 */
+	private function paramsOf(array $event): array {
+		$params = $event['params'] ?? [];
+		if (is_array($params) === false) {
+			return [];
 		}
 
-		if ($name === 'form_submit') {
-			$form['submits']++;
+		return $params;
+	}
+
+	/**
+	 * Add one form event to its form's tally: a start or submit counts,
+	 * an abandon counts and marks the field left on, a field visit adds
+	 * its time.
+	 *
+	 * @param array<string, mixed> $form  The form's tally.
+	 * @param array<string, mixed> $event The form event.
+	 *
+	 * @return void
+	 */
+	private function tally(array &$form, array $event): void {
+		$name = (string)($event['name'] ?? '');
+		$params = $this->paramsOf(event: $event);
+		if (isset(self::COUNTED[$name]) === true) {
+			$form[self::COUNTED[$name]]++;
 			return;
 		}
 

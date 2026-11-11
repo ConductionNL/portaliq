@@ -81,6 +81,28 @@ class TrafficReportMailTest extends TestCase {
 
 
 	/**
+	 * The folded numbers keep their key order, and referrers without a
+	 * channel count as direct, ranked by count.
+	 *
+	 * @return void
+	 */
+	public function testTheFoldKeepsItsShapeAndRanksTheSources(): void {
+		$folded = (new TrafficReportNumbers())->fold(records: [
+			['pageViews' => 5, 'referrers' => [['host' => 'a.nl', 'channel' => '', 'count' => 2], ['host' => 'b.nl', 'channel' => 'social', 'count' => 1]]],
+			['pageViews' => 1, 'referrers' => [['host' => 'c.nl', 'count' => 3], ['host' => 'd.nl', 'channel' => 'social', 'count' => 1]]],
+		]);
+
+		$this->assertSame(
+			['days', 'pageViews', 'sessions', 'visitors', 'engagedSessions', 'bounceRate', 'pages', 'sources', 'devices', 'browsers', 'languages', 'regions', 'goals', 'conversionRate', 'funnels', 'forms', 'notFound', 'errors'],
+			array_keys($folded)
+		);
+		$this->assertSame(2, $folded['days']);
+		$this->assertSame(6, $folded['pageViews']);
+		$this->assertSame(['direct' => 5, 'social' => 2], $folded['sources']);
+	}//end testTheFoldKeepsItsShapeAndRanksTheSources()
+
+
+	/**
 	 * The metric arithmetic an alert reads.
 	 *
 	 * @return void
