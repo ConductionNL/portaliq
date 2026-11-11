@@ -11,14 +11,17 @@ use OCA\Portaliq\Service\Intake\PortalFormCalculator;
 use OCA\Portaliq\Service\Intake\PortalFormDecision;
 use OCA\Portaliq\Service\Intake\PortalFormValidator;
 use OCA\Portaliq\Service\Intake\PortalSubmissionChecks;
+use OCA\Portaliq\Service\Intake\SubmissionDecisions;
 use OCP\AppFramework\Http\JSONResponse;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Pre-submission checks: validation, family refs, e-mail proofs, decisions, statements.
  */
 #[CoversClass(PortalSubmissionChecks::class)]
+#[UsesClass(SubmissionDecisions::class)]
 class PortalSubmissionChecksTest extends TestCase {
 	/**
 	 * A validator that accepts what it is given.
