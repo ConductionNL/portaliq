@@ -164,15 +164,25 @@ class QuietHoursPolicy {
 			return null;
 		}
 
+		return $this->firstRow(rows: $this->readOwnRows(objectService: $objectService, subjectRef: $subjectRef));
+	}//end ownRow()
+
+	/**
+	 * The subject's window rows; null when the read fails, which is logged.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $subjectRef    The subject's own subjectRef.
+	 *
+	 * @return mixed What the read returned, or null.
+	 */
+	private function readOwnRows(object $objectService, string $subjectRef): mixed {
 		try {
-			$rows = $this->subjectRows(objectService: $objectService, subjectRef: $subjectRef);
+			return $this->subjectRows(objectService: $objectService, subjectRef: $subjectRef);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: quiet hours read failed', ['reason' => $e->getMessage()]);
 			return null;
 		}
-
-		return $this->firstRow(rows: $rows);
-	}//end ownRow()
+	}//end readOwnRows()
 
 	/**
 	 * The stored window when both of its times are valid, else the default.
@@ -371,15 +381,27 @@ class QuietHoursPolicy {
 	 * @return string|null
 	 */
 	private function rowId(array $row): ?string {
-		if (isset($row['id']) === true) {
-			return (string)$row['id'];
+		$id = ($row['id'] ?? $this->selfId(row: $row));
+		if ($id === null) {
+			return null;
 		}
 
-		$self = $row['@self'] ?? [];
-		if (is_array($self) === true && isset($self['id']) === true) {
-			return (string)$self['id'];
-		}
-
-		return null;
+		return (string)$id;
 	}//end rowId()
+
+	/**
+	 * The id in a row's `@self` envelope, or null.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return mixed
+	 */
+	private function selfId(array $row): mixed {
+		$self = ($row['@self'] ?? []);
+		if (is_array($self) === false) {
+			return null;
+		}
+
+		return ($self['id'] ?? null);
+	}//end selfId()
 }//end class
