@@ -91,6 +91,37 @@ class PortalDraftDrainTest extends TestCase {
 	}//end testARowThatCannotBeDeletedIsReported()
 
 	/**
+	 * Every row's outcome and reason, exactly as recorded.
+	 *
+	 * @return void
+	 */
+	public function testEveryRowOutcomeIsAsRecorded(): void {
+		$this->rows = [
+			'r-now' => ['id' => 'r-now', 'subjectRef' => 'sanne', 'actionKey' => 'dossiq/request', 'answers' => [], 'expiresAt' => '2026-10-11T00:00:00+00:00'],
+			'r-later' => ['id' => 'r-later', 'subjectRef' => 'sanne', 'actionKey' => 'dossiq/request', 'answers' => 'x', 'expiresAt' => 'not a date'],
+			'r-nobody' => ['id' => 'r-nobody', 'subjectRef' => '', 'actionKey' => 'dossiq/request', 'answers' => []],
+			'r-noone' => ['id' => 'r-noone', 'actionKey' => 'dossiq/request'],
+			'r-three' => ['id' => 'r-three', 'subjectRef' => 'sanne', 'actionKey' => 'dossiq/request/extra', 'answers' => []],
+			'r-nokey' => ['id' => 'r-nokey', 'subjectRef' => 'sanne'],
+		];
+
+		$result = $this->drain(outcome: ['id' => 'd-1'])->drain(now: new DateTimeImmutable('2026-10-11T00:00:00+00:00'));
+
+		$this->assertSame(1, $result['converted']);
+		$this->assertSame(1, $result['expired']);
+		$this->assertSame(
+			[
+				'r-nobody' => 'its action is not a create action this subject can use',
+				'r-noone' => 'its action is not a create action this subject can use',
+				'r-three' => 'its action is not a create action this subject can use',
+				'r-nokey' => 'its action is not a create action this subject can use',
+			],
+			$result['reasons']
+		);
+		$this->assertSame(['r-nobody', 'r-noone', 'r-three', 'r-nokey'], array_keys($this->rows));
+	}//end testEveryRowOutcomeIsAsRecorded()
+
+	/**
 	 * The drain over fakes.
 	 *
 	 * @param array<string, mixed>|\Throwable $outcome What saveDraft answers.
