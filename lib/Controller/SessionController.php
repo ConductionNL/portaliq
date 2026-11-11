@@ -538,6 +538,39 @@ class SessionController extends Controller {
 			return $this->toBroker(org: $org, provider: $provider, siteReturn: $siteReturn, site: $site);
 		}
 
+		$run = new OidcStartRun(org: $org, provider: $provider);
+		$run->site       = $site;
+		$run->siteReturn = $siteReturn;
+		$run->prompt     = $this->brokerPrompt(silent: $silent);
+		return $this->startOidcLogin(run: $run);
+	}//end oidcStart()
+
+	/**
+	 * The broker prompt a start asks for: a silent start asks for no prompt
+	 * (signin-session-idle-warning-and-sso D5).
+	 *
+	 * @param string $silent `1` for a silent start.
+	 *
+	 * @return string
+	 */
+	private function brokerPrompt(string $silent): string {
+		if ($silent === '1') {
+			return 'none';
+		}
+
+		return '';
+	}//end brokerPrompt()
+
+	/**
+	 * Start the OIDC login once the organisation's policy allows the
+	 * provider: resolve and discover it, store the single-use state and
+	 * redirect to the broker; the generic error on any failure.
+	 *
+	 * @param OidcStartRun $run The start, with its organisation and provider.
+	 *
+	 * @return Response
+	 */
+	private function startOidcLogin(OidcStartRun $run): Response {
 		// THE AUTHORISATION DECISION, MADE EXPLICITLY AND BEFORE ANY SECRET IS
 		// TOUCHED. `resolveOidcConfig()` answers two different questions at
 		// once — "may this org+provider start a login" and "give me the client
@@ -545,56 +578,91 @@ class SessionController extends Controller {
 		// the public entry point states its policy in one named predicate that
 		// can be tested on its own, and the secret-bearing resolver is only
 		// reached once that policy has said yes.
-		if ($this->orgConfig->isLoginProviderAllowed(orgSlug: $org, provider: $provider) === false) {
+		if ($this->orgConfig->isLoginProviderAllowed(orgSlug: $run->org, provider: $run->provider) === false) {
 			return $this->oidcGenericError();
 		}
 
+		$provider = $this->discoveredProvider(org: $run->org, provider: $run->provider);
+		if ($provider === null) {
+			return $this->oidcGenericError();
+		}
+
+		$run->config    = $provider['config'];
+		$run->endpoints = $provider['endpoints'];
+		if ($this->storeStartState(run: $run) === false) {
+			return $this->oidcGenericError();
+		}
+
+		// Explicit 302 (design.md) — RedirectResponse's own default is 303.
+		return new RedirectResponse($this->authorizationUrl(run: $run), Http::STATUS_FOUND);
+	}//end startOidcLogin()
+
+	/**
+	 * The organisation's provider configuration and its discovered
+	 * endpoints, or null when either cannot be resolved.
+	 *
+	 * @param string $org      The organisation slug.
+	 * @param string $provider The login provider.
+	 *
+	 * @return array{config: array<string, mixed>, endpoints: array<string, string>}|null
+	 */
+	private function discoveredProvider(string $org, string $provider): ?array {
 		$config = $this->orgConfig->resolveOidcConfig(orgSlug: $org, provider: $provider);
 		if ($config === null) {
-			return $this->oidcGenericError();
+			return null;
 		}
 
 		$endpoints = $this->oidc->discover(issuer: (string)$config['issuer']);
 		if ($endpoints === null) {
-			return $this->oidcGenericError();
+			return null;
 		}
 
-		$state = $this->oidc->generateToken();
-		$nonce = $this->oidc->generateToken();
-		$pkce = $this->oidc->generatePkce();
-		// A silent start asks the broker for no prompt (signin-session-idle-warning-and-sso D5).
-		$prompt = '';
-		if ($silent === '1') {
-			$prompt = 'none';
-		}
+		return ['config' => $config, 'endpoints' => $endpoints];
+	}//end discoveredProvider()
 
-		$stored = $this->stateStore->create(
-			state: $state,
-			nonce: $nonce,
-			codeVerifier: $pkce['verifier'],
-			org: $org,
-			provider: $provider,
-			returnTo: $this->returnAddress(siteReturn: $siteReturn, site: $site),
-			silent: ($prompt === 'none')
+	/**
+	 * Mint the state, nonce and PKCE pair and store them single-use and
+	 * TTL-bounded with where the login returns.
+	 *
+	 * @param OidcStartRun $run The start, with its provider resolved.
+	 *
+	 * @return bool Whether the state was stored.
+	 */
+	private function storeStartState(OidcStartRun $run): bool {
+		$run->state = $this->oidc->generateToken();
+		$run->nonce = $this->oidc->generateToken();
+		$run->pkce  = $this->oidc->generatePkce();
+
+		return $this->stateStore->create(
+			state: $run->state,
+			nonce: $run->nonce,
+			codeVerifier: $run->pkce['verifier'],
+			org: $run->org,
+			provider: $run->provider,
+			returnTo: $this->returnAddress(siteReturn: $run->siteReturn, site: $run->site),
+			silent: ($run->prompt === 'none')
 		);
-		if ($stored === false) {
-			return $this->oidcGenericError();
-		}
+	}//end storeStartState()
 
-		$url = $this->oidc->buildAuthorizationUrl(
-			authorizeEndpoint: $endpoints['authorization_endpoint'],
-			clientId: (string)$config['clientId'],
+	/**
+	 * The broker's authorization URL for a stored start.
+	 *
+	 * @param OidcStartRun $run The start, with its state stored.
+	 *
+	 * @return string
+	 */
+	private function authorizationUrl(OidcStartRun $run): string {
+		return $this->oidc->buildAuthorizationUrl(
+			authorizeEndpoint: $run->endpoints['authorization_endpoint'],
+			clientId: (string)$run->config['clientId'],
 			redirectUri: $this->oidcRedirectUri(),
-			scopes: (array)$config['scopes'],
-			state: $state,
-			nonce: $nonce,
-			codeChallenge: $pkce['challenge'],
-			prompt: $prompt
+			scopes: (array)$run->config['scopes'],
+			state: $run->state,
+			nonce: $run->nonce,
+			codeChallenge: $run->pkce['challenge'],
+			prompt: $run->prompt
 		);
-
-		// Explicit 302 (design.md) — RedirectResponse's own default is 303.
-		return new RedirectResponse($url, Http::STATUS_FOUND);
-	}//end oidcStart()
+	}//end authorizationUrl()
 
 
 	/**
@@ -623,13 +691,6 @@ class SessionController extends Controller {
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T08
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
 	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) -- one fail-closed guard
-	 * per step of the OIDC flow (state, config, discovery, exchange, ID-token
-	 * validation, claim mapping, account resolution, session issuance), every
-	 * one returning the IDENTICAL generic error (ADR-005, design.md);
-	 * collapsing them would trade auditability for a score, mirroring
-	 * PortalSessionService's identical rationale.
-	 * @SuppressWarnings(PHPMD.NPathComplexity)      -- same rationale.
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -639,97 +700,224 @@ class SessionController extends Controller {
 			return $this->brokerErrorAnswer(state: $state, error: $error);
 		}
 
-		if ($state === '' || $code === '') {
+		$run = $this->oidcLoginRun(state: $state, code: $code);
+		if ($run === null) {
 			return $this->oidcGenericError();
+		}
+
+		$issued = $this->oidcLoginSession(run: $run);
+		if ($issued === null) {
+			return $this->oidcGenericError();
+		}
+
+		return $this->tokenRedirect(target: $this->pendingReturnTo(pending: $run->pending), token: $issued['token']);
+	}//end oidcCallback()
+
+	/**
+	 * The callback's run: the consumed state row when it was written for an
+	 * OIDC login, with the organisation's provider resolved and discovered;
+	 * null on any failure. The state is consumed only when a state and a
+	 * code were both returned.
+	 *
+	 * @param string $state The OIDC `state` returned by the broker.
+	 * @param string $code  The authorization code.
+	 *
+	 * @return OidcLoginRun|null
+	 */
+	private function oidcLoginRun(string $state, string $code): ?OidcLoginRun {
+		if ($state === '' || $code === '') {
+			return null;
 		}
 
 		$pending = $this->stateStore->consume(state: $state);
 		// A row written for the integriq broker route cannot complete an OIDC
 		// login (signin-integriq-broker-login, design D3).
-		if ($pending === null || $pending['route'] !== 'oidc' || $pending['codeVerifier'] === '') {
-			return $this->oidcGenericError();
+		if ($this->isOidcLoginState(pending: $pending) === false) {
+			return null;
 		}
 
-		$config = $this->orgConfig->resolveOidcConfig(orgSlug: $pending['org'], provider: $pending['provider']);
-		if ($config === null) {
-			return $this->oidcGenericError();
+		return $this->withOidcProvider(run: new OidcLoginRun(pending: $pending, code: $code));
+	}//end oidcLoginRun()
+
+	/**
+	 * Whether a consumed state row can complete an OIDC login: it exists, was
+	 * written for the OIDC route and carries a PKCE verifier.
+	 *
+	 * @param array<string, mixed>|null $pending The consumed state row.
+	 *
+	 * @return bool
+	 */
+	private function isOidcLoginState(?array $pending): bool {
+		return $pending !== null && $pending['route'] === 'oidc' && $pending['codeVerifier'] !== '';
+	}//end isOidcLoginState()
+
+	/**
+	 * The run with the organisation's provider configuration and discovered
+	 * endpoints filled in, or null when either cannot be resolved.
+	 *
+	 * @param OidcLoginRun $run The callback's run.
+	 *
+	 * @return OidcLoginRun|null
+	 */
+	private function withOidcProvider(OidcLoginRun $run): ?OidcLoginRun {
+		$provider = $this->discoveredProvider(org: $run->pending['org'], provider: $run->pending['provider']);
+		if ($provider === null) {
+			return null;
 		}
 
-		$endpoints = $this->oidc->discover(issuer: (string)$config['issuer']);
-		if ($endpoints === null) {
-			return $this->oidcGenericError();
+		$run->config    = $provider['config'];
+		$run->endpoints = $provider['endpoints'];
+		return $run;
+	}//end withOidcProvider()
+
+	/**
+	 * The portal session the callback mints: the verified claims, mapped onto
+	 * an account found or created for them; null on any failure.
+	 *
+	 * @param OidcLoginRun $run The callback's run.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function oidcLoginSession(OidcLoginRun $run): ?array {
+		$claims = $this->verifiedIdTokenClaims(run: $run);
+		if ($claims === null) {
+			return null;
 		}
 
+		$mapped = $this->claimMapper->mapClaims(claims: $claims, config: $run->config);
+		if ($mapped === null) {
+			return null;
+		}
+
+		$run->claims = $claims;
+		$run->mapped = $mapped;
+		$account     = $this->oidcLoginAccount(run: $run);
+		if ($account === null) {
+			return null;
+		}
+
+		return $this->issueOidcSession(run: $run, account: $account);
+	}//end oidcLoginSession()
+
+	/**
+	 * The ID token's claims after exchanging the code and FULLY validating
+	 * the token ({@see OidcClientService::verifyIdToken()}), or null.
+	 *
+	 * @param OidcLoginRun $run The callback's run.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function verifiedIdTokenClaims(OidcLoginRun $run): ?array {
+		$idToken = $this->exchangedIdToken(run: $run);
+		if ($idToken === '') {
+			return null;
+		}
+
+		return $this->oidc->verifyIdToken(
+			idToken: $idToken,
+			jwksUri: $run->endpoints['jwks_uri'],
+			issuer: (string)$run->config['issuer'],
+			clientId: (string)$run->config['clientId'],
+			expectedNonce: $run->pending['nonce']
+		);
+	}//end verifiedIdTokenClaims()
+
+	/**
+	 * The ID token the token endpoint returns for the code, or '' when the
+	 * exchange failed or returned none.
+	 *
+	 * @param OidcLoginRun $run The callback's run.
+	 *
+	 * @return string
+	 */
+	private function exchangedIdToken(OidcLoginRun $run): string {
 		$tokenResponse = $this->oidc->exchangeCode(
-			tokenEndpoint: $endpoints['token_endpoint'],
-			code: $code,
-			codeVerifier: $pending['codeVerifier'],
-			clientId: (string)$config['clientId'],
-			clientSecret: (string)$config['clientSecret'],
+			tokenEndpoint: $run->endpoints['token_endpoint'],
+			code: $run->code,
+			codeVerifier: $run->pending['codeVerifier'],
+			clientId: (string)$run->config['clientId'],
+			clientSecret: (string)$run->config['clientSecret'],
 			redirectUri: $this->oidcRedirectUri()
 		);
-		$idToken = (string)($tokenResponse['id_token'] ?? '');
-		if ($idToken === '') {
-			return $this->oidcGenericError();
-		}
+		return (string)($tokenResponse['id_token'] ?? '');
+	}//end exchangedIdToken()
 
-		$claims = $this->oidc->verifyIdToken(
-			idToken: $idToken,
-			jwksUri: $endpoints['jwks_uri'],
-			issuer: (string)$config['issuer'],
-			clientId: (string)$config['clientId'],
-			expectedNonce: $pending['nonce']
+	/**
+	 * The portal account for the mapped identity, found or created, or null.
+	 *
+	 * @param OidcLoginRun $run The callback's run, with its claims mapped.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function oidcLoginAccount(OidcLoginRun $run): ?array {
+		return $this->accounts->findOrCreate(
+			identityType: $run->mapped['identityType'],
+			identityRef: $run->mapped['identityRef'],
+			organisation: $run->pending['org'],
+			audience: $run->mapped['audience'],
+			subjectRefOverride: $run->mapped['subjectRef'],
+			verifiedEmail: $this->verifiedEmailOf(claims: $run->claims)
 		);
-		if ($claims === null) {
-			return $this->oidcGenericError();
-		}
+	}//end oidcLoginAccount()
 
-		$mapped = $this->claimMapper->mapClaims(claims: $claims, config: $config);
-		if ($mapped === null) {
-			return $this->oidcGenericError();
-		}
-
-		$account = $this->accounts->findOrCreate(
-			identityType: $mapped['identityType'],
-			identityRef: $mapped['identityRef'],
-			organisation: $pending['org'],
-			audience: $mapped['audience'],
-			subjectRefOverride: $mapped['subjectRef'],
-			verifiedEmail: $this->verifiedEmailOf(claims: $claims)
-		);
-		if ($account === null) {
-			return $this->oidcGenericError();
-		}
-
-		$trust = $this->claimMapper->mapLoaToTrust(claims: $claims, config: $config);
+	/**
+	 * Mints the EXISTING HS256 portal session for the account, with the trust
+	 * the LoA maps to; null when issuance fails.
+	 *
+	 * @param OidcLoginRun         $run     The callback's run, with its claims mapped.
+	 * @param array<string, mixed> $account The resolved portal account.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function issueOidcSession(OidcLoginRun $run, array $account): ?array {
+		$trust = $this->claimMapper->mapLoaToTrust(claims: $run->claims, config: $run->config);
 		// The account's own audience wins over the claim map's (the-account-names-the-audience-and-the-company).
-		$audience = (string)($account['audience'] ?? $mapped['audience']);
-		$issued   = $this->session->issueSession(
+		$audience = (string)($account['audience'] ?? $run->mapped['audience']);
+		return $this->session->issueSession(
 			subjectRef: $account['subjectRef'],
 			audience: $audience,
-			organisation: $pending['org'],
+			organisation: $run->pending['org'],
 			trust: $trust,
 			roles: [$audience . ':read'],
-			branch: (string)($mapped['branch'] ?? ''),
-			provider: $pending['provider']
+			branch: (string)($run->mapped['branch'] ?? ''),
+			provider: $run->pending['provider']
 		);
-		if ($issued === null) {
-			return $this->oidcGenericError();
-		}
+	}//end issueOidcSession()
 
+	/**
+	 * The 302 back to the portal with the minted bearer.
+	 *
+	 * @param string $target The address to land on.
+	 * @param string $token  The minted bearer.
+	 *
+	 * @return RedirectResponse
+	 */
+	private function tokenRedirect(string $target, string $token): RedirectResponse {
+		// The bearer travels in the URL FRAGMENT, never a query string — a
+		// fragment is never sent to the server (no access/Referer-header
+		// leak) and never appears in server logs.
+		$redirectUrl = $this->urlGenerator->getAbsoluteURL($target) . '#token=' . rawurlencode($token);
+
+		// Explicit 302 (design.md) — RedirectResponse's own default is 303.
+		return new RedirectResponse($redirectUrl, Http::STATUS_FOUND);
+	}//end tokenRedirect()
+
+	/**
+	 * Where a consumed login returns: the address stored with its state, else
+	 * the plain portal address.
+	 *
+	 * @param array<string, mixed> $pending The consumed OIDC state row.
+	 *
+	 * @return string
+	 */
+	private function pendingReturnTo(array $pending): string {
 		$returnTo = $this->portalReturnTo();
 		if ($pending['returnTo'] !== '') {
 			$returnTo = $pending['returnTo'];
 		}
 
-		// The bearer travels in the URL FRAGMENT, never a query string — a
-		// fragment is never sent to the server (no access/Referer-header
-		// leak) and never appears in server logs.
-		$redirectUrl = $this->urlGenerator->getAbsoluteURL($returnTo) . '#token=' . rawurlencode($issued['token']);
-
-		// Explicit 302 (design.md) — RedirectResponse's own default is 303.
-		return new RedirectResponse($redirectUrl, Http::STATUS_FOUND);
-	}//end oidcCallback()
+		return $returnTo;
+	}//end pendingReturnTo()
 
 	/**
 	 * The answer to a broker that returned an error instead of a code. A silent
@@ -751,12 +939,7 @@ class SessionController extends Controller {
 			return $this->oidcGenericError();
 		}
 
-		$returnTo = $this->portalReturnTo();
-		if ($pending['returnTo'] !== '') {
-			$returnTo = $pending['returnTo'];
-		}
-
-		return new RedirectResponse($this->urlGenerator->getAbsoluteURL($returnTo), Http::STATUS_FOUND);
+		return new RedirectResponse($this->urlGenerator->getAbsoluteURL($this->pendingReturnTo(pending: $pending)), Http::STATUS_FOUND);
 	}//end brokerErrorAnswer()
 
 	/**
@@ -840,18 +1023,49 @@ class SessionController extends Controller {
 	public function nextcloud(string $portal = '', string $returnTo = ''): Response {
 		$uid = $this->currentNextcloudUid();
 		if ($uid === '') {
-			// Not signed in to Nextcloud yet: hand the visitor to the platform's
-			// own login form and come back here. The password is Nextcloud's
-			// business, never ours.
-			return new RedirectResponse(
-				$this->urlGenerator->linkToRoute(
-					'core.login.showLoginForm',
-					['redirect_url' => $this->request->getRequestUri()]
-				),
-				Http::STATUS_FOUND
-			);
+			return $this->toNextcloudLogin();
 		}
 
+		$site = $this->nextcloudPortal(portal: $portal);
+		if ($site instanceof JSONResponse) {
+			return $site;
+		}
+
+		$issued = $this->nextcloudSession(site: $site, uid: $uid);
+		if ($issued instanceof JSONResponse) {
+			return $issued;
+		}
+
+		// Same hand-off as the OIDC callback: the bearer travels in the URL
+		// FRAGMENT, which is never sent to a server and never reaches a log.
+		return $this->tokenRedirect(target: $this->nextcloudReturnTo(site: $site, returnTo: $returnTo), token: $issued['token']);
+	}//end nextcloud()
+
+	/**
+	 * Not signed in to Nextcloud yet: hand the visitor to the platform's own
+	 * login form and come back here. The password is Nextcloud's business,
+	 * never ours.
+	 *
+	 * @return RedirectResponse
+	 */
+	private function toNextcloudLogin(): RedirectResponse {
+		return new RedirectResponse(
+			$this->urlGenerator->linkToRoute(
+				'core.login.showLoginForm',
+				['redirect_url' => $this->request->getRequestUri()]
+			),
+			Http::STATUS_FOUND
+		);
+	}//end toNextcloudLogin()
+
+	/**
+	 * The named portal when it offers the `nextcloud` mode, else the 404.
+	 *
+	 * @param string $portal The portal's slug.
+	 *
+	 * @return array<string, mixed>|JSONResponse
+	 */
+	private function nextcloudPortal(string $portal): array|JSONResponse {
 		$site = $this->portalFor(slug: $portal);
 		if ($site === null) {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
@@ -865,13 +1079,43 @@ class SessionController extends Controller {
 			return new JSONResponse(['error' => 'mode_not_offered'], Http::STATUS_NOT_FOUND);
 		}
 
+		return $site;
+	}//end nextcloudPortal()
+
+	/**
+	 * The portal session for a Nextcloud user with an active account on the
+	 * portal: 403 without one, 503 when no session can be minted.
+	 *
+	 * @param array<string, mixed> $site The portal offering the mode.
+	 * @param string               $uid  The signed-in Nextcloud user.
+	 *
+	 * @return array<string, mixed>|JSONResponse
+	 */
+	private function nextcloudSession(array $site, string $uid): array|JSONResponse {
 		$account = $this->accountOf(site: $site, uid: $uid);
 		if ($account === null || ($account['status'] ?? 'active') !== 'active') {
 			return new JSONResponse(['error' => 'no_portal_account'], Http::STATUS_FORBIDDEN);
 		}
 
+		$issued = $this->issueNextcloudSession(uid: $uid, account: $account);
+		if ($issued === null) {
+			return new JSONResponse(['error' => 'not_configured'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		return $issued;
+	}//end nextcloudSession()
+
+	/**
+	 * Mint the low-trust portal session for a Nextcloud user's account.
+	 *
+	 * @param string               $uid     The signed-in Nextcloud user.
+	 * @param array<string, mixed> $account The user's active portal account.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function issueNextcloudSession(string $uid, array $account): ?array {
 		$audience = (string)($account['audience'] ?? 'client');
-		$issued = $this->session->issueSession(
+		return $this->session->issueSession(
 			subjectRef: $uid,
 			audience: $audience,
 			organisation: (string)($account['organisation'] ?? 'dev-org'),
@@ -882,23 +1126,25 @@ class SessionController extends Controller {
 			trust: 'low',
 			roles: [$audience . ':read']
 		);
+	}//end issueNextcloudSession()
 
-		if ($issued === null) {
-			return new JSONResponse(['error' => 'not_configured'], Http::STATUS_SERVICE_UNAVAILABLE);
-		}
-
-		// Same hand-off as the OIDC callback: the bearer travels in the URL
-		// FRAGMENT, which is never sent to a server and never reaches a log.
+	/**
+	 * Where a Nextcloud sign-in returns: the given address, else the portal's
+	 * own site page.
+	 *
+	 * @param array<string, mixed> $site     The portal signed in to.
+	 * @param string               $returnTo The requested return address, or ''.
+	 *
+	 * @return string
+	 */
+	private function nextcloudReturnTo(array $site, string $returnTo): string {
 		$target = $returnTo;
 		if ($target === '') {
 			$target = '/apps/portaliq/site?portal=' . rawurlencode((string)($site['slug'] ?? ''));
 		}
 
-		return new RedirectResponse(
-			$this->urlGenerator->getAbsoluteURL($target) . '#token=' . rawurlencode($issued['token']),
-			Http::STATUS_FOUND
-		);
-	}//end nextcloud()
+		return $target;
+	}//end nextcloudReturnTo()
 
 	/**
 	 * The user's portal account; for a resident without one, written first.
