@@ -87,7 +87,32 @@ class CrossRefConfigNormaliser {
 			return $action;
 		}
 
-		$declared = $action[self::KEY];
+		$config = $this->references(declared: $action[self::KEY], whitelist: $whitelist);
+		if ($config === null) {
+			return null;
+		}
+
+		$action[self::KEY] = $config;
+
+		// An anonymous caller owns nothing, so there is no scope to check a
+		// reference against. The two keys are mutually exclusive, and the
+		// guard is what survives: the action stays, without its anonymous
+		// flag, which makes it reachable only with a subject.
+		unset($action['anonymous']);
+
+		return $action;
+	}//end normaliseAction()
+
+	/**
+	 * Every declared reference, sanitised, or null when the declaration is
+	 * empty, not a map, or holds one unusable reference.
+	 *
+	 * @param mixed              $declared  The declaration as authored.
+	 * @param array<int, string> $whitelist The fields the action accepts.
+	 *
+	 * @return array<string, array<string, mixed>>|null
+	 */
+	private function references(mixed $declared, array $whitelist): ?array {
 		if (is_array($declared) === false || $declared === []) {
 			return null;
 		}
@@ -102,16 +127,8 @@ class CrossRefConfigNormaliser {
 			$config[(string)$field] = $entry;
 		}
 
-		$action[self::KEY] = $config;
-
-		// An anonymous caller owns nothing, so there is no scope to check a
-		// reference against. The two keys are mutually exclusive, and the
-		// guard is what survives: the action stays, without its anonymous
-		// flag, which makes it reachable only with a subject.
-		unset($action['anonymous']);
-
-		return $action;
-	}//end normaliseAction()
+		return $config;
+	}//end references()
 
 	/**
 	 * One declared reference, or null when it is unusable.
@@ -135,6 +152,23 @@ class CrossRefConfigNormaliser {
 			return null;
 		}
 
+		$entry = $this->requiredKeys(reference: $reference);
+		if ($entry === null) {
+			return null;
+		}
+
+		return $entry + ['required' => (($reference['required'] ?? false) === true), 'scopeClaim' => $this->scopeClaimOf(reference: $reference)];
+	}//end normaliseReference()
+
+	/**
+	 * The register, schema and scope field a reference must name, or null
+	 * when one is missing or empty.
+	 *
+	 * @param array<string, mixed> $reference The reference config as authored.
+	 *
+	 * @return array<string, string>|null
+	 */
+	private function requiredKeys(array $reference): ?array {
 		$entry = [];
 		foreach (self::REQUIRED as $key) {
 			$value = ($reference[$key] ?? null);
@@ -145,14 +179,22 @@ class CrossRefConfigNormaliser {
 			$entry[$key] = $value;
 		}
 
-		$entry['required'] = (($reference['required'] ?? false) === true);
+		return $entry;
+	}//end requiredKeys()
 
+	/**
+	 * The claim a reference scopes by, '' for none.
+	 *
+	 * @param array<string, mixed> $reference The reference config as authored.
+	 *
+	 * @return string
+	 */
+	private function scopeClaimOf(array $reference): string {
 		$scopeClaim = ($reference['scopeClaim'] ?? null);
-		$entry['scopeClaim'] = '';
 		if (is_string($scopeClaim) === true) {
-			$entry['scopeClaim'] = $scopeClaim;
+			return $scopeClaim;
 		}
 
-		return $entry;
-	}//end normaliseReference()
+		return '';
+	}//end scopeClaimOf()
 }//end class

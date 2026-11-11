@@ -161,30 +161,34 @@ class ReportController extends Controller {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$solved = $this->checkReporterCredential(
-			site: $site,
-			report: $report,
-			nonce: $nonce,
-			solution: $solution,
-			expiresAt: $expiresAt,
-			signature: $signature
-		);
-		if ($solved === false) {
+		$filing = new ReportFiling(site: $site, report: $report);
+		$filing->contact   = $contact;
+		$filing->caseType  = $caseType;
+		$filing->register  = $register;
+		$filing->schema    = $schema;
+		$filing->challenge = ['nonce' => $nonce, 'solution' => $solution, 'expiresAt' => $expiresAt, 'signature' => $signature];
+		return $this->fileReport(filing: $filing);
+	}//end file()
+
+	/**
+	 * File a report on a portal that exists: refused without the
+	 * challenge's credential or without a body; else accepted, and its code
+	 * answered once.
+	 *
+	 * @param ReportFiling $filing The filing.
+	 *
+	 * @return JSONResponse
+	 */
+	private function fileReport(ReportFiling $filing): JSONResponse {
+		if ($this->checkReporterCredential(filing: $filing) === false) {
 			return new JSONResponse(['error' => 'challenge_failed'], Http::STATUS_FORBIDDEN);
 		}
 
-		if (trim((string)($report['body'] ?? '')) === '') {
+		if (trim((string)($filing->report['body'] ?? '')) === '') {
 			return new JSONResponse(['error' => 'report_empty'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$accepted = $this->intake->accept(
-			portal: (string)($site['slug'] ?? ''),
-			caseType: $caseType,
-			report: $report,
-			contact: $contact,
-			caseTypeRegister: $register,
-			caseTypeSchema: $schema
-		);
+		$accepted = $this->acceptedReport(filing: $filing);
 		if ($accepted === null) {
 			return new JSONResponse(['error' => 'not_accepted'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
@@ -195,7 +199,25 @@ class ReportController extends Controller {
 			'codeShownOnce' => true,
 			'recoverable' => false,
 		]);
-	}//end file()
+	}//end fileReport()
+
+	/**
+	 * The report the intake accepts, with its code, or null.
+	 *
+	 * @param ReportFiling $filing The filing.
+	 *
+	 * @return array{code: string, reportId: string}|null
+	 */
+	private function acceptedReport(ReportFiling $filing): ?array {
+		return $this->intake->accept(
+			portal: (string)($filing->site['slug'] ?? ''),
+			caseType: $filing->caseType,
+			report: $filing->report,
+			contact: $filing->contact,
+			caseTypeRegister: $filing->register,
+			caseTypeSchema: $filing->schema
+		);
+	}//end acceptedReport()
 
 	/**
 	 * Whether the filing carries the credential this endpoint authenticates with.
@@ -211,26 +233,21 @@ class ReportController extends Controller {
 	 * unconditionally rather than behind isEnabled(): the honeypot costs
 	 * nothing and should not be skipped with it.
 	 *
-	 * @param array<string, mixed> $site The portal the filing arrived on.
-	 * @param array<string, mixed> $report The submitted report.
-	 * @param string $nonce The challenge nonce, when one was issued.
-	 * @param string $solution The solution to it.
-	 * @param int $expiresAt The expiry issued with the nonce.
-	 * @param string $signature This instance's signature over the nonce.
+	 * @param ReportFiling $filing The filing, with the challenge proof it carried.
 	 *
 	 * @return bool Whether the credential checks out.
 	 *
 	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
 	 */
-	private function checkReporterCredential(array $site, array $report, string $nonce, string $solution, int $expiresAt, string $signature): bool {
+	private function checkReporterCredential(ReportFiling $filing): bool {
 		return $this->challenge->accepts(
-			site: $site,
+			site: $filing->site,
 			surface: 'report',
-			submission: $report,
-			nonce: $nonce,
-			solution: $solution,
-			expiresAt: $expiresAt,
-			signature: $signature
+			submission: $filing->report,
+			nonce: $filing->challenge['nonce'],
+			solution: $filing->challenge['solution'],
+			expiresAt: $filing->challenge['expiresAt'],
+			signature: $filing->challenge['signature']
 		);
 	}//end checkReporterCredential()
 
@@ -519,13 +536,7 @@ class ReportController extends Controller {
 			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$request = $this->reader->readObject(
-			register: self::REGISTER,
-			schema: self::REQUEST_SCHEMA,
-			scopeField: '',
-			subjectRef: '',
-			id: $id
-		);
+		$request = $this->revealRequest(id: $id);
 		if ($request === null) {
 			return new JSONResponse(['error' => 'request_not_found'], Http::STATUS_NOT_FOUND);
 		}
@@ -543,19 +554,47 @@ class ReportController extends Controller {
 			allow: $allow,
 			reason: $reason
 		);
-		if (isset($decided['error']) === true) {
-			// `not_custodian` covers the administrator who is not in the
-			// declared group, and it is a refusal that shows nothing at all.
-			$status = Http::STATUS_CONFLICT;
-			if ($decided['error'] === 'not_custodian') {
-				$status = Http::STATUS_FORBIDDEN;
-			}
+		return $this->decisionAnswer(decided: $decided);
+	}//end decideReveal()
 
-			return new JSONResponse(['error' => $decided['error']], $status);
+	/**
+	 * The reveal request by its id, or null.
+	 *
+	 * @param string $id The request.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function revealRequest(string $id): ?array {
+		return $this->reader->readObject(
+			register: self::REGISTER,
+			schema: self::REQUEST_SCHEMA,
+			scopeField: '',
+			subjectRef: '',
+			id: $id
+		);
+	}//end revealRequest()
+
+	/**
+	 * The answer to the custodian's decision: the decision, or its refusal.
+	 * `not_custodian` covers the administrator who is not in the declared
+	 * group, and it is a refusal that shows nothing at all.
+	 *
+	 * @param array<string, mixed> $decided What the reveal service decided.
+	 *
+	 * @return JSONResponse
+	 */
+	private function decisionAnswer(array $decided): JSONResponse {
+		if (isset($decided['error']) === false) {
+			return new JSONResponse($decided);
 		}
 
-		return new JSONResponse($decided);
-	}//end decideReveal()
+		$status = Http::STATUS_CONFLICT;
+		if ($decided['error'] === 'not_custodian') {
+			$status = Http::STATUS_FORBIDDEN;
+		}
+
+		return new JSONResponse(['error' => $decided['error']], $status);
+	}//end decisionAnswer()
 
 	/**
 	 * The reveal requests on one report, without anything the reporter gave.

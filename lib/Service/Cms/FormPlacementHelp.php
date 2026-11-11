@@ -67,54 +67,99 @@ class FormPlacementHelp {
 	 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
 	 */
 	public function attach(array $widgets, string $portal): array {
-		$forms = null;
-
-		return $this->walk(widgets: $widgets, portal: $portal, forms: $forms);
+		return $this->walk(widgets: $widgets, run: new FormPlacementRun(portal: $portal));
 	}//end attach()
 
 	/**
-	 * @param array      $widgets The widgets of a page or of an expanded shared block.
-	 * @param string     $portal  The serving portal's slug.
-	 * @param array|null $forms   The portal's forms by identifier, read on first use.
+	 * Attach form help to the widgets of a page or of an expanded shared block.
+	 *
+	 * @param array            $widgets The widgets.
+	 * @param FormPlacementRun $run     The serving portal and its forms, read on first use.
 	 *
 	 * @return array The widgets.
 	 */
-	private function walk(array $widgets, string $portal, ?array &$forms): array {
+	private function walk(array $widgets, FormPlacementRun $run): array {
 		foreach ($widgets as $index => $widget) {
-			if (is_array($widget) === false) {
-				continue;
+			if (is_array($widget) === true) {
+				$widgets[$index] = $this->placed(widget: $widget, run: $run);
 			}
-
-			$props = (array)($widget['props'] ?? []);
-			if (($widget['widgetKey'] ?? '') === 'sharedBlock' && is_array($props['widgets'] ?? null) === true) {
-				$widgets[$index]['props']['widgets'] = $this->walk(widgets: $props['widgets'], portal: $portal, forms: $forms);
-				continue;
-			}
-
-			if (($widget['widgetKey'] ?? '') !== self::WIDGET) {
-				continue;
-			}
-
-			$details = $this->help->details(help: ($props['formHelp'] ?? null));
-			$formId  = trim((string)($props['formId'] ?? ''));
-			if ($formId !== '') {
-				if ($forms === null) {
-					$forms = $this->formsOf(portal: $portal);
-				}
-
-				$details = array_merge($details, $this->help->details(help: ($forms[$formId]['help'] ?? null)));
-			}
-
-			unset($props['formHelp']);
-			if ($details !== []) {
-				$props['formHelp'] = $details;
-			}
-
-			$widgets[$index]['props'] = $props;
-		}//end foreach
+		}
 
 		return $widgets;
 	}//end walk()
+
+	/**
+	 * One widget: a shared block walked into, a form placement with its help, anything else as it is.
+	 *
+	 * @param array            $widget The widget.
+	 * @param FormPlacementRun $run    The serving portal and its forms.
+	 *
+	 * @return array The widget.
+	 */
+	private function placed(array $widget, FormPlacementRun $run): array {
+		$props = (array)($widget['props'] ?? []);
+		if ($this->isSharedBlock(widget: $widget, props: $props) === true) {
+			$widget['props']['widgets'] = $this->walk(widgets: $props['widgets'], run: $run);
+			return $widget;
+		}
+
+		if (($widget['widgetKey'] ?? '') === self::WIDGET) {
+			$widget['props'] = $this->withFormHelp(props: $props, run: $run);
+		}
+
+		return $widget;
+	}//end placed()
+
+	/**
+	 * Whether a widget is a shared block with widgets to walk into.
+	 *
+	 * @param array $widget The widget.
+	 * @param array $props  Its props.
+	 *
+	 * @return bool
+	 */
+	private function isSharedBlock(array $widget, array $props): bool {
+		return ($widget['widgetKey'] ?? '') === 'sharedBlock' && is_array($props['widgets'] ?? null) === true;
+	}//end isSharedBlock()
+
+	/**
+	 * A form placement's props with `formHelp`: its own, the stored form's winning per key; none when empty.
+	 *
+	 * @param array            $props The placement's props.
+	 * @param FormPlacementRun $run   The serving portal and its forms.
+	 *
+	 * @return array The props.
+	 */
+	private function withFormHelp(array $props, FormPlacementRun $run): array {
+		$details = $this->help->details(help: ($props['formHelp'] ?? null));
+		$formId  = trim((string)($props['formId'] ?? ''));
+		if ($formId !== '') {
+			$details = array_merge($details, $this->storedHelp(formId: $formId, run: $run));
+		}
+
+		unset($props['formHelp']);
+		if ($details !== []) {
+			$props['formHelp'] = $details;
+		}
+
+		return $props;
+	}//end withFormHelp()
+
+	/**
+	 * The help a stored form of the serving portal holds; the forms are read at the first ask.
+	 *
+	 * @param string           $formId The placement's form identifier.
+	 * @param FormPlacementRun $run    The serving portal and its forms.
+	 *
+	 * @return array<string, string>
+	 */
+	private function storedHelp(string $formId, FormPlacementRun $run): array {
+		if ($run->forms === null) {
+			$run->forms = $this->formsOf(portal: $run->portal);
+		}
+
+		return $this->help->details(help: ($run->forms[$formId]['help'] ?? null));
+	}//end storedHelp()
 
 	/**
 	 * The serving portal's forms, under every identifier a row carries.
@@ -130,18 +175,53 @@ class FormPlacementHelp {
 
 		$forms = [];
 		foreach ($this->rows->query(schema: 'form', filters: ['portal' => $portal]) as $row) {
-			if ((string)($row['portal'] ?? '') !== $portal) {
-				continue;
-			}
-
-			$self = (array)($row['@self'] ?? []);
-			foreach ([($row['id'] ?? null), ($row['uuid'] ?? null), ($self['id'] ?? null), ($self['uuid'] ?? null)] as $id) {
-				if ((is_string($id) === true || is_int($id) === true) && (string)$id !== '') {
-					$forms[(string)$id] = $row;
-				}
+			if ((string)($row['portal'] ?? '') === $portal) {
+				$forms = $this->keyedBy(forms: $forms, row: $row);
 			}
 		}
 
 		return $forms;
 	}//end formsOf()
+
+	/**
+	 * The forms with one row added under each identifier it carries.
+	 *
+	 * @param array<string, array> $forms The forms so far.
+	 * @param array                $row   The form row.
+	 *
+	 * @return array<string, array>
+	 */
+	private function keyedBy(array $forms, array $row): array {
+		foreach ($this->idCandidates(row: $row) as $id) {
+			if ((is_string($id) === true || is_int($id) === true) && (string)$id !== '') {
+				$forms[(string)$id] = $row;
+			}
+		}
+
+		return $forms;
+	}//end keyedBy()
+
+	/**
+	 * A row's `id` and `uuid`, then its `@self` id and uuid.
+	 *
+	 * @param array $row The form row.
+	 *
+	 * @return array<int, mixed>
+	 */
+	private function idCandidates(array $row): array {
+		$self = $this->selfOf(row: $row);
+
+		return [($row['id'] ?? null), ($row['uuid'] ?? null), ($self['id'] ?? null), ($self['uuid'] ?? null)];
+	}//end idCandidates()
+
+	/**
+	 * A row's `@self`, as an array.
+	 *
+	 * @param array $row The form row.
+	 *
+	 * @return array
+	 */
+	private function selfOf(array $row): array {
+		return (array)($row['@self'] ?? []);
+	}//end selfOf()
 }//end class

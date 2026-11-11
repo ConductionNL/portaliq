@@ -121,7 +121,22 @@ class TrafficAggregationService {
 	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
 	 */
 	public function run(): array {
-		$now = $this->now();
+		$done = $this->aggregateAll(now: $this->now()) + $this->purgeExpired();
+
+		$this->logger->info('Portaliq: traffic aggregation ran', $done);
+
+		return $done;
+	}
+
+	/**
+	 * Recompute every ordinary portal's open days, then every roll-up
+	 * portal's from its members.
+	 *
+	 * @param DateTimeImmutable $now The clock.
+	 *
+	 * @return array{portals: int, days: int} How many portals and days were done.
+	 */
+	private function aggregateAll(DateTimeImmutable $now): array {
 		$portalsDone = 0;
 		$daysDone = 0;
 		$written = [];
@@ -137,6 +152,16 @@ class TrafficAggregationService {
 			$daysDone += $this->aggregateRollup(slug: $slug, members: $members, written: $written, now: $now);
 		}
 
+		return ['portals' => $portalsDone, 'days' => $daysDone];
+	}
+
+	/**
+	 * Purge the expired raw events and, on the same retention, the session
+	 * recordings taken beside them.
+	 *
+	 * @return array{purged: int, recordingsPurged: int} How many were removed.
+	 */
+	private function purgeExpired(): array {
 		$purged = $this->store->purgeExpired();
 		// Session recordings expire on the same retention as the raw events
 		// they were taken beside, and the same run removes them.
@@ -145,12 +170,7 @@ class TrafficAggregationService {
 			$recordingsPurged = $this->recordings->purgeExpired();
 		}
 
-		$this->logger->info(
-			'Portaliq: traffic aggregation ran',
-			['portals' => $portalsDone, 'days' => $daysDone, 'purged' => $purged, 'recordingsPurged' => $recordingsPurged]
-		);
-
-		return ['portals' => $portalsDone, 'days' => $daysDone, 'purged' => $purged, 'recordingsPurged' => $recordingsPurged];
+		return ['purged' => $purged, 'recordingsPurged' => $recordingsPurged];
 	}
 
 	/**
@@ -251,15 +271,46 @@ class TrafficAggregationService {
 	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
 	 */
 	public function dayRecords(string $slug, string $date, array $config, DateTimeImmutable $now): ?array {
-		$from = $date . 'T00:00:00.000Z';
-		$to = (new DateTimeImmutable($date . ' 00:00:00', new DateTimeZone('UTC')))->modify('+1 day')->format('Y-m-d\TH:i:s.v\Z');
-		$events = $this->store->eventsBetween(portal: $slug, from: $from, to: $to);
+		$events = $this->dayEvents(slug: $slug, date: $date);
 		if ($events === []) {
 			return null;
 		}
 
 		$sessions = $this->sessioniser->sessions(events: $events, timeoutMinutes: (int)$config['sessionTimeoutMinutes']);
-		$options = [
+		$build = new DayRollup(
+			portal: $slug,
+			date: $date,
+			aggregatedAt: $now->format('Y-m-d\TH:i:s\Z'),
+			options: self::rollupOptions(config: $config)
+		);
+
+		return $this->segmentRecords(build: $build, wanted: $this->sessionsBySegment(config: $config, sessions: $sessions));
+	}
+
+	/**
+	 * A portal's raw events of one UTC day.
+	 *
+	 * @param string $slug The portal slug.
+	 * @param string $date The UTC day.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function dayEvents(string $slug, string $date): array {
+		$from = $date . 'T00:00:00.000Z';
+		$to = (new DateTimeImmutable($date . ' 00:00:00', new DateTimeZone('UTC')))->modify('+1 day')->format('Y-m-d\TH:i:s.v\Z');
+
+		return $this->store->eventsBetween(portal: $slug, from: $from, to: $to);
+	}
+
+	/**
+	 * The rollup options a portal's configuration asks for.
+	 *
+	 * @param array<string, mixed> $config The portal's resolved configuration.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private static function rollupOptions(array $config): array {
+		return [
 			'persistClientId' => (($config['sensitive']['persistClientId'] ?? false) === true),
 			'accountLinking' => (($config['sensitive']['accountLinking'] ?? false) === true),
 			'goals' => ($config['goals'] ?? []),
@@ -268,16 +319,43 @@ class TrafficAggregationService {
 			'experiments' => ($config['experiments'] ?? []),
 			'heatmaps' => (($config['sensitive']['heatmaps'] ?? false) === true),
 		];
-		$aggregatedAt = $now->format('Y-m-d\TH:i:s\Z');
+	}
 
+	/**
+	 * The day's sessions for all sessions ('') and for each segment.
+	 *
+	 * @param array<string, mixed>             $config   The portal's resolved configuration.
+	 * @param array<int, array<string, mixed>> $sessions The day's sessions.
+	 *
+	 * @return array<string, array<int, array<string, mixed>>> By segment id.
+	 */
+	private function sessionsBySegment(array $config, array $sessions): array {
 		$wanted = ['' => $sessions];
 		foreach ((array)($config['segments'] ?? []) as $segment) {
 			$wanted[(string)$segment['id']] = $this->segments->filter(segment: $segment, sessions: $sessions, goals: (array)($config['goals'] ?? []));
 		}
 
+		return $wanted;
+	}
+
+	/**
+	 * One record per segment, each stamped with its segment id.
+	 *
+	 * @param DayRollup                                        $build  What every record is built with.
+	 * @param array<string, array<int, array<string, mixed>>> $wanted The sessions by segment id.
+	 *
+	 * @return array<string, array<string, mixed>> The records by segment id.
+	 */
+	private function segmentRecords(DayRollup $build, array $wanted): array {
 		$records = [];
 		foreach ($wanted as $segmentId => $segmentSessions) {
-			$record = $this->rollup->build(portal: $slug, date: $date, sessions: $segmentSessions, aggregatedAt: $aggregatedAt, options: $options);
+			$record = $this->rollup->build(
+				portal: $build->portal,
+				date: $build->date,
+				sessions: $segmentSessions,
+				aggregatedAt: $build->aggregatedAt,
+				options: $build->options
+			);
 			$record['segment'] = (string)$segmentId;
 			$records[(string)$segmentId] = $record;
 		}
@@ -331,42 +409,81 @@ class TrafficAggregationService {
 	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
 	 */
 	public function aggregateRollup(string $slug, array $members, array $written, DateTimeImmutable $now): int {
+		$run = new RollupRun(slug: $slug, members: $members, now: $now);
+		$done = 0;
+		foreach ($this->rollupDays(run: $run, written: $written) as $date) {
+			$done += $this->rollupDay(run: $run, date: (string)$date);
+		}
+
+		return $done;
+	}
+
+	/**
+	 * Today, yesterday and every day a member rewrote in this run.
+	 *
+	 * @param RollupRun                         $run     The roll-up.
+	 * @param array<string, array<int, string>> $written The days each ordinary portal rewrote in this run.
+	 *
+	 * @return array<int, string|int> The days.
+	 */
+	private function rollupDays(RollupRun $run, array $written): array {
 		$days = [
-			$now->modify('-1 day')->format('Y-m-d') => true,
-			$now->format('Y-m-d') => true,
+			$run->now->modify('-1 day')->format('Y-m-d') => true,
+			$run->now->format('Y-m-d') => true,
 		];
-		foreach ($members as $member) {
+		foreach ($run->members as $member) {
 			foreach (($written[$member] ?? []) as $date) {
 				$days[$date] = true;
 			}
 		}
 
-		$done = 0;
-		foreach (array_keys($days) as $date) {
-			$records = [];
-			foreach ($members as $member) {
-				$record = $this->store->findDaily(portal: $member, date: (string)$date);
-				if ($record !== null) {
-					$records[] = $record;
-				}
-			}
+		return array_keys($days);
+	}
 
-			if ($records === []) {
-				continue;
-			}
-
-			$summed = $this->rollupSum->sum(
-				portal: $slug,
-				date: (string)$date,
-				members: $members,
-				records: $records,
-				aggregatedAt: $now->format('Y-m-d\TH:i:s\Z')
-			);
-			$existing = $this->existingBySegment(slug: $slug, date: (string)$date);
-			$done += (int)$this->store->saveDaily(rollup: $summed, uuid: ($existing[''] ?? null));
+	/**
+	 * Sum one day of the members' records into the roll-up's record.
+	 *
+	 * @param RollupRun $run  The roll-up.
+	 * @param string    $date The UTC day.
+	 *
+	 * @return int 1 when the record was written, else 0.
+	 */
+	private function rollupDay(RollupRun $run, string $date): int {
+		$records = $this->memberRecords(run: $run, date: $date);
+		if ($records === []) {
+			return 0;
 		}
 
-		return $done;
+		$summed = $this->rollupSum->sum(
+			portal: $run->slug,
+			date: $date,
+			members: $run->members,
+			records: $records,
+			aggregatedAt: $run->now->format('Y-m-d\TH:i:s\Z')
+		);
+		$existing = $this->existingBySegment(slug: $run->slug, date: $date);
+
+		return (int)$this->store->saveDaily(rollup: $summed, uuid: ($existing[''] ?? null));
+	}
+
+	/**
+	 * The members' own records of one day.
+	 *
+	 * @param RollupRun $run  The roll-up.
+	 * @param string    $date The UTC day.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function memberRecords(RollupRun $run, string $date): array {
+		$records = [];
+		foreach ($run->members as $member) {
+			$record = $this->store->findDaily(portal: $member, date: $date);
+			if ($record !== null) {
+				$records[] = $record;
+			}
+		}
+
+		return $records;
 	}
 
 	/**

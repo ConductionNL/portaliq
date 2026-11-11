@@ -270,4 +270,24 @@ class InboxMessageFieldsTest extends TestCase {
 		$this->assertSame(['readByRecipientAt' => 'NOW'], $fields->readPayload($collection, 'NOW', []));
 		$this->assertSame([], $fields->readPayload($collection, 'LATER', ['readByRecipientAt' => 'NOW']));
 	}//end testAppInboxKeepsAnExistingReadAt()
+
+	/**
+	 * Only a label and a path or an in-page hash on this portal are kept,
+	 * with the label trimmed; control characters, a bad hash and a
+	 * non-string address are dropped.
+	 *
+	 * @return void
+	 */
+	public function testEverySameSiteActionIsAsRecorded(): void {
+		$this->assertSame(['label' => 'Open', 'href' => '/mijn/a?b=c#d'], InboxMessageFields::sameSiteAction(action: ['label' => ' Open ', 'href' => '/mijn/a?b=c#d']));
+		$this->assertSame(['label' => 'Open', 'href' => '#tab=a.b-c_d'], InboxMessageFields::sameSiteAction(action: ['label' => 'Open', 'href' => '#tab=a.b-c_d']));
+		foreach (["/mijn\n", '#', '#a b', '#a<b', 'mijn', "/mijn\t/x"] as $href) {
+			$this->assertNull(InboxMessageFields::sameSiteAction(action: ['label' => 'Open', 'href' => $href]), json_encode($href));
+		}
+
+		$this->assertNull(InboxMessageFields::sameSiteAction(action: ['label' => 'Open', 'href' => 7]));
+		$this->assertNull(InboxMessageFields::sameSiteAction(action: ['label' => 7, 'href' => '/mijn']));
+		$this->assertNull(InboxMessageFields::sameSiteAction(action: ['label' => '  ', 'href' => '/mijn']));
+		$this->assertNull(InboxMessageFields::sameSiteAction(action: '/mijn'));
+	}//end testEverySameSiteActionIsAsRecorded()
 }

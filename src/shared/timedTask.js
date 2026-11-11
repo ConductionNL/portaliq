@@ -288,16 +288,14 @@ export function createSaveQueue(send, onState = () => {}) {
 /**
  * Start (or resume) a task and return the sanitised attempt.
  *
- * @param {object} api The portal api adapter (`forwardAction`).
- * @param {string} app The contributing app.
- * @param {object} block The collection's `timedTask` block.
- * @param {string} taskId The task to start.
- * @param {string} [accessCode] The access code, when the task asks for one.
+ * @param {{api: object, app: string, block: object}} actions The portal api adapter (`forwardAction`), the contributing app and the collection's `timedTask` block.
+ * @param {{taskId: string, accessCode?: string}} start The task to start, and the access code when the task asks for one.
  * @return {Promise<{ok: boolean, attempt?: object, error?: string, message?: string}>} The outcome.
  */
-export async function startAttempt(api, app, block, taskId, accessCode = '') {
+export async function startAttempt(actions, start) {
+	const { taskId, accessCode = '' } = start
 	const body = accessCode ? { taskId, accessCode } : { taskId }
-	const result = await api.forwardAction(app, block.start, body)
+	const result = await actions.api.forwardAction(actions.app, actions.block.start, body)
 	const attempt = result.ok ? normaliseAttempt(result.body) : null
 	if (!attempt) {
 		return {
@@ -312,16 +310,15 @@ export async function startAttempt(api, app, block, taskId, accessCode = '') {
 /**
  * Flush unsaved answers, then hand the attempt in.
  *
- * @param {object} api The portal api adapter (`forwardAction`).
- * @param {string} app The contributing app.
- * @param {object} block The collection's `timedTask` block.
- * @param {string} attemptId The attempt.
- * @param {{flush: () => Promise<boolean>}} queue The attempt's save queue.
+ * @param {{api: object, app: string, block: object}} actions The portal api adapter (`forwardAction`), the contributing app and the collection's `timedTask` block.
+ * @param {{attemptId: string, queue: {flush: () => Promise<boolean>}}} handIn The attempt and its save queue.
  * @return {Promise<{ok: boolean, allSaved: boolean}>} The outcome.
  */
-export async function submitAttempt(api, app, block, attemptId, queue) {
-	const allSaved = await queue.flush()
-	const result = await api.forwardAction(app, block.submit, { attemptId })
+export async function submitAttempt(actions, handIn) {
+	const allSaved = await handIn.queue.flush()
+	const result = await actions.api.forwardAction(actions.app, actions.block.submit, {
+		attemptId: handIn.attemptId,
+	})
 	// Already handed in (by the deadline, or another tab) is handed in.
 	return { ok: result.ok || result.status === 409, allSaved }
 }

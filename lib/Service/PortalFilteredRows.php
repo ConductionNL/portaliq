@@ -79,32 +79,59 @@ class PortalFilteredRows {
 		int $limit,
 		array $filter,
 	): ?array {
-		$queries = [$this->filters(filter: $filter, scopeField: '', value: '')];
-		if ($match === 'scopeField' && $scopeField !== '') {
-			$queries = [];
-			foreach (array_keys($targets) as $target) {
-				$queries[] = $this->filters(filter: $filter, scopeField: $scopeField, value: (string)$target);
-			}
-		}
-
-		$rows = [];
+		$query = new OuterRowsQuery(scopeField: $scopeField, targets: $targets, match: $match, limit: $limit, filter: $filter);
 		try {
-			foreach ($queries as $filters) {
-				$remaining = ($limit - count($rows));
-				if ($remaining <= 0) {
-					break;
-				}
-
-				$page = $objectService->findAll(config: ['filters' => $filters, 'limit' => $remaining, 'offset' => 0], _rbac: false, _multitenancy: false);
-				$rows = $this->withoutDuplicates(rows: $rows, page: (array)$page);
-			}
+			return $this->readUpTo(objectService: $objectService, query: $query);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: OR read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
 			return null;
 		}
+	}//end outerRows()
+
+	/**
+	 * Ask each query in turn until the limit is reached, skipping a row an
+	 * earlier query already read.
+	 *
+	 * @param object         $objectService OpenRegister's ObjectService.
+	 * @param OuterRowsQuery $query         The outer query.
+	 *
+	 * @return array<int, mixed> The raw rows.
+	 */
+	private function readUpTo(object $objectService, OuterRowsQuery $query): array {
+		$rows = [];
+		foreach ($this->queries(query: $query) as $filters) {
+			$remaining = ($query->limit - count($rows));
+			if ($remaining <= 0) {
+				break;
+			}
+
+			$page = $objectService->findAll(config: ['filters' => $filters, 'limit' => $remaining, 'offset' => 0], _rbac: false, _multitenancy: false);
+			$rows = $this->withoutDuplicates(rows: $rows, page: (array)$page);
+		}
 
 		return $rows;
-	}//end outerRows()
+	}//end readUpTo()
+
+	/**
+	 * The filters of each query: one with the declared filter on a forward
+	 * read, one per target with the scope field set on a reverse read.
+	 *
+	 * @param OuterRowsQuery $query The outer query.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function queries(OuterRowsQuery $query): array {
+		if ($query->match !== 'scopeField' || $query->scopeField === '') {
+			return [$this->filters(filter: $query->filter, scopeField: '', value: '')];
+		}
+
+		$queries = [];
+		foreach (array_keys($query->targets) as $target) {
+			$queries[] = $this->filters(filter: $query->filter, scopeField: $query->scopeField, value: (string)$target);
+		}
+
+		return $queries;
+	}//end queries()
 
 	/**
 	 * Whether a row satisfies the declared filter. The scope field is left

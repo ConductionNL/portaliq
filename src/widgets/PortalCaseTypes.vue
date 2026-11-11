@@ -113,6 +113,31 @@ import {
 import CaseTypeColumns from './CaseTypeColumns.vue'
 import { caseTypesUrl, hiddenFrom, hidesMore } from '../lib/caseTypeVisibility.js'
 
+/**
+ * Read a portal's case types, their columns and fields.
+ *
+ * @param {string} slug The portal slug.
+ * @return {Promise<object>} The answer's data.
+ */
+async function readCaseTypes(slug) {
+	const { data } = await axios.get(caseTypesUrl(slug, generateUrl))
+	return data
+}
+
+/**
+ * Store the case types a portal hides.
+ *
+ * @param {string} slug The portal slug.
+ * @param {Array<object>} rows The case types with their switches.
+ * @return {Promise<object>} The answer's data.
+ */
+async function storeHidden(slug, rows) {
+	const { data } = await axios.put(caseTypesUrl(slug, generateUrl), {
+		hiddenCaseTypes: hiddenFrom(rows),
+	})
+	return data
+}
+
 export default {
 	name: 'PortalCaseTypes',
 
@@ -222,17 +247,12 @@ export default {
 				return
 			}
 			try {
-				const { data } = await axios.get(
-					caseTypesUrl(this.slug, generateUrl),
-				)
+				const data = await readCaseTypes(this.slug)
 				this.accept(data.caseTypes || [])
 				this.columns = data.columns || {}
 				this.fields = data.fields || []
 			} catch {
-				this.error = t(
-					'portaliq',
-					'The case types of this portal could not be loaded.',
-				)
+				this.error = t('portaliq', 'The case types of this portal could not be loaded.')
 			} finally {
 				this.loading = false
 			}
@@ -284,19 +304,11 @@ export default {
 			this.saving = true
 			this.error = ''
 			try {
-				const { data } = await axios.put(
-					caseTypesUrl(this.slug, generateUrl),
-					{
-						hiddenCaseTypes: hiddenFrom(this.rows),
-					},
-				)
+				const data = await storeHidden(this.slug, this.rows)
 				this.accept(data.caseTypes || [])
 				this.notice = t('portaliq', 'Your choices are saved.')
 			} catch {
-				this.error = t(
-					'portaliq',
-					'Your choices could not be saved. Try again.',
-				)
+				this.error = t('portaliq', 'Your choices could not be saved. Try again.')
 			} finally {
 				this.saving = false
 			}

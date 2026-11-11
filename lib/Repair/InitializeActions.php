@@ -81,33 +81,60 @@ class InitializeActions implements IRepairStep {
 		}
 
 		$matrix = $this->actionAuth->getMatrix();
-		$added  = [];
-		foreach ($seed as $action => $groups) {
-			$groups = $this->groupsOf(entry: $groups);
-			if (is_string($action) === false || is_array($groups) === false || array_key_exists($action, $matrix) === true) {
-				continue;
-			}
-
-			$matrix[$action] = $groups;
-			$added[]         = $action;
-		}
-
-		if (count($added) === 0) {
+		$added  = $this->unseeded(seed: $seed, matrix: $matrix);
+		if ($added === []) {
 			$output->info(sprintf('Action matrix already holds every seeded action (%d) — preserving.', count($matrix)));
 			return;
 		}
 
+		if ($this->wroteMatrix(matrix: ($matrix + $added), output: $output) === false) {
+			return;
+		}
+
+		$message = sprintf('Added %d seeded action(s) to the action matrix: %s', count($added), implode(', ', array_keys($added)));
+		$output->info($message);
+		$this->logger->info('[portaliq] ADR-023 ' . $message);
+	}//end run()
+
+	/**
+	 * The seeded actions the stored matrix does not hold yet, with their
+	 * groups, in seed order; a stored grant is never overwritten.
+	 *
+	 * @param array<mixed>                      $seed   The seeded matrix.
+	 * @param array<string, array<int, string>> $matrix The stored matrix.
+	 *
+	 * @return array<string, array<int, string>>
+	 */
+	private function unseeded(array $seed, array $matrix): array {
+		$added = [];
+		foreach ($seed as $action => $groups) {
+			$groups = $this->groupsOf(entry: $groups);
+			if (is_string($action) === true && is_array($groups) === true && array_key_exists($action, $matrix) === false) {
+				$added[$action] = $groups;
+			}
+		}
+
+		return $added;
+	}//end unseeded()
+
+	/**
+	 * Store the matrix, or warn and say no when it cannot be encoded.
+	 *
+	 * @param array<string, array<int, string>> $matrix The matrix to store.
+	 * @param IOutput                           $output The repair output.
+	 *
+	 * @return bool Whether it was stored.
+	 */
+	private function wroteMatrix(array $matrix, IOutput $output): bool {
 		try {
 			$this->actionAuth->setMatrix($matrix);
 		} catch (\JsonException $e) {
 			$output->warning('Failed to write matrix: ' . $e->getMessage());
-			return;
+			return false;
 		}
 
-		$message = sprintf('Added %d seeded action(s) to the action matrix: %s', count($added), implode(', ', $added));
-		$output->info($message);
-		$this->logger->info('[portaliq] ADR-023 ' . $message);
-	}//end run()
+		return true;
+	}//end wroteMatrix()
 
 	/**
 	 * The groups of a seed entry: the old bare group list, or the catalogue

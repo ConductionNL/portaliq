@@ -157,19 +157,46 @@ class CollectionListKeys {
 			$out['titleFields'] = $titles;
 		}
 
-		$progress = ($block['progress'] ?? null);
-		if (is_array($progress) === true
-			&& $this->projects(collection: $collection, field: ($progress['valueField'] ?? null)) === true
-			&& $this->projects(collection: $collection, field: ($progress['totalField'] ?? null)) === true
+		return $out + $this->progress(declared: ($block['progress'] ?? null), collection: $collection);
+	}//end cards()
+
+	/**
+	 * The cards' progress figure as `['progress' => …]`: a value and a total
+	 * field the collection both projects, and a label when it says
+	 * something; nothing otherwise.
+	 *
+	 * @param mixed                     $declared   The declared progress.
+	 * @param array<string, mixed>|null $collection The collection.
+	 *
+	 * @return array<string, array<string, string>>
+	 */
+	private function progress(mixed $declared, ?array $collection): array {
+		if (is_array($declared) === false
+			|| $this->projects(collection: $collection, field: ($declared['valueField'] ?? null)) === false
+			|| $this->projects(collection: $collection, field: ($declared['totalField'] ?? null)) === false
 		) {
-			$out['progress'] = ['valueField' => $progress['valueField'], 'totalField' => $progress['totalField']];
-			if (is_string($progress['label'] ?? null) === true && trim($progress['label']) !== '') {
-				$out['progress']['label'] = trim($progress['label']);
-			}
+			return [];
 		}
 
-		return $out;
-	}//end cards()
+		$fields = ['valueField' => $declared['valueField'], 'totalField' => $declared['totalField']];
+		return ['progress' => $fields + $this->progressLabel(declared: $declared)];
+	}//end progress()
+
+	/**
+	 * A progress figure's label as `['label' => …]`, trimmed, when it says
+	 * something.
+	 *
+	 * @param array<string, mixed> $declared The declared progress.
+	 *
+	 * @return array<string, string>
+	 */
+	private function progressLabel(array $declared): array {
+		if (is_string($declared['label'] ?? null) === true && trim($declared['label']) !== '') {
+			return ['label' => trim($declared['label'])];
+		}
+
+		return [];
+	}//end progressLabel()
 
 	/**
 	 * The projected fields that name each card, in the order declared.

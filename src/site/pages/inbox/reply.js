@@ -108,14 +108,12 @@ export function replyStart(message, reply) {
  * when a file fails: the text arrived.
  *
  * @param {object} api The portal api (`replyToMessage`, `uploadFieldFile`).
- * @param {object} message The message being answered.
- * @param {object} reply The reply declaration.
- * @param {Record<string, string>} values What the resident wrote.
- * @param {Record<string, File[]>} filesByField The picked files per field.
+ * @param {{message: object, reply: object, values: Record<string, string>, filesByField: Record<string, File[]>}} answer The message being answered, the reply declaration, what the resident wrote and the picked files per field.
  * @return {Promise<{ok: boolean, errors: Record<string, string>, failed: string[]}>} `failed` names the files that did not attach.
  * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t06
  */
-export async function sendReply(api, message, reply, values, filesByField) {
+export async function sendReply(api, answer) {
+	const { message, reply, values, filesByField } = answer
 	const adapter = {
 		createObject: (action, body) => api.replyToMessage(message, body),
 		uploadFieldFile: (action, id, field, file) =>

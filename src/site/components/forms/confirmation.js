@@ -53,18 +53,28 @@ export function confirmationView(confirmation, fallbackText, values, defaultTitl
 	const own = confirmation && typeof confirmation === 'object' ? confirmation : {}
 	const title = String(own.title || '').trim() || defaultTitle
 	const body = fillBody(String(own.body || '').trim() || fallbackText, values)
-	const next = (Array.isArray(own.next) ? own.next : [])
-		.filter(
-			(step) =>
-				step
-				&& (String(step.title || '').trim()
-					|| String(step.text || '').trim()),
-		)
-		.map((step) => ({
-			title: String(step.title || ''),
-			text: String(step.text || ''),
-		}))
-	return { title, body, next }
+	return { title, body, next: nextSteps(own.next) }
+}
+
+/**
+ * @param {object|null} step A declared next step.
+ * @return {boolean} Whether it has a title or a text with words.
+ */
+function hasWords(step) {
+	return Boolean(step) && Boolean(String(step.title || '').trim() || String(step.text || '').trim())
+}
+
+/**
+ * The next steps the confirmation lists: those with words, as text.
+ *
+ * @param {unknown} next The binding's `next`.
+ * @return {Array<{title: string, text: string}>} The steps.
+ */
+function nextSteps(next) {
+	return (Array.isArray(next) ? next : []).filter(hasWords).map((step) => ({
+		title: String(step.title || ''),
+		text: String(step.text || ''),
+	}))
 }
 
 /**

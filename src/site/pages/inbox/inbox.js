@@ -519,42 +519,93 @@ export function bodyParts(body, origin, labels) {
 		if (n > 0) {
 			pushPart(parts, { text: '\n' })
 		}
-		let cursor = 0
-		for (const match of line.matchAll(URL_PATTERN)) {
-			const url = match[0].replace(TRAILING_PUNCTUATION, '')
-			const link = siteLink(url, origin)
-			if (!link) {
-				continue
-			}
-			const before = line.slice(cursor, match.index)
-			const atLineStart = cursor === 0
-			cursor = match.index + url.length
-			const listed = LIST_ITEM.exec(before)
-			if (listed && listed[2].trim() !== '') {
-				const kept = listed[1]
-				// The list mark goes; between two items on one line a space stays.
-				if (kept.trim() !== '') {
-					pushPart(parts, { text: kept })
-				} else if (!atLineStart) {
-					pushPart(parts, { text: ' ' })
-				}
-				pushPart(parts, { text: listed[2].trim(), ...link })
-				continue
-			}
-			const label = /^\/publicatie\/[^/]+\/?$/.test(link.route || '')
-				? labels.publication
-				: labels.link
-			let kept = before
-			if (kept.trimEnd().endsWith(':')) {
-				kept = withoutLeadIn(kept.trimEnd().slice(0, -1))
-				kept = kept.trim() === '' ? kept.trim() : `${kept.trimEnd()} `
-			}
-			pushPart(parts, { text: kept })
-			pushPart(parts, { text: label, ...link })
-		}
-		pushPart(parts, { text: line.slice(cursor) })
+		pushLineParts(parts, { line, origin, labels })
 	})
 	return parts
+}
+
+/**
+ * Add one line's parts: its text, with each address into this site named.
+ *
+ * @param {Array<object>} parts The parts so far.
+ * @param {{line: string, origin: string, labels: object}} view The line, the page's origin and the names of a link.
+ * @return {void}
+ */
+function pushLineParts(parts, view) {
+	let cursor = 0
+	for (const match of view.line.matchAll(URL_PATTERN)) {
+		cursor = pushLinkParts(parts, { ...view, match, cursor })
+	}
+	pushPart(parts, { text: view.line.slice(cursor) })
+}
+
+/**
+ * Add the text before one address and the address as a named link, when it
+ * is one of this site's.
+ *
+ * @param {Array<object>} parts The parts so far.
+ * @param {{line: string, origin: string, labels: object, match: RegExpMatchArray, cursor: number}} at The line, the origin, the names, the address found and where the line's text was taken up to.
+ * @return {number} Where the line's text is now taken up to.
+ */
+function pushLinkParts(parts, at) {
+	const url = at.match[0].replace(TRAILING_PUNCTUATION, '')
+	const link = siteLink(url, at.origin)
+	if (!link) {
+		return at.cursor
+	}
+	const before = at.line.slice(at.cursor, at.match.index)
+	const listed = LIST_ITEM.exec(before)
+	if (listed && listed[2].trim() !== '') {
+		pushListedLink(parts, { listed, atLineStart: at.cursor === 0, link })
+	} else {
+		pushNamedLink(parts, { before, link, labels: at.labels })
+	}
+	return at.match.index + url.length
+}
+
+/**
+ * A list item's link: the title is the link, and the mark goes; between two
+ * items on one line a space stays.
+ *
+ * @param {Array<object>} parts The parts so far.
+ * @param {{listed: RegExpExecArray, atLineStart: boolean, link: object}} item The list item, whether it opens the line and the link.
+ * @return {void}
+ */
+function pushListedLink(parts, item) {
+	const kept = item.listed[1]
+	if (kept.trim() !== '') {
+		pushPart(parts, { text: kept })
+	} else if (!item.atLineStart) {
+		pushPart(parts, { text: ' ' })
+	}
+	pushPart(parts, { text: item.listed[2].trim(), ...item.link })
+}
+
+/**
+ * A link named after what it opens, in the place of its lead-in.
+ *
+ * @param {Array<object>} parts The parts so far.
+ * @param {{before: string, link: object, labels: object}} item The text before the address, the link and the names of a link.
+ * @return {void}
+ */
+function pushNamedLink(parts, item) {
+	const label = /^\/publicatie\/[^/]+\/?$/.test(item.link.route || '')
+		? item.labels.publication
+		: item.labels.link
+	pushPart(parts, { text: withoutLeadInColon(item.before) })
+	pushPart(parts, { text: label, ...item.link })
+}
+
+/**
+ * @param {string} before The text before an address.
+ * @return {string} The text, without the lead-in a colon ends.
+ */
+function withoutLeadInColon(before) {
+	if (!before.trimEnd().endsWith(':')) {
+		return before
+	}
+	const kept = withoutLeadIn(before.trimEnd().slice(0, -1))
+	return kept.trim() === '' ? kept.trim() : `${kept.trimEnd()} `
 }
 
 /**
@@ -569,23 +620,47 @@ export function bodyParts(body, origin, labels) {
  */
 export function actionOf(message, origin = '') {
 	const action = message?.action
-	if (!action || typeof action.label !== 'string' || !action.label.trim()) {
+	if (!hasLabel(action) || !isPortalHref(action.href, origin)) {
 		return null
 	}
-	const href = action.href
+	return { label: action.label.trim(), href: action.href }
+}
+
+/**
+ * @param {object|null} action A message's action.
+ * @return {boolean} Whether it has a label with words.
+ */
+function hasLabel(action) {
+	return Boolean(action) && typeof action.label === 'string' && Boolean(action.label.trim())
+}
+
+/**
+ * @param {unknown} href An action's address.
+ * @param {string} origin The page origin, or ''.
+ * @return {boolean} Whether it is a page of this portal: a path on this site, an `#open=`-style fragment, or an address on this origin.
+ */
+function isPortalHref(href, origin) {
 	if (typeof href !== 'string' || href === '') {
-		return null
+		return false
 	}
-	if (/^\/(?!\/)/.test(href) && !href.includes('\\')) {
-		return { label: action.label.trim(), href }
-	}
-	if (/^#[\w/=.-]+$/.test(href)) {
-		return { label: action.label.trim(), href }
-	}
-	if (origin !== '' && href.startsWith(`${origin}/`)) {
-		return { label: action.label.trim(), href }
-	}
-	return null
+	return isSitePath(href) || /^#[\w/=.-]+$/.test(href) || isOnOrigin(href, origin)
+}
+
+/**
+ * @param {string} href An address.
+ * @return {boolean} Whether it is a path on this site, not another host's.
+ */
+function isSitePath(href) {
+	return /^\/(?!\/)/.test(href) && !href.includes('\\')
+}
+
+/**
+ * @param {string} href An address.
+ * @param {string} origin The page origin, or ''.
+ * @return {boolean} Whether it is an address on the page's own origin.
+ */
+function isOnOrigin(href, origin) {
+	return origin !== '' && href.startsWith(`${origin}/`)
 }
 
 /**
@@ -603,13 +678,21 @@ export function inboxTabs(messages) {
 	]
 	const seen = new Set()
 	for (const message of messages || []) {
-		const value = typeof message?.tab === 'string' ? message.tab.trim() : ''
+		const value = tabValueOf(message)
 		if (value !== '' && !seen.has(value)) {
 			seen.add(value)
 			tabs.push({ key: `tab:${value}`, kind: 'value', value })
 		}
 	}
 	return tabs
+}
+
+/**
+ * @param {object|null} message A loaded message.
+ * @return {string} The tab it names, trimmed, or ''.
+ */
+function tabValueOf(message) {
+	return typeof message?.tab === 'string' ? message.tab.trim() : ''
 }
 
 /**

@@ -50,39 +50,57 @@ export function runtimeConfig() {
 	// `/apps/portaliq/api/content/menus` — four 404s, an empty menu bar, and a
 	// page that still looked half-alive because the shell itself rendered fine.
 	//
-	// So ask each channel directly, in the order they can exist.
+	// So ask each channel directly, in the order they can exist; the third, a
+	// plain global, is for a genuinely external host that sets one.
+	return shellConfig() ?? initialStateConfig() ?? (window.PORTALIQ_SITE_CONFIG || {})
+}
 
-	// 1. The standalone shell's block. Present only when `templates/site.php`
-	//    rendered the whole document, so its presence IS the host signal.
-	// Outside a browser document (server rendering, a test) there is none.
+/**
+ * The standalone shell's block. Present only when `templates/site.php`
+ * rendered the whole document, so its presence IS the host signal. Outside a
+ * browser document (server rendering, a test) there is none.
+ *
+ * @return {object|null} The configuration, or null without a readable block.
+ */
+function shellConfig() {
+	const text = shellBlockText()
+	if (!text) {
+		return null
+	}
+	try {
+		const parsed = JSON.parse(text)
+		return parsed && typeof parsed === 'object' ? parsed : null
+	} catch {
+		// A malformed block must not take the portal down — fall through.
+		return null
+	}
+}
+
+/**
+ * @return {string} The text of the shell's configuration block, or ''.
+ */
+function shellBlockText() {
 	const el =
 		typeof document === 'undefined'
 			? null
 			: document.getElementById('portaliq-site-config')
-	if (el && el.textContent) {
-		try {
-			const parsed = JSON.parse(el.textContent)
-			if (parsed && typeof parsed === 'object') {
-				return parsed
-			}
-		} catch {
-			// A malformed block must not take the portal down — fall through.
-		}
-	}
+	return (el && el.textContent) || ''
+}
 
-	// 2. Nextcloud's initial-state channel, when some other route still renders
-	//    this bundle inside a Nextcloud layout.
+/**
+ * Nextcloud's initial-state channel, when some other route still renders
+ * this bundle inside a Nextcloud layout.
+ *
+ * @return {object|null} The configuration, or null without one.
+ */
+function initialStateConfig() {
 	try {
 		const state = loadState('portaliq', 'portalConfig', null)
-		if (state && typeof state === 'object') {
-			return state
-		}
+		return state && typeof state === 'object' ? state : null
 	} catch {
 		// No initial-state element at all: keep going.
+		return null
 	}
-
-	// 3. A plain global, for a genuinely external host that sets one.
-	return window.PORTALIQ_SITE_CONFIG || {}
 }
 
 /**

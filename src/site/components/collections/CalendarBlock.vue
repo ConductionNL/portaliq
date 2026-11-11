@@ -187,6 +187,24 @@ import {
 
 let counter = 0
 
+/** A day as the calendar names it: "di 10 nov". */
+const DAY = Object.freeze({ weekday: 'short', day: 'numeric', month: 'short' })
+
+/**
+ * A moment's time on the clock, '' when the language cannot be used.
+ *
+ * @param {Date} date The moment.
+ * @param {string} locale The page language, Dutch when empty.
+ * @return {string} "09:00".
+ */
+function clockTime(date, locale) {
+	try {
+		return date.toLocaleTimeString(locale || 'nl', { hour: '2-digit', minute: '2-digit' })
+	} catch {
+		return ''
+	}
+}
+
 /**
  * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-calendar-block-must-show-dated-rows-as-a-list-and-a-month
  */
@@ -278,33 +296,22 @@ export default {
 		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-calendar-block-must-show-dated-rows-as-a-list-and-a-month
 		 */
 		when(item) {
-			const day = { weekday: 'short', day: 'numeric', month: 'short' }
 			const sameDay = dayKey(item.start) === dayKey(item.end)
 			if (item.allDay) {
 				return sameDay
-					? this.format(item.start, day)
+					? this.format(item.start, DAY)
 					: this.t('{from} to {to}', {
-							from: this.format(item.start, day),
-							to: this.format(item.end, day),
+							from: this.format(item.start, DAY),
+							to: this.format(item.end, DAY),
 						})
 			}
-			const time = (date) => {
-				try {
-					return date.toLocaleTimeString(this.locale || 'nl', {
-						hour: '2-digit',
-						minute: '2-digit',
-					})
-				} catch {
-					return ''
-				}
-			}
-			const from = `${this.format(item.start, day)} ${time(item.start)}`
+			const from = `${this.format(item.start, DAY)} ${clockTime(item.start, this.locale)}`
 			if (sameDay) {
-				return item.end > item.start ? `${from}–${time(item.end)}` : from
+				return item.end > item.start ? `${from}–${clockTime(item.end, this.locale)}` : from
 			}
 			return this.t('{from} to {to}', {
 				from,
-				to: `${this.format(item.end, day)} ${time(item.end)}`,
+				to: `${this.format(item.end, DAY)} ${clockTime(item.end, this.locale)}`,
 			})
 		},
 

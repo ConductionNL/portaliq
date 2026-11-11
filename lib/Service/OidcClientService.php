@@ -50,6 +50,7 @@ namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Service\Connection\ConnectionReporter;
 use OCP\Http\Client\IClientService;
+use OCP\Http\Client\IResponse;
 use OCP\ICacheFactory;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -180,6 +181,26 @@ class OidcClientService {
 			return $cached;
 		}
 
+		$endpoints = $this->fetchedEndpoints(issuer: $issuer);
+		if ($endpoints === null) {
+			return null;
+		}
+
+		$cache->set($issuer, $endpoints, self::CACHE_TTL);
+
+		return $endpoints;
+	}//end discover()
+
+	/**
+	 * The endpoints the issuer's discovery document announces, or null when
+	 * it cannot be fetched, is no JSON or lacks a required endpoint; each
+	 * failure reported (adopt-connection-registry).
+	 *
+	 * @param string $issuer The configured issuer base URL.
+	 *
+	 * @return array{authorization_endpoint: string, token_endpoint: string, jwks_uri: string, end_session_endpoint: string}|null
+	 */
+	private function fetchedEndpoints(string $issuer): ?array {
 		$url = rtrim($issuer, '/') . '/.well-known/openid-configuration';
 
 		try {
@@ -197,6 +218,19 @@ class OidcClientService {
 			return null;
 		}
 
+		return $this->announcedEndpoints(issuer: $issuer, decoded: $decoded);
+	}//end fetchedEndpoints()
+
+	/**
+	 * The endpoints of a decoded discovery document, or null (reported) when
+	 * the authorization, token or JWKS endpoint is missing.
+	 *
+	 * @param string               $issuer  The configured issuer base URL.
+	 * @param array<string, mixed> $decoded The decoded discovery document.
+	 *
+	 * @return array{authorization_endpoint: string, token_endpoint: string, jwks_uri: string, end_session_endpoint: string}|null
+	 */
+	private function announcedEndpoints(string $issuer, array $decoded): ?array {
 		$endpoints = [
 			'authorization_endpoint' => (string)($decoded['authorization_endpoint'] ?? ''),
 			'token_endpoint' => (string)($decoded['token_endpoint'] ?? ''),
@@ -209,10 +243,8 @@ class OidcClientService {
 			return null;
 		}
 
-		$cache->set($issuer, $endpoints, self::CACHE_TTL);
-
 		return $endpoints;
-	}//end discover()
+	}//end announcedEndpoints()
 
 	/**
 	 * Build the authorization-request URL (RFC 6749 + PKCE).
@@ -255,15 +287,27 @@ class OidcClientService {
 			$params['prompt'] = $prompt;
 		}
 
+		return $this->withQuery(url: $authorizeEndpoint, params: $params);
+	}//end buildAuthorizationUrl()
+
+	/**
+	 * The URL with the parameters added to its query.
+	 *
+	 * @param string               $url    The URL, with or without a query.
+	 * @param array<string, mixed> $params The parameters.
+	 *
+	 * @return string
+	 */
+	private function withQuery(string $url, array $params): string {
 		$query = http_build_query($params);
 
 		$separator = '?';
-		if (str_contains($authorizeEndpoint, '?') === true) {
+		if (str_contains($url, '?') === true) {
 			$separator = '&';
 		}
 
-		return $authorizeEndpoint . $separator . $query;
-	}//end buildAuthorizationUrl()
+		return $url . $separator . $query;
+	}//end withQuery()
 
 	/**
 	 * Exchange an authorization code for tokens at the broker's token endpoint.
@@ -294,28 +338,20 @@ class OidcClientService {
 		string $clientSecret,
 		string $redirectUri,
 	): ?array {
-		try {
-			$client = $this->clientService->newClient();
-			$response = $client->post(
-				$tokenEndpoint,
-				[
-					'timeout' => self::HTTP_TIMEOUT,
-					'http_errors' => false,
-					'body' => [
-						'grant_type' => 'authorization_code',
-						'code' => $code,
-						'redirect_uri' => $redirectUri,
-						'client_id' => $clientId,
-						'client_secret' => $clientSecret,
-						'code_verifier' => $codeVerifier,
-					],
-				]
-			);
-		} catch (Throwable $e) {
-			$this->logger->debug('Portaliq: OIDC code exchange failed', ['reason' => $e->getMessage()]);
-			$this->connectionReporter?->oidcExchangeAnswered(tokenEndpoint: $tokenEndpoint, httpStatus: null, oauthError: '', hasToken: false);
+		$response = $this->tokenResponse(
+			tokenEndpoint: $tokenEndpoint,
+			form: [
+				'grant_type' => 'authorization_code',
+				'code' => $code,
+				'redirect_uri' => $redirectUri,
+				'client_id' => $clientId,
+				'client_secret' => $clientSecret,
+				'code_verifier' => $codeVerifier,
+			]
+		);
+		if ($response === null) {
 			return null;
-		}//end try
+		}
 
 		$decoded = $this->decodeJsonBody(response: $response);
 		$status  = $response->getStatusCode();
@@ -327,6 +363,32 @@ class OidcClientService {
 
 		return $decoded;
 	}//end exchangeCode()
+
+	/**
+	 * Post the token request; null (reported) on a transport failure.
+	 *
+	 * @param string               $tokenEndpoint The broker's token endpoint.
+	 * @param array<string, mixed> $form          The token request's form fields.
+	 *
+	 * @return IResponse|null
+	 */
+	private function tokenResponse(string $tokenEndpoint, array $form): ?IResponse {
+		try {
+			$client = $this->clientService->newClient();
+			return $client->post(
+				$tokenEndpoint,
+				[
+					'timeout' => self::HTTP_TIMEOUT,
+					'http_errors' => false,
+					'body' => $form,
+				]
+			);
+		} catch (Throwable $e) {
+			$this->logger->debug('Portaliq: OIDC code exchange failed', ['reason' => $e->getMessage()]);
+			$this->connectionReporter?->oidcExchangeAnswered(tokenEndpoint: $tokenEndpoint, httpStatus: null, oauthError: '', hasToken: false);
+			return null;
+		}//end try
+	}//end tokenResponse()
 
 	/**
 	 * Tell integriq, throttled, what the broker answered to a code exchange.
@@ -501,7 +563,9 @@ class OidcClientService {
 			return null;
 		}
 
-		if ($this->claimsAreValid(claims: $claims, issuer: $issuer, clientId: $clientId, expectedNonce: $expectedNonce) === false) {
+		$expected = new IdTokenExpectation(issuer: $issuer, clientId: $clientId);
+		$expected->nonce = $expectedNonce;
+		if ($this->claimsAreValid(claims: $claims, expected: $expected) === false) {
 			return null;
 		}
 
@@ -513,33 +577,57 @@ class OidcClientService {
 	 * already verified. Split out purely for readability; every branch still
 	 * collapses to the SAME boolean the caller treats identically.
 	 *
-	 * @param array<string, mixed> $claims The decoded ID token claims.
-	 * @param string $issuer The configured issuer.
-	 * @param string $clientId This RP's client id.
-	 * @param string $expectedNonce The nonce stored at `start`.
+	 * @param array<string, mixed> $claims   The decoded ID token claims.
+	 * @param IdTokenExpectation   $expected The issuer, client id and nonce the token must carry.
 	 *
 	 * @return bool
-	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) -- five independent
-	 * fail-closed guards (iss/aud/nonce/exp/iat), each mandatory per design.md
-	 * — collapsing them into fewer branches would trade auditability for a
-	 * score, mirroring PortalSessionService's identical rationale.
 	 */
-	private function claimsAreValid(array $claims, string $issuer, string $clientId, string $expectedNonce): bool {
-		if (($claims['iss'] ?? null) !== $issuer) {
+	private function claimsAreValid(array $claims, IdTokenExpectation $expected): bool {
+		return $this->identifiesTheLogin(claims: $claims, expected: $expected) === true && $this->isCurrent(claims: $claims) === true;
+	}//end claimsAreValid()
+
+	/**
+	 * Whether the claims name the configured issuer, this client among
+	 * their audience, and the nonce stored at `start`.
+	 *
+	 * @param array<string, mixed> $claims   The decoded ID token claims.
+	 * @param IdTokenExpectation   $expected The issuer, client id and nonce the token must carry.
+	 *
+	 * @return bool
+	 */
+	private function identifiesTheLogin(array $claims, IdTokenExpectation $expected): bool {
+		if (($claims['iss'] ?? null) !== $expected->issuer) {
 			return false;
 		}
 
-		$aud = ($claims['aud'] ?? null);
-		$audMatches = ($aud === $clientId) || (is_array($aud) === true && in_array($clientId, $aud, true) === true);
-		if ($audMatches === false) {
+		if ($this->namesTheClient(aud: ($claims['aud'] ?? null), clientId: $expected->clientId) === false) {
 			return false;
 		}
 
-		if (($claims['nonce'] ?? null) !== $expectedNonce) {
-			return false;
-		}
+		return ($claims['nonce'] ?? null) === $expected->nonce;
+	}//end identifiesTheLogin()
 
+	/**
+	 * Whether the audience is this client, or a list that holds it.
+	 *
+	 * @param mixed  $aud      The token's `aud` claim.
+	 * @param string $clientId This RP's client id.
+	 *
+	 * @return bool
+	 */
+	private function namesTheClient(mixed $aud, string $clientId): bool {
+		return ($aud === $clientId) || (is_array($aud) === true && in_array($clientId, $aud, true) === true);
+	}//end namesTheClient()
+
+	/**
+	 * Whether the token has not expired and was not issued in the future,
+	 * both within the clock skew.
+	 *
+	 * @param array<string, mixed> $claims The decoded ID token claims.
+	 *
+	 * @return bool
+	 */
+	private function isCurrent(array $claims): bool {
 		$now = time();
 		$exp = (int)($claims['exp'] ?? 0);
 		if ($exp === 0 || $now > ($exp + self::CLOCK_SKEW)) {
@@ -547,12 +635,8 @@ class OidcClientService {
 		}
 
 		$iat = (int)($claims['iat'] ?? 0);
-		if ($iat !== 0 && $iat > ($now + self::CLOCK_SKEW)) {
-			return false;
-		}
-
-		return true;
-	}//end claimsAreValid()
+		return ($iat === 0 || $iat <= ($now + self::CLOCK_SKEW));
+	}//end isCurrent()
 
 	/**
 	 * Resolve the RSA public key PEM for a `kid` from a JWKS. When the token
@@ -565,19 +649,7 @@ class OidcClientService {
 	 * @return string|null PEM-encoded RSA public key, or null when unresolvable.
 	 */
 	private function resolveSigningKeyPem(array $jwks, string $kid): ?string {
-		$candidates = [];
-		foreach ($jwks['keys'] as $key) {
-			if (is_array($key) === false || ($key['kty'] ?? '') !== 'RSA') {
-				continue;
-			}
-
-			if ($kid !== '' && ($key['kid'] ?? '') !== $kid) {
-				continue;
-			}
-
-			$candidates[] = $key;
-		}
-
+		$candidates = $this->signingCandidates(keys: $jwks['keys'], kid: $kid);
 		if (count($candidates) !== 1) {
 			return null;
 		}
@@ -588,98 +660,41 @@ class OidcClientService {
 			return null;
 		}
 
-		return $this->rsaJwkToPem(nB64Url: $n, eB64Url: $e);
+		return (new RsaPublicKeyPem())->encode(modulus: $this->b64UrlDecode(encoded: $n), exponent: $this->b64UrlDecode(encoded: $e));
 	}//end resolveSigningKeyPem()
 
 	/**
-	 * Build a PEM-encoded X.509 SubjectPublicKeyInfo for an RSA public key
-	 * from its JWK `n` (modulus) / `e` (exponent), base64url-encoded.
+	 * The RSA keys of a JWKS the token's `kid` can name: every RSA key when
+	 * it names none.
 	 *
-	 * Standard PKCS#1 `RSAPublicKey ::= SEQUENCE { n INTEGER, e INTEGER }`
-	 * wrapped in the standard X.509 `SubjectPublicKeyInfo` (rsaEncryption
-	 * OID + NULL params, BIT STRING payload) — the same encoding
-	 * `openssl_pkey_get_public()` expects for a `-----BEGIN PUBLIC KEY-----`
-	 * PEM. There is no `ext-jwk`/composer JOSE dependency in this app
-	 * (mirrors `PortalJwtService`'s self-contained rationale), so this is a
-	 * small, self-contained DER builder rather than a new dependency.
+	 * @param array<int, mixed> $keys The JWKS keys.
+	 * @param string            $kid  The token's `kid` header (may be empty).
 	 *
-	 * @param string $nB64Url Base64url-encoded modulus.
-	 * @param string $eB64Url Base64url-encoded exponent.
-	 *
-	 * @return string PEM-encoded public key.
+	 * @return array<int, array<string, mixed>>
 	 */
-	private function rsaJwkToPem(string $nB64Url, string $eB64Url): string {
-		$n = $this->b64UrlDecode(encoded: $nB64Url);
-		$e = $this->b64UrlDecode(encoded: $eB64Url);
-
-		$rsaPublicKey = $this->derSequence(content: $this->derInteger(bytes: $n) . $this->derInteger(bytes: $e));
-		$bitString = $this->derBitString(content: $rsaPublicKey);
-		// AlgorithmIdentifier for rsaEncryption (1.2.840.113549.1.1.1) + NULL.
-		$algorithmId = hex2bin('300d06092a864886f70d0101010500');
-		$spki = $this->derSequence(content: $algorithmId . $bitString);
-
-		return "-----BEGIN PUBLIC KEY-----\n" . chunk_split(base64_encode($spki), 64, "\n") . "-----END PUBLIC KEY-----\n";
-	}//end rsaJwkToPem()
-
-	/**
-	 * DER-encode a length (short or long form).
-	 *
-	 * @param int $length The content length in bytes.
-	 *
-	 * @return string
-	 */
-	private function derLength(int $length): string {
-		if ($length < 0x80) {
-			return chr($length);
+	private function signingCandidates(array $keys, string $kid): array {
+		$candidates = [];
+		foreach ($keys as $key) {
+			if ($this->isSigningCandidate(key: $key, kid: $kid) === true) {
+				$candidates[] = $key;
+			}
 		}
 
-		$bytes = ltrim(pack('N', $length), "\x00");
-
-		return chr(0x80 | strlen($bytes)) . $bytes;
-	}//end derLength()
+		return $candidates;
+	}//end signingCandidates()
 
 	/**
-	 * DER-encode an unsigned big-endian integer, prefixing a `0x00` byte
-	 * when the high bit is set (so it is never misread as negative).
+	 * Whether a JWKS entry is an RSA key the token's `kid` names (any RSA
+	 * key when the token names none).
 	 *
-	 * @param string $bytes Raw big-endian magnitude bytes.
+	 * @param mixed  $key The JWKS entry.
+	 * @param string $kid The token's `kid` header (may be empty).
 	 *
-	 * @return string
+	 * @return bool
 	 */
-	private function derInteger(string $bytes): string {
-		$bytes = ltrim($bytes, "\x00");
-		if ($bytes === '') {
-			$bytes = "\x00";
-		}
-
-		if (ord($bytes[0]) > 0x7f) {
-			$bytes = "\x00" . $bytes;
-		}
-
-		return "\x02" . $this->derLength(length: strlen($bytes)) . $bytes;
-	}//end derInteger()
-
-	/**
-	 * DER-encode a SEQUENCE.
-	 *
-	 * @param string $content The already-encoded inner content.
-	 *
-	 * @return string
-	 */
-	private function derSequence(string $content): string {
-		return "\x30" . $this->derLength(length: strlen($content)) . $content;
-	}//end derSequence()
-
-	/**
-	 * DER-encode a BIT STRING with zero unused bits.
-	 *
-	 * @param string $content The raw bit-string payload.
-	 *
-	 * @return string
-	 */
-	private function derBitString(string $content): string {
-		return "\x03" . $this->derLength(length: (strlen($content) + 1)) . "\x00" . $content;
-	}//end derBitString()
+	private function isSigningCandidate(mixed $key, string $kid): bool {
+		return is_array($key) === true && ($key['kty'] ?? '') === 'RSA' && ($kid === '' || ($key['kid'] ?? '') === $kid);
+	}//end isSigningCandidate()
 
 	/**
 	 * Decode + json_decode an HTTP response body, or null on any failure.

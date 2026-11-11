@@ -126,6 +126,7 @@ import {
 	PROVIDER_LABELS,
 	saveBody,
 } from '../lib/portalSigninSettings.js'
+import portalWidgetMixin from './portalWidgetMixin.js'
 
 export default {
 	name: 'PortalSignin',
@@ -139,13 +140,7 @@ export default {
 		NcTextField,
 	},
 
-	props: {
-		/** The portal the detail page shows. */
-		objectData: {
-			type: Object,
-			default: null,
-		},
-	},
+	mixins: [portalWidgetMixin],
 
 	data() {
 		return {
@@ -162,15 +157,6 @@ export default {
 	},
 
 	computed: {
-		/**
-		 * The portal's slug.
-		 *
-		 * @return {string}
-		 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
-		 */
-		slug() {
-			return String(this.objectData?.slug || '')
-		},
 	},
 
 	/**

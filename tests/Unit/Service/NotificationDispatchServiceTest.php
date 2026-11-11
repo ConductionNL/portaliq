@@ -69,6 +69,36 @@ class NotificationDispatchServiceTest extends TestCase {
 
 	}//end testAMatchingRuleKeyEnqueuesTheDispatchJobWithAContentFreePayload()
 
+	public function testTheFirstContributionOfTheAppDecidesAndAChangeRuleCarriesItsRecord(): void {
+		$registry = $this->createMock(PortalContributionRegistry::class);
+		$registry->method('aggregateFor')->willReturn([
+			'contributions' => [
+				'junk',
+				['app' => 'other', 'notifications' => ['status.changed']],
+				['app' => 'portaliq', 'notifications' => [['ruleKey' => 'status.changed', 'field' => 'status'], 7]],
+				['app' => 'portaliq', 'notifications' => ['message.created']],
+			],
+		]);
+		$added   = [];
+		$jobList = $this->createMock(IJobList::class);
+		$jobList->method('add')->willReturnCallback(
+			function (string $job, $argument) use (&$added) {
+				$added[] = $argument;
+			}
+		);
+		$service = new NotificationDispatchService($registry, $jobList, $this->createMock(LoggerInterface::class));
+
+		$record = ['app' => 'portaliq', 'collection' => 'cases', 'id' => 'c1', 'label' => 'Zaak'];
+		$service->dispatch(NotificationDispatchService::RULE_STATUS_CHANGED, 'portaliq', ['subjectRef' => 's1'], $record);
+		$this->assertSame(
+			[['subjectRef' => 's1', 'organisation' => '', 'audience' => '', 'appId' => 'portaliq', 'ruleKey' => 'status.changed', 'record' => $record]],
+			$added
+		);
+
+		$service->dispatch(NotificationDispatchService::RULE_MESSAGE_CREATED, 'portaliq', ['subjectRef' => 's1']);
+		$this->assertCount(1, $added, 'the first portaliq contribution does not declare it, so nothing is sent');
+	}//end testTheFirstContributionOfTheAppDecidesAndAChangeRuleCarriesItsRecord()
+
 	public function testNoMatchingRuleKeyEnqueuesNothing(): void {
 		$registry = $this->createMock(PortalContributionRegistry::class);
 		$registry->method('aggregateFor')->willReturn($this->aggregateWith(['status.changed']));

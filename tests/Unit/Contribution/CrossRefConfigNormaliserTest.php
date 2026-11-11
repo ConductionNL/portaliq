@@ -48,6 +48,26 @@ class CrossRefConfigNormaliserTest extends TestCase {
 	}//end testASoundDeclarationIsKept()
 
 	/**
+	 * A reference keeps only its three keys, `required` exactly true and a
+	 * string `scopeClaim`, in that order; an empty key, a reference that is
+	 * not a map and a field that is not a name drop the action.
+	 *
+	 * @return void
+	 */
+	public function testEveryReferenceRuleIsAsRecorded(): void {
+		$sound = ['scopeClaim' => 'kvk', 'extra' => 1, 'required' => 'yes', 'scopeField' => 'portalSubject', 'schema' => 'case', 'register' => 'dossiq'];
+		$this->assertSame(
+			['register' => 'dossiq', 'schema' => 'case', 'scopeField' => 'portalSubject', 'required' => false, 'scopeClaim' => 'kvk'],
+			$this->normalised(['tegenZaakId' => $sound])[CrossRefConfigNormaliser::KEY]['tegenZaakId']
+		);
+		$this->assertSame('', $this->normalised(['tegenZaakId' => ['scopeClaim' => 7] + $sound])[CrossRefConfigNormaliser::KEY]['tegenZaakId']['scopeClaim']);
+		$this->assertNull($this->normalised(['tegenZaakId' => ['schema' => ''] + $sound]));
+		$this->assertNull($this->normalised(['tegenZaakId' => 'dossiq']));
+		$this->assertNull($this->normalised([7 => $sound]));
+		$this->assertNull($this->normalised(['' => $sound]));
+	}//end testEveryReferenceRuleIsAsRecorded()
+
+	/**
 	 * `required` is false unless it is said, so a declaration that forgets it
 	 * guards the value that is there rather than demanding one.
 	 *

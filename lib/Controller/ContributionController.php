@@ -1054,29 +1054,10 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @return array{collection: array<string, mixed>, app: string}|null
 	 */
 	private function authorisedCollection(array $subject, string $register, string $schema, string $collectionId = ''): ?array {
-		$aggregate = $this->registry->aggregateFor($subject);
-		foreach (($aggregate['contributions'] ?? []) as $contribution) {
-			foreach (($contribution['collections'] ?? []) as $collection) {
-				if (($collection['register'] ?? '') !== $register || ($collection['schema'] ?? '') !== $schema) {
-					continue;
-				}
-
-				// When a collection id is supplied it MUST match — this is what
-				// distinguishes two collections that share a register+schema
-				// (e.g. a direct view and a scopeClaim/via view of the same
-				// schema). An empty id keeps the first-match fallback.
-				if ($collectionId !== '' && ($collection['id'] ?? '') !== $collectionId) {
-					continue;
-				}
-
-				return [
-					'collection' => $collection,
-					'app' => (string)($contribution['app'] ?? ''),
-				];
-			}
-		}
-
-		return null;
+		return (new SubjectCollectionFinder(registry: $this->registry))->find(
+			subject: $subject,
+			requested: ['register' => $register, 'schema' => $schema, 'collection' => $collectionId]
+		);
 	}//end authorisedCollection()
 
 	/**

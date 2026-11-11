@@ -51,31 +51,54 @@ class ItemListConfigNormaliser {
 	 */
 	public function resolve(array $collections, array $actions): array {
 		foreach ($collections as $index => $collection) {
-			if (is_array($collection) === false || array_key_exists(self::KEY, $collection) === false) {
-				continue;
+			if (is_array($collection) === true && array_key_exists(self::KEY, $collection) === true) {
+				$collections[$index] = $this->withItemList(collection: $collection, actions: $actions);
 			}
-
-			$declared = $collection[self::KEY];
-			unset($collection[self::KEY]);
-			if (is_array($declared) === true && (new TimelineProviderMethod())->accepts(name: ($declared['provider'] ?? null)) === true) {
-				$label = '';
-				if (is_string($declared['label'] ?? null) === true) {
-					$label = $declared['label'];
-				}
-
-				$list = ['label' => $label, 'provider' => $declared['provider']];
-				if ($this->removes(collection: $collection, actions: $actions, id: ($declared['removeAction'] ?? null)) === true) {
-					$list['removeAction'] = $declared['removeAction'];
-				}
-
-				$collection[self::KEY] = $list;
-			}
-
-			$collections[$index] = $collection;
-		}//end foreach
+		}
 
 		return $collections;
 	}//end resolve()
+
+	/**
+	 * One collection with its item list kept only when it names a provider
+	 * portaliq may call, and its remove action only when that removes.
+	 *
+	 * @param array<string, mixed>             $collection The collection, declaring the key.
+	 * @param array<int, array<string, mixed>> $actions    The contribution's actions.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withItemList(array $collection, array $actions): array {
+		$declared = $collection[self::KEY];
+		unset($collection[self::KEY]);
+		if (is_array($declared) === false || (new TimelineProviderMethod())->accepts(name: ($declared['provider'] ?? null)) === false) {
+			return $collection;
+		}
+
+		$list = $this->itemList(declared: $declared);
+		if ($this->removes(collection: $collection, actions: $actions, id: ($declared['removeAction'] ?? null)) === true) {
+			$list['removeAction'] = $declared['removeAction'];
+		}
+
+		$collection[self::KEY] = $list;
+		return $collection;
+	}//end withItemList()
+
+	/**
+	 * An item list's label ('' unless it is a string) and its provider.
+	 *
+	 * @param array<string, mixed> $declared The declared item list.
+	 *
+	 * @return array{label: string, provider: string}
+	 */
+	private function itemList(array $declared): array {
+		$label = '';
+		if (is_string($declared['label'] ?? null) === true) {
+			$label = $declared['label'];
+		}
+
+		return ['label' => $label, 'provider' => $declared['provider']];
+	}//end itemList()
 
 	/**
 	 * Whether an id names a row action of this collection that takes `itemId`.

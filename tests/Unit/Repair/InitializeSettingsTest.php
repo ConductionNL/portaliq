@@ -135,6 +135,38 @@ class InitializeSettingsTest extends TestCase {
 	 *
 	 * @return void
 	 */
+	/**
+	 * Every message the import reports to the operator, as recorded: a
+	 * success with and without a version, and an import issue with and
+	 * without a message.
+	 *
+	 * @return void
+	 */
+	public function testTheImportReportsAreAsRecorded(): void {
+		$cases = [
+			[['success' => true, 'version' => '1.2.3'], 'info', 'Portaliq configuration imported successfully (version: 1.2.3)'],
+			[['success' => true], 'info', 'Portaliq configuration imported successfully (version: unknown)'],
+			[['success' => false, 'message' => 'schema clash'], 'warning', 'Portaliq configuration import issue: schema clash'],
+			[['success' => false], 'warning', 'Portaliq configuration import issue: unknown error'],
+		];
+		foreach ($cases as [$result, $channel, $expected]) {
+			$settingsService = $this->createMock(SettingsService::class);
+			$settingsService->method('isOpenRegisterAvailable')->willReturn(true);
+			$settingsService->method('loadConfiguration')->willReturn($result);
+			$seen   = [];
+			$output = $this->createMock(IOutput::class);
+			$output->method($channel)->willReturnCallback(
+				static function (string $message) use (&$seen): void {
+					$seen[] = $message;
+				}
+			);
+
+			$this->repairWith($settingsService)->run($output);
+
+			$this->assertSame($expected, end($seen), $expected);
+		}
+	}//end testTheImportReportsAreAsRecorded()
+
 	public function testHappyPathImportsAndReportsSuccessToTheOperator(): void {
 		$settingsService = $this->createMock(SettingsService::class);
 		$settingsService->method('isOpenRegisterAvailable')->willReturn(true);

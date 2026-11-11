@@ -251,6 +251,57 @@ class ReportWithoutAnAccountTest extends TestCase {
 
 	}//end testARefusalIsRecordedAndRevealsNothing()
 
+	public function testARequestThatIsNoLongerPendingIsRefusedBeforeTheCustodianCheck(): void {
+		[$reveals, $request, $report, $declaration] = $this->pendingRequest();
+		$request['state'] = 'allowed';
+
+		$outcome = $reveals->decide(request: $request, report: $report, custodian: $this->user('admin', inGroup: false), caseType: $declaration, allow: true);
+
+		$this->assertSame(['error' => 'not_pending'], $outcome);
+		$this->assertSame('pending', $this->storedRows('portalRevealRequest')[0]['state']);
+		$this->assertSame([], $this->events);
+
+	}//end testARequestThatIsNoLongerPendingIsRefusedBeforeTheCustodianCheck()
+
+	public function testTheEventCarriesTheRequestAndTheMomentOnTheRecord(): void {
+		[$reveals, $request, $report, $declaration] = $this->pendingRequest();
+
+		$reveals->decide(request: $request, report: $report, custodian: $this->user('vertrouwenspersoon-lena'), caseType: $declaration, allow: true);
+
+		$closed = $this->storedRows('portalRevealRequest')[0];
+		$this->assertSame('', $closed['decisionReason']);
+		$this->assertSame((string)$report['uuid'], $this->events[0]->getReportId());
+		$this->assertSame('handler-anna', $this->events[0]->getRequestedBy());
+		$this->assertSame('Er is een tweede melding over dezelfde afdeling.', $this->events[0]->getMotivation());
+		$this->assertSame($closed['decidedAt'], $this->events[0]->getOccurredAt());
+
+	}//end testTheEventCarriesTheRequestAndTheMomentOnTheRecord()
+
+	public function testARequestWithoutAnIdIsNotWrittenButTheRevealIsStillAnnounced(): void {
+		[$reveals, $request, $report, $declaration] = $this->pendingRequest();
+		unset($request['uuid']);
+
+		$outcome = $reveals->decide(request: $request, report: $report, custodian: $this->user('vertrouwenspersoon-lena'), caseType: $declaration, allow: true);
+
+		$this->assertSame('allowed', $outcome['state']);
+		$this->assertSame(['name' => 'Sanne Bakker', 'email' => 'sanne@example.org'], $outcome['contact']);
+		$this->assertSame('pending', $this->storedRows('portalRevealRequest')[0]['state']);
+		$this->assertCount(1, $this->events);
+
+	}//end testARequestWithoutAnIdIsNotWrittenButTheRevealIsStillAnnounced()
+
+	public function testAReportWithoutAContactRevealsNothingAndSaysSo(): void {
+		[$reveals, $request, $report, $declaration] = $this->pendingRequest();
+		$report['contactRef'] = '';
+
+		$outcome = $reveals->decide(request: $request, report: $report, custodian: $this->user('vertrouwenspersoon-lena'), caseType: $declaration, allow: true);
+
+		$this->assertSame(['state' => 'allowed', 'contact' => []], $outcome);
+		$this->assertSame([], $this->storedRows('portalRevealRequest')[0]['revealedFields']);
+		$this->assertSame([], $this->events[0]->getRevealedFields());
+
+	}//end testAReportWithoutAContactRevealsNothingAndSaysSo()
+
 	public function testACaseTypeThatNamedNoCustodianHasNobodyWhoMayReveal(): void {
 		[$reveals, $request, $report] = $this->pendingRequest();
 

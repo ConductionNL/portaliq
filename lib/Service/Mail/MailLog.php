@@ -87,13 +87,8 @@ class MailLog {
 			return false;
 		}
 
-		$row = $this->writer->createObject(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: '',
-			subjectRef: '',
-			organisation: '',
-			data: [
+		return $this->write(
+			row: [
 				'kind' => 'mail',
 				'portal' => $portal,
 				'templateKey' => $templateKey,
@@ -107,8 +102,6 @@ class MailLog {
 				'retryOf' => $retryOf,
 			]
 		);
-
-		return $row !== null;
 	}//end record()
 
 	/**
@@ -125,13 +118,7 @@ class MailLog {
 	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t04
 	 */
 	public function queueRetry(string $id): string {
-		$row = $this->reader->readObject(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: 'kind',
-			subjectRef: 'mail',
-			id: $id
-		);
+		$row = $this->readRow(id: $id);
 		if ($row === null) {
 			return 'not_found';
 		}
@@ -140,32 +127,73 @@ class MailLog {
 			return 'not_failed';
 		}
 
-		$created = $this->writer->createObject(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: '',
-			subjectRef: '',
-			organisation: '',
-			data: [
-				'kind' => 'mail',
-				'portal' => (string)($row['portal'] ?? ''),
-				'templateKey' => (string)($row['templateKey'] ?? ''),
-				'recipientMasked' => (string)($row['recipientMasked'] ?? ''),
-				'recipientHash' => (string)($row['recipientHash'] ?? ''),
-				'subjectRef' => (string)($row['subjectRef'] ?? ''),
-				'caseRef' => (string)($row['caseRef'] ?? ''),
-				'status' => 'queued',
-				'failureReason' => '',
-				'sentAt' => (new DateTimeImmutable())->format(DATE_ATOM),
-				'retryOf' => $id,
-			]
-		);
-		if ($created === null) {
+		if ($this->write(row: $this->retryRow(row: $row, id: $id)) === false) {
 			return 'error';
 		}
 
 		return 'queued';
 	}//end queueRetry()
+
+	/**
+	 * One log row, or null when there is none with the id.
+	 *
+	 * @param string $id The row's id.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function readRow(string $id): ?array {
+		return $this->reader->readObject(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'kind',
+			subjectRef: 'mail',
+			id: $id
+		);
+	}//end readRow()
+
+	/**
+	 * The `queued` row that sends a failed one again and points back at it.
+	 *
+	 * @param array<string, mixed> $row The failed row.
+	 * @param string               $id  The failed row's id.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function retryRow(array $row, string $id): array {
+		return [
+			'kind' => 'mail',
+			'portal' => (string)($row['portal'] ?? ''),
+			'templateKey' => (string)($row['templateKey'] ?? ''),
+			'recipientMasked' => (string)($row['recipientMasked'] ?? ''),
+			'recipientHash' => (string)($row['recipientHash'] ?? ''),
+			'subjectRef' => (string)($row['subjectRef'] ?? ''),
+			'caseRef' => (string)($row['caseRef'] ?? ''),
+			'status' => 'queued',
+			'failureReason' => '',
+			'sentAt' => (new DateTimeImmutable())->format(DATE_ATOM),
+			'retryOf' => $id,
+		];
+	}//end retryRow()
+
+	/**
+	 * Write one log row.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return bool True when the row was written.
+	 */
+	private function write(array $row): bool {
+		$written = $this->writer->createObject(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: '',
+			subjectRef: '',
+			organisation: '',
+			data: $row
+		);
+
+		return $written !== null;
+	}//end write()
 
 	/**
 	 * An address with its middle hidden: "sanne@example.nl" becomes "s***@example.nl".
@@ -192,8 +220,26 @@ class MailLog {
 	 */
 	public function purgeExpired(int $limit=500, ?DateTimeImmutable $now=null): int {
 		$now ??= new DateTimeImmutable();
-		$cutoff = $now->modify('-' . self::RETENTION_DAYS . ' days');
-		$rows   = $this->reader->readCollection(
+		$cutoff  = $now->modify('-' . self::RETENTION_DAYS . ' days');
+		$removed = 0;
+		foreach ($this->expiredIds(rows: $this->readRows(limit: $limit), cutoff: $cutoff) as $id) {
+			if ($this->delete(id: $id) === true) {
+				$removed++;
+			}
+		}
+
+		return $removed;
+	}//end purgeExpired()
+
+	/**
+	 * The log rows, as many as the limit.
+	 *
+	 * @param int $limit How many rows to read at most.
+	 *
+	 * @return array<mixed>
+	 */
+	private function readRows(int $limit): array {
+		return $this->reader->readCollection(
 			register: self::REGISTER,
 			schema: self::SCHEMA,
 			scopeField: 'kind',
@@ -201,33 +247,44 @@ class MailLog {
 			organisation: '',
 			limit: $limit
 		);
+	}//end readRows()
 
-		$removed = 0;
+	/**
+	 * The ids of the rows older than the cutoff, in order; a row without an id is skipped.
+	 *
+	 * @param array<mixed>      $rows   The rows.
+	 * @param DateTimeImmutable $cutoff The moment before which rows go.
+	 *
+	 * @return array<int, string>
+	 */
+	private function expiredIds(array $rows, DateTimeImmutable $cutoff): array {
+		$ids = [];
 		foreach ($rows as $row) {
-			if (is_array($row) === false || $this->older(row: $row, cutoff: $cutoff) === false) {
-				continue;
-			}
-
-			$id = $this->idOf(row: $row);
-			if ($id === '') {
-				continue;
-			}
-
-			$gone = $this->writer->deleteObject(
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				scopeField: 'kind',
-				subjectRef: 'mail',
-				organisation: '',
-				id: $id
-			);
-			if ($gone === true) {
-				$removed++;
+			if (is_array($row) === true && $this->older(row: $row, cutoff: $cutoff) === true && $this->idOf(row: $row) !== '') {
+				$ids[] = $this->idOf(row: $row);
 			}
 		}
 
-		return $removed;
-	}//end purgeExpired()
+		return $ids;
+	}//end expiredIds()
+
+	/**
+	 * Delete one log row.
+	 *
+	 * @param string $id The row's id.
+	 *
+	 * @return bool True when it is gone.
+	 */
+	private function delete(string $id): bool {
+		return $this->writer->deleteObject(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: 'kind',
+			subjectRef: 'mail',
+			organisation: '',
+			id: $id
+		) === true;
+	}//end delete()
 
 	/**
 	 * Whether a row is older than the cutoff. A row without a readable date is kept.

@@ -82,31 +82,66 @@ class PortalAccountInvitationListener implements IEventListener {
 			return;
 		}
 
-		try {
-			$issued = $this->invitations->issue(subjectRef: $event->getSubjectRef(), appId: $event->getAppId());
-		} catch (Throwable $exception) {
-			$this->logger->error('Portal account invitation failed', ['exception' => get_class($exception)]);
-			$issued = null;
-		}
+		$this->answerMail(event: $event);
+	}//end handle()
 
+	/**
+	 * Mail the invitation secret to the waiting account's address. The secret
+	 * itself is never answered.
+	 *
+	 * @param PortalAccountInvitationRequestedEvent $event The event.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 */
+	private function answerMail(PortalAccountInvitationRequestedEvent $event): void {
+		$issued = $this->issuedInvitation(event: $event);
 		if ($issued === null) {
 			$event->answer(PortalAccountInvitationRequestedEvent::REFUSED);
 			return;
 		}
 
-		$sent = $this->mailer->send(
-			template: PortalIdentityMailer::TEMPLATE_ACCOUNT_INVITATION,
-			email: $issued['email'],
-			secret: $issued['token'],
-			organisation: $issued['organisation']
-		);
-		if ($sent === false) {
+		if ($this->mailed(issued: $issued) === false) {
 			$event->answer(PortalAccountInvitationRequestedEvent::NOT_SENT, $issued['expiresAt']);
 			return;
 		}
 
 		$event->answer(PortalAccountInvitationRequestedEvent::SENT, $issued['expiresAt']);
-	}//end handle()
+	}//end answerMail()
+
+	/**
+	 * Issue the invitation, or null when it may not be issued or the issue
+	 * failed (logged by class only, never its message).
+	 *
+	 * @param PortalAccountInvitationRequestedEvent $event The event.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function issuedInvitation(PortalAccountInvitationRequestedEvent $event): ?array {
+		try {
+			return $this->invitations->issue(subjectRef: $event->getSubjectRef(), appId: $event->getAppId());
+		} catch (Throwable $exception) {
+			$this->logger->error('Portal account invitation failed', ['exception' => get_class($exception)]);
+			return null;
+		}
+	}//end issuedInvitation()
+
+	/**
+	 * Mail an issued invitation's secret.
+	 *
+	 * @param array<string, mixed> $issued The issued invitation.
+	 *
+	 * @return bool Whether the mail left.
+	 */
+	private function mailed(array $issued): bool {
+		return $this->mailer->send(
+			template: PortalIdentityMailer::TEMPLATE_ACCOUNT_INVITATION,
+			email: $issued['email'],
+			secret: $issued['token'],
+			organisation: $issued['organisation']
+		);
+	}//end mailed()
 
 	/**
 	 * Answer the code for a paper letter. Nothing is mailed.

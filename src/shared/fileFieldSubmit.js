@@ -85,6 +85,50 @@ export async function uploadFiles(api, action, id, filesByField) {
 }
 
 /**
+ * The form values without the file fields: those travel as uploads.
+ *
+ * @param {Record<string, string>} values The form values.
+ * @param {Set<string>} skip The file fields.
+ * @return {Record<string, string>} The create body.
+ */
+function withoutFileFields(values, skip) {
+	return Object.fromEntries(
+		Object.entries(values).filter(([field]) => !skip.has(field)),
+	)
+}
+
+/**
+ * The answer for a create the server refused.
+ *
+ * @param {object|null} created The create's answer.
+ * @return {object} Not ok, with the status, errors and invalid fields it carried.
+ */
+function refusedCreate(created) {
+	return {
+		ok: false,
+		status: (created && created.status) || 0,
+		object: null,
+		id: '',
+		failed: [],
+		errors: (created && created.errors) || {},
+		invalid: (created && created.invalid) || {},
+	}
+}
+
+/**
+ * Every picked file of the file fields, field by field.
+ *
+ * @param {Set<string>} skip The file fields.
+ * @param {Record<string, File[]>} filesByField The picked files per field.
+ * @return {Array<{field: string, file: File}>} The picked files.
+ */
+function pickedFiles(skip, filesByField) {
+	return [...skip].flatMap((field) =>
+		(filesByField[field] || []).map((file) => ({ field, file })),
+	)
+}
+
+/**
  * Create the record without its file fields, then upload the picked files.
  *
  * @param {object} api The portal api adapter (`createObject`, `uploadFieldFile`).
@@ -95,39 +139,16 @@ export async function uploadFiles(api, action, id, filesByField) {
  */
 export async function submitWithFiles(api, action, values, filesByField) {
 	const skip = new Set(fileFields(action))
-	const body = {}
-	for (const [field, value] of Object.entries(values)) {
-		if (!skip.has(field)) {
-			body[field] = value
-		}
-	}
-
-	const created = await api.createObject(action, body)
+	const created = await api.createObject(action, withoutFileFields(values, skip))
 	if (!created || !created.ok) {
-		return {
-			ok: false,
-			status: (created && created.status) || 0,
-			object: null,
-			id: '',
-			failed: [],
-			errors: (created && created.errors) || {},
-			invalid: (created && created.invalid) || {},
-		}
+		return refusedCreate(created)
 	}
 
 	const id = objectIdOf(created.object)
-	const hasFiles = [...skip].some(
-		(field) => (filesByField[field] || []).length > 0,
-	)
-	if (!hasFiles) {
-		return { ok: true, object: created.object, id, failed: [] }
-	}
-	if (id === '') {
+	const picked = pickedFiles(skip, filesByField)
+	if (picked.length === 0 || id === '') {
 		// A record the server did not identify cannot take a file.
-		const failed = [...skip].flatMap((field) =>
-			(filesByField[field] || []).map((file) => ({ field, file })),
-		)
-		return { ok: true, object: created.object, id, failed }
+		return { ok: true, object: created.object, id, failed: picked }
 	}
 
 	const { failed } = await uploadFiles(api, action, id, filesByField)

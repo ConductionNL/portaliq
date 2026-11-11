@@ -75,6 +75,28 @@ class PortalCaseDocumentReaderTest extends TestCase {
 	}//end testKeepsWellFormedEntries()
 
 	/**
+	 * Any kind but a decision is a document, and a file type or size of the
+	 * wrong type stays behind; the keys keep their order.
+	 *
+	 * @return void
+	 */
+	public function testTheKindAndTheFileFactsAreAsRecorded(): void {
+		$file    = ['register' => 'zaken', 'schema' => 'document', 'id' => 'd-1', 'fileId' => '71'];
+		$entries = $this->reader([
+			['size' => 10, 'mimeType' => 'text/plain', 'file' => $file, 'kind' => 'letter', 'title' => 'Brief', 'id' => 'a', 'date' => '2026-01-02'],
+			['id' => 'b', 'title' => 'Besluit', 'kind' => 'Decision', 'file' => $file, 'mimeType' => 7, 'size' => '10'],
+		])->entries(appId: 'dossiq', method: 'caseDocuments', caseId: 'case-1');
+
+		$this->assertSame(
+			[
+				['id' => 'a', 'title' => 'Brief', 'kind' => 'document', 'date' => '2026-01-02', 'file' => $file, 'mimeType' => 'text/plain', 'size' => 10],
+				['id' => 'b', 'title' => 'Besluit', 'kind' => 'document', 'date' => '', 'file' => $file],
+			],
+			$entries
+		);
+	}//end testTheKindAndTheFileFactsAreAsRecorded()
+
+	/**
 	 * An entry without an id, a title or a complete file reference is dropped.
 	 *
 	 * @return void

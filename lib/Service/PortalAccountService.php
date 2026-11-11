@@ -140,51 +140,100 @@ class PortalAccountService {
 		?string $subjectRefOverride = null,
 		string $verifiedEmail = '',
 	): ?array {
-		if ($identityType === '' || $identityRef === '' || $organisation === '') {
+		$run = new AccountLoginRun(identityType: $identityType, identityRef: $identityRef);
+		$run->organisation  = $organisation;
+		$run->audience      = $audience;
+		$run->verifiedEmail = $verifiedEmail;
+		if ($run->isComplete() === false) {
 			return null;
 		}
 
-		$existing = $this->existingFor(
-			identityType: $identityType,
-			identityRef: $identityRef,
-			organisation: $organisation,
-			verifiedEmail: $verifiedEmail
-		);
+		$existing = $this->existingFor(run: $run);
 		if ($existing !== null) {
-			$this->activate(existing: $existing, identityType: $identityType, identityRef: $identityRef);
-			// The stored audience first, the proposed one when none is stored.
-			$audiences = array_filter([trim((string)($existing['audience'] ?? '')), $audience], static fn (string $value): bool => $value !== '');
-
-			return ['subjectRef' => (string)($existing['subjectRef'] ?? ''), 'isNew' => false, 'audience' => (string)reset($audiences)];
+			return $this->returningAccount(run: $run, existing: $existing);
 		}
 
-		$subjectRef = ($subjectRefOverride ?? $this->mintSubjectRef());
+		return $this->newAccount(run: $run, subjectRef: ($subjectRefOverride ?? $this->mintSubjectRef()));
+	}//end findOrCreate()
+
+	/**
+	 * The matched account, activated and stamped, with its own subjectRef
+	 * and audience: the stored audience first, the proposed one when none is
+	 * stored.
+	 *
+	 * @param AccountLoginRun      $run      The sign-in.
+	 * @param array<string, mixed> $existing The matched account row.
+	 *
+	 * @return array{subjectRef: string, isNew: bool, audience: string}
+	 */
+	private function returningAccount(AccountLoginRun $run, array $existing): array {
+		$this->activate(existing: $existing, run: $run);
+		// The stored audience first, the proposed one when none is stored.
+		$audiences = array_filter([trim((string)($existing['audience'] ?? '')), $run->audience], static fn (string $value): bool => $value !== '');
+
+		return ['subjectRef' => (string)($existing['subjectRef'] ?? ''), 'isNew' => false, 'audience' => (string)reset($audiences)];
+	}//end returningAccount()
+
+	/**
+	 * Create the active account for a new identity under the subjectRef
+	 * given; null when there is none or the write fails.
+	 *
+	 * @param AccountLoginRun $run        The sign-in.
+	 * @param string          $subjectRef The validated-claim or freshly minted subjectRef.
+	 *
+	 * @return array{subjectRef: string, isNew: bool, audience: string}|null
+	 */
+	private function newAccount(AccountLoginRun $run, string $subjectRef): ?array {
 		if ($subjectRef === '') {
 			return null;
 		}
 
-		$created = $this->writer->createObject(
+		$created = $this->createAccountRow(organisation: $run->organisation, data: $this->newAccountRow(run: $run, subjectRef: $subjectRef));
+		if ($created === null) {
+			return null;
+		}
+
+		return ['subjectRef' => $subjectRef, 'isNew' => true, 'audience' => $run->audience];
+	}//end newAccount()
+
+	/**
+	 * The row of a new identity's account: active, stamped with this login.
+	 *
+	 * @param AccountLoginRun $run        The sign-in.
+	 * @param string          $subjectRef The account's subjectRef.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function newAccountRow(AccountLoginRun $run, string $subjectRef): array {
+		return [
+			'audience' => $run->audience,
+			'identityType' => $run->identityType,
+			'identityRef' => $run->identityRef,
+			'subjectRef' => $subjectRef,
+			'organisation' => $run->organisation,
+			'status' => 'active',
+			'lastLoginAt' => (new DateTimeImmutable())->format(DATE_ATOM),
+		];
+	}//end newAccountRow()
+
+	/**
+	 * Write a new account row in the tenant.
+	 *
+	 * @param string               $organisation The tenant slug.
+	 * @param array<string, mixed> $data         The row.
+	 *
+	 * @return array<string, mixed>|null The written row, or null when the write failed.
+	 */
+	private function createAccountRow(string $organisation, array $data): ?array {
+		return $this->writer->createObject(
 			register: self::REGISTER,
 			schema: self::SCHEMA,
 			scopeField: '',
 			subjectRef: '',
 			organisation: $organisation,
-			data: [
-				'audience' => $audience,
-				'identityType' => $identityType,
-				'identityRef' => $identityRef,
-				'subjectRef' => $subjectRef,
-				'organisation' => $organisation,
-				'status' => 'active',
-				'lastLoginAt' => (new DateTimeImmutable())->format(DATE_ATOM),
-			]
+			data: $data
 		);
-		if ($created === null) {
-			return null;
-		}
-
-		return ['subjectRef' => $subjectRef, 'isNew' => true, 'audience' => $audience];
-	}//end findOrCreate()
+	}//end createAccountRow()
 
 	/**
 	 * The account a `subjectRef` belongs to, or null.
@@ -246,21 +295,31 @@ class PortalAccountService {
 		string $provisionedBy = '',
 		string $displayName = '',
 	): ?array {
-		if (in_array('', [$audience, $organisation], true) === true) {
+		$run = new AccountProvisionRun(audience: $audience, organisation: $organisation);
+		$run->identityType  = $identityType;
+		$run->identityRef   = $identityRef;
+		$run->email         = $email;
+		$run->verifiedEmail = $verifiedEmail;
+		$run->provisionedBy = $provisionedBy;
+		$run->displayName   = $displayName;
+		return $this->provisionAccount(run: $run);
+	}//end provision()
+
+	/**
+	 * Provision the account the run describes: refused without an audience
+	 * and tenant, or with neither an identity nor an address; the account
+	 * already provisioned for it when there is one; else a new pending one.
+	 *
+	 * @param AccountProvisionRun $run The provisioning.
+	 *
+	 * @return array{subjectRef: string, isNew: bool, status: string}|null
+	 */
+	private function provisionAccount(AccountProvisionRun $run): ?array {
+		if ($run->isProvisionable() === false) {
 			return null;
 		}
 
-		$hasIdentity = ($identityType !== '' && $identityRef !== '');
-		if ($hasIdentity === false && $email === '') {
-			return null;
-		}
-
-		$existing = $this->accountAlreadyProvisioned(
-			identityType: $identityType,
-			identityRef: $identityRef,
-			email: $email,
-			organisation: $organisation
-		);
+		$existing = $this->accountAlreadyProvisioned(run: $run);
 		if ($existing !== null) {
 			return [
 				'subjectRef' => (string)($existing['subjectRef'] ?? ''),
@@ -269,44 +328,53 @@ class PortalAccountService {
 			];
 		}
 
-		$subjectRef = $this->mintSubjectRef();
+		return $this->newPendingAccount(run: $run, subjectRef: $this->mintSubjectRef());
+	}//end provisionAccount()
+
+	/**
+	 * Create the pending account under a freshly minted subjectRef; null when
+	 * none was minted or the write fails.
+	 *
+	 * @param AccountProvisionRun $run        The provisioning.
+	 * @param string              $subjectRef The minted subjectRef.
+	 *
+	 * @return array{subjectRef: string, isNew: bool, status: string}|null
+	 */
+	private function newPendingAccount(AccountProvisionRun $run, string $subjectRef): ?array {
 		if ($subjectRef === '') {
 			return null;
 		}
 
-		// An address-only account (a self-registration, an invitation) has no
-		// identity yet, and `identityType` is an enum: an empty string is no
-		// member of it, so the register would refuse the row. The two fields
-		// are left out until the sign-in that matches the account fills them.
-		$identity = [];
-		if ($hasIdentity === true) {
-			$identity = ['identityType' => $identityType, 'identityRef' => $identityRef];
-		}
-
-		$created = $this->writer->createObject(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: '',
-			subjectRef: '',
-			organisation: $organisation,
-			data: $identity + [
-				'audience' => $audience,
-				'subjectRef' => $subjectRef,
-				'organisation' => $organisation,
-				'displayName' => $displayName,
-				'email' => $email,
-				'verifiedEmail' => $verifiedEmail,
-				'status' => self::STATUS_PENDING,
-				'provisionedBy' => $provisionedBy,
-				'provisionedAt' => (new DateTimeImmutable())->format(DATE_ATOM),
-			]
-		);
+		$created = $this->createAccountRow(organisation: $run->organisation, data: $this->pendingAccountRow(run: $run, subjectRef: $subjectRef));
 		if ($created === null) {
 			return null;
 		}
 
 		return ['subjectRef' => $subjectRef, 'isNew' => true, 'status' => self::STATUS_PENDING];
-	}//end provision()
+	}//end newPendingAccount()
+
+	/**
+	 * The row of a provisioned account: its identity when it has one, then
+	 * pending, with who asked and when.
+	 *
+	 * @param AccountProvisionRun $run        The provisioning.
+	 * @param string              $subjectRef The minted subjectRef.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function pendingAccountRow(AccountProvisionRun $run, string $subjectRef): array {
+		return $run->identityFields() + [
+			'audience' => $run->audience,
+			'subjectRef' => $subjectRef,
+			'organisation' => $run->organisation,
+			'displayName' => $run->displayName,
+			'email' => $run->email,
+			'verifiedEmail' => $run->verifiedEmail,
+			'status' => self::STATUS_PENDING,
+			'provisionedBy' => $run->provisionedBy,
+			'provisionedAt' => (new DateTimeImmutable())->format(DATE_ATOM),
+		];
+	}//end pendingAccountRow()
 
 	/**
 	 * Write an app's claim on an account, server-side (REQ-PIS-003).
@@ -411,12 +479,11 @@ class PortalAccountService {
 	 * only stamped.
 	 *
 	 * @param array<string, mixed> $existing The matched account row.
-	 * @param string $identityType The identity type the login carried.
-	 * @param string $identityRef The identity reference the login carried.
+	 * @param AccountLoginRun      $run      The sign-in, with the identity it carried.
 	 *
 	 * @return void
 	 */
-	private function activate(array $existing, string $identityType, string $identityRef): void {
+	private function activate(array $existing, AccountLoginRun $run): void {
 		if (($existing['status'] ?? self::STATUS_ACTIVE) !== self::STATUS_PENDING) {
 			$this->touchLastLogin(existing: $existing);
 			return;
@@ -426,8 +493,8 @@ class PortalAccountService {
 			account: $existing,
 			data: [
 				'status' => self::STATUS_ACTIVE,
-				'identityType' => $identityType,
-				'identityRef' => $identityRef,
+				'identityType' => $run->identityType,
+				'identityRef' => $run->identityRef,
 				'lastLoginAt' => (new DateTimeImmutable())->format(DATE_ATOM),
 			]
 		);
@@ -491,21 +558,18 @@ class PortalAccountService {
 	 * identity reference falls back to a pending, email-only account, which
 	 * is the only kind an address alone may claim.
 	 *
-	 * @param string $identityType The identity type, or ''.
-	 * @param string $identityRef The identity reference, or ''.
-	 * @param string $email The contact address, or ''.
-	 * @param string $organisation The tenant slug.
+	 * @param AccountProvisionRun $run The provisioning.
 	 *
 	 * @return array<string, mixed>|null
 	 *
 	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
 	 */
-	private function accountAlreadyProvisioned(string $identityType, string $identityRef, string $email, string $organisation): ?array {
-		if ($identityType !== '' && $identityRef !== '') {
-			return $this->lookup()->byIdentity(identityType: $identityType, identityRef: $identityRef, organisation: $organisation);
+	private function accountAlreadyProvisioned(AccountProvisionRun $run): ?array {
+		if ($run->hasIdentity() === true) {
+			return $this->lookup()->byIdentity(identityType: $run->identityType, identityRef: $run->identityRef, organisation: $run->organisation);
 		}
 
-		return $this->lookup()->pendingByVerifiedEmail(email: $email, organisation: $organisation);
+		return $this->lookup()->pendingByVerifiedEmail(email: $run->email, organisation: $run->organisation);
 	}//end accountAlreadyProvisioned()
 
 	/**
@@ -521,27 +585,24 @@ class PortalAccountService {
 	 * never reach it. Only an email-only pending account, whose address was
 	 * verified out of band, is claimable this way.
 	 *
-	 * @param string $identityType The identity type.
-	 * @param string $identityRef The identity reference.
-	 * @param string $organisation The tenant slug.
-	 * @param string $verifiedEmail An address the broker says it verified, or ''.
+	 * @param AccountLoginRun $run The sign-in.
 	 *
 	 * @return array<string, mixed>|null
 	 *
 	 * @spec openspec/specs/portal-identity-space/spec.md#requirement-first-login-matches-the-pending-account-req-pis-002
 	 * @spec openspec/changes/portal-invitation-joins-the-signed-in-account/specs/portal-identity-space/spec.md
 	 */
-	private function existingFor(string $identityType, string $identityRef, string $organisation, string $verifiedEmail): ?array {
-		$existing = $this->lookup()->byIdentity(identityType: $identityType, identityRef: $identityRef, organisation: $organisation);
+	private function existingFor(AccountLoginRun $run): ?array {
+		$existing = $this->lookup()->byIdentity(identityType: $run->identityType, identityRef: $run->identityRef, organisation: $run->organisation);
 		if ($existing === null) {
 			// An empty address finds nothing here.
-			return $this->lookup()->pendingByVerifiedEmail(email: $verifiedEmail, organisation: $organisation);
+			return $this->lookup()->pendingByVerifiedEmail(email: $run->verifiedEmail, organisation: $run->organisation);
 		}
 
 		(new WaitingAccountJoin(lookup: $this->lookup(), writer: $this->writer))->join(
 			account: $existing,
-			verifiedEmail: $verifiedEmail,
-			organisation: $organisation
+			verifiedEmail: $run->verifiedEmail,
+			organisation: $run->organisation
 		);
 
 		return $existing;

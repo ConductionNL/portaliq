@@ -115,35 +115,80 @@ class TrafficPathController extends Controller {
 			$steps = (string)self::DEFAULT_STEPS;
 		}
 
-		$chosen = $this->trail(value: $trail, steps: (int)$steps);
-
-		$reason = $this->refusal(portal: $portal, from: $from, to: $to, segment: $segment)
-			?? $this->explorerRefusal(mode: $mode, anchor: $anchor, steps: $steps, trail: $chosen);
-		if ($reason !== null) {
-			return $this->answer(data: ['error' => $reason], status: Http::STATUS_BAD_REQUEST);
-		}
-
-		$result = $this->paths->explore(
+		$query = new PathQuery(
 			portal: $portal,
 			from: $from,
 			to: $to,
 			segment: $segment,
 			mode: $mode,
 			anchor: $anchor,
-			steps: (int)$steps,
-			trail: (array)$chosen
+			steps: $steps,
+			trail: $this->trail(value: $trail, steps: (int)$steps)
 		);
 
+		return $this->explored(query: $query);
+	}//end paths()
+
+
+	/**
+	 * Refuse a malformed query, or ask the explorer and answer its result.
+	 *
+	 * @param PathQuery $query The query.
+	 *
+	 * @return JSONResponse The explorer, or a 400/404 with a reason.
+	 */
+	private function explored(PathQuery $query): JSONResponse {
+		$reason = $this->refusal(query: $query) ?? $this->explorerRefusal(query: $query);
+		if ($reason !== null) {
+			return $this->answer(data: ['error' => $reason], status: Http::STATUS_BAD_REQUEST);
+		}
+
+		$result = $this->explore(query: $query);
+
+		return $this->answer(data: $result, status: $this->statusOf(result: $result));
+	}//end explored()
+
+
+	/**
+	 * Ask the explorer the query.
+	 *
+	 * @param PathQuery $query A well-formed query.
+	 *
+	 * @return array<string, mixed> The explorer's result.
+	 */
+	private function explore(PathQuery $query): array {
+		return $this->paths->explore(
+			portal: $query->portal,
+			from: $query->from,
+			to: $query->to,
+			segment: $query->segment,
+			mode: $query->mode,
+			anchor: $query->anchor,
+			steps: (int)$query->steps,
+			trail: (array)$query->trail
+		);
+	}//end explore()
+
+
+	/**
+	 * The status of the explorer's result: 404 for an unknown portal, 400
+	 * for any other refusal, 200 otherwise.
+	 *
+	 * @param array<string, mixed> $result The explorer's result.
+	 *
+	 * @return int The status.
+	 */
+	private function statusOf(array $result): int {
 		if (($result['error'] ?? null) === 'unknown-portal') {
-			return $this->answer(data: $result, status: Http::STATUS_NOT_FOUND);
+			return Http::STATUS_NOT_FOUND;
 		}
 
 		if (isset($result['error']) === true) {
-			return $this->answer(data: $result, status: Http::STATUS_BAD_REQUEST);
+			return Http::STATUS_BAD_REQUEST;
 		}
 
-		return $this->answer(data: $result, status: Http::STATUS_OK);
-	}//end paths()
+		return Http::STATUS_OK;
+	}//end statusOf()
 
 
 	/**
@@ -165,27 +210,24 @@ class TrafficPathController extends Controller {
 	/**
 	 * Why the portal, period or segment is refused, or null.
 	 *
-	 * @param string $portal  The portal slug.
-	 * @param string $from    The first day.
-	 * @param string $to      The last day.
-	 * @param string $segment The segment id.
+	 * @param PathQuery $query The query.
 	 *
 	 * @return string|null The reason.
 	 */
-	private function refusal(string $portal, string $from, string $to, string $segment): ?string {
-		if (preg_match('/^[A-Za-z0-9][A-Za-z0-9-]{0,127}$/', $portal) !== 1) {
+	private function refusal(PathQuery $query): ?string {
+		if (preg_match('/^[A-Za-z0-9][A-Za-z0-9-]{0,127}$/', $query->portal) !== 1) {
 			return 'missing-portal';
 		}
 
-		if ($this->isDay(value: $from) === false || $this->isDay(value: $to) === false || $from > $to) {
+		if ($this->isDay(value: $query->from) === false || $this->isDay(value: $query->to) === false || $query->from > $query->to) {
 			return 'invalid-range';
 		}
 
-		if ((strtotime($to) - strtotime($from)) / 86400 >= self::MAX_DAYS) {
+		if ((strtotime($query->to) - strtotime($query->from)) / 86400 >= self::MAX_DAYS) {
 			return 'range-too-long';
 		}
 
-		if ($segment !== '' && preg_match('/^[A-Za-z0-9_-]{1,64}$/', $segment) !== 1) {
+		if ($query->segment !== '' && preg_match('/^[A-Za-z0-9_-]{1,64}$/', $query->segment) !== 1) {
 			return 'invalid-segment';
 		}
 
@@ -196,27 +238,24 @@ class TrafficPathController extends Controller {
 	/**
 	 * Why the explorer's own parameters are refused, or null.
 	 *
-	 * @param string                   $mode   The mode.
-	 * @param string                   $anchor The page, or ''.
-	 * @param string                   $steps  The steps, as sent.
-	 * @param array<int, ?string>|null $trail  The parsed trail, null when it did not parse.
+	 * @param PathQuery $query The query.
 	 *
 	 * @return string|null The reason.
 	 */
-	private function explorerRefusal(string $mode, string $anchor, string $steps, ?array $trail): ?string {
-		if (in_array($mode, TrafficPaths::MODES, true) === false) {
+	private function explorerRefusal(PathQuery $query): ?string {
+		if (in_array($query->mode, TrafficPaths::MODES, true) === false) {
 			return 'invalid-mode';
 		}
 
-		if ($anchor !== '' && $this->isPath(value: $anchor) === false) {
+		if ($query->anchor !== '' && $this->isPath(value: $query->anchor) === false) {
 			return 'invalid-anchor';
 		}
 
-		if (preg_match('/^\d{1,2}$/', $steps) !== 1 || (int)$steps < 1 || (int)$steps > TrafficPaths::MAX_STEPS) {
+		if (preg_match('/^\d{1,2}$/', $query->steps) !== 1 || (int)$query->steps < 1 || (int)$query->steps > TrafficPaths::MAX_STEPS) {
 			return 'invalid-steps';
 		}
 
-		if ($trail === null) {
+		if ($query->trail === null) {
 			return 'invalid-trail';
 		}
 

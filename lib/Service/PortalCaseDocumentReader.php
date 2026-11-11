@@ -119,29 +119,50 @@ class PortalCaseDocumentReader {
 			return null;
 		}
 
-		// Anything but a decision is a document.
-		$kind = 'document';
-		if (($entry['kind'] ?? null) === 'decision') {
-			$kind = 'decision';
-		}
-
-		$kept = [
+		return [
 			'id' => $this->text(value: $entry['id']),
 			'title' => $this->text(value: $entry['title']),
-			'kind' => $kind,
+			'kind' => $this->kindOf(entry: $entry),
 			'date' => $this->text(value: ($entry['date'] ?? null)),
 			'file' => $file,
-		];
+		] + $this->fileFacts(entry: $entry) + (new DocumentEntryExtras())->extrasOf(entry: $entry);
+	}//end wellFormed()
+
+	/**
+	 * The entry's kind: anything but a decision is a document.
+	 *
+	 * @param array<string, mixed> $entry The entry as the provider returned it.
+	 *
+	 * @return string
+	 */
+	private function kindOf(array $entry): string {
+		if (($entry['kind'] ?? null) === 'decision') {
+			return 'decision';
+		}
+
+		return 'document';
+	}//end kindOf()
+
+	/**
+	 * The file's type and size, each only when the provider gives it as a
+	 * string and an integer.
+	 *
+	 * @param array<string, mixed> $entry The entry as the provider returned it.
+	 *
+	 * @return array{mimeType?: string, size?: int}
+	 */
+	private function fileFacts(array $entry): array {
+		$facts = [];
 		if (is_string(($entry['mimeType'] ?? null)) === true) {
-			$kept['mimeType'] = $entry['mimeType'];
+			$facts['mimeType'] = $entry['mimeType'];
 		}
 
 		if (is_int(($entry['size'] ?? null)) === true) {
-			$kept['size'] = $entry['size'];
+			$facts['size'] = $entry['size'];
 		}
 
-		return $kept + (new DocumentEntryExtras())->extrasOf(entry: $entry);
-	}//end wellFormed()
+		return $facts;
+	}//end fileFacts()
 
 	/**
 	 * A complete file reference, or null.

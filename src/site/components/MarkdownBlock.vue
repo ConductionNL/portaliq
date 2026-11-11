@@ -23,6 +23,55 @@
 import { cnRenderMarkdown } from '@conduction/nextcloud-vue'
 
 /**
+ * The design system's class for each element markdown renders bare.
+ *
+ * @type {Record<string, string>}
+ */
+const DESIGN_SYSTEM_CLASSES = {
+	H1: 'utrecht-heading-1',
+	H2: 'utrecht-heading-2',
+	H3: 'utrecht-heading-3',
+	H4: 'utrecht-heading-4',
+	H5: 'utrecht-heading-5',
+	H6: 'utrecht-heading-6',
+	P: 'utrecht-paragraph',
+	A: 'utrecht-link',
+	UL: 'utrecht-unordered-list',
+	OL: 'utrecht-ordered-list',
+	BLOCKQUOTE: 'utrecht-blockquote',
+	// site-nlds-widget-palette T6: the inline marks and the blocks
+	// an author writes in markdown but had no class for, so a
+	// portal's own tokens style them like everything else. The
+	// list is the design system's own: LI carries no class,
+	// because the list element styles its items.
+	STRONG: 'utrecht-strong',
+	EM: 'utrecht-em',
+	SUB: 'utrecht-sub',
+	SUP: 'utrecht-sup',
+	MARK: 'utrecht-mark',
+	CODE: 'utrecht-code',
+	PRE: 'utrecht-code-block',
+	HR: 'utrecht-separator',
+	IMG: 'utrecht-img',
+}
+
+/**
+ * Give each element the class when it has none, so authored HTML that already
+ * carries design-system classes is left alone.
+ *
+ * @param {Iterable<Element>} elements The elements of one tag.
+ * @param {string} className The design system's class for them.
+ * @return {void}
+ */
+function addMissingClass(elements, className) {
+	for (const el of elements) {
+		if (el.className === '') {
+			el.className = className
+		}
+	}
+}
+
+/**
  * Renders markdown through the SHARED library helper.
  *
  * `cnRenderMarkdown` is the same path `CnWikiPage` uses, so a page rendered
@@ -90,42 +139,8 @@ export default {
 			const template = document.createElement('template')
 			template.innerHTML = html
 
-			const MAP = {
-				H1: 'utrecht-heading-1',
-				H2: 'utrecht-heading-2',
-				H3: 'utrecht-heading-3',
-				H4: 'utrecht-heading-4',
-				H5: 'utrecht-heading-5',
-				H6: 'utrecht-heading-6',
-				P: 'utrecht-paragraph',
-				A: 'utrecht-link',
-				UL: 'utrecht-unordered-list',
-				OL: 'utrecht-ordered-list',
-				BLOCKQUOTE: 'utrecht-blockquote',
-				// site-nlds-widget-palette T6: the inline marks and the blocks
-				// an author writes in markdown but had no class for, so a
-				// portal's own tokens style them like everything else. The
-				// list is the design system's own: LI carries no class,
-				// because the list element styles its items.
-				STRONG: 'utrecht-strong',
-				EM: 'utrecht-em',
-				SUB: 'utrecht-sub',
-				SUP: 'utrecht-sup',
-				MARK: 'utrecht-mark',
-				CODE: 'utrecht-code',
-				PRE: 'utrecht-code-block',
-				HR: 'utrecht-separator',
-				IMG: 'utrecht-img',
-			}
-
-			for (const [tag, className] of Object.entries(MAP)) {
-				for (const el of template.content.querySelectorAll(
-					tag.toLowerCase(),
-				)) {
-					if (el.className === '') {
-						el.className = className
-					}
-				}
+			for (const [tag, className] of Object.entries(DESIGN_SYSTEM_CLASSES)) {
+				addMissingClass(template.content.querySelectorAll(tag.toLowerCase()), className)
 			}
 
 			return template.innerHTML

@@ -22,14 +22,35 @@ export function endDayOf(end) {
 	if (parts.every((part) => part === '')) {
 		return ''
 	}
-	const [day, month, year] = parts.map(Number)
-	if (
-		!/^\d{1,2}$/.test(parts[0])
-		|| !/^\d{1,2}$/.test(parts[1])
-		|| !/^\d{4}$/.test(parts[2])
-	) {
+	if (!looksLikeDay(parts)) {
 		return null
 	}
+	return calendarDay(parts.map(Number))
+}
+
+/**
+ * Whether typed day, month and year parts have the digits a date needs.
+ *
+ * @param {Array<string>} parts The trimmed day, month and year.
+ * @return {boolean} True for one or two, one or two, and four digits.
+ */
+function looksLikeDay(parts) {
+	return (
+		/^\d{1,2}$/.test(parts[0])
+		&& /^\d{1,2}$/.test(parts[1])
+		&& /^\d{4}$/.test(parts[2])
+	)
+}
+
+/**
+ * A day as `YYYY-MM-DD`, or null when the calendar has no such day
+ * (31 February rolls over and is refused).
+ *
+ * @param {Array<number>} numbers The day, month and year.
+ * @return {string|null} The day, or null.
+ */
+function calendarDay(numbers) {
+	const [day, month, year] = numbers
 	const date = new Date(Date.UTC(year, month - 1, day))
 	if (
 		date.getUTCFullYear() !== year

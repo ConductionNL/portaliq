@@ -79,11 +79,9 @@ import {
 	addToCollectionBody,
 	dossierCollectionOf,
 	getJson,
-	offeredActions,
-	postAction,
 	RESIDENT_ACTION_DEFAULTS,
-	saveVisible,
 } from '../lib/residentActions.js'
+import { offersSave, postSave, SAVE_FAILED } from '../lib/residentSave.js'
 import {
 	residentAuthBase,
 	residentManifest,
@@ -168,11 +166,7 @@ export default {
 	async mounted() {
 		const manifest = await residentManifest()
 		this.collection = dossierCollectionOf(manifest, this.app, this.dossierSchema)
-		this.offered = saveVisible(
-			true,
-			offeredActions(manifest, this.app),
-			this.actionId,
-		)
+		this.offered = offersSave(manifest, { app: this.app, actionId: this.actionId })
 	},
 
 	methods: {
@@ -216,18 +210,12 @@ export default {
 			const chosen = this.dossiers.find(
 				(dossier) => dossier.id === this.target,
 			)
-			const result = await postAction({
-				authBase: residentAuthBase(),
-				appId: this.app,
-				actionId: this.actionId,
-				body: addToCollectionBody({
-					collection: this.target,
-					title: this.title,
-					publication: this.publication,
-					attachment: this.attachment,
-				}),
-				token: residentToken(),
-			})
+			const result = await postSave(this, addToCollectionBody({
+				collection: this.target,
+				title: this.title,
+				publication: this.publication,
+				attachment: this.attachment,
+			}))
 			this.busy = false
 
 			if (result.ok === true) {
@@ -236,7 +224,7 @@ export default {
 				return
 			}
 
-			this.status = 'Bewaren is niet gelukt. Probeer het later opnieuw.'
+			this.status = SAVE_FAILED
 		},
 	},
 }

@@ -81,20 +81,37 @@ class NoticeRecipientNormaliser {
 			return null;
 		}
 
-		$messages = $rule['messages'];
+		$reason = $this->messagesRefusal(messages: $rule['messages'], collection: $collection);
+		if ($reason === null) {
+			return null;
+		}
+
+		return $label.': '.$reason;
+	}//end refusal()
+
+	/**
+	 * Why the rule's messages cannot be kept, or null: a non-empty map whose
+	 * every message can be kept.
+	 *
+	 * @param mixed                $messages   The declared messages.
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return string|null
+	 */
+	private function messagesRefusal(mixed $messages, array $collection): ?string {
 		if (is_array($messages) === false || $messages === []) {
-			return $label.': messages must map a value to a subject and a body';
+			return 'messages must map a value to a subject and a body';
 		}
 
 		foreach ($messages as $message) {
 			$reason = $this->messageRefusal(message: $message, collection: $collection);
 			if ($reason !== null) {
-				return $label.': '.$reason;
+				return $reason;
 			}
 		}
 
 		return null;
-	}//end refusal()
+	}//end messagesRefusal()
 
 	/**
 	 * The rule's recipients and messages, shaped for the listener. Call only
@@ -147,17 +164,42 @@ class NoticeRecipientNormaliser {
 			return null;
 		}
 
-		$parts = explode('.', $claim);
-		if (count($parts) === 2 && $parts[0] === $appId && $appId !== '') {
-			$parts = [$parts[1]];
-		}
+		return $this->bareClaim(claim: $claim, appId: $appId);
+	}//end claimOf()
 
+	/**
+	 * A claim name without the app's own prefix (`dossiq.kvk` is `kvk` for
+	 * dossiq), or null when it is another app's or not a name.
+	 *
+	 * @param string $claim The declared claim.
+	 * @param string $appId The contributing app.
+	 *
+	 * @return string|null
+	 */
+	private function bareClaim(string $claim, string $appId): ?string {
+		$parts = $this->withoutOwnPrefix(parts: explode('.', $claim), appId: $appId);
 		if (count($parts) !== 1 || $this->isName(value: $parts[0]) === false) {
 			return null;
 		}
 
 		return $parts[0];
-	}//end claimOf()
+	}//end bareClaim()
+
+	/**
+	 * A claim's dotted parts with the app's own prefix taken off.
+	 *
+	 * @param array<int, string> $parts The claim, split on dots.
+	 * @param string             $appId The contributing app.
+	 *
+	 * @return array<int, string>
+	 */
+	private function withoutOwnPrefix(array $parts, string $appId): array {
+		if (count($parts) === 2 && $parts[0] === $appId && $appId !== '') {
+			return [$parts[1]];
+		}
+
+		return $parts;
+	}//end withoutOwnPrefix()
 
 	/**
 	 * Whether a value is a field or claim name.
@@ -184,25 +226,59 @@ class NoticeRecipientNormaliser {
 		}
 
 		foreach (['subject', 'body'] as $part) {
-			$texts = ($message[$part] ?? null);
-			if (is_string($texts) === true) {
-				$texts = [$texts];
-			}
-
-			if (is_array($texts) === false || $texts === []) {
-				return 'a message needs a subject and a body';
-			}
-
-			foreach ($texts as $text) {
-				$reason = $this->textRefusal(text: $text, collection: $collection);
-				if ($reason !== null) {
-					return $reason;
-				}
+			$reason = $this->partRefusal(texts: ($message[$part] ?? null), collection: $collection);
+			if ($reason !== null) {
+				return $reason;
 			}
 		}
 
 		return null;
 	}//end messageRefusal()
+
+	/**
+	 * Why a message's subject or body cannot be kept, or null: one text or a
+	 * non-empty list of texts that can each be kept.
+	 *
+	 * @param mixed                $texts      The declared subject or body.
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return string|null
+	 */
+	private function partRefusal(mixed $texts, array $collection): ?string {
+		$list = $this->textsOf(texts: $texts);
+		if ($list === null) {
+			return 'a message needs a subject and a body';
+		}
+
+		foreach ($list as $text) {
+			$reason = $this->textRefusal(text: $text, collection: $collection);
+			if ($reason !== null) {
+				return $reason;
+			}
+		}
+
+		return null;
+	}//end partRefusal()
+
+	/**
+	 * A subject or body as its list of texts: one text is a list of one,
+	 * and anything but a non-empty list is null.
+	 *
+	 * @param mixed $texts The declared subject or body.
+	 *
+	 * @return array<int|string, mixed>|null
+	 */
+	private function textsOf(mixed $texts): ?array {
+		if (is_string($texts) === true) {
+			return [$texts];
+		}
+
+		if (is_array($texts) === false || $texts === []) {
+			return null;
+		}
+
+		return $texts;
+	}//end textsOf()
 
 	/**
 	 * Why one text cannot be kept, or null.

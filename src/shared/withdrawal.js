@@ -27,28 +27,23 @@ export function withdrawalView(withdrawal, caseRow) {
 		return {
 			kind: 'withdrawn',
 			withdrawnAt: caseRow.withdrawnAt,
-			reason:
-				typeof caseRow.withdrawalReason === 'string'
-					? caseRow.withdrawalReason
-					: '',
+			reason: textOf(caseRow.withdrawalReason),
 		}
 	}
 	if (!withdrawal || withdrawal.declared !== true) {
 		return { kind: 'none' }
 	}
-	if (withdrawal.open === true) {
-		return {
-			kind: 'button',
-			confirmText:
-				typeof withdrawal.confirmText === 'string'
-					? withdrawal.confirmText
-					: '',
-		}
-	}
-	return {
-		kind: 'closed',
-		reason: typeof withdrawal.reason === 'string' ? withdrawal.reason : '',
-	}
+	return withdrawal.open === true
+		? { kind: 'button', confirmText: textOf(withdrawal.confirmText) }
+		: { kind: 'closed', reason: textOf(withdrawal.reason) }
+}
+
+/**
+ * @param {unknown} value A sentence from the server or the case.
+ * @return {string} The sentence, or '' when it is no text.
+ */
+function textOf(value) {
+	return typeof value === 'string' ? value : ''
 }
 
 /**
@@ -84,17 +79,19 @@ export function caseHasEnded(writableSet, view) {
  */
 export function caseFieldNames(caseRow, writableSet) {
 	const named = writableSet?.fields
-	if (
-		!caseRow
-		|| typeof caseRow !== 'object'
-		|| !named
-		|| typeof named !== 'object'
-		|| Array.isArray(named)
-	) {
+	if (!isRecord(caseRow) || !isRecord(named) || Array.isArray(named)) {
 		return []
 	}
 	return Object.keys(named).filter(
 		(key) =>
 			key !== '@self' && key !== '_files' && !WITHDRAWAL_FIELDS.includes(key),
 	)
+}
+
+/**
+ * @param {unknown} value A value.
+ * @return {boolean} Whether it is a non-null object.
+ */
+function isRecord(value) {
+	return Boolean(value) && typeof value === 'object'
 }

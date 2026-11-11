@@ -72,18 +72,9 @@
 </template>
 
 <script>
-import {
-	offeredActions,
-	postAction,
-	RESIDENT_ACTION_DEFAULTS,
-	saveSearchBody,
-	saveVisible,
-} from '../lib/residentActions.js'
-import {
-	residentAuthBase,
-	residentManifest,
-	residentToken,
-} from '../lib/residentSession.js'
+import { RESIDENT_ACTION_DEFAULTS, saveSearchBody } from '../lib/residentActions.js'
+import { offersSave, postSave, SAVE_FAILED } from '../lib/residentSave.js'
+import { residentManifest } from '../lib/residentSession.js'
 
 /**
  * "Bewaar deze zoekopdracht" (woo-journey-entry-points, REQ-WJE-003).
@@ -155,12 +146,7 @@ export default {
 	 * @spec openspec/changes/woo-journey-entry-points/specs/portal-federated-search/spec.md#requirement-the-save-actions-must-show-only-to-a-signed-in-resident-who-is-offered-them-req-wje-001
 	 */
 	async mounted() {
-		const manifest = await residentManifest()
-		this.offered = saveVisible(
-			true,
-			offeredActions(manifest, this.app),
-			this.actionId,
-		)
+		this.offered = offersSave(await residentManifest(), { app: this.app, actionId: this.actionId })
 	},
 
 	methods: {
@@ -173,17 +159,11 @@ export default {
 		 */
 		async submit() {
 			this.busy = true
-			const result = await postAction({
-				authBase: residentAuthBase(),
-				appId: this.app,
-				actionId: this.actionId,
-				body: saveSearchBody({
-					title: this.title,
-					frequency: this.frequency,
-					query: this.query,
-				}),
-				token: residentToken(),
-			})
+			const result = await postSave(this, saveSearchBody({
+				title: this.title,
+				frequency: this.frequency,
+				query: this.query,
+			}))
 			this.busy = false
 
 			if (result.ok === true) {
@@ -193,7 +173,7 @@ export default {
 				return
 			}
 
-			this.status = 'Bewaren is niet gelukt. Probeer het later opnieuw.'
+			this.status = SAVE_FAILED
 		},
 	},
 }

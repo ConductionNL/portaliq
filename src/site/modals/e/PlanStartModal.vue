@@ -110,6 +110,7 @@
 <script>
 import { contactsApi, plansApi } from '../../../shared/areaApi.js'
 import { planWords } from '../../lib/plans.js'
+import { closeDialog, openDialog } from '../forms/draftDialog.js'
 
 /**
  * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t03
@@ -158,13 +159,7 @@ export default {
 	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t03
 	 */
 	async mounted() {
-		const dialog = this.$refs.dialog
-		if (typeof dialog?.showModal === 'function') {
-			dialog.showModal()
-		} else {
-			dialog?.setAttribute('open', '')
-		}
-		this.$refs.heading?.focus()
+		openDialog(this.$refs.dialog, this.$refs.heading)
 		const [templates, overview] = await Promise.all([
 			plansApi(this.api).fetchPlanTemplates(),
 			contactsApi(this.api).fetchContacts(),
@@ -181,12 +176,7 @@ export default {
 	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t03
 	 */
 	beforeUnmount() {
-		if (
-			this.$refs.dialog?.open
-			&& typeof this.$refs.dialog.close === 'function'
-		) {
-			this.$refs.dialog.close()
-		}
+		closeDialog(this.$refs.dialog)
 	},
 
 	methods: {

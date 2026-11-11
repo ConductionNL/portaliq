@@ -126,14 +126,8 @@ class TrafficSegments {
 			return [];
 		}
 
-		$goalIds = [];
-		foreach ($goals as $goal) {
-			if (is_array($goal) === true && isset($goal['id']) === true) {
-				$goalIds[(string)$goal['id']] = true;
-			}
-		}
-
-		$out = [];
+		$goalIds = $this->goalIds(goals: $goals);
+		$out     = [];
 		foreach (array_slice(array_values($value), 0, self::MAX_SEGMENTS) as $row) {
 			$segment = $this->segment(row: $row, goalIds: $goalIds);
 			if ($segment === null || isset($out[$segment['id']]) === true) {
@@ -144,6 +138,24 @@ class TrafficSegments {
 		}
 
 		return array_values($out);
+	}
+
+	/**
+	 * The ids of the portal's goals, as keys.
+	 *
+	 * @param array<int, array<string, mixed>> $goals The portal's resolved goals.
+	 *
+	 * @return array<string, true>
+	 */
+	private function goalIds(array $goals): array {
+		$goalIds = [];
+		foreach ($goals as $goal) {
+			if (is_array($goal) === true && isset($goal['id']) === true) {
+				$goalIds[(string)$goal['id']] = true;
+			}
+		}
+
+		return $goalIds;
 	}
 
 	/**
@@ -165,12 +177,24 @@ class TrafficSegments {
 			return null;
 		}
 
+		return ['id' => $id, 'name' => $this->nameOf(row: $row, id: $id), 'conditions' => $conditions];
+	}
+
+	/**
+	 * A segment's name, at most 128 characters; its id when it has none.
+	 *
+	 * @param array<string, mixed> $row The configured row.
+	 * @param string               $id  The segment's id.
+	 *
+	 * @return string
+	 */
+	private function nameOf(array $row, string $id): string {
 		$name = mb_substr(trim((string)($row['name'] ?? '')), 0, 128);
 		if ($name === '') {
-			$name = $id;
+			return $id;
 		}
 
-		return ['id' => $id, 'name' => $name, 'conditions' => $conditions];
+		return $name;
 	}
 
 	/**
@@ -248,35 +272,108 @@ class TrafficSegments {
 	 * @return array<int, array{dimension: string, operator: string, value: string}>|null The conditions.
 	 */
 	private function conditions(mixed $value, array $goalIds): ?array {
-		if (is_array($value) === false || $value === []) {
+		$declaredList = $this->listOf(value: $value);
+		if ($declaredList === []) {
 			return null;
 		}
 
 		$out = [];
-		foreach (array_slice(array_values($value), 0, self::MAX_CONDITIONS) as $condition) {
-			if (is_array($condition) === false) {
+		foreach (array_slice(array_values($declaredList), 0, self::MAX_CONDITIONS) as $declared) {
+			$condition = $this->condition(declared: $declared, goalIds: $goalIds);
+			if ($condition === null) {
 				return null;
 			}
 
-			$dimension = trim((string)($condition['dimension'] ?? ''));
-			$operator = trim((string)($condition['operator'] ?? ''));
-			$expected = $condition['value'] ?? '';
-			if (is_bool($expected) === true) {
-				$expected = $this->flag(value: $expected);
-			}
-
-			if (is_scalar($expected) === false || $this->knowsDimension(dimension: $dimension, goalIds: $goalIds) === false) {
-				return null;
-			}
-
-			if (in_array($operator, self::OPERATORS, true) === false) {
-				return null;
-			}
-
-			$out[] = ['dimension' => $dimension, 'operator' => $operator, 'value' => mb_substr(trim((string)$expected), 0, 256)];
+			$out[] = $condition;
 		}
 
 		return $out;
+	}
+
+	/**
+	 * A value as an array, or [] when it is not one.
+	 *
+	 * @param mixed $value The value.
+	 *
+	 * @return array<mixed>
+	 */
+	private function listOf(mixed $value): array {
+		if (is_array($value) === false) {
+			return [];
+		}
+
+		return $value;
+	}
+
+	/**
+	 * One normalised condition, or null when it cannot be acted on.
+	 *
+	 * @param mixed               $declared The configured condition.
+	 * @param array<string, true> $goalIds  The portal's goal ids.
+	 *
+	 * @return array{dimension: string, operator: string, value: string}|null The condition.
+	 */
+	private function condition(mixed $declared, array $goalIds): ?array {
+		if (is_array($declared) === false) {
+			return null;
+		}
+
+		$condition = [
+			'dimension' => $this->trimmed(declared: $declared, key: 'dimension'),
+			'operator' => $this->trimmed(declared: $declared, key: 'operator'),
+			'value' => $this->conditionValue(declared: $declared),
+		];
+		if ($condition['value'] === null || $this->isActionable(condition: $condition, goalIds: $goalIds) === false) {
+			return null;
+		}
+
+		return $condition;
+	}
+
+	/**
+	 * A configured key as trimmed text, '' when absent.
+	 *
+	 * @param array<string, mixed> $declared The configured condition.
+	 * @param string               $key      The key.
+	 *
+	 * @return string
+	 */
+	private function trimmed(array $declared, string $key): string {
+		return trim((string)($declared[$key] ?? ''));
+	}
+
+	/**
+	 * A condition's value as text of at most 256 characters, a flag as
+	 * `true`/`false`; null when it is not a single value.
+	 *
+	 * @param array<string, mixed> $declared The configured condition.
+	 *
+	 * @return string|null
+	 */
+	private function conditionValue(array $declared): ?string {
+		$expected = ($declared['value'] ?? '');
+		if (is_bool($expected) === true) {
+			$expected = $this->flag(value: $expected);
+		}
+
+		if (is_scalar($expected) === false) {
+			return null;
+		}
+
+		return mb_substr(trim((string)$expected), 0, 256);
+	}
+
+	/**
+	 * Whether a condition names a known dimension and operator.
+	 *
+	 * @param array{dimension: string, operator: string} $condition The condition.
+	 * @param array<string, true>                        $goalIds   The portal's goal ids.
+	 *
+	 * @return bool
+	 */
+	private function isActionable(array $condition, array $goalIds): bool {
+		return $this->knowsDimension(dimension: $condition['dimension'], goalIds: $goalIds) === true
+			&& in_array($condition['operator'], self::OPERATORS, true) === true;
 	}
 
 	/**
@@ -370,19 +467,53 @@ class TrafficSegments {
 			return '';
 		}
 
-		foreach (($session['events'] ?? []) as $event) {
-			if (is_array($event) === false || ($event['name'] ?? '') !== 'session_start') {
-				continue;
-			}
+		return $this->firstStartType(events: ($session['events'] ?? []));
+	}
 
-			$type = (string)($event['params']['visitorType'] ?? '');
-			if ($type === 'new' || (($event['params']['first'] ?? false) === true)) {
-				return 'new';
+	/**
+	 * The visitor type the first telling `session_start` event names, or ''.
+	 *
+	 * @param mixed $events The session's events.
+	 *
+	 * @return string
+	 */
+	private function firstStartType(mixed $events): string {
+		foreach ($events as $event) {
+			if ($this->isSessionStart(event: $event) === true && $this->startType(event: $event) !== '') {
+				return $this->startType(event: $event);
 			}
+		}
 
-			if ($type === 'returning') {
-				return 'returning';
-			}
+		return '';
+	}
+
+	/**
+	 * Whether an event is a `session_start`.
+	 *
+	 * @param mixed $event The event.
+	 *
+	 * @return bool
+	 */
+	private function isSessionStart(mixed $event): bool {
+		return is_array($event) === true && ($event['name'] ?? '') === 'session_start';
+	}
+
+	/**
+	 * `new` when a start event says so or marks the first visit, `returning`
+	 * when it says so, else ''.
+	 *
+	 * @param array<string, mixed> $event The `session_start` event.
+	 *
+	 * @return string
+	 */
+	private function startType(array $event): string {
+		$type = (string)($event['params']['visitorType'] ?? '');
+		if ($type === 'new' || (($event['params']['first'] ?? false) === true)) {
+			return 'new';
+		}
+
+		if ($type === 'returning') {
+			return 'returning';
 		}
 
 		return '';
@@ -399,14 +530,38 @@ class TrafficSegments {
 	 */
 	private function metGoal(string $id, array $events, array $goals): bool {
 		foreach ($goals as $goal) {
-			if ((string)($goal['id'] ?? '') !== $id || is_array($goal['match'] ?? null) === false) {
-				continue;
+			if ($this->isGoal(goal: $goal, id: $id) === true && $this->anyEventMeets(goal: $goal, events: $events) === true) {
+				return true;
 			}
+		}
 
-			foreach ($events as $event) {
-				if (is_array($event) === true && $this->match->matches(match: $goal['match'], event: $event, type: (string)($goal['type'] ?? '')) === true) {
-					return true;
-				}
+		return false;
+	}
+
+	/**
+	 * Whether a goal has this id and a match to check.
+	 *
+	 * @param array<string, mixed> $goal A resolved goal.
+	 * @param string               $id   The goal id.
+	 *
+	 * @return bool
+	 */
+	private function isGoal(array $goal, string $id): bool {
+		return (string)($goal['id'] ?? '') === $id && is_array($goal['match'] ?? null) === true;
+	}
+
+	/**
+	 * Whether any event meets the goal's match.
+	 *
+	 * @param array<string, mixed> $goal   A resolved goal with a match.
+	 * @param array<int, mixed>    $events The events.
+	 *
+	 * @return bool
+	 */
+	private function anyEventMeets(array $goal, array $events): bool {
+		foreach (array_filter($events, 'is_array') as $event) {
+			if ($this->match->matches(match: $goal['match'], event: $event, type: (string)($goal['type'] ?? '')) === true) {
+				return true;
 			}
 		}
 

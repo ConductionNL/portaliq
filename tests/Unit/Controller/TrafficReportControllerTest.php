@@ -111,6 +111,25 @@ class TrafficReportControllerTest extends TestCase {
 
 
 	/**
+	 * A malformed day is an invalid range, the first refusal wins, and a
+	 * served export is never cached.
+	 *
+	 * @return void
+	 */
+	public function testMalformedDaysTheFirstRefusalAndTheCacheHeaderAreAsRecorded(): void {
+		foreach ([['2026-9-01', '2026-09-04'], ['2026-09-01', 'tomorrow']] as [$from, $to]) {
+			$this->assertSame(['error' => 'invalid-range'], $this->controller()->export(portal: 'open-tilburg', from: $from, to: $to)->getData());
+		}
+
+		$this->assertSame(['error' => 'missing-portal'], $this->controller()->export(portal: '', from: 'x', segment: 'bad segment', format: 'xlsx')->getData());
+		$this->assertSame(['error' => 'invalid-segment'], $this->controller()->export(portal: 'open-tilburg', from: '2026-09-01', to: '2026-09-04', segment: 'bad segment', format: 'xlsx')->getData());
+
+		$served = $this->controller()->export(portal: 'open-tilburg', from: '2026-09-01', to: '2026-09-04');
+		$this->assertSame('private, no-store', $this->headers($served)['Cache-Control']);
+	}//end testMalformedDaysTheFirstRefusalAndTheCacheHeaderAreAsRecorded()
+
+
+	/**
 	 * A portal whose slug carries capitals is a portal like any other.
 	 *
 	 * Nothing in the schema constrains a slug to lower case, so an operator

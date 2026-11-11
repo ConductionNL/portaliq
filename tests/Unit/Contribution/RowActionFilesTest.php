@@ -112,6 +112,26 @@ class RowActionFilesTest extends TestCase {
 		$this->assertSame('file_too_large', $big['error']);
 	}//end testTooManyOrTooLargeIsRefused()
 
+	/**
+	 * Missing parts of an upload read as their defaults; an entry with an
+	 * error, no temporary file, or no upload at all is left out.
+	 *
+	 * @return void
+	 */
+	public function testUploadDefaultsAndUnreadableEntriesAreAsRecorded(): void {
+		$action = (new RowActionFiles())->normalise(action: $this->endpointAction(['field' => 'attachments', 'max' => 5]), whitelist: ['answer']);
+		$files  = new RowActionFiles();
+
+		$bare = $files->collect(action: $action, request: $this->request(['tmp_name' => '/tmp/x']));
+		$this->assertSame(['files' => [['name' => 'upload', 'type' => 'application/octet-stream', 'tmp_name' => '/tmp/x', 'size' => 0]], 'error' => null], $bare);
+
+		$parallel = $files->collect(action: $action, request: $this->request(['tmp_name' => ['k' => '/tmp/k', 'e' => '/tmp/e'], 'error' => ['e' => UPLOAD_ERR_PARTIAL]]));
+		$this->assertSame([['name' => '', 'type' => '', 'tmp_name' => '/tmp/k', 'size' => 0]], $parallel['files']);
+
+		$this->assertSame(['files' => [], 'error' => null], $files->collect(action: $action, request: $this->request(['name' => 'a.pdf'])));
+		$this->assertSame(['files' => [], 'error' => null], $files->collect(action: $action, request: $this->request(['tmp_name' => '/tmp/x', 'error' => UPLOAD_ERR_INI_SIZE])));
+	}//end testUploadDefaultsAndUnreadableEntriesAreAsRecorded()
+
 	public function testAnActionWithoutFilesReadsNoUploads(): void {
 		$request = $this->createMock(IRequest::class);
 		$request->expects($this->never())->method('getUploadedFile');

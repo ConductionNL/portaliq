@@ -31,6 +31,7 @@ namespace OCA\Portaliq\Service\Identity\EmailLink;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Portaliq\Service\Identity\ClaimLock;
+use OCA\Portaliq\Service\Identity\TokenRows;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\Security\ISecureRandom;
@@ -239,7 +240,7 @@ class EmailLinkTokens {
 
 		$voided = 0;
 		foreach ($rows as $row) {
-			$id = $this->identifierOf(row: (array)$row);
+			$id = TokenRows::identifierOf(row: (array)$row);
 			if ($id === '' || ($row['subjectRef'] ?? null) !== $subjectRef || ($row['state'] ?? '') !== 'sent') {
 				continue;
 			}
@@ -291,7 +292,7 @@ class EmailLinkTokens {
 			scopeField: '',
 			subjectRef: '',
 			organisation: '',
-			id: $this->identifierOf(row: $row),
+			id: TokenRows::identifierOf(row: $row),
 			data: ['state' => 'used', 'usedAt' => $moment->format(DATE_ATOM)]
 		);
 		if ($spent === null) {
@@ -349,13 +350,7 @@ class EmailLinkTokens {
 			organisation: '',
 			limit: 2
 		);
-		foreach ($rows as $row) {
-			if (is_array($row) === true && hash_equals((string)($row['tokenHash'] ?? ''), $hash) === true) {
-				return $row;
-			}
-		}
-
-		return null;
+		return TokenRows::matching(rows: $rows, hash: $hash);
 	}//end rowFor()
 
 	/**
@@ -383,22 +378,4 @@ class EmailLinkTokens {
 
 		return 'live';
 	}//end stateOf()
-
-	/**
-	 * The stored identifier of a row, wherever OpenRegister put it.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string
-	 */
-	private function identifierOf(array $row): string {
-		$id = (string)($row['uuid'] ?? $row['id'] ?? '');
-		if ($id !== '') {
-			return $id;
-		}
-
-		$self = (array)($row['@self'] ?? []);
-
-		return (string)($self['uuid'] ?? $self['id'] ?? '');
-	}//end identifierOf()
 }//end class

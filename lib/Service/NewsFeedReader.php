@@ -162,12 +162,7 @@ class NewsFeedReader {
 				continue;
 			}
 
-			$target = [];
-			if (is_array($row['target'] ?? null) === true) {
-				$target = $row['target'];
-			}
-
-			if (NewsAudienceMatcher::matches(target: $target, audience: $audience) === false) {
+			if (NewsAudienceMatcher::reaches(row: $row, audience: $audience) === false) {
 				continue;
 			}
 
@@ -269,12 +264,7 @@ class NewsFeedReader {
 				continue;
 			}
 
-			$target = [];
-			if (is_array($row['target'] ?? null) === true) {
-				$target = $row['target'];
-			}
-
-			if (NewsAudienceMatcher::matches(target: $target, audience: $audience) === true) {
+			if (NewsAudienceMatcher::reaches(row: $row, audience: $audience) === true) {
 				$matched[] = $row;
 			}
 		}

@@ -201,38 +201,89 @@ class AttachedActionResolver {
 	 * @return array{app: string, target: string, schema: string, collection: string, action: array, listed: array}|null
 	 */
 	private function attachment(string $app, mixed $action): ?array {
-		if (is_array($action) === false || is_string($action['id'] ?? null) === false
-			|| (new RowActionResolver())->isEndpointRowAction(action: $action) === false
-		) {
+		if ($this->isAttachable(action: $action) === false) {
 			return null;
 		}
 
-		$target = ($action['attachTo'] ?? null);
-		if (is_array($target) === false || $this->isName(value: ($target['app'] ?? null)) === false
-			|| $this->isName(value: ($target['schema'] ?? null)) === false
-		) {
+		$target = $this->attachTarget(declared: ($action['attachTo'] ?? null));
+		if ($target === null) {
 			return null;
 		}
-
-		// An optional collection id narrows the target to that one collection.
-		// A malformed one attaches nothing: widening it to every collection on
-		// the schema would show the action where its app never meant it.
-		$collection = ($target['collection'] ?? '');
-		if ($collection !== '' && $this->isName(value: $collection) === false) {
-			return null;
-		}
-
-		$listed = $this->listedFor(app: $app, action: $action);
 
 		return [
 			'app' => $app,
 			'target' => $target['app'],
 			'schema' => $target['schema'],
-			'collection' => (string)$collection,
+			'collection' => $target['collection'],
 			'action' => $action,
-			'listed' => $listed,
+			'listed' => $this->listedFor(app: $app, action: $action),
 		];
 	}//end attachment()
+
+	/**
+	 * Whether an action can attach at all: a map with a string id that is an
+	 * endpoint row action.
+	 *
+	 * @param mixed $action The action.
+	 *
+	 * @return bool
+	 */
+	private function isAttachable(mixed $action): bool {
+		return is_array($action) === true && is_string($action['id'] ?? null) === true
+			&& (new RowActionResolver())->isEndpointRowAction(action: $action) === true;
+	}//end isAttachable()
+
+	/**
+	 * The app, schema and collection an action attaches to, or null when its
+	 * `attachTo` does not name an app and a schema, or names a malformed
+	 * collection.
+	 *
+	 * @param mixed $declared The declared `attachTo`.
+	 *
+	 * @return array{app: string, schema: string, collection: string}|null
+	 */
+	private function attachTarget(mixed $declared): ?array {
+		if (is_array($declared) === false || $this->namesAppAndSchema(declared: $declared) === false) {
+			return null;
+		}
+
+		$collection = $this->targetCollection(declared: $declared);
+		if ($collection === null) {
+			return null;
+		}
+
+		return ['app' => $declared['app'], 'schema' => $declared['schema'], 'collection' => $collection];
+	}//end attachTarget()
+
+	/**
+	 * Whether an `attachTo` names an app and a schema.
+	 *
+	 * @param array<string, mixed> $declared The declared `attachTo`.
+	 *
+	 * @return bool
+	 */
+	private function namesAppAndSchema(array $declared): bool {
+		return $this->isName(value: ($declared['app'] ?? null)) === true && $this->isName(value: ($declared['schema'] ?? null)) === true;
+	}//end namesAppAndSchema()
+
+	/**
+	 * The collection id an `attachTo` narrows the target to, '' for every
+	 * collection on the schema. A malformed one is null and attaches
+	 * nothing: widening it to every collection on the schema would show the
+	 * action where its app never meant it.
+	 *
+	 * @param array<string, mixed> $declared The declared `attachTo`.
+	 *
+	 * @return string|null
+	 */
+	private function targetCollection(array $declared): ?string {
+		$collection = ($declared['collection'] ?? '');
+		if ($collection !== '' && $this->isName(value: $collection) === false) {
+			return null;
+		}
+
+		return (string)$collection;
+	}//end targetCollection()
 
 	/**
 	 * Whether an attachment targets this collection of this app: the app and

@@ -178,29 +178,49 @@ export function stepUpEntries(stepUp, nav = []) {
 	const taken = new Set((nav || []).map((entry) => entry.key))
 	const entries = []
 	for (const item of Array.isArray(stepUp) ? stepUp : []) {
-		const app = typeof item?.app === 'string' ? item.app : ''
-		const collection =
-			typeof item?.collection === 'string' ? item.collection : ''
-		const key = `${app}:${collection}`
-		if (app === '' || collection === '' || taken.has(key)) {
-			continue
+		const entry = stepUpEntry(item)
+		if (entry !== null && !taken.has(entry.key)) {
+			taken.add(entry.key)
+			entries.push(entry)
 		}
-		taken.add(key)
-		entries.push({
-			key,
-			label:
-				typeof item.label === 'string' && item.label !== ''
-					? item.label
-					: collection,
-			icon: 'Lock',
-			stepUp: {
-				app,
-				collection,
-				minTrust: typeof item.minTrust === 'string' ? item.minTrust : '',
-			},
-		})
 	}
 	return entries
+}
+
+/**
+ * The navigation entry for one `stepUp` item, or null when it does not name
+ * both its app and its collection.
+ *
+ * @param {object|null} item `{app, collection, label, minTrust}`.
+ * @return {{key: string, label: string, icon: string, stepUp: object}|null} The entry.
+ */
+function stepUpEntry(item) {
+	const app = textOr(item?.app, '')
+	const collection = textOr(item?.collection, '')
+	if (app === '' || collection === '') {
+		return null
+	}
+	return {
+		key: `${app}:${collection}`,
+		label: textOr(item.label, '') || collection,
+		icon: 'Lock',
+		stepUp: {
+			app,
+			collection,
+			minTrust: textOr(item.minTrust, ''),
+		},
+	}
+}
+
+/**
+ * A value when it is text, else the fallback.
+ *
+ * @param {string|number|object|null|undefined} value The value.
+ * @param {string} fallback The fallback.
+ * @return {string} The text.
+ */
+function textOr(value, fallback) {
+	return typeof value === 'string' ? value : fallback
 }
 
 /**
@@ -334,21 +354,37 @@ export function navEntryForRoute(nav, route) {
 	if (products) {
 		return products
 	}
-	// A record page with one record chosen: `/mijn/<app>/<page>/<id>`
-	// (site-mijn-omgeving-components REQ-SMO-008, REQ-SMO-020).
-	const id = recordIdOfRoute(route)
-	if (id === '') {
+	return recordPageEntry(nav, route)
+}
+
+/**
+ * The record page a route chooses one record on: `/mijn/<app>/<page>/<id>`
+ * (site-mijn-omgeving-components REQ-SMO-008, REQ-SMO-020), or null.
+ *
+ * @param {Array<object>} nav The navigation.
+ * @param {string} route The route.
+ * @return {object|null} The record page's entry.
+ */
+function recordPageEntry(nav, route) {
+	if (recordIdOfRoute(route) === '') {
 		return null
 	}
 	const pageRoute = String(route).slice(0, String(route).lastIndexOf('/'))
 	return (
 		(nav || []).find(
-			(entry) =>
-				!entry.special
-				&& (entry.page?.record || entry.page?.records)
-				&& routeForNav(entry) === pageRoute,
+			(entry) => isRecordPage(entry) && routeForNav(entry) === pageRoute,
 		) || null
 	)
+}
+
+/**
+ * Whether an entry is a contribution's page that lists records.
+ *
+ * @param {object} entry A navigation entry.
+ * @return {boolean} True for a record page.
+ */
+function isRecordPage(entry) {
+	return !entry.special && Boolean(entry.page?.record || entry.page?.records)
 }
 
 /**

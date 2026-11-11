@@ -164,30 +164,64 @@ class TrafficRecordingMask {
 			return null;
 		}
 
-		$out = ['k' => $kind];
+		return ['k' => $kind] + $this->numbers(kind: $kind, event: $event) + $this->kindExtras(kind: $kind, event: $event);
+	}
+
+	/**
+	 * The numbers a kind of event keeps, each as a non-negative number.
+	 *
+	 * @param string               $kind  The event kind.
+	 * @param array<string, mixed> $event The posted event.
+	 *
+	 * @return array<string, int|float>
+	 */
+	private function numbers(string $kind, array $event): array {
+		$out = [];
 		foreach (self::KINDS[$kind] as $field) {
 			$out[$field] = $this->number(value: ($event[$field] ?? 0));
 		}
 
+		return $out;
+	}
+
+	/**
+	 * What a snapshot, a stylesheet or a navigation keeps beside its numbers.
+	 *
+	 * @param string               $kind  The event kind.
+	 * @param array<string, mixed> $event The posted event.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function kindExtras(string $kind, array $event): array {
 		if ($kind === 's') {
-			$out['n'] = $this->node(node: ($event['n'] ?? null), depth: 0);
+			return ['n' => $this->node(node: ($event['n'] ?? null), depth: 0)];
 		}
 
 		if ($kind === 'y') {
-			$sheet = $event['s'] ?? '';
-			if (is_string($sheet) === false) {
-				$sheet = '';
-			}
-
-			$out['h'] = $this->hash(value: ($event['h'] ?? null));
-			$out['s'] = $this->css(value: $sheet);
+			return $this->stylesheet(event: $event);
 		}
 
 		if ($kind === 'n') {
-			$out['p'] = $this->path(value: ($event['p'] ?? null));
+			return ['p' => $this->path(value: ($event['p'] ?? null))];
 		}
 
-		return $out;
+		return [];
+	}
+
+	/**
+	 * A stylesheet event's hash and text; a sheet that is no text is kept as ''.
+	 *
+	 * @param array<string, mixed> $event The posted event.
+	 *
+	 * @return array{h: string, s: string}
+	 */
+	private function stylesheet(array $event): array {
+		$sheet = ($event['s'] ?? '');
+		if (is_string($sheet) === false) {
+			$sheet = '';
+		}
+
+		return ['h' => $this->hash(value: ($event['h'] ?? null)), 's' => $this->css(value: $sheet)];
 	}
 
 	/**

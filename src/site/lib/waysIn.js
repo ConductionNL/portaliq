@@ -353,6 +353,33 @@ async function post(url, body, fetchImpl) {
 }
 
 /**
+ * What a registration sends back of the portal's challenge.
+ *
+ * @param {{nonce?: string, expiresAt?: number, signature?: string}} challenge The challenge.
+ * @return {{nonce: string, expiresAt: number, signature: string}} The proof fields.
+ */
+function challengeProof(challenge) {
+	return {
+		nonce: challenge.nonce || '',
+		expiresAt: challenge.expiresAt || 0,
+		signature: challenge.signature || '',
+	}
+}
+
+/**
+ * Put the honeypot's value under its field, when the form had one.
+ *
+ * @param {object} body The body, added to.
+ * @param {{field: string, value: string}|null} honeypot The honeypot.
+ * @return {void}
+ */
+function fillHoneypot(body, honeypot) {
+	if (honeypot && honeypot.field) {
+		body[honeypot.field] = honeypot.value || ''
+	}
+}
+
+/**
  * The identity routes for one portal.
  *
  * @param {string} authBase The portal API base (`.../portal/api`).
@@ -395,14 +422,10 @@ export function waysInApi(
 				email,
 				displayName,
 				contactInvitation,
-				nonce: challenge.nonce || '',
-				expiresAt: challenge.expiresAt || 0,
-				signature: challenge.signature || '',
+				...challengeProof(challenge),
 				solution,
 			}
-			if (honeypot && honeypot.field) {
-				body[honeypot.field] = honeypot.value || ''
-			}
+			fillHoneypot(body, honeypot)
 			return post(`${authBase}/identity/register`, body, fetchImpl)
 		},
 		async contactInvitationEmail(token) {

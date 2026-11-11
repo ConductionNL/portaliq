@@ -203,4 +203,89 @@ class ExampleSetResidentsTest extends TestCase {
 		$this->assertSame([], $this->residents(withOpenRegister: false)->residentsOf(portal: 'zuiddrecht'));
 		$this->assertTrue($this->residents()->available());
 	}
+
+	/**
+	 * Every declared resident in every fragment is installed, left out or read exactly as recorded,
+	 * each set's record read once and only when the portal has a resident in it.
+	 *
+	 * @return void
+	 */
+	public function testEveryFragmentAndResidentIsAsRecorded(): void {
+		$folder = sys_get_temp_dir().'/portaliq-example-sets-'.uniqid();
+		mkdir($folder);
+		$write = static fn (string $name, string $json) => file_put_contents($folder.'/'.$name, $json);
+		$write('a-set.json', (string)json_encode(['exampleResident' => [
+			['portal' => 'p', 'account' => 'acc-ok', 'cast' => 'ok', 'card' => ['title' => ' Title ', 'text' => '  ', 'button' => 5, 'extra' => 'x']],
+			['portal' => 'p', 'account' => 'acc-ok', 'cast' => ''],
+			['portal' => 'p', 'account' => 'acc-wrong-schema'],
+			['portal' => 'p', 'account' => 'acc-unknown-user'],
+			['portal' => 'p', 'account' => 'acc-missing'],
+			['portal' => 'p', 'account' => 'acc-unrecorded'],
+			['portal' => 'other', 'account' => 'acc-ok'],
+			['portal' => 5, 'account' => 'acc-ok'],
+			['portal' => 'p'],
+			'not an entry',
+			['portal' => 'p', 'account' => 'acc-ok', 'cast' => 7, 'card' => 'x'],
+		]]));
+		$write('b-set.json', (string)json_encode(['exampleResident' => ['portal' => 'p', 'account' => 'acc-b']]));
+		$write('c-broken.json', '{not json');
+		$write('d-none.json', (string)json_encode(['other' => true]));
+		$write('e-scalar.json', (string)json_encode(['exampleResident' => 'x']));
+		$write('f-throws.json', (string)json_encode(['exampleResident' => ['portal' => 'p', 'account' => 'acc-ok']]));
+		$write('g-elsewhere.json', (string)json_encode(['exampleResident' => ['portal' => 'q', 'account' => 'acc-ok']]));
+		$write('not-a-fragment.txt', 'x');
+
+		$reads   = [];
+		$records = new class($reads) {
+			public function __construct(private array &$reads) {
+			}
+
+			public function read(string $set): array {
+				$this->reads[] = $set;
+				if ($set === 'f-throws') {
+					throw new RuntimeException('unreadable');
+				}
+
+				$held = static fn (string $id, string $schema = 'portalAccount'): array => ['register' => 'r', 'schema' => $schema, 'id' => $id];
+
+				return [
+					'users' => ['u-ok' => 'created', 'u-b' => 'adopted', 'u-blank' => 'created'],
+					'objects' => [
+						'portaliq/acc-ok' => $held('acc-ok'),
+						'portaliq/acc-wrong-schema' => $held('acc-ok', 'other'),
+						'portaliq/acc-unknown-user' => $held('acc-unknown-user'),
+						'portaliq/acc-missing' => $held('acc-missing'),
+						'portaliq/acc-b' => $held('acc-b'),
+					],
+				];
+			}
+		};
+		$this->accounts = [
+			'acc-ok' => ['subjectRef' => 'u-ok', 'displayName' => ' Ok Person '],
+			'acc-unknown-user' => ['subjectRef' => 'nobody', 'displayName' => 'Nobody'],
+			'acc-b' => ['subjectRef' => 'u-b', 'displayName' => '  '],
+		];
+
+		$residents = new ExampleSetResidents(container: $this->containerWith(records: $records), store: $this->storeStandIn(), folder: $folder);
+		$found     = $residents->residentsOf(portal: 'p');
+
+		$this->assertSame(
+			[
+				['set' => 'a-set', 'key' => 'ok', 'uid' => 'u-ok', 'name' => 'Ok Person', 'card' => ['title' => 'Title']],
+				['set' => 'a-set', 'key' => 'acc-ok', 'uid' => 'u-ok', 'name' => 'Ok Person', 'card' => []],
+				['set' => 'a-set', 'key' => 'acc-ok', 'uid' => 'u-ok', 'name' => 'Ok Person', 'card' => []],
+				['set' => 'b-set', 'key' => 'acc-b', 'uid' => 'u-b', 'name' => 'u-b', 'card' => []],
+			],
+			$found
+		);
+		$this->assertSame(['a-set', 'b-set', 'f-throws'], $reads);
+		$this->assertSame([], $residents->residentsOf(portal: ''));
+		$this->assertSame(['a-set', 'b-set', 'f-throws'], $reads, 'no portal reads no record');
+
+		foreach ((array)glob($folder.'/*') as $file) {
+			unlink((string)$file);
+		}
+
+		rmdir($folder);
+	}//end testEveryFragmentAndResidentIsAsRecorded()
 }

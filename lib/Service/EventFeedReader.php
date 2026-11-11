@@ -85,45 +85,68 @@ class EventFeedReader {
 		$rsvps = $this->findAll(schema: 'eventRsvp', filters: ['guardianRef' => $subjectRef]);
 		// The learner herself sees the answer given for her, by whoever gave it.
 		$own = $this->findAll(schema: 'eventRsvp', filters: ['childRef' => $subjectRef]);
-		$rsvps = array_merge($rsvps, $own);
-		$everyRsvp = null;
+		$run = new EventFeedRun(subjectRef: $subjectRef, rsvps: array_merge($rsvps, $own));
 
 		$matched = [];
 		foreach ($rows as $row) {
-			if (($row['status'] ?? '') !== 'published') {
-				continue;
+			if ($this->isListedEvent(row: $row, audience: $audience) === true) {
+				$matched[] = $this->withRsvpState(run: $run, row: $row);
 			}
-
-			$target = [];
-			if (is_array($row['target'] ?? null) === true) {
-				$target = $row['target'];
-			}
-
-			if (NewsAudienceMatcher::matches(target: $target, audience: $audience) === false) {
-				continue;
-			}
-
-			$row['myRsvp'] = $this->myRsvp(eventId: $this->rowId(row: $row), subjectRef: $subjectRef, rsvps: $rsvps);
-			if (($row['askSeats'] ?? false) === true) {
-				if ($everyRsvp === null) {
-					$everyRsvp = $this->findAll(schema: 'eventRsvp');
-				}
-
-				$row['seatsTaken'] = EventRsvpService::seatsTaken(
-					answers: array_values(
-						array_filter(
-							$everyRsvp,
-							fn (array $rsvp): bool => (string)($rsvp['eventRef'] ?? '') === $this->rowId(row: $row)
-						)
-					)
-				);
-			}
-
-			$matched[] = $row;
 		}
 
 		return $matched;
 	}//end feedFor()
+
+	/**
+	 * Whether an event is published and reaches the audience.
+	 *
+	 * @param array<string, mixed> $row      The event.
+	 * @param array<string, mixed> $audience The guardian's resolved audience.
+	 *
+	 * @return bool
+	 */
+	private function isListedEvent(array $row, array $audience): bool {
+		return ($row['status'] ?? '') === 'published' && NewsAudienceMatcher::reaches(row: $row, audience: $audience) === true;
+	}//end isListedEvent()
+
+	/**
+	 * The event with the guardian's own RSVP and, when it asks for seats,
+	 * the seats taken.
+	 *
+	 * @param EventFeedRun         $run The feed.
+	 * @param array<string, mixed> $row The event.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function withRsvpState(EventFeedRun $run, array $row): array {
+		$row['myRsvp'] = $this->myRsvp(eventId: $this->rowId(row: $row), subjectRef: $run->subjectRef, rsvps: $run->rsvps);
+		if (($row['askSeats'] ?? false) === true) {
+			$row['seatsTaken'] = EventRsvpService::seatsTaken(answers: $this->answersTo(run: $run, eventId: $this->rowId(row: $row)));
+		}
+
+		return $row;
+	}//end withRsvpState()
+
+	/**
+	 * Every RSVP to one event, read once per feed.
+	 *
+	 * @param EventFeedRun $run     The feed.
+	 * @param string       $eventId The event id.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function answersTo(EventFeedRun $run, string $eventId): array {
+		if ($run->everyRsvp === null) {
+			$run->everyRsvp = $this->findAll(schema: 'eventRsvp');
+		}
+
+		return array_values(
+			array_filter(
+				$run->everyRsvp,
+				fn (array $rsvp): bool => (string)($rsvp['eventRef'] ?? '') === $eventId
+			)
+		);
+	}//end answersTo()
 
 	/**
 	 * One `event` by id, scoped to the calling guardian's own audience.
@@ -144,29 +167,31 @@ class EventFeedReader {
 		$audience = $this->audienceReader->resolveAudience(subjectRef: $subjectRef);
 		$rows = $this->findAll(schema: 'schoolEvent', filters: ['status' => 'published']);
 
+		$row = $this->eventById(rows: $rows, id: $id);
+		if ($row === null || $this->isListedEvent(row: $row, audience: $audience) === false) {
+			return null;
+		}
+
+		return $row;
+	}//end readOwnEvent()
+
+	/**
+	 * The first event with the id, or null.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The events.
+	 * @param string                           $id   The event id.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function eventById(array $rows, string $id): ?array {
 		foreach ($rows as $row) {
-			if ($this->rowId(row: $row) !== $id) {
-				continue;
+			if ($this->rowId(row: $row) === $id) {
+				return $row;
 			}
-
-			if (($row['status'] ?? '') !== 'published') {
-				return null;
-			}
-
-			$target = [];
-			if (is_array($row['target'] ?? null) === true) {
-				$target = $row['target'];
-			}
-
-			if (NewsAudienceMatcher::matches(target: $target, audience: $audience) === false) {
-				return null;
-			}
-
-			return $row;
 		}
 
 		return null;
-	}//end readOwnEvent()
+	}//end eventById()
 
 	/**
 	 * Whether a child is one of the guardian's own children, so an RSVP or a

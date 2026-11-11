@@ -91,15 +91,47 @@ class PortalManifestController extends Controller {
 		$portal = $this->configResolver->resolvePortal(request: $this->request, portalSlug: $portalSlug, orgValue: $orgValue);
 		$runtimeConfig = $this->configResolver->runtimeConfigFor(portal: $portal, orgValue: $orgValue, locale: 'nl');
 
+		$manifest = $this->manifestOf(
+			name: $this->appName(runtimeConfig: $runtimeConfig),
+			startUrl: $this->startUrl(orgValue: $orgValue, portalSlug: $portalSlug)
+		);
+
+		return new DataDisplayResponse(
+			(string)json_encode($manifest, JSON_UNESCAPED_SLASHES),
+			200,
+			['Content-Type' => 'application/manifest+json']
+		);
+	}//end manifest()
+
+	/**
+	 * The installed app's name: the portal's organisation, else Portaliq.
+	 *
+	 * @param array<string, mixed> $runtimeConfig The portal's runtime configuration.
+	 *
+	 * @return string
+	 */
+	private function appName(array $runtimeConfig): string {
 		$name = (string)($runtimeConfig['organisationName'] ?? '');
 		if ($name === '') {
-			$name = 'Portaliq';
+			return 'Portaliq';
 		}
 
-		$manifest = [
+		return $name;
+	}//end appName()
+
+	/**
+	 * The web app manifest for an app of this name that starts here.
+	 *
+	 * @param string $name     The app's name.
+	 * @param string $startUrl Where the installed app opens.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function manifestOf(string $name, string $startUrl): array {
+		return [
 			'name' => $name,
 			'short_name' => $this->shortName(name: $name),
-			'start_url' => $this->startUrl(orgValue: $orgValue, portalSlug: $portalSlug),
+			'start_url' => $startUrl,
 			// The installed app stays on the site: a link it follows out of
 			// `/site` opens in the browser instead of inside the app window.
 			'scope' => $this->urlGenerator->linkToRoute('portaliq.portalPage.site'),
@@ -114,15 +146,7 @@ class PortalManifestController extends Controller {
 				],
 			],
 		];
-
-		$response = new DataDisplayResponse(
-			(string)json_encode($manifest, JSON_UNESCAPED_SLASHES),
-			200,
-			['Content-Type' => 'application/manifest+json']
-		);
-
-		return $response;
-	}//end manifest()
+	}//end manifestOf()
 
 	/**
 	 * The service worker script, scoped to the whole app path.

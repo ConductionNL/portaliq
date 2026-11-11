@@ -96,6 +96,84 @@ class AnonymousColumnsTest extends TestCase {
 	}//end testNormaliserFailureIsLogged()
 
 	/**
+	 * The normaliser sees the served audiences, the answer never does, an
+	 * entry the normaliser stripped of its flag is filtered out again, and
+	 * each failure logs its app and audience.
+	 *
+	 * @return void
+	 */
+	public function testTheNormaliserRoundAndTheLogsAreAsRecorded(): void {
+		$seen    = [];
+		$locator = $this->createMock(PortalProviderLocator::class);
+		$locator->method('contributionOf')->willReturnCallback(static function (object $provider, array $subject): array {
+			return ['collections' => [['id' => 'pub', 'anonymous' => true], ['id' => 'mixed', 'anonymous' => true, 'minTrust' => 'high']], 'actions' => [], 'asked' => $subject];
+		});
+		$normaliser = $this->createMock(PortalManifestNormaliser::class);
+		$normaliser->method('normalise')->willReturnCallback(static function (array $contribution) use (&$seen): array {
+			$seen = $contribution;
+			unset($contribution['collections'][1]['anonymous']);
+			return $contribution;
+		});
+		$out = (new AnonymousContributions($locator, $normaliser, $this->createMock(LoggerInterface::class)))->forAudience(new \stdClass(), 'myapp', 'parent', ['parent', 'staff']);
+
+		$this->assertSame(['parent', 'staff'], $seen['servedAudiences']);
+		$this->assertSame('myapp', $seen['app']);
+		$this->assertSame(['audience' => 'parent'], $seen['asked']);
+		$this->assertCount(1, $out);
+		$this->assertArrayNotHasKey('servedAudiences', $out[0]);
+		$this->assertSame([['id' => 'pub', 'anonymous' => true]], $out[0]['collections']);
+
+		$stripping = $this->createMock(PortalManifestNormaliser::class);
+		$stripping->method('normalise')->willReturnCallback(static function (array $contribution): array {
+			unset($contribution['collections'][0]['anonymous'], $contribution['collections'][1]['anonymous']);
+			return $contribution;
+		});
+		$this->assertSame([], (new AnonymousContributions($locator, $stripping, $this->createMock(LoggerInterface::class)))->forAudience(new \stdClass(), 'myapp', 'parent'));
+
+		$logs   = [];
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->method('error')->willReturnCallback(static function (string $message, array $context) use (&$logs): void {
+			$logs[] = [$message, $context];
+		});
+		$this->aggregatorWith(logger: $logger, contribution: new \RuntimeException('down'))->forAudience(new \stdClass(), 'myapp', 'parent');
+		$this->aggregatorWith(logger: $logger, contribution: ['collections' => [['id' => 'pub', 'anonymous' => true]]], normaliserThrows: true)->forAudience(new \stdClass(), 'myapp', 'parent');
+		$this->assertSame(
+			[
+				['Portaliq: contribution provider failed (anonymous aggregation)', ['app' => 'myapp', 'audience' => 'parent', 'reason' => 'down']],
+				['Portaliq: manifest normalisation failed (anonymous aggregation)', ['app' => 'myapp', 'audience' => 'parent', 'reason' => 'bad']],
+			],
+			$logs
+		);
+	}//end testTheNormaliserRoundAndTheLogsAreAsRecorded()
+
+	/**
+	 * The aggregator over doubles, with a given logger.
+	 *
+	 * @param LoggerInterface $logger           The logger.
+	 * @param mixed           $contribution     What the provider returns (or an exception).
+	 * @param bool            $normaliserThrows Whether the manifest normaliser throws.
+	 *
+	 * @return AnonymousContributions
+	 */
+	private function aggregatorWith(LoggerInterface $logger, mixed $contribution, bool $normaliserThrows=false): AnonymousContributions {
+		$locator = $this->createMock(PortalProviderLocator::class);
+		if ($contribution instanceof \Throwable) {
+			$locator->method('contributionOf')->willThrowException($contribution);
+		} else {
+			$locator->method('contributionOf')->willReturn($contribution);
+		}
+
+		$normaliser = $this->createMock(PortalManifestNormaliser::class);
+		if ($normaliserThrows === true) {
+			$normaliser->method('normalise')->willThrowException(new \RuntimeException('bad'));
+		} else {
+			$normaliser->method('normalise')->willReturnArgument(0);
+		}
+
+		return new AnonymousContributions($locator, $normaliser, $logger);
+	}//end aggregatorWith()
+
+	/**
 	 * Columns keep sound entries, default the render kind and bound link labels.
 	 *
 	 * @return void

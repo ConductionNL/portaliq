@@ -66,8 +66,8 @@ test('the fragment is read once and removed from the address bar (REQ-GST-002)',
 test('preview and act post the token to the guest routes', async () => {
 	const calls = []
 	const link = { app: 'shillinq', action: 'withdraw', token: 'T1' }
-	await lib.guestPreview('/apps/portaliq/portal/api', link, 'knip', answering(200, {}, calls))
-	await lib.guestAct('/apps/portaliq/portal/api', link, { reason: 'x' }, 'knip', answering(200, {}, calls))
+	await lib.guestPreview({ authBase: '/apps/portaliq/portal/api', link, portal: 'knip' }, answering(200, {}, calls))
+	await lib.guestAct({ authBase: '/apps/portaliq/portal/api', link, portal: 'knip', fields: { reason: 'x' } }, answering(200, {}, calls))
 
 	assert.equal(calls[0][0], '/apps/portaliq/portal/api/guest/shillinq/withdraw/preview')
 	assert.deepEqual(JSON.parse(calls[0][1].body), { token: 'T1', portal: 'knip' })
@@ -76,7 +76,7 @@ test('preview and act post the token to the guest routes', async () => {
 	assert.equal(calls[1][1].method, 'POST')
 	assert.equal(calls[1][1].headers.Authorization, undefined)
 
-	const failed = await lib.guestAct('/x', link, {}, '', async () => {
+	const failed = await lib.guestAct({ authBase: '/x', link, portal: '', fields: {} }, async () => {
 		throw new Error('offline')
 	})
 	assert.deepEqual(failed, { ok: false, status: 0, body: {} })

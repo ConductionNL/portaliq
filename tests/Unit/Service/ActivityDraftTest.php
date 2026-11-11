@@ -87,4 +87,25 @@ class ActivityDraftTest extends TestCase {
 		$this->assertSame(['not-a-list'], $draft['supervisorRefs']);
 		$this->assertSame([['id' => 'week-1', 'start' => '2026-10-05T15:15:00+02:00', 'location' => 'Gym']], $draft['sessions']);
 	}//end testOptionalFieldsAreSanitised()
+
+	/**
+	 * The optional fields come first in a fixed order: the texts, then the
+	 * four switches (only true, 'true', 1 or '1' switch on), then the
+	 * supervision, without empty, non-string or repeated supervisors.
+	 *
+	 * @return void
+	 */
+	public function testTheOptionalFieldsAreInTheRecordedOrder(): void {
+		$draft = (new ActivityDraft())->build(
+			$this->required(),
+			['photosTaken' => 1, 'paymentRequested' => true, 'consentRequired' => 'TRUE', 'waitlistEnabled' => 1.0, 'location' => '', 'description' => 'D', 'termEnd' => 'E', 'supervisorRefs' => ['b', '', 'a', 'b', 3], 'childrenPerSupervisor' => '4'],
+			'staff'
+		);
+
+		$this->assertSame(
+			['termEnd', 'description', 'waitlistEnabled', 'paymentRequested', 'consentRequired', 'photosTaken', 'childrenPerSupervisor', 'supervisorRefs', 'sessions', 'title', 'kind', 'target', 'termStart', 'capacity', 'status', 'authorRef'],
+			array_keys($draft)
+		);
+		$this->assertSame([false, true, false, true, 4, ['b', 'a'], []], [$draft['waitlistEnabled'], $draft['paymentRequested'], $draft['consentRequired'], $draft['photosTaken'], $draft['childrenPerSupervisor'], $draft['supervisorRefs'], $draft['sessions']]);
+	}//end testTheOptionalFieldsAreInTheRecordedOrder()
 }//end class

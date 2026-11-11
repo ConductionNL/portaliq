@@ -136,10 +136,10 @@
 import axios from '@nextcloud/axios'
 import { translate } from '@nextcloud/l10n'
 import { NcButton, NcNoteCard } from '@nextcloud/vue'
+import { refusalKind } from './editorRefusal.js'
 import {
 	addMenuItem,
 	createPortalObjects,
-	isConflict,
 	menuPayload,
 	moveMenuItem,
 	removeMenuItem,
@@ -365,14 +365,14 @@ export default {
 		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-the-portals-menu-from-the-portal-req-pie-011
 		 */
 		messageFor(error) {
-			if (isConflict(error)) {
+			const kind = refusalKind(error)
+			if (kind === 'conflict') {
 				return this.t(
 					'portaliq',
 					'Someone else saved this menu after you opened it, so your changes were not saved. Close and reopen the menu to see their version.',
 				)
 			}
-			const status = error?.response?.status
-			if (status === 401 || status === 403) {
+			if (kind === 'forbidden') {
 				return this.t(
 					'portaliq',
 					'You are not allowed to change the menu of this portal.',

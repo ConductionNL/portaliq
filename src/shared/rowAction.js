@@ -102,6 +102,9 @@ export function unavailableReason(action, row) {
 	return typeof reason === 'string' ? reason.trim() : ''
 }
 
+/** The name of a row input: a letter, then letters, digits and `_`. */
+const INPUT_NAME = /^[a-zA-Z][a-zA-Z0-9_]*$/
+
 /**
  * The inputs the selected row declares for the action, as the server accepts
  * them: a name, a label, whether it is required and its type.
@@ -112,26 +115,49 @@ export function unavailableReason(action, row) {
  * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-inputs-its-row-declares-req-rai-002
  */
 export function rowInputsOf(action, row) {
-	const from = action?.rowInputs?.from
-	const list =
-		typeof from === 'string' && Array.isArray(row?.[from]) ? row[from] : []
 	const seen = new Set()
 	const out = []
-	for (const entry of list) {
-		const name = entry && typeof entry.name === 'string' ? entry.name : ''
-		if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(name) || seen.has(name)) {
+	for (const entry of declaredInputs(action, row)) {
+		const name = inputName(entry)
+		if (!INPUT_NAME.test(name) || seen.has(name)) {
 			continue
 		}
 		seen.add(name)
-		out.push({
-			name,
-			label:
-				typeof entry.label === 'string' && entry.label ? entry.label : name,
-			required: entry.required === true,
-			type: entry.type === 'date' ? 'date' : 'text',
-		})
+		out.push(rowInput(entry, name))
 	}
 	return out
+}
+
+/**
+ * @param {object} action A resolved row action.
+ * @param {object} row The row.
+ * @return {Array} The list the action's `rowInputs.from` names on the row, or none.
+ */
+function declaredInputs(action, row) {
+	const from = action?.rowInputs?.from
+	return typeof from === 'string' && Array.isArray(row?.[from]) ? row[from] : []
+}
+
+/**
+ * @param {object|null} entry A declared input.
+ * @return {string} Its name, or ''.
+ */
+function inputName(entry) {
+	return entry && typeof entry.name === 'string' ? entry.name : ''
+}
+
+/**
+ * @param {object} entry A declared input.
+ * @param {string} name Its name.
+ * @return {{name: string, label: string, required: boolean, type: string}} The input as the server accepts it.
+ */
+function rowInput(entry, name) {
+	return {
+		name,
+		label: typeof entry.label === 'string' && entry.label ? entry.label : name,
+		required: entry.required === true,
+		type: entry.type === 'date' ? 'date' : 'text',
+	}
 }
 
 /**
@@ -145,22 +171,33 @@ export function rowInputsOf(action, row) {
 export function answerWords(result) {
 	const body =
 		result && typeof result.body === 'object' && result.body ? result.body : {}
-	const errors = {}
-	if (
-		body.errors
-		&& typeof body.errors === 'object'
-		&& !Array.isArray(body.errors)
-	) {
-		for (const [name, value] of Object.entries(body.errors)) {
-			if (typeof value === 'string' && value !== '') {
-				errors[name] = value
-			}
-		}
-	}
 	return {
 		message: typeof body.message === 'string' ? body.message.trim() : '',
-		errors,
+		errors: inputErrors(body.errors),
 	}
+}
+
+/**
+ * @param {unknown} errors An answer's `errors`.
+ * @return {Object<string, string>} Its non-empty messages by input name.
+ */
+function inputErrors(errors) {
+	if (!isMessageMap(errors)) {
+		return {}
+	}
+	return Object.fromEntries(
+		Object.entries(errors).filter(
+			([, value]) => typeof value === 'string' && value !== '',
+		),
+	)
+}
+
+/**
+ * @param {unknown} errors An answer's `errors`.
+ * @return {boolean} Whether it is a map of messages by input name.
+ */
+function isMessageMap(errors) {
+	return Boolean(errors) && typeof errors === 'object' && !Array.isArray(errors)
 }
 
 /**
@@ -265,28 +302,42 @@ function pageOrigin() {
  * @spec openspec/changes/my-dossiers/specs/portal-contribution-contract/spec.md#requirement-a-link-in-an-actions-answer-must-be-shown-to-the-resident-req-myd-004
  */
 export function answerLink(result, origin = pageOrigin()) {
-	if (
-		!result
-		|| !result.ok
-		|| !result.body
-		|| typeof result.body.link !== 'string'
-	) {
-		return ''
-	}
-	const link = result.body.link.trim()
+	const link = linkInAnswer(result)
 	if (/^https:\/\/\S+$/i.test(link) || /^\/(?!\/)\S*$/.test(link)) {
 		return link
 	}
 	if (origin !== '' && /^http:\/\/\S+$/i.test(link)) {
-		let url
-		try {
-			url = new URL(link)
-		} catch {
-			return ''
-		}
-		return url.origin === origin ? link : ''
+		return onOrigin(link, origin) ? link : ''
 	}
 	return ''
+}
+
+/**
+ * The trimmed link a successful answer carries, else ''.
+ *
+ * @param {object|null} result `{ok, body}` from a forward.
+ * @return {string} The link, or ''.
+ */
+function linkInAnswer(result) {
+	if (!result || !result.ok || !result.body || typeof result.body.link !== 'string') {
+		return ''
+	}
+	return result.body.link.trim()
+}
+
+/**
+ * Whether an absolute link lies on the given origin; a malformed one does not.
+ *
+ * @param {string} link The link.
+ * @param {string} origin The page's own origin.
+ * @return {boolean} True on that origin.
+ */
+function onOrigin(link, origin) {
+	try {
+		return new URL(link).origin === origin
+	} catch {
+		return false
+	}
 }
 
 /**
@@ -312,14 +363,22 @@ export async function runRowAction(api, { collection, row, action, answers = {},
 			messageKey: outcomeKey({ ok: false, status: 0, body: {} }),
 		}
 	}
-	const upload =
-		action.files && action.files.field && files.length > 0
-			? { field: action.files.field, files }
-			: null
+	const upload = uploadOf(action, files)
 	const result = upload
 		? await api.forwardRowAction(collection, rowId, action.id, answers, '', upload)
 		: await api.forwardRowAction(collection, rowId, action.id, answers)
 	return rowActionOutcome(result)
+}
+
+/**
+ * @param {object} action The endpoint row action.
+ * @param {Array<File>} files The files the resident chose.
+ * @return {{field: string, files: Array<File>}|null} The upload, for an action that declares `files` and a choice of files.
+ */
+function uploadOf(action, files) {
+	return action.files && action.files.field && files.length > 0
+		? { field: action.files.field, files }
+		: null
 }
 
 /**

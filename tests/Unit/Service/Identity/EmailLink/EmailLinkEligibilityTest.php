@@ -152,4 +152,81 @@ class EmailLinkEligibilityTest extends TestCase {
 	private function eligibility(): EmailLinkEligibility {
 		return new EmailLinkEligibility($this->fakeReader(), new EmailLinkAddress());
 	}//end eligibility()
+
+	/**
+	 * Every account shape is eligible or not exactly as recorded.
+	 *
+	 * @return void
+	 */
+	public function testEveryAccountShapeIsAsRecorded(): void {
+		$eligibility = $this->eligibility();
+		$cases       = [
+			[[], true],
+			[['identityType' => 'digid'], false],
+			[['identityType' => null], false],
+			[['status' => 'pending'], false],
+			[['organisation' => 'elders'], false],
+			[['identityRef' => '  '], true],
+			[['identityRef' => 'x'], false],
+			[['signInAddress' => '  '], false],
+			[['claims' => 'x'], false],
+			[['claims' => []], true],
+			[['claims' => ['digid' => '']], true],
+			[['claims' => ['digid' => '0']], true],
+			[['claims' => ['eherkenning' => 'x']], false],
+			[['claims' => ['eidas' => ['a']]], false],
+			[['claims' => ['broker' => 1]], false],
+			[['claims' => ['oidc' => true]], false],
+			[['claims' => ['other' => 'x']], true],
+		];
+		foreach ($cases as $index => [$overrides, $expected]) {
+			$this->assertSame($expected, $eligibility->isEligible(account: $this->account($overrides), organisation: 'academie'), 'case ' . $index);
+		}
+
+		$this->assertFalse($eligibility->isEligible(account: array_diff_key($this->account(), ['identityType' => 1]), organisation: 'academie'));
+		$this->assertFalse($eligibility->isEligible(account: array_diff_key($this->account(), ['status' => 1]), organisation: 'academie'));
+		$this->assertFalse($eligibility->isEligible(account: array_diff_key($this->account(), ['signInAddress' => 1]), organisation: 'academie'));
+		$this->assertTrue($eligibility->isEligible(account: array_diff_key($this->account(), ['organisation' => 1]), organisation: ''));
+	}//end testEveryAccountShapeIsAsRecorded()
+
+	/**
+	 * Every row the reader answers for an address or a subject is picked or passed over exactly as recorded.
+	 *
+	 * @return void
+	 */
+	public function testEveryReadRowIsAsRecorded(): void {
+		$rows   = [
+			'not a row',
+			$this->account(['subjectRef' => 'email:other', 'signInAddress' => 'someone@example.nl']),
+			$this->account(['subjectRef' => 'email:pending', 'status' => 'pending']),
+			$this->account(['subjectRef' => 'email:tom', 'signInAddress' => ' TOM@Example.nl ']),
+		];
+		$asked  = [];
+		$reader = $this->createMock(\OCA\Portaliq\Service\ScopedCollectionReaderInterface::class);
+		$reader->method('readCollection')->willReturnCallback(
+			static function (...$args) use (&$asked, &$rows): array {
+				$asked[] = array_slice($args, 0, 6);
+				return $rows;
+			}
+		);
+		$eligibility = new EmailLinkEligibility($reader, new EmailLinkAddress());
+
+		$this->assertSame('email:tom', $eligibility->accountFor(address: ' Tom@Example.NL ', organisation: 'academie')['subjectRef']);
+		$this->assertSame(['portaliq', 'portalAccount', 'signInAddress', 'tom@example.nl', 'academie', 5], $asked[0]);
+		$this->assertNull($eligibility->accountFor(address: 'tom@example.nl', organisation: ''));
+		$this->assertNull($eligibility->accountFor(address: '  ', organisation: 'academie'));
+		$this->assertCount(1, $asked, 'no address or organisation reads nothing');
+
+		$this->assertSame('email:tom', $eligibility->stillEligible(subjectRef: 'email:tom', organisation: 'academie')['subjectRef']);
+		$this->assertSame(['portaliq', 'portalAccount', 'subjectRef', 'email:tom', 'academie', 2], $asked[1]);
+		$this->assertNull($eligibility->stillEligible(subjectRef: 'email:pending', organisation: 'academie'));
+		$this->assertNull($eligibility->stillEligible(subjectRef: 'email:nobody', organisation: 'academie'));
+		$this->assertNull($eligibility->stillEligible(subjectRef: '', organisation: 'academie'));
+		$this->assertNull($eligibility->stillEligible(subjectRef: 'email:tom', organisation: ''));
+		$this->assertCount(4, $asked);
+
+		$rows[] = $this->account(['subjectRef' => 'email:tom2', 'signInAddress' => 'tom@example.nl']);
+		$this->assertNull($eligibility->accountFor(address: 'tom@example.nl', organisation: 'academie'), 'shared by two eligible accounts');
+		$this->assertSame('email:tom', $eligibility->stillEligible(subjectRef: 'email:tom', organisation: 'academie')['subjectRef'], 'the first eligible one');
+	}//end testEveryReadRowIsAsRecorded()
 }//end class

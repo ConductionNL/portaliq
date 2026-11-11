@@ -1,0 +1,8 @@
+{
+	"normaliseFormat": ["111222333",null,"NL91ABNA0417164300",null,"AB1234","0612345678","+442079460958","1234 AB",null,"12345678",null,"123456789012",null,null,null,null,null],
+	"evaluate": [null,null,null,null,null,2,null,"2026-10-06",null,null,null,"2026-09-11",14,-14,null,10.5,null,null,12,null,1,6,5,null,null,null,null,null],
+	"calculatedValues": {"total":5,"double":10},
+	"calculatedValues of nothing": [{},{}],
+	"summarySentence": ["De ouder meldt Sam ziek op morgen, ook A, b.","Leeg meldt 2 ziek op morgen, x A.","","","","Een en 2","",""],
+	"addressProblem": ["Vul postcode, huisnummer, straat en plaats in.","Vul postcode, huisnummer, straat en plaats in.","Vul postcode, huisnummer, straat en plaats in.","","","Vul postcode, huisnummer, straat en plaats in.","Vul postcode, huisnummer, straat en plaats in.","Vul postcode, huisnummer, straat en plaats in.","Vul postcode, huisnummer, straat en plaats in.","Vul postcode, huisnummer, straat en plaats in.","Vul postcode, huisnummer, straat en plaats in."]
+}

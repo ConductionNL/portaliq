@@ -1,0 +1,186 @@
+{
+	"check-schema-l10n": {
+		"no baseline": {
+			"status": 1,
+			"stdout": "",
+			"stderr": "No baseline. Run `npm run check:schema-l10n -- --update` and commit it.\n",
+			"l10n": {
+				"en.json": "{\"translations\":{\"Case\":\"Case\",\"Name\":\"Name\",\"Open\":\"Open\"}}"
+			}
+		},
+		"at the baseline": {
+			"status": 0,
+			"stdout": "12 schema string(s); 9 uncovered, baseline 12\n3 fewer than the baseline — lower it with:\n  npm run check:schema-l10n -- --update\n",
+			"stderr": "",
+			"l10n": {
+				".schema-l10n-baseline.json": "{\"uncovered\": 12}\n",
+				"en.json": "{\"translations\":{\"Case\":\"Case\",\"Name\":\"Name\",\"Open\":\"Open\"}}"
+			}
+		},
+		"below the baseline": {
+			"status": 0,
+			"stdout": "12 schema string(s); 9 uncovered, baseline 20\n11 fewer than the baseline — lower it with:\n  npm run check:schema-l10n -- --update\n",
+			"stderr": "",
+			"l10n": {
+				".schema-l10n-baseline.json": "{\"uncovered\": 20}\n",
+				"en.json": "{\"translations\":{\"Case\":\"Case\",\"Name\":\"Name\",\"Open\":\"Open\"}}"
+			}
+		},
+		"above the baseline": {
+			"status": 1,
+			"stdout": "12 schema string(s); 9 uncovered, baseline 3\n",
+			"stderr": "\n6 schema string(s) added with no catalogue key — they will render\nin English inside an otherwise translated form.\n\nAdd them to l10n/en.json (identity) and l10n/nl.json (translated), then\nrun `npm run l10n:build`. See what is uncovered with:\n  node scripts/check-schema-l10n.js --list\n",
+			"l10n": {
+				".schema-l10n-baseline.json": "{\"uncovered\": 3}\n",
+				"en.json": "{\"translations\":{\"Case\":\"Case\",\"Name\":\"Name\",\"Open\":\"Open\"}}"
+			}
+		},
+		"list and update": {
+			"status": 0,
+			"stdout": "lib/Settings/register.json:status.x-enum-labels\n  Closed\nlib/Settings/register.json:schema title\n  In a list\nlib/Settings/register.json:inner.title\n  Inner\nlib/Settings/register.json:nested.title\n  Nested\nlib/Settings/register.json:status.title\n  Status\nlib/Settings/deeper/other.json:schema title\n  T\nlib/Settings/register.json:tags.x-enum-labels\n  Tag A\nlib/Settings/register.json:name.description\n  The name\nlib/Settings/register.json:x.title\n  X\nbaseline written: 9 uncovered schema string(s)\n",
+			"stderr": "",
+			"l10n": {
+				".schema-l10n-baseline.json": "{\n  \"uncovered\": 9\n}\n",
+				"en.json": "{\"translations\":{\"Case\":\"Case\",\"Name\":\"Name\",\"Open\":\"Open\"}}"
+			}
+		},
+		"list against a baseline": {
+			"status": 0,
+			"stdout": "lib/Settings/register.json:status.x-enum-labels\n  Closed\nlib/Settings/register.json:schema title\n  In a list\nlib/Settings/register.json:inner.title\n  Inner\nlib/Settings/register.json:nested.title\n  Nested\nlib/Settings/register.json:status.title\n  Status\nlib/Settings/deeper/other.json:schema title\n  T\nlib/Settings/register.json:tags.x-enum-labels\n  Tag A\nlib/Settings/register.json:name.description\n  The name\nlib/Settings/register.json:x.title\n  X\n12 schema string(s); 9 uncovered, baseline 12\n3 fewer than the baseline — lower it with:\n  npm run check:schema-l10n -- --update\n",
+			"stderr": "",
+			"l10n": {
+				".schema-l10n-baseline.json": "{\"uncovered\": 12}\n",
+				"en.json": "{\"translations\":{\"Case\":\"Case\",\"Name\":\"Name\",\"Open\":\"Open\"}}"
+			}
+		},
+		"no catalogue and no schema dir": {
+			"status": 0,
+			"stdout": "0 schema string(s); 0 uncovered, baseline 0\n",
+			"stderr": "",
+			"l10n": {
+				".schema-l10n-baseline.json": "{\"uncovered\": 0}\n"
+			}
+		},
+		"catalogue without translations": {
+			"status": 1,
+			"stdout": "12 schema string(s); 12 uncovered, baseline 1\n",
+			"stderr": "\n11 schema string(s) added with no catalogue key — they will render\nin English inside an otherwise translated form.\n\nAdd them to l10n/en.json (identity) and l10n/nl.json (translated), then\nrun `npm run l10n:build`. See what is uncovered with:\n  node scripts/check-schema-l10n.js --list\n",
+			"l10n": {
+				".schema-l10n-baseline.json": "{\"uncovered\": 1}\n",
+				"en.json": "{}"
+			}
+		}
+	},
+	"build-l10n-js": {
+		"write every locale": {
+			"status": 0,
+			"stdout": "  ✎ l10n/en.js written (2 keys)\n  ✎ l10n/nl.js written (1 keys)\n",
+			"stderr": "",
+			"l10n": {
+				".schema-l10n-baseline.json": "{\"uncovered\": 1}\n",
+				"en.js": "OC.L10N.register(\n    \"demoapp\",\n    {\n        \"A\": \"A\",\n        \"Say \\\"hi\\\"\": \"Say \\\"hi\\\"\"\n    },\n    \"nplurals=2; plural=(n != 1);\"\n)\n",
+				"en.json": "{\"translations\":{\"A\":\"A\",\"Say \\\"hi\\\"\":\"Say \\\"hi\\\"\"}}",
+				"nl.js": "OC.L10N.register(\n    \"demoapp\",\n    {\n        \"A\": \"Aa\"\n    },\n    \"nplurals=2; plural=(n > 1);\"\n)\n",
+				"nl.json": "{\"translations\":{\"A\":\"Aa\"},\"pluralForm\":\"nplurals=2; plural=(n > 1);\"}",
+				"readme.md": "ignored"
+			}
+		},
+		"one current, one missing": {
+			"status": 0,
+			"stdout": "  ✓ l10n/en.js up to date (2 keys)\n  ✎ l10n/nl.js written (1 keys)\n",
+			"stderr": "",
+			"l10n": {
+				".schema-l10n-baseline.json": "{\"uncovered\": 1}\n",
+				"en.js": "OC.L10N.register(\n    \"demoapp\",\n    {\n        \"A\": \"A\",\n        \"Say \\\"hi\\\"\": \"Say \\\"hi\\\"\"\n    },\n    \"nplurals=2; plural=(n != 1);\"\n)\n",
+				"en.json": "{\"translations\":{\"A\":\"A\",\"Say \\\"hi\\\"\":\"Say \\\"hi\\\"\"}}",
+				"nl.js": "OC.L10N.register(\n    \"demoapp\",\n    {\n        \"A\": \"Aa\"\n    },\n    \"nplurals=2; plural=(n > 1);\"\n)\n",
+				"nl.json": "{\"translations\":{\"A\":\"Aa\"},\"pluralForm\":\"nplurals=2; plural=(n > 1);\"}",
+				"readme.md": "ignored"
+			}
+		},
+		"check finds stale": {
+			"status": 1,
+			"stdout": "  ✓ l10n/en.js up to date (2 keys)\n",
+			"stderr": "\nStale browser catalogue: l10n/nl.js\nRun `npm run l10n:build` and commit the result.\n",
+			"l10n": {
+				".schema-l10n-baseline.json": "{\"uncovered\": 1}\n",
+				"en.js": "OC.L10N.register(\n    \"demoapp\",\n    {\n        \"A\": \"A\",\n        \"Say \\\"hi\\\"\": \"Say \\\"hi\\\"\"\n    },\n    \"nplurals=2; plural=(n != 1);\"\n)\n",
+				"en.json": "{\"translations\":{\"A\":\"A\",\"Say \\\"hi\\\"\":\"Say \\\"hi\\\"\"}}",
+				"nl.js": "old",
+				"nl.json": "{\"translations\":{\"A\":\"Aa\"},\"pluralForm\":\"nplurals=2; plural=(n > 1);\"}",
+				"readme.md": "ignored"
+			}
+		},
+		"check passes": {
+			"status": 0,
+			"stdout": "  ✓ l10n/en.js up to date (2 keys)\n  ✓ l10n/nl.js up to date (2 keys)\n",
+			"stderr": "",
+			"l10n": {
+				".schema-l10n-baseline.json": "{\"uncovered\": 1}\n",
+				"en.js": "OC.L10N.register(\n    \"demoapp\",\n    {\n        \"A\": \"A\",\n        \"Say \\\"hi\\\"\": \"Say \\\"hi\\\"\"\n    },\n    \"nplurals=2; plural=(n != 1);\"\n)\n",
+				"en.json": "{\"translations\":{\"A\":\"A\",\"Say \\\"hi\\\"\":\"Say \\\"hi\\\"\"}}",
+				"nl.js": "OC.L10N.register(\n    \"demoapp\",\n    {\n        \"A\": \"A\",\n        \"Say \\\"hi\\\"\": \"Say \\\"hi\\\"\"\n    },\n    \"nplurals=2; plural=(n != 1);\"\n)\n",
+				"nl.json": "{\"translations\":{\"A\":\"A\",\"Say \\\"hi\\\"\":\"Say \\\"hi\\\"\"}}",
+				"readme.md": "ignored"
+			}
+		},
+		"empty translations": {
+			"status": 0,
+			"stdout": "  ✎ l10n/en.js written (2 keys)\n  ✎ l10n/nl.js written (0 keys)\n",
+			"stderr": "",
+			"l10n": {
+				".schema-l10n-baseline.json": "{\"uncovered\": 1}\n",
+				"en.js": "OC.L10N.register(\n    \"demoapp\",\n    {\n        \"A\": \"A\",\n        \"Say \\\"hi\\\"\": \"Say \\\"hi\\\"\"\n    },\n    \"nplurals=2; plural=(n != 1);\"\n)\n",
+				"en.json": "{\"translations\":{\"A\":\"A\",\"Say \\\"hi\\\"\":\"Say \\\"hi\\\"\"}}",
+				"nl.js": "OC.L10N.register(\n    \"demoapp\",\n    {\n\n    },\n    \"nplurals=2; plural=(n != 1);\"\n)\n",
+				"nl.json": "{\"translations\": {}}",
+				"readme.md": "ignored"
+			}
+		},
+		"catalogue does not parse": {
+			"status": 1,
+			"stdout": "",
+			"stderr": "l10n/de.json does not parse: <parse error>\n",
+			"l10n": {
+				".schema-l10n-baseline.json": "{\"uncovered\": 1}\n",
+				"de.json": "{ nope",
+				"en.json": "{\"translations\":{\"A\":\"A\",\"Say \\\"hi\\\"\":\"Say \\\"hi\\\"\"}}",
+				"nl.json": "{\"translations\":{\"A\":\"Aa\"},\"pluralForm\":\"nplurals=2; plural=(n > 1);\"}",
+				"readme.md": "ignored"
+			}
+		},
+		"catalogue without translations": {
+			"status": 1,
+			"stdout": "  ✎ l10n/en.js written (2 keys)\n  ✎ l10n/nl.js written (1 keys)\n",
+			"stderr": "l10n/zz.json is missing \"translations\"\n",
+			"l10n": {
+				".schema-l10n-baseline.json": "{\"uncovered\": 1}\n",
+				"en.js": "OC.L10N.register(\n    \"demoapp\",\n    {\n        \"A\": \"A\",\n        \"Say \\\"hi\\\"\": \"Say \\\"hi\\\"\"\n    },\n    \"nplurals=2; plural=(n != 1);\"\n)\n",
+				"en.json": "{\"translations\":{\"A\":\"A\",\"Say \\\"hi\\\"\":\"Say \\\"hi\\\"\"}}",
+				"nl.js": "OC.L10N.register(\n    \"demoapp\",\n    {\n        \"A\": \"Aa\"\n    },\n    \"nplurals=2; plural=(n > 1);\"\n)\n",
+				"nl.json": "{\"translations\":{\"A\":\"Aa\"},\"pluralForm\":\"nplurals=2; plural=(n > 1);\"}",
+				"readme.md": "ignored",
+				"zz.json": "{\"pluralForm\": \"x\"}"
+			}
+		},
+		"no catalogues": {
+			"status": 1,
+			"stdout": "",
+			"stderr": "l10n/ holds no <locale>.json catalogue to generate from\n",
+			"l10n": {
+				".schema-l10n-baseline.json": "{}"
+			}
+		},
+		"no app id": {
+			"status": 1,
+			"stdout": "",
+			"stderr": "appinfo/info.xml declares no <id>\n",
+			"l10n": {
+				".schema-l10n-baseline.json": "{\"uncovered\": 1}\n",
+				"en.json": "{\"translations\":{\"A\":\"A\",\"Say \\\"hi\\\"\":\"Say \\\"hi\\\"\"}}",
+				"nl.json": "{\"translations\":{\"A\":\"Aa\"},\"pluralForm\":\"nplurals=2; plural=(n > 1);\"}",
+				"readme.md": "ignored"
+			}
+		}
+	}
+}

@@ -91,7 +91,22 @@ class PortalInvitationService {
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function invite(string $email, string $organisation, string $audience, string $invitedBy, string $ttl = ''): ?array {
-		if ($email === '' || $organisation === '' || $invitedBy === '') {
+		return $this->inviteAddress(
+			invitation: new AddressInvitation(email: $email, organisation: $organisation, audience: $audience, invitedBy: $invitedBy, ttl: $ttl)
+		);
+	}//end invite()
+
+	/**
+	 * Invite an address, and hand the caller the secret to mail.
+	 *
+	 * @param AddressInvitation $invitation The address, the tenant, the audience, the clerk and the window.
+	 *
+	 * @return array{token: string, expiresAt: string}|null Null when refused.
+	 *
+	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 */
+	public function inviteAddress(AddressInvitation $invitation): ?array {
+		if ($invitation->email === '' || $invitation->organisation === '' || $invitation->invitedBy === '') {
 			return null;
 		}
 
@@ -100,6 +115,23 @@ class PortalInvitationService {
 			return null;
 		}
 
+		$sent = $this->sentMoments(ttl: $invitation->ttl) + ['tokenHash' => hash('sha256', $token)];
+		if ($this->storeInvitation(invitation: $invitation, sent: $sent) === false) {
+			return null;
+		}
+
+		return ['token' => $token, 'expiresAt' => $sent['expiresAt']];
+	}//end inviteAddress()
+
+	/**
+	 * When an invitation is sent and until when it lives: now, plus the given
+	 * ISO 8601 duration or the default week.
+	 *
+	 * @param string $ttl An ISO 8601 duration, or '' for the default week.
+	 *
+	 * @return array{sentAt: string, expiresAt: string}
+	 */
+	private function sentMoments(string $ttl): array {
 		$now = new DateTimeImmutable();
 
 		$window = self::DEFAULT_TTL;
@@ -107,36 +139,41 @@ class PortalInvitationService {
 			$window = $ttl;
 		}
 
-		$expiry = $now->add(new DateInterval($window));
+		return ['sentAt' => $now->format(DATE_ATOM), 'expiresAt' => $now->add(new DateInterval($window))->format(DATE_ATOM)];
+	}//end sentMoments()
 
+	/**
+	 * Write the invitation row; an invitation without an audience is for a client.
+	 *
+	 * @param AddressInvitation $invitation The address, the tenant, the audience and the clerk.
+	 * @param array{sentAt: string, expiresAt: string, tokenHash: string} $sent The moments and the secret's hash.
+	 *
+	 * @return bool Whether the row was written.
+	 */
+	private function storeInvitation(AddressInvitation $invitation, array $sent): bool {
 		$forAudience = 'client';
-		if ($audience !== '') {
-			$forAudience = $audience;
+		if ($invitation->audience !== '') {
+			$forAudience = $invitation->audience;
 		}
 
-		$created = $this->writer->createObject(
+		return $this->writer->createObject(
 			register: self::REGISTER,
 			schema: self::SCHEMA,
 			scopeField: '',
 			subjectRef: '',
-			organisation: $organisation,
+			organisation: $invitation->organisation,
 			data: [
-				'email' => $email,
-				'organisation' => $organisation,
+				'email' => $invitation->email,
+				'organisation' => $invitation->organisation,
 				'audience' => $forAudience,
-				'tokenHash' => hash('sha256', $token),
+				'tokenHash' => $sent['tokenHash'],
 				'state' => 'sent',
-				'invitedBy' => $invitedBy,
-				'sentAt' => $now->format(DATE_ATOM),
-				'expiresAt' => $expiry->format(DATE_ATOM),
+				'invitedBy' => $invitation->invitedBy,
+				'sentAt' => $sent['sentAt'],
+				'expiresAt' => $sent['expiresAt'],
 			]
-		);
-		if ($created === null) {
-			return null;
-		}
-
-		return ['token' => $token, 'expiresAt' => $expiry->format(DATE_ATOM)];
-	}//end invite()
+		) !== null;
+	}//end storeInvitation()
 
 	/**
 	 * The invitations one sender has sent, with their state.
@@ -397,13 +434,7 @@ class PortalInvitationService {
 			limit: 5
 		);
 
-		foreach ($rows as $row) {
-			if (is_array($row) === true && hash_equals((string)($row['tokenHash'] ?? ''), $hash) === true) {
-				return $row;
-			}
-		}
-
-		return null;
+		return TokenRows::matching(rows: $rows, hash: $hash);
 	}//end findByToken()
 
 	/**

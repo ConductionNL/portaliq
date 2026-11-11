@@ -71,6 +71,58 @@ import EmbedForm from './EmbedForm.vue'
 import { submissionErrors, submitAnswers } from './frame.js'
 import { refusalKey } from './strings.js'
 
+/**
+ * Send the answers: through the frame's own submitter when it has one, else
+ * to its submit route with the honeypot.
+ *
+ * @param {object} frame The frame.
+ * @param {{answers: object, honeypot: string}} sending The answers and the honeypot's value.
+ * @return {Promise<object>} The server's answer.
+ */
+function sendAnswers(frame, sending) {
+	if (frame.submitter) {
+		return frame.submitter(sending.answers)
+	}
+	return submitAnswers({
+		submitUrl: frame.submitUrl,
+		route: frame.payload?.route,
+		answers: sending.answers,
+		honeypot: sending.honeypot,
+	})
+}
+
+/**
+ * Show a refused submission: the server's message per field and all of
+ * them, else one sentence that it was not sent.
+ *
+ * @param {object} frame The frame.
+ * @param {object|null} result The server's answer.
+ * @return {void}
+ */
+function showRefusal(frame, result) {
+	const errors = submissionErrors(result)
+	frame.fieldErrors = errors.fields
+	frame.messages =
+		errors.messages.length > 0
+			? errors.messages
+			: [notSentMessage(result, frame.t)]
+}
+
+/**
+ * What a refusal without the server's own words says. 503: the destination
+ * could not be reached; nothing was stored and the answers stay in the form
+ * (decision 179), so the visitor is asked to try again later.
+ *
+ * @param {object|null} result The server's answer.
+ * @param {(key: string) => string} t The frame's translator.
+ * @return {string} The message.
+ */
+function notSentMessage(result, t) {
+	return result?.error === 'try_again_later'
+		? t('Your application could not be sent. Please try again later.')
+		: t('Your application could not be sent.')
+}
+
 export default {
 	name: 'EmbedFrame',
 
@@ -162,33 +214,12 @@ export default {
 			this.messages = []
 			this.fieldErrors = {}
 			try {
-				const result = this.submitter
-					? await this.submitter(answers)
-					: await submitAnswers({
-							submitUrl: this.submitUrl,
-							route: this.payload?.route,
-							answers,
-							honeypot,
-						})
+				const result = await sendAnswers(this, { answers, honeypot })
 				if (result?.reference) {
 					this.reference = String(result.reference)
 					return
 				}
-
-				const errors = submissionErrors(result)
-				this.fieldErrors = errors.fields
-				// 503: the destination could not be reached; nothing was stored and
-				// the answers stay in the form (decision 179).
-				this.messages =
-					errors.messages.length > 0
-						? errors.messages
-						: [
-								result?.error === 'try_again_later'
-									? this.t(
-											'Your application could not be sent. Please try again later.',
-										)
-									: this.t('Your application could not be sent.'),
-							]
+				showRefusal(this, result)
 			} catch {
 				this.messages = [
 					this.t(

@@ -155,73 +155,144 @@ class PortalIdentityController extends Controller {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
+		$run = new ReferenceLinkRun(
+			site: $site,
+			asked: ['register' => $register, 'schema' => $schema, 'caseType' => $caseType, 'caseReference' => $caseReference, 'email' => $email]
+		);
+		return $this->referenceLinkAnswer(run: $run);
+	}//end requestReferenceLink()
+
+	/**
+	 * The answer to a reference-link request on a portal that exists: 404
+	 * when the case type is not offered, the same "sent" for a case the
+	 * address does not match as for a mailed link.
+	 *
+	 * @param ReferenceLinkRun $run The request.
+	 *
+	 * @return JSONResponse
+	 */
+	private function referenceLinkAnswer(ReferenceLinkRun $run): JSONResponse {
+		$type = $this->offeredCaseType(run: $run);
+		if ($type === null) {
+			return new JSONResponse(['error' => 'route_not_offered'], Http::STATUS_NOT_FOUND);
+		}
+
+		$case = $this->linkableCase(run: $run);
+		if ($case === null) {
+			return new JSONResponse(['sent' => true, 'expiresAt' => $this->references->nominalExpiry()]);
+		}
+
+		$run->type     = $type;
+		$run->linkable = $case;
+		return $this->issueReferenceLink(run: $run);
+	}//end referenceLinkAnswer()
+
+	/**
+	 * The case type the request names when this portal offers a reference
+	 * link for it, else null.
+	 *
+	 * @param ReferenceLinkRun $run The request.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function offeredCaseType(ReferenceLinkRun $run): ?array {
 		// The register, schema and case type arrive from an anonymous request,
 		// and the read behind them runs with RBAC and multitenancy off. So the
 		// triple is checked against the portal's own published form bindings
 		// BEFORE anything is read: outside that scope nothing is looked up.
 		if ($this->bindings->caseTypeIsInPortalScope(
-			portal: (string)($site['slug'] ?? ''),
-			register: $register,
-			schema: $schema,
-			typeId: $caseType
-		) === false
-		) {
-			return new JSONResponse(['error' => 'route_not_offered'], Http::STATUS_NOT_FOUND);
+			portal: (string)($run->site['slug'] ?? ''),
+			register: $run->register,
+			schema: $run->schema,
+			typeId: $run->caseType
+		) === false) {
+			return null;
 		}
 
-		$type = $this->caseTypes->readCaseType(register: $register, schema: $schema, id: $caseType);
+		// Outside the portal's scope, unknown, and `account` only are one
+		// answer on purpose. A 403 here would tell an anonymous caller
+		// which of the three it was, and that is an existence oracle for
+		// case types on registers that are none of their business.
+		$type = $this->caseTypes->readCaseType(register: $run->register, schema: $run->schema, id: $run->caseType);
 		if ($type === null || $this->references->admitsReference(caseType: $type) === false) {
-			// Outside the portal's scope, unknown, and `account` only are one
-			// answer on purpose. A 403 here would tell an anonymous caller
-			// which of the three it was, and that is an existence oracle for
-			// case types on registers that are none of their business.
-			return new JSONResponse(['error' => 'route_not_offered'], Http::STATUS_NOT_FOUND);
+			return null;
 		}
 
-		// The address must be the one recorded on the case (portaliq#796).
-		// Otherwise anyone who knows or guesses a case number reads the case.
-		// A mismatch, an unknown case and a case app that declares no address
-		// field all answer exactly like a sent link, so this endpoint is no
-		// oracle for case numbers; no link is issued and no mail leaves.
-		$case = $this->referenceCases->linkableCase(
-			portal: (string)($site['slug'] ?? ''),
-			register: $register,
-			schema: $schema,
-			caseType: $caseType,
-			caseReference: $caseReference,
-			email: $email,
-			organisation: (string)($site['organisation'] ?? '')
+		return $type;
+	}//end offeredCaseType()
+
+	/**
+	 * The case behind the number when the address is the one recorded on it.
+	 *
+	 * The address must be the one recorded on the case (portaliq#796).
+	 * Otherwise anyone who knows or guesses a case number reads the case.
+	 * A mismatch, an unknown case and a case app that declares no address
+	 * field all answer exactly like a sent link, so this endpoint is no
+	 * oracle for case numbers; no link is issued and no mail leaves.
+	 *
+	 * @param ReferenceLinkRun $run The request, with its case type offered.
+	 *
+	 * @return array{register: string, schema: string}|null
+	 */
+	private function linkableCase(ReferenceLinkRun $run): ?array {
+		return $this->referenceCases->linkableCase(
+			portal: (string)($run->site['slug'] ?? ''),
+			register: $run->register,
+			schema: $run->schema,
+			caseType: $run->caseType,
+			caseReference: $run->caseReference,
+			email: $run->email,
+			organisation: (string)($run->site['organisation'] ?? '')
 		);
-		if ($case === null) {
-			return new JSONResponse(['sent' => true, 'expiresAt' => $this->references->nominalExpiry()]);
-		}
+	}//end linkableCase()
 
+	/**
+	 * Issue the link and mail it.
+	 *
+	 * The secret goes out by mail, never in this answer: the address is
+	 * what proves the asker is the person the case belongs to. A mail
+	 * that did not leave answers the same, so the answer tells an
+	 * anonymous caller nothing; the mailer logs the failure.
+	 *
+	 * @param ReferenceLinkRun $run The request, with its case found.
+	 *
+	 * @return JSONResponse
+	 */
+	private function issueReferenceLink(ReferenceLinkRun $run): JSONResponse {
 		$issued = $this->references->issue(
-			caseType: $type,
-			caseReference: $caseReference,
-			email: $email,
-			organisation: (string)($site['organisation'] ?? ''),
-			caseRegister: $case['register'],
-			caseSchema: $case['schema']
+			caseType: $run->type,
+			caseReference: $run->caseReference,
+			email: $run->email,
+			organisation: (string)($run->site['organisation'] ?? ''),
+			caseRegister: $run->linkable['register'],
+			caseSchema: $run->linkable['schema']
 		);
 		if ($issued === null) {
 			return new JSONResponse(['error' => 'refused'], Http::STATUS_BAD_REQUEST);
 		}
 
-		// The secret goes out by mail, never in this answer: the address is
-		// what proves the asker is the person the case belongs to. A mail
-		// that did not leave answers the same, so the answer tells an
-		// anonymous caller nothing; the mailer logs the failure.
-		$this->mailer->send(
-			template: PortalIdentityMailer::TEMPLATE_REFERENCE_LINK,
-			email: $email,
-			secret: $issued['token'],
-			organisation: (string)($site['organisation'] ?? ''),
-			portal: $site
-		);
+		$this->mailReferenceLink(run: $run, secret: $issued['token']);
 
 		return new JSONResponse(['sent' => true, 'expiresAt' => $issued['expiresAt']]);
-	}//end requestReferenceLink()
+	}//end issueReferenceLink()
+
+	/**
+	 * Mail the issued link's secret to the address the request named.
+	 *
+	 * @param ReferenceLinkRun $run    The request.
+	 * @param string           $secret The issued link's secret.
+	 *
+	 * @return void
+	 */
+	private function mailReferenceLink(ReferenceLinkRun $run, string $secret): void {
+		$this->mailer->send(
+			template: PortalIdentityMailer::TEMPLATE_REFERENCE_LINK,
+			email: $run->email,
+			secret: $secret,
+			organisation: (string)($run->site['organisation'] ?? ''),
+			portal: $run->site
+		);
+	}//end mailReferenceLink()
 
 	/**
 	 * Follow a reference link, once. The link opens a short, read-only
@@ -247,6 +318,18 @@ class PortalIdentityController extends Controller {
 			return new JSONResponse(['error' => 'link_not_valid'], Http::STATUS_FORBIDDEN);
 		}
 
+		return $this->referenceSessionAnswer(redeemed: $redeemed);
+	}//end redeemReferenceLink()
+
+	/**
+	 * The short, read-only session a redeemed link opens for its one case,
+	 * with its bearer; 503 when none can be minted.
+	 *
+	 * @param array<string, string> $redeemed The redeemed link.
+	 *
+	 * @return JSONResponse
+	 */
+	private function referenceSessionAnswer(array $redeemed): JSONResponse {
 		$session = $this->sessions->issueReferenceSession(
 			linkId: $redeemed['linkId'],
 			caseReference: $redeemed['caseReference'],
@@ -260,13 +343,25 @@ class PortalIdentityController extends Controller {
 			return new JSONResponse(['error' => 'session_unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
 
+		return $this->redeemedLinkAnswer(redeemed: $redeemed, session: $session);
+	}//end referenceSessionAnswer()
+
+	/**
+	 * The case a redeemed link admits to, with its session's bearer.
+	 *
+	 * @param array<string, string> $redeemed The redeemed link.
+	 * @param array<string, string> $session  The reference session minted for it.
+	 *
+	 * @return JSONResponse
+	 */
+	private function redeemedLinkAnswer(array $redeemed, array $session): JSONResponse {
 		return new JSONResponse([
 			'caseReference' => $redeemed['caseReference'],
 			'organisation' => $redeemed['organisation'],
 			'bearer' => $session['token'],
 			'expiresAt' => $session['expiresAt'],
 		]);
-	}//end redeemReferenceLink()
+	}//end redeemedLinkAnswer()
 
 	/**
 	 * The one case a reference session may read, read only.
@@ -329,64 +424,129 @@ class PortalIdentityController extends Controller {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		if ($this->policy->isOffered(site: $site) === false) {
+		$run = new RegistrationRun(site: $site, email: $email);
+		$run->displayName       = $displayName;
+		$run->contactInvitation = $contactInvitation;
+		$run->challenge         = ['nonce' => $nonce, 'solution' => $solution, 'expiresAt' => $expiresAt, 'signature' => $signature];
+		return $this->registerOnPortal(run: $run);
+	}//end register()
+
+	/**
+	 * Register on a portal that exists: refused when the portal offers no
+	 * registration, the challenge is not solved or the policy declines the
+	 * address; else the account is provisioned.
+	 *
+	 * @param RegistrationRun $run The registration.
+	 *
+	 * @return JSONResponse
+	 */
+	private function registerOnPortal(RegistrationRun $run): JSONResponse {
+		if ($this->policy->isOffered(site: $run->site) === false) {
 			return new JSONResponse(['error' => 'registration_off'], Http::STATUS_FORBIDDEN);
 		}
 
-		// The credential this endpoint authenticates on: a nonce this instance
-		// signed, for this surface, still inside its window, with the proof of
-		// work done over it. $signature is what makes the nonce ours; without
-		// it the caller could mint their own and reuse it for ever.
-		$accepted = $this->challenge->accepts(
-			site: $site,
-			surface: 'registration',
-			submission: (array)$this->request->getParams(),
-			nonce: $nonce,
-			solution: $solution,
-			expiresAt: $expiresAt,
-			signature: $signature
-		);
-		if ($accepted === false) {
+		if ($this->acceptsRegistrationChallenge(run: $run) === false) {
 			return new JSONResponse(['error' => 'challenge_failed'], Http::STATUS_FORBIDDEN);
 		}
 
-		$decision = $this->policy->decide(site: $site, email: $email);
+		$decision = $this->policy->decide(site: $run->site, email: $run->email);
 		if ($decision['accepted'] === false) {
 			return new JSONResponse(['error' => $decision['reason']], Http::STATUS_FORBIDDEN);
 		}
 
-		$account = $this->accounts->provision(
-			audience: 'client',
-			organisation: (string)($site['organisation'] ?? ''),
-			email: $email,
-			// Neither policy trusts the address yet: approval waits for a
-			// person, activation waits for the mail.
-			verifiedEmail: false,
-			provisionedBy: PortalAccountService::SELF_REGISTRATION,
-			displayName: $displayName
+		return $this->provisionRegistration(run: $run, decision: $decision);
+	}//end registerOnPortal()
+
+	/**
+	 * Whether the registration carries a solved challenge.
+	 *
+	 * The credential this endpoint authenticates on: a nonce this instance
+	 * signed, for this surface, still inside its window, with the proof of
+	 * work done over it. The signature is what makes the nonce ours; without
+	 * it the caller could mint their own and reuse it for ever.
+	 *
+	 * @param RegistrationRun $run The registration.
+	 *
+	 * @return bool
+	 */
+	private function acceptsRegistrationChallenge(RegistrationRun $run): bool {
+		return $this->challenge->accepts(
+			site: $run->site,
+			surface: 'registration',
+			submission: (array)$this->request->getParams(),
+			nonce: $run->challenge['nonce'],
+			solution: $run->challenge['solution'],
+			expiresAt: $run->challenge['expiresAt'],
+			signature: $run->challenge['signature']
 		);
+	}//end acceptsRegistrationChallenge()
+
+	/**
+	 * Provision the account the policy accepted, hold a followed contact
+	 * invitation for it and, under activation, mail its link.
+	 *
+	 * @param RegistrationRun      $run      The registration.
+	 * @param array<string, mixed> $decision The policy's decision.
+	 *
+	 * @return JSONResponse
+	 */
+	private function provisionRegistration(RegistrationRun $run, array $decision): JSONResponse {
+		$account = $this->selfRegisteredAccount(run: $run);
 		if ($account === null) {
 			return new JSONResponse(['error' => 'refused'], Http::STATUS_BAD_REQUEST);
 		}
 
-		// An invitation from a resident is held for the new account, so its
-		// activation joins both sides, in whichever tab the link opens.
-		if ($contactInvitation !== '') {
-			$this->contacts?->holdForRegistration(
-				token: $contactInvitation,
-				newRef: (string)$account['subjectRef'],
-				organisation: (string)($site['organisation'] ?? '')
-			);
-		}
+		$this->holdContactInvitation(run: $run, account: $account);
 
 		if ($decision['reason'] === PortalRegistrationPolicyService::POLICY_ACTIVATION) {
-			$this->mailActivation(subjectRef: $account['subjectRef'], email: $email, site: $site);
+			$this->mailActivation(subjectRef: $account['subjectRef'], email: $run->email, site: $run->site);
 		}
 
 		// The subjectRef is deliberately not answered: the account cannot sign
 		// in yet, and handing out its reference would only make it guessable.
 		return new JSONResponse(['status' => $account['status'], 'awaiting' => $decision['reason']]);
-	}//end register()
+	}//end provisionRegistration()
+
+	/**
+	 * The self-registered account for the address, or null.
+	 *
+	 * @param RegistrationRun $run The registration.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function selfRegisteredAccount(RegistrationRun $run): ?array {
+		return $this->accounts->provision(
+			audience: 'client',
+			organisation: (string)($run->site['organisation'] ?? ''),
+			email: $run->email,
+			// Neither policy trusts the address yet: approval waits for a
+			// person, activation waits for the mail.
+			verifiedEmail: false,
+			provisionedBy: PortalAccountService::SELF_REGISTRATION,
+			displayName: $run->displayName
+		);
+	}//end selfRegisteredAccount()
+
+	/**
+	 * An invitation from a resident is held for the new account, so its
+	 * activation joins both sides, in whichever tab the link opens.
+	 *
+	 * @param RegistrationRun      $run     The registration.
+	 * @param array<string, mixed> $account The new account.
+	 *
+	 * @return void
+	 */
+	private function holdContactInvitation(RegistrationRun $run, array $account): void {
+		if ($run->contactInvitation === '') {
+			return;
+		}
+
+		$this->contacts?->holdForRegistration(
+			token: $run->contactInvitation,
+			newRef: (string)$account['subjectRef'],
+			organisation: (string)($run->site['organisation'] ?? '')
+		);
+	}//end holdContactInvitation()
 
 	/**
 	 * Follow the activation link of a self-registration: the account becomes

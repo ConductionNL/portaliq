@@ -62,51 +62,95 @@ class AnonymousContributions {
 	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
 	 */
 	public function forAudience(object $provider, string $appId, string $audience, array $served = []): array {
-		try {
-			$contribution = $this->locator->contributionOf(provider: $provider, subject: ['audience' => $audience]);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Portaliq: contribution provider failed (anonymous aggregation)',
-				['app' => $appId, 'audience' => $audience, 'reason' => $e->getMessage()]
-			);
+		$read = new AnonymousRead(provider: $provider, appId: $appId, audience: $audience, served: $served);
+		$contribution = $this->providerContribution(read: $read);
+		if ($contribution === null) {
 			return [];
 		}
 
-		if (is_array($contribution) === false) {
-			return [];
-		}
-
-		$contribution['app'] = $appId;
-		$contribution = (new PublicRecordsNormaliser())->attach(contribution: $contribution, provider: $provider, appId: $appId);
-		$anonymousOnly = $this->keepAnonymousOnly(contribution: $contribution);
+		$anonymousOnly = $this->keepAnonymousOnly(contribution: $this->tagged(read: $read, contribution: $contribution));
 		if ($this->hasAnonymousEntries(contribution: $anonymousOnly) === false) {
 			return [];
 		}
-
-		// The provider's audiences bound a start tile's `audiences`; input only.
-		$anonymousOnly['servedAudiences'] = $served;
-		try {
-			$anonymousOnly = $this->normaliser->normalise(contribution: $anonymousOnly);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Portaliq: manifest normalisation failed (anonymous aggregation)',
-				['app' => $appId, 'audience' => $audience, 'reason' => $e->getMessage()]
-			);
-		}
-
-		unset($anonymousOnly['servedAudiences']);
 
 		// The normaliser may have dropped `anonymous` from an entry that ALSO
 		// declared a non-low minTrust (fail-closed mutual exclusion) — filter
 		// again so no flag-stripped entry can survive into an aggregate an
 		// anonymous caller consumes.
-		$anonymousOnly = $this->keepAnonymousOnly(contribution: $anonymousOnly);
+		$anonymousOnly = $this->keepAnonymousOnly(contribution: $this->normalised(read: $read, contribution: $anonymousOnly));
 		if ($this->hasAnonymousEntries(contribution: $anonymousOnly) === false) {
 			return [];
 		}
 
 		return [$anonymousOnly];
 	}//end forAudience()
+
+	/**
+	 * What the provider contributes for the audience, or null when it fails
+	 * (logged) or answers no array.
+	 *
+	 * @param AnonymousRead $read The read.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function providerContribution(AnonymousRead $read): ?array {
+		try {
+			$contribution = $this->locator->contributionOf(provider: $read->provider, subject: ['audience' => $read->audience]);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Portaliq: contribution provider failed (anonymous aggregation)',
+				['app' => $read->appId, 'audience' => $read->audience, 'reason' => $e->getMessage()]
+			);
+			return null;
+		}
+
+		if (is_array($contribution) === false) {
+			return null;
+		}
+
+		return $contribution;
+	}//end providerContribution()
+
+	/**
+	 * The contribution tagged with its app, with its public records attached.
+	 *
+	 * @param AnonymousRead        $read         The read.
+	 * @param array<string, mixed> $contribution The provider's contribution.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function tagged(AnonymousRead $read, array $contribution): array {
+		$contribution['app'] = $read->appId;
+
+		return (new PublicRecordsNormaliser())->attach(contribution: $contribution, provider: $read->provider, appId: $read->appId);
+	}//end tagged()
+
+	/**
+	 * The contribution through the manifest normaliser, which sees the
+	 * provider's served audiences (they bound a start tile's `audiences`;
+	 * input only). A failing normaliser is logged and the entries are kept
+	 * as they were.
+	 *
+	 * @param AnonymousRead        $read         The read.
+	 * @param array<string, mixed> $contribution The anonymous-only contribution.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function normalised(AnonymousRead $read, array $contribution): array {
+		$contribution['servedAudiences'] = $read->served;
+		try {
+			$contribution = $this->normaliser->normalise(contribution: $contribution);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Portaliq: manifest normalisation failed (anonymous aggregation)',
+				['app' => $read->appId, 'audience' => $read->audience, 'reason' => $e->getMessage()]
+			);
+		}
+
+		unset($contribution['servedAudiences']);
+
+		return $contribution;
+	}//end normalised()
 
 	/**
 	 * Drop every collection/action entry that is not explicitly flagged

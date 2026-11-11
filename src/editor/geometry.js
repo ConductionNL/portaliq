@@ -28,18 +28,26 @@ export const GRID_COLUMNS = 12
 export function cellOf(widget) {
 	const gridX = Math.max(
 		0,
-		Math.min(GRID_COLUMNS - 1, Math.trunc(Number(widget?.gridX) || 0)),
+		Math.min(GRID_COLUMNS - 1, wholeOr(widget?.gridX, 0)),
 	)
 	const gridWidth = Math.max(
 		1,
-		Math.min(
-			GRID_COLUMNS - gridX,
-			Math.trunc(Number(widget?.gridWidth) || GRID_COLUMNS),
-		),
+		Math.min(GRID_COLUMNS - gridX, wholeOr(widget?.gridWidth, GRID_COLUMNS)),
 	)
-	const gridY = Math.max(0, Math.trunc(Number(widget?.gridY) || 0))
-	const gridHeight = Math.max(1, Math.trunc(Number(widget?.gridHeight) || 1))
+	const gridY = Math.max(0, wholeOr(widget?.gridY, 0))
+	const gridHeight = Math.max(1, wholeOr(widget?.gridHeight, 1))
 	return { gridX, gridY, gridWidth, gridHeight }
+}
+
+/**
+ * A value as a whole number, or the fallback when it is no number or zero.
+ *
+ * @param {unknown} value The value.
+ * @param {number} fallback The fallback.
+ * @return {number} The whole number.
+ */
+function wholeOr(value, fallback) {
+	return Math.trunc(Number(value) || fallback)
 }
 
 /**
@@ -95,10 +103,17 @@ export function cellFromDrop(drop, rowHeight = GRID_ROW_HEIGHT) {
 	)
 
 	return {
-		gridX: Math.max(
-			0,
-			Math.min(GRID_COLUMNS - 1, Number.isFinite(column) ? column : 0),
-		),
-		gridY: Math.max(0, Number.isFinite(row) ? row : 0),
+		gridX: Math.max(0, Math.min(GRID_COLUMNS - 1, finiteOr0(column))),
+		gridY: Math.max(0, finiteOr0(row)),
 	}
+}
+
+/**
+ * A number when it is finite, else 0.
+ *
+ * @param {number} value The number.
+ * @return {number} It, or 0.
+ */
+function finiteOr0(value) {
+	return Number.isFinite(value) ? value : 0
 }

@@ -65,18 +65,7 @@ export const pages = {
  * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-record-link-must-open-its-record-after-sign-in-req-srp-021
  */
 export function openRecordEntry(nav, where = {}) {
-	const location =
-		where.location || (typeof window !== 'undefined' ? window.location : null)
-	const history =
-		where.history || (typeof window !== 'undefined' ? window.history : null)
-	let storage = where.storage
-	if (storage === undefined) {
-		try {
-			storage = typeof window !== 'undefined' ? window.sessionStorage : null
-		} catch {
-			storage = null
-		}
-	}
+	const { location, history, storage } = pageParts(where)
 	const target = consumeOpenTarget(location, history, storage)
 	if (!target) {
 		return null
@@ -87,6 +76,40 @@ export function openRecordEntry(nav, where = {}) {
 		return null
 	}
 	return (nav || []).find((entry) => entry.key === key) || null
+}
+
+/**
+ * The location, history and storage given, the browser's own for each one
+ * left out.
+ *
+ * @param {{location?: object, history?: object, storage?: object|null}} where What the caller gave.
+ * @return {{location: object|null, history: object|null, storage: object|null}} The parts.
+ */
+function pageParts(where) {
+	return {
+		location: where.location || browserPart('location'),
+		history: where.history || browserPart('history'),
+		storage: where.storage === undefined ? browserStorage() : where.storage,
+	}
+}
+
+/**
+ * @param {'location'|'history'} name A part of the browser window.
+ * @return {object|null} That part, or null outside a browser.
+ */
+function browserPart(name) {
+	return typeof window !== 'undefined' ? window[name] : null
+}
+
+/**
+ * @return {object|null} The browser's sessionStorage, or null outside a browser or when it is refused.
+ */
+function browserStorage() {
+	try {
+		return typeof window !== 'undefined' ? window.sessionStorage : null
+	} catch {
+		return null
+	}
 }
 
 export { BLOCK_SLOTS, registerBlockSlot } from './blockSlots.js'

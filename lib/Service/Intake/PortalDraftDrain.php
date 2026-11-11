@@ -117,40 +117,95 @@ class PortalDraftDrain {
 	 * @return string `converted`, `expired`, or the reason it was kept.
 	 */
 	private function drainOne(array $row, DateTimeImmutable $now): string {
-		$subjectRef = (string)($row['subjectRef'] ?? '');
-		$expiresAt  = strtotime((string)($row['expiresAt'] ?? ''));
-		if ($expiresAt !== false && $expiresAt <= $now->getTimestamp()) {
+		if ($this->isExpired(row: $row, now: $now) === true) {
 			return $this->remove(row: $row, outcome: 'expired');
 		}
 
-		$parts = explode('/', (string)($row['actionKey'] ?? ''), 2);
-		$match = null;
-		if ($subjectRef !== '' && count($parts) === 2) {
-			$match = $this->actions->actionFor(subject: ['subjectRef' => $subjectRef], appId: $parts[0], actionId: $parts[1]);
-		}
-
+		$match = $this->matchOf(row: $row);
 		if ($match === null) {
 			return 'its action is not a create action this subject can use';
 		}
 
-		$body = $this->actions->bodyOf(match: $match, subject: ['subjectRef' => $subjectRef], answers: (array)($row['answers'] ?? []));
-		if ($body === null) {
-			return 'its scope claim does not resolve';
-		}
-
-		$existing = $this->actions->find(action: $match['action'], subjectRef: $subjectRef, now: $now);
-		$saved    = $this->drafts->saveDraft(
-			destination: $this->actions->destinationOf(action: $match['action']),
-			payload: $body,
-			subjectRef: $subjectRef,
-			draftId: (string)($existing['id'] ?? '')
-		);
-		if ($saved['ok'] === false) {
-			return 'the destination refused it (' . $saved['status'] . '): ' . implode('; ', $this->drafts->errorsOf(findings: $saved['findings']));
+		$reason = $this->convert(draft: ['row' => $row, 'match' => $match, 'subjectRef' => (string)($row['subjectRef'] ?? '')], now: $now);
+		if ($reason !== null) {
+			return $reason;
 		}
 
 		return $this->remove(row: $row, outcome: 'converted');
 	}//end drainOne()
+
+	/**
+	 * Whether a row's expiry has passed; a row without a readable expiry never expires.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 * @param DateTimeImmutable    $now The moment.
+	 *
+	 * @return bool
+	 */
+	private function isExpired(array $row, DateTimeImmutable $now): bool {
+		$expiresAt = strtotime((string)($row['expiresAt'] ?? ''));
+
+		return $expiresAt !== false && $expiresAt <= $now->getTimestamp();
+	}//end isExpired()
+
+	/**
+	 * The create action a row's `app/action` key names, when its subject may use it.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function matchOf(array $row): ?array {
+		$subjectRef = (string)($row['subjectRef'] ?? '');
+		$parts      = explode('/', (string)($row['actionKey'] ?? ''), 2);
+		if ($subjectRef === '' || count($parts) !== 2) {
+			return null;
+		}
+
+		return $this->actions->actionFor(subject: ['subjectRef' => $subjectRef], appId: $parts[0], actionId: $parts[1]);
+	}//end matchOf()
+
+	/**
+	 * Save a row as an OpenRegister draft of its action's destination.
+	 *
+	 * @param array{row: array<string, mixed>, match: array<string, mixed>, subjectRef: string} $draft The row, its action and its subject.
+	 * @param DateTimeImmutable                                                                $now   The moment.
+	 *
+	 * @return string|null Why it was kept, or null when it was saved.
+	 */
+	private function convert(array $draft, DateTimeImmutable $now): ?string {
+		$answers = (array)($draft['row']['answers'] ?? []);
+		$body    = $this->actions->bodyOf(match: $draft['match'], subject: ['subjectRef' => $draft['subjectRef']], answers: $answers);
+		if ($body === null) {
+			return 'its scope claim does not resolve';
+		}
+
+		$saved = $this->save(draft: $draft + ['body' => $body], now: $now);
+		if ($saved['ok'] === false) {
+			return 'the destination refused it (' . $saved['status'] . '): ' . implode('; ', $this->drafts->errorsOf(findings: $saved['findings']));
+		}
+
+		return null;
+	}//end convert()
+
+	/**
+	 * Save the draft body over the subject's existing draft of the action, if any.
+	 *
+	 * @param array{match: array<string, mixed>, subjectRef: string, body: array<string, mixed>} $draft The action, its subject and the body.
+	 * @param DateTimeImmutable                                                                  $now   The moment.
+	 *
+	 * @return array<string, mixed> The destination's answer.
+	 */
+	private function save(array $draft, DateTimeImmutable $now): array {
+		$existing = $this->actions->find(action: $draft['match']['action'], subjectRef: $draft['subjectRef'], now: $now);
+
+		return $this->drafts->saveDraft(
+			destination: $this->actions->destinationOf(action: $draft['match']['action']),
+			payload: $draft['body'],
+			subjectRef: $draft['subjectRef'],
+			draftId: (string)($existing['id'] ?? '')
+		);
+	}//end save()
 
 	/**
 	 * Delete a row and answer the outcome, or say it could not be deleted.
