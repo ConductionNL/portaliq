@@ -190,22 +190,48 @@ class GuardianAccountDirectory {
 	 * @return string|null
 	 */
 	private function activeGuardianRef(mixed $row): ?string {
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			$row = $row->jsonSerialize();
-		}
-
-		if (is_array($row) === false
-			|| ($row['audience'] ?? null) !== self::AUDIENCE
-			|| ($row['status'] ?? null) !== 'active'
-		) {
+		$account = $this->accountRow(row: $row);
+		if ($account === null || $this->isActiveGuardian(account: $account) === false) {
 			return null;
 		}
 
-		$ref = ($row['subjectRef'] ?? null);
+		$ref = ($account['subjectRef'] ?? null);
 		if (is_string($ref) === false || $ref === '') {
 			return null;
 		}
 
 		return $ref;
 	}//end activeGuardianRef()
+
+	/**
+	 * An account row as a map: an entity through its jsonSerialize(), and
+	 * null for anything that is not or does not give a map.
+	 *
+	 * @param mixed $row The row as OpenRegister answered it.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function accountRow(mixed $row): ?array {
+		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
+			$row = $row->jsonSerialize();
+		}
+
+		if (is_array($row) === false) {
+			return null;
+		}
+
+		return $row;
+	}//end accountRow()
+
+	/**
+	 * Whether an account is an active guardian's: the `parent` audience and
+	 * the `active` status, exactly.
+	 *
+	 * @param array<string, mixed> $account The account row.
+	 *
+	 * @return bool
+	 */
+	private function isActiveGuardian(array $account): bool {
+		return ($account['audience'] ?? null) === self::AUDIENCE && ($account['status'] ?? null) === 'active';
+	}//end isActiveGuardian()
 }//end class
