@@ -190,11 +190,32 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
-		// A task is answered once. The seam is asked for the task first, so a
-		// second answer is refused with a sentence instead of quietly
-		// overwriting the first one the citizen already sent. A refused
-		// answer audits and receipts nothing: no completion happened.
-		$existing = $this->gateway->getTask(subject: $subject, uuid: $uuid);
+		$run = new TaskCompletionRun(subject: $subject, uuid: $uuid);
+		$run->outcome = $outcome;
+		$run->comment = $comment;
+		$refusal      = $this->answerRefusal(run: $run);
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		return $this->relayCompletion(run: $run);
+	}//end complete()
+
+	/**
+	 * The refusal when the task cannot be answered: the seam's own refusal
+	 * or failure, or a task already answered.
+	 *
+	 * A task is answered once. The seam is asked for the task first, so a
+	 * second answer is refused with a sentence instead of quietly
+	 * overwriting the first one the citizen already sent. A refused answer
+	 * audits and receipts nothing: no completion happened.
+	 *
+	 * @param TaskCompletionRun $run The answer.
+	 *
+	 * @return JSONResponse|null
+	 */
+	private function answerRefusal(TaskCompletionRun $run): ?JSONResponse {
+		$existing = $this->gateway->getTask(subject: $run->subject, uuid: $run->uuid);
 		if ($existing === null) {
 			return $this->relay(answer: null);
 		}
@@ -204,44 +225,69 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 		}
 
 		if ($this->isAnswered(task: $existing['body']) === true) {
-			return new JSONResponse(
-				[
-					'message' => $this->l10n->t('You have already answered this task.'),
-					'error' => 'task-already-answered',
-					'task' => $existing['body'],
-				],
-				Http::STATUS_CONFLICT
-			);
+			return $this->alreadyAnswered(task: $existing['body']);
 		}
 
-		$answers = $this->answers();
-		$files = $this->uploads();
+		return null;
+	}//end answerRefusal()
+
+	/**
+	 * The refusal of a second answer, with the task as it stands.
+	 *
+	 * @param array<string, mixed> $task The seam's task row.
+	 *
+	 * @return JSONResponse
+	 */
+	private function alreadyAnswered(array $task): JSONResponse {
+		return new JSONResponse(
+			[
+				'message' => $this->l10n->t('You have already answered this task.'),
+				'error' => 'task-already-answered',
+				'task' => $task,
+			],
+			Http::STATUS_CONFLICT
+		);
+	}//end alreadyAnswered()
+
+	/**
+	 * Relay the answer to the seam; a confirmed completion is audited and
+	 * receipted, a client's answer announced.
+	 *
+	 * @param TaskCompletionRun $run The answer.
+	 *
+	 * @return JSONResponse
+	 */
+	private function relayCompletion(TaskCompletionRun $run): JSONResponse {
+		$run->answers = $this->answers();
+		$run->files   = $this->uploads();
 
 		$answer = $this->gateway->completeTask(
-			subject: $subject,
-			uuid: $uuid,
-			answers: $answers,
-			comment: $comment,
-			outcome: $outcome,
-			files: $files
+			subject: $run->subject,
+			uuid: $run->uuid,
+			answers: $run->answers,
+			comment: $run->comment,
+			outcome: $run->outcome,
+			files: $run->files
 		);
-
-		if ($answer !== null && $answer['status'] >= Http::STATUS_OK && $answer['status'] < Http::STATUS_MULTIPLE_CHOICES) {
-			$this->recordCompletion(
-				subject: $subject,
-				uuid: $uuid,
-				task: $answer['body'],
-				answers: $answers,
-				comment: $comment,
-				outcome: $outcome,
-				files: $files
-			);
+		if ($this->isConfirmed(answer: $answer) === true) {
+			$this->recordCompletion(run: $run, task: $answer['body']);
 		}
 
-		$this->announceClientAnswer(subject: $subject, answer: $answer, uuid: $uuid, answers: $answers);
+		$this->announceClientAnswer(run: $run, answer: $answer);
 
 		return $this->relay(answer: $answer);
-	}//end complete()
+	}//end relayCompletion()
+
+	/**
+	 * Whether the seam confirmed the completion (2xx).
+	 *
+	 * @param array{status: int, body: array<string, mixed>}|null $answer The seam's answer.
+	 *
+	 * @return bool
+	 */
+	private function isConfirmed(?array $answer): bool {
+		return $answer !== null && $answer['status'] >= Http::STATUS_OK && $answer['status'] < Http::STATUS_MULTIPLE_CHOICES;
+	}//end isConfirmed()
 
 	/**
 	 * Raise the citizen write event for a task the CLIENT audience answered.
@@ -249,19 +295,17 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 	 * write, so it raises nothing here; `partner-tasks-in-the-portal` owns that
 	 * audience's path.
 	 *
-	 * @param array<string, mixed> $subject The resolved bearer subject.
+	 * @param TaskCompletionRun                                   $run    The answer, with its answers relayed.
 	 * @param array{status: int, body: array<string, mixed>}|null $answer The seam's answer.
-	 * @param string $uuid The task uuid.
-	 * @param array<string, mixed> $answers The submitted answer fields.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
 	 */
-	private function announceClientAnswer(array $subject, ?array $answer, string $uuid, array $answers): void {
+	private function announceClientAnswer(TaskCompletionRun $run, ?array $answer): void {
 		if ($answer === null
 			|| $answer['status'] >= Http::STATUS_BAD_REQUEST
-			|| (string)($subject['audience'] ?? '') !== 'client'
+			|| (string)($run->subject['audience'] ?? '') !== 'client'
 		) {
 			return;
 		}
@@ -270,10 +314,10 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 		$this->recorder->announce(
 			register: (string)($task['objectRegister'] ?? ''),
 			schema: (string)($task['objectSchema'] ?? ''),
-			caseId: (string)($task['objectId'] ?? $uuid),
+			caseId: (string)($task['objectId'] ?? $run->uuid),
 			act: PortalClientWriteEvent::ACT_TASK_ANSWER,
-			fields: array_map(strval(...), array_keys($answers)),
-			subject: $subject,
+			fields: array_map(strval(...), array_keys($run->answers)),
+			subject: $run->subject,
 			action: ['id' => 'portal-task', 'minTrust' => ''],
 			occurredAt: $this->recorder->now()
 		);
@@ -291,6 +335,17 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	private function isAnswered(array $task): bool {
+		return $this->hasAnsweredStamp(task: $task) === true || $this->hasAnsweredState(task: $task) === true;
+	}//end isAnswered()
+
+	/**
+	 * Whether the task row carries a non-empty completion stamp.
+	 *
+	 * @param array<string, mixed> $task The seam's task row.
+	 *
+	 * @return bool
+	 */
+	private function hasAnsweredStamp(array $task): bool {
 		foreach (['completedAt', 'completedOn', 'answeredAt'] as $stamp) {
 			$value = ($task[$stamp] ?? null);
 			if (is_string($value) === true && $value !== '') {
@@ -298,6 +353,17 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 			}
 		}
 
+		return false;
+	}//end hasAnsweredStamp()
+
+	/**
+	 * Whether the task row's status names a terminal state.
+	 *
+	 * @param array<string, mixed> $task The seam's task row.
+	 *
+	 * @return bool
+	 */
+	private function hasAnsweredState(array $task): bool {
 		foreach (['status', 'state', 'taskStatus'] as $key) {
 			$value = ($task[$key] ?? null);
 			if (is_string($value) === true
@@ -308,7 +374,7 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 		}
 
 		return false;
-	}//end isAnswered()
+	}//end hasAnsweredState()
 
 	/**
 	 * Resolve the subject from the bearer (fail-closed). PortalAuthMiddleware
@@ -329,13 +395,8 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 	 * SubmissionReceiptService. Fired only after the seam answered 2xx, so
 	 * the audited/acknowledged deed has already happened.
 	 *
-	 * @param array<string, mixed> $subject The resolved bearer subject.
-	 * @param string $uuid The task uuid the resident addressed.
+	 * @param TaskCompletionRun    $run  The confirmed answer.
 	 * @param array<string, mixed> $task The seam's completed task row.
-	 * @param array<string, mixed> $answers The submitted answers.
-	 * @param string|null $comment The resident's comment.
-	 * @param string $outcome The requested outcome ('' = the seam's default).
-	 * @param array<int, array<string, mixed>> $files The relayed uploads.
 	 *
 	 * @return void
 	 *
@@ -344,49 +405,64 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 	 * @spec openspec/specs/supplier-portal/spec.md#proof-of-receipt-log-satisfying-the-wmebv-burden-of-proof
 	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
 	 */
-	private function recordCompletion(
-		array $subject,
-		string $uuid,
-		array $task,
-		array $answers,
-		?string $comment,
-		string $outcome,
-		array $files,
-	): void {
-		$subjectRef = (string)($subject['subjectRef'] ?? '');
-		$organisation = (string)($subject['organisation'] ?? '');
-		$taskUuid = (string)($task['uuid'] ?? $uuid);
-		if ($taskUuid === '') {
-			$taskUuid = $uuid;
+	private function recordCompletion(TaskCompletionRun $run, array $task): void {
+		$run->taskUuid = (string)($task['uuid'] ?? $run->uuid);
+		if ($run->taskUuid === '') {
+			$run->taskUuid = $run->uuid;
 		}
 
 		$this->auditor->record(
 			verb: self::VERB_COMPLETE,
-			subjectRef: $subjectRef,
-			organisation: $organisation,
+			subjectRef: (string)($run->subject['subjectRef'] ?? ''),
+			organisation: (string)($run->subject['organisation'] ?? ''),
 			register: self::TASK_REGISTER,
 			schema: self::TASK_SCHEMA,
-			id: $taskUuid,
-			jti: (string)($subject['jti'] ?? '')
+			id: $run->taskUuid,
+			jti: (string)($run->subject['jti'] ?? '')
 		);
 
+		$this->receiptCompletion(run: $run, task: $task);
+	}//end recordCompletion()
+
+	/**
+	 * The WMEBV ontvangstbevestiging and proof log of a confirmed completion,
+	 * named by the task's title.
+	 *
+	 * @param TaskCompletionRun    $run  The confirmed answer, with its completed uuid.
+	 * @param array<string, mixed> $task The seam's completed task row.
+	 *
+	 * @return void
+	 */
+	private function receiptCompletion(TaskCompletionRun $run, array $task): void {
 		$this->receiptService->record(
-			subjectRef: $subjectRef,
-			organisation: $organisation,
+			subjectRef: (string)($run->subject['subjectRef'] ?? ''),
+			organisation: (string)($run->subject['organisation'] ?? ''),
 			appId: Application::APP_ID,
 			actionId: self::ACTION_COMPLETE,
-			whitelistedData: $this->receiptService->taskCompletionCopy(
-				taskUuid: $taskUuid,
-				task: $task,
-				answers: $answers,
-				comment: $comment,
-				outcome: $outcome,
-				files: $files
-			),
-			audience: (string)($subject['audience'] ?? ''),
+			whitelistedData: $this->completionCopy(run: $run, task: $task),
+			audience: (string)($run->subject['audience'] ?? ''),
 			actionTitle: ($task['displayTitle'] ?? $task['title'] ?? '')
 		);
-	}//end recordCompletion()
+	}//end receiptCompletion()
+
+	/**
+	 * The WMEBV copy of the completion for the receipt and proof log.
+	 *
+	 * @param TaskCompletionRun    $run  The confirmed answer, with its completed uuid.
+	 * @param array<string, mixed> $task The seam's completed task row.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function completionCopy(TaskCompletionRun $run, array $task): array {
+		return $this->receiptService->taskCompletionCopy(
+			taskUuid: $run->taskUuid,
+			task: $task,
+			answers: $run->answers,
+			comment: $run->comment,
+			outcome: $run->outcome,
+			files: $run->files
+		);
+	}//end completionCopy()
 
 
 	/**
@@ -458,23 +534,51 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 			$uploads[] = $single;
 		}
 
-		$many = $this->request->getUploadedFile('files');
-		if (is_array($many) === true && isset($many['tmp_name']) === true) {
-			if (is_array($many['tmp_name']) === true) {
-				// PHP's multi-upload shape: parallel arrays per field.
-				foreach (array_keys($many['tmp_name']) as $key) {
-					$uploads[] = [
-						'name' => ($many['name'][$key] ?? 'upload'),
-						'type' => ($many['type'][$key] ?? 'application/octet-stream'),
-						'tmp_name' => ($many['tmp_name'][$key] ?? ''),
-						'size' => ($many['size'][$key] ?? 0),
-					];
-				}
-			} elseif (is_string($many['tmp_name']) === true) {
-				$uploads[] = $many;
-			}
+		return array_merge($uploads, $this->manyUploads(many: $this->request->getUploadedFile('files')));
+	}//end uploads()
+
+	/**
+	 * The uploads of the `files` field: PHP's multi-upload shape, parallel
+	 * arrays per field, one upload per entry; a single upload as it came.
+	 *
+	 * @param mixed $many The uploaded `files` field.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function manyUploads(mixed $many): array {
+		if (is_array($many) === false || isset($many['tmp_name']) === false) {
+			return [];
+		}
+
+		if (is_array($many['tmp_name']) === false) {
+			return $this->singleUpload(upload: $many);
+		}
+
+		$uploads = [];
+		foreach (array_keys($many['tmp_name']) as $key) {
+			$uploads[] = [
+				'name' => ($many['name'][$key] ?? 'upload'),
+				'type' => ($many['type'][$key] ?? 'application/octet-stream'),
+				'tmp_name' => ($many['tmp_name'][$key] ?? ''),
+				'size' => ($many['size'][$key] ?? 0),
+			];
 		}
 
 		return $uploads;
-	}//end uploads()
+	}//end manyUploads()
+
+	/**
+	 * A single upload of the `files` field, when it names its temp file.
+	 *
+	 * @param array<string, mixed> $upload The uploaded field.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function singleUpload(array $upload): array {
+		if (is_string($upload['tmp_name']) === true) {
+			return [$upload];
+		}
+
+		return [];
+	}//end singleUpload()
 }//end class
