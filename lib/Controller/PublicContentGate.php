@@ -33,9 +33,6 @@ use OCP\AppFramework\Http\JSONResponse;
  * The using controller provides `$request`, `$session`
  * (BearerSessionResolver) and `$resolver` (PortalResolver).
  *
- * @SuppressWarnings(PHPMD.StaticAccess) -- SessionTrust::trustSatisfies is the single
- * trust comparator, called statically everywhere so the ordering cannot fork (as in ContentController).
- *
  * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-news-item-shows-on-a-portals-public-website-only-when-staff-put-it-there
  */
 trait PublicContentGate {
@@ -89,7 +86,7 @@ trait PublicContentGate {
 			return $this->refusal(error: 'authentication_required', status: Http::STATUS_UNAUTHORIZED, modes: $modes);
 		}
 
-		if (SessionTrust::trustSatisfies($subject['trust'] ?? null, ($auth['minTrust'] ?? null)) === false) {
+		if ((new SessionTrust())->trustSatisfies($subject['trust'] ?? null, ($auth['minTrust'] ?? null)) === false) {
 			// A real session that is not assured enough. Distinct from 401:
 			// signing in again with the same means would loop.
 			return $this->refusal(error: 'insufficient_trust', status: Http::STATUS_FORBIDDEN, modes: $modes);

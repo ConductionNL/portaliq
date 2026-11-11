@@ -46,9 +46,6 @@ use Throwable;
  * Reads a resident's message contacts per record, and proves one.
  *
  * @spec openspec/changes/site-messages-per-record/specs/portal-contribution-contract/spec.md#requirement-a-resident-may-start-a-conversation-only-with-a-contact-of-their-own-record
- *
- * @SuppressWarnings(PHPMD.StaticAccess) -- SessionTrust::trustSatisfies,
- * the one trust ordering every portal gate shares.
  */
 class MessageContactReader {
 	/**
@@ -169,7 +166,7 @@ class MessageContactReader {
 		foreach ((array)($aggregate['contributions'] ?? []) as $contribution) {
 			foreach ((array)($contribution['collections'] ?? []) as $collection) {
 				if (is_array($collection['contacts'] ?? null) === false
-					|| SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false
+					|| (new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false
 				) {
 					continue;
 				}

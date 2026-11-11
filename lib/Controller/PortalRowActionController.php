@@ -61,8 +61,6 @@ use OCP\IRequest;
  *
  * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
  *
- * @SuppressWarnings(PHPMD.StaticAccess) -- SessionTrust::trustSatisfies,
- * the one trust ordering every portal gate shares.
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- one collaborator per step
  * of the forward (who, which row action, whose row, send, record) plus the
  * framework attributes every portal endpoint carries.
@@ -428,8 +426,8 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	private function trustAndEndpointHold(array $subject, array $collection, array $action): bool {
 		$trust = ($subject['trust'] ?? '');
 
-		return SessionTrust::trustSatisfies($trust, ($collection['minTrust'] ?? null)) === true
-			&& SessionTrust::trustSatisfies($trust, ($action['minTrust'] ?? null)) === true
+		return (new SessionTrust())->trustSatisfies($trust, ($collection['minTrust'] ?? null)) === true
+			&& (new SessionTrust())->trustSatisfies($trust, ($action['minTrust'] ?? null)) === true
 			&& $this->forwarder->isForwardable(action: $action) === true;
 	}//end trustAndEndpointHold()
 

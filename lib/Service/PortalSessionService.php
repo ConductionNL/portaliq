@@ -190,7 +190,7 @@ class PortalSessionService {
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
 	 */
 	public static function normaliseTrust(mixed $trust): string {
-		return SessionTrust::normaliseTrust(trust: $trust);
+		return (new SessionTrust())->normaliseTrust(trust: $trust);
 	}//end normaliseTrust()
 
 	/**
@@ -205,7 +205,7 @@ class PortalSessionService {
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
 	 */
 	public static function trustSatisfies(mixed $subjectTrust, mixed $minTrust): bool {
-		return SessionTrust::trustSatisfies(subjectTrust: $subjectTrust, minTrust: $minTrust);
+		return (new SessionTrust())->trustSatisfies(subjectTrust: $subjectTrust, minTrust: $minTrust);
 	}//end trustSatisfies()
 
 	/**

@@ -37,9 +37,6 @@ use OCA\Portaliq\Service\Session\SessionTrust;
 /**
  * Joins the waiting account for an address its holder just confirmed.
  *
- * @SuppressWarnings(PHPMD.StaticAccess) -- SessionTrust::trustSatisfies
- * is the one trust comparison every portal surface uses.
- *
  * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
  */
 class ConfirmedAddressJoin {
@@ -189,7 +186,7 @@ class ConfirmedAddressJoin {
 			&& (string)($session['subjectRef'] ?? '') === $subjectRef
 			&& $organisation !== ''
 			&& (string)($session['organisation'] ?? '') === $organisation
-			&& SessionTrust::trustSatisfies(subjectTrust: ($session['trust'] ?? ''), minTrust: self::MIN_TRUST) === true;
+			&& (new SessionTrust())->trustSatisfies(subjectTrust: ($session['trust'] ?? ''), minTrust: self::MIN_TRUST) === true;
 	}//end isHoldersOwnSession()
 
 	/**

@@ -33,9 +33,6 @@ use OCA\Portaliq\Service\Session\SessionTrust;
  * The account side of taking on an invitation's audience.
  *
  * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
- *
- * @SuppressWarnings(PHPMD.StaticAccess) -- SessionTrust::trustSatisfies,
- * the one comparison of trust levels, as in ContributionController.
  */
 final class UnboundAccount {
 	/**
@@ -92,7 +89,7 @@ final class UnboundAccount {
 			&& (string)($account['identityRef'] ?? '') !== ''
 			&& (string)($account['provisionedBy'] ?? '') === ''
 			&& $this->holdsNoClaims(account: $account) === true
-			&& SessionTrust::trustSatisfies(subjectTrust: $this->trust, minTrust: self::ADOPT_TRUST) === true;
+			&& (new SessionTrust())->trustSatisfies(subjectTrust: $this->trust, minTrust: self::ADOPT_TRUST) === true;
 	}//end mayTakeOn()
 
 	/**

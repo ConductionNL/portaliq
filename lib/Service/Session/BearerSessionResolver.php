@@ -88,7 +88,7 @@ class BearerSessionResolver {
 			return null;
 		}
 
-		return (new SessionClaims())->subject(claims: $claims, trust: SessionTrust::normaliseTrust(trust: ($claims['trust'] ?? '')));
+		return (new SessionClaims())->subject(claims: $claims, trust: (new SessionTrust())->normaliseTrust(trust: ($claims['trust'] ?? '')));
 	}//end resolveFromBearer()
 
 	/**

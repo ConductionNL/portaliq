@@ -57,7 +57,7 @@ final class SessionTrust {
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
 	 */
-	public static function normaliseTrust(mixed $trust): string {
+	public function normaliseTrust(mixed $trust): string {
 		if (is_string($trust) === true && isset(self::TRUST_ORDER[$trust]) === true) {
 			return $trust;
 		}
@@ -81,7 +81,7 @@ final class SessionTrust {
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
 	 */
-	public static function trustSatisfies(mixed $subjectTrust, mixed $minTrust): bool {
+	public function trustSatisfies(mixed $subjectTrust, mixed $minTrust): bool {
 		if ($minTrust === null || $minTrust === '') {
 			$minTrust = 'low';
 		}
@@ -91,6 +91,6 @@ final class SessionTrust {
 			return false;
 		}
 
-		return self::TRUST_ORDER[self::normaliseTrust(trust: $subjectTrust)] >= self::TRUST_ORDER[$minTrust];
+		return self::TRUST_ORDER[$this->normaliseTrust(trust: $subjectTrust)] >= self::TRUST_ORDER[$minTrust];
 	}//end trustSatisfies()
 }//end class

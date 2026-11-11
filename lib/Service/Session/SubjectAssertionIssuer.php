@@ -88,7 +88,7 @@ class SubjectAssertionIssuer {
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
 			audience: (string)($subject['audience'] ?? ''),
 			organisation: (string)($subject['organisation'] ?? ''),
-			trust: SessionTrust::normaliseTrust(trust: ($subject['trust'] ?? '')),
+			trust: (new SessionTrust())->normaliseTrust(trust: ($subject['trust'] ?? '')),
 			jti: (string)($subject['jti'] ?? ''),
 			scopeClaim: $scopeClaim,
 			scopeValue: $scopeValue,

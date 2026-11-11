@@ -312,12 +312,6 @@ class OidcClaimMapperService {
 	 *
 	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T05
 	 * @spec openspec/specs/supplier-portal/spec.md#broker-loa-maps-to-portal-trust-under-privileging-on-ambiguity
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) -- deliberate reuse of the ONE
-	 * canonical trust-normalisation point (SessionTrust's own
-	 * docblock: "the single normalisation point used by the session edge,
-	 * the registry, and the contribution controller") — duplicating it here
-	 * would risk the trust vocabulary drifting between call sites.
 	 */
 	public function mapLoaToTrust(array $claims, array $config): string {
 		$loaClaim = (string)($config['loaClaim'] ?? 'acr');
@@ -330,7 +324,7 @@ class OidcClaimMapperService {
 
 		$mapped = ($loaMap[$loaValue] ?? 'low');
 
-		return SessionTrust::normaliseTrust(trust: $mapped);
+		return (new SessionTrust())->normaliseTrust(trust: $mapped);
 	}//end mapLoaToTrust()
 
 	/**
