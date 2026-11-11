@@ -120,4 +120,41 @@ class PlanRulesTest extends TestCase {
 		$this->assertTrue((new PlanRules())->visible(plan: ['status' => 'running'], today: '2030-01-01'));
 		$this->assertTrue((new PlanRules())->visible(plan: ['status' => 'done'], today: '2030-01-01'), 'no done date: kept');
 	}//end testADonePlanStaysAYear()
+
+	/**
+	 * Every template expands exactly as recorded.
+	 *
+	 * @return void
+	 */
+	public function testEveryTemplateExpandsAsRecorded(): void {
+		$r = new PlanRules();
+		$actions = [
+			['title' => ' One ', 'kind' => 'recurring', 'offsetDays' => 3],
+			['title' => '', 'offsetDays' => 1],
+			['title' => '   '],
+			'not an action',
+			['title' => 5],
+			['title' => str_repeat('é', 250), 'kind' => 'weekly', 'offsetDays' => -4],
+			['title' => 'Two', 'offsetDays' => '10'],
+		];
+		for ($i = 0; $i < 20; $i++) {
+			$actions[] = ['title' => "Filler $i"];
+		}
+		$cases = [
+			[['durationDays' => 10, 'actions' => $actions], '2026-02-27'],
+			[['durationDays' => 0], '2026-02-27'],
+			[['durationDays' => '-3', 'actions' => 'x'], '2026-12-30'],
+			[[], '2026-01-01'],
+		];
+
+		$expected = [
+			'{"endDate":"2026-03-09","actions":[{"title":"One","kind":"recurring","endDate":"2026-03-02"},{"title":"éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé","kind":"once","endDate":"2026-02-27"},{"title":"Two","kind":"once","endDate":"2026-03-09"},{"title":"Filler 0","kind":"once","endDate":"2026-02-27"},{"title":"Filler 1","kind":"once","endDate":"2026-02-27"},{"title":"Filler 2","kind":"once","endDate":"2026-02-27"},{"title":"Filler 3","kind":"once","endDate":"2026-02-27"},{"title":"Filler 4","kind":"once","endDate":"2026-02-27"},{"title":"Filler 5","kind":"once","endDate":"2026-02-27"},{"title":"Filler 6","kind":"once","endDate":"2026-02-27"},{"title":"Filler 7","kind":"once","endDate":"2026-02-27"},{"title":"Filler 8","kind":"once","endDate":"2026-02-27"},{"title":"Filler 9","kind":"once","endDate":"2026-02-27"},{"title":"Filler 10","kind":"once","endDate":"2026-02-27"},{"title":"Filler 11","kind":"once","endDate":"2026-02-27"},{"title":"Filler 12","kind":"once","endDate":"2026-02-27"},{"title":"Filler 13","kind":"once","endDate":"2026-02-27"},{"title":"Filler 14","kind":"once","endDate":"2026-02-27"},{"title":"Filler 15","kind":"once","endDate":"2026-02-27"},{"title":"Filler 16","kind":"once","endDate":"2026-02-27"}]}',
+			'{"endDate":"2026-04-24","actions":[]}',
+			'{"endDate":"2027-02-24","actions":[]}',
+			'{"endDate":"2026-02-26","actions":[]}',
+		];
+		foreach ($cases as $index => [$template, $today]) {
+			$this->assertSame($expected[$index], json_encode($r->expand(template: $template, today: $today), JSON_UNESCAPED_UNICODE), 'case ' . $index);
+		}
+	}//end testEveryTemplateExpandsAsRecorded()
 }//end class
