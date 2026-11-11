@@ -1147,15 +1147,44 @@ export default {
 		showSideMenu() {
 			return (
 				sideMenuOf(this.regions)
-				&& !this.guestLink
-				&& !this.wayInLink
-				&& !this.sharedDossierRoute
-				&& !this.statementRoute
-				&& !this.error
-				&& !(this.editMode && this.editing && this.editing.pageId)
+				&& !this.pageReplaced
 				&& this.page !== null
 				&& !this.accountRoute
 			)
+		},
+
+		/**
+		 * Whether something other than the CMS page fills the content: a
+		 * one-off screen, an error, or the editor on a page.
+		 *
+		 * @return {boolean}
+		 */
+		pageReplaced() {
+			return this.oneOffScreen || Boolean(this.error) || this.editingPage
+		},
+
+		/**
+		 * Whether the screen is one a link opens on its own: a guest link, a
+		 * mailed way in, a shared dossier or the accessibility statement.
+		 *
+		 * @return {boolean}
+		 */
+		oneOffScreen() {
+			return Boolean(
+				this.guestLink
+				|| this.wayInLink
+				|| this.sharedDossierRoute
+				|| this.statementRoute,
+			)
+		},
+
+		/**
+		 * Whether the editor is open on a page.
+		 *
+		 * @return {boolean}
+		 */
+		editingPage() {
+			return Boolean(this.editMode && this.editing && this.editing.pageId)
 		},
 
 		/**
@@ -2064,24 +2093,44 @@ export default {
 				return
 			}
 
-			// The page's search title first (site-page-seo-history-and-media),
-			// so the tab reads what the server already put in the head.
-			let pageName = this.accountRoute
-				? this.accountEntry?.label || this.t('My area')
-				: this.page?.seo?.title || this.page?.title
-			if (this.sharedDossierRoute) {
-				pageName = this.sharedDossierTitle || this.t('Shared dossier')
-			}
-			if (this.statementRoute) {
-				pageName = this.t('Accessibility statement')
-			}
-			if (this.subject) {
-				pageName = this.subject.title
-			}
+			const pageName = this.tabPageName()
 			document.title =
 				pageName && pageName !== portalName
 					? `${pageName} - ${portalName}`
 					: portalName
+		},
+
+		/**
+		 * The name of what the tab shows: the subject, else the statement,
+		 * else the shared dossier, else the route's own page.
+		 *
+		 * @return {string|undefined} The name.
+		 */
+		tabPageName() {
+			if (this.subject) {
+				return this.subject.title
+			}
+			if (this.statementRoute) {
+				return this.t('Accessibility statement')
+			}
+			if (this.sharedDossierRoute) {
+				return this.sharedDossierTitle || this.t('Shared dossier')
+			}
+			return this.routePageName()
+		},
+
+		/**
+		 * The name of the route's own page: the account entry in the account
+		 * area, else the page's search title first
+		 * (site-page-seo-history-and-media), so the tab reads what the server
+		 * already put in the head.
+		 *
+		 * @return {string|undefined} The name.
+		 */
+		routePageName() {
+			return this.accountRoute
+				? this.accountEntry?.label || this.t('My area')
+				: this.page?.seo?.title || this.page?.title
 		},
 
 		/**
