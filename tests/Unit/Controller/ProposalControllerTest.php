@@ -7,8 +7,8 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ProposalController;
 use OCA\Portaliq\Service\PortalObjectReader;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\Proposals\ProposalService;
+use OCA\Portaliq\Service\Session\BearerSessionResolver;
 use OCA\Portaliq\Service\Tasks\PortalCaseAccessGuard;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
@@ -332,7 +332,7 @@ class ProposalControllerTest extends TestCase {
 			}
 		);
 
-		$session = $this->getMockBuilder(PortalSessionService::class)
+		$session = $this->getMockBuilder(BearerSessionResolver::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['resolveFromBearer'])
 			->getMock();

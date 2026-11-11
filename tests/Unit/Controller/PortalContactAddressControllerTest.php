@@ -7,7 +7,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Controller\PortalContactAddressController;
 use OCA\Portaliq\Service\Identity\PortalContactAddressService;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\BearerSessionResolver;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -94,7 +94,7 @@ class PortalContactAddressControllerTest extends TestCase {
 	private function controller(?array $subject): PortalContactAddressController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn($subject === null ? '' : 'Bearer token-1');
-		$session = $this->getMockBuilder(PortalSessionService::class)
+		$session = $this->getMockBuilder(BearerSessionResolver::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['resolveFromBearer'])
 			->getMock();

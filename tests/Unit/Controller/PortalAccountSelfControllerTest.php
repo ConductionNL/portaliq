@@ -11,7 +11,7 @@ use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\BearerSessionResolver;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\Security\ISecureRandom;
@@ -243,7 +243,7 @@ class PortalAccountSelfControllerTest extends TestCase {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParams')->willReturn([]);
 
-		$session = $this->double(PortalSessionService::class, ['resolveFromBearer']);
+		$session = $this->double(BearerSessionResolver::class, ['resolveFromBearer']);
 		$session->method('resolveFromBearer')->willReturn($subject);
 
 		$this->doubles = [
@@ -291,7 +291,7 @@ class PortalAccountSelfControllerTest extends TestCase {
 	 */
 	private function preferencesController(array $account, array &$written, array $subscriptions = [], ?array $messageBox = null, bool $canDeliver = true): PortalAccountSelfController {
 		$request = $this->createMock(IRequest::class);
-		$session = $this->double(PortalSessionService::class, ['resolveFromBearer']);
+		$session = $this->double(BearerSessionResolver::class, ['resolveFromBearer']);
 		$session->method('resolveFromBearer')->willReturn(['subjectRef' => 'subject-1', 'organisation' => 'gemeente-x']);
 
 		$accounts = $this->double(PortalAccountService::class, ['findBySubjectRef']);

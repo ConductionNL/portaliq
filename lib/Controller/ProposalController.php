@@ -33,8 +33,8 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\PortalObjectReader;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\Proposals\ProposalService;
+use OCA\Portaliq\Service\Session\BearerSessionResolver;
 use OCA\Portaliq\Service\Tasks\PortalCaseAccessGuard;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -65,7 +65,7 @@ class ProposalController extends Controller {
 	 * @param ProposalService $proposals The queue itself.
 	 * @param PortalContributionRegistry $registry The contribution aggregator.
 	 * @param PortalObjectReader $reader Reads the record being proposed about.
-	 * @param PortalSessionService $session Resolves a portal subject.
+	 * @param BearerSessionResolver $session Resolves a portal subject.
 	 * @param PortalCaseAccessGuard $guard Decides who may review.
 	 * @param IUserSession $userSession The staff user, when there is one.
 	 */
@@ -74,7 +74,7 @@ class ProposalController extends Controller {
 		private readonly ProposalService $proposals,
 		private readonly PortalContributionRegistry $registry,
 		private readonly PortalObjectReader $reader,
-		private readonly PortalSessionService $session,
+		private readonly BearerSessionResolver $session,
 		private readonly PortalCaseAccessGuard $guard,
 		private readonly IUserSession $userSession,
 	) {

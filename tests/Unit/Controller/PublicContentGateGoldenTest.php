@@ -19,9 +19,9 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Controller\ContentCatalogueController;
 use OCA\Portaliq\Controller\ContentNewsController;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PublicCatalogue;
 use OCA\Portaliq\Service\PublicNewsReader;
+use OCA\Portaliq\Service\Session\BearerSessionResolver;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\Response;
 use OCP\IRequest;
@@ -111,7 +111,7 @@ class PublicContentGateGoldenTest extends TestCase {
 	 *
 	 * @param array{0: array<int, string>|null, 1: string, 2: array<string, mixed>|null} $caller The caller.
 	 *
-	 * @return array{0: IRequest, 1: PortalResolver, 2: PortalSessionService}
+	 * @return array{0: IRequest, 1: PortalResolver, 2: BearerSessionResolver}
 	 */
 	private function doubles(array $caller): array {
 		[$modes, $bearer, $subject] = $caller;
@@ -122,7 +122,7 @@ class PublicContentGateGoldenTest extends TestCase {
 		$resolver->method('resolve')->willReturnCallback(
 			static fn (IRequest $request, ?string $portalSlug): ?array => ($modes === null || $portalSlug !== 'asked') ? null : ['slug' => 'asked', 'authentication' => ['modes' => $modes, 'minTrust' => 'substantial']]
 		);
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 
 		return [$request, $resolver, $session];
