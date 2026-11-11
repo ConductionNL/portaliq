@@ -239,6 +239,33 @@ async function post(url, body, fetchImpl) {
 }
 
 /**
+ * What a filed report sends: the filing, the report with the honeypot's
+ * value under the field the challenge named, and the solved challenge.
+ *
+ * @param {{caseType: string, register: string, schema: string, report: object, contact: object, trap?: string}} filing What to file.
+ * @param {{challenge: object, solution: string}} proof The challenge and its solution.
+ * @return {object} The body.
+ */
+function reportBody(filing, proof) {
+	const { challenge, solution } = proof
+	const sent = { ...filing.report }
+	if (challenge.honeypotField) {
+		sent[challenge.honeypotField] = filing.trap === undefined ? '' : filing.trap
+	}
+	return {
+		caseType: filing.caseType,
+		register: filing.register,
+		schema: filing.schema,
+		report: sent,
+		contact: filing.contact,
+		nonce: challenge.nonce || '',
+		solution,
+		expiresAt: challenge.expiresAt || 0,
+		signature: challenge.signature || '',
+	}
+}
+
+/**
  * The report routes of one portal. No cookie is sent: a reporter has no
  * session, and the page keeps nothing they can be recognised by.
  *
@@ -257,6 +284,24 @@ export function reportApi(
 	solve = solveChallenge,
 ) {
 	const query = `portal=${encodeURIComponent(portal || '')}`
+
+	/**
+	 * The portal's challenge for a report, `{}` when it cannot be read.
+	 *
+	 * @return {Promise<object>} The challenge.
+	 */
+	async function reportChallenge() {
+		try {
+			const response = await fetchImpl(
+				`${authBase}/identity/challenge?surface=report&${query}`,
+				{ credentials: 'omit', headers: { Accept: 'application/json' } },
+			)
+			return response.ok ? await response.json() : {}
+		} catch {
+			return {}
+		}
+	}
+
 	return {
 		/**
 		 * Solve the portal's challenge for a report and file it.
@@ -264,37 +309,14 @@ export function reportApi(
 		 * @param {{caseType: string, register: string, schema: string, report: object, contact: object, trap?: string}} filing What to file; `trap` is the honeypot's value.
 		 * @return {Promise<{ok: boolean, status: number, error: string, code: string}>} The code on success.
 		 */
-		async file({ caseType, register, schema, report, contact, trap = '' }) {
-			let challenge
-			try {
-				const response = await fetchImpl(
-					`${authBase}/identity/challenge?surface=report&${query}`,
-					{ credentials: 'omit', headers: { Accept: 'application/json' } },
-				)
-				challenge = response.ok ? await response.json() : {}
-			} catch {
-				challenge = {}
-			}
+		async file(filing) {
+			const challenge = await reportChallenge()
 			const solution = challenge.difficulty
 				? await solve(challenge.nonce, challenge.difficulty)
 				: ''
-			const sent = { ...report }
-			if (challenge.honeypotField) {
-				sent[challenge.honeypotField] = trap
-			}
 			const answer = await post(
 				`${authBase}/reports?${query}`,
-				{
-					caseType,
-					register,
-					schema,
-					report: sent,
-					contact,
-					nonce: challenge.nonce || '',
-					solution,
-					expiresAt: challenge.expiresAt || 0,
-					signature: challenge.signature || '',
-				},
+				reportBody(filing, { challenge, solution }),
 				fetchImpl,
 			)
 			return {
