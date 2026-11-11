@@ -69,24 +69,45 @@ class RequiredFieldsGuard {
 		$missing = [];
 		foreach ((array)($action['fields'] ?? []) as $field) {
 			$config = ($configs[$field] ?? null);
-			if (is_string($field) === false
-				|| is_array($config) === false
-				|| ($config['required'] ?? false) !== true
-				|| ($config['type'] ?? null) === FileFieldConfigNormaliser::TYPE_FILE
-			) {
-				continue;
-			}
-
-			if ($this->isEmpty(value: ($body[$field] ?? null)) === true) {
-				$missing[$field] = '';
-				if (is_string($config['requiredMessage'] ?? null) === true) {
-					$missing[$field] = $config['requiredMessage'];
-				}
+			if ($this->isCheckedField(field: $field, config: $config) === true && $this->isEmpty(value: ($body[$field] ?? null)) === true) {
+				$missing[$field] = $this->requiredMessage(config: $config);
 			}
 		}
 
 		return $missing;
 	}//end missing()
+
+	/**
+	 * Whether the guard checks a field: a string name whose config is an
+	 * array with `required` exactly true. A file field is checked by its
+	 * upload, not here.
+	 *
+	 * @param mixed $field  The field name.
+	 * @param mixed $config The field's config.
+	 *
+	 * @return bool
+	 */
+	private function isCheckedField(mixed $field, mixed $config): bool {
+		return is_string($field) === true
+			&& is_array($config) === true
+			&& ($config['required'] ?? false) === true
+			&& ($config['type'] ?? null) !== FileFieldConfigNormaliser::TYPE_FILE;
+	}//end isCheckedField()
+
+	/**
+	 * The words a missing field is refused with: its own, or none.
+	 *
+	 * @param array<string, mixed> $config The field's config.
+	 *
+	 * @return string
+	 */
+	private function requiredMessage(array $config): string {
+		if (is_string($config['requiredMessage'] ?? null) === true) {
+			return $config['requiredMessage'];
+		}
+
+		return '';
+	}//end requiredMessage()
 
 	/**
 	 * The 400 answer for a body that leaves a required field empty, or null
