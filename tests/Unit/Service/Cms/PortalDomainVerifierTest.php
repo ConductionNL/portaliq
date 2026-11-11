@@ -153,6 +153,15 @@ class PortalDomainVerifierTest extends TestCase {
 		$this->assertSame([], $saved);
 	}
 
+	public function testOnlyGloballyRoutableAddressesAreContacted(): void {
+		$global = new \ReflectionMethod(PortalDomainVerifier::class, 'isGlobalAddress');
+		foreach (['100.64.0.1', '198.18.0.1', '192.0.2.1', '198.51.100.1', '203.0.113.5', '192.0.0.8', '10.0.0.1', '127.0.0.1', '169.254.169.254', '0.0.0.0'] as $address) {
+			$this->assertFalse($global->invoke(null, $address), $address);
+		}
+
+		$this->assertTrue($global->invoke(null, '8.8.8.8'));
+	}
+
 	public function testThePrivateHostIsNeverContacted(): void {
 		$this->assertNull(PortalDomainVerifier::probeCertificate('localhost'));
 	}
