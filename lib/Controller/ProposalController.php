@@ -108,34 +108,14 @@ class ProposalController extends Controller {
 			return new JSONResponse(['error' => 'not_proposable'], Http::STATUS_FORBIDDEN);
 		}
 
-		// The record, read through the subject's own scoping: a record that is
-		// not theirs and one that does not exist answer identically.
-		$row = $this->reader->readObject(
-			register: $register,
-			schema: $schema,
-			scopeField: (string)($match['action']['scopeField'] ?? 'subjectRef'),
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			id: $id,
-			organisation: (string)($subject['organisation'] ?? ''),
-			scopeClaim: (string)($match['action']['scopeClaim'] ?? ''),
-			contributingApp: $match['app'],
-			audience: (string)($subject['audience'] ?? '')
-		);
+		$proposal = ['record' => ['register' => $register, 'schema' => $schema, 'id' => $id], 'match' => $match];
+		$row      = $this->ownRecord(subject: $subject, proposal: $proposal);
 		if ($row === null) {
 			return new JSONResponse(['error' => 'not_yours'], Http::STATUS_FORBIDDEN);
 		}
 
-		return $this->answer(
-			result: $this->proposals->propose(
-				subject: ['register' => $register, 'schema' => $schema, 'id' => $id],
-				changes: $changes,
-				proposable: $match['proposable'],
-				subjectRow: $row,
-				proposedBy: (string)($subject['subjectRef'] ?? ''),
-				channel: 'portal',
-				note: $note
-			)
-		);
+		$edit = ['changes' => $changes, 'note' => $note, 'row' => $row, 'proposedBy' => (string)($subject['subjectRef'] ?? '')];
+		return $this->answer(result: $this->proposed(proposal: $proposal, edit: $edit));
 	}//end proposeFromPortal()
 
 	/**
@@ -515,6 +495,52 @@ class ProposalController extends Controller {
 
 		return null;
 	}//end proposableFor()
+
+	/**
+	 * The record a portal proposal is about, read through the subject's own
+	 * scoping: a record that is not theirs and one that does not exist
+	 * answer identically, with null.
+	 *
+	 * @param array<string, mixed> $subject  The bearer's subject.
+	 * @param array<string, mixed> $proposal The record asked for and the matched propose action.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function ownRecord(array $subject, array $proposal): ?array {
+		$record = $proposal['record'];
+		$action = $proposal['match']['action'];
+		return $this->reader->readObject(
+			register: $record['register'],
+			schema: $record['schema'],
+			scopeField: (string)($action['scopeField'] ?? 'subjectRef'),
+			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			id: $record['id'],
+			organisation: (string)($subject['organisation'] ?? ''),
+			scopeClaim: (string)($action['scopeClaim'] ?? ''),
+			contributingApp: $proposal['match']['app'],
+			audience: (string)($subject['audience'] ?? '')
+		);
+	}//end ownRecord()
+
+	/**
+	 * Queue a portal proposal on the record that was read.
+	 *
+	 * @param array<string, mixed> $proposal The record and the matched propose action.
+	 * @param array<string, mixed> $edit     The changes, the note, the read row and the proposer.
+	 *
+	 * @return array<string, mixed> What the service answered.
+	 */
+	private function proposed(array $proposal, array $edit): array {
+		return $this->proposals->propose(
+			subject: $proposal['record'],
+			changes: $edit['changes'],
+			proposable: $proposal['match']['proposable'],
+			subjectRow: $edit['row'],
+			proposedBy: $edit['proposedBy'],
+			channel: 'portal',
+			note: $edit['note']
+		);
+	}//end proposed()
 
 	/**
 	 * Turn a service answer into a response.
