@@ -133,23 +133,48 @@ export function newPagePayload({ title, route, portal, parent = '' }, pages) {
 	if (!name) {
 		throw new Error('A page needs a title.')
 	}
-	const address = normaliseRoute(route)
-	if (pages.some((p) => normaliseRoute(p.route) === address)) {
-		throw new Error('Another page already uses this route.')
-	}
-	const siblings = pages.filter((p) => (p.parent || '') === (parent || ''))
-	const payload = {
+	const payload = draftPage({
 		title: name,
-		route: address,
+		route: freeRoute(route, pages),
 		portal,
-		status: 'draft',
-		order: siblings.length,
-		body: { type: 'grid', widgets: [] },
-	}
+		order: siblingCount(pages, parent),
+	})
 	if (parent) {
 		payload.parent = parent
 	}
 	return payload
+}
+
+/**
+ * @param {{title: string, route: string, portal: string, order: number}} page The title, route, portal and place of the new page.
+ * @return {object} The page as a draft with an empty grid.
+ */
+function draftPage(page) {
+	const { title, route, portal, order } = page
+	return { title, route, portal, status: 'draft', order, body: { type: 'grid', widgets: [] } }
+}
+
+/**
+ * @param {string} route The route the editor typed.
+ * @param {Array<object>} pages The portal's pages.
+ * @return {string} The route, normalised.
+ * @throws {Error} When another page uses it already.
+ */
+function freeRoute(route, pages) {
+	const address = normaliseRoute(route)
+	if (pages.some((p) => normaliseRoute(p.route) === address)) {
+		throw new Error('Another page already uses this route.')
+	}
+	return address
+}
+
+/**
+ * @param {Array<object>} pages The portal's pages.
+ * @param {string} parent The parent's id, or '' for the top.
+ * @return {number} How many pages the parent holds already.
+ */
+function siblingCount(pages, parent) {
+	return pages.filter((p) => (p.parent || '') === (parent || '')).length
 }
 
 /**
