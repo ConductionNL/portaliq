@@ -136,6 +136,42 @@ class ReportControllerTest extends TestCase {
 
 	}//end testAnAcceptedFilingAnswersTheCodeOnceAndSaysItCannotBeRecovered()
 
+	/**
+	 * The challenge is checked against the report with every proof value the
+	 * filing carried, the intake gets the report and contact on their case
+	 * type, the whole answer is the code once, and an intake that accepts
+	 * nothing is a 503.
+	 *
+	 * @return void
+	 */
+	public function testAFilingHandsEveryValueOnAndAnUnacceptedOneIs503(): void {
+		$controller = $this->controller();
+		$this->doubles['challenge']->expects($this->exactly(2))->method('accepts')
+			->with(['slug' => 'gemeente-x'], 'report', ['body' => 'Er klopt iets niet.'], 'n-1', 's-1', 1700000000, 'sig-1')
+			->willReturn(true);
+		$this->doubles['intake']->expects($this->exactly(2))->method('accept')
+			->with('gemeente-x', 'misstand', ['body' => 'Er klopt iets niet.'], ['email' => 'a@example.org'], 'reg', 'sch')
+			->willReturnOnConsecutiveCalls(['code' => 'MELD-1', 'id' => 'report-1'], null);
+
+		$filed = fn () => $controller->file(
+			caseType: 'misstand',
+			register: 'reg',
+			schema: 'sch',
+			report: ['body' => 'Er klopt iets niet.'],
+			contact: ['email' => 'a@example.org'],
+			nonce: 'n-1',
+			solution: 's-1',
+			expiresAt: 1700000000,
+			signature: 'sig-1'
+		);
+
+		$this->assertSame(['code' => 'MELD-1', 'codeShownOnce' => true, 'recoverable' => false], $filed()->getData());
+		$refused = $filed();
+		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $refused->getStatus());
+		$this->assertSame(['error' => 'not_accepted'], $refused->getData());
+
+	}//end testAFilingHandsEveryValueOnAndAnUnacceptedOneIs503()
+
 	public function testACodeThatOpensNothingIsAnsweredExactlyLikeAWrongOne(): void {
 		$controller = $this->controller();
 		$this->doubles['threads']->method('openByCode')->willReturn(null);
@@ -280,6 +316,30 @@ class ReportControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->decideReveal(id: 'request-bestaatniet')->getStatus());
 
 	}//end testAnUnknownRevealRequestIsNotFound()
+
+	/**
+	 * A decision needs a signed-in user, and the custodian's own answer
+	 * reaches the reveal service with its reason.
+	 *
+	 * @return void
+	 */
+	public function testADecisionNeedsAUserAndCarriesTheAnswer(): void {
+		$anonymous = $this->controller(user: false);
+		$this->doubles['reveals']->expects($this->never())->method('decide');
+		$response = $anonymous->decideReveal(id: 'request-1', allow: true, reason: 'x');
+		$this->assertSame([Http::STATUS_UNAUTHORIZED, ['error' => 'not_authenticated']], [$response->getStatus(), $response->getData()]);
+
+		$controller = $this->controller();
+		$this->doubles['reader']->method('readObject')->willReturn(['reportRef' => 'report-1'] + $this->storedReport());
+		$this->doubles['reader']->method('readObjectAsUser')->willReturn($this->storedReport());
+		$this->doubles['reveals']->expects($this->once())->method('decide')
+			->with($this->anything(), $this->anything(), $this->anything(), $this->anything(), true, 'Gegronde reden.')
+			->willReturn(['state' => 'allowed', 'contact' => ['email' => 'a@example.org']]);
+
+		$allowed = $controller->decideReveal(id: 'request-1', allow: true, reason: 'Gegronde reden.');
+		$this->assertSame([Http::STATUS_OK, ['state' => 'allowed', 'contact' => ['email' => 'a@example.org']]], [$allowed->getStatus(), $allowed->getData()]);
+
+	}//end testADecisionNeedsAUserAndCarriesTheAnswer()
 
 	/**
 	 * A signed-in colleague in neither the handler nor the custodian group
