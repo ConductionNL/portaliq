@@ -159,20 +159,31 @@ final class TrafficRollupOutcomes {
 	public function finishFunnels(array $funnels): array {
 		$out = [];
 		foreach ($funnels as $funnel) {
-			$steps = [];
-			$previous = null;
-			foreach ($funnel['steps'] as $step) {
-				$sessions = (int)$step['sessions'];
-				$dropOff = 0.0;
-				if ($previous !== null && $previous > 0) {
-					$dropOff = round(($previous - $sessions) / $previous, 3);
-				}
+			$out[] = ['id' => $funnel['id'], 'name' => $funnel['name'], 'steps' => $this->funnelSteps(steps: $funnel['steps'])];
+		}
 
-				$steps[] = ['name' => $step['name'], 'sessions' => $sessions, 'dropOff' => $dropOff];
-				$previous = $sessions;
+		return $out;
+	}
+
+	/**
+	 * A funnel's summed steps with the share lost since the step before.
+	 *
+	 * @param array<int, array<string, mixed>> $steps The funnel's step accumulator.
+	 *
+	 * @return array<int, array<string, mixed>> The step rows.
+	 */
+	private function funnelSteps(array $steps): array {
+		$out = [];
+		$previous = null;
+		foreach ($steps as $step) {
+			$sessions = (int)$step['sessions'];
+			$dropOff = 0.0;
+			if ($previous !== null && $previous > 0) {
+				$dropOff = round(($previous - $sessions) / $previous, 3);
 			}
 
-			$out[] = ['id' => $funnel['id'], 'name' => $funnel['name'], 'steps' => $steps];
+			$out[] = ['name' => $step['name'], 'sessions' => $sessions, 'dropOff' => $dropOff];
+			$previous = $sessions;
 		}
 
 		return $out;
@@ -194,15 +205,28 @@ final class TrafficRollupOutcomes {
 				$form[$key] += $this->values->int(value: $row[$key] ?? 0);
 			}
 
-			foreach ($this->keyedRows(rows: (array)($row['fields'] ?? []), key: 'fieldId') as [$fieldId, $field]) {
-				$sum = $form['fields'][$fieldId] ?? ['fieldId' => $fieldId, 'ms' => 0, 'members' => 0, 'abandonedHere' => 0];
-				$sum['ms'] += $this->values->int(value: $field['avgMs'] ?? 0);
-				$sum['members'] += 1;
-				$sum['abandonedHere'] += $this->values->int(value: $field['abandonedHere'] ?? 0);
-				$form['fields'][$fieldId] = $sum;
-			}
-
+			$form['fields'] = $this->addFormFields(into: $form['fields'], rows: (array)($row['fields'] ?? []));
 			$into[$id] = $form;
+		}
+
+		return $into;
+	}
+
+	/**
+	 * Merge a form's field rows by field id.
+	 *
+	 * @param array<string, array<string, mixed>> $into The form's field accumulator.
+	 * @param array<int, mixed>                   $rows The record's field rows.
+	 *
+	 * @return array<string, array<string, mixed>> The accumulator.
+	 */
+	private function addFormFields(array $into, array $rows): array {
+		foreach ($this->keyedRows(rows: $rows, key: 'fieldId') as [$fieldId, $field]) {
+			$sum = $into[$fieldId] ?? ['fieldId' => $fieldId, 'ms' => 0, 'members' => 0, 'abandonedHere' => 0];
+			$sum['ms'] += $this->values->int(value: $field['avgMs'] ?? 0);
+			$sum['members'] += 1;
+			$sum['abandonedHere'] += $this->values->int(value: $field['abandonedHere'] ?? 0);
+			$into[$fieldId] = $sum;
 		}
 
 		return $into;
@@ -219,15 +243,6 @@ final class TrafficRollupOutcomes {
 	public function finishForms(array $forms): array {
 		$out = [];
 		foreach ($forms as $form) {
-			$fields = [];
-			foreach ($form['fields'] as $field) {
-				$fields[] = [
-					'fieldId' => $field['fieldId'],
-					'avgMs' => (int)round($this->values->ratio(numerator: (float)$field['ms'], denominator: (int)$field['members']), 0),
-					'abandonedHere' => $field['abandonedHere'],
-				];
-			}
-
 			$starts = (int)$form['starts'];
 			$out[] = [
 				'formId' => $form['formId'],
@@ -235,7 +250,27 @@ final class TrafficRollupOutcomes {
 				'submits' => $form['submits'],
 				'abandons' => $form['abandons'],
 				'completionRate' => round($this->values->ratio(numerator: (float)$form['submits'], denominator: $starts), 3),
-				'fields' => $fields,
+				'fields' => $this->finishFormFields(fields: $form['fields']),
+			];
+		}
+
+		return $out;
+	}
+
+	/**
+	 * A form's summed fields with their mean time, in order.
+	 *
+	 * @param array<string, array<string, mixed>> $fields The form's field accumulator.
+	 *
+	 * @return array<int, array<string, mixed>> The field rows.
+	 */
+	private function finishFormFields(array $fields): array {
+		$out = [];
+		foreach ($fields as $field) {
+			$out[] = [
+				'fieldId' => $field['fieldId'],
+				'avgMs' => (int)round($this->values->ratio(numerator: (float)$field['ms'], denominator: (int)$field['members']), 0),
+				'abandonedHere' => $field['abandonedHere'],
 			];
 		}
 
