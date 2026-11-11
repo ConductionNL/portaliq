@@ -59,6 +59,19 @@ class MessageBoxConfigNormaliserTest extends TestCase {
 	}//end testKeepsTheDeclaredLetterFields()
 
 	/**
+	 * The kept key moves to the end of the collection, its letter fields in
+	 * body-then-subject order whatever the declared order.
+	 *
+	 * @return void
+	 */
+	public function testTheKeptKeyIsInTheRecordedOrder(): void {
+		$this->assertSame(
+			['kind' => 'inbox', 'id' => 'b', 'messageBox' => ['recipientProvider' => 'messageBoxRecipient', 'bodyField' => '_body', 'subjectField' => 'subject']],
+			(new MessageBoxConfigNormaliser())->normalise(collection: ['messageBox' => ['subjectField' => 'subject', 'bodyField' => '_body', 'recipientProvider' => 'messageBoxRecipient'], 'kind' => 'inbox', 'id' => 'b'])
+		);
+	}//end testTheKeptKeyIsInTheRecordedOrder()
+
+	/**
 	 * A contract method, a non-identifier, a missing name, a non-array value
 	 * and a collection that is not an inbox all drop the key.
 	 *
