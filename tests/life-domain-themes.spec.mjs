@@ -89,7 +89,7 @@ test('a product is valid, expired or not yet in effect by its dates', () => {
 })
 
 test('a product row reads as the board draws it', () => {
-	const view = productView(ROWS[0], PERMITS, TODAY, (d) => `<${d}>`, t)
+	const view = productView(ROWS[0], { collection: PERMITS, today: TODAY, format: (d) => `<${d}>`, t })
 	assert.deepEqual(view, {
 		id: 'p1',
 		title: 'Bewonersvergunning binnenstad',
@@ -98,12 +98,12 @@ test('a product row reads as the board draws it', () => {
 		meta: 'Kenteken GZ-482-K · Lindelaan 12 · in effect since <2026-01-01>',
 		validUntil: 'Valid until <2026-12-31>',
 	})
-	const expired = productView(ROWS[1], PERMITS, TODAY, (d) => d, t)
+	const expired = productView(ROWS[1], { collection: PERMITS, today: TODAY, format: (d) => d, t })
 	assert.equal(expired.tag, 'Expired')
-	const upcoming = productView(ROWS[2], PERMITS, TODAY, (d) => d, t)
+	const upcoming = productView(ROWS[2], { collection: PERMITS, today: TODAY, format: (d) => d, t })
 	assert.equal(upcoming.tag, 'Starts on 2026-11-01')
 	assert.equal(upcoming.meta.includes('in effect since'), false, 'not in effect yet')
-	assert.equal(productView({ name: 'x' }, PERMITS, TODAY, (d) => d, t).validUntil, '', 'no last day: left out')
+	assert.equal(productView({ name: 'x' }, { collection: PERMITS, today: TODAY, format: (d) => d, t }).validUntil, '', 'no last day: left out')
 })
 
 test('the valid products come first, expired ones last, and the count line uses the collection\'s words', () => {
