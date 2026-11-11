@@ -118,38 +118,31 @@ class ProposalService {
 		string $channel = 'portal',
 		string $note = '',
 	): array {
-		if ($proposedBy === '' || ($subject['id'] ?? '') === '') {
-			return ['error' => 'refused'];
-		}
+		$request = new ChangeProposalRequest(
+			subject: $subject,
+			changes: $changes,
+			proposable: $proposable,
+			subjectRow: $subjectRow,
+			proposedBy: $proposedBy,
+			channel: $channel,
+			note: $note
+		);
+		return $this->proposeChange(request: $request);
+	}//end propose()
 
-		$recorded = [];
-		foreach ($changes as $change) {
-			if (is_array($change) === false) {
-				continue;
-			}
-
-			$property = (string)($change['property'] ?? '');
-			if ($property === '') {
-				continue;
-			}
-
-			if (in_array($property, $proposable, true) === false) {
-				// The allow-list is the contribution's, and it is checked here
-				// rather than in the UI: a property nobody listed is not
-				// proposable however the request was made.
-				return ['error' => 'property_not_proposable', 'property' => $property];
-			}
-
-			$recorded[] = [
-				'property' => $property,
-				// The snapshot: what the record said at this moment.
-				'currentValue' => ($subjectRow[$property] ?? null),
-				'proposedValue' => ($change['proposedValue'] ?? null),
-			];
-		}//end foreach
-
-		if ($recorded === []) {
-			return ['error' => 'nothing_proposed'];
+	/**
+	 * Queue a proposal against a record.
+	 *
+	 * @param ChangeProposalRequest $request The record, the changes and who asks.
+	 *
+	 * @return array{proposal: array<string, mixed>}|array{error: string, property?: string}
+	 *
+	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 */
+	public function proposeChange(ChangeProposalRequest $request): array {
+		$checked = $this->checkedChanges(request: $request);
+		if (isset($checked['error']) === true) {
+			return $checked;
 		}
 
 		$created = $this->writer->createObject(
@@ -158,24 +151,128 @@ class ProposalService {
 			scopeField: '',
 			subjectRef: '',
 			organisation: '',
-			data: [
-				'subjectRegister' => (string)($subject['register'] ?? ''),
-				'subjectSchema' => (string)($subject['schema'] ?? ''),
-				'subjectId' => (string)($subject['id'] ?? ''),
-				'proposedBy' => $proposedBy,
-				'channel' => $channel,
-				'changes' => $recorded,
-				'note' => $note,
-				'state' => self::STATE_QUEUED,
-				'proposedAt' => (new DateTimeImmutable())->format(DATE_ATOM),
-			]
+			data: $this->proposalRow(request: $request, recorded: $checked['changes'])
 		);
 		if ($created === null) {
 			return ['error' => 'not_recorded'];
 		}
 
 		return ['proposal' => $created];
-	}//end propose()
+	}//end proposeChange()
+
+	/**
+	 * The changes to record with their snapshot, or why the proposal is refused.
+	 *
+	 * @param ChangeProposalRequest $request The record, the changes and who asks.
+	 *
+	 * @return array{changes: array<int, array<string, mixed>>}|array{error: string, property?: string}
+	 */
+	private function checkedChanges(ChangeProposalRequest $request): array {
+		if ($request->proposedBy === '' || ($request->subject['id'] ?? '') === '') {
+			return ['error' => 'refused'];
+		}
+
+		$named        = $this->namedChanges(changes: $request->changes);
+		$unproposable = $this->firstUnproposable(named: $named, proposable: $request->proposable);
+		if ($unproposable !== '') {
+			// The allow-list is the contribution's, and it is checked here
+			// rather than in the UI: a property nobody listed is not
+			// proposable however the request was made.
+			return ['error' => 'property_not_proposable', 'property' => $unproposable];
+		}
+
+		$recorded = $this->snapshot(named: $named, subjectRow: $request->subjectRow);
+		if ($recorded === []) {
+			return ['error' => 'nothing_proposed'];
+		}
+
+		return ['changes' => $recorded];
+	}//end checkedChanges()
+
+	/**
+	 * The changes that name a property, each with that property's name;
+	 * anything else in the list is skipped.
+	 *
+	 * @param array<int, mixed> $changes Each `property` and `proposedValue`.
+	 *
+	 * @return array<int, array{0: string, 1: array<string, mixed>}> Property name and change.
+	 */
+	private function namedChanges(array $changes): array {
+		$named = [];
+		foreach ($changes as $change) {
+			if (is_array($change) === false) {
+				continue;
+			}
+
+			$property = (string)($change['property'] ?? '');
+			if ($property !== '') {
+				$named[] = [$property, $change];
+			}
+		}
+
+		return $named;
+	}//end namedChanges()
+
+	/**
+	 * The first named property the contribution does not allow, '' when all are allowed.
+	 *
+	 * @param array<int, array{0: string, 1: array<string, mixed>}> $named      Property name and change.
+	 * @param array<int, string>                                    $proposable The properties the contribution allows.
+	 *
+	 * @return string
+	 */
+	private function firstUnproposable(array $named, array $proposable): string {
+		foreach ($named as $entry) {
+			if (in_array($entry[0], $proposable, true) === false) {
+				return $entry[0];
+			}
+		}
+
+		return '';
+	}//end firstUnproposable()
+
+	/**
+	 * Each change with the snapshot: what the record said at this moment.
+	 *
+	 * @param array<int, array{0: string, 1: array<string, mixed>}> $named      Property name and change.
+	 * @param array<string, mixed>                                  $subjectRow The record as it stands.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function snapshot(array $named, array $subjectRow): array {
+		$recorded = [];
+		foreach ($named as $entry) {
+			$recorded[] = [
+				'property' => $entry[0],
+				'currentValue' => ($subjectRow[$entry[0]] ?? null),
+				'proposedValue' => ($entry[1]['proposedValue'] ?? null),
+			];
+		}
+
+		return $recorded;
+	}//end snapshot()
+
+	/**
+	 * The fields of a newly queued proposal.
+	 *
+	 * @param ChangeProposalRequest            $request  The record, the changes and who asks.
+	 * @param array<int, array<string, mixed>> $recorded The changes with their snapshot.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function proposalRow(ChangeProposalRequest $request, array $recorded): array {
+		return [
+			'subjectRegister' => (string)($request->subject['register'] ?? ''),
+			'subjectSchema' => (string)($request->subject['schema'] ?? ''),
+			'subjectId' => (string)($request->subject['id'] ?? ''),
+			'proposedBy' => $request->proposedBy,
+			'channel' => $request->channel,
+			'changes' => $recorded,
+			'note' => $request->note,
+			'state' => self::STATE_QUEUED,
+			'proposedAt' => (new DateTimeImmutable())->format(DATE_ATOM),
+		];
+	}//end proposalRow()
 
 	/**
 	 * The queued proposals on one record.
