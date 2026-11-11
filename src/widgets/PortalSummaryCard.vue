@@ -61,6 +61,30 @@ import { generateUrl } from '@nextcloud/router'
 import { domainTerms, editorPeople, statusSummary } from '../lib/portalSummary.js'
 
 /**
+ * The name of the portal's chosen theme set, else its id.
+ *
+ * @param {string} slug The portal slug.
+ * @param {string} themeId The chosen set.
+ * @return {Promise<string>} The name.
+ */
+async function themeNameOf(slug, themeId) {
+	const { data } = await axios.get(generateUrl('/apps/portaliq/api/portals/{slug}/theme', { slug }))
+	const set = (Array.isArray(data?.sets) ? data.sets : []).find((s) => s.id === themeId)
+	return set?.name || themeId
+}
+
+/**
+ * How many of the portal's pages wait as draft.
+ *
+ * @param {string} slug The portal slug.
+ * @return {Promise<number>} The count.
+ */
+async function draftPageCount(slug) {
+	const { data } = await axios.get(generateUrl('/apps/openregister/api/objects/portaliq/page'), { params: { portal: slug, status: 'draft', _limit: 1 } })
+	return Number(data?.total) || 0
+}
+
+/**
  * The translate function the summary helpers take.
  *
  * @param {string} key The key.
@@ -243,12 +267,9 @@ export default {
 			}
 			try {
 				if (this.kind === 'theme' && this.themeId) {
-					const { data } = await axios.get(generateUrl('/apps/portaliq/api/portals/{slug}/theme', { slug }))
-					const set = (Array.isArray(data?.sets) ? data.sets : []).find((s) => s.id === this.themeId)
-					this.themeName = set?.name || this.themeId
+					this.themeName = await themeNameOf(slug, this.themeId)
 				} else if (this.kind === 'status') {
-					const { data } = await axios.get(generateUrl('/apps/openregister/api/objects/portaliq/page'), { params: { portal: slug, status: 'draft', _limit: 1 } })
-					this.waitingPages = Number(data?.total) || 0
+					this.waitingPages = await draftPageCount(slug)
 				}
 			} catch {
 				this.themeName = this.themeName || this.themeId
