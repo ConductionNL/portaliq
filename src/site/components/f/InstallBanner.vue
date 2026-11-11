@@ -118,6 +118,27 @@ function remember(storage) {
 	}
 }
 
+/**
+ * Keep Tab inside the dialog: Shift+Tab on its first control or on the
+ * dialog itself goes to the last control, Tab on the last to the first.
+ *
+ * @param {object} banner The banner, with its `$refs` and window.
+ * @param {KeyboardEvent} event The Tab.
+ * @return {void}
+ */
+function keepTabInside(banner, event) {
+	const { first, last, dialog } = banner.$refs
+	if (!first || !last) {
+		return
+	}
+	const active = banner.win?.document?.activeElement
+	const wraps = event.shiftKey ? active === first || active === dialog : active === last
+	if (wraps) {
+		event.preventDefault()
+		;(event.shiftKey ? last : first).focus()
+	}
+}
+
 export default {
 	name: 'InstallBanner',
 
@@ -283,24 +304,8 @@ export default {
 				this.dismiss()
 				return
 			}
-			if (event.key !== 'Tab') {
-				return
-			}
-			const first = this.$refs.first
-			const last = this.$refs.last
-			if (!first || !last) {
-				return
-			}
-			const active = this.win?.document?.activeElement
-			if (
-				event.shiftKey
-				&& (active === first || active === this.$refs.dialog)
-			) {
-				event.preventDefault()
-				last.focus()
-			} else if (!event.shiftKey && active === last) {
-				event.preventDefault()
-				first.focus()
+			if (event.key === 'Tab') {
+				keepTabInside(this, event)
 			}
 		},
 	},
