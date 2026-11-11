@@ -113,4 +113,42 @@ class PortalReferenceListsTest extends TestCase {
 		$this->assertSame([], $cache);
 		$this->assertSame([], $lists->items('../../etc'));
 	}//end testAnUnreadableOrOddlyNamedListAnswersNothingAndIsNotCached()
+
+	/**
+	 * Every row shape is listed or left out exactly as recorded, in order.
+	 *
+	 * @return void
+	 */
+	public function testEveryRowIsAsRecorded(): void {
+		$entity  = new class implements \JsonSerializable {
+			public function jsonSerialize(): array {
+				return ['code' => ' e ', 'label' => ' Entity '];
+			}
+		};
+		$service = $this->service([
+			$entity,
+			['code' => ' a ', 'label' => ' A '],
+			['code' => 'b', 'label' => '  '],
+			['code' => 'c', 'active' => 1],
+			['code' => 'd', 'active' => null],
+			['code' => '  ', 'label' => 'Blank code'],
+			['code' => 5, 'label' => 7],
+			'not a row',
+			new \stdClass(),
+			['code' => 'z', 'active' => false],
+		]);
+		$cache   = [];
+
+		$this->assertSame(
+			[
+				['value' => 'e', 'label' => 'Entity'],
+				['value' => 'a', 'label' => 'A'],
+				['value' => 'b', 'label' => 'b'],
+				['value' => 'c', 'label' => 'c'],
+				['value' => 'd', 'label' => 'd'],
+				['value' => '5', 'label' => '7'],
+			],
+			$this->lists($service, $cache)->items('mixed')
+		);
+	}//end testEveryRowIsAsRecorded()
 }
