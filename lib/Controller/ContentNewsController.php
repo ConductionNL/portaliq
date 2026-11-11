@@ -86,14 +86,9 @@ class ContentNewsController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 240, period: 60)]
 	public function index(?string $portal = null, ?int $limit = null): JSONResponse {
-		$resolved = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
-		if ($resolved === null) {
-			return $this->notFound();
-		}
-
-		$refusal = $this->refuseUnlessPermitted(portal: $resolved);
-		if ($refusal !== null) {
-			return $refusal;
+		$resolved = $this->permittedPortal(portal: $portal);
+		if ($resolved instanceof JSONResponse) {
+			return $resolved;
 		}
 
 		return $this->publicJson(
@@ -115,14 +110,9 @@ class ContentNewsController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 240, period: 60)]
 	public function show(string $id, ?string $portal = null): JSONResponse {
-		$resolved = $this->resolver->resolve(request: $this->request, portalSlug: $portal);
-		if ($resolved === null) {
-			return $this->notFound();
-		}
-
-		$refusal = $this->refuseUnlessPermitted(portal: $resolved);
-		if ($refusal !== null) {
-			return $refusal;
+		$resolved = $this->permittedPortal(portal: $portal);
+		if ($resolved instanceof JSONResponse) {
+			return $resolved;
 		}
 
 		$item = $this->news->itemFor(portal: (string)$resolved['slug'], id: $id);
