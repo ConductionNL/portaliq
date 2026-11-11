@@ -94,6 +94,13 @@
 </template>
 
 <script>
+/** The keys the open menu takes over, each with what it does. */
+const MENU_KEYS = Object.freeze({
+	Escape: (menu) => menu.close(),
+	ArrowDown: (menu) => menu.move(1),
+	ArrowUp: (menu) => menu.move(-1),
+})
+
 /** The entries that open the app, each where the context carries its address. */
 const LINK_ACTIONS = Object.freeze([
 	{ key: 'designer', label: 'In de beheeromgeving openen', field: 'designerUrl' },
@@ -284,21 +291,9 @@ export default {
 		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-site-must-offer-an-editing-entry-point-only-to-a-visitor-who-may-edit
 		 */
 		onMenuKey(event) {
-			if (event.key === 'Escape') {
+			if (Object.hasOwn(MENU_KEYS, event.key)) {
 				event.preventDefault()
-				this.close()
-				return
-			}
-
-			if (event.key === 'ArrowDown') {
-				event.preventDefault()
-				this.move(1)
-				return
-			}
-
-			if (event.key === 'ArrowUp') {
-				event.preventDefault()
-				this.move(-1)
+				MENU_KEYS[event.key](this)
 				return
 			}
 
