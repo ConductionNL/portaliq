@@ -242,6 +242,58 @@ class PortalAccountService {
 
 
 	/**
+	 * Provision an account before any login (REQ-PIS-001), through the
+	 * creation half; see PortalAccountCreation::provision(). Kept for the
+	 * invitation accept, which an open pull request is changing.
+	 *
+	 * @param string $audience The external audience ("client"|"supplier"|...).
+	 * @param string $organisation The tenant slug.
+	 * @param string $identityType One of the register's identityType enum, or ''.
+	 * @param string $identityRef The identity reference, or '' when unknown.
+	 * @param string $email A contact address, or '' when none is known.
+	 * @param bool $verifiedEmail True when that address was verified out of band.
+	 * @param string $provisionedBy The staff user id or app id that asked.
+	 * @param string $displayName The name to greet the person by, or ''.
+	 *
+	 * @return array{subjectRef: string, isNew: bool, status: string}|null Null
+	 *         when the call is refused or OpenRegister is unavailable.
+	 *
+	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 *
+	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- one parameter per
+	 * declared field of the provisioned row; an options array would lose the
+	 * type safety on the identity boundary.
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- `verifiedEmail` is a
+	 * field OF the account, not a mode this method runs in. It is carried to
+	 * the stored row and nothing ever branches on it: one write, no condition.
+	 * Splitting the method in two would give two methods differing in a literal.
+	 */
+	public function provision(
+		string $audience,
+		string $organisation,
+		string $identityType = '',
+		string $identityRef = '',
+		string $email = '',
+		bool $verifiedEmail = false,
+		string $provisionedBy = '',
+		string $displayName = '',
+	): ?array {
+		return $this->creation()->provision(
+			request: new AccountProvisionRequest(
+				audience: $audience,
+				organisation: $organisation,
+				verifiedEmail: $verifiedEmail,
+				identityType: $identityType,
+				identityRef: $identityRef,
+				email: $email,
+				provisionedBy: $provisionedBy,
+				displayName: $displayName
+			)
+		);
+	}//end provision()
+
+	/**
 	 * Write an app's claim on an account, server-side (REQ-PIS-003).
 	 *
 	 * The app id comes from the dispatching context, never from the payload,

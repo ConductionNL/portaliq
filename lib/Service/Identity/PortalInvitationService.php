@@ -32,8 +32,7 @@ namespace OCA\Portaliq\Service\Identity;
 
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Portaliq\Service\AccountProvisionRequest;
-use OCA\Portaliq\Service\PortalAccountCreation;
+use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\Security\ISecureRandom;
@@ -67,13 +66,13 @@ class PortalInvitationService {
 	 *
 	 * @param PortalObjectReader $reader Looks the invitation up by hash.
 	 * @param PortalObjectWriter $writer Records and updates the invitation.
-	 * @param PortalAccountCreation $accounts Provisions the account on acceptance.
+	 * @param PortalAccountService $accounts Provisions the account on acceptance.
 	 * @param ISecureRandom $random Mints the one-time secret.
 	 */
 	public function __construct(
 		private readonly PortalObjectReader $reader,
 		private readonly PortalObjectWriter $writer,
-		private readonly PortalAccountCreation $accounts,
+		private readonly PortalAccountService $accounts,
 		private readonly ISecureRandom $random,
 	) {
 	}//end __construct()
@@ -272,13 +271,13 @@ class PortalInvitationService {
 			return null;
 		}
 
-		$account = $this->accounts->provision(request: new AccountProvisionRequest(
+		$account = $this->accounts->provision(
 			audience: (string)($row['audience'] ?? 'client'),
 			organisation: (string)($row['organisation'] ?? ''),
 			email: (string)($row['email'] ?? ''),
 			verifiedEmail: true,
 			provisionedBy: (string)($row['invitedBy'] ?? '')
-		));
+		);
 		if ($account === null) {
 			return null;
 		}
