@@ -163,17 +163,7 @@ export default {
 			return
 		}
 		if (this.link.kind === 'activate') {
-			this.busy = true
-			const answer = await this.api.activateAccount(this.link.token)
-			this.busy = false
-			this.result = answer.ok
-				? { role: 'status', text: readyText(this.t, this.emailSignIn) }
-				: {
-						role: 'alert',
-						text: this.t(
-							wayInRefusalText(answer.error || 'activation_not_valid'),
-						),
-					}
+			await this.activate()
 		}
 		if (this.link.kind === 'reference') {
 			await this.openReference()
@@ -194,10 +184,7 @@ export default {
 		async openReference() {
 			this.busy = true
 			const answer = await this.api.redeemReferenceLink(this.link.token)
-			const read =
-				answer.ok && answer.data.bearer
-					? await this.api.referenceCase(answer.data.bearer)
-					: null
+			const read = await this.readReferenceCase(answer)
 			this.busy = false
 			if (read && read.case) {
 				this.opened = {
@@ -221,6 +208,20 @@ export default {
 		 *
 		 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-a-link-opened-in-another-browser-asks-for-the-address-first-req-iwi-010
 		 */
+		/**
+		 * Read the case a redeemed reference link opens, with the bearer the
+		 * redemption answered; null without one.
+		 *
+		 * @param {{ok: boolean, data: object}} answer The redemption's answer.
+		 * @return {Promise<object|null>} The case read, or null.
+		 */
+		async readReferenceCase(answer) {
+			if (!answer.ok || !answer.data.bearer) {
+				return null
+			}
+			return this.api.referenceCase(answer.data.bearer)
+		},
+
 		async describeEmailLink() {
 			this.busy = true
 			const answer = await this.api.describeEmailLink(this.link.token)
@@ -256,15 +257,21 @@ export default {
 				window.location.reload()
 				return
 			}
-			const text = this.t(wayInRefusalText(answer.error || 'link_not_valid'))
-			if (
-				answer.error === 'address_needed'
-				|| answer.error === 'address_wrong'
-			) {
-				// The link is not spent: ask for the address it was sent to.
+			this.showEmailLinkRefusal(answer.error)
+		},
+
+		/**
+		 * Show why an e-mail sign-in link did not sign in. When it wants the
+		 * address it was sent to, the link is not spent: ask for it.
+		 *
+		 * @param {string|undefined} error The refusal code.
+		 * @return {void}
+		 */
+		showEmailLinkRefusal(error) {
+			const text = this.t(wayInRefusalText(error || 'link_not_valid'))
+			if (error === 'address_needed' || error === 'address_wrong') {
 				this.emailLink = { ...this.emailLink, sameBrowser: false }
-				this.result =
-					answer.error === 'address_wrong' ? { role: 'alert', text } : null
+				this.result = error === 'address_wrong' ? { role: 'alert', text } : null
 				return
 			}
 			this.emailLink = null
@@ -282,14 +289,37 @@ export default {
 			this.busy = true
 			const answer = await this.api.acceptInvitation(this.link.token)
 			this.busy = false
-			this.result = answer.ok
-				? { role: 'status', text: readyText(this.t, this.emailSignIn) }
-				: {
-						role: 'alert',
-						text: this.t(
-							wayInRefusalText(answer.error || 'invitation_not_valid'),
-						),
-					}
+			this.result = this.readyOrRefused(answer, 'invitation_not_valid')
+		},
+
+		/**
+		 * Activate the account an activation link names.
+		 *
+		 * @return {Promise<void>}
+		 */
+		async activate() {
+			this.busy = true
+			const answer = await this.api.activateAccount(this.link.token)
+			this.busy = false
+			this.result = this.readyOrRefused(answer, 'activation_not_valid')
+		},
+
+		/**
+		 * What an activation or an accepted invitation says: the account is
+		 * ready, or why it was refused.
+		 *
+		 * @param {{ok: boolean, error?: string}} answer The server's answer.
+		 * @param {string} fallback The refusal code when the server names none.
+		 * @return {{role: string, text: string}} The result.
+		 */
+		readyOrRefused(answer, fallback) {
+			if (answer.ok) {
+				return { role: 'status', text: readyText(this.t, this.emailSignIn) }
+			}
+			return {
+				role: 'alert',
+				text: this.t(wayInRefusalText(answer.error || fallback)),
+			}
 		},
 	},
 }
