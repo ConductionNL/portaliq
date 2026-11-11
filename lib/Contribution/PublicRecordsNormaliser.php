@@ -56,17 +56,16 @@ class PublicRecordsNormaliser {
 			return [];
 		}
 
-		$methods = new TimelineProviderMethod();
-		$kept    = [];
-		$seen    = [];
+		$run  = new PublicRecordsRun(provider: $provider, methods: new TimelineProviderMethod());
+		$kept = [];
 		foreach ($entries as $entry) {
-			$clean = $this->entry(entry: $entry, seen: $seen, provider: $provider, methods: $methods);
+			$clean = $this->entry(entry: $entry, run: $run);
 			if ($clean === null) {
 				continue;
 			}
 
-			$seen[$clean['id']] = true;
-			$kept[]             = $clean;
+			$run->seen[$clean['id']] = true;
+			$kept[] = $clean;
 		}
 
 		return $kept;
@@ -75,40 +74,65 @@ class PublicRecordsNormaliser {
 	/**
 	 * One declared entry, or null when it is malformed, a duplicate or names a provider method that is not callable.
 	 *
-	 * @param mixed $entry The declared entry.
-	 * @param array<string, bool> $seen The ids kept so far.
-	 * @param object $provider The contributing app's provider.
-	 * @param TimelineProviderMethod $methods The provider method check.
+	 * @param mixed            $entry The declared entry.
+	 * @param PublicRecordsRun $run   The provider, the method check and the ids kept so far.
 	 *
 	 * @return array<string, string>|null The kept entry.
 	 */
-	private function entry(mixed $entry, array $seen, object $provider, TimelineProviderMethod $methods): ?array {
-		if (is_array($entry) === false) {
+	private function entry(mixed $entry, PublicRecordsRun $run): ?array {
+		if (is_array($entry) === false || $this->isNewId(id: ($entry['id'] ?? null), run: $run) === false
+			|| $this->hasLabel(entry: $entry) === false || $this->namesCallableProviders(entry: $entry, run: $run) === false
+		) {
 			return null;
 		}
 
-		$id    = $entry['id'] ?? null;
-		$label = $entry['label'] ?? null;
-		$list  = $entry['listProvider'] ?? null;
-		$one   = $entry['recordProvider'] ?? null;
-		if (is_string($id) === false || preg_match(self::ID_PATTERN, $id) !== 1 || isset($seen[$id]) === true) {
-			return null;
-		}
-
-		if (is_string($label) === false || trim($label) === '') {
-			return null;
-		}
-
-		$listCallable = $methods->callableOn(provider: $provider, method: (string)$list);
-		$oneCallable  = $methods->callableOn(provider: $provider, method: (string)$one);
-		if ($listCallable === false || $oneCallable === false) {
-			return null;
-		}
-
-		$group = $this->group(value: ($entry['group'] ?? ''));
-
-		return ['id' => $id, 'label' => trim($label), 'group' => $group, 'listProvider' => (string)$list, 'recordProvider' => (string)$one];
+		return [
+			'id'             => $entry['id'],
+			'label'          => trim($entry['label']),
+			'group'          => $this->group(value: ($entry['group'] ?? '')),
+			'listProvider'   => (string)$entry['listProvider'],
+			'recordProvider' => (string)$entry['recordProvider'],
+		];
 	}//end entry()
+
+	/**
+	 * Whether an entry id is a plain id not kept before.
+	 *
+	 * @param mixed            $id  The declared id.
+	 * @param PublicRecordsRun $run The ids kept so far.
+	 *
+	 * @return bool
+	 */
+	private function isNewId(mixed $id, PublicRecordsRun $run): bool {
+		return is_string($id) === true && preg_match(self::ID_PATTERN, $id) === 1 && isset($run->seen[$id]) === false;
+	}//end isNewId()
+
+	/**
+	 * Whether an entry has a label that says something.
+	 *
+	 * @param array<string, mixed> $entry The declared entry.
+	 *
+	 * @return bool
+	 */
+	private function hasLabel(array $entry): bool {
+		$label = $entry['label'] ?? null;
+		return is_string($label) === true && trim($label) !== '';
+	}//end hasLabel()
+
+	/**
+	 * Whether an entry's list and record providers are both methods the
+	 * provider lets portaliq call.
+	 *
+	 * @param array<string, mixed> $entry The declared entry.
+	 * @param PublicRecordsRun     $run   The provider and the method check.
+	 *
+	 * @return bool
+	 */
+	private function namesCallableProviders(array $entry, PublicRecordsRun $run): bool {
+		$listCallable = $run->methods->callableOn(provider: $run->provider, method: (string)($entry['listProvider'] ?? null));
+		$oneCallable  = $run->methods->callableOn(provider: $run->provider, method: (string)($entry['recordProvider'] ?? null));
+		return $listCallable === true && $oneCallable === true;
+	}//end namesCallableProviders()
 
 	/**
 	 * The group of an entry, empty when it is not text.
