@@ -7,7 +7,7 @@ namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 use OCA\Portaliq\Event\PortalAccountProvisionRequestedEvent;
 use OCA\Portaliq\Listener\PortalAccountProvisionListener;
 use OCA\Portaliq\Service\Identity\NextcloudAccountProvisioner;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\PortalAccountCreation;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PublishedPortals;
@@ -81,7 +81,7 @@ class NextcloudAccountProvisionerTest extends TestCase {
 
 		$provisioner = new NextcloudAccountProvisioner($reader, $this->writer, $users, $portals);
 		$listener = new PortalAccountProvisionListener(
-			$this->createMock(PortalAccountService::class),
+			$this->createMock(PortalAccountCreation::class),
 			$this->createMock(LoggerInterface::class),
 			$provisioner
 		);
@@ -227,7 +227,7 @@ class NextcloudAccountProvisionerTest extends TestCase {
 	 * @return void
 	 */
 	public function testWithoutAUserIdThePendingPathRuns(): void {
-		$accounts = $this->createMock(PortalAccountService::class);
+		$accounts = $this->createMock(PortalAccountCreation::class);
 		$accounts->expects($this->once())->method('provision')->willReturn(['subjectRef' => 'minted-2', 'isNew' => true, 'status' => 'pending']);
 		$provisioner = $this->createMock(NextcloudAccountProvisioner::class);
 		$provisioner->expects($this->never())->method('provision');

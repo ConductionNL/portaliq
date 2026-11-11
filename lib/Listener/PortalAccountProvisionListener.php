@@ -28,8 +28,9 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Listener;
 
 use OCA\Portaliq\Event\PortalAccountProvisionRequestedEvent;
+use OCA\Portaliq\Service\AccountProvisionRequest;
 use OCA\Portaliq\Service\Identity\NextcloudAccountProvisioner;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\PortalAccountCreation;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -47,13 +48,13 @@ class PortalAccountProvisionListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalAccountService $accounts Provisions the account.
+	 * @param PortalAccountCreation $accounts Provisions the account.
 	 * @param LoggerInterface $logger Records a refusal's cause.
 	 * @param NextcloudAccountProvisioner|null $nextcloud Writes an active
 	 *        `nextcloud`-mode account (an-app-provisions-a-nextcloud-account).
 	 */
 	public function __construct(
-		private readonly PortalAccountService $accounts,
+		private readonly PortalAccountCreation $accounts,
 		private readonly LoggerInterface $logger,
 		private readonly ?NextcloudAccountProvisioner $nextcloud = null,
 	) {
@@ -122,7 +123,7 @@ class PortalAccountProvisionListener implements IEventListener {
 	 * @return array<string, mixed>|null The account, or null when none may be given.
 	 */
 	private function pendingAccount(PortalAccountProvisionRequestedEvent $event): ?array {
-		return $this->accounts->provision(
+		return $this->accounts->provision(request: new AccountProvisionRequest(
 			audience: $event->getAudience(),
 			organisation: $event->getOrganisation(),
 			identityType: $event->getIdentityType(),
@@ -131,7 +132,7 @@ class PortalAccountProvisionListener implements IEventListener {
 			verifiedEmail: $event->isVerifiedEmail(),
 			provisionedBy: $event->getAppId(),
 			displayName: $event->getDisplayName()
-		);
+		));
 	}//end pendingAccount()
 
 	/**

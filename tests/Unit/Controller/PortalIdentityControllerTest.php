@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\PortalIdentityController;
+use OCA\Portaliq\Service\AccountProvisionRequest;
 use OCA\Portaliq\Service\CaseTypeReader;
 use OCA\Portaliq\Service\Identity\PortalAccountActivationService;
 use OCA\Portaliq\Service\Identity\PortalChallengeService;
@@ -15,6 +16,7 @@ use OCA\Portaliq\Service\Identity\PortalInvitationService;
 use OCA\Portaliq\Service\Identity\PortalReferenceLinkService;
 use OCA\Portaliq\Service\Identity\PortalRegistrationPolicyService;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
+use OCA\Portaliq\Service\PortalAccountCreation;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -183,7 +185,18 @@ class PortalIdentityControllerTest extends TestCase {
 		$this->doubles['challenge']->method('accepts')->willReturn(true);
 		$this->doubles['policy']->method('decide')->willReturn(['accepted' => true, 'reason' => 'activation', 'status' => 'pending']);
 		$this->doubles['accounts']->expects($this->once())->method('provision')
-			->with('client', 'gemeente-x', '', '', 'ans@example.org', false, PortalAccountService::SELF_REGISTRATION, 'Ans')
+			->with(
+				new AccountProvisionRequest(
+					audience: 'client',
+					organisation: 'gemeente-x',
+					verifiedEmail: false,
+					identityType: '',
+					identityRef: '',
+					email: 'ans@example.org',
+					provisionedBy: PortalAccountService::SELF_REGISTRATION,
+					displayName: 'Ans'
+				)
+			)
 			->willReturn(null);
 		$this->doubles['contacts']->expects($this->never())->method('holdForRegistration');
 		$this->doubles['activation']->expects($this->never())->method('issue');
@@ -817,7 +830,7 @@ class PortalIdentityControllerTest extends TestCase {
 			'references' => $this->double(PortalReferenceLinkService::class, ['admitsReference', 'issue', 'redeem', 'nominalExpiry']),
 			'policy' => $this->double(PortalRegistrationPolicyService::class, ['isOffered', 'decide']),
 			'invitations' => $this->double(PortalInvitationService::class, ['accept']),
-			'accounts' => $this->double(PortalAccountService::class, ['provision']),
+			'accounts' => $this->double(PortalAccountCreation::class, ['provision']),
 			'caseTypes' => $this->double(CaseTypeReader::class, ['readCaseType']),
 			'bindings' => $this->double(PortalFormBindingResolver::class, ['caseTypeIsInPortalScope']),
 			'mailer' => $this->double(PortalIdentityMailer::class, ['send']),

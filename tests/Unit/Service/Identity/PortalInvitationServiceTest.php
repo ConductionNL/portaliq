@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Service\AccountProvisionRequest;
 use OCA\Portaliq\Service\Identity\PortalInvitationService;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\PortalAccountCreation;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -97,14 +98,18 @@ class PortalInvitationServiceTest extends TestCase {
 		$accounts->expects($this->once())
 			->method('provision')
 			->with(
-				$this->equalTo('client'),
-				$this->equalTo('gemeente-x'),
-				$this->equalTo(''),
-				$this->equalTo(''),
-				$this->equalTo('ans@example.org'),
-				$this->equalTo(true),
-				$this->equalTo('clerk-anna'),
-				$this->equalTo('')
+				$this->equalTo(
+					new AccountProvisionRequest(
+						audience: 'client',
+						organisation: 'gemeente-x',
+						verifiedEmail: true,
+						identityType: '',
+						identityRef: '',
+						email: 'ans@example.org',
+						provisionedBy: 'clerk-anna',
+						displayName: ''
+					)
+				)
 			)
 			->willReturn(['subjectRef' => 'subject-1', 'isNew' => true, 'status' => 'pending']);
 		$service = $this->service(accounts: $accounts);
@@ -219,11 +224,11 @@ class PortalInvitationServiceTest extends TestCase {
 	/**
 	 * The service over the fake store.
 	 *
-	 * @param PortalAccountService|null $accounts An account double, or the default.
+	 * @param PortalAccountCreation|null $accounts An account double, or the default.
 	 *
 	 * @return PortalInvitationService
 	 */
-	private function service(?PortalAccountService $accounts = null): PortalInvitationService {
+	private function service(?PortalAccountCreation $accounts = null): PortalInvitationService {
 		if ($accounts === null) {
 			$accounts = $this->accounts();
 			$accounts->method('provision')->willReturn(['subjectRef' => 'subject-1', 'isNew' => true, 'status' => 'pending']);
@@ -235,10 +240,10 @@ class PortalInvitationServiceTest extends TestCase {
 	/**
 	 * A double that can only answer methods the real service has.
 	 *
-	 * @return PortalAccountService&\PHPUnit\Framework\MockObject\MockObject
+	 * @return PortalAccountCreation&\PHPUnit\Framework\MockObject\MockObject
 	 */
-	private function accounts(): PortalAccountService {
-		return $this->getMockBuilder(PortalAccountService::class)
+	private function accounts(): PortalAccountCreation {
+		return $this->getMockBuilder(PortalAccountCreation::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['provision'])
 			->getMock();

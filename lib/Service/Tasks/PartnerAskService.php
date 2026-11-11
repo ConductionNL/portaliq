@@ -31,7 +31,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Tasks;
 
+use OCA\Portaliq\Service\AccountProvisionRequest;
 use OCA\Portaliq\Service\Identity\AccountStatus;
+use OCA\Portaliq\Service\PortalAccountCreation;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalTaskGateway;
 
@@ -54,12 +56,14 @@ class PartnerAskService {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalAccountService $accounts Finds or pre-provisions the partner.
+	 * @param PortalAccountService $accounts Finds the partner's account.
 	 * @param PortalTaskGateway $tasks Raises the task on the engine.
+	 * @param PortalAccountCreation $accountCreation Provisions an account before any login.
 	 */
 	public function __construct(
 		private readonly PortalAccountService $accounts,
 		private readonly PortalTaskGateway $tasks,
+		private readonly PortalAccountCreation $accountCreation,
 	) {
 	}//end __construct()
 
@@ -262,7 +266,7 @@ class PartnerAskService {
 	 * @return array<string, mixed>|null
 	 */
 	private function provision(array $contact, array $handler): ?array {
-		return $this->accounts->provision(
+		return $this->accountCreation->provision(request: new AccountProvisionRequest(
 			audience: self::AUDIENCE,
 			organisation: (string)($handler['organisation'] ?? ''),
 			identityType: $this->identityTypeOf(kvk: $contact['kvk']),
@@ -273,7 +277,7 @@ class PartnerAskService {
 			verifiedEmail: false,
 			provisionedBy: (string)($handler['uid'] ?? $handler['subjectRef'] ?? ''),
 			displayName: $contact['name']
-		);
+		));
 	}//end provision()
 
 	/**

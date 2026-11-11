@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\PortalAccountAdminController;
+use OCA\Portaliq\Service\AccountProvisionRequest;
 use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\Identity\EmailLink\SignInAddressChange;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\Identity\PortalInvitationService;
+use OCA\Portaliq\Service\PortalAccountCreation;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\OCS\OCSForbiddenException;
@@ -27,9 +29,29 @@ use PHPUnit\Framework\TestCase;
  */
 class PortalAccountAdminControllerTest extends TestCase {
 
+	/**
+	 * The account creation double every controller here is built with.
+	 *
+	 * @var PortalAccountCreation&\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private PortalAccountCreation $creation;
+
+	/**
+	 * A fresh account creation double per test.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		parent::setUp();
+		$this->creation = $this->getMockBuilder(PortalAccountCreation::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['provision'])
+			->getMock();
+	}//end setUp()
+
 	public function testAnAuthenticatedUserWithoutTheActionIsRefused(): void {
 		$accounts = $this->accounts();
-		$accounts->expects($this->never())->method('provision');
+		$this->creation->expects($this->never())->method('provision');
 		$controller = $this->controller(accounts: $accounts, allowed: false, user: $this->user('ordinary-user'));
 
 		$response = $controller->provision(audience: 'client', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-1');
@@ -41,7 +63,7 @@ class PortalAccountAdminControllerTest extends TestCase {
 
 	public function testAnAnonymousCallerIsRefusedBeforeAnythingIsRead(): void {
 		$accounts = $this->accounts();
-		$accounts->expects($this->never())->method('provision');
+		$this->creation->expects($this->never())->method('provision');
 		$controller = $this->controller(accounts: $accounts, allowed: true, user: null);
 
 		$response = $controller->provision(audience: 'client', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-1');
@@ -52,17 +74,21 @@ class PortalAccountAdminControllerTest extends TestCase {
 
 	public function testAClerkWithTheActionProvisionsAndIsNamedOnTheRow(): void {
 		$accounts = $this->accounts();
-		$accounts->expects($this->once())
+		$this->creation->expects($this->once())
 			->method('provision')
 			->with(
-				$this->equalTo('client'),
-				$this->equalTo('gemeente-x'),
-				$this->equalTo('digid'),
-				$this->equalTo('bsn-1'),
-				$this->equalTo(''),
-				$this->equalTo(false),
-				$this->equalTo('clerk-anna'),
-				$this->equalTo('')
+				$this->equalTo(
+					new AccountProvisionRequest(
+						audience: 'client',
+						organisation: 'gemeente-x',
+						verifiedEmail: false,
+						identityType: 'digid',
+						identityRef: 'bsn-1',
+						email: '',
+						provisionedBy: 'clerk-anna',
+						displayName: ''
+					)
+				)
 			)
 			->willReturn(['subjectRef' => 'subject-1', 'isNew' => true, 'status' => 'pending']);
 		$controller = $this->controller(accounts: $accounts, allowed: true, user: $this->user('clerk-anna'));
@@ -76,7 +102,7 @@ class PortalAccountAdminControllerTest extends TestCase {
 
 	public function testARefusedProvisioningIsABadRequest(): void {
 		$accounts = $this->accounts();
-		$accounts->method('provision')->willReturn(null);
+		$this->creation->method('provision')->willReturn(null);
 		$controller = $this->controller(accounts: $accounts, allowed: true, user: $this->user('clerk-anna'));
 
 		$response = $controller->provision(audience: 'client', organisation: 'gemeente-x');
@@ -185,7 +211,7 @@ class PortalAccountAdminControllerTest extends TestCase {
 			$mailer->method('send')->willReturn(true);
 		}
 
-		return new PortalAccountAdminController($this->createMock(IRequest::class), $accounts, $actionAuth, $session, $invitations, $mailer, $signInAddresses);
+		return new PortalAccountAdminController($this->createMock(IRequest::class), $accounts, $actionAuth, $session, $invitations, $mailer, $this->creation, $signInAddresses);
 	}//end controller()
 
 	/**
@@ -212,7 +238,8 @@ class PortalAccountAdminControllerTest extends TestCase {
 			actionAuth: $this->createMock(ActionAuthService::class),
 			userSession: $session,
 			invitations: $invitations,
-			mailer: $mailer
+			mailer: $mailer,
+			accountCreation: $this->creation
 		);
 
 		$void = $controller->void(subjectRef: 'subject-1', reason: 'mistake');
@@ -343,7 +370,8 @@ class PortalAccountAdminControllerTest extends TestCase {
 			actionAuth: $actionAuth,
 			userSession: $session,
 			invitations: $invitations,
-			mailer: $mailer
+			mailer: $mailer,
+			accountCreation: $this->creation
 		);
 	}//end resending()
 
@@ -434,7 +462,7 @@ class PortalAccountAdminControllerTest extends TestCase {
 	private function accounts(): PortalAccountService {
 		return $this->getMockBuilder(PortalAccountService::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['provision', 'voidPending', 'approvePending', 'findBySubjectRef'])
+			->onlyMethods(['voidPending', 'approvePending', 'findBySubjectRef'])
 			->getMock();
 	}//end accounts()
 

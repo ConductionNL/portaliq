@@ -7,7 +7,7 @@ namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 use DateTimeImmutable;
 use OCA\Portaliq\Service\Identity\PortalInvitationService;
 use OCA\Portaliq\Service\Identity\PortalReferenceLinkService;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\PortalAccountCreation;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -183,7 +183,7 @@ class IdentityTokenRowsTest extends TestCase {
 	 * @return PortalInvitationService
 	 */
 	private function invitations(): PortalInvitationService {
-		$accounts = $this->getMockBuilder(PortalAccountService::class)->disableOriginalConstructor()->getMock();
+		$accounts = $this->getMockBuilder(PortalAccountCreation::class)->disableOriginalConstructor()->getMock();
 		return new PortalInvitationService($this->fakeReader(), $this->fakeWriter(), $accounts, $this->fakeRandom());
 	}//end invitations()
 

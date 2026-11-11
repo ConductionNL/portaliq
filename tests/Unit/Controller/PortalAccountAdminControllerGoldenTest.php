@@ -21,10 +21,12 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\PortalAccountAdminController;
+use OCA\Portaliq\Service\AccountProvisionRequest;
 use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\Identity\EmailLink\SignInAddressChange;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\Identity\PortalInvitationService;
+use OCA\Portaliq\Service\PortalAccountCreation;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
@@ -158,8 +160,7 @@ class PortalAccountAdminControllerGoldenTest extends TestCase {
 		});
 
 		$accounts = $this->getMockBuilder(PortalAccountService::class)->disableOriginalConstructor()
-			->onlyMethods(['provision', 'voidPending', 'approvePending', 'findBySubjectRef'])->getMock();
-		$this->answer($accounts, 'provision', ['subjectRef' => 'subject-new', 'status' => 'pending']);
+			->onlyMethods(['voidPending', 'approvePending', 'findBySubjectRef'])->getMock();
 		$this->answer($accounts, 'voidPending', true);
 		$this->answer($accounts, 'approvePending', true);
 		$this->answer($accounts, 'findBySubjectRef', ['subjectRef' => 'subject-4']);
@@ -174,6 +175,13 @@ class PortalAccountAdminControllerGoldenTest extends TestCase {
 		$mailer = $this->getMockBuilder(PortalIdentityMailer::class)->disableOriginalConstructor()->onlyMethods(['send'])->getMock();
 		$this->answer($mailer, 'send', true);
 
+		$creation = $this->getMockBuilder(PortalAccountCreation::class)->disableOriginalConstructor()
+			->onlyMethods(['provision'])->getMock();
+		$creation->method('provision')->willReturnCallback(function (AccountProvisionRequest $request): array {
+			$this->log[] = ['provision' => self::provisionFields(request: $request)];
+			return ['subjectRef' => 'subject-new', 'status' => 'pending'];
+		});
+
 		$change = $this->getMockBuilder(SignInAddressChange::class)->disableOriginalConstructor()->onlyMethods(['change'])->getMock();
 		$this->answer($change, 'change', SignInAddressChange::CHANGED);
 
@@ -184,9 +192,30 @@ class PortalAccountAdminControllerGoldenTest extends TestCase {
 			$session,
 			$invitations,
 			$mailer,
+			$creation,
 			$change
 		);
 	}//end controller()
+
+	/**
+	 * A provision request's fields by name, in the order the recording names them.
+	 *
+	 * @param AccountProvisionRequest $request The request.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private static function provisionFields(AccountProvisionRequest $request): array {
+		return [
+			'audience' => $request->audience,
+			'organisation' => $request->organisation,
+			'identityType' => $request->identityType,
+			'identityRef' => $request->identityRef,
+			'email' => $request->email,
+			'verifiedEmail' => $request->verifiedEmail,
+			'provisionedBy' => $request->provisionedBy,
+			'displayName' => $request->displayName,
+		];
+	}//end provisionFields()
 
 	/**
 	 * Make a mocked method log its arguments by name and answer a fixed value.
