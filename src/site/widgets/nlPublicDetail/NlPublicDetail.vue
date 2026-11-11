@@ -182,6 +182,30 @@ function pagePath() {
 }
 
 /**
+ * What to ask the index for: the route's item, or null when a part is missing.
+ *
+ * @param {object} block The block's props.
+ * @return {{app: string, kind: string, slug: string}|null} The query.
+ */
+function detailQuery(block) {
+	if (!block.routeParam || !block.app || !block.kind) {
+		return null
+	}
+	return { app: block.app, kind: block.kind, slug: block.routeParam }
+}
+
+/**
+ * The choice the visitor kept before signing in, taken once.
+ *
+ * @param {object} detail The item's detail.
+ * @return {{chosenDate: string, count: number}|object} The fields to restore, or none.
+ */
+function keptChoice(detail) {
+	const kept = takeChoice(sessionStore(), pagePath(), detail.dates, detail.action?.countMax)
+	return kept ? { chosenDate: kept.date, count: kept.count } : {}
+}
+
+/**
  * @spec openspec/changes/public-detail-page-for-a-provider-item/tasks.md#task-3
  */
 export default {
@@ -320,34 +344,20 @@ export default {
 		 * @spec openspec/changes/public-detail-page-for-a-provider-item/tasks.md#task-3
 		 */
 		async load() {
-			if (!this.routeParam || !this.app || !this.kind) {
+			const query = detailQuery(this)
+			if (query === null) {
 				this.state = 'missing'
 				return
 			}
 			this.state = 'loading'
 			try {
-				const found = await fetchCatalogueDetail(this.portal, {
-					app: this.app,
-					kind: this.kind,
-					slug: this.routeParam,
-				})
+				const found = await fetchCatalogueDetail(this.portal, query)
 				if (!found) {
 					this.state = 'missing'
 					return
 				}
-				this.item = found.item
-				this.detail = found.detail
-				this.state = 'ready'
-				const kept = takeChoice(
-					sessionStore(),
-					pagePath(),
-					found.detail.dates,
-					found.detail.action?.countMax,
-				)
-				if (kept) {
-					this.chosenDate = kept.date
-					this.count = kept.count
-				}
+				Object.assign(this, { item: found.item, detail: found.detail, state: 'ready' })
+				Object.assign(this, keptChoice(found.detail))
 			} catch {
 				this.state = 'failed'
 			}
