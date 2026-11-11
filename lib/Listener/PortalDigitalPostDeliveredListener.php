@@ -115,7 +115,26 @@ class PortalDigitalPostDeliveredListener implements IEventListener {
 	 * @return void
 	 */
 	private function record(string $messageId, string $status): void {
-		$row = null;
+		$row = $this->messageBoxRow(messageId: $messageId);
+		if ($row === null) {
+			(new MessageBoxStatus())->remember(messageId: $messageId, status: $status);
+			return;
+		}
+
+		if (self::rowIdOf(row: $row) !== '' && ($row['status'] ?? null) !== $status) {
+			$this->writeStatus(row: $row, status: $status);
+		}
+	}//end record()
+
+	/**
+	 * The message box row of integriq's message, or null while the send is
+	 * still writing it.
+	 *
+	 * @param string $messageId Integriq's message id.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function messageBoxRow(string $messageId): ?array {
 		$rows = $this->reader->readCollection(
 			register: 'portaliq',
 			schema: 'portalNotification',
@@ -124,34 +143,57 @@ class PortalDigitalPostDeliveredListener implements IEventListener {
 			organisation: '',
 			limit: 2
 		);
-		foreach ($rows as $candidate) {
-			if (($candidate['externalMessageId'] ?? null) === $messageId && ($candidate['channel'] ?? null) === MessageBoxChannel::CHANNEL) {
-				$row = $candidate;
-				break;
-			}
-		}
+		$matching = array_filter(
+			$rows,
+			static fn (mixed $candidate): bool => self::isMessageBoxRow(candidate: $candidate, messageId: $messageId)
+		);
 
-		if ($row === null) {
-			(new MessageBoxStatus())->remember(messageId: $messageId, status: $status);
-			return;
-		}
+		return (array_values($matching)[0] ?? null);
+	}//end messageBoxRow()
 
-		$rowId = (string)($row['@self']['id'] ?? $row['id'] ?? $row['uuid'] ?? '');
-		if ($rowId === '' || ($row['status'] ?? null) === $status) {
-			return;
-		}
+	/**
+	 * Whether a row is this message's, on the message box channel.
+	 *
+	 * @param mixed  $candidate The row.
+	 * @param string $messageId Integriq's message id.
+	 *
+	 * @return bool
+	 */
+	private static function isMessageBoxRow(mixed $candidate, string $messageId): bool {
+		return ($candidate['externalMessageId'] ?? null) === $messageId && ($candidate['channel'] ?? null) === MessageBoxChannel::CHANNEL;
+	}//end isMessageBoxRow()
 
+	/**
+	 * Write a new status onto a message box row.
+	 *
+	 * @param array<string, mixed> $row    The row, carrying integriq's message id.
+	 * @param string               $status The mapped status.
+	 *
+	 * @return void
+	 */
+	private function writeStatus(array $row, string $status): void {
 		$updated = $this->writer->updateObject(
 			register: 'portaliq',
 			schema: 'portalNotification',
 			scopeField: 'externalMessageId',
-			subjectRef: $messageId,
+			subjectRef: (string)$row['externalMessageId'],
 			organisation: (string)($row['organisation'] ?? ''),
-			id: $rowId,
+			id: self::rowIdOf(row: $row),
 			data: ['status' => $status, 'lastAttemptAt' => gmdate('c')]
 		);
 		if ($updated === null) {
 			$this->logger->warning('Portaliq: message box status was not written', ['status' => $status]);
 		}
-	}//end record()
+	}//end writeStatus()
+
+	/**
+	 * A row's id: `@self.id`, else `id`, else `uuid`.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return string '' when it has none.
+	 */
+	private static function rowIdOf(array $row): string {
+		return (string)($row['@self']['id'] ?? $row['id'] ?? $row['uuid'] ?? '');
+	}//end rowIdOf()
 }//end class
