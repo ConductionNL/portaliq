@@ -30,7 +30,6 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Notifications;
 
 use OCA\Portaliq\Contribution\PortalProviderLocator;
-use OCA\Portaliq\Contribution\TimelineProviderMethod;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
@@ -306,49 +305,8 @@ class MessageBoxSender {
 	 * @return string|null
 	 */
 	private function recipient(array $record, string $method): ?string {
-		return $this->trimmedRecipient(value: $this->providedRecipient(record: $record, method: $method));
+		return (new MessageBoxRecipient(locator: $this->locator, logger: $this->logger))->forRecord(record: $record, method: $method);
 	}//end recipient()
-
-	/**
-	 * What the case app's recipient method answers for this message; null
-	 * when the app or the method is missing or the method fails.
-	 *
-	 * @param array<string, string> $record The message's reference.
-	 * @param string                $method The declared recipient method.
-	 *
-	 * @return mixed
-	 */
-	private function providedRecipient(array $record, string $method): mixed {
-		$provider = $this->locator->locate(appId: $record['app']);
-		if ($provider === null || (new TimelineProviderMethod())->callableOn(provider: $provider, method: $method) === false) {
-			return null;
-		}
-
-		try {
-			return $provider->{$method}($record['id']);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Portaliq: message box recipient method failed',
-				['app' => $record['app'], 'method' => $method, 'exception' => get_class($e)]
-			);
-			return null;
-		}
-	}//end providedRecipient()
-
-	/**
-	 * The answered recipient, trimmed; null when it is not non-blank text.
-	 *
-	 * @param mixed $value What the recipient method answered.
-	 *
-	 * @return string|null
-	 */
-	private function trimmedRecipient(mixed $value): ?string {
-		if (is_string($value) === false || trim($value) === '') {
-			return null;
-		}
-
-		return trim($value);
-	}//end trimmedRecipient()
 
 	/**
 	 * The letter from the message: the text and subject from the fields the
