@@ -205,20 +205,31 @@ class PublicDetailShape {
 
 		// Sign-in is required unless the app says in so many words that it is not:
 		// an action that asks for nothing is the unsafe state.
-		$out   = ['id' => $id, 'label' => $label, 'requiresSignIn' => (($declared['requiresSignIn'] ?? true) !== false)];
-		$count = $this->short(value: ($declared['countLabel'] ?? null));
-		if ($count !== null) {
-			$max = ($declared['countMax'] ?? 20);
-			if (is_int($max) === false || $max < 1 || $max > 100) {
-				$max = 20;
-			}
+		$out = ['id' => $id, 'label' => $label, 'requiresSignIn' => (($declared['requiresSignIn'] ?? true) !== false)];
+		return $out + $this->countOf(declared: $declared);
+	}//end action()
 
-			$out['countLabel'] = $count;
-			$out['countMax']   = $max;
+	/**
+	 * The action's count field: its label and its maximum (1 to 100, else
+	 * 20), or nothing when it names no label.
+	 *
+	 * @param array<string, mixed> $declared The action the page places.
+	 *
+	 * @return array{countLabel?: string, countMax?: int}
+	 */
+	private function countOf(array $declared): array {
+		$count = $this->short(value: ($declared['countLabel'] ?? null));
+		if ($count === null) {
+			return [];
 		}
 
-		return $out;
-	}//end action()
+		$max = ($declared['countMax'] ?? 20);
+		if (is_int($max) === false || $max < 1 || $max > 100) {
+			$max = 20;
+		}
+
+		return ['countLabel' => $count, 'countMax' => $max];
+	}//end countOf()
 
 	/**
 	 * @param mixed $declared A list.
