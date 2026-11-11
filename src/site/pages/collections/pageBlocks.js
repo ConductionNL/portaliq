@@ -153,21 +153,32 @@ export function withoutRecordWrites(items) {
 export function groupTiles(items) {
 	const out = []
 	for (const item of items) {
-		const last = out[out.length - 1]
-		if (item.kind !== 'tile') {
-			out.push(item)
-		} else if (last && last.kind === 'tiles') {
-			last.tiles.push(item.block)
-		} else {
-			out.push({
-				index: item.index,
-				block: item.block,
-				kind: 'tiles',
-				tiles: [item.block],
-			})
-		}
+		foldTile(out, item)
 	}
 	return out
+}
+
+/**
+ * Add one block to the folded list: a tile joins the run of tiles before it
+ * or starts one, any other block is added as it is.
+ *
+ * @param {Array<object>} out The blocks folded so far.
+ * @param {object} item The next block.
+ */
+function foldTile(out, item) {
+	const last = out[out.length - 1]
+	if (item.kind !== 'tile') {
+		out.push(item)
+	} else if (last && last.kind === 'tiles') {
+		last.tiles.push(item.block)
+	} else {
+		out.push({
+			index: item.index,
+			block: item.block,
+			kind: 'tiles',
+			tiles: [item.block],
+		})
+	}
 }
 
 /**
@@ -226,6 +237,222 @@ function quietDetailUnderTable(items) {
 }
 
 /**
+ * A block that renders nothing.
+ *
+ * @param {{index: number, block: object}} spot The block and its place.
+ * @return {object}
+ */
+function nothing(spot) {
+	return { ...spot, kind: 'none' }
+}
+
+/**
+ * A text, or a text filled from the open record (REQ-SMO-027).
+ *
+ * @param {{index: number, block: object}} spot The block and its place.
+ * @return {object}
+ */
+function resolveRichText(spot) {
+	return { ...spot, kind: spot.block.template ? 'template' : 'richText' }
+}
+
+/**
+ * The table's row actions: updates and endpoint actions, without the remove
+ * action and the document view.
+ *
+ * @param {object} collection The collection.
+ * @param {Array<object>} rowActions Its resolved row actions.
+ * @return {Array<object>}
+ */
+function tableActionsOf(collection, rowActions) {
+	return tableRowActions(
+		withoutRemoveAction(
+			collection,
+			rowActions.filter((a) => a.type === 'update' || isEndpointRowAction(a)),
+		),
+	)
+}
+
+/**
+ * A table of a collection, with its row actions and its document view.
+ *
+ * @param {{index: number, block: object}} spot The block and its place.
+ * @param {{collection: object, rowActions: Array<object>}} found The collection and its row actions.
+ * @return {object}
+ */
+function tableOf(spot, found) {
+	const { collection, rowActions } = found
+	return {
+		...spot,
+		kind: 'table',
+		collection,
+		rowActions,
+		tableActions: tableActionsOf(collection, rowActions),
+		viewAction:
+			rowActions.find((a) => a.id === 'viewDocument' && isEndpointRowAction(a))
+			|| null,
+	}
+}
+
+/**
+ * A detail card, with the propose-change action of its collection.
+ *
+ * @param {{index: number, block: object}} spot The block and its place.
+ * @param {{collection: object, rowActions: Array<object>}} found The collection and its row actions.
+ * @return {object}
+ */
+function detailOf(spot, found) {
+	return {
+		...spot,
+		kind: 'detail',
+		collection: found.collection,
+		proposeAction:
+			found.rowActions.find((a) => a.type === 'propose-change') || null,
+	}
+}
+
+/**
+ * A collection block: a detail card, a case screen, a timed task or a table.
+ *
+ * @param {{index: number, block: object}} spot The block and its place.
+ * @param {object} contribution The contribution it belongs to.
+ * @return {object}
+ */
+function resolveCollectionBlock(spot, contribution) {
+	const collection = findCollection(contribution, spot.block.collection)
+	if (!collection) {
+		return nothing(spot)
+	}
+	return collectionBlockOf(spot, {
+		collection,
+		rowActions: rowActionsOf(contribution, collection),
+	})
+}
+
+/**
+ * What a collection block over an existing collection draws, by its type and
+ * the collection's kind.
+ *
+ * @param {{index: number, block: object}} spot The block and its place.
+ * @param {{collection: object, rowActions: Array<object>}} found The collection and its row actions.
+ * @return {object}
+ */
+function collectionBlockOf(spot, found) {
+	const type = spot.block.type
+	const collection = found.collection
+	if (type === 'detail') {
+		return detailOf(spot, found)
+	}
+	if (type === 'citizenCase') {
+		return { ...spot, kind: 'citizenCase', collection }
+	}
+	if (collection.kind === 'timedTask' && collection.timedTask) {
+		return { ...spot, kind: 'timedTask', collection }
+	}
+	return tableOf(spot, found)
+}
+
+/**
+ * A block drawn from one collection under the block's own type as its kind:
+ * figure cards (contribution-record-page), what is still to do (REQ-SMO-004)
+ * and the cases, steps, documents and timeline lists (REQ-SMO-002,
+ * REQ-SMO-003, REQ-SMO-005).
+ *
+ * @param {{index: number, block: object}} spot The block and its place.
+ * @param {object} contribution The contribution it belongs to.
+ * @return {object}
+ */
+function resolveCollectionView(spot, contribution) {
+	const collection = findCollection(contribution, spot.block.collection)
+	return collection
+		? { ...spot, kind: spot.block.type, collection }
+		: nothing(spot)
+}
+
+/**
+ * A calendar over the sources whose collection exists.
+ *
+ * @param {{index: number, block: object}} spot The block and its place.
+ * @param {object} contribution The contribution it belongs to.
+ * @return {object}
+ */
+function resolveCalendar(spot, contribution) {
+	const { index, block } = spot
+	const sources = (block.sources || [])
+		.filter((source) => findCollection(contribution, source?.collection))
+		.map((source) => withStatusLabels(source, contribution))
+	return sources.length > 0
+		? { index, block: { ...block, sources }, kind: 'calendar' }
+		: nothing(spot)
+}
+
+/**
+ * The overview's opening (site-school-blocks); an action it names is
+ * resolved like a cta's.
+ *
+ * @param {{index: number, block: object}} spot The block and its place.
+ * @param {object} contribution The contribution it belongs to.
+ * @return {object}
+ */
+function resolveGreeting(spot, contribution) {
+	const action = spot.block.action
+	return {
+		...spot,
+		kind: 'greeting',
+		action: action ? findAction(contribution, action) : null,
+	}
+}
+
+/**
+ * An action button, or a cta: a tile to a page or a route (REQ-SMO-024) or a
+ * button for its action.
+ *
+ * @param {{index: number, block: object}} spot The block and its place.
+ * @param {object} contribution The contribution it belongs to.
+ * @return {object}
+ */
+function resolveAction(spot, contribution) {
+	const block = spot.block
+	if (block.type === 'cta' && (block.page || block.route)) {
+		return { ...spot, kind: 'tile' }
+	}
+	const action = findAction(contribution, block.action)
+	return action ? { ...spot, kind: block.type, action } : nothing(spot)
+}
+
+/**
+ * A block that needs nothing resolved: its type is its kind.
+ *
+ * @param {{index: number, block: object}} spot The block and its place.
+ * @return {object}
+ */
+function asItsType(spot) {
+	return { ...spot, kind: spot.block.type }
+}
+
+/**
+ * How each block type resolves, by type.
+ *
+ * @type {Map<string, function({index: number, block: object}, object): object>}
+ */
+const BLOCK_RESOLVERS = new Map([
+	['richText', resolveRichText],
+	...COLLECTION_BLOCKS.map((type) => [type, resolveCollectionBlock]),
+	['kpi', resolveCollectionView],
+	['calendar', resolveCalendar],
+	['news', asItsType],
+	['tasks', resolveCollectionView],
+	['inbox', asItsType],
+	['cases', resolveCollectionView],
+	['steps', resolveCollectionView],
+	['documents', resolveCollectionView],
+	['timeline', resolveCollectionView],
+	['greeting', resolveGreeting],
+	['cta', resolveAction],
+	['action', resolveAction],
+])
+
+/**
  * Resolve each block on its own, see resolveBlocks().
  *
  * @param {object} page The contribution page.
@@ -234,108 +461,7 @@ function quietDetailUnderTable(items) {
  */
 function resolveEachBlock(page, contribution) {
 	return (page?.blocks || []).map((block, index) => {
-		const type = block?.type
-		if (type === 'richText') {
-			// A text filled from the open record (REQ-SMO-027).
-			return { index, block, kind: block.template ? 'template' : 'richText' }
-		}
-		if (COLLECTION_BLOCKS.includes(type)) {
-			const collection = findCollection(contribution, block.collection)
-			if (!collection) {
-				return { index, block, kind: 'none' }
-			}
-			const rowActions = rowActionsOf(contribution, collection)
-			if (type === 'detail') {
-				return {
-					index,
-					block,
-					kind: 'detail',
-					collection,
-					proposeAction:
-						rowActions.find((a) => a.type === 'propose-change') || null,
-				}
-			}
-			if (type === 'citizenCase') {
-				return { index, block, kind: 'citizenCase', collection }
-			}
-			if (collection.kind === 'timedTask' && collection.timedTask) {
-				return { index, block, kind: 'timedTask', collection }
-			}
-			return {
-				index,
-				block,
-				kind: 'table',
-				collection,
-				rowActions,
-				tableActions: tableRowActions(
-					withoutRemoveAction(
-						collection,
-						rowActions.filter(
-							(a) => a.type === 'update' || isEndpointRowAction(a),
-						),
-					),
-				),
-				viewAction:
-					rowActions.find(
-						(a) => a.id === 'viewDocument' && isEndpointRowAction(a),
-					) || null,
-			}
-		}
-		if (type === 'kpi') {
-			// contribution-record-page: figure cards from one row.
-			const collection = findCollection(contribution, block.collection)
-			return collection
-				? { index, block, kind: 'kpi', collection }
-				: { index, block, kind: 'none' }
-		}
-		if (type === 'calendar') {
-			const sources = (block.sources || [])
-				.filter((source) => findCollection(contribution, source?.collection))
-				.map((source) => withStatusLabels(source, contribution))
-			return sources.length > 0
-				? { index, block: { ...block, sources }, kind: 'calendar' }
-				: { index, block, kind: 'none' }
-		}
-		if (type === 'news') {
-			return { index, block, kind: 'news' }
-		}
-		if (type === 'tasks') {
-			// site-mijn-omgeving-components REQ-SMO-004: what is still to do.
-			const collection = findCollection(contribution, block.collection)
-			return collection
-				? { index, block, kind: 'tasks', collection }
-				: { index, block, kind: 'none' }
-		}
-		if (type === 'inbox') {
-			return { index, block, kind: 'inbox' }
-		}
-		if (['cases', 'steps', 'documents', 'timeline'].includes(type)) {
-			// site-mijn-omgeving-components REQ-SMO-002, REQ-SMO-003, REQ-SMO-005.
-			const collection = findCollection(contribution, block.collection)
-			return collection
-				? { index, block, kind: type, collection }
-				: { index, block, kind: 'none' }
-		}
-		if (type === 'greeting') {
-			// The overview's opening (site-school-blocks); an action it names
-			// is resolved like a cta's.
-			return {
-				index,
-				block,
-				kind: 'greeting',
-				action: block.action ? findAction(contribution, block.action) : null,
-			}
-		}
-		if (type === 'cta' && (block.page || block.route)) {
-			// A tile to a page or a route (REQ-SMO-024).
-			return { index, block, kind: 'tile' }
-		}
-		if (type === 'action' || type === 'cta') {
-			const action = findAction(contribution, block.action)
-			return action
-				? { index, block, kind: type, action }
-				: { index, block, kind: 'none' }
-		}
-		return { index, block, kind: 'none' }
+		const resolve = BLOCK_RESOLVERS.get(block?.type) || nothing
+		return resolve({ index, block }, contribution)
 	})
 }
