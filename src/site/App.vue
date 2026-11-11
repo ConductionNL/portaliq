@@ -2241,27 +2241,7 @@ export default {
 		async loadRoute(route, { fresh = false } = {}) {
 			this.signInNeeded = false
 			this.subject = null
-			// The signed-in area renders from the session, not from a CMS
-			// page, so no page is read for it.
-			if (isAccountRoute(route)) {
-				this.page = null
-				this.error = null
-				this.routeParam = ''
-				this.loading = false
-				this.followAccountRoute()
-				this.applyDocumentTitle()
-				return
-			}
-
-			// A shared dossier link renders from opencatalogi's answer, not
-			// from a CMS page, so it opens on every portal without one.
-			if (isSharedDossierRoute(route)) {
-				this.page = null
-				this.error = null
-				this.routeParam = ''
-				this.sharedDossierTitle = ''
-				this.loading = false
-				this.applyDocumentTitle()
+			if (this.openPagelessRoute(route)) {
 				return
 			}
 
@@ -2270,74 +2250,118 @@ export default {
 			// statement, never "not found".
 			this.statementAuthored = false
 			if (isStatementRoute(route)) {
-				this.error = null
-				this.routeParam = ''
-				this.loading = true
-				this.page = await authoredStatement(() =>
-					fetchPage(route, this.portalSlug, {
-						fresh,
-						locale: this.chosenLocale,
-					}),
-				)
-				this.statementAuthored = this.page !== null
-				this.loading = false
-				this.applyDocumentTitle()
-				if (this.statementAuthored) {
-					await this.refreshEditingContext()
-				}
+				await this.openStatementRoute(route, fresh)
 				return
 			}
 
-			this.loading = true
+			await this.openPageRoute(route, fresh)
+		},
+
+		/**
+		 * Open a route that renders without a CMS page: the signed-in area or
+		 * a shared dossier.
+		 *
+		 * @param {string} route The in-portal route.
+		 * @return {boolean} Whether the route was one of them.
+		 */
+		openPagelessRoute(route) {
+			// The signed-in area renders from the session, not from a CMS
+			// page, so no page is read for it.
+			if (isAccountRoute(route)) {
+				this.openAccountRoute()
+				return true
+			}
+
+			// A shared dossier link renders from opencatalogi's answer, not
+			// from a CMS page, so it opens on every portal without one.
+			if (isSharedDossierRoute(route)) {
+				this.openSharedDossierRoute()
+				return true
+			}
+			return false
+		},
+
+		/**
+		 * Open the signed-in area.
+		 *
+		 * @return {void}
+		 */
+		openAccountRoute() {
+			this.page = null
 			this.error = null
 			this.routeParam = ''
-			try {
-				this.page = await fetchPage(route, this.portalSlug, {
+			this.loading = false
+			this.followAccountRoute()
+			this.applyDocumentTitle()
+		},
+
+		/**
+		 * Open a shared dossier link; the dossier names itself once loaded.
+		 *
+		 * @return {void}
+		 */
+		openSharedDossierRoute() {
+			this.page = null
+			this.error = null
+			this.routeParam = ''
+			this.sharedDossierTitle = ''
+			this.loading = false
+			this.applyDocumentTitle()
+		},
+
+		/**
+		 * Open the accessibility statement: the authored page when there is
+		 * one, which editors may then edit, else the generated statement.
+		 *
+		 * @param {string} route The in-portal route.
+		 * @param {boolean} fresh Whether to read past the browser cache.
+		 * @return {Promise<void>} Resolves when loaded.
+		 */
+		async openStatementRoute(route, fresh) {
+			this.error = null
+			this.routeParam = ''
+			this.loading = true
+			this.page = await authoredStatement(() =>
+				fetchPage(route, this.portalSlug, {
 					fresh,
 					locale: this.chosenLocale,
-				})
-			} catch (error) {
-				// A ROUTE CAN ADDRESS A THING RATHER THAN A PAGE.
-				//
-				// `/publicatie/8f21…` is one page and thousands of subjects; no
-				// CMS holds a page per publication. So an unresolved route
-				// falls back to its PARENT and hands the trailing segment to
-				// the page as `routeParam`, which is how `/publicatie/<id>`
-				// resolves to the `/publicatie` page rendering that id.
-				//
-				// Only ONE level, and only on a 404. Walking all the way up
-				// would make `/does/not/exist` render the home page — a
-				// mistyped URL answering with content is worse than answering
-				// with "not found", because nothing tells the visitor they are
-				// in the wrong place.
-				const parent = this.parentRoute(route)
-				if (this.isNotFound(error) === true && parent !== null) {
-					try {
-						this.page = await fetchPage(parent, this.portalSlug, {
-							fresh,
-							locale: this.chosenLocale,
-						})
-						this.routeParam = route.slice(parent.length + 1)
-						this.loading = false
-						return
-					} catch (parentError) {
-						this.error = parentError
-						this.page = null
-						this.loading = false
-						return
-					}
-				}
+				}),
+			)
+			await this.showStatement()
+		},
 
-				this.page = null
-				// A page behind the portal's sign-in shows the way in rather
-				// than an error: the signed-in area renders signed out.
-				this.signInNeeded = Boolean(
-					error && (error.status === 401 || error.status === 403),
-				)
-				// A 404 is information, not a fault — an unknown route and an
-				// unpublished page are answered identically by the API on
-				// purpose, and both belong on screen as "not found".
-				this.error = error
+		/**
+		 * Show the statement just read: the authored page, which editors may
+		 * then edit, or the generated statement without one.
+		 *
+		 * @return {Promise<void>} Resolves when shown.
+		 */
+		async showStatement() {
+			this.statementAuthored = this.page !== null
+			this.loading = false
+			this.applyDocumentTitle()
+			if (this.statementAuthored) {
+				await this.refreshEditingContext()
+			}
+		},
+
+		/**
+		 * Open a CMS page by route, falling back to its parent when the route
+		 * addresses a thing rather than a page.
+		 *
+		 * @param {string} route The in-portal route.
+		 * @param {boolean} fresh Whether to read past the browser cache.
+		 * @return {Promise<void>} Resolves when loaded.
+		 */
+		async openPageRoute(route, fresh) {
+			this.startPageRead()
+			try {
+				this.page = await this.readPage(route, fresh)
+			} catch (error) {
+				if (await this.openParentPage({ route, fresh }, error)) {
+					return
+				}
+				this.showPageError(error)
 			} finally {
 				this.loading = false
 			}
@@ -2346,6 +2370,87 @@ export default {
 			// editors and must not be able to delay — or fail — the content
 			// every other visitor came for.
 			await this.refreshEditingContext()
+		},
+
+		/**
+		 * Clear the last page's error and segment and show the read going on.
+		 *
+		 * @return {void}
+		 */
+		startPageRead() {
+			this.loading = true
+			this.error = null
+			this.routeParam = ''
+		},
+
+		/**
+		 * Read one published page, in the visitor's language.
+		 *
+		 * @param {string} route The in-portal route.
+		 * @param {boolean} fresh Whether to read past the browser cache.
+		 * @return {Promise<object>} The page.
+		 */
+		readPage(route, fresh) {
+			return fetchPage(route, this.portalSlug, {
+				fresh,
+				locale: this.chosenLocale,
+			})
+		},
+
+		/**
+		 * Open the parent page of a route that was not found, handing it the
+		 * trailing segment.
+		 *
+		 * A ROUTE CAN ADDRESS A THING RATHER THAN A PAGE.
+		 *
+		 * `/publicatie/8f21…` is one page and thousands of subjects; no CMS
+		 * holds a page per publication. So an unresolved route falls back to
+		 * its PARENT and hands the trailing segment to the page as
+		 * `routeParam`, which is how `/publicatie/<id>` resolves to the
+		 * `/publicatie` page rendering that id.
+		 *
+		 * Only ONE level, and only on a 404. Walking all the way up would make
+		 * `/does/not/exist` render the home page — a mistyped URL answering
+		 * with content is worse than answering with "not found", because
+		 * nothing tells the visitor they are in the wrong place.
+		 *
+		 * @param {{route: string, fresh: boolean}} read The route that was read, and whether past the browser cache.
+		 * @param {Error} error Why the route's page was not read.
+		 * @return {Promise<boolean>} Whether the parent was tried, found or not.
+		 */
+		async openParentPage(read, error) {
+			const parent = this.parentRoute(read.route)
+			if (this.isNotFound(error) !== true || parent === null) {
+				return false
+			}
+			try {
+				this.page = await this.readPage(parent, read.fresh)
+				this.routeParam = read.route.slice(parent.length + 1)
+			} catch (parentError) {
+				this.error = parentError
+				this.page = null
+			}
+			this.loading = false
+			return true
+		},
+
+		/**
+		 * Show why a route's page is not there.
+		 *
+		 * @param {Error} error Why the page was not read.
+		 * @return {void}
+		 */
+		showPageError(error) {
+			this.page = null
+			// A page behind the portal's sign-in shows the way in rather
+			// than an error: the signed-in area renders signed out.
+			this.signInNeeded = Boolean(
+				error && (error.status === 401 || error.status === 403),
+			)
+			// A 404 is information, not a fault — an unknown route and an
+			// unpublished page are answered identically by the API on
+			// purpose, and both belong on screen as "not found".
+			this.error = error
 		},
 
 		/**
