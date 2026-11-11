@@ -158,7 +158,6 @@ class PortalJwtService {
 		$iat = time();
 		$exp = ($iat + ($ttl ?? self::DEFAULT_TTL));
 
-		$header = ['alg' => self::ALG, 'typ' => 'JWT'];
 		$claims = [
 			'sub' => $subjectRef,
 			'audience' => $audience,
@@ -175,26 +174,45 @@ class PortalJwtService {
 			'authTime' => ($authTime ?? $iat),
 		];
 
-		// Change signin-eherkenning-branch: the branch in effect, and whether the
-		// login restricted the session to it. Signed only when set, so a
-		// session without a branch carries exactly the claims it did before.
-		if ((string)($context['number'] ?? '') !== '') {
-			$claims['branch'] = (string)$context['number'];
-			$claims['branchRestricted'] = (($context['restricted'] ?? false) === true);
-		}
-
-		// Change signin-session-idle-warning-and-sso D6: the OIDC provider the
-		// session came through, so signing out can reach that broker. Signed
-		// only when set: dev-login and the Nextcloud mode carry none.
-		if ((string)($context['provider'] ?? '') !== '') {
-			$claims['provider'] = (string)$context['provider'];
-		}
-
-		$hPart = $this->b64UrlEncode(bytes: (string)json_encode($header, JSON_UNESCAPED_SLASHES));
-		$cPart = $this->b64UrlEncode(bytes: (string)json_encode($claims, JSON_UNESCAPED_SLASHES));
-		$sig = $this->b64UrlEncode(bytes: $this->signRaw(input: $hPart . '.' . $cPart));
-		return $hPart . '.' . $cPart . '.' . $sig;
+		return $this->signed(claims: array_replace($claims, $this->branchClaims(context: $context), $this->providerClaim(context: $context)));
 	}//end createSession()
+
+	/**
+	 * Change signin-eherkenning-branch: the branch in effect, and whether the
+	 * login restricted the session to it. Signed only when set, so a session
+	 * without a branch carries exactly the claims it did before.
+	 *
+	 * @param array{number?: string, restricted?: bool, provider?: string} $context The login's context.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function branchClaims(array $context): array {
+		if ((string)($context['number'] ?? '') === '') {
+			return [];
+		}
+
+		return [
+			'branch' => (string)$context['number'],
+			'branchRestricted' => (($context['restricted'] ?? false) === true),
+		];
+	}//end branchClaims()
+
+	/**
+	 * Change signin-session-idle-warning-and-sso D6: the OIDC provider the
+	 * session came through, so signing out can reach that broker. Signed only
+	 * when set: dev-login and the Nextcloud mode carry none.
+	 *
+	 * @param array{number?: string, restricted?: bool, provider?: string} $context The login's context.
+	 *
+	 * @return array<string, string>
+	 */
+	private function providerClaim(array $context): array {
+		if ((string)($context['provider'] ?? '') === '') {
+			return [];
+		}
+
+		return ['provider' => (string)$context['provider']];
+	}//end providerClaim()
 
 	/**
 	 * Mint a short-lived `X-Portal-Subject` assertion (contract v2, A6).
@@ -233,7 +251,6 @@ class PortalJwtService {
 		$iat = time();
 		$exp = ($iat + ($ttl ?? self::ASSERTION_TTL));
 
-		$header = ['alg' => self::ALG, 'typ' => 'JWT'];
 		$claims = [
 			'sub' => $subjectRef,
 			'audience' => $audience,
@@ -251,16 +268,41 @@ class PortalJwtService {
 			$claims[self::BRANCH_ASSERTION_CLAIM] = $branch;
 		}
 
+		return $this->signed(claims: array_replace($claims, $this->scopeClaim(scopeClaim: $scopeClaim, scopeValue: $scopeValue)));
+	}//end createAssertion()
+
+	/**
+	 * The action's declared scope claim with its server-resolved value, when
+	 * the name may be added and the value is set; none otherwise.
+	 *
+	 * @param string $scopeClaim The action's declared scope claim, or ''.
+	 * @param string $scopeValue The server-resolved value of that claim, or ''.
+	 *
+	 * @return array<string, string>
+	 */
+	private function scopeClaim(string $scopeClaim, string $scopeValue): array {
 		$claimName = self::scopeClaimName(scopeClaim: $scopeClaim);
-		if ($claimName !== null && $scopeValue !== '') {
-			$claims[$claimName] = $scopeValue;
+		if ($claimName === null || $scopeValue === '') {
+			return [];
 		}
 
-		$hPart = $this->b64UrlEncode(bytes: (string)json_encode($header, JSON_UNESCAPED_SLASHES));
-		$cPart = $this->b64UrlEncode(bytes: (string)json_encode($claims, JSON_UNESCAPED_SLASHES));
-		$sig = $this->b64UrlEncode(bytes: $this->signRaw(input: $hPart . '.' . $cPart));
+		return [$claimName => $scopeValue];
+	}//end scopeClaim()
+
+	/**
+	 * The compact HS256 JWT of a claim set.
+	 *
+	 * @param array<string, mixed> $claims The claims.
+	 *
+	 * @return string Compact JWT string.
+	 */
+	private function signed(array $claims): string {
+		$header = ['alg' => self::ALG, 'typ' => 'JWT'];
+		$hPart  = $this->b64UrlEncode(bytes: (string)json_encode($header, JSON_UNESCAPED_SLASHES));
+		$cPart  = $this->b64UrlEncode(bytes: (string)json_encode($claims, JSON_UNESCAPED_SLASHES));
+		$sig    = $this->b64UrlEncode(bytes: $this->signRaw(input: $hPart . '.' . $cPart));
 		return $hPart . '.' . $cPart . '.' . $sig;
-	}//end createAssertion()
+	}//end signed()
 
 	/**
 	 * The assertion claim name a declared scope claim maps to.
@@ -351,7 +393,6 @@ class PortalJwtService {
 	): string {
 		$iat = time();
 
-		$header = ['alg' => self::ALG, 'typ' => 'JWT'];
 		$claims = [
 			'sub' => $subjectRef,
 			'audience' => 'client',
@@ -368,10 +409,7 @@ class PortalJwtService {
 			'iss' => self::ISSUER,
 		];
 
-		$hPart = $this->b64UrlEncode(bytes: (string)json_encode($header, JSON_UNESCAPED_SLASHES));
-		$cPart = $this->b64UrlEncode(bytes: (string)json_encode($claims, JSON_UNESCAPED_SLASHES));
-		$sig = $this->b64UrlEncode(bytes: $this->signRaw(input: $hPart . '.' . $cPart));
-		return $hPart . '.' . $cPart . '.' . $sig;
+		return $this->signed(claims: $claims);
 	}//end createReferenceSession()
 
 	/**
