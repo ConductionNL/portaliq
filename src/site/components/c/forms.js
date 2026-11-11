@@ -201,15 +201,26 @@ export function withSingleOptions(action, values, options) {
  */
 function singleOption(action, { field, options }) {
 	const list = (options || {})[field]
-	if (
-		fieldConfig(action, field).required !== true
-		|| fieldInput(action, field, list) !== 'select'
-		|| !Array.isArray(list)
-		|| list.length !== 1
-	) {
+	if (!offersOneOption(action, { field, list })) {
 		return undefined
 	}
 	return list[0] && list[0].value
+}
+
+/**
+ * Whether a field is a required select with exactly one option.
+ *
+ * @param {object} action The action.
+ * @param {{field: string, list: Array|undefined}} ask The field and its resolved options.
+ * @return {boolean}
+ */
+function offersOneOption(action, { field, list }) {
+	return (
+		fieldConfig(action, field).required === true
+		&& fieldInput(action, field, list) === 'select'
+		&& Array.isArray(list)
+		&& list.length === 1
+	)
 }
 
 /**
@@ -223,10 +234,21 @@ function singleOption(action, { field, options }) {
 export function sentValue(input, value) {
 	const text = value === null || value === undefined ? '' : String(value)
 	if (input === 'datetime-local' && text !== '') {
-		const date = new Date(text)
-		return Number.isNaN(date.getTime()) ? text : date.toISOString()
+		return instantOf(text)
 	}
 	return text
+}
+
+/**
+ * A local moment as the ISO instant it is in the resident's own time; a
+ * value that is no moment stays as typed.
+ *
+ * @param {string} text The `datetime-local` value.
+ * @return {string} The instant.
+ */
+function instantOf(text) {
+	const date = new Date(text)
+	return Number.isNaN(date.getTime()) ? text : date.toISOString()
 }
 
 /**
@@ -283,6 +305,13 @@ function booleanOf(text) {
 	return null
 }
 
+/** How an answer reads in each value type that is not text; null when it does not fit. */
+const TYPED_READERS = new Map([
+	['integer', numberOf],
+	['number', numberOf],
+	['boolean', booleanOf],
+])
+
 /**
  * One answer in the type its field declares. An answer that does not fit the
  * type is sent as typed, so the server's refusal names the field; the form's
@@ -295,15 +324,12 @@ function booleanOf(text) {
  * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-form-must-send-each-value-in-the-type-its-field-declares
  */
 export function typedValue(type, text) {
-	if (type === 'integer' || type === 'number') {
-		const number = numberOf(text)
-		return number === null ? text : number
+	const read = TYPED_READERS.get(type)
+	if (read === undefined) {
+		return text
 	}
-	if (type === 'boolean') {
-		const yes = booleanOf(text)
-		return yes === null ? text : yes
-	}
-	return text
+	const value = read(text)
+	return value === null ? text : value
 }
 
 /**
@@ -470,6 +496,15 @@ export function invalidFieldErrors(action, invalid, t) {
 	return out
 }
 
+/** The message of each status that says why a form was refused. */
+const REFUSAL_KEYS = new Map([
+	[400, 'Not everything is filled in correctly. Check your answers.'],
+	[422, 'Not everything is filled in correctly. Check your answers.'],
+	[403, 'This can no longer be done for this item.'],
+	[404, 'This can no longer be done for this item.'],
+	[409, 'This can no longer be done for this item.'],
+])
+
 /**
  * The message for a refused form that names no field, by status: a refusal of
  * the answers (400, 422), an item that can no longer take it (403, 404, 409),
@@ -481,13 +516,7 @@ export function invalidFieldErrors(action, invalid, t) {
  * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
  */
 export function refusalKey(status) {
-	if (status === 400 || status === 422) {
-		return 'Not everything is filled in correctly. Check your answers.'
-	}
-	if (status === 403 || status === 404 || status === 409) {
-		return 'This can no longer be done for this item.'
-	}
-	return 'Saving did not work.'
+	return REFUSAL_KEYS.get(status) ?? 'Saving did not work.'
 }
 
 /**
