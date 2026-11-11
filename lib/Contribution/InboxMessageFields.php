@@ -77,6 +77,22 @@ class InboxMessageFields {
 
 		$declared = $collection['messageFields'];
 		unset($collection['messageFields']);
+
+		return $this->withKeptFields(collection: $collection, declared: $declared);
+	}//end normalise()
+
+	/**
+	 * The collection with the plain field names its declaration keeps, on an
+	 * inbox only; without them when none is kept.
+	 *
+	 * @param array<string, mixed> $collection The collection without its `messageFields`.
+	 * @param mixed                $declared   The declared `messageFields`.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/inbox-reads-each-apps-message-fields/specs/supplier-portal/spec.md#requirement-an-inbox-collection-names-its-own-message-fields-req-imf-001
+	 */
+	private function withKeptFields(array $collection, mixed $declared): array {
 		if (($collection['kind'] ?? null) !== 'inbox' || is_array($declared) === false) {
 			return $collection;
 		}
@@ -87,7 +103,7 @@ class InboxMessageFields {
 		}
 
 		return $collection;
-	}//end normalise()
+	}//end withKeptFields()
 
 	/**
 	 * The inbox fields a declaration names with a plain field name.
