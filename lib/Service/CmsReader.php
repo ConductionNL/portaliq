@@ -339,37 +339,9 @@ class CmsReader {
 	private function shapeMenu(array $row): array {
 		$items = [];
 		foreach ((array)($row['items'] ?? []) as $item) {
-			if (is_array($item) === false) {
-				continue;
+			if (is_array($item) === true) {
+				$items[] = $this->shapeMenuItem(item: $item);
 			}
-
-			$children = [];
-			foreach ((array)($item['items'] ?? []) as $child) {
-				if (is_array($child) === false) {
-					continue;
-				}
-
-				// Only ONE level of children is emitted. A third level in
-				// stored data is dropped here rather than passed on, so a
-				// consumer never has to guess how deep the tree can go.
-				$children[] = [
-					'order' => (int)($child['order'] ?? 0),
-					'name'  => (string)($child['name'] ?? ''),
-					'link'  => (string)($child['link'] ?? ''),
-					'icon'  => (string)($child['icon'] ?? ''),
-				];
-			}
-
-			usort($children, static fn ($a, $b) => $a['order'] <=> $b['order']);
-
-			$items[] = [
-				'order'       => (int)($item['order'] ?? 0),
-				'name'        => (string)($item['name'] ?? ''),
-				'link'        => (string)($item['link'] ?? ''),
-				'description' => (string)($item['description'] ?? ''),
-				'icon'        => (string)($item['icon'] ?? ''),
-				'items'       => $children,
-			];
 		}
 
 		usort($items, static fn ($a, $b) => $a['order'] <=> $b['order']);
@@ -380,6 +352,55 @@ class CmsReader {
 			'items'    => $items,
 		];
 	}//end shapeMenu()
+
+
+	/**
+	 * Shape one top-level menu item, with its children ordered.
+	 *
+	 * @param array $item The stored item.
+	 *
+	 * @return array The API shape.
+	 */
+	private function shapeMenuItem(array $item): array {
+		$children = [];
+		foreach ((array)($item['items'] ?? []) as $child) {
+			if (is_array($child) === true) {
+				$children[] = $this->shapeMenuChild(child: $child);
+			}
+		}
+
+		usort($children, static fn ($a, $b) => $a['order'] <=> $b['order']);
+
+		return [
+			'order'       => (int)($item['order'] ?? 0),
+			'name'        => (string)($item['name'] ?? ''),
+			'link'        => (string)($item['link'] ?? ''),
+			'description' => (string)($item['description'] ?? ''),
+			'icon'        => (string)($item['icon'] ?? ''),
+			'items'       => $children,
+		];
+	}//end shapeMenuItem()
+
+
+	/**
+	 * Shape one child of a menu item.
+	 *
+	 * Only ONE level of children is emitted. A third level in stored data is
+	 * dropped here rather than passed on, so a consumer never has to guess
+	 * how deep the tree can go.
+	 *
+	 * @param array $child The stored child.
+	 *
+	 * @return array The API shape.
+	 */
+	private function shapeMenuChild(array $child): array {
+		return [
+			'order' => (int)($child['order'] ?? 0),
+			'name'  => (string)($child['name'] ?? ''),
+			'link'  => (string)($child['link'] ?? ''),
+			'icon'  => (string)($child['icon'] ?? ''),
+		];
+	}//end shapeMenuChild()
 
 
 	/**
@@ -426,67 +447,105 @@ class CmsReader {
 	 * @return array The API shape.
 	 */
 	private function shapePage(array $row, string $organisation=''): array {
-		$body   = (array)($row['body'] ?? []);
-		$type   = (string)($body['type'] ?? 'markdown');
 		$portal = (string)($row['portal'] ?? '');
 
-		$shaped = [
+		return [
 			'title'   => (string)($row['title'] ?? ''),
 			'route'   => (string)($row['route'] ?? ''),
 			'summary' => (string)($row['summary'] ?? ''),
 			'locale'  => (string)($row['locale'] ?? ''),
 			'seo'     => $this->shapeSeo(row: $row),
 			'hero'    => $this->media->hero(portal: $portal, value: ($row['heroImage'] ?? null)),
-			'body'    => ['type' => $type],
+			'body'    => $this->shapeBody(row: $row, organisation: $organisation),
 		];
+	}//end shapePage()
+
+
+	/**
+	 * Shape a stored page's body: markdown source, or a widget grid.
+	 *
+	 * @param array  $row          The stored page.
+	 * @param string $organisation The serving portal's organisation, for shared blocks.
+	 *
+	 * @return array The API shape of the body.
+	 */
+	private function shapeBody(array $row, string $organisation): array {
+		$body = (array)($row['body'] ?? []);
+		$type = (string)($body['type'] ?? 'markdown');
 
 		// The regions this page empties on purpose (REQ-PTB-009). Served for
 		// both body types: a markdown page can clear the portal's hero too.
-		$shaped['body']['clearedRegions'] = $this->regions->cleared(cleared: ($body['clearedRegions'] ?? []));
-
-		if ($type === 'markdown') {
-			// Served as SOURCE. Rendering to HTML here would force every
-			// consumer that wants markdown — a Docusaurus build, most
-			// obviously — to parse it back out, losing fidelity for nothing.
-			// Only a media:<id> link target is rewritten to the item's address.
-			$shaped['body']['markdown'] = $this->media->markdown(portal: $portal, markdown: (string)($body['markdown'] ?? ''));
-			return $shaped;
+		$shaped = ['type' => $type, 'clearedRegions' => $this->regions->cleared(cleared: ($body['clearedRegions'] ?? []))];
+		if ($type !== 'markdown') {
+			return $shaped + $this->shapeGrid(row: $row, organisation: $organisation);
 		}
+
+		// Served as SOURCE. Rendering to HTML here would force every
+		// consumer that wants markdown — a Docusaurus build, most
+		// obviously — to parse it back out, losing fidelity for nothing.
+		// Only a media:<id> link target is rewritten to the item's address.
+		$shaped['markdown'] = $this->media->markdown(portal: (string)($row['portal'] ?? ''), markdown: (string)($body['markdown'] ?? ''));
+
+		return $shaped;
+	}//end shapeBody()
+
+
+	/**
+	 * Shape a grid body: its widgets ordered by row then column, its aside
+	 * column, and the same widgets grouped by region.
+	 *
+	 * @param array  $row          The stored page.
+	 * @param string $organisation The serving portal's organisation, for shared blocks.
+	 *
+	 * @return array `widgets`, `aside` when asked for, `regions` and `unknownRegions`.
+	 */
+	private function shapeGrid(array $row, string $organisation): array {
+		$body = (array)($row['body'] ?? []);
 
 		// The portal goes along for the form placements: each is served with
 		// its stored form's help details, read now and not when the page was
 		// made (help-texts-and-form-help).
 		$widgets = $this->blocks->shapeWidgets(raw: (array)($body['widgets'] ?? []));
-		$widgets = $this->blocks->expand(widgets: $widgets, organisation: $organisation, portal: $portal);
+		$widgets = $this->blocks->expand(widgets: $widgets, organisation: $organisation, portal: (string)($row['portal'] ?? ''));
 
 		usort(
 			$widgets,
 			static fn ($a, $b) => [$a['gridY'], $a['gridX']] <=> [$b['gridY'], $b['gridX']]
 		);
 
-		$shaped['body']['widgets'] = $widgets;
-
-		// A fixed-width aside column, when the page asks for one
-		// (site-aside-column); the site checks the range.
-		$aside = $body['aside'] ?? null;
-		if (is_array($aside) === true && is_numeric($aside['width'] ?? null) === true) {
-			$gap = null;
-			if (is_numeric($aside['gap'] ?? null) === true) {
-				$gap = (int) $aside['gap'];
-			}
-
-			$shaped['body']['aside'] = ['width' => (int) $aside['width'], 'gap' => $gap];
-		}
-
 		// The same widgets grouped by region, beside the flat list the
 		// Docusaurus plugin reads (REQ-PTB-008). A slot that names no region
 		// is reported, not dropped silently. An empty map stays an object.
 		$grouped = $this->regions->group(widgets: $widgets);
-		$shaped['body']['regions']        = $this->regions->forJson(regions: $grouped['regions']);
-		$shaped['body']['unknownRegions'] = $grouped['unknownRegions'];
 
-		return $shaped;
-	}//end shapePage()
+		return ['widgets' => $widgets] + $this->shapeAside(body: $body) + [
+			'regions'        => $this->regions->forJson(regions: $grouped['regions']),
+			'unknownRegions' => $grouped['unknownRegions'],
+		];
+	}//end shapeGrid()
+
+
+	/**
+	 * A fixed-width aside column, when the page asks for one
+	 * (site-aside-column); the site checks the range.
+	 *
+	 * @param array $body The stored body.
+	 *
+	 * @return array `['aside' => ...]`, or nothing.
+	 */
+	private function shapeAside(array $body): array {
+		$aside = $body['aside'] ?? null;
+		if (is_array($aside) === false || is_numeric($aside['width'] ?? null) === false) {
+			return [];
+		}
+
+		$gap = null;
+		if (is_numeric($aside['gap'] ?? null) === true) {
+			$gap = (int) $aside['gap'];
+		}
+
+		return ['aside' => ['width' => (int) $aside['width'], 'gap' => $gap]];
+	}//end shapeAside()
 
 	/**
 	 * Hits and misses of the content cache since it was first used.
