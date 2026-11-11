@@ -59,27 +59,36 @@ class TimedTaskConfigNormaliser {
 	public function resolve(array $collections, array $actions): array {
 		$endpointIds = $this->endpointActionIds(actions: $actions);
 		foreach ($collections as $index => $collection) {
-			if (($collection['kind'] ?? null) !== self::KIND && array_key_exists('timedTask', $collection) === false) {
-				continue;
-			}
-
-			$block = $this->soundBlock(declared: ($collection['timedTask'] ?? null), endpointIds: $endpointIds);
-			if (($collection['kind'] ?? null) !== self::KIND || $block === null) {
-				unset($collection['timedTask']);
-				if (($collection['kind'] ?? null) === self::KIND) {
-					unset($collection['kind']);
-				}
-
-				$collections[$index] = $collection;
-				continue;
-			}
-
-			$collection['timedTask'] = $block;
-			$collections[$index] = $collection;
+			$collections[$index] = $this->resolved(collection: $collection, endpointIds: $endpointIds);
 		}
 
 		return $collections;
 	}//end resolve()
+
+	/**
+	 * One collection: a timed task keeps its sound block or loses it with its
+	 * kind; any other collection loses a stray block.
+	 *
+	 * @param array<string, mixed> $collection  The collection.
+	 * @param array<int, string>   $endpointIds The endpoint action ids in reach.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function resolved(array $collection, array $endpointIds): array {
+		if (($collection['kind'] ?? null) !== self::KIND) {
+			unset($collection['timedTask']);
+			return $collection;
+		}
+
+		$block = $this->soundBlock(declared: ($collection['timedTask'] ?? null), endpointIds: $endpointIds);
+		if ($block === null) {
+			unset($collection['timedTask'], $collection['kind']);
+			return $collection;
+		}
+
+		$collection['timedTask'] = $block;
+		return $collection;
+	}//end resolved()
 
 	/**
 	 * The block with exactly the five steps, each naming an endpoint action,
@@ -97,16 +106,33 @@ class TimedTaskConfigNormaliser {
 
 		$block = [];
 		foreach (self::STEPS as $step) {
-			$actionId = ($declared[$step] ?? null);
-			if (is_string($actionId) === false || in_array($actionId, $endpointIds, true) === false) {
-				return null;
-			}
+			$block[$step] = ($declared[$step] ?? null);
+		}
 
-			$block[$step] = $actionId;
+		if ($this->allEndpoints(block: $block, endpointIds: $endpointIds) === false) {
+			return null;
 		}
 
 		return $block;
 	}//end soundBlock()
+
+	/**
+	 * Whether every step names an endpoint action in reach.
+	 *
+	 * @param array<string, mixed> $block       The steps and their declared action ids.
+	 * @param array<int, string>   $endpointIds The endpoint action ids in reach.
+	 *
+	 * @return bool
+	 */
+	private function allEndpoints(array $block, array $endpointIds): bool {
+		foreach ($block as $actionId) {
+			if (is_string($actionId) === false || in_array($actionId, $endpointIds, true) === false) {
+				return false;
+			}
+		}
+
+		return true;
+	}//end allEndpoints()
 
 	/**
 	 * The ids of the actions that forward to an instance-local endpoint.
@@ -118,16 +144,36 @@ class TimedTaskConfigNormaliser {
 	private function endpointActionIds(array $actions): array {
 		$ids = [];
 		foreach ($actions as $action) {
-			$id = ($action['id'] ?? null);
-			$endpoint = ($action['endpoint'] ?? null);
-			if (is_string($id) === true && $id !== ''
-				&& is_string($endpoint) === true && str_starts_with($endpoint, '/') === true
-				&& str_starts_with($endpoint, '//') === false && str_contains($endpoint, '://') === false
-			) {
-				$ids[] = $id;
+			if ($this->isEndpointAction(action: $action) === true) {
+				$ids[] = $action['id'];
 			}
 		}
 
 		return $ids;
 	}//end endpointActionIds()
+
+	/**
+	 * Whether an action has an id and forwards to an instance-local endpoint.
+	 *
+	 * @param array<string, mixed> $action The sanitised action.
+	 *
+	 * @return bool
+	 */
+	private function isEndpointAction(array $action): bool {
+		$id = ($action['id'] ?? null);
+
+		return is_string($id) === true && $id !== '' && $this->isLocalPath(endpoint: ($action['endpoint'] ?? null)) === true;
+	}//end isEndpointAction()
+
+	/**
+	 * Whether an endpoint is a path on this instance: one leading slash, no scheme.
+	 *
+	 * @param mixed $endpoint The declared endpoint.
+	 *
+	 * @return bool
+	 */
+	private function isLocalPath(mixed $endpoint): bool {
+		return is_string($endpoint) === true && str_starts_with($endpoint, '/') === true
+			&& str_starts_with($endpoint, '//') === false && str_contains($endpoint, '://') === false;
+	}//end isLocalPath()
 }//end class
