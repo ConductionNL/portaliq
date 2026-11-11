@@ -1643,48 +1643,11 @@ export default {
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-request-must-resolve-to-exactly-one-portal-or-to-none
 		 */
 		async loadSite() {
-			try {
-				const [site, menus, glossary] = await Promise.all([
-					fetchSite(this.portalSlug, this.chosenLocale),
-					this.unlessSignInNeeded(
-						fetchMenus(this.portalSlug, this.chosenLocale),
-						[],
-					),
-					this.unlessSignInNeeded(
-						fetchGlossary(this.portalSlug, this.chosenLocale),
-						[],
-					),
-				])
-				this.site = site
-				setAssistantAvailable(site?.assistantEnabled === true)
-				this.menus = menus
-				this.glossary = glossary
-			} catch (error) {
-				this.error = error
+			if (!(await this.loadPortal())) {
 				return
 			}
-
-			// Contributions load SEPARATELY and never reject into the block
-			// above. They come from third-party apps reached through a
-			// duck-typed provider (ADR-046): a leaf app that is broken, half
-			// installed, or simply absent must cost the visitor a section, not
-			// the whole portal. The CMS content above is the portal; this is
-			// an addition to it.
-			try {
-				this.contributions = await fetchContributions(this.portalSlug)
-			} catch {
-				this.contributions = []
-			}
-
-			// The session is read last and cannot fail the page. A portal whose
-			// auth edge is down must still serve its public content, which is
-			// the overwhelming majority of what it serves; `fetchSession`
-			// resolves null rather than throwing for exactly that reason.
-			this.session = await fetchSession(authBaseFrom(resolveApiBase()))
-			this.sessionKnown = true
-			this.watchIdle()
-
-			this.applyDocumentTitle()
+			await this.loadContributions()
+			await this.readSession()
 
 			// A confirmation link needs no session; it is read once, at boot.
 			this.confirmMessage = await confirmEmailFromLink({
@@ -1692,8 +1655,116 @@ export default {
 				t: this.t,
 			})
 
-			// A kept invitation is handed back before the account loads, so
-			// what it shares is there on the first read.
+			await this.redeemKeptInvitations()
+			await this.enterAccount()
+		},
+
+		/**
+		 * Load the portal record, its menus and its glossary; a failure is
+		 * the page's error.
+		 *
+		 * @return {Promise<boolean>} Whether the portal answered.
+		 */
+		async loadPortal() {
+			try {
+				const [site, menus, glossary] = await this.readPortal()
+				this.site = site
+				setAssistantAvailable(site?.assistantEnabled === true)
+				this.menus = menus
+				this.glossary = glossary
+			} catch (error) {
+				this.error = error
+				return false
+			}
+			return true
+		},
+
+		/**
+		 * Read the portal record, its menus and its glossary at once, in the
+		 * visitor's language; a portal behind its sign-in still names itself.
+		 *
+		 * @return {Promise<Array>} The site, the menus and the glossary.
+		 */
+		readPortal() {
+			return Promise.all([
+				fetchSite(this.portalSlug, this.chosenLocale),
+				this.unlessSignInNeeded(
+					fetchMenus(this.portalSlug, this.chosenLocale),
+					[],
+				),
+				this.unlessSignInNeeded(
+					fetchGlossary(this.portalSlug, this.chosenLocale),
+					[],
+				),
+			])
+		},
+
+		/**
+		 * Load the contributed surfaces.
+		 *
+		 * Contributions load SEPARATELY and never reject into the portal's
+		 * own read. They come from third-party apps reached through a
+		 * duck-typed provider (ADR-046): a leaf app that is broken, half
+		 * installed, or simply absent must cost the visitor a section, not
+		 * the whole portal. The CMS content is the portal; this is an
+		 * addition to it.
+		 *
+		 * @return {Promise<void>} Resolves when loaded.
+		 */
+		async loadContributions() {
+			try {
+				this.contributions = await fetchContributions(this.portalSlug)
+			} catch {
+				this.contributions = []
+			}
+		},
+
+		/**
+		 * Read the session, watch it for idleness and title the tab.
+		 *
+		 * The session is read last and cannot fail the page. A portal whose
+		 * auth edge is down must still serve its public content, which is
+		 * the overwhelming majority of what it serves; `fetchSession`
+		 * resolves null rather than throwing for exactly that reason.
+		 *
+		 * @return {Promise<void>} Resolves when read.
+		 */
+		async readSession() {
+			this.session = await fetchSession(authBaseFrom(resolveApiBase()))
+			this.sessionKnown = true
+			this.watchIdle()
+
+			this.applyDocumentTitle()
+		},
+
+		/**
+		 * Hand back the invitations kept from a mail before the account
+		 * loads, so what they share is there on the first read: a claim
+		 * first, then a contact invitation, then one to act on someone's
+		 * behalf (site-mandates-the-represented-manage T4). The first answer
+		 * is the message.
+		 *
+		 * @return {Promise<void>} Resolves when redeemed.
+		 */
+		async redeemKeptInvitations() {
+			await this.handBackKeptClaim()
+			await this.redeemKeptInvitation(
+				'portaliq.contactInvitation',
+				async () => (await import('../shared/contactInvitation.js')).redeemKeptContactInvitation,
+			)
+			await this.redeemKeptInvitation(
+				'portaliq.mandateInvitation',
+				async () => (await import('../shared/mandateInvitation.js')).redeemKeptMandateInvitation,
+			)
+		},
+
+		/**
+		 * Hand back a kept claim; a claimed one changes who the session is,
+		 * so the session is read again.
+		 *
+		 * @return {Promise<void>} Resolves when redeemed.
+		 */
+		async handBackKeptClaim() {
 			this.claimMessage = await redeemKeptClaim({
 				api: this.api,
 				session: this.session,
@@ -1703,36 +1774,37 @@ export default {
 			if (this.claimMessage?.claimed) {
 				await this.reloadSession()
 			}
+		},
 
-			// A contact invitation kept from the mail is handed back the same way.
-			if (this.claimStorage()?.getItem('portaliq.contactInvitation')) {
-				const { redeemKeptContactInvitation } =
-					await import('../shared/contactInvitation.js')
-				this.claimMessage =
-					this.claimMessage
-					|| (await redeemKeptContactInvitation({
-						api: this.api,
-						session: this.session,
-						t: this.t,
-						storage: this.claimStorage(),
-					}))
+		/**
+		 * Hand back one kept invitation, loading its redeemer only when the
+		 * mail left one; it answers only when nothing answered before it.
+		 *
+		 * @param {string} key The sessionStorage key the invitation is kept under.
+		 * @param {() => Promise<(kept: object) => Promise<object|null>>} redeemerOf Loads the invitation's redeemer.
+		 * @return {Promise<void>} Resolves when redeemed.
+		 */
+		async redeemKeptInvitation(key, redeemerOf) {
+			if (!this.claimStorage()?.getItem(key)) {
+				return
 			}
+			const redeem = await redeemerOf()
+			this.claimMessage =
+				this.claimMessage
+				|| (await redeem({
+					api: this.api,
+					session: this.session,
+					t: this.t,
+					storage: this.claimStorage(),
+				}))
+		},
 
-			// So is an invitation to act on someone's behalf
-			// (site-mandates-the-represented-manage T4).
-			if (this.claimStorage()?.getItem('portaliq.mandateInvitation')) {
-				const { redeemKeptMandateInvitation } =
-					await import('../shared/mandateInvitation.js')
-				this.claimMessage =
-					this.claimMessage
-					|| (await redeemKeptMandateInvitation({
-						api: this.api,
-						session: this.session,
-						t: this.t,
-						storage: this.claimStorage(),
-					}))
-			}
-
+		/**
+		 * Open the account with a session, else try a silent sign-in.
+		 *
+		 * @return {Promise<void>} Resolves when the account loaded.
+		 */
+		async enterAccount() {
 			if (this.session) {
 				await this.loadAccount()
 			} else {
