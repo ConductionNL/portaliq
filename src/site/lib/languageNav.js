@@ -84,21 +84,15 @@ export function hrefForLocale(href, locale) {
  * @spec openspec/changes/language-switch-reaches-the-content/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
  */
 export function languageEntries(locales, href) {
-	const seen = new Set()
-	const entries = []
-	for (const raw of Array.isArray(locales) ? locales : []) {
-		const locale = typeof raw === 'string' ? raw.trim() : ''
-		if (locale === '' || seen.has(locale) || !href) {
-			continue
-		}
-
-		seen.add(locale)
-		entries.push({
-			locale,
-			label: languageName(locale),
-			href: hrefForLocale(href, locale),
-		})
+	if (!href) {
+		return []
 	}
-
-	return entries
+	const trimmed = (Array.isArray(locales) ? locales : []).map((raw) =>
+		typeof raw === 'string' ? raw.trim() : '',
+	)
+	return [...new Set(trimmed.filter((locale) => locale !== ''))].map((locale) => ({
+		locale,
+		label: languageName(locale),
+		href: hrefForLocale(href, locale),
+	}))
 }
