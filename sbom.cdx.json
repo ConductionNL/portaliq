@@ -2,10 +2,8 @@
   "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:11953381-8d11-46b4-90d2-fd39a3a0f596",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-11-11T17:27:40Z",
     "tools": [
       {
         "name": "composer",
@@ -82,10 +80,10 @@
       }
     ],
     "component": {
-      "bom-ref": "conductionnl/portaliq-dev-development",
+      "bom-ref": "conductionnl/portaliq-0.1.0.0",
       "type": "application",
       "name": "portaliq",
-      "version": "dev-development",
+      "version": "0.1.0",
       "group": "conductionnl",
       "description": "A template for creating new Nextcloud apps",
       "author": "Conduction b.v.",
@@ -96,16 +94,8 @@
           }
         }
       ],
-      "purl": "pkg:composer/conductionnl/portaliq@dev-development",
+      "purl": "pkg:composer/conductionnl/portaliq@0.1.0",
       "properties": [
-        {
-          "name": "cdx:composer:package:distReference",
-          "value": "ec315b8a5c84d9a6645cfd4650e483e0f371c81a"
-        },
-        {
-          "name": "cdx:composer:package:sourceReference",
-          "value": "ec315b8a5c84d9a6645cfd4650e483e0f371c81a"
-        },
         {
           "name": "cdx:composer:package:type",
           "value": "library"
@@ -34631,7 +34621,7 @@
       "ref": "maxmind-db/reader-1.14.0.0"
     },
     {
-      "ref": "conductionnl/portaliq-dev-development",
+      "ref": "conductionnl/portaliq-0.1.0.0",
       "dependsOn": [
         "maxmind-db/reader-1.14.0.0"
       ]
