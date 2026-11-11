@@ -103,6 +103,25 @@ class PublishedPortals {
 			return $this->publishedPortals;
 		}
 
+		$rows = $this->readPublished();
+		if (is_array($rows) === false) {
+			return [];
+		}
+
+		$this->publishedPortals = self::asRows(rows: $rows);
+
+		return $this->publishedPortals;
+	}//end allPublishedPortals()
+
+
+	/**
+	 * Read the published portal rows from OpenRegister, or null when they
+	 * could not be read: the register context could not be set, or the read
+	 * threw.
+	 *
+	 * @return mixed What OpenRegister answered, or null.
+	 */
+	private function readPublished(): mixed {
 		try {
 			$objectService = $this->container->get(self::OBJECT_SERVICE);
 			// Applied through the context helper rather than by two slug
@@ -110,19 +129,10 @@ class PublishedPortals {
 			// unrelated app left pending on the shared service — which took
 			// every public read of this portal down. See PortalRegisterContext.
 			if ($this->context->apply(objectService: $objectService, schemaSlug: 'portal') === false) {
-				return [];
+				return null;
 			}
 
-			// RBAC and multitenancy OFF: a public site is read by visitors who
-			// are not Nextcloud users at all, so OR's user-based scoping would
-			// filter every row out. The security boundary here is the
-			// `status: published` filter plus per-domain verification, not OR's
-			// user model.
-			$rows = $objectService->findAll(
-				config: ['filters' => ['status' => 'published'], 'limit' => 500, 'offset' => 0],
-				_rbac: false,
-				_multitenancy: false
-			);
+			return $this->findPublished(objectService: $objectService);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Portaliq: portal read failed',
@@ -131,14 +141,41 @@ class PublishedPortals {
 			// Fail CLOSED. An empty list means every request 404s, which is
 			// visible immediately; returning "some site" on an OR error would
 			// serve the wrong tenant silently.
-			return [];
-		}
+			return null;
+		}//end try
+	}//end readPublished()
 
-		if (is_array($rows) === false) {
-			return [];
-		}
 
-		$this->publishedPortals = array_map(
+	/**
+	 * Ask OpenRegister for the published portals.
+	 *
+	 * RBAC and multitenancy OFF: a public site is read by visitors who are
+	 * not Nextcloud users at all, so OR's user-based scoping would filter
+	 * every row out. The security boundary here is the `status: published`
+	 * filter plus per-domain verification, not OR's user model.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService, pointed at the portal schema.
+	 *
+	 * @return mixed What OpenRegister answered.
+	 */
+	private function findPublished(object $objectService): mixed {
+		return $objectService->findAll(
+			config: ['filters' => ['status' => 'published'], 'limit' => 500, 'offset' => 0],
+			_rbac: false,
+			_multitenancy: false
+		);
+	}//end findPublished()
+
+
+	/**
+	 * The rows as arrays, an entity serialised.
+	 *
+	 * @param array $rows The raw rows.
+	 *
+	 * @return array The published portal objects.
+	 */
+	private static function asRows(array $rows): array {
+		return array_map(
 			static function ($row) {
 				if (is_array($row) === true) {
 					return $row;
@@ -148,7 +185,5 @@ class PublishedPortals {
 			},
 			$rows
 		);
-
-		return $this->publishedPortals;
-	}//end allPublishedPortals()
+	}//end asRows()
 }//end class
