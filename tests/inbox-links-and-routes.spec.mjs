@@ -72,10 +72,10 @@ test('a body line loses the "Open" address with its lead-in, a list line only ":
 			'Slot.',
 		].join('\n'),
 	)
-	assert.equal(bodyWithoutOpenLink('Route: ' + SITE + '?route=/mijn/zaken/', link, '/mijn/zaken'), 'Route')
+	assert.equal(bodyWithoutOpenLink('Route: ' + SITE + '?route=/mijn/zaken/', link, '/mijn/zaken'), '', 'a lead-in route line goes as a whole')
 	assert.equal(bodyWithoutOpenLink('Leeg: ' + SITE + '?route=', link, '/mijn/zaken'), 'Leeg: ' + SITE + '?route=')
 	assert.equal(bodyWithoutOpenLink('* Ster: ' + OPEN + ' !', link, '/x'), '* Ster !')
-	assert.equal(bodyWithoutOpenLink(OPEN + ' ...', link, '/x'), '')
+	assert.equal(bodyWithoutOpenLink(OPEN + ' ...', link, '/x'), '...')
 	assert.equal(bodyWithoutOpenLink(42, link, '/x'), '')
 	assert.equal(bodyWithoutOpenLink('Tekst ' + OPEN, null, '/x'), 'Tekst ' + OPEN)
 	assert.equal(bodyWithoutOpenLink('Tekst ' + OPEN, link, null), 'Tekst ' + OPEN)
