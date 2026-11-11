@@ -141,6 +141,37 @@ import {
 /** How long a page may take to show its site root, in milliseconds. */
 const PAGE_TIMEOUT = 20000
 
+/** The frame's page refused to load in a frame. */
+const REFUSED = Symbol('refused')
+
+/** The frame's page showed no site root in time. */
+const TIMED_OUT = Symbol('timed out')
+
+/**
+ * Where a frame's page stands: its site root, refused, timed out, or null
+ * while it is still coming.
+ *
+ * @param {HTMLIFrameElement} frame The frame.
+ * @param {number} started When loading began, in milliseconds.
+ * @return {Element|symbol|null} The site root, `REFUSED`, `TIMED_OUT` or null.
+ */
+function frameState(frame, started) {
+	let doc
+	try {
+		doc = frame.contentDocument
+	} catch {
+		doc = null
+	}
+	if (!doc) {
+		return REFUSED
+	}
+	const root = doc.querySelector(SITE_ROOT)
+	if (root) {
+		return root
+	}
+	return Date.now() - started > PAGE_TIMEOUT ? TIMED_OUT : null
+}
+
 export default {
 	name: 'PortalAccessibility',
 
@@ -428,40 +459,16 @@ export default {
 			const started = Date.now()
 			return new Promise((resolve, reject) => {
 				const look = () => {
-					let doc
-					try {
-						doc = frame.contentDocument
-					} catch {
-						doc = null
+					const state = frameState(frame, started)
+					if (state === REFUSED) {
+						reject(new Error(t('portaliq', 'The page refused to load in a frame.')))
+					} else if (state === TIMED_OUT) {
+						reject(new Error(t('portaliq', 'The page showed no site content within 20 seconds.')))
+					} else if (state) {
+						resolve(state)
+					} else {
+						setTimeout(look, 250)
 					}
-					if (!doc) {
-						reject(
-							new Error(
-								t(
-									'portaliq',
-									'The page refused to load in a frame.',
-								),
-							),
-						)
-						return
-					}
-					const root = doc.querySelector(SITE_ROOT)
-					if (root) {
-						resolve(root)
-						return
-					}
-					if (Date.now() - started > PAGE_TIMEOUT) {
-						reject(
-							new Error(
-								t(
-									'portaliq',
-									'The page showed no site content within 20 seconds.',
-								),
-							),
-						)
-						return
-					}
-					setTimeout(look, 250)
 				}
 				frame.addEventListener('load', look, { once: true })
 				frame.src = frameAddress(this.siteBase, this.slug, route)
