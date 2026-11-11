@@ -105,6 +105,60 @@ class FormStatements {
 	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t03
 	 */
 	public function check(array $asked, mixed $accepted): array {
+		$ticked = $this->ticked(accepted: $accepted);
+
+		return ['errors' => $this->errorsFor(asked: $asked, ticked: $ticked), 'record' => $this->recordFor(asked: $asked, ticked: $ticked)];
+	}//end check()
+
+	/**
+	 * The error of every statement that stops the form, by key.
+	 *
+	 * @param array<int, array{key: string, required: bool, text: string, version: string}> $asked  The asked statements.
+	 * @param array<string, true>                                                           $ticked The ticked keys.
+	 *
+	 * @return array<string, string>
+	 */
+	private function errorsFor(array $asked, array $ticked): array {
+		$errors = [];
+		foreach ($asked as $statement) {
+			$error = $this->errorFor(statement: $statement, ticked: $ticked);
+			if ($error !== null) {
+				$errors[$statement['key']] = $error;
+			}
+		}
+
+		return $errors;
+	}//end errorsFor()
+
+	/**
+	 * What is recorded as accepted: every ticked statement with text to show, now.
+	 * Ticked but unreadable: nothing is recorded as accepted.
+	 *
+	 * @param array<int, array{key: string, required: bool, text: string, version: string}> $asked  The asked statements.
+	 * @param array<string, true>                                                           $ticked The ticked keys.
+	 *
+	 * @return array<int, array{key: string, textVersion: string, acceptedAt: string}>
+	 */
+	private function recordFor(array $asked, array $ticked): array {
+		$now    = (new DateTimeImmutable())->format(DATE_ATOM);
+		$record = [];
+		foreach ($asked as $statement) {
+			if (isset($ticked[$statement['key']]) === true && $statement['text'] !== '') {
+				$record[] = ['key' => $statement['key'], 'textVersion' => $statement['version'], 'acceptedAt' => $now];
+			}
+		}
+
+		return $record;
+	}//end recordFor()
+
+	/**
+	 * The keys the client says were ticked, as a set; anything but a string is ignored.
+	 *
+	 * @param mixed $accepted The keys the client says were ticked.
+	 *
+	 * @return array<string, true>
+	 */
+	private function ticked(mixed $accepted): array {
 		$ticked = [];
 		foreach ((array)$accepted as $key) {
 			if (is_string($key) === true) {
@@ -112,32 +166,31 @@ class FormStatements {
 			}
 		}
 
-		$now    = (new DateTimeImmutable())->format(DATE_ATOM);
-		$errors = [];
-		$record = [];
-		foreach ($asked as $statement) {
-			$key = $statement['key'];
-			if ($statement['required'] === true && $statement['text'] === '') {
-				$errors[$key] = $this->l10n->t('This form cannot be sent yet: a statement it needs has no text.');
-				continue;
-			}
+		return $ticked;
+	}//end ticked()
 
-			if (isset($ticked[$key]) === false) {
-				if ($statement['required'] === true) {
-					$errors[$key] = $this->l10n->t('Accept this statement before you send the form.');
-				}
-
-				continue;
-			}
-
-			if ($statement['text'] === '') {
-				// Ticked but unreadable: nothing is recorded as accepted.
-				continue;
-			}
-
-			$record[] = ['key' => $key, 'textVersion' => $statement['version'], 'acceptedAt' => $now];
+	/**
+	 * Why a statement stops the form: a required one with no text to show,
+	 * or a required one not accepted; null when it does not.
+	 *
+	 * @param array{key: string, required: bool, text: string, version: string} $statement The asked statement.
+	 * @param array<string, true>                                                $ticked    The ticked keys.
+	 *
+	 * @return string|null
+	 */
+	private function errorFor(array $statement, array $ticked): ?string {
+		if ($statement['required'] === false) {
+			return null;
 		}
 
-		return ['errors' => $errors, 'record' => $record];
-	}//end check()
+		if ($statement['text'] === '') {
+			return $this->l10n->t('This form cannot be sent yet: a statement it needs has no text.');
+		}
+
+		if (isset($ticked[$statement['key']]) === false) {
+			return $this->l10n->t('Accept this statement before you send the form.');
+		}
+
+		return null;
+	}//end errorFor()
 }//end class
