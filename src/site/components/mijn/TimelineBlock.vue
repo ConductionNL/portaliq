@@ -39,6 +39,7 @@ import ContactTimeline from './ContactTimeline.vue'
 import EmptyState from './EmptyState.vue'
 import LoadError from './LoadError.vue'
 import Skeleton from './Skeleton.vue'
+import { loadRecordAnswer, recordIdOf } from './recordAnswer.js'
 import { mijnTranslator } from './rows.js'
 
 /**
@@ -86,8 +87,7 @@ export default {
 		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
 		recordId() {
-			const row = this.record
-			return String(row?.id || row?.uuid || row?.['@self']?.id || '')
+			return recordIdOf(this.record)
 		},
 
 		/**
@@ -150,28 +150,8 @@ export default {
 		 * @return {Promise<void>}
 		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
-		async load() {
-			const id = this.recordId
-			if (!id || !this.collection) {
-				return
-			}
-			this.answer = null
-			this.failed = false
-			let answer
-			try {
-				answer = await this.api?.fetchTimeline?.(
-					this.collection,
-					id,
-					this.record?._mandate?.id || '',
-				)
-			} catch {
-				answer = null
-			}
-			if (id !== this.recordId) {
-				return
-			}
-			this.failed = !answer || !Array.isArray(answer.entries)
-			this.answer = this.failed ? null : answer
+		load() {
+			return loadRecordAnswer(this, { api: this.api, fetch: 'fetchTimeline', list: 'entries' })
 		},
 	},
 }
