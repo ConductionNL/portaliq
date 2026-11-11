@@ -75,28 +75,31 @@ class DutchFormats {
 	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t02
 	 */
 	public function normalise(string $format, string $value): ?string {
-		$value = trim($value);
-		switch ($format) {
-			case 'bsn':
-				return $this->bsn(value: $value);
-			case 'iban':
-				return $this->iban(value: $value);
-			case 'nl-licence-plate':
-				return $this->plate(value: $value);
-			case 'phone-nl':
-				return $this->phoneNl(value: $value);
-			case 'phone-international':
-				return $this->phoneInternational(value: $value);
-			case 'postcode':
-				return $this->postcode(value: $value);
-			case 'kvk':
-				return $this->digits(value: $value, length: 8);
-			case 'kvk-branch':
-				return $this->digits(value: $value, length: 12);
-			default:
-				return null;
+		$check = ($this->checks()[$format] ?? null);
+		if ($check === null) {
+			return null;
 		}
+
+		return $check(trim($value));
 	}//end normalise()
+
+	/**
+	 * The check of each format, taking the trimmed value.
+	 *
+	 * @return array<string, callable(string): ?string>
+	 */
+	private function checks(): array {
+		return [
+			'bsn' => fn (string $value) => $this->bsn(value: $value),
+			'iban' => fn (string $value) => $this->iban(value: $value),
+			'nl-licence-plate' => fn (string $value) => $this->plate(value: $value),
+			'phone-nl' => fn (string $value) => $this->phoneNl(value: $value),
+			'phone-international' => fn (string $value) => $this->phoneInternational(value: $value),
+			'postcode' => fn (string $value) => $this->postcode(value: $value),
+			'kvk' => fn (string $value) => $this->digits(value: $value, length: 8),
+			'kvk-branch' => fn (string $value) => $this->digits(value: $value, length: 12),
+		];
+	}//end checks()
 
 	/**
 	 * Exactly `length` digits.
@@ -122,10 +125,21 @@ class DutchFormats {
 	 * @return string|null
 	 */
 	private function bsn(string $value): ?string {
-		if (preg_match('/^\d{9}$/', $value) !== 1 || $value === '000000000') {
+		if (preg_match('/^\d{9}$/', $value) !== 1 || $value === '000000000' || ($this->elfproefSum(digits: $value) % 11) !== 0) {
 			return null;
 		}
 
+		return $value;
+	}//end bsn()
+
+	/**
+	 * The elfproef sum of nine digits: weights 9 down to 2, and -1 for the last.
+	 *
+	 * @param string $digits Nine digits.
+	 *
+	 * @return int
+	 */
+	private function elfproefSum(string $digits): int {
 		$sum = 0;
 		for ($index = 0; $index < 9; $index++) {
 			$weight = (9 - $index);
@@ -133,15 +147,11 @@ class DutchFormats {
 				$weight = -1;
 			}
 
-			$sum += ($weight * (int)$value[$index]);
+			$sum += ($weight * (int)$digits[$index]);
 		}
 
-		if (($sum % 11) !== 0) {
-			return null;
-		}
-
-		return $value;
-	}//end bsn()
+		return $sum;
+	}//end elfproefSum()
 
 	/**
 	 * An IBAN: ISO 13616 mod 97, with the Dutch length of 18.
@@ -152,17 +162,40 @@ class DutchFormats {
 	 */
 	private function iban(string $value): ?string {
 		$iban = strtoupper((string)preg_replace('/\s+/', '', $value));
+		if ($this->hasIbanShape(iban: $iban) === false || $this->mod97(iban: $iban) !== 1) {
+			return null;
+		}
+
+		return $iban;
+	}//end iban()
+
+	/**
+	 * Whether a value has the shape of an IBAN, with the Dutch length of 18
+	 * for a Dutch one.
+	 *
+	 * @param string $iban The value in capitals, no spaces.
+	 *
+	 * @return bool
+	 */
+	private function hasIbanShape(string $iban): bool {
 		if (preg_match('/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/', $iban) !== 1) {
-			return null;
+			return false;
 		}
 
-		if (str_starts_with($iban, 'NL') === true && strlen($iban) !== 18) {
-			return null;
-		}
+		return str_starts_with($iban, 'NL') === false || strlen($iban) === 18;
+	}//end hasIbanShape()
 
-		$rearranged = (substr($iban, 4) . substr($iban, 0, 4));
-		$remainder  = 0;
-		foreach (str_split($rearranged) as $char) {
+	/**
+	 * The ISO 13616 remainder: the first four characters moved to the end,
+	 * each letter read as its number (A is 10), modulo 97.
+	 *
+	 * @param string $iban The IBAN in capitals, no spaces.
+	 *
+	 * @return int
+	 */
+	private function mod97(string $iban): int {
+		$remainder = 0;
+		foreach (str_split(substr($iban, 4) . substr($iban, 0, 4)) as $char) {
 			$number = $char;
 			if (ctype_alpha($char) === true) {
 				$number = (string)(ord($char) - 55);
@@ -171,12 +204,8 @@ class DutchFormats {
 			$remainder = ((int)((string)$remainder . $number) % 97);
 		}
 
-		if ($remainder !== 1) {
-			return null;
-		}
-
-		return $iban;
-	}//end iban()
+		return $remainder;
+	}//end mod97()
 
 	/**
 	 * A licence plate in one of the RDW side codes, dashes optional.
@@ -191,19 +220,30 @@ class DutchFormats {
 			return null;
 		}
 
-		$shape = (string)preg_replace(['/[A-Z]/', '/\d/'], ['L', 'D'], $plate);
-		$code  = array_search($shape, self::PLATE_PATTERNS, true);
-		if ($code === false) {
-			return null;
-		}
-
-		// From side code 7 on, plates use consonants only.
-		if ($code >= 6 && preg_match('/[AEIOUCQ]/', $plate) === 1) {
+		if ($this->fitsASideCode(plate: $plate) === false) {
 			return null;
 		}
 
 		return $plate;
 	}//end plate()
+
+	/**
+	 * Whether six capitals and digits make one of the RDW side codes. From
+	 * side code 7 on, plates use consonants only.
+	 *
+	 * @param string $plate The plate, capitals, no dashes.
+	 *
+	 * @return bool
+	 */
+	private function fitsASideCode(string $plate): bool {
+		$shape = (string)preg_replace(['/[A-Z]/', '/\d/'], ['L', 'D'], $plate);
+		$code  = array_search($shape, self::PLATE_PATTERNS, true);
+		if ($code === false) {
+			return false;
+		}
+
+		return $code < 6 || preg_match('/[AEIOUCQ]/', $plate) !== 1;
+	}//end fitsASideCode()
 
 	/**
 	 * A Dutch phone number, national or with +31 / 0031.
