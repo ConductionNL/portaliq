@@ -42,7 +42,6 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\BackgroundJob;
 
-use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
 use OCA\Portaliq\Service\PortalAccountService;
@@ -126,23 +125,6 @@ class PortalTaskDeliveryJob extends TimedJob {
 		'reminder' => 'Reminder about your task: %1$s',
 		'overdue' => 'Your task is overdue: %1$s',
 	];
-
-	/**
-	 * Body-part translation keys (B1).
-	 */
-	private const BODY_DUE_KEY = 'Please finish this task before %1$s.';
-
-	/**
-	 * The due line once the date has passed: "finish before" would ask for
-	 * the impossible (tasks-reminders-after-the-deadline D3).
-	 */
-	private const BODY_WAS_DUE_KEY = 'This task was due on %1$s.';
-
-	private const BODY_CONSEQUENCE_KEY = 'If you do not respond: %1$s';
-
-	private const BODY_REASON_KEY = 'The reason: %1$s';
-
-	private const BODY_OPEN_KEY = 'Open "Mijn taken" in the portal to complete this task.';
 
 	/**
 	 * The privacy-minimal mail keys per delivery kind — organisation name and
@@ -254,33 +236,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 		$uuid = '';
 		try {
 			$uuid = (string)$row->getUuid();
-			$party = (string)$row->getPartyReference();
-			if (str_starts_with($party, self::PARTY_PREFIX) === false) {
-				$this->markFailed(ledger: $ledger, uuid: $uuid, reason: 'unusable party reference (expected party:<subjectRef>)');
-				return;
-			}
-
-			// A kind this job does not know would otherwise reach the
-			// resident as a new task (tasks-reminders-after-the-deadline D2).
-			$kind = (string)$row->getKind();
-			if (isset(self::SUBJECT_KEYS[$kind], self::MAIL_KEYS[$kind]) === false) {
-				$this->markFailed(ledger: $ledger, uuid: $uuid, reason: 'unknown delivery kind: ' . $kind);
-				return;
-			}
-
-			$subjectRef = substr($party, strlen(self::PARTY_PREFIX));
-			$channel = (string)$row->getChannel();
-			$message = ($row->getMessage() ?? []);
-			if (is_array($message) === false) {
-				$message = [];
-			}
-
-			$error = match ($channel) {
-				'portal-inbox' => $this->deliverInbox(uuid: $uuid, subjectRef: $subjectRef, kind: $kind, message: $message),
-				'mail' => $this->deliverMail(subjectRef: $subjectRef, kind: $kind),
-				default => 'unknown delivery channel: ' . $channel,
-			};
-
+			$error = $this->deliver(row: $row, uuid: $uuid);
 			if ($error === null) {
 				$ledger->markDelivered($uuid);
 				return;
@@ -297,56 +253,96 @@ class PortalTaskDeliveryJob extends TimedJob {
 	}//end settleRow()
 
 	/**
+	 * Deliver one ledger row on its channel.
+	 *
+	 * @param object $row  One pending PortalTaskDelivery row.
+	 * @param string $uuid The row's uuid, already read.
+	 *
+	 * @return string|null Null on success, else the failure reason.
+	 *
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-an-unknown-kind-fails-honestly-req-trd-003
+	 */
+	private function deliver(object $row, string $uuid): ?string {
+		$party = (string)$row->getPartyReference();
+		if (str_starts_with($party, self::PARTY_PREFIX) === false) {
+			return 'unusable party reference (expected party:<subjectRef>)';
+		}
+
+		// A kind this job does not know would otherwise reach the
+		// resident as a new task (tasks-reminders-after-the-deadline D2).
+		$kind = (string)$row->getKind();
+		if (isset(self::SUBJECT_KEYS[$kind], self::MAIL_KEYS[$kind]) === false) {
+			return 'unknown delivery kind: ' . $kind;
+		}
+
+		$delivery = new TaskDelivery(
+			uuid: $uuid,
+			subjectRef: substr($party, strlen(self::PARTY_PREFIX)),
+			kind: $kind,
+			channel: (string)$row->getChannel(),
+			message: $this->messageOf(row: $row)
+		);
+
+		return $this->deliverOn(delivery: $delivery);
+	}//end deliver()
+
+	/**
+	 * The engine's rendered payload of a row, or an empty one.
+	 *
+	 * @param object $row One pending PortalTaskDelivery row.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function messageOf(object $row): array {
+		$message = ($row->getMessage() ?? []);
+		if (is_array($message) === false) {
+			return [];
+		}
+
+		return $message;
+	}//end messageOf()
+
+	/**
+	 * Deliver on the row's channel.
+	 *
+	 * @param TaskDelivery $delivery The delivery.
+	 *
+	 * @return string|null Null on success, else the failure reason.
+	 */
+	private function deliverOn(TaskDelivery $delivery): ?string {
+		return match ($delivery->channel) {
+			'portal-inbox' => $this->deliverInbox(delivery: $delivery),
+			'mail' => $this->deliverMail(delivery: $delivery),
+			default => 'unknown delivery channel: ' . $delivery->channel,
+		};
+	}//end deliverOn()
+
+	/**
 	 * Write the party's inbox message for one `portal-inbox` row, idempotently.
 	 *
-	 * @param string $uuid The ledger row uuid (stamped as `deliveryUuid`).
-	 * @param string $subjectRef The party's subject reference.
-	 * @param string $kind `ask`, `re-ask`, `reminder` or `overdue`.
-	 * @param array<string, mixed> $message The engine's rendered payload
-	 *                                      (title, description, reason, dueAt,
-	 *                                      taskUuid — descriptors, never case data).
+	 * @param TaskDelivery $delivery The delivery; its message carries the
+	 *                               engine's rendered payload (title,
+	 *                               description, reason, dueAt, taskUuid —
+	 *                               descriptors, never case data).
 	 *
 	 * @return string|null Null on success, else the failure reason.
 	 *
 	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-inbox-message-deep-links-to-the-task
 	 */
-	private function deliverInbox(string $uuid, string $subjectRef, string $kind, array $message): ?string {
+	private function deliverInbox(TaskDelivery $delivery): ?string {
 		// Idempotency probe: an earlier run may have written the message and
 		// crashed before settling. Settle, never duplicate.
-		$existing = $this->reader->readCollection(
-			register: self::REGISTER,
-			schema: self::MESSAGE_SCHEMA,
-			scopeField: 'subjectRef',
-			subjectRef: $subjectRef,
-			limit: 1,
-			filter: ['deliveryUuid' => $uuid]
-		);
-		if (count($existing) > 0) {
+		if ($this->alreadyInInbox(delivery: $delivery) === true) {
 			return null;
 		}
 
-		$account = $this->account(subjectRef: $subjectRef);
+		$account = $this->account(subjectRef: $delivery->subjectRef);
 		if ($this->withdrawn(account: $account) === true) {
 			return self::WITHDRAWN;
 		}
 
 		$l10n = $this->language->forOrganisation(organisation: (string)($account['organisation'] ?? ''));
-		$written = $this->writer->createObject(
-			register: self::REGISTER,
-			schema: self::MESSAGE_SCHEMA,
-			scopeField: 'subjectRef',
-			subjectRef: $subjectRef,
-			organisation: '',
-			data: [
-				'subject' => $l10n->t(self::SUBJECT_KEYS[$kind], [(string)($message['title'] ?? '')]),
-				'body' => $this->bodyText(kind: $kind, message: $message, l10n: $l10n),
-				'read' => false,
-				'receivedAt' => $this->time->getDateTime()->format(DateTimeInterface::ATOM),
-				'taskUuid' => (string)($message['taskUuid'] ?? ''),
-				'deliveryUuid' => $uuid,
-			]
-		);
-		if ($written === null) {
+		if ($this->writeInboxMessage(delivery: $delivery, l10n: $l10n) === null) {
 			return 'portal message write failed';
 		}
 
@@ -354,37 +350,94 @@ class PortalTaskDeliveryJob extends TimedJob {
 	}//end deliverInbox()
 
 	/**
+	 * Whether an earlier run already wrote this delivery's inbox message.
+	 *
+	 * @param TaskDelivery $delivery The delivery.
+	 *
+	 * @return bool
+	 */
+	private function alreadyInInbox(TaskDelivery $delivery): bool {
+		$existing = $this->reader->readCollection(
+			register: self::REGISTER,
+			schema: self::MESSAGE_SCHEMA,
+			scopeField: 'subjectRef',
+			subjectRef: $delivery->subjectRef,
+			limit: 1,
+			filter: ['deliveryUuid' => $delivery->uuid]
+		);
+
+		return count($existing) > 0;
+	}//end alreadyInInbox()
+
+	/**
+	 * Write the inbox message, scoped to the party.
+	 *
+	 * @param TaskDelivery $delivery The delivery.
+	 * @param IL10N        $l10n     The translations in the portal's language.
+	 *
+	 * @return array<string, mixed>|null The written message, or null when the write failed.
+	 */
+	private function writeInboxMessage(TaskDelivery $delivery, IL10N $l10n): ?array {
+		return $this->writer->createObject(
+			register: self::REGISTER,
+			schema: self::MESSAGE_SCHEMA,
+			scopeField: 'subjectRef',
+			subjectRef: $delivery->subjectRef,
+			organisation: '',
+			data: [
+				'subject' => $l10n->t(self::SUBJECT_KEYS[$delivery->kind], [(string)($delivery->message['title'] ?? '')]),
+				'body' => (new TaskNoticeBody())->text(delivery: $delivery, l10n: $l10n),
+				'read' => false,
+				'receivedAt' => $this->time->getDateTime()->format(DateTimeInterface::ATOM),
+				'taskUuid' => (string)($delivery->message['taskUuid'] ?? ''),
+				'deliveryUuid' => $delivery->uuid,
+			]
+		);
+	}//end writeInboxMessage()
+
+	/**
 	 * Send the privacy-minimal mail for one `mail` row.
 	 *
-	 * @param string $subjectRef The party's subject reference.
-	 * @param string $kind       `ask`, `re-ask`, `reminder` or `overdue`; picks the subject and body.
+	 * @param TaskDelivery $delivery The delivery; its kind picks the subject and body.
 	 *
 	 * @return string|null Null on success, else the failure reason.
 	 *
 	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-delivery-worker-settles-every-ledger-row-idempotently-and-in-isolation
 	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-mail-says-which-kind-of-delivery-it-is-req-trd-002
 	 */
-	private function deliverMail(string $subjectRef, string $kind): ?string {
-		$account = $this->account(subjectRef: $subjectRef);
+	private function deliverMail(TaskDelivery $delivery): ?string {
+		$account = $this->account(subjectRef: $delivery->subjectRef);
 		$refusal = $this->mailRefusal(account: $account);
 		if ($refusal !== null) {
 			return $refusal;
 		}
 
-		$email = (string)($account['email'] ?? '');
 		$organisation = (string)($account['organisation'] ?? '');
-		$organisationName = (string)($this->orgConfig->resolve(orgSlug: $organisation)['organisationName'] ?? 'Portaliq');
-		$deepLink = $this->deepLink(organisation: $organisation);
+		$mail = new TaskMail(
+			email: (string)($account['email'] ?? ''),
+			organisationName: (string)($this->orgConfig->resolve(orgSlug: $organisation)['organisationName'] ?? 'Portaliq'),
+			deepLink: $this->deepLink(organisation: $organisation),
+			keys: self::MAIL_KEYS[$delivery->kind],
+			l10n: $this->language->forOrganisation(organisation: $organisation)
+		);
 
-		$keys = self::MAIL_KEYS[$kind];
-		$l10n = $this->language->forOrganisation(organisation: $organisation);
+		return $this->sendMail(mail: $mail);
+	}//end deliverMail()
 
+	/**
+	 * Send one task mail.
+	 *
+	 * @param TaskMail $mail The mail's parts.
+	 *
+	 * @return string|null Null on success, else the failure reason.
+	 */
+	private function sendMail(TaskMail $mail): ?string {
 		try {
-			$mail = $this->mailer->createMessage();
-			$mail->setSubject($l10n->t($keys['subject'], [$organisationName]));
-			$mail->setPlainBody($l10n->t($keys['body'], [$organisationName, $deepLink]));
-			$mail->setTo([$email]);
-			$failedRecipients = $this->mailer->send($mail);
+			$message = $this->mailer->createMessage();
+			$message->setSubject($mail->l10n->t($mail->keys['subject'], [$mail->organisationName]));
+			$message->setPlainBody($mail->l10n->t($mail->keys['body'], [$mail->organisationName, $mail->deepLink]));
+			$message->setTo([$mail->email]);
+			$failedRecipients = $this->mailer->send($message);
 		} catch (Throwable $failure) {
 			return 'mail send failed: ' . $failure->getMessage();
 		}
@@ -394,56 +447,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 		}
 
 		return null;
-	}//end deliverMail()
-
-	/**
-	 * The B1 inbox body: the engine's description, the due date, the re-ask
-	 * reason when present, and where to act, in the portal's language. An
-	 * `overdue` notice says when the task was due and, when the engine sends
-	 * one, what happens without a response.
-	 *
-	 * @param string $kind The delivery kind.
-	 * @param array<string, mixed> $message The engine's payload.
-	 * @param IL10N $l10n The translations in the portal's language.
-	 *
-	 * @return string
-	 *
-	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-an-overdue-delivery-reaches-the-resident-as-overdue-req-trd-001
-	 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-a-notification-mail-and-a-task-notice-are-written-in-the-portals-language-only
-	 */
-	private function bodyText(string $kind, array $message, IL10N $l10n): string {
-		$parts = [];
-
-		$description = trim((string)($message['description'] ?? ''));
-		if ($description !== '') {
-			$parts[] = $description;
-		}
-
-		$reason = trim((string)($message['reason'] ?? ''));
-		if ($reason !== '') {
-			$parts[] = $l10n->t(self::BODY_REASON_KEY, [$reason]);
-		}
-
-		$due = $this->dueDate(raw: (string)($message['dueAt'] ?? ''));
-		$overdue = ($kind === 'overdue');
-		if ($due !== '') {
-			$dueKey = self::BODY_DUE_KEY;
-			if ($overdue === true) {
-				$dueKey = self::BODY_WAS_DUE_KEY;
-			}
-
-			$parts[] = $l10n->t($dueKey, [$due]);
-		}
-
-		$consequence = trim((string)($message['consequence'] ?? ''));
-		if ($overdue === true && $consequence !== '') {
-			$parts[] = $l10n->t(self::BODY_CONSEQUENCE_KEY, [$consequence]);
-		}
-
-		$parts[] = $l10n->t(self::BODY_OPEN_KEY, []);
-
-		return implode("\n\n", $parts);
-	}//end bodyText()
+	}//end sendMail()
 
 	/**
 	 * The party's own portal account, or null when they have none.
@@ -502,25 +506,6 @@ class PortalTaskDeliveryJob extends TimedJob {
 
 		return true;
 	}//end withdrawn()
-
-	/**
-	 * A readable day for an ISO-8601 due timestamp, or '' when unparseable.
-	 *
-	 * @param string $raw The engine's `dueAt` value.
-	 *
-	 * @return string
-	 */
-	private function dueDate(string $raw): string {
-		if ($raw === '') {
-			return '';
-		}
-
-		try {
-			return (new DateTimeImmutable($raw))->format('d-m-Y');
-		} catch (Throwable) {
-			return '';
-		}
-	}//end dueDate()
 
 	/**
 	 * The portal deep link the mail carries (content stays behind the auth edge).
