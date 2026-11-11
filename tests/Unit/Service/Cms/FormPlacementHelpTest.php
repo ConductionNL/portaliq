@@ -157,4 +157,57 @@ class FormPlacementHelpTest extends TestCase {
 		$this->assertSame('b', $out[0]['props']['block']);
 		$this->assertSame(self::STORED, $out[1]['props']['formHelp']);
 	}//end testAFormInsideASharedBlock()
+
+	/**
+	 * Every widget, nested shared block and form row reads exactly as recorded,
+	 * the forms asked for once and only at the first form with an id.
+	 *
+	 * @return void
+	 */
+	public function testEveryPlacementIsAsRecorded(): void {
+		$asked = 0;
+		$rows  = $this->createMock(CmsRows::class);
+		$rows->method('query')->willReturnCallback(
+			static function (string $schema, array $filters) use (&$asked): array {
+				$asked++;
+				return [
+					['id' => 'f-1', 'portal' => 'p', 'help' => ['phone' => '14 021']],
+					['id' => 7, 'uuid' => 'f-7', '@self' => ['id' => '', 'uuid' => 'self-7'], 'portal' => 'p', 'help' => ['email' => 'a@b.example']],
+					['id' => 'foreign', 'portal' => 'q', 'help' => ['phone' => '1']],
+					['id' => true, 'uuid' => 'f-b', 'portal' => 'p', 'help' => ['phone' => '2']],
+					['@self' => 'x', 'id' => 'f-s', 'portal' => 'p'],
+				];
+			}
+		);
+		$widgets = [
+			['widgetKey' => 'markdown', 'props' => ['formHelp' => ['phone' => 'kept as is']]],
+			['widgetKey' => 'form', 'props' => ['formHelp' => ['phone' => 'own'], 'title' => 'T']],
+			['widgetKey' => 'form', 'props' => 'not props'],
+			['widgetKey' => 'form'],
+			[
+				'widgetKey' => 'sharedBlock',
+				'props' => ['widgets' => [
+					['widgetKey' => 'form', 'props' => ['formId' => 'f-1', 'formHelp' => ['phone' => 'own', 'email' => 'own@x.example']]],
+					['widgetKey' => 'sharedBlock', 'props' => ['widgets' => [['widgetKey' => 'form', 'props' => ['formId' => '7']]]]],
+				]],
+			],
+			['widgetKey' => 'sharedBlock', 'props' => ['widgets' => 'x']],
+			['widgetKey' => 'sharedBlock', 'props' => 'x'],
+			['widgetKey' => 'form', 'props' => ['formId' => 'self-7']],
+			['widgetKey' => 'form', 'props' => ['formId' => 'f-7']],
+			['widgetKey' => 'form', 'props' => ['formId' => 'foreign', 'formHelp' => []]],
+			['widgetKey' => 'form', 'props' => ['formId' => 'f-b']],
+			['widgetKey' => 'form', 'props' => ['formId' => '1']],
+			['widgetKey' => 'form', 'props' => ['formId' => 'f-s']],
+			'junk',
+		];
+
+		$out = (new FormPlacementHelp($rows))->attach($widgets, 'p');
+
+		$this->assertSame(1, $asked);
+		$this->assertSame(
+			'[{"widgetKey":"markdown","props":{"formHelp":{"phone":"kept as is"}}},{"widgetKey":"form","props":{"title":"T","formHelp":{"phone":"own"}}},{"widgetKey":"form","props":["not props"]},{"widgetKey":"form","props":[]},{"widgetKey":"sharedBlock","props":{"widgets":[{"widgetKey":"form","props":{"formId":"f-1","formHelp":{"phone":"14 021","email":"own@x.example"}}},{"widgetKey":"sharedBlock","props":{"widgets":[{"widgetKey":"form","props":{"formId":"7","formHelp":{"email":"a@b.example"}}}]}}]}},{"widgetKey":"sharedBlock","props":{"widgets":"x"}},{"widgetKey":"sharedBlock","props":"x"},{"widgetKey":"form","props":{"formId":"self-7","formHelp":{"email":"a@b.example"}}},{"widgetKey":"form","props":{"formId":"f-7","formHelp":{"email":"a@b.example"}}},{"widgetKey":"form","props":{"formId":"foreign"}},{"widgetKey":"form","props":{"formId":"f-b","formHelp":{"phone":"2"}}},{"widgetKey":"form","props":{"formId":"1"}},{"widgetKey":"form","props":{"formId":"f-s"}},"junk"]',
+			json_encode($out, JSON_UNESCAPED_SLASHES)
+		);
+	}//end testEveryPlacementIsAsRecorded()
 }//end class
