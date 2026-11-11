@@ -173,4 +173,28 @@ class PublicRecordReaderTest extends TestCase {
 		$this->assertNull($this->reader(throws: true)->entries(app: 'decidiq', list: 'memberVotingRecords'));
 
 	}//end testAProviderThatFailsDeclaresNothing()
+
+	/**
+	 * Every entry kept, in order, and every record asked once, exactly as recorded.
+	 *
+	 * @return void
+	 */
+	public function testEveryEntryAndRecordIsAsRecorded(): void {
+		$reader  = $this->reader();
+		$entries = $reader->entries(app: 'decidiq', list: 'memberVotingRecords');
+
+		$this->assertSame(array_merge(['p1'], array_map(static fn (int $i): string => 'f'.$i, range(0, 498))), array_column($entries, 'id'));
+		$this->assertSame(['id' => 'f0', 'title' => 'Lid 0'], $entries[1]);
+
+		$first = $reader->record(app: 'decidiq', list: 'memberVotingRecords', id: 'p1');
+		$again = $reader->record(app: 'decidiq', list: 'memberVotingRecords', id: 'p1');
+		$this->assertSame($first, $again);
+		$this->assertSame(['p1'], $this->provider->asked, 'a record is cached per app, list and id');
+
+		$this->assertNotNull($reader->record(app: 'decidiq', list: 'memberVotingRecords', id: 'f498'));
+		$this->assertNull($reader->record(app: 'decidiq', list: 'memberVotingRecords', id: 'f499'));
+		$this->assertNull($reader->record(app: 'decidiq', list: 'memberVotingRecords', id: 'p2'));
+		$this->assertSame(['p1', 'f498'], $this->provider->asked);
+		$this->assertSame(1, $this->provider->listed);
+	}//end testEveryEntryAndRecordIsAsRecorded()
 }//end class
