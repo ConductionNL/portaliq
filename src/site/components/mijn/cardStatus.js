@@ -42,24 +42,81 @@ function dayOf(value) {
  * Whether a row of the lookup collection covers today for this card.
  *
  * @param {object} row The lookup row.
- * @param {string} cardId The card's record id.
- * @param {object} status The block's `status`.
- * @param {Date} today Today at midnight.
+ * @param {{cardId: string, status: object, today: Date}} check The card's record id, the block's `status` and today at midnight.
  * @return {boolean} True when it does.
  */
-function covers(row, cardId, status, today) {
+function covers(row, check) {
+	const { cardId, status, today } = check
 	if (String(row?.[status.matchField] ?? '') !== cardId) {
 		return false
 	}
-	if (
-		status.only
-		&& !status.only.in.includes(String(row?.[status.only.field] ?? ''))
-	) {
+	if (!passesOnly(row, status.only)) {
 		return false
 	}
 	const from = dayOf(row?.[status.fromField])
 	const to = dayOf(row?.[status.toField]) || from
 	return from !== null && from <= today && today <= to
+}
+
+/**
+ * @param {object} row The lookup row.
+ * @param {{field: string, in: Array<string>}|undefined} only The block's `only` rule.
+ * @return {boolean} Whether the row passes the rule, or there is none.
+ */
+function passesOnly(row, only) {
+	return !only || only.in.includes(String(row?.[only.field] ?? ''))
+}
+
+/**
+ * No chip until the rows are in: "Op school" for a child who is reported
+ * sick, even for a moment, is the one wrong answer this must not give.
+ *
+ * @param {object|null} status The block's `status`.
+ * @param {{loading?: boolean, failed?: boolean}|null} lookup The lookup collection as loaded.
+ * @return {boolean} Whether the chip can be worked out.
+ */
+function isReady(status, lookup) {
+	return Boolean(status && lookup && !lookup.loading && !lookup.failed)
+}
+
+/**
+ * @param {Date} now The site's clock.
+ * @return {Date} Today at midnight.
+ */
+function midnightOf(now) {
+	return new Date(now.getFullYear(), now.getMonth(), now.getDate())
+}
+
+/**
+ * @param {object} status The block's `status`.
+ * @param {Date} today Today.
+ * @return {boolean} Whether today is a weekend day on a school-days-only block.
+ */
+function isDayOff(status, today) {
+	const day = today.getDay()
+	return Boolean(status.schoolDaysOnly) && (day === 0 || day === 6)
+}
+
+/**
+ * @param {object} status The block's `status`.
+ * @param {boolean} covered Whether a row covers today.
+ * @return {{text: string, tone: string}|null} The chip for a covered day, or the other chip, or none.
+ */
+function chipOf(status, covered) {
+	if (covered) {
+		return { text: status.label, tone: status.tone || 'neutral' }
+	}
+	return status.otherLabel
+		? { text: status.otherLabel, tone: status.otherTone || 'neutral' }
+		: null
+}
+
+/**
+ * @param {{objects?: Array<object>}} lookup The lookup collection as loaded.
+ * @return {Array<object>} Its rows, or none.
+ */
+function rowsOf(lookup) {
+	return Array.isArray(lookup.objects) ? lookup.objects : []
 }
 
 /**
@@ -73,25 +130,14 @@ function covers(row, cardId, status, today) {
  * @spec openspec/changes/card-status-today/specs/portal-contribution-contract/spec.md#requirement-a-card-may-say-where-its-record-stands-today
  */
 export function cardStatus(card, status, lookup, now = new Date()) {
-	// No chip until the rows are in: "Op school" for a child who is reported
-	// sick, even for a moment, is the one wrong answer this must not give.
-	if (!status || !lookup || lookup.loading || lookup.failed) {
+	if (!isReady(status, lookup)) {
 		return null
 	}
-	const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-	const day = today.getDay()
-	if (status.schoolDaysOnly && (day === 0 || day === 6)) {
-		return null
-	}
+	const today = midnightOf(now)
 	const cardId = idOf(card)
-	if (cardId === '') {
+	if (isDayOff(status, today) || cardId === '') {
 		return null
 	}
-	const rows = Array.isArray(lookup.objects) ? lookup.objects : []
-	if (rows.some((row) => covers(row, cardId, status, today))) {
-		return { text: status.label, tone: status.tone || 'neutral' }
-	}
-	return status.otherLabel
-		? { text: status.otherLabel, tone: status.otherTone || 'neutral' }
-		: null
+	const check = { cardId, status, today }
+	return chipOf(status, rowsOf(lookup).some((row) => covers(row, check)))
 }
