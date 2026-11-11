@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -47,13 +47,13 @@ class PortalFamilyMembers {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalAccountService $accounts  Reads the account's identity.
+	 * @param PortalAccountLookup  $accounts  Reads the account's identity.
 	 * @param ContainerInterface   $container Resolves the BRP provider.
 	 * @param DutchFormats         $formats   Checks the BSN.
 	 * @param LoggerInterface      $logger    Logs a lookup that failed.
 	 */
 	public function __construct(
-		private readonly PortalAccountService $accounts,
+		private readonly PortalAccountLookup $accounts,
 		private readonly ContainerInterface $container,
 		private readonly DutchFormats $formats,
 		private readonly LoggerInterface $logger,
@@ -214,7 +214,7 @@ class PortalFamilyMembers {
 			return null;
 		}
 
-		$account = $this->accounts->findBySubjectRef(subjectRef: $subjectRef);
+		$account = $this->accounts->bySubjectRef(subjectRef: $subjectRef);
 		if ($account === null || in_array(($account['identityType'] ?? ''), ['digid', 'eidas'], true) === false) {
 			return null;
 		}
