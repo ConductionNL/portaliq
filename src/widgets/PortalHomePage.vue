@@ -54,6 +54,7 @@ import {
 	noteType,
 	ROOT_ROUTE,
 } from '../lib/portalHomePage.js'
+import portalWidgetMixin from './portalWidgetMixin.js'
 
 export default {
 	name: 'PortalHomePage',
@@ -64,13 +65,7 @@ export default {
 		NcNoteCard,
 	},
 
-	props: {
-		/** The portal the detail page shows. */
-		objectData: {
-			type: Object,
-			default: null,
-		},
-	},
+	mixins: [portalWidgetMixin],
 
 	data() {
 		return {
@@ -81,16 +76,6 @@ export default {
 	},
 
 	computed: {
-		/**
-		 * The portal's slug.
-		 *
-		 * @return {string}
-		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-without-a-published-home-page-must-be-reported-as-a-configuration-error
-		 */
-		slug() {
-			return String(this.objectData?.slug || '')
-		},
-
 		/**
 		 * The portal's name, so the report says which portal it is about.
 		 *
