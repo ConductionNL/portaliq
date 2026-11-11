@@ -54,7 +54,7 @@ class RegisterAccessDeclaredTest extends TestCase {
 		// Staff authoring: the audience options a news author picks from.
 		'Service/NewsAudienceOptions.php',
 		// Counts for the install repair step (CLI, a trusted system caller) and the admin metrics.
-		'Service/PortalObjectWriter.php',
+		'Service/PortalObjectCounter.php',
 		// The admin's demo-data screen.
 		'Service/DemoDataService.php',
 	];
