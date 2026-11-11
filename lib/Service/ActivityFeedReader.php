@@ -174,12 +174,7 @@ class ActivityFeedReader {
 			return false;
 		}
 
-		$target = [];
-		if (is_array($activity['target'] ?? null) === true) {
-			$target = $activity['target'];
-		}
-
-		return NewsAudienceMatcher::matches(target: $target, audience: $audience);
+		return NewsAudienceMatcher::reaches(row: $activity, audience: $audience);
 	}//end inReach()
 
 	/**
