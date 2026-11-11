@@ -93,4 +93,17 @@ final class SessionSigningKey {
 	public function jwt(): ?PortalJwtService {
 		return $this->jwt;
 	}//end jwt()
+
+	/**
+	 * Whether a dedicated signing secret is configured. Surfaced by
+	 * `AdminSettings` so an operator can see the auth edge is not yet safe to
+	 * use, rather than discovering it via failed logins.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.4
+	 */
+	public function isConfigured(): bool {
+		return $this->jwt !== null;
+	}//end isConfigured()
 }//end class

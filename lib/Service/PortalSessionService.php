@@ -58,7 +58,6 @@ use OCA\Portaliq\Service\Session\SessionTrust;
 use OCP\IConfig;
 use OCP\Security\ISecureRandom;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 use Throwable;
 
 /**
@@ -179,19 +178,6 @@ class PortalSessionService {
 	) {
 		$this->jwt = $signingKey->jwt();
 	}//end __construct()
-
-	/**
-	 * Whether a dedicated signing secret is configured. Surfaced by
-	 * `AdminSettings` so an operator can see the auth edge is not yet safe to
-	 * use, rather than discovering it via failed logins.
-	 *
-	 * @return bool
-	 *
-	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.4
-	 */
-	public function isConfigured(): bool {
-		return $this->jwt !== null;
-	}//end isConfigured()
 
 	/**
 	 * Normalise a subject trust value; kept for the callers not yet moved to
@@ -894,43 +880,4 @@ class PortalSessionService {
 	private function records(): SessionRecords {
 		return new SessionRecords(reader: $this->reader, revoker: $this->revoker());
 	}//end records()
-
-	/**
-	 * Mint a short-lived `X-Portal-Subject` assertion for a resolved subject.
-	 *
-	 * Delegates to PortalJwtService::createAssertion() so the assertion uses
-	 * exactly the same secret sourcing as sessions. The assertion carries the
-	 * SESSION's jti (audit correlation to the originating, revocable session)
-	 * plus `use: "assertion"`, which resolveFromBearer() rejects — an assertion
-	 * can never come back as a portal session (contract v2, A6).
-	 *
-	 * @param array<string, mixed> $subject The resolved subject (from resolveFromBearer).
-	 * @param string $scopeClaim The action's declared scope claim, or ''.
-	 * @param string $scopeValue The server-resolved value of that claim, or ''.
-	 *
-	 * @return string Compact assertion JWT (TTL ~60s).
-	 *
-	 * @throws RuntimeException When no dedicated signing secret is configured
-	 *                          — should be unreachable in practice, since a
-	 *                          resolved subject implies `resolveFromBearer()`
-	 *                          already required `$jwt` to be non-null.
-	 *
-	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T7
-	 */
-	public function issueAssertion(array $subject, string $scopeClaim = '', string $scopeValue = ''): string {
-		if ($this->jwt === null) {
-			throw new RuntimeException('Portaliq: cannot issue an assertion — no dedicated jwt_signing_secret configured');
-		}
-
-		return $this->jwt->createAssertion(
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			audience: (string)($subject['audience'] ?? ''),
-			organisation: (string)($subject['organisation'] ?? ''),
-			trust: SessionTrust::normaliseTrust(trust: ($subject['trust'] ?? '')),
-			jti: (string)($subject['jti'] ?? ''),
-			scopeClaim: $scopeClaim,
-			scopeValue: $scopeValue,
-			branch: (string)($subject['branch'] ?? '')
-		);
-	}//end issueAssertion()
 }//end class

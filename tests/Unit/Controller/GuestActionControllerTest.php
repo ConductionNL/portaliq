@@ -19,6 +19,7 @@ use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\Session\BearerSessionResolver;
 use OCA\Portaliq\Service\Session\SessionRecords;
 use OCA\Portaliq\Service\Session\SessionSigningKey;
+use OCA\Portaliq\Service\Session\SubjectAssertionIssuer;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
@@ -337,7 +338,7 @@ class GuestActionControllerTest extends TestCase {
 		return new GuestActionController(
 			$request,
 			$registry,
-			new PortalActionForwarder($request, new InstanceLoopback($clientService, $urls, $this->createMock(InternalBaseUrl::class), $this->createMock(LoggerInterface::class)), $session),
+			new PortalActionForwarder($request, new InstanceLoopback($clientService, $urls, $this->createMock(InternalBaseUrl::class), $this->createMock(LoggerInterface::class)), new SubjectAssertionIssuer($signingKey)),
 			$portals,
 			($auditor ?? $this->createMock(AuditTrailService::class))
 		);

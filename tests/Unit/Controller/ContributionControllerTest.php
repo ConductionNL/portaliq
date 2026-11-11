@@ -21,6 +21,7 @@ use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\SubjectAssertionIssuer;
 use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\StreamResponse;
@@ -2429,7 +2430,7 @@ class ContributionControllerTest extends TestCase {
 			$this->createMock(PortalSchemaReader::class),
 			$this->createMock(PortalInboxReader::class),
 			$this->createMock(PortalAuditHook::class),
-			$this->forwarder(request: $request, session: $session),
+			$this->forwarder(request: $request),
 			$this->createMock(AuditTrailService::class),
 			$this->createMock(SubmissionReceiptService::class),
 			$this->createMock(NotificationDispatchService::class),
@@ -2707,7 +2708,7 @@ class ContributionControllerTest extends TestCase {
 			$this->createMock(PortalSchemaReader::class),
 			$this->createMock(PortalInboxReader::class),
 			$this->createMock(PortalAuditHook::class),
-			$this->forwarder(request: $request, session: $session),
+			$this->forwarder(request: $request),
 			$this->createMock(AuditTrailService::class),
 			$this->createMock(SubmissionReceiptService::class),
 			$this->createMock(NotificationDispatchService::class),
@@ -2801,7 +2802,8 @@ class ContributionControllerTest extends TestCase {
 
 		$session = $this->createMock(PortalSessionService::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
-		$session->method('issueAssertion')->willReturn('assertion-jwt');
+		$assertions = $this->createMock(SubjectAssertionIssuer::class);
+		$assertions->method('issueAssertion')->willReturn('assertion-jwt');
 
 		$urlGenerator = $this->createMock(IURLGenerator::class);
 		$urlGenerator->method('getAbsoluteURL')->willReturnCallback(
@@ -2826,7 +2828,7 @@ class ContributionControllerTest extends TestCase {
 			($auditHook ?? $this->createMock(PortalAuditHook::class)),
 			$this->forwarder(
 				request: $request,
-				session: $session,
+				assertions: $assertions,
 				clientService: $clientService,
 				urlGenerator: $urlGenerator
 			),
@@ -2954,14 +2956,14 @@ class ContributionControllerTest extends TestCase {
 	}//end testSchemaReturnsNotFoundWhenTheReaderResolvesNothing()
 
 	/**
-	 * The real PortalActionForwarder wired to the SAME request/session/client
-	 * mocks the controller under test uses — the forward's transport behaviour
+	 * The real PortalActionForwarder wired to the SAME request/client
+	 * mocks the controller under test uses, plus an assertion stub — the forward's transport behaviour
 	 * (signed assertion header, instance-local URL, method dispatch, 502 on a
 	 * transport throw) is still exercised end-to-end through action().
 	 */
 	private function forwarder(
 		IRequest $request,
-		PortalSessionService $session,
+		?SubjectAssertionIssuer $assertions = null,
 		?IClientService $clientService = null,
 		?IURLGenerator $urlGenerator = null,
 	): PortalActionForwarder {
@@ -2980,7 +2982,7 @@ class ContributionControllerTest extends TestCase {
 				$this->createMock(InternalBaseUrl::class),
 				$this->createMock(LoggerInterface::class)
 			),
-			$session
+			($assertions ?? $this->createMock(SubjectAssertionIssuer::class))
 		);
 
 	}//end forwarder()

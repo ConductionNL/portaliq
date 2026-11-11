@@ -13,6 +13,7 @@ use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\Session\BearerSessionResolver;
 use OCA\Portaliq\Service\Session\SessionRecords;
 use OCA\Portaliq\Service\Session\SessionSigningKey;
+use OCA\Portaliq\Service\Session\SubjectAssertionIssuer;
 use OCP\IAppConfig;
 use OCP\IConfig;
 use OCP\Security\ISecureRandom;
@@ -111,8 +112,7 @@ class PortalSessionServiceTest extends TestCase {
 	}//end testUnrecognisedMinTrustIsUnsatisfiableForEveryone()
 
 	public function testAssertionCarriesUseClaimSessionJtiAndShortTtl(): void {
-		$service = $this->service();
-		$assertion = $service->issueAssertion(
+		$assertion = $this->assertions()->issueAssertion(
 			[
 				'subjectRef' => 's1',
 				'audience' => 'supplier',
@@ -145,7 +145,7 @@ class PortalSessionServiceTest extends TestCase {
 	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
 	 */
 	public function testAssertionCarriesTheSessionBranchOnlyWhenThereIsOne(): void {
-		$service = $this->service();
+		$assertions = $this->assertions();
 		$subject = [
 			'subjectRef' => 's1',
 			'audience' => 'business',
@@ -155,18 +155,18 @@ class PortalSessionServiceTest extends TestCase {
 		];
 
 		$withBranch = (new PortalJwtService(self::SECRET))->validate(
-			$service->issueAssertion(array_merge($subject, ['branch' => '000012345678']))
+			$assertions->issueAssertion(array_merge($subject, ['branch' => '000012345678']))
 		);
 		$this->assertSame('000012345678', $withBranch['branch']);
 
-		$without = (new PortalJwtService(self::SECRET))->validate($service->issueAssertion($subject));
+		$without = (new PortalJwtService(self::SECRET))->validate($assertions->issueAssertion($subject));
 		$this->assertArrayNotHasKey('branch', $without);
 
 	}//end testAssertionCarriesTheSessionBranchOnlyWhenThereIsOne()
 
 	public function testAssertionPresentedAsBearerFailsClosed(): void {
 		$service = $this->service();
-		$assertion = $service->issueAssertion(
+		$assertion = $this->assertions()->issueAssertion(
 			[
 				'subjectRef' => 's1',
 				'audience' => 'supplier',
@@ -251,7 +251,7 @@ class PortalSessionServiceTest extends TestCase {
 		// (portal-auth-edge-session-hardening) — the edge fails closed.
 		$service = $this->service(secret: '');
 
-		$this->assertFalse($service->isConfigured());
+		$this->assertFalse($this->signingKey(secret: '')->isConfigured());
 		$this->assertNull($service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1'));
 		$this->assertNull($service->resolveFromBearer('Bearer whatever'));
 
@@ -259,7 +259,7 @@ class PortalSessionServiceTest extends TestCase {
 
 	public function testShortSecretAlsoRefusesFailClosed(): void {
 		$service = $this->service(secret: 'too-short');
-		$this->assertFalse($service->isConfigured());
+		$this->assertFalse($this->signingKey(secret: 'too-short')->isConfigured());
 		$this->assertNull($service->issueSession(subjectRef: 's1', audience: 'supplier', organisation: 'org-1'));
 
 	}//end testShortSecretAlsoRefusesFailClosed()
@@ -1171,10 +1171,7 @@ class PortalSessionServiceTest extends TestCase {
 	): PortalSessionService {
 		// The signing secret lives in IAppConfig, flagged sensitive (review S4);
 		// IConfig answers the other session settings only.
-		$appConfig = $this->createMock(IAppConfig::class);
-		$appConfig->method('getValueString')->willReturnCallback(
-			fn (string $app, string $key, string $default = '') => ($key === 'jwt_signing_secret' ? ($secret ?? '') : $default)
-		);
+		$signingKey = $this->signingKey(secret: $secret);
 		$config = $this->createMock(IConfig::class);
 		$config->method('getAppValue')->willReturnCallback(
 			function (string $appId, string $key, string $default = '') use ($secret, $maxLifetime, $idleTimeout, $idlePreview) {
@@ -1258,7 +1255,6 @@ class PortalSessionServiceTest extends TestCase {
 
 		$logger = $this->createMock(LoggerInterface::class);
 		$auditor = ($auditor ?? $this->createMock(AuditTrailService::class));
-		$signingKey = new SessionSigningKey($appConfig);
 		$records = new SessionRecords($reader, new PortalSessionRevoker($reader, $writer, $auditor, $logger));
 
 		return new PortalSessionService(
@@ -1273,5 +1269,32 @@ class PortalSessionServiceTest extends TestCase {
 		);
 
 	}//end service()
+
+	/**
+	 * The signing key over an app config holding the given secret.
+	 *
+	 * @param string|null $secret The configured `jwt_signing_secret`.
+	 *
+	 * @return SessionSigningKey
+	 */
+	private function signingKey(?string $secret): SessionSigningKey {
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->method('getValueString')->willReturnCallback(
+			fn (string $app, string $key, string $default = '') => ($key === 'jwt_signing_secret' ? ($secret ?? '') : $default)
+		);
+
+		return new SessionSigningKey($appConfig);
+
+	}//end signingKey()
+
+	/**
+	 * The assertion issuer over the test secret.
+	 *
+	 * @return SubjectAssertionIssuer
+	 */
+	private function assertions(): SubjectAssertionIssuer {
+		return new SubjectAssertionIssuer($this->signingKey(secret: self::SECRET));
+
+	}//end assertions()
 
 }//end class

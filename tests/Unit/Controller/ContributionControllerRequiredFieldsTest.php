@@ -43,6 +43,7 @@ use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\SubjectAssertionIssuer;
 use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
@@ -288,7 +289,8 @@ class ContributionControllerRequiredFieldsTest extends TestCase {
 
 		$session = $this->createMock(PortalSessionService::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
-		$session->method('issueAssertion')->willReturn('ASSERTION_JWT_HERE');
+		$assertions = $this->createMock(SubjectAssertionIssuer::class);
+		$assertions->method('issueAssertion')->willReturn('ASSERTION_JWT_HERE');
 
 		$response = $this->createMock(IResponse::class);
 		$response->method('getBody')->willReturn('{"identifier":"2026-0003"}');
@@ -319,7 +321,7 @@ class ContributionControllerRequiredFieldsTest extends TestCase {
 			$schemas,
 			$this->createMock(PortalInboxReader::class),
 			$this->createMock(PortalAuditHook::class),
-			new PortalActionForwarder($request, new InstanceLoopback($clientService, $urls, $this->createMock(InternalBaseUrl::class), $this->createMock(LoggerInterface::class)), $session),
+			new PortalActionForwarder($request, new InstanceLoopback($clientService, $urls, $this->createMock(InternalBaseUrl::class), $this->createMock(LoggerInterface::class)), $assertions),
 			($auditor ?? $this->createMock(AuditTrailService::class)),
 			$this->createMock(SubmissionReceiptService::class),
 			$this->createMock(NotificationDispatchService::class),

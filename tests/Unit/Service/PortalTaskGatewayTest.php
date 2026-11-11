@@ -13,7 +13,7 @@ namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Service\InstanceLoopback;
 use OCA\Portaliq\Service\InternalBaseUrl;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\SubjectAssertionIssuer;
 use OCA\Portaliq\Service\PortalTaskGateway;
 use OCA\Portaliq\Tests\Unit\Service\Fixtures\FakeConnectException;
 use OCP\App\IAppManager;
@@ -152,7 +152,7 @@ class PortalTaskGatewayTest extends TestCase {
 		$client->expects($this->never())->method('get');
 		$client->expects($this->never())->method('post');
 
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(SubjectAssertionIssuer::class);
 		$session->method('issueAssertion')->willThrowException(new RuntimeException('no secret'));
 
 		$this->assertNull($this->gateway(client: $client, session: $session)->listTasks(subject: self::SUBJECT));
@@ -342,7 +342,7 @@ class PortalTaskGatewayTest extends TestCase {
 		$this->assertTrue($this->gateway()->isAvailable());
 		$this->assertFalse($this->gateway(openregisterInstalled: false)->isAvailable());
 
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(SubjectAssertionIssuer::class);
 		$session->method('isConfigured')->willReturn(false);
 		$this->assertFalse($this->gateway(session: $session)->isAvailable());
 	}//end testAvailabilityNeedsOpenregisterAndTheSecret()
@@ -364,7 +364,7 @@ class PortalTaskGatewayTest extends TestCase {
 	 * Build the gateway around a mocked transport.
 	 *
 	 * @param IClient|null $client The HTTP client mock.
-	 * @param PortalSessionService|null $session The session/minter mock.
+	 * @param SubjectAssertionIssuer|null $session The session/minter mock.
 	 * @param bool $openregisterInstalled Whether openregister reads as installed.
 	 * @param LoggerInterface|null $logger The logger mock, when a test asserts on it.
 	 * @param bool $routeTableKnowsTheSeam Whether linkToRoute() resolves the seam
@@ -373,7 +373,7 @@ class PortalTaskGatewayTest extends TestCase {
 	 */
 	private function gateway(
 		?IClient $client = null,
-		?PortalSessionService $session = null,
+		?SubjectAssertionIssuer $session = null,
 		bool $openregisterInstalled = true,
 		?LoggerInterface $logger = null,
 		bool $routeTableKnowsTheSeam = true,
@@ -382,7 +382,7 @@ class PortalTaskGatewayTest extends TestCase {
 		$clientService->method('newClient')->willReturn($client ?? $this->createMock(IClient::class));
 
 		if ($session === null) {
-			$session = $this->createMock(PortalSessionService::class);
+			$session = $this->createMock(SubjectAssertionIssuer::class);
 			$session->method('issueAssertion')->willReturn('minted-assertion');
 			$session->method('isConfigured')->willReturn(true);
 		}
