@@ -10,6 +10,23 @@
  */
 
 /**
+ * The fields an action fills in itself: the stamped subject and row fields
+ * and the fields it sets.
+ *
+ * @param {object} action The action.
+ * @return {Set<string>} The fields.
+ */
+function stampedFields(action) {
+	return new Set(
+		[
+			action.subjectField,
+			action.rowField,
+			...Object.keys(action.set || {}),
+		].filter((field) => typeof field === 'string'),
+	)
+}
+
+/**
  * The fields of an action the resident fills in: its whitelisted fields,
  * minus a field the server stamps (`subjectField`, `rowField`), a value the
  * action sets itself (`set`) and a field it hides (`visible: false`).
@@ -23,13 +40,7 @@ export function inputFields(action) {
 	if (!action || !Array.isArray(action.fields)) {
 		return []
 	}
-	const stamped = new Set(
-		[
-			action.subjectField,
-			action.rowField,
-			...Object.keys(action.set || {}),
-		].filter((field) => typeof field === 'string'),
-	)
+	const stamped = stampedFields(action)
 	const configs = action.fieldConfigs || {}
 	return action.fields.filter(
 		(field) =>
