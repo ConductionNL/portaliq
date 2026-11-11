@@ -17,6 +17,28 @@ import { sfcOptionsLoaded } from './support/sfc-options-loaded.mjs'
 const App = await sfcOptionsLoaded('src/site/App.vue')
 
 /**
+ * A stand-in `this`: the given state, and every other computed getter and
+ * method of the shell bound to it.
+ *
+ * @param {object} state The state the code under test reads.
+ * @return {object} The stand-in.
+ */
+function shellWith(state) {
+	const self = { ...state }
+	for (const [name, getter] of Object.entries(App.computed)) {
+		if (!Object.hasOwn(self, name)) {
+			Object.defineProperty(self, name, { get: getter.bind(self) })
+		}
+	}
+	for (const [name, method] of Object.entries(App.methods)) {
+		if (!Object.hasOwn(self, name)) {
+			self[name] = method.bind(self)
+		}
+	}
+	return self
+}
+
+/**
  * The shell's state as the side menu reads it, with the menu block placed
  * on an ordinary CMS page.
  *
@@ -24,7 +46,7 @@ const App = await sfcOptionsLoaded('src/site/App.vue')
  * @return {object} The stand-in `this`.
  */
 function shell(over = {}) {
-	return {
+	return shellWith({
 		regions: { aside: [{ widgetKey: 'siteNavigation' }] },
 		guestLink: null,
 		wayInLink: null,
@@ -36,10 +58,10 @@ function shell(over = {}) {
 		page: { title: 'Afval' },
 		accountRoute: false,
 		...over,
-	}
+	})
 }
 
-const showSideMenu = (over) => App.computed.showSideMenu.call(shell(over))
+const showSideMenu = (over) => shell(over).showSideMenu
 
 test('the side menu shows on a CMS page whose side region holds the menu block', () => {
 	assert.equal(showSideMenu({}), true)
@@ -70,7 +92,7 @@ test('the side menu stays out without the block, on a one-off screen, in the edi
  */
 function titleFor(over) {
 	globalThis.document = { title: 'unchanged' }
-	App.methods.applyDocumentTitle.call({
+	shellWith({
 		site: { title: 'Gemeente X' },
 		t: (text) => `«${text}»`,
 		accountRoute: false,
@@ -81,7 +103,7 @@ function titleFor(over) {
 		statementRoute: false,
 		subject: null,
 		...over,
-	})
+	}).applyDocumentTitle()
 	return globalThis.document.title
 }
 
