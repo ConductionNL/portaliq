@@ -99,4 +99,56 @@ class ThemeTagKeysTest extends TestCase {
 			$this->assertSame([], $keys->action(['when' => $when]));
 		}
 	}//end testActionWhen()
+
+	/**
+	 * Every condition and count label keeps or loses its key exactly as recorded.
+	 *
+	 * @return void
+	 */
+	public function testEveryConditionAndLabelIsAsRecorded(): void {
+		$keys = new ThemeTagKeys();
+
+		$kept = [
+			[['field' => 'a', 'op' => 'eq', 'value' => 1, 'x' => 2], ['field' => 'a', 'op' => 'eq', 'value' => 1]],
+			[['field' => 'a', 'op' => 'in', 'value' => [1, 'b']], ['field' => 'a', 'op' => 'in', 'value' => [1, 'b']]],
+		];
+		foreach ($kept as [$when, $expected]) {
+			$this->assertSame(['theme' => 't-1', 'when' => $expected], $keys->action(['theme' => 't-1', 'when' => $when]));
+		}
+
+		$dropped = [
+			['field' => 'a', 'op' => 'in', 'value' => []],
+			['field' => 'a', 'op' => 'in', 'value' => ['k' => 1]],
+			['field' => 'a', 'op' => 'in', 'value' => [[1]]],
+			['field' => 'a', 'op' => 'neq', 'value' => [1]],
+			['field' => 'a', 'op' => 'neq', 'value' => null],
+			['field' => '1a', 'op' => 'eq', 'value' => 1],
+			['field' => 5, 'op' => 'eq', 'value' => 1],
+			['field' => 'a', 'op' => 'gt', 'value' => 1],
+			['field' => 'a', 'op' => 'eq'],
+			'x',
+			null,
+		];
+		foreach ($dropped as $when) {
+			$this->assertSame(['theme' => 't-1'], $keys->action(['theme' => 't-1', 'when' => $when]));
+		}
+
+		$product = ['kind' => 'products', 'metaFields' => 'x', 'titleField' => null];
+		$this->assertSame(
+			['kind' => 'products', 'countLabel' => ['singular' => 'a', 'plural' => 'b']],
+			$keys->collection($product + ['countLabel' => ['singular' => 'a', 'plural' => 'b']])
+		);
+		$badLabels = [
+			['singular' => ' ', 'plural' => 'b'],
+			['singular' => 'a', 'plural' => ' '],
+			['singular' => 'a'],
+			['plural' => 'b'],
+			['singular' => 1, 'plural' => 'b'],
+			'x',
+			null,
+		];
+		foreach ($badLabels as $label) {
+			$this->assertSame(['kind' => 'products'], $keys->collection($product + ['countLabel' => $label]));
+		}
+	}//end testEveryConditionAndLabelIsAsRecorded()
 }//end class
