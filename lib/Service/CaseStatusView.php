@@ -88,21 +88,37 @@ class CaseStatusView {
 			$entry = ($actions[$status] ?? null);
 		}
 
-		if (is_array($entry) === false) {
+		if (is_array($entry) === false || $this->isButton(entry: $entry) === false) {
 			return null;
 		}
 
-		$label  = ($entry['label'] ?? null);
-		$kind   = ($entry['kind'] ?? null);
-		$target = ($entry['target'] ?? null);
-		if (is_string($label) === false || trim($label) === '' || in_array($kind, ['task', 'page', 'action'], true) === false
-			|| is_string($target) === false || trim($target) === ''
-		) {
-			return null;
-		}
-
-		return ['label' => trim($label), 'kind' => $kind, 'target' => trim($target)];
+		return ['label' => trim($entry['label']), 'kind' => $entry['kind'], 'target' => trim($entry['target'])];
 	}//end statusAction()
+
+	/**
+	 * Whether a status action entry is a button: a label, a kind of task,
+	 * page or action, and a target.
+	 *
+	 * @param array<string, mixed> $entry The status action entry.
+	 *
+	 * @return bool
+	 */
+	private function isButton(array $entry): bool {
+		return $this->saysSomething(value: ($entry['label'] ?? null)) === true
+			&& in_array(($entry['kind'] ?? null), ['task', 'page', 'action'], true) === true
+			&& $this->saysSomething(value: ($entry['target'] ?? null)) === true;
+	}//end isButton()
+
+	/**
+	 * Whether a value is a string that says something.
+	 *
+	 * @param mixed $value The value.
+	 *
+	 * @return bool
+	 */
+	private function saysSomething(mixed $value): bool {
+		return is_string($value) === true && trim($value) !== '';
+	}//end saysSomething()
 
 	/**
 	 * The status after the current one, in the order the case type lists its labels.
