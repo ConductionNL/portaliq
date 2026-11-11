@@ -35,7 +35,6 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
-use OCA\Portaliq\Service\PortalJwtService;
 use OCA\Portaliq\Service\PortalSchemaReader;
 
 /**
@@ -43,9 +42,6 @@ use OCA\Portaliq\Service\PortalSchemaReader;
  *
  * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
  * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
- *
- * @SuppressWarnings(PHPMD.StaticAccess) -- PortalJwtService::isReservedScopeClaim() is a pure check on
- *                                         the frozen assertion claims, with no state to inject.
  */
 class ActionConfigNormaliser {
 	/**
@@ -121,103 +117,117 @@ class ActionConfigNormaliser {
 	public function normaliseActions(array $actions, ?array $served = null): array {
 		$out = [];
 		foreach ($actions as $action) {
-			if (is_array($action) === false) {
-				continue;
+			$normalised = $this->normaliseAction(action: $action, served: $served);
+			if ($normalised !== null) {
+				$out[] = $normalised;
 			}
-
-			$whitelist = [];
-			if (isset($action['fields']) === true && is_array($action['fields']) === true) {
-				$whitelist = array_values(array_filter($action['fields'], static fn ($f) => is_string($f) === true));
-			}
-
-			$definition = $this->schemaDefinition(action: $action);
-			$mandatory = $this->mandatoryFields(definition: $definition);
-			$action = $this->normaliseFieldConfigs(action: $action, whitelist: $whitelist, mandatory: $mandatory);
-			// Which fields the resident must fill in: the schema's required
-			// fields on a create, plus the action's own `requiredFields`, only
-			// ever among its `fields` (REQ-SMF-023).
-			$action = $this->form->requiredFields(action: $action, whitelist: $whitelist, mandatory: $mandatory);
-			$action = $this->options->normaliseOptionsProviders(action: $action, whitelist: $whitelist);
-			// What the schema says a field holds (a date, a number, one of a
-			// list) shapes its input, after the manifest had its say.
-			$action = (new SchemaInputHintNormaliser())->apply(action: $action, whitelist: $whitelist, definition: $definition);
-			// A widget hint that does not fit its field (choice cards without
-			// options, named days on a field that is no date) is dropped.
-			$action = $this->form->fitWidgets(action: $action);
-			$action = $this->normaliseSet(action: $action, whitelist: $whitelist);
-			$action = $this->normaliseTextKeys(action: $action);
-			// The mail a create sends the resident, and the field it names (contact-page-question-form-and-not-found).
-			// What an endpoint row action asks for and when it is offered
-			// (case-actions-row-inputs-and-conditions).
-			$action = $this->form->mailAndRowInputs(action: $action, whitelist: $whitelist);
-			// Steps, a draft and a confirmation on a create or endpoint action
-			// (site-multi-step-forms REQ-SMF-020, -021, -022).
-			$action = $this->form->flow(action: $action, whitelist: $whitelist);
-			// A start tile's sentence and audiences (site-nlds-widget-palette D6).
-			$action = (new StartTileNormaliser())->apply(action: $action, served: $served);
-			$action = $this->values->normaliseAnonymousFlag(entry: $action);
-			// The life domain an action belongs to, and when it is offered (life-domain-theme-pages).
-			$action = $this->form->themeTags(action: $action);
-			// The citizen write declaration (what-the-citizen-may-write-on-their-
-			// own-case). An absent normaliser drops the key, which closes the
-			// surface rather than opening it.
-			$action = ($this->citizenWrite ?? new CitizenWriteConfigNormaliser())->normaliseAction(action: $action);
-
-			// A server-stamped subject field (portal-take-assessment) is a
-			// guard too: an action whose field name cannot be read is removed
-			// rather than forwarded without its stamp.
-			if ($this->subjectFieldIsMalformed(action: $action) === true) {
-				continue;
-			}
-
-			// A declared scope claim rides in the signed assertion; one that
-			// names a frozen assertion claim (`sub`, `iss`, ...) is removed with
-			// its action, so it can never stand in for that claim.
-			if (PortalJwtService::isReservedScopeClaim(scopeClaim: ($action['scopeClaim'] ?? null)) === true) {
-				continue;
-			}
-
-			// The cross-reference guard, and the one normaliser that can
-			// remove an action rather than a key: a create whose guard could
-			// not be read must not be offered without it.
-			$guarded = ($this->crossRefs ?? new CrossRefConfigNormaliser())
-				->normaliseAction(action: $action, whitelist: $whitelist);
-			if ($guarded === null) {
-				continue;
-			}
-
-			// A guest action (identity-guest-page-for-signed-links) without a
-			// token field, local endpoints and `low` trust is removed whole.
-			$guarded = (new GuestActionConfigNormaliser())->normaliseAction(action: $guarded);
-			if ($guarded === null) {
-				continue;
-			}
-
-			$out[] = $guarded;
-		}//end foreach
+		}
 
 		return $out;
 	}//end normaliseActions()
 
 	/**
-	 * Whether an action declares a `subjectField` that is not a plain field
-	 * name. Absent is fine; anything declared must match
-	 * `^[a-zA-Z][a-zA-Z0-9_]*$`.
+	 * Shape one entry of the action list, or remove it whole.
+	 *
+	 * @param mixed                   $action The declared action.
+	 * @param array<int, string>|null $served The audiences the provider serves, or null when unknown.
+	 *
+	 * @return array<string, mixed>|null The action, or null when it is not offered.
+	 */
+	private function normaliseAction(mixed $action, ?array $served): ?array {
+		if (is_array($action) === false) {
+			return null;
+		}
+
+		$whitelist = $this->whitelistOf(action: $action);
+		$action    = $this->shapeFields(action: $action, whitelist: $whitelist);
+		$action    = $this->shapeOffer(action: $action, served: $served);
+
+		return $this->guarded(action: $action, whitelist: $whitelist);
+	}//end normaliseAction()
+
+	/**
+	 * The action's `fields` whitelist: its string entries, in order.
 	 *
 	 * @param array<string, mixed> $action The action.
 	 *
-	 * @return bool
-	 *
-	 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
+	 * @return array<int, string>
 	 */
-	private function subjectFieldIsMalformed(array $action): bool {
-		if (array_key_exists('subjectField', $action) === false) {
-			return false;
+	private function whitelistOf(array $action): array {
+		if (isset($action['fields']) === false || is_array($action['fields']) === false) {
+			return [];
 		}
 
-		return is_string($action['subjectField']) === false
-			|| preg_match('/^[a-zA-Z][a-zA-Z0-9_]*$/', $action['subjectField']) !== 1;
-	}//end subjectFieldIsMalformed()
+		return array_values(array_filter($action['fields'], static fn ($f) => is_string($f) === true));
+	}//end whitelistOf()
+
+	/**
+	 * Shape what the action asks for: its field configs, required fields,
+	 * options, inputs, `set`, texts, mail and row inputs, and steps.
+	 *
+	 * @param array<string, mixed> $action    The action.
+	 * @param array<int, string>   $whitelist The action's `fields` whitelist.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function shapeFields(array $action, array $whitelist): array {
+		$definition = $this->schemaDefinition(action: $action);
+		$mandatory = $this->mandatoryFields(definition: $definition);
+		$action = $this->normaliseFieldConfigs(action: $action, whitelist: $whitelist, mandatory: $mandatory);
+		// Which fields the resident must fill in: the schema's required
+		// fields on a create, plus the action's own `requiredFields`, only
+		// ever among its `fields` (REQ-SMF-023).
+		$action = $this->form->requiredFields(action: $action, whitelist: $whitelist, mandatory: $mandatory);
+		$action = $this->options->normaliseOptionsProviders(action: $action, whitelist: $whitelist);
+		// What the schema says a field holds (a date, a number, one of a
+		// list) shapes its input, after the manifest had its say.
+		$action = (new SchemaInputHintNormaliser())->apply(action: $action, whitelist: $whitelist, definition: $definition);
+		// A widget hint that does not fit its field (choice cards without
+		// options, named days on a field that is no date) is dropped.
+		$action = $this->form->fitWidgets(action: $action);
+		$action = $this->normaliseSet(action: $action, whitelist: $whitelist);
+		$action = $this->normaliseTextKeys(action: $action);
+		// The mail a create sends the resident, and the field it names (contact-page-question-form-and-not-found).
+		// What an endpoint row action asks for and when it is offered
+		// (case-actions-row-inputs-and-conditions).
+		$action = $this->form->mailAndRowInputs(action: $action, whitelist: $whitelist);
+		// Steps, a draft and a confirmation on a create or endpoint action
+		// (site-multi-step-forms REQ-SMF-020, -021, -022).
+		return $this->form->flow(action: $action, whitelist: $whitelist);
+	}//end shapeFields()
+
+	/**
+	 * Shape how the action is offered: its start tile, anonymity, life
+	 * domain, and what the citizen may write on their own case.
+	 *
+	 * @param array<string, mixed>    $action The action.
+	 * @param array<int, string>|null $served The audiences the provider serves, or null when unknown.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function shapeOffer(array $action, ?array $served): array {
+		// A start tile's sentence and audiences (site-nlds-widget-palette D6).
+		$action = (new StartTileNormaliser())->apply(action: $action, served: $served);
+		$action = $this->values->normaliseAnonymousFlag(entry: $action);
+		// The life domain an action belongs to, and when it is offered (life-domain-theme-pages).
+		$action = $this->form->themeTags(action: $action);
+		// The citizen write declaration (what-the-citizen-may-write-on-their-
+		// own-case). An absent normaliser drops the key, which closes the
+		// surface rather than opening it.
+		return ($this->citizenWrite ?? new CitizenWriteConfigNormaliser())->normaliseAction(action: $action);
+	}//end shapeOffer()
+
+	/**
+	 * Run the guards that can remove an action whole, in order.
+	 *
+	 * @param array<string, mixed> $action    The shaped action.
+	 * @param array<int, string>   $whitelist The action's `fields` whitelist.
+	 *
+	 * @return array<string, mixed>|null The action, or null when a guard cannot be honoured.
+	 */
+	private function guarded(array $action, array $whitelist): ?array {
+		return (new ActionGuards($this->crossRefs ?? new CrossRefConfigNormaliser()))->guard(action: $action, whitelist: $whitelist);
+	}//end guarded()
 
 	/**
 	 * Drop a non-string `submitLabel` / `successMessage`.
