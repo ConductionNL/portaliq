@@ -245,7 +245,7 @@ class PortalContactsController extends Controller implements PortalProtected {
 	 * @return JSONResponse
 	 */
 	private function unauthenticated(): JSONResponse {
-		return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		return (new SignedInSubject())->unauthenticated();
 	}//end unauthenticated()
 
 	/**
@@ -254,8 +254,8 @@ class PortalContactsController extends Controller implements PortalProtected {
 	 * @return array<string, mixed>|null
 	 */
 	private function subject(): ?array {
-		$subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
-		if ($subject === null || (string)($subject['subjectRef'] ?? '') === '') {
+		$subject = (new SignedInSubject())->resolve(session: $this->session, request: $this->request);
+		if ($subject === null) {
 			return null;
 		}
 
