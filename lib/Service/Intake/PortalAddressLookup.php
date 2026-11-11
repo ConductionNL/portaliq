@@ -83,13 +83,45 @@ class PortalAddressLookup {
 			return null;
 		}
 
-		$filters = $this->filters(postcode: $normalised, number: $number, letter: $letter, addition: $addition);
+		$query = new AddressQuery(postcode: $normalised, number: $number, letter: $letter, addition: $addition);
+		$row   = $this->firstRow(filters: $this->filters(query: $query));
+		if ($row === null) {
+			return null;
+		}
 
+		return $this->streetAndTown(row: $row);
+	}//end find()
+
+	/**
+	 * The first row the register answers for the filters, as an array; null
+	 * when there is none or the register could not be read.
+	 *
+	 * @param array<string, mixed> $filters The register filters.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function firstRow(array $filters): ?array {
+		$rows = $this->rowsFor(filters: $filters);
+		if ($rows === null) {
+			return null;
+		}
+
+		return $this->plainRow(row: ($rows[0] ?? null));
+	}//end firstRow()
+
+	/**
+	 * The register's rows for the filters, at most one; null when it could not be read.
+	 *
+	 * @param array<string, mixed> $filters The register filters.
+	 *
+	 * @return array<mixed>|null
+	 */
+	private function rowsFor(array $filters): ?array {
 		try {
 			$service = $this->container->get(self::OBJECT_SERVICE);
 			$service->setRegister(register: self::REGISTER);
 			$service->setSchema(schema: self::SCHEMA);
-			$rows = (array)$service->findAll(
+			return (array)$service->findAll(
 				config: ['filters' => $filters, 'limit' => 1, 'offset' => 0],
 				_rbac: false,
 				_multitenancy: false
@@ -99,8 +131,16 @@ class PortalAddressLookup {
 
 			return null;
 		}
+	}//end rowsFor()
 
-		$row = ($rows[0] ?? null);
+	/**
+	 * A row as an array: an entity serialised, an array as it is; null for anything else.
+	 *
+	 * @param mixed $row The row.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function plainRow(mixed $row): ?array {
 		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
 			$row = $row->jsonSerialize();
 		}
@@ -109,33 +149,52 @@ class PortalAddressLookup {
 			return null;
 		}
 
-		$street = trim((string)($row['openbareRuimte'] ?? $row['straat'] ?? ''));
+		return $row;
+	}//end plainRow()
+
+	/**
+	 * The street and town of a row, or null when it lacks either.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return array{street: string, town: string}|null
+	 */
+	private function streetAndTown(array $row): ?array {
+		$street = $this->streetOf(row: $row);
 		$town   = trim((string)($row['woonplaats'] ?? ''));
 		if ($street === '' || $town === '') {
 			return null;
 		}
 
 		return ['street' => $street, 'town' => $town];
-	}//end find()
+	}//end streetAndTown()
+
+	/**
+	 * A row's street: its public space name, else its street.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return string
+	 */
+	private function streetOf(array $row): string {
+		return trim((string)($row['openbareRuimte'] ?? $row['straat'] ?? ''));
+	}//end streetOf()
 
 	/**
 	 * The register filters for a normalised postcode and a house number.
 	 *
-	 * @param string $postcode The normalised postcode.
-	 * @param string $number   The house number, digits only.
-	 * @param string $letter   The house letter, or ''.
-	 * @param string $addition The house number addition, or ''.
+	 * @param AddressQuery $query The address asked for.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function filters(string $postcode, string $number, string $letter, string $addition): array {
-		$filters = ['postcode' => str_replace(' ', '', $postcode), 'huisnummer' => (int)$number];
-		if ($letter !== '') {
-			$filters['huisletter'] = strtoupper(substr($letter, 0, 1));
+	private function filters(AddressQuery $query): array {
+		$filters = ['postcode' => str_replace(' ', '', $query->postcode), 'huisnummer' => (int)$query->number];
+		if ($query->letter !== '') {
+			$filters['huisletter'] = strtoupper(substr($query->letter, 0, 1));
 		}
 
-		if ($addition !== '') {
-			$filters['huisnummertoevoeging'] = substr($addition, 0, 4);
+		if ($query->addition !== '') {
+			$filters['huisnummertoevoeging'] = substr($query->addition, 0, 4);
 		}
 
 		return $filters;
