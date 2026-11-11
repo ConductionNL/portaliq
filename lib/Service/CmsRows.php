@@ -130,22 +130,6 @@ class CmsRows {
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-public-content-reads-must-be-cached-keyed-by-audience
 	 */
 	public function rowId(array $row): ?string {
-		$self = ($row['@self'] ?? null);
-		$candidates = [
-			($row['id'] ?? null),
-			($row['uuid'] ?? null),
-		];
-		if (is_array($self) === true) {
-			$candidates[] = ($self['id'] ?? null);
-			$candidates[] = ($self['uuid'] ?? null);
-		}
-
-		foreach ($candidates as $candidate) {
-			if ((is_string($candidate) === true || is_int($candidate) === true) && (string)$candidate !== '') {
-				return (string)$candidate;
-			}
-		}
-
-		return null;
+		return (new RowIdLookup())->firstIdOrUuid(row: $row);
 	}//end rowId()
 }//end class
