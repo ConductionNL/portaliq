@@ -164,24 +164,28 @@ function hashOf(value) {
 }
 
 /**
- * Start recording in a window whose traffic client asked for it.
+ * Whether a window may be recorded: its traffic client asked for a
+ * recording that has not started, with consent, and the page is not the
+ * e-mail link page (sign-in-with-an-email-link M4).
  *
  * @param {Window} win The window.
- * @return {void}
+ * @param {object|null} cfg The recording config the client set, if any.
+ * @return {boolean} True to start.
  */
-export function start(win) {
-	const api = win.portaliqTraffic
-	const cfg = api && api.recording
+function mayStart(win, cfg) {
 	if (!cfg || cfg.started || cfg.consent() !== true) {
-		return
+		return false
 	}
-	// The e-mail link page is never recorded (sign-in-with-an-email-link M4).
-	if (/^#email-link=/.test(String(win.location.hash || ''))) {
-		return
-	}
-	cfg.started = true
-	const doc = win.document
-	const state = {
+	return /^#email-link=/.test(String(win.location.hash || '')) === false
+}
+
+/**
+ * The state of one recording, begun now.
+ *
+ * @return {object} The state.
+ */
+function newState() {
+	return {
 		began: Date.now(),
 		events: [],
 		bytes: 0,
@@ -206,6 +210,136 @@ export function start(win) {
 		// by hash from every snapshot after.
 		styles: {},
 	}
+}
+
+/**
+ * A text node as its length.
+ *
+ * @param {Node} node The text node.
+ * @return {object} `{ l }`.
+ */
+function textNode(node) {
+	return { l: String(node.nodeValue || '').length }
+}
+
+/**
+ * Whether an element is left out of the snapshot: a script-like element,
+ * or one deeper than the walk goes.
+ *
+ * @param {string} tag   The element's tag.
+ * @param {number} depth How deep the walk is.
+ * @return {boolean} True to omit it.
+ */
+function isDropped(tag, depth) {
+	return DROPPED.indexOf(tag) !== -1 || depth > MAX_DEPTH
+}
+
+/**
+ * The form elements written as a number instead of their value, by tag: an
+ * input or a textarea as the length of its value, a select as 0, so not
+ * even the length of what was chosen leaves the page.
+ */
+const VALUE_LEAVES = {
+	input: valueLength,
+	textarea: valueLength,
+	select: () => 0,
+}
+
+/**
+ * The length of a form element's value.
+ *
+ * @param {Element} node The input or textarea.
+ * @return {number} The length.
+ */
+function valueLength(node) {
+	return String(node.value || '').length
+}
+
+/**
+ * What a leaf element writes instead of its children: a box nothing, an
+ * input or a textarea the length of its value, a select nothing of what
+ * was chosen; null for an element whose children are walked.
+ *
+ * @param {Element} node The element.
+ * @param {string}  tag  Its tag.
+ * @return {object|null} The extra fields, or null.
+ */
+function leafFields(node, tag) {
+	if (BOXES.indexOf(tag) !== -1) {
+		return {}
+	}
+	if (Object.hasOwn(VALUE_LEAVES, tag)) {
+		return { v: VALUE_LEAVES[tag](node) }
+	}
+	return null
+}
+
+/**
+ * The allowed attributes of an element. A stylesheet link keeps its
+ * absolute address, the one address that survives.
+ *
+ * @param {Element} node The element.
+ * @param {string}  tag  Its tag.
+ * @return {object} Name to value.
+ */
+function attributes(node, tag) {
+	const out = {}
+	for (let i = 0; i < ATTRIBUTES.length; i++) {
+		const name = ATTRIBUTES[i]
+		if (node.hasAttribute && node.hasAttribute(name)) {
+			out[name] = attributeValue(node, name)
+		}
+	}
+	if (tag === 'link') {
+		keepStylesheetHref(node, out)
+	}
+	return out
+}
+
+/**
+ * A stylesheet link's absolute address, cut to 512 characters.
+ *
+ * @param {Element} node The link element.
+ * @param {object}  out  Its allowed attributes, added to.
+ * @return {void}
+ */
+function keepStylesheetHref(node, out) {
+	if (out.rel === 'stylesheet' && node.href) {
+		out.href = String(node.href).substring(0, 512)
+	}
+}
+
+/**
+ * One allowed attribute's value, cut to 512 characters; a style's
+ * `url(...)` becomes `none`, so no address leaves through it.
+ *
+ * @param {Element} node The element.
+ * @param {string}  name The attribute.
+ * @return {string} The value.
+ */
+function attributeValue(node, name) {
+	const value = String(node.getAttribute(name) || '').substring(0, 512)
+	if (name === 'style') {
+		return value.replace(/url\s*\([^)]*\)/gi, 'none')
+	}
+	return value
+}
+
+/**
+ * Start recording in a window whose traffic client asked for it.
+ *
+ * @param {Window} win The window.
+ * @return {void}
+ */
+export function start(win) {
+	const api = win.portaliqTraffic
+	const cfg = api && api.recording
+	if (!mayStart(win, cfg)) {
+		return
+	}
+	cfg.started = true
+	const doc = win.document
+	const state = newState()
 
 	/**
 	 * Milliseconds since the recording began.
@@ -247,16 +381,6 @@ export function start(win) {
 	}
 
 	/**
-	 * A text node as its length.
-	 *
-	 * @param {Node} node The text node.
-	 * @return {object} `{ l }`.
-	 */
-	function textNode(node) {
-		return { l: String(node.nodeValue || '').length }
-	}
-
-	/**
 	 * An element as its tag, allowed attributes and children; boxes and
 	 * dropped elements as described above.
 	 *
@@ -266,40 +390,50 @@ export function start(win) {
 	 */
 	function element(node, depth) {
 		const tag = String(node.tagName || '').toLowerCase()
-		if (DROPPED.indexOf(tag) !== -1 || depth > MAX_DEPTH) {
+		if (isDropped(tag, depth)) {
 			return null
 		}
 		const out = { n: tag, a: attributes(node, tag) }
-		if (BOXES.indexOf(tag) !== -1) {
+		const leaf = tag === 'style' ? styleFields(node) : leafFields(node, tag)
+		if (leaf) {
+			Object.assign(out, leaf)
 			out.c = []
 			return out
 		}
-		if (tag === 'input' || tag === 'textarea') {
-			out.v = String(node.value || '').length
-			out.c = []
-			return out
-		}
-		if (tag === 'select') {
-			out.v = 0
-			out.c = []
-			return out
-		}
-		if (tag === 'style') {
-			out.h = stylesheet(
+		out.c = children(node, depth)
+		return out
+	}
+
+	/**
+	 * A style element as the hash of its stylesheet.
+	 *
+	 * @param {Element} node The style element.
+	 * @return {object} `{ h }`.
+	 */
+	function styleFields(node) {
+		return {
+			h: stylesheet(
 				String(node.textContent || '').substring(0, MAX_STYLE_BYTES),
-			)
-			out.c = []
-			return out
+			),
 		}
-		const children = []
+	}
+
+	/**
+	 * An element's serialised children, at most MAX_CHILDREN of them.
+	 *
+	 * @param {Element} node  The element.
+	 * @param {number}  depth How deep the walk is.
+	 * @return {Array<object>} The children.
+	 */
+	function children(node, depth) {
+		const out = []
 		const list = node.childNodes
-		for (let i = 0; i < list.length && children.length < MAX_CHILDREN; i++) {
+		for (let i = 0; i < list.length && out.length < MAX_CHILDREN; i++) {
 			const child = serialise(list[i], depth + 1)
 			if (child) {
-				children.push(child)
+				out.push(child)
 			}
 		}
-		out.c = children
 		return out
 	}
 
@@ -317,33 +451,6 @@ export function start(win) {
 			push({ k: 'y', t: now(), h: hash, s: text })
 		}
 		return hash
-	}
-
-	/**
-	 * The allowed attributes of an element. A stylesheet link keeps its
-	 * absolute address, the one address that survives.
-	 *
-	 * @param {Element} node The element.
-	 * @param {string}  tag  Its tag.
-	 * @return {object} Name to value.
-	 */
-	function attributes(node, tag) {
-		const out = {}
-		for (let i = 0; i < ATTRIBUTES.length; i++) {
-			const name = ATTRIBUTES[i]
-			if (!node.hasAttribute || !node.hasAttribute(name)) {
-				continue
-			}
-			let value = String(node.getAttribute(name) || '').substring(0, 512)
-			if (name === 'style') {
-				value = value.replace(/url\s*\([^)]*\)/gi, 'none')
-			}
-			out[name] = value
-		}
-		if (tag === 'link' && out.rel === 'stylesheet' && node.href) {
-			out.href = String(node.href).substring(0, 512)
-		}
-		return out
 	}
 
 	/**
@@ -458,37 +565,7 @@ export function start(win) {
 		if (state.events.length === 0) {
 			return
 		}
-		const events = state.events
-		state.total += state.bytes
-		state.events = []
-		state.bytes = 0
-		posts(events).forEach((batch) => {
-			const body = {
-				consent: cfg.consent() === true,
-				recording: cfg.id,
-				page: route(),
-				elapsed: now(),
-				sessionId:
-					typeof cfg.sessionId === 'function' ? cfg.sessionId() : '',
-				events: batch,
-			}
-			if (cfg.portal) {
-				body.portal = cfg.portal
-			}
-			const encoded = JSON.stringify(body)
-			state.sending = state.sending.then(() =>
-				win
-					.fetch(cfg.endpoint, {
-						method: 'POST',
-						body: encoded,
-						headers: { 'Content-Type': 'text/plain' },
-						mode: 'cors',
-						credentials: 'omit',
-						keepalive: encoded.length <= MAX_KEEPALIVE_BYTES,
-					})
-					.catch(() => {}),
-			)
-		})
+		posts(takeQueue()).forEach(post)
 		if (state.total >= MAX_TOTAL_BYTES) {
 			stop()
 			return
@@ -496,6 +573,64 @@ export function start(win) {
 		if (!state.stopped) {
 			state.timer = win.setTimeout(flush, FLUSH_EVERY)
 		}
+	}
+
+	/**
+	 * The queued events, counted towards the visit's total and taken off
+	 * the queue.
+	 *
+	 * @return {Array<object>} The events.
+	 */
+	function takeQueue() {
+		const events = state.events
+		state.total += state.bytes
+		state.events = []
+		state.bytes = 0
+		return events
+	}
+
+	/**
+	 * Post one batch of events after the post in flight.
+	 *
+	 * @param {Array<object>} batch The events.
+	 * @return {void}
+	 */
+	function post(batch) {
+		const encoded = JSON.stringify(postBody(batch))
+		state.sending = state.sending.then(() =>
+			win
+				.fetch(cfg.endpoint, {
+					method: 'POST',
+					body: encoded,
+					headers: { 'Content-Type': 'text/plain' },
+					mode: 'cors',
+					credentials: 'omit',
+					keepalive: encoded.length <= MAX_KEEPALIVE_BYTES,
+				})
+				.catch(() => {}),
+		)
+	}
+
+	/**
+	 * The body of one post: the consent, the recording, the page and the
+	 * events, and the portal when there is one.
+	 *
+	 * @param {Array<object>} batch The events.
+	 * @return {object} The body.
+	 */
+	function postBody(batch) {
+		const body = {
+			consent: cfg.consent() === true,
+			recording: cfg.id,
+			page: route(),
+			elapsed: now(),
+			sessionId: typeof cfg.sessionId === 'function' ? cfg.sessionId() : '',
+			events: batch,
+		}
+		if (cfg.portal) {
+			body.portal = cfg.portal
+		}
+		return body
 	}
 
 	/**
@@ -606,20 +741,36 @@ export function start(win) {
 		push({ k: 'v', t: now(), w: win.innerWidth, h: win.innerHeight })
 	}
 
-	cfg.stop = stop
-	doc.addEventListener('mousemove', onMove, true)
-	doc.addEventListener('click', onClick, true)
-	win.addEventListener('scroll', onScroll, { passive: true })
-	win.addEventListener('resize', onResize)
-	win.addEventListener('popstate', navigated)
-	win.addEventListener('pagehide', flush)
-	doc.addEventListener('visibilitychange', () => {
-		if (doc.visibilityState === 'hidden') {
-			flush()
+	/**
+	 * Listen to the pointer, the clicks, the scrolling, the viewport, the
+	 * navigations and the page going away.
+	 *
+	 * @return {void}
+	 */
+	function listen() {
+		doc.addEventListener('mousemove', onMove, true)
+		doc.addEventListener('click', onClick, true)
+		win.addEventListener('scroll', onScroll, { passive: true })
+		win.addEventListener('resize', onResize)
+		win.addEventListener('popstate', navigated)
+		win.addEventListener('pagehide', flush)
+		doc.addEventListener('visibilitychange', () => {
+			if (doc.visibilityState === 'hidden') {
+				flush()
+			}
+		})
+	}
+
+	/**
+	 * Take a new snapshot soon whenever the page changes, where the browser
+	 * can tell.
+	 *
+	 * @return {void}
+	 */
+	function observeChanges() {
+		if (typeof win.MutationObserver !== 'function' || !doc.documentElement) {
+			return
 		}
-	})
-	patchHistory()
-	if (typeof win.MutationObserver === 'function' && doc.documentElement) {
 		state.observer = new win.MutationObserver(scheduleSnapshot)
 		state.observer.observe(doc.documentElement, {
 			childList: true,
@@ -628,6 +779,11 @@ export function start(win) {
 			characterData: true,
 		})
 	}
+
+	cfg.stop = stop
+	listen()
+	patchHistory()
+	observeChanges()
 	push({ k: 'v', t: 0, w: win.innerWidth, h: win.innerHeight })
 	snapshot()
 	state.timer = win.setTimeout(flush, FLUSH_EVERY)
