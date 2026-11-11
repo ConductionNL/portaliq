@@ -117,7 +117,7 @@ class ContactConfirmationMailer {
 	 */
 	private function address(string $subjectRef): string {
 		$account = $this->accounts->findBySubjectRef(subjectRef: $subjectRef);
-		if (($account['status'] ?? '') === PortalAccountService::STATUS_VOID) {
+		if (($account['status'] ?? '') === AccountStatus::VOID) {
 			$this->logger->info('Portaliq: no question confirmation to a withdrawn account', ['account' => (string)($account['id'] ?? '')]);
 			return '';
 		}

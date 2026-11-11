@@ -30,7 +30,6 @@ namespace OCA\Portaliq\Service\Identity;
 
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\Security\ISecureRandom;
@@ -145,7 +144,7 @@ class PortalAccountActivationService {
 		$written = $this->write(
 			id: $uuid,
 			data: [
-				'status' => PortalAccountService::STATUS_ACTIVE,
+				'status' => AccountStatus::ACTIVE,
 				'verifiedEmail' => true,
 				// The hash goes, so the link works once. The expiry stays as
 				// it was: an empty string is no date-time.
@@ -174,8 +173,8 @@ class PortalAccountActivationService {
 	 * @return bool
 	 */
 	private function awaitsActivation(array $account): bool {
-		return ($account['status'] ?? '') === PortalAccountService::STATUS_PENDING
-			&& ($account['provisionedBy'] ?? '') === PortalAccountService::SELF_REGISTRATION;
+		return ($account['status'] ?? '') === AccountStatus::PENDING
+			&& ($account['provisionedBy'] ?? '') === AccountStatus::SELF_REGISTRATION;
 	}//end awaitsActivation()
 
 	/**

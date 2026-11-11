@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Service\Identity\AccountStatus;
 use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use OCA\Portaliq\Service\Identity\WaitingAccountJoin;
 use OCP\Security\ISecureRandom;
@@ -52,26 +53,24 @@ class PortalAccountService {
 	private const SCHEMA = 'portalAccount';
 
 	/**
-	 * An account provisioned before any login: no session, no reach.
-	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * An account provisioned before any login, see AccountStatus::PENDING.
 	 */
-	public const STATUS_PENDING = 'pending';
+	public const STATUS_PENDING = AccountStatus::PENDING;
 
 	/**
-	 * An account a matching first login has activated.
+	 * An account a matching first login has activated, see AccountStatus::ACTIVE.
 	 */
-	public const STATUS_ACTIVE = 'active';
+	public const STATUS_ACTIVE = AccountStatus::ACTIVE;
 
 	/**
-	 * A pending account a clerk withdrew. It never matches a login again.
+	 * A pending account a clerk withdrew, see AccountStatus::VOID.
 	 */
-	public const STATUS_VOID = 'void';
+	public const STATUS_VOID = AccountStatus::VOID;
 
 	/**
-	 * The `provisionedBy` of an account a stranger created through self-registration.
+	 * The `provisionedBy` of a self-registered account, see AccountStatus::SELF_REGISTRATION.
 	 */
-	public const SELF_REGISTRATION = 'self-registration';
+	public const SELF_REGISTRATION = AccountStatus::SELF_REGISTRATION;
 
 	/**
 	 * The lazily built read half, see lookup().
