@@ -113,41 +113,57 @@ export function visitorRows(publication, { t, locale, themeNames = {} }) {
 		return []
 	}
 
-	const rows = []
+	const reader = { t, locale, themeNames }
+	return [dateRow, categoryRow, themesRow]
+		.map((row) => row(publication, reader))
+		.filter((row) => row !== null)
+}
+
+/**
+ * @param {object} publication One publication object.
+ * @param {{t: (key: string) => string, locale: string}} reader The translator and the site's language.
+ * @return {object|null} The publication date's row, or null without a readable date.
+ */
+function dateRow(publication, reader) {
 	const date = isEmpty(publication.publicationDate)
 		? ''
-		: readableDate(publication.publicationDate, locale)
-	if (date !== '') {
-		rows.push({
-			name: 'publicationDate',
-			label: t('Publication date'),
-			value: date,
-			kind: 'text',
-		})
+		: readableDate(publication.publicationDate, reader.locale)
+	if (date === '') {
+		return null
 	}
+	return { name: 'publicationDate', label: reader.t('Publication date'), value: date, kind: 'text' }
+}
 
-	if (!isEmpty(publication.wooCategory)) {
-		rows.push({
-			name: 'wooCategory',
-			label: t('Information category'),
-			value: valueLabel('wooCategory', publication.wooCategory, locale),
-			kind: 'text',
-		})
+/**
+ * @param {object} publication One publication object.
+ * @param {{t: (key: string) => string, locale: string}} reader The translator and the site's language.
+ * @return {object|null} The information category's row, or null without one.
+ */
+function categoryRow(publication, reader) {
+	if (isEmpty(publication.wooCategory)) {
+		return null
 	}
+	return {
+		name: 'wooCategory',
+		label: reader.t('Information category'),
+		value: valueLabel('wooCategory', publication.wooCategory, reader.locale),
+		kind: 'text',
+	}
+}
 
+/**
+ * @param {object} publication One publication object.
+ * @param {{t: (key: string) => string, themeNames: Record<string, string>}} reader The translator and the theme names.
+ * @return {object|null} The themes' row with the known names, or null without one.
+ */
+function themesRow(publication, reader) {
 	const themes = themeIdsOf(publication)
-		.map((id) => themeNames[id])
+		.map((id) => reader.themeNames[id])
 		.filter((name) => typeof name === 'string' && name.trim() !== '')
-	if (themes.length > 0) {
-		rows.push({
-			name: 'themes',
-			label: t('Themes'),
-			value: themes,
-			kind: 'list',
-		})
+	if (themes.length === 0) {
+		return null
 	}
-
-	return rows
+	return { name: 'themes', label: reader.t('Themes'), value: themes, kind: 'list' }
 }
 
 /**
@@ -186,6 +202,14 @@ export function humanSize(bytes) {
 		return ''
 	}
 
+	return sizeWords(size)
+}
+
+/**
+ * @param {number} size A size in bytes, zero or more.
+ * @return {string} The size in bytes, kilobytes or megabytes.
+ */
+function sizeWords(size) {
 	if (size < 1000) {
 		return `${Math.round(size)} B`
 	}
