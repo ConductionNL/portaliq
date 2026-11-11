@@ -180,4 +180,61 @@ class QuietHoursPolicyTest extends TestCase {
 
 		$this->assertSame('Asia/Tokyo', $policy->timeZoneFor(str_repeat('claim-subject-', 6))->getName());
 	}//end testASubjectNextcloudCannotLookUpFallsBackToTheInstanceZone()
+	/**
+	 * A stored window that is not valid, an empty subject, no OpenRegister or a
+	 * failed read all give the default; a failed read is logged.
+	 */
+	public function testResolveWindowFallsBackOnEveryUnusableAnswer(): void {
+		$default = ['start' => QuietHoursPolicy::DEFAULT_START, 'end' => QuietHoursPolicy::DEFAULT_END];
+		$invalid = new QuietHoursPolicy($this->container([['subjectRef' => 'g', 'startTime' => '20:00', 'endTime' => '8:00']]), $this->createMock(LoggerInterface::class), $this->config());
+		$this->assertSame($default, $invalid->resolveWindow('g'));
+		$this->assertSame($default, $invalid->resolveWindow(''));
+
+		$none = $this->createMock(ContainerInterface::class);
+		$none->method('get')->willThrowException(new RuntimeException('no OpenRegister'));
+		$this->assertSame($default, (new QuietHoursPolicy($none, $this->createMock(LoggerInterface::class), $this->config()))->resolveWindow('g'));
+
+		$failing = new class {
+			public function setRegister(string $register): self {
+				return $this;
+			}//end setRegister()
+
+			public function setSchema(string $schema): self {
+				return $this;
+			}//end setSchema()
+
+			public function findAll(array $config, bool $_rbac = true, bool $_multitenancy = true): array {
+				throw new RuntimeException('down');
+			}//end findAll()
+
+			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+				return $object;
+			}//end saveObject()
+		};
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($failing);
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->exactly(2))->method('warning')->willReturnCallback(
+			function (string $message): void {
+				$this->assertContains($message, ['Portaliq: quiet hours read failed', 'Portaliq: quiet hours lookup failed']);
+			}
+		);
+		$policy = new QuietHoursPolicy($container, $logger, $this->config());
+		$this->assertSame($default, $policy->resolveWindow('g'));
+		$this->assertTrue($policy->setWindow('g', '21:00', '06:00'), 'a failed lookup saves a new row');
+	}//end testResolveWindowFallsBackOnEveryUnusableAnswer()
+
+	/**
+	 * A later window replaces the subject's row, found by its id or its
+	 * `@self` id; a row without either saves a new one.
+	 */
+	public function testSetWindowReplacesTheExistingRow(): void {
+		foreach ([[['subjectRef' => 'g', 'id' => 'r1'], 'r1'], [['subjectRef' => 'g', '@self' => ['id' => 'r2']], 'r2'], [['subjectRef' => 'g', '@self' => 'x'], null], [['subjectRef' => 'h', 'id' => 'r3'], null]] as [$row, $uuid]) {
+			$container = $this->container([$row]);
+			$policy = new QuietHoursPolicy($container, $this->createMock(LoggerInterface::class), $this->config());
+			$this->assertTrue($policy->setWindow('g', '21:00', '06:00'));
+			$this->assertSame($uuid, $container->get(self::OS)->uuid);
+			$this->assertSame(['subjectRef' => 'g', 'startTime' => '21:00', 'endTime' => '06:00'], $container->get(self::OS)->saved);
+		}
+	}//end testSetWindowReplacesTheExistingRow()
 }//end class
