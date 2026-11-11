@@ -57,6 +57,13 @@ class PortalInvitationService {
 	private const SCHEMA = 'portalInvitation';
 
 	/**
+	 * The states an invitation keeps whatever the moment.
+	 *
+	 * @var array<int, string>
+	 */
+	private const FINAL_STATES = ['accepted', 'revoked', 'expired'];
+
+	/**
 	 * How long an invitation admits anybody, by default.
 	 */
 	private const DEFAULT_TTL = 'P7D';
@@ -106,7 +113,7 @@ class PortalInvitationService {
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function inviteAddress(AddressInvitation $invitation): ?array {
-		if ($invitation->email === '' || $invitation->organisation === '' || $invitation->invitedBy === '') {
+		if ($this->isAddressable(invitation: $invitation) === false) {
 			return null;
 		}
 
@@ -115,13 +122,37 @@ class PortalInvitationService {
 			return null;
 		}
 
+		return $this->storedSecret(invitation: $invitation, token: $token);
+	}//end inviteAddress()
+
+	/**
+	 * Whether an invitation names an address, a tenant and the clerk who sends it.
+	 *
+	 * @param AddressInvitation $invitation The invitation.
+	 *
+	 * @return bool
+	 */
+	private function isAddressable(AddressInvitation $invitation): bool {
+		return $invitation->email !== '' && $invitation->organisation !== '' && $invitation->invitedBy !== '';
+	}//end isAddressable()
+
+	/**
+	 * Store the invitation under the secret's hash and hand back the secret,
+	 * or null when it was not stored.
+	 *
+	 * @param AddressInvitation $invitation The invitation.
+	 * @param string            $token      The secret to mail.
+	 *
+	 * @return array{token: string, expiresAt: string}|null
+	 */
+	private function storedSecret(AddressInvitation $invitation, string $token): ?array {
 		$sent = $this->sentMoments(ttl: $invitation->ttl) + ['tokenHash' => hash('sha256', $token)];
 		if ($this->storeInvitation(invitation: $invitation, sent: $sent) === false) {
 			return null;
 		}
 
 		return ['token' => $token, 'expiresAt' => $sent['expiresAt']];
-	}//end inviteAddress()
+	}//end storedSecret()
 
 	/**
 	 * When an invitation is sent and until when it lives: now, plus the given
@@ -397,20 +428,40 @@ class PortalInvitationService {
 			organisation: $organisation,
 			limit: 500
 		);
-		foreach ($rows as $row) {
-			if (is_array($row) === false) {
-				continue;
-			}
 
-			$self = (array)($row['@self'] ?? []);
-			$ids  = [(string)($row['uuid'] ?? ''), (string)($row['id'] ?? ''), (string)($self['id'] ?? '')];
-			if (in_array($id, $ids, true) === true) {
+		return $this->rowWithId(rows: $rows, id: $id);
+	}//end findById()
+
+	/**
+	 * The first row that carries the id as its uuid, its id or its `@self` id.
+	 *
+	 * @param array<int|string, mixed> $rows The rows.
+	 * @param string                   $id   The invitation's id.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function rowWithId(array $rows, string $id): ?array {
+		foreach ($rows as $row) {
+			if (is_array($row) === true && in_array($id, $this->idsOf(row: $row), true) === true) {
 				return $row;
 			}
 		}
 
 		return null;
-	}//end findById()
+	}//end rowWithId()
+
+	/**
+	 * The ids a row answers to: its uuid, its id and its `@self` id.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return array<int, string>
+	 */
+	private function idsOf(array $row): array {
+		$self = (array)($row['@self'] ?? []);
+
+		return [(string)($row['uuid'] ?? ''), (string)($row['id'] ?? ''), (string)($self['id'] ?? '')];
+	}//end idsOf()
 
 	/**
 	 * The invitation carrying this secret's hash, or null.
@@ -447,22 +498,34 @@ class PortalInvitationService {
 	 */
 	private function stateAsOf(array $row, DateTimeImmutable $now): string {
 		$state = (string)($row['state'] ?? 'sent');
-		if ($state === 'accepted' || $state === 'revoked' || $state === 'expired') {
+		if (in_array($state, self::FINAL_STATES, true) === true) {
 			return $state;
 		}
 
-		$expiresAt = (string)($row['expiresAt'] ?? '');
-		if ($expiresAt === '') {
-			return $state;
-		}
-
-		$expiry = date_create_immutable($expiresAt);
-		if ($expiry === false || $expiry <= $now) {
+		if ($this->hasLapsed(expiresAt: (string)($row['expiresAt'] ?? ''), now: $now) === true) {
 			return 'expired';
 		}
 
 		return $state;
 	}//end stateAsOf()
+
+	/**
+	 * Whether an expiry moment has come, or does not parse; never without one.
+	 *
+	 * @param string            $expiresAt The stored expiry, or ''.
+	 * @param DateTimeImmutable $now       The moment.
+	 *
+	 * @return bool
+	 */
+	private function hasLapsed(string $expiresAt, DateTimeImmutable $now): bool {
+		if ($expiresAt === '') {
+			return false;
+		}
+
+		$expiry = date_create_immutable($expiresAt);
+
+		return $expiry === false || $expiry <= $now;
+	}//end hasLapsed()
 
 	/**
 	 * Write a new state on the invitation row.
