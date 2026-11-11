@@ -109,4 +109,35 @@ class PortalApplicantPrefillTest extends TestCase {
 		return new PortalApplicantPrefill($service);
 	}//end prefill()
 
+	/**
+	 * Every subject and field reads exactly as recorded.
+	 *
+	 * @return void
+	 */
+	public function testEverySubjectAndFieldIsAsRecorded(): void {
+		$prefill = $this->prefill([
+			's-1' => ['subjectRef' => 's-1', 'displayName' => 'Ans', 'email' => ''],
+			's-2' => ['subjectRef' => 'someone-else', 'displayName' => 'Bob', 'email' => 'bob@example.org'],
+			's-3' => ['displayName' => 'No ref'],
+			's-4' => ['subjectRef' => 's-4', 'displayName' => 7, 'email' => 'four@example.org'],
+		]);
+		$fields  = [
+			['name' => 'applicantEmail'],
+			'not a field',
+			['name' => 'applicantName'],
+			['name' => 'other'],
+			['label' => 'no name'],
+			['name' => 'applicantName'],
+		];
+
+		$this->assertSame(['applicantName' => 'Ans'], $prefill->forSubject(subject: ['subjectRef' => 's-1'], fields: $fields));
+		$this->assertSame([], $prefill->forSubject(subject: ['subjectRef' => 's-2'], fields: $fields), 'another account is never read');
+		$this->assertSame([], $prefill->forSubject(subject: ['subjectRef' => 's-3'], fields: $fields));
+		$this->assertSame(['applicantEmail' => 'four@example.org', 'applicantName' => '7'], $prefill->forSubject(subject: ['subjectRef' => 's-4'], fields: $fields));
+		$this->assertSame([], $prefill->forSubject(subject: ['subjectRef' => 'unknown'], fields: $fields));
+		$this->assertSame([], $prefill->forSubject(subject: ['subjectRef' => ''], fields: $fields));
+		$this->assertSame([], $prefill->forSubject(subject: [], fields: $fields));
+		$this->assertSame([], $prefill->forSubject(subject: ['subjectRef' => 's-1'], fields: []));
+	}//end testEverySubjectAndFieldIsAsRecorded()
+
 }//end class
