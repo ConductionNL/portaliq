@@ -895,15 +895,27 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$match = $this->trustedCollection(subject: $subject, target: ['register' => $register, 'schema' => $schema]);
+		return $this->collectionRows(subject: $subject, target: ['register' => $register, 'schema' => $schema]);
+	}//end collection()
+
+	/**
+	 * The rows of the subject's own collection, or 403 when it is not theirs.
+	 *
+	 * @param array<string, mixed>                    $subject The resolved subject.
+	 * @param array{register: string, schema: string} $target  The requested register and schema.
+	 *
+	 * @return JSONResponse
+	 */
+	private function collectionRows(array $subject, array $target): JSONResponse {
+		$match = $this->trustedCollection(subject: $subject, target: $target);
 		if ($match === null) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		$objects = $this->screenRows(subject: $subject, match: $match, register: $register, schema: $schema);
+		$objects = $this->screenRows(subject: $subject, match: $match, register: $target['register'], schema: $target['schema']);
 
-		return new JSONResponse(['register' => $register, 'schema' => $schema, 'objects' => $objects]);
-	}//end collection()
+		return new JSONResponse(['register' => $target['register'], 'schema' => $target['schema'], 'objects' => $objects]);
+	}//end collectionRows()
 
 	/**
 	 * The subject's own collection for (register, schema), or null (403).
@@ -1806,17 +1818,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/landing-page-provisioning/spec.md#requirement-a-landing-pages-form-is-submittable-with-no-portal-session
 	 */
 	private function submitIntoDestination(array $action, array $answers): JSONResponse {
-		if ($this->intake === null) {
-			return $this->intakeRefusal(submitted: null);
-		}
-
-		$submitted = $this->intake->submit(
-			binding: $this->intakeBinding(action: $action),
-			render: ['fields' => $this->intakeFields(action: $action)],
-			answers: $answers,
-			server: (array)($action['server'] ?? []),
-			idempotencyKey: (string)$this->request->getHeader('Idempotency-Key')
-		);
+		$submitted = $this->intakeSubmission(action: $action, answers: $answers);
 		if ($submitted['ok'] === false) {
 			return $this->intakeRefusal(submitted: $submitted);
 		}
@@ -1825,13 +1827,36 @@ class ContributionController extends Controller implements PortalProtected {
 	}//end submitIntoDestination()
 
 	/**
+	 * What the destination intake answers for the action's answers; a
+	 * refusal without a status (try again later) when the intake is not wired.
+	 *
+	 * @param array<string, mixed> $action  The matched action.
+	 * @param array<string, mixed> $answers The whitelisted answers.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function intakeSubmission(array $action, array $answers): array {
+		if ($this->intake === null) {
+			return ['ok' => false];
+		}
+
+		return $this->intake->submit(
+			binding: $this->intakeBinding(action: $action),
+			render: ['fields' => $this->intakeFields(action: $action)],
+			answers: $answers,
+			server: (array)($action['server'] ?? []),
+			idempotencyKey: (string)$this->request->getHeader('Idempotency-Key')
+		);
+	}//end intakeSubmission()
+
+	/**
 	 * The destination intake's refusal as a response.
 	 *
-	 * @param array<string, mixed>|null $submitted What the intake answered, or null when it is not wired.
+	 * @param array<string, mixed> $submitted What the intake answered.
 	 *
 	 * @return JSONResponse
 	 */
-	private function intakeRefusal(?array $submitted): JSONResponse {
+	private function intakeRefusal(array $submitted): JSONResponse {
 		$refusal = DestinationIntake::refusal(submitted: $submitted);
 
 		return new JSONResponse($refusal['body'], $refusal['status']);
