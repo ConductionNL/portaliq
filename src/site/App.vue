@@ -2025,19 +2025,36 @@ export default {
 			} catch {
 				return
 			}
-			const url = silentSignInUrl(
-				{
-					apiBase: authBaseFrom(resolveApiBase()),
-					signinOrganisation: this.signinConfig.signinOrganisation || '',
-					silentSignIn: this.signinConfig.silentSignIn || '',
-					organisationSlug: this.site.slug || this.portalSlug || '',
-				},
-				store,
-			)
-			if (url) {
-				const back = window.location.pathname + window.location.search
-				window.location.assign(`${url}&returnTo=${encodeURIComponent(back)}`)
+			this.goToSilentSignIn(silentSignInUrl(this.silentSignInConfig(), store))
+		},
+
+		/**
+		 * Where a silent sign-in starts: the auth edge, the organisation and
+		 * its provider, and the portal.
+		 *
+		 * @return {{apiBase: string, signinOrganisation: string, silentSignIn: string, organisationSlug: string}}
+		 */
+		silentSignInConfig() {
+			return {
+				apiBase: authBaseFrom(resolveApiBase()),
+				signinOrganisation: this.signinConfig.signinOrganisation || '',
+				silentSignIn: this.signinConfig.silentSignIn || '',
+				organisationSlug: this.site.slug || this.portalSlug || '',
 			}
+		},
+
+		/**
+		 * Go to a silent sign-in, returning to this page; nothing without one.
+		 *
+		 * @param {string} url The silent sign-in address, or ''.
+		 * @return {void}
+		 */
+		goToSilentSignIn(url) {
+			if (!url) {
+				return
+			}
+			const back = window.location.pathname + window.location.search
+			window.location.assign(`${url}&returnTo=${encodeURIComponent(back)}`)
 		},
 
 		/**
