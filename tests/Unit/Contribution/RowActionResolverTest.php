@@ -68,6 +68,35 @@ class RowActionResolverTest extends TestCase {
 	}//end testSingularRowActionAndObjectEntriesResolve()
 
 	/**
+	 * A list that is not a list is ignored but the singular still counts;
+	 * the kept ids move to the end of the collection; nothing resolvable
+	 * removes both keys; a collection without either is untouched.
+	 *
+	 * @return void
+	 */
+	public function testTheRowActionKeysAreAsRecorded(): void {
+		$out = (new RowActionResolver())->resolve(
+			collections: [
+				['rowActions' => 'close', 'id' => 'a', 'rowAction' => ['id' => 'pay'], 'label' => 'A'],
+				['rowActions' => ['nope', '', 7], 'id' => 'b', 'rowAction' => 'other'],
+				['id' => 'c', 'label' => 'C'],
+				['rowActions' => [['id' => 'close'], 'close'], 'id' => 'd'],
+			],
+			actions: [$this->close(), $this->pay()]
+		);
+
+		$this->assertSame(
+			[
+				['id' => 'a', 'label' => 'A', 'rowActions' => ['pay']],
+				['id' => 'b'],
+				['id' => 'c', 'label' => 'C'],
+				['id' => 'd', 'rowActions' => ['close']],
+			],
+			$out
+		);
+	}//end testTheRowActionKeysAreAsRecorded()
+
+	/**
 	 * Shillinq's manifest as it ships today: `pay` without `rowField` is not
 	 * a row action, so no button. The action itself stays in the manifest.
 	 *
