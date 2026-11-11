@@ -138,45 +138,93 @@ class QuietHoursPolicy {
 	public function resolveWindow(string $subjectRef): array {
 		$default = ['start' => self::DEFAULT_START, 'end' => self::DEFAULT_END];
 
-		if ($subjectRef === '') {
-			return $default;
-		}
-
-		$objectService = $this->objectService();
-		if ($objectService === null) {
-			return $default;
-		}
-
-		try {
-			$objectService->setRegister(register: self::REGISTER);
-			$objectService->setSchema(schema: self::SCHEMA);
-			$rows = $objectService->findAll(
-				config: ['filters' => ['subjectRef' => $subjectRef], 'limit' => 1, 'offset' => 0],
-				_rbac: false,
-				_multitenancy: false
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: quiet hours read failed', ['reason' => $e->getMessage()]);
-			return $default;
-		}
-
-		if (is_array($rows) === false || count($rows) === 0) {
-			return $default;
-		}
-
-		$row = $this->normalise(row: $rows[0]);
+		$row = $this->ownRow(subjectRef: $subjectRef);
 		if ($row === null) {
 			return $default;
 		}
 
+		return $this->validWindow(row: $row, default: $default);
+	}//end resolveWindow()
+
+	/**
+	 * The subject's stored window row, or null when there is none or it
+	 * cannot be read (a failed read is logged).
+	 *
+	 * @param string $subjectRef The subject's own subjectRef.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function ownRow(string $subjectRef): ?array {
+		if ($subjectRef === '') {
+			return null;
+		}
+
+		$objectService = $this->objectService();
+		if ($objectService === null) {
+			return null;
+		}
+
+		try {
+			$rows = $this->subjectRows(objectService: $objectService, subjectRef: $subjectRef);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: quiet hours read failed', ['reason' => $e->getMessage()]);
+			return null;
+		}
+
+		return $this->firstRow(rows: $rows);
+	}//end ownRow()
+
+	/**
+	 * The stored window when both of its times are valid, else the default.
+	 *
+	 * @param array<string, mixed>               $row     The stored row.
+	 * @param array{start: string, end: string} $default The documented default.
+	 *
+	 * @return array{start: string, end: string}
+	 */
+	private function validWindow(array $row, array $default): array {
 		$start = (string)($row['startTime'] ?? '');
-		$end = (string)($row['endTime'] ?? '');
+		$end   = (string)($row['endTime'] ?? '');
 		if ($this->isValidTime(value: $start) === false || $this->isValidTime(value: $end) === false) {
 			return $default;
 		}
 
 		return ['start' => $start, 'end' => $end];
-	}//end resolveWindow()
+	}//end validWindow()
+
+	/**
+	 * The subject's window rows, read without access rules; throws when the read fails.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $subjectRef    The subject's own subjectRef.
+	 *
+	 * @return mixed What the read returned.
+	 */
+	private function subjectRows(object $objectService, string $subjectRef): mixed {
+		$objectService->setRegister(register: self::REGISTER);
+		$objectService->setSchema(schema: self::SCHEMA);
+
+		return $objectService->findAll(
+			config: ['filters' => ['subjectRef' => $subjectRef], 'limit' => 1, 'offset' => 0],
+			_rbac: false,
+			_multitenancy: false
+		);
+	}//end subjectRows()
+
+	/**
+	 * The first row of a read, as an array, or null when there is none.
+	 *
+	 * @param mixed $rows What the read returned.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function firstRow(mixed $rows): ?array {
+		if (is_array($rows) === false || count($rows) === 0) {
+			return null;
+		}
+
+		return $this->normalise(row: $rows[0]);
+	}//end firstRow()
 
 	/**
 	 * Whether a subject is currently within their quiet-hours window, read
@@ -301,27 +349,28 @@ class QuietHoursPolicy {
 	 */
 	private function findExistingId(object $objectService, string $subjectRef): ?string {
 		try {
-			$objectService->setRegister(register: self::REGISTER);
-			$objectService->setSchema(schema: self::SCHEMA);
-			$rows = $objectService->findAll(
-				config: ['filters' => ['subjectRef' => $subjectRef], 'limit' => 1, 'offset' => 0],
-				_rbac: false,
-				_multitenancy: false
-			);
+			$rows = $this->subjectRows(objectService: $objectService, subjectRef: $subjectRef);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: quiet hours lookup failed', ['reason' => $e->getMessage()]);
 			return null;
 		}
 
-		if (is_array($rows) === false || count($rows) === 0) {
-			return null;
-		}
-
-		$row = $this->normalise(row: $rows[0]);
+		$row = $this->firstRow(rows: $rows);
 		if ($row === null) {
 			return null;
 		}
 
+		return $this->rowId(row: $row);
+	}//end findExistingId()
+
+	/**
+	 * A row's id, flat or from its `@self` envelope, or null.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return string|null
+	 */
+	private function rowId(array $row): ?string {
 		if (isset($row['id']) === true) {
 			return (string)$row['id'];
 		}
@@ -332,5 +381,5 @@ class QuietHoursPolicy {
 		}
 
 		return null;
-	}//end findExistingId()
+	}//end rowId()
 }//end class
