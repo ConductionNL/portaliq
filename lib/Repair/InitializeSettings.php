@@ -90,38 +90,71 @@ class InitializeSettings implements IRepairStep {
 		$this->ensureSigningSecret(output: $output);
 
 		if ($this->settingsService->isOpenRegisterAvailable() === false) {
-			$output->warning(
-				'OpenRegister is not installed or enabled. Skipping auto-configuration.'
-			);
-			$this->logger->warning(
-				'Portaliq: OpenRegister not available, skipping register initialization'
-			);
+			$this->skipWithoutOpenRegister(output: $output);
 			return;
 		}
 
+		$this->importConfiguration(output: $output);
+	}//end run()
+
+	/**
+	 * Say, on both channels, that the step skips without OpenRegister.
+	 *
+	 * @param IOutput $output The output interface for progress reporting.
+	 *
+	 * @return void
+	 */
+	private function skipWithoutOpenRegister(IOutput $output): void {
+		$output->warning(
+			'OpenRegister is not installed or enabled. Skipping auto-configuration.'
+		);
+		$this->logger->warning(
+			'Portaliq: OpenRegister not available, skipping register initialization'
+		);
+	}//end skipWithoutOpenRegister()
+
+	/**
+	 * Import the configuration and report how it went. A throw is caught and
+	 * logged, so the surrounding repair pass keeps running.
+	 *
+	 * @param IOutput $output The output interface for progress reporting.
+	 *
+	 * @return void
+	 */
+	private function importConfiguration(IOutput $output): void {
 		try {
-			$result = $this->settingsService->loadConfiguration(force: false);
-
-			if ($result['success'] === true) {
-				$version = ($result['version'] ?? 'unknown');
-				$output->info(
-					'Portaliq configuration imported successfully (version: ' . $version . ')'
-				);
-				return;
-			}
-
-			$message = ($result['message'] ?? 'unknown error');
-			$output->warning(
-				'Portaliq configuration import issue: ' . $message
-			);
+			$this->reportImport(output: $output, result: $this->settingsService->loadConfiguration(force: false));
 		} catch (\Throwable $e) {
 			$output->warning('Could not auto-configure Portaliq: ' . $e->getMessage());
 			$this->logger->error(
 				'Portaliq initialization failed',
 				['exception' => $e]
 			);
-		}//end try
-	}//end run()
+		}
+	}//end importConfiguration()
+
+	/**
+	 * Tell the operator whether the import landed.
+	 *
+	 * @param IOutput              $output The output interface for progress reporting.
+	 * @param array<string, mixed> $result The import's result.
+	 *
+	 * @return void
+	 */
+	private function reportImport(IOutput $output, array $result): void {
+		if ($result['success'] === true) {
+			$version = ($result['version'] ?? 'unknown');
+			$output->info(
+				'Portaliq configuration imported successfully (version: ' . $version . ')'
+			);
+			return;
+		}
+
+		$message = ($result['message'] ?? 'unknown error');
+		$output->warning(
+			'Portaliq configuration import issue: ' . $message
+		);
+	}//end reportImport()
 
 	/**
 	 * Generate a dedicated `jwt_signing_secret` for the portal auth edge, only
