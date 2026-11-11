@@ -55,6 +55,7 @@ use OCA\Portaliq\Contribution\InboxMessageFields;
 use OCA\Portaliq\Contribution\PageChoice;
 use OCA\Portaliq\Contribution\ThemeChoice;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Contribution\RowIdentifier;
 use OCA\Portaliq\Http\PdfDownloadResponse;
 use OCA\Portaliq\Service\Intake\ActionDraft;
 use OCA\Portaliq\Service\Intake\DestinationDraft;
@@ -1294,8 +1295,25 @@ class ContributionController extends Controller implements PortalProtected {
 	 */
 	private function readUploadedFile(): ?array {
 		$uploaded = $this->request->getUploadedFile('file');
-		$tmpName = (string)($uploaded['tmp_name'] ?? '');
-		if ((int)($uploaded['error'] ?? 1) !== 0 || $tmpName === '' || is_readable($tmpName) === false) {
+		$content  = $this->uploadedContent(uploaded: $uploaded);
+		if ($content === null) {
+			return null;
+		}
+
+		return ['name' => $this->uploadedName(uploaded: $uploaded), 'content' => $content];
+	}//end readUploadedFile()
+
+	/**
+	 * The uploaded file's bytes, or null when the upload failed, is absent,
+	 * or cannot be read.
+	 *
+	 * @param mixed $uploaded What `IRequest::getUploadedFile()` returned.
+	 *
+	 * @return string|null
+	 */
+	private function uploadedContent(mixed $uploaded): ?string {
+		$tmpName = $this->readableUpload(uploaded: $uploaded);
+		if ($tmpName === '') {
 			return null;
 		}
 
@@ -1304,13 +1322,41 @@ class ContributionController extends Controller implements PortalProtected {
 			return null;
 		}
 
-		$fileName = basename((string)($uploaded['name'] ?? 'upload'));
-		if ($fileName === '' || $fileName === '.' || $fileName === '..') {
-			$fileName = 'upload';
+		return $content;
+	}//end uploadedContent()
+
+	/**
+	 * The temp file of an upload without an error that can be read, else ''.
+	 *
+	 * @param mixed $uploaded What `IRequest::getUploadedFile()` returned.
+	 *
+	 * @return string The temp file's path, or ''.
+	 */
+	private function readableUpload(mixed $uploaded): string {
+		$tmpName = (string)($uploaded['tmp_name'] ?? '');
+		if ((int)($uploaded['error'] ?? 1) !== 0 || $tmpName === '' || is_readable($tmpName) === false) {
+			return '';
 		}
 
-		return ['name' => $fileName, 'content' => $content];
-	}//end readUploadedFile()
+		return $tmpName;
+	}//end readableUpload()
+
+	/**
+	 * The upload's file name reduced to a basename, `upload` when that
+	 * leaves nothing usable: a client path is never trusted.
+	 *
+	 * @param mixed $uploaded What `IRequest::getUploadedFile()` returned.
+	 *
+	 * @return string
+	 */
+	private function uploadedName(mixed $uploaded): string {
+		$fileName = basename((string)($uploaded['name'] ?? 'upload'));
+		if ($fileName === '' || $fileName === '.' || $fileName === '..') {
+			return 'upload';
+		}
+
+		return $fileName;
+	}//end uploadedName()
 
 	/**
 	 * Stream a file attached to an object the subject owns
@@ -1428,20 +1474,7 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		// The subject may only introspect a schema their manifest references.
-		$referenced = false;
-		$aggregate = $this->registry->aggregateFor(subject: $subject);
-		foreach (($aggregate['contributions'] ?? []) as $contribution) {
-			foreach (['collections', 'actions'] as $section) {
-				foreach (($contribution[$section] ?? []) as $entry) {
-					if ((string)($entry['schema'] ?? '') === $schema) {
-						$referenced = true;
-						break 3;
-					}
-				}
-			}
-		}
-
-		if ($referenced === false) {
+		if ($this->referencesSchema(subject: $subject, schema: $schema) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -1452,6 +1485,47 @@ class ContributionController extends Controller implements PortalProtected {
 
 		return new JSONResponse($definition);
 	}//end schema()
+
+	/**
+	 * Whether a collection or an action of the subject's own manifest names the schema.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param string               $schema  The schema slug.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#scoped-schema-introspection
+	 */
+	private function referencesSchema(array $subject, string $schema): bool {
+		$aggregate = $this->registry->aggregateFor(subject: $subject);
+		foreach (($aggregate['contributions'] ?? []) as $contribution) {
+			if ($this->contributionNames(contribution: $contribution, schema: $schema) === true) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end referencesSchema()
+
+	/**
+	 * Whether one contribution's collections or actions name the schema.
+	 *
+	 * @param mixed  $contribution The contribution.
+	 * @param string $schema       The schema slug.
+	 *
+	 * @return bool
+	 */
+	private function contributionNames(mixed $contribution, string $schema): bool {
+		foreach (['collections', 'actions'] as $section) {
+			foreach (($contribution[$section] ?? []) as $entry) {
+				if ((string)($entry['schema'] ?? '') === $schema) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}//end contributionNames()
 
 	/**
 	 * Create an object in a collection, owned by the subject.
@@ -2107,21 +2181,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
 	 */
 	private function extractId(array $row): string {
-		$self = ($row['@self'] ?? null);
-		$selfUuid = null;
-		$selfId = null;
-		if (is_array($self) === true) {
-			$selfUuid = ($self['uuid'] ?? null);
-			$selfId = ($self['id'] ?? null);
-		}
-
-		foreach ([($row['id'] ?? null), ($row['uuid'] ?? null), $selfUuid, $selfId] as $candidate) {
-			if ((is_string($candidate) === true || is_int($candidate) === true) && (string)$candidate !== '') {
-				return (string)$candidate;
-			}
-		}
-
-		return '';
+		return (new RowIdentifier())->idFor(row: $row, fallback: '');
 	}//end extractId()
 
 	/**
@@ -2296,17 +2356,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @return bool
 	 */
 	private function isForwardableAction(array $action, array $subject): bool {
-		$endpoint = ($action['endpoint'] ?? null);
-		if (is_string($endpoint) === false || $endpoint === '') {
-			return false;
-		}
-
-		// SSRF guard: instance-local absolute paths ONLY. Full http(s)://
-		// URLs and protocol-relative // paths are rejected.
-		if (str_starts_with($endpoint, '/') === false
-			|| str_starts_with($endpoint, '//') === true
-			|| str_contains($endpoint, '://') === true
-		) {
+		if ($this->isLocalEndpoint(endpoint: ($action['endpoint'] ?? null)) === false) {
 			return false;
 		}
 
@@ -2317,6 +2367,22 @@ class ContributionController extends Controller implements PortalProtected {
 
 		return PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null));
 	}//end isForwardableAction()
+
+	/**
+	 * Whether an endpoint is a non-empty instance-local absolute path. SSRF
+	 * guard: full http(s):// URLs and protocol-relative // paths are rejected.
+	 *
+	 * @param mixed $endpoint The declared endpoint.
+	 *
+	 * @return bool
+	 */
+	private function isLocalEndpoint(mixed $endpoint): bool {
+		return is_string($endpoint) === true
+			&& $endpoint !== ''
+			&& str_starts_with($endpoint, '/') === true
+			&& str_starts_with($endpoint, '//') === false
+			&& str_contains($endpoint, '://') === false;
+	}//end isLocalEndpoint()
 
 	/**
 	 * Report `exportPdf` on a collection only when OpenRegister's rows renderer is there,
@@ -2334,15 +2400,31 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		foreach ((array)($aggregate['contributions'] ?? []) as $i => $contribution) {
-			foreach ((array)($contribution['collections'] ?? []) as $j => $collection) {
-				if (is_array($collection) === true && array_key_exists('exportPdf', $collection) === true) {
-					$aggregate['contributions'][$i]['collections'][$j]['exportPdf'] = false;
-				}
+			foreach ($this->pdfExportKeys(contribution: $contribution) as $j) {
+				$aggregate['contributions'][$i]['collections'][$j]['exportPdf'] = false;
 			}
 		}
 
 		return $aggregate;
 	}//end withExportAvailability()
+
+	/**
+	 * The keys of a contribution's collections that declare `exportPdf`.
+	 *
+	 * @param mixed $contribution The contribution.
+	 *
+	 * @return array<int, int|string>
+	 */
+	private function pdfExportKeys(mixed $contribution): array {
+		$keys = [];
+		foreach ((array)($contribution['collections'] ?? []) as $j => $collection) {
+			if (is_array($collection) === true && array_key_exists('exportPdf', $collection) === true) {
+				$keys[] = $j;
+			}
+		}
+
+		return $keys;
+	}//end pdfExportKeys()
 
 	/**
 	 * Download the subject's own list as a PDF: the same authorisation and the same
