@@ -19,6 +19,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Repair;
 
 use OCA\Portaliq\Repair\InitializeDemoPortal;
+use OCA\Portaliq\Service\PortalObjectCounter;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
@@ -78,9 +79,11 @@ class InitializeDemoPortalGoldenTest extends TestCase {
 		);
 
 		$writer = $this->createMock(originalClassName: PortalObjectWriter::class);
-		$writer->method('countObjects')->willReturnCallback(
-			static function (string $register, string $schema, array $filters = []) use (&$log, $scenario): int {
-				$log[] = ['count', $register, $schema, $filters];
+		$counter = $this->createMock(originalClassName: PortalObjectCounter::class);
+		$counter->method('countObjects')->willReturnCallback(
+			static function (string $register, string $schema) use (&$log, $scenario): int {
+				// The recording names the filters too; a count runs without any.
+				$log[] = ['count', $register, $schema, []];
 				return (int)($scenario['existing'] ?? 0);
 			}
 		);
@@ -109,7 +112,7 @@ class InitializeDemoPortalGoldenTest extends TestCase {
 			$log[] = ['log.warning', $message];
 		});
 
-		(new InitializeDemoPortal(writer: $writer, appConfig: $config, logger: $logger))->run(output: $output);
+		(new InitializeDemoPortal(writer: $writer, appConfig: $config, logger: $logger, counter: $counter))->run(output: $output);
 
 		return $log;
 	}//end trace()
