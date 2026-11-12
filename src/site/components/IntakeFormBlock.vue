@@ -1474,6 +1474,17 @@ export default {
 			if (Object.hasOwn(TYPED_ANSWERS, field.type)) {
 				return TYPED_ANSWERS[field.type](field, this.values[field.name])
 			}
+			return this.plainAnswerText(field)
+		},
+
+		/**
+		 * An answer without a type of its own as the review shows it: the
+		 * option's label, a date as written in Dutch, or the text.
+		 *
+		 * @param {object} field The field.
+		 * @return {string} The answer.
+		 */
+		plainAnswerText(field) {
 			const value = String(this.values[field.name] ?? '')
 			const option = chosenOption(field, value)
 			if (option !== undefined) {
