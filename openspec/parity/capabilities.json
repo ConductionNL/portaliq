@@ -7485,7 +7485,7 @@
 		{
 			"id": "srch-detail-generic-properties",
 			"area": "search",
-			"name": "See a publication's full property set as a public detail page, with any URL-shaped field rendered as a clickable link.",
+			"name": "See every stored property of a publication in an \"All details\" table below its worded public page, with any URL-shaped value as a link.",
 			"portaliq": "partial",
 			"open-inwoner": "no",
 			"nl-portal": "no",
@@ -7502,13 +7502,15 @@
 				"open-forms": "no site search: the product serves forms only (src/openforms/forms/urls.py:20-23); search lives in the embedding website [reached on nothing] [read 2026-10-08 at 4.0.1]"
 			},
 			"built": {
-				"state": "built",
-				"evidence": "src/site/lib/publicationDetail.js:14-24 HIDDEN_PROPERTIES (only @self/id/title/name suppressed, everything else shown), :38-60 humaniseLabel() turns camelCase properties into reference-matching labels; src/site/components/PublicationDetailBlock.vue:51,78 renders a URL-shaped value as an <a href>",
+				"state": "specified",
+				"evidence": "Not built: decision 391 keeps the worded publication page and adds an \"All details\" table of the stored properties below it (change publication-page-all-details). Was: src/site/lib/publicationDetail.js:14-24 HIDDEN_PROPERTIES (only @self/id/title/name suppressed, everything else shown), :38-60 humaniseLabel() turns camelCase properties into reference-matching labels; src/site/components/PublicationDetailBlock.vue:51,78 renders a URL-shaped value as an <a href>",
 				"reachedOn": "/publicatie/<id> route (parent-route fallback in App.vue:939-972)",
 				"owner": "ConductionNL/portaliq",
 				"note": "This is a generic reflected property table, not a curated document/attachment download list; publicationDetail.js:20-24 records that 'hidden'/'downloads'/'rating' bookkeeping fields print too, only because the reference implementation does, which the same comment flags as arguably wrong.",
 				"origin": "code",
-				"change": "portal-public-search"
+				"change": "portal-public-search",
+				"requirement": "openspec/changes/publication-page-all-details/specs/portal-federated-search :: The publication page MUST end with an \"All details\" table of every stored property",
+				"plan": "openspec/changes/publication-page-all-details"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -10474,7 +10476,7 @@
 		{
 			"id": "dem-rm-house-style-ui",
 			"area": "theming",
-			"name": "Set the house style (colours, typography, component styles) from design tokens in an admin screen, with no code change.",
+			"name": "Give the portal the house style an administrator sets from design tokens in thematiq's admin screen, with no code change.",
 			"portaliq": "yes",
 			"open-inwoner": "partial",
 			"nl-portal": "partial",
@@ -10496,8 +10498,13 @@
 				"reachedOn": "admin: thematiq settings -> upload or import a token set; Portals -> a portal -> House style widget -> pick it -> Save; the public site renders with it",
 				"owner": "ConductionNL/portaliq",
 				"origin": "code",
-				"note": "Built in nldesign-theme-integration part 2 (tasks 2.3, 4.1-4.4). Colours, typography and component tokens are edited in thematiq, the one theming app; portaliq keeps no token editor of its own.",
-				"change": "nldesign-theme-integration"
+				"note": "Built in nldesign-theme-integration part 2 (tasks 2.3, 4.1-4.4). Colours, typography and component tokens are edited in thematiq, the one theming app; portaliq keeps no token editor of its own. Decision 391: editing the tokens is thematiq's capability (thematiq rows aut-token-editor and app-runtime-no-deploy); this row covers the portal taking that house style up.",
+				"change": "nldesign-theme-integration",
+				"requirement": [
+					"openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration :: A portal MUST adopt a token set that exists",
+					"openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration :: Portaliq MUST NOT ship design tokens or a theming mechanism",
+					"thematiq:openspec/specs/token-editor-ui :: Token Editor Panel"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
