@@ -590,6 +590,44 @@ class PortalIntakeControllerTest extends TestCase {
 	}//end testTheConfirmationMailIsSentRecordedAndNamedOnThePage()
 
 	/**
+	 * pq-f6: the answers are repeated only to an address this submission
+	 * proved with an e-mail code. An unproven address gets the neutral
+	 * confirmation (reference and moments, no answers), so an anonymous
+	 * submitter cannot aim their own text at somebody else's mailbox.
+	 *
+	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t05
+	 */
+	public function testTheAnswersGoOnlyToAProvenAddress(): void {
+		foreach (['unproven' => false, 'proven' => true] as $label => $proven) {
+			$render = $this->hostedForm();
+			$render['fields'][] = ['name' => 'mail', 'type' => 'email', 'verify' => $proven];
+			$render['settings']['confirmationMail'] = true;
+			$mailer = $this->double(\OCA\Portaliq\Service\Intake\FormConfirmationMailer::class, ['addressIn', 'send']);
+			$mailer->method('addressIn')->willReturn('Sanne@Example.nl');
+			$summaries = [];
+			$mailer->method('send')->willReturnCallback(
+				static function (string $email, array $site, string $reference, string $formName, array $summary) use (&$summaries): bool {
+					$summaries[] = $summary;
+					return true;
+				}
+			);
+			$verification = $this->createMock(\OCA\Portaliq\Service\Intake\PortalEmailVerification::class);
+			$verification->method('unverified')->willReturn([]);
+			$verification->method('record')->willReturn($proven ? [['address' => 'sanne@example.nl', 'verifiedAt' => '2026-11-09T10:00:00+00:00']] : []);
+			$controller = $this->controller(render: $render, mailer: $mailer, pay: ['verification' => $verification]);
+
+			$controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB', 'mail' => 'Sanne@Example.nl'], verifiedEmails: ['sanne@example.nl' => 'proof']);
+
+			$this->assertCount(1, $summaries, $label);
+			if ($proven === true) {
+				$this->assertNotSame([], $summaries[0], $label . ': the answers are repeated');
+			} else {
+				$this->assertSame([], $summaries[0], $label . ': no answers are repeated');
+			}
+		}
+	}//end testTheAnswersGoOnlyToAProvenAddress()
+
+	/**
 	 * No mail is sent when the form does not ask for one.
 	 *
 	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t05

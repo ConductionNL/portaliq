@@ -8,6 +8,7 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\PortalCollectionDocumentsController;
 use OCA\Portaliq\Service\CollectionDocuments;
 use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\PortalRowScreen;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\StreamResponse;
@@ -52,7 +53,7 @@ class PortalCollectionDocumentsControllerTest extends TestCase {
 		$l10n            = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
 
-		return new PortalCollectionDocumentsController($request, $registry, $session, $this->reader, $this->documents, $l10n);
+		return new PortalCollectionDocumentsController($request, $registry, $session, $this->documents, $l10n, new PortalRowScreen(reader: $this->reader));
 	}
 
 	private function collection(string $minTrust='substantial'): array {
@@ -118,4 +119,25 @@ class PortalCollectionDocumentsControllerTest extends TestCase {
 		$this->assertSame('d1', $data['documents'][0]['id']);
 
 	}//end testTheNamedReaderGetsTheListAndTheFile()
+
+	/**
+	 * pq-f2: the documents of a row prove the row through the same function
+	 * as `contribution#object`. A row of another branch that the restricted
+	 * session's scope still reads is the same 404 for the list and the file,
+	 * and the provider is never asked.
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T04
+	 */
+	public function testARowOfAnotherBranchHasNoDocuments(): void {
+		$controller = $this->controller(
+			subject: ['subjectRef' => 'p', 'trust' => 'substantial', 'organisation' => 'org-1', 'branch' => '000012345678', 'branchRestricted' => true],
+			collections: [$this->collection() + ['branchField' => 'vestiging']],
+			owned: ['id' => 'a1', 'vestiging' => '000087654321']
+		);
+		$this->documents->expects($this->never())->method($this->anything());
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->list('decidiq', 'agendaItem', 'a1')->getStatus());
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->open('decidiq', 'agendaItem', 'a1', 'd1')->getStatus());
+
+	}//end testARowOfAnotherBranchHasNoDocuments()
 }//end class

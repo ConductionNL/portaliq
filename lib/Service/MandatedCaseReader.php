@@ -36,6 +36,7 @@ use OCA\Portaliq\Service\Identity\PortalMandateService;
 use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
+use OCP\IRequest;
 
 /**
  * Reads one case under a named mandate, or nothing.
@@ -55,12 +56,16 @@ class MandatedCaseReader {
 	 * @param PortalCaseListReader $cases Lists the cases a mandate opens.
 	 * @param PortalMandateService $mandates The mandates the identity holds.
 	 * @param PortalPartyTreeResolver $tree How far a mandate reaches.
+	 * @param CaseTypeVisibility|null $caseTypes The case types the serving portal hides; absent hides nothing.
+	 * @param IRequest|null $request The request, for the serving portal.
 	 */
 	public function __construct(
 		private readonly PortalContributionRegistry $registry,
 		private readonly PortalCaseListReader $cases,
 		private readonly PortalMandateService $mandates,
 		private readonly PortalPartyTreeResolver $tree,
+		private readonly ?CaseTypeVisibility $caseTypes = null,
+		private readonly ?IRequest $request = null,
 	) {
 	}//end __construct()
 
@@ -101,10 +106,19 @@ class MandatedCaseReader {
 		}
 
 		$mandate['_entities'] = $scope['entities'];
+		// The same hidden case types "My cases" passes to the mandated list,
+		// so a case type the serving portal hides is not opened by its id
+		// either (portal-case-type-visibility REQ-OSC-002).
+		$hidden = [];
+		if ($this->request !== null) {
+			$hidden = ($this->caseTypes?->hiddenForRequest(request: $this->request, subject: $subject) ?? []);
+		}
+
 		$rows = $this->cases->listMandatedCases(
 			subject: $subject,
 			aggregate: $this->registry->aggregateFor($subject),
-			mandates: [$mandate]
+			mandates: [$mandate],
+			hiddenCaseTypes: $hidden
 		);
 
 		foreach ($rows as $row) {

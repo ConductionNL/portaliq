@@ -17,6 +17,7 @@ use OCA\Portaliq\Controller\CitizenCaseController;
 use OCA\Portaliq\Event\PortalClientWriteEvent;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\CaseTypeReader;
+use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\CitizenWritableSetResolver;
 use OCA\Portaliq\Service\CitizenWriteRecorder;
 use OCA\Portaliq\Service\CitizenCaseDocuments;
@@ -30,6 +31,7 @@ use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\PortalRowScreen;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
 use OCP\EventDispatcher\Event;
@@ -70,6 +72,8 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Portaliq\Service\PortalFieldProjector
  * @uses   \OCA\Portaliq\Service\CaseRowMarker
  * @uses   \OCA\Portaliq\Service\CaseStatusView
+ * @uses   \OCA\Portaliq\Service\PortalRowScreen
+ * @uses   \OCA\Portaliq\Service\VisibleFromGate
  *
  * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
  */
@@ -534,6 +538,76 @@ class CitizenCaseControllerTest extends TestCase {
 	}//end caseType()
 
 	/**
+	 * pq-f4: the citizen's OWN case of a type the serving portal hides does
+	 * not open on the case screen, nor its documents, nor a write: each
+	 * answers exactly what a foreign case answers.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 */
+	public function testAnOwnCaseOfAHiddenTypeAnswersLikeAForeignOne(): void {
+		$controller = $this->controller(fields: ['omschrijving' => 'verborgen'], collections: self::WITH_DOCUMENTS, published: self::PUBLISHED, caseTypes: $this->hidingCaseTypes());
+
+		$ownShow    = $controller->show('zaken', 'zaak', self::CASE_ID);
+		$foreignShow = $controller->show('zaken', 'zaak', self::OTHER_CASE_ID);
+		$this->assertSame(Http::STATUS_FORBIDDEN, $ownShow->getStatus());
+		$this->assertSame($foreignShow->getData(), $ownShow->getData());
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->document('zaken', 'zaak', self::CASE_ID, 'besluit-1')->getStatus());
+		$this->assertSame([], $this->streamed);
+
+		$this->assertSame('case-not-yours', $controller->amend('zaken', 'zaak', self::CASE_ID)->getData()['error']);
+		$this->assertSame('case-not-yours', $controller->withdraw('zaken', 'zaak', self::CASE_ID)->getData()['error']);
+		$this->assertSame([], $this->writes);
+
+		// A shown type still opens.
+		$shown = $this->controller(collections: self::WITH_DOCUMENTS, caseTypes: $this->hidingCaseTypes(hidden: ['type-9']))->show('zaken', 'zaak', self::CASE_ID);
+		$this->assertSame(Http::STATUS_OK, $shown->getStatus());
+	}//end testAnOwnCaseOfAHiddenTypeAnswersLikeAForeignOne()
+
+	/**
+	 * pq-f4: an own case the "My cases" collection still holds back
+	 * (`visibleFromField` in the future) does not open by its id either.
+	 *
+	 * @return void
+	 */
+	public function testAnOwnCaseStillWaitingForItsMomentDoesNotOpen(): void {
+		$waiting    = array_merge($this->cases()[self::CASE_ID], ['id' => 'zaak-3', 'zichtbaarVanaf' => '2999-01-01T00:00:00+00:00']);
+		$collection = [['id' => 'mijn-zaken', 'register' => 'zaken', 'schema' => 'zaak', 'kind' => 'cases', 'visibleFromField' => 'zichtbaarVanaf']];
+		$controller = $this->controller(collections: $collection, extraCases: ['zaak-3' => $waiting]);
+
+		$this->assertSame('case-not-yours', $controller->show('zaken', 'zaak', 'zaak-3')->getData()['error']);
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->document('zaken', 'zaak', 'zaak-3', 'besluit-1')->getStatus());
+		$this->assertSame(Http::STATUS_OK, $controller->show('zaken', 'zaak', self::CASE_ID)->getStatus());
+	}//end testAnOwnCaseStillWaitingForItsMomentDoesNotOpen()
+
+	/**
+	 * A serving portal hiding the given case types.
+	 *
+	 * @param array<int, string> $hidden The hidden type ids.
+	 *
+	 * @return CaseTypeVisibility
+	 */
+	private function hidingCaseTypes(array $hidden = ['type-1']): CaseTypeVisibility {
+		$caseTypes = $this->createMock(CaseTypeVisibility::class);
+		$caseTypes->method('hiddenForRequest')->willReturn($hidden);
+		$caseTypes->method('hiddenForCollection')->willReturnCallback(
+			static fn (IRequest $request, array $subject, array $collection): array => (($collection['kind'] ?? '') === 'cases' ? $hidden : [])
+		);
+		$caseTypes->method('rowIsHidden')->willReturnCallback(
+			static function (array $row, array $collection, array $hidden): bool {
+				$field = (string)($collection['caseTypeField'] ?? '');
+				$field = ($field === '' ? 'caseType' : $field);
+
+				return in_array((string)($row[$field] ?? ''), $hidden, true);
+			}
+		);
+
+		return $caseTypes;
+	}//end hidingCaseTypes()
+
+	/**
 	 * The update action dossiq would contribute.
 	 *
 	 * @return array<string, mixed>
@@ -602,6 +676,8 @@ class CitizenCaseControllerTest extends TestCase {
 	 * @param array<int, array<string, mixed>> $collections The contribution's collections.
 	 * @param array<int, array<string, mixed>>|null $releasedFiles What the released
 	 *        listing answers; null means the same as $existingFiles.
+	 * @param CaseTypeVisibility|null $caseTypes The serving portal's hidden case types; null hides nothing.
+	 * @param array<string, array<string, mixed>> $extraCases Cases added to the fixture.
 	 */
 	private function controller(
 		array|null $subject = self::SUBJECT,
@@ -618,9 +694,11 @@ class CitizenCaseControllerTest extends TestCase {
 		array $published = [],
 		?MandatedCaseReader $mandatedCases = null,
 		?array $actingMandate = null,
+		?CaseTypeVisibility $caseTypes = null,
+		array $extraCases = [],
 	): CitizenCaseController {
 		$action = ($action ?? $this->action());
-		$cases = $this->cases();
+		$cases = array_merge($this->cases(), $extraCases);
 
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer token');
@@ -730,6 +808,7 @@ class CitizenCaseControllerTest extends TestCase {
 			$l10n,
 			$this->createMock(LoggerInterface::class),
 			$this->documents(fileReader: $fileReader, published: $published),
+			new PortalRowScreen(reader: $reader, caseTypes: $caseTypes),
 			$mandatedCases
 		);
 	}//end controller()

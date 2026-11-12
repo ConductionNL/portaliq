@@ -8,6 +8,7 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\PortalTimelineController;
 use OCA\Portaliq\Service\MandatedCaseReader;
 use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\PortalRowScreen;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PortalTimelineReader;
 use OCP\AppFramework\Http;
@@ -84,6 +85,32 @@ class PortalTimelineControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->show(register: 'dossiq', schema: 'case', id: 'someone-elses')->getStatus());
 
 	}//end testAForeignOrAbsentCaseIsOne404AndTheProviderIsNeverAsked()
+
+	/**
+	 * pq-f2: the timeline proves its row through the same function as
+	 * `contribution#object`. A case of another branch that the restricted
+	 * session's scope still reads, and a case still waiting for its moment,
+	 * are the same 404 and the provider is never asked.
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T04
+	 */
+	public function testACaseTheListWouldNotShowHasNoTimeline(): void {
+		$otherBranch = $this->controller(
+			subject: self::SUBJECT + ['branch' => '000012345678', 'branchRestricted' => true],
+			collection: self::COLLECTION + ['branchField' => 'vestiging'],
+			owned: ['id' => 'case-1', 'vestiging' => '000087654321']
+		);
+		$this->doubles['timelines']->expects($this->never())->method('entries');
+		$this->assertSame(Http::STATUS_NOT_FOUND, $otherBranch->show(register: 'dossiq', schema: 'case', id: 'case-1')->getStatus());
+
+		$waiting = $this->controller(
+			collection: self::COLLECTION + ['visibleFromField' => 'releaseAt'],
+			owned: ['id' => 'case-1', 'releaseAt' => '2999-01-01T00:00:00+00:00']
+		);
+		$this->doubles['timelines']->expects($this->never())->method('entries');
+		$this->assertSame(Http::STATUS_NOT_FOUND, $waiting->show(register: 'dossiq', schema: 'case', id: 'case-1')->getStatus());
+
+	}//end testACaseTheListWouldNotShowHasNoTimeline()
 
 	public function testNoSessionIsA401(): void {
 		$controller = $this->controller(subject: null);
@@ -256,7 +283,7 @@ class PortalTimelineControllerTest extends TestCase {
 
 		$this->doubles = ['reader' => $reader, 'timelines' => $timelines];
 
-		return new PortalTimelineController($request, $registry, $session, $reader, $timelines, null, $mandatedCases);
+		return new PortalTimelineController($request, $registry, $session, $timelines, new PortalRowScreen(reader: $reader), null, $mandatedCases);
 
 	}//end controller()
 

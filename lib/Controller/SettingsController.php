@@ -204,9 +204,16 @@ class SettingsController extends Controller {
 	 * Forces a fresh import regardless of version, auto-configuring
 	 * all schema and register IDs from the import result.
 	 *
-	 * @NoCSRFRequired
+	 * CSRF is checked: the forced import resets schema authorization to the
+	 * seed, so a cross-site form POST in an admin's browser must not reach it.
+	 * The non-browser callers (tests/e2e/ci-seed.sh, the Playwright admin
+	 * suite) use Basic auth with `OCS-APIRequest: true`, which passes the check.
 	 *
 	 * @return JSONResponse
+	 *
+	 * @auth admin-only Forced re-import that resets schema authorization to the
+	 *       seed (REQ-CFG-003). Nextcloud expresses admin-only as the absence of
+	 *       an opt-out attribute, so this tag is the declaration.
 	 *
 	 * @spec openspec/specs/settings-management/spec.md#REQ-CFG-003
 	 */

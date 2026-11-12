@@ -196,6 +196,7 @@ class ContributionControllerFileFieldTest extends TestCase {
 
 		$reader = $this->createMock(PortalObjectReader::class);
 		$reader->method('resolveScopeValue')->willReturn('learner-1');
+		$reader->method('readObject')->willReturnCallback(static fn (string $register, string $schema, string $scopeField, string $subjectRef, string $id): array => ['id' => $id]);
 
 		return new ContributionController(
 			$request,

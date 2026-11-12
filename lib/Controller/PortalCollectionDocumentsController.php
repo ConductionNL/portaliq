@@ -29,7 +29,7 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\CollectionDocuments;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\PortalRowScreen;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -59,17 +59,17 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 	 * @param IRequest $request The request.
 	 * @param PortalContributionRegistry $registry The subject's contributions.
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalObjectReader $reader The scoped single-object read.
 	 * @param CollectionDocuments $documents Lists and opens the documents.
 	 * @param IL10N $l10n The sentence a refused opening is given with.
+	 * @param PortalRowScreen $rows The shared per-row proof, with the hidden-case-type gate; required so no route builds one without it.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalContributionRegistry $registry,
 		private readonly PortalSessionService $session,
-		private readonly PortalObjectReader $reader,
 		private readonly CollectionDocuments $documents,
 		private readonly IL10N $l10n,
+		private readonly PortalRowScreen $rows,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -172,18 +172,14 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 			return $notFound;
 		}
 
-		$owned = $this->reader->readObject(
-			register: $register,
-			schema: $schema,
-			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			id: $id,
-			organisation: (string)($subject['organisation'] ?? ''),
-			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
-			contributingApp: $match['app'],
-			via: ($collection['via'] ?? null),
-			audience: (string)($subject['audience'] ?? ''),
-			fields: ($collection['fields'] ?? null)
+		// The same proof as `contribution#object`: the scoped read plus the
+		// branch, waiting-row and hidden-case-type gates.
+		$owned = $this->rowScreen()->row(
+			request: $this->request,
+			subject: $subject,
+			collection: $collection,
+			app: $match['app'],
+			target: ['register' => $register, 'schema' => $schema, 'id' => $id]
 		);
 		if ($owned === null) {
 			return $notFound;
@@ -191,6 +187,17 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 
 		return ['subject' => $subject, 'app' => $match['app'], 'documents' => $documents];
 	}//end proven()
+
+	/**
+	 * The shared per-row proof (PortalRowScreen): the scoped read plus the
+	 * branch, waiting-row and hidden-case-type gates `contribution#object`
+	 * applies. Injected and never optional, because it is a guard.
+	 *
+	 * @return PortalRowScreen
+	 */
+	private function rowScreen(): PortalRowScreen {
+		return $this->rows;
+	}//end rowScreen()
 
 	/**
 	 * The subject's own collection for a register and schema, with its app.

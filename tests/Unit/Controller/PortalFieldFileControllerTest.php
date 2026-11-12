@@ -10,6 +10,7 @@ use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalFileFieldPolicy;
 use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\PortalRowScreen;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -245,6 +246,48 @@ class PortalFieldFileControllerTest extends TestCase {
 	}//end testForeignObjectIs404BeforeAnyAttach()
 
 	/**
+	 * pq-f2: owning the row through the action is not enough. A
+	 * branch-restricted session gets the same 404 for a row of another branch,
+	 * and for any row when nothing declares which branch a row belongs to;
+	 * nothing is attached.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T04
+	 */
+	public function testABranchRestrictedSessionUploadsOnlyIntoItsOwnBranch(): void {
+		$subject = self::SUBJECT + ['branch' => '000012345678', 'branchRestricted' => true];
+		$cases   = [
+			'another branch' => [$this->action() + ['branchField' => 'vestiging'], $this->submission() + ['vestiging' => '000087654321']],
+			'no branchField' => [$this->action(), $this->submission()],
+		];
+		foreach ($cases as $label => [$action, $row]) {
+			$reader = $this->createMock(PortalObjectReader::class);
+			$reader->method('readObject')->willReturn($row);
+			$fileWriter = $this->createMock(PortalFileWriter::class);
+			$fileWriter->expects($this->never())->method('attachFile');
+
+			$response = $this->controller(actions: [$action], reader: $reader, fileWriter: $fileWriter, subject: $subject)
+				->upload('learniq', 'submission', 'submission-1', 'attachmentRefs');
+
+			$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus(), $label);
+		}
+
+		// The session's own branch still uploads.
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('readObject')->willReturn($this->submission() + ['vestiging' => '000012345678']);
+		$fileWriter = $this->createMock(PortalFileWriter::class);
+		$fileWriter->method('attachFile')->willReturn(['id' => 4711, 'name' => 'essay.txt', 'size' => 15]);
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('updateObject')->willReturn(['id' => 'submission-1']);
+
+		$response = $this->controller(actions: [$this->action() + ['branchField' => 'vestiging']], reader: $reader, writer: $writer, fileWriter: $fileWriter, subject: $subject)
+			->upload('learniq', 'submission', 'submission-1', 'attachmentRefs');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+	}//end testABranchRestrictedSessionUploadsOnlyIntoItsOwnBranch()
+
+	/**
 	 * An update action whose claim does not resolve is the same 404.
 	 *
 	 * @return void
@@ -406,16 +449,19 @@ class PortalFieldFileControllerTest extends TestCase {
 		$schemaReader = $this->createMock(PortalSchemaReader::class);
 		$schemaReader->method('readSchema')->willReturn(['properties' => ['attachmentRefs' => ['type' => 'array']]]);
 
+		$reader = ($reader ?? $this->createMock(PortalObjectReader::class));
+
 		return new PortalFieldFileController(
 			$request,
 			$registry,
 			$session,
-			($reader ?? $this->createMock(PortalObjectReader::class)),
+			$reader,
 			($writer ?? $this->createMock(PortalObjectWriter::class)),
 			($fileWriter ?? $this->createMock(PortalFileWriter::class)),
 			new PortalFileFieldPolicy($time, $schemaReader),
 			($auditor ?? $this->createMock(AuditTrailService::class)),
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			new PortalRowScreen(reader: $reader)
 		);
 	}//end controller()
 }//end class

@@ -43,7 +43,6 @@ use OCA\Portaliq\Contribution\CitizenWriteActionFinder;
 use OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Event\PortalClientWriteEvent;
-use OCA\Portaliq\Service\Branch\PortalBranchScope;
 use OCA\Portaliq\Service\CitizenCaseDocuments;
 use OCA\Portaliq\Service\CitizenCaseProjection;
 use OCA\Portaliq\Service\CitizenWritableSetResolver;
@@ -57,6 +56,7 @@ use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\PortalRowScreen;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -110,10 +110,10 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 * @param IL10N $l10n The sentences a refusal is given with.
 	 * @param LoggerInterface $logger Records the cause of a translated failure.
 	 * @param CitizenCaseDocuments $documents Lists and opens the documents on the case.
+	 * @param PortalRowScreen $rows The per-row proof: the waiting-row and hidden-case-type gates the case list applies.
 	 * @param MandatedCaseReader|null $mandatedCases Reads a case listed under a
 	 *                                               mandate (cases-my-cases-page).
 	 *                                               Absent opens only own cases.
-	 * @param PortalBranchScope $branches The branch filter of signin-eherkenning-branch.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -132,8 +132,8 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 		private readonly CitizenCaseDocuments $documents,
+		private readonly PortalRowScreen $rows,
 		private readonly ?MandatedCaseReader $mandatedCases = null,
-		private readonly PortalBranchScope $branches = new PortalBranchScope(),
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -546,8 +546,21 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			audience: (string)($subject['audience'] ?? '')
 		);
 		// Change signin-eherkenning-branch D2: a branch session changes only its
-		// branch's cases, and answers the same as for a case not its own.
-		if ($case === null || $this->branches->admits(subject: $subject, collection: $action, row: $case) === false) {
+		// branch's cases, and answers the same as for a case not its own. And
+		// only a case the "My cases" list would show: a case of a type the
+		// serving portal hides, or one still waiting for its moment, does not
+		// open (nor its documents, nor a write) by its id either
+		// (portal-case-type-visibility REQ-OSC-002).
+		if ($case === null
+			|| $this->rows->admitsOwnCase(
+				request: $this->request,
+				subject: $subject,
+				aggregate: $this->registry->aggregateFor($subject),
+				match: ['action' => $action, 'app' => $match['app']],
+				target: ['register' => $register, 'schema' => $schema, 'id' => $id],
+				row: $case
+			) === false
+		) {
 			return $this->refuse(
 				message: $this->l10n->t('This case is not yours.'),
 				slug: 'case-not-yours',

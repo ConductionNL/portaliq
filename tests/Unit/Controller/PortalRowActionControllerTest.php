@@ -11,6 +11,7 @@ use OCA\Portaliq\Controller\PortalRowActionController;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\PortalRowScreen;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
 use OCP\Http\Client\IResponse;
@@ -137,13 +138,16 @@ class PortalRowActionControllerTest extends TestCase {
 		$session = $this->createMock(PortalSessionService::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 
+		$reader = ($reader ?? $this->createMock(PortalObjectReader::class));
+
 		return new PortalRowActionController(
 			$request,
 			$registry,
 			$session,
-			($reader ?? $this->createMock(PortalObjectReader::class)),
+			$reader,
 			($forwarder ?? $this->forwarderThatMustNotForward()),
 			($auditor ?? $this->createMock(AuditTrailService::class)),
+			new PortalRowScreen(reader: $reader),
 		);
 	}//end controller()
 
@@ -654,7 +658,7 @@ class PortalRowActionControllerTest extends TestCase {
 		$session = $this->createMock(PortalSessionService::class);
 		$session->method('resolveFromBearer')->willReturn(self::SUBJECT);
 
-		return new PortalRowActionController($request, $registry, $session, $reader, $forwarder, $this->createMock(AuditTrailService::class));
+		return new PortalRowActionController($request, $registry, $session, $reader, $forwarder, $this->createMock(AuditTrailService::class), new PortalRowScreen(reader: $reader));
 	}//end dossierController()
 
 	/**
@@ -776,7 +780,7 @@ class PortalRowActionControllerTest extends TestCase {
 		$session = $this->createMock(PortalSessionService::class);
 		$session->method('resolveFromBearer')->willReturn(self::SUBJECT);
 
-		return new PortalRowActionController($request, $registry, $session, $reader, $forwarder, $this->createMock(AuditTrailService::class));
+		return new PortalRowActionController($request, $registry, $session, $reader, $forwarder, $this->createMock(AuditTrailService::class), new PortalRowScreen(reader: $reader));
 	}//end questionController()
 
 	/**
@@ -826,4 +830,36 @@ class PortalRowActionControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_CONFLICT, $result->getStatus());
 	}//end testAnAttachedActionOutsideItsRowWhenIs409()
+
+	/**
+	 * pq-f2: a branch-restricted session's own scope reads a row of another
+	 * branch, and the row action is still one 404 with nothing forwarded: the
+	 * same proof as `contribution#object`. A row still waiting for its moment
+	 * is refused the same way.
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T04
+	 */
+	public function testARowTheListWouldNotShowGetsNoRowAction(): void {
+		$cases = [
+			'another branch' => [
+				self::SUBJECT + ['branch' => '000012345678', 'branchRestricted' => true],
+				$this->salesInvoices(['branchField' => 'vestiging']),
+				$this->invoice() + ['vestiging' => '000087654321'],
+			],
+			'still waiting' => [
+				self::SUBJECT,
+				$this->salesInvoices(['visibleFromField' => 'issueFrom']),
+				$this->invoice() + ['issueFrom' => '2999-01-01T00:00:00+00:00'],
+			],
+		];
+		foreach ($cases as $label => [$subject, $collection, $row]) {
+			$reader = $this->createMock(PortalObjectReader::class);
+			$reader->method('readObject')->willReturn($row);
+
+			$result = $this->controller(collection: $collection, action: $this->pay(), reader: $reader, subject: $subject)
+				->forward('shillinq', 'ARInvoice', self::INVOICE_ID, 'pay');
+
+			$this->assertSame(Http::STATUS_NOT_FOUND, $result->getStatus(), $label);
+		}
+	}//end testARowTheListWouldNotShowGetsNoRowAction()
 }//end class

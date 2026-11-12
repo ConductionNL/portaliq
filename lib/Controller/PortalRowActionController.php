@@ -46,6 +46,7 @@ use OCA\Portaliq\Contribution\RowIdentifier;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\PortalRowScreen;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\RequiredFieldsGuard;
 use OCP\AppFramework\Controller;
@@ -77,6 +78,7 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	 * @param PortalObjectReader $reader The scoped single-object read.
 	 * @param PortalActionForwarder $forwarder The signed server-to-server forward.
 	 * @param AuditTrailService $auditor Records the forward.
+	 * @param PortalRowScreen $rows The shared per-row proof, with the hidden-case-type gate; required so no route builds one without it.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -85,6 +87,7 @@ class PortalRowActionController extends Controller implements PortalProtected {
 		private readonly PortalObjectReader $reader,
 		private readonly PortalActionForwarder $forwarder,
 		private readonly AuditTrailService $auditor,
+		private readonly PortalRowScreen $rows,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -402,8 +405,10 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	}//end trustAndEndpointHold()
 
 	/**
-	 * The row when the subject's collection scope reads it, else null (one
-	 * 404 for a foreign and a missing row alike).
+	 * The row when the subject's collection shows it, else null (one 404 for
+	 * a foreign, missing, waiting, other-branch or hidden row alike): the same
+	 * proof as `contribution#object`, so a write is never forwarded for a row
+	 * the subject could not open.
 	 *
 	 * @param array{collection: array<string, mixed>, action: array<string, mixed>, app: string, rowApp?: string} $match The authorised row action.
 	 * @param array<string, mixed> $subject The resolved subject.
@@ -412,22 +417,25 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	 * @return array<string, mixed>|null
 	 */
 	private function ownedRow(array $match, array $subject, array $target): ?array {
-		$collection = $match['collection'];
-
-		return $this->reader->readObject(
-			register: $target['register'],
-			schema: $target['schema'],
-			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			id: $target['id'],
-			organisation: (string)($subject['organisation'] ?? ''),
-			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
-			contributingApp: ($match['rowApp'] ?? $match['app']),
-			via: ($collection['via'] ?? null),
-			audience: (string)($subject['audience'] ?? ''),
-			fields: ($collection['fields'] ?? null)
+		return $this->rowScreen()->row(
+			request: $this->request,
+			subject: $subject,
+			collection: $match['collection'],
+			app: ($match['rowApp'] ?? $match['app']),
+			target: $target
 		);
 	}//end ownedRow()
+
+	/**
+	 * The shared per-row proof (PortalRowScreen): the scoped read plus the
+	 * branch, waiting-row and hidden-case-type gates `contribution#object`
+	 * applies. Injected and never optional, because it is a guard.
+	 *
+	 * @return PortalRowScreen
+	 */
+	private function rowScreen(): PortalRowScreen {
+		return $this->rows;
+	}//end rowScreen()
 
 	/**
 	 * The forwarded body: the action's `fields` whitelist of the request

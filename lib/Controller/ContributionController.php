@@ -81,6 +81,7 @@ use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\Tenancy\SchemaTenancy;
 use OCA\Portaliq\Service\PortalTaskGateway;
 use OCA\Portaliq\Service\VisibleFromGate;
+use OCA\Portaliq\Service\PortalRowScreen;
 use OCA\Portaliq\Service\PortalUserDisplayNames;
 use OCA\Portaliq\Service\PortalRateLimit;
 use OCA\Portaliq\Service\RequiredFieldsGuard;
@@ -563,7 +564,8 @@ class ContributionController extends Controller implements PortalProtected {
 			contributingApp: $match['app'],
 			subject: $subject
 		);
-		if ($scopeValue === null || $scopeValue === '') {
+		$target = ['register' => $register, 'schema' => $schema, 'id' => $id];
+		if ($this->inboxTargetRefused(scopeValue: $scopeValue, subject: $subject, match: $match, target: $target) === true) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
@@ -638,7 +640,8 @@ class ContributionController extends Controller implements PortalProtected {
 			contributingApp: $match['app'],
 			subject: $subject
 		);
-		if ($scopeValue === null || $scopeValue === '') {
+		$target = ['register' => $register, 'schema' => $schema, 'id' => $id];
+		if ($this->inboxTargetRefused(scopeValue: $scopeValue, subject: $subject, match: $match, target: $target) === true) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
@@ -755,18 +758,45 @@ class ContributionController extends Controller implements PortalProtected {
 	}//end createReply()
 
 	/**
-	 * The resident's inbox message, read through the scope of its collection.
+	 * Whether a per-message inbox write (markRead, deleteMessage) answers 404
+	 * before writing: the ownership scope did not resolve, or the inbox list
+	 * still holds the message back (its collection's `visibleFromField` lies
+	 * in the future). Only a collection that declares the field is read; the
+	 * writer re-proves ownership either way.
+	 *
+	 * @param string|null $scopeValue The resolved ownership scope value.
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param array<string, mixed> $match The authorised inbox collection and its app.
+	 * @param array{register: string, schema: string, id: string} $target The requested register, schema and message id.
+	 *
+	 * @return bool True when the write must answer 404.
+	 */
+	private function inboxTargetRefused(?string $scopeValue, array $subject, array $match, array $target): bool {
+		if ($scopeValue === null || $scopeValue === '') {
+			return true;
+		}
+
+		if ((string)($match['collection']['visibleFromField'] ?? '') === '') {
+			return false;
+		}
+
+		return $this->readReplyMessage(subject: $subject, match: $match, target: $target) === null;
+	}//end inboxTargetRefused()
+
+	/**
+	 * The resident's inbox message, read through the scope of its collection,
+	 * past the waiting-row gate the inbox list applies (`visibleFromField`).
 	 *
 	 * @param array<string, mixed> $subject The resolved subject.
 	 * @param array<string, mixed> $match The authorised inbox collection and its app.
 	 * @param array{register: string, schema: string, id: string} $target The requested register, schema and message id.
 	 *
-	 * @return array<string, mixed>|null The message, or null when it is not the resident's or not there.
+	 * @return array<string, mixed>|null The message, or null when it is not the resident's, not there or still waiting.
 	 */
 	private function readReplyMessage(array $subject, array $match, array $target): ?array {
 		$collection = $match['collection'];
 
-		return $this->reader->readObject(
+		$message = $this->reader->readObject(
 			register: $target['register'],
 			schema: $target['schema'],
 			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
@@ -779,6 +809,11 @@ class ContributionController extends Controller implements PortalProtected {
 			audience: (string)($subject['audience'] ?? ''),
 			fields: ($collection['fields'] ?? null)
 		);
+		if ($message === null || (new VisibleFromGate())->rows(rows: [$message], collection: $collection) === []) {
+			return null;
+		}
+
+		return $message;
 	}//end readReplyMessage()
 
 	/**
@@ -1165,37 +1200,27 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t03
 	 */
 	private function screenRow(array $subject, array $match, string $register, string $schema, string $id): ?array {
-		$collection = $match['collection'];
-		if ($this->withoutTenant(subject: $subject, schema: $schema) === true) {
-			return null;
-		}
-
-		$object = $this->reader->readObject(
-			register: $register,
-			schema: $schema,
-			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			id: $id,
-			organisation: (string)($subject['organisation'] ?? ''),
-			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
-			contributingApp: $match['app'],
-			via: ($collection['via'] ?? null),
-			audience: (string)($subject['audience'] ?? ''),
-			fields: ($collection['fields'] ?? null),
-			filter: (array)($collection['filter'] ?? [])
+		return $this->rowScreen()->row(
+			request: $this->request,
+			subject: $subject,
+			collection: $match['collection'],
+			app: $match['app'],
+			target: ['register' => $register, 'schema' => $schema, 'id' => $id]
 		);
-
-		$hidden = ($this->caseTypes?->hiddenForCollection(request: $this->request, subject: $subject, collection: $collection) ?? []);
-		if ($object === null
-			|| (new VisibleFromGate())->rows(rows: [$object], collection: $collection) === []
-			|| $this->branches->admits(subject: $subject, collection: $collection, row: $object) === false
-			|| $this->caseTypes?->rowIsHidden(row: $object, collection: $collection, hidden: $hidden) === true
-		) {
-			return null;
-		}
-
-		return $object;
 	}//end screenRow()
+
+	/**
+	 * The shared per-row proof, over this controller's own reader and gates.
+	 *
+	 * Built here rather than injected so every per-object route of this
+	 * controller proves its row through the same function as object(), and the
+	 * gates cannot drift per route.
+	 *
+	 * @return PortalRowScreen
+	 */
+	private function rowScreen(): PortalRowScreen {
+		return new PortalRowScreen(reader: $this->reader, caseTypes: $this->caseTypes, branches: $this->branches);
+	}//end rowScreen()
 
 	/**
 	 * Attach an uploaded file to an object the subject owns (the file-upload
@@ -1243,21 +1268,10 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
-		// Re-verify ownership with the full scope resolution — 404 (no oracle)
-		// when the object is not the subject's or does not exist.
-		$owned = $this->reader->readObject(
-			register: $register,
-			schema: $schema,
-			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			id: $id,
-			organisation: (string)($subject['organisation'] ?? ''),
-			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
-			contributingApp: $match['app'],
-			via: ($collection['via'] ?? null),
-			audience: (string)($subject['audience'] ?? ''),
-			fields: ($collection['fields'] ?? null)
-		);
+		// Re-verify ownership with the full scope resolution, and the branch,
+		// waiting-row and hidden-case-type gates object() applies — 404 (no
+		// oracle) when the subject may not see the object or it does not exist.
+		$owned = $this->screenRow(subject: $subject, match: $match, register: $register, schema: $schema, id: $id);
 		if ($owned === null) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
@@ -1369,22 +1383,11 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		// Re-verify ownership with the full scope resolution BEFORE the file is
-		// ever resolved — a foreign or non-existent object never reaches the
-		// file layer.
-		$owned = $this->reader->readObject(
-			register: $register,
-			schema: $schema,
-			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			id: $id,
-			organisation: (string)($subject['organisation'] ?? ''),
-			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
-			contributingApp: $match['app'],
-			via: ($collection['via'] ?? null),
-			audience: (string)($subject['audience'] ?? ''),
-			fields: ($collection['fields'] ?? null)
-		);
+		// Re-verify ownership with the full scope resolution, and the gates
+		// object() applies, BEFORE the file is ever resolved — a foreign,
+		// non-existent, waiting, other-branch or hidden object never reaches
+		// the file layer.
+		$owned = $this->screenRow(subject: $subject, match: $match, register: $register, schema: $schema, id: $id);
 		if ($owned === null) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
@@ -1942,6 +1945,13 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
+		// The row must be one the subject's own collection shows (pq-f2). Same
+		// 404 as a foreign id, and nothing is written.
+		$target = ['register' => $register, 'schema' => $schema, 'id' => $id];
+		if ($this->visibleForUpdate(subject: $subject, match: $match, target: $target, scopeValue: $scopeValue) === false) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
 		$data = $this->withoutFileFields(action: $action, data: $this->whitelist(fields: (array)($action['fields'] ?? [])));
 
 		$data = $this->withTransitionSet(action: $action, data: $data);
@@ -1998,6 +2008,44 @@ class ContributionController extends Controller implements PortalProtected {
 
 		return new JSONResponse(['object' => $updated]);
 	}//end update()
+
+	/**
+	 * Whether the row an update targets is one the subject's own collection
+	 * shows: the branch, waiting-row and hidden-case-type gates of object()
+	 * hold for a write too. The read is the one the writer re-checks
+	 * ownership with, by the action's scope field and the resolved value.
+	 *
+	 * @param array<string, mixed>                                $subject    The resolved subject.
+	 * @param array{action: array<string, mixed>, app: string}    $match      The authorised update action.
+	 * @param array{register: string, schema: string, id: string} $target     The register, schema and id.
+	 * @param string                                              $scopeValue The resolved ownership scope value.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t03
+	 */
+	private function visibleForUpdate(array $subject, array $match, array $target, string $scopeValue): bool {
+		$owned = $this->reader->readObject(
+			register: $target['register'],
+			schema: $target['schema'],
+			scopeField: (string)($match['action']['scopeField'] ?? 'subjectRef'),
+			subjectRef: $scopeValue,
+			id: $target['id'],
+			organisation: (string)($subject['organisation'] ?? '')
+		);
+		if ($owned === null) {
+			return false;
+		}
+
+		return $this->rowScreen()->admitsForAction(
+			request: $this->request,
+			subject: $subject,
+			aggregate: $this->registry->aggregateFor($subject),
+			match: $match,
+			target: $target,
+			row: $owned
+		);
+	}//end visibleForUpdate()
 
 	/**
 	 * Find a `type: update` action for (register, schema) in the subject's

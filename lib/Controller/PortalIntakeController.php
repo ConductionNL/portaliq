@@ -35,7 +35,6 @@ use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Service\Identity\PortalChallengeService;
 use OCA\Portaliq\Service\Intake\DestinationIntake;
 use OCA\Portaliq\Service\Intake\DestinationLookup;
-use OCA\Portaliq\Service\Intake\DestinationMapping;
 use OCA\Portaliq\Service\Intake\FormConfirmationMailer;
 use OCA\Portaliq\Service\Intake\FormStatements;
 use OCA\Portaliq\Service\Intake\PortalAddressLookup;
@@ -55,6 +54,7 @@ use OCA\Portaliq\Service\Intake\PortalIntakeConfirmation;
 use OCA\Portaliq\Service\Intake\PortalIntakePayments;
 use OCA\Portaliq\Service\Intake\PortalIntakeQueue;
 use OCA\Portaliq\Service\Intake\PortalSubmissionChecks;
+use OCA\Portaliq\Service\Intake\PortalSubmissionGate;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
@@ -83,6 +83,13 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @var PortalSubmissionChecks
 	 */
 	private readonly PortalSubmissionChecks $checks;
+
+	/**
+	 * The pipeline every submit route runs: submittable, challenge, checks.
+	 *
+	 * @var PortalSubmissionGate
+	 */
+	private readonly PortalSubmissionGate $gate;
 
 	/**
 	 * Takes the payment for a submission and reads its state.
@@ -157,6 +164,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			decision: $decision,
 			emailVerification: $emailVerification
 		);
+		$this->gate         = new PortalSubmissionGate(challenge: $challenge, checks: $this->checks);
 		$this->payments     = new PortalIntakePayments(
 			lookup: $lookup,
 			fees: $fees,
@@ -314,27 +322,15 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return $refusal;
 		}
 
-		if (($render['settings']['challenge'] ?? false) === true) {
-			$accepted = $this->challenge->accepts(
-				site: $site,
-				surface: 'form',
-				submission: $answers,
-				nonce: $nonce,
-				solution: $solution,
-				expiresAt: $expiresAt,
-				signature: $signature
-			);
-			if ($accepted === false) {
-				return new JSONResponse(['error' => 'challenge_failed'], Http::STATUS_FORBIDDEN);
-			}
-		}
-
-		$prepared = $this->checks->prepare(
-			render: $render,
+		// The same pipeline the embedded frame's submit runs (PortalSubmissionGate),
+		// so the two routes cannot drift apart.
+		$prepared = $this->gate->admit(
 			site: $site,
+			render: $render,
 			route: $route,
 			answers: $answers,
 			subject: $subject,
+			challenge: ['nonce' => $nonce, 'solution' => $solution, 'expiresAt' => $expiresAt, 'signature' => $signature],
 			statements: $statements,
 			verifiedEmails: $verifiedEmails
 		);
@@ -347,14 +343,13 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			render: $render,
 			answers: $prepared['answers'],
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			server: [
-				'portal' => (string)($site['slug'] ?? ''),
-				'origin' => (string)$this->request->getHeader('Origin'),
-				'statements' => $prepared['statements'],
-				'decisions' => $prepared['decisions'],
-				'verifiedEmails' => $prepared['verified'],
-				'fieldMeta' => (new DestinationMapping())->fieldMeta(computed: $prepared['computed']),
-			],
+			server: array_merge(
+				[
+					'portal' => (string)($site['slug'] ?? ''),
+					'origin' => (string)$this->request->getHeader('Origin'),
+				],
+				$prepared['server']
+			),
 			idempotencyKey: (string)$this->request->getHeader('Idempotency-Key')
 		);
 		if ($submitted === null || $submitted['ok'] === false) {
@@ -365,7 +360,14 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		$answer    = $submitted['answer'];
 		$reference = (string)($answer['reference'] ?? '');
 		$moments   = (array)($answer['confirmation'] ?? []);
-		$mailedTo  = $this->confirmation->send(site: $site, render: $render, answers: $prepared['answers'], reference: $reference, moments: $moments);
+		$mailedTo  = $this->confirmation->send(
+			site: $site,
+			render: $render,
+			answers: $prepared['answers'],
+			reference: $reference,
+			moments: $moments,
+			verified: array_column((array)($prepared['server']['verifiedEmails'] ?? []), 'address')
+		);
 
 		return new JSONResponse(
 			array_merge(
@@ -535,10 +537,9 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @return JSONResponse|null
 	 */
 	private function submitRefusal(array $site, array $binding, array $render, ?array $subject): ?JSONResponse {
-		if (($render['resolvesToNoForm'] ?? false) === true || ($render['kind'] ?? '') === PortalFormBindingResolver::KIND_EXTERNAL) {
-			// An external intake is filled in at its own host; the portal has
-			// nothing to accept here.
-			return new JSONResponse(['error' => 'form_not_submittable'], Http::STATUS_FORBIDDEN);
+		$refusal = $this->gate->notSubmittable(render: $render);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		return $this->signInRefusal(site: $site, binding: $binding, render: $render, subject: $subject);

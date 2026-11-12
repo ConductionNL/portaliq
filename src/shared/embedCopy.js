@@ -15,6 +15,8 @@ export const EMBED_REFUSALS = {
 	origin_not_allowed: 'Dit formulier mag niet op deze website worden getoond.',
 	form_not_published: 'Dit formulier is op dit moment niet beschikbaar.',
 	identified_intake: 'Voor deze aanvraag moet u eerst inloggen.',
+	portal_steps_required:
+		'Deze aanvraag kunt u alleen op ons eigen portaal invullen.',
 }
 
 /** Said when the controller refuses for a reason nobody has written copy for. */

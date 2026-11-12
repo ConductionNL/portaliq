@@ -214,4 +214,19 @@ class SettingsControllerWriteTest extends TestCase {
 
 	}//end testEmptySubmissionStillReachesTheService()
 
+	/**
+	 * pq-f3: the forced configuration re-import resets schema authorization,
+	 * so it keeps Nextcloud's CSRF check: neither the attribute nor the
+	 * docblock annotation may switch it off.
+	 *
+	 * @return void
+	 */
+	public function testTheForcedReimportKeepsTheCsrfCheck(): void {
+		$method = new \ReflectionMethod(SettingsController::class, 'load');
+
+		$this->assertSame([], $method->getAttributes(\OCP\AppFramework\Http\Attribute\NoCSRFRequired::class));
+		$this->assertStringNotContainsString('@NoCSRFRequired', (string)$method->getDocComment());
+
+	}//end testTheForcedReimportKeepsTheCsrfCheck()
+
 }//end class

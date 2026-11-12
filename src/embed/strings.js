@@ -18,6 +18,8 @@ export const REFUSAL_KEYS = {
 	origin_not_allowed: 'This form may not be shown on this website.',
 	form_not_published: 'This form is not available at the moment.',
 	identified_intake: 'For this application you have to sign in first.',
+	portal_steps_required:
+		'You can only fill in this application on our own portal.',
 }
 
 /** Said for a refusal nobody has written copy for. */
@@ -29,6 +31,7 @@ const STRINGS = {
 		[REFUSAL_KEYS.origin_not_allowed]: EMBED_REFUSALS.origin_not_allowed,
 		[REFUSAL_KEYS.form_not_published]: EMBED_REFUSALS.form_not_published,
 		[REFUSAL_KEYS.identified_intake]: EMBED_REFUSALS.identified_intake,
+		[REFUSAL_KEYS.portal_steps_required]: EMBED_REFUSALS.portal_steps_required,
 		[REFUSAL_FALLBACK_KEY]: 'Dit formulier kan hier niet worden getoond.',
 		'Continue on our own portal': 'Ga verder op ons eigen portaal',
 		'Thank you, we have received your application.':
@@ -46,6 +49,7 @@ const STRINGS = {
 		[REFUSAL_KEYS.origin_not_allowed]: REFUSAL_KEYS.origin_not_allowed,
 		[REFUSAL_KEYS.form_not_published]: REFUSAL_KEYS.form_not_published,
 		[REFUSAL_KEYS.identified_intake]: REFUSAL_KEYS.identified_intake,
+		[REFUSAL_KEYS.portal_steps_required]: REFUSAL_KEYS.portal_steps_required,
 		[REFUSAL_FALLBACK_KEY]: REFUSAL_FALLBACK_KEY,
 		'Continue on our own portal': 'Continue on our own portal',
 		'Thank you, we have received your application.':
