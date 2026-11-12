@@ -443,25 +443,47 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return new JSONResponse(['error' => 'unauthorized'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		// Cast as the framework casts a bound bool; absent means only the resident's own address.
-		$raw      = $this->request->getParam('sameAddressOnly');
-		$sameOnly = ($raw === null || ($raw !== 'false' && (bool)$raw === true));
-		$ref      = (string)($subject['subjectRef'] ?? '');
-		$members  = null;
-		if ($this->family !== null && $sameOnly === true) {
-			$members = $this->family->forSubject(subjectRef: $ref);
-		}
-
-		if ($this->family !== null && $sameOnly === false) {
-			$members = $this->family->allForSubject(subjectRef: $ref);
-		}
-
+		$members = $this->familyMembers(subjectRef: (string)($subject['subjectRef'] ?? ''));
 		if ($members === null) {
 			return new JSONResponse(['error' => 'family_unavailable'], Http::STATUS_NOT_FOUND);
 		}
 
 		return new JSONResponse(['members' => $members]);
 	}//end family()
+
+	/**
+	 * The resident's family from the BRP: at their own address unless the
+	 * request asks for all; null when there is no BRP to ask or it does not answer.
+	 *
+	 * @param string $subjectRef The session's own subjectRef.
+	 *
+	 * @return array<int, array<string, mixed>>|null
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t04
+	 */
+	private function familyMembers(string $subjectRef): ?array {
+		if ($this->family === null) {
+			return null;
+		}
+
+		if ($this->sameAddressOnly() === true) {
+			return $this->family->forSubject(subjectRef: $subjectRef);
+		}
+
+		return $this->family->allForSubject(subjectRef: $subjectRef);
+	}//end familyMembers()
+
+	/**
+	 * The request's `sameAddressOnly`, cast as the framework casts a bound
+	 * bool; absent means only the resident's own address.
+	 *
+	 * @return bool
+	 */
+	private function sameAddressOnly(): bool {
+		$raw = $this->request->getParam('sameAddressOnly');
+
+		return $raw === null || ($raw !== 'false' && (bool)$raw === true);
+	}//end sameAddressOnly()
 
 	/**
 	 * What became of a submission.
