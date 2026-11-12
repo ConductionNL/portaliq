@@ -123,7 +123,7 @@ class PortalTimelineController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{label, steps}`, or 401 / 403 / 404 / 502.
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cases-collection-may-supply-steps-an-answer-date-and-whose-turn-it-is-req-smo-022
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-cases-collection-may-supply-steps-an-answer-date-and-whose-turn-it-is-req-smo-022
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -159,7 +159,7 @@ class PortalTimelineController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{label, items, removeAction}`, or 401 / 403 / 404 / 502.
 	 *
-	 * @spec openspec/changes/my-dossiers/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-an-item-list-read-from-its-app-req-myd-001
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-an-item-list-read-from-its-app-req-myd-001
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -199,7 +199,7 @@ class PortalTimelineController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse|array{app: string, declared: array<string, mixed>} The refusal, or the proven match.
 	 *
-	 * @spec openspec/changes/my-dossiers/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-an-item-list-read-from-its-app-req-myd-001
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-an-item-list-read-from-its-app-req-myd-001
 	 * @spec openspec/changes/mandated-case-opens-on-its-record-page/specs/portal-my-cases/spec.md#requirement-a-case-read-under-a-mandate-opens-on-its-record-page
 	 */
 	private function provenObject(string $register, string $schema, string $id, string $key): JSONResponse|array {

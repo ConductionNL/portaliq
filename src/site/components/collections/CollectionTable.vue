@@ -153,7 +153,7 @@ import {
  * buttons show on the rows `offers` names, and are disabled on the row whose
  * action is running.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-collection-table-must-follow-the-declared-columns-req-srp-015
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-collection-table-must-follow-the-declared-columns-req-srp-015
  */
 export default {
 	name: 'CollectionTable',
@@ -215,7 +215,7 @@ export default {
 		 *
 		 * @param {object} row The row.
 		 * @return {Array<object>}
-		 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
+		 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
 		 */
 		rowColumns(row) {
 			return this.columns.map((column) => rowColumn(column, row))

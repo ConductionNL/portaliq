@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Mint a portal's server token.
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
  */
 class TrafficToken extends Command {
 
@@ -58,7 +58,7 @@ class TrafficToken extends Command {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
 	 */
 	protected function configure(): void {
 		$this->setName(name: 'portaliq:traffic:token');
@@ -75,7 +75,7 @@ class TrafficToken extends Command {
 	 *
 	 * @return int 0 when minted, 1 when the portal is unknown or the write failed.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output): int {
 		$slug = trim((string)$input->getArgument('portal'));

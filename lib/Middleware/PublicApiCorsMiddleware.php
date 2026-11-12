@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-cross-origin-posting-must-work-without-a-preflight
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-cross-origin-posting-must-work-without-a-preflight
  */
 
 declare(strict_types=1);
@@ -49,7 +49,7 @@ use Throwable;
 /**
  * Reflect-Origin CORS headers on the public content and traffic responses.
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-cross-origin-posting-must-work-without-a-preflight
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-cross-origin-posting-must-work-without-a-preflight
  */
 class PublicApiCorsMiddleware extends Middleware {
 
@@ -87,7 +87,7 @@ class PublicApiCorsMiddleware extends Middleware {
 	 *
 	 * @return Response The response, with reflect-Origin headers when it qualifies.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-cross-origin-posting-must-work-without-a-preflight
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-cross-origin-posting-must-work-without-a-preflight
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the base class dictates
 	 * the signature; the reflector already knows the dispatched method.

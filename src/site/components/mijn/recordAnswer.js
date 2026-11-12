@@ -6,7 +6,7 @@
  * the way the Mijn blocks do: a failed read says so and is not "nothing yet",
  * and an answer for a record that is no longer open is dropped.
  *
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
  */
 
 /**
@@ -14,7 +14,7 @@
  *
  * @param {object|null} row The record.
  * @return {string} Its id, uuid or `@self` id, or ''.
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
  */
 export function recordIdOf(row) {
 	return String(row?.id || row?.uuid || row?.['@self']?.id || '')
@@ -45,7 +45,7 @@ async function answerFor(block, read) {
  * @param {object} block The block: `recordId`, `collection`, `record`, `answer`, `failed`.
  * @param {{api: object|null, fetch: string, list: string}} read The api, its read and the list a good answer carries.
  * @return {Promise<void>}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-process-steps-must-say-where-a-case-stands-in-order-req-smo-003
  */
 export async function loadRecordAnswer(block, read) {
 	const id = block.recordId

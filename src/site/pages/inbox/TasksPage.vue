@@ -227,7 +227,7 @@ import {
 import { pageLocale, withStrings } from './translate.js'
 
 /**
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
  */
 export default {
 	name: 'TasksPage',
@@ -269,7 +269,7 @@ export default {
 		 * Whether an open task is on screen: its title is then the page's h1.
 		 *
 		 * @return {boolean}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
 		 */
 		showsTask() {
 			return Boolean(this.detail?.task)
@@ -277,7 +277,7 @@ export default {
 
 		/**
 		 * @return {string} `nl` or `en`.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
 		 */
 		lang() {
 			return pageLocale(this.locale)
@@ -285,7 +285,7 @@ export default {
 
 		/**
 		 * @return {(key: string, vars?: object) => string} The translator.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
 		 */
 		tr() {
 			return withStrings(this.t, this.lang)
@@ -293,7 +293,7 @@ export default {
 
 		/**
 		 * @return {(key: string, vars?: object) => string} The translator of the mijn omgeving components.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
 		mt() {
 			return mijnTranslator(this.t, this.lang)
@@ -311,7 +311,7 @@ export default {
 
 		/**
 		 * @return {object} The open task's upload rules.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
 		 */
 		rules() {
 			return uploadRules(this.detail?.task)
@@ -319,7 +319,7 @@ export default {
 
 		/**
 		 * @return {Array<string>} The rules as sentences under the file field.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
 		 */
 		ruleLines() {
 			const lines = []
@@ -349,7 +349,7 @@ export default {
 
 		/**
 		 * @return {string|undefined} The file input's accept value.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
 		 */
 		accept() {
 			return acceptAttribute(this.rules.acceptedTypes)
@@ -362,7 +362,7 @@ export default {
 		 *
 		 * @param {boolean} shows Whether an open task is on screen.
 		 * @return {void}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
 		 */
 		showsTask(shows) {
 			this.$emit('titled', shows)
@@ -372,7 +372,7 @@ export default {
 	/**
 	 * Read on arrival.
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
 	 */
 	created() {
 		this.loadList()
@@ -385,7 +385,7 @@ export default {
 	methods: {
 		/**
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
 		 */
 		async loadList() {
 			this.loading = true
@@ -459,7 +459,7 @@ export default {
 		 *
 		 * @param {string} uuid The task uuid.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
 		 */
 		async openTask(uuid) {
 			this.comment = ''
@@ -475,7 +475,7 @@ export default {
 
 		/**
 		 * @return {void}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
 		 */
 		backToList() {
 			this.detail = null
@@ -485,7 +485,7 @@ export default {
 		/**
 		 * @param {FileList|Array<File>|null} list The chosen files.
 		 * @return {void}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
 		 */
 		pick(list) {
 			this.files = Array.from(list || [])
@@ -495,7 +495,7 @@ export default {
 		/**
 		 * @param {object} task A task row.
 		 * @return {string} Its due date in the page language.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
 		 */
 		due(task) {
 			return formatDate(task?.dueAt, this.lang)
@@ -507,7 +507,7 @@ export default {
 		 *
 		 * @param {object} task A task row.
 		 * @return {Array<object>} No badge or one.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
 		badgesOf(task) {
 			if (task?.overdue === true) {
@@ -550,7 +550,7 @@ export default {
 		 * Check the files, then send the comment and files through the proxy.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
 		 */
 		async submit() {
 			const task = this.detail?.task

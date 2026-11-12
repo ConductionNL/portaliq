@@ -218,7 +218,7 @@ class PortalRecordChangeListener implements IEventListener {
 	 *
 	 * @return array<int, array<string, array<string, mixed>>> Each with `account` and `row`.
 	 *
-	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md
 	 */
 	private function recipients(array $rule, RecordChange $change): array {
 		$data = $change->newData;
@@ -385,7 +385,7 @@ class PortalRecordChangeListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-journey-entry-points/specs/portal-notifications-and-preferences/spec.md#requirement-another-apps-notice-with-a-declared-rule-key-must-be-sent-by-email-req-wje-006
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-another-apps-notice-with-a-declared-rule-key-must-be-sent-by-email-req-wje-006
 	 */
 	private function onForeignMessage(array $data, string $recordId): void {
 		$ruleKey = ($data['ruleKey'] ?? null);

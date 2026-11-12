@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
+ * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use OCP\IRequest;
 use OCP\IUserSession;
 
 /**
- * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
+ * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
  */
 class QuietHoursStaffController extends Controller {
 	/**
@@ -61,7 +61,7 @@ class QuietHoursStaffController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
+	 * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
 	 */
 	#[NoAdminRequired]
 	public function index(): JSONResponse {
@@ -77,7 +77,7 @@ class QuietHoursStaffController extends Controller {
 	 *
 	 * @return JSONResponse 204 on success, 400 for an invalid window.
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
+	 * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
 	 */
 	#[NoAdminRequired]
 	public function update(string $start, string $end): JSONResponse {

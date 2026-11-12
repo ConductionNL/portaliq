@@ -7,7 +7,7 @@
   often, and the pages it happened on. Never a stack trace; the client
   never sends one.
 
-  @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-script-errors-must-be-reported-without-the-stack-or-the-query-string
+  @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-script-errors-must-be-reported-without-the-stack-or-the-query-string
 -->
 <template>
 	<div class="traffic-table" data-testid="traffic-errors">
@@ -76,7 +76,7 @@ export default {
 		 * that did not is told so rather than shown an empty list that
 		 * reads as "no errors".
 		 *
-		 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-script-errors-must-be-reported-without-the-stack-or-the-query-string
+		 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-script-errors-must-be-reported-without-the-stack-or-the-query-string
 		 * @return {boolean} True when enabled.
 		 */
 		enabled() {

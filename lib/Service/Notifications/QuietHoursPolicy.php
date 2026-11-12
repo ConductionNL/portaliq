@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-a-non-emergency-push-during-quiet-hours-is-deferred-not-dropped
+ * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-a-non-emergency-push-during-quiet-hours-is-deferred-not-dropped
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-a-non-emergency-push-during-quiet-hours-is-deferred-not-dropped
+ * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-a-non-emergency-push-during-quiet-hours-is-deferred-not-dropped
  */
 class QuietHoursPolicy {
 	use ObjectRowNormaliser;
@@ -95,7 +95,7 @@ class QuietHoursPolicy {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
+	 * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
 	 */
 	public function setWindow(string $subjectRef, string $start, string $end): bool {
 		if ($subjectRef === '' || $this->isValidTime(value: $start) === false || $this->isValidTime(value: $end) === false) {
@@ -133,7 +133,7 @@ class QuietHoursPolicy {
 	 *
 	 * @return array{start: string, end: string}
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
+	 * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
 	 */
 	public function resolveWindow(string $subjectRef): array {
 		$default = ['start' => self::DEFAULT_START, 'end' => self::DEFAULT_END];
@@ -188,7 +188,7 @@ class QuietHoursPolicy {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-a-non-emergency-push-during-quiet-hours-is-deferred-not-dropped
+	 * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-a-non-emergency-push-during-quiet-hours-is-deferred-not-dropped
 	 */
 	public function isQuietNow(string $subjectRef, ?DateTimeImmutable $now = null): bool {
 		$window = $this->resolveWindow(subjectRef: $subjectRef);
@@ -213,7 +213,7 @@ class QuietHoursPolicy {
 	 *
 	 * @return DateTimeImmutable
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-a-non-emergency-push-during-quiet-hours-is-deferred-not-dropped
+	 * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-a-non-emergency-push-during-quiet-hours-is-deferred-not-dropped
 	 */
 	public function windowEnd(string $subjectRef, ?DateTimeImmutable $now = null): DateTimeImmutable {
 		$window = $this->resolveWindow(subjectRef: $subjectRef);
@@ -238,7 +238,7 @@ class QuietHoursPolicy {
 	 *
 	 * @return DateTimeZone
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-a-non-emergency-push-during-quiet-hours-is-deferred-not-dropped
+	 * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-a-non-emergency-push-during-quiet-hours-is-deferred-not-dropped
 	 */
 	public function timeZoneFor(string $subjectRef): DateTimeZone {
 		$candidates = [

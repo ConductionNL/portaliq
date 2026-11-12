@@ -9,7 +9,7 @@
  * each would ask for the whole manifest. Kept out of `residentActions.js` so
  * that file stays free of browser state and a node test can import it.
  *
- * @spec openspec/changes/woo-journey-entry-points/specs/portal-federated-search/spec.md#requirement-the-save-actions-must-show-only-to-a-signed-in-resident-who-is-offered-them-req-wje-001
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-save-actions-must-show-only-to-a-signed-in-resident-who-is-offered-them-req-wje-001
  */
 
 import { adoptSessionToken, authBaseFrom } from './authApi.js'
@@ -23,7 +23,7 @@ let manifest = null
  *
  * @return {string} The base, `.../portal/api`.
  *
- * @spec openspec/changes/woo-journey-entry-points/specs/portal-federated-search/spec.md#requirement-the-save-actions-must-show-only-to-a-signed-in-resident-who-is-offered-them-req-wje-001
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-save-actions-must-show-only-to-a-signed-in-resident-who-is-offered-them-req-wje-001
  */
 export function residentAuthBase() {
 	return authBaseFrom(resolveApiBase())
@@ -34,7 +34,7 @@ export function residentAuthBase() {
  *
  * @return {string} The bearer.
  *
- * @spec openspec/changes/woo-journey-entry-points/specs/portal-federated-search/spec.md#requirement-the-save-actions-must-show-only-to-a-signed-in-resident-who-is-offered-them-req-wje-001
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-save-actions-must-show-only-to-a-signed-in-resident-who-is-offered-them-req-wje-001
  */
 export function residentToken() {
 	return adoptSessionToken()
@@ -45,7 +45,7 @@ export function residentToken() {
  *
  * @return {Promise<object|null>} The manifest, or null.
  *
- * @spec openspec/changes/woo-journey-entry-points/specs/portal-federated-search/spec.md#requirement-the-save-actions-must-show-only-to-a-signed-in-resident-who-is-offered-them-req-wje-001
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-save-actions-must-show-only-to-a-signed-in-resident-who-is-offered-them-req-wje-001
  */
 export function residentManifest() {
 	if (manifest === null) {

@@ -14,7 +14,7 @@
   /api/news/audiences). When the school app offers no choices, the screen
   asks for the school's or groups' reference instead.
 
-  @spec openspec/changes/staff-news-screen/tasks.md#T4
+  @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T4
 -->
 <template>
 	<CnDialog
@@ -207,7 +207,7 @@ export default {
 		 * state (PtNieuwsbericht "Nieuws, concept").
 		 *
 		 * @return {string}
-		 * @spec openspec/changes/news-dialog-eyebrow/specs/staff-news/spec.md#requirement-the-news-dialog-names-the-list-and-the-items-state-above-its-title
+		 * @spec openspec/specs/staff-news/spec.md#requirement-the-news-dialog-names-the-list-and-the-items-state-above-its-title
 		 */
 		eyebrow() {
 			if (!this.item) {
@@ -222,7 +222,7 @@ export default {
 		school: {
 			/**
 			 * @return {object|null}
-			 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+			 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T4
 			 */
 			get() {
 				return this.optionFor(this.options.schools, this.form.schoolRef)
@@ -230,7 +230,7 @@ export default {
 
 			/**
 			 * @param {object|null} option The chosen school.
-			 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+			 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T4
 			 */
 			set(option) {
 				this.form.schoolRef = option?.id || ''
@@ -241,7 +241,7 @@ export default {
 		groups: {
 			/**
 			 * @return {Array<object>}
-			 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+			 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T4
 			 */
 			get() {
 				return this.form.groupRefs.map((ref) =>
@@ -251,7 +251,7 @@ export default {
 
 			/**
 			 * @param {Array} selected The chosen groups.
-			 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+			 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T4
 			 */
 			set(selected) {
 				this.form.groupRefs = (selected || [])
@@ -268,7 +268,7 @@ export default {
 	/**
 	 * A single school needs no choosing.
 	 *
-	 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+	 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T4
 	 */
 	created() {
 		if (!this.item && this.options.schools.length === 1) {
@@ -286,7 +286,7 @@ export default {
 		 * @param {string} ref The reference.
 		 * @return {object|null}
 		 *
-		 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+		 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T4
 		 */
 		optionFor(list, ref) {
 			if (!ref) {
@@ -302,7 +302,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/staff-news-screen/tasks.md#T4
+		 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T4
 		 */
 		async confirm() {
 			this.missing = missingFields(this.form)

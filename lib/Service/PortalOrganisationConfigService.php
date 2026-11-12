@@ -31,7 +31,7 @@
  *
  * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.2
  * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#3.1
- * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T01
  */
 
 declare(strict_types=1);
@@ -52,7 +52,7 @@ use Throwable;
  * replacing the `idp` placeholder this change removes the last dependency on.
  *
  * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.2
- * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T01
+ * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T01
  */
 class PortalOrganisationConfigService {
 	/**
@@ -157,8 +157,8 @@ class PortalOrganisationConfigService {
 	 * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.2
 	 * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.3
 	 * @spec openspec/specs/supplier-portal/spec.md#requirement-the-public-site-must-render-its-own-words-through-a-locale-aware-translation-layer
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T01
-	 * @spec openspec/changes/woo-search-names-the-organisation/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T01
+	 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
 	 */
 	public function resolve(string $orgSlug, string $locale = 'nl'): array {
 		$locale = $this->normaliseLocale(locale: $locale);
@@ -251,7 +251,7 @@ class PortalOrganisationConfigService {
 	 *
 	 * @return array<string, mixed>|null The merged OIDC config, or null.
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T01
 	 * @spec openspec/specs/supplier-portal/spec.md#oidc-start-builds-a-state-nonce-pkce-authorization-request
 	 */
 	public function resolveOidcConfig(string $orgSlug, string $provider): ?array {
@@ -386,7 +386,7 @@ class PortalOrganisationConfigService {
 	 *
 	 * @return bool Whether the value was written.
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T01
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T01
 	 */
 	public function setOidcClientSecret(string $organisationUuid, string $provider, string $clientSecret): bool {
 		if ($organisationUuid === '' || in_array($provider, self::OIDC_PROVIDERS, true) === false) {

@@ -595,7 +595,7 @@ class PortalObjectReader implements ScopedCollectionReaderInterface {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/via-read-scoped-query/tasks.md#T2
+	 * @spec openspec/changes/archive/2026-10-07-via-read-scoped-query/tasks.md#T2
 	 */
 	private function withinFilter(?array $row, array $filter, string $scopeField): ?array {
 		if ($row === null || $this->filteredRows->matchesFilter(row: $row, filter: $filter, scopeField: $scopeField) === false) {
@@ -969,7 +969,7 @@ class PortalObjectReader implements ScopedCollectionReaderInterface {
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T6
 	 * @spec openspec/changes/archive/2026-09-07-reverse-scope-join/tasks.md#T1
-	 * @spec openspec/changes/via-read-scoped-query/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-10-07-via-read-scoped-query/tasks.md#T1
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the parameters map
 	 * 1:1 onto the declarative collection fields, identical to readCollection.
@@ -1044,7 +1044,7 @@ class PortalObjectReader implements ScopedCollectionReaderInterface {
 	 *
 	 * @return array<string, true> Verified target ids as a lookup set.
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-via-join-may-grant-only-through-live-join-rows-req-smo-023
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-via-join-may-grant-only-through-live-join-rows-req-smo-023
 	 */
 	private function verifiedJoinTargets(object $objectService, array $via, string $scopeValue, string $organisation): array {
 		$joinScopeField = (string)$via['scopeField'];
@@ -1226,7 +1226,7 @@ class PortalObjectReader implements ScopedCollectionReaderInterface {
 	 * @return bool
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-reverse-scope-join/tasks.md#T1
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-via-join-may-grant-only-through-live-join-rows-req-smo-023
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-via-join-may-grant-only-through-live-join-rows-req-smo-023
 	 */
 	private function isValidVia(mixed $via): bool {
 		if (is_array($via) === false) {
@@ -1396,7 +1396,7 @@ class PortalObjectReader implements ScopedCollectionReaderInterface {
 	 *
 	 * @return array<int, array<string, mixed>> The verified rows.
 	 *
-	 * @spec openspec/changes/portal-scope-list-membership/specs/portal-contribution-contract/spec.md#requirement-a-direct-scope-field-must-match-a-single-value-or-strict-list-membership
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-direct-scope-field-must-match-a-single-value-or-strict-list-membership
 	 */
 	private function verifyScope(array $rows, string $scopeField, string $subjectRef, string $organisation = '', string $schema = ''): array {
 		$verified = [];

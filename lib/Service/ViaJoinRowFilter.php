@@ -33,7 +33,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-via-join-may-grant-only-through-live-join-rows-req-smo-023
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-via-join-may-grant-only-through-live-join-rows-req-smo-023
  */
 
 declare(strict_types=1);
@@ -45,7 +45,7 @@ use DateTimeImmutable;
 /**
  * The live-row rule of a `via` join.
  *
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-via-join-may-grant-only-through-live-join-rows-req-smo-023
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-via-join-may-grant-only-through-live-join-rows-req-smo-023
  */
 class ViaJoinRowFilter {
 	/**
@@ -56,7 +56,7 @@ class ViaJoinRowFilter {
 	 *
 	 * @return bool False when either member is present and malformed.
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-via-join-may-grant-only-through-live-join-rows-req-smo-023
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-via-join-may-grant-only-through-live-join-rows-req-smo-023
 	 */
 	public function isValid(array $via): bool {
 		if (array_key_exists('when', $via) === true && $this->isValidWhen(when: $via['when']) === false) {
@@ -81,7 +81,7 @@ class ViaJoinRowFilter {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-via-join-may-grant-only-through-live-join-rows-req-smo-023
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-via-join-may-grant-only-through-live-join-rows-req-smo-023
 	 */
 	public function grants(array $row, array $via, ?DateTimeImmutable $now = null): bool {
 		if (isset($via['when']) === true && is_array($via['when']) === true) {

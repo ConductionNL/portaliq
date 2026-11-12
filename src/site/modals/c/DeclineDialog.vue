@@ -65,7 +65,7 @@ import '@utrecht/textarea-css/dist/index.css'
  * DeclineDialog.jsx). The dialog asks why and forwards the reason; a refusal
  * keeps the dialog open with the answer in words.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-document-must-be-signable-and-declinable-from-its-row-req-srp-029
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-document-must-be-signable-and-declinable-from-its-row-req-srp-029
  */
 export default {
 	name: 'DeclineDialog',
@@ -131,7 +131,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-document-must-be-signable-and-declinable-from-its-row-req-srp-029
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-document-must-be-signable-and-declinable-from-its-row-req-srp-029
 		 */
 		async submit() {
 			if (this.reason.trim() === '') {

@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use OCA\Portaliq\Service\Traffic\TrafficSegments;
  * upgraded; consent and retention are decisions its operator makes, and an
  * unconfigured portal has made neither.
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
  */
 class TrafficConfigResolver {
 
@@ -312,10 +312,10 @@ class TrafficConfigResolver {
 	 *               reports: array<int, array<string, mixed>>, alerts: array<int, array<string, mixed>>,
 	 *               experiments: array<int, array<string, mixed>>} The effective configuration.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
-	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
+	 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
 	 */
 	public function resolve(array $portal): array {
 		$traffic = self::arrayOrEmpty(value: ($portal['traffic'] ?? []));
@@ -468,7 +468,7 @@ class TrafficConfigResolver {
 	 *
 	 * @return string The sha256 hex of the token, or ''.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
 	 */
 	public function serverTokenHash(array $portal): string {
 		$traffic = $portal['traffic'] ?? [];
@@ -564,7 +564,7 @@ class TrafficConfigResolver {
 	 *
 	 * @return bool True when the caller may send this event.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-mail-events-must-only-be-written-server-side
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-mail-events-must-only-be-written-server-side
 	 */
 	public function allowsCaller(string $event, bool $serverSide): bool {
 		if (in_array($event, self::SERVER_SIDE_EVENTS, true) === false) {
@@ -583,7 +583,7 @@ class TrafficConfigResolver {
 	 *
 	 * @return bool True when the event may be stored.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-measurement-must-honour-the-portals-consent-posture
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-measurement-must-honour-the-portals-consent-posture
 	 */
 	public function acceptsEvent(array $config, string $event, bool $hasConsent): bool {
 		if (($config['enabled'] ?? false) !== true) {
@@ -713,7 +713,7 @@ class TrafficConfigResolver {
 	 *
 	 * @return array<int, string>
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	private function excludedPaths(mixed $value): array {
 		if (is_array($value) === false) {

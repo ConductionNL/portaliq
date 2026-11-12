@@ -5,14 +5,14 @@
 // it as node: the pages a contribution marks `home: true`, and without one an
 // overview of every app's running cases.
 //
-// @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
+// @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
 
 /**
  * The pages a contribution marks `home: true`, in contribution order.
  *
  * @param {Array<object>} nav The signed-in navigation.
  * @return {Array<object>} Their entries.
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
  */
 export function homeEntriesOf(nav) {
 	return (Array.isArray(nav) ? nav : []).filter(
@@ -27,7 +27,7 @@ export function homeEntriesOf(nav) {
  * @param {Array<object>} contributions The aggregate's contributions.
  * @param {string} label The blocks' heading, "Lopende zaken".
  * @return {Array<object>} Navigation-like entries `{key, page, contribution}`.
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
  */
 export function caseOverviewsOf(contributions, label) {
 	return (Array.isArray(contributions) ? contributions : [])

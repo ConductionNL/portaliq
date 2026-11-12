@@ -296,7 +296,7 @@ export default {
 		/**
 		 * @return {string} The page's language.
 		 *
-		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
 		 */
 		locale() {
 			return pageLocale()
@@ -305,7 +305,7 @@ export default {
 		/**
 		 * @return {(key: string) => string} The translator for the page's language.
 		 *
-		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
 		 */
 		t() {
 			return createTranslator(this.locale)
@@ -314,7 +314,7 @@ export default {
 		/**
 		 * @return {string} The summary under the title, or ''.
 		 *
-		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
 		 */
 		summary() {
 			return publicationSummary(this.publication)
@@ -335,7 +335,7 @@ export default {
 		/**
 		 * @return {Array<object>} The rendered field rows.
 		 *
-		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
 		 */
 		/**
 		 * @return {boolean} Whether the cards variant is drawn.
@@ -485,7 +485,7 @@ export default {
 		 * @param {string} publicationUrl The publication's own URL.
 		 * @return {Promise<void>} Resolves once `documents` is set.
 		 *
-		 * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-list-and-offer-every-document-for-download-req-wsd-005
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-list-and-offer-every-document-for-download-req-wsd-005
 		 */
 		async loadDocuments(publicationUrl) {
 			const asked = this.subjectId
@@ -535,7 +535,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves once `themeNames` is set.
 		 *
-		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
 		 */
 		async loadThemeNames() {
 			const asked = this.subjectId

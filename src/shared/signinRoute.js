@@ -44,7 +44,7 @@ export function loginStartUrl(base, org, provider, route, portal = '') {
  *
  * @param {{organisationSlug?: string, signinOrganisation?: string}} config The runtime config.
  * @return {string}
- * @spec openspec/changes/portal-signin-on-its-own-address/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-portal-signin-on-its-own-address/tasks.md#T1
  */
 export function signinOrganisation(config) {
 	return String(config?.signinOrganisation || config?.organisationSlug || '')

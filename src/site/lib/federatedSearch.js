@@ -429,7 +429,7 @@ export function formatDutchDate(value) {
  * @param {object} state The search state.
  * @return {Array<string>} The field names, never empty.
  *
- * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
  */
 export function facetFieldsOf(state) {
 	const fields = (
@@ -448,7 +448,7 @@ export function facetFieldsOf(state) {
  * @param {string} value The value from an input or the page address.
  * @return {string} The date, or ''.
  *
- * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-a-publication-period-req-wsd-002
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-a-publication-period-req-wsd-002
  */
 export function validDate(value) {
 	const text = String(value || '')
@@ -492,7 +492,7 @@ export function termParameter(params) {
  * @param {Array<string>} facetFields The block's facet fields.
  * @return {object} `{query, page, sort, facets, periodFrom, periodTo}`.
  *
- * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-every-filter-must-survive-a-shared-link-req-wsd-003
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-filter-must-survive-a-shared-link-req-wsd-003
  * @spec openspec/specs/portal-federated-search/spec.md#requirement-a-link-with-q-opens-the-search-for-that-term-req-srq-001
  */
 export function readSearchState(search, facetFields) {
@@ -535,7 +535,7 @@ export function readSearchState(search, facetFields) {
  * @param {Array<string>} facetFields The block's facet fields.
  * @return {URL} The same address.
  *
- * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-every-filter-must-survive-a-shared-link-req-wsd-003
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-filter-must-survive-a-shared-link-req-wsd-003
  * @spec openspec/specs/portal-federated-search/spec.md#requirement-a-link-with-q-opens-the-search-for-that-term-req-srq-001
  */
 export function writeSearchState(url, state, facetFields) {
@@ -572,7 +572,7 @@ export function writeSearchState(url, state, facetFields) {
  * @param {string} catalog The catalog the block searches, or ''.
  * @return {object} `{text, filters: {informatiecategorie, organisation, periodFrom, periodTo}, catalog}`.
  *
- * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-block-must-describe-its-search-as-the-saved-search-query-req-wsd-004
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-block-must-describe-its-search-as-the-saved-search-query-req-wsd-004
  */
 export function searchQuery(state, catalog = '') {
 	const facets = (state && state.facets) || {}

@@ -10,7 +10,7 @@
   operator can tell "declared but the page never set it" from "not
   declared".
 
-  @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-custom-dimensions-must-be-declared-before-they-are-stored
+  @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-custom-dimensions-must-be-declared-before-they-are-stored
 -->
 <template>
 	<div class="traffic-dimensions" data-testid="traffic-dimensions">
@@ -85,7 +85,7 @@ export default {
 		 * One list per dimension: the declared ones first, in the portal's
 		 * order, then any the rollups carry that the portal since dropped.
 		 *
-		 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-custom-dimensions-must-be-declared-before-they-are-stored
+		 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-custom-dimensions-must-be-declared-before-they-are-stored
 		 * @return {Array<{id: string, name: string, scope: string, rows: Array<object>}>} The lists.
 		 */
 		lists() {

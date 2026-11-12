@@ -111,7 +111,7 @@ import '@utrecht/checkbox-css/dist/index.css'
  * that they read it; only then is `{consent: true}` forwarded. Without a
  * `viewDocument` action there is nothing to read, so nothing to sign.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-document-must-be-signable-and-declinable-from-its-row-req-srp-029
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-document-must-be-signable-and-declinable-from-its-row-req-srp-029
  */
 export default {
 	name: 'SigningDialog',
@@ -197,7 +197,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-document-must-be-signable-and-declinable-from-its-row-req-srp-029
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-document-must-be-signable-and-declinable-from-its-row-req-srp-029
 		 */
 		async sign() {
 			this.busy = true

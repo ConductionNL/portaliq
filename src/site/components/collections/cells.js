@@ -15,7 +15,7 @@
 //
 // Imports plain modules only, so tests/site-collections.spec.mjs runs it as node.
 //
-// @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-collection-table-must-follow-the-declared-columns-req-srp-015
+// @spec openspec/specs/site-portal-parity/spec.md#requirement-a-collection-table-must-follow-the-declared-columns-req-srp-015
 
 import { DAY_AND_MINUTE } from '../../lib/dayAndMinute.js'
 
@@ -184,7 +184,7 @@ function withLabel(column) {
  * @param {object} column The declared column.
  * @param {object} row The row.
  * @return {object} The column for this row.
- * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
+ * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
  */
 export function rowColumn(column, row) {
 	const own = row?._columns?.[column?.field]
@@ -242,7 +242,7 @@ export function detailFields(collection, row) {
  * @param {object} collection The collection.
  * @param {string} field The field.
  * @return {{label?: string, valueLabels?: object}}
- * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-contribution-contract/spec.md#requirement-a-collection-may-say-how-the-values-of-any-of-its-fields-read
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-may-say-how-the-values-of-any-of-its-fields-read
  */
 export function fieldConfigOf(collection, field) {
 	const configs = collection?.fieldConfigs
@@ -374,7 +374,7 @@ function objectText(value, { locale, t, depth }) {
  * @param {unknown} value The value.
  * @param {Record<string, string>|undefined} valueLabels The column's labels.
  * @return {string|undefined} The label, or undefined for an unlabelled value.
- * @spec openspec/changes/contribution-value-labels/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
  */
 export function valueLabel(value, valueLabels) {
 	if (!valueLabels || typeof valueLabels !== 'object') {

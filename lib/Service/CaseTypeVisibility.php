@@ -174,7 +174,7 @@ class CaseTypeVisibility {
 	 *
 	 * @return ColumnOverrides
 	 *
-	 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
 	 */
 	public function servingColumns(IRequest $request, array $subject): ColumnOverrides {
 		$portal = $this->servingPortal(request: $request, subject: $subject);

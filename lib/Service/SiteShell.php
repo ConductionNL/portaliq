@@ -85,7 +85,7 @@ class SiteShell {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 	 * @spec openspec/changes/site-at-the-root-of-a-portal-host/specs/portal-settings/spec.md#requirement-a-verified-domain-may-serve-the-site-at-its-root-req-srh-001
 	 */
 	public function templateParams(string $path = ''): array {
@@ -194,7 +194,7 @@ class SiteShell {
 	 *
 	 * @return string The slug, or ''.
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-old-portal-links-must-land-on-the-site-req-srp-048
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-old-portal-links-must-land-on-the-site-req-srp-048
 	 */
 	public function requestedPortalSlug(): string {
 		if ($this->requestedSlug !== null) {
@@ -302,7 +302,7 @@ class SiteShell {
 	 * @return array{devLogin: bool, silentSignIn: string, signinOrganisation: string, audience: string,
 	 *               waysIn: array<string, mixed>, exampleResident: string, exampleResidents: list<array<string, mixed>>}
 	 *
-	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/tasks.md#T07
 	 * @spec openspec/changes/demo-sign-in-beside-the-account/specs/example-resident/spec.md#requirement-a-demo-may-sign-in-each-example-resident-with-one-click
 	 */
@@ -335,7 +335,7 @@ class SiteShell {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-notices-must-show-above-every-page-req-srp-010
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-notices-must-show-above-every-page-req-srp-010
 	 */
 	private function sitePortalNotices(): array {
 		$slug = $this->siteResolvedSlug();

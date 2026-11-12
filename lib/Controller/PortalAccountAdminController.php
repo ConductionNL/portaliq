@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
@@ -45,7 +45,7 @@ use OCP\IUserSession;
 /**
  * Provisioning and withdrawal of portal accounts by staff.
  *
- * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 class PortalAccountAdminController extends Controller {
 	/**
@@ -89,7 +89,7 @@ class PortalAccountAdminController extends Controller {
 	 *
 	 * @return JSONResponse The account, or a refusal.
 	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- one parameter per
 	 * declared field of the account being provisioned.
@@ -138,7 +138,7 @@ class PortalAccountAdminController extends Controller {
 	 *
 	 * @return JSONResponse The outcome, or a refusal.
 	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	#[NoAdminRequired]
 	public function void(string $subjectRef, string $reason = ''): JSONResponse {
@@ -169,7 +169,7 @@ class PortalAccountAdminController extends Controller {
 	 * @return JSONResponse That it was sent and until when, or a refusal.
 	 *                      Never the secret: that is in the mail only.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-invite-an-address-and-portaliq-mails-it-req-isa-001
 	 */
 	#[NoAdminRequired]
@@ -214,7 +214,7 @@ class PortalAccountAdminController extends Controller {
 	 *
 	 * @return JSONResponse The sender's own invitations.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	#[NoAdminRequired]
 	public function invitations(string $organisation = ''): JSONResponse {

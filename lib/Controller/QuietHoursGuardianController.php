@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
+ * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 
 /**
- * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
+ * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
  */
 class QuietHoursGuardianController extends Controller implements PortalProtected {
 	/**
@@ -64,7 +64,7 @@ class QuietHoursGuardianController extends Controller implements PortalProtected
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
+	 * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -86,7 +86,7 @@ class QuietHoursGuardianController extends Controller implements PortalProtected
 	 *
 	 * @return JSONResponse 204 on success, 400 for an invalid window.
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
+	 * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

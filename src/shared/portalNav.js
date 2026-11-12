@@ -61,7 +61,7 @@ export const THEME_PRODUCTS_SEGMENT = 'producten'
  * @param {Array<object>} [enabled.themes] The life domains with something for this resident.
  * @param {Array<object>} [enabled.stepUp] The aggregate's `stepUp`: collections the login is too low for.
  * @return {Array<object>} `{key, label, icon, page?, contribution?, special?, stepUp?}` entries.
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t6
  */
 export function buildNav(contributions, t, enabled = {}) {
@@ -235,7 +235,7 @@ function textOr(value, fallback) {
  * @param {Array|null} state.threads The message threads.
  * @param {Array|null} state.news The news feed.
  * @return {{tasks: boolean, messages: boolean, news: boolean, access: boolean, cases: boolean, pages: Array<object>, themes: Array<object>}}
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function shellSections({ session, contributions, threads, news }) {
 	return {
@@ -263,7 +263,7 @@ export function shellSections({ session, contributions, threads, news }) {
  *
  * @param {Array<object>} nav The navigation.
  * @return {string|null} The key, or null for an empty navigation.
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function defaultNavKey(nav) {
 	if (!Array.isArray(nav) || nav.length === 0) {
@@ -281,7 +281,7 @@ export function defaultNavKey(nav) {
  *
  * @param {object} entry A navigation entry.
  * @return {string} The route.
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function routeForNav(entry) {
 	if (entry.special) {
@@ -324,7 +324,7 @@ export function isThemeProductsRoute(entry, route) {
  *
  * @param {string} route The route.
  * @return {boolean}
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function isAccountRoute(route) {
 	const value = String(route || '')
@@ -338,7 +338,7 @@ export function isAccountRoute(route) {
  * @param {Array<object>} nav The navigation.
  * @param {string} route The route.
  * @return {object|null} The entry.
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function navEntryForRoute(nav, route) {
 	if (!isAccountRoute(route)) {
@@ -393,7 +393,7 @@ function isRecordPage(entry) {
  *
  * @param {string} route The route.
  * @return {string} The record id, decoded.
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-must-see-and-switch-for-whom-they-act-req-smo-008
  */
 export function recordIdOfRoute(route) {
 	const parts = String(route || '').split('/')

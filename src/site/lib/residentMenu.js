@@ -11,7 +11,7 @@
  * which groups. It imports only shared code, so
  * tests/site-resident-menu.spec.mjs runs it as node.
  *
- * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
  */
 
 import {
@@ -40,7 +40,7 @@ const PROFILE_SECTIONS = ['details', 'account']
  * @param {string} route The route on screen.
  * @param {Array<object>} nav The signed-in navigation.
  * @return {boolean} True when the menu shows.
- * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
  */
 export function showsResidentMenu(session, route, nav) {
 	return (
@@ -79,7 +79,7 @@ export function withAreaName(t, name) {
  * @param {(key: string) => string} t The translator.
  * @param {(route: string) => string} hrefFor A real address for a route.
  * @return {{route: string, href: string, label: string}|null} The link.
- * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-header-must-hold-the-name-the-way-to-the-own-area-and-sign-out-req-srm-003
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-the-header-must-hold-the-name-the-way-to-the-own-area-and-sign-out-req-srm-003
  */
 export function ownAreaLink(session, t, hrefFor) {
 	if (!session) {
@@ -113,7 +113,7 @@ export function ownAreaLink(session, t, hrefFor) {
  * @param {object} entry The navigation entry.
  * @param {MenuContext} ctx What the item is built from.
  * @return {object} `{key, name, link, href, icon?, badge?, badgeLabel?}`.
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-menu-must-show-icons-and-counts-in-groups-req-smo-006
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-menu-must-show-icons-and-counts-in-groups-req-smo-006
  */
 function itemFor(entry, ctx) {
 	const link = routeForNav(entry)
@@ -138,7 +138,7 @@ function itemFor(entry, ctx) {
  * @param {object} item The item (changed in place).
  * @param {{entry: object, ctx: MenuContext}} source The entry and what it is built from.
  * @return {object} The item.
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-the-resident-menu-must-show-icons-and-counts-in-groups-req-smo-006
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-menu-must-show-icons-and-counts-in-groups-req-smo-006
  */
 function withBadge(item, { entry, ctx }) {
 	const { t, unread, recordRows = {}, openTasks = 0 } = ctx
@@ -229,8 +229,8 @@ const NAMES = new WeakMap()
  * @param {number} [menu.openTasks] The resident's open tasks, counted beside "My tasks".
  * @param {string} [menu.area] The name the portal gives its own area.
  * @return {Array<{key: string, title: string, items: Array<object>}>} The groups.
- * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
- * @spec openspec/changes/resident-sees-words-not-codes/specs/site-resident-menu/spec.md#requirement-a-contributed-page-may-name-the-menu-group-it-belongs-to-req-srm-005
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-a-contributed-page-may-name-the-menu-group-it-belongs-to-req-srm-005
  * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
  * @spec openspec/changes/resident-menu-leave-out/specs/site-resident-menu/spec.md#requirement-a-portal-may-leave-items-out-of-the-resident-menu
  */
@@ -303,7 +303,7 @@ function named(item, name) {
  * @param {MenuContext} ctx What the items are built from.
  * @param {[string, string, Array<string>]} group The group's key, heading and sections.
  * @return {{key: string, title: string, items: Array<object>}} The group.
- * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
  */
 function sectionGroup(ctx, [key, title, sections]) {
 	return {
@@ -321,7 +321,7 @@ function sectionGroup(ctx, [key, title, sections]) {
  *
  * @param {MenuContext} ctx What the items are built from.
  * @return {{key: string, title: string, items: Array<object>}} The group.
- * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
  */
 function themeGroup(ctx) {
 	return {
@@ -340,8 +340,8 @@ function themeGroup(ctx) {
  *
  * @param {MenuContext} ctx What the items are built from.
  * @return {{appGroups: Array<object>, recordGroups: Array<object>}} The groups.
- * @spec openspec/changes/resident-sees-words-not-codes/specs/site-resident-menu/spec.md#requirement-a-contributed-page-may-name-the-menu-group-it-belongs-to-req-srm-005
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-a-contributed-page-may-name-the-menu-group-it-belongs-to-req-srm-005
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
  */
 function contributedGroups(ctx) {
 	const appGroups = []
@@ -395,7 +395,7 @@ function groupIn(groups, { key, title }) {
  * @param {Array<{items: Array<object>}>} groups The groups (changed in place).
  * @param {(key: string, vars?: object) => string} t The translator.
  * @return {void}
- * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
  */
 function withDistinctNames(groups, t) {
 	const counts = new Map()
@@ -648,7 +648,7 @@ function withRestOf(out, { groups, placed }) {
  * @param {Array<object>|null} contributions The aggregate's `contributions`.
  * @param {object} api The portal api (`fetchCollection`).
  * @return {Promise<Record<string, Array<object>>>} The rows.
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
  */
 export async function loadPerRecordRows(contributions, api) {
 	const wanted = new Map()
@@ -693,7 +693,7 @@ export async function loadPerRecordRows(contributions, api) {
  * @param {object} entry A navigation entry of a contributed page.
  * @param {Record<string, Array<object>>} recordRows The known rows.
  * @return {Array<object>|null} The rows.
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
  */
 export function perRecordRows(entry, recordRows) {
 	const collection = entry.page?.perRecord
@@ -727,7 +727,7 @@ function titleFieldsOf(page) {
  * @param {boolean} [target.grouped] Whether the rows are items of the page's declared group.
  * @param {MenuContext} ctx What the items are built from.
  * @return {void}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
  * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-a-per-record-page-in-a-group-lists-each-row-with-its-subtitle
  */
 function addPerRecordItems(target, ctx) {
@@ -833,7 +833,7 @@ function appNameOf(entry) {
  *
  * @param {object} entry A navigation entry of a contributed page.
  * @return {{key: string, title: string}} The group's key and heading.
- * @spec openspec/changes/resident-sees-words-not-codes/specs/site-resident-menu/spec.md#requirement-a-contributed-page-may-name-the-menu-group-it-belongs-to-req-srm-005
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-a-contributed-page-may-name-the-menu-group-it-belongs-to-req-srm-005
  */
 export function pageGroupOf(entry) {
 	const declared = entry.page?.group

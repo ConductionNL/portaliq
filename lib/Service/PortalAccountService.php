@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T08
+ * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T08
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use OCP\Security\ISecureRandom;
 /**
  * Find-or-create `portalAccount` for the OIDC login edge.
  *
- * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T08
+ * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T08
  */
 class PortalAccountService {
 	/**
@@ -54,7 +54,7 @@ class PortalAccountService {
 	/**
 	 * An account provisioned before any login: no session, no reach.
 	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public const STATUS_PENDING = 'pending';
 
@@ -127,9 +127,9 @@ class PortalAccountService {
 	 *                                                     write failed (fail closed
 	 *                                                     — the caller mints no session).
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T08
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T08
 	 * @spec openspec/specs/supplier-portal/spec.md#the-subject-reference-is-server-derived-never-client-supplied
-	 * @spec openspec/changes/portal-invitation-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 * @spec openspec/changes/the-account-names-the-audience-and-the-company/specs/portal-identity-space/spec.md#requirement-an-existing-accounts-audience-wins-over-the-sign-in-routes
 	 */
 	public function findOrCreate(
@@ -274,7 +274,7 @@ class PortalAccountService {
 	 * @return array{subjectRef: string, isNew: bool, status: string}|null Null
 	 *         when the call is refused or OpenRegister is unavailable.
 	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- one parameter per
 	 * declared field of the provisioned row; an options array would lose the
@@ -389,7 +389,7 @@ class PortalAccountService {
 	 *
 	 * @return bool True when the claim landed.
 	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function claim(string $subjectRef, string $appId, string $claimName, string $value): bool {
 		if ($subjectRef === '' || $appId === '' || $claimName === '' || $value === '') {
@@ -421,7 +421,7 @@ class PortalAccountService {
 	 *
 	 * @return bool True when the account is now void.
 	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function voidPending(string $subjectRef, string $reason, string $voidedBy = ''): bool {
 		if ($subjectRef === '' || $reason === '') {
@@ -562,7 +562,7 @@ class PortalAccountService {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	private function accountAlreadyProvisioned(AccountProvisionRun $run): ?array {
 		if ($run->hasIdentity() === true) {
@@ -590,7 +590,7 @@ class PortalAccountService {
 	 * @return array<string, mixed>|null
 	 *
 	 * @spec openspec/specs/portal-identity-space/spec.md#requirement-first-login-matches-the-pending-account-req-pis-002
-	 * @spec openspec/changes/portal-invitation-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	private function existingFor(AccountLoginRun $run): ?array {
 		$existing = $this->lookup()->byIdentity(identityType: $run->identityType, identityRef: $run->identityRef, organisation: $run->organisation);
@@ -617,7 +617,7 @@ class PortalAccountService {
 	 *
 	 * @return PortalAccountLookup
 	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	private function lookup(): PortalAccountLookup {
 		if ($this->lookup === null) {

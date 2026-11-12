@@ -340,7 +340,7 @@ function pageOrigin() {
 }
 
 /**
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
  */
 export default {
 	name: 'InboxPage',
@@ -381,7 +381,7 @@ export default {
 	computed: {
 		/**
 		 * @return {string} `nl` or `en`.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
 		 */
 		lang() {
 			return pageLocale(this.locale)
@@ -389,7 +389,7 @@ export default {
 
 		/**
 		 * @return {(key: string, vars?: object) => string} The translator.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
 		 */
 		tr() {
 			return withStrings(this.t, this.lang)
@@ -402,7 +402,7 @@ export default {
 		 * shell reloaded the contributions, counted down from that old number.
 		 *
 		 * @return {number} How many of the loaded rows are unread.
-		 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-badge-counts-the-unread-messages-the-inbox-shows-req-nap-011
+		 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-badge-counts-the-unread-messages-the-inbox-shows-req-nap-011
 		 */
 		unread() {
 			return unreadIn(this.messages)
@@ -444,7 +444,7 @@ export default {
 
 		/**
 		 * @return {Array<string>} The ids of the rows the resident may delete.
-		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
 		 */
 		deletableIds() {
 			return this.messages.filter(canDelete).map((m) => rowId(m))
@@ -452,7 +452,7 @@ export default {
 
 		/**
 		 * @return {boolean} Whether every deletable row is chosen.
-		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
 		 */
 		allSelected() {
 			return (
@@ -463,7 +463,7 @@ export default {
 
 		/**
 		 * @return {Array<object>} The chosen messages.
-		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
 		 */
 		selectedMessages() {
 			return this.messages.filter((m) => this.selected.includes(rowId(m)))
@@ -471,7 +471,7 @@ export default {
 
 		/**
 		 * @return {string} The question before a delete, singular or plural.
-		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
 		 */
 		question() {
 			return this.confirming.length === 1
@@ -492,7 +492,7 @@ export default {
 		 *
 		 * @param {object} message The message.
 		 * @return {object|null} The reply declaration.
-		 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t05
+		 * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t05
 		 */
 		replyOf(message) {
 			const reply = message && message._source && message._source.reply
@@ -508,8 +508,8 @@ export default {
 		 * a job wrote after sign-in is not in the sign-in count.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
-		 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-badge-counts-the-unread-messages-the-inbox-shows-req-nap-011
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+		 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-badge-counts-the-unread-messages-the-inbox-shows-req-nap-011
 		 */
 		async load() {
 			this.loading = true
@@ -526,7 +526,7 @@ export default {
 		 * @param {object} message A message.
 		 * @param {number} i Its position.
 		 * @return {string|number} Its id.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
 		 */
 		idOf(message, i) {
 			return rowId(message, i)
@@ -546,7 +546,7 @@ export default {
 		/**
 		 * @param {string} value An ISO date-time.
 		 * @return {string} The value in the page language.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
 		 */
 		dateTime(value) {
 			return formatDateTime(value, this.lang)
@@ -557,7 +557,7 @@ export default {
 		 *
 		 * @param {object} message A message.
 		 * @return {string|null} The route.
-		 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-does-not-repeat-the-open-link-in-the-text-req-nap-012
+		 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-does-not-repeat-the-open-link-in-the-text-req-nap-012
 		 */
 		openRouteOf(message) {
 			return message?.recordLink?.id ? this.routeOf(message.recordLink) : null
@@ -569,7 +569,7 @@ export default {
 		 *
 		 * @param {object} message A message.
 		 * @return {string} The body to show.
-		 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-does-not-repeat-the-open-link-in-the-text-req-nap-012
+		 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-does-not-repeat-the-open-link-in-the-text-req-nap-012
 		 */
 		shownBody(message) {
 			return bodyWithoutOpenLink(
@@ -585,7 +585,7 @@ export default {
 		 *
 		 * @param {string} text The shown body or translation.
 		 * @return {Array<object>} The parts.
-		 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-shows-other-site-addresses-as-named-links-req-nap-013
+		 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-shows-other-site-addresses-as-named-links-req-nap-013
 		 */
 		partsOf(text) {
 			return bodyParts(text, this.origin, {
@@ -599,7 +599,7 @@ export default {
 		 *
 		 * @param {object} message A message.
 		 * @return {object|null} The translation entry, or null.
-		 * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-does-not-repeat-the-open-link-in-the-text-req-nap-012
+		 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-does-not-repeat-the-open-link-in-the-text-req-nap-012
 		 */
 		shownTranslation(message) {
 			const translation = message?.translation || null
@@ -619,7 +619,7 @@ export default {
 		/**
 		 * @param {object} message A message.
 		 * @return {boolean} Whether it carries readiness fields.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
 		 */
 		readiness(message) {
 			return hasReadiness(message)
@@ -628,7 +628,7 @@ export default {
 		/**
 		 * @param {object} message A message.
 		 * @return {Array<object>} The files that came with it.
-		 * @spec openspec/changes/inbox-reply-with-attachments/specs/portal-inbox-reply/spec.md#requirement-files-that-came-with-a-message-open-req-ira-004
+		 * @spec openspec/specs/portal-inbox-reply/spec.md#requirement-files-that-came-with-a-message-open-req-ira-004
 		 */
 		attachments(message) {
 			return attachmentsOf(message)
@@ -641,7 +641,7 @@ export default {
 		 * @param {object} message The message.
 		 * @param {object} file The file: `id`, `name`.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/inbox-reply-with-attachments/specs/portal-inbox-reply/spec.md#requirement-files-that-came-with-a-message-open-req-ira-004
+		 * @spec openspec/specs/portal-inbox-reply/spec.md#requirement-files-that-came-with-a-message-open-req-ira-004
 		 */
 		async download(message, file) {
 			const id = rowId(message)
@@ -661,7 +661,7 @@ export default {
 		/**
 		 * @param {object} message A message.
 		 * @return {string|null} The message box delivery line.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
 		 */
 		delivery(message) {
 			return deliveryLine(message, { t: this.tr, locale: this.lang })
@@ -670,7 +670,7 @@ export default {
 		/**
 		 * @param {object} link A record link.
 		 * @return {string|null} The route of the page that shows it.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
 		 */
 		routeOf(link) {
 			return recordRoute(this.nav, link)
@@ -682,7 +682,7 @@ export default {
 		 *
 		 * @param {object} message The message.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
 		 */
 		async markRead(message) {
 			const id = rowId(message)
@@ -701,7 +701,7 @@ export default {
 		/**
 		 * @param {object} message A message.
 		 * @return {boolean} Whether the resident may delete it.
-		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
 		 */
 		deletable(message) {
 			return canDelete(message)
@@ -713,7 +713,7 @@ export default {
 		 *
 		 * @param {string} id The row id.
 		 * @return {void}
-		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
 		 */
 		toggleSelected(id) {
 			if (!this.deletableIds.includes(id)) {
@@ -728,7 +728,7 @@ export default {
 		 * Choose every deletable row, or none when all are chosen already.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
 		 */
 		toggleAll() {
 			this.selected = this.allSelected ? [] : [...this.deletableIds]
@@ -740,7 +740,7 @@ export default {
 		 *
 		 * @param {Array<object>} messages The messages to delete.
 		 * @return {void}
-		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
 		 */
 		askDelete(messages) {
 			this.confirming = (messages || []).filter(canDelete).map((m) => rowId(m))
@@ -756,7 +756,7 @@ export default {
 		 * Leave the question without deleting anything.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
 		 */
 		cancelDelete() {
 			this.confirming = []
@@ -768,7 +768,7 @@ export default {
 		 * stays chosen.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+		 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
 		 */
 		async confirmDelete() {
 			const ids = [...this.confirming]
@@ -822,7 +822,7 @@ export default {
 		 *
 		 * @param {{app: string, collection: string, id: string}} link The record link.
 		 * @return {void}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
 		 */
 		openRecord(link) {
 			const route = recordRoute(this.nav, link)
@@ -838,7 +838,7 @@ export default {
 		 *
 		 * @param {string} route The in-site route.
 		 * @return {string} The address.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
 		 */
 		hrefOf(route) {
 			return siteHref(route)
@@ -851,7 +851,7 @@ export default {
 		 * @param {MouseEvent} event The click.
 		 * @param {{app: string, collection: string, id: string}} link The record link.
 		 * @return {void}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
 		 */
 		onOpenClick(event, link) {
 			if (
@@ -871,7 +871,7 @@ export default {
 		 *
 		 * @param {string} uuid The task uuid.
 		 * @return {void}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
 		 */
 		openTask(uuid) {
 			keepTaskToOpen(sessionStore(), uuid)
@@ -1015,7 +1015,7 @@ export default {
 		 *
 		 * @param {string} route The in-site route.
 		 * @return {void}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
 		 */
 		go(route) {
 			if (typeof this.navigate === 'function') {

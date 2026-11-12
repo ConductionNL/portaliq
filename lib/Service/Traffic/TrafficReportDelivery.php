@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use Throwable;
  * report's or the alert's name and a link to the Traffic page; the
  * Notifier renders it.
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- delivery is where the
  * mailer, the user directory, the notification manager, the URL generator
@@ -99,7 +99,7 @@ class TrafficReportDelivery {
 	 *
 	 * @return int How many deliveries succeeded (mails and notifications).
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
 	 */
 	public function sendReport(array $portal, array $report, array $period, array $current, array $previous): int {
 		$done = 0;
@@ -152,7 +152,7 @@ class TrafficReportDelivery {
 	 *
 	 * @return int How many deliveries succeeded.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
 	 */
 	public function sendAlert(array $portal, array $alert, array $period, float $value, ?float $change): int {
 		$done = 0;

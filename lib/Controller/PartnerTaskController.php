@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/partner-tasks-in-the-portal/specs/partner-tasks-in-the-portal/spec.md
+ * @spec openspec/specs/partner-tasks-in-the-portal/spec.md
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use OCP\IUserSession;
 /**
  * Raises a partner ask from a case.
  *
- * @spec openspec/changes/partner-tasks-in-the-portal/specs/partner-tasks-in-the-portal/spec.md
+ * @spec openspec/specs/partner-tasks-in-the-portal/spec.md
  */
 class PartnerTaskController extends Controller {
 
@@ -75,7 +75,7 @@ class PartnerTaskController extends Controller {
 	 *
 	 * @return JSONResponse The task and the account it went to, or a refusal.
 	 *
-	 * @spec openspec/changes/partner-tasks-in-the-portal/specs/partner-tasks-in-the-portal/spec.md
+	 * @spec openspec/specs/partner-tasks-in-the-portal/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the parameters are the
 	 * declared fields of the ask; an options array would lose their types.

@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use OCA\Portaliq\Service\TrafficIngestService;
  * aggregation is idempotent by day but the raw events are not deduplicated,
  * so importing the same file twice doubles its views; the command says so.
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
  */
 class TrafficLogImporter {
 	use PortalBySlug;
@@ -72,7 +72,7 @@ class TrafficLogImporter {
 	 * @return array{lines: int, views: int, skipped: int, duplicates: int, accepted: int,
 	 *               refused: array<string, int>}|null The outcome, or null for an unknown portal.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
 	 */
 	public function import(string $slug, $stream, string $format, string $host): ?array {
 		$portal = $this->portalBySlug(slug: $slug);

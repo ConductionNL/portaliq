@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
 
 declare(strict_types=1);
@@ -58,7 +58,7 @@ use OCP\IRequest;
 /**
  * The citizen's own identity surfaces.
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  *
  * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- one dependency per
  * distinct act; a facade would hide which boundary each one crosses.
@@ -110,7 +110,7 @@ class PortalIdentityController extends Controller {
 	 *
 	 * @return JSONResponse The challenge, or 404 for an unknown portal.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -143,7 +143,7 @@ class PortalIdentityController extends Controller {
 	 *
 	 * @return JSONResponse Whether a link was issued, or a refusal.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 * @spec openspec/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
 	 */
 	#[PublicPage]
@@ -304,7 +304,7 @@ class PortalIdentityController extends Controller {
 	 *
 	 * @return JSONResponse The case the link admits to with its bearer, or a refusal.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
 	 */
 	#[PublicPage]
@@ -404,7 +404,7 @@ class PortalIdentityController extends Controller {
 	 *
 	 * @return JSONResponse What became of the registration.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
 	 */
 	#[PublicPage]
@@ -637,7 +637,7 @@ class PortalIdentityController extends Controller {
 	 *
 	 * @return JSONResponse Whether the invitation admitted anybody.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

@@ -52,7 +52,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-case-app-declares-which-change-a-resident-hears-about-req-nap-001
- * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md
  */
 
 declare(strict_types=1);
@@ -133,7 +133,7 @@ class NotificationRuleNormaliser {
 	 * @return array{kept: array<int, string|array<string, mixed>>, dropped: array<int, string>}
 	 *
 	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-case-app-declares-which-change-a-resident-hears-about-req-nap-001
-	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md
 	 */
 	public function normalise(mixed $notifications, array $collections, string $appId = ''): array {
 		if (is_array($notifications) === false) {
@@ -287,7 +287,7 @@ class NotificationRuleNormaliser {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md
 	 */
 	public function scopedElsewhere(array $collection): bool {
 		return $this->filled(value: ($collection['scopeClaim'] ?? null)) || $this->filled(value: ($collection['via'] ?? null));

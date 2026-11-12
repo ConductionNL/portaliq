@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-roll-up-portal-must-sum-its-members-and-never-count-its-own
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-roll-up-portal-must-sum-its-members-and-never-count-its-own
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ namespace OCA\Portaliq\Service\Traffic;
  * alternative (a distinct count) would need the raw events a roll-up
  * portal is defined not to have.
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-roll-up-portal-must-sum-its-members-and-never-count-its-own
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-roll-up-portal-must-sum-its-members-and-never-count-its-own
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- one merge over
  * every shape the daily record has (maps, ranked lists, pages, goals,
@@ -114,7 +114,7 @@ class TrafficRollupSum {
 	 *
 	 * @return array<string, mixed> The `portalTrafficDaily` fields.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-roll-up-portal-must-sum-its-members-and-never-count-its-own
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-roll-up-portal-must-sum-its-members-and-never-count-its-own
 	 */
 	public function sum(string $portal, string $date, array $members, array $records, string $aggregatedAt): array {
 		$acc = $this->empty();
@@ -373,7 +373,7 @@ class TrafficRollupSum {
 	 *
 	 * @return array<string, array<string, mixed>> The accumulator.
 	 *
-	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-each-daily-page-row-must-carry-its-sessions-visitors-sources-and-outbound-links
+	 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-each-daily-page-row-must-carry-its-sessions-visitors-sources-and-outbound-links
 	 */
 	private function addPages(array $into, mixed $rows): array {
 		if (is_array($rows) === false) {

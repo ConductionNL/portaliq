@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
+ * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ namespace OCA\Portaliq\Service\Traffic;
  *
  * Pure: definitions and sessions in, rows out.
  *
- * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
+ * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
  */
 class TrafficExperiments {
 
@@ -77,7 +77,7 @@ class TrafficExperiments {
 	 *
 	 * @return bool True when the tag may be stored.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
 	 */
 	public function acceptsTag(array $config, string $experiment, string $variant): bool {
 		foreach ((array)($config['experiments'] ?? []) as $definition) {
@@ -104,7 +104,7 @@ class TrafficExperiments {
 	 *
 	 * @return array<int, array<string, mixed>> Rows of `{id, name, status, variants: [{id, name, sessions, conversions, rate}], winner, confidence}`.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
 	 */
 	public function rows(array $experiments, array $sessions, array $goals): array {
 		$byId = [];
@@ -170,7 +170,7 @@ class TrafficExperiments {
 	 *
 	 * @return array{winner: string, confidence: float} The verdict.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-winner-must-only-be-named-with-enough-sessions-and-a-significant-difference
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-winner-must-only-be-named-with-enough-sessions-and-a-significant-difference
 	 */
 	public function verdict(array $variants): array {
 		if (count($variants) < 2) {
@@ -221,7 +221,7 @@ class TrafficExperiments {
 	 *
 	 * @return float The confidence.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-winner-must-only-be-named-with-enough-sessions-and-a-significant-difference
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-winner-must-only-be-named-with-enough-sessions-and-a-significant-difference
 	 */
 	public function zTest(int $conversionsA, int $sessionsA, int $conversionsB, int $sessionsB): float {
 		if ($sessionsA <= 0 || $sessionsB <= 0) {

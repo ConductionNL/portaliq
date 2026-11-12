@@ -151,7 +151,7 @@ const STRINGS = {
 }
 
 /**
- * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t05
+ * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t05
  */
 export default {
 	name: 'InboxReply',
@@ -184,7 +184,7 @@ export default {
 	computed: {
 		/**
 		 * @return {string} The id prefix.
-		 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t05
+		 * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t05
 		 */
 		base() {
 			return this.idBase
@@ -192,7 +192,7 @@ export default {
 
 		/**
 		 * @return {Array<object>} The questions.
-		 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t05
+		 * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t05
 		 */
 		questions() {
 			return replyQuestions(this.reply)
@@ -200,7 +200,7 @@ export default {
 
 		/**
 		 * @return {object} The words in the page language.
-		 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t05
+		 * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t05
 		 */
 		words() {
 			return STRINGS[
@@ -210,7 +210,7 @@ export default {
 
 		/**
 		 * @return {Array<object>} The file fields.
-		 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t05
+		 * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t05
 		 */
 		fileFieldsOf() {
 			return replyFileFields(this.reply)
@@ -222,7 +222,7 @@ export default {
 		 * Open the form with the subject filled in and put focus on its heading.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t05
+		 * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t05
 		 */
 		show() {
 			this.values = replyStart(this.message, this.reply)
@@ -243,7 +243,7 @@ export default {
 		 *
 		 * @param {{maxSizeMb: number}} field The file field.
 		 * @return {string} The sentence, or ''.
-		 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t05
+		 * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t05
 		 */
 		limitText(field) {
 			return field.maxSizeMb > 0
@@ -256,7 +256,7 @@ export default {
 		 * file was not added while keeping the reply.
 		 *
 		 * @return {Promise<void>} Resolves when sent or refused.
-		 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t06
+		 * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t06
 		 */
 		async send() {
 			this.sending = true

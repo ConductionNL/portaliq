@@ -476,7 +476,7 @@ class PortalIdentityMailer {
 	 *
 	 * @return bool True when the mail left.
 	 *
-	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function sendClaimNotice(string $email, string $organisation, DateTimeInterface $moment): bool {
 		return $this->notice(

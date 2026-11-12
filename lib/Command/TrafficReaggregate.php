@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
+ * @spec openspec/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * purge keeps its more complete record. Always exits 0; the counts say
  * what happened.
  *
- * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
+ * @spec openspec/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
  */
 class TrafficReaggregate extends Command {
 
@@ -64,7 +64,7 @@ class TrafficReaggregate extends Command {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
+	 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
 	 */
 	protected function configure(): void {
 		$this->setName(name: 'portaliq:traffic:reaggregate');
@@ -85,7 +85,7 @@ class TrafficReaggregate extends Command {
 	 *
 	 * @return int Always 0.
 	 *
-	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
+	 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output): int {
 		$only = trim((string)$input->getOption('portal'));

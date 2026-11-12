@@ -24,10 +24,10 @@
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T02
  * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
- * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T03
- * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T05
- * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T06
- * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T07
+ * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T03
+ * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T05
+ * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T06
+ * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T07
  */
 
 declare(strict_types=1);
@@ -67,8 +67,8 @@ use OCP\IUserSession;
  * Public auth-edge endpoints for the portal SPA.
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T02
- * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T06
- * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T07
+ * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T06
+ * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T07
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- one dependency per
  * distinct OIDC responsibility (config resolution, protocol mechanics, claim
@@ -110,7 +110,7 @@ class SessionController extends Controller {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-server-must-link-to-the-site-directly-req-srp-049
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-server-must-link-to-the-site-directly-req-srp-049
 	 */
 	private function portalReturnTo(): string {
 		return $this->urlGenerator->linkToRoute(Application::APP_ID . '.portalPage.site');
@@ -126,7 +126,7 @@ class SessionController extends Controller {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/portal-signin-on-its-own-address/tasks.md#T3
+	 * @spec openspec/changes/archive/2026-10-07-portal-signin-on-its-own-address/tasks.md#T3
 	 */
 	private function returnToPortal(?array $site): string {
 		$slug = (string)($site['slug'] ?? '');
@@ -145,7 +145,7 @@ class SessionController extends Controller {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 	 */
 	private function siteReturn(string $returnTo): string {
 		return (new SiteReturnAddress())->accept(
@@ -162,7 +162,7 @@ class SessionController extends Controller {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 	 */
 	private function returnAddress(string $siteReturn, ?array $site): string {
 		if ($siteReturn !== '') {
@@ -184,7 +184,7 @@ class SessionController extends Controller {
 	 * @return RedirectResponse
 	 *
 	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-organisation-chooses-the-login-route-per-provider-req-bel-001
-	 * @spec openspec/changes/portal-broker-login-keeps-the-portal/specs/portal-broker-envelope-login/spec.md
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md
 	 */
 	private function toBroker(string $org, string $provider, string $siteReturn, ?array $site): RedirectResponse {
 		$params = ['org' => $org, 'provider' => $provider];
@@ -212,7 +212,7 @@ class SessionController extends Controller {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/portal-signin-on-its-own-address/tasks.md#T3
+	 * @spec openspec/changes/archive/2026-10-07-portal-signin-on-its-own-address/tasks.md#T3
 	 */
 	private function siteFor(string $portal): ?array {
 		if (((new RequestedPortal())->slug(request: $this->request) ?? $portal) === '') {
@@ -296,7 +296,7 @@ class SessionController extends Controller {
 	 *                      offered and rejected.
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T05
 	 * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T02
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T02
 	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T06
@@ -363,8 +363,8 @@ class SessionController extends Controller {
 	 *
 	 * @return string The name, or ''.
 	 *
-	 * @spec openspec/changes/site-header-names-the-person/specs/portaliq-cms/spec.md#requirement-the-header-must-name-the-signed-in-person-never-their-reference
-	 * @spec openspec/changes/resident-sees-words-not-codes/specs/portaliq-cms/spec.md#requirement-the-header-must-never-name-a-person-by-a-number
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-header-must-name-the-signed-in-person-never-their-reference
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-header-must-never-name-a-person-by-a-number
 	 */
 	private function displayNameOf(?array $account, string $subjectRef): string {
 		$name = trim((string)($account['displayName'] ?? ''));
@@ -429,7 +429,7 @@ class SessionController extends Controller {
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T05
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -496,11 +496,11 @@ class SessionController extends Controller {
 	 *
 	 * @return Response 302 to the broker, or the generic OIDC error.
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T06
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T06
 	 * @spec openspec/specs/supplier-portal/spec.md#oidc-start-builds-a-state-nonce-pkce-authorization-request
 	 * @spec openspec/changes/archive/2026-09-29-signin-integriq-broker-login/design.md#d2-two-new-routes-and-the-spas-follow-the-route-field
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T07
-	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 	 *
 	 * @no-admin-idor-exempt the lookup is unscoped because it MUST be: this is
 	 * the anonymous entry point to a portal's login, so a caller with no
@@ -683,7 +683,7 @@ class SessionController extends Controller {
 	 *
 	 * @return Response 302 to the SPA with the minted bearer, or the generic OIDC error.
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T07
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T07
 	 * @spec openspec/specs/supplier-portal/spec.md#oidc-callback-validates-the-id-token-and-fails-closed-on-every-error
 	 * @spec openspec/specs/supplier-portal/spec.md#every-validation-failure-is-an-identical-generic-error
 	 * @spec openspec/specs/supplier-portal/spec.md#the-subject-reference-is-server-derived-never-client-supplied
@@ -1212,7 +1212,7 @@ class SessionController extends Controller {
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.1
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T05
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
 	 */
 	#[PublicPage]
@@ -1293,7 +1293,7 @@ class SessionController extends Controller {
 	 *
 	 * @return JSONResponse 200 with the new bearer, or 401 on any rejection.
 	 *
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T03
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T02
 	 * @spec openspec/specs/supplier-portal/spec.md#session-refresh-rotates-the-token-within-an-absolute-cap
 	 */

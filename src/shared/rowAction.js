@@ -299,7 +299,7 @@ function pageOrigin() {
  * @param {object} result `{ok, body}` from a forward.
  * @param {string} [origin] The page's own origin; defaults to the current page.
  * @return {string} The link, or ''.
- * @spec openspec/changes/my-dossiers/specs/portal-contribution-contract/spec.md#requirement-a-link-in-an-actions-answer-must-be-shown-to-the-resident-req-myd-004
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-link-in-an-actions-answer-must-be-shown-to-the-resident-req-myd-004
  */
 export function answerLink(result, origin = pageOrigin()) {
 	const link = linkInAnswer(result)

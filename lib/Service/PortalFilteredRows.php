@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/via-read-scoped-query/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-via-read-scoped-query/tasks.md#T1
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use Throwable;
  * Builds the subject-scoped outer query of a via read and checks a row
  * against a collection's declared filter.
  *
- * @spec openspec/changes/via-read-scoped-query/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-via-read-scoped-query/tasks.md#T1
  */
 class PortalFilteredRows {
 
@@ -65,7 +65,7 @@ class PortalFilteredRows {
 	 *
 	 * @return array<int, mixed>|null The raw rows, or null when the read failed.
 	 *
-	 * @spec openspec/changes/via-read-scoped-query/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-10-07-via-read-scoped-query/tasks.md#T1
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- one parameter per
 	 * part of the declared collection, as in PortalObjectReader.
@@ -143,7 +143,7 @@ class PortalFilteredRows {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/via-read-scoped-query/tasks.md#T2
+	 * @spec openspec/changes/archive/2026-10-07-via-read-scoped-query/tasks.md#T2
 	 */
 	public function matchesFilter(array $row, array $filter, string $scopeField): bool {
 		foreach ($filter as $key => $expected) {

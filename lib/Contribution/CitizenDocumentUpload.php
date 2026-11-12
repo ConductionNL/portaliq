@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ use OCA\Portaliq\Service\UploadedFile;
 /**
  * Reads the citizen's upload and names it so it adds rather than replaces.
  *
- * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
 class CitizenDocumentUpload {
 
@@ -47,7 +47,7 @@ class CitizenDocumentUpload {
 	 *
 	 * @return array{name: string, content: string}|null
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function read(?array $uploaded): ?array {
 		return (new UploadedFile())->read(uploaded: $uploaded);
@@ -62,7 +62,7 @@ class CitizenDocumentUpload {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function uniqueName(array $existing, string $fileName): string {
 		$taken = [];

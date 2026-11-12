@@ -9,7 +9,7 @@
 // listed more unread rows. Once the inbox has loaded its rows, the badge
 // takes their count.
 //
-// @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-badge-counts-the-unread-messages-the-inbox-shows-req-nap-011
+// @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-badge-counts-the-unread-messages-the-inbox-shows-req-nap-011
 
 /**
  * How many of the loaded inbox rows are unread.

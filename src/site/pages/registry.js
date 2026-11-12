@@ -40,7 +40,7 @@
  * Imports only loader maps and shared code, so tests/site-signed-in-shell.spec.mjs
  * runs it as node.
  *
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 
 // Slice c registers its forms and actions in slice b's places on import.
@@ -122,7 +122,7 @@ export function isFormPage(entry) {
  *
  * @param {object|null} entry A navigation entry.
  * @return {boolean}
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function pageOwnsHeading(entry) {
 	return Boolean(
@@ -140,7 +140,7 @@ export function pageOwnsHeading(entry) {
  * @param {string} key An entry key, a section name or `contribution`.
  * @param {() => Promise<object>} loader Loads the component, e.g. `() => import('./InboxPage.vue')`.
  * @return {void}
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function registerSitePage(key, loader) {
 	if (typeof key !== 'string' || key === '') {
@@ -157,7 +157,7 @@ export function registerSitePage(key, loader) {
  *
  * @param {object} entry A navigation entry.
  * @return {Array<string>} The keys.
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function sitePageKeys(entry) {
 	if (!entry) {
@@ -175,7 +175,7 @@ export function sitePageKeys(entry) {
  *
  * @param {object} entry A navigation entry.
  * @return {(() => Promise<object>)|null} The loader.
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function sitePageLoader(entry) {
 	for (const key of sitePageKeys(entry)) {

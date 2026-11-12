@@ -9,7 +9,7 @@
  * goes through the row-action route with `actionApp`, which proves the row
  * through the collection's own scope before the action's app hears of it.
  *
- * @spec openspec/changes/woo-journey-entry-points/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
  */
 
 import { outcomeKey } from './rowAction.js'
@@ -23,7 +23,7 @@ import { outcomeKey } from './rowAction.js'
  * @param {object} entry The attached action.
  * @param {object} row   The row on screen.
  * @return {boolean}
- * @spec openspec/changes/attach-to-own-collection/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-carry-its-rowwhen-to-the-renderer-req-ato-002
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-carry-its-rowwhen-to-the-renderer-req-ato-002
  */
 function appliesTo(entry, row) {
 	if (!entry.rowWhen) {
@@ -43,7 +43,7 @@ function appliesTo(entry, row) {
  * @param {object} collection The manifest collection.
  * @param {object} [row]      The row on screen; without it nothing is left out.
  * @return {Array<object>} Entries with string `app` and `id`.
- * @spec openspec/changes/attach-to-own-collection/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-carry-its-rowwhen-to-the-renderer-req-ato-002
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-carry-its-rowwhen-to-the-renderer-req-ato-002
  */
 export function attachedActionsOf(collection, row) {
 	const listed =

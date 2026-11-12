@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbox-reads-each-apps-message-fields/specs/supplier-portal/spec.md#requirement-an-inbox-collection-names-its-own-message-fields-req-imf-001
+ * @spec openspec/specs/supplier-portal/spec.md#requirement-an-inbox-collection-names-its-own-message-fields-req-imf-001
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Normalises and applies an inbox collection's `messageFields`.
  *
- * @spec openspec/changes/inbox-reads-each-apps-message-fields/specs/supplier-portal/spec.md#requirement-an-inbox-collection-names-its-own-message-fields-req-imf-001
+ * @spec openspec/specs/supplier-portal/spec.md#requirement-an-inbox-collection-names-its-own-message-fields-req-imf-001
  */
 class InboxMessageFields {
 	/**
@@ -67,7 +67,7 @@ class InboxMessageFields {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/inbox-reads-each-apps-message-fields/specs/supplier-portal/spec.md#requirement-an-inbox-collection-names-its-own-message-fields-req-imf-001
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-an-inbox-collection-names-its-own-message-fields-req-imf-001
 	 */
 	public function normalise(array $collection): array {
 		$collection = $this->normaliseExtra(collection: $collection);
@@ -176,7 +176,7 @@ class InboxMessageFields {
 	 *
 	 * @return array<string, mixed> The row in the inbox's shape.
 	 *
-	 * @spec openspec/changes/inbox-reads-each-apps-message-fields/specs/supplier-portal/spec.md#requirement-an-inbox-collection-names-its-own-message-fields-req-imf-001
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-an-inbox-collection-names-its-own-message-fields-req-imf-001
 	 */
 	public function apply(array $row, array $collection): array {
 		$row = $this->applyExtra(row: $row, collection: $collection);

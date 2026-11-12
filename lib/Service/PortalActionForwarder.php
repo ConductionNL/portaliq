@@ -27,7 +27,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
- * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+ * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T09
  * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
  */
 
@@ -429,7 +429,7 @@ class PortalActionForwarder {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
 	 */
 	public function isForwardable(array $action): bool {
 		$endpoint = ($action['endpoint'] ?? null);
@@ -479,7 +479,7 @@ class PortalActionForwarder {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
 	 */
 	protected function requestBody(): string {
 		if (is_callable([$this->request, 'getContent']) === true) {
@@ -497,7 +497,7 @@ class PortalActionForwarder {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
 	 */
 	protected function rawInput(): string {
 		$raw = file_get_contents('php://input');

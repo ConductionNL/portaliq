@@ -10,7 +10,7 @@
   are declared, rather than shown an empty table: an empty table reads
   as "nothing converted", which is a different and worse message.
 
-  @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
+  @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
 -->
 <template>
 	<div class="traffic-table" data-testid="traffic-goals">
@@ -100,7 +100,7 @@ export default {
 		 * Whether the selected portal declared any goal, read from the
 		 * portal record so a goal with no conversions yet is still a row.
 		 *
-		 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
+		 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
 		 * @return {boolean} True when there is a goal to show.
 		 */
 		hasGoals() {
@@ -115,7 +115,7 @@ export default {
 		/**
 		 * The selected portal's object id, for the link to its detail page.
 		 *
-		 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
+		 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
 		 * @return {string} The id, or ''.
 		 */
 		portalId() {
@@ -128,7 +128,7 @@ export default {
 		 * The sentence above the table: the share of visits that met any
 		 * goal.
 		 *
-		 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
+		 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
 		 * @return {string} The label.
 		 */
 		rateLabel() {
@@ -143,7 +143,7 @@ export default {
 		/**
 		 * Conversions as a share of the range's sessions.
 		 *
-		 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
+		 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-goals-must-be-evaluated-from-the-portals-own-definitions
 		 * @param {number} conversions The goal's conversions.
 		 * @return {string} A percentage with one decimal.
 		 */

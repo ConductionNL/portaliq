@@ -88,7 +88,7 @@ function titleOf(item) {
 }
 
 /**
- * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-news-block-must-show-the-subjects-latest-news
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-news-block-must-show-the-subjects-latest-news
  */
 export default {
 	name: 'NewsBlock',
@@ -131,7 +131,7 @@ export default {
 		 * translation notice) behind the page's.
 		 *
 		 * @return {(key: string, vars?: object) => string}
-		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-news-block-must-show-the-subjects-latest-news
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-news-block-must-show-the-subjects-latest-news
 		 */
 		tr() {
 			return withStrings(this.t, this.locale)
@@ -143,7 +143,7 @@ export default {
 		 * body (account-news-rows).
 		 *
 		 * @return {Array<{key: string, who: string, when: string, title: string, lang: string}>}
-		 * @spec openspec/changes/account-news-rows/specs/portal-contribution-contract/spec.md#requirement-a-news-block-on-an-account-page-shows-rows-not-bodies
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-news-block-on-an-account-page-shows-rows-not-bodies
 		 */
 		rows() {
 			return this.items.map((item, index) => ({
@@ -177,7 +177,7 @@ export default {
 		 * Read the subject's feed; an unreachable feed reads as empty.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-news-block-must-show-the-subjects-latest-news
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-news-block-must-show-the-subjects-latest-news
 		 */
 		async load() {
 			if (!this.api || typeof this.api.fetchNewsFeed !== 'function') {

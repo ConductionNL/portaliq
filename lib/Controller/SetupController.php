@@ -118,7 +118,7 @@ class SetupController extends Controller {
 	 *       a real declaration), which would widen the route to delegated
 	 *       settings admins.
 	 *
-	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	#[AuthorizedAdminSetting(PortaliqAdmin::class)]
 	public function status(): JSONResponse {
@@ -154,7 +154,7 @@ class SetupController extends Controller {
 	 *
 	 * @return JSONResponse `{ success, config }`.
 	 *
-	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	#[AuthorizedAdminSetting(PortaliqAdmin::class)]
 	public function saveConfig(): JSONResponse {
@@ -243,7 +243,7 @@ class SetupController extends Controller {
 	 *
 	 * @return string|JSONResponse The dataset id, or the refusal of a posted value.
 	 *
-	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function pickedDataset(string $actionId): string|JSONResponse {
 		$picked = $this->appConfig->getValueString(Application::APP_ID, self::DATASET_KEY, '');
@@ -288,7 +288,7 @@ class SetupController extends Controller {
 	 *
 	 * @return JSONResponse `{ success, message }`.
 	 *
-	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function loadDataset(string $actionId): JSONResponse {
 		$picked = $this->pickedDataset(actionId: $actionId);
@@ -395,7 +395,7 @@ class SetupController extends Controller {
 	 *
 	 * @return JSONResponse|null The refusal, or null when the dataset is known.
 	 *
-	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
+	 * @spec openspec/specs/first-time-setup/spec.md
 	 */
 	private function refuseDataset(mixed $value): ?JSONResponse {
 		if (is_scalar($value) === false) {

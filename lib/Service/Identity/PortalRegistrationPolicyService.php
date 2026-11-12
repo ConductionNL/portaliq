@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
 
 declare(strict_types=1);
@@ -29,7 +29,7 @@ namespace OCA\Portaliq\Service\Identity;
 /**
  * Decides what happens to a self-registration.
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
 class PortalRegistrationPolicyService {
 	/**
@@ -54,7 +54,7 @@ class PortalRegistrationPolicyService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function isOffered(array $site): bool {
 		return $this->policy(site: $site) !== self::POLICY_OFF;
@@ -67,7 +67,7 @@ class PortalRegistrationPolicyService {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function policy(array $site): string {
 		$registration = ((array)($site['authentication'] ?? []))['registration'] ?? [];
@@ -95,7 +95,7 @@ class PortalRegistrationPolicyService {
 	 *         `status`, which is `pending` under either policy, because
 	 *         neither admits anybody yet.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function decide(array $site, string $email): array {
 		$policy = $this->policy(site: $site);

@@ -242,7 +242,7 @@ import {
 import { withStrings } from '../../pages/inbox/translate.js'
 
 /**
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
  */
 export default {
 	name: 'TimedTaskView',
@@ -288,7 +288,7 @@ export default {
 	computed: {
 		/**
 		 * @return {(key: string, vars?: object) => string} The translator.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
 		 */
 		tr() {
 			return withStrings(this.t, this.locale)
@@ -296,7 +296,7 @@ export default {
 
 		/**
 		 * @return {object} The five action ids.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
 		 */
 		block() {
 			return this.collection.timedTask || {}
@@ -304,7 +304,7 @@ export default {
 
 		/**
 		 * @return {number|null} Seconds left, or null for no limit.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
 		 */
 		left() {
 			if (!this.attempt) {
@@ -320,7 +320,7 @@ export default {
 
 		/**
 		 * @return {string} The visible clock.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
 		 */
 		clockText() {
 			return this.left === null
@@ -330,7 +330,7 @@ export default {
 
 		/**
 		 * @return {string} The clock a screen reader hears, once a minute.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
 		 */
 		spokenClock() {
 			return this.left === null
@@ -342,7 +342,7 @@ export default {
 
 		/**
 		 * @return {object|null} The question on screen.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
 		 */
 		currentItem() {
 			return this.attempt ? this.attempt.items[this.index] || null : null
@@ -350,7 +350,7 @@ export default {
 
 		/**
 		 * @return {boolean} Whether the question on screen waits to be saved.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
 		 */
 		currentUnsaved() {
 			return this.currentItem
@@ -360,7 +360,7 @@ export default {
 
 		/**
 		 * @return {number} How many questions have an answer.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
 		 */
 		answeredCount() {
 			return this.attempt
@@ -372,7 +372,7 @@ export default {
 
 		/**
 		 * @return {Array<object>} The result's items.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
 		 */
 		resultItems() {
 			return Array.isArray(this.result?.items) ? this.result.items : []
@@ -423,7 +423,7 @@ export default {
 		 * Read the tests the pupil can start.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
 		 */
 		async loadTasks() {
 			const answer = await this.api.forwardAction(
@@ -442,7 +442,7 @@ export default {
 		 *
 		 * @param {object} task The test from `available`.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
 		 */
 		async start(task) {
 			this.error = null
@@ -489,7 +489,7 @@ export default {
 
 		/**
 		 * @return {void}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
 		 */
 		startClock() {
 			this.stopClock()
@@ -502,7 +502,7 @@ export default {
 
 		/**
 		 * @return {void}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
 		 */
 		stopClock() {
 			if (this.timer) {
@@ -517,7 +517,7 @@ export default {
 		 * @param {string} itemId The question.
 		 * @param {string|Array<string>|Record<string, string>} value The answer.
 		 * @return {void}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
 		 */
 		answer(itemId, value) {
 			this.answers = { ...this.answers, [itemId]: value }
@@ -529,7 +529,7 @@ export default {
 		 *
 		 * @param {number} next The question's place.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
 		 */
 		async go(next) {
 			this.index = next
@@ -541,7 +541,7 @@ export default {
 		 *
 		 * @param {boolean} byClock Whether the deadline triggered it.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
 		 */
 		async handIn(byClock) {
 			if (this.submitting || !this.attempt) {
@@ -575,7 +575,7 @@ export default {
 		 *
 		 * @param {string} attemptId The attempt.
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
 		 */
 		async showResult(attemptId) {
 			this.result = null
@@ -590,7 +590,7 @@ export default {
 		/**
 		 * @param {object} row An attempt row.
 		 * @return {string|undefined} Its id.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
 		 */
 		attemptIdOf(row) {
 			return row.id || row['@self']?.id
@@ -599,7 +599,7 @@ export default {
 		/**
 		 * @param {string|Array<string>|object|null} response A stored answer.
 		 * @return {string} It as text.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-pupil-must-be-able-to-take-a-timed-task-req-srp-036
 		 */
 		answerText(response) {
 			return typeof response === 'string'

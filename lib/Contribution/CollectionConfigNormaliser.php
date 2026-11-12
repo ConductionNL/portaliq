@@ -72,7 +72,7 @@ class CollectionConfigNormaliser {
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/specs/supplier-portal/spec.md#download-is-opt-in-per-collection-fail-closed
-	 * @spec openspec/changes/inbox-reads-each-apps-message-fields/specs/supplier-portal/spec.md#requirement-an-inbox-collection-names-its-own-message-fields-req-imf-001
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-an-inbox-collection-names-its-own-message-fields-req-imf-001
 	 * @spec openspec/changes/archive/2026-10-30-collection-intro/tasks.md#t1
 	 */
 	public function normaliseCollections(array $collections): array {
@@ -174,7 +174,7 @@ class CollectionConfigNormaliser {
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T1
-	 * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-server-enforced-status-transitions
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-server-enforced-status-transitions
 	 */
 	public function resolveRowActions(array $collections, array $actions): array {
 		return (new RowActionResolver())->resolve(collections: $collections, actions: $actions);
@@ -193,7 +193,7 @@ class CollectionConfigNormaliser {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	private function normaliseKind(array $collection): array {
 		if (array_key_exists('kind', $collection) === false) {
@@ -252,7 +252,7 @@ class CollectionConfigNormaliser {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/collection-group-by-field/tasks.md#T2
+	 * @spec openspec/changes/archive/2026-10-07-collection-group-by-field/tasks.md#T2
 	 */
 	private function normaliseGroupByField(array $collection): array {
 		if (array_key_exists('groupByField', $collection) === false) {

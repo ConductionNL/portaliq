@@ -180,7 +180,7 @@ export default {
 		 *
 		 * @return {boolean}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-install-offer-must-be-dismissible-req-srp-046
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-install-offer-must-be-dismissible-req-srp-046
 		 */
 		visible() {
 			return (
@@ -233,7 +233,7 @@ export default {
 		 * @param {Event} event The `beforeinstallprompt` event.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-install-offer-must-be-dismissible-req-srp-046
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-install-offer-must-be-dismissible-req-srp-046
 		 */
 		onOffer(event) {
 			event.preventDefault()
@@ -245,7 +245,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-install-offer-must-be-dismissible-req-srp-046
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-install-offer-must-be-dismissible-req-srp-046
 		 */
 		onInstalled() {
 			this.offer = null
@@ -258,7 +258,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-install-offer-must-be-dismissible-req-srp-046
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-install-offer-must-be-dismissible-req-srp-046
 		 */
 		async install() {
 			const offer = this.offer
@@ -281,7 +281,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-install-offer-must-be-dismissible-req-srp-046
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-install-offer-must-be-dismissible-req-srp-046
 		 * @spec openspec/changes/site-matches-the-zuiddrecht-boards/specs/portaliq-cms/spec.md#requirement-the-install-offer-is-a-dialog-over-the-page-that-remembers-not-now
 		 */
 		dismiss() {

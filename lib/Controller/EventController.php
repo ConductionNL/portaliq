@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/events-and-signups/design.md#api-design
+ * @spec openspec/changes/archive/2026-09-28-events-and-signups/design.md#api-design
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Staff authoring for events.
  *
- * @spec openspec/changes/events-and-signups/design.md#api-design
+ * @spec openspec/changes/archive/2026-09-28-events-and-signups/design.md#api-design
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- `IUserSession` and
  * `ActionAuthService` are the authorization guard every `#[NoAdminRequired]`
@@ -99,7 +99,7 @@ class EventController extends Controller {
 	 *
 	 * @return JSONResponse The created object, or 400/500.
 	 *
-	 * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- `rsvpEnabled` is a
 	 * request-bound field stored verbatim on the created object, not a
@@ -144,7 +144,7 @@ class EventController extends Controller {
 	 *
 	 * @return JSONResponse The updated object, or 404.
 	 *
-	 * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
 	 */
 	#[NoAdminRequired]
 	public function publish(string $id): JSONResponse {

@@ -15,7 +15,7 @@
 //
 // Imports nothing, so tests/record-page.spec.mjs runs it as node.
 //
-// @spec openspec/changes/contribution-record-page/tasks.md#T2
+// @spec openspec/changes/archive/2026-10-07-contribution-record-page/tasks.md#T2
 
 /**
  * The id of a row, wherever the envelope keeps it.
@@ -252,7 +252,7 @@ export function figure(row, field, locale) {
  * @param {string|{one: string, other: string}|undefined} word The declared word.
  * @param {unknown} value The figure the word follows.
  * @return {string}
- * @spec openspec/changes/kpi-unit-singular-and-plural/specs/portal-contribution-contract/spec.md#requirement-a-figure-cards-unit-may-name-its-singular-and-plural
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-figure-cards-unit-may-name-its-singular-and-plural
  */
 export function countedWord(word, value) {
 	if (typeof word === 'string') {
@@ -686,7 +686,7 @@ function publishedMoment(item) {
  *
  * @param {Array<object>} items The news items.
  * @return {Array<object>} A newest-first copy; undated items last, ties keep their order.
- * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-news-block-must-show-the-subjects-latest-news
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-news-block-must-show-the-subjects-latest-news
  */
 export function newestNewsFirst(items) {
 	return (Array.isArray(items) ? items : [])
