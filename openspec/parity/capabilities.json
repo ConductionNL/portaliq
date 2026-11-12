@@ -13968,7 +13968,13 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"origin": "change-triage"
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"BerichtDetail",
+					"Berichten"
+				]
+			}
 		},
 		{
 			"id": "ops-staff-only-register",
@@ -14016,7 +14022,12 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"origin": "change-triage"
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"Artikel"
+				]
+			}
 		},
 		{
 			"id": "int-form-settings-page",
@@ -14032,7 +14043,12 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"origin": "change-triage"
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"PtFormulierInstellingen"
+				]
+			}
 		},
 		{
 			"id": "site-subject-landing",
@@ -14048,7 +14064,13 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"origin": "change-triage"
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"Home",
+					"ThemaOverzicht"
+				]
+			}
 		},
 		{
 			"id": "ops-internal-base-url",
@@ -14080,7 +14102,13 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"origin": "change-triage"
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"PtArtikel",
+					"PtArtikelen"
+				]
+			}
 		},
 		{
 			"id": "ops-portal-page-choice",
@@ -14096,7 +14124,15 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"origin": "change-triage"
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"EditorMenu",
+					"Kop",
+					"Voet",
+					"PtPortal"
+				]
+			}
 		},
 		{
 			"id": "id-account-presence",
@@ -14112,7 +14148,12 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"origin": "change-triage"
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"DqContact"
+				]
+			}
 		},
 		{
 			"id": "site-public-catalogue",
@@ -14128,7 +14169,17 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"origin": "change-triage"
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"Zoeken",
+					"Zoeken",
+					"Zoeken",
+					"Zoeken",
+					"Zoeken",
+					"Editor"
+				]
+			}
 		},
 		{
 			"id": "ana-zero-result-searches",
@@ -14144,7 +14195,12 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"origin": "change-triage"
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"PtVerkeer"
+				]
+			}
 		},
 		{
 			"id": "site-public-item-detail",
@@ -14160,7 +14216,12 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"origin": "change-triage"
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"Artikel"
+				]
+			}
 		},
 		{
 			"id": "srch-publication-documents",
@@ -14176,7 +14237,12 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"origin": "change-triage"
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"Publicatie"
+				]
+			}
 		},
 		{
 			"id": "srch-error-report-and-withheld",
@@ -14192,7 +14258,12 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"origin": "change-triage"
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"Publicatie"
+				]
+			}
 		},
 		{
 			"id": "sig-email-link",
@@ -14208,7 +14279,13 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"origin": "change-triage"
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"Inloggen",
+					"PtAccount"
+				]
+			}
 		},
 		{
 			"id": "site-accessibility-statement",
@@ -14224,7 +14301,12 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"origin": "change-triage"
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"Toegankelijkheid"
+				]
+			}
 		},
 		{
 			"id": "site-without-javascript",
@@ -14240,7 +14322,12 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"origin": "change-triage"
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"ZonderJavascript"
+				]
+			}
 		},
 		{
 			"id": "id-manage-mandates",
@@ -14256,7 +14343,13 @@
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
-			"origin": "change-triage"
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"Machtigingen",
+					"Machtigen"
+				]
+			}
 		}
 	],
 	"pending": [
