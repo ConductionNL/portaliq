@@ -9,12 +9,14 @@ use OCA\Portaliq\Service\Intake\IntakeQueueDrain;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\Intake\PortalIntakeQueue;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 /**
  * One drain pass over recorded entries and destination answers.
  */
 #[CoversClass(IntakeQueueDrain::class)]
+#[UsesClass(\OCA\Portaliq\Service\Intake\DestinationMapping::class)]
 class IntakeQueueDrainRecordedTest extends TestCase {
 	/**
 	 * Every entry is submitted, marked and counted exactly as recorded.

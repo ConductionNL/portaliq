@@ -45,6 +45,8 @@ use RuntimeException;
  * portal's own text and the mail log.
  *
  * @covers \OCA\Portaliq\Service\Identity\PortalIdentityMailer
+ * @uses   \OCA\Portaliq\Service\Identity\IdentityMailRun
+ * @uses   \OCA\Portaliq\Service\Identity\IdentityNotice
  */
 class PortalIdentityMailerCallsGoldenTest extends TestCase {
 
