@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Service\Session\SessionTrust;
 use OCA\Portaliq\Contribution\CaseStatusLabelField;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
 use OCA\Portaliq\Service\Identity\MandateParties;
@@ -41,7 +42,7 @@ use OCA\Portaliq\Service\Identity\MandateParties;
  *
  * @spec openspec/specs/portal-identity-space/spec.md
  *
- * @SuppressWarnings(PHPMD.StaticAccess)             -- PortalSessionService::trustSatisfies
+ * @SuppressWarnings(PHPMD.StaticAccess)             -- SessionTrust::trustSatisfies
  * is deliberately THE single trust comparator (contract-v2 design decision);
  * every re-check calls it statically so the ordering can never fork. Same
  * reasoning, and the same suppression, as ContentController and
@@ -148,7 +149,7 @@ class PortalCaseListReader {
 			return false;
 		}
 
-		return PortalSessionService::trustSatisfies((string)($run->subject['trust'] ?? ''), ($collection['minTrust'] ?? null));
+		return SessionTrust::trustSatisfies((string)($run->subject['trust'] ?? ''), ($collection['minTrust'] ?? null));
 	}//end isListedCollection()
 
 	/**

@@ -37,7 +37,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Contribution;
 
 use OCA\Portaliq\Service\Identity\PortalAccountLookup;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\SessionTrust;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -48,7 +48,7 @@ use Throwable;
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T04
  *
- * @SuppressWarnings(PHPMD.StaticAccess) -- PortalSessionService's trust
+ * @SuppressWarnings(PHPMD.StaticAccess) -- SessionTrust's trust
  * helpers are deliberately THE single normalisation/comparison point
  * (contract-v2 design decision); calling them statically keeps one source of
  * truth on every path.
@@ -122,7 +122,7 @@ class PortalContributionRegistry {
 	 * @spec openspec/changes/update-row-action-condition/specs/portal-contribution-contract/spec.md#requirement-a-malformed-row-condition-must-be-dropped-with-a-warning-req-urc-002
 	 */
 	public function aggregateFor(array $subject): array {
-		$run = new AggregateRun(subject: $subject, trust: PortalSessionService::normaliseTrust(trust: ($subject['trust'] ?? '')));
+		$run = new AggregateRun(subject: $subject, trust: SessionTrust::normaliseTrust(trust: ($subject['trust'] ?? '')));
 		foreach ($this->appManager->getInstalledApps() as $appId) {
 			$this->collectContribution(run: $run, appId: (string)$appId);
 		}
@@ -393,7 +393,7 @@ class PortalContributionRegistry {
 					continue;
 				}
 
-				if (PortalSessionService::trustSatisfies($trust, ($entry['minTrust'] ?? null)) === false) {
+				if (SessionTrust::trustSatisfies($trust, ($entry['minTrust'] ?? null)) === false) {
 					continue;
 				}
 
@@ -460,12 +460,12 @@ class PortalContributionRegistry {
 	private function droppedForTrust(array $contribution, string $trust, string $appId): array {
 		$dropped = [];
 		foreach ((array)($contribution['collections'] ?? []) as $collection) {
-			if (is_array($collection) === false || PortalSessionService::trustSatisfies($trust, ($collection['minTrust'] ?? null)) === true) {
+			if (is_array($collection) === false || SessionTrust::trustSatisfies($trust, ($collection['minTrust'] ?? null)) === true) {
 				continue;
 			}
 
 			$needs = $collection['minTrust'] ?? null;
-			if (is_string($needs) === false || PortalSessionService::normaliseTrust(trust: $needs) !== $needs) {
+			if (is_string($needs) === false || SessionTrust::normaliseTrust(trust: $needs) !== $needs) {
 				// An unrecognised level is unsatisfiable for everyone: no login would help, so it is no step-up.
 				continue;
 			}
