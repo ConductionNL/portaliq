@@ -8816,7 +8816,7 @@
 				"change": "portal-traffic-analytics",
 				"requirement": [
 					"openspec/specs/portal-traffic-visitors-and-geo/spec.md :: A session MUST be reconstructable into an ordered journey",
-					"openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md :: The reader MUST be able to expand from a node and change the number of steps"
+					"openspec/specs/portal-traffic-path-explorer/spec.md :: The reader MUST be able to expand from a node and change the number of steps"
 				]
 			},
 			"provider": "portaliq",
