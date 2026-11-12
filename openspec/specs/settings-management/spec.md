@@ -30,7 +30,7 @@ messages plus server-side logging (ADR-005) apply throughout.
 
 ## Requirements
 
-### REQ-CFG-001: Read current settings
+### Requirement: Read current settings (REQ-CFG-001)
 
 The system MUST expose a `GET /api/settings` endpoint that returns the current
 set of configuration values plus two derived fields: `openregisters` (boolean,
@@ -65,7 +65,7 @@ accessible to any authenticated user (`#[NoAdminRequired]`).
 - WHEN the same request is made
 - THEN the response body MUST include `isAdmin: true`
 
-### REQ-CFG-002: Update settings (admin only)
+### Requirement: Update settings (admin only) (REQ-CFG-002)
 
 The system MUST expose a settings-write endpoint that accepts a partial
 settings payload and writes values to the app config. Only keys in `CONFIG_KEYS`
@@ -112,7 +112,7 @@ independently — the delegate target's posture is never consulted.
 - AND the legacy `POST /api/settings` MUST continue to produce an identical result by delegating to `update()`
 - AND neither verb MUST be reachable without an admin session
 
-### REQ-CFG-003: Reload configuration from JSON file (admin only)
+### Requirement: Reload configuration from JSON file (admin only) (REQ-CFG-003)
 
 The system MUST expose a `POST /api/settings/load` endpoint that triggers a
 fresh import of the app's bundled `*_register.json` configuration via
@@ -135,7 +135,7 @@ admin-only and MUST be callable at any time (not only on install).
 - AND the system MUST return `{ "success": false, "message": "OpenRegister is not installed or enabled." }`
 - AND the HTTP response MUST NOT leak implementation detail beyond that generic message (per ADR-005)
 
-### REQ-CFG-004: Graceful handling when OpenRegister is absent
+### Requirement: Graceful handling when OpenRegister is absent (REQ-CFG-004)
 
 The system MUST provide a stable way to detect whether the OpenRegister app is
 installed so that UI and services can degrade gracefully. A missing
@@ -149,7 +149,7 @@ log server-side and return safe fallback responses.
 - THEN the system MUST return a boolean derived from `IAppManager::isInstalled('openregister')`
 - AND the result MUST be safe to call in any request phase (no throw, no heavy I/O)
 
-### REQ-CFG-005: Read a per-user preference
+### Requirement: Read a per-user preference (REQ-CFG-005)
 
 App config (REQ-CFG-001..004) is instance-wide and admin-guarded. Per-user
 preferences are a separate, user-scoped store used by the shared
@@ -183,7 +183,7 @@ contract; the auth and sanitisation branches are unit-testable.
 - WHEN `GET /api/preferences/{key}` is called
 - THEN the system MUST return HTTP 400 and MUST NOT read any config value
 
-### REQ-CFG-006: Write a per-user preference
+### Requirement: Write a per-user preference (REQ-CFG-006)
 
 The system MUST expose a `PUT /api/preferences/{key}` endpoint that stores a
 value for the calling user only. Writing an empty value MUST clear the

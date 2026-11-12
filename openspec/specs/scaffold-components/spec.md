@@ -33,7 +33,7 @@ per slot-bearing kind so a freshly-cloned template renders something real:
 
 ## Requirements
 
-### REQ-COMP-001: Cell renderer derives a CSS-safe class from the value
+### Requirement: Cell renderer derives a CSS-safe class from the value (REQ-COMP-001)
 
 @e2e exclude `StatusBadge` is registered but can never bind, so no rendered
 table cell in this app is one. `src/registry.js` registers it with
@@ -70,7 +70,7 @@ when the value is empty.
 - WHEN `normalised` runs
 - THEN it MUST return `unknown`
 
-### REQ-COMP-002: Confirm/cancel modal relays the choice and closes
+### Requirement: Confirm/cancel modal relays the choice and closes (REQ-COMP-002)
 
 @e2e exclude `ExampleModal` is opened only by a manifest action of
 `type: "open-modal"` targeting the registry key `example-modal`, and
@@ -104,7 +104,7 @@ isolation, ADR-004).
 - THEN the component MUST emit `cancel`
 - AND it MUST emit `update:open` with `false`
 
-### REQ-COMP-003: Form-field demo uses the Vue 3 v-model contract and a unique label id
+### Requirement: Form-field demo uses the Vue 3 v-model contract and a unique label id (REQ-COMP-003)
 
 The `EmailField` demo (`kind: form-field`, `appliesTo: { format: "email" }`)
 MUST implement the Vue 3 `v-model` contract: it takes the current value as the
