@@ -96,3 +96,16 @@ the block SHALL say the number is not available.
 - **GIVEN** openregister answers a count of 3 for the resident's address object
 - **WHEN** the resident opens "My details"
 - **THEN** they see that 3 people are registered at their address, and no name of any of them
+
+### Requirement: A resident starts an address investigation from their details (REQ-IRD-006)
+
+When the portal names a published form for address investigations, the address block SHALL offer "Something wrong at this address?", which opens that form with the address filled in. Without such a form the link SHALL not show.
+
+#### Scenario: A resident reports a wrong count
+- **GIVEN** a portal with a published address investigation form, and a resident whose address shows 5 registered people
+- **WHEN** the resident chooses "Something wrong at this address?"
+- **THEN** the address investigation form opens with their address filled in
+
+#### Scenario: No form configured
+- **WHEN** the portal names no address investigation form
+- **THEN** the address block shows no "Something wrong at this address?" link
