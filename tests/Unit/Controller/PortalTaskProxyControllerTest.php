@@ -26,6 +26,7 @@ use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\BearerSessionResolver;
 use OCA\Portaliq\Service\PortalTaskGateway;
 use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\AppFramework\Http;
@@ -691,7 +692,7 @@ class PortalTaskProxyControllerTest extends TestCase {
 		?SubmissionReceiptService $receiptService = null,
 		?CitizenWriteRecorder $recorder = null,
 	): PortalTaskProxyController {
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 
 		return new PortalTaskProxyController(

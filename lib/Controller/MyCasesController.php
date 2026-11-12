@@ -36,7 +36,7 @@ use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
 use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\MandatedCaseReader;
 use OCA\Portaliq\Service\PortalCaseListReader;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\BearerSessionResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -64,7 +64,7 @@ class MyCasesController extends Controller implements PortalProtected {
 	 *
 	 * @param IRequest $request The request.
 	 * @param PortalContributionRegistry $registry The contribution aggregator.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
+	 * @param BearerSessionResolver $session Resolves the subject from the bearer.
 	 * @param PortalCaseListReader $cases Merges every case collection.
 	 * @param PortalMandateService $mandates The mandates the identity holds.
 	 * @param PortalPartyTreeResolver $tree Resolves how far a mandate reaches.
@@ -76,7 +76,7 @@ class MyCasesController extends Controller implements PortalProtected {
 	public function __construct(
 		IRequest $request,
 		private readonly PortalContributionRegistry $registry,
-		private readonly PortalSessionService $session,
+		private readonly BearerSessionResolver $session,
 		private readonly PortalCaseListReader $cases,
 		private readonly PortalMandateService $mandates,
 		private readonly PortalPartyTreeResolver $tree,

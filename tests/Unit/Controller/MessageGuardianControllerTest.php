@@ -28,7 +28,7 @@ use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
 use OCA\Portaliq\Service\Messaging\GuardianMessageTranslator;
 use OCA\Portaliq\Service\Messaging\GuardianMessagingLeafInterface;
 use OCA\Portaliq\Service\Messaging\MessageContactReader;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\BearerSessionResolver;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -42,7 +42,7 @@ class MessageGuardianControllerTest extends TestCase {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer token');
 
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 
 		return new MessageGuardianController($request, $session, $messaging ?? $this->createMock(GuardianMessagingLeafInterface::class));
@@ -115,7 +115,7 @@ class MessageGuardianControllerTest extends TestCase {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer token');
 
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn(['subjectRef' => 'guardian-1']);
 
 		$messaging = $this->createMock(GuardianMessagingLeafInterface::class);
@@ -172,7 +172,7 @@ class MessageGuardianControllerTest extends TestCase {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer token');
 
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 
 		return new MessageGuardianController($request, $session, $this->createMock(GuardianMessagingLeafInterface::class), null, null, $contacts);
@@ -219,7 +219,7 @@ class MessageGuardianControllerTest extends TestCase {
 	private function residentContactsController(GuardianMessagingLeafInterface $messaging): MessageGuardianController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer token');
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn(['subjectRef' => 'guardian-1', 'organisation' => 'org-1']);
 		$contacts = $this->getMockBuilder(PortalContactService::class)
 			->disableOriginalConstructor()

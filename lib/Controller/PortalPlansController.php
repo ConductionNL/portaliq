@@ -34,7 +34,7 @@ use OCA\Portaliq\Service\Plans\PortalPlanService;
 use OCA\Portaliq\Service\PortalPdfExport;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\RequestedPortal;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\BearerSessionResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -73,7 +73,7 @@ class PortalPlansController extends Controller implements PortalProtected {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
+	 * @param BearerSessionResolver $session Resolves the subject from the bearer.
 	 * @param PortalPlanService $plans The plan rules.
 	 * @param PortalResolver $portals Finds the serving portal, for its templates.
 	 * @param PortalPdfExport|null $pdf Renders the plan as a PDF through OpenRegister.
@@ -81,7 +81,7 @@ class PortalPlansController extends Controller implements PortalProtected {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
+		private readonly BearerSessionResolver $session,
 		private readonly PortalPlanService $plans,
 		private readonly PortalResolver $portals,
 		private readonly ?PortalPdfExport $pdf = null,

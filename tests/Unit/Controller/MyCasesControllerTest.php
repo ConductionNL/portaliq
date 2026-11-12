@@ -11,7 +11,7 @@ use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
 use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\PortalCaseListReader;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\BearerSessionResolver;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -208,7 +208,7 @@ class MyCasesControllerTest extends TestCase {
 	 * @return MyCasesController
 	 */
 	private function controller(?array $subject, PortalCaseListReader $cases, array $rows, array $mandates = [], array $mandatedRows = [], ?array $scope = null, ?CaseTypeVisibility $caseTypes = null, string $mandateParam = ''): MyCasesController {
-		$session = $this->getMockBuilder(PortalSessionService::class)
+		$session = $this->getMockBuilder(BearerSessionResolver::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['resolveFromBearer'])
 			->getMock();

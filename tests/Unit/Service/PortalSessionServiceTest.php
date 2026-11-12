@@ -8,7 +8,11 @@ use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalJwtService;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\PortalSessionRevoker;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\BearerSessionResolver;
+use OCA\Portaliq\Service\Session\SessionRecords;
+use OCA\Portaliq\Service\Session\SessionSigningKey;
 use OCP\IAppConfig;
 use OCP\IConfig;
 use OCP\Security\ISecureRandom;
@@ -1252,14 +1256,20 @@ class PortalSessionServiceTest extends TestCase {
 			}
 		);
 
+		$logger = $this->createMock(LoggerInterface::class);
+		$auditor = ($auditor ?? $this->createMock(AuditTrailService::class));
+		$signingKey = new SessionSigningKey($appConfig);
+		$records = new SessionRecords($reader, new PortalSessionRevoker($reader, $writer, $auditor, $logger));
+
 		return new PortalSessionService(
 			$config,
 			$random,
-			$this->createMock(LoggerInterface::class),
+			$logger,
 			$writer,
 			$reader,
-			($auditor ?? $this->createMock(AuditTrailService::class)),
-			$appConfig
+			$auditor,
+			$signingKey,
+			new BearerSessionResolver($signingKey, $records, $logger)
 		);
 
 	}//end service()

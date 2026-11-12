@@ -32,12 +32,12 @@ use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\SessionTrust;
 
 /**
  * Joins the waiting account for an address its holder just confirmed.
  *
- * @SuppressWarnings(PHPMD.StaticAccess) -- PortalSessionService::trustSatisfies
+ * @SuppressWarnings(PHPMD.StaticAccess) -- SessionTrust::trustSatisfies
  * is the one trust comparison every portal surface uses.
  *
  * @spec openspec/specs/portal-identity-space/spec.md
@@ -189,7 +189,7 @@ class ConfirmedAddressJoin {
 			&& (string)($session['subjectRef'] ?? '') === $subjectRef
 			&& $organisation !== ''
 			&& (string)($session['organisation'] ?? '') === $organisation
-			&& PortalSessionService::trustSatisfies(subjectTrust: ($session['trust'] ?? ''), minTrust: self::MIN_TRUST) === true;
+			&& SessionTrust::trustSatisfies(subjectTrust: ($session['trust'] ?? ''), minTrust: self::MIN_TRUST) === true;
 	}//end isHoldersOwnSession()
 
 	/**

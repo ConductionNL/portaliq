@@ -28,7 +28,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\PollService;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\BearerSessionResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -57,14 +57,14 @@ class PollController extends Controller {
 	 *
 	 * @param IRequest $request The request.
 	 * @param PollService $polls Creates, lists and answers polls.
-	 * @param PortalSessionService $session Resolves a portal subject.
+	 * @param BearerSessionResolver $session Resolves a portal subject.
 	 * @param IUserSession $userSession The staff user, when there is one.
 	 * @param ActionAuthService $actionAuth Decides whether this staff user may create a poll (ADR-023).
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PollService $polls,
-		private readonly PortalSessionService $session,
+		private readonly BearerSessionResolver $session,
 		private readonly IUserSession $userSession,
 		private readonly ActionAuthService $actionAuth,
 	) {
