@@ -1140,7 +1140,11 @@
 				"origin": "code",
 				"change": "integriq/portal-idp-broker-config",
 				"readOn": "2026-10-07",
-				"requirement": "openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md REQ-SEE-001 An eHerkenning sign-in is a business sign-in"
+				"requirement": "openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md :: An eHerkenning sign-in is a business sign-in (REQ-SEE-001)",
+				"plan": [
+					"supplier-portal",
+					"the-account-names-the-audience-and-the-company"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1181,7 +1185,10 @@
 				"note": "Fully generic OIDC RP: discovery, PKCE, state/nonce, per-org claim/LoA map overrides.",
 				"origin": "code",
 				"change": "2026-07-24-portal-oidc-broker-login",
-				"requirement": "openspec/specs/supplier-portal/spec.md :: OIDC start builds a state + nonce + PKCE authorization request"
+				"requirement": [
+					"openspec/specs/supplier-portal/spec.md :: OIDC start builds a state + nonce + PKCE authorization request",
+					"openspec/specs/supplier-portal/spec.md :: OIDC callback validates the ID token and fails closed on every error"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1299,7 +1306,17 @@
 				"origin": "code",
 				"spec": "openspec/specs/portal-nextcloud-account-login",
 				"readOn": "2026-10-07",
-				"requirement": "openspec/specs/portal-nextcloud-account-login/spec.md :: Nextcloud checks the password, never the portal (REQ-NCL-002)"
+				"requirement": [
+					"openspec/specs/portal-nextcloud-account-login/spec.md :: Nextcloud checks the password, never the portal (REQ-NCL-002)",
+					"openspec/specs/portal-nextcloud-account-login/spec.md :: Only an existing, active portal account gets a session (REQ-NCL-003)"
+				],
+				"plan": [
+					"an-app-provisions-a-nextcloud-account",
+					"business-audience-group",
+					"demo-sign-in-beside-the-account",
+					"nextcloud-account-registration",
+					"resident-lands-on-the-portal"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1454,7 +1471,7 @@
 				"note": "A code comment in authApi.js records that this WAS broken once (fragment redirected but nothing read it), now fixed and covered on both frontends.",
 				"origin": "code",
 				"change": "2026-07-24-portal-oidc-broker-login",
-				"requirement": "openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md REQ-SEE-003 The bearer reaches the browser in the fragment and leaves the address"
+				"requirement": "openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md :: The bearer reaches the browser in the fragment and leaves the address (REQ-SEE-003)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1492,7 +1509,10 @@
 				"note": "Policy check and secret resolution are deliberately split so an org/provider combination that is not allowed never reaches the client secret.",
 				"origin": "code",
 				"change": "2026-07-24-portal-oidc-broker-login",
-				"requirement": "openspec/specs/supplier-portal/spec.md :: Per-organisation OIDC broker configuration"
+				"requirement": [
+					"openspec/specs/supplier-portal/spec.md :: Per-organisation OIDC broker configuration",
+					"openspec/changes/operate-portals-per-organisation/specs/portal-tenancy/spec.md :: Each organisation looks after its own portal on a shared installation (REQ-OPO-005)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1530,7 +1550,10 @@
 				"note": "reportedOnly: the row stays 'Not checked yet' until the next real broker login happens, so a broker nobody has used recently shows no health at all, not a stale-but-visible status.",
 				"origin": "code",
 				"change": "adopt-connection-registry",
-				"requirement": "openspec/changes/adopt-connection-registry/specs/app-connections/spec.md :: REQ-PORTALIQ-CONN-003 A broker call reports what the broker answered, throttled"
+				"requirement": [
+					"openspec/changes/adopt-connection-registry/specs/app-connections/spec.md :: REQ-PORTALIQ-CONN-003 A broker call reports what the broker answered, throttled",
+					"openspec/changes/adopt-connection-registry/specs/app-connections/spec.md :: REQ-PORTALIQ-CONN-004 An admin reads the connections on an Integrations page"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1568,7 +1591,8 @@
 				"note": "Generic OR CRUD pages, not a bespoke session console, but a real reachable staff screen; no per-session revoke action visible on this page (only the org-wide revoke on AdminRoot.vue).",
 				"origin": "code",
 				"change": "portal-traffic-analytics",
-				"requirement": "openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md :: Staff can browse the portal sessions that were issued (REQ-CRG-001)"
+				"requirement": "openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md :: Staff can browse the portal sessions that were issued (REQ-CRG-001)",
+				"plan": "staff-revoke-one-session"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1644,7 +1668,12 @@
 				"note": "Built 2026-09-29 (cases-my-cases-page): the person names and switches the mandate they act under. Rating stays partial: turning a DigiD Machtigen or eHerkenning claim into a portalMandate at sign-in is not built, and nothing can be changed under a mandate.",
 				"origin": "competitor",
 				"change": "2026-09-29-cases-my-cases-page",
-				"requirement": "openspec/specs/portal-my-cases/spec.md :: You choose whom you act for (REQ-CMC-004)"
+				"requirement": "openspec/specs/portal-my-cases/spec.md :: You choose whom you act for (REQ-CMC-004)",
+				"plan": [
+					"mandated-case-offers-no-writes",
+					"resident-menu-badges-and-cards",
+					"write-record-names-the-mandate"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1725,7 +1754,7 @@
 				"origin": "competitor",
 				"change": "integriq/portal-idp-broker-config",
 				"readOn": "2026-10-07",
-				"requirement": "openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md REQ-SEE-002 An eIDAS sign-in is a visitor from another EU country"
+				"requirement": "openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md :: An eIDAS sign-in is a visitor from another EU country (REQ-SEE-002)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1840,7 +1869,8 @@
 				"sourceId": "pub-14",
 				"origin": "sibling",
 				"change": "site-member-voting-record-and-confidential-papers",
-				"requirement": "openspec/changes/site-member-voting-record-and-confidential-papers/specs/site-council-records/spec.md :: A visitor MUST read one member's voting record without signing in (REQ-SCR-006)"
+				"requirement": "openspec/changes/site-member-voting-record-and-confidential-papers/specs/site-council-records/spec.md :: A visitor MUST read one member's voting record without signing in (REQ-SCR-006)",
+				"plan": "site-voting-record-board"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1921,7 +1951,11 @@
 				"note": "This, not the dedicated /portal/api/identity/register endpoint, is the actual working registration path: a broker login mints the account with no separate form.",
 				"origin": "code",
 				"spec": "openspec/specs/portal-identity-space",
-				"requirement": "openspec/specs/portal-broker-envelope-login/spec.md :: The envelope becomes an ordinary portal session (REQ-BEL-005)"
+				"requirement": [
+					"openspec/specs/portal-broker-envelope-login/spec.md :: The envelope becomes an ordinary portal session (REQ-BEL-005)",
+					"openspec/specs/portal-identity-space/spec.md :: First login matches the pending account (REQ-PIS-002)"
+				],
+				"plan": "an-app-provisions-a-nextcloud-account"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1959,7 +1993,8 @@
 				"note": "Built 2026-10-02 on the Vue site (identity-ways-in-screens; server half #1041). provision() no longer writes identityType '' (the enum refused every address-only account).",
 				"origin": "code",
 				"change": "2026-10-02-identity-ways-in-screens",
-				"requirement": "openspec/specs/portal-ways-in/spec.md :: You can create an account where the portal allows it (REQ-IWI-002)"
+				"requirement": "openspec/specs/portal-ways-in/spec.md :: You can create an account where the portal allows it (REQ-IWI-002)",
+				"plan": "nextcloud-account-registration"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2073,7 +2108,11 @@
 				"note": "Built 2026-09-30 (identity-staff-account-screens). The invitee's acceptance screen is identity-ways-in-screens T06.",
 				"origin": "code",
 				"change": "2026-09-30-identity-staff-account-screens",
-				"requirement": "openspec/specs/portal-account-administration/spec.md :: Staff invite an address and portaliq mails it (REQ-ISA-001)"
+				"requirement": "openspec/specs/portal-account-administration/spec.md :: Staff invite an address and portaliq mails it (REQ-ISA-001)",
+				"plan": [
+					"admin-dialogs-board-look",
+					"staff-resend-an-invitation"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2114,7 +2153,8 @@
 				"note": "Built 2026-09-30 (identity-staff-account-screens).",
 				"origin": "code",
 				"change": "2026-09-30-identity-staff-account-screens",
-				"requirement": "openspec/specs/portal-account-administration/spec.md :: Staff issue and withdraw accounts through the validated actions (REQ-ISA-003)"
+				"requirement": "openspec/specs/portal-account-administration/spec.md :: Staff issue and withdraw accounts through the validated actions (REQ-ISA-003)",
+				"plan": "admin-dialogs-board-look"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2152,7 +2192,10 @@
 				"note": "Built 2026-09-30 (identity-staff-account-screens). A widget, not a header action: see the archived design's As built.",
 				"origin": "code",
 				"change": "2026-09-30-identity-staff-account-screens",
-				"requirement": "openspec/specs/portal-account-administration/spec.md :: Staff issue and withdraw accounts through the validated actions (REQ-ISA-003)"
+				"requirement": [
+					"openspec/specs/portal-account-administration/spec.md :: Staff issue and withdraw accounts through the validated actions (REQ-ISA-003)",
+					"openspec/changes/capability-rows-said-and-planned/specs/portal-account-administration/spec.md :: Staff withdraw an account issued by mistake (REQ-RSP-001)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2190,7 +2233,10 @@
 				"note": "tasks.md T10 'change your own details, with a new e-mail confirmed by a link' is marked done for the backend only. Built by openspec/changes/archive/2026-09-30-identity-profile-page (build-all lane 19, 2026-09-30).",
 				"origin": "code",
 				"change": "2026-09-30-identity-profile-page",
-				"requirement": "openspec/specs/portal-profile/spec.md :: A new e-mail address is confirmed before it is used (REQ-IPP-002)"
+				"requirement": [
+					"openspec/specs/portal-profile/spec.md :: A new e-mail address is confirmed before it is used (REQ-IPP-002)",
+					"openspec/changes/capability-rows-said-and-planned/specs/portal-profile/spec.md :: A resident changes their own name (REQ-RSP-002)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2348,7 +2394,10 @@
 				"note": "Built 2026-09-30 (identity-staff-account-screens). Partial: the policy is per portal, not per organisation, and the visitor's registration form is identity-ways-in-screens (id-self-registration-form).",
 				"origin": "code",
 				"change": "2026-09-30-identity-staff-account-screens",
-				"requirement": "openspec/specs/portal-account-administration/spec.md :: Staff set the registration policy and approve registrations (REQ-ISA-004)"
+				"requirement": [
+					"openspec/specs/portal-account-administration/spec.md :: Staff set the registration policy and approve registrations (REQ-ISA-004)",
+					"openspec/specs/portal-identity-and-the-organisations-cases/spec.md :: Self-registration is governed by a policy (REQ-PIOC-004)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2386,7 +2435,11 @@
 				"note": "Organisation is server-derived from the OIDC state/nonce record started at oidcStart, not from anything the client can send at callback time.",
 				"origin": "code",
 				"spec": "openspec/specs/portal-identity-space",
-				"requirement": "openspec/specs/portal-broker-envelope-login/spec.md :: The broker start binds the login to one organisation and one provider (REQ-BEL-002)"
+				"requirement": [
+					"openspec/specs/portal-broker-envelope-login/spec.md :: The broker start binds the login to one organisation and one provider (REQ-BEL-002)",
+					"openspec/changes/operate-portals-per-organisation/specs/portal-tenancy/spec.md :: No route crosses from one organisation to another (REQ-OPO-003)"
+				],
+				"plan": "portal-acts-for-its-organisation"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2425,7 +2478,8 @@
 				"sourceId": "gua-guardian-sees-the-child",
 				"origin": "sibling",
 				"change": "portal-scope-list-membership",
-				"requirement": "openspec/specs/portal-contribution-contract/spec.md Requirement: A direct scope field MUST match a single value or strict list membership"
+				"requirement": "openspec/specs/portal-contribution-contract/spec.md :: A direct scope field MUST match a single value or strict list membership",
+				"plan": "card-status-today"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2463,7 +2517,11 @@
 				"sourceId": "Q1.14",
 				"origin": "sibling",
 				"change": "2026-10-02-identity-ways-in-screens",
-				"requirement": "openspec/specs/portal-ways-in/spec.md :: You can create an account where the portal allows it (REQ-IWI-002)"
+				"requirement": [
+					"openspec/specs/portal-ways-in/spec.md :: You can create an account where the portal allows it (REQ-IWI-002)",
+					"openspec/specs/portal-contribution-contract/spec.md :: A create writes through the action it names",
+					"openspec/specs/portal-my-cases/spec.md :: Your cases from every app in one list (REQ-CMC-001)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2779,7 +2837,8 @@
 				"origin": "code",
 				"change": "2026-09-29-cases-my-cases-page",
 				"readOn": "2026-10-07",
-				"requirement": "openspec/specs/portal-my-cases/spec.md :: Your cases from every app in one list (REQ-CMC-001)"
+				"requirement": "openspec/specs/portal-my-cases/spec.md :: Your cases from every app in one list (REQ-CMC-001)",
+				"plan": "zuiddrecht-resident-pages-match-the-boards"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2820,7 +2879,11 @@
 				"note": "Works for a declared detail block and, since portaliq#723, for every page portaliq synthesises for a contribution that declares no pages.",
 				"origin": "code",
 				"change": "2026-09-07-portal-scoped-crud",
-				"requirement": "openspec/specs/portal-contribution-contract/spec.md :: A page MAY be the record page of a collection"
+				"requirement": "openspec/specs/portal-contribution-contract/spec.md :: A page MAY be the record page of a collection",
+				"plan": [
+					"mandated-case-opens-on-its-record-page",
+					"woo-dossier-in-my-cases"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2861,7 +2924,7 @@
 				"note": "The status label is whatever the case-owning app's case type declares; portaliq only renders it, never invents one.",
 				"origin": "code",
 				"change": "2026-09-28-what-the-citizen-may-write-on-their-own-case",
-				"requirement": "openspec/specs/citizen-writes-on-their-own-case/spec.md REQ-CWOC-006 The citizen reads the status vocabulary the case app supplied"
+				"requirement": "openspec/specs/citizen-writes-on-their-own-case/spec.md :: The citizen reads the status vocabulary the case app supplied (REQ-CWOC-006)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2902,7 +2965,11 @@
 				"note": "Built 2026-09-29 (cases-documents-on-the-case). A resident opens every listed document from the case screen: their own uploads always, the organisation's released files where the collection opted into downloads, and what a case app publishes through its documents method.",
 				"origin": "code",
 				"change": "2026-09-29-cases-documents-on-the-case",
-				"requirement": "openspec/specs/citizen-case-documents/spec.md :: The case app declares which documents a resident may see (REQ-CDC-001)"
+				"requirement": "openspec/specs/citizen-case-documents/spec.md :: The case app declares which documents a resident may see (REQ-CDC-001)",
+				"plan": [
+					"documents-for-each-record",
+					"documents-grouped-per-record"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -2979,7 +3046,15 @@
 				"origin": "code",
 				"change": "dossiq/site-business-and-authorisation",
 				"readOn": "2026-10-07",
-				"requirement": "openspec/specs/portal-my-cases/spec.md :: You choose whom you act for (REQ-CMC-004)"
+				"requirement": [
+					"openspec/specs/portal-my-cases/spec.md :: You choose whom you act for (REQ-CMC-004)",
+					"openspec/specs/portal-visibility-and-the-party-tree/spec.md :: A mandate declares how far down the tree it reaches (REQ-PTV-001)"
+				],
+				"plan": [
+					"mandated-case-offers-no-writes",
+					"mandated-case-opens-on-its-record-page",
+					"resident-pages-live-round-3"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3148,7 +3223,14 @@
 				],
 				"spec": "openspec/specs/case-timeline",
 				"readOn": "2026-10-07",
-				"requirement": "openspec/specs/portal-contribution-contract/spec.md :: A cases collection MAY supply steps, an answer date and whose turn it is (REQ-SMO-022)"
+				"requirement": [
+					"openspec/specs/portal-contribution-contract/spec.md :: A cases collection MAY supply steps, an answer date and whose turn it is (REQ-SMO-022)",
+					"openspec/specs/site-mijn-omgeving/spec.md :: Process steps MUST say where a case stands, in order (REQ-SMO-003)"
+				],
+				"plan": [
+					"steps-as-bars",
+					"steps-highlight"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3190,7 +3272,11 @@
 				"origin": "competitor",
 				"change": "2026-09-29-cases-documents-on-the-case",
 				"readOn": "2026-10-07",
-				"requirement": "openspec/specs/citizen-case-documents/spec.md :: The case app declares which documents a resident may see (REQ-CDC-001)"
+				"requirement": "openspec/specs/citizen-case-documents/spec.md :: The case app declares which documents a resident may see (REQ-CDC-001)",
+				"plan": [
+					"documents-for-each-record",
+					"documents-grouped-per-record"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3229,7 +3315,10 @@
 				"origin": "competitor",
 				"change": "2026-09-29-cases-documents-on-the-case",
 				"readOn": "2026-10-07",
-				"requirement": "openspec/specs/citizen-case-documents/spec.md :: The decision is shown first (REQ-CDC-003)"
+				"requirement": [
+					"openspec/specs/citizen-case-documents/spec.md :: The decision is shown first (REQ-CDC-003)",
+					"openspec/specs/citizen-case-documents/spec.md :: Every listed document opens from the case screen (REQ-CDC-002)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3552,7 +3641,10 @@
 				"note": "Built 2026-09-29 (case-actions-withdraw-screen) on the existing withdraw route. Works for any case type that declares portalWithdrawal on a collection with a citizenWrite update action.",
 				"origin": "code",
 				"change": "2026-09-29-case-actions-withdraw-screen",
-				"requirement": "openspec/specs/citizen-case-withdraw-screen/spec.md :: The case screen offers withdrawal exactly as the server declares it (REQ-WDS-001)"
+				"requirement": [
+					"openspec/specs/citizen-case-withdraw-screen/spec.md :: The case screen offers withdrawal exactly as the server declares it (REQ-WDS-001)",
+					"openspec/specs/citizen-case-withdraw-screen/spec.md :: Withdrawing takes a confirmation, with an optional reason (REQ-WDS-002)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3595,7 +3687,10 @@
 				"origin": "sibling",
 				"change": "2026-09-29-case-actions-withdraw-screen",
 				"readOn": "2026-10-07",
-				"requirement": "openspec/specs/citizen-case-withdraw-screen/spec.md :: The case screen offers withdrawal exactly as the server declares it (REQ-WDS-001)"
+				"requirement": [
+					"openspec/specs/citizen-case-withdraw-screen/spec.md :: The case screen offers withdrawal exactly as the server declares it (REQ-WDS-001)",
+					"openspec/specs/citizen-case-withdraw-screen/spec.md :: Withdrawing takes a confirmation, with an optional reason (REQ-WDS-002)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3636,7 +3731,7 @@
 				"note": "Not a user-visible feature by itself, but a real, invoked guard rather than a declaration.",
 				"origin": "code",
 				"change": "2026-09-28-what-the-citizen-may-write-on-their-own-case",
-				"requirement": "openspec/changes/citizen-case-write-limit/specs/citizen-writes-on-their-own-case/spec.md REQ-CWL-001 A resident's writes on her own case are limited per case and per identity"
+				"requirement": "openspec/changes/citizen-case-write-limit/specs/citizen-writes-on-their-own-case/spec.md :: A resident's writes on her own case are limited per case and per identity (REQ-CWL-001)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3681,7 +3776,10 @@
 					}
 				],
 				"spec": "openspec/specs/change-proposal-queue",
-				"requirement": "openspec/specs/change-proposal-queue/spec.md :: Portal subjects and colleagues can propose, never edit (REQ-CPQ-002)"
+				"requirement": [
+					"openspec/specs/change-proposal-queue/spec.md :: Portal subjects and colleagues can propose, never edit (REQ-CPQ-002)",
+					"openspec/specs/change-proposal-queue/spec.md :: Accept writes the subject as the reviewer (REQ-CPQ-003)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3720,7 +3818,11 @@
 				"origin": "code",
 				"change": "2026-09-29-change-proposal-queue",
 				"readOn": "2026-10-07",
-				"requirement": "openspec/specs/change-proposal-queue/spec.md REQ-CPQ-002; build plan openspec/changes/change-proposals-reach-the-case-page REQ-CPC-001, REQ-CPC-003"
+				"requirement": [
+					"openspec/specs/change-proposal-queue/spec.md :: Portal subjects and colleagues can propose, never edit (REQ-CPQ-002)",
+					"openspec/changes/change-proposals-reach-the-case-page/specs/change-proposal-queue/spec.md :: A colleague who may read a record proposes from the queue widget (REQ-CPC-001)",
+					"openspec/changes/change-proposals-reach-the-case-page/specs/change-proposal-queue/spec.md :: The colleague route takes the allow-list from the server (REQ-CPC-003)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3804,7 +3906,11 @@
 				"origin": "code",
 				"change": "2026-09-29-change-proposal-queue",
 				"readOn": "2026-10-07",
-				"requirement": "openspec/specs/change-proposal-queue/spec.md REQ-CPQ-003, REQ-CPQ-004; build plan openspec/changes/change-proposals-reach-the-case-page REQ-CPC-001"
+				"requirement": [
+					"openspec/specs/change-proposal-queue/spec.md :: Accept writes the subject as the reviewer (REQ-CPQ-003)",
+					"openspec/specs/change-proposal-queue/spec.md :: The queue is a leaf on the subject (REQ-CPQ-004)",
+					"openspec/changes/change-proposals-reach-the-case-page/specs/change-proposal-queue/spec.md :: A colleague who may read a record proposes from the queue widget (REQ-CPC-001)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3842,7 +3948,8 @@
 				"note": "Ownership is stamped server-side, not sent by the client.",
 				"origin": "code",
 				"change": "2026-09-29-contribution-manifest-v3",
-				"requirement": "openspec/specs/portal-contribution-contract/spec.md :: A create writes through the action it names"
+				"requirement": "openspec/specs/portal-contribution-contract/spec.md :: A create writes through the action it names",
+				"plan": "site-action-forms"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3880,7 +3987,12 @@
 				"note": "The change portal-status-transitions is implemented in code and was archived on 2026-09-29 (openspec/changes/archive/2026-09-29-portal-status-transitions).",
 				"origin": "code",
 				"change": "2026-09-29-portal-status-transitions",
-				"requirement": "openspec/specs/portal-contribution-contract/spec.md :: Server-enforced status transitions"
+				"requirement": "openspec/specs/portal-contribution-contract/spec.md :: Server-enforced status transitions",
+				"plan": [
+					"case-actions-row-inputs-and-conditions",
+					"site-action-forms",
+					"update-row-action-condition"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3918,7 +4030,8 @@
 				"note": null,
 				"origin": "code",
 				"change": "2026-09-07-portal-scoped-crud",
-				"requirement": "openspec/specs/portal-contribution-contract/spec.md :: Scoped file attachment on a subject-owned object"
+				"requirement": "openspec/specs/portal-contribution-contract/spec.md :: Scoped file attachment on a subject-owned object",
+				"plan": "row-action-carries-files"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3956,7 +4069,11 @@
 				"note": "Best-effort/thin trigger from the shell's side; the browser never talks to the target app directly. See cmp-cas-pay for a concrete example (shillinq payments).",
 				"origin": "code",
 				"change": "2026-09-07-contract-v2",
-				"requirement": "openspec/specs/portal-contribution-contract/spec.md Requirement: Endpoint bearer-forward actions"
+				"requirement": "openspec/specs/portal-contribution-contract/spec.md :: Endpoint bearer-forward actions",
+				"plan": [
+					"action-forward-survives-a-slow-answer",
+					"row-action-carries-files"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -3996,7 +4113,17 @@
 				"origin": "sibling",
 				"change": "2026-09-29-change-proposal-queue",
 				"readOn": "2026-10-07",
-				"requirement": "openspec/specs/change-proposal-queue/spec.md REQ-CPQ-001..006; build plan openspec/changes/change-proposals-reach-the-case-page REQ-CPC-001..003"
+				"requirement": [
+					"openspec/specs/change-proposal-queue/spec.md :: A change proposal is a queued object on its subject (REQ-CPQ-001)",
+					"openspec/specs/change-proposal-queue/spec.md :: Portal subjects and colleagues can propose, never edit (REQ-CPQ-002)",
+					"openspec/specs/change-proposal-queue/spec.md :: Accept writes the subject as the reviewer (REQ-CPQ-003)",
+					"openspec/specs/change-proposal-queue/spec.md :: The queue is a leaf on the subject (REQ-CPQ-004)",
+					"openspec/specs/change-proposal-queue/spec.md :: A proposer can list their own proposals (REQ-CPQ-005)",
+					"openspec/specs/change-proposal-queue/spec.md :: The portal SPA can submit and withdraw a proposal (REQ-CPQ-006)",
+					"openspec/changes/change-proposals-reach-the-case-page/specs/change-proposal-queue/spec.md :: A colleague who may read a record proposes from the queue widget (REQ-CPC-001)",
+					"openspec/changes/change-proposals-reach-the-case-page/specs/change-proposal-queue/spec.md :: A colleague lists their own proposals on a record (REQ-CPC-002)",
+					"openspec/changes/change-proposals-reach-the-case-page/specs/change-proposal-queue/spec.md :: The colleague route takes the allow-list from the server (REQ-CPC-003)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4037,7 +4164,8 @@
 				"note": null,
 				"origin": "code",
 				"spec": "openspec/specs/portal-task-delivery",
-				"requirement": "openspec/specs/portal-task-delivery/spec.md :: \"Mijn taken\" lists, details and completes the party's open tasks"
+				"requirement": "openspec/specs/portal-task-delivery/spec.md :: \"Mijn taken\" lists, details and completes the party's open tasks",
+				"plan": "mijn-taken-lists-contributed-tasks"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4120,7 +4248,8 @@
 				"note": "Client-side validation mirrors server-side re-checks (defense in depth), see tsk-upload-rules.",
 				"origin": "code",
 				"spec": "openspec/specs/portal-task-delivery",
-				"requirement": "openspec/specs/portal-task-delivery/spec.md :: \"Mijn taken\" lists, details and completes the party's open tasks"
+				"requirement": "openspec/specs/portal-task-delivery/spec.md :: \"Mijn taken\" lists, details and completes the party's open tasks",
+				"plan": "a-task-opens-the-app-action-that-completes-it"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4243,7 +4372,10 @@
 				"note": "The e-mail deliberately carries only the organisation name and portal link, never task or case content.",
 				"origin": "code",
 				"spec": "openspec/specs/portal-task-delivery",
-				"requirement": "openspec/specs/portal-task-delivery/spec.md :: The delivery worker settles every ledger row, idempotently and in isolation"
+				"requirement": [
+					"openspec/specs/portal-task-delivery/spec.md :: The delivery worker settles every ledger row, idempotently and in isolation",
+					"openspec/specs/partner-tasks-in-the-portal/spec.md :: A handler raises an ask from the case (REQ-PTP-002)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4281,7 +4413,11 @@
 				"note": "Confirmed at the audience-plumbing level; a live check would still be needed to see a real supplier-audience task end to end.",
 				"origin": "code",
 				"spec": "openspec/specs/supplier-portal",
-				"requirement": "openspec/specs/partner-tasks-in-the-portal/spec.md :: The task surface serves every audience (REQ-PTP-001)"
+				"requirement": [
+					"openspec/specs/partner-tasks-in-the-portal/spec.md :: The task surface serves every audience (REQ-PTP-001)",
+					"openspec/specs/partner-tasks-in-the-portal/spec.md :: The answer lands on the case (REQ-PTP-003)"
+				],
+				"plan": "supplier-portal"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4296,7 +4432,7 @@
 			"id": "tsk-ask-partner",
 			"area": "tasks",
 			"name": "As a case handler, ask an external partner (with or without an existing account) for something on a case.",
-			"portaliq": "no",
+			"portaliq": "partial",
 			"open-inwoner": "no",
 			"nl-portal": "partial",
 			"xxllnc-pip": "yes",
@@ -4312,15 +4448,16 @@
 				"open-forms": "src/openforms/formio/components/custom.py:1373 coSign: the submitter names a second person who receives an e-mail and co-signs after their own DigiD login (src/openforms/submissions/urls.py:29-37); limited to co-signing a submission, not asking a partner for anything on a case [reached on a form with a co-sign component] [read 2026-10-08 at 4.0.1]"
 			},
 			"built": {
-				"state": "built",
-				"evidence": "lib/Controller/PartnerTaskController.php:83-129 ask(), guarded by PortalCaseAccessGuard::mayAsk() (RBAC action 'portal.ask-partner', lib/actions.seed.json:7 admin-only by default), lib/Service/Tasks/PartnerAskService.php pre-provisions a portal account and freezes due date + upload rules onto the task; routes.php:269 POST /api/partner-tasks/ask",
+				"state": "specified",
+				"evidence": "Not built: the backend is guarded and routed (lib/Controller/PartnerTaskController.php ask(), POST /api/partner-tasks/ask), but nothing calls it: dossiq declares no ask-partner action and offers no ask button (checked 2026-11-12 on dossiq development). lib/Controller/PartnerTaskController.php:83-129 ask(), guarded by PortalCaseAccessGuard::mayAsk() (RBAC action 'portal.ask-partner', lib/actions.seed.json:7 admin-only by default), lib/Service/Tasks/PartnerAskService.php pre-provisions a portal account and freezes due date + upload rules onto the task; routes.php:269 POST /api/partner-tasks/ask",
 				"reachedOn": "nothing reaches it: grep 'partner-tasks'/'partnerTask'/'PartnerTask'/'ask-partner' across all of src/ returns zero hits; portaliq's own manifest has no page or widget for it; dossiq (procest) has no code caller either, only a mention in its own competitor-parity proposal doc that this change would 'retire ExternalConsultationResponse', dossiq's ExternalConsultationResponse public page (src/manifest.d/consultation-public.json) is still present and unretired",
 				"owner": "ConductionNL/portaliq",
 				"note": "A fully built, guarded backend for asking an outside partner has no caseworker-facing button anywhere; the sibling row (dossiq 3.19) rated it 'partial' pointing at dossiq's own legacy page, which is unrelated and un-retired. Portaliq's half is built (openspec/changes/partner-tasks-in-the-portal). The handler's ask button is dossiq's consumer half: declare ask-partner on its case contribution and retire ExternalConsultationResponse (OpenSpec pass 2026-09-27).",
 				"origin": "code",
 				"defectCandidate": "lib/Controller/PartnerTaskController.php:1 whole controller has no UI caller in portaliq or in dossiq (code reading, needs a live check)",
 				"spec": "openspec/specs/partner-tasks-in-the-portal",
-				"requirement": "openspec/specs/partner-tasks-in-the-portal/spec.md :: A handler raises an ask from the case (REQ-PTP-002)"
+				"requirement": "openspec/specs/partner-tasks-in-the-portal/spec.md :: A handler raises an ask from the case (REQ-PTP-002)",
+				"plan": "capability-rows-said-and-planned"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4354,15 +4491,16 @@
 				"open-forms": "no task model [reached on nothing] [read 2026-10-08 at 4.0.1]"
 			},
 			"built": {
-				"state": "built",
-				"evidence": "same finding as tsk-ask-partner: lib/Controller/PartnerTaskController.php:83 ask() is implemented and RBAC-guarded but has no caller anywhere in portaliq or dossiq",
+				"state": "specified",
+				"evidence": "Not built: the backend is guarded and routed (lib/Controller/PartnerTaskController.php ask(), POST /api/partner-tasks/ask), but nothing calls it: dossiq declares no ask-partner action and offers no ask button (checked 2026-11-12 on dossiq development). same finding as tsk-ask-partner: lib/Controller/PartnerTaskController.php:83 ask() is implemented and RBAC-guarded but has no caller anywhere in portaliq or dossiq",
 				"reachedOn": "nothing reaches it",
 				"owner": "ConductionNL/portaliq",
 				"note": "dossiq's matrix rates this 'partial' citing its own ExternalConsultationResponse page and a merged PR (#611); the PR shipped the portaliq-side controller, but nothing calls it, and dossiq's old ExternalConsultationResponse flow it was meant to retire is still shipping unchanged. Portaliq's half is built (openspec/changes/partner-tasks-in-the-portal). The handler's ask button is dossiq's consumer half: declare ask-partner on its case contribution and retire ExternalConsultationResponse (OpenSpec pass 2026-09-27).",
 				"sourceId": "sib-3.19",
 				"origin": "sibling",
 				"spec": "openspec/specs/partner-tasks-in-the-portal",
-				"requirement": "openspec/specs/partner-tasks-in-the-portal/spec.md :: A handler raises an ask from the case (REQ-PTP-002)"
+				"requirement": "openspec/specs/partner-tasks-in-the-portal/spec.md :: A handler raises an ask from the case (REQ-PTP-002)",
+				"plan": "capability-rows-said-and-planned"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4473,7 +4611,11 @@
 				"origin": "competitor",
 				"readOn": "2026-10-08",
 				"change": "shared-plans-with-a-caseworker",
-				"requirement": "openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md :: Participants share the goal, actions, note and file versions (REQ-SPL-003)"
+				"requirement": [
+					"openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md :: Participants share the goal, actions, note and file versions (REQ-SPL-003)",
+					"openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md :: A resident works on plans with their contacts (REQ-SPL-001)",
+					"openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md :: A plan starts empty or from a template the municipality sets up (REQ-SPL-002)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4515,7 +4657,11 @@
 				"note": "Works end to end. Each row carries a _source provenance tag (appId/label) so the SPA can show which app it came from.",
 				"origin": "code",
 				"change": "2026-07-23-portal-inbox-v2",
-				"requirement": "openspec/specs/supplier-portal/spec.md :: Unified inbox aggregates every inbox collection subject-scoped"
+				"requirement": "openspec/specs/supplier-portal/spec.md :: Unified inbox aggregates every inbox collection subject-scoped",
+				"plan": [
+					"a-message-names-its-record-and-links-its-action",
+					"receipt-date-reads-in-the-portals-language"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4553,7 +4699,8 @@
 				"note": "Optimistic UI update only flips read on server confirmation; only the read field can ever be set by this endpoint.",
 				"origin": "code",
 				"change": "2026-07-23-portal-inbox-v2",
-				"requirement": "openspec/specs/supplier-portal/spec.md :: Tamper-proof mark-read"
+				"requirement": "openspec/specs/supplier-portal/spec.md :: Tamper-proof mark-read",
+				"plan": "a-message-names-its-record-and-links-its-action"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4594,7 +4741,11 @@
 				"note": "Live-decrements on markRead without a full reload.",
 				"origin": "code",
 				"change": "2026-07-23-portal-inbox-v2",
-				"requirement": "openspec/specs/supplier-portal/spec.md :: Unread count on the contributions payload"
+				"requirement": [
+					"openspec/specs/supplier-portal/spec.md :: Unread count on the contributions payload",
+					"openspec/specs/site-portal-parity/spec.md :: Navigation MUST be built from the pages contributions declare (REQ-SRP-007)"
+				],
+				"plan": "resident-menu-badges-and-cards"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5013,7 +5164,11 @@
 				"evidence": "portalMessage carries only a read boolean (lib/Settings/portaliq_register.json portalMessage.read): no receipt request, no read moment, nothing ties the copies of one sending together. Staff see a read badge per message (cmp-inb-read-receipt).",
 				"owner": "ConductionNL/portaliq",
 				"change": "inbox-read-receipt-on-request",
-				"requirement": "openspec/changes/inbox-read-receipt-on-request/specs/supplier-portal/spec.md :: A sender can ask for a read receipt on a message (REQ-IRR-001)"
+				"requirement": [
+					"openspec/changes/inbox-read-receipt-on-request/specs/supplier-portal/spec.md :: A sender can ask for a read receipt on a message (REQ-IRR-001)",
+					"openspec/changes/inbox-read-receipt-on-request/specs/supplier-portal/spec.md :: Staff see when a message was read (REQ-IRR-004)",
+					"openspec/changes/inbox-read-receipt-on-request/specs/supplier-portal/spec.md :: Staff see who read one sending (REQ-IRR-005)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5171,7 +5326,17 @@
 				"note": "This is the actual working 'submit a form' mechanism for a signed-in or password/OIDC-authenticated subject, driven by whatever type:create actions a sibling app's contribution declares. It fires SubmissionReceiptService on success (see cmp-int-pdf-receipt / inb-wmebv-fields).",
 				"origin": "code",
 				"spec": "openspec/specs/supplier-portal",
-				"requirement": "openspec/specs/portal-contribution-contract/spec.md :: A create writes through the action it names"
+				"requirement": "openspec/specs/portal-contribution-contract/spec.md :: A create writes through the action it names",
+				"plan": [
+					"a-create-stamps-the-moment-it-was-made",
+					"action-summary-sentence",
+					"count-field",
+					"guardian-message-to-and-whole-day",
+					"guardian-pages-follow-the-wilgenboom-boards",
+					"receipt-date-reads-in-the-portals-language",
+					"resident-pages-live-round-3",
+					"submit-creates-the-case-directly"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5255,14 +5420,15 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "lib/Controller/PortalEmbedController.php frame() serves templates/embed.php with a per-form frame-ancestors CSP; submit() validates answers then calls PortalIntakeQueue::accept() (lib/Service/Intake/PortalIntakeQueue.php); lib/BackgroundJob/PortalIntakeDeliveryJob.php drains the queue into the binding's own caseRegister/caseSchema; src/embed/main.js mounts src/embed/EmbedFrame.vue / EmbedForm.vue at #portaliq-embed (its own small webpack entry, webpack.site.js) and posts to the configured submitUrl [evidence repointed 2026-10-30 from the retired src/portal React shell to src/site and src/shared]",
+				"evidence": "lib/Controller/PortalEmbedController.php frame() serves templates/embed.php with a per-form frame-ancestors CSP; submit() validates answers then hands them to lib/Service/Intake/DestinationIntake.php, which creates the case in the binding's destination at once (submit-creates-the-case-directly); requests still in the old intake queue are sent on by `occ portaliq:intake:drain` (lib/Command/IntakeDrain.php over lib/Service/Intake/IntakeQueueDrain.php); src/embed/main.js mounts src/embed/EmbedFrame.vue / EmbedForm.vue at #portaliq-embed (its own small webpack entry, webpack.site.js) and posts to the configured submitUrl [evidence repointed 2026-10-30 from the retired src/portal React shell to src/site and src/shared]",
 				"reachedOn": "a municipality's own page embeds /portal/embed in an iframe; the frame renders EmbedForm.vue and posts to POST /portal/api/embed/submit",
 				"owner": "ConductionNL/portaliq",
 				"note": "EmbeddedForm.jsx's own file header documents a real past defect: the frame route and CSP worked but the bundle only ever mounted #portaliq-portal, so the iframe rendered an empty div, caught only because the original e2e test fetched the HTML over plain HTTP and asserted the string 'portaliq-embed' was present rather than driving a browser. That gap is fixed now: EmbeddedForm.jsx is mounted and posts real answers. The follow-up link the API returns (followUrl, '...site?reference=...') is dead: nothing in src/site reads a 'reference' query param (see int-status-lookup).",
 				"origin": "code",
 				"defectCandidate": "lib/Controller/PortalEmbedController.php followUrl points to the portal site route with ?reference=... but grep of src/site for reading a reference query param returns 0 hits, so the 'come back and check' link the API promises leads to an ordinary page that ignores it (code reading, needs a live check)",
 				"change": "embedded-intake-form",
-				"requirement": "openspec/changes/embedded-intake-form/specs/embedded-intake-form/spec.md :: A submission from an embed is an ordinary contribution create (REQ-EIF-003)"
+				"requirement": "openspec/changes/embedded-intake-form/specs/embedded-intake-form/spec.md :: A submission from an embed is an ordinary contribution create (REQ-EIF-003)",
+				"plan": "submit-creates-the-case-directly"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5461,7 +5627,11 @@
 				"note": "The page itself is created as draft; an editor must publish it (not automatic). The relay is fail-safe: if the requesting app has not shipped its own consumer event class yet, the submission is still stored but the relay silently no-ops (logged as info, not an error).",
 				"origin": "code",
 				"spec": "openspec/specs/landing-page-provisioning",
-				"requirement": "openspec/specs/landing-page-provisioning/spec.md :: A submission is relayed to the contributing app as a fail-safe, not a fail-closed, cross-app event"
+				"requirement": [
+					"openspec/specs/landing-page-provisioning/spec.md :: A submission is relayed to the contributing app as a fail-safe, not a fail-closed, cross-app event",
+					"openspec/specs/landing-page-provisioning/spec.md :: A contributing app requests a landing page via a typed event",
+					"openspec/specs/landing-page-provisioning/spec.md :: A landing page's form is submittable with no portal session"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5617,7 +5787,10 @@
 				"sourceId": "int-dossiq-13.33",
 				"origin": "sibling",
 				"change": "intake-report-pages",
-				"requirement": "openspec/changes/intake-report-pages/specs/report-pages/spec.md :: The custodian decides a reveal on a screen of their own (REQ-IRP-006)"
+				"requirement": [
+					"openspec/changes/intake-report-pages/specs/report-pages/spec.md :: The custodian decides a reveal on a screen of their own (REQ-IRP-006)",
+					"openspec/changes/intake-report-pages/specs/report-pages/spec.md :: A reporter files a report on a public page and keeps a code (REQ-IRP-001)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5699,7 +5872,7 @@
 				"note": "Duplicate of int-applicant-prefill-unreached, kept as its own row because it is a named competitor capability. Moved building to built on 2026-09-28: the public site now reaches the intake endpoints (portal-intake-form-as-an-object T09). T03, the admin view of which form a binding resolves to, landed on 2026-09-28 as the admin app's Request forms page and its Check form action.",
 				"origin": "competitor",
 				"change": "2026-09-28-portal-intake-form-as-an-object",
-				"requirement": "openspec/specs/portal-intake-form/spec.md REQ-PIFO-003 The applicant block is prefilled from the signed-in identity only"
+				"requirement": "openspec/specs/portal-intake-form/spec.md :: The applicant block is prefilled from the signed-in identity only (REQ-PIFO-003)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5740,7 +5913,8 @@
 				"note": "Specified in openspec/changes/intake-conditional-questions-and-drafts (OpenSpec pass 2026-09-27).",
 				"origin": "competitor",
 				"change": "intake-conditional-questions-and-drafts",
-				"requirement": "openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md :: A resident can save and continue later (REQ-ICQ-005)"
+				"requirement": "openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md :: A resident can save and continue later (REQ-ICQ-005)",
+				"plan": "form-save-and-resume-dialogs"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5781,7 +5955,10 @@
 				"note": "Specified in openspec/changes/intake-pay-on-submit (OpenSpec pass 2026-09-27).",
 				"origin": "competitor",
 				"change": "intake-pay-on-submit",
-				"requirement": "openspec/changes/intake-pay-on-submit/specs/portal-intake-payment/spec.md :: The fee comes from the case type (REQ-IPS-001)"
+				"requirement": [
+					"openspec/changes/intake-pay-on-submit/specs/portal-intake-payment/spec.md :: The fee comes from the case type (REQ-IPS-001)",
+					"openspec/changes/intake-pay-on-submit/specs/portal-intake-payment/spec.md :: The result is read from the payment record (REQ-IPS-005)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5932,14 +6109,18 @@
 				"open-forms": "src/openforms/products/models/product.py:13 Product holds a name, price and information for one form, and src/openforms/forms/views/form.py:26-28 shows the form list to staff only; no browsable catalogue for residents [reached on nothing] [read 2026-10-08 at 4.0.1]"
 			},
 			"built": {
-				"state": "built",
-				"evidence": "src/site/components/IntakeCatalogueBlock.vue lists the published catalogue by topic with each entry's title and summary; conditions and costs show only as far as an editor writes them into the summary, the catalogue entry carries no structured conditions or cost fields",
+				"state": "specified",
+				"evidence": "Not built: the catalogue lists title and summary only; structured costs and conditions (REQ-CSC-001) are not built. src/site/components/IntakeCatalogueBlock.vue lists the published catalogue by topic with each entry's title and summary; conditions and costs show only as far as an editor writes them into the summary, the catalogue entry carries no structured conditions or cost fields",
 				"reachedOn": "a public site page with the intakeCatalogue block",
 				"owner": "ConductionNL/portaliq",
 				"note": "Kept as its own row because it is a named competitor capability distinct from starting one specific form. Moved building to built on 2026-09-28: the public site now reaches the intake endpoints (portal-intake-form-as-an-object T09). T03, the admin view of which form a binding resolves to, landed on 2026-09-28 as the admin app's Request forms page and its Check form action.",
 				"origin": "competitor",
 				"change": "2026-09-28-portal-intake-form-as-an-object",
-				"requirement": "openspec/changes/catalogue-entry-shows-costs-and-conditions/specs/portal-intake-form/spec.md REQ-CSC-001 A catalogue entry shows what it costs and what it asks of you; browsing itself: openspec/specs/portal-intake-form/spec.md REQ-PIFO-006"
+				"requirement": [
+					"openspec/changes/catalogue-entry-shows-costs-and-conditions/specs/portal-intake-form/spec.md :: A catalogue entry shows what it costs and what it asks of you (REQ-CSC-001)",
+					"openspec/specs/portal-intake-form/spec.md :: The citizen's entry point is composed content, listing the published catalogue (REQ-PIFO-006)"
+				],
+				"plan": "catalogue-entry-shows-costs-and-conditions"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5981,7 +6162,10 @@
 				"note": "A contributing app's provider class carries no import of portaliq and no info.xml dependency, so it stays inert if portaliq is not installed.",
 				"origin": "code",
 				"spec": "openspec/specs/portal-contribution-contract",
-				"requirement": "openspec/specs/portal-contribution-contract/spec.md :: Multi-audience provider discovery"
+				"requirement": [
+					"openspec/specs/portal-contribution-contract/spec.md :: Multi-audience provider discovery",
+					"openspec/changes/capability-rows-said-and-planned/specs/portal-contribution-contract/spec.md :: An app joins the portal by convention alone (REQ-RSP-003)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6019,7 +6203,11 @@
 				"note": "The area brief's own audience list (client/supplier/partner) undersells it: the vocabulary is open and siblings use their own domain words (citizen, inspector, vendor-org).",
 				"origin": "code",
 				"spec": "openspec/specs/portal-contribution-contract",
-				"requirement": "openspec/specs/portal-contribution-contract/spec.md :: Multi-audience provider discovery"
+				"requirement": "openspec/specs/portal-contribution-contract/spec.md :: Multi-audience provider discovery",
+				"plan": [
+					"supplier-portal",
+					"the-account-names-the-audience-and-the-company"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6054,7 +6242,7 @@
 				"evidence": "IPortalContributionProvider.php:18-19 minTrust (low|substantial|high, default low), dropped fail-closed on an unrecognised value; lib/Contribution/PortalContributionRegistry.php filters both aggregateFor() and aggregateAnonymous() by minTrust",
 				"reachedOn": "every aggregation pass",
 				"owner": "ConductionNL/portaliq",
-				"note": "The mechanism is real and enforced, but the identity broker that would ever produce anything above 'low' is dormant: decidiq's own owed row plt-02 found 'citizens log in through portaliq's ordinary password/portalAccount edge at trust low' with no DigiD/eHerkenning anywhere. So today every subject sits at the one trust level, and every substantial/high-gated collection or action is unreachable by anyone.",
+				"note": "The mechanism is real and enforced. A trust above low now arrives with a broker login (REQ-BEL-005 maps the envelope's trust onto the session), but the broker's vendor half is still open (sig-digid, building), so in practice a substantial or high collection is reached only once that lands (re-read 2026-11-12).",
 				"origin": "code",
 				"spec": "openspec/specs/portal-contribution-contract",
 				"requirement": "openspec/specs/portal-contribution-contract/spec.md :: Trust ordering and manifest filtering"
@@ -6095,7 +6283,7 @@
 				"note": "opencatalogi is a deliberate exception, not a gap: it integrates by exposing its own @PublicPage federation/search endpoints that portaliq's site renderer calls directly (FederatedSearchBlock.vue, PublicationDetailBlock.vue), bypassing the contribution registry entirely, a second, parallel integration pattern this area's brief does not mention. The other 8 missing apps (openregister, integriq, thematiq, launchpad, buildiq, keepiq, hermiq, versioniq) have no portal presence of any kind.",
 				"origin": "code",
 				"spec": "openspec/specs/portaliq-leaf-integrations",
-				"requirement": "openspec/changes/contributing-apps-census/specs/portal-contribution-contract/spec.md REQ-CAC-001 An administrator can see which apps contribute to the portal"
+				"requirement": "openspec/changes/contributing-apps-census/specs/portal-contribution-contract/spec.md :: An administrator can see which apps contribute to the portal (REQ-CAC-001)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6133,7 +6321,12 @@
 				"note": "Confirmed live for the generic mechanism. Whether every specific sibling's declared page renders without error was not checked page-by-page; PortalManifestNormaliser.php sanitises the shape fail-closed before it ever reaches PageView.",
 				"origin": "code",
 				"change": "2026-09-29-contribution-manifest-v3",
-				"requirement": "openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md :: A contributed page MUST be reachable at its own route (REQ-PTB-011)"
+				"requirement": "openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md :: A contributed page MUST be reachable at its own route (REQ-PTB-011)",
+				"plan": [
+					"guardian-pages-follow-the-wilgenboom-boards",
+					"resident-menu-badges-and-cards",
+					"resident-menu-leave-out"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6174,7 +6367,18 @@
 				"note": "Presentation-only per its own docblock: block composition never widens data access, the fields whitelist and collection scope stay the sole authorities.",
 				"origin": "code",
 				"change": "2026-09-29-contribution-manifest-v3",
-				"requirement": "openspec/specs/portal-contribution-contract/spec.md :: Page composition with resolvable, same-contribution blocks"
+				"requirement": [
+					"openspec/specs/portal-contribution-contract/spec.md :: Page composition with resolvable, same-contribution blocks",
+					"openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md :: A contributed page MUST be reachable at its own route (REQ-PTB-011)",
+					"openspec/specs/portal-contribution-contract/spec.md :: A cta block MAY open a page or a site route, for the open record, with the record in its label (REQ-SMO-024)",
+					"openspec/changes/capability-rows-said-and-planned/specs/portal-contribution-contract/spec.md :: A contributed page is built from typed blocks (REQ-RSP-004)"
+				],
+				"plan": [
+					"calendar-timetable-display",
+					"card-status-today",
+					"collection-skip",
+					"lookup-by-row-field"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6212,7 +6416,18 @@
 				"note": "A collection dropdown (optionsProviders type:collection) is populated through the subject-scoped collection endpoint, so it can only ever offer values the subject may already read, the UI convenience cannot become a data leak.",
 				"origin": "code",
 				"change": "2026-09-29-contribution-manifest-v3",
-				"requirement": "openspec/specs/portal-contribution-contract/spec.md :: A collection may say how the values of any of its fields read"
+				"requirement": [
+					"openspec/specs/portal-contribution-contract/spec.md :: A collection may say how the values of any of its fields read",
+					"openspec/specs/portal-contribution-contract/spec.md :: A column and a form field may declare how their values read",
+					"openspec/specs/portal-contribution-contract/spec.md :: Scoped option providers",
+					"openspec/changes/capability-rows-said-and-planned/specs/portal-contribution-contract/spec.md :: A contribution says how its data reads (REQ-RSP-005)"
+				],
+				"plan": [
+					"collection-column-labels",
+					"guardian-pages-follow-the-wilgenboom-boards",
+					"link-field-qr-code",
+					"lookup-by-row-field"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6250,7 +6465,11 @@
 				"note": null,
 				"origin": "code",
 				"spec": "openspec/specs/portal-contribution-contract",
-				"requirement": "openspec/specs/portal-page-provisioning/spec.md :: Anonymous submission MUST be available without an identity provider"
+				"requirement": [
+					"openspec/specs/portal-page-provisioning/spec.md :: Anonymous submission MUST be available without an identity provider",
+					"openspec/changes/anonymous-collection-reads-what-the-public-may/specs/portal-contribution-contract/spec.md :: An anonymous collection shows what the public may read",
+					"openspec/changes/capability-rows-said-and-planned/specs/portal-contribution-contract/spec.md :: An anonymous visitor reads public contributed content (REQ-RSP-006)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6288,7 +6507,11 @@
 				"note": "The browser never holds the target app's credentials; portaliq signs the assertion server-to-server. The site shows the leaf app's answer in a status region or follows its redirect (REQ-SRP-027).",
 				"origin": "code",
 				"change": "portal-contribution-endpoint-actions",
-				"requirement": "openspec/specs/supplier-portal/spec.md :: A contribution MUST be able to declare an endpoint-forwarding action"
+				"requirement": "openspec/specs/supplier-portal/spec.md :: A contribution MUST be able to declare an endpoint-forwarding action",
+				"plan": [
+					"action-forward-survives-a-slow-answer",
+					"case-actions-row-inputs-and-conditions"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6405,7 +6628,7 @@
 				"sourceId": "con-stackiq-share-portal",
 				"origin": "sibling",
 				"spec": "openspec/specs/portal-contribution-contract",
-				"requirement": "openspec/specs/portal-contribution-contract/spec.md :: Multi-audience provider discovery"
+				"requirement": "openspec/specs/example-site/spec.md :: The example site shows stackiq's software catalogue to anyone"
 			},
 			"provider": "stackiq",
 			"providerHow": "read-from-code",
@@ -6443,7 +6666,25 @@
 				"note": "The allow-list is the gate itself (one structure, not a separate flag), so a block added to the shared library does not become publicly mountable just by existing. Widgets not in the list degrade to an inert placeholder rather than throwing.",
 				"origin": "code",
 				"spec": "openspec/specs/portaliq-cms",
-				"requirement": "openspec/specs/portaliq-cms/spec.md :: Only explicitly public widgets MUST render at a public origin"
+				"requirement": [
+					"openspec/specs/portaliq-cms/spec.md :: Only explicitly public widgets MUST render at a public origin",
+					"openspec/specs/portaliq-cms/spec.md :: A page body MUST be either a widget grid or markdown",
+					"openspec/specs/portaliq-cms/spec.md :: A page may carry a hero image reference",
+					"openspec/specs/portaliq-cms/spec.md :: A public page may embed a lead-capture form widget",
+					"openspec/changes/capability-rows-without-a-requirement/specs/portaliq-cms/spec.md :: The glossary and the contributed services are blocks an editor places (REQ-CRG-006)",
+					"openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md :: An anonymous visitor MUST be able to search federated publications",
+					"openspec/specs/portal-federated-search/spec.md :: The publication page must show what a visitor needs, in words"
+				],
+				"plan": [
+					"editor-blocks-read-public-app-data",
+					"hero-aside",
+					"hero-links-follow-the-site-address",
+					"site-callouts-steps-and-tables-follow-the-boards",
+					"site-home-follows-the-school-boards",
+					"site-matches-the-zuiddrecht-boards",
+					"site-nlds-widget-palette",
+					"site-school-blocks"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6563,7 +6804,13 @@
 				"note": "Convention read off an existing field rather than a schema change; a portal with a single footer menu keeps it as a column instead of being silently demoted to the legal strip.",
 				"origin": "code",
 				"spec": "openspec/specs/portaliq-cms",
-				"requirement": "openspec/changes/capability-rows-without-a-requirement/specs/portaliq-cms/spec.md :: Header, footer and legal menus follow one position field (REQ-CRG-007)"
+				"requirement": "openspec/changes/capability-rows-without-a-requirement/specs/portaliq-cms/spec.md :: Header, footer and legal menus follow one position field (REQ-CRG-007)",
+				"plan": [
+					"resident-menu-leave-out",
+					"site-breadcrumb-follows-the-school-boards",
+					"site-home-follows-the-school-boards",
+					"site-matches-the-zuiddrecht-boards"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6681,7 +6928,11 @@
 				"note": "Same layout item shape as every dashboard in the fleet (manifest-v2 widgetEntry).",
 				"origin": "code",
 				"spec": "openspec/specs/portal-page-designer",
-				"requirement": "openspec/specs/portal-page-designer/spec.md :: A page's widget grid MUST be editable by direct manipulation"
+				"requirement": "openspec/specs/portal-page-designer/spec.md :: A page's widget grid MUST be editable by direct manipulation",
+				"plan": [
+					"editor-blocks-read-public-app-data",
+					"site-nlds-widget-palette"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6758,7 +7009,11 @@
 				"note": "The fail-safe (not fail-closed) dispatch is deliberate: a missing consumer event class must not fail the citizen's submission.",
 				"origin": "code",
 				"spec": "openspec/specs/landing-page-provisioning",
-				"requirement": "openspec/specs/landing-page-provisioning/spec.md :: A landing page's form is submittable with no portal session"
+				"requirement": [
+					"openspec/specs/landing-page-provisioning/spec.md :: A landing page's form is submittable with no portal session",
+					"openspec/specs/landing-page-provisioning/spec.md :: A submission is relayed to the contributing app as a fail-safe, not a fail-closed, cross-app event"
+				],
+				"plan": "submit-creates-the-case-directly"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6977,7 +7232,8 @@
 				"note": "Each `portal` OpenRegister object is independent: its own domains, theme, locales and authentication modes.",
 				"origin": "competitor",
 				"spec": "openspec/specs/portaliq-cms",
-				"requirement": "openspec/specs/portaliq-cms/spec.md Requirement: A request MUST resolve to exactly one portal, or to none"
+				"requirement": "openspec/specs/portaliq-cms/spec.md :: A request MUST resolve to exactly one portal, or to none",
+				"plan": "example-site-zuiddrecht"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7015,7 +7271,11 @@
 				"note": "Built 2026-09-29. A portal behind sign-in serves no library item yet (an image tag carries no bearer token).",
 				"origin": "competitor",
 				"change": "2026-09-29-site-page-seo-history-and-media",
-				"requirement": "openspec/specs/site-page-seo-history-and-media/spec.md :: A portal keeps a media library (REQ-SPH-004)"
+				"requirement": "openspec/specs/site-page-seo-history-and-media/spec.md :: A portal keeps a media library (REQ-SPH-004)",
+				"plan": [
+					"admin-dialogs-board-look",
+					"media-usage-count"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7171,7 +7431,11 @@
 					}
 				],
 				"spec": "openspec/specs/portaliq-cms",
-				"requirement": "openspec/specs/portaliq-cms/spec.md :: A news item carries the moment it was published"
+				"requirement": "openspec/specs/portaliq-cms/spec.md :: A news item carries the moment it was published",
+				"plan": [
+					"site-article-page-follows-the-board",
+					"site-school-blocks"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7211,7 +7475,8 @@
 				"reachedOn": "nothing reaches it: no code exists",
 				"owner": "ConductionNL/portaliq",
 				"note": "Decided no in the build-all pass 2026-09-28 (defer retired, reversible): single competitor, no demand: only Open Inwoner rates it yes, no demand row, outside the core area.",
-				"origin": "competitor"
+				"origin": "competitor",
+				"plan": "site-location-map"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7277,7 +7542,11 @@
 				"note": "portaliq renders; opencatalogi supplies and federates the data. Matches source rating (opencatalogi matrix, id fed-portal).",
 				"origin": "sibling",
 				"change": "portal-federated-search",
-				"requirement": "openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md :: Every result MUST name the catalogue it came from"
+				"requirement": [
+					"openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md :: Every result MUST name the catalogue it came from",
+					"openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md :: An anonymous visitor MUST be able to search federated publications"
+				],
+				"plan": "search-names-only-a-foreign-source"
 			},
 			"provider": "opencatalogi",
 			"providerHow": "read-from-code",
@@ -7315,7 +7584,8 @@
 				"note": "opencatalogi supplies the anonymous publication API; portaliq renders the reading room. Matches source rating (opencatalogi matrix, id pub-portal).",
 				"origin": "sibling",
 				"spec": "openspec/specs/portaliq-cms",
-				"requirement": "openspec/specs/portal-federated-search/spec.md :: The publication page must show what a visitor needs, in words"
+				"requirement": "openspec/specs/portal-federated-search/spec.md :: The publication page must show what a visitor needs, in words",
+				"plan": "resident-pages-live-round-3"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7356,7 +7626,11 @@
 				"note": "Re-confirmed the portaliq-side manifest routes exist. Matches source rating (opencatalogi matrix, id pub-pages); its note that opencatalogi still has dead ui#pages/ui#menus routes left over is opencatalogi's own debt, not portaliq's.",
 				"origin": "sibling",
 				"spec": "openspec/specs/portaliq-cms",
-				"requirement": "openspec/specs/portal-in-place-editing/spec.md :: An editor MUST be able to edit a page in place on the portal (REQ-PIE-006)"
+				"requirement": [
+					"openspec/specs/portal-in-place-editing/spec.md :: An editor MUST be able to edit a page in place on the portal (REQ-PIE-006)",
+					"openspec/changes/retire-the-vendored-woo-bundle/specs/portaliq-cms/spec.md :: The WOO public surface MUST be authored as portal content"
+				],
+				"plan": "portal-cms-admin-ui"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7397,7 +7671,10 @@
 				"note": "The URL is shareable: the same `_search` param the search page itself reads.",
 				"origin": "code",
 				"change": "portal-federated-search",
-				"requirement": "openspec/specs/portal-federated-search/spec.md :: A link with q opens the search for that term (REQ-SRQ-001)"
+				"requirement": [
+					"openspec/specs/portal-federated-search/spec.md :: A link with q opens the search for that term (REQ-SRQ-001)",
+					"openspec/changes/capability-rows-said-and-planned/specs/portal-federated-search/spec.md :: A search from the home page opens the results (REQ-RSP-007)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7553,7 +7830,8 @@
 				"note": "Re-confirmed the portaliq-side wiring. Matches source rating (opencatalogi matrix, id srch-plain).",
 				"origin": "sibling",
 				"change": "portal-federated-search",
-				"requirement": "openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md :: An anonymous visitor MUST be able to search federated publications"
+				"requirement": "openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md :: An anonymous visitor MUST be able to search federated publications",
+				"plan": "site-catalogue-follows-the-school-boards"
 			},
 			"provider": "opencatalogi",
 			"providerHow": "read-from-code",
@@ -7591,7 +7869,14 @@
 				"note": "No category, organisation or date filter reachable; only one configurable facet field at a time. Matches source rating (opencatalogi matrix, id srch-facets). Specified in openspec/changes/portal-public-search (existing change, OpenSpec pass 2026-09-27).",
 				"origin": "sibling",
 				"change": "portal-public-search",
-				"requirement": "openspec/specs/portal-federated-search/spec.md :: The search block MUST filter on information category and organisation (REQ-WSD-001); REQ-WSD-002 The search block MUST filter on a publication period"
+				"requirement": [
+					"openspec/specs/portal-federated-search/spec.md :: The search block MUST filter on information category and organisation (REQ-WSD-001)",
+					"openspec/specs/portal-federated-search/spec.md :: The search block MUST filter on a publication period (REQ-WSD-002)"
+				],
+				"plan": [
+					"search-filter-by-kind",
+					"site-catalogue-follows-the-school-boards"
+				]
 			},
 			"provider": "opencatalogi",
 			"providerHow": "read-from-code",
@@ -7629,7 +7914,11 @@
 				"note": "Date sort works; relevance sort does not exist on any reachable path. Matches source rating (opencatalogi matrix, id srch-sort). Specified in openspec/changes/search-sort-by-relevance (OpenSpec pass 2026-09-27).",
 				"origin": "sibling",
 				"change": "search-sort-by-relevance",
-				"requirement": "openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md :: A search with a term can be sorted by relevance (REQ-SSR-001)"
+				"requirement": [
+					"openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md :: A search with a term can be sorted by relevance (REQ-SSR-001)",
+					"openspec/changes/capability-rows-said-and-planned/specs/portal-federated-search/spec.md :: Results can be sorted by date (REQ-RSP-008)"
+				],
+				"plan": "capability-rows-said-and-planned"
 			},
 			"provider": "opencatalogi",
 			"providerHow": "read-from-code",
@@ -7667,7 +7956,16 @@
 				"note": null,
 				"origin": "code",
 				"spec": "openspec/specs/portaliq-cms",
-				"requirement": "openspec/specs/portaliq-cms/spec.md :: A request MUST resolve to exactly one portal, or to none"
+				"requirement": [
+					"openspec/specs/portaliq-cms/spec.md :: A request MUST resolve to exactly one portal, or to none",
+					"openspec/specs/portaliq-cms/spec.md :: A portal's theme MUST change what a visitor sees"
+				],
+				"plan": [
+					"portal-cms-admin-ui",
+					"portal-host-root-redirect",
+					"site-at-the-root-of-a-portal-host",
+					"site-links-the-theme-bridge"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7708,7 +8006,8 @@
 				"note": "Also handles the fleet's nldesign->thematiq app-id rename: :67 THEME_APP_IDS tries both ids so a stale hardcode would silently render unthemed rather than error (:309-322 themeAppId()).",
 				"origin": "code",
 				"change": "nldesign-theme-integration",
-				"requirement": "openspec/specs/portaliq-cms/spec.md :: A portal's theme MUST change what a visitor sees"
+				"requirement": "openspec/specs/portaliq-cms/spec.md :: A portal's theme MUST change what a visitor sees",
+				"plan": "portal-theme-application"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7787,7 +8086,8 @@
 				"note": "Fails closed to the neutral default on every unresolved path (no org param, unknown slug, OpenRegister unavailable) per :130,:473, never another tenant's branding, never a wildcard frame-ancestors.",
 				"origin": "code",
 				"change": "portal-white-label-runtime-config",
-				"requirement": "openspec/changes/portal-white-label-runtime-config/specs/supplier-portal/spec.md :: The portal MUST be organisation-agnostic and white-label"
+				"requirement": "openspec/changes/portal-white-label-runtime-config/specs/supplier-portal/spec.md :: The portal MUST be organisation-agnostic and white-label",
+				"plan": "portal-identity-from-the-admin"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7913,7 +8213,7 @@
 		{
 			"id": "thm-nlds-dual-frontend",
 			"area": "theming",
-			"name": "Style two independently-built frontends, the citizen portal SPA and the public site renderer, from the same NL Design System theme tokens.",
+			"name": "Style the public site and the resident's own area, one renderer since the React portal was retired, from the NL Design System tokens of the portal's theme.",
 			"portaliq": "yes",
 			"open-inwoner": "partial",
 			"nl-portal": "no",
@@ -7934,10 +8234,14 @@
 				"evidence": "one frontend now: the React portal and its src/portal/theme.css were retired (site-portal-parity, commit 4e3abcd9). src/site/App.vue maps the `--pq-*` chain, reading `--utrecht-*` names first and the theme app's `--nldesign-color-*` layer after, per portal [evidence repointed 2026-10-30 from the retired src/portal React shell to src/site and src/shared]",
 				"reachedOn": "/site root",
 				"owner": "ConductionNL/portaliq",
-				"note": "Two bridges, maintained separately, to two different token vocabularies from the same theme app, a drift risk the App.vue comments document happening at least twice already (font-family, link colour).",
+				"note": "Reworded 2026-11-12: the two-frontend premise is retired (site-portal-parity); src/site renders both the public site and Mijn. Two bridges, maintained separately, to two different token vocabularies from the same theme app, a drift risk the App.vue comments document happening at least twice already (font-family, link colour).",
 				"origin": "code",
 				"change": "2026-09-29-portal-spa-nl-design-system-styling",
-				"requirement": "openspec/specs/supplier-portal/spec.md :: The portal shell MUST use the NL Design System component set and meet WCAG 2.1 AA"
+				"requirement": [
+					"openspec/specs/supplier-portal/spec.md :: The portal shell MUST use the NL Design System component set and meet WCAG 2.1 AA",
+					"openspec/specs/portaliq-cms/spec.md :: A portal's theme MUST change what a visitor sees"
+				],
+				"plan": "portal-theme-application"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7951,7 +8255,7 @@
 		{
 			"id": "cmp-thm-languages",
 			"area": "theming",
-			"name": "Offer the portal in more than one language, including the texts editors write.",
+			"name": "Offer the portal's own texts in more than one language, and send the visitor's language choice with every content read.",
 			"portaliq": "partial",
 			"open-inwoner": "no",
 			"nl-portal": "partial",
@@ -7972,10 +8276,18 @@
 				"evidence": "Combines thm-portal-chrome-i18n (yes: the /site renderer's chrome through src/shared/i18n/index.js createTranslator() in src/site/App.vue) with thm-content-i18n (decided-no: editor page/menu/glossary content is not translated); the language switch sends the chosen locale on every content read [evidence repointed 2026-10-30 from the retired src/portal React shell to src/site and src/shared]",
 				"reachedOn": "/site chrome in the visitor's language; editor-written content stays in the language it was written in",
 				"owner": "ConductionNL/portaliq",
-				"note": "One of the fleet's four frontends here (the portal SPA) has real i18n; the CMS site renderer and its editor-authored content do not.",
+				"note": "Narrowed 2026-11-12: translating the texts editors write is thm-content-i18n (decided-no). One of the fleet's four frontends here (the portal SPA) has real i18n; the CMS site renderer and its editor-authored content do not.",
 				"origin": "competitor",
 				"change": "portal-spa-i18n-locale-support",
-				"requirement": "openspec/specs/supplier-portal/spec.md Requirement: The public site MUST render its own words through a locale-aware translation layer; openspec/specs/portaliq-cms/spec.md Requirement: The language switch offers the portal's locales and the choice reaches the content (editor content translation is decided-no, thm-content-i18n)"
+				"requirement": [
+					"openspec/specs/supplier-portal/spec.md :: The public site MUST render its own words through a locale-aware translation layer",
+					"openspec/specs/portaliq-cms/spec.md :: The language switch offers the portal's locales and the choice reaches the content"
+				],
+				"plan": [
+					"site-dates-in-content-language",
+					"site-matches-the-zuiddrecht-boards",
+					"site-nlds-widget-palette"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -8122,7 +8434,7 @@
 				"note": "Automated axe + a keyboard test cover three page states and the phone breakpoint. The federated-search and publication-detail block templates are not named in the axe test list, so their own controls (facet checkboxes, sort select) are unverified by this suite. Matches source rating (opencatalogi matrix, id pub-wcag): evidence of AA work, not a conformance claim.",
 				"origin": "sibling",
 				"spec": "openspec/specs/portaliq-cms",
-				"requirement": "openspec/changes/public-site-meets-wcag-aa/specs/portaliq-cms/spec.md REQ-PWA-001 The public site meets WCAG 2.1 AA on every page state it serves"
+				"requirement": "openspec/changes/public-site-meets-wcag-aa/specs/portaliq-cms/spec.md :: The public site meets WCAG 2.1 AA on every page state it serves (REQ-PWA-001)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -8198,7 +8510,7 @@
 				"note": "Endpoint exists, is routed and rate-limited, but no in-repo caller embeds an <img> pointing at it; likely meant for external embedding (e.g. e-mail opens) similar to the recorder script.",
 				"origin": "code",
 				"change": "portal-traffic-analytics",
-				"requirement": "openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics :: The collector MUST survive being a public endpoint (scenario: A pixel counts one event)"
+				"requirement": "openspec/specs/portal-traffic-reporting/spec.md :: The collector MUST survive being a public endpoint"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -8388,7 +8700,10 @@
 				"note": "Admin-only (docblock explicitly calls this out as ADMIN ONLY, BY OMISSION), exports exactly the date range and segment currently selected on screen.",
 				"origin": "code",
 				"spec": "openspec/specs/portal-traffic-reporting",
-				"requirement": "openspec/specs/portal-traffic-reporting/spec.md :: The daily records MUST be exportable"
+				"requirement": [
+					"openspec/specs/portal-traffic-reporting/spec.md :: The daily records MUST be exportable",
+					"openspec/changes/capability-rows-said-and-planned/specs/portal-traffic-reporting/spec.md :: The CSV export follows what the page shows (REQ-RSP-009)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -8426,7 +8741,11 @@
 				"note": "A config field that is declaratively stored but unread is this codebase's own named worst-case (tasks.md 2.4); the tests cited assert the collector's behaviour, not just storage.",
 				"origin": "code",
 				"change": "portal-traffic-analytics",
-				"requirement": "openspec/specs/portal-traffic-reporting/spec.md :: A portal MUST decide what is measured, and the collector MUST enforce it"
+				"requirement": [
+					"openspec/specs/portal-traffic-reporting/spec.md :: A portal MUST decide what is measured, and the collector MUST enforce it",
+					"openspec/specs/portal-traffic-reporting/spec.md :: The content contract MUST carry the resolved measurement configuration",
+					"openspec/changes/capability-rows-said-and-planned/specs/portal-traffic-reporting/spec.md :: A portal switches measurement off (REQ-RSP-010)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -8648,13 +8967,16 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "lib/Service/Traffic/TrafficJourneyStats.php:49 pages(); src/widgets/TrafficJourneys.vue mounted on the Traffic page (src/manifest.json:360-364) and registered src/registry.js:108-112",
+				"evidence": "lib/Service/Traffic/TrafficJourneyStats.php:49 pages(); src/widgets/TrafficPathExplorer.vue (replaces the retired TrafficJourneys widget) on the Traffic page (src/manifest.json:1086), registered src/registry.js:150, reads /api/traffic/paths",
 				"reachedOn": "Traffic dashboard page, Journeys widget",
 				"owner": "ConductionNL/portaliq",
 				"note": "Reconstructed by event sequence, not receipt time (tasks.md 4.2), so an out-of-order delivery on a slow connection does not corrupt the journey.",
 				"origin": "code",
 				"change": "portal-traffic-analytics",
-				"requirement": "openspec/specs/portal-traffic-visitors-and-geo/spec.md :: A session MUST be reconstructable into an ordered journey"
+				"requirement": [
+					"openspec/specs/portal-traffic-visitors-and-geo/spec.md :: A session MUST be reconstructable into an ordered journey",
+					"openspec/specs/portal-traffic-path-explorer/spec.md :: The reader MUST be able to expand from a node and change the number of steps"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -9002,7 +9324,10 @@
 				"note": "Pre-consent events are validated server-side to be a subset of the portal's enabled events (TrafficConfigResolver.php:348-351), so a portal cannot admit before consent something it does not collect at all.",
 				"origin": "code",
 				"change": "portal-traffic-analytics",
-				"requirement": "openspec/changes/capability-rows-without-a-requirement/specs/portal-traffic-experiments/spec.md :: The client honours Do Not Track (REQ-CRG-013); openspec/specs/portal-traffic-experiments/spec.md :: Measurement MUST honour the portal's consent posture"
+				"requirement": [
+					"openspec/changes/capability-rows-without-a-requirement/specs/portal-traffic-experiments/spec.md :: The client honours Do Not Track (REQ-CRG-013)",
+					"openspec/specs/portal-traffic-experiments/spec.md :: Measurement MUST honour the portal's consent posture"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -9081,7 +9406,11 @@
 				"note": "This is a stable anonymous id used to split new/returning counts, not a visitor profile with traits or a per-visitor history view. No screen anywhere shows 'this visitor's past visits'.",
 				"origin": "competitor",
 				"change": "portal-traffic-analytics",
-				"requirement": "openspec/specs/portal-traffic-visitors-and-geo/spec.md :: Measurement MUST be cookieless unless the portal persists a client id"
+				"requirement": [
+					"openspec/specs/portal-traffic-visitors-and-geo/spec.md :: Measurement MUST be cookieless unless the portal persists a client id",
+					"openspec/specs/portal-traffic-visitors-and-geo/spec.md :: Visitors MUST be counted honestly in each mode",
+					"openspec/changes/capability-rows-said-and-planned/specs/portal-traffic-visitors-and-geo/spec.md :: A returning visitor is known as the same visitor (REQ-RSP-011)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -9192,7 +9521,11 @@
 				"note": "Verified against node_modules-less clone by reading the shared component's source in the nextcloud-vue sibling repo directly (git show origin/development:src/components/CnSetupWizard/CnSetupWizard.vue).",
 				"origin": "code",
 				"spec": "openspec/specs/configuration-initialization",
-				"requirement": "openspec/specs/first-time-setup/spec.md :: Setup status reports every manifest step"
+				"requirement": [
+					"openspec/specs/first-time-setup/spec.md :: Setup status reports every manifest step",
+					"openspec/specs/first-time-setup/spec.md :: Each example data card loads itself",
+					"openspec/changes/capability-rows-said-and-planned/specs/first-time-setup/spec.md :: An administrator walks through the setup wizard (REQ-RSP-012)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -9230,7 +9563,10 @@
 				"note": "Reached from the dedicated admin view.",
 				"origin": "code",
 				"spec": "openspec/specs/settings-management",
-				"requirement": "openspec/specs/settings-management/spec.md :: REQ-CFG-002: Update settings (admin only)"
+				"requirement": [
+					"openspec/specs/settings-management/spec.md :: Update settings (admin only) (REQ-CFG-002)",
+					"openspec/specs/settings-management/spec.md :: Read current settings (REQ-CFG-001)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -9268,7 +9604,10 @@
 				"note": "The empty delegated-admin map is a deliberate auth choice documented in the class's own docblock, not an oversight.",
 				"origin": "code",
 				"spec": "openspec/specs/settings-management",
-				"requirement": "openspec/specs/admin-ui/spec.md :: REQ-UI-001: Register the admin section (IIconSection)"
+				"requirement": [
+					"openspec/specs/admin-ui/spec.md :: Register the admin section (IIconSection) (REQ-UI-001)",
+					"openspec/specs/admin-ui/spec.md :: Render the admin settings form (ISettings) (REQ-UI-002)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -9305,7 +9644,7 @@
 				"note": "InitializeDemoPortal is install-only by design (a post-migration entry would re-seed an instance whose admin deliberately deleted their demo portal, per the info.xml comment).",
 				"origin": "code",
 				"spec": "openspec/specs/configuration-initialization",
-				"requirement": "openspec/specs/configuration-initialization/spec.md :: REQ-INIT-002: Import configuration on install / upgrade"
+				"requirement": "openspec/specs/configuration-initialization/spec.md :: Import configuration on install / upgrade (REQ-INIT-002)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -9343,7 +9682,14 @@
 				"note": "Picking NONE_DATASET is a first-class choice, not just skipping the step; the wizard marks the step done either way (SetupController.php:141-142).",
 				"origin": "code",
 				"spec": "openspec/specs/configuration-initialization",
-				"requirement": "openspec/specs/first-time-setup/spec.md :: Each example data card loads itself"
+				"requirement": "openspec/specs/first-time-setup/spec.md :: Each example data card loads itself",
+				"plan": [
+					"business-audience-group",
+					"demo-sign-in-beside-the-account",
+					"example-resident-zuiddrecht",
+					"example-site-zuiddrecht",
+					"resident-on-example-set"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -9381,7 +9727,7 @@
 				"note": "Uses the older @PublicPage/@NoCSRFRequired docblock-annotation style rather than PHP 8 attributes, unlike most other controllers in this app; Nextcloud's controller middleware reads both forms, so this is a style inconsistency, not a broken guard, but worth a live check since annotation-vs-attribute mismatches are a known gate class in this fleet.",
 				"origin": "code",
 				"spec": "openspec/specs/observability",
-				"requirement": "openspec/specs/observability/spec.md :: REQ-OBS-002: Health check endpoint (public)"
+				"requirement": "openspec/specs/observability/spec.md :: Health check endpoint (public) (REQ-OBS-002)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -9419,7 +9765,7 @@
 				"note": "Deliberately admin-gated because the body counts portalNotification and portalAccount rows, which would leak tenant volume to an anonymous scrape.",
 				"origin": "code",
 				"spec": "openspec/specs/observability",
-				"requirement": "openspec/specs/observability/spec.md :: REQ-OBS-001: Prometheus metrics endpoint (admin only)"
+				"requirement": "openspec/specs/observability/spec.md :: Prometheus metrics endpoint (admin only) (REQ-OBS-001)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -9451,13 +9797,17 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "lib/Service/AuditTrailService.php writes every portal proof record (sign-in, sign-out, refresh, create, update, forward, download, task completion) as one row in OpenRegister's audit trail (AuditTrailMapper::insertAuditTrails, action portaliq.<verb>); called from ContributionController, PortalSessionService, CitizenWriteRecorder, PortalTaskProxyController, PortalAuditHook; MetricsController counts the rows. lib/Repair/MovePortalAuditEntries moves the old portalAuditEntry objects on upgrade.",
+				"evidence": "lib/Service/AuditTrailService.php writes every portal proof record (sign-in, sign-out, refresh, create, update, forward, download, task completion) as one row in OpenRegister's audit trail (AuditTrailMapper::insertAuditTrails, action portaliq.<verb>); called from ContributionController, PortalSessionService, CitizenWriteRecorder, PortalTaskProxyController, PortalAuditHook; MetricsController counts the rows. lib/Repair/MovePortalAuditEntries.php moves the old portalAuditEntry objects on upgrade.",
 				"reachedOn": "every contribution write, portal session event, download and task completion; administrators read the rows in OpenRegister's audit trail",
 				"owner": "ConductionNL/portaliq",
 				"note": "This is not a guard-with-no-caller: multiple real call sites confirmed across controllers and services.",
 				"origin": "code",
 				"change": "2026-09-30-consume-or-audit-trail-proof-records",
-				"requirement": "openspec/specs/supplier-portal/spec.md :: Append-only portal audit trail on every mutation, download, and session event"
+				"requirement": [
+					"openspec/specs/supplier-portal/spec.md :: Append-only portal audit trail on every mutation, download, and session event",
+					"openspec/changes/capability-rows-said-and-planned/specs/supplier-portal/spec.md :: Staff actions on portal accounts and sessions are in the trail (REQ-RSP-013)"
+				],
+				"plan": "submission-records-its-action-title"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -9538,7 +9888,7 @@
 				"note": "routes.php's own comments record the FAILURE MODE this shipped to fix: without these two route entries, the SPA catch-all answered 200 HTML and the page read 'The store registry did not answer' (WOO-559) with nothing erroring. Search is reachable by any signed-in user (one tier below the rest of this app's admin-only /api/), accepted not chosen, because OpenRegister's store-plane engine has no searchAuth key to narrow it further. Stays spec none (7 Oct 2026, decision 81): the store backend is OpenRegister's GenericStoreController and the page is nextcloud-vue's CnStorePage; portaliq only aliases the two routes. Spec added 1 Nov 2026: openspec/specs/portal-store-page records the page and the two aliased routes as built.",
 				"origin": "code",
 				"spec": "openspec/specs/portal-store-page",
-				"requirement": "openspec/specs/portal-store-page/spec.md The store page lists and installs published portal configurations"
+				"requirement": "openspec/specs/portal-store-page/spec.md :: The store page lists and installs published portal configurations"
 			},
 			"provider": "openregister",
 			"providerHow": "read-from-code",
@@ -9578,7 +9928,7 @@
 				"origin": "code",
 				"spec": "openspec/specs/settings-management",
 				"readOn": "2026-10-07",
-				"requirement": "openspec/specs/settings-management/spec.md :: REQ-CFG-006: Write a per-user preference"
+				"requirement": "openspec/specs/settings-management/spec.md :: Write a per-user preference (REQ-CFG-006)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -9616,7 +9966,8 @@
 				"note": "The mechanism is real and wired, but every shipped seed entry is ['admin'], admin-only out of the box, so there is no shipped example of a non-admin group actually granted an action. The seed file's own $comment is also unedited app-template boilerplate ('remove the $comment field... when implementing your app'), left in production. Specified in openspec/changes/operate-roles-for-content-and-actions (OpenSpec pass 2026-09-27).",
 				"origin": "code",
 				"change": "operate-roles-for-content-and-actions",
-				"requirement": "openspec/changes/operate-roles-for-content-and-actions/specs/portal-admin-roles/spec.md :: An administrator grants an action to a group on screen (REQ-ORA-001)"
+				"requirement": "openspec/changes/operate-roles-for-content-and-actions/specs/portal-admin-roles/spec.md :: An administrator grants an action to a group on screen (REQ-ORA-001)",
+				"plan": "admin-rights-page"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -9654,7 +10005,8 @@
 				"note": "Fails closed both ways per the method's own docblock: no session is never an editor, and an empty configured-groups list means only admins, never 'everyone signed in'.",
 				"origin": "code",
 				"spec": "openspec/specs/portal-page-designer",
-				"requirement": "openspec/specs/portal-page-designer/spec.md :: Who may edit pages MUST be configurable and enforced at the write"
+				"requirement": "openspec/specs/portal-page-designer/spec.md :: Who may edit pages MUST be configurable and enforced at the write",
+				"plan": "portal-cms-admin-ui"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -9692,7 +10044,8 @@
 				"note": "Rated partial rather than yes: this reader confirmed the session claim and the branding-isolation guard, but did not trace a full object-store query to prove row-level data isolation end to end for every schema; that needs a live check across the schemas in lib/Settings/portaliq_register.json (48 at portaliq db4a6cf, 23 of them without an organisation or portal property). Specified in openspec/changes/operate-portals-per-organisation (OpenSpec pass 2026-09-27).",
 				"origin": "code",
 				"change": "operate-portals-per-organisation",
-				"requirement": "openspec/changes/operate-portals-per-organisation/specs/portal-tenancy/spec.md :: No route crosses from one organisation to another (REQ-OPO-003)"
+				"requirement": "openspec/changes/operate-portals-per-organisation/specs/portal-tenancy/spec.md :: No route crosses from one organisation to another (REQ-OPO-003)",
+				"plan": "portal-acts-for-its-organisation"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -9769,7 +10122,10 @@
 				"origin": "code",
 				"change": "portal-traffic-analytics",
 				"readOn": "2026-10-07",
-				"requirement": "openspec/specs/portal-traffic-reporting/spec.md :: Cross-origin posting MUST work without a preflight"
+				"requirement": [
+					"openspec/specs/portal-traffic-reporting/spec.md :: Cross-origin posting MUST work without a preflight",
+					"openspec/changes/capability-rows-said-and-planned/specs/portaliq-cms/spec.md :: The public content API answers other sites (REQ-RSP-016)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -9807,7 +10163,8 @@
 				"note": "Same caveat as ops-multitenancy-organisation: the session-level and branding-level isolation is confirmed, full row-level data isolation across every schema was not traced end to end in this pass. Specified in openspec/changes/operate-portals-per-organisation (OpenSpec pass 2026-09-27).",
 				"origin": "competitor",
 				"change": "operate-portals-per-organisation",
-				"requirement": "openspec/changes/operate-portals-per-organisation/specs/portal-tenancy/spec.md :: No route crosses from one organisation to another (REQ-OPO-003)"
+				"requirement": "openspec/changes/operate-portals-per-organisation/specs/portal-tenancy/spec.md :: No route crosses from one organisation to another (REQ-OPO-003)",
+				"plan": "portal-acts-for-its-organisation"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -9845,7 +10202,12 @@
 				"note": "Content editing genuinely separates 'editor group' from 'admin'. Settings/action rights are mechanically group-based but every shipped action is admin-only, so out of the box there is no non-admin role over settings. Specified in openspec/changes/operate-roles-for-content-and-actions (OpenSpec pass 2026-09-27).",
 				"origin": "competitor",
 				"change": "operate-roles-for-content-and-actions",
-				"requirement": "openspec/changes/operate-roles-for-content-and-actions/specs/portal-admin-roles/spec.md REQ-ORA-007 Content rights and settings rights stay apart (with REQ-ORA-001, REQ-ORA-005)"
+				"requirement": [
+					"openspec/changes/operate-roles-for-content-and-actions/specs/portal-admin-roles/spec.md :: Content rights and settings rights stay apart (REQ-ORA-007)",
+					"openspec/changes/operate-roles-for-content-and-actions/specs/portal-admin-roles/spec.md :: An administrator grants an action to a group on screen (REQ-ORA-001)",
+					"openspec/changes/operate-roles-for-content-and-actions/specs/portal-admin-roles/spec.md :: Page editors can edit the menu (REQ-ORA-005)"
+				],
+				"plan": "admin-rights-page"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -9877,13 +10239,16 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "lib/Service/AuditTrailService.php writes every portal proof record (sign-in, sign-out, refresh, create, update, forward, download, task completion) as one row in OpenRegister's audit trail (AuditTrailMapper::insertAuditTrails, action portaliq.<verb>); called from ContributionController, PortalSessionService, CitizenWriteRecorder, PortalTaskProxyController, PortalAuditHook; MetricsController counts the rows. lib/Repair/MovePortalAuditEntries moves the old portalAuditEntry objects on upgrade.",
+				"evidence": "lib/Service/AuditTrailService.php writes every portal proof record (sign-in, sign-out, refresh, create, update, forward, download, task completion) as one row in OpenRegister's audit trail (AuditTrailMapper::insertAuditTrails, action portaliq.<verb>); called from ContributionController, PortalSessionService, CitizenWriteRecorder, PortalTaskProxyController, PortalAuditHook; MetricsController counts the rows. lib/Repair/MovePortalAuditEntries.php moves the old portalAuditEntry objects on upgrade.",
 				"reachedOn": "every contribution write, portal session event, download and task completion; administrators read the rows in OpenRegister's audit trail",
 				"owner": "ConductionNL/portaliq",
 				"note": "Not rated only from a class existing: multiple independent real callers were confirmed.",
 				"origin": "competitor",
 				"change": "2026-09-30-consume-or-audit-trail-proof-records",
-				"requirement": "openspec/specs/supplier-portal/spec.md :: Append-only portal audit trail on every mutation, download, and session event"
+				"requirement": [
+					"openspec/specs/supplier-portal/spec.md :: Append-only portal audit trail on every mutation, download, and session event",
+					"openspec/changes/capability-rows-said-and-planned/specs/supplier-portal/spec.md :: Staff actions on portal accounts and sessions are in the trail (REQ-RSP-013)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -9925,7 +10290,10 @@
 				"note": "A hosting company could offer managed Nextcloud+portaliq as a service, but that would be an external arrangement, not a capability this codebase provides. Specified in openspec/changes/operate-portals-per-organisation (OpenSpec pass 2026-09-27).",
 				"origin": "competitor",
 				"change": "operate-portals-per-organisation",
-				"requirement": "openspec/changes/operate-portals-per-organisation/specs/portal-tenancy/spec.md REQ-OPO-005 Each organisation looks after its own portal on a shared installation (with REQ-OPO-004)"
+				"requirement": [
+					"openspec/changes/operate-portals-per-organisation/specs/portal-tenancy/spec.md :: Each organisation looks after its own portal on a shared installation (REQ-OPO-005)",
+					"openspec/changes/operate-portals-per-organisation/specs/portal-tenancy/spec.md :: A hosting party can add an organisation's portal in one step (REQ-OPO-004)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -10001,7 +10369,11 @@
 				"note": "Built 2026-09-28: a declared field change on a resident's record writes an inbox message with a record link and dispatches the rule. Reaches a resident only once a case app declares a change rule in its contribution (docs/operations/notices-on-a-case.md); no sibling declares one yet.",
 				"origin": "code",
 				"change": "2026-09-28-inbox-notifications-and-preferences",
-				"requirement": "openspec/specs/portal-notifications-and-preferences/spec.md :: A case app declares which change a resident hears about (REQ-NAP-001); openspec/specs/citizen-writes-on-their-own-case/spec.md :: A citizen write raises its own event (REQ-CWOC-005)"
+				"requirement": [
+					"openspec/specs/portal-notifications-and-preferences/spec.md :: A case app declares which change a resident hears about (REQ-NAP-001)",
+					"openspec/specs/citizen-writes-on-their-own-case/spec.md :: A citizen write raises its own event (REQ-CWOC-005)",
+					"openspec/specs/portal-notifications-and-preferences/spec.md :: A declared change reaches the resident's inbox (REQ-NAP-002)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -10136,7 +10508,8 @@
 				"origin": "code",
 				"change": "2026-09-28-case-actions-sign-a-document",
 				"readOn": "2026-10-07",
-				"requirement": "openspec/specs/portal-document-signing/spec.md :: The resident reads the document before signing it (REQ-SGN-004)"
+				"requirement": "openspec/specs/portal-document-signing/spec.md :: The resident reads the document before signing it (REQ-SGN-004)",
+				"plan": "capability-rows-said-and-planned"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -10216,14 +10589,15 @@
 				"open-forms": "no case list or case page: Open Formulieren hands a submission to a registration backend (ZGW, Objects API, StUF-ZDS, e-mail; src/openforms/registrations/contrib/) and reads nothing back for the resident; the partners component (src/openforms/formio/components/custom.py:857) and co-signing collect the partner's data and signature, they do not show a shared case [reached on nothing] [read 2026-10-08 at 4.0.1]"
 			},
 			"built": {
-				"state": "built",
-				"evidence": "lib/Service/PortalObjectReader.php:17-31 one-hop 'via' join (rol->zaak, match id or scopeField array-contains) lets a second party's own subjectRef reach a case; ConductionNL/dossiq@971735b03e (development) lib/Portal/PortalContributionProvider.php:425 dossiq's mijnZaken collection scopes on the scalar 'portalSubject' with no via declared",
+				"state": "specified",
+				"evidence": "Not built: portaliq's via join is built, but dossiq's mijnZaken still scopes on portaalSubject alone and declares no via over the case roles, so a co-applicant sees no shared case (checked 2026-11-12 on dossiq development). lib/Service/PortalObjectReader.php:17-31 one-hop 'via' join (rol->zaak, match id or scopeField array-contains) lets a second party's own subjectRef reach a case; ConductionNL/dossiq@971735b03e (development) lib/Portal/PortalContributionProvider.php:425 dossiq's mijnZaken collection scopes on the scalar 'portalSubject' with no via declared",
 				"reachedOn": "portal SPA collection page -> GET /portal/api/collections/{register}/{schema} -> PortalObjectReader via-join, only when the contributing app declares it",
 				"owner": "ConductionNL/portaliq",
 				"note": "The mechanism for a co-applicant signing in with their own DigiD and seeing a shared case is in portaliq (role-join scoping), but dossiq, the case app, scopes cases on one portalSubject value, so in the fleet as shipped the partner sees nothing. Portaliq's half is built (openspec/changes/archive/2026-09-07-contract-v2, the via join, and 2026-09-07-reverse-scope-join). The missing half is dossiq's: declare a via over the case roles on mijnZaken so a co-applicant's own subjectRef reaches the shared case (OpenSpec pass 2026-09-27).",
 				"origin": "code",
 				"change": "via-read-scoped-query",
-				"requirement": "openspec/specs/portal-contribution-contract/spec.md Requirement: One-hop via join scoping"
+				"requirement": "openspec/specs/portal-contribution-contract/spec.md :: One-hop via join scoping",
+				"plan": "capability-rows-said-and-planned"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -10300,13 +10674,16 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "lib/Service/CaseTypeVisibility.php (portal.hiddenCaseTypes, the serving portal from X-Portaliq-Portal / ?portal= / host / the organisation's portal); enforced in lib/Service/PortalCaseListReader.php (My cases, own and mandated), lib/Controller/ContributionController.php collection()/object() for kind cases (404 as not found), lib/Service/Intake/PortalFormBindingResolver.php render() (reason hiddenCaseType) and PortalCatalogueReader; admin page src/views/PortalCaseTypeVisibility.vue (manifest PortalCaseTypes, header action on PortalDetail) over lib/Controller/PortalCaseTypesController.php (admin-only) and lib/Service/PortalCaseTypeCatalogue.php",
+				"evidence": "lib/Service/CaseTypeVisibility.php (portal.hiddenCaseTypes, the serving portal from X-Portaliq-Portal / ?portal= / host / the organisation's portal); enforced in lib/Service/PortalCaseListReader.php (My cases, own and mandated), lib/Controller/ContributionController.php collection()/object() for kind cases (404 as not found), lib/Service/Intake/PortalFormBindingResolver.php render() (reason hiddenCaseType) and PortalCatalogueReader; admin page widget src/widgets/PortalCaseTypes.vue (src/registry.js:211, src/manifest.json:3999, header action on PortalDetail) over lib/Controller/PortalCaseTypesController.php (admin-only) and lib/Service/PortalCaseTypeCatalogue.php",
 				"reachedOn": "admin: Portals -> portal -> Case types -> 'Show in this portal' switch -> Save; resident: My cases, a case page, the request form and catalogue of that portal",
 				"owner": "ConductionNL/portaliq",
 				"note": "Built 2026-09-29 (operate-show-per-case-type). The page names case types from the portal's published request forms, from a case app's caseTypeSource on a cases collection, and the hidden list itself; a case type known only from cases is not listed until its case app declares caseTypeSource (none does yet).",
 				"origin": "code",
 				"change": "2026-09-29-operate-show-per-case-type",
-				"requirement": "openspec/specs/portal-case-type-visibility/spec.md :: An administrator hides a case type in one portal (REQ-OSC-001)"
+				"requirement": [
+					"openspec/specs/portal-case-type-visibility/spec.md :: An administrator hides a case type in one portal (REQ-OSC-001)",
+					"openspec/specs/portal-case-type-visibility/spec.md :: A hidden case type does not reach residents (REQ-OSC-002)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -10345,13 +10722,14 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "lib/BackgroundJob/AvailabilityProbeJob.php (every 300 s, each published portal's site route + health through the instance's own URL, lib/Service/Availability/AvailabilityProbe.php); lib/Service/Availability/AvailabilityRollup.php (a missed interval counts as down, cause no-check; outages); records portalAvailabilityDaily / portalAvailabilityOutage kept 13 months (AvailabilityStore::purgeBefore); lib/Controller/AvailabilityController.php (admin-only JSON + CSV); src/widgets/AvailabilityReport.vue on the Availability dashboard reached from the Reports hub",
+				"evidence": "lib/BackgroundJob/AvailabilityProbeJob.php (every 300 s, each published portal's site route + health through the instance's own URL, lib/Service/Availability/AvailabilityProbe.php); lib/Service/Availability/AvailabilityRollup.php (a missed interval counts as down, cause no-check; outages); records portalAvailabilityDaily / portalAvailabilityOutage kept 13 months (AvailabilityStore::purgeBefore); lib/Controller/AvailabilityController.php (admin-only JSON + CSV); the Availability dashboard page in src/manifest.json:1326 (stat widgets over /api/availability/@page.portal, Download as CSV over /api/availability/@page.portal/export) over lib/Service/Availability/AvailabilityReport.php, reached from the Reports hub",
 				"reachedOn": "admin: Reports -> Availability -> pick a portal: twelve monthly percentages, the outages, 'How this is measured', Download as CSV",
 				"owner": "ConductionNL/portaliq",
 				"note": "Built 2026-09-29 (operate-availability-report). Measured inside the installation, so an outage of the network in front of it is not seen; the report says so and names the hosting party's external monitor as the complement. No planned maintenance is subtracted.",
 				"origin": "code",
 				"change": "2026-09-29-operate-availability-report",
-				"requirement": "openspec/specs/portal-availability/spec.md :: An administrator reads a twelve-month report (REQ-OAR-004)"
+				"requirement": "openspec/specs/portal-availability/spec.md :: An administrator reads a twelve-month report (REQ-OAR-004)",
+				"plan": "dashboard-figures-across-portals"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -10433,7 +10811,10 @@
 				"note": "Which entries show is dossiq's decision: portaliq renders what caseTimeline returns, newest first. Only contact moments dossiq marks public reach the resident.",
 				"origin": "code",
 				"change": "2026-09-29-contribution-manifest-v3",
-				"requirement": "openspec/specs/case-timeline/spec.md :: The resident reads the history newest first (REQ-CTL-004)"
+				"requirement": [
+					"openspec/specs/case-timeline/spec.md :: The resident reads the history newest first (REQ-CTL-004)",
+					"dossiq:openspec/specs/portal-contribution/spec.md :: Feed entries default to internal and the portal sees only public ones (REQ-PC-10)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -10513,6 +10894,11 @@
 					"openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration :: A portal MUST adopt a token set that exists",
 					"openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration :: Portaliq MUST NOT ship design tokens or a theming mechanism",
 					"thematiq:openspec/specs/token-editor-ui :: Token Editor Panel"
+				],
+				"plan": [
+					"portal-identity-from-the-admin",
+					"portal-theme-application",
+					"site-links-the-theme-bridge"
 				]
 			},
 			"provider": "portaliq",
@@ -10672,7 +11058,10 @@
 				"origin": "code",
 				"change": "integriq/portal-idp-broker-config",
 				"readOn": "2026-10-07",
-				"requirement": "openspec/specs/portal-branch-scope/spec.md :: A restricted session sees only its branch (REQ-SEB-002)"
+				"requirement": [
+					"openspec/specs/portal-branch-scope/spec.md :: A restricted session sees only its branch (REQ-SEB-002)",
+					"openspec/specs/portal-branch-scope/spec.md :: The login's branch travels with the session (REQ-SEB-001)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -10856,7 +11245,8 @@
 				"note": "A resident can send a message tied to one of their cases, but from the messages page with the case uuid typed by hand, not from the case page, and the answer shows in the inbox, not on the case. Specified in ConductionNL/dossiq openspec/changes/communication-portal-conversation-on-the-case (dossiq lane, OpenSpec pass 2026-09-27).",
 				"origin": "code",
 				"change": "dossiq/communication-portal-conversation-on-the-case",
-				"requirement": "dossiq:openspec/specs/portal-contribution :: A resident asks a question from the case and finds the answer there (REQ-PORTAL-007)"
+				"requirement": "dossiq:openspec/specs/portal-contribution :: A resident asks a question from the case and finds the answer there (REQ-PORTAL-007)",
+				"plan": "capability-rows-said-and-planned"
 			},
 			"provider": "dossiq",
 			"providerHow": "read-from-code",
@@ -10887,7 +11277,10 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "Canvas decision (7 Oct 2026): Bezwaar and Klacht live on the case page, board Zaak.",
 				"change": "case-page-objection-and-complaint",
-				"requirement": "openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md :: The case page offers the actions the server lists (REQ-COC-002)"
+				"requirement": [
+					"openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md :: The case page offers the actions the server lists (REQ-COC-002)",
+					"openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md :: The resident gets a receipt on the case page (REQ-COC-005)"
+				]
 			},
 			"source": "spec-round-2026-10-07",
 			"feature": "withdraw-object-and-complain",
@@ -10958,7 +11351,7 @@
 				"note": "The final status's public label and description are shown, which can carry the decision in words, but the result itself renders as a raw uuid and there is no field for the organisation's explanation of the decision (code reading, needs a live check). The dossiq half shipped in 9489ca2c6 (dossiq lane: existing): the outcome reads in words, with the organisation's explanation, and no uuid is shown. Before: ConductionNL/dossiq@971735b03e (development) lib/Portal/PortalContributionProvider.php:121 projects 'result' (a uuid $ref to the result record in dossiq_register.json) and statusPublicLabel/statusPublicDescription; src/portal/components/CollectionTable.jsx:42 deriveColumns shows every projected field as text (OpenSpec pass 2026-09-27, corrected 2026-09-28).",
 				"origin": "code",
 				"change": "2026-09-29-contribution-manifest-v3",
-				"requirement": "openspec/changes/case-outcome-on-the-case-page/specs/citizen-writes-on-their-own-case/spec.md REQ-COC-001 An ended case shows its outcome with the organisation's explanation"
+				"requirement": "openspec/changes/case-outcome-on-the-case-page/specs/citizen-writes-on-their-own-case/spec.md :: An ended case shows its outcome with the organisation's explanation (REQ-COC-001)"
 			},
 			"provider": "dossiq",
 			"providerHow": "read-from-code",
@@ -11036,7 +11429,8 @@
 				"note": "Built 2026-09-29 (operate-maintenance-notice). Site-wide, time-boxed, on the public site and the signed-in portal, closable for the visit. The public site answer may be cached up to five minutes, so a notice can show late but never after its end. One notice per language.",
 				"origin": "code",
 				"change": "2026-09-29-operate-maintenance-notice",
-				"requirement": "openspec/specs/portal-notices/spec.md :: A notice shows on every page during its window (REQ-OMN-001)"
+				"requirement": "openspec/specs/portal-notices/spec.md :: A notice shows on every page during its window (REQ-OMN-001)",
+				"plan": "portal-notices-as-drawn"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -11080,7 +11474,11 @@
 				"note": "No BRP read and no address-investigation request. Built by openspec/changes/identity-registered-details (build-all lane 17, 2026-09-30). Missing half: openregister's count by address object.",
 				"origin": "code",
 				"change": "identity-registered-details",
-				"requirement": "openspec/changes/identity-registered-details/specs/registered-details/spec.md :: A resident sees how many people live at their address (REQ-IRD-005); REQ-IRD-004 A resident can ask for a correction"
+				"requirement": [
+					"openspec/changes/identity-registered-details/specs/registered-details/spec.md :: A resident sees how many people live at their address (REQ-IRD-005)",
+					"openspec/changes/identity-registered-details/specs/registered-details/spec.md :: A resident can ask for a correction (REQ-IRD-004)",
+					"openspec/changes/identity-registered-details/specs/registered-details/spec.md :: A resident starts an address investigation from their details (REQ-IRD-006)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -11121,7 +11519,7 @@
 				"evidence": "GET /portal/api/session answers contactPrompt when portalAccount.email is empty or needsAlternativeContact is set (SessionController::index, ContactAddressBook::needsContactPrompt); src/site/App.vue shows src/site/components/e/ContactPrompt.vue ('Add an e-mail address so we can tell you when something changes.') with a link to My account, dismissible for the session. Tests: SessionControllerTest::testIndexAsksForAnEmailAddressWhenNoneIsInUse, tests/account-page.spec.mjs. [evidence repointed 2026-10-30 from the retired src/portal React shell to src/site and src/shared]",
 				"reachedOn": "Signed-in site -> account area 'Mijn gegevens' (src/site/pages/e/AccountPage.vue)",
 				"owner": "ConductionNL/portaliq",
-				"note": "No prompt; a missing or failing e-mail only flags the account for staff. Built by openspec/changes/archive/2026-09-30-identity-profile-page (build-all lane 19, 2026-09-30).",
+				"note": "The prompt is built: SessionController::index answers contactPrompt and src/site/components/e/ContactPrompt.vue shows it (re-read 2026-11-12; the earlier 'No prompt' note was stale). Built by openspec/changes/archive/2026-09-30-identity-profile-page (build-all lane 19, 2026-09-30).",
 				"origin": "code",
 				"change": "2026-09-30-identity-profile-page",
 				"requirement": "openspec/specs/portal-profile/spec.md :: You are asked for an e-mail address when there is none (REQ-IPP-005)"
@@ -11358,7 +11756,15 @@
 				"evidence": "lib/Controller/MessageGuardianController.php, lib/Controller/MessageStaffController.php, lib/Service/Messaging/MessageStore.php, MessageThreadAccessGuard.php",
 				"owner": "ConductionNL/portaliq",
 				"spec": "openspec/specs/guardian-direct-messaging",
-				"requirement": "openspec/specs/guardian-direct-messaging/spec.md :: A guardian may start a direct thread with a teacher who teaches their child's group"
+				"requirement": [
+					"openspec/specs/guardian-direct-messaging/spec.md :: A guardian may start a direct thread with a teacher who teaches their child's group",
+					"openspec/specs/guardian-direct-messaging/spec.md :: A group thread reaches every in-audience guardian, replies are two-way",
+					"openspec/specs/guardian-direct-messaging/spec.md :: A message tracks who has read it"
+				],
+				"plan": [
+					"guardian-message-to-and-whole-day",
+					"site-messages-per-record"
+				]
 			},
 			"source": "spec-round-2026-10-07",
 			"feature": "conversations-with-the-organisation",
@@ -11416,7 +11822,10 @@
 				"evidence": "lib/Controller/PushSubscriptionController.php, lib/BackgroundJob/PendingPushDeliveryJob.php (deferred push delivered when due)",
 				"owner": "ConductionNL/portaliq",
 				"spec": "openspec/specs/guardian-push-notifications",
-				"requirement": "openspec/specs/guardian-push-notifications/spec.md :: A non-emergency push during quiet hours is deferred, not dropped"
+				"requirement": [
+					"openspec/specs/guardian-push-notifications/spec.md :: A non-emergency push during quiet hours is deferred, not dropped",
+					"openspec/specs/guardian-push-notifications/spec.md :: An emergency push bypasses quiet hours unconditionally"
+				]
 			},
 			"source": "spec-round-2026-10-07",
 			"feature": "notifications",
@@ -11547,7 +11956,10 @@
 				"evidence": "src/widgets/PageTrafficFlow.vue on the page detail; the page traffic endpoint and daily page rows per in-site route",
 				"owner": "ConductionNL/portaliq",
 				"spec": "openspec/specs/portal-page-traffic",
-				"requirement": "openspec/specs/portal-page-traffic/spec.md :: The page detail MUST show where visitors came from and went next"
+				"requirement": [
+					"openspec/specs/portal-page-traffic/spec.md :: The page detail MUST show where visitors came from and went next",
+					"openspec/specs/portal-page-traffic/spec.md :: The page detail MUST open with four traffic KPI cards"
+				]
 			},
 			"source": "spec-round-2026-10-07",
 			"feature": "traffic-dashboards-and-reports",
@@ -11577,7 +11989,11 @@
 				"evidence": "src/widgets/PortalTrafficKpi.vue registered in src/registry.js; the summary endpoint returns the four totals for a period",
 				"owner": "ConductionNL/portaliq",
 				"spec": "openspec/specs/portal-traffic-kpi-cards",
-				"requirement": "openspec/specs/portal-traffic-kpi-cards/spec.md :: The portal page MUST open with four traffic KPI cards"
+				"requirement": [
+					"openspec/specs/portal-traffic-kpi-cards/spec.md :: The portal page MUST open with four traffic KPI cards",
+					"openspec/specs/portal-traffic-kpi-cards/spec.md :: The Traffic page MUST show its four headline numbers as KPI cards"
+				],
+				"plan": "dashboard-figures-across-portals"
 			},
 			"source": "spec-round-2026-10-07",
 			"feature": "traffic-dashboards-and-reports",
@@ -11637,7 +12053,7 @@
 		{
 			"id": "dem-rm-shared-design-library",
 			"area": "theming",
-			"name": "Maintain one shared set of styles and page blocks that several portals use, instead of repeating it per portal.",
+			"name": "Maintain one shared set of page blocks that several portals use, instead of repeating them per portal.",
 			"portaliq": "partial",
 			"open-inwoner": "partial",
 			"nl-portal": "no",
@@ -11659,9 +12075,12 @@
 				"reachedOn": "Portals admin theme field -> PortalThemeResolver at render time",
 				"owner": "ConductionNL/portaliq",
 				"origin": "code",
-				"note": "Owner moved to ConductionNL/portaliq (thematiq lane): the shared token set is built in thematiq; the missing half is a shared library of page blocks, which is portaliq's (thematiq lane, OpenSpec pass 2026-09-27; owner was ConductionNL/thematiq). Specified in openspec/changes/site-shared-page-blocks (owner-moves pass 2026-09-28): the missing half, a library of page blocks shared by the portals of one organisation.",
+				"note": "Narrowed 2026-11-12: shared styles are the theme app's (thematiq), not portaliq's; portaliq ships no tokens. Owner moved to ConductionNL/portaliq (thematiq lane): the shared token set is built in thematiq; the missing half is a shared library of page blocks, which is portaliq's (thematiq lane, OpenSpec pass 2026-09-27; owner was ConductionNL/thematiq). Specified in openspec/changes/site-shared-page-blocks (owner-moves pass 2026-09-28): the missing half, a library of page blocks shared by the portals of one organisation.",
 				"change": "site-shared-page-blocks",
-				"requirement": "openspec/changes/site-shared-page-blocks/specs/portal-shared-page-blocks/spec.md :: A page shows a shared block it places (REQ-SPB-002)"
+				"requirement": [
+					"openspec/changes/site-shared-page-blocks/specs/portal-shared-page-blocks/spec.md :: A page shows a shared block it places (REQ-SPB-002)",
+					"openspec/changes/site-shared-page-blocks/specs/portal-shared-page-blocks/spec.md :: An organisation keeps shared blocks (REQ-SPB-001)"
+				]
 			},
 			"provider": "thematiq",
 			"providerHow": "read-from-code",
@@ -11787,7 +12206,8 @@
 				"evidence": "lib/Controller/PortalManifestController.php (web app manifest per portal), src/site/lib/pwa.js (service worker caching the shell, never the API; install control)",
 				"owner": "ConductionNL/portaliq",
 				"spec": "openspec/specs/parent-pwa-installability",
-				"requirement": "openspec/specs/parent-pwa-installability/spec.md :: An installable browser offers a dismissible install control"
+				"requirement": "openspec/specs/parent-pwa-installability/spec.md :: An installable browser offers a dismissible install control",
+				"plan": "site-matches-the-zuiddrecht-boards"
 			},
 			"source": "spec-round-2026-10-07",
 			"feature": "accessible-on-every-device",
@@ -11829,7 +12249,14 @@
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/portaliq",
 				"spec": "openspec/specs/site-mijn-omgeving",
-				"requirement": "openspec/specs/site-mijn-omgeving/spec.md :: Mijn MUST open on what the resident still has to do (REQ-SMO-007)"
+				"requirement": [
+					"openspec/specs/site-mijn-omgeving/spec.md :: Mijn MUST open on what the resident still has to do (REQ-SMO-007)",
+					"openspec/changes/capability-rows-said-and-planned/specs/site-mijn-omgeving/spec.md :: The overview shows running cases and the newest messages (REQ-RSP-014)"
+				],
+				"plan": [
+					"site-school-blocks",
+					"zuiddrecht-resident-pages-match-the-boards"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -11865,7 +12292,8 @@
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/portaliq",
 				"change": "case-page-tasks-decision-dates-and-next-step",
-				"requirement": "openspec/changes/case-page-tasks-decision-dates-and-next-step/specs/portal-my-cases/spec.md :: The case page shows the open tasks of that case (REQ-CPT-001)"
+				"requirement": "openspec/changes/case-page-tasks-decision-dates-and-next-step/specs/portal-my-cases/spec.md :: The case page shows the open tasks of that case (REQ-CPT-001)",
+				"plan": "woo-dossier-in-my-cases"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -11904,7 +12332,8 @@
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/portaliq",
 				"change": "case-page-tasks-decision-dates-and-next-step",
-				"requirement": "openspec/changes/case-page-tasks-decision-dates-and-next-step/specs/portal-my-cases/spec.md :: The case page tells the planned and the legal decision date apart (REQ-CPT-002)"
+				"requirement": "openspec/changes/case-page-tasks-decision-dates-and-next-step/specs/portal-my-cases/spec.md :: The case page tells the planned and the legal decision date apart (REQ-CPT-002)",
+				"plan": "woo-dossier-in-my-cases"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -11941,7 +12370,8 @@
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/portaliq",
 				"change": "case-page-tasks-decision-dates-and-next-step",
-				"requirement": "openspec/changes/case-page-tasks-decision-dates-and-next-step/specs/portal-my-cases/spec.md :: The current status step offers the next action (REQ-CPT-003)"
+				"requirement": "openspec/changes/case-page-tasks-decision-dates-and-next-step/specs/portal-my-cases/spec.md :: The current status step offers the next action (REQ-CPT-003)",
+				"plan": "steps-highlight"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -11977,7 +12407,10 @@
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/portaliq",
 				"change": "life-domain-theme-pages",
-				"requirement": "openspec/changes/life-domain-theme-pages/specs/life-domain-themes/spec.md :: A portal groups a resident's items per life domain (REQ-LDT-001)"
+				"requirement": [
+					"openspec/changes/life-domain-theme-pages/specs/life-domain-themes/spec.md :: A portal groups a resident's items per life domain (REQ-LDT-001)",
+					"openspec/changes/life-domain-theme-pages/specs/life-domain-themes/spec.md :: A theme page lists the resident's cases in that domain (REQ-LDT-005)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -12089,7 +12522,11 @@
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/portaliq",
 				"change": "contact-page-question-form-and-not-found",
-				"requirement": "openspec/changes/contact-page-question-form-and-not-found/specs/site-contact/spec.md :: A resident can ask a question without a case (REQ-SCN-001)"
+				"requirement": "openspec/changes/contact-page-question-form-and-not-found/specs/site-contact/spec.md :: A resident can ask a question without a case (REQ-SCN-001)",
+				"plan": [
+					"contact-question-form-names-its-action",
+					"contact-question-form-reads-dutch"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -12164,7 +12601,7 @@
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/portaliq",
 				"change": "public-faq-and-product-finder",
-				"requirement": "openspec/changes/public-faq-and-product-finder/specs/site-faq-and-product-finder/spec.md REQ-FPF-001 A FAQ entry is written once and shown on every page it belongs to"
+				"requirement": "openspec/changes/public-faq-and-product-finder/specs/site-faq-and-product-finder/spec.md :: A FAQ entry is written once and shown on every page it belongs to (REQ-FPF-001)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -12203,7 +12640,10 @@
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/portaliq",
 				"change": "public-faq-and-product-finder",
-				"requirement": "openspec/changes/public-faq-and-product-finder/specs/site-faq-and-product-finder/spec.md REQ-FPF-002 A product finder narrows the products with yes or no questions; REQ-FPF-003 The finder keeps no answers"
+				"requirement": [
+					"openspec/changes/public-faq-and-product-finder/specs/site-faq-and-product-finder/spec.md :: A product finder narrows the products with yes or no questions (REQ-FPF-002)",
+					"openspec/changes/public-faq-and-product-finder/specs/site-faq-and-product-finder/spec.md :: The finder keeps no answers (REQ-FPF-003)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -12314,7 +12754,11 @@
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/portaliq",
 				"change": "own-contacts-and-invitations",
-				"requirement": "openspec/changes/own-contacts-and-invitations/specs/resident-contacts/spec.md :: A resident keeps a list of approved contacts (REQ-ROC-001)"
+				"requirement": [
+					"openspec/changes/own-contacts-and-invitations/specs/resident-contacts/spec.md :: A resident keeps a list of approved contacts (REQ-ROC-001)",
+					"openspec/changes/own-contacts-and-invitations/specs/resident-contacts/spec.md :: A resident can invite someone by e-mail (REQ-ROC-003)",
+					"openspec/changes/own-contacts-and-invitations/specs/resident-contacts/spec.md :: Someone becomes a contact only after both sides approve (REQ-ROC-002)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -12353,7 +12797,10 @@
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/portaliq",
 				"change": "personal-action-list",
-				"requirement": "openspec/changes/personal-action-list/specs/resident-actions/spec.md :: A resident keeps a list of own actions (REQ-RAL-001)"
+				"requirement": [
+					"openspec/changes/personal-action-list/specs/resident-actions/spec.md :: A resident keeps a list of own actions (REQ-RAL-001)",
+					"openspec/changes/personal-action-list/specs/resident-actions/spec.md :: The assignee gets a reminder before the end date (REQ-RAL-003)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -12498,7 +12945,11 @@
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/portaliq",
 				"spec": "openspec/specs/portaliq-cms",
-				"requirement": "openspec/changes/contact-page-question-form-and-not-found/specs/site-contact/spec.md :: The example contact page follows the Contact board (REQ-SCN-003)"
+				"requirement": "openspec/changes/contact-page-question-form-and-not-found/specs/site-contact/spec.md :: The example contact page follows the Contact board (REQ-SCN-003)",
+				"plan": [
+					"contact-question-form-names-its-action",
+					"contact-question-form-reads-dutch"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -12571,7 +13022,10 @@
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/portaliq",
 				"spec": "openspec/specs/site-shared-dossier",
-				"requirement": "openspec/specs/site-shared-dossier/spec.md :: A shared dossier link must open a public page (REQ-SSD-001)"
+				"requirement": [
+					"openspec/specs/site-shared-dossier/spec.md :: A shared dossier link must open a public page (REQ-SSD-001)",
+					"openspec/changes/capability-rows-said-and-planned/specs/site-shared-dossier/spec.md :: A shared dossier shows only what is public now (REQ-RSP-015)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -12647,7 +13101,11 @@
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/portaliq",
 				"change": "site-multi-step-forms",
-				"requirement": "openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md :: A form with steps MUST end with a review and a confirmation (REQ-SMF-011)"
+				"requirement": [
+					"openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md :: A form with steps MUST end with a review and a confirmation (REQ-SMF-011)",
+					"openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md :: A published form with steps MUST be filled in one step at a time with visible progress (REQ-SMF-010)"
+				],
+				"plan": "attached-form-confirmation-drops-cancel"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -12877,7 +13335,10 @@
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/portaliq",
 				"change": "form-statements-intro-and-confirmation-mail",
-				"requirement": "openspec/changes/form-statements-intro-and-confirmation-mail/specs/portal-form-statements/spec.md :: The confirmation page and mail follow the form's settings (REQ-FCI-003)"
+				"requirement": [
+					"openspec/changes/form-statements-intro-and-confirmation-mail/specs/portal-form-statements/spec.md :: The confirmation page and mail follow the form's settings (REQ-FCI-003)",
+					"openspec/changes/form-statements-intro-and-confirmation-mail/specs/portal-form-statements/spec.md :: A form can open with an introduction page (REQ-FCI-001)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -13271,7 +13732,7 @@
 		{
 			"id": "int-registration-per-form",
 			"area": "intake",
-			"name": "Choose per form where a submission is registered: a ZGW case, an Objects API record, StUF-ZDS, an e-mail mailbox or a JSON endpoint.",
+			"name": "Choose per form where a submission is registered: an app's case type, an e-mail mailbox, or an integriq target that reaches a ZGW case, an Objects API record, StUF-ZDS or a JSON endpoint.",
 			"portaliq": "partial",
 			"open-inwoner": "partial",
 			"nl-portal": "unknown",
@@ -13330,7 +13791,8 @@
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/portaliq",
 				"change": "form-governance-availability-retention-and-routing",
-				"requirement": "openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md :: A failed registration is retried and reported (REQ-FGV-003)"
+				"requirement": "openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md :: A failed registration is retried and reported (REQ-FGV-003)",
+				"plan": "submission-row-actions"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -13490,6 +13952,403 @@
 			"screen": {
 				"canvas": "design-system",
 				"board": "PtFormulierPrijs"
+			}
+		},
+		{
+			"id": "inb-open-one-message",
+			"area": "inbox",
+			"name": "Open one message on its own page, with its details, files, case card and a reply when allowed.",
+			"portaliq": "no",
+			"built": {
+				"state": "specified",
+				"evidence": "Not built: Message detail page not built: no GET single-message route or MessagePage.vue; all 11 tasks open.",
+				"requirement": "openspec/changes/a-resident-opens-one-message/specs/portal-message-detail/spec.md :: A resident MUST be able to open one message on its own page (REQ-ROM-001)",
+				"plan": "a-resident-opens-one-message",
+				"note": "Row added 2026-11-12 in the closing round: the open change a-resident-opens-one-message had no capability row (decision 395)."
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"BerichtDetail",
+					"Berichten"
+				]
+			}
+		},
+		{
+			"id": "ops-staff-only-register",
+			"area": "operate",
+			"name": "Keep portaliq's Nextcloud app and its register readable by staff only, never by residents or other accounts.",
+			"portaliq": "yes",
+			"built": {
+				"state": "built",
+				"evidence": "lib/Repair/SeedStaffGroup.php, lib/Service/AdminMenuAccess.php, appinfo/info.xml",
+				"requirement": "openspec/changes/close-portaliq-register-to-staff/specs/admin-ui/spec.md :: Only staff may open portaliq's Nextcloud app and read its register",
+				"plan": "close-portaliq-register-to-staff",
+				"note": "Row added 2026-11-12 in the closing round: the open change close-portaliq-register-to-staff had no capability row (decision 395)."
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"origin": "change-triage"
+		},
+		{
+			"id": "site-docusaurus-plugin",
+			"area": "site",
+			"name": "Build a static Docusaurus site from the portal's public content API.",
+			"portaliq": "no",
+			"built": {
+				"state": "specified",
+				"evidence": "Not built: Docusaurus plugin that builds a site from the public API; needs a new repository, nothing built.",
+				"requirement": "openspec/changes/docusaurus-plugin-portaliq/specs/docusaurus-plugin-portaliq/spec.md :: The plugin MUST build a site from the public API alone",
+				"plan": "docusaurus-plugin-portaliq",
+				"note": "Row added 2026-11-12 in the closing round: the open change docusaurus-plugin-portaliq had no capability row (decision 395)."
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"origin": "change-triage"
+		},
+		{
+			"id": "site-event-sign-up",
+			"area": "site",
+			"name": "Sign up for a school event yourself as a pupil, with the number of seats, from its news item.",
+			"portaliq": "partial",
+			"built": {
+				"state": "building",
+				"evidence": "lib/Controller/NewsController.php, src/site/widgets/nlNewsArticle/NlNewsArticle.vue, src/site/widgets/nlNewsArticle/article.js",
+				"requirement": "openspec/changes/event-sign-up-by-a-pupil-with-seats/specs/portaliq-cms/spec.md :: A pupil may answer an event for herself, with the number of seats",
+				"plan": "event-sign-up-by-a-pupil-with-seats",
+				"note": "Row added 2026-11-12 in the closing round: the open change event-sign-up-by-a-pupil-with-seats had no capability row (decision 395)."
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"Artikel"
+				]
+			}
+		},
+		{
+			"id": "int-form-settings-page",
+			"area": "intake",
+			"name": "Open each request form's own settings page with tabs for confirmation, statements, co-signing, payment, appointment, availability, retention and forwarding.",
+			"portaliq": "yes",
+			"built": {
+				"state": "built",
+				"evidence": "src/manifest.json (page FormBindingDetail), tests/form-binding-settings-page.spec.mjs",
+				"requirement": "openspec/changes/form-binding-settings-page/specs/portal-intake-form/spec.md :: A request form has a settings page (REQ-FBS-001)",
+				"plan": "form-binding-settings-page",
+				"note": "Row added 2026-11-12 in the closing round: the open change form-binding-settings-page had no capability row (decision 395)."
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"PtFormulierInstellingen"
+				]
+			}
+		},
+		{
+			"id": "site-subject-landing",
+			"area": "site",
+			"name": "Open a landing page per subject with its image, description and publications, and see live counts of what the portal holds.",
+			"portaliq": "yes",
+			"built": {
+				"state": "built",
+				"evidence": "src/site/widgets/nlSubjectLanding/NlSubjectLanding.vue; src/site/widgets/nlPortalCounts/NlPortalCounts.vue; src/site/widgets/index.js (nlFeaturedSubjects); src/site/lib/federatedSearch.js (lockedFilters)",
+				"requirement": "openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md :: A subject has a public landing page (REQ-HTL-002)",
+				"plan": "home-and-theme-landing-pages",
+				"note": "Row added 2026-11-12 in the closing round: the open change home-and-theme-landing-pages had no capability row (decision 395)."
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"Home",
+					"ThemaOverzicht"
+				]
+			}
+		},
+		{
+			"id": "ops-internal-base-url",
+			"area": "operate",
+			"name": "Let portaliq reach its own server behind a port mapping or proxy, with an internal address an administrator can set.",
+			"portaliq": "yes",
+			"built": {
+				"state": "built",
+				"evidence": "lib/Service/InstanceLoopback.php; lib/Service/InternalBaseUrl.php; lib/Service/LoopbackRetry.php; lib/Controller/SettingsController.php; src/views/AdminRoot.vue",
+				"requirement": "openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md :: An administrator can name the internal address",
+				"plan": "instance-loopback-self-calls",
+				"note": "Row added 2026-11-12 in the closing round: the open change instance-loopback-self-calls had no capability row (decision 395)."
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"origin": "change-triage"
+		},
+		{
+			"id": "site-marketing-articles",
+			"area": "site",
+			"name": "Write a marketing article once in portaliq and reuse it in newsletters, messages and campaign pages.",
+			"portaliq": "no",
+			"built": {
+				"state": "specified",
+				"evidence": "Not built: 0 of 7 tasks; no article schema, ArticleService or pages in the code (Ruben decision 2026-10-09).",
+				"requirement": "openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md :: A marketer writes and reads an article in portaliq",
+				"plan": "marketing-articles-from-pipelinq",
+				"note": "Row added 2026-11-12 in the closing round: the open change marketing-articles-from-pipelinq had no capability row (decision 395)."
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"PtArtikel",
+					"PtArtikelen"
+				]
+			}
+		},
+		{
+			"id": "ops-portal-page-choice",
+			"area": "operate",
+			"name": "Choose which contributed pages a portal shows and in which order, and hide pages from one client.",
+			"portaliq": "partial",
+			"built": {
+				"state": "building",
+				"evidence": "lib/Contribution/HiddenPagesReader.php; lib/Settings/portaliq_register.json (portal.navigation, hiddenPages)",
+				"requirement": "openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md :: A portal shows the pages its administrator chose, in the chosen order (REQ-PGC-001)",
+				"plan": "operate-pages-per-portal-and-client",
+				"note": "Row added 2026-11-12 in the closing round: the open change operate-pages-per-portal-and-client had no capability row (decision 395)."
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"EditorMenu",
+					"Kop",
+					"Voet",
+					"PtPortal"
+				]
+			}
+		},
+		{
+			"id": "id-account-presence",
+			"area": "identity",
+			"name": "Let staff in another app see whether a citizen has an active portal account, without seeing the account itself.",
+			"portaliq": "yes",
+			"built": {
+				"state": "built",
+				"evidence": "lib/Service/Identity/PortalAccountPresence.php; PortalAccountLookup::activeByCitizenNumber",
+				"requirement": "openspec/changes/portal-account-presence/specs/portal-identity-space/spec.md :: Staff can ask whether a citizen has a portal account",
+				"plan": "portal-account-presence",
+				"note": "Row added 2026-11-12 in the closing round: the open change portal-account-presence had no capability row (decision 395)."
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"DqContact"
+				]
+			}
+		},
+		{
+			"id": "site-public-catalogue",
+			"area": "site",
+			"name": "Search and filter a portal's public catalogue of news, courses and programmes from every app, without signing in.",
+			"portaliq": "yes",
+			"built": {
+				"state": "built",
+				"evidence": "lib/Controller/ContentCatalogueController.php; PublicCatalogue; PublicCatalogueQuery; nlCatalogue widget",
+				"requirement": "openspec/changes/portal-public-catalogue/specs/portal-public-catalogue/spec.md :: A visitor may search and filter a portal's public catalogue",
+				"plan": "portal-public-catalogue",
+				"note": "Row added 2026-11-12 in the closing round: the open change portal-public-catalogue had no capability row (decision 395)."
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"Zoeken",
+					"Zoeken",
+					"Zoeken",
+					"Zoeken",
+					"Zoeken",
+					"Editor"
+				]
+			}
+		},
+		{
+			"id": "ana-zero-result-searches",
+			"area": "analytics",
+			"name": "See what the public searched for on the portal and did not find.",
+			"portaliq": "yes",
+			"built": {
+				"state": "built",
+				"evidence": "lib/Service/Traffic/TrafficRollup.php; lib/Service/Traffic/TrafficRollupSum.php; lib/Service/Traffic/TrafficExport.php; src/widgets/TrafficSources.vue; src/lib/trafficSummary.js",
+				"requirement": "openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md :: The Traffic page shows what the public did not find (REQ-PZR-002)",
+				"plan": "portal-traffic-zero-result-searches",
+				"note": "Row added 2026-11-12 in the closing round: the open change portal-traffic-zero-result-searches had no capability row (decision 395)."
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"PtVerkeer"
+				]
+			}
+		},
+		{
+			"id": "site-public-item-detail",
+			"area": "site",
+			"name": "Open a public page for an item an app offers, such as a course, with its facts, dates and a sign-up that asks you to sign in first.",
+			"portaliq": "partial",
+			"built": {
+				"state": "building",
+				"evidence": "lib/Contribution/PublicDetailShape.php; src/site/widgets/nlPublicDetail/NlPublicDetail.vue",
+				"requirement": "openspec/changes/public-detail-page-for-a-provider-item/specs/portal-contribution-contract/spec.md :: An app may declare a public detail page for an item of its public index",
+				"plan": "public-detail-page-for-a-provider-item",
+				"note": "Row added 2026-11-12 in the closing round: the open change public-detail-page-for-a-provider-item had no capability row (decision 395)."
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"Artikel"
+				]
+			}
+		},
+		{
+			"id": "srch-publication-documents",
+			"area": "search",
+			"name": "Read a publication's documents in the browser, open each on a page of its own, and download them all or their metadata.",
+			"portaliq": "no",
+			"built": {
+				"state": "specified",
+				"evidence": "Not built: 0 of 11 tasks; no document route, ZIP download or metadata links in src/site.",
+				"requirement": "openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md :: Every public document has a page of its own (REQ-PDC-002)",
+				"plan": "publication-detail-page-complete",
+				"note": "Row added 2026-11-12 in the closing round: the open change publication-detail-page-complete had no capability row (decision 395)."
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"Publicatie"
+				]
+			}
+		},
+		{
+			"id": "srch-error-report-and-withheld",
+			"area": "search",
+			"name": "Report an error in a publication to a named owner, and see that a withheld record exists and why.",
+			"portaliq": "no",
+			"built": {
+				"state": "specified",
+				"evidence": "Not built: 0 of 12 tasks; no publicationErrorReport schema or settings in the code (decision D9, opt-in).",
+				"requirement": "openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md :: A report reaches the named owner (REQ-PER-002)",
+				"plan": "publication-error-reports-and-withheld-notices",
+				"note": "Row added 2026-11-12 in the closing round: the open change publication-error-reports-and-withheld-notices had no capability row (decision 395)."
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"Publicatie"
+				]
+			}
+		},
+		{
+			"id": "sig-email-link",
+			"area": "signin",
+			"name": "Sign in to an existing portal account with a one-time link sent by e-mail.",
+			"portaliq": "yes",
+			"built": {
+				"state": "built",
+				"evidence": "lib/Controller/EmailLinkController.php; lib/Service/Identity/EmailLink/; lib/BackgroundJob/EmailLinkRequestJob.php; appinfo/routes.php emailLink#*",
+				"requirement": "openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md :: A portal may let an existing e-mail account sign in with a one-time e-mail link (REQ-IWI-006)",
+				"plan": "sign-in-with-an-email-link",
+				"note": "Row added 2026-11-12 in the closing round: the open change sign-in-with-an-email-link had no capability row (decision 395)."
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"Inloggen",
+					"PtAccount"
+				]
+			}
+		},
+		{
+			"id": "site-accessibility-statement",
+			"area": "site",
+			"name": "Publish each portal's accessibility statement in the national model, based on measurements of its own pages.",
+			"portaliq": "yes",
+			"built": {
+				"state": "built",
+				"evidence": "lib/Service/Cms/AccessibilityStatement.php; lib/Service/Cms/AccessibilityMeasurements.php; lib/Service/Cms/AccessibilityRun.php; lib/Controller/AccessibilityController.php; src/site/components/AccessibilityStatementPage.vue",
+				"requirement": "openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md :: Each portal publishes a statement in the national model (REQ-SAS-002)",
+				"plan": "site-accessibility-statement",
+				"note": "Row added 2026-11-12 in the closing round: the open change site-accessibility-statement had no capability row (decision 395)."
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"Toegankelijkheid"
+				]
+			}
+		},
+		{
+			"id": "site-without-javascript",
+			"area": "site",
+			"name": "Read the public pages and search and read publications with JavaScript turned off.",
+			"portaliq": "no",
+			"built": {
+				"state": "specified",
+				"evidence": "Not built: No row for a no-JavaScript site; nothing built (no noscript in templates/site.php, no /site/plain route, no PlainPageRenderer).",
+				"requirement": "openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md :: The server renders a plain version of every public page (REQ-SHJ-002)",
+				"plan": "site-honest-without-javascript",
+				"note": "Row added 2026-11-12 in the closing round: the open change site-honest-without-javascript had no capability row (decision 395)."
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"ZonderJavascript"
+				]
+			}
+		},
+		{
+			"id": "id-manage-mandates",
+			"area": "identity",
+			"name": "See who may act for you or your company, invite someone to do so and end a mandate from either side.",
+			"portaliq": "yes",
+			"built": {
+				"state": "built",
+				"evidence": "lib/Controller/MandateController.php; appinfo/routes.php mandate#*; src/shared/areaApi.js",
+				"requirement": "openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md :: The represented party MUST see who may act for it (REQ-SMR-002)",
+				"plan": "site-mandates-the-represented-manage",
+				"note": "Row added 2026-11-12 in the closing round: the open change site-mandates-the-represented-manage had no capability row (decision 395)."
+			},
+			"provider": "portaliq",
+			"providerHow": "read-from-code",
+			"origin": "change-triage",
+			"screen": {
+				"board": [
+					"Machtigingen",
+					"Machtigen"
+				]
 			}
 		}
 	],

@@ -90,3 +90,7 @@ read `production` only once both a portaliq and a dossiq store release carry the
 ## Amended by submit-creates-the-case-directly (decision 179)
 
 Superseded by `submit-creates-the-case-directly` task 3.1 (decision 179). There is no delivery step any more: a Woo request form is a form binding whose `destination` names the dossiq Woo case, and the submit creates that case in the request through OpenRegister's `FormSubmitService`. `PortalWooRequestDelivery` and `PortalIntakeDeliveryJob` are removed on that branch. Do not build tasks 1 to 3 of this change; archive it as superseded once `submit-creates-the-case-directly` lands.
+
+## Superseded
+
+Superseded on 12 November 2026 by `submit-creates-the-case-directly` task 3.1: a Woo form submits straight into the dossiq Woo case, and the delivery path this change would alter is removed. Archived without syncing its deltas.
