@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use OCP\IRequest;
  * nothing, and the session cookie's SameSite guard is what a cross-site
  * GET meets.
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
  */
 class TrafficReportController extends Controller {
 
@@ -95,7 +95,7 @@ class TrafficReportController extends Controller {
 	 *
 	 * @return Response The file, or a 400 with a reason.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
 	 */
 	#[NoCSRFRequired]
 	public function export(string $portal = '', string $from = '', string $to = '', string $segment = '', string $format = 'csv'): Response {
@@ -155,7 +155,7 @@ class TrafficReportController extends Controller {
 	 *
 	 * @auth admin-only audience measurement is an operator's surface, the same posture as the export
 	 *
-	 * @spec openspec/changes/portal-traffic-kpi-cards/specs/portal-traffic-kpi-cards/spec.md#requirement-the-summary-endpoint-must-return-a-portals-four-totals-for-a-period
+	 * @spec openspec/specs/portal-traffic-kpi-cards/spec.md#requirement-the-summary-endpoint-must-return-a-portals-four-totals-for-a-period
 	 */
 	public function summary(string $portal = '', string $days = ''): JSONResponse {
 		if (preg_match('/^[A-Za-z0-9][A-Za-z0-9-]{0,127}$/', $portal) !== 1) {

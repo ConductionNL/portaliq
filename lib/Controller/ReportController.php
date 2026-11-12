@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+ * @spec openspec/specs/report-without-an-account/spec.md
  */
 
 declare(strict_types=1);
@@ -59,7 +59,7 @@ use OCP\IUserSession;
 /**
  * Files a report, runs its thread, and gates the reveal.
  *
- * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+ * @spec openspec/specs/report-without-an-account/spec.md
  *
  * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- one dependency per step:
  * the portal, the challenge, intake, the thread, the terms, the reveal, the
@@ -140,7 +140,7 @@ class ReportController extends Controller {
 	 *
 	 * @return JSONResponse The receipt code, once.
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -237,7 +237,7 @@ class ReportController extends Controller {
 	 *
 	 * @return bool Whether the credential checks out.
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	private function checkReporterCredential(ReportFiling $filing): bool {
 		return $this->challenge->accepts(
@@ -265,7 +265,7 @@ class ReportController extends Controller {
 	 *
 	 * @return array<string, mixed>|null The report, or null when the code opens none.
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	private function resolveReporterCredential(string $code, string $address): ?array {
 		return $this->threads->openByCode(code: $code, address: $address);
@@ -278,7 +278,7 @@ class ReportController extends Controller {
 	 *
 	 * @return JSONResponse The report, the visible messages and the terms.
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -308,7 +308,7 @@ class ReportController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -335,7 +335,7 @@ class ReportController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	#[NoAdminRequired]
 	public function show(string $id): JSONResponse {
@@ -448,7 +448,7 @@ class ReportController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- request-bound field, not
 	 * a mode switch: it is stored on the message as its visibility and is not
@@ -490,7 +490,7 @@ class ReportController extends Controller {
 	 *
 	 * @return JSONResponse The recorded request, or a refusal.
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	#[NoAdminRequired]
 	public function requestReveal(string $id, string $motivation = ''): JSONResponse {
@@ -523,7 +523,7 @@ class ReportController extends Controller {
 	 * @return JSONResponse The contact details on an allowed reveal, the
 	 *                      refusal otherwise.
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- request-bound field: the
 	 * custodian's answer is the payload of this endpoint, and it is recorded on

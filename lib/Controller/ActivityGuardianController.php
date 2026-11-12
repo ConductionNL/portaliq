@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/extracurricular-activity-offer/contract.md
+ * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/contract.md
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use OCP\IRequest;
 /**
  * Guardian read, sign-up and withdraw for activities.
  *
- * @spec openspec/changes/extracurricular-activity-offer/contract.md
+ * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/contract.md
  */
 class ActivityGuardianController extends Controller implements PortalProtected {
 	/**
@@ -81,7 +81,7 @@ class ActivityGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -105,8 +105,8 @@ class ActivityGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{status, position?}`, or 401 / 404 / 409 / 422 / 502.
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
-	 * @spec openspec/changes/activity-parental-consent/specs/portaliq-cms/spec.md#requirement-an-activity-must-be-able-to-require-a-guardians-consent-recorded-on-the-sign-up
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-activity-must-be-able-to-require-a-guardians-consent-recorded-on-the-sign-up
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -133,7 +133,7 @@ class ActivityGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse 204, or 401 / 404 / 502.
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

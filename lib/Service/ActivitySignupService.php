@@ -26,8 +26,8 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
- * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use OCP\AppFramework\Utility\ITimeFactory;
 /**
  * Signs children up, withdraws them and promotes from the waiting list.
  *
- * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
  */
 class ActivitySignupService {
 	/**
@@ -100,8 +100,8 @@ class ActivitySignupService {
 	 *
 	 * @return array{status?: string, position?: int|null, error?: string}
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
-	 * @spec openspec/changes/activity-parental-consent/specs/portaliq-cms/spec.md#requirement-an-activity-must-be-able-to-require-a-guardians-consent-recorded-on-the-sign-up
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-activity-must-be-able-to-require-a-guardians-consent-recorded-on-the-sign-up
 	 */
 	public function signUp(string $subjectRef, string $activityId, string $childRef, string $note = '', string $acceptedStatement = ''): array {
 		$checked = $this->checkedSignup(subjectRef: $subjectRef, activityId: $activityId, childRef: $childRef, acceptedStatement: $acceptedStatement);
@@ -213,7 +213,7 @@ class ActivitySignupService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/activity-parental-consent/specs/portaliq-cms/spec.md#requirement-an-activity-must-be-able-to-require-a-guardians-consent-recorded-on-the-sign-up
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-activity-must-be-able-to-require-a-guardians-consent-recorded-on-the-sign-up
 	 */
 	private function consentAccepted(array $activity, string $acceptedStatement): bool {
 		if (($activity['consentRequired'] ?? false) !== true) {
@@ -236,7 +236,7 @@ class ActivitySignupService {
 	 *
 	 * @return string|null A REASON_* constant, or null on success.
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
 	 */
 	public function withdraw(string $subjectRef, string $activityId, string $childRef): ?string {
 		$activity = $this->feedReader->readOwnActivity(subjectRef: $subjectRef, activityId: $activityId);
@@ -273,7 +273,7 @@ class ActivitySignupService {
 	 *
 	 * @return int
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
 	 */
 	public function promote(array $activity): int {
 		$signups = $this->signupsOf(activity: $activity);
@@ -312,7 +312,7 @@ class ActivitySignupService {
 	 *
 	 * @return array{activity: array<string, mixed>, promoted: int}|null Null when the activity is unknown or the write failed.
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
 	 */
 	public function setSupervisors(string $activityId, array $supervisorRefs): ?array {
 		$activity = $this->store->lookup(schema: ActivityStore::OFFER, id: $activityId);

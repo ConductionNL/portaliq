@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ use OCA\Portaliq\Service\PortalJwtService;
  * Removes an action whose guard cannot be honoured. Built by
  * ActionConfigNormaliser for each action it normalises.
  *
- * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
  *
  * @SuppressWarnings(PHPMD.StaticAccess) -- PortalJwtService::isReservedScopeClaim() is a pure check on
  *                                         the frozen assertion claims, with no state to inject.
@@ -57,7 +57,7 @@ final class ActionGuards {
 	 *
 	 * @return array<string, mixed>|null The action, or null when a guard cannot be honoured.
 	 *
-	 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
 	 */
 	public function guard(array $action, array $whitelist): ?array {
 		// A server-stamped subject field (portal-take-assessment) is a
@@ -96,7 +96,7 @@ final class ActionGuards {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
 	 */
 	private function subjectFieldIsMalformed(array $action): bool {
 		if (array_key_exists('subjectField', $action) === false) {

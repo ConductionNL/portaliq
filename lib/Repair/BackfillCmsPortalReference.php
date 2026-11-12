@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-cms-content-model/tasks.md#task-4
+ * @spec openspec/changes/archive/2026-10-09-portal-cms-content-model/tasks.md#task-4
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use Throwable;
 /**
  * Assigns the only portal to content that has none.
  *
- * @spec openspec/changes/portal-cms-content-model/tasks.md#task-4
+ * @spec openspec/changes/archive/2026-10-09-portal-cms-content-model/tasks.md#task-4
  */
 class BackfillCmsPortalReference implements IRepairStep {
 	use ObjectServiceLookup;
@@ -95,7 +95,7 @@ class BackfillCmsPortalReference implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/portal-cms-content-model/tasks.md#task-4
+	 * @spec openspec/changes/archive/2026-10-09-portal-cms-content-model/tasks.md#task-4
 	 */
 	public function getName(): string {
 		return 'Give existing site content its portal';
@@ -108,7 +108,7 @@ class BackfillCmsPortalReference implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-cms-content-model/tasks.md#task-4
+	 * @spec openspec/changes/archive/2026-10-09-portal-cms-content-model/tasks.md#task-4
 	 */
 	public function run(IOutput $output): void {
 		$objectService = $this->objectService();

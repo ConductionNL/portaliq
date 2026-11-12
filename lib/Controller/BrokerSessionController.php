@@ -84,7 +84,7 @@ class BrokerSessionController extends Controller {
 	 * @return RedirectResponse
 	 *
 	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-broker-start-binds-the-login-to-one-organisation-and-one-provider-req-bel-002
-	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 	 *
 	 * @no-admin-idor-exempt The anonymous entry point to a portal's login: a
 	 * caller with no session names the organisation and provider it wants.
@@ -128,7 +128,7 @@ class BrokerSessionController extends Controller {
 	 * @return RedirectResponse
 	 *
 	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-a-failed-login-returns-to-the-login-screen-without-a-reason-req-bel-006
-	 * @spec openspec/changes/portal-broker-login-keeps-the-portal/specs/portal-broker-envelope-login/spec.md
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md
 	 *
 	 * @no-admin-idor-exempt The anonymous return leg of a login. What it acts
 	 * on is bound by the single-use state row written at the start and by the
@@ -174,7 +174,7 @@ class BrokerSessionController extends Controller {
 	 *
 	 * @return RedirectResponse
 	 *
-	 * @spec openspec/changes/portal-broker-login-keeps-the-portal/specs/portal-broker-envelope-login/spec.md
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md
 	 */
 	private function failed(string $landing): RedirectResponse {
 		return new RedirectResponse($this->urlGenerator->getAbsoluteURL($landing) . self::FAILED_FRAGMENT, Http::STATUS_FOUND);
@@ -190,8 +190,8 @@ class BrokerSessionController extends Controller {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
-	 * @spec openspec/changes/portal-broker-login-keeps-the-portal/specs/portal-broker-envelope-login/spec.md
+	 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md
 	 */
 	private function returnPath(string $returnTo, ?array $site): string {
 		$page = (new SiteReturnAddress())->accept(
@@ -215,7 +215,7 @@ class BrokerSessionController extends Controller {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/portal-broker-login-keeps-the-portal/specs/portal-broker-envelope-login/spec.md
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md
 	 */
 	private function portalOf(?array $site): string {
 		$slug = ($site['slug'] ?? null);
@@ -252,7 +252,7 @@ class BrokerSessionController extends Controller {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-server-must-link-to-the-site-directly-req-srp-049
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-server-must-link-to-the-site-directly-req-srp-049
 	 */
 	private function portalPath(): string {
 		return $this->urlGenerator->linkToRoute(Application::APP_ID . '.portalPage.site');

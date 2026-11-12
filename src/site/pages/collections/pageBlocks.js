@@ -24,7 +24,7 @@
 //     a `steps` block where the open case stands, and `documents` and
 //     `timeline` blocks its file items and history (site-mijn-omgeving-components).
 //
-// @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
+// @spec openspec/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
 
 import { withoutRemoveAction } from '../../../shared/itemList.js'
 import { isEndpointRowAction } from '../../../shared/rowAction.js'
@@ -148,7 +148,7 @@ export function withoutRecordWrites(items) {
  *
  * @param {Array<object>} items The resolved blocks.
  * @return {Array<object>} The same blocks, runs of tiles folded into one.
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
  */
 export function groupTiles(items) {
 	const out = []
@@ -190,7 +190,7 @@ function foldTile(out, item) {
  * @param {Array<object>} items The resolved blocks.
  * @return {Array<object>} The same blocks, a quiet case screen marked `quietWhenEmpty`.
  *
- * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/citizen-case-withdraw-screen/spec.md
+ * @spec openspec/specs/citizen-case-withdraw-screen/spec.md
  */
 function quietCaseUnderDetail(items) {
 	const detailed = new Set(
@@ -216,7 +216,7 @@ function quietCaseUnderDetail(items) {
  * @param {Array<object>} items The resolved blocks.
  * @return {Array<object>} The same blocks, a quiet detail card marked `quietWhenEmpty`.
  *
- * @spec openspec/changes/site-tables-read-in-their-declared-order/specs/portal-contribution-contract/spec.md#requirement-a-detail-card-under-its-own-table-waits-quietly-for-a-row
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-detail-card-under-its-own-table-waits-quietly-for-a-row
  */
 function quietDetailUnderTable(items) {
 	const ids = (kind) =>

@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-funnel-steps-must-count-in-order
+ * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-funnel-steps-must-count-in-order
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ namespace OCA\Portaliq\Service\Traffic;
  *
  * Pure: definitions and sessions in, rows out.
  *
- * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-funnel-steps-must-count-in-order
+ * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-funnel-steps-must-count-in-order
  */
 class TrafficFunnels {
 
@@ -61,7 +61,7 @@ class TrafficFunnels {
 	 *
 	 * @return array<int, array<string, mixed>> Rows of `{id, name, steps: [{name, sessions, dropOff}]}`.
 	 *
-	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-funnel-steps-must-count-in-order
+	 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-funnel-steps-must-count-in-order
 	 */
 	public function rows(array $funnels, array $sessions): array {
 		$out = [];

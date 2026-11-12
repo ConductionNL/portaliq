@@ -150,7 +150,7 @@ export function navKeyFor(nav, target) {
  * @param {object} entry The nav entry.
  * @param {string} collection The collection id.
  * @return {boolean}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-opening-a-record-must-land-on-its-record-page-with-that-record-chosen-req-smo-010
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-opening-a-record-must-land-on-its-record-page-with-that-record-chosen-req-smo-010
  */
 export function opensAsRecordPage(entry, collection) {
 	if (!entry?.page) {

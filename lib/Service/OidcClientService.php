@@ -36,8 +36,8 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T03
- * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T04
+ * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T03
+ * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T04
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- one dependency per
  * distinct responsibility (HTTP, distributed cache, logging) — see
@@ -59,8 +59,8 @@ use Throwable;
  * Generic broker-agnostic OIDC Relying Party: discovery, PKCE, token exchange,
  * and fail-closed RS256 ID-token validation via cached JWKS.
  *
- * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T03
- * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T04
+ * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T03
+ * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T04
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- discovery, PKCE, token
  * exchange, JWKS fetch/cache, and the RS256/DER verification the JOSE-library-
@@ -129,7 +129,7 @@ class OidcClientService {
 	 *
 	 * @return string URL-safe, ~43 characters.
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T03
 	 */
 	public function generateToken(): string {
 		return $this->b64UrlEncode(bytes: random_bytes(32));
@@ -140,7 +140,7 @@ class OidcClientService {
 	 *
 	 * @return array{verifier: string, challenge: string}
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T03
 	 */
 	public function generatePkce(): array {
 		$verifier = $this->b64UrlEncode(bytes: random_bytes(32));
@@ -166,7 +166,7 @@ class OidcClientService {
 	 *
 	 * @return array{authorization_endpoint: string, token_endpoint: string, jwks_uri: string, end_session_endpoint: string}|null
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T03
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T10
 	 * @spec openspec/changes/adopt-connection-registry/specs/app-connections/spec.md#requirement-req-portaliq-conn-003-a-broker-call-reports-what-the-broker-answered-throttled
 	 */
@@ -260,7 +260,7 @@ class OidcClientService {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T03
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T07
 	 */
 	public function buildAuthorizationUrl(
@@ -327,7 +327,7 @@ class OidcClientService {
 	 *
 	 * @return array<string, mixed>|null The decoded token response, or null.
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T03
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T03
 	 * @spec openspec/changes/adopt-connection-registry/specs/app-connections/spec.md#requirement-req-portaliq-conn-003-a-broker-call-reports-what-the-broker-answered-throttled
 	 */
 	public function exchangeCode(
@@ -433,7 +433,7 @@ class OidcClientService {
 	 * @return array<string, mixed>|null The validated claim set, or null on
 	 *                                   ANY failure (fail-closed, no oracle).
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T04
 	 * @spec openspec/specs/supplier-portal/spec.md#oidc-callback-validates-the-id-token-and-fails-closed-on-every-error
 	 */
 	public function verifyIdToken(string $idToken, string $jwksUri, string $issuer, string $clientId, string $expectedNonce): ?array {
@@ -529,7 +529,7 @@ class OidcClientService {
 	 *
 	 * @return array<string, mixed>|null The validated claim set, or null.
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T04
 	 * @spec openspec/specs/supplier-portal/spec.md#every-validation-failure-is-an-identical-generic-error
 	 */
 	public function validateIdTokenAgainstJwks(string $idToken, array $jwks, string $issuer, string $clientId, string $expectedNonce): ?array {

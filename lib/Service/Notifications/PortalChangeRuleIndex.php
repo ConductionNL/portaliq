@@ -130,7 +130,7 @@ class PortalChangeRuleIndex {
 	 *
 	 * @return array{collection: array<string, mixed>, messages: array<string, mixed>}
 	 *
-	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md
 	 */
 	public function details(array $entry): array {
 		$this->entries();

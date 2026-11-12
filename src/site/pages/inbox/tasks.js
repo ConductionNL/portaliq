@@ -20,7 +20,7 @@ const MB = 1024 * 1024
  *
  * @param {object} task The task row.
  * @return {{required: boolean, maxFiles: number, maxSizeBytes: number, acceptedTypes: Array<string>}}
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
  */
 export function uploadRules(task) {
 	const upload = task?.metadata?.upload || {}
@@ -40,7 +40,7 @@ export function uploadRules(task) {
  *
  * @param {number} bytes The limit in bytes.
  * @return {number} Megabytes.
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
  */
 export function sizeInMb(bytes) {
 	return Math.round(bytes / MB)
@@ -53,7 +53,7 @@ export function sizeInMb(bytes) {
  * @param {{name: string, type: string}} file The chosen file.
  * @param {Array<string>} accepted The accepted entries.
  * @return {boolean}
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
  */
 export function typeAccepted(file, accepted) {
 	if (!accepted || accepted.length === 0) {
@@ -81,7 +81,7 @@ export function typeAccepted(file, accepted) {
  *
  * @param {Array<string>} accepted The accepted entries.
  * @return {string|undefined} The value.
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
  */
 export function acceptAttribute(accepted) {
 	if (!accepted || accepted.length === 0) {
@@ -101,7 +101,7 @@ export function acceptAttribute(accepted) {
  * @param {Array<{name: string, type: string, size: number}>} chosen The chosen files.
  * @param {(key: string, vars?: object) => string} t The translator.
  * @return {string|null} The message.
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
  */
 export function validateFiles(task, chosen, t) {
 	const check = { rules: uploadRules(task), t }
@@ -165,7 +165,7 @@ function fileProblem(check, file) {
  *
  * @param {string} code The refusal code.
  * @return {string} The message key.
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
  */
 export function refusalKey(code) {
 	if (code === 'no-such-task') {

@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/contribution-user-display-name/specs/portal-contribution-contract/spec.md#requirement-a-column-may-show-a-nextcloud-user-by-name
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-column-may-show-a-nextcloud-user-by-name
  */
 
 declare(strict_types=1);
@@ -69,7 +69,7 @@ class PortalUserDisplayNames {
 	 *
 	 * @return list<string> The field names, each once.
 	 *
-	 * @spec openspec/changes/contribution-user-display-name/specs/portal-contribution-contract/spec.md#requirement-a-column-may-show-a-nextcloud-user-by-name
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-column-may-show-a-nextcloud-user-by-name
 	 */
 	public function userFields(array $collection): array {
 		$fields = [];
@@ -95,7 +95,7 @@ class PortalUserDisplayNames {
 	 *
 	 * @return array<int, mixed> The rows, in the same order.
 	 *
-	 * @spec openspec/changes/contribution-user-display-name/specs/portal-contribution-contract/spec.md#requirement-a-column-may-show-a-nextcloud-user-by-name
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-column-may-show-a-nextcloud-user-by-name
 	 */
 	public function rows(array $rows, array $collection): array {
 		$fields = $this->userFields(collection: $collection);
@@ -120,7 +120,7 @@ class PortalUserDisplayNames {
 	 *
 	 * @return array<string, mixed> The row.
 	 *
-	 * @spec openspec/changes/contribution-user-display-name/specs/portal-contribution-contract/spec.md#requirement-a-column-may-show-a-nextcloud-user-by-name
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-column-may-show-a-nextcloud-user-by-name
 	 */
 	public function row(array $row, array $collection): array {
 		$fields = $this->userFields(collection: $collection);

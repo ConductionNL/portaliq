@@ -30,7 +30,7 @@ export const TASK_STORAGE_KEY = 'portaliq.openTask'
  * @param {object} row The row.
  * @param {string|number|null} [fallback] Used when the row has no id.
  * @return {string|number|null} The id.
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
  */
 export function rowId(row, fallback = null) {
 	return row?.id || row?.['@self']?.id || fallback
@@ -42,7 +42,7 @@ export function rowId(row, fallback = null) {
  * @param {string} value An ISO date-time.
  * @param {string} locale `nl` or `en`.
  * @return {string} The formatted value.
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
  */
 export function formatDateTime(value, locale) {
 	if (!value) {
@@ -92,7 +92,7 @@ export function formatMessageMoment(value, locale) {
  * @param {string} value An ISO date-time.
  * @param {string} locale `nl` or `en`.
  * @return {string} The formatted date.
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
  */
 export function formatDate(value, locale) {
 	if (!value) {
@@ -110,7 +110,7 @@ export function formatDate(value, locale) {
  *
  * @param {object} message The message.
  * @return {boolean}
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
  */
 export function hasReadiness(message) {
 	return Boolean(message?.nature || message?.rechtsgevolg || message?.term)
@@ -122,7 +122,7 @@ export function hasReadiness(message) {
  * @param {Array<object>} messages The messages.
  * @param {string|number} id The id of the message the server marked read.
  * @return {Array<object>} The new list.
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
  */
 export function markedRead(messages, id) {
 	return (messages || []).map((m) => (rowId(m) === id ? { ...m, read: true } : m))
@@ -135,7 +135,7 @@ export function markedRead(messages, id) {
  *
  * @param {object} message The message.
  * @return {boolean}
- * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
  */
 export function canDelete(message) {
 	return Boolean(rowId(message)) && message?._source?.deletable === true
@@ -147,7 +147,7 @@ export function canDelete(message) {
  * @param {Array<object>} messages The messages.
  * @param {Array<string>} ids The ids to leave out.
  * @return {Array<object>}
- * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
  */
 export function withoutMessages(messages, ids) {
 	const gone = new Set(ids || [])
@@ -162,7 +162,7 @@ export function withoutMessages(messages, ids) {
  * @param {Array<object>} nav The navigation entries.
  * @param {{app: string, collection: string, id: string}} link The record link.
  * @return {string|null} The route.
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
  */
 export function recordRoute(nav, link) {
 	const key = navKeyFor(nav, link)
@@ -184,7 +184,7 @@ export function recordRoute(nav, link) {
  * @param {object|null} storage sessionStorage.
  * @param {{app: string, collection: string, id: string}} link The record link.
  * @return {void}
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
  */
 export function keepRecordToOpen(storage, link) {
 	try {
@@ -207,7 +207,7 @@ export function keepRecordToOpen(storage, link) {
  * @param {object|null} storage sessionStorage.
  * @param {string} uuid The task uuid.
  * @return {void}
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
  */
 export function keepTaskToOpen(storage, uuid) {
 	try {
@@ -222,7 +222,7 @@ export function keepTaskToOpen(storage, uuid) {
  *
  * @param {object|null} storage sessionStorage.
  * @return {string|null} The task uuid.
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
  */
 export function takeTaskToOpen(storage) {
 	try {
@@ -238,7 +238,7 @@ export function takeTaskToOpen(storage) {
  * The browser's sessionStorage, or null where it is blocked.
  *
  * @return {object|null} The storage.
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-complete-their-tasks-req-srp-035
  */
 export function sessionStore() {
 	try {
@@ -254,7 +254,7 @@ export function sessionStore() {
  *
  * @param {object} message The message.
  * @return {Array<{id: (string|number), name: string, size?: number}>} The files, or `[]`.
- * @spec openspec/changes/inbox-reply-with-attachments/specs/portal-inbox-reply/spec.md#requirement-files-that-came-with-a-message-open-req-ira-004
+ * @spec openspec/specs/portal-inbox-reply/spec.md#requirement-files-that-came-with-a-message-open-req-ira-004
  */
 export function attachmentsOf(message) {
 	const files = Array.isArray(message?._files) ? message._files : []
@@ -272,7 +272,7 @@ export function attachmentsOf(message) {
  *
  * @param {object} message The message.
  * @return {{id: string, register: string, schema: string}|null} The collection, or null without a source.
- * @spec openspec/changes/inbox-reply-with-attachments/specs/portal-inbox-reply/spec.md#requirement-files-that-came-with-a-message-open-req-ira-004
+ * @spec openspec/specs/portal-inbox-reply/spec.md#requirement-files-that-came-with-a-message-open-req-ira-004
  */
 export function downloadCollection(message) {
 	const source = message?._source || {}
@@ -408,7 +408,7 @@ function lineWithoutOpenLinks(line, isOpenTarget) {
  * @param {{app: string, collection: string, id: string}|null} link The row's record link.
  * @param {string|null} openRoute The route "Open" navigates to, or null without the button.
  * @return {string} The body to show.
- * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-does-not-repeat-the-open-link-in-the-text-req-nap-012
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-does-not-repeat-the-open-link-in-the-text-req-nap-012
  */
 export function bodyWithoutOpenLink(body, link, openRoute) {
 	if (typeof body !== 'string' || body === '' || !link?.id || !openRoute) {
@@ -510,7 +510,7 @@ function pushPart(parts, part) {
  * @param {string} origin The page's origin.
  * @param {{publication: string, link: string}} labels The names of a link.
  * @return {Array<{text: string, href?: string, route?: (string|null)}>} The parts, in order.
- * @spec openspec/changes/woo-inbox-notices/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-shows-other-site-addresses-as-named-links-req-nap-013
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-the-inbox-shows-other-site-addresses-as-named-links-req-nap-013
  */
 export function bodyParts(body, origin, labels) {
 	const parts = []

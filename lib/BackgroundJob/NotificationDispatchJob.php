@@ -407,7 +407,7 @@ class NotificationDispatchJob extends QueuedJob {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-a-notification-mail-and-a-task-notice-are-written-in-the-portals-language-only
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-a-notification-mail-and-a-task-notice-are-written-in-the-portals-language-only
 	 */
 	private function subjectLine(string $organisation, string $organisationName, array $record = []): string {
 		$key = [self::SUBJECT_KEY, self::CHANGE_SUBJECT_KEY][(int)($record !== [])];

@@ -34,7 +34,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-create-cross-refs/specs/portal-contribution-contract/spec.md
+ * @spec openspec/specs/portal-contribution-contract/spec.md
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Validates the per-action `crossRefs` declaration, fail closed.
  *
- * @spec openspec/changes/portal-create-cross-refs/specs/portal-contribution-contract/spec.md
+ * @spec openspec/specs/portal-contribution-contract/spec.md
  */
 class CrossRefConfigNormaliser {
 	/**
@@ -73,7 +73,7 @@ class CrossRefConfigNormaliser {
 	 *
 	 * @return array<string, mixed>|null The action, or null when it must be dropped.
 	 *
-	 * @spec openspec/changes/portal-create-cross-refs/specs/portal-contribution-contract/spec.md
+	 * @spec openspec/specs/portal-contribution-contract/spec.md
 	 */
 	public function normaliseAction(array $action, array $whitelist): ?array {
 		if (array_key_exists(self::KEY, $action) === false) {
@@ -139,7 +139,7 @@ class CrossRefConfigNormaliser {
 	 *
 	 * @return array<string, mixed>|null The sanitised reference, or null.
 	 *
-	 * @spec openspec/changes/portal-create-cross-refs/specs/portal-contribution-contract/spec.md
+	 * @spec openspec/specs/portal-contribution-contract/spec.md
 	 */
 	private function normaliseReference(mixed $field, mixed $reference, array $whitelist): ?array {
 		if (is_string($field) === false || $field === '' || is_array($reference) === false) {

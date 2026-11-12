@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
 
 declare(strict_types=1);
@@ -46,7 +46,7 @@ use OCP\Security\ISecureRandom;
 /**
  * The citizen's own account: their details, and its removal.
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
 class PortalSelfServiceService {
 	/**
@@ -111,9 +111,9 @@ class PortalSelfServiceService {
 	 * @return array{updated: bool, confirmationToken: string}|null Null when
 	 *         there is no such account or nothing usable was asked.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
-	 * @spec openspec/changes/notification-preferences-per-role/specs/supplier-portal/spec.md#requirement-an-accounts-own-channel-opt-out-gates-dispatch
-	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-an-accounts-own-channel-opt-out-gates-dispatch
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
 	 */
 	public function updateDetails(
 		string $subjectRef,
@@ -196,7 +196,7 @@ class PortalSelfServiceService {
 	 * @return array{displayName: string, email: string, emailNotifications: bool, messageLanguage: string}|null
 	 *         Null when there is no such account.
 	 *
-	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
 	 */
 	public function details(string $subjectRef): ?array {
 		$account = $this->rows()->find(subjectRef: $subjectRef);
@@ -222,7 +222,7 @@ class PortalSelfServiceService {
 	 *
 	 * @return string The language tag, or ''.
 	 *
-	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
 	 */
 	public function messageLanguage(string $subjectRef): string {
 		return ($this->details(subjectRef: $subjectRef)['messageLanguage'] ?? '');
@@ -309,7 +309,7 @@ class PortalSelfServiceService {
 	 *
 	 * @return array<string, mixed>|null The fields to write, or null to refuse.
 	 *
-	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
 	 */
 	private function preferenceData(array $account, array $asked): ?array {
 		$emailNotifications = $asked['emailNotifications'];
@@ -340,7 +340,7 @@ class PortalSelfServiceService {
 	 *
 	 * @return array<string, bool>
 	 *
-	 * @spec openspec/changes/notification-preferences-per-role/specs/supplier-portal/spec.md#requirement-an-accounts-own-channel-opt-out-gates-dispatch
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-an-accounts-own-channel-opt-out-gates-dispatch
 	 */
 	private function withEmailChannel(array $account, bool $emailNotifications): array {
 		$channels = (array)($account['notificationChannels'] ?? []);
@@ -368,8 +368,8 @@ class PortalSelfServiceService {
 	 * @return array{email: string}|null Null when the link admits nobody:
 	 *         unknown, already used or expired.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
-	 * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function confirmEmail(string $token, ?DateTimeImmutable $now = null, ?array $session = null): ?array {
 		if ($token === '') {
@@ -412,7 +412,7 @@ class PortalSelfServiceService {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	private function accountAwaitingConfirmation(string $hash, DateTimeImmutable $moment): ?array {
 		$rows = $this->reader->readCollection(
@@ -451,7 +451,7 @@ class PortalSelfServiceService {
 	 *
 	 * @return bool True when the account is emptied and marked removed.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function removeAccount(string $subjectRef): bool {
 		$account = $this->rows()->find(subjectRef: $subjectRef);

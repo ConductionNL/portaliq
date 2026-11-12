@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-create-cross-refs/specs/portal-contribution-contract/spec.md
+ * @spec openspec/specs/portal-contribution-contract/spec.md
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Refuses a portal write whose references are not the subject's own.
  *
- * @spec openspec/changes/portal-create-cross-refs/specs/portal-contribution-contract/spec.md#requirement-a-declared-cross-reference-must-resolve-inside-the-subjects-own-scope
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-declared-cross-reference-must-resolve-inside-the-subjects-own-scope
  */
 class PortalCrossRefGuard {
 	/**
@@ -73,7 +73,7 @@ class PortalCrossRefGuard {
 	 *
 	 * @return JSONResponse|null The refusal, or null to go on.
 	 *
-	 * @spec openspec/changes/portal-create-cross-refs/specs/portal-contribution-contract/spec.md#requirement-a-declared-cross-reference-must-resolve-inside-the-subjects-own-scope
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-declared-cross-reference-must-resolve-inside-the-subjects-own-scope
 	 */
 	public function refusal(array $action, array $data, array $subject, string $app): ?JSONResponse {
 		$refused = $this->refusedField(action: $action, data: $data, subject: $subject, app: $app);
@@ -94,7 +94,7 @@ class PortalCrossRefGuard {
 	 *
 	 * @return string The refusing field, empty when every reference is the subject's.
 	 *
-	 * @spec openspec/changes/portal-create-cross-refs/specs/portal-contribution-contract/spec.md#requirement-a-declared-cross-reference-must-resolve-inside-the-subjects-own-scope
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-declared-cross-reference-must-resolve-inside-the-subjects-own-scope
 	 */
 	public function refusedField(array $action, array $data, array $subject, string $app): string {
 		$declared = ($action[CrossRefConfigNormaliser::KEY] ?? []);

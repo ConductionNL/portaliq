@@ -28,7 +28,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/partner-tasks-in-the-portal/specs/partner-tasks-in-the-portal/spec.md
+ * @spec openspec/specs/partner-tasks-in-the-portal/spec.md
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use Throwable;
 /**
  * Decides whether a staff user may ask a partner about a case.
  *
- * @spec openspec/changes/partner-tasks-in-the-portal/specs/partner-tasks-in-the-portal/spec.md
+ * @spec openspec/specs/partner-tasks-in-the-portal/spec.md
  */
 class PortalCaseAccessGuard {
 	/**
@@ -55,7 +55,7 @@ class PortalCaseAccessGuard {
 	/**
 	 * The ADR-023 action reviewing a change proposal is gated by.
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public const ACTION_REVIEW_PROPOSAL = 'portal.review-proposal';
 
@@ -87,7 +87,7 @@ class PortalCaseAccessGuard {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/partner-tasks-in-the-portal/specs/partner-tasks-in-the-portal/spec.md
+	 * @spec openspec/specs/partner-tasks-in-the-portal/spec.md
 	 */
 	public function mayAsk(IUser $user, string $register, string $schema, string $id): bool {
 		return $this->mayAct(user: $user, register: $register, schema: $schema, id: $id, action: self::ACTION);
@@ -104,7 +104,7 @@ class PortalCaseAccessGuard {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function mayAct(IUser $user, string $register, string $schema, string $id, string $action): bool {
 		if ($register === '' || $schema === '' || $id === '') {

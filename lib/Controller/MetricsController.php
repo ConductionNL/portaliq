@@ -25,9 +25,9 @@
  *
  *   Point @spec at the canonical spec under `openspec/specs/`, never at
  *   `openspec/changes/<name>/` — see ConductionNL/.github#228.)
- * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T10
+ * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T10
  * @spec openspec/specs/supplier-portal/spec.md#repeated-failure-flags-an-alternative-contact-fallback
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
  */
 
 declare(strict_types=1);
@@ -126,7 +126,7 @@ class MetricsController extends Controller {
 	 *
 	 * @spec openspec/specs/observability/spec.md#REQ-OBS-001
 	 * @spec openspec/specs/supplier-portal/spec.md#repeated-failure-flags-an-alternative-contact-fallback
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
 	 */
 	public function index(): DataDisplayResponse {
 		try {

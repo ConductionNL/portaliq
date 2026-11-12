@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-visibility-follows-the-party-tree/specs/portal-visibility-and-the-party-tree/spec.md
+ * @spec openspec/specs/portal-visibility-and-the-party-tree/spec.md
  */
 
 declare(strict_types=1);

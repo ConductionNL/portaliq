@@ -60,7 +60,7 @@ import { cardParts } from './displays.js'
 import { mijnTranslator } from './rows.js'
 
 /**
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-may-show-its-rows-as-cards-with-a-progress-figure-req-smo-028
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-may-show-its-rows-as-cards-with-a-progress-figure-req-smo-028
  */
 export default {
 	name: 'ProgressCards',
@@ -92,7 +92,7 @@ export default {
 	computed: {
 		/**
 		 * @return {Array<object>} `{key, title, figure, width}` per row.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-may-show-its-rows-as-cards-with-a-progress-figure-req-smo-028
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-may-show-its-rows-as-cards-with-a-progress-figure-req-smo-028
 		 */
 		cards() {
 			const tr = mijnTranslator(this.t, this.locale)

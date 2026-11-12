@@ -16,7 +16,7 @@
 
 <script>
 /**
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-inbox-must-merge-every-apps-messages-req-srp-030
  */
 export default {
 	name: 'BusyStatus',

@@ -33,7 +33,7 @@
 //
 // Imports nothing, so tests/site-collections.spec.mjs runs it as node.
 //
-// @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
+// @spec openspec/specs/site-portal-parity/spec.md#requirement-a-contribution-page-must-render-its-blocks-req-srp-014
 
 /** Every place a slice can fill. */
 export const BLOCK_SLOTS = Object.freeze([

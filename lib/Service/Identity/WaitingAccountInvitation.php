@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use OCP\Security\ISecureRandom;
 /**
  * Issues and redeems the one-time secret of a waiting account.
  *
- * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 class WaitingAccountInvitation {
 	/**
@@ -148,7 +148,7 @@ class WaitingAccountInvitation {
 	 * @return array{token: string, email: string, organisation: string, expiresAt: string}|null
 	 *         Null when the account is not this app's waiting account or the write failed.
 	 *
-	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function issue(string $subjectRef, string $appId, ?DateTimeImmutable $now = null): ?array {
 		$lookup  = new PortalAccountLookup(reader: $this->reader);
@@ -193,7 +193,7 @@ class WaitingAccountInvitation {
 	 * @return array{code: string, expiresAt: string}|null Null when the
 	 *         account is not this app's waiting account or the write failed.
 	 *
-	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function issueCode(string $subjectRef, string $appId, ?DateTimeImmutable $now = null): ?array {
 		$lookup  = new PortalAccountLookup(reader: $this->reader);
@@ -241,8 +241,8 @@ class WaitingAccountInvitation {
 	 *
 	 * @return string One of CLAIMED, NOT_VALID, LOCKED, CANNOT_RECEIVE, CONFLICT and BUSY.
 	 *
-	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
-	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function redeem(array $subject, #[\SensitiveParameter] string $secret, ?DateTimeImmutable $now = null): string {
 		$moment  = ($now ?? new DateTimeImmutable());
@@ -349,7 +349,7 @@ class WaitingAccountInvitation {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function audienceOf(array $subject): string {
 		$account = (new PortalAccountLookup(reader: $this->reader))->bySubjectRef(subjectRef: (string)($subject['subjectRef'] ?? ''));

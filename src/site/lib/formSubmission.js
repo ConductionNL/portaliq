@@ -37,7 +37,7 @@ function resolvePortalApiRoot() {
  * @param {string} formId The bound form's id.
  * @return {string} `submit-{formId}`, or '' without a form id.
  *
- * @spec openspec/changes/create-names-its-action/tasks.md#T3
+ * @spec openspec/changes/archive/2026-10-07-create-names-its-action/tasks.md#T3
  */
 export function landingPageActionId(formId) {
 	return typeof formId === 'string' && formId !== '' ? `submit-${formId}` : ''
@@ -98,7 +98,7 @@ function submissionBody(values, tracking) {
  * @return {Promise<object>} The destination's answer: `reference`, `id`, `receivedAt`.
  *
  * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-landing-pages-form-is-submittable-with-no-portal-session
- * @spec openspec/changes/create-names-its-action/tasks.md#T3
+ * @spec openspec/changes/archive/2026-10-07-create-names-its-action/tasks.md#T3
  */
 export async function submitLandingPageForm(values, tracking = {}, formId = '') {
 	const response = await fetch(submissionUrl(formId), {

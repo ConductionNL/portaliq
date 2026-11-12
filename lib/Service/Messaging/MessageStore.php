@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/guardian-direct-messages/design.md#messaging-leaf-interface
+ * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#messaging-leaf-interface
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * @spec openspec/changes/guardian-direct-messages/design.md#messaging-leaf-interface
+ * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#messaging-leaf-interface
  */
 class MessageStore {
 	use ObjectRowNormaliser;
@@ -71,7 +71,7 @@ class MessageStore {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/design.md#messaging-leaf-interface
+	 * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#messaging-leaf-interface
 	 */
 	public function save(string $schema, array $object, ?string $uuid = null): ?string {
 		$objectService = $this->objectService();
@@ -111,7 +111,7 @@ class MessageStore {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/design.md#messaging-leaf-interface
+	 * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#messaging-leaf-interface
 	 */
 	public function findAll(string $schema, array $filters = [], ?array $ids = null): array {
 		$objectService = $this->objectService();
@@ -148,7 +148,7 @@ class MessageStore {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/design.md#messaging-leaf-interface
+	 * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#messaging-leaf-interface
 	 */
 	public function rowId(array $row): ?string {
 		if (isset($row['id']) === true) {

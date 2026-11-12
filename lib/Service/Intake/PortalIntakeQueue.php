@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use OCP\Security\ISecureRandom;
 /**
  * Records, acknowledges and reports on intake submissions.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
 class PortalIntakeQueue {
 	/**
@@ -97,7 +97,7 @@ class PortalIntakeQueue {
 	 *         submission could not be recorded, in which case nothing is
 	 *         acknowledged: a reference nobody can look up is worse than none.
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function accept(
 		string $portal,
@@ -133,7 +133,7 @@ class PortalIntakeQueue {
 	 *         submission could not be recorded, in which case nothing is
 	 *         acknowledged: a reference nobody can look up is worse than none.
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function acceptSubmission(QueuedSubmission $submission): ?array {
 		if ($submission->portal === '') {
@@ -216,8 +216,8 @@ class PortalIntakeQueue {
 	 * @return array<string, mixed>|null The state, and the reason when it
 	 *         failed. Null when no submission carries that reference.
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
-	 * @spec openspec/changes/woo-request-intake-through-opencatalogi/specs/portal-intake-form/spec.md#requirement-a-woo-request-form-is-delivered-to-opencatalogis-intake
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-woo-request-form-is-delivered-to-opencatalogis-intake
 	 */
 	public function status(string $reference, string $portal): ?array {
 		$row = $this->byReference(reference: $reference, portal: $portal);
@@ -258,7 +258,7 @@ class PortalIntakeQueue {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function queued(int $limit = 50): array {
 		$rows = $this->reader->readCollection(
@@ -320,8 +320,8 @@ class PortalIntakeQueue {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
-	 * @spec openspec/changes/woo-request-intake-through-opencatalogi/specs/portal-intake-form/spec.md#requirement-a-woo-request-form-is-delivered-to-opencatalogis-intake
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-woo-request-form-is-delivered-to-opencatalogis-intake
 	 */
 	public function markRegistered(array $submission, string $caseId, string $externalReference = '', string $dueAt = ''): bool {
 		$data = [
@@ -350,7 +350,7 @@ class PortalIntakeQueue {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function markFailed(array $submission, string $reason): bool {
 		return $this->write(submission: $submission, data: ['state' => self::STATE_FAILED, 'failureReason' => $reason]);

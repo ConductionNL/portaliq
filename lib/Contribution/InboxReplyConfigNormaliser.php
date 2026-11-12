@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t01
+ * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t01
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ namespace OCA\Portaliq\Contribution;
  * action must be a `type: create` action of the same contribution; a carried
  * field must be one the action whitelists and the collection projects.
  *
- * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t01
+ * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t01
  */
 class InboxReplyConfigNormaliser {
 
@@ -49,7 +49,7 @@ class InboxReplyConfigNormaliser {
 	 *
 	 * @return array<int, array<string, mixed>> The collections, with a well-formed `reply` or none.
 	 *
-	 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t01
+	 * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t01
 	 */
 	public function resolve(array $collections, array $actions): array {
 		foreach ($collections as $index => $collection) {

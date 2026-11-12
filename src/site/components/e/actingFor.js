@@ -66,7 +66,7 @@ export function hasChosenActingFor(store) {
  * @param {object} [store] The store to keep it in (test seam).
  * @return {void}
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-act-for-someone-else-req-srp-041
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-act-for-someone-else-req-srp-041
  */
 export function chooseActingFor(id, store = sessionStore()) {
 	keepActingFor(store, id)
@@ -98,7 +98,7 @@ export function forgetChosenParty(store = sessionStore()) {
  * @param {object|null} answer The `fetchMyCases` answer.
  * @return {void}
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-act-for-someone-else-req-srp-041
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-act-for-someone-else-req-srp-041
  */
 export function learnMandates(answer) {
 	if (!answer || !answer.ok) {
@@ -116,7 +116,7 @@ export function learnMandates(answer) {
  * @param {object} [store] The store the choice is kept in (test seam).
  * @return {void}
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-act-for-someone-else-req-srp-041
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-act-for-someone-else-req-srp-041
  */
 export function forgetActingFor(store = sessionStore()) {
 	try {

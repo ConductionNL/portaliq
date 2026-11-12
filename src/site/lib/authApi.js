@@ -113,7 +113,7 @@ export const LEGACY_TOKEN_KEY = 'portaliq_token'
  *
  * @return {string} The adopted bearer, or ''.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-site-must-adopt-and-keep-one-bearer-for-the-resident-req-srp-002
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-site-must-adopt-and-keep-one-bearer-for-the-resident-req-srp-002
  */
 export function adoptLegacyToken() {
 	let legacy
@@ -178,7 +178,7 @@ export function takeSigninFailed() {
  *
  * @param {string|null} token The bearer.
  * @return {void}
- * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+ * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
  */
 export function storeSessionToken(token) {
 	try {
@@ -328,9 +328,9 @@ function dutchLabel(key, vars = {}) {
  *        with it (demo-sign-in-beside-the-account).
  * @param {boolean} [ways.emailLink] Whether the portal offers the e-mail link (`waysIn.emailLink`).
  * @return {Array<{key: string, mode: string, label: string, card?: object, href: string, demo?: boolean, form?: string}>} The routes.
- * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
+ * @spec openspec/specs/site-chrome/spec.md#requirement-the-sign-in-page-must-offer-each-way-in-as-a-card-for-its-role
  * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#1
- * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+ * @spec openspec/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
  * @spec openspec/changes/nextcloud-account-registration/specs/portal-nextcloud-account-login/spec.md#requirement-the-sign-in-page-leads-to-nextclouds-own-registration-req-ncl-005
  * @spec openspec/changes/demo-sign-in-beside-the-account/specs/example-resident/spec.md#requirement-a-demo-may-sign-in-each-example-resident-with-one-click
  */

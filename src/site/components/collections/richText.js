@@ -7,7 +7,7 @@
 //
 // Imports nothing, so tests/rich-text.spec.mjs runs it as node.
 //
-// @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-rich-text-must-stay-text-only-req-srp-018
+// @spec openspec/specs/site-portal-parity/spec.md#requirement-rich-text-must-stay-text-only-req-srp-018
 
 /**
  * The lines to render.

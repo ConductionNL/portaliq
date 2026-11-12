@@ -22,7 +22,7 @@ export const MOUNT_ID = 'portaliq-embed'
  * @param {Document|null} doc The document.
  * @return {{payload: object, submitUrl: string, locale: string}} The boot data.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-embed-frame-must-render-its-form-from-a-small-entry-req-srp-047
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-embed-frame-must-render-its-form-from-a-small-entry-req-srp-047
  */
 export function readEmbedConfig(doc) {
 	const parsed = parsedConfig(doc)
@@ -87,7 +87,7 @@ function configLocale(locale) {
  * @param {Array<object>} fields The form's fields.
  * @return {object} Field name to value.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-embed-frame-must-render-its-form-from-a-small-entry-req-srp-047
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-embed-frame-must-render-its-form-from-a-small-entry-req-srp-047
  */
 export function initialAnswers(fields) {
 	const answers = {}
@@ -121,7 +121,7 @@ function hasPreset(field) {
  * @param {Function} [args.fetchImpl] fetch (test seam).
  * @return {Promise<object>} The server's answer: `{reference, …}` or `{errors}`.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-embed-frame-must-render-its-form-from-a-small-entry-req-srp-047
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-embed-frame-must-render-its-form-from-a-small-entry-req-srp-047
  */
 export async function submitAnswers({
 	submitUrl,
@@ -153,7 +153,7 @@ export async function submitAnswers({
  * @param {object} result The server's answer.
  * @return {{fields: object, messages: Array<string>}} Per field, and all of them.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-embed-frame-must-render-its-form-from-a-small-entry-req-srp-047
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-embed-frame-must-render-its-form-from-a-small-entry-req-srp-047
  */
 export function submissionErrors(result) {
 	const raw = result?.errors

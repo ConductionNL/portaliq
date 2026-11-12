@@ -235,7 +235,7 @@ export default {
 	 *
 	 * @return {Promise<void>} Resolves when read.
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-ask-for-access-to-cases-req-srp-039
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-ask-for-access-to-cases-req-srp-039
 	 */
 	async mounted() {
 		if (this.initialRequests !== null) {
@@ -261,7 +261,7 @@ export default {
 		 * @param {object} request The request.
 		 * @return {string} The date.
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-ask-for-access-to-cases-req-srp-039
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-ask-for-access-to-cases-req-srp-039
 		 */
 		askedOn(request) {
 			return request.requestedAt
@@ -274,7 +274,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when answered.
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-ask-for-access-to-cases-req-srp-039
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-ask-for-access-to-cases-req-srp-039
 		 */
 		async send() {
 			this.notice = ''

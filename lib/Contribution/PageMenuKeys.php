@@ -29,7 +29,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Normalises the menu, record-switcher, home and badge keys of one page.
  *
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
  */
 class PageMenuKeys {
 	/**
@@ -56,7 +56,7 @@ class PageMenuKeys {
 	 *
 	 * @return array<string, mixed> The kept keys, possibly none.
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
 	 */
 	public function keys(array $page, array $entry, array $collectionIds): array {
 		$out     = $this->flags(page: $page);
@@ -124,7 +124,7 @@ class PageMenuKeys {
 	 *
 	 * @return array<string, array{collection: string, label?: string}> `['badge' => ...]`, or [] to drop it.
 	 *
-	 * @spec openspec/changes/page-badge-key/specs/portal-contribution-contract/spec.md#requirement-a-page-may-show-a-count-in-its-menu-entry
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-page-may-show-a-count-in-its-menu-entry
 	 */
 	private function badge(mixed $declared, array $collectionIds): array {
 		if (is_array($declared) === false || in_array(($declared['collection'] ?? null), $collectionIds, true) === false) {

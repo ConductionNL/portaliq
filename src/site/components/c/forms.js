@@ -10,7 +10,7 @@
  * `required` against the schema, and re-scopes every row. These helpers keep
  * the screen honest, they are not the authority.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
  */
 
 import { fileFields } from '../../../shared/fileFieldSubmit.js'
@@ -110,7 +110,7 @@ const INPUT_OF_HINT = {
  * @param {Array|undefined} options The field's resolved options, if any.
  * @return {string} One of file, select, textarea, date, datetime-local, number, email, text.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
  */
 export function fieldInput(action, field, options) {
 	if (fileFields(action).includes(field)) {
@@ -172,7 +172,7 @@ export function collectionProviders(action) {
  * @param {Record<string, Array<{value: string, label: string}>>} options The resolved options per field.
  * @return {Record<string, string>} The values, with the single options filled in.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
  */
 export function withSingleOptions(action, values, options) {
 	const out = { ...(values || {}) }
@@ -316,7 +316,7 @@ export function typedValue(type, text) {
  * @param {Record<string, Array>} [options] The resolved options per field.
  * @return {Record<string, string|number|boolean>} The body.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
  * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-form-must-send-each-value-in-the-type-its-field-declares
  */
 export function formBody(action, values, options = {}) {
@@ -367,7 +367,7 @@ export function isEndpointAction(action) {
  * @param {(key: string, vars?: object) => string} t The translator.
  * @return {Record<string, string>} The message per field; empty when all is well.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
  * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-date-field-must-be-asked-as-day-month-and-year-req-smf-003
  * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-word-its-own-error-req-smf-006
  */
@@ -561,7 +561,7 @@ function rowText(row, field) {
  * @param {object|null} row The row.
  * @return {Record<string, string>} The values.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-propose-a-change-req-srp-024
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-propose-a-change-req-srp-024
  */
 export function proposalStart(action, row) {
 	const out = {}
@@ -579,7 +579,7 @@ export function proposalStart(action, row) {
  * @param {Record<string, string>} values The edited values.
  * @return {Array<{property: string, proposedValue: string}>} The changes.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-propose-a-change-req-srp-024
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-be-able-to-propose-a-change-req-srp-024
  */
 export function proposedChanges(action, row, values) {
 	return ((action && action.proposable) || [])

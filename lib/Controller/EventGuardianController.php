@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/events-and-signups/design.md#api-design
+ * @spec openspec/changes/archive/2026-09-28-events-and-signups/design.md#api-design
  */
 
 declare(strict_types=1);
@@ -45,7 +45,7 @@ use OCP\IRequest;
 /**
  * Guardian read/RSVP/signup path for events.
  *
- * @spec openspec/changes/events-and-signups/design.md#api-design
+ * @spec openspec/changes/archive/2026-09-28-events-and-signups/design.md#api-design
  */
 class EventGuardianController extends Controller implements PortalProtected {
 	/**
@@ -72,7 +72,7 @@ class EventGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -96,7 +96,7 @@ class EventGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse 204 on success, 404 when unreachable, 422 when the event is full, closed or the seats are out of range.
 	 *
-	 * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -136,7 +136,7 @@ class EventGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse 204 on success, 404 (role/event unreachable) or 422 (role full).
 	 *
-	 * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-a-sign-up-role-enforces-its-capacity-server-side
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-sign-up-role-enforces-its-capacity-server-side
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

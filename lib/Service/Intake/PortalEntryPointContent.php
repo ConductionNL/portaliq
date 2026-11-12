@@ -31,7 +31,7 @@
  *
  * @link https://Portaliq.app
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
 
 declare(strict_types=1);
@@ -68,7 +68,7 @@ class PortalEntryPointContent {
 	 *
 	 * @return array<int, array<string, mixed>> The pages.
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function pagesFor(string $portal): array {
 		return [
@@ -93,7 +93,7 @@ class PortalEntryPointContent {
 	 *
 	 * @return array<int, array<string, mixed>> The topics.
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function topics(): array {
 		return [
@@ -113,7 +113,7 @@ class PortalEntryPointContent {
 	 *
 	 * @return array<string, mixed> The plan: what is created, what is left alone and why.
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function plan(string $portal, array $existingRoutes): array {
 		$create = [];

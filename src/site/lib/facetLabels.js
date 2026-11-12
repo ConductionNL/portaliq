@@ -9,7 +9,7 @@
  * names, and the names themselves, are configuration in
  * `src/site/config/valueLists.js`; nothing here knows one list from another.
  *
- * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
  */
 
 import { VALUE_LISTS } from '../config/valueLists.js'
@@ -34,7 +34,7 @@ export function hasValueList(field) {
  * @param {string} code The stored code.
  * @param {string} locale The site's language.
  * @return {string} The name.
- * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
  */
 export function valueLabel(field, code, locale) {
 	const key = String(code ?? '')
@@ -55,8 +55,8 @@ export function valueLabel(field, code, locale) {
  * @param {string} locale The site's language.
  * @param {Record<string, string>} [names] Names the host knows for this field's values (an organisation by its id).
  * @return {Array<{value: string, label: string, count: number}>} The buckets.
- * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
- * @spec openspec/changes/woo-search-names-the-organisation/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
  */
 export function labelBuckets(buckets, field, locale, names = {}) {
 	if (field === 'resultType') {

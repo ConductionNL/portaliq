@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
+ * @spec openspec/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use OCP\IAppConfig;
  * more complete record (TrafficDayGuard). The job's watermark is not
  * touched: this is not the ordinary run.
  *
- * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
+ * @spec openspec/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
  */
 class TrafficBackfillService {
 	use PublishedPortalWalk;
@@ -90,7 +90,7 @@ class TrafficBackfillService {
 	 *
 	 * @return int The days rewritten, 0 when it had already run.
 	 *
-	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
+	 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
 	 */
 	public function runOnce(): int {
 		if ($this->appConfig->getValueString(Application::APP_ID, self::DONE_KEY, '') === self::VERSION) {
@@ -114,7 +114,7 @@ class TrafficBackfillService {
 	 * @return array{portals: int, days: int, kept: int, rollupDays: int} Portals walked, days rewritten,
 	 *                                                                  days kept as they were, roll-up days re-summed.
 	 *
-	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
+	 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
 	 */
 	public function backfill(?string $only = null): array {
 		$now = DateTimeImmutable::createFromMutable($this->time->getDateTime())->setTimezone(new DateTimeZone('UTC'));

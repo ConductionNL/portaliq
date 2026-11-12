@@ -6,7 +6,7 @@
 // plain text: the result is rendered as text, never as markdown or HTML. No
 // Vue, so tests/mijn-wave6.spec.mjs runs it as node.
 //
-// @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-text-block-on-a-record-page-may-be-filled-from-the-record-req-smo-027
+// @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-text-block-on-a-record-page-may-be-filled-from-the-record-req-smo-027
 
 const PLACEHOLDER = /\{([A-Za-z_][A-Za-z0-9_]*)\}/g
 
@@ -49,7 +49,7 @@ function words(value, locale) {
  * @param {Array<string>|null} [options.fields] The projected fields; null for any.
  * @param {string} [options.locale] The page language.
  * @return {Array<string>} The sentences to show.
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-text-block-on-a-record-page-may-be-filled-from-the-record-req-smo-027
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-text-block-on-a-record-page-may-be-filled-from-the-record-req-smo-027
  */
 export function fillTemplate(
 	template,
@@ -93,7 +93,7 @@ function filledSentence(sentence, { record, whenEmpty, fields, locale }) {
  * @param {string} label The label.
  * @param {string} title The open record's title, or ''.
  * @return {string}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
  */
 export function ctaLabel(label, title) {
 	const text = String(label || '')

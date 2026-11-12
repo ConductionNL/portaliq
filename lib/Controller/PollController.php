@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/parent-polls/specs/parent-polls/spec.md
+ * @spec openspec/specs/parent-polls/spec.md
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use OCP\IUserSession;
 /**
  * Creates polls (staff) and serves a subject's own (portal).
  *
- * @spec openspec/changes/parent-polls/specs/parent-polls/spec.md
+ * @spec openspec/specs/parent-polls/spec.md
  */
 class PollController extends Controller {
 	/**
@@ -82,7 +82,7 @@ class PollController extends Controller {
 	 *
 	 * @return JSONResponse The created poll, or a refusal.
 	 *
-	 * @spec openspec/changes/parent-polls/specs/parent-polls/spec.md#requirement-a-poll-is-created-by-staff-addressed-to-one-audience-and-organisation
+	 * @spec openspec/specs/parent-polls/spec.md#requirement-a-poll-is-created-by-staff-addressed-to-one-audience-and-organisation
 	 */
 	#[NoAdminRequired]
 	public function create(
@@ -139,7 +139,7 @@ class PollController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/parent-polls/specs/parent-polls/spec.md#requirement-a-portal-subject-sees-only-polls-for-their-own-audience-and-organisation
+	 * @spec openspec/specs/parent-polls/spec.md#requirement-a-portal-subject-sees-only-polls-for-their-own-audience-and-organisation
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -161,7 +161,7 @@ class PollController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/parent-polls/specs/parent-polls/spec.md#requirement-a-subject-may-answer-once-and-change-their-answer-while-the-poll-is-open
+	 * @spec openspec/specs/parent-polls/spec.md#requirement-a-subject-may-answer-once-and-change-their-answer-while-the-poll-is-open
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

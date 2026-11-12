@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-cms-content-model/tasks.md#task-3
+ * @spec openspec/changes/archive/2026-10-09-portal-cms-content-model/tasks.md#task-3
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use Psr\Log\LoggerInterface;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/portal-cms-content-model/tasks.md#task-3
+ * @spec openspec/changes/archive/2026-10-09-portal-cms-content-model/tasks.md#task-3
  */
 class GlossaryRelationGuardListener implements IEventListener {
 
@@ -83,7 +83,7 @@ class GlossaryRelationGuardListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-cms-content-model/tasks.md#task-3
+	 * @spec openspec/changes/archive/2026-10-09-portal-cms-content-model/tasks.md#task-3
 	 */
 	protected function check(ObjectCreatingEvent|ObjectUpdatingEvent $event, object $entity): void {
 		if ($this->guardsSchema(schema: (string)$entity->getSchema()) === false) {

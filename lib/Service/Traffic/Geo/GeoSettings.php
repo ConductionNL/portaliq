@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
+ * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ use OCP\IAppConfig;
  * that renders: `toArray()` says whether a key is stored, and only the
  * provider that needs it asks for the value.
  *
- * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
+ * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
  */
 class GeoSettings {
 
@@ -93,7 +93,7 @@ class GeoSettings {
 	 *
 	 * @return string One of PROVIDERS.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
 	 */
 	public function provider(): string {
 		$value = $this->config->getValueString(Application::APP_ID, self::KEY_PROVIDER, self::DEFAULT_PROVIDER);
@@ -109,7 +109,7 @@ class GeoSettings {
 	 *
 	 * @return string The account id.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
 	 */
 	public function maxMindAccountId(): string {
 		return trim($this->config->getValueString(Application::APP_ID, self::KEY_ACCOUNT_ID, ''));
@@ -120,7 +120,7 @@ class GeoSettings {
 	 *
 	 * @return string The key.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
 	 */
 	public function maxMindLicenseKey(): string {
 		return trim($this->config->getValueString(Application::APP_ID, self::KEY_LICENSE_KEY, ''));
@@ -131,7 +131,7 @@ class GeoSettings {
 	 *
 	 * @return string One of EDITIONS.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
 	 */
 	public function maxMindEdition(): string {
 		$value = $this->config->getValueString(Application::APP_ID, self::KEY_EDITION, self::EDITIONS[0]);
@@ -147,7 +147,7 @@ class GeoSettings {
 	 *
 	 * @return array{provider: string, maxmindAccountId: string, maxmindEdition: string, maxmindLicenseKeySet: bool} The view.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
 	 */
 	public function toArray(): array {
 		return [
@@ -167,7 +167,7 @@ class GeoSettings {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-maxmind-credentials-must-never-be-echoed-back
 	 */
 	public function update(array $data): void {
 		$provider = $data['provider'] ?? null;

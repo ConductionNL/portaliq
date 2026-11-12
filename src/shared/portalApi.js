@@ -696,7 +696,7 @@ export function createPortalApi(config, store = {}) {
 		 * @param {object} message The message, with its `_source`.
 		 * @param {object} data The fields the resident filled in, files left out.
 		 * @return {Promise<object>} `{ ok, status, object, error, errors }`.
-		 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t05
+		 * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t05
 		 */
 		async replyToMessage(message, data) {
 			const source = message._source || {}
@@ -1078,8 +1078,8 @@ export function createPortalApi(config, store = {}) {
 		 * @param {string} secret The secret from the invitation.
 		 * @return {Promise<object>} `{ ok, status, error, data }`.
 		 *
-		 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
-		 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+		 * @spec openspec/specs/portal-identity-space/spec.md
+		 * @spec openspec/specs/portal-identity-space/spec.md
 		 */
 		async claimInvitation(secret) {
 			const result = await answer('POST', '/identity/invitation/redeem', {
@@ -1322,7 +1322,7 @@ export function createPortalApi(config, store = {}) {
 		 * @param {object} data The whitelisted field values.
 		 * @return {Promise<object>} `{ ok, status, object }` result envelope.
 		 *
-		 * @spec openspec/changes/create-names-its-action/tasks.md#T2
+		 * @spec openspec/changes/archive/2026-10-07-create-names-its-action/tasks.md#T2
 		 */
 		async createObject(action, data) {
 			const id = action && typeof action.id === 'string' ? action.id : ''
@@ -1407,7 +1407,7 @@ export function createPortalApi(config, store = {}) {
 		 * @param {string} id The case id.
 		 * @param {string} [mandateId] The mandate the case was listed under, if any.
 		 * @return {Promise<object|null>} `{ case, writableSet, documents }` or null.
-		 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+		 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 		 */
 		async fetchCitizenCase(collection, id, mandateId = '') {
 			// A case listed under a mandate is read under that mandate
@@ -1429,7 +1429,7 @@ export function createPortalApi(config, store = {}) {
 		 * @param {string} id The case id.
 		 * @param {object} fields The answers to change, by field name.
 		 * @return {Promise<object>} `{ ok, status, case }` or `{ ok: false, status, message, error }`.
-		 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+		 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 		 */
 		async amendCitizenCase(collection, id, fields) {
 			const res = await fetch(citizenCaseUrl(collection, id), jsonInit('PATCH', { fields }))
@@ -1448,7 +1448,7 @@ export function createPortalApi(config, store = {}) {
 		 * @param {object} collection Manifest collection: `{ register, schema, id, label }`.
 		 * @param {string} [id] The record id; none exports the whole list.
 		 * @return {Promise<object>} `{ ok }`, or `{ ok: false, status }` (400: the list is too long).
-		 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t06
+		 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t06
 		 */
 		async downloadPdf(collection, id) {
 			const path =
@@ -1556,7 +1556,7 @@ export function createPortalApi(config, store = {}) {
 		 * @param {string} id The case id.
 		 * @param {File} file The document to add.
 		 * @return {Promise<object>} `{ ok, document }` or `{ ok: false, status, message, error }`.
-		 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+		 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 		 */
 		async addCitizenDocument(collection, id, file) {
 			const form = new FormData()
@@ -1584,7 +1584,7 @@ export function createPortalApi(config, store = {}) {
 		 * @param {object} body The request body (only the action's `fields` are forwarded).
 		 * @param {{submissionKey?: string}} [options] The form's submission key (REQ-AFS-001).
 		 * @return {Promise<{ok: boolean, status: number, body: object}>} The relayed answer.
-		 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-the-portal-must-let-a-subject-take-a-timed-task
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-the-portal-must-let-a-subject-take-a-timed-task
 		 */
 		async forwardAction(app, actionId, body, options = {}) {
 			try {
@@ -1696,7 +1696,7 @@ export function createPortalApi(config, store = {}) {
 		 * @param {string} field The file field.
 		 * @param {File} file The file to upload.
 		 * @return {Promise<object>} `{ ok, file, value }` on success, `{ ok: false, status, error }` otherwise.
-		 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-the-generic-portal-form-must-render-a-file-field-as-a-file-picker
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-the-generic-portal-form-must-render-a-file-field-as-a-file-picker
 		 */
 		async uploadFieldFile(action, id, field, file) {
 			const form = new FormData()

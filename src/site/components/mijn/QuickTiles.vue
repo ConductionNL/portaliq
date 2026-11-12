@@ -37,7 +37,7 @@
 import { siteHref } from './rows.js'
 
 /**
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
  */
 export default {
 	name: 'QuickTiles',
@@ -53,7 +53,7 @@ export default {
 		/**
 		 * @param {string} route An in-site route.
 		 * @return {string} Its real address.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
 		 */
 		hrefOf(route) {
 			return siteHref(route)
@@ -65,7 +65,7 @@ export default {
 		 * @param {MouseEvent} event The click.
 		 * @param {object} tile The tile.
 		 * @return {void}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
 		 */
 		open(event, tile) {
 			if (event?.ctrlKey || event?.metaKey || event?.shiftKey) {

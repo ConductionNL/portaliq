@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use Throwable;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 class PortalAccountInvitationListener implements IEventListener {
 
@@ -64,8 +64,8 @@ class PortalAccountInvitationListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
-	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function handle(Event $event): void {
 		if (($event instanceof PortalAccountInvitationRequestedEvent) === false) {
@@ -93,7 +93,7 @@ class PortalAccountInvitationListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	private function answerMail(PortalAccountInvitationRequestedEvent $event): void {
 		$issued = $this->issuedInvitation(event: $event);
@@ -150,7 +150,7 @@ class PortalAccountInvitationListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	private function answerCode(PortalAccountInvitationRequestedEvent $event): void {
 		try {

@@ -76,7 +76,7 @@
  * DeclineDialog) take the RowActionDialog props, minus `rowActions`; the
  * signing dialog takes `viewAction` instead.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
  */
 
 import { defineAsyncComponent } from 'vue'

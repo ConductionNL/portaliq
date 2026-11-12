@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-form-analytics-must-never-carry-a-value
+ * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-form-analytics-must-never-carry-a-value
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ namespace OCA\Portaliq\Service\Traffic;
  *
  * Pure: sessions in, rows out.
  *
- * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-form-analytics-must-never-carry-a-value
+ * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-form-analytics-must-never-carry-a-value
  */
 class TrafficFormStats {
 
@@ -60,7 +60,7 @@ class TrafficFormStats {
 	 *
 	 * @return array<int, array<string, mixed>> Rows of `{formId, starts, submits, abandons, completionRate, fields}`.
 	 *
-	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-form-analytics-must-never-carry-a-value
+	 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-form-analytics-must-never-carry-a-value
 	 */
 	public function rows(array $sessions): array {
 		$forms = [];

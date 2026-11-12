@@ -22,7 +22,7 @@
 
 <script>
 /**
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-loading-and-empty-states-must-say-what-is-happening-req-smo-009
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-loading-and-empty-states-must-say-what-is-happening-req-smo-009
  */
 export default {
 	name: 'LoadingSkeleton',
@@ -37,7 +37,7 @@ export default {
 	computed: {
 		/**
 		 * @return {number} One to ten rows.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-loading-and-empty-states-must-say-what-is-happening-req-smo-009
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-loading-and-empty-states-must-say-what-is-happening-req-smo-009
 		 */
 		count() {
 			return Math.min(Math.max(Math.round(this.rows) || 1, 1), 10)

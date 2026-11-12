@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use Throwable;
 /**
  * Staff authoring for newsletters.
  *
- * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- `IUserSession` is the
  * gate-7 (no-admin-idor) authorization guard every `#[NoAdminRequired]`
@@ -97,7 +97,7 @@ class NewsletterController extends Controller {
 	 *
 	 * @return JSONResponse The created draft, or 400/500.
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsletter-composes-existing-news-items-with-an-archive
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsletter-composes-existing-news-items-with-an-archive
 	 */
 	#[NoAdminRequired]
 	public function create(string $title, array $itemRefs, array $target): JSONResponse {
@@ -127,7 +127,7 @@ class NewsletterController extends Controller {
 	 *
 	 * @return JSONResponse `{recipientCount}`, or 404.
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
 	 */
 	#[NoAdminRequired]
 	public function preflight(string $id): JSONResponse {
@@ -155,7 +155,7 @@ class NewsletterController extends Controller {
 	 *
 	 * @return JSONResponse The sent object, 422 `{"error":"empty-audience"}`, or 404.
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsletter-send-is-preceded-by-a-recipient-count-preflight
 	 */
 	#[NoAdminRequired]
 	public function send(string $id): JSONResponse {

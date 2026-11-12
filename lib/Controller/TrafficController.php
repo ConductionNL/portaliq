@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
  */
 
 declare(strict_types=1);
@@ -65,7 +65,7 @@ use Throwable;
  * authenticated callers at Nextcloud's default, which is far lower, so an
  * editor previewing their own site would be throttled before a visitor.
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the edge of the
  * collector meets the resolver, the ingest, the body reader, the app
@@ -134,7 +134,7 @@ class TrafficController extends Controller {
 	 *
 	 * @return Response 204, or a 400 with a reason.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -212,7 +212,7 @@ class TrafficController extends Controller {
 	 *
 	 * @return Response 204, a 400 with a reason, or a 401.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -314,7 +314,7 @@ class TrafficController extends Controller {
 	 *
 	 * @return Response 204, or a 400 with a reason.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -343,7 +343,7 @@ class TrafficController extends Controller {
 	 *
 	 * @return DataDisplayResponse The script, a 304, or a 404.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -363,7 +363,7 @@ class TrafficController extends Controller {
 	 *
 	 * @return DataDisplayResponse A 1x1 GIF, always.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -408,7 +408,7 @@ class TrafficController extends Controller {
 	 *
 	 * @return DataDisplayResponse The script, a 304, or a 404.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-served-client-must-be-one-file-for-every-renderer
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-served-client-must-be-one-file-for-every-renderer
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -517,7 +517,7 @@ class TrafficController extends Controller {
 	 *
 	 * @return string The subjectRef, or ''.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-account-linking-must-attach-only-a-pseudonymous-reference
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-account-linking-must-attach-only-a-pseudonymous-reference
 	 */
 	private function subjectRef(): string {
 		$header = trim($this->request->getHeader('Authorization'));

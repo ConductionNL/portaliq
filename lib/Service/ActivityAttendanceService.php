@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-mark-attendance-per-session
+ * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-mark-attendance-per-session
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ use OCP\AppFramework\Utility\ITimeFactory;
 /**
  * Marks attendance for one session and one child.
  *
- * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-mark-attendance-per-session
+ * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-mark-attendance-per-session
  */
 class ActivityAttendanceService {
 	/**
@@ -91,7 +91,7 @@ class ActivityAttendanceService {
 	 *
 	 * @return array{attendance?: array<string, mixed>, error?: string}
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-mark-attendance-per-session
+	 * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-mark-attendance-per-session
 	 */
 	public function mark(string $activityId, string $sessionId, string $childRef, string $status, string $markedByRef): array {
 		return $this->record(
@@ -106,7 +106,7 @@ class ActivityAttendanceService {
 	 *
 	 * @return array{attendance?: array<string, mixed>, error?: string}
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-mark-attendance-per-session
+	 * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-mark-attendance-per-session
 	 */
 	private function record(AttendanceMark $mark): array {
 		$activity = $this->store->lookup(schema: ActivityStore::OFFER, id: $mark->activityId);

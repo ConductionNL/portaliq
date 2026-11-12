@@ -206,7 +206,7 @@ function clockTime(date, locale) {
 }
 
 /**
- * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-calendar-block-must-show-dated-rows-as-a-list-and-a-month
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-calendar-block-must-show-dated-rows-as-a-list-and-a-month
  */
 export default {
 	name: 'CalendarBlock',
@@ -293,7 +293,7 @@ export default {
 		 *
 		 * @param {object} item The item.
 		 * @return {string}
-		 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-a-calendar-block-must-show-dated-rows-as-a-list-and-a-month
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-calendar-block-must-show-dated-rows-as-a-list-and-a-month
 		 */
 		when(item) {
 			const sameDay = dayKey(item.start) === dayKey(item.end)

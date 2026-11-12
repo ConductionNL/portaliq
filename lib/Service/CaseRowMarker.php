@@ -99,7 +99,7 @@ class CaseRowMarker {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
+	 * @spec openspec/changes/archive/2026-10-07-citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
 	 */
 	public function hasEnded(array $row, string $closedField): bool {
 		$withdrawnAt = ($row['withdrawnAt'] ?? null);

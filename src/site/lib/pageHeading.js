@@ -33,7 +33,7 @@ function headingLevel(props) {
  *
  * @param {Array<object>} widgets The blocks of the hero and main regions.
  * @return {boolean} True when the renderer must not add a title.
- * @spec openspec/changes/site-page-layout/specs/site-look/spec.md#requirement-a-page-must-have-one-title-heading
+ * @spec openspec/specs/site-look/spec.md#requirement-a-page-must-have-one-title-heading
  */
 export function blocksOwnHeading(widgets) {
 	return (Array.isArray(widgets) ? widgets : []).some(

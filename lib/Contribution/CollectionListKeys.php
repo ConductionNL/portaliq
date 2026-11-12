@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Normalises `limit` and `sort` on a collection block and `range` on a calendar block.
  *
- * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
  */
 class CollectionListKeys {
 	/**
@@ -57,8 +57,8 @@ class CollectionListKeys {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
-	 * @spec openspec/changes/collection-block-label/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-keeps-its-own-heading
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-keeps-its-own-heading
 	 */
 	public function collectionKeys(array $block, ?array $collection): array {
 		$out = [];
@@ -112,7 +112,7 @@ class CollectionListKeys {
 	 *
 	 * @return array<string, string> `['label' => ...]` or [].
 	 *
-	 * @spec openspec/changes/collection-block-label/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-keeps-its-own-heading
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-keeps-its-own-heading
 	 */
 	private function label(array $block): array {
 		$label = ($block['label'] ?? null);
@@ -144,7 +144,7 @@ class CollectionListKeys {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-may-show-its-rows-as-cards-with-a-progress-figure-req-smo-028
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-may-show-its-rows-as-cards-with-a-progress-figure-req-smo-028
 	 */
 	private function cards(array $block, ?array $collection): array {
 		if (($block['display'] ?? null) !== 'cards') {
@@ -206,7 +206,7 @@ class CollectionListKeys {
 	 *
 	 * @return array<int, string>
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-may-show-its-rows-as-cards-with-a-progress-figure-req-smo-028
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-block-may-show-its-rows-as-cards-with-a-progress-figure-req-smo-028
 	 */
 	private function titleFields(array $block, ?array $collection): array {
 		$titles = [];
@@ -226,7 +226,7 @@ class CollectionListKeys {
 	 *
 	 * @return array<string, string>
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 	 */
 	public function calendarKeys(array $block): array {
 		$range = ($block['range'] ?? null);

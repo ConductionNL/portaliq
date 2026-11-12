@@ -77,7 +77,7 @@ class PortalProviderLocator {
 	 *
 	 * @return mixed What the provider returned; null when it has no `getContribution`.
 	 *
-	 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-the-portal-api-must-ask-contributing-apps-in-the-portals-language
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-the-portal-api-must-ask-contributing-apps-in-the-portals-language
 	 */
 	public function contributionOf(object $provider, array $subject): mixed {
 		if (method_exists($provider, 'getContribution') === false) {

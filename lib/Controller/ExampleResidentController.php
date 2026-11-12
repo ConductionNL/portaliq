@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+ * @spec openspec/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use OCP\IURLGenerator;
 /**
  * The one-click demo sign-in for the example resident.
  *
- * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+ * @spec openspec/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
  */
 class ExampleResidentController extends Controller {
 
@@ -92,7 +92,7 @@ class ExampleResidentController extends Controller {
 	 *
 	 * @return Response A redirect carrying the bearer in the URL fragment, or 404.
 	 *
-	 * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+	 * @spec openspec/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
 	 * @spec openspec/changes/demo-sign-in-beside-the-account/specs/example-resident/spec.md#requirement-a-demo-may-sign-in-each-example-resident-with-one-click
 	 */
 	#[PublicPage]
@@ -190,7 +190,7 @@ class ExampleResidentController extends Controller {
 	 *
 	 * @return string The user id, or ''.
 	 *
-	 * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+	 * @spec openspec/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
 	 */
 	private function residentUser(string $id, string $portal, string $resident): string {
 		if ($this->signIns->open() === false || $portal === '') {
@@ -219,7 +219,7 @@ class ExampleResidentController extends Controller {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+	 * @spec openspec/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
 	 */
 	private function offersNextcloud(?array $site, string $portal): bool {
 		if ($site === null || (string)($site['slug'] ?? '') !== $portal) {

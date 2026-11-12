@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/parent-pwa-installability/specs/parent-pwa-installability/spec.md
+ * @spec openspec/specs/parent-pwa-installability/spec.md
  */
 
 declare(strict_types=1);
@@ -48,7 +48,7 @@ use OCP\IURLGenerator;
 /**
  * Serves the manifest and the service worker.
  *
- * @spec openspec/changes/parent-pwa-installability/specs/parent-pwa-installability/spec.md
+ * @spec openspec/specs/parent-pwa-installability/spec.md
  */
 class PortalManifestController extends Controller {
 
@@ -78,7 +78,7 @@ class PortalManifestController extends Controller {
 	 *
 	 * @return DataDisplayResponse
 	 *
-	 * @spec openspec/changes/parent-pwa-installability/specs/parent-pwa-installability/spec.md#requirement-the-portal-serves-a-web-app-manifest-naming-the-resolved-portal
+	 * @spec openspec/specs/parent-pwa-installability/spec.md#requirement-the-portal-serves-a-web-app-manifest-naming-the-resolved-portal
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -153,7 +153,7 @@ class PortalManifestController extends Controller {
 	 *
 	 * @return DataDisplayResponse
 	 *
-	 * @spec openspec/changes/parent-pwa-installability/specs/parent-pwa-installability/spec.md#requirement-the-service-worker-caches-the-app-shell-and-never-the-api
+	 * @spec openspec/specs/parent-pwa-installability/spec.md#requirement-the-service-worker-caches-the-app-shell-and-never-the-api
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -207,7 +207,7 @@ class PortalManifestController extends Controller {
 	 *
 	 * @return string The scope, ending in a slash.
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-service-worker-must-cache-the-site-shell-req-srp-045
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-service-worker-must-cache-the-site-shell-req-srp-045
 	 */
 	private function serviceWorkerScope(): string {
 		$suffix = 'portal/sw.js';
@@ -244,7 +244,7 @@ class PortalManifestController extends Controller {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-service-worker-must-cache-the-site-shell-req-srp-045
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-service-worker-must-cache-the-site-shell-req-srp-045
 	 */
 	private function serviceWorkerSourcePath(string $appRoot): string {
 		$source = $appRoot . '/src/shared/serviceWorker.js';
@@ -290,7 +290,7 @@ class PortalManifestController extends Controller {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-the-site-must-be-installable-req-srp-044
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-site-must-be-installable-req-srp-044
 	 */
 	private function startUrl(string $orgValue, string $portalSlug): string {
 		$params = [];

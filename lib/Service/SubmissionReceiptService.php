@@ -225,7 +225,7 @@ class SubmissionReceiptService {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-a-notification-mail-and-a-task-notice-are-written-in-the-portals-language-only
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-a-notification-mail-and-a-task-notice-are-written-in-the-portals-language-only
 	 */
 	private function doRecord(ReceiptRun $run): void {
 		$run->referenceId = $this->generateReferenceId();

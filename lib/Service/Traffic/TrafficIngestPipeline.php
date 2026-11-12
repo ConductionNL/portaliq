@@ -29,7 +29,7 @@ use OCA\Portaliq\Service\TrafficEventValidator;
 /**
  * Finds the portal, resolves its settings, validates the event and stores the record.
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
  */
 final class TrafficIngestPipeline {
 	/**
@@ -40,7 +40,7 @@ final class TrafficIngestPipeline {
 	 * @param TrafficEventValidator $validator Admits or refuses an event.
 	 * @param TrafficEventStore     $store     Stores the records.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
 	 */
 	public function __construct(
 		public readonly PortalResolver $portals,

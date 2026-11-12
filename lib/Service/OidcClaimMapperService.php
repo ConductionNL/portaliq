@@ -30,7 +30,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T05
+ * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T05
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use OCA\Portaliq\Service\Branch\BranchNumber;
 /**
  * Provider presets + claim/LoA mapping for the OIDC broker login edge.
  *
- * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T05
+ * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T05
  */
 class OidcClaimMapperService {
 	/**
@@ -121,7 +121,7 @@ class OidcClaimMapperService {
 	 * @return array<string, mixed>|null The merged config, or null when the
 	 *                                   provider is unknown.
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T05
 	 */
 	public function applyPreset(string $provider, array $rawConfig): ?array {
 		$preset = (self::PRESETS[$provider] ?? null);
@@ -240,7 +240,7 @@ class OidcClaimMapperService {
 	 *
 	 * @return array{identityType: string, identityRef: string, subjectRef: string|null, audience: string, branch: string}|null
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T05
 	 * @spec openspec/specs/supplier-portal/spec.md#the-subject-reference-is-server-derived-never-client-supplied
 	 */
 	public function mapClaims(array $claims, array $config): ?array {
@@ -309,7 +309,7 @@ class OidcClaimMapperService {
 	 *
 	 * @return string One of `low`, `substantial`, `high`.
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T05
 	 * @spec openspec/specs/supplier-portal/spec.md#broker-loa-maps-to-portal-trust-under-privileging-on-ambiguity
 	 *
 	 * @SuppressWarnings(PHPMD.StaticAccess) -- deliberate reuse of the ONE
@@ -400,7 +400,7 @@ class OidcClaimMapperService {
 	 *
 	 * @return array<string, string> provider => label.
 	 *
-	 * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T05
+	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T05
 	 */
 	public function providerLabels(): array {
 		$labels = [];
