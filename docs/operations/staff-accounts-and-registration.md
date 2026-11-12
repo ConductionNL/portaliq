@@ -68,6 +68,8 @@ The sign-in screen of the portal's site (under **My page**) shows extra ways in 
 
 Registration passes the portal's challenge against automated sign-ups. If the portal names a honeypot field, the form carries it empty.
 
+The challenge's proof of work is single-use: a solved nonce carries one submission through and a second submission with the same nonce is refused. That needs a memcache (APCu for one web server, Redis or Memcached for several, because APCu is per server). On an instance with no memcache configured, Portaliq cannot remember spent nonces and refuses every submission on a surface whose proof of work is switched on, rather than accept a replay. Configure a memcache in `config.php`, or switch the proof of work off for that portal.
+
 Under **Anyone who confirms their e-mail address**, Portaliq mails an activation link. Following it activates the account and confirms the address. The link works once and for two days. Registering again with the same address sends a new link.
 
 After registration or an accepted invitation, the screen tells the person to sign in with the e-mail sign-in. Their first sign-in with that address finds the account.

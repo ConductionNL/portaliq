@@ -95,6 +95,7 @@ class PortalChallengeServiceTest extends TestCase {
 		$added  = [];
 		$memory = $this->createMock(IMemcache::class);
 		$memory->expects($this->never())->method('set');
+		$memory->expects($this->never())->method('hasKey');
 		$memory->method('add')->willReturnCallback(
 			static function ($key, $value, $ttl = 0) use (&$added): bool {
 				if (array_key_exists($key, $added) === true) {
@@ -106,6 +107,7 @@ class PortalChallengeServiceTest extends TestCase {
 			}
 		);
 		$this->cacheFactory = $this->createMock(ICacheFactory::class);
+		$this->cacheFactory->method('isAvailable')->willReturn(true);
 		$this->cacheFactory->method('createDistributed')->willReturn($memory);
 
 		$service  = $this->service();
@@ -128,6 +130,143 @@ class PortalChallengeServiceTest extends TestCase {
 		$this->assertSame([hash('sha256', 'form:nonce-1') => (PortalChallengeService::TTL_SECONDS - 100)], $added);
 
 	}//end testAMemcacheAddsTheNonceOnceAndRefusesTheReplay()
+
+	/**
+	 * Barry's finding on #1990: the single atomic call is the whole check. The
+	 * memcache is asked to `add` the nonce's hash once per submission and
+	 * nothing else is called on it: no hasKey-then-set, which two concurrent
+	 * requests could both pass.
+	 *
+	 * @return void
+	 */
+	public function testSpendingUsesTheOneAtomicAddAndNothingElse(): void {
+		$memory = $this->createMock(IMemcache::class);
+		$memory->expects($this->once())->method('add')->with(hash('sha256', 'form:nonce-1'), 1, $this->anything())->willReturn(true);
+		$memory->expects($this->never())->method('hasKey');
+		$memory->expects($this->never())->method('set');
+		$memory->expects($this->never())->method('get');
+		$this->cacheFactory = $this->createMock(ICacheFactory::class);
+		$this->cacheFactory->method('isAvailable')->willReturn(true);
+		$this->cacheFactory->method('createDistributed')->willReturn($memory);
+
+		$service = $this->service();
+		$site    = $this->site(difficulty: 8);
+		$issued  = $service->issue(site: $site, surface: 'form');
+
+		$this->assertTrue($service->accepts(
+			site: $site,
+			surface: 'form',
+			submission: [],
+			nonce: 'nonce-1',
+			solution: $this->solve(nonce: 'nonce-1', difficulty: 8),
+			expiresAt: $issued['expiresAt'],
+			signature: $issued['signature']
+		));
+
+	}//end testSpendingUsesTheOneAtomicAddAndNothingElse()
+
+	/**
+	 * A nonce whose add loses (another request got there first) is refused.
+	 *
+	 * @return void
+	 */
+	public function testANonceThatLosesTheAtomicAddIsRefused(): void {
+		$memory = $this->createMock(IMemcache::class);
+		$memory->expects($this->once())->method('add')->willReturn(false);
+		$memory->expects($this->never())->method('hasKey');
+		$memory->expects($this->never())->method('set');
+		$this->cacheFactory = $this->createMock(ICacheFactory::class);
+		$this->cacheFactory->method('isAvailable')->willReturn(true);
+		$this->cacheFactory->method('createDistributed')->willReturn($memory);
+
+		$service = $this->service();
+		$site    = $this->site(difficulty: 8);
+		$issued  = $service->issue(site: $site, surface: 'form');
+
+		$this->assertFalse($service->accepts(
+			site: $site,
+			surface: 'form',
+			submission: [],
+			nonce: 'nonce-1',
+			solution: $this->solve(nonce: 'nonce-1', difficulty: 8),
+			expiresAt: $issued['expiresAt'],
+			signature: $issued['signature']
+		));
+
+	}//end testANonceThatLosesTheAtomicAddIsRefused()
+
+	/**
+	 * No memcache configured: Nextcloud's NullCache is not "available" and its
+	 * add() would say yes to everything, so the store is never touched and the
+	 * submission is refused (fail closed) however well it is solved.
+	 *
+	 * @return void
+	 */
+	public function testWithoutAMemcacheTheChallengeFailsClosed(): void {
+		$this->cacheFactory = $this->createMock(ICacheFactory::class);
+		$this->cacheFactory->method('isAvailable')->willReturn(false);
+		$this->cacheFactory->expects($this->never())->method('createDistributed');
+
+		$service = $this->service();
+		$site    = $this->site(difficulty: 8);
+		$issued  = $service->issue(site: $site, surface: 'form');
+
+		$this->assertFalse($service->accepts(
+			site: $site,
+			surface: 'form',
+			submission: [],
+			nonce: 'nonce-1',
+			solution: $this->solve(nonce: 'nonce-1', difficulty: 8),
+			expiresAt: $issued['expiresAt'],
+			signature: $issued['signature']
+		));
+
+	}//end testWithoutAMemcacheTheChallengeFailsClosed()
+
+	/**
+	 * A cache with no atomic add (a plain ICache) is not trusted either: the
+	 * old hasKey-then-set path is gone, so neither is called and the
+	 * submission is refused.
+	 *
+	 * @return void
+	 */
+	public function testACacheWithoutAnAtomicAddFailsClosedAndNeverChecksThenSets(): void {
+		$plain = $this->createMock(ICache::class);
+		$plain->expects($this->never())->method('hasKey');
+		$plain->expects($this->never())->method('set');
+		$this->cacheFactory = $this->createMock(ICacheFactory::class);
+		$this->cacheFactory->method('isAvailable')->willReturn(true);
+		$this->cacheFactory->method('createDistributed')->willReturn($plain);
+
+		$service = $this->service();
+		$site    = $this->site(difficulty: 8);
+		$issued  = $service->issue(site: $site, surface: 'form');
+
+		$this->assertFalse($service->accepts(
+			site: $site,
+			surface: 'form',
+			submission: [],
+			nonce: 'nonce-1',
+			solution: $this->solve(nonce: 'nonce-1', difficulty: 8),
+			expiresAt: $issued['expiresAt'],
+			signature: $issued['signature']
+		));
+
+	}//end testACacheWithoutAnAtomicAddFailsClosedAndNeverChecksThenSets()
+
+	/**
+	 * With the challenge switched off no nonce is spent, so a portal that
+	 * runs no proof of work still works on an instance without a memcache.
+	 *
+	 * @return void
+	 */
+	public function testAPortalWithTheChallengeOffNeedsNoMemcache(): void {
+		$this->cacheFactory = $this->createMock(ICacheFactory::class);
+		$this->cacheFactory->method('isAvailable')->willReturn(false);
+
+		$this->assertTrue($this->service()->accepts(site: [], surface: 'form', submission: [], nonce: '', solution: ''));
+
+	}//end testAPortalWithTheChallengeOffNeedsNoMemcache()
 
 	/**
 	 * aud-f1: a refused submission (unsolved work) does not burn the nonce;
@@ -382,7 +521,7 @@ class PortalChallengeServiceTest extends TestCase {
 	}//end service()
 
 	/**
-	 * A cache factory over one in-memory store, shared by every service this
+	 * A cache factory over one in-memory memcache (atomic add), shared by every service this
 	 * test builds, the way a distributed cache is shared by web servers.
 	 *
 	 * @return ICacheFactory
@@ -393,11 +532,12 @@ class PortalChallengeServiceTest extends TestCase {
 		}
 
 		$entries = [];
-		$cache   = $this->createMock(ICache::class);
-		$cache->method('hasKey')->willReturnCallback(static function (string $key) use (&$entries): bool {
-			return array_key_exists($key, $entries);
-		});
-		$cache->method('set')->willReturnCallback(static function (string $key, $value, int $ttl = 0) use (&$entries): bool {
+		$cache   = $this->createMock(IMemcache::class);
+		$cache->method('add')->willReturnCallback(static function (string $key, $value, int $ttl = 0) use (&$entries): bool {
+			if (array_key_exists($key, $entries) === true) {
+				return false;
+			}
+
 			$entries[$key] = $value;
 			return true;
 		});

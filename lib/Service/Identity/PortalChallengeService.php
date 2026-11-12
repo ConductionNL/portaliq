@@ -20,15 +20,18 @@
  * it once, and send the same pair for as long as they liked. Signing it is
  * what makes solving the work again the only way through.
  *
- * A nonce is also single-use where the instance has a memcache: the first
- * submission it carries through is remembered, by the nonce's hash, in the
- * distributed cache until the nonce expires, and a second submission with
- * the same nonce is refused. Single-use needs a configured memcache: APCu
- * covers one web server, several web servers need a shared one (Redis or
- * Memcached), because with APCu alone each server keeps its own store. With
- * no memcache at all Nextcloud hands out a NullCache and the check fails
- * open, as it did before: refusing every registration and report filing on
- * such an instance would refuse the visitor rather than the bot.
+ * A nonce is also single-use, and that needs a memcache: the first submission
+ * it carries through is remembered, by the nonce's hash, in the distributed
+ * cache until the nonce expires, with one atomic add, so two submissions
+ * racing with the same nonce cannot both get through. The store must be a real
+ * memcache that can add atomically: APCu covers one web server, several web
+ * servers need a shared one (Redis or Memcached), because with APCu alone each
+ * server keeps its own store and a nonce spent on one is still good on the
+ * others. With no memcache at all Nextcloud hands out a NullCache, which
+ * remembers nothing, and the check fails CLOSED: while the challenge is
+ * enabled, every submission is refused, because accepting one would mean
+ * accepting a replay. An operator without a memcache either configures one or
+ * switches the proof of work off.
  *
  * @category Service
  * @package  OCA\Portaliq\Service\Identity
@@ -50,7 +53,6 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use DateTimeImmutable;
-use OCP\ICache;
 use OCP\ICacheFactory;
 use OCP\IMemcache;
 use OCP\Security\ICrypto;
@@ -84,13 +86,6 @@ class PortalChallengeService {
 	 * The cache prefix under which spent nonces are remembered.
 	 */
 	private const SPENT_PREFIX = 'portaliq-challenge-spent';
-
-	/**
-	 * The store of spent nonces, built on first use.
-	 *
-	 * @var ICache|null
-	 */
-	private ?ICache $spent = null;
 
 	/**
 	 * Constructor.
@@ -281,8 +276,13 @@ class PortalChallengeService {
 	 * Mark a nonce used, or report that it already was.
 	 *
 	 * Remembered by its hash until it expires, which is as long as it could be
-	 * replayed. A memcache adds atomically, so two submissions racing with one
-	 * nonce cannot both get through.
+	 * replayed. The only way it is remembered is one atomic add on a memcache:
+	 * the first add wins and every other one finds the key and is refused, so
+	 * two submissions racing with one nonce cannot both get through. A cache
+	 * that cannot add atomically (a plain ICache, where "is it there?" and
+	 * "put it there" are two steps) is not used at all, and neither is the
+	 * NullCache that Nextcloud hands out without a memcache, whose add always
+	 * succeeds: both would let a replay through, so the nonce is refused.
 	 *
 	 * @param string $nonce The nonce, already proven ours and solved.
 	 * @param string $surface The surface it was issued for.
@@ -294,38 +294,39 @@ class PortalChallengeService {
 	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	private function spend(string $nonce, string $surface, int $expiresAt, ?DateTimeImmutable $now): bool {
-		$key = hash('sha256', ($surface . ':' . $nonce));
-		$ttl = max(1, ($expiresAt - ($now ?? new DateTimeImmutable())->getTimestamp()));
-
 		$store = $this->spentStore();
-		if ($store instanceof IMemcache) {
-			return (bool)$store->add($key, 1, $ttl);
-		}
-
-		if ($store->hasKey($key) === true) {
+		if ($store === null) {
 			return false;
 		}
 
-		$store->set($key, 1, $ttl);
+		$key = hash('sha256', ($surface . ':' . $nonce));
+		$ttl = max(1, ($expiresAt - ($now ?? new DateTimeImmutable())->getTimestamp()));
 
-		return true;
+		return (bool)$store->add($key, 1, $ttl);
 	}//end spend()
 
 	/**
 	 * The distributed cache, so a nonce spent on one web server is spent on
-	 * all. Nextcloud already falls back to the local cache when no
-	 * distributed one is configured (so with APCu only, each web server has
-	 * its own store), and to a NullCache when there is no memcache at all, in
-	 * which case nothing is remembered and single-use does not hold.
+	 * all, or null when there is no store that can be trusted to remember.
+	 * Nextcloud already falls back to the local cache when no distributed one
+	 * is configured (so with APCu only, each web server has its own store),
+	 * and to a NullCache when there is no memcache at all: that one is not
+	 * available, and its add() reports success for every key, so single-use
+	 * cannot hold on it. A store that is not an IMemcache has no atomic add.
 	 *
-	 * @return ICache
+	 * @return IMemcache|null
 	 */
-	private function spentStore(): ICache {
-		if ($this->spent === null) {
-			$this->spent = $this->caches->createDistributed(self::SPENT_PREFIX);
+	private function spentStore(): ?IMemcache {
+		if ($this->caches->isAvailable() === false) {
+			return null;
 		}
 
-		return $this->spent;
+		$store = $this->caches->createDistributed(self::SPENT_PREFIX);
+		if (($store instanceof IMemcache) === false) {
+			return null;
+		}
+
+		return $store;
 	}//end spentStore()
 
 	/**
