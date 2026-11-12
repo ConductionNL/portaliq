@@ -134,6 +134,50 @@ if (interface_exists(\OCA\OpenRegister\Mcp\IMcpToolProvider::class) === false) {
 // hydra connection-registry design D6 and integriq's own classes on
 // `development`, and load only when the real classes are absent. Without OCP on
 // the autoload path their parent class is missing, so they are skipped then.
+// OpenRegister's leaf contract (change-proposal-queue): verbatim copies under
+// tests/Stubs/OpenRegister, used only when OpenRegister itself is not loadable,
+// so the leaf tests run in CI where no sibling checkout exists.
+foreach ([
+	'Exception\\NotImplementedException' => 'Exception/NotImplementedException.php',
+	'Service\\Integration\\IntegrationProvider' => 'Service/Integration/IntegrationProvider.php',
+	'Service\\Integration\\LeafIdentity' => 'Service/Integration/LeafIdentity.php',
+	'Service\\Integration\\LeafAvailability' => 'Service/Integration/LeafAvailability.php',
+	'Service\\Integration\\LeafRendering' => 'Service/Integration/LeafRendering.php',
+	'Service\\Integration\\LeafDescriptor' => 'Service/Integration/LeafDescriptor.php',
+	'Event\\RegisterLeafProvidersEvent' => 'Event/RegisterLeafProvidersEvent.php',
+	// The form submit and draft value objects (openregister #7788, #7964):
+	// DraftOwner first, the others name it.
+	'Service\\Object\\DraftOwner' => 'Service/Object/DraftOwner.php',
+	'Service\\Object\\DiscardDraftRequest' => 'Service/Object/DiscardDraftRequest.php',
+	'Service\\Form\\FormSubmitter' => 'Service/Form/FormSubmitter.php',
+	'Service\\Form\\FormSubmission' => 'Service/Form/FormSubmission.php',
+] as $orStubClass => $orStubFile) {
+	if (class_exists('\\OCP\\EventDispatcher\\Event') === true
+		&& class_exists('\\OCA\\OpenRegister\\' . $orStubClass) === false
+		&& interface_exists('\\OCA\\OpenRegister\\' . $orStubClass) === false
+	) {
+		require_once __DIR__ . '/Stubs/OpenRegister/' . $orStubFile;
+	}
+}
+
+unset($orStubClass, $orStubFile);
+
+// Thematiq's contrast arithmetic (nldesign-theme-integration): a verbatim copy,
+// used only when thematiq itself is not loadable.
+if (class_exists('\\OCA\\Thematiq\\Service\\ContrastService') === false) {
+	require_once __DIR__ . '/Stubs/Thematiq/Service/ContrastService.php';
+}
+
+// And its custom token set validator (nldesign-theme-integration 4.2): a
+// verbatim copy, plus the one converter constant it reads.
+if (class_exists('\\OCA\\Thematiq\\Service\\TokenSetConverterService') === false) {
+	require_once __DIR__ . '/Stubs/Thematiq/Service/TokenSetConverterService.php';
+}
+
+if (class_exists('\\OCA\\Thematiq\\Service\\CustomTokenSetValidator') === false) {
+	require_once __DIR__ . '/Stubs/Thematiq/Service/CustomTokenSetValidator.php';
+}
+
 foreach (['ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent', 'DigitalPostSendRequestedEvent', 'DigitalPostDeliveredEvent'] as $integriqStubEvent) {
 	if (class_exists('\\OCP\\EventDispatcher\\Event') === true
 		&& class_exists('\\OCA\\Integriq\\Event\\' . $integriqStubEvent) === false

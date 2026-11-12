@@ -24,6 +24,7 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(PublicCatalogueQuery::class)]
 #[UsesClass(DerivedCatalogueFacets::class)]
 #[UsesClass(BearerSessionResolver::class)]
+#[UsesClass(\OCA\Portaliq\Service\CatalogueScope::class)]
 class ContentCatalogueControllerTest extends TestCase {
 	/**
 	 * Build the controller over doubles.
