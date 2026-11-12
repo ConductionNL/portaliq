@@ -32,6 +32,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Portaliq\Portal\PortalContributionProvider
  * @uses   \OCA\Portaliq\Portal\FormSubmitActions
+ * @uses   \OCA\Portaliq\Service\RowIdLookup
  */
 class PortalContributionProviderGoldenTest extends TestCase {
 

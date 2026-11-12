@@ -47,6 +47,8 @@ use RuntimeException;
  * @covers \OCA\Portaliq\Service\Identity\PortalIdentityMailer
  * @covers \OCA\Portaliq\Service\Identity\ContactConfirmationMailer
  * @uses   \OCA\Portaliq\Service\Mail\MailSite
+ * @uses   \OCA\Portaliq\Service\Identity\IdentityMailRun
+ * @uses   \OCA\Portaliq\Service\Identity\IdentityNotice
  */
 class PortalMailOriginGoldenTest extends TestCase {
 
