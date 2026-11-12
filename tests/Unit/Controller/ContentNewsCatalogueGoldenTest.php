@@ -42,6 +42,7 @@ use PHPUnit\Framework\TestCase;
  * @uses   \OCA\Portaliq\Service\PortalSessionService
  * @uses   \OCA\Portaliq\Service\PublicCatalogueQuery
  * @uses   \OCA\Portaliq\Service\DerivedCatalogueFacets
+ * @uses   \OCA\Portaliq\Service\CatalogueScope
  */
 class ContentNewsCatalogueGoldenTest extends TestCase {
 

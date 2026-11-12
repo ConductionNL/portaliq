@@ -76,6 +76,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Portaliq\Service\PortalJwtService
  * @uses \OCA\Portaliq\Service\PortalUserDisplayNames
  * @uses \OCA\Portaliq\Service\RequiredFieldsGuard
+ * @uses   \OCA\Portaliq\Contribution\ActionGuards
+ * @uses   \OCA\Portaliq\Contribution\SchemaFieldProperty
  */
 class ContributionControllerLandingDestinationTest extends TestCase {
 

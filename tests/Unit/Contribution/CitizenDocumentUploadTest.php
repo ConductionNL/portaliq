@@ -19,6 +19,7 @@ use PHPUnit\Framework\TestCase;
  * replaces a document the case already carries.
  *
  * @covers \OCA\Portaliq\Contribution\CitizenDocumentUpload
+ * @uses   \OCA\Portaliq\Service\UploadedFile
  *
  * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
  */

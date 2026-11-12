@@ -30,6 +30,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Portaliq\Service\LandingPageProvisioningService
  * @uses   \OCA\Portaliq\Event\LandingPageRequestedEvent
+ * @uses   \OCA\Portaliq\Service\RowIdLookup
  */
 class LandingPageProvisioningGoldenTest extends TestCase {
 

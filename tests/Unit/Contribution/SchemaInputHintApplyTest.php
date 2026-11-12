@@ -6,12 +6,15 @@ namespace OCA\Portaliq\Tests\Unit\Contribution;
 
 use OCA\Portaliq\Contribution\SchemaInputHintNormaliser;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 /**
  * The schema hints added to an action, read straight from the normaliser.
  */
 #[CoversClass(SchemaInputHintNormaliser::class)]
+#[UsesClass(\OCA\Portaliq\Contribution\SchemaFieldProperty::class)]
+#[UsesClass(\OCA\Portaliq\Contribution\ValueLabelsNormaliser::class)]
 class SchemaInputHintApplyTest extends TestCase {
 	/**
 	 * Every whitelisted field gets exactly the input, value type and options recorded for it.
