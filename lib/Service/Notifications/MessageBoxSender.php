@@ -30,7 +30,6 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Notifications;
 
 use OCA\Portaliq\Contribution\PortalProviderLocator;
-use OCA\Portaliq\Contribution\TimelineProviderMethod;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
@@ -247,16 +246,31 @@ class MessageBoxSender {
 
 		$out = [];
 		foreach (['app', 'collection', 'id'] as $key) {
-			$value = ($record[$key] ?? null);
-			if (is_string($value) === false || $value === '') {
+			$out[$key] = $this->recordPart(record: $record, key: $key);
+			if ($out[$key] === '') {
 				return null;
 			}
-
-			$out[$key] = $value;
 		}
 
 		return $out;
 	}//end record()
+
+	/**
+	 * One part of the message's reference, or '' when it is not a non-empty string.
+	 *
+	 * @param array<string, mixed> $record The job's record.
+	 * @param string               $key    The part: `app`, `collection` or `id`.
+	 *
+	 * @return string
+	 */
+	private function recordPart(array $record, string $key): string {
+		$value = ($record[$key] ?? null);
+		if (is_string($value) === false) {
+			return '';
+		}
+
+		return $value;
+	}//end recordPart()
 
 	/**
 	 * The message, read the way the resident's own inbox reads it.
@@ -291,26 +305,7 @@ class MessageBoxSender {
 	 * @return string|null
 	 */
 	private function recipient(array $record, string $method): ?string {
-		$provider = $this->locator->locate(appId: $record['app']);
-		if ($provider === null || (new TimelineProviderMethod())->callableOn(provider: $provider, method: $method) === false) {
-			return null;
-		}
-
-		try {
-			$recipient = $provider->{$method}($record['id']);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Portaliq: message box recipient method failed',
-				['app' => $record['app'], 'method' => $method, 'exception' => get_class($e)]
-			);
-			return null;
-		}
-
-		if (is_string($recipient) === false || trim($recipient) === '') {
-			return null;
-		}
-
-		return trim($recipient);
+		return (new MessageBoxRecipient(locator: $this->locator, logger: $this->logger))->forRecord(record: $record, method: $method);
 	}//end recipient()
 
 	/**
@@ -382,13 +377,32 @@ class MessageBoxSender {
 
 		$out = [];
 		foreach ($value as $attachment) {
-			if (is_array($attachment) === true) {
-				$out[] = $attachment;
-			} elseif (is_string($attachment) === true && $attachment !== '') {
-				$out[] = ['id' => $attachment];
+			$reference = $this->attachmentReference(attachment: $attachment);
+			if ($reference !== null) {
+				$out[] = $reference;
 			}
 		}
 
 		return $out;
 	}//end attachments()
+
+	/**
+	 * One attachment as integriq takes it: an array as it is, a non-empty id
+	 * as `{id}`, anything else null.
+	 *
+	 * @param mixed $attachment The attachment.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function attachmentReference(mixed $attachment): ?array {
+		if (is_array($attachment) === true) {
+			return $attachment;
+		}
+
+		if (is_string($attachment) === true && $attachment !== '') {
+			return ['id' => $attachment];
+		}
+
+		return null;
+	}//end attachmentReference()
 }//end class
