@@ -20,6 +20,7 @@ use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\SubjectAssertionIssuer;
 use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\AppFramework\Http;
 use OCP\Http\Client\IClientService;
@@ -63,7 +64,7 @@ class ContributionTenantGuardTest extends TestCase {
 			$this->createMock(PortalSchemaReader::class),
 			$this->createMock(PortalInboxReader::class),
 			$this->createMock(PortalAuditHook::class),
-			new PortalActionForwarder($request, new InstanceLoopback($this->createMock(IClientService::class), $this->createMock(IURLGenerator::class), $this->createMock(InternalBaseUrl::class), $this->createMock(LoggerInterface::class)), $session),
+			new PortalActionForwarder($request, new InstanceLoopback($this->createMock(IClientService::class), $this->createMock(IURLGenerator::class), $this->createMock(InternalBaseUrl::class), $this->createMock(LoggerInterface::class)), $this->createMock(SubjectAssertionIssuer::class)),
 			$this->createMock(AuditTrailService::class),
 			$this->createMock(SubmissionReceiptService::class),
 			$this->createMock(NotificationDispatchService::class),

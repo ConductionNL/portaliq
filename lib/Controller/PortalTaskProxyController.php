@@ -47,8 +47,8 @@ use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Event\PortalClientWriteEvent;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\CitizenWriteRecorder;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PortalTaskGateway;
+use OCA\Portaliq\Service\Session\BearerSessionResolver;
 use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -95,7 +95,7 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalSessionService $session Resolves the bearer subject (fail-closed).
+	 * @param BearerSessionResolver $session Resolves the bearer subject (fail-closed).
 	 * @param PortalTaskGateway $gateway The assertion-signed seam client.
 	 * @param AuditTrailService $auditor Records the `complete` audit fact (fail-safe, never throws).
 	 * @param SubmissionReceiptService $receiptService WMEBV ontvangstbevestiging + proof log (fail-safe, never throws).
@@ -105,7 +105,7 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
+		private readonly BearerSessionResolver $session,
 		private readonly PortalTaskGateway $gateway,
 		private readonly AuditTrailService $auditor,
 		private readonly SubmissionReceiptService $receiptService,

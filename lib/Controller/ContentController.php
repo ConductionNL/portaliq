@@ -36,7 +36,7 @@ use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
 use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\BearerSessionResolver;
 use OCA\Portaliq\Service\SiteOrganisation;
 use OCA\Portaliq\Service\TrafficConfigResolver;
 use OCP\AppFramework\Controller;
@@ -90,7 +90,7 @@ class ContentController extends Controller {
 	 * @param PortalContributionRegistry $registry     Aggregates leaf apps' contributions.
 	 * @param PortalContributionFilter   $contribFilter Scopes that aggregate to one portal.
 	 * @param LoggerInterface            $logger       Records a provider failure the visitor never sees.
-	 * @param PortalSessionService       $session      Resolves the caller's portal session for the content gate.
+	 * @param BearerSessionResolver      $session      Resolves the caller's portal session for the content gate.
 	 * @param TrafficConfigResolver      $traffic      Resolves the portal's measurement configuration.
 	 * @param IURLGenerator              $urlGenerator Builds the absolute collector URL.
 	 * @param PortalNoticeReader         $notices      The notices running on the site now.
@@ -110,7 +110,7 @@ class ContentController extends Controller {
 		private readonly PortalContributionRegistry $registry,
 		private readonly PortalContributionFilter $contribFilter,
 		private readonly LoggerInterface $logger,
-		private readonly PortalSessionService $session,
+		private readonly BearerSessionResolver $session,
 		private readonly TrafficConfigResolver $traffic,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly PortalNoticeReader $notices,

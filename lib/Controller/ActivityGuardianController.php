@@ -31,7 +31,7 @@ use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Service\ActivityFeedReader;
 use OCA\Portaliq\Service\ActivitySignupService;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\BearerSessionResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -62,13 +62,13 @@ class ActivityGuardianController extends Controller implements PortalProtected {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
+	 * @param BearerSessionResolver $session Resolves the subject from the bearer.
 	 * @param ActivityFeedReader $feedReader The guardian-scoped read.
 	 * @param ActivitySignupService $signups Sign-up and withdraw.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
+		private readonly BearerSessionResolver $session,
 		private readonly ActivityFeedReader $feedReader,
 		private readonly ActivitySignupService $signups,
 	) {

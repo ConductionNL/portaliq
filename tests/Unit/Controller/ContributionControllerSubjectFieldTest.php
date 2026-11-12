@@ -19,6 +19,7 @@ use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\SubjectAssertionIssuer;
 use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
@@ -133,12 +134,12 @@ class ContributionControllerSubjectFieldTest extends TestCase {
 	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
 	 */
 	public function testADeclaredScopeClaimRidesInTheAssertion(): void {
-		$session = $this->createMock(PortalSessionService::class);
-		$session->expects($this->once())->method('issueAssertion')
+		$assertions = $this->createMock(SubjectAssertionIssuer::class);
+		$assertions->expects($this->once())->method('issueAssertion')
 			->with(self::SUBJECT, 'learnerRef', 'learner-profile-7')
 			->willReturn('ASSERTION_JWT_HERE');
 		$sent = [];
-		$response = $this->controller(action: $this->action(), scopeValue: 'learner-profile-7', sent: $sent, session: $session)->action('learniq', 'submitTest');
+		$response = $this->controller(action: $this->action(), scopeValue: 'learner-profile-7', sent: $sent, assertions: $assertions)->action('learniq', 'submitTest');
 		$this->assertSame(200, $response->getStatus());
 		$this->assertSame('ASSERTION_JWT_HERE', $sent['headers']['X-Portal-Subject']);
 
@@ -157,11 +158,11 @@ class ContributionControllerSubjectFieldTest extends TestCase {
 	 * @param string|null $scopeValue What the claim resolves to.
 	 * @param array<string, mixed> $sent Receives the outbound request options.
 	 * @param AuditTrailService|null $auditor The auditor.
-	 * @param PortalSessionService|null $session The session double, when a test pins the assertion.
+	 * @param SubjectAssertionIssuer|null $assertions The assertion double, when a test pins the assertion.
 	 *
 	 * @return ContributionController
 	 */
-	private function controller(array $action, ?string $scopeValue, array &$sent, ?AuditTrailService $auditor = null, ?PortalSessionService $session = null): ContributionController {
+	private function controller(array $action, ?string $scopeValue, array &$sent, ?AuditTrailService $auditor = null, ?SubjectAssertionIssuer $assertions = null): ContributionController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer token');
 		$request->method('getParam')->willReturnCallback(fn (string $key) => (self::BODY[$key] ?? null));
@@ -169,11 +170,12 @@ class ContributionControllerSubjectFieldTest extends TestCase {
 		$registry = $this->createMock(PortalContributionRegistry::class);
 		$registry->method('aggregateFor')->willReturn(['contributions' => [['app' => 'learniq', 'collections' => [], 'actions' => [$action]]]]);
 
-		if ($session === null) {
-			$session = $this->createMock(PortalSessionService::class);
-			$session->method('issueAssertion')->willReturn('ASSERTION_JWT_HERE');
+		if ($assertions === null) {
+			$assertions = $this->createMock(SubjectAssertionIssuer::class);
+			$assertions->method('issueAssertion')->willReturn('ASSERTION_JWT_HERE');
 		}
 
+		$session = $this->createMock(PortalSessionService::class);
 		$session->method('resolveFromBearer')->willReturn(self::SUBJECT);
 
 		$reader = $this->createMock(PortalObjectReader::class);
@@ -211,7 +213,7 @@ class ContributionControllerSubjectFieldTest extends TestCase {
 			$this->createMock(PortalSchemaReader::class),
 			$this->createMock(PortalInboxReader::class),
 			$this->createMock(PortalAuditHook::class),
-			new PortalActionForwarder($request, new InstanceLoopback($clientService, $urls, $this->createMock(InternalBaseUrl::class), $this->createMock(LoggerInterface::class)), $session),
+			new PortalActionForwarder($request, new InstanceLoopback($clientService, $urls, $this->createMock(InternalBaseUrl::class), $this->createMock(LoggerInterface::class)), $assertions),
 			($auditor ?? $this->createMock(AuditTrailService::class)),
 			$this->createMock(SubmissionReceiptService::class),
 			$this->createMock(NotificationDispatchService::class),

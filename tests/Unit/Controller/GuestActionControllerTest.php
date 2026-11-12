@@ -14,7 +14,12 @@ use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PortalSessionRevoker;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\BearerSessionResolver;
+use OCA\Portaliq\Service\Session\SessionRecords;
+use OCA\Portaliq\Service\Session\SessionSigningKey;
+use OCA\Portaliq\Service\Session\SubjectAssertionIssuer;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
@@ -292,14 +297,19 @@ class GuestActionControllerTest extends TestCase {
 		$appConfig->method('getValueString')->willReturnCallback(
 			fn (string $app, string $key, string $default = '') => ($key === 'jwt_signing_secret' ? str_repeat('s', 48) : $default)
 		);
+		$sessionReader = $this->createMock(PortalObjectReader::class);
+		$sessionAuditor = $this->createMock(AuditTrailService::class);
+		$signingKey = new SessionSigningKey($appConfig);
+		$records = new SessionRecords($sessionReader, new PortalSessionRevoker($sessionReader, $writer, $sessionAuditor, $logger));
 		$session = new PortalSessionService(
 			$config,
 			$this->createMock(ISecureRandom::class),
 			$this->createMock(LoggerInterface::class),
 			$writer,
-			$this->createMock(PortalObjectReader::class),
-			$this->createMock(AuditTrailService::class),
-			$appConfig
+			$sessionReader,
+			$sessionAuditor,
+			$signingKey,
+			new BearerSessionResolver($signingKey, $records, $logger)
 		);
 
 		$response = $this->createMock(IResponse::class);
@@ -328,7 +338,7 @@ class GuestActionControllerTest extends TestCase {
 		return new GuestActionController(
 			$request,
 			$registry,
-			new PortalActionForwarder($request, new InstanceLoopback($clientService, $urls, $this->createMock(InternalBaseUrl::class), $this->createMock(LoggerInterface::class)), $session),
+			new PortalActionForwarder($request, new InstanceLoopback($clientService, $urls, $this->createMock(InternalBaseUrl::class), $this->createMock(LoggerInterface::class)), new SubjectAssertionIssuer($signingKey)),
 			$portals,
 			($auditor ?? $this->createMock(AuditTrailService::class))
 		);

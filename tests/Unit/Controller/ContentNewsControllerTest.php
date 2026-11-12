@@ -16,8 +16,8 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 
 use OCA\Portaliq\Controller\ContentNewsController;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PublicNewsReader;
+use OCA\Portaliq\Service\Session\BearerSessionResolver;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 
@@ -45,7 +45,7 @@ class ContentNewsControllerTest extends TestCase {
 			($modes === null) ? null : ['slug' => 'wilgenboom', 'authentication' => ['modes' => $modes]]
 		);
 
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 
 		if ($news === null) {

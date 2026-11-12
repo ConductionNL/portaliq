@@ -38,7 +38,7 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Contribution\PortalProviderLocator;
 use OCA\Portaliq\Contribution\TimelineProviderMethod;
 use OCA\Portaliq\Service\PortalObjectReader;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\SessionTrust;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -47,7 +47,7 @@ use Throwable;
  *
  * @spec openspec/changes/site-messages-per-record/specs/portal-contribution-contract/spec.md#requirement-a-resident-may-start-a-conversation-only-with-a-contact-of-their-own-record
  *
- * @SuppressWarnings(PHPMD.StaticAccess) -- PortalSessionService::trustSatisfies,
+ * @SuppressWarnings(PHPMD.StaticAccess) -- SessionTrust::trustSatisfies,
  * the one trust ordering every portal gate shares.
  */
 class MessageContactReader {
@@ -169,7 +169,7 @@ class MessageContactReader {
 		foreach ((array)($aggregate['contributions'] ?? []) as $contribution) {
 			foreach ((array)($contribution['collections'] ?? []) as $collection) {
 				if (is_array($collection['contacts'] ?? null) === false
-					|| PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false
+					|| SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false
 				) {
 					continue;
 				}

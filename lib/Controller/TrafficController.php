@@ -29,7 +29,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\BearerSessionResolver;
 use OCA\Portaliq\Service\Traffic\RawRequestBody;
 use OCA\Portaliq\Service\Traffic\TrafficRecordingService;
 use OCA\Portaliq\Service\Traffic\TrafficServerBatch;
@@ -102,7 +102,7 @@ class TrafficController extends Controller {
 	 * @param TrafficIngestService $ingest     Validates and stores events.
 	 * @param RawRequestBody       $body       Reads the text body.
 	 * @param IAppManager          $appManager Locates the built client on disk.
-	 * @param PortalSessionService $session    Resolves a portal session bearer to its subject, for account linking.
+	 * @param BearerSessionResolver $session    Resolves a portal session bearer to its subject, for account linking.
 	 * @param TrafficServerToken   $tokens     Verifies a backend's bearer token (portal-traffic-reporting).
 	 * @param TrafficRecordingService $recordings Stores a session recording chunk (portal-traffic-experiments).
 	 *
@@ -115,7 +115,7 @@ class TrafficController extends Controller {
 		private readonly TrafficIngestService $ingest,
 		private readonly RawRequestBody $body,
 		private readonly IAppManager $appManager,
-		private readonly PortalSessionService $session,
+		private readonly BearerSessionResolver $session,
 		private readonly TrafficServerToken $tokens,
 		private readonly TrafficRecordingService $recordings,
 	) {

@@ -12,7 +12,7 @@ use OCA\Portaliq\Controller\PortalAccountSelfController;
 use OCA\Portaliq\Controller\PortalIdentityController;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCA\Portaliq\Service\PortalRateLimit;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\BearerSessionResolver;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\OCS\OCSForbiddenException;
@@ -106,7 +106,7 @@ class PortalAuthMiddlewareTest extends TestCase {
 	 * @return void
 	 */
 	public function testAReferenceSessionIsRefusedOnEveryProtectedRoute(): void {
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn(null);
 		$session->method('resolveReferenceFromBearer')->willReturn(['caseReference' => 'Z-2026-0042']);
 		$mw = $this->middleware($session, $this->registry([]));
@@ -345,7 +345,7 @@ class PortalAuthMiddlewareTest extends TestCase {
 
 	}//end testNoBearerNonEligibleMethodAlwaysThrows()
 
-	private function middleware(PortalSessionService $session, PortalContributionRegistry $registry, array $params = []): PortalAuthMiddleware {
+	private function middleware(BearerSessionResolver $session, PortalContributionRegistry $registry, array $params = []): PortalAuthMiddleware {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('');
 		$request->method('getParam')->willReturnCallback(
@@ -356,8 +356,8 @@ class PortalAuthMiddlewareTest extends TestCase {
 		return new PortalAuthMiddleware($request, $session, $registry, $l10n);
 	}//end middleware()
 
-	private function session(?array $subject): PortalSessionService {
-		$mock = $this->createMock(PortalSessionService::class);
+	private function session(?array $subject): BearerSessionResolver {
+		$mock = $this->createMock(BearerSessionResolver::class);
 		$mock->method('resolveFromBearer')->willReturn($subject);
 		return $mock;
 	}//end session()

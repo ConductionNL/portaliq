@@ -29,9 +29,9 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PublicCatalogue;
 use OCA\Portaliq\Service\PublicCatalogueQuery;
+use OCA\Portaliq\Service\Session\BearerSessionResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -87,14 +87,14 @@ class ContentCatalogueController extends Controller {
 	 * @param string               $appName   The app name.
 	 * @param IRequest             $request   The request.
 	 * @param PortalResolver       $resolver  Resolves the portal of the request.
-	 * @param PortalSessionService $session   Resolves a bearer, for a portal that is not public.
+	 * @param BearerSessionResolver $session   Resolves a bearer, for a portal that is not public.
 	 * @param PublicCatalogue      $catalogue The catalogue.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly PortalResolver $resolver,
-		private readonly PortalSessionService $session,
+		private readonly BearerSessionResolver $session,
 		private readonly PublicCatalogue $catalogue,
 	) {
 		parent::__construct(appName: $appName, request: $request);

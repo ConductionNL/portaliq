@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Service\Session\SubjectAssertionIssuer;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IResponse;
 use OCP\IURLGenerator;
@@ -78,14 +79,14 @@ class PortalTaskGateway {
 	 *
 	 * @param InstanceLoopback $loopback Sends the server-to-server forward to this instance.
 	 * @param IURLGenerator $urlGenerator Resolves the instance-local seam path.
-	 * @param PortalSessionService $session Mints the signed `X-Portal-Subject` assertion.
+	 * @param SubjectAssertionIssuer $session Mints the signed `X-Portal-Subject` assertion.
 	 * @param IAppManager $appManager Answers whether openregister is installed at all.
 	 * @param LoggerInterface $logger Where transport failures are reported.
 	 */
 	public function __construct(
 		private readonly InstanceLoopback $loopback,
 		private readonly IURLGenerator $urlGenerator,
-		private readonly PortalSessionService $session,
+		private readonly SubjectAssertionIssuer $session,
 		private readonly IAppManager $appManager,
 		private readonly LoggerInterface $logger,
 	) {
