@@ -57,13 +57,44 @@ function text(value) {
  * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
  */
 export function imageOf(image, title = '') {
-	const described = typeof image === 'object' && image !== null
-	const url = text(described ? (image.url ?? image.downloadUrl) : image)
+	const url = imageUrl(image)
 	if (url === '') {
 		return null
 	}
-	const alt = described ? text(image.alt ?? image.title) : ''
+	const alt = imageAlt(image)
 	return { url, alt: alt !== '' ? alt : title }
+}
+
+/**
+ * Whether an image arrives as an object that describes it.
+ *
+ * @param {unknown} image The row's `image`.
+ * @return {boolean}
+ */
+function isDescribed(image) {
+	return typeof image === 'object' && image !== null
+}
+
+/**
+ * An image's address: the bare address, or the object's `url` (else its
+ * `downloadUrl`); '' without one.
+ *
+ * @param {unknown} image The row's `image`.
+ * @return {string} The address.
+ */
+function imageUrl(image) {
+	return text(isDescribed(image) ? (image.url ?? image.downloadUrl) : image)
+}
+
+/**
+ * The alternative text an image object gives (its `alt`, else its
+ * `title`); '' for a bare address.
+ *
+ * @param {unknown} image The row's `image`.
+ * @return {string} The alternative text.
+ */
+function imageAlt(image) {
+	return isDescribed(image) ? text(image.alt ?? image.title) : ''
 }
 
 /**
@@ -146,16 +177,43 @@ export function featuredFrom(body, count = 6) {
 	const rows = Array.isArray(body?.results) ? body.results : []
 	return rows
 		.map(subjectFrom)
-		.filter(
-			(subject) =>
-				subject !== null && subject.featured === true && subject.slug !== '',
-		)
-		.sort(
-			(a, b) =>
-				a.featuredOrder - b.featuredOrder
-				|| a.title.localeCompare(b.title, 'nl'),
-		)
-		.slice(0, Math.max(0, Number(count) || 0))
+		.filter(isFeatured)
+		.sort(byFeaturedOrder)
+		.slice(0, featuredLimit(count))
+}
+
+/**
+ * Whether a subject is featured and has a slug to link to.
+ *
+ * @param {object|null} subject The subject.
+ * @return {boolean}
+ */
+function isFeatured(subject) {
+	return subject !== null && subject.featured === true && subject.slug !== ''
+}
+
+/**
+ * The featured order: `featuredOrder`, then title.
+ *
+ * @param {object} a A subject.
+ * @param {object} b Another subject.
+ * @return {number} The order.
+ */
+function byFeaturedOrder(a, b) {
+	return (
+		a.featuredOrder - b.featuredOrder
+		|| a.title.localeCompare(b.title, 'nl')
+	)
+}
+
+/**
+ * The most featured subjects to show: a count, none when it is not one.
+ *
+ * @param {unknown} count The most to show.
+ * @return {number} The limit.
+ */
+function featuredLimit(count) {
+	return Math.max(0, Number(count) || 0)
 }
 
 /**
