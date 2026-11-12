@@ -19,9 +19,9 @@ use OCA\Portaliq\Contribution\PortalProviderLocator;
 use OCA\Portaliq\Contribution\PublicDetailShape;
 use OCA\Portaliq\Controller\ContentCatalogueController;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PublicCatalogue;
 use OCA\Portaliq\Service\PublicNewsReader;
+use OCA\Portaliq\Service\Session\BearerSessionResolver;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http;
 use OCP\ICache;
@@ -112,6 +112,6 @@ class PublicDetailTest extends TestCase {
 		$resolver = $this->createMock(PortalResolver::class);
 		$resolver->method('resolve')->willReturn(['slug' => 'warmtepompacademie', 'authentication' => ['modes' => ['public']]]);
 
-		return new ContentCatalogueController('portaliq', $request, $resolver, $this->createMock(PortalSessionService::class), $catalogue);
+		return new ContentCatalogueController('portaliq', $request, $resolver, $this->createMock(BearerSessionResolver::class), $catalogue);
 	}
 }

@@ -22,7 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\BearerSessionResolver;
+use OCA\Portaliq\Service\Session\SessionTrust;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 
@@ -30,9 +31,9 @@ use OCP\AppFramework\Http\JSONResponse;
  * Who may read a portal's public content, and the answers that refuse it.
  *
  * The using controller provides `$request`, `$session`
- * (PortalSessionService) and `$resolver` (PortalResolver).
+ * (BearerSessionResolver) and `$resolver` (PortalResolver).
  *
- * @SuppressWarnings(PHPMD.StaticAccess) -- PortalSessionService::trustSatisfies is the single
+ * @SuppressWarnings(PHPMD.StaticAccess) -- SessionTrust::trustSatisfies is the single
  * trust comparator, called statically everywhere so the ordering cannot fork (as in ContentController).
  *
  * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-news-item-shows-on-a-portals-public-website-only-when-staff-put-it-there
@@ -88,7 +89,7 @@ trait PublicContentGate {
 			return $this->refusal(error: 'authentication_required', status: Http::STATUS_UNAUTHORIZED, modes: $modes);
 		}
 
-		if (PortalSessionService::trustSatisfies($subject['trust'] ?? null, ($auth['minTrust'] ?? null)) === false) {
+		if (SessionTrust::trustSatisfies($subject['trust'] ?? null, ($auth['minTrust'] ?? null)) === false) {
 			// A real session that is not assured enough. Distinct from 401:
 			// signing in again with the same means would loop.
 			return $this->refusal(error: 'insufficient_trust', status: Http::STATUS_FORBIDDEN, modes: $modes);

@@ -26,7 +26,7 @@ use OCA\Portaliq\Controller\NewsGuardianController;
 use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
 use OCA\Portaliq\Service\NewsFeedReader;
 use OCA\Portaliq\Service\NewsReadReceiptService;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\BearerSessionResolver;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -51,7 +51,7 @@ class NewsGuardianControllerTest extends TestCase {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer token');
 
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 
 		return new NewsGuardianController(
@@ -94,7 +94,7 @@ class NewsGuardianControllerTest extends TestCase {
 
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer token');
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn(['subjectRef' => 'guardian-anna-devries']);
 
 		$controller = new NewsGuardianController($request, $session, $feedReader, $this->createMock(NewsReadReceiptService::class), $selfService);
@@ -115,7 +115,7 @@ class NewsGuardianControllerTest extends TestCase {
 
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer token');
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn(['subjectRef' => 'guardian-anna-devries']);
 
 		$controller = new NewsGuardianController($request, $session, $feedReader, $this->createMock(NewsReadReceiptService::class), $selfService);

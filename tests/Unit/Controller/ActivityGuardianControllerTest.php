@@ -7,7 +7,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Controller\ActivityGuardianController;
 use OCA\Portaliq\Service\ActivityFeedReader;
 use OCA\Portaliq\Service\ActivitySignupService;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\BearerSessionResolver;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
@@ -32,7 +32,7 @@ class ActivityGuardianControllerTest extends TestCase {
 	private function controller(?string $subjectRef, ?ActivitySignupService $signups = null, ?ActivityFeedReader $feed = null): ActivityGuardianController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer token');
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn($subjectRef === null ? null : ['subjectRef' => $subjectRef]);
 
 		return new ActivityGuardianController(

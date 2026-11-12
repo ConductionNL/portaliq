@@ -39,7 +39,7 @@ use OCA\Portaliq\Service\Identity\PortalAccessRequestService;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\BearerSessionResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -59,7 +59,7 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
+	 * @param BearerSessionResolver $session Resolves the subject from the bearer.
 	 * @param PortalSelfServiceService $selfService The account's own details.
 	 * @param PortalAccessRequestService $accessRequests Asking for access.
 	 * @param PortalIdentityMailer $mailer Mails the confirmation to the new address.
@@ -67,7 +67,7 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
+		private readonly BearerSessionResolver $session,
 		private readonly PortalSelfServiceService $selfService,
 		private readonly PortalAccessRequestService $accessRequests,
 		private readonly PortalIdentityMailer $mailer,
