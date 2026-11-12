@@ -109,7 +109,7 @@ class PortalSubmissionChecks {
 		// A calculated value is worked out again here and a decision is asked of the
 		// rule engine again, whatever the browser sent (form-flow-repeating-groups-
 		// calculations-and-decisions REQ-FFL-002, REQ-FFL-003).
-		$worked = $this->workedOut(render: $render, answers: $validated['answers']);
+		$worked = $this->decisions()->workedOut(render: $render, answers: $validated['answers']);
 		if ($worked === null) {
 			return new JSONResponse(['error' => 'decision_unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
@@ -140,23 +140,12 @@ class PortalSubmissionChecks {
 	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
 	 */
 	public function decideStep(array $render, string $step, array $answers): JSONResponse {
-		$declared = null;
-		foreach ((array)($render['steps'] ?? []) as $candidate) {
-			if (($candidate['id'] ?? null) === $step && is_array($candidate['decision'] ?? null) === true) {
-				$declared = $candidate['decision'];
-			}
-		}
-
+		$declared = $this->decisions()->declaredDecision(steps: (array)($render['steps'] ?? []), step: $step);
 		if ($declared === null || $this->decision === null) {
 			return new JSONResponse(['error' => 'step_not_found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$names = array_map(static fn (array $field): string => (string)($field['name'] ?? ''), (array)($render['fields'] ?? []));
-		$known = array_intersect_key($answers, array_flip($names));
-		if ($this->calculator !== null) {
-			$known = $this->calculator->apply(fields: (array)($render['fields'] ?? []), answers: $known)['answers'];
-		}
-
+		$known   = $this->decisions()->knownAnswers(fields: (array)($render['fields'] ?? []), answers: $answers);
 		$decided = $this->decision->decide(decision: $declared, answers: $known);
 		if ($decided['status'] === PortalFormDecision::UNAVAILABLE) {
 			return new JSONResponse(['error' => 'decision_unavailable'], Http::STATUS_SERVICE_UNAVAILABLE);
@@ -164,6 +153,16 @@ class PortalSubmissionChecks {
 
 		return new JSONResponse(['outcome' => $decided['outcome'], 'output' => $decided['output'], 'nextStep' => $decided['nextStep']]);
 	}//end decideStep()
+
+	/**
+	 * The calculations and decisions of a submission, worked out with this
+	 * check's calculator and rule engine.
+	 *
+	 * @return SubmissionDecisions
+	 */
+	private function decisions(): SubmissionDecisions {
+		return new SubmissionDecisions(calculator: $this->calculator, decision: $this->decision);
+	}//end decisions()
 
 	/**
 	 * The statements the form asks are accepted before anything is recorded;
@@ -250,59 +249,6 @@ class PortalSubmissionChecks {
 	}//end askedStatements()
 
 	/**
-	 * Work out the calculated fields and the decided ones for a submission.
-	 *
-	 * @param array<string, mixed> $render What render() returned for the form.
-	 * @param array<string, mixed> $answers The validated answers.
-	 *
-	 * @return array{answers: array<string, mixed>, computed: array<int, string>, decisions: array<string, string>}|null
-	 *         Null when a decision the form declares could not be asked.
-	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
-	 */
-	private function workedOut(array $render, array $answers): ?array {
-		$fields   = (array)($render['fields'] ?? []);
-		$computed = [];
-		if ($this->calculator !== null) {
-			$first    = $this->calculator->apply(fields: $fields, answers: $answers);
-			$answers  = $first['answers'];
-			$computed = $first['computed'];
-		}
-
-		$decisions = [];
-		foreach ((array)($render['steps'] ?? []) as $step) {
-			if (is_array($step['decision'] ?? null) === false) {
-				continue;
-			}
-
-			if ($this->decision === null) {
-				return null;
-			}
-
-			$decided = $this->decision->decide(decision: $step['decision'], answers: $answers);
-			if ($decided['status'] === PortalFormDecision::UNAVAILABLE) {
-				return null;
-			}
-
-			if ($decided['status'] === PortalFormDecision::DECIDED) {
-				$answers[$decided['output']]   = $decided['outcome'];
-				$decisions[(string)$step['id']] = $decided['outcome'];
-				$computed[]                    = $decided['output'];
-			}
-		}//end foreach
-
-		if ($decisions !== [] && $this->calculator !== null) {
-			// A calculation may read a decided field.
-			$again    = $this->calculator->apply(fields: $fields, answers: $answers);
-			$answers  = $again['answers'];
-			$computed = array_merge($computed, $again['computed']);
-		}
-
-		return ['answers' => $answers, 'computed' => array_values(array_unique($computed)), 'decisions' => $decisions];
-	}//end workedOut()
-
-	/**
 	 * The errors of `familyMembers` answers that are not the resident's family.
 	 *
 	 * @param array<int, array<string, mixed>> $fields  The form's fields.
@@ -316,24 +262,52 @@ class PortalSubmissionChecks {
 	private function familyErrors(array $fields, array $answers, ?array $subject): array {
 		$errors = [];
 		foreach ($fields as $field) {
-			$name = (string)($field['name'] ?? '');
-			if (($field['type'] ?? '') !== 'familyMembers' || $name === '' || empty($answers[$name]) === true) {
-				continue;
-			}
-
-			$refs   = (array)$answers[$name];
-			$forged = $refs;
-			if ($this->family !== null && $subject !== null) {
-				$forged = $this->family->forged(subjectRef: (string)($subject['subjectRef'] ?? ''), refs: $refs);
-			}
-
-			if ($forged !== []) {
+			$name = $this->answeredFamilyField(field: $field, answers: $answers);
+			if ($name !== '' && $this->forgedFamily(refs: (array)$answers[$name], subject: $subject) !== []) {
 				$errors[$name] = 'Choose the people from the list we found.';
 			}
 		}
 
 		return $errors;
 	}//end familyErrors()
+
+	/**
+	 * The name of a `familyMembers` field the citizen answered, else ''.
+	 *
+	 * @param array<string, mixed> $field   One of the form's fields.
+	 * @param array<string, mixed> $answers The validated answers.
+	 *
+	 * @return string The field name, or '' when the field is not an answered family field.
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t04
+	 */
+	private function answeredFamilyField(array $field, array $answers): string {
+		$name = (string)($field['name'] ?? '');
+		if (($field['type'] ?? '') !== 'familyMembers' || $name === '' || empty($answers[$name]) === true) {
+			return '';
+		}
+
+		return $name;
+	}//end answeredFamilyField()
+
+	/**
+	 * The chosen references that are not the resident's family; all of them
+	 * when there is no family service or no subject to check against.
+	 *
+	 * @param array<int, mixed>         $refs    The chosen references.
+	 * @param array<string, mixed>|null $subject The session's subject.
+	 *
+	 * @return array<int|string, mixed> The forged references.
+	 *
+	 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t04
+	 */
+	private function forgedFamily(array $refs, ?array $subject): array {
+		if ($this->family === null || $subject === null) {
+			return $refs;
+		}
+
+		return $this->family->forged(subjectRef: (string)($subject['subjectRef'] ?? ''), refs: $refs);
+	}//end forgedFamily()
 
 	/**
 	 * The verified addresses to record with the submission.
