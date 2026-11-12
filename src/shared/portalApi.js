@@ -137,11 +137,24 @@ function appendAnswer(form, entry) {
 	const key = entry[0]
 	const value = entry[1]
 	if (value !== null && typeof value === 'object') {
-		for (const [name, inner] of Object.entries(value)) {
-			form.append(`${key}[${name}]`, String(inner))
-		}
-	} else if (value !== undefined && value !== null) {
+		appendObjectAnswer(form, entry)
+		return
+	}
+	if (value !== undefined && value !== null) {
 		form.append(key, String(value))
+	}
+}
+
+/**
+ * An object answer as `key[name]` fields.
+ *
+ * @param {FormData} form The body, appended to.
+ * @param {Array} entry The answer's key and its object value.
+ * @return {void}
+ */
+function appendObjectAnswer(form, entry) {
+	for (const [name, inner] of Object.entries(entry[1])) {
+		form.append(`${entry[0]}[${name}]`, String(inner))
 	}
 }
 
@@ -178,11 +191,114 @@ function myCasesAnswer(res, json) {
 	return {
 		ok: res.ok,
 		status: res.status,
-		cases: res.ok && Array.isArray(json?.cases) ? json.cases : [],
-		mandates: Array.isArray(json?.mandates) ? json.mandates : [],
+		cases: res.ok ? listIn(json, 'cases') : [],
+		mandates: listIn(json, 'mandates'),
 		activeMandate: json?.activeMandate || null,
 		error: res.ok ? '' : String(json?.error || ''),
 	}
+}
+
+/**
+ * A list an answer's body carries under a key, or none.
+ *
+ * @param {object|null} json The body.
+ * @param {string} key The key.
+ * @return {Array} The list.
+ */
+function listIn(json, key) {
+	return Array.isArray(json?.[key]) ? json[key] : []
+}
+
+/**
+ * A task completion as multipart: the comment when there is one, and each
+ * file.
+ *
+ * @param {string} comment The comment, or ''.
+ * @param {Array<File>} files The files.
+ * @return {FormData} The body.
+ */
+function completionForm(comment, files) {
+	const form = new FormData()
+	if (comment) {
+		form.append('comment', comment)
+	}
+	for (const file of files) {
+		form.append('files[]', file, file.name)
+	}
+	return form
+}
+
+/**
+ * The request that posts a task completion; the browser sets the multipart
+ * Content-Type (with its boundary) itself.
+ *
+ * @param {FormData} form The completion.
+ * @param {object} auth The Authorization header, or none.
+ * @return {object} The request init.
+ */
+function completionRequest(form, auth) {
+	return {
+		method: 'POST',
+		headers: { Accept: 'application/json', ...auth },
+		body: form,
+	}
+}
+
+/**
+ * What a task completion answered, with its body (`{}` when it was not
+ * JSON).
+ *
+ * @param {{ok: boolean, status: number, json: () => Promise<object>}} res The response.
+ * @return {Promise<{ok: boolean, status: number, code: string, body: object}>} The outcome.
+ */
+async function completionAnswer(res) {
+	const body = await res.json().catch(() => ({}))
+	return { ok: res.ok, status: res.status, code: body.code || '', body }
+}
+
+/**
+ * A task completion that never reached the task service.
+ *
+ * @return {{ok: false, status: 0, code: string, body: object}} The outcome.
+ */
+function unreachableTask() {
+	return {
+		ok: false,
+		status: 0,
+		code: 'task-service-unreachable',
+		body: {},
+	}
+}
+
+/**
+ * The threads a read answered, or `failed` for a refusal or a body that is
+ * not a list.
+ *
+ * @param {{ok: boolean, json: () => Promise<unknown>}} res The response.
+ * @param {Array|null} failed The answer for a failed read.
+ * @return {Promise<Array<object>|null>} The threads.
+ */
+async function threadsIn(res, failed) {
+	if (!res.ok) {
+		return failed
+	}
+	const json = await res.json()
+	return Array.isArray(json) ? json : failed
+}
+
+/**
+ * The objects a collection read answered: its list, else none (null with
+ * `orNull`).
+ *
+ * @param {object|null|undefined} body The read's body.
+ * @param {boolean} orNull Answer null instead of none.
+ * @return {Array<object>|null} The objects.
+ */
+function objectsIn(body, orNull) {
+	if (body && Array.isArray(body.objects)) {
+		return body.objects
+	}
+	return orNull ? null : []
 }
 
 /**
@@ -624,33 +740,17 @@ export function createPortalApi(config, store = {}) {
 		 * @return {Promise<{ok: boolean, status: number, code: string, body: object}>}
 		 */
 		async completeTask(uuid, { comment = '', files = [] } = {}) {
-			const form = new FormData()
-			if (comment) {
-				form.append('comment', comment)
-			}
-			for (const file of files) {
-				form.append('files[]', file, file.name)
-			}
+			const form = completionForm(comment, files)
 			let res
 			try {
 				res = await fetch(
 					`${base}/tasks/${encodeURIComponent(uuid)}/complete`,
-					{
-						method: 'POST',
-						headers: { Accept: 'application/json', ...authHeaders() },
-						body: form,
-					},
+					completionRequest(form, authHeaders()),
 				)
 			} catch {
-				return {
-					ok: false,
-					status: 0,
-					code: 'task-service-unreachable',
-					body: {},
-				}
+				return unreachableTask()
 			}
-			const body = await res.json().catch(() => ({}))
-			return { ok: res.ok, status: res.status, code: body.code || '', body }
+			return completionAnswer(res)
 		},
 
 		/**
@@ -726,11 +826,7 @@ export function createPortalApi(config, store = {}) {
 				const res = await fetch(`${appRoot}/api/messages/threads`, {
 					headers: { Accept: 'application/json', ...authHeaders() },
 				})
-				if (!res.ok) {
-					return failed
-				}
-				const json = await res.json()
-				return Array.isArray(json) ? json : failed
+				return await threadsIn(res, failed)
 			} catch {
 				return failed
 			}
@@ -1131,10 +1227,7 @@ export function createPortalApi(config, store = {}) {
 					throw new TypeError('The collection could not be read.')
 				}
 			}
-			if (body && Array.isArray(body.objects)) {
-				return body.objects
-			}
-			return orNull ? null : []
+			return objectsIn(body, orNull)
 		},
 
 		/**
