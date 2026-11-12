@@ -3109,7 +3109,7 @@
 		{
 			"id": "cmp-cas-all-gov",
 			"area": "cases",
-			"name": "See your cases from several organisations in one overview.",
+			"name": "See your cases from every app of your own organisation in one overview.",
 			"portaliq": "partial",
 			"open-inwoner": "partial",
 			"nl-portal": "no",
@@ -3130,11 +3130,14 @@
 				"evidence": "lib/Controller/MyCasesController.php:99 GET /portal/api/my-cases over lib/Service/PortalCaseListReader.php:39 (every kind: cases collection merged, newest first, each row naming its app as _source); src/site/pages/e/MyCasesPage.vue (registered as __cases__ in src/site/pages/e/index.js:52) shows the list with open and closed tabs. dossiq now declares its case collection kind: cases with closedField isFinalStatus (dossiq lib/Portal/CitizenManifest.php:552-553, closed ConductionNL/dossiq#3152), so dossiq cases reach the list.",
 				"reachedOn": "resident: site menu 'Mijn zaken' (the __cases__ page)",
 				"owner": "ConductionNL/portaliq",
-				"note": "Re-read 2026-10-07: one list over every case app on this instance, built end to end with dossiq's kind: cases. Partial against the competitors: cases of other government organisations arrive only through a mandate, and no case app declares mandateField yet (see cas-mandate-org-cases); there is no cross-instance fan-out.",
+				"note": "Re-read 2026-10-07: one list over every case app on this instance, built end to end with dossiq's kind: cases. Partial against the competitors: cases of other government organisations arrive only through a mandate, and no case app declares mandateField yet (see cas-mandate-org-cases); there is no cross-instance fan-out. Reworded 2026-11-12 (decision 399) to the tenancy spec: REQ-CMC-001 merges the cases of every app on this instance and REQ-OPO-003 keeps organisations apart, so the row no longer claims a cross-organisation overview. The competitor ratings were read against the earlier wording (\"from several organisations\").",
 				"origin": "competitor",
 				"change": "2026-09-29-cases-my-cases-page",
 				"readOn": "2026-10-07",
-				"requirement": "openspec/specs/portal-my-cases/spec.md :: Your cases from every app in one list (REQ-CMC-001)"
+				"requirement": [
+					"openspec/specs/portal-my-cases/spec.md :: Your cases from every app in one list (REQ-CMC-001)",
+					"openspec/changes/operate-portals-per-organisation/specs/portal-tenancy/spec.md :: No route crosses from one organisation to another (REQ-OPO-003)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7454,7 +7457,7 @@
 			"id": "cmp-site-map",
 			"area": "site",
 			"name": "Show locations on a map on a public page.",
-			"portaliq": "no",
+			"portaliq": "yes",
 			"open-inwoner": "yes",
 			"nl-portal": "no",
 			"xxllnc-pip": "partial",
@@ -7470,18 +7473,23 @@
 				"open-forms": "no website pages or CMS: the product serves forms only (src/openforms/forms/urls.py:20-23 form list and form detail routes); pages around the form live in the embedding website; the map is a form input (src/openforms/formio/components/custom.py:258), not a public page [reached on nothing] [read 2026-10-08 at 4.0.1]"
 			},
 			"built": {
-				"state": "decided-no",
-				"evidence": "No map library or component under src/site (grep -rln \"leaflet|maplibre|mapbox\" src/site: 0 hits)",
-				"reachedOn": "nothing reaches it: no code exists",
+				"state": "built",
+				"evidence": "src/site/widgets/nlLocationMap/NlLocationMap.vue (the locations as a numbered list beside a sketch map, filter per kind) with its editor description src/site/widgets/nlLocationMap/meta.js (key nlLocationMap, group content, label \"Locaties op een kaart\"), registered in src/site/widgets/index.js:60,111 and lazy-loaded in src/site/widgets/loaders.js:32, so an editor places it on any public /site page. Built by openspec/changes/site-location-map (only its live check T03 is open). Before: no map library or component under src/site.",
+				"reachedOn": "/site renderer: a public page with the nlLocationMap block (board LocatiesKaart)",
 				"owner": "ConductionNL/portaliq",
-				"note": "Decided no in the build-all pass 2026-09-28 (defer retired, reversible): single competitor, no demand: only Open Inwoner rates it yes, no demand row, outside the core area.",
+				"note": "Decided built on 2026-11-12 (decision 399): the map block exists. Was decided-no in the build-all pass 2026-09-28 (single competitor, no demand).",
 				"origin": "competitor",
-				"plan": "site-location-map"
+				"change": "openspec/changes/site-location-map",
+				"requirement": "openspec/changes/site-location-map/specs/portaliq-cms/spec.md :: A page can show the organisation's locations on a map (REQ-SLM-001)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
 			"feature": "website-pages-and-menus",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"screen": {
+				"canvas": "design-system",
+				"board": "LocatiesKaart"
+			}
 		},
 		{
 			"id": "sib-opencatalogi-od-visualise",
