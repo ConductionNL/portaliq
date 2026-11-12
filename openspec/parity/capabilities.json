@@ -1567,7 +1567,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "Generic OR CRUD pages, not a bespoke session console, but a real reachable staff screen; no per-session revoke action visible on this page (only the org-wide revoke on AdminRoot.vue).",
 				"origin": "code",
-				"change": "portal-traffic-analytics"
+				"change": "portal-traffic-analytics",
+				"requirement": "openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md :: Staff can browse the portal sessions that were issued (REQ-CRG-001)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -1604,7 +1605,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "The controller's own docblock (ContentController.php:106-115) records this WAS a no-op: a DigiD-only, substantial-minTrust portal served full page bodies to anonymous callers until this method was added. Now enforced.",
 				"origin": "code",
-				"spec": "openspec/specs/portaliq-cms"
+				"spec": "openspec/specs/portaliq-cms",
+				"requirement": "openspec/changes/capability-rows-without-a-requirement/specs/portaliq-cms/spec.md :: A portal's minimum trust gates its content reads (REQ-CRG-004)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4666,7 +4668,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "Generic OpenRegister-backed index/detail pages, staff-only.",
 				"origin": "code",
-				"change": "2026-07-23-portal-inbox-v2"
+				"change": "2026-07-23-portal-inbox-v2",
+				"requirement": "openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md :: Staff can browse and search every portal message (REQ-CRG-002)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -4703,7 +4706,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": null,
 				"origin": "code",
-				"change": "2026-07-23-portal-inbox-v2"
+				"change": "2026-07-23-portal-inbox-v2",
+				"requirement": "openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md :: The staff dashboard counts unread portal messages (REQ-CRG-003)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -5812,7 +5816,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "You get an honest, structured copy of what you submitted (WMEBV burden-of-proof), just not a PDF, and not through the unreached PortalIntakeController#status page either.",
 				"origin": "competitor",
-				"change": "2026-07-23-wmebv-submission-receipts"
+				"change": "2026-07-23-wmebv-submission-receipts",
+				"requirement": "openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md :: A submission receipt offers the answers as a PDF (REQ-CRG-005)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6473,7 +6478,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "Terms are alphabetised and portal-scoped. The glossary schema carries no locale field (see thm-content-i18n), so terms cannot differ per language.",
 				"origin": "code",
-				"spec": "openspec/specs/portaliq-cms"
+				"spec": "openspec/specs/portaliq-cms",
+				"requirement": "openspec/changes/capability-rows-without-a-requirement/specs/portaliq-cms/spec.md :: The glossary and the contributed services are blocks an editor places (REQ-CRG-006)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6513,7 +6519,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "App.vue's own commentary (App.vue:282-309) records that this replaced two hard-coded sections, and that the move landed only for glossary at first, leaving contributions unreachable until a page block existed for it too.",
 				"origin": "code",
-				"change": "portal-theme-blocks-and-contributed-pages"
+				"change": "portal-theme-blocks-and-contributed-pages",
+				"requirement": "openspec/changes/capability-rows-without-a-requirement/specs/portaliq-cms/spec.md :: The glossary and the contributed services are blocks an editor places (REQ-CRG-006)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6550,7 +6557,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "Convention read off an existing field rather than a schema change; a portal with a single footer menu keeps it as a column instead of being silently demoted to the legal strip.",
 				"origin": "code",
-				"spec": "openspec/specs/portaliq-cms"
+				"spec": "openspec/specs/portaliq-cms",
+				"requirement": "openspec/changes/capability-rows-without-a-requirement/specs/portaliq-cms/spec.md :: Header, footer and legal menus follow one position field (REQ-CRG-007)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7421,7 +7429,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": null,
 				"origin": "code",
-				"change": "portal-federated-search"
+				"change": "portal-federated-search",
+				"requirement": "openspec/changes/capability-rows-without-a-requirement/specs/portal-federated-search/spec.md :: The result page travels in the address (REQ-CRG-009)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7458,7 +7467,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": null,
 				"origin": "code",
-				"change": "portal-public-search"
+				"change": "portal-public-search",
+				"requirement": "openspec/changes/capability-rows-without-a-requirement/specs/portal-federated-search/spec.md :: The result count is announced (REQ-CRG-010)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7878,7 +7888,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": null,
 				"origin": "code",
-				"change": "2026-09-29-portal-spa-nl-design-system-styling"
+				"change": "2026-09-29-portal-spa-nl-design-system-styling",
+				"requirement": "openspec/changes/capability-rows-without-a-requirement/specs/portaliq-cms/spec.md :: The site fits a phone without scrolling sideways (REQ-CRG-008)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -8293,7 +8304,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "Off by default, gated on consent where required, bounded per-chunk and per-visit (TrafficController.php:311-317 docblock); TrafficRecordingMask enforces no free text or typed values are ever stored.",
 				"origin": "code",
-				"spec": "openspec/specs/portal-traffic-experiments"
+				"spec": "openspec/specs/portal-traffic-experiments",
+				"requirement": "openspec/changes/capability-rows-without-a-requirement/specs/portal-traffic-experiments/spec.md :: Staff can replay a masked recording (REQ-CRG-011)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -8982,7 +8994,8 @@
 				"owner": "ConductionNL/portaliq",
 				"note": "Pre-consent events are validated server-side to be a subset of the portal's enabled events (TrafficConfigResolver.php:348-351), so a portal cannot admit before consent something it does not collect at all.",
 				"origin": "code",
-				"change": "portal-traffic-analytics"
+				"change": "portal-traffic-analytics",
+				"requirement": "openspec/changes/capability-rows-without-a-requirement/specs/portal-traffic-experiments/spec.md :: The client honours Do Not Track (REQ-CRG-013); openspec/specs/portal-traffic-experiments/spec.md :: Measurement MUST honour the portal's consent posture"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
