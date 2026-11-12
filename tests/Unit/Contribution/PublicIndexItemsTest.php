@@ -6,12 +6,14 @@ namespace OCA\Portaliq\Tests\Unit\Contribution;
 
 use OCA\Portaliq\Contribution\PublicIndexItems;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Holding a public index answer to its fixed shape.
  */
 #[CoversClass(PublicIndexItems::class)]
+#[UsesClass(\OCA\Portaliq\Contribution\PublicIndexText::class)]
 class PublicIndexItemsTest extends TestCase {
 	/**
 	 * Every entry is kept, trimmed or dropped exactly as recorded, in order and once per id.

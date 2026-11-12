@@ -23,6 +23,7 @@ use PHPUnit\Framework\TestCase;
 
 #[CoversClass(FormPlacementHelp::class)]
 #[UsesClass(PortalHelp::class)]
+#[UsesClass(\OCA\Portaliq\Service\Cms\FormPlacementRun::class)]
 class FormPlacementHelpTest extends TestCase {
 	/**
 	 * The help a stored form holds, as an editor saves it.
