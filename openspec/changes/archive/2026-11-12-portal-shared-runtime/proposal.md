@@ -2,6 +2,8 @@
 kind: code
 ---
 
+> Superseded by `site-reaches-portal-parity` (archived 2026-10-07 as `openspec/changes/archive/2026-10-07-site-reaches-portal-parity`): the React portal moved onto `src/site`, so the shared runtime this change planned is not built. Archived under decision 399 without syncing its spec. Reversible.
+
 # Proposal: portal-shared-runtime
 
 > **Superseded 2026-10-01 by `site-reaches-portal-parity`.** This proposal
