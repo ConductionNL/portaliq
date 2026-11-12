@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
  */
 
 declare(strict_types=1);
@@ -58,7 +58,7 @@ use OCP\IRequest;
 /**
  * Serves the row-scoped endpoint action forward.
  *
- * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
  *
  * @SuppressWarnings(PHPMD.StaticAccess) -- PortalSessionService::trustSatisfies,
  * the one trust ordering every portal gate shares.
@@ -104,9 +104,9 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The relayed answer, or 401 / 403 / 404 / 409 / 502.
 	 *
-	 * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
-	 * @spec openspec/changes/contribution-pay-screen/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-must-be-offered-only-on-the-rows-its-rowwhen-names
-	 * @spec openspec/changes/attach-to-own-collection/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-be-able-to-name-one-collection-and-its-own-app-req-ato-001
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-row-scoped-forward-must-prove-the-row-before-it-forwards
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-must-be-offered-only-on-the-rows-its-rowwhen-names
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-attached-action-must-be-able-to-name-one-collection-and-its-own-app-req-ato-001
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -371,7 +371,7 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	 *
 	 * @return array{collection: array<string, mixed>, action: array<string, mixed>, app: string, rowApp: string}|null
 	 *
-	 * @spec openspec/changes/woo-journey-entry-points/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-attach-to-another-apps-collection-req-wje-004
 	 */
 	private function attachedMatch(array $contributions, array $subject, array $target, string $actionApp, string $actionId): ?array {
 		$collection = $target['collection'];

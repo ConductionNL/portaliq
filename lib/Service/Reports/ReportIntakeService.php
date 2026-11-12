@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+ * @spec openspec/specs/report-without-an-account/spec.md
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use OCP\Security\ISecureRandom;
 /**
  * Accepts a report and issues its receipt code.
  *
- * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+ * @spec openspec/specs/report-without-an-account/spec.md
  */
 class ReportIntakeService {
 	/**
@@ -97,7 +97,7 @@ class ReportIntakeService {
 	 *         is unknown or the write failed. A report with no contact detail
 	 *         is never a failure.
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	public function accept(
 		string $portal,
@@ -127,7 +127,7 @@ class ReportIntakeService {
 	 *         is unknown or the write failed. A report with no contact detail
 	 *         is never a failure.
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	public function acceptSubmission(ReportSubmission $submission): ?array {
 		if ($submission->portal === '') {

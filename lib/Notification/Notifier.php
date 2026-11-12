@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use OCP\Notification\UnknownNotificationException;
  * Turns a stored notification's subject key and parameters into the
  * words a user sees, in their language.
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
  */
 class Notifier implements INotifier {
 
@@ -66,7 +66,7 @@ class Notifier implements INotifier {
 	 *
 	 * @return string The id.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
 	 */
 	public function getID(): string {
 		return Application::APP_ID;
@@ -78,7 +78,7 @@ class Notifier implements INotifier {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
 	 */
 	public function getName(): string {
 		return $this->l10n->get(Application::APP_ID)->t('Portaliq');
@@ -95,7 +95,7 @@ class Notifier implements INotifier {
 	 *
 	 * @throws UnknownNotificationException When it is not one of ours.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
 	 */
 	public function prepare(INotification $notification, string $languageCode): INotification {
 		if ($notification->getApp() !== Application::APP_ID) {

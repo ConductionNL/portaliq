@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/events-and-signups/design.md#architecture-overview
+ * @spec openspec/changes/archive/2026-09-28-events-and-signups/design.md#architecture-overview
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
- * @spec openspec/changes/events-and-signups/design.md#architecture-overview
+ * @spec openspec/changes/archive/2026-09-28-events-and-signups/design.md#architecture-overview
  *
  * @SuppressWarnings(PHPMD.StaticAccess) -- NewsAudienceMatcher::matches() is
  * deliberately the ONE stateless match predicate every caller shares (see
@@ -77,7 +77,7 @@ class EventFeedReader {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
 	 */
 	public function feedFor(string $subjectRef): array {
 		$audience = $this->audienceReader->resolveAudience(subjectRef: $subjectRef);
@@ -157,7 +157,7 @@ class EventFeedReader {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/events-and-signups/design.md#api-design
+	 * @spec openspec/changes/archive/2026-09-28-events-and-signups/design.md#api-design
 	 */
 	public function readOwnEvent(string $subjectRef, string $id): ?array {
 		if ($id === '') {
@@ -202,7 +202,7 @@ class EventFeedReader {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
 	 */
 	public function isOwnChild(string $subjectRef, string $childRef): bool {
 		if ($subjectRef === '' || $childRef === '') {

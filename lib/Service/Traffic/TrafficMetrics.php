@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use OCP\IAppConfig;
  * The counters are what make a refusal VISIBLE. Without them a misconfigured
  * client and a working one both produce a 204 and a quiet dashboard.
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
  */
 class TrafficMetrics {
 
@@ -70,7 +70,7 @@ class TrafficMetrics {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
 	 */
 	public function accepted(int $count): void {
 		if ($count <= 0) {
@@ -87,7 +87,7 @@ class TrafficMetrics {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
 	 */
 	public function refused(array $reasons): void {
 		foreach ($reasons as $reason => $count) {
@@ -104,7 +104,7 @@ class TrafficMetrics {
 	 *
 	 * @return int The count.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
 	 */
 	public function acceptedTotal(): int {
 		return $this->config->getValueInt(Application::APP_ID, self::ACCEPTED_KEY, 0);
@@ -115,7 +115,7 @@ class TrafficMetrics {
 	 *
 	 * @return array<string, int> Reason => count, sorted by reason.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
 	 */
 	public function refusedByReason(): array {
 		$out = [];

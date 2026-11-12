@@ -136,7 +136,7 @@ class BrokerLogin {
 	 *
 	 * @return array{token: string, returnTo: string}|null
 	 *
-	 * @spec openspec/changes/portal-broker-login-keeps-the-portal/specs/portal-broker-envelope-login/spec.md
+	 * @spec openspec/specs/portal-broker-envelope-login/spec.md
 	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-envelope-becomes-an-ordinary-portal-session-req-bel-005
 	 */
 	public function complete(string $state, string $code): ?array {

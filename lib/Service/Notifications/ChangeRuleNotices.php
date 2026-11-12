@@ -34,7 +34,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md
  */
 
 declare(strict_types=1);
@@ -49,7 +49,7 @@ use OCP\IDateTimeZone;
  * Resolves the accounts a claim-addressed change rule reaches, and the words
  * a rule declares.
  *
- * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+ * @spec openspec/specs/portal-notifications-and-preferences/spec.md
  */
 class ChangeRuleNotices {
 
@@ -78,7 +78,7 @@ class ChangeRuleNotices {
 	 *
 	 * @return array{subject: string, body: string}|null
 	 *
-	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md
 	 */
 	public function text(array $messages, string $value, array $row, string $language): ?array {
 		return (new ChangeNoticeText(timeZone: $this->timeZone))->render(messages: $messages, value: $value, row: $row, language: $language);
@@ -97,7 +97,7 @@ class ChangeRuleNotices {
 	 *
 	 * @return array<int, array{account: array<string, mixed>, row: array<string, mixed>}>
 	 *
-	 * @spec openspec/changes/claim-addressed-change-notices/specs/portal-notifications-and-preferences/spec.md
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md
 	 * @spec openspec/changes/portal-acts-for-its-organisation/specs/portal-tenancy/spec.md#requirement-claim-addressed-recipients-are-found-in-the-records-organisation-req-pao-003
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- each argument is one

@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use OCP\Security\ISecureRandom;
 /**
  * Issues, tracks and redeems portal invitations.
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- issue, resend, withdraw
  * and redeem each check the invitation's state before they act.
@@ -88,7 +88,7 @@ class PortalInvitationService {
 	 *
 	 * @return array{token: string, expiresAt: string}|null Null when refused.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function invite(string $email, string $organisation, string $audience, string $invitedBy, string $ttl = ''): ?array {
 		return $this->inviteAddress(
@@ -103,7 +103,7 @@ class PortalInvitationService {
 	 *
 	 * @return array{token: string, expiresAt: string}|null Null when refused.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function inviteAddress(AddressInvitation $invitation): ?array {
 		if ($invitation->email === '' || $invitation->organisation === '' || $invitation->invitedBy === '') {
@@ -184,7 +184,7 @@ class PortalInvitationService {
 	 *
 	 * @return array<int, array<string, mixed>> The invitations, state first.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function sentBy(string $invitedBy, string $organisation, ?DateTimeImmutable $now = null): array {
 		if ($invitedBy === '') {
@@ -230,7 +230,7 @@ class PortalInvitationService {
 	 * @return array{state: string, email: string}|null Null when no invitation
 	 *         matches; otherwise the state, which may be `expired`.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function open(string $token, ?DateTimeImmutable $now = null): ?array {
 		$row = $this->findByToken(token: $token);
@@ -258,7 +258,7 @@ class PortalInvitationService {
 	 * @return array{subjectRef: string}|null Null when the invitation admits
 	 *         nobody: unknown, expired, revoked or already accepted.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function accept(string $token, ?DateTimeImmutable $now = null): ?array {
 		$row = $this->findByToken(token: $token);

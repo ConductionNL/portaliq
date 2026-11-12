@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-a-timed-task-driven-by-five-endpoint-actions
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-a-timed-task-driven-by-five-endpoint-actions
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Resolves each timed-task block against the contribution's endpoint actions.
  *
- * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-a-timed-task-driven-by-five-endpoint-actions
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-a-timed-task-driven-by-five-endpoint-actions
  */
 class TimedTaskConfigNormaliser {
 	/**
@@ -54,7 +54,7 @@ class TimedTaskConfigNormaliser {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-a-timed-task-driven-by-five-endpoint-actions
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-a-timed-task-driven-by-five-endpoint-actions
 	 */
 	public function resolve(array $collections, array $actions): array {
 		$endpointIds = $this->endpointActionIds(actions: $actions);

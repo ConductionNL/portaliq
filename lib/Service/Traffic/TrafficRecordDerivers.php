@@ -26,7 +26,7 @@ namespace OCA\Portaliq\Service\Traffic;
  * Turns the address, the agent and the location into the families a record
  * keeps, so the raw values never reach storage.
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
  */
 final class TrafficRecordDerivers {
 	/**
@@ -37,7 +37,7 @@ final class TrafficRecordDerivers {
 	 * @param ReferrerClassifier   $referrers Path, host, channel and campaign.
 	 * @param GeoResolverInterface $geo       The region of an address.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
 	 */
 	public function __construct(
 		public readonly VisitorHasher $hasher,

@@ -120,7 +120,7 @@ import { caseOverviewsOf, homeEntriesOf, homeGreets } from './home.js'
 import { deadlineBadge, mijnTranslator } from './rows.js'
 
 /**
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
  */
 export default {
 	name: 'MijnHome',
@@ -167,7 +167,7 @@ export default {
 	computed: {
 		/**
 		 * @return {(key: string, vars?: object) => string} The translator.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
 		 */
 		tr() {
 			return mijnTranslator(this.t, this.locale)
@@ -177,7 +177,7 @@ export default {
 		 * "Welkom, Sanne": the name the header shows, never a number.
 		 *
 		 * @return {string}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
 		 */
 		greeting() {
 			const name = String(
@@ -193,7 +193,7 @@ export default {
 
 		/**
 		 * @return {Array<object>} The home pages.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
 		 */
 		homeEntries() {
 			return homeEntriesOf(this.nav)
@@ -212,7 +212,7 @@ export default {
 
 		/**
 		 * @return {Array<object>} The default overview, without a home page.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
 		 */
 		caseOverviews() {
 			return caseOverviewsOf(
@@ -227,7 +227,7 @@ export default {
 		 * resident with nothing to do reads that.
 		 *
 		 * @return {boolean}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
 		 */
 		showTasks() {
 			if (this.homeEntries.length === 0) {
@@ -243,7 +243,7 @@ export default {
 	/**
 	 * Read the open tasks on arrival.
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
+	 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
 	 */
 	created() {
 		if (this.tasks === null) {
@@ -257,7 +257,7 @@ export default {
 		 * says so.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
 		 */
 		async loadTasks() {
 			this.tasks = null
@@ -282,7 +282,7 @@ export default {
 		/**
 		 * @param {object} task A task.
 		 * @return {Array<object>} Its deadline badge, or none.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
 		 */
 		badgesOf(task) {
 			if (task?.overdue === true) {
@@ -302,7 +302,7 @@ export default {
 		 *
 		 * @param {object} task The task.
 		 * @return {void}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
 		 */
 		openTask(task) {
 			keepTaskToOpen(sessionStore(), task.uuid)
@@ -312,7 +312,7 @@ export default {
 		/**
 		 * @param {object} entry A home page's entry.
 		 * @return {string} Its app's name.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-mijn-must-open-on-what-the-resident-still-has-to-do-req-smo-007
 		 */
 		appNameOf(entry) {
 			return entry.contribution?.label || entry.contribution?.app || ''

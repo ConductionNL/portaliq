@@ -12,7 +12,7 @@
  * reachable by typing its address either. The server still refuses every
  * write the user may not make; the menu only stops offering it.
  *
- * @spec openspec/changes/admin-menu-follows-roles/specs/admin-ui/spec.md#requirement-the-app-menu-must-show-a-user-only-the-pages-their-role-may-use
+ * @spec openspec/specs/admin-ui/spec.md#requirement-the-app-menu-must-show-a-user-only-the-pages-their-role-may-use
  */
 
 /** The flags the server hands, in a fixed order. */
@@ -27,7 +27,7 @@ const PREFIX = 'access.'
  *
  * @param {unknown} raw What the server handed, or null.
  * @return {{admin: boolean, pages: boolean, accounts: boolean, accessRequests: boolean}}
- * @spec openspec/changes/admin-menu-follows-roles/specs/admin-ui/spec.md#requirement-the-app-menu-must-show-a-user-only-the-pages-their-role-may-use
+ * @spec openspec/specs/admin-ui/spec.md#requirement-the-app-menu-must-show-a-user-only-the-pages-their-role-may-use
  */
 export function normaliseAccess(raw) {
 	const source = raw && typeof raw === 'object' ? raw : {}
@@ -43,7 +43,7 @@ export function normaliseAccess(raw) {
  * @param {object} manifest The bundled manifest.
  * @param {object} access The normalised flags.
  * @return {object} A manifest carrying the flags.
- * @spec openspec/changes/admin-menu-follows-roles/specs/admin-ui/spec.md#requirement-the-app-menu-must-show-a-user-only-the-pages-their-role-may-use
+ * @spec openspec/specs/admin-ui/spec.md#requirement-the-app-menu-must-show-a-user-only-the-pages-their-role-may-use
  */
 export function withAccess(manifest, access) {
 	return {
@@ -59,7 +59,7 @@ export function withAccess(manifest, access) {
  * @param {object} item A menu entry.
  * @param {object} access The normalised flags.
  * @return {boolean} True when every access predicate passes.
- * @spec openspec/changes/admin-menu-follows-roles/specs/admin-ui/spec.md#requirement-the-app-menu-must-show-a-user-only-the-pages-their-role-may-use
+ * @spec openspec/specs/admin-ui/spec.md#requirement-the-app-menu-must-show-a-user-only-the-pages-their-role-may-use
  */
 export function entryAllowed(item, access) {
 	const condition = item && item.visibleIf
@@ -80,7 +80,7 @@ export function entryAllowed(item, access) {
  * @param {string} routeName The route name (a manifest page id).
  * @param {object} access The normalised flags.
  * @return {boolean} True when the page may open.
- * @spec openspec/changes/admin-menu-follows-roles/specs/admin-ui/spec.md#requirement-the-app-menu-must-show-a-user-only-the-pages-their-role-may-use
+ * @spec openspec/specs/admin-ui/spec.md#requirement-the-app-menu-must-show-a-user-only-the-pages-their-role-may-use
  */
 export function routeAllowed(manifest, routeName, access) {
 	const entries = (manifest.menu || []).filter((item) => item.route === routeName)

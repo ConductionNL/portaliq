@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+ * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * fix. Exit 1 when a download or the verification failed, with the
  * reason on stdout, so a cron wrapper notices.
  *
- * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+ * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
  */
 class TrafficGeoRefresh extends Command {
 
@@ -61,7 +61,7 @@ class TrafficGeoRefresh extends Command {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
 	 */
 	protected function configure(): void {
 		$this->setName(name: 'portaliq:traffic:geo-refresh');
@@ -77,7 +77,7 @@ class TrafficGeoRefresh extends Command {
 	 *
 	 * @return int 0 when refreshed or disabled, 1 when failed.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the base class dictates
 	 * the signature.

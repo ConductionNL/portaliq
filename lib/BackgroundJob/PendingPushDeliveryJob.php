@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-a-due-deferred-push-is-delivered-by-the-background-job-an-undue-one-is-left-alone
+ * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-a-due-deferred-push-is-delivered-by-the-background-job-an-undue-one-is-left-alone
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use Throwable;
 /**
  * Deliver due deferred pushes, every 5 minutes.
  *
- * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-a-due-deferred-push-is-delivered-by-the-background-job-an-undue-one-is-left-alone
+ * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-a-due-deferred-push-is-delivered-by-the-background-job-an-undue-one-is-left-alone
  */
 class PendingPushDeliveryJob extends TimedJob {
 	/**
@@ -73,7 +73,7 @@ class PendingPushDeliveryJob extends TimedJob {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/specs/guardian-push-notifications/spec.md#requirement-a-due-deferred-push-is-delivered-by-the-background-job-an-undue-one-is-left-alone
+	 * @spec openspec/specs/guardian-push-notifications/spec.md#requirement-a-due-deferred-push-is-delivered-by-the-background-job-an-undue-one-is-left-alone
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the base class dictates
 	 * the signature; dropping the parameter breaks the override.

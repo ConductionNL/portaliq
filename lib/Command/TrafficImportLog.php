@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Import an access log.
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
  */
 class TrafficImportLog extends Command {
 
@@ -60,7 +60,7 @@ class TrafficImportLog extends Command {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
 	 */
 	protected function configure(): void {
 		$this->setName(name: 'portaliq:traffic:import-log');
@@ -90,7 +90,7 @@ class TrafficImportLog extends Command {
 	 *
 	 * @return int 0 when imported, 1 when the portal, the file or the format is wrong.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output): int {
 		$format = (string)$input->getOption('format');

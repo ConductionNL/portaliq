@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use OCP\Lock\LockedException;
 /**
  * Takes and gives back the exclusive lock of one account row.
  *
- * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 class ClaimLock {
 	/**
@@ -76,7 +76,7 @@ class ClaimLock {
 	 *
 	 * @return bool True when the lock is now held; false when it stayed taken.
 	 *
-	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function acquire(string $accountId): bool {
 		for ($try = 0; $try <= $this->retries; $try++) {
@@ -100,7 +100,7 @@ class ClaimLock {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function release(string $accountId): void {
 		$this->locks->releaseLock(self::PREFIX . $accountId, ILockingProvider::LOCK_EXCLUSIVE);

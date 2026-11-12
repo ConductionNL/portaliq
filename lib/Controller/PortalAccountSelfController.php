@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
 
 declare(strict_types=1);
@@ -51,7 +51,7 @@ use OCP\IRequest;
 /**
  * The bearer's own account.
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
 class PortalAccountSelfController extends Controller implements PortalProtected {
 
@@ -94,10 +94,10 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 *                      confirmation is now waiting, and whether its
 	 *                      mail left.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/tasks.md#T01
-	 * @spec openspec/changes/notification-preferences-per-role/specs/supplier-portal/spec.md#requirement-an-accounts-own-channel-opt-out-gates-dispatch
-	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-an-accounts-own-channel-opt-out-gates-dispatch
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -253,7 +253,7 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 *
 	 * @return JSONResponse The details, 401 without a subject, 404 without an account.
 	 *
-	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-a-guardian-chooses-the-language-messages-are-shown-in
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -282,8 +282,8 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 *
 	 * @return JSONResponse Whether the address is now in use.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
-	 * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -305,7 +305,7 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 *
 	 * @return JSONResponse Whether the account is gone.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -332,7 +332,7 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 *
 	 * @return JSONResponse The recorded request, or a refusal.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -361,7 +361,7 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 *
 	 * @return JSONResponse The asker's own requests.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

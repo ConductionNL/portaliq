@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ use OCA\Portaliq\Service\PortalAccountService;
 /**
  * Fills the applicant block from the signed-in identity's own claims.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
 class PortalApplicantPrefill {
 	/**
@@ -68,7 +68,7 @@ class PortalApplicantPrefill {
 	 * @return array<string, mixed> Field name to value. Empty for a visitor
 	 *         with no session.
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function forSubject(?array $subject, array $fields): array {
 		$account = $this->ownAccount(subject: $subject);

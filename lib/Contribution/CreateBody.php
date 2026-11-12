@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/claim-scoped-create-stamps-the-claim/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-claim-scoped-create-stamps-the-claim/tasks.md#T1
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ use DateTimeZone;
 /**
  * Applies an action's declared defaults over its whitelisted body.
  *
- * @spec openspec/changes/claim-scoped-create-stamps-the-claim/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-claim-scoped-create-stamps-the-claim/tasks.md#T1
  */
 class CreateBody {
 
@@ -64,7 +64,7 @@ class CreateBody {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/claim-scoped-create-stamps-the-claim/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-10-07-claim-scoped-create-stamps-the-claim/tasks.md#T1
 	 * @spec openspec/changes/a-create-stamps-the-moment-it-was-made/specs/portal-contribution-contract/spec.md#requirement-a-create-action-may-name-the-field-that-holds-when-it-was-made
 	 */
 	public function build(array $action, array $whitelisted, ?DateTimeImmutable $now = null): array {

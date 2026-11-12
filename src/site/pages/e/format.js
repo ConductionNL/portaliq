@@ -4,7 +4,7 @@
 // Dates on the slice-e screens, in the reader's language. Imports nothing, so
 // the node specs run it as a plain script.
 //
-// @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
+// @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
 
 /**
  * A moment as a long date in the reader's language, or '' when it does not parse.
@@ -13,7 +13,7 @@
  * @param {string} locale The reader's locale.
  * @return {string} The date.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
  */
 export function longDate(value, locale) {
 	const time = Date.parse(value || '')
@@ -37,7 +37,7 @@ export function longDate(value, locale) {
  * @param {string} locale The reader's locale.
  * @return {string} The date.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-their-registered-details-req-srp-038
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-their-registered-details-req-srp-038
  */
 export function calendarDate(value, locale) {
 	const time = Date.parse(`${value || ''}T00:00:00Z`)
@@ -61,7 +61,7 @@ export function calendarDate(value, locale) {
  * @param {string} locale The reader's locale.
  * @return {string} The date.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-citizen-must-work-on-their-own-case-req-srp-042
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-citizen-must-work-on-their-own-case-req-srp-042
  */
 export function shortDate(value, locale) {
 	const time = Date.parse(value || '')
@@ -83,7 +83,7 @@ export function shortDate(value, locale) {
  * @param {string} given The locale a caller handed in, or ''.
  * @return {string} The locale.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
  */
 export function readerLocale(given) {
 	if (given) {

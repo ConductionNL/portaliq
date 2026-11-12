@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use Throwable;
  * cost nothing. Time-insensitive, and never in parallel: two runs
  * deciding the same report is due would send it twice.
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
  */
 class TrafficReportJob extends TimedJob {
 
@@ -81,7 +81,7 @@ class TrafficReportJob extends TimedJob {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the base class dictates
 	 * the signature; dropping the parameter breaks the override.

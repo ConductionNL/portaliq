@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ use OCP\AppFramework\Http\JSONResponse;
  * The checks between a validated form and a recorded submission: validation,
  * family and e-mail proofs, calculations and decisions, and statements.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
 class PortalSubmissionChecks {
 	/**
@@ -73,7 +73,7 @@ class PortalSubmissionChecks {
 	 *     verified: array<int, array{address: string, verifiedAt: string}>
 	 * }|JSONResponse The checked submission, or the refusal.
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function prepare(
 		array $render,

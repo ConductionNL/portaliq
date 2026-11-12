@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-a-sign-up-role-enforces-its-capacity-server-side
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-sign-up-role-enforces-its-capacity-server-side
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-a-sign-up-role-enforces-its-capacity-server-side
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-sign-up-role-enforces-its-capacity-server-side
  */
 class EventSignupService {
 	use ObjectRowNormaliser;
@@ -81,7 +81,7 @@ class EventSignupService {
 	 *
 	 * @return string|null The refusal reason, or null on success.
 	 *
-	 * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-a-sign-up-role-enforces-its-capacity-server-side
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-sign-up-role-enforces-its-capacity-server-side
 	 */
 	public function attemptSignup(string $subjectRef, string $eventId, string $roleId, string $childRef = '', string $note = ''): ?string {
 		$role = $this->reachableRole(subjectRef: $subjectRef, eventId: $eventId, roleId: $roleId, childRef: $childRef);

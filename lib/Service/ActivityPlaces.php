@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-term-long-activity-must-be-offered-with-places-set-by-capacity-and-supervision
+ * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-term-long-activity-must-be-offered-with-places-set-by-capacity-and-supervision
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ namespace OCA\Portaliq\Service;
 /**
  * Counts places, holders and the waiting list of one activity.
  *
- * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-term-long-activity-must-be-offered-with-places-set-by-capacity-and-supervision
+ * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-term-long-activity-must-be-offered-with-places-set-by-capacity-and-supervision
  */
 class ActivityPlaces {
 	/**
@@ -58,7 +58,7 @@ class ActivityPlaces {
 	 *
 	 * @return int
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-term-long-activity-must-be-offered-with-places-set-by-capacity-and-supervision
+	 * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-term-long-activity-must-be-offered-with-places-set-by-capacity-and-supervision
 	 */
 	public function placesFor(array $activity): int {
 		$capacity = max(0, (int)($activity['capacity'] ?? 0));
@@ -85,7 +85,7 @@ class ActivityPlaces {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
 	 */
 	public function forActivity(array $signups, array $activityKeys): array {
 		return array_values(
@@ -103,7 +103,7 @@ class ActivityPlaces {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
 	 */
 	public function confirmed(array $signups): array {
 		return array_values(array_filter($signups, static fn (array $signup): bool => ($signup['status'] ?? '') === self::CONFIRMED));
@@ -117,7 +117,7 @@ class ActivityPlaces {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
 	 */
 	public function waitlist(array $signups): array {
 		$waiting = array_values(array_filter($signups, static fn (array $signup): bool => ($signup['status'] ?? '') === self::WAITLISTED));
@@ -144,7 +144,7 @@ class ActivityPlaces {
 	 *
 	 * @return int|null
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
 	 */
 	public function position(array $signups, string $childRef): ?int {
 		foreach ($this->waitlist(signups: $signups) as $index => $signup) {
@@ -164,7 +164,7 @@ class ActivityPlaces {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-guardian-must-be-able-to-sign-up-one-of-their-own-children-with-a-waiting-list-when-full
 	 */
 	public function activeFor(array $signups, string $childRef): ?array {
 		foreach ($signups as $signup) {

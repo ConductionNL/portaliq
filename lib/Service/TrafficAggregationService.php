@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
  */
 
 declare(strict_types=1);
@@ -60,7 +60,7 @@ use Psr\Log\LoggerInterface;
  * of its members' "all sessions" records, computed AFTER every ordinary
  * portal so it reads the numbers this same run wrote.
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the job's service
  * meets the portals, the configuration, the store, the sessioniser, the
@@ -117,8 +117,8 @@ class TrafficAggregationService {
 	 *
 	 * @return array{portals: int, days: int, purged: int, recordingsPurged: int} What was done.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-daily-rollups-must-be-readable-through-the-ordinary-object-api
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
 	 */
 	public function run(): array {
 		$done = $this->aggregateAll(now: $this->now()) + $this->purgeExpired();
@@ -246,7 +246,7 @@ class TrafficAggregationService {
 	 *
 	 * @return bool True when a rollup was written.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-segment-must-be-a-saved-filter-over-sessions
 	 */
 	private function aggregateDay(string $slug, string $date, array $config, DateTimeImmutable $now): bool {
 		$records = $this->dayRecords(slug: $slug, date: $date, config: $config, now: $now);
@@ -268,7 +268,7 @@ class TrafficAggregationService {
 	 *
 	 * @return array<string, array<string, mixed>>|null The records.
 	 *
-	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
+	 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
 	 */
 	public function dayRecords(string $slug, string $date, array $config, DateTimeImmutable $now): ?array {
 		$events = $this->dayEvents(slug: $slug, date: $date);
@@ -373,7 +373,7 @@ class TrafficAggregationService {
 	 *
 	 * @return bool True when a rollup was written.
 	 *
-	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
+	 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
 	 */
 	public function writeDay(string $slug, string $date, array $records): bool {
 		$existing = $this->existingBySegment(slug: $slug, date: $date);
@@ -405,8 +405,8 @@ class TrafficAggregationService {
 	 *
 	 * @return int How many days were written.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-roll-up-portal-must-sum-its-members-and-never-count-its-own
-	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-roll-up-portal-must-sum-its-members-and-never-count-its-own
+	 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
 	 */
 	public function aggregateRollup(string $slug, array $members, array $written, DateTimeImmutable $now): int {
 		$run = new RollupRun(slug: $slug, members: $members, now: $now);

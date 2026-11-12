@@ -11,7 +11,7 @@
   the theme's own colours with the number in text beside each, which is
   what a screen reader gets too.
 
-  @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-funnel-steps-must-count-in-order
+  @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-funnel-steps-must-count-in-order
 -->
 <template>
 	<div class="traffic-funnels" data-testid="traffic-funnels">
@@ -82,7 +82,7 @@ export default {
 		 * The bar's width: the step's sessions as a share of the first
 		 * step's, never below a sliver so a zero step is still a bar.
 		 *
-		 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-funnel-steps-must-count-in-order
+		 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-funnel-steps-must-count-in-order
 		 * @param {object} step   The step.
 		 * @param {object} funnel Its funnel.
 		 * @return {string} A CSS percentage.
@@ -98,7 +98,7 @@ export default {
 		/**
 		 * The drop-off from the previous step, as text.
 		 *
-		 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-funnel-steps-must-count-in-order
+		 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-funnel-steps-must-count-in-order
 		 * @param {object} step The step.
 		 * @return {string} "-50% drop-off".
 		 */
@@ -111,7 +111,7 @@ export default {
 		/**
 		 * What a screen reader hears for the bar.
 		 *
-		 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-funnel-steps-must-count-in-order
+		 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-funnel-steps-must-count-in-order
 		 * @param {object} step   The step.
 		 * @param {object} funnel Its funnel.
 		 * @return {string} The label.

@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ namespace OCA\Portaliq\Service;
 /**
  * Finds the event a person may answer for a child, or nothing.
  *
- * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
  */
 class EventRsvpEligibility {
 	/**
@@ -65,7 +65,7 @@ class EventRsvpEligibility {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/events-and-signups/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-event-is-authored-per-school-group-or-child-with-guardian-rsvp
 	 */
 	public function answerableEvent(string $subjectRef, string $eventId, string $childRef, string $response): ?array {
 		$named = ($subjectRef !== '' && $eventId !== '' && $childRef !== '');

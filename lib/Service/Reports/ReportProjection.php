@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+ * @spec openspec/specs/report-without-an-account/spec.md
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ namespace OCA\Portaliq\Service\Reports;
 /**
  * Projects a report for anybody who is not the custodian answering a reveal.
  *
- * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+ * @spec openspec/specs/report-without-an-account/spec.md
  */
 class ReportProjection {
 	/**
@@ -61,7 +61,7 @@ class ReportProjection {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	public function one(array $report): array {
 		$out = ['id' => ReportRowId::of(row: $report)];
@@ -94,7 +94,7 @@ class ReportProjection {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	public function many(array $reports): array {
 		$out = [];

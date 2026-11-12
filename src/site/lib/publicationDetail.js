@@ -62,7 +62,7 @@ function readableDate(value, locale) {
  *
  * @param {object} publication One publication object.
  * @return {string} The summary, or ''.
- * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
  */
 export function publicationSummary(publication) {
 	const row = publication || {}
@@ -80,7 +80,7 @@ export function publicationSummary(publication) {
  *
  * @param {object} publication One publication object.
  * @return {Array<string>} The theme ids.
- * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
  */
 export function themeIdsOf(publication) {
 	const themes = (publication || {}).themes
@@ -106,7 +106,7 @@ export function themeIdsOf(publication) {
  * @param {string} context.locale The site's language.
  * @param {Record<string, string>} [context.themeNames] Theme id to name.
  * @return {Array<{name: string, label: string, value: string|Array<string>, kind: string}>} The rows.
- * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
  */
 export function visitorRows(publication, { t, locale, themeNames = {} }) {
 	if (!publication || typeof publication !== 'object') {
@@ -190,7 +190,7 @@ function safeLink(value) {
  * @param {number} bytes The size in bytes.
  * @return {string} The size, or '' when unknown.
  *
- * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-list-and-offer-every-document-for-download-req-wsd-005
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-list-and-offer-every-document-for-download-req-wsd-005
  */
 export function humanSize(bytes) {
 	if (bytes === null || bytes === undefined || bytes === '') {
@@ -249,7 +249,7 @@ function fileType(file) {
  * @param {object|Array} envelope The attachments answer.
  * @return {Array<object>} `{id, title, type, size, href}` rows.
  *
- * @spec openspec/changes/woo-search-and-detail/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-list-and-offer-every-document-for-download-req-wsd-005
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-list-and-offer-every-document-for-download-req-wsd-005
  */
 export function toDocuments(envelope) {
 	let files = []

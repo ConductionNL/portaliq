@@ -84,7 +84,7 @@ class PortalSessionRevoker {
 	 * @return array{revoked: int, failed: int, complete: bool}
 	 *
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#3.2
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T09
 	 * @spec openspec/changes/sign-in-with-an-email-link/specs/portal-ways-in/spec.md#requirement-staff-can-revoke-an-accounts-e-mail-links-and-sessions-req-iwi-013
 	 */
 	public function revokeAll(string $organisation, string $admin, string $subjectRef = ''): array {

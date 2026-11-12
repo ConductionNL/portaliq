@@ -148,7 +148,7 @@ class SiteShellTheme {
 	 *
 	 * @spec openspec/changes/site-links-the-theme-bridge/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-theme-apps-public-bridge-before-a-resolved-token-set-req-stb-001
 	 * @spec openspec/changes/site-links-the-theme-bridge/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-faces-the-theme-app-bundles-req-stb-002
-	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+	 * @spec openspec/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
 	 */
 	public function appSheets(): array {
 		$none = ['bridge' => '', 'fonts' => '', 'logoInverse' => '', 'emblem' => '', 'emblemGrey' => ''];
@@ -202,7 +202,7 @@ class SiteShellTheme {
 	 * @return string An absolute URL, or '' when there is no logo to serve.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
-	 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+	 * @spec openspec/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
 	 */
 	public function logoUrl(string $variant=''): string {
 		$stylesheet = $this->stylesheet();

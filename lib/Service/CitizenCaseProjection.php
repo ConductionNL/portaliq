@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Projects the citizen's case to what the case screen may show.
  *
- * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
 class CitizenCaseProjection {
 	/**
@@ -72,7 +72,7 @@ class CitizenCaseProjection {
 	 *
 	 * @return array<string, mixed> The projected case.
 	 *
-	 * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function visible(array $context, array $case): array {
 		$declared = ($context['fields'] ?? null);

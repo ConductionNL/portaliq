@@ -16,7 +16,7 @@
  * per type and asks for the same list again. The page's rows and pagination
  * read from the store, so they update where they are.
  *
- * @spec openspec/changes/news-list-keeps-its-page/specs/admin-ui/spec.md#requirement-saving-from-a-list-must-keep-the-list-where-it-was
+ * @spec openspec/specs/admin-ui/spec.md#requirement-saving-from-a-list-must-keep-the-list-where-it-was
  */
 
 /** The store this module watches, once recorded. */
@@ -31,7 +31,7 @@ const lastParams = new Map()
  *
  * @param {object} store The shared object store (`useObjectStore()`).
  * @return {void}
- * @spec openspec/changes/news-list-keeps-its-page/specs/admin-ui/spec.md#requirement-saving-from-a-list-must-keep-the-list-where-it-was
+ * @spec openspec/specs/admin-ui/spec.md#requirement-saving-from-a-list-must-keep-the-list-where-it-was
  */
 export function recordListFetches(store) {
 	if (watched !== null || !store || typeof store.$onAction !== 'function') {
@@ -51,7 +51,7 @@ export function recordListFetches(store) {
  * @param {string} type The store type, `<register>-<schema>`.
  * @return {boolean} False when that list was never fetched here, so the
  *   caller can fall back to reloading the page.
- * @spec openspec/changes/news-list-keeps-its-page/specs/admin-ui/spec.md#requirement-saving-from-a-list-must-keep-the-list-where-it-was
+ * @spec openspec/specs/admin-ui/spec.md#requirement-saving-from-a-list-must-keep-the-list-where-it-was
  */
 export function refreshList(type) {
 	if (watched === null || !lastParams.has(type)) {

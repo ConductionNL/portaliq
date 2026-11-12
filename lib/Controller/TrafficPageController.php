@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-endpoint-must-return-one-pages-figures-for-a-period
+ * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-endpoint-must-return-one-pages-figures-for-a-period
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use OCP\IRequest;
  * `NoAdminRequired` on the action. A page's audience is part of the
  * portal's audience measurement, which is an operator's surface.
  *
- * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-endpoint-must-return-one-pages-figures-for-a-period
+ * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-endpoint-must-return-one-pages-figures-for-a-period
  */
 class TrafficPageController extends Controller {
 
@@ -106,7 +106,7 @@ class TrafficPageController extends Controller {
 	 *
 	 * @auth admin-only audience measurement is an operator's surface, the same posture as the summary and the export
 	 *
-	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-endpoint-must-return-one-pages-figures-for-a-period
+	 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-endpoint-must-return-one-pages-figures-for-a-period
 	 */
 	public function page(string $portal = '', string $route = '', string $days = ''): JSONResponse {
 		$reason = $this->refusal(portal: $portal, route: $route, days: $days);

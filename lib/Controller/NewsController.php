@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/news-and-newsletter-authoring/design.md#api-design
+ * @spec openspec/changes/archive/2026-10-09-news-and-newsletter-authoring/design.md#api-design
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Staff authoring for news items.
  *
- * @spec openspec/changes/news-and-newsletter-authoring/design.md#api-design
+ * @spec openspec/changes/archive/2026-10-09-news-and-newsletter-authoring/design.md#api-design
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- `IUserSession` is the
  * authorization guard every `#[NoAdminRequired]` method calls first, and
@@ -107,7 +107,7 @@ class NewsController extends Controller {
 	 *
 	 * @return JSONResponse The created object, or a 400/500.
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
 	 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-news-item-shows-on-a-portals-public-website-only-when-staff-put-it-there
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- `public` is a request parameter the framework
@@ -160,7 +160,7 @@ class NewsController extends Controller {
 	 *
 	 * @return JSONResponse The updated object, a 400 or a 404.
 	 *
-	 * @spec openspec/changes/staff-news-screen/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T1
 	 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-news-item-shows-on-a-portals-public-website-only-when-staff-put-it-there
 	 */
 	#[NoAdminRequired]
@@ -198,7 +198,7 @@ class NewsController extends Controller {
 	 *
 	 * @return JSONResponse `{schools: [{id, label}], groups: [{id, label}]}`.
 	 *
-	 * @spec openspec/changes/staff-news-screen/tasks.md#T2
+	 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T2
 	 */
 	#[NoAdminRequired]
 	public function audiences(): JSONResponse {
@@ -219,8 +219,8 @@ class NewsController extends Controller {
 	 *
 	 * @return JSONResponse The updated object, or 404.
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
-	 * @spec openspec/changes/news-publish-date/specs/portaliq-cms/spec.md#requirement-a-news-item-carries-the-moment-it-was-published
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-news-item-carries-the-moment-it-was-published
 	 */
 	#[NoAdminRequired]
 	public function publish(string $id): JSONResponse {
@@ -242,8 +242,8 @@ class NewsController extends Controller {
 	 *
 	 * @return JSONResponse The updated object, or 404.
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
-	 * @spec openspec/changes/news-publish-date/specs/portaliq-cms/spec.md#requirement-a-news-item-carries-the-moment-it-was-published
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-news-item-carries-the-moment-it-was-published
 	 */
 	#[NoAdminRequired]
 	public function unpublish(string $id): JSONResponse {

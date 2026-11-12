@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/news-publish-date/tasks.md#T3
+ * @spec openspec/changes/archive/2026-10-07-news-publish-date/tasks.md#T3
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use Throwable;
 /**
  * Stamps `publishedAt` on published news items that have none.
  *
- * @spec openspec/changes/news-publish-date/tasks.md#T3
+ * @spec openspec/changes/archive/2026-10-07-news-publish-date/tasks.md#T3
  */
 class BackfillNewsPublishedAt implements IRepairStep {
 	use PagedSchemaRead;
@@ -97,7 +97,7 @@ class BackfillNewsPublishedAt implements IRepairStep {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/news-publish-date/tasks.md#T3
+	 * @spec openspec/changes/archive/2026-10-07-news-publish-date/tasks.md#T3
 	 */
 	public function getName(): string {
 		return 'Give published news items their publish moment';
@@ -110,7 +110,7 @@ class BackfillNewsPublishedAt implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/news-publish-date/tasks.md#T3
+	 * @spec openspec/changes/archive/2026-10-07-news-publish-date/tasks.md#T3
 	 */
 	public function run(IOutput $output): void {
 		$objectService = $this->objectService();

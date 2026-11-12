@@ -122,7 +122,7 @@ class PortalResolver {
 	 *
 	 * @return array|null The portal object, or null when nothing matched.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-the-collector-must-survive-being-a-public-endpoint
 	 */
 	public function resolveForCollector(IRequest $request, ?string $portalSlug = null): ?array {
 		$sites = $this->allPublishedPortals();

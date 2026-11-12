@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-invitation-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ use OCA\Portaliq\Service\PortalObjectWriter;
 /**
  * Joins a waiting account into the account that signed in.
  *
- * @spec openspec/changes/portal-invitation-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 class WaitingAccountJoin {
 	/**
@@ -89,8 +89,8 @@ class WaitingAccountJoin {
 	 * @return string|null The identifier of the waiting account that was
 	 *                     joined, or null when nothing was.
 	 *
-	 * @spec openspec/changes/portal-invitation-joins-the-signed-in-account/specs/portal-identity-space/spec.md
-	 * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function join(array $account, string $verifiedEmail, string $organisation): ?string {
 		if ($verifiedEmail === '') {
@@ -131,10 +131,10 @@ class WaitingAccountJoin {
 	 * @return string|null The identifier of the waiting account that was
 	 *                     joined, or null when nothing was.
 	 *
-	 * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
-	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
-	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
-	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- one field of the write
 	 * depends on it; two methods would differ in that value only.
@@ -190,7 +190,7 @@ class WaitingAccountJoin {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function isJoinable(array $account, array $waiting): bool {
 		$organisation = (string)($waiting['organisation'] ?? '');
@@ -242,7 +242,7 @@ class WaitingAccountJoin {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function mayAdoptAudience(array $account, array $waiting, UnboundAccount $unbound): bool {
 		return $unbound->mayTakeOn(account: $account, waiting: $waiting)
@@ -281,7 +281,7 @@ class WaitingAccountJoin {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/confirmed-address-joins-the-waiting-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function claimsConflict(array $account, array $waiting): bool {
 		$held = (array)($account['claims'] ?? []);

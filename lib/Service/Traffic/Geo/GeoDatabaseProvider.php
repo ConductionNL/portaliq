@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
+ * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ use RuntimeException;
  * so a provider is a download and nothing else, which is what makes the
  * second one cheap.
  *
- * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
+ * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
  */
 interface GeoDatabaseProvider {
 
@@ -40,7 +40,7 @@ interface GeoDatabaseProvider {
 	 *
 	 * @return string One of GeoSettings::PROVIDERS, never `none`.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
 	 */
 	public function providerId(): string;
 
@@ -49,7 +49,7 @@ interface GeoDatabaseProvider {
 	 *
 	 * @return string The attribution, stored beside the database.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
 	 */
 	public function attribution(): string;
 
@@ -62,7 +62,7 @@ interface GeoDatabaseProvider {
 	 *
 	 * @throws RuntimeException When nothing usable could be fetched.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-the-geography-database-must-be-refreshed-without-an-operator-and-on-demand
 	 */
 	public function fetch(string $targetPath): string;
 }

@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/guardian-enumeration-from-the-school-app/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-guardian-enumeration-from-the-school-app/tasks.md#T1
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use Throwable;
 /**
  * The active guardian accounts, as subjectRefs.
  *
- * @spec openspec/changes/guardian-enumeration-from-the-school-app/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-guardian-enumeration-from-the-school-app/tasks.md#T1
  *
  * @SuppressWarnings(PHPMD.StaticAccess) -- NewsAudienceMatcher::matches() is
  * the ONE stateless match predicate the news feed and every enumeration
@@ -92,7 +92,7 @@ class GuardianAccountDirectory {
 	 *
 	 * @return array<int, string> Distinct guardian subjectRefs.
 	 *
-	 * @spec openspec/changes/guardian-enumeration-from-the-school-app/tasks.md#T2
+	 * @spec openspec/changes/archive/2026-10-07-guardian-enumeration-from-the-school-app/tasks.md#T2
 	 */
 	public function guardiansMatching(array $target, array $exclude = []): array {
 		// A keyed set: an in_array() per guardian made this quadratic.
@@ -119,7 +119,7 @@ class GuardianAccountDirectory {
 	 *
 	 * @return array<int, string>
 	 *
-	 * @spec openspec/changes/guardian-enumeration-from-the-school-app/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-10-07-guardian-enumeration-from-the-school-app/tasks.md#T1
 	 */
 	public function activeGuardianRefs(): array {
 		$objectService = $this->objectService();

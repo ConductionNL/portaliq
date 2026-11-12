@@ -45,7 +45,7 @@ function goTo(url) {
  * Without an `api` it forwards through the site's own resident session
  * (`residentActions.forwardApi`), the way the save buttons do.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-an-endpoint-action-must-show-its-answer-or-follow-its-redirect-req-srp-027
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-an-endpoint-action-must-show-its-answer-or-follow-its-redirect-req-srp-027
  */
 export default {
 	name: 'ActionButton',
@@ -86,7 +86,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-an-endpoint-action-must-show-its-answer-or-follow-its-redirect-req-srp-027
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-an-endpoint-action-must-show-its-answer-or-follow-its-redirect-req-srp-027
 		 */
 		async run() {
 			this.message = ''

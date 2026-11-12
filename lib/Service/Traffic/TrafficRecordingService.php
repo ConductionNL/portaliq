@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+ * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use OCP\AppFramework\Utility\ITimeFactory;
  * Every chunk passes through the mask before it is stored, whatever the
  * recorder promised.
  *
- * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+ * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
  */
 class TrafficRecordingService {
 
@@ -93,7 +93,7 @@ class TrafficRecordingService {
 	 *
 	 * @return array{ok: bool, reason: string} The outcome; the reason is '' when stored.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-session-recording-must-be-off-by-default-consented-and-bounded
 	 */
 	public function ingest(array $portal, array $body, array $context = []): array {
 		$config = $this->config->resolve(portal: $portal);

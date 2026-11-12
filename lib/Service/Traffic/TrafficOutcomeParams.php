@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-form-analytics-must-never-carry-a-value
+ * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-form-analytics-must-never-carry-a-value
  */
 
 declare(strict_types=1);
@@ -32,8 +32,8 @@ use OCA\Portaliq\Service\TrafficConfigResolver;
  * which is the contract's rule for dimensions applied to these. Both
  * STRIP, never refuse: the event is still a real start, field or view.
  *
- * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-form-analytics-must-never-carry-a-value
- * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
+ * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-form-analytics-must-never-carry-a-value
+ * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
  */
 class TrafficOutcomeParams {
 
@@ -58,9 +58,9 @@ class TrafficOutcomeParams {
 	 *
 	 * @return array<string, string|int|float|bool> The params that survive.
 	 *
-	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-form-analytics-must-never-carry-a-value
-	 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-custom-dimensions-must-be-declared-before-they-are-stored
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
+	 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-form-analytics-must-never-carry-a-value
+	 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-custom-dimensions-must-be-declared-before-they-are-stored
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
 	 */
 	public function filter(string $name, array $params, array $config): array {
 		// A use is counted, never its text (search-assistant-from-public-content).

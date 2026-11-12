@@ -228,7 +228,7 @@ class PortalRuntimeConfigResolver {
 	 *
 	 * @return ExampleResidentSignIn
 	 *
-	 * @spec openspec/changes/example-resident-demo-login/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
+	 * @spec openspec/specs/example-resident/spec.md#requirement-a-demo-may-sign-the-example-resident-in-with-one-click
 	 */
 	private function exampleResidentSignIn(): ExampleResidentSignIn {
 		return new ExampleResidentSignIn(
@@ -245,7 +245,7 @@ class PortalRuntimeConfigResolver {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-signin-on-its-own-address/tasks.md#T2
+	 * @spec openspec/changes/archive/2026-10-07-portal-signin-on-its-own-address/tasks.md#T2
 	 * @spec openspec/specs/supplier-portal/spec.md#requirement-the-test-sign-in-opens-only-on-its-own-switch
 	 */
 	private function devLoginEnabled(): bool {

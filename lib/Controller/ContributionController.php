@@ -30,11 +30,11 @@
  * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T3
  * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T5
  * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
- * @spec openspec/changes/portal-inbox-v2/tasks.md#T02
- * @spec openspec/changes/portal-inbox-v2/tasks.md#T03
- * @spec openspec/changes/portal-inbox-v2/tasks.md#T04
- * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T06
- * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+ * @spec openspec/changes/archive/2026-07-23-portal-inbox-v2/tasks.md#T02
+ * @spec openspec/changes/archive/2026-07-23-portal-inbox-v2/tasks.md#T03
+ * @spec openspec/changes/archive/2026-07-23-portal-inbox-v2/tasks.md#T04
+ * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T06
+ * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T09
  * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
  * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
  * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
@@ -240,7 +240,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return PortalCrossRefGuard The guard.
 	 *
-	 * @spec openspec/changes/portal-create-cross-refs/specs/portal-contribution-contract/spec.md
+	 * @spec openspec/specs/portal-contribution-contract/spec.md
 	 */
 	private function crossRefGuard(): PortalCrossRefGuard {
 		return ($this->crossRefs ?? new PortalCrossRefGuard(reader: $this->reader, logger: $this->logger));
@@ -354,9 +354,9 @@ class ContributionController extends Controller implements PortalProtected {
 	 *                      inbox without a subject).
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T04
-	 * @spec openspec/changes/portal-inbox-v2/tasks.md#T04
+	 * @spec openspec/changes/archive/2026-07-23-portal-inbox-v2/tasks.md#T04
 	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
-	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
 	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-your-cases-from-every-app-in-one-list-req-cmc-001
 	 */
 	#[PublicPage]
@@ -490,7 +490,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The merged inbox rows, or 401.
 	 *
-	 * @spec openspec/changes/portal-inbox-v2/tasks.md#T02
+	 * @spec openspec/changes/archive/2026-07-23-portal-inbox-v2/tasks.md#T02
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -527,8 +527,8 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The updated message, or 401 / 403 / 404.
 	 *
-	 * @spec openspec/changes/portal-inbox-v2/tasks.md#T03
-	 * @spec openspec/changes/inbox-reads-each-apps-message-fields/specs/supplier-portal/spec.md#requirement-mark-read-writes-the-collections-own-read-field-req-imf-002
+	 * @spec openspec/changes/archive/2026-07-23-portal-inbox-v2/tasks.md#T03
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-mark-read-writes-the-collections-own-read-field-req-imf-002
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -607,7 +607,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{deleted: true}`, or 401 / 403 / 404.
 	 *
-	 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -678,7 +678,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{object, action, register, schema}`, or 401 / 403 / 404 / 400 / 502.
 	 *
-	 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t03
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -837,8 +837,8 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return array{collection: array<string, mixed>, app: string}|null
 	 *
-	 * @spec openspec/changes/portal-inbox-v2/tasks.md#T03
-	 * @spec openspec/changes/inbox-shows-portal-messages/specs/portal-notifications-and-preferences/spec.md#requirement-portaliqs-own-notices-reach-the-residents-inbox-req-nap-009
+	 * @spec openspec/changes/archive/2026-07-23-portal-inbox-v2/tasks.md#T03
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-portaliqs-own-notices-reach-the-residents-inbox-req-nap-009
 	 */
 	private function authorisedInboxCollection(array $subject, string $register, string $schema, string $collectionId = ''): ?array {
 		$match = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
@@ -876,7 +876,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T3
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T5
 	 * @spec openspec/changes/archive/2026-09-07-field-projection/tasks.md#T2
-	 * @spec openspec/changes/portal-subject-rate-limit/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -934,7 +934,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return array<int, mixed> The rows.
 	 *
-	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t02
 	 */
 	private function screenRows(array $subject, array $match, string $register, string $schema): array {
 		$collection = $match['collection'];
@@ -984,7 +984,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return ColumnOverrides
 	 *
-	 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
 	 */
 	private function columnsFor(array $subject): ColumnOverrides {
 		if ($this->caseTypes === null) {
@@ -1159,7 +1159,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return array<string, mixed>|null The row.
 	 *
-	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t03
 	 */
 	private function screenRow(array $subject, array $match, string $register, string $schema, string $id): ?array {
 		$collection = $match['collection'];
@@ -1478,7 +1478,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T06
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T3
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T09
 	 * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
 	 * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
 	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
@@ -1528,7 +1528,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The created object, or the refusal.
 	 *
-	 * @spec openspec/changes/inbox-reply-with-attachments/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t02
 	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
 	 */
 	private function createFrom(array $subject, array $match, string $register, string $schema, array $carried=[]): JSONResponse {
@@ -1702,7 +1702,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *                                                                      WMEBV receipt's `appId`), 'ambiguous',
 	 *                                                                      or null.
 	 *
-	 * @spec openspec/changes/create-names-its-action/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-10-07-create-names-its-action/tasks.md#T1
 	 */
 	private function authorisedCreateAction(array $subject, string $register, string $schema): array|string|null {
 		return (new CreateActionMatcher())->match(
@@ -1836,7 +1836,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @return array{action: array<string, mixed>, app: string}|string|null The match, 'ambiguous', or null.
 	 *
 	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
-	 * @spec openspec/changes/create-names-its-action/tasks.md#T3
+	 * @spec openspec/changes/archive/2026-10-07-create-names-its-action/tasks.md#T3
 	 */
 	private function authorisedAnonymousCreateAction(string $register, string $schema): array|string|null {
 		return (new CreateActionMatcher())->matchAnonymous(
@@ -1900,7 +1900,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @return JSONResponse The updated object, or 401 / 403 / 404.
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T3
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T09
 	 * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
 	 */
 	#[PublicPage]
@@ -2083,7 +2083,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return array<string, mixed> The body without file fields.
 	 *
-	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-file-field-must-never-be-written-from-a-request-body
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-file-field-must-never-be-written-from-a-request-body
 	 */
 	private function withoutFileFields(array $action, array $data): array {
 		foreach ((array)($action['fieldConfigs'] ?? []) as $field => $config) {
@@ -2104,7 +2104,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return string The identifier, or '' when the row carries none.
 	 *
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T09
 	 */
 	private function extractId(array $row): string {
 		$self = ($row['@self'] ?? null);
@@ -2149,10 +2149,10 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @return JSONResponse The relayed response, or 401 / 403 / 502.
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T09
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T09
 	 * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
 	 * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
-	 * @spec openspec/changes/portal-take-assessment/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-action-must-be-able-to-receive-the-subjects-scope-from-the-server
 	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
 	 *
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) -- the audit fact-record
@@ -2326,7 +2326,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return array<string, mixed> The aggregate.
 	 *
-	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t01
+	 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t01
 	 */
 	private function withExportAvailability(array $aggregate): array {
 		if ($this->pdf?->available() === true) {
@@ -2353,7 +2353,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return Response The PDF, or 401 / 403 / 404 / 400 / 502 / 503.
 	 *
-	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t02
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -2397,7 +2397,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return Response The PDF, or 401 / 403 / 404 / 400 / 502 / 503.
 	 *
-	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t03
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -2444,8 +2444,8 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return Response The PDF, or 400 (too long) / 502 / 503.
 	 *
-	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t04
-	 * @spec openspec/changes/cases-export-own-data-pdf/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t04
+	 * @spec openspec/changes/archive/2026-10-09-cases-export-own-data-pdf/tasks.md#t05
 	 */
 	private function pdfResponse(array $subject, array $collection, array $columns, array $rows, array $target): Response {
 		if ($this->pdf === null || $this->pdf->available() === false) {

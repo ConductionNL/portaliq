@@ -34,8 +34,8 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
- * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
+ * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
+ * @spec openspec/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
  */
 
 declare(strict_types=1);
@@ -62,7 +62,7 @@ use OCP\IRequest;
 /**
  * Bearer-guarded proxy for the subject's portal tasks.
  *
- * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
+ * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
  */
 class PortalTaskProxyController extends Controller implements PortalProtected {
 
@@ -123,7 +123,7 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The seam's page {results, total, limit, offset}, or a refusal.
 	 *
-	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -144,7 +144,7 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The seam's task row, or a refusal.
 	 *
-	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -176,7 +176,7 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The completed task row, or a refusal.
 	 *
-	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks
 	 * @spec openspec/specs/supplier-portal/spec.md#append-only-portal-audit-trail-on-every-mutation-download-and-session-event
 	 * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
 	 * @spec openspec/specs/supplier-portal/spec.md#proof-of-receipt-log-satisfying-the-wmebv-burden-of-proof
@@ -300,7 +300,7 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	private function announceClientAnswer(TaskCompletionRun $run, ?array $answer): void {
 		if ($answer === null
@@ -332,7 +332,7 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	private function isAnswered(array $task): bool {
 		return $this->hasAnsweredStamp(task: $task) === true || $this->hasAnsweredState(task: $task) === true;
@@ -473,7 +473,7 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
+	 * @spec openspec/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
 	 */
 	private function relay(?array $answer): JSONResponse {
 		if ($answer === null) {

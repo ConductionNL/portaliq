@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
  */
 
 declare(strict_types=1);
@@ -46,7 +46,7 @@ use Throwable;
  * `persistClientId`; otherwise it is dropped even if a stale client sends one,
  * because the portal said no.
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the validator reads
  * DateTimeImmutable/DateTimeZone/Throwable and the resolver; there is no
@@ -123,7 +123,7 @@ class TrafficEventValidator {
 	 * @return array{ok: bool, reason?: string, event?: array<string, mixed>}
 	 *                                                                       The outcome.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
 	 */
 	public function validate(
 		array $event,
@@ -229,7 +229,7 @@ class TrafficEventValidator {
 	 *
 	 * @return string|null The refusal reason, or null.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
 	 */
 	private function refusal(TrafficEventCheck $check): ?string {
 		$name = $this->string(value: ($check->event['name'] ?? null), max: 64);

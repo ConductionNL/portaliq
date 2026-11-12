@@ -352,7 +352,7 @@ export async function markRead(api, threadId) {
  * @param {{readAt?: string}} message The resident's own message.
  * @param {{who: string, locale: string, tr: (key: string, vars?: object) => string}} context Who she wrote to, the page language and the translator.
  * @return {string}
- * @spec openspec/changes/message-read-time/specs/guardian-direct-messaging/spec.md#requirement-the-sender-sees-when-her-message-was-read
+ * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-the-sender-sees-when-her-message-was-read
  */
 export function readLine(message, { who, locale, tr }) {
 	const moment = formatMessageMoment(message?.readAt, locale)

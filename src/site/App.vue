@@ -965,7 +965,7 @@ export default {
 		 * @return {boolean} True when the renderer must not add a title.
 		 *
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
-		 * @spec openspec/changes/site-page-layout/specs/site-look/spec.md#requirement-a-page-must-have-one-title-heading
+		 * @spec openspec/specs/site-look/spec.md#requirement-a-page-must-have-one-title-heading
 		 */
 		bodyProvidesHeading() {
 			const body = this.page.body || {}
@@ -1035,7 +1035,7 @@ export default {
 		 *
 		 * @return {{locales: Array<object>, current: string}} The switch's props.
 		 *
-		 * @spec openspec/changes/language-switch-reaches-the-content/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
 		 */
 		languages() {
 			return {
@@ -1054,7 +1054,7 @@ export default {
 		 *
 		 * @return {object} `{enabled, placeholder, route}`.
 		 *
-		 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
+		 * @spec openspec/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
 		 */
 		headerSearch() {
 			return headerSearchOf(this.site)
@@ -1065,7 +1065,7 @@ export default {
 		 *
 		 * @return {string} The route, `/zoeken` unless the portal names another.
 		 *
-		 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
+		 * @spec openspec/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
 		 */
 		searchRoute() {
 			return this.headerSearch.route
@@ -1099,7 +1099,7 @@ export default {
 		 *
 		 * @return {object} `{groups, currentRoute, label, toggleLabel}`.
 		 *
-		 * @spec openspec/changes/site-navigation-block/specs/portaliq-cms/spec.md#requirement-a-menu-block-must-show-the-portals-navigation-in-groups
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-menu-block-must-show-the-portals-navigation-in-groups
 		 */
 		navigation() {
 			return {
@@ -1128,7 +1128,7 @@ export default {
 		 *
 		 * @return {boolean}
 		 *
-		 * @spec openspec/changes/site-navigation-block/specs/portaliq-cms/spec.md#requirement-a-page-with-a-menu-block-must-leave-the-header-menu-out
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-with-a-menu-block-must-leave-the-header-menu-out
 		 */
 		menuOnPage() {
 			return hasNavigationBlock(this.regions) && !this.accountRoute
@@ -1142,7 +1142,7 @@ export default {
 		 *
 		 * @return {boolean}
 		 *
-		 * @spec openspec/changes/site-navigation-block/specs/portaliq-cms/spec.md#requirement-a-page-with-a-menu-block-must-leave-the-header-menu-out
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-with-a-menu-block-must-leave-the-header-menu-out
 		 */
 		showSideMenu() {
 			return (
@@ -1178,7 +1178,7 @@ export default {
 		 *
 		 * @return {Array} The header menus.
 		 *
-		 * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-blue-bar-must-carry-the-websites-pages-only-req-srm-001
+		 * @spec openspec/specs/site-resident-menu/spec.md#requirement-the-blue-bar-must-carry-the-websites-pages-only-req-srm-001
 		 */
 		headerMenus() {
 			// A menu link opens its page where the site is served under the
@@ -1192,7 +1192,7 @@ export default {
 		 *
 		 * @return {Array<object>} The groups.
 		 *
-		 * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
+		 * @spec openspec/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
 		 */
 		residentMenu() {
 			if (!showsResidentMenu(this.session, this.route, this.nav)) {
@@ -1206,7 +1206,7 @@ export default {
 		 *
 		 * @return {object|null} The link.
 		 *
-		 * @spec openspec/changes/site-resident-menu/specs/site-resident-menu/spec.md#requirement-the-header-must-hold-the-name-the-way-to-the-own-area-and-sign-out-req-srm-003
+		 * @spec openspec/specs/site-resident-menu/spec.md#requirement-the-header-must-hold-the-name-the-way-to-the-own-area-and-sign-out-req-srm-003
 		 */
 		ownAreaLink() {
 			return ownAreaLinkFor(this.session, this.t, this.hrefForRoute)
@@ -1219,7 +1219,7 @@ export default {
 		 *
 		 * @return {Array<object>} The notices.
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-notices-must-show-above-every-page-req-srp-010
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-notices-must-show-above-every-page-req-srp-010
 		 */
 		shownNotices() {
 			return noticesFor(
@@ -1250,7 +1250,7 @@ export default {
 		 *
 		 * @return {string} A language code, `nl` when nothing says otherwise.
 		 *
-		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 		 */
 		locale() {
 			const lang =
@@ -1268,7 +1268,7 @@ export default {
 		 *
 		 * @return {(key: string, vars?: object) => string} The translator.
 		 *
-		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 		 * @spec openspec/changes/example-site-zuiddrecht/specs/example-site/spec.md#requirement-the-own-area-must-carry-the-name-the-portal-gives-it
 		 */
 		t() {
@@ -1284,7 +1284,7 @@ export default {
 		 *
 		 * @return {object} The sign-in settings, possibly empty.
 		 *
-		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 		 */
 		signinConfig() {
 			return runtimeConfig().signin || {}
@@ -1296,7 +1296,7 @@ export default {
 		 *
 		 * @return {object} The API.
 		 *
-		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 		 */
 		api() {
 			return createPortalApi(
@@ -1318,7 +1318,7 @@ export default {
 		 *
 		 * @return {Array<object>} The entries.
 		 *
-		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 		 */
 		nav() {
 			if (!this.session || !this.account.contributions) {
@@ -1334,7 +1334,7 @@ export default {
 		/**
 		 * @return {boolean} Whether the route on screen is in the signed-in area.
 		 *
-		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 		 */
 		accountRoute() {
 			return isAccountRoute(this.route)
@@ -1343,7 +1343,7 @@ export default {
 		/**
 		 * @return {boolean} Whether the route on screen is a shared dossier link.
 		 *
-		 * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
+		 * @spec openspec/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
 		 */
 		sharedDossierRoute() {
 			return isSharedDossierRoute(this.route)
@@ -1365,7 +1365,7 @@ export default {
 		/**
 		 * @return {string} The share token of the route on screen, or ''.
 		 *
-		 * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
+		 * @spec openspec/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
 		 */
 		sharedDossierToken() {
 			return sharedDossierToken(this.route)
@@ -1374,7 +1374,7 @@ export default {
 		/**
 		 * @return {string} The Nextcloud instance root other apps are reached under.
 		 *
-		 * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
+		 * @spec openspec/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
 		 */
 		instanceRoot() {
 			return instanceRootFrom(resolveApiBase())
@@ -1383,7 +1383,7 @@ export default {
 		/**
 		 * @return {object|null} The navigation entry the route names.
 		 *
-		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 		 */
 		accountEntry() {
 			return navEntryForRoute(this.nav, this.route)
@@ -1392,7 +1392,7 @@ export default {
 		/**
 		 * @return {number} The inbox's unread count.
 		 *
-		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 		 */
 		unreadCount() {
 			return (
@@ -1748,7 +1748,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when the account is read again.
 		 *
-		 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+		 * @spec openspec/specs/portal-identity-space/spec.md
 		 */
 		async onCodeClaimed() {
 			this.claimMessage = {
@@ -1767,7 +1767,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when the session is read again.
 		 *
-		 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+		 * @spec openspec/specs/portal-identity-space/spec.md
 		 */
 		async reloadSession() {
 			const session = await fetchSession(authBaseFrom(resolveApiBase()))
@@ -1783,7 +1783,7 @@ export default {
 		 *
 		 * @return {Storage|null}
 		 *
-		 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+		 * @spec openspec/specs/portal-identity-space/spec.md
 		 */
 		claimStorage() {
 			try {
@@ -1803,7 +1803,7 @@ export default {
 		 * @param {Array<object>} fallback What a refused read answers.
 		 * @return {Promise<Array<object>>} The read's answer, or the fallback.
 		 *
-		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 		 */
 		async unlessSignInNeeded(read, fallback) {
 			try {
@@ -1824,7 +1824,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when loaded.
 		 *
-		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 		 */
 		async loadAccount() {
 			if (!this.session) {
@@ -1871,7 +1871,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 		 */
 		forgetAccount() {
 			this.account = {
@@ -1901,7 +1901,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 		 */
 		followAccountRoute() {
 			if (!this.session || this.nav.length === 0) {
@@ -1931,7 +1931,7 @@ export default {
 		 * @param {string} target A navigation key, a section name or a route.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 		 */
 		goSection(target) {
 			const value = String(target || '')
@@ -1953,7 +1953,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-record-link-must-open-its-record-after-sign-in-req-srp-021
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-record-link-must-open-its-record-after-sign-in-req-srp-021
 		 */
 		keepOpenTarget() {
 			let storage = null
@@ -1971,7 +1971,7 @@ export default {
 		 * @param {string} route The route.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+		 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 		 */
 		replaceRoute(route) {
 			this.route = route
@@ -1990,7 +1990,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when signed in, or refused.
 		 *
-		 * @spec openspec/changes/portal-signin-on-its-own-address/tasks.md#T2
+		 * @spec openspec/changes/archive/2026-10-07-portal-signin-on-its-own-address/tasks.md#T2
 		 */
 		async devLogin() {
 			this.devError = ''
@@ -2221,7 +2221,7 @@ export default {
 		 * @param {string} title The dossier's title, or ''.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/site-shared-dossier/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
+		 * @spec openspec/specs/site-shared-dossier/spec.md#requirement-a-shared-dossier-link-must-open-a-public-page-req-ssd-001
 		 */
 		onSharedDossierLoaded(title) {
 			this.sharedDossierTitle = title || ''
@@ -2236,7 +2236,7 @@ export default {
 		 * @return {Promise<void>} Resolves when loaded.
 		 *
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-unpublished-content-must-be-indistinguishable-from-absent-content
-		 * @spec openspec/changes/site-shows-what-was-published/specs/portal-in-place-editing/spec.md#requirement-the-site-must-show-what-an-editor-published-not-a-cached-copy-req-ssp-001
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-the-site-must-show-what-an-editor-published-not-a-cached-copy-req-ssp-001
 		 */
 		async loadRoute(route, { fresh = false } = {}) {
 			this.signInNeeded = false
@@ -2373,7 +2373,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when the page is read.
 		 *
-		 * @spec openspec/changes/site-shows-what-was-published/specs/portal-in-place-editing/spec.md#requirement-the-site-must-show-what-an-editor-published-not-a-cached-copy-req-ssp-001
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-the-site-must-show-what-an-editor-published-not-a-cached-copy-req-ssp-001
 		 */
 		async refreshShownPage() {
 			if (this.routeParam !== '') {

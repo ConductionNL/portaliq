@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ use Throwable;
  * The hash is compared with `hash_equals` so the comparison's timing does
  * not say how many characters matched.
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
  */
 class TrafficServerToken {
 	use PortalBySlug;
@@ -87,7 +87,7 @@ class TrafficServerToken {
 	 *
 	 * @return string|null The token, shown once; null when the portal is unknown or the write failed.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
 	 */
 	public function issue(string $slug): ?string {
 		$portal = $this->portalBySlug(slug: $slug);
@@ -121,7 +121,7 @@ class TrafficServerToken {
 	 *
 	 * @return bool True when it matches the stored hash.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
 	 */
 	public function verify(array $portal, string $token): bool {
 		$stored = $this->config->serverTokenHash(portal: $portal);
@@ -140,7 +140,7 @@ class TrafficServerToken {
 	 *
 	 * @return string The sha256 hex.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
 	 */
 	public function hash(string $token): string {
 		return hash('sha256', $token);

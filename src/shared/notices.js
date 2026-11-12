@@ -88,7 +88,7 @@ export function sessionStore() {
  * @param {boolean} signedIn Whether a resident is signed in.
  * @return {Array<object>}
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-notices-must-show-above-every-page-req-srp-010
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-notices-must-show-above-every-page-req-srp-010
  */
 export function noticesFor(publicOnes, signedInOnes, signedIn) {
 	const shown = Array.isArray(publicOnes) ? publicOnes : []

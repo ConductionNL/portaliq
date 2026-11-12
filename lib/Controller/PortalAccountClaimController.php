@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use Throwable;
 /**
  * Redeems an invitation's secret for the bearer.
  *
- * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 class PortalAccountClaimController extends Controller implements PortalProtected {
 	/**
@@ -88,7 +88,7 @@ class PortalAccountClaimController extends Controller implements PortalProtected
 	 *                      could not finish; and one 403 `invitation_not_valid`
 	 *                      for wrong, expired and used.
 	 *
-	 * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -131,7 +131,7 @@ class PortalAccountClaimController extends Controller implements PortalProtected
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	private function claimed(array $subject): array {
 		$body = ['claimed' => true];

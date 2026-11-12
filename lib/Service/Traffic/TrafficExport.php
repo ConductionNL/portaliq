@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
  */
 
 declare(strict_types=1);
@@ -28,7 +28,7 @@ namespace OCA\Portaliq\Service\Traffic;
  * cannot hold a ranked list; the JSON carries everything the object API
  * would, minus the `@self` envelope, for the caller that wants the lists.
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
  */
 class TrafficExport {
 
@@ -69,7 +69,7 @@ class TrafficExport {
 	 *
 	 * @return string The CSV, header first, CRLF lines.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
 	 */
 	public function csv(array $records): string {
 		$lines = [$this->line(values: self::COLUMNS)];
@@ -103,7 +103,7 @@ class TrafficExport {
 	 *
 	 * @return string The JSON array.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
 	 */
 	public function json(array $records): string {
 		$out = [];
@@ -126,7 +126,7 @@ class TrafficExport {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
 	 */
 	public function fileName(string $portal, string $from, string $to, string $segment, string $format): string {
 		$parts = ['traffic', $portal, $from, $to];

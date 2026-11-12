@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+ * @spec openspec/specs/report-without-an-account/spec.md
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ use DateTimeImmutable;
 /**
  * Renders the declared terms and where they stand.
  *
- * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+ * @spec openspec/specs/report-without-an-account/spec.md
  */
 class ReportTermsService {
 	/**
@@ -55,7 +55,7 @@ class ReportTermsService {
 	 *         its name, its days, its due date, whether it is met, and the
 	 *         days left or over. A term nobody declared is simply absent.
 	 *
-	 * @spec openspec/changes/a-report-without-an-account-and-a-custodian-who-may-reveal-it/specs/report-without-an-account/spec.md
+	 * @spec openspec/specs/report-without-an-account/spec.md
 	 */
 	public function forReport(array $caseType, array $report, ?DateTimeImmutable $now = null): array {
 		$declaration = ($caseType[self::DECLARATION] ?? null);

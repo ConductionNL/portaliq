@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-paths-endpoint-must-count-each-visits-own-path-from-the-raw-events
+ * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-paths-endpoint-must-count-each-visits-own-path-from-the-raw-events
  */
 
 declare(strict_types=1);
@@ -48,7 +48,7 @@ namespace OCA\Portaliq\Service\Traffic;
  * narrows what follows it and never the step it sits on: the step still
  * shows the alternatives the reader did not take.
  *
- * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-paths-endpoint-must-count-each-visits-own-path-from-the-raw-events
+ * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-paths-endpoint-must-count-each-visits-own-path-from-the-raw-events
  */
 class TrafficPaths {
 
@@ -101,7 +101,7 @@ class TrafficPaths {
 	 *
 	 * @return string[] The paths, at most MAX_VIEWS.
 	 *
-	 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-paths-endpoint-must-count-each-visits-own-path-from-the-raw-events
+	 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-paths-endpoint-must-count-each-visits-own-path-from-the-raw-events
 	 */
 	public function sequence(array $session): array {
 		$out = [];
@@ -139,7 +139,7 @@ class TrafficPaths {
 	 *
 	 * @return array<string, int> The fold, keyed by the pages joined with NUL.
 	 *
-	 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-paths-endpoint-must-count-each-visits-own-path-from-the-raw-events
+	 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-paths-endpoint-must-count-each-visits-own-path-from-the-raw-events
 	 */
 	public function fold(array $folded, array $sessions): array {
 		foreach ($sessions as $session) {
@@ -167,8 +167,8 @@ class TrafficPaths {
 	 * @return array{sessions: int, columns: array<int, array<string, mixed>>,
 	 *               links: array<int, array{source: int, target: int, step: int, sessions: int}>} The explorer.
 	 *
-	 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-start-from-a-visits-start-or-a-page-or-end-at-a-visits-end-or-a-page
-	 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-reader-must-be-able-to-expand-from-a-node-and-change-the-number-of-steps
+	 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-start-from-a-visits-start-or-a-page-or-end-at-a-visits-end-or-a-page
+	 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-reader-must-be-able-to-expand-from-a-node-and-change-the-number-of-steps
 	 */
 	public function explore(array $folded, string $mode, string $anchor, int $steps, array $trail): array {
 		$steps = max(1, min(self::MAX_STEPS, $steps));

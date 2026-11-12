@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-measurement-must-be-cookieless-unless-the-portal-persists-a-client-id
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-measurement-must-be-cookieless-unless-the-portal-persists-a-client-id
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ use OCP\IAppConfig;
  *
  * Portal is in the hash so the same browser on two portals is two visitors.
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-measurement-must-be-cookieless-unless-the-portal-persists-a-client-id
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-measurement-must-be-cookieless-unless-the-portal-persists-a-client-id
  */
 class VisitorHasher {
 
@@ -67,7 +67,7 @@ class VisitorHasher {
 	 *
 	 * @return string A 64-character hex digest.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-measurement-must-be-cookieless-unless-the-portal-persists-a-client-id
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-measurement-must-be-cookieless-unless-the-portal-persists-a-client-id
 	 */
 	public function hash(string $portal, array $parts): string {
 		return hash('sha256', implode('|', array_merge([$this->salt(), $portal], $parts)));

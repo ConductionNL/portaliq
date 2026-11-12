@@ -651,7 +651,7 @@ export default {
 		 *
 		 * @param {string} key The widget key.
 		 * @return {string} The name.
-		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-in-place-editing/spec.md#requirement-the-editor-names-a-block-by-its-widgets-name
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-the-editor-names-a-block-by-its-widgets-name
 		 */
 		labelOf(key) {
 			return widgetLabel(key, dashboardWidgetRegistry)

@@ -5,7 +5,7 @@
 // block shows, where a case stands ("Stap 2 van 4"), its answer date and
 // whose turn it is. No Vue, so tests/mijn-cases.spec.mjs runs it as node.
 //
-// @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+// @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
 
 import { dueValueOf } from '../../../shared/casePage.js'
 import { caseStatus, caseTitle } from '../../../shared/myCases.js'
@@ -20,7 +20,7 @@ export const DEFAULT_CASE_LIMIT = 4
  * @param {object} row The case row.
  * @param {object} collection The `cases` collection.
  * @return {boolean}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
  */
 export function isClosedCase(row, collection) {
 	if (typeof row?._closed === 'boolean') {
@@ -42,7 +42,7 @@ export function isClosedCase(row, collection) {
  * @param {object} block The block (`open`, `limit`).
  * @param {object} collection The collection.
  * @return {{rows: Array<object>, more: boolean}}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
  */
 export function casesOnScreen(rows, block, collection) {
 	const limit =
@@ -61,7 +61,7 @@ export function casesOnScreen(rows, block, collection) {
  *
  * @param {Array<{state: string}>|null} steps The steps provider's answer.
  * @return {{current: number, total: number}|null}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
  */
 export function stepPosition(steps) {
 	const list = Array.isArray(steps) ? steps : []
@@ -112,7 +112,7 @@ export function dayInWords(value, today, locale, withYear = false) {
  * @param {object} row The case row.
  * @param {object} collection The `cases` collection.
  * @return {string}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
  */
 export function turnSentence(row, collection) {
 	const field = collection?.turnField
@@ -140,7 +140,7 @@ export function turnSentence(row, collection) {
  * @param {Array<object>|null} [context.steps] The case's steps, when read.
  * @param {Array<string>} [context.yourTurn] The turn values at which the resident must act (the board card's tag).
  * @return {object} `{title, typeName, status, reference, number, numberLabel, due, dueDay, readyBy, turn, yourTurn, position, closed}`.
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
  * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
  */
 export function caseCard(

@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+ * @spec openspec/specs/change-proposal-queue/spec.md
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ use OCP\IUserSession;
 /**
  * Takes proposals and decides them.
  *
- * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+ * @spec openspec/specs/change-proposal-queue/spec.md
  *
  * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- one dependency per step:
  * the session, the contribution allow-list, the record, the queue, the guard.
@@ -92,7 +92,7 @@ class ProposalController extends Controller {
 	 *
 	 * @return JSONResponse The queued proposal, or a refusal.
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -130,7 +130,7 @@ class ProposalController extends Controller {
 	 *
 	 * @return JSONResponse The queued proposal, or a refusal.
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	#[NoAdminRequired]
 	public function proposeAsColleague(
@@ -178,7 +178,7 @@ class ProposalController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	#[NoAdminRequired]
 	public function index(string $register, string $schema, string $id, string $state = ProposalService::STATE_QUEUED): JSONResponse {
@@ -217,7 +217,7 @@ class ProposalController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/guardian-self-service-profile/specs/change-proposal-queue/spec.md#requirement-a-proposer-can-list-their-own-proposals-req-cpq-005
+	 * @spec openspec/specs/change-proposal-queue/spec.md#requirement-a-proposer-can-list-their-own-proposals-req-cpq-005
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -241,7 +241,7 @@ class ProposalController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	#[NoAdminRequired]
 	public function accept(string $id): JSONResponse {
@@ -268,7 +268,7 @@ class ProposalController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	#[NoAdminRequired]
 	public function acceptConfirmingDrift(string $id): JSONResponse {
@@ -290,7 +290,7 @@ class ProposalController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	private function acceptAnswer(array $result): JSONResponse {
 		if (isset($result['error']) === false) {
@@ -313,7 +313,7 @@ class ProposalController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	#[NoAdminRequired]
 	public function reject(string $id, string $reason = ''): JSONResponse {
@@ -337,7 +337,7 @@ class ProposalController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

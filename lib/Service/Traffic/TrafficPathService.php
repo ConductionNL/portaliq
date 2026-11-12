@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-paths-endpoint-must-count-each-visits-own-path-from-the-raw-events
+ * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-paths-endpoint-must-count-each-visits-own-path-from-the-raw-events
  */
 
 declare(strict_types=1);
@@ -57,7 +57,7 @@ use OCP\ICacheFactory;
  * The daily figures refresh every fifteen minutes; five minutes of paths
  * lagging behind them is the smaller surprise.
  *
- * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-say-when-it-shows-less-than-the-chosen-period
+ * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-say-when-it-shows-less-than-the-chosen-period
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the portals, their
  * configuration, the store, the sessioniser, the segments, the path
@@ -136,8 +136,8 @@ class TrafficPathService {
 	 *
 	 * @return array<string, mixed> The explorer and what it covers, or `['error' => reason]`.
 	 *
-	 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-say-when-it-shows-less-than-the-chosen-period
-	 * @spec openspec/changes/portal-traffic-path-explorer/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-follow-the-pages-portal-period-and-segment
+	 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-say-when-it-shows-less-than-the-chosen-period
+	 * @spec openspec/specs/portal-traffic-path-explorer/spec.md#requirement-the-explorer-must-follow-the-pages-portal-period-and-segment
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the eight are the
 	 * request's eight parameters, each validated by the controller.

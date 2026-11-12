@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 /**
  * Lists the published catalogue entries, grouped by their topic.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
 class PortalCatalogueReader {
 	/**
@@ -78,7 +78,7 @@ class PortalCatalogueReader {
 	 *
 	 * @return array<int, array<string, mixed>> Topics, each with its entries.
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 */
 	public function topicsFor(string $portal): array {

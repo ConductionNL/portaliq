@@ -101,7 +101,7 @@ class PortalObjectWriter {
 	 * @return array<string, mixed>|null The created object, or null on failure.
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T06
-	 * @spec openspec/changes/portal-scope-list-membership/specs/portal-contribution-contract/spec.md#requirement-a-write-must-keep-a-verified-list-and-stamp-a-list-for-an-array-scope-field
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-write-must-keep-a-verified-list-and-stamp-a-list-for-an-array-scope-field
 	 */
 	public function createObject(
 		string $register,
@@ -191,7 +191,7 @@ class PortalObjectWriter {
 	 *
 	 * @return int The matching count, or 0 on failure.
 	 *
-	 * @spec openspec/changes/portal-session-hardening-v2/tasks.md#T10
+	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T10
 	 */
 	public function countObjects(string $register, string $schema, array $filters = []): int {
 		$objectService = $this->objectService();
@@ -240,7 +240,7 @@ class PortalObjectWriter {
 	 * @return array<string, mixed>|null The updated object, or null on ownership/OR failure.
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T2
-	 * @spec openspec/changes/portal-scope-list-membership/specs/portal-contribution-contract/spec.md#requirement-a-write-must-keep-a-verified-list-and-stamp-a-list-for-an-array-scope-field
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-write-must-keep-a-verified-list-and-stamp-a-list-for-an-array-scope-field
 	 */
 	public function updateObject(
 		string $register,
@@ -359,7 +359,7 @@ class PortalObjectWriter {
 	 *
 	 * @return bool True when the row was the subject's and is deleted.
 	 *
-	 * @spec openspec/changes/inbox-delete-own-messages/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
 	 */
 	public function deleteObject(
 		string $register,
@@ -422,7 +422,7 @@ class PortalObjectWriter {
 	 * @return array<string, mixed>|null The owned row, or null.
 	 *
 	 * @spec openspec/changes/archive/2026-09-07-portal-scoped-crud/tasks.md#T2
-	 * @spec openspec/changes/portal-scope-list-membership/specs/portal-contribution-contract/spec.md#requirement-a-direct-scope-field-must-match-a-single-value-or-strict-list-membership
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-direct-scope-field-must-match-a-single-value-or-strict-list-membership
 	 */
 	private function fetchOwnedObject(
 		object $objectService,
@@ -521,7 +521,7 @@ class PortalObjectWriter {
 	 *
 	 * @return string|array<int, string>
 	 *
-	 * @spec openspec/changes/portal-scope-list-membership/specs/portal-contribution-contract/spec.md#requirement-a-write-must-keep-a-verified-list-and-stamp-a-list-for-an-array-scope-field
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-write-must-keep-a-verified-list-and-stamp-a-list-for-an-array-scope-field
 	 */
 	private function createStamp(string $schema, string $scopeField, string $subjectRef): string|array {
 		$definition = $this->schemaReader?->readSchema(slug: $schema);

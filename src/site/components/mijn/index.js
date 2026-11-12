@@ -6,7 +6,7 @@
 // only when a page holds one, so the site's entry stays inside its budget
 // (site-mijn-omgeving-components design D1).
 //
-// @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-mijn-omgeving-components-must-use-the-den-haag-css-on-our-own-markup-and-load-on-demand-req-smo-001
+// @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-mijn-omgeving-components-must-use-the-den-haag-css-on-our-own-markup-and-load-on-demand-req-smo-001
 
 /**
  * The block components, by block type.

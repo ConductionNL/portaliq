@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
+ * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use Throwable;
  * The reader is opened once per process and reused. A city database is
  * mapped, not read, so that is cheap; opening it per event would not be.
  *
- * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
+ * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
  */
 class MmdbGeoResolver implements GeoResolverInterface {
 
@@ -87,7 +87,7 @@ class MmdbGeoResolver implements GeoResolverInterface {
 	 *
 	 * @return string|null `NL`, `NL-NB`, or null when unknown, absent or disabled.
 	 *
-	 * @spec openspec/changes/portal-traffic-visitors-and-geo/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
+	 * @spec openspec/specs/portal-traffic-visitors-and-geo/spec.md#requirement-geography-must-come-from-an-offline-database-the-operator-chose
 	 */
 	public function resolve(string $address, string $granularity): ?string {
 		if ($granularity === 'none' || $address === '' || $this->settings->provider() === 'none') {

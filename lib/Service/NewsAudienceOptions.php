@@ -35,7 +35,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/staff-news-screen/tasks.md#T2
+ * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T2
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ use Throwable;
 /**
  * Resolves the school and group choices for a news item's audience.
  *
- * @spec openspec/changes/staff-news-screen/tasks.md#T2
+ * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T2
  */
 class NewsAudienceOptions {
 	use ObjectRowNormaliser;
@@ -89,7 +89,7 @@ class NewsAudienceOptions {
 	 *
 	 * @return array{schools: array<int, array{id: string, label: string}>, groups: array<int, array{id: string, label: string}>}
 	 *
-	 * @spec openspec/changes/staff-news-screen/tasks.md#T2
+	 * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T2
 	 */
 	public function options(): array {
 		$options = ['schools' => [], 'groups' => []];

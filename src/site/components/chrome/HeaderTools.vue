@@ -156,7 +156,7 @@ import '@utrecht/button-link-css/dist/index.css'
  * The search box, the way to the own area and the phone menu button of a
  * designed header. Every string is a prop, so it mounts at a public origin.
  *
- * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
+ * @spec openspec/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
  */
 export default {
 	name: 'HeaderTools',

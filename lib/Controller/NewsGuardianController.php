@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/news-and-newsletter-authoring/design.md#api-design
+ * @spec openspec/changes/archive/2026-10-09-news-and-newsletter-authoring/design.md#api-design
  */
 
 declare(strict_types=1);
@@ -46,7 +46,7 @@ use OCP\IRequest;
 /**
  * Guardian read path for news items and the newsletter archive.
  *
- * @spec openspec/changes/news-and-newsletter-authoring/design.md#api-design
+ * @spec openspec/changes/archive/2026-10-09-news-and-newsletter-authoring/design.md#api-design
  */
 class NewsGuardianController extends Controller implements PortalProtected {
 	/**
@@ -76,8 +76,8 @@ class NewsGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
-	 * @spec openspec/changes/news-item-translation/specs/guardian-message-translation/spec.md#requirement-a-news-item-keeps-its-ai-translations-next-to-the-original
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-a-news-item-keeps-its-ai-translations-next-to-the-original
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -101,7 +101,7 @@ class NewsGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse 204 on success, 404 otherwise.
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsitem-is-authored-per-school-group-or-child-and-tracks-read-receipts
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -126,8 +126,8 @@ class NewsGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-a-newsletter-composes-existing-news-items-with-an-archive
-	 * @spec openspec/changes/news-title-and-newsletter-translation/specs/guardian-message-translation/spec.md#requirement-the-newsletter-archive-shows-its-items-as-the-news-page-does
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-newsletter-composes-existing-news-items-with-an-archive
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-the-newsletter-archive-shows-its-items-as-the-news-page-does
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

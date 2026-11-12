@@ -335,8 +335,8 @@ class ActionConfigNormaliser {
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/specs/supplier-portal/spec.md#form-data-minimisation-no-non-mandatory-field-may-be-required
-	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-an-action-must-be-able-to-declare-a-file-field
-	 * @spec openspec/changes/contribution-value-labels/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-action-must-be-able-to-declare-a-file-field
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
 	 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-choice-cards-or-named-days-req-smf-005
 	 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-an-action-field-may-word-its-own-error-req-smf-006
 	 * @spec openspec/specs/site-forms/spec.md#requirement-an-endpoint-action-may-declare-a-fields-input-req-eaf-001
@@ -409,7 +409,7 @@ class ActionConfigNormaliser {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
 	 */
 	private function schemaDefinition(array $action): ?array {
 		if ($this->schemaReader === null) {

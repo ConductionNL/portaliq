@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use OCA\Portaliq\Service\PortalSessionService;
 /**
  * The account side of taking on an invitation's audience.
  *
- * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess) -- PortalSessionService::trustSatisfies,
  * the one comparison of trust levels, as in ContributionController.
@@ -83,7 +83,7 @@ final class UnboundAccount {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function mayTakeOn(array $account, array $waiting): bool {
 		return in_array((string)($waiting['audience'] ?? ''), $this->audiences, true) === true

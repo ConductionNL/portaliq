@@ -144,7 +144,7 @@ class PortalPageController extends Controller {
 	 *
 	 * @return RedirectResponse
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-old-portal-links-must-land-on-the-site-req-srp-048
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-old-portal-links-must-land-on-the-site-req-srp-048
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -167,7 +167,7 @@ class PortalPageController extends Controller {
 	 *
 	 * @return RedirectResponse
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-old-portal-links-must-land-on-the-site-req-srp-048
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-old-portal-links-must-land-on-the-site-req-srp-048
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- $path is bound by the
 	 * route definition and carries nothing the site can use.
@@ -185,7 +185,7 @@ class PortalPageController extends Controller {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-old-portal-links-must-land-on-the-site-req-srp-048
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-old-portal-links-must-land-on-the-site-req-srp-048
 	 */
 	private function siteAddress(): string {
 		$site = $this->urlGenerator->linkToRoute('portaliq.portalPage.site');
@@ -212,7 +212,7 @@ class PortalPageController extends Controller {
 	 *
 	 * @return TemplateResponse The site shell.
 	 *
-	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -229,7 +229,7 @@ class PortalPageController extends Controller {
 	 *
 	 * @return TemplateResponse The site shell.
 	 *
-	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 	 */
 	private function shellResponse(string $path): TemplateResponse {
 		$response = new TemplateResponse(

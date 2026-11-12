@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/activity-offer-contract-fix/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-raise-the-contribution-for-an-activitys-confirmed-places-and-portaliq-must-write-the-reference
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-raise-the-contribution-for-an-activitys-confirmed-places-and-portaliq-must-write-the-reference
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use OCA\Portaliq\Service\Identity\PortalAccountLookup;
  * Raises an activity's contribution per confirmed place and writes the
  * references.
  *
- * @spec openspec/changes/activity-offer-contract-fix/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-raise-the-contribution-for-an-activitys-confirmed-places-and-portaliq-must-write-the-reference
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-raise-the-contribution-for-an-activitys-confirmed-places-and-portaliq-must-write-the-reference
  */
 class ActivityContributionService {
 	/**
@@ -102,7 +102,7 @@ class ActivityContributionService {
 	 *
 	 * @return array<string, mixed> `{raised, skipped, failed, results}`, or `['error' => <code>]`.
 	 *
-	 * @spec openspec/changes/activity-offer-contract-fix/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-raise-the-contribution-for-an-activitys-confirmed-places-and-portaliq-must-write-the-reference
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-raise-the-contribution-for-an-activitys-confirmed-places-and-portaliq-must-write-the-reference
 	 */
 	public function raise(string $activityId, array $params): array {
 		$activity = $this->store->lookup(schema: ActivityStore::OFFER, id: $activityId);

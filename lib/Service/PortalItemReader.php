@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/my-dossiers/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-an-item-list-read-from-its-app-req-myd-001
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-an-item-list-read-from-its-app-req-myd-001
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ use Throwable;
 /**
  * Reads and sanitises one object's items.
  *
- * @spec openspec/changes/my-dossiers/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-an-item-list-read-from-its-app-req-myd-001
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-an-item-list-read-from-its-app-req-myd-001
  */
 class PortalItemReader {
 	/**
@@ -58,7 +58,7 @@ class PortalItemReader {
 	 *
 	 * @return array<int, array{id: string, title: string, url: string, note: string, public: bool, addedAt: string}>|null
 	 *
-	 * @spec openspec/changes/my-dossiers/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-an-item-list-read-from-its-app-req-myd-001
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-an-item-list-read-from-its-app-req-myd-001
 	 */
 	public function items(string $appId, string $method, string $id): ?array {
 		$provider = $this->locator->locate(appId: $appId);

@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/portal-my-cases/spec.md
+ * @spec openspec/specs/portal-my-cases/spec.md
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Normalises a collection's `statusLabelField` and stamps its words on a row.
  *
- * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/portal-my-cases/spec.md
+ * @spec openspec/specs/portal-my-cases/spec.md
  */
 class CaseStatusLabelField {
 	/**
@@ -48,7 +48,7 @@ class CaseStatusLabelField {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/portal-my-cases/spec.md
+	 * @spec openspec/specs/portal-my-cases/spec.md
 	 */
 	public function normalise(array $collection): array {
 		if (array_key_exists('statusLabelField', $collection) === false) {
@@ -76,7 +76,7 @@ class CaseStatusLabelField {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/portal-my-cases/spec.md
+	 * @spec openspec/specs/portal-my-cases/spec.md
 	 */
 	public function stamp(array $row, array $collection): array {
 		$field = (string)($collection['statusLabelField'] ?? '');

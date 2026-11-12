@@ -14,7 +14,7 @@
  * manifest offers. So this file never decides what a resident may do: it only
  * hides a button whose action the manifest does not offer.
  *
- * @spec openspec/changes/woo-journey-entry-points/specs/portal-federated-search/spec.md#requirement-the-save-actions-must-show-only-to-a-signed-in-resident-who-is-offered-them-req-wje-001
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-save-actions-must-show-only-to-a-signed-in-resident-who-is-offered-them-req-wje-001
  */
 import { submissionHeaders } from '../../shared/submissionKey.js'
 
@@ -37,7 +37,7 @@ export const RESIDENT_ACTION_DEFAULTS = Object.freeze({
  * @param {boolean} signedIn Whether the shell holds a portal session.
  * @return {object} The props with `signedIn` set by the host.
  *
- * @spec openspec/changes/woo-journey-entry-points/specs/portal-federated-search/spec.md#requirement-the-save-actions-must-show-only-to-a-signed-in-resident-who-is-offered-them-req-wje-001
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-save-actions-must-show-only-to-a-signed-in-resident-who-is-offered-them-req-wje-001
  */
 export function withSignedIn(props, signedIn) {
 	return { ...props, signedIn: signedIn === true }
@@ -50,7 +50,7 @@ export function withSignedIn(props, signedIn) {
  * @param {string} appId    The contributing app.
  * @return {Set<string>} The offered action ids.
  *
- * @spec openspec/changes/woo-journey-entry-points/specs/portal-federated-search/spec.md#requirement-the-save-actions-must-show-only-to-a-signed-in-resident-who-is-offered-them-req-wje-001
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-save-actions-must-show-only-to-a-signed-in-resident-who-is-offered-them-req-wje-001
  */
 export function offeredActions(manifest, appId) {
 	const ids = new Set()
@@ -76,7 +76,7 @@ export function offeredActions(manifest, appId) {
  * @param {string}      actionId The button's action.
  * @return {boolean} True only when both hold.
  *
- * @spec openspec/changes/woo-journey-entry-points/specs/portal-federated-search/spec.md#requirement-the-save-actions-must-show-only-to-a-signed-in-resident-who-is-offered-them-req-wje-001
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-save-actions-must-show-only-to-a-signed-in-resident-who-is-offered-them-req-wje-001
  */
 export function saveVisible(signedIn, offered, actionId) {
 	return signedIn === true && offered instanceof Set && offered.has(actionId)
@@ -90,7 +90,7 @@ export function saveVisible(signedIn, offered, actionId) {
  * @param {string} schema   The dossier schema.
  * @return {object|null} `{id, register, schema}`, or null.
  *
- * @spec openspec/changes/woo-journey-entry-points/specs/portal-federated-search/spec.md#requirement-a-resident-must-be-able-to-keep-a-publication-or-one-document-in-a-dossier-req-wje-002
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-a-resident-must-be-able-to-keep-a-publication-or-one-document-in-a-dossier-req-wje-002
  */
 export function dossierCollectionOf(manifest, appId, schema) {
 	for (const contribution of contributionsOf(manifest, appId)) {
@@ -143,7 +143,7 @@ function* contributionsOf(manifest, appId) {
  * @param {object} input `{collection?, title?, publication, attachment?}`.
  * @return {object} The action body.
  *
- * @spec openspec/changes/woo-journey-entry-points/specs/portal-federated-search/spec.md#requirement-a-resident-must-be-able-to-keep-a-publication-or-one-document-in-a-dossier-req-wje-002
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-a-resident-must-be-able-to-keep-a-publication-or-one-document-in-a-dossier-req-wje-002
  */
 export function addToCollectionBody(input) {
 	const target = input.collection
@@ -174,7 +174,7 @@ function attachmentOf(attachment) {
  * @param {object} input `{title, frequency?, query}`.
  * @return {object} The action body.
  *
- * @spec openspec/changes/woo-journey-entry-points/specs/portal-federated-search/spec.md#requirement-a-resident-must-be-able-to-save-the-current-search-req-wje-003
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-a-resident-must-be-able-to-save-the-current-search-req-wje-003
  */
 export function saveSearchBody(input) {
 	const frequency = ['immediate', 'daily', 'weekly'].includes(input.frequency)
@@ -218,7 +218,7 @@ function headersFor(token) {
  * @param {typeof fetch} fetchImpl    `fetch`, replaceable in tests.
  * @return {Promise<object>} `{ok, status, body}`.
  *
- * @spec openspec/changes/woo-journey-entry-points/specs/portal-federated-search/spec.md#requirement-a-resident-must-be-able-to-keep-a-publication-or-one-document-in-a-dossier-req-wje-002
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-a-resident-must-be-able-to-keep-a-publication-or-one-document-in-a-dossier-req-wje-002
  */
 export async function postAction(request, fetchImpl = fetch) {
 	const { authBase, appId, actionId } = request
@@ -264,7 +264,7 @@ function actionInit(request) {
  * @param {typeof fetch} fetchImpl `fetch`, replaceable in tests.
  * @return {{forwardAction: (appId: string, actionId: string, body: object, options?: object) => Promise<object>}} The adapter.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-an-endpoint-action-must-show-its-answer-or-follow-its-redirect-req-srp-027
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-an-endpoint-action-must-show-its-answer-or-follow-its-redirect-req-srp-027
  */
 export function forwardApi(authBase, token, fetchImpl = fetch) {
 	return {
@@ -285,7 +285,7 @@ export function forwardApi(authBase, token, fetchImpl = fetch) {
  * @param {Function} fetchImpl `fetch`, replaceable in tests.
  * @return {Promise<object|null>} The answer.
  *
- * @spec openspec/changes/woo-journey-entry-points/specs/portal-federated-search/spec.md#requirement-the-save-actions-must-show-only-to-a-signed-in-resident-who-is-offered-them-req-wje-001
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-save-actions-must-show-only-to-a-signed-in-resident-who-is-offered-them-req-wje-001
  */
 export async function getJson(url, token, fetchImpl = fetch) {
 	try {

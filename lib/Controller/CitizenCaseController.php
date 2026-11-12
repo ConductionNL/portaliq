@@ -29,7 +29,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
 
 declare(strict_types=1);
@@ -72,7 +72,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Serves and accepts the writes a citizen may make on their own case.
  *
- * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  *
  * @SuppressWarnings(PHPMD.StaticAccess)             -- PortalSessionService::trustSatisfies
  * is the single trust comparator across every portal handler; calling it
@@ -158,7 +158,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The case and its writable set, or a refusal.
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -233,7 +233,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The amended case, or a refusal with a sentence.
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -331,7 +331,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The added document, or a refusal with a sentence.
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -456,7 +456,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The withdrawn case, or a refusal with a sentence.
 	 *
-	 * @spec openspec/changes/withdrawing-your-own-case-from-the-portal/specs/withdrawing-your-own-case/spec.md
+	 * @spec openspec/specs/withdrawing-your-own-case/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -507,7 +507,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/withdrawing-your-own-case-from-the-portal/specs/withdrawing-your-own-case/spec.md
+	 * @spec openspec/specs/withdrawing-your-own-case/spec.md
 	 */
 	private function applyWithdrawal(CaseWriteRun $write, array $withdrawal): JSONResponse {
 		$change = $this->startWithdrawal(write: $write, withdrawal: $withdrawal);
@@ -979,7 +979,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/portal-visibility-follows-the-party-tree/specs/portal-visibility-and-the-party-tree/spec.md
+	 * @spec openspec/specs/portal-visibility-and-the-party-tree/spec.md
 	 */
 	private function actingAs(array $subject): array {
 		$entity = (string)$this->request->getParam('actingFor', '');
@@ -1071,7 +1071,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 *
 	 * @return CitizenWriteActionFinder
 	 *
-	 * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	private function writeActions(): CitizenWriteActionFinder {
 		if ($this->writeActions === null) {

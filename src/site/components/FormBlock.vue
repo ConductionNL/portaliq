@@ -378,7 +378,7 @@ export default {
 		 * @return {Promise<void>}
 		 *
 		 * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-landing-pages-form-is-submittable-with-no-portal-session
-		 * @spec openspec/changes/create-names-its-action/tasks.md#T3
+		 * @spec openspec/changes/archive/2026-10-07-create-names-its-action/tasks.md#T3
 		 */
 		async submit() {
 			this.status = null

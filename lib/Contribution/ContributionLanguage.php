@@ -31,7 +31,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-the-portal-api-must-ask-contributing-apps-in-the-portals-language
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-the-portal-api-must-ask-contributing-apps-in-the-portals-language
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use Throwable;
 /**
  * Picks the portal's language and runs a provider call in it.
  *
- * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-the-portal-api-must-ask-contributing-apps-in-the-portals-language
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-the-portal-api-must-ask-contributing-apps-in-the-portals-language
  */
 class ContributionLanguage {
 	/**
@@ -82,7 +82,7 @@ class ContributionLanguage {
 	 *
 	 * @return string A language code, or '' to leave the choice to Nextcloud.
 	 *
-	 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-the-portal-api-must-ask-contributing-apps-in-the-portals-language
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-the-portal-api-must-ask-contributing-apps-in-the-portals-language
 	 */
 	public function languageFor(array $subject=[]): string {
 		$locales = $this->portalLocales(organisation: (string)($subject['organisation'] ?? ''));
@@ -116,7 +116,7 @@ class ContributionLanguage {
 	 *
 	 * @return mixed What the call returns.
 	 *
-	 * @spec openspec/changes/contribution-record-page/specs/portal-contribution-contract/spec.md#requirement-the-portal-api-must-ask-contributing-apps-in-the-portals-language
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-the-portal-api-must-ask-contributing-apps-in-the-portals-language
 	 */
 	public function speak(string $language, callable $call): mixed {
 		if ($language === '' || $this->languageAlreadyForced() === true

@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use OCA\Portaliq\Service\PortalObjectReader;
 /**
  * Resolves a form binding against the published form, at render time.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
 class PortalFormBindingResolver {
 	/**
@@ -115,7 +115,7 @@ class PortalFormBindingResolver {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function bindingFor(string $portal, string $route): ?array {
 		if ($portal === '' || $route === '') {
@@ -161,7 +161,7 @@ class PortalFormBindingResolver {
 	 * @return array<int, array{0: string, 1: string, 2: string}> One
 	 *         `[register, schema, typeId]` triple per published binding.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function declaredCaseTypes(string $portal): array {
 		$declared = [];
@@ -188,7 +188,7 @@ class PortalFormBindingResolver {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function publishedBindings(string $portal): array {
 		if ($portal === '') {
@@ -267,7 +267,7 @@ class PortalFormBindingResolver {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function caseTypeIsInPortalScope(string $portal, string $register, string $schema, string $typeId): bool {
 		if ($register === '' || $schema === '' || $typeId === '') {
@@ -287,7 +287,7 @@ class PortalFormBindingResolver {
 	 *         settings) or `resolvesToNoForm` true with the reason the admin
 	 *         surface prints.
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
 	 * @spec openspec/changes/intake-conditional-questions-and-drafts/specs/portal-intake-form/spec.md#requirement-a-condition-the-portal-cannot-check-refuses-the-form-req-icq-003
 	 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
@@ -421,7 +421,7 @@ class PortalFormBindingResolver {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	public function publishedForm(array $binding): ?array {
 		$typeId = (string)($binding['typeId'] ?? '');
@@ -463,7 +463,7 @@ class PortalFormBindingResolver {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	private function formAnswersTheBinding(array $row, array $binding, string $typeId, string $audience): bool {
 		if (($row['caseType'] ?? '') !== $typeId || ($row['audience'] ?? '') !== $audience) {

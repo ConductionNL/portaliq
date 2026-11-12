@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/guardian-direct-messages/design.md#participation-model
+ * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#participation-model
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * @spec openspec/changes/guardian-direct-messages/design.md#participation-model
+ * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#participation-model
  */
 class GroupStaffFixtureReader {
 	use ObjectRowNormaliser;
@@ -66,7 +66,7 @@ class GroupStaffFixtureReader {
 	 *
 	 * @return array<int, string>
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/design.md#participation-model
+	 * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#participation-model
 	 */
 	public function staffForGroup(string $groupRef): array {
 		if ($groupRef === '') {
@@ -111,7 +111,7 @@ class GroupStaffFixtureReader {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/design.md#participation-model
+	 * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#participation-model
 	 */
 	public function staffTeachesGroup(string $staffRef, string $groupRef): bool {
 		if ($staffRef === '') {
@@ -128,7 +128,7 @@ class GroupStaffFixtureReader {
 	 *
 	 * @return array<int, string>
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/design.md#participation-model
+	 * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#participation-model
 	 */
 	public function groupsTaughtBy(string $staffRef): array {
 		if ($staffRef === '') {

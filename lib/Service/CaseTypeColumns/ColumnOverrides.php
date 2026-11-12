@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
+ * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ use OCA\Portaliq\Service\CaseTypeVisibility;
 /**
  * Stamps a case row with its case type's column settings.
  *
- * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
+ * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
  */
 class ColumnOverrides {
 	/**
@@ -56,7 +56,7 @@ class ColumnOverrides {
 	 *
 	 * @return array<int, mixed>
 	 *
-	 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
 	 */
 	public function rows(array $rows, array $collection): array {
 		if ($this->byType === [] || ($collection['kind'] ?? '') !== 'cases') {
@@ -84,7 +84,7 @@ class ColumnOverrides {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/case-type-columns-in-my-cases/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
 	 */
 	public function row(array $row, array $collection): array {
 		if ($this->types === null || ($collection['kind'] ?? '') !== 'cases') {

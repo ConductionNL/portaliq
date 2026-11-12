@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 /**
  * Reads and resolves the mandates a portal identity holds.
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
 class PortalMandateService {
 	/**
@@ -86,7 +86,7 @@ class PortalMandateService {
 	 *
 	 * @return array<int, array<string, mixed>> The live mandates, never null.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function mandatesFor(string $subjectRef, string $organisation = '', ?DateTimeImmutable $now = null, array $holders = []): array {
 		if ($subjectRef === '') {
@@ -195,7 +195,7 @@ class PortalMandateService {
 	 * @return array<string, mixed>|null The active mandate, or null when the
 	 *                                   identity holds none.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function activeMandate(array $mandates, string $mandateId = ''): ?array {
 		if ($mandates === []) {
@@ -223,7 +223,7 @@ class PortalMandateService {
 	 *
 	 * @return array<string, mixed> The id, label, organisation and party.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function describe(array $mandate): array {
 		$label = (string)($mandate['label'] ?? '');
@@ -256,7 +256,7 @@ class PortalMandateService {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/portal-visibility-follows-the-party-tree/specs/portal-visibility-and-the-party-tree/spec.md
+	 * @spec openspec/specs/portal-visibility-and-the-party-tree/spec.md
 	 */
 	public function reachOf(array $mandate): string {
 		if ((string)($mandate['reach'] ?? '') === self::REACH_TREE) {
@@ -277,7 +277,7 @@ class PortalMandateService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function covers(array $mandate, string $caseType): bool {
 		$caseTypes = array_values((array)($mandate['caseTypes'] ?? []));

@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
  */
 
 declare(strict_types=1);
@@ -28,7 +28,7 @@ namespace OCA\Portaliq\Service;
  * Reads an upload the way every portal upload is read: the client's path is
  * never trusted.
  *
- * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
  */
 final class UploadedFile {
 	/**
@@ -42,7 +42,7 @@ final class UploadedFile {
 	 *
 	 * @return array{name: string, content: string}|null
 	 *
-	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
 	 */
 	public function read(mixed $uploaded): ?array {
 		$tmpName = (string)($uploaded['tmp_name'] ?? '');

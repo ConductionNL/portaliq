@@ -56,7 +56,7 @@
 import DataBadge from './DataBadge.vue'
 
 /**
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
  */
 export default {
 	name: 'FileItem',

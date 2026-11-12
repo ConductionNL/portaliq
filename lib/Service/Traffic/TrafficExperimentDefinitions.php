@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
+ * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ namespace OCA\Portaliq\Service\Traffic;
  * variant text is copy nobody approved yet; it stays in the portal
  * record and reaches nobody until its status says running.
  *
- * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
+ * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
  */
 class TrafficExperimentDefinitions {
 
@@ -80,7 +80,7 @@ class TrafficExperimentDefinitions {
 	 *
 	 * @return array<int, array<string, mixed>> Each `{id, name, status, page, variants, goal, startedAt, stoppedAt}`.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
 	 */
 	public function definitions(mixed $value): array {
 		if (is_array($value) === false) {

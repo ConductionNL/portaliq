@@ -7,8 +7,8 @@
   (portal-traffic-analytics), and the paths that were requested but do
   not exist (portal-traffic-outcomes).
 
-  @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-session-must-be-reconstructable-into-an-ordered-journey
-  @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-missing-pages-must-be-reported-by-the-renderer-and-listed
+  @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-session-must-be-reconstructable-into-an-ordered-journey
+  @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-missing-pages-must-be-reported-by-the-renderer-and-listed
 -->
 <template>
 	<div class="traffic-table" data-testid="traffic-pages">
@@ -117,7 +117,7 @@ export default {
 		 * Which part of the pages report this card shows.
 		 *
 		 * @return {string} "all", "pages" or "missing".
-		 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-missing-pages-must-be-reported-by-the-renderer-and-listed
+		 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-missing-pages-must-be-reported-by-the-renderer-and-listed
 		 */
 		part() {
 			return ['pages', 'missing'].includes(this.content?.part) ? this.content.part : 'all'
@@ -127,7 +127,7 @@ export default {
 		 * Whether the most viewed pages are shown.
 		 *
 		 * @return {boolean} True unless the card shows only the missing pages.
-		 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-session-must-be-reconstructable-into-an-ordered-journey
+		 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-session-must-be-reconstructable-into-an-ordered-journey
 		 */
 		showPages() {
 			return this.part !== 'missing'
@@ -138,7 +138,7 @@ export default {
 		 * under the pages only when there are any.
 		 *
 		 * @return {boolean} True when the missing pages table is drawn.
-		 * @spec openspec/changes/portal-traffic-outcomes/specs/portal-traffic-outcomes/spec.md#requirement-missing-pages-must-be-reported-by-the-renderer-and-listed
+		 * @spec openspec/specs/portal-traffic-outcomes/spec.md#requirement-missing-pages-must-be-reported-by-the-renderer-and-listed
 		 */
 		showMissing() {
 			if (this.part === 'missing') {

@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/teacher-inbox-per-group/specs/guardian-direct-messaging/spec.md#requirement-a-staff-members-inbox-is-bucketed-by-group-with-an-unread-count
+ * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-a-staff-members-inbox-is-bucketed-by-group-with-an-unread-count
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ namespace OCA\Portaliq\Service;
 use OCA\Portaliq\Service\Messaging\GuardianMessagingLeafInterface;
 
 /**
- * @spec openspec/changes/teacher-inbox-per-group/specs/guardian-direct-messaging/spec.md#requirement-a-staff-members-inbox-is-bucketed-by-group-with-an-unread-count
+ * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-a-staff-members-inbox-is-bucketed-by-group-with-an-unread-count
  */
 class TeacherInboxService {
 	private const DIRECT_BUCKET = 'direct';
@@ -54,7 +54,7 @@ class TeacherInboxService {
 	 *
 	 * @return array<string, array<int, array<string, mixed>>> Bucket key => threads (each carrying `unreadCount`).
 	 *
-	 * @spec openspec/changes/teacher-inbox-per-group/specs/guardian-direct-messaging/spec.md#requirement-a-staff-members-inbox-is-bucketed-by-group-with-an-unread-count
+	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-a-staff-members-inbox-is-bucketed-by-group-with-an-unread-count
 	 */
 	public function inboxFor(string $staffRef): array {
 		if ($staffRef === '') {

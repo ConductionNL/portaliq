@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ use Throwable;
  * store carries `$logger`, `objectService()`, the `REGISTER` constant and
  * its own one-by-one delete for a platform without the raw purge.
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
  */
 trait ExpiredRowPurge {
 	/**
@@ -41,7 +41,7 @@ trait ExpiredRowPurge {
 	 *
 	 * @return int How many were removed.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
 	 */
 	abstract protected function deleteExpired(object $objectService): int;
 
@@ -55,7 +55,7 @@ trait ExpiredRowPurge {
 	 *
 	 * @return int How many were removed, or 0 when the platform cannot say.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-raw-events-must-be-retained-for-a-finite-configured-period
 	 */
 	private function purgeExpiredOf(string $schema, string $failure): int {
 		$objectService = $this->objectService();

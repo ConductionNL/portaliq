@@ -29,7 +29,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-visibility-follows-the-party-tree/specs/portal-visibility-and-the-party-tree/spec.md
+ * @spec openspec/specs/portal-visibility-and-the-party-tree/spec.md
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use OCA\Portaliq\Service\PortalObjectReader;
 /**
  * Walks the party tree, bounded, without keeping any of it.
  *
- * @spec openspec/changes/portal-visibility-follows-the-party-tree/specs/portal-visibility-and-the-party-tree/spec.md
+ * @spec openspec/specs/portal-visibility-and-the-party-tree/spec.md
  */
 class PortalPartyTreeResolver {
 	/**
@@ -85,7 +85,7 @@ class PortalPartyTreeResolver {
 	 *         `refused` true means the group is past the bound and NOTHING may
 	 *         be listed from it; `entities` is then empty.
 	 *
-	 * @spec openspec/changes/portal-visibility-follows-the-party-tree/specs/portal-visibility-and-the-party-tree/spec.md
+	 * @spec openspec/specs/portal-visibility-and-the-party-tree/spec.md
 	 */
 	public function entitiesFor(string $root, bool $reachesDown, array $bounds = []): array {
 		$maxDepth = (int)($bounds['maxDepth'] ?? self::DEFAULT_MAX_DEPTH);
@@ -122,7 +122,7 @@ class PortalPartyTreeResolver {
 	 *
 	 * @return array<int, string>|null The entities, or null when refused.
 	 *
-	 * @spec openspec/changes/portal-visibility-follows-the-party-tree/specs/portal-visibility-and-the-party-tree/spec.md
+	 * @spec openspec/specs/portal-visibility-and-the-party-tree/spec.md
 	 */
 	private function walkDown(string $root, int $maxDepth, int $pageSize): ?array {
 		$entities = [$root => true];

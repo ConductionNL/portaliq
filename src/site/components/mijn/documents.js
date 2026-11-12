@@ -6,7 +6,7 @@
 // gemeente, 2 oktober 2026"), and a moment in words for the timeline. No
 // Vue, so tests/mijn-documents.spec.mjs runs it as node.
 //
-// @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+// @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 
 /** File types a resident recognises by name, by media type. */
 const TYPES = {
@@ -42,7 +42,7 @@ function language(locale) {
  *
  * @param {object} entry The document (`mimeType?`, `title`).
  * @return {string}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
  */
 export function fileType(entry) {
 	const known = TYPES[String(entry?.mimeType || '').toLowerCase()]
@@ -61,7 +61,7 @@ export function fileType(entry) {
  * @param {number} bytes The size.
  * @param {string} [locale] The page language.
  * @return {string} The words, or '' without a size.
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
  */
 export function sizeInWords(bytes, locale = 'nl') {
 	const size = Number(bytes)
@@ -102,7 +102,7 @@ export function fullDay(value, locale = 'nl') {
  * @param {(key: string, vars?: object) => string} tr The translator.
  * @param {string} [locale] The page language.
  * @return {string}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
  */
 export function momentInWords(value, tr, locale = 'nl') {
 	const day = fullDay(value, locale)
@@ -127,7 +127,7 @@ export function momentInWords(value, tr, locale = 'nl') {
  * @param {(key: string, vars?: object) => string} tr The translator.
  * @param {string} [locale] The page language.
  * @return {string}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
  */
 export function fileLine(entry, tr, locale = 'nl') {
 	const from =

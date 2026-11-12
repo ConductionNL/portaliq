@@ -38,7 +38,7 @@ export const MESSAGE_LANGUAGES = [
  * @param {string} tag A language tag such as `nl` or `pt-BR`.
  * @param {string} locale The page language.
  * @return {string} The name.
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-machine-translation-must-say-so-req-srp-034
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-machine-translation-must-say-so-req-srp-034
  */
 export function languageLabel(tag, locale) {
 	if (!tag) {
@@ -63,7 +63,7 @@ export function languageLabel(tag, locale) {
  * @param {string} tag The language tag.
  * @param {string} locale The page language.
  * @return {string} For example "Arabic (العربية)".
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-messages-in-their-chosen-language-req-srp-032
  */
 export function pickerLabel(tag, locale) {
 	const inPage = languageLabel(tag, locale)
@@ -76,7 +76,7 @@ export function pickerLabel(tag, locale) {
  *
  * @param {object|undefined} translation The entry.
  * @return {boolean}
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-machine-translation-must-say-so-req-srp-034
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-machine-translation-must-say-so-req-srp-034
  */
 export function isLabelledTranslation(translation) {
 	return Boolean(
@@ -94,7 +94,7 @@ export function isLabelledTranslation(translation) {
  * @param {(key: string, vars?: object) => string} t The translator.
  * @param {string} locale The page language.
  * @return {string} "Translated by AI from <language>", or without the language for `und`.
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-machine-translation-must-say-so-req-srp-034
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-machine-translation-must-say-so-req-srp-034
  */
 export function noticeText(translation, t, locale) {
 	const source = translation?.sourceLanguage || 'und'
@@ -111,7 +111,7 @@ export function noticeText(translation, t, locale) {
  *
  * @param {string|number} id The message's id.
  * @return {string} The element id.
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-machine-translation-must-say-so-req-srp-034
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-machine-translation-must-say-so-req-srp-034
  */
 export function originalId(id) {
 	return `portaliq-original-${String(id).replace(/[^A-Za-z0-9_-]/g, '-')}`
@@ -122,7 +122,7 @@ export function originalId(id) {
  *
  * @param {object|undefined} translation The entry.
  * @return {boolean}
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
  */
 export function hasTranslatedTitle(translation) {
 	return (
@@ -138,7 +138,7 @@ export function hasTranslatedTitle(translation) {
  *
  * @param {Array<object>|null} feed The feed.
  * @return {boolean}
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
  */
 export function hasNews(feed) {
 	return Array.isArray(feed) && feed.length > 0
@@ -149,7 +149,7 @@ export function hasNews(feed) {
  *
  * @param {Array<object>|null} archive The archive.
  * @return {boolean}
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-guardian-must-read-school-news-req-srp-033
  */
 export function hasArchive(archive) {
 	return Array.isArray(archive) && archive.length > 0

@@ -105,7 +105,7 @@ class PortalPageResolver {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
 	 */
 	private function normalisePage(mixed $page, array $collections, array $actionIds, int $index, array $pageIds=[]): ?array {
 		if (is_array($page) === false) {
@@ -174,7 +174,7 @@ class PortalPageResolver {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 	 */
 	private function withRecordBlocksOnRecordPagesOnly(array $entry): ?array {
 		$records = array_filter(
@@ -200,7 +200,7 @@ class PortalPageResolver {
 	 *
 	 * @return array<string, string> `['group' => <trimmed>]`, or [] when it names none.
 	 *
-	 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-name-the-menu-group-it-belongs-to
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-name-the-menu-group-it-belongs-to
 	 */
 	private function menuGroup(mixed $group): array {
 		if (is_string($group) === false) {

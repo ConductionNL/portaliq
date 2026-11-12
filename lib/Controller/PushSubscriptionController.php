@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
+ * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
  */
 
 declare(strict_types=1);
@@ -45,7 +45,7 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
+ * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
  */
 class PushSubscriptionController extends Controller implements PortalProtected {
 	use ObjectRowNormaliser;
@@ -99,7 +99,7 @@ class PushSubscriptionController extends Controller implements PortalProtected {
 	 *                      https address of a known push service, 401 without
 	 *                      a resolved subject.
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
+	 * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -155,7 +155,7 @@ class PushSubscriptionController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse 204 on success (including "was not subscribed"), 401 without a resolved subject.
 	 *
-	 * @spec openspec/changes/push-notifications-quiet-hours/design.md#api-design
+	 * @spec openspec/changes/archive/2026-09-28-push-notifications-quiet-hours/design.md#api-design
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

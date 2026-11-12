@@ -101,7 +101,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when answered.
 		 *
-		 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+		 * @spec openspec/specs/portal-identity-space/spec.md
 		 */
 		async submit() {
 			if (this.busy || this.code.trim() === '') {

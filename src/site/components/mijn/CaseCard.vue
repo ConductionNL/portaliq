@@ -216,7 +216,7 @@ import { siteHref } from './rows.js'
 const DISPLAYS = ['', 'compact', 'folder', 'row']
 
 /**
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
  */
 export default {
 	name: 'CaseCard',
@@ -250,7 +250,7 @@ export default {
 	computed: {
 		/**
 		 * @return {string} a, button or span.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
 		 */
 		tag() {
 			if (this.route) {
@@ -261,7 +261,7 @@ export default {
 
 		/**
 		 * @return {string} The link's real address.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
 		 */
 		href() {
 			return siteHref(this.route)
@@ -269,7 +269,7 @@ export default {
 
 		/**
 		 * @return {string} The bar's width, from the step position.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
 		 */
 		barWidth() {
 			const position = this.card.position
@@ -333,7 +333,7 @@ export default {
 		 *
 		 * @param {MouseEvent} event The click.
 		 * @return {void}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
 		 */
 		onClick(event) {
 			if (this.tag === 'span') {

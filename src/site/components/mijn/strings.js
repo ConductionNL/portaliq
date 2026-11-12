@@ -10,7 +10,7 @@
 //
 // Imports nothing, so tests/mijn-components.spec.mjs reads it as node.
 //
-// @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+// @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 
 export default {
 	nl: {

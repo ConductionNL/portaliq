@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ use OCA\Portaliq\Service\PortalObjectWriter;
 /**
  * Records access requests and the answers to them.
  *
- * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+ * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
  */
 class PortalAccessRequestService {
 	/**
@@ -96,7 +96,7 @@ class PortalAccessRequestService {
 	 * @return array<string, mixed>|null The recorded request, or null when the
 	 *         ask carries neither an identity nor a reason.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function request(string $subjectRef, string $organisation, string $onBehalfOf = '', string $reason = '', string $displayName = ''): ?array {
 		if ($subjectRef === '' || $organisation === '' || trim($reason) === '') {
@@ -131,7 +131,7 @@ class PortalAccessRequestService {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function forOwner(string $organisation, string $state = 'pending'): array {
 		if ($organisation === '') {
@@ -170,7 +170,7 @@ class PortalAccessRequestService {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function madeBy(string $subjectRef): array {
 		if ($subjectRef === '') {
@@ -210,7 +210,7 @@ class PortalAccessRequestService {
 	 *
 	 * @return bool True when the answer landed.
 	 *
-	 * @spec openspec/changes/portal-identity-and-the-organisations-cases/specs/portal-identity-and-the-organisations-cases/spec.md
+	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
 	 */
 	public function decide(string $id, string $organisation, bool $granted, string $decidedBy): bool {
 		if ($id === '' || $organisation === '' || $decidedBy === '') {

@@ -36,7 +36,7 @@
  * @param {object} query Query parameters; empty values are left out.
  * @return {string} The URL, relative to the origin.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
  */
 export function intakeUrl(base, path, query = {}) {
 	const params = new URLSearchParams()
@@ -132,7 +132,7 @@ function intakeError(what, response) {
  * @param {IntakeConnection} conn The connection (`base`, `portal`, `fetchImpl`).
  * @return {Promise<Array<{topic: string, entries: Array<object>}>>} The topics.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
  */
 export async function fetchCatalogue(conn) {
 	const response = await fetcher(conn.fetchImpl)(
@@ -169,7 +169,7 @@ export async function fetchCatalogue(conn) {
  * @param {string} bindingRoute The entry's binding route.
  * @return {string} The in-site route.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
  */
 export function formRouteFor(formPage, bindingRoute) {
 	const page = `/${String(formPage || '').replace(/^\/+|\/+$/g, '')}`
@@ -188,7 +188,7 @@ export function formRouteFor(formPage, bindingRoute) {
  * @param {string} fixedRoute The route the author placed on the block, or ''.
  * @return {string} The binding route, or ''.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-citizens-entry-point-is-composed-content-listing-the-published-catalogue-req-pifo-006
  */
 export function bindingRouteFrom(routeParam, fixedRoute) {
 	if (fixedRoute) {
@@ -214,7 +214,7 @@ export function bindingRouteFrom(routeParam, fixedRoute) {
  * @param {string} route The binding route.
  * @return {Promise<{state: string, render: object}>} The view.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-applicant-block-is-prefilled-from-the-signed-in-identity-only-req-pifo-003
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-applicant-block-is-prefilled-from-the-signed-in-identity-only-req-pifo-003
  */
 export async function loadForm(conn, route) {
 	const response = await fetcher(conn.fetchImpl)(
@@ -255,7 +255,7 @@ export async function loadForm(conn, route) {
  * @param {object} prefill The prefill the endpoint answered.
  * @return {object} Values keyed by field name.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-applicant-block-is-prefilled-from-the-signed-in-identity-only-req-pifo-003
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-applicant-block-is-prefilled-from-the-signed-in-identity-only-req-pifo-003
  */
 export function initialValues(fields, prefill) {
 	const values = {}
@@ -333,7 +333,7 @@ function startValue(field, own) {
  * @param {Record<string, string>} [submission.verifiedEmails] The proof of each verified e-mail address, by address.
  * @return {Promise<{reference: string, confirmationText: string, errors: object, moments?: object}>} The outcome.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
  * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-the-case-is-created-in-the-request-and-the-citizen-gets-its-reference-at-once-req-pifo-005
  */
 export async function submitIntake(conn, submission) {
@@ -404,7 +404,7 @@ function submittedOutcome(parsed) {
  * @param {string} reference The reference the visitor was given.
  * @return {Promise<object|null>} The status, or null.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
  */
 export async function lookUpStatus(conn, reference) {
 	const trimmed = String(reference || '').trim()
@@ -431,7 +431,7 @@ export async function lookUpStatus(conn, reference) {
  * @param {string|undefined} value An ISO 8601 moment.
  * @return {string} Such as "2 november 2026".
  *
- * @spec openspec/changes/woo-request-intake-through-opencatalogi/specs/portal-intake-form/spec.md#requirement-a-woo-request-form-is-delivered-to-opencatalogis-intake
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-woo-request-form-is-delivered-to-opencatalogis-intake
  */
 function readableDate(value) {
 	const moment = new Date(String(value || ''))
@@ -495,8 +495,8 @@ const STATE_VIEWS = {
  * @param {object|null} status The status, or null when none was found.
  * @return {{tone: string, sentence: string}} The view.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
- * @spec openspec/changes/woo-request-intake-through-opencatalogi/specs/portal-intake-form/spec.md#requirement-a-woo-request-form-is-delivered-to-opencatalogis-intake
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-the-case-is-created-asynchronously-and-the-citizen-gets-a-reference-at-once-req-pifo-005
+ * @spec openspec/specs/portal-intake-form/spec.md#requirement-a-woo-request-form-is-delivered-to-opencatalogis-intake
  */
 export function statusView(status) {
 	if (!status) {

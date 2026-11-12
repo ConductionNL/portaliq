@@ -34,7 +34,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/news-audience-from-the-school-app/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-news-audience-from-the-school-app/tasks.md#T1
  */
 
 declare(strict_types=1);
@@ -48,7 +48,7 @@ use Throwable;
 /**
  * Resolves a guardian's audience from the school app's own collections.
  *
- * @spec openspec/changes/news-audience-from-the-school-app/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-news-audience-from-the-school-app/tasks.md#T1
  */
 class LeafGuardianAudienceReader {
 
@@ -86,7 +86,7 @@ class LeafGuardianAudienceReader {
 	 *
 	 * @return array<string, mixed>|null The audience (schoolRef, groupRefs, childRefs, photoConsent), or null.
 	 *
-	 * @spec openspec/changes/news-audience-from-the-school-app/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-10-07-news-audience-from-the-school-app/tasks.md#T1
 	 */
 	public function resolveAudience(string $subjectRef): ?array {
 		if ($subjectRef === '') {

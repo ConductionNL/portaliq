@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
+ * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ namespace OCA\Portaliq\Service\Traffic;
  *
  * Pure: sessions in, rows out.
  *
- * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
+ * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
  */
 class TrafficHeatmapStats {
 
@@ -71,7 +71,7 @@ class TrafficHeatmapStats {
 	 *
 	 * @return array<int, array{path: string, samples: int, clicks: array<int, array{x: int, y: int, count: int}>, scroll: array<int, int>}> The rows.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-heatmaps-must-be-off-by-default-and-hold-positions-never-content
 	 */
 	public function rows(array $sessions): array {
 		$pages = [];

@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use Throwable;
 /**
  * Decides the checks of one upload into a declared file field.
  *
- * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
  */
 class PortalFileFieldPolicy {
 	/**
@@ -132,7 +132,7 @@ class PortalFileFieldPolicy {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
 	 */
 	public function fileConfig(array $action, string $field): ?array {
 		if (in_array(($action['type'] ?? ''), ['create', 'update'], true) === false
@@ -162,7 +162,7 @@ class PortalFileFieldPolicy {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
 	 */
 	public function windowOpen(string $actionType, array $row): bool {
 		if ($actionType === 'update') {
@@ -200,7 +200,7 @@ class PortalFileFieldPolicy {
 	 *
 	 * @return string|null One of the ERROR_* constants, or null.
 	 *
-	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
 	 */
 	public function refusal(array $config, string $fileName, string $content): ?string {
 		$limitMb = ($config['maxSizeMb'] ?? FileFieldConfigNormaliser::DEFAULT_SIZE_MB);
@@ -242,7 +242,7 @@ class PortalFileFieldPolicy {
 	 *
 	 * @return array<int, string>|string|null
 	 *
-	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
 	 */
 	public function mergedValue(array $config, mixed $current, string $fileId, ?bool $arrayProperty): array|string|null {
 		if ($this->hasRoom(config: $config, current: $current, arrayProperty: $arrayProperty) === false) {
@@ -277,7 +277,7 @@ class PortalFileFieldPolicy {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
 	 */
 	public function hasRoom(array $config, mixed $current, ?bool $arrayProperty): bool {
 		$multiple = (($config['multiple'] ?? false) === true);
@@ -297,7 +297,7 @@ class PortalFileFieldPolicy {
 	 *
 	 * @return bool|null
 	 *
-	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
 	 */
 	public function isArrayProperty(string $schemaSlug, string $field): ?bool {
 		$schema = $this->schemaReader->readSchema(slug: $schemaSlug);
@@ -335,7 +335,7 @@ class PortalFileFieldPolicy {
 	 *
 	 * @return array{name: string, content: string}|null
 	 *
-	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
 	 */
 	public function readUpload(IRequest $request): ?array {
 		return (new UploadedFile())->read(uploaded: $request->getUploadedFile('file'));

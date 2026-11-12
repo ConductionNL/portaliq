@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  */
 
 declare(strict_types=1);
@@ -68,7 +68,7 @@ use OCP\IRequest;
 /**
  * Renders the intake form, takes the submission and reports on it.
  *
- * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+ * @spec openspec/specs/portal-intake-form/spec.md
  *
  * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- one dependency per step
  * of the intake: resolve, prefill, validate, challenge, queue, list.
@@ -174,7 +174,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The topics and their requests.
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -228,7 +228,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The render payload, or a refusal.
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -281,7 +281,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The reference, the per-field errors, or a refusal.
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -471,7 +471,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The real state, including a create that failed.
 	 *
-	 * @spec openspec/changes/portal-intake-form-as-an-object/specs/portal-intake-form/spec.md
+	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

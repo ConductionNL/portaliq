@@ -88,7 +88,7 @@ class PortalBlockResolver {
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/changes/archive/2026-09-29-contribution-manifest-v3/tasks.md#T2
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 	 */
 	public function normaliseBlocks(mixed $blocks, array $collectionIds, array $actionIds, array $collections=[], array $pageIds=[]): array {
 		if (is_array($blocks) === false) {
@@ -179,7 +179,7 @@ class PortalBlockResolver {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 	 * @spec openspec/changes/card-status-today/specs/portal-contribution-contract/spec.md#requirement-a-card-may-say-where-its-record-stands-today
 	 */
 	private function collectionBlock(BlockResolveRun $run, array $block): ?array {
@@ -284,7 +284,7 @@ class PortalBlockResolver {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-use-the-tasks-inbox-cases-steps-documents-and-timeline-blocks-req-smo-021
 	 */
 	private function ownRulesBlock(BlockResolveRun $run, array $block): ?array {
 		$type = $block['type'];
@@ -321,7 +321,7 @@ class PortalBlockResolver {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/contribution-record-page/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-10-07-contribution-record-page/tasks.md#T1
 	 */
 	private function recordPageBlock(array $block, array $collectionIds): ?array {
 		$type = $block['type'];

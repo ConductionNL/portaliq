@@ -27,7 +27,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
  */
 
 declare(strict_types=1);
@@ -56,7 +56,7 @@ use Throwable;
 /**
  * Serves the scoped upload into a declared file field.
  *
- * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
  *
  * @SuppressWarnings(PHPMD.StaticAccess) -- PortalSessionService::trustSatisfies,
  * the one trust ordering every portal gate shares.
@@ -115,7 +115,7 @@ class PortalFieldFileController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{file, field, value}`, or 400 / 401 / 403 / 404 / 409 / 413 / 415 / 502.
 	 *
-	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -154,7 +154,7 @@ class PortalFieldFileController extends Controller implements PortalProtected {
 	 *
 	 * @return array<string, mixed>|JSONResponse The upload context, or the refusal.
 	 *
-	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
 	 */
 	private function authorise(array $subject, array $target): array|JSONResponse {
 		$match = $this->authorisedAction(subject: $subject, register: $target['register'], schema: $target['schema']);
@@ -190,7 +190,7 @@ class PortalFieldFileController extends Controller implements PortalProtected {
 	 *
 	 * @return array{name: string, content: string, arrayProperty: bool|null}|JSONResponse
 	 *
-	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
 	 */
 	private function checkedUpload(array $context): array|JSONResponse {
 		$upload = $this->policy->readUpload(request: $this->request);
@@ -219,7 +219,7 @@ class PortalFieldFileController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{file, field, value}`, or 502.
 	 *
-	 * @spec openspec/changes/assignment-portal-file-upload/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
 	 */
 	private function store(array $context, array $upload): JSONResponse {
 		$file = $this->fileWriter->attachFile(

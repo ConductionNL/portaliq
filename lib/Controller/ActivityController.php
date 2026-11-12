@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/extracurricular-activity-offer/contract.md
+ * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/contract.md
  */
 
 declare(strict_types=1);
@@ -46,8 +46,8 @@ use OCP\IUserSession;
 /**
  * Staff authoring, roster, attendance and contribution raise for activities.
  *
- * @spec openspec/changes/extracurricular-activity-offer/contract.md
- * @spec openspec/changes/activity-offer-contract-fix/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-raise-the-contribution-for-an-activitys-confirmed-places-and-portaliq-must-write-the-reference
+ * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/contract.md
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-raise-the-contribution-for-an-activitys-confirmed-places-and-portaliq-must-write-the-reference
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- one small service per
  * staff task on an activity (draft, places, sign-ups, roster, attendance,
@@ -134,7 +134,7 @@ class ActivityController extends Controller {
 	 *
 	 * @return JSONResponse The draft, or 400 / 502.
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-term-long-activity-must-be-offered-with-places-set-by-capacity-and-supervision
+	 * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-term-long-activity-must-be-offered-with-places-set-by-capacity-and-supervision
 	 */
 	#[NoAdminRequired]
 	public function create(string $title, string $kind, array $target, string $termStart, int $capacity): JSONResponse {
@@ -164,8 +164,8 @@ class ActivityController extends Controller {
 	 *
 	 * @return JSONResponse The activity, or 404 / 422 `no_places` / 422 `no_consent_statement` / 502.
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-term-long-activity-must-be-offered-with-places-set-by-capacity-and-supervision
-	 * @spec openspec/changes/activity-parental-consent/specs/portaliq-cms/spec.md#requirement-an-activity-must-be-able-to-require-a-guardians-consent-recorded-on-the-sign-up
+	 * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-term-long-activity-must-be-offered-with-places-set-by-capacity-and-supervision
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-an-activity-must-be-able-to-require-a-guardians-consent-recorded-on-the-sign-up
 	 */
 	#[NoAdminRequired]
 	public function open(string $id): JSONResponse {
@@ -195,7 +195,7 @@ class ActivityController extends Controller {
 	 *
 	 * @return JSONResponse The activity, or 404 / 502.
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-term-long-activity-must-be-offered-with-places-set-by-capacity-and-supervision
+	 * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-term-long-activity-must-be-offered-with-places-set-by-capacity-and-supervision
 	 */
 	#[NoAdminRequired]
 	public function close(string $id): JSONResponse {
@@ -217,7 +217,7 @@ class ActivityController extends Controller {
 	 *
 	 * @return JSONResponse `{activity, promoted}`, or 404.
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
 	 */
 	#[NoAdminRequired]
 	public function supervisors(string $id, array $supervisorRefs = []): JSONResponse {
@@ -238,7 +238,7 @@ class ActivityController extends Controller {
 	 *
 	 * @return JSONResponse `{places, confirmed, waitlist}`, or 404.
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-freed-place-must-go-to-the-child-who-waited-longest
 	 */
 	#[NoAdminRequired]
 	public function roster(string $id): JSONResponse {
@@ -262,7 +262,7 @@ class ActivityController extends Controller {
 	 *
 	 * @return JSONResponse The attendance row, or 404 / 422 / 502.
 	 *
-	 * @spec openspec/changes/extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-mark-attendance-per-session
+	 * @spec openspec/changes/archive/2026-09-28-extracurricular-activity-offer/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-mark-attendance-per-session
 	 */
 	#[NoAdminRequired]
 	public function attendance(string $id, string $sessionId, string $childRef, string $status): JSONResponse {
@@ -288,7 +288,7 @@ class ActivityController extends Controller {
 	 *
 	 * @return JSONResponse `{raised, skipped, failed, results}`, or 400 / 403 / 404 / 422 / 502 / 503.
 	 *
-	 * @spec openspec/changes/activity-offer-contract-fix/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-raise-the-contribution-for-an-activitys-confirmed-places-and-portaliq-must-write-the-reference
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-staff-must-be-able-to-raise-the-contribution-for-an-activitys-confirmed-places-and-portaliq-must-write-the-reference
 	 */
 	#[NoAdminRequired]
 	public function contributions(string $id): JSONResponse {

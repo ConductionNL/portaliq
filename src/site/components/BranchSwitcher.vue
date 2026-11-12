@@ -130,7 +130,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-business-user-must-be-able-to-choose-a-branch-req-srp-011
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-business-user-must-be-able-to-choose-a-branch-req-srp-011
 		 */
 		async load() {
 			if (this.initialBranches) {
@@ -154,7 +154,7 @@ export default {
 		 * @param {string} branch The branch number, or '' for the whole company.
 		 * @return {Promise<void>}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-business-user-must-be-able-to-choose-a-branch-req-srp-011
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-business-user-must-be-able-to-choose-a-branch-req-srp-011
 		 */
 		async choose(branch) {
 			this.refused = false
