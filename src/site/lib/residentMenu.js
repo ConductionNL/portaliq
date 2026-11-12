@@ -130,6 +130,9 @@ function itemFor(entry, ctx) {
 	return withBadge(item, { entry, ctx })
 }
 
+/** The counts an item may carry, in order; a later one wins. */
+const BADGES = [unreadBadge, openTasksBadge, rowsBadge]
+
 /**
  * An item with the count its entry shows, if any: the unread messages beside
  * the inbox, the open tasks beside "My tasks", or the rows a page's `badge`
@@ -140,24 +143,69 @@ function itemFor(entry, ctx) {
  * @return {object} The item.
  * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-resident-menu-must-show-icons-and-counts-in-groups-req-smo-006
  */
-function withBadge(item, { entry, ctx }) {
-	const { t, unread, recordRows = {}, openTasks = 0 } = ctx
-	if (entry.special === 'inbox' && Number(unread) > 0) {
-		item.badge = String(unread)
-		item.badgeLabel = t('{count} unread', { count: unread })
+function withBadge(item, source) {
+	let badge = null
+	for (const countOf of BADGES) {
+		badge = countOf(source) || badge
 	}
-	if (entry.special === 'tasks' && Number(openTasks) > 0) {
-		item.badge = String(openTasks)
-		item.badgeLabel = t('{count} open', { count: openTasks })
-	}
-	const counted = badgeRows(entry, recordRows)
-	if (counted && counted.length > 0) {
-		item.badge = String(counted.length)
-		item.badgeLabel = t(entry.page.badge.label || '{count} open', {
-			count: counted.length,
-		})
+	if (badge) {
+		item.badge = badge.badge
+		item.badgeLabel = badge.badgeLabel
 	}
 	return item
+}
+
+/**
+ * The inbox's count: its unread messages.
+ *
+ * @param {{entry: object, ctx: MenuContext}} source The entry and what it is built from.
+ * @return {{badge: string, badgeLabel: string}|null} The count, or null.
+ */
+function unreadBadge({ entry, ctx }) {
+	if (entry.special !== 'inbox' || !(Number(ctx.unread) > 0)) {
+		return null
+	}
+	return {
+		badge: String(ctx.unread),
+		badgeLabel: ctx.t('{count} unread', { count: ctx.unread }),
+	}
+}
+
+/**
+ * The tasks section's count: the open tasks.
+ *
+ * @param {{entry: object, ctx: MenuContext}} source The entry and what it is built from.
+ * @return {{badge: string, badgeLabel: string}|null} The count, or null.
+ */
+function openTasksBadge({ entry, ctx }) {
+	const { openTasks = 0 } = ctx
+	if (entry.special !== 'tasks' || !(Number(openTasks) > 0)) {
+		return null
+	}
+	return {
+		badge: String(openTasks),
+		badgeLabel: ctx.t('{count} open', { count: openTasks }),
+	}
+}
+
+/**
+ * A page's count: the rows its `badge` counts, once those are known.
+ *
+ * @param {{entry: object, ctx: MenuContext}} source The entry and what it is built from.
+ * @return {{badge: string, badgeLabel: string}|null} The count, or null.
+ */
+function rowsBadge({ entry, ctx }) {
+	const { recordRows = {} } = ctx
+	const counted = badgeRows(entry, recordRows)
+	if (!counted || counted.length === 0) {
+		return null
+	}
+	return {
+		badge: String(counted.length),
+		badgeLabel: ctx.t(entry.page.badge.label || '{count} open', {
+			count: counted.length,
+		}),
+	}
 }
 
 /**
@@ -398,20 +446,44 @@ function groupIn(groups, { key, title }) {
  * @spec openspec/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
  */
 function withDistinctNames(groups, t) {
-	const counts = new Map()
+	const counts = nameCounts(groups.flatMap((group) => group.items))
 	for (const item of groups.flatMap((group) => group.items)) {
+		withDistinctName(item, { counts, t })
+	}
+}
+
+/**
+ * How often each name is used, in lower case; rows of a `perRecord` page
+ * never count.
+ *
+ * @param {Array<object>} items The items.
+ * @return {Map<string, number>} The uses by name.
+ */
+function nameCounts(items) {
+	const counts = new Map()
+	for (const item of items) {
 		if (!item.perRecord) {
 			const name = item.name.toLowerCase()
 			counts.set(name, (counts.get(name) || 0) + 1)
 		}
 	}
-	for (const item of groups.flatMap((group) => group.items)) {
-		const source = item.source
-		delete item.source
-		delete item.perRecord
-		if (source !== undefined && counts.get(item.name.toLowerCase()) > 1) {
-			item.name = t('{label} ({source})', { label: item.name, source })
-		}
+	return counts
+}
+
+/**
+ * Take the bookkeeping off one item and add its app's name when its name is
+ * used more than once.
+ *
+ * @param {object} item The item (changed in place).
+ * @param {{counts: Map<string, number>, t: (key: string, vars?: object) => string}} names The uses by name and the translator.
+ * @return {void}
+ */
+function withDistinctName(item, { counts, t }) {
+	const source = item.source
+	delete item.source
+	delete item.perRecord
+	if (source !== undefined && counts.get(item.name.toLowerCase()) > 1) {
+		item.name = t('{label} ({source})', { label: item.name, source })
 	}
 }
 
@@ -431,17 +503,61 @@ function withDistinctNames(groups, t) {
  * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
  */
 export function menuCurrentRoute(route, { groups, nav = [], contributions = null }) {
-	const links = (Array.isArray(groups) ? groups : [])
-		.flatMap((group) => (Array.isArray(group?.items) ? group.items : []))
-		.map((item) => item?.link)
-		.filter((link) => typeof link === 'string' && link !== '')
-	if (typeof route !== 'string' || route === '' || links.includes(route)) {
+	const links = menuLinks(groups)
+	if (isMarkedItself(route, links)) {
 		return route || ''
 	}
-	const under = links
+	return markedAbove(route, { links, nav, contributions })
+}
+
+/**
+ * The links the menu's items lead to.
+ *
+ * @param {Array<{items: Array<{link: string}>}>} groups The menu's groups.
+ * @return {Array<string>} The links.
+ */
+function menuLinks(groups) {
+	return listOf(groups)
+		.flatMap((group) => listOf(group?.items))
+		.map((item) => item?.link)
+		.filter((link) => typeof link === 'string' && link !== '')
+}
+
+/**
+ * Whether a route is handed back as it is: no route, or one an item links
+ * to.
+ *
+ * @param {unknown} route The route on screen.
+ * @param {Array<string>} links The menu's links.
+ * @return {boolean}
+ */
+function isMarkedItself(route, links) {
+	return typeof route !== 'string' || route === '' || links.includes(route)
+}
+
+/**
+ * The deepest item a route lies under, else the cases section for a cases
+ * page, else the route itself.
+ *
+ * @param {string} route The route on screen.
+ * @param {{links: Array<string>, nav: Array<object>, contributions: object|null}} menu The menu's links, the navigation and the contributions aggregate.
+ * @return {string} The route to mark.
+ */
+function markedAbove(route, menu) {
+	const under = menu.links
 		.filter((link) => link !== ACCOUNT_ROUTE && route.startsWith(`${link}/`))
 		.sort((a, b) => b.length - a.length)[0]
-	return under || casesRouteFor(route, { links, nav, contributions })
+	return under || casesRouteFor(route, menu)
+}
+
+/**
+ * A value that should be a list, or none.
+ *
+ * @param {unknown} value The value.
+ * @return {Array} The list.
+ */
+function listOf(value) {
+	return Array.isArray(value) ? value : []
 }
 
 /**
@@ -454,22 +570,29 @@ export function menuCurrentRoute(route, { groups, nav = [], contributions = null
  * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
  */
 function casesRouteFor(route, { links, nav, contributions }) {
-	const entries = Array.isArray(nav) ? nav : []
-	const entry = entries.find((candidate) => {
-		if (candidate.special) {
-			return false
-		}
-		const own = routeForNav(candidate)
-		return route === own || route.startsWith(`${own}/`)
-	})
+	const entries = listOf(nav)
+	const entry = entries.find((candidate) => showsRoute(candidate, route))
 	const cases = entries.find((candidate) => candidate.special === 'cases')
-	if (entry && cases && isCasesPage(entry, contributions)) {
-		const link = routeForNav(cases)
-		if (links.includes(link)) {
-			return link
-		}
+	if (!entry || !cases || !isCasesPage(entry, contributions)) {
+		return route
 	}
-	return route
+	const link = routeForNav(cases)
+	return links.includes(link) ? link : route
+}
+
+/**
+ * Whether a contributed page shows a route: its own, or one under it.
+ *
+ * @param {object} candidate A navigation entry.
+ * @param {string} route The route on screen.
+ * @return {boolean}
+ */
+function showsRoute(candidate, route) {
+	if (candidate.special) {
+		return false
+	}
+	const own = routeForNav(candidate)
+	return route === own || route.startsWith(`${own}/`)
 }
 
 /**
@@ -482,26 +605,36 @@ function casesRouteFor(route, { links, nav, contributions }) {
  */
 function isCasesPage(entry, contributions) {
 	const app = entry.contribution?.app || ''
-	const page = entry.page || {}
-	const names = [
-		page.record?.collection,
-		...(Array.isArray(page.blocks) ? page.blocks : []).map(
-			(block) => block?.collection,
-		),
-	].filter((name) => typeof name === 'string' && name !== '')
-	const list = Array.isArray(contributions?.contributions)
-		? contributions.contributions
-		: []
-	return list.some(
+	const names = pageCollections(entry.page || {})
+	return listOf(contributions?.contributions).some(
 		(contribution) =>
-			contribution?.app === app
-			&& (Array.isArray(contribution.collections)
-				? contribution.collections
-				: []
-			).some(
-				(collection) =>
-					collection?.kind === 'cases' && names.includes(collection.id),
-			),
+			contribution?.app === app && offersCases(contribution, names),
+	)
+}
+
+/**
+ * The collections a page shows: its record's and its blocks'.
+ *
+ * @param {object} page The page.
+ * @return {Array<string>} The collection ids.
+ */
+function pageCollections(page) {
+	return [
+		page.record?.collection,
+		...listOf(page.blocks).map((block) => block?.collection),
+	].filter((name) => typeof name === 'string' && name !== '')
+}
+
+/**
+ * Whether a contribution offers one of these collections as its cases.
+ *
+ * @param {object} contribution The contribution.
+ * @param {Array<string>} names The collection ids.
+ * @return {boolean}
+ */
+function offersCases(contribution, names) {
+	return listOf(contribution.collections).some(
+		(collection) => collection?.kind === 'cases' && names.includes(collection.id),
 	)
 }
 
