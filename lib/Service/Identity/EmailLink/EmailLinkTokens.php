@@ -228,7 +228,26 @@ class EmailLinkTokens {
 			return 0;
 		}
 
-		$rows = $this->reader->readCollection(
+		$voided = 0;
+		foreach ($this->sentLinksOf(subjectRef: $subjectRef, organisation: $organisation) as $row) {
+			if ($this->voided(row: (array)$row, subjectRef: $subjectRef) === true) {
+				$voided++;
+			}
+		}
+
+		return $voided;
+	}//end voidFor()
+
+	/**
+	 * The account's links that were sent and not spent yet.
+	 *
+	 * @param string $subjectRef   The account's subject reference.
+	 * @param string $organisation The account's organisation.
+	 *
+	 * @return array<int|string, mixed>
+	 */
+	private function sentLinksOf(string $subjectRef, string $organisation): array {
+		return $this->reader->readCollection(
 			register: self::REGISTER,
 			schema: self::SCHEMA,
 			scopeField: 'subjectRef',
@@ -237,30 +256,33 @@ class EmailLinkTokens {
 			limit: self::VOID_LIMIT,
 			filter: ['state' => 'sent']
 		);
+	}//end sentLinksOf()
 
-		$voided = 0;
-		foreach ($rows as $row) {
-			$id = TokenRows::identifierOf(row: (array)$row);
-			if ($id === '' || ($row['subjectRef'] ?? null) !== $subjectRef || ($row['state'] ?? '') !== 'sent') {
-				continue;
-			}
-
-			$updated = $this->writer->updateObject(
-				register: self::REGISTER,
-				schema: self::SCHEMA,
-				scopeField: '',
-				subjectRef: '',
-				organisation: '',
-				id: $id,
-				data: ['state' => 'void']
-			);
-			if ($updated !== null) {
-				$voided++;
-			}
+	/**
+	 * Void one link when it is this account's, still sent and has an id;
+	 * true when the write landed.
+	 *
+	 * @param array<string, mixed> $row        The link.
+	 * @param string               $subjectRef The account's subject reference.
+	 *
+	 * @return bool
+	 */
+	private function voided(array $row, string $subjectRef): bool {
+		$id = TokenRows::identifierOf(row: $row);
+		if ($id === '' || ($row['subjectRef'] ?? null) !== $subjectRef || ($row['state'] ?? '') !== 'sent') {
+			return false;
 		}
 
-		return $voided;
-	}//end voidFor()
+		return $this->writer->updateObject(
+			register: self::REGISTER,
+			schema: self::SCHEMA,
+			scopeField: '',
+			subjectRef: '',
+			organisation: '',
+			id: $id,
+			data: ['state' => 'void']
+		) !== null;
+	}//end voided()
 
 	/**
 	 * The spend itself, under the lock.
@@ -366,16 +388,28 @@ class EmailLinkTokens {
 			return self::NOT_VALID;
 		}
 
-		$state = (string)($row['state'] ?? '');
-		if ($state === 'used') {
+		if ((string)($row['state'] ?? '') === 'used') {
 			return self::USED;
 		}
 
-		$expiry = date_create_immutable((string)($row['expiresAt'] ?? ''));
-		if ($state !== 'sent' || $expiry === false || $expiry <= $moment) {
+		if ($this->isLive(row: $row, moment: $moment) === false) {
 			return self::NOT_VALID;
 		}
 
 		return 'live';
 	}//end stateOf()
+
+	/**
+	 * Whether a link is sent and its expiry has not come at the moment.
+	 *
+	 * @param array<string, mixed> $row    The row.
+	 * @param DateTimeImmutable    $moment The moment.
+	 *
+	 * @return bool
+	 */
+	private function isLive(array $row, DateTimeImmutable $moment): bool {
+		$expiry = date_create_immutable((string)($row['expiresAt'] ?? ''));
+
+		return (string)($row['state'] ?? '') === 'sent' && $expiry !== false && $expiry > $moment;
+	}//end isLive()
 }//end class
