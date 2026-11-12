@@ -30,7 +30,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Branch;
 
 use OCA\Portaliq\Service\Identity\PortalRegisteredDetailsService;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 
 /**
  * The branches a session may choose.
@@ -42,11 +42,11 @@ class BranchChoice {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalAccountService           $accounts Finds the caller's account.
+	 * @param PortalAccountLookup            $accounts Finds the caller's account.
 	 * @param PortalRegisteredDetailsService $details  Reads the company's KvK branches.
 	 */
 	public function __construct(
-		private readonly PortalAccountService $accounts,
+		private readonly PortalAccountLookup $accounts,
 		private readonly PortalRegisteredDetailsService $details,
 	) {
 	}//end __construct()
@@ -69,7 +69,7 @@ class BranchChoice {
 		$subjectRef = (string)($subject['subjectRef'] ?? '');
 		$account    = null;
 		if ($subjectRef !== '') {
-			$account = $this->accounts->findBySubjectRef(subjectRef: $subjectRef);
+			$account = $this->accounts->bySubjectRef(subjectRef: $subjectRef);
 		}
 
 		if ($account === null || (string)($account['identityType'] ?? '') !== 'eherkenning') {

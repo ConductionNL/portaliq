@@ -29,7 +29,6 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use OCA\Portaliq\Event\PortalContactDetailsChangedEvent;
-use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\Security\ISecureRandom;
@@ -43,7 +42,7 @@ class PortalContactAddressService {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalAccountService $accounts Finds the account by subjectRef.
+	 * @param PortalAccountLookup  $accounts Finds the account by subjectRef.
 	 * @param PortalObjectWriter $writer Writes the account row.
 	 * @param ISecureRandom $random Mints the confirmation secret.
 	 * @param IEventDispatcher $dispatcher Announces a changed contact channel (ADR-041).
@@ -51,7 +50,7 @@ class PortalContactAddressService {
 	 * @param ContactAddressValues $values The address values.
 	 */
 	public function __construct(
-		private readonly PortalAccountService $accounts,
+		private readonly PortalAccountLookup $accounts,
 		private readonly PortalObjectWriter $writer,
 		private readonly ISecureRandom $random,
 		private readonly IEventDispatcher $dispatcher,

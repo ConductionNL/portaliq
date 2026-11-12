@@ -31,7 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 
 /**
  * Fills the applicant block from the signed-in identity's own claims.
@@ -52,10 +52,10 @@ class PortalApplicantPrefill {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalAccountService $accounts Reads the signed-in account.
+	 * @param PortalAccountLookup  $accounts Reads the signed-in account.
 	 */
 	public function __construct(
-		private readonly PortalAccountService $accounts,
+		private readonly PortalAccountLookup $accounts,
 	) {
 	}//end __construct()
 
@@ -113,7 +113,7 @@ class PortalApplicantPrefill {
 	 * @return array<string, mixed>|null
 	 */
 	private function accountOf(string $subjectRef): ?array {
-		$account = $this->accounts->findBySubjectRef(subjectRef: $subjectRef);
+		$account = $this->accounts->bySubjectRef(subjectRef: $subjectRef);
 		if ($account === null || (string)($account['subjectRef'] ?? '') !== $subjectRef) {
 			return null;
 		}

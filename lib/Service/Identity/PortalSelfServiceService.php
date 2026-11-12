@@ -38,7 +38,6 @@ use DateTimeImmutable;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\Notifications\NotificationChannels;
 use OCA\Portaliq\Service\Notifications\PushDeliveryService;
-use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCP\Security\ISecureRandom;
@@ -68,7 +67,7 @@ class PortalSelfServiceService {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalAccountService $accounts Finds the account by subjectRef.
+	 * @param PortalAccountLookup  $accounts Finds the account by subjectRef.
 	 * @param ScopedCollectionReaderInterface $reader Looks a confirmation up by hash.
 	 * @param PortalObjectWriter $writer Writes the account row.
 	 * @param ISecureRandom $random Mints the confirmation secret.
@@ -78,7 +77,7 @@ class PortalSelfServiceService {
 	 * @param ClaimLock|null $claimLock Keeps a redeem of the same waiting account out while it joins.
 	 */
 	public function __construct(
-		private readonly PortalAccountService $accounts,
+		private readonly PortalAccountLookup $accounts,
 		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly ISecureRandom $random,
