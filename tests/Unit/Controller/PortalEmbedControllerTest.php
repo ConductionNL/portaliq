@@ -378,7 +378,11 @@ class PortalEmbedControllerTest extends TestCase {
 	 * @param callable(array<string, mixed>): array<string, mixed> $shape Adds the portal-only step.
 	 */
 	public function testAFormWithAPortalOnlyStepLinksToThePortal(callable $shape): void {
-		$controller = $this->controller(origin: 'https://www.gemeente.nl', render: $shape($this->plainForm()));
+		$controller = $this->controller(
+			origin: 'https://www.gemeente.nl',
+			site: ['slug' => 'gemeente-x', 'authentication' => ['challenge' => ['proofOfWork' => ['enabled' => true]]]],
+			render: $shape($this->plainForm())
+		);
 
 		$params = $controller->frame(route: 'aanvragen/verhuizing')->getParams()['embed'];
 
@@ -387,6 +391,21 @@ class PortalEmbedControllerTest extends TestCase {
 		$this->assertStringContainsString('https://portaal.example.org/site', $params['portalUrl']);
 		$this->assertStringContainsString('route=aanvragen%2Fverhuizing', $params['portalUrl']);
 	}//end testAFormWithAPortalOnlyStepLinksToThePortal()
+
+	/**
+	 * pq-f6: a form that asks for the challenge on a portal with its proof of
+	 * work switched off stays framed, because the submit asks for no challenge there.
+	 */
+	public function testAChallengeFormOnAPortalWithoutProofOfWorkStaysFramed(): void {
+		$render = $this->plainForm();
+		$render['settings']['challenge'] = true;
+		$controller = $this->controller(origin: 'https://www.gemeente.nl', render: $render);
+
+		$params = $controller->frame(route: 'aanvragen/verhuizing')->getParams()['embed'];
+
+		$this->assertArrayNotHasKey('refused', $params);
+		$this->assertSame(['postcode'], array_column($params['fields'], 'name'));
+	}//end testAChallengeFormOnAPortalWithoutProofOfWorkStaysFramed()
 
 	/**
 	 * pq-f6: an e-mail field without `verify` and an empty statements list stay framed.

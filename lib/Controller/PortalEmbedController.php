@@ -137,7 +137,7 @@ class PortalEmbedController extends Controller {
 			);
 		}
 
-		if ($this->needsPortalSteps(render: $render) === true) {
+		if ($this->needsPortalSteps(site: (array)$site, render: $render) === true) {
 			// The frame has no anti-bot challenge, statements or e-mail code step,
 			// and the embed submit refuses a form that asks for them. Rendering its
 			// fields would let the visitor fill in a form that can never be sent,
@@ -338,16 +338,19 @@ class PortalEmbedController extends Controller {
 	/**
 	 * Whether the form asks for a step only the portal's own page has: the
 	 * anti-bot challenge, statements, or an e-mail address confirmed with a code.
+	 * The challenge only counts on a portal that has its proof of work switched
+	 * on: with it off the submit asks for none, and the form stays framed.
 	 *
+	 * @param array<string, mixed> $site   The resolved portal.
 	 * @param array<string, mixed> $render What render() returned for the form.
 	 *
 	 * @return bool True when the frame cannot complete this form.
 	 *
 	 * @spec openspec/changes/embedded-intake-form/specs/embedded-intake-form/spec.md
 	 */
-	private function needsPortalSteps(array $render): bool {
+	private function needsPortalSteps(array $site, array $render): bool {
 		$settings = (array)($render['settings'] ?? []);
-		if (($settings['challenge'] ?? false) === true) {
+		if ($this->gate->asksForChallenge(site: $site, render: $render) === true) {
 			return true;
 		}
 

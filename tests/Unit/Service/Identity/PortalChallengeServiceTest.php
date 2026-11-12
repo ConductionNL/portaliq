@@ -132,7 +132,7 @@ class PortalChallengeServiceTest extends TestCase {
 	}//end testAMemcacheAddsTheNonceOnceAndRefusesTheReplay()
 
 	/**
-	 * Barry's finding on #1990: the single atomic call is the whole check. The
+	 * The single atomic call is the whole check. The
 	 * memcache is asked to `add` the nonce's hash once per submission and
 	 * nothing else is called on it: no hasKey-then-set, which two concurrent
 	 * requests could both pass.

@@ -73,6 +73,27 @@ class PortalSubmissionGate {
 	}//end notSubmittable()
 
 	/**
+	 * Whether a submission of this form has to carry a solved challenge.
+	 *
+	 * The form asks for it and the portal has its proof of work switched on;
+	 * with the proof of work off the gate accepts the form without one.
+	 *
+	 * @param array<string, mixed> $site   The resolved portal.
+	 * @param array<string, mixed> $render What the binding renders to.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/embedded-intake-form/specs/embedded-intake-form/spec.md
+	 */
+	public function asksForChallenge(array $site, array $render): bool {
+		if (($render['settings']['challenge'] ?? false) !== true) {
+			return false;
+		}
+
+		return $this->challenge->isEnabled(site: $site);
+	}//end asksForChallenge()
+
+	/**
 	 * Run the whole pipeline over one submission.
 	 *
 	 * The sign-in level is the caller's to check before this: the portal's own
