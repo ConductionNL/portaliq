@@ -3366,7 +3366,11 @@
 				"owner": "ConductionNL/shillinq",
 				"note": "portaliq's forwarding path itself works. Whether a real payment happens depends entirely on shillinq's Mollie adapter, which logs instead of charging by default (matches the sal-customer-portal sibling row). Specified in ConductionNL/shillinq openspec/changes/receivables-payment-links (shillinq lane, OpenSpec pass 2026-09-27).",
 				"origin": "sibling",
-				"change": "shillinq/receivables-payment-links"
+				"change": "shillinq/receivables-payment-links",
+				"requirement": [
+					"shillinq:openspec/changes/receivables-payment-links/specs/portal-payment-initiation :: The portal pay action opens a live checkout (REQ-RPL-005)",
+					"shillinq:openspec/changes/case-payment-requests/specs/object-payment-requests :: The debtor pays an object request through the portal (REQ-SOPR-005)"
+				]
 			},
 			"provider": "shillinq",
 			"providerHow": "read-from-code",
@@ -4785,7 +4789,8 @@
 				"origin": "sibling",
 				"defectCandidate": "src/portal/components/InboxPage.jsx:86-148 never reads message.attachments or message.content; a dossiq portaalBericht row carrying attachments renders with no way to see or download them (code reading, needs a live check)",
 				"readOn": "2026-09-26",
-				"change": "dossiq/portal-conversation-live-pass"
+				"change": "dossiq/portal-conversation-live-pass",
+				"requirement": "dossiq:openspec/specs/portal-contribution :: A resident reads dossiq's messages in full in the portal inbox (REQ-PORTAL-005)"
 			},
 			"provider": "dossiq",
 			"providerHow": "read-from-code",
@@ -10036,7 +10041,11 @@
 				"owner": "ConductionNL/dossiq",
 				"note": "Messages both ways carry the case on dossiq's schema, so they are filed on the case. Not automatic from the resident's side: the reply form shows caseId as a free text field (no optionsProvider declared), so the resident must type the case uuid, and there is no reply-from-this-message or reply-from-the-case-page control. Note: the existing row cmp-inb-reply ('no compose control') predates this dossiq action and may be stale. Specified in ConductionNL/dossiq openspec/changes/communication-portal-conversation-on-the-case (dossiq lane, OpenSpec pass 2026-09-27).",
 				"origin": "code",
-				"change": "dossiq/portal-conversation-live-pass"
+				"change": "dossiq/portal-conversation-live-pass",
+				"requirement": [
+					"dossiq:openspec/specs/portal-contribution :: A reply carries its case without the resident typing it (REQ-PORTAL-006)",
+					"dossiq:openspec/specs/portal-contribution :: The handler sees a resident's message on the case and answers from it (REQ-PORTAL-008)"
+				]
 			},
 			"provider": "dossiq",
 			"providerHow": "read-from-code",
@@ -10846,7 +10855,8 @@
 				"owner": "ConductionNL/dossiq",
 				"note": "A resident can send a message tied to one of their cases, but from the messages page with the case uuid typed by hand, not from the case page, and the answer shows in the inbox, not on the case. Specified in ConductionNL/dossiq openspec/changes/communication-portal-conversation-on-the-case (dossiq lane, OpenSpec pass 2026-09-27).",
 				"origin": "code",
-				"change": "dossiq/communication-portal-conversation-on-the-case"
+				"change": "dossiq/communication-portal-conversation-on-the-case",
+				"requirement": "dossiq:openspec/specs/portal-contribution :: A resident asks a question from the case and finds the answer there (REQ-PORTAL-007)"
 			},
 			"provider": "dossiq",
 			"providerHow": "read-from-code",
@@ -12596,7 +12606,11 @@
 				"evidence": "portaliq renders forms designed in buildiq (lib/Service/Intake/PortalFormBindingResolver.php header: an editor adds a field in buildiq and sees it on the portal) and binds them to a route on the Request forms page; the designer is nextcloud-vue CnFormBuilder (src/components/CnFormBuilder/CnFormBuilder.vue:152), an MVP without drag-and-drop reorder (nextcloud-vue#279)",
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/buildiq",
-				"spec": "buildiq/openspec/specs/openbuild-page-designer"
+				"spec": "buildiq/openspec/specs/openbuild-page-designer",
+				"requirement": [
+					"buildiq:openspec/changes/forms-designer-file-camera-children-and-assign/specs/form-field-kinds :: A maker builds a form by dragging field types from a palette (REQ-BQFK-005)",
+					"buildiq:openspec/specs/form-editor-logic :: Conditions builder authors per-field visibleWhen from the form's own fields (REQ-OBFEL-002)"
+				]
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -13428,7 +13442,8 @@
 				"evidence": "the form lives in buildiq and travels with its app export (buildiq lc-export-zip, built) or a copy (form-copy, built: apps-copy-app-and-page); the portal's form binding (route to form) is not exported: no export service in portaliq lib reads portalFormBinding",
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/buildiq",
-				"change": "buildiq/openbuild-exporter"
+				"change": "buildiq/openbuild-exporter",
+				"requirement": "buildiq:openspec/changes/reuse-gallery-categories-and-form-library/specs/form-library :: Forms travel between organisations (REQ-BQGL-005)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
