@@ -30,6 +30,7 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\Portaliq\Service\Identity\AccountStatus;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -149,7 +150,7 @@ class ActionReminderService {
 	 */
 	private function withdrawn(string $assignee): bool {
 		$account = $this->accounts?->findBySubjectRef(subjectRef: $assignee);
-		if (($account['status'] ?? '') !== PortalAccountService::STATUS_VOID) {
+		if (($account['status'] ?? '') !== AccountStatus::VOID) {
 			return false;
 		}
 

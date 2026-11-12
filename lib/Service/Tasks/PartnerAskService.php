@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Tasks;
 
+use OCA\Portaliq\Service\Identity\AccountStatus;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalTaskGateway;
 
@@ -310,6 +311,6 @@ class PartnerAskService {
 	 * @return bool
 	 */
 	private function isVoid(array $account): bool {
-		return ($account['status'] ?? '') === PortalAccountService::STATUS_VOID;
+		return ($account['status'] ?? '') === AccountStatus::VOID;
 	}//end isVoid()
 }//end class

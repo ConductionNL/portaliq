@@ -34,6 +34,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\CaseTypeReader;
+use OCA\Portaliq\Service\Identity\AccountStatus;
 use OCA\Portaliq\Service\Identity\PortalAccountActivationService;
 use OCA\Portaliq\Service\Identity\PortalChallengeService;
 use OCA\Portaliq\Service\Identity\PortalContactService;
@@ -522,7 +523,7 @@ class PortalIdentityController extends Controller {
 			// Neither policy trusts the address yet: approval waits for a
 			// person, activation waits for the mail.
 			verifiedEmail: false,
-			provisionedBy: PortalAccountService::SELF_REGISTRATION,
+			provisionedBy: AccountStatus::SELF_REGISTRATION,
 			displayName: $run->displayName
 		);
 	}//end selfRegisteredAccount()

@@ -29,6 +29,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\ActionAuthService;
+use OCA\Portaliq\Service\Identity\AccountStatus;
 use OCA\Portaliq\Service\Identity\EmailLink\SignInAddressChange;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\Identity\PortalInvitationService;
@@ -156,7 +157,7 @@ class PortalAccountAdminController extends Controller {
 			return new JSONResponse(['error' => 'not_pending'], Http::STATUS_BAD_REQUEST);
 		}
 
-		return new JSONResponse(['status' => PortalAccountService::STATUS_VOID]);
+		return new JSONResponse(['status' => AccountStatus::VOID]);
 	}//end void()
 
 	/**
@@ -311,7 +312,7 @@ class PortalAccountAdminController extends Controller {
 			return new JSONResponse(['error' => 'not_pending'], Http::STATUS_BAD_REQUEST);
 		}
 
-		return new JSONResponse(['status' => PortalAccountService::STATUS_ACTIVE]);
+		return new JSONResponse(['status' => AccountStatus::ACTIVE]);
 	}//end approve()
 
 	/**
@@ -339,7 +340,7 @@ class PortalAccountAdminController extends Controller {
 			return new JSONResponse(['error' => 'not_pending'], Http::STATUS_BAD_REQUEST);
 		}
 
-		return new JSONResponse(['status' => PortalAccountService::STATUS_VOID]);
+		return new JSONResponse(['status' => AccountStatus::VOID]);
 	}//end refuse()
 
 	/**
