@@ -46,7 +46,9 @@ SPDX-PackageDownloadLocation = "https://github.com/ConductionNL/portaliq"
 # 2026-09-17 Ruben van der Linde decided they come out, and they did -- from
 # woo/, from the service-worker precache, from asset-manifest.json and from
 # the @font-face rules -- so there is nothing left for a blanket to cover
-# dishonestly. The six that remain are annotated by name under "Third party".
+# dishonestly. Since 2026-11-12 woo/ is not committed at all: the bundle and
+# its licensing (REUSE.toml and LICENSES/ inside the archive) arrive from the
+# release pinned in scripts/woo-bundle.json.
 
 # ---------------------------------------------------------------------------
 # First-party source.
@@ -152,47 +154,6 @@ precedence = "override"
 SPDX-FileCopyrightText = "Google LLC"
 SPDX-License-Identifier = "Apache-2.0"
 
-# ---------------------------------------------------------------------------
-# The six fonts left under woo/ after 2026-09-17, each verified from its own
-# `name` table (fontTools, 2026-09-14) and annotated as what it is. The six
-# commercial faces that sat beside them were removed, not annotated -- see the
-# blanket note at the top. Hashed filenames are what tilburg-woo-ui's bundler
-# emitted; the mapping is in woo/asset-manifest.json.
-# ---------------------------------------------------------------------------
-
-# Roboto 400 / 500 / 700 (static/fonts/roboto-v30-latin-*). Apache-2.0, same
-# face and licence as the css/fonts copies above.
-[[annotations]]
-path = [
-"woo/static/fonts/b009a76ad6afe.woff2",
-"woo/static/fonts/f25d774ecfe09.woff2",
-"woo/static/fonts/227c93190fe7f.woff2",
-]
-precedence = "override"
-SPDX-FileCopyrightText = "Google LLC"
-SPDX-License-Identifier = "Apache-2.0"
-
-# Aldrich (asset-manifest spells it "Aldritch"). SIL Open Font License 1.1,
-# Matthew Desmond, per the font's own name table.
-[[annotations]]
-path = "woo/cb2dd4a29f236588895b.woff2"
-precedence = "override"
-SPDX-FileCopyrightText = "Matthew Desmond"
-SPDX-License-Identifier = "OFL-1.1"
-
-# ac-icons (.woff and .woff2): the icon font tilburg-woo-ui builds from its own
-# SVGs. No copyright string in the name table; it is build output of an
-# EUPL-1.2 ConductionNL repository, so it takes that repository's licence, the
-# same reasoning as the bundles above.
-[[annotations]]
-path = [
-"woo/static/fonts/35d973432fe54.woff",
-"woo/static/fonts/3e220b8f699ca.woff2",
-]
-precedence = "override"
-SPDX-FileCopyrightText = "2026 Conduction B.V. <info@conduction.nl>"
-SPDX-License-Identifier = "EUPL-1.2"
-
 # MaxMind's GeoIP2 test database and the licence text that ships beside it.
 # Apache-2.0 OR MIT, per https://github.com/maxmind/MaxMind-DB, which ships
 # LICENSE-APACHE and LICENSE-MIT and states "at your option". Our fixture is
@@ -225,86 +186,3 @@ path = [
 precedence = "override"
 SPDX-FileCopyrightText = "2013-2026 MaxMind, Inc."
 SPDX-License-Identifier = "Apache-2.0 OR MIT"
-
-# ---------------------------------------------------------------------------
-# woo/ — the bundled tilburg-woo-ui SPA.
-#
-# WHAT IT IS, established 2026-09-11 (Remko Huisman asked for the analysis).
-# woo/ is 21 MB / 491 committed files: the production build of
-# ConductionNL/tilburg-woo-ui, the Open Tilburg citizen WOO front end, which
-# lib/Controller/BundledSiteController.php serves from `woo/` on the
-# public routes `bundledSite#serve` and `bundledSite#servePath` (/woo). It is load-bearing, not dead
-# weight. It arrived in a single commit — 3b109c8, 2026-07-10, "wip: preserve
-# uncommitted work" — and has never been touched since; no script in this
-# repository can rebuild it.
-#
-# That settles the provenance question for the code: tilburg-woo-ui is a public
-# ConductionNL repository licensed EUPL-1.2, so its build output is ours under
-# the same licence as this app. The bundles, styles, markup and images below
-# are annotated accordingly.
-#
-# AND THAT ANNOTATION IS A DELIBERATE PRAGMATIC CALL, not an oversight -- said
-# here because the inconsistency is real and a future reader will otherwise
-# re-litigate it. `woo/static/js/**` is annotated pure EUPL-1.2 / Conduction
-# while the 308 `*.LICENSE.txt` files sitting beside it exist precisely because
-# those same bundles contain third-party code. Both statements are in this
-# file, and they pull in opposite directions.
-#
-# The call: a webpack bundle is a single artefact with no per-byte provenance,
-# and no SPDX expression describes "our EUPL-1.2 application code, plus parts
-# of forty npm packages under a dozen licences, concatenated". The honest
-# alternatives are to annotate it with a compound expression nobody can verify,
-# or to leave it unlicensed -- and unlicensed build output of OUR repository is
-# the less true of the two. So the bundle takes the licence of the source it
-# was built from, and the notices next to it are left to say what is inside;
-# the extracted notices are the machine-readable record, which is the job they
-# were extracted to do. The same reasoning covers `css/nlds/*.css`, four of
-# which are webpack output over third-party npm packages (@amsterdam,
-# @uiw, @nl-design-system-unstable) that kept no banner of their own.
-#
-# This is the pragmatic answer, not the correct one. The correct one is to stop
-# committing build output -- see openspec/changes/retire-the-vendored-woo-bundle.
-# Raised by Remko Huisman on #553.
-[[annotations]]
-path = [
-    "woo/*.html",
-    "woo/*.js",
-    "woo/*.json",
-    "woo/*.png",
-    "woo/*.svg",
-    "woo/*.ico",
-    "woo/robots.txt",
-    "woo/static/js/**",
-    "woo/static/css/**",
-]
-precedence = "closest"
-SPDX-FileCopyrightText = "2026 Conduction B.V. <info@conduction.nl>"
-SPDX-License-Identifier = "EUPL-1.2"
-
-# The 308 `*.LICENSE.txt` files are NOT ours and are not one licence either:
-# webpack wrote them by concatenating the licence banners of the third-party
-# packages inside each bundle. Claiming them as Conduction/EUPL-1.2 would
-# misrepresent every notice in them, so they carry a LicenseRef whose text
-# says what they are and leaves the rights with the upstream authors.
-[[annotations]]
-# (`woo/**/*.LICENSE.txt` already covers woo/service-worker.js.LICENSE.txt at
-# depth 1 -- reuse translates `**/` so it can match zero path segments.)
-path = "woo/**/*.LICENSE.txt"
-precedence = "override"
-SPDX-FileCopyrightText = "the respective authors of the bundled third-party packages"
-SPDX-License-Identifier = "LicenseRef-third-party-notices"
-
-# NOTE — THE 12 FONT FILES IN woo/ ARE DELIBERATELY LEFT UNANNOTATED.
-#
-# woo/*.woff2, woo/*.otf and woo/static/fonts/* are the only files in this
-# repository still without licensing information, and that is on purpose. The
-# built CSS declares `font-family: Avenir`, and the source repository ships
-# `static/fonts/avenir-lt-w01-55-roman.woff2`. Avenir LT is a commercial
-# Linotype/Monotype typeface, so these may be licensed webfonts redistributed
-# from a public repository — a question about the font licence itself, not
-# about metadata. Annotating them EUPL-1.2 would state something we have no
-# basis for and would bury exactly the finding worth raising.
-#
-# Raised with Wilco and Remko on 2026-09-11; tracked in
-# plans/issues/WOO-556/sub-tasks/WOO-571/ step 10. Resolve the font question
-# first, then annotate these to match the answer.

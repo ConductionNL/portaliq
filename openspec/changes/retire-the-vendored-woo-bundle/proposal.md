@@ -102,3 +102,7 @@ pipeline.
 - `portal-shared-runtime`, which removes the React portal at `/portal`. That
   change and this one both reduce this repo to one frontend; they are
   independent and can land in either order.
+
+## Decision 2026-11-12: the bundle leaves the repository first
+
+Ruben decided to stop committing `woo/` now, ahead of the content tasks. The bundle that portaliq served is published unchanged as a release asset of `tilburg-woo-ui` (`portaliq-woo-2026-07-10`), pinned by URL and SHA-256 in `scripts/woo-bundle.json`, and `npm run build:woo` (part of `npm run build`, so of every release package) unpacks it into `woo/`. `BundledSiteController` and the `/woo` routes stay until Tasks 1 to 5 land, so Tilburg keeps the same site. Task 6 is therefore done for the directory, not yet for the controller and routes.
