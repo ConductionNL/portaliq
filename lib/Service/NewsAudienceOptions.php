@@ -260,24 +260,57 @@ class NewsAudienceOptions {
 			return [];
 		}
 
+		return $this->optionsOf(rows: $this->sourceRows(source: $source));
+	}//end listOptions()
+
+	/**
+	 * The rows of one source, read as the signed-in user; none when the read fails.
+	 *
+	 * @param array{register: string, schema: string} $source The source.
+	 *
+	 * @return array<int|string, mixed>
+	 */
+	private function sourceRows(array $source): array {
 		$objectService = $this->objectService();
 		if ($objectService === null) {
 			return [];
 		}
 
-		try {
-			$objectService->setRegister(register: $source['register']);
-			$objectService->setSchema(schema: $source['schema']);
-			$rows = $objectService->findAll(config: ['filters' => [], 'limit' => self::LIMIT, 'offset' => 0]);
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: news audience options read failed', ['schema' => $source['schema'], 'reason' => $e->getMessage()]);
-			return [];
-		}
-
+		$rows = $this->readRows(objectService: $objectService, source: $source);
 		if (is_array($rows) === false) {
 			return [];
 		}
 
+		return $rows;
+	}//end sourceRows()
+
+	/**
+	 * Read one source's rows; null when the read fails, which is logged.
+	 *
+	 * @param object                                  $objectService OpenRegister's ObjectService.
+	 * @param array{register: string, schema: string} $source        The source.
+	 *
+	 * @return mixed What the read returned, or null.
+	 */
+	private function readRows(object $objectService, array $source): mixed {
+		try {
+			$objectService->setRegister(register: $source['register']);
+			$objectService->setSchema(schema: $source['schema']);
+			return $objectService->findAll(config: ['filters' => [], 'limit' => self::LIMIT, 'offset' => 0]);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: news audience options read failed', ['schema' => $source['schema'], 'reason' => $e->getMessage()]);
+			return null;
+		}
+	}//end readRows()
+
+	/**
+	 * The `{id, label}` options of the rows that carry an id, in their order.
+	 *
+	 * @param array<int|string, mixed> $rows The rows.
+	 *
+	 * @return array<int, array{id: string, label: string}>
+	 */
+	private function optionsOf(array $rows): array {
 		$options = [];
 		foreach ($rows as $row) {
 			$option = $this->option(row: $row);
@@ -287,7 +320,7 @@ class NewsAudienceOptions {
 		}
 
 		return $options;
-	}//end listOptions()
+	}//end optionsOf()
 
 	/**
 	 * One row as `{id, label}`, or null without an id.
@@ -302,19 +335,47 @@ class NewsAudienceOptions {
 			return null;
 		}
 
-		$id = ($row['id'] ?? ($row['uuid'] ?? ($row['@self']['id'] ?? null)));
-		if (is_string($id) === false || $id === '') {
+		$id = $this->optionId(row: $row);
+		if ($id === '') {
 			return null;
 		}
 
+		return ['id' => $id, 'label' => $this->optionLabel(row: $row, fallback: $id)];
+	}//end option()
+
+	/**
+	 * A row's id: `id`, else `uuid`, else `@self.id`; '' when none is a string.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return string The id, or ''.
+	 */
+	private function optionId(array $row): string {
+		$id = ($row['id'] ?? ($row['uuid'] ?? ($row['@self']['id'] ?? null)));
+		if (is_string($id) === false) {
+			return '';
+		}
+
+		return $id;
+	}//end optionId()
+
+	/**
+	 * A row's label: the first non-empty `name`, `title` or `label`, else the fallback.
+	 *
+	 * @param array<string, mixed> $row      The row.
+	 * @param string               $fallback The label when the row names none.
+	 *
+	 * @return string The label.
+	 */
+	private function optionLabel(array $row, string $fallback): string {
 		foreach (['name', 'title', 'label'] as $key) {
 			if (is_string($row[$key] ?? null) === true && $row[$key] !== '') {
-				return ['id' => $id, 'label' => $row[$key]];
+				return $row[$key];
 			}
 		}
 
-		return ['id' => $id, 'label' => $id];
-	}//end option()
+		return $fallback;
+	}//end optionLabel()
 
 	/**
 	 * Distinct by id, sorted by label (natural order, so "Groep 10" follows
