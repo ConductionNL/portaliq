@@ -72,6 +72,8 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Portaliq\Service\CaseRowMarker
  * @uses   \OCA\Portaliq\Service\PortalUserDisplayNames
  * @uses   \OCA\Portaliq\Contribution\ThemeChoice
+ * @uses   \OCA\Portaliq\Contribution\ThemeTagRun
+ * @uses   \OCA\Portaliq\Controller\TaskCompletionRun
  *
  * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-the-task-proxy-is-the-only-path-and-the-assertion-never-reaches-the-browser
  * @spec openspec/changes/portal-task-delivery/specs/portal-task-delivery/spec.md#requirement-mijn-taken-lists-details-and-completes-the-partys-open-tasks

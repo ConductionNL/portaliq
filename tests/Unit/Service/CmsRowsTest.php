@@ -7,6 +7,7 @@ namespace OCA\Portaliq\Tests\Unit\Service;
 use OCA\Portaliq\Service\CmsRows;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -15,6 +16,7 @@ use Psr\Log\LoggerInterface;
  * Scoped CMS reads through OpenRegister's object service.
  */
 #[CoversClass(CmsRows::class)]
+#[UsesClass(\OCA\Portaliq\Service\RowIdLookup::class)]
 class CmsRowsTest extends TestCase {
 	/**
 	 * Build CmsRows over an object service that returns the given rows.

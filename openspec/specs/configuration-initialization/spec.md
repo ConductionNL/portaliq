@@ -57,7 +57,7 @@ session can observe. Covered by `tests/Unit/Repair/InitializeSettingsTest.php`
 > stack trace never reaches the log. Both are filed as
 > [ConductionNL/portaliq#91](https://github.com/ConductionNL/portaliq/issues/91).
 
-### REQ-INIT-001: Identify the repair step
+### Requirement: Identify the repair step (REQ-INIT-001)
 
 The system MUST expose a human-readable name for the repair step so that it
 appears in Nextcloud's occ repair output.
@@ -68,7 +68,7 @@ appears in Nextcloud's occ repair output.
 - THEN `InitializeSettings::getName()` MUST return a non-empty string identifying this step
 - AND the name MUST mention the app and what the step does ("Initialize Portaliq register and schemas via ConfigurationService" or equivalent after substitution)
 
-### REQ-INIT-002: Import configuration on install / upgrade
+### Requirement: Import configuration on install / upgrade (REQ-INIT-002)
 
 The system MUST, when the repair step runs, invoke `SettingsService::loadConfiguration(force: true)`. If OpenRegister is not available, the step MUST log a warning and return without throwing. If the service call throws, the step MUST catch the exception, log the error with context, and continue — it MUST NOT let the failure abort the rest of the Nextcloud repair pass.
 
