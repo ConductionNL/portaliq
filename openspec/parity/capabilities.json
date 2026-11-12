@@ -1441,7 +1441,10 @@
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "PtSessies"
+				"board": [
+					"PtSessies",
+					"PtBeheerinstellingen"
+				]
 			}
 		},
 		{
@@ -1561,7 +1564,10 @@
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "PtDashboard"
+				"board": [
+					"PtDashboard",
+					"PtIntegraties"
+				]
 			}
 		},
 		{
@@ -1762,7 +1768,10 @@
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "Inloggen"
+				"board": [
+					"Inloggen",
+					"FormulierInloggen"
+				]
 			}
 		},
 		{
@@ -3576,7 +3585,10 @@
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "ZaakWijzigingVoorstellen"
+				"board": [
+					"ZaakWijzigingVoorstellen",
+					"Zaak"
+				]
 			}
 		},
 		{
@@ -4428,7 +4440,10 @@
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "MijnTaken"
+				"board": [
+					"MijnTaken",
+					"PtOpdrachtnemerProjecten"
+				]
 			}
 		},
 		{
@@ -4470,7 +4485,8 @@
 				"canvas": "design-system",
 				"board": [
 					"MijnTaken",
-					"TaakAfronden"
+					"TaakAfronden",
+					"DqZaak"
 				]
 			}
 		},
@@ -4511,7 +4527,10 @@
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "MijnTaken"
+				"board": [
+					"MijnTaken",
+					"DqZaak"
+				]
 			}
 		},
 		{
@@ -4756,7 +4775,10 @@
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "MijnMenu"
+				"board": [
+					"MijnMenu",
+					"MobielZaak"
+				]
 			}
 		},
 		{
@@ -4992,7 +5014,8 @@
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
 				"board": [
 					"Berichten",
-					"Gesprek"
+					"Gesprek",
+					"BerichtDetail"
 				]
 			}
 		},
@@ -5031,7 +5054,10 @@
 			"featureConfidence": "high",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "Berichten"
+				"board": [
+					"Berichten",
+					"BerichtDetail"
+				]
 			}
 		},
 		{
@@ -5995,14 +6021,15 @@
 				"open-forms": "src/openforms/submissions/models/submission_report.py:14 SubmissionReport; src/openforms/submissions/urls.py:14 pdf download route with a token; sdk:src/components/PostCompletionViews/ConfirmationView.tsx:53 reportDownloadUrl offers the PDF on the confirmation page [reached on the confirmation page] [read 2026-10-08 at 4.0.1]"
 			},
 			"built": {
-				"state": "built",
-				"evidence": "lib/Service/SubmissionReceiptService.php fires on a successful create action, writes an append-only portalSubmission log row + a portalMessage carrying referenceId and dataCopy (a JSON copy of the whitelisted submitted fields, lib/Settings/portaliq_register.json:1107-1114); no PDF rendering anywhere (grep 'pdf' in lib/Service/SubmissionReceiptService.php and PortalIntakeController.php: 0 hits)",
+				"state": "specified",
+				"evidence": "Not built (verify round 2026-11-12): no PDF of a receipt exists; lib/Service/Intake/FormConfirmationMailer.php says the receipt PDF is not attached, and no route serves one. The receipt itself is built: lib/Service/SubmissionReceiptService.php fires on a successful create action, writes an append-only portalSubmission log row + a portalMessage carrying referenceId and dataCopy (a JSON copy of the whitelisted submitted fields, lib/Settings/portaliq_register.json:1107-1114); no PDF rendering anywhere (grep 'pdf' in lib/Service/SubmissionReceiptService.php and PortalIntakeController.php: 0 hits)",
 				"reachedOn": "the receipt message reaches the citizen through the ordinary inbox (see inb-view-unified); dataCopy is shown as plain data on the message, never as a downloadable file",
 				"owner": "ConductionNL/portaliq",
-				"note": "You get an honest, structured copy of what you submitted (WMEBV burden-of-proof), just not a PDF, and not through the unreached PortalIntakeController#status page either.",
+				"note": "You get an honest, structured copy of what you submitted (WMEBV burden-of-proof), just not a PDF, and not through the unreached PortalIntakeController#status page either. Demoted from built on 2026-11-12 (decision 389): REQ-CRG-005 asks for a PDF; task T04 of capability-rows-without-a-requirement builds it.",
 				"origin": "competitor",
 				"change": "2026-07-23-wmebv-submission-receipts",
-				"requirement": "openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md :: A submission receipt offers the answers as a PDF (REQ-CRG-005)"
+				"requirement": "openspec/changes/capability-rows-without-a-requirement/specs/supplier-portal/spec.md :: A submission receipt offers the answers as a PDF (REQ-CRG-005)",
+				"plan": "capability-rows-without-a-requirement"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -6134,7 +6161,8 @@
 				"board": [
 					"Home",
 					"PtProduct",
-					"PtProducten"
+					"PtProducten",
+					"ProductPagina"
 				]
 			}
 		},
@@ -7051,10 +7079,10 @@
 				"evidence": "lib/Controller/BundledSiteController.php:1-20 serves the vendored tilburg-woo-ui React build; appinfo/routes.php bundledSite#serve /woo, bundledSite#servePath /woo/{path}; the committed woo/ directory (~28MB per openspec/changes/retire-the-vendored-woo-bundle/proposal.md)",
 				"reachedOn": "public route /woo",
 				"owner": "ConductionNL/portaliq",
-				"note": "openspec/changes/retire-the-vendored-woo-bundle has all tasks unchecked (open, not built): it proposes replacing this one-tenant vendored SPA with ordinary portal/menu/page content so every municipality gets the same pattern instead of only Tilburg. Until that lands this is a special case, not the general CMS pattern.",
+				"note": "Relinked 2026-11-12 (verify round): the vendored bundle is served by the generic bundled-site host (portaliq-cms). openspec/changes/retire-the-vendored-woo-bundle (open) replaces the bundle with authored portal content; until that lands this is a special case, not the general CMS pattern.",
 				"origin": "code",
 				"change": "retire-the-vendored-woo-bundle",
-				"requirement": "openspec/changes/retire-the-vendored-woo-bundle/specs/portaliq-cms/spec.md :: The WOO public surface MUST be authored as portal content"
+				"requirement": "openspec/specs/portaliq-cms/spec.md :: A bundled site is served by a generic host"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -7424,7 +7452,7 @@
 				"evidence": "portaliq#682 (d8a38bd): lib/Controller/NewsController.php:104 create(), :150 publish(); lib/Controller/NewsGuardianController.php:78 feed(); appinfo/routes.php:97-103; newsItem and newsletter schemas at lib/Settings/portaliq_register.json:6436,6555",
 				"reachedOn": "GET /apps/portaliq/api/news/feed for a signed-in guardian; staff author through /api/news",
 				"owner": "ConductionNL/portaliq",
-				"note": "Matrix corrected in the OpenSpec pass 2026-09-27: a dated NewsItem targeted per school, group or child shipped after the rating with openspec/changes/news-and-newsletter-authoring (portaliq#682). Partial because there is no public news overview page on the site.",
+				"note": "Matrix corrected in the OpenSpec pass 2026-09-27: a dated NewsItem targeted per school, group or child shipped after the rating with openspec/changes/news-and-newsletter-authoring (portaliq#682). Since then the public site has a news list block (src/site/widgets/nlNewsList, site-school-blocks) and an article page (nlNewsArticle).",
 				"origin": "competitor",
 				"prs": [
 					{
@@ -7434,7 +7462,11 @@
 					}
 				],
 				"spec": "openspec/specs/portaliq-cms",
-				"requirement": "openspec/specs/portaliq-cms/spec.md :: A news item carries the moment it was published",
+				"requirement": [
+					"openspec/specs/portaliq-cms/spec.md :: A news item carries the moment it was published",
+					"openspec/specs/portaliq-cms/spec.md :: Staff write, change and publish news on a News screen",
+					"openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md :: A news list shows the news staff put on the website"
+				],
 				"plan": [
 					"site-article-page-follows-the-board",
 					"site-school-blocks"
@@ -7636,7 +7668,8 @@
 				"spec": "openspec/specs/portaliq-cms",
 				"requirement": [
 					"openspec/specs/portal-in-place-editing/spec.md :: An editor MUST be able to edit a page in place on the portal (REQ-PIE-006)",
-					"openspec/changes/retire-the-vendored-woo-bundle/specs/portaliq-cms/spec.md :: The WOO public surface MUST be authored as portal content"
+					"openspec/changes/retire-the-vendored-woo-bundle/specs/portaliq-cms/spec.md :: The WOO public surface MUST be authored as portal content",
+					"openspec/specs/portal-in-place-editing/spec.md :: An editor MUST be able to edit the portal's menu from the portal (REQ-PIE-011)"
 				],
 				"plan": "portal-cms-admin-ui"
 			},
@@ -10392,7 +10425,10 @@
 			"originNote": "TenderNed 397282 Gemeente Molenlanden, requirement 'Het portaal geeft bij een wijziging een notificatie aan zowel de klant als aan de behandelaar'; also 415380 Sudwest-Fryslan 'statuswijziging ... kenbaar in het klantportaal'",
 			"screen": {
 				"canvas": "5NkFW28vZUUij43xzxHg5a",
-				"board": "Berichten"
+				"board": [
+					"Berichten",
+					"MijnOverzicht"
+				]
 			}
 		},
 		{
@@ -14076,7 +14112,8 @@
 			"screen": {
 				"board": [
 					"Home",
-					"ThemaOverzicht"
+					"ThemaOverzicht",
+					"Onderwerp"
 				]
 			}
 		},
@@ -14239,7 +14276,12 @@
 			"built": {
 				"state": "specified",
 				"evidence": "Not built: 0 of 11 tasks; no document route, ZIP download or metadata links in src/site.",
-				"requirement": "openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md :: Every public document has a page of its own (REQ-PDC-002)",
+				"requirement": [
+					"openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md :: Every public document has a page of its own (REQ-PDC-002)",
+					"openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md :: A document opens in the browser (REQ-PDC-001)",
+					"openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md :: The publication downloads as one archive (REQ-PDC-003)",
+					"openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md :: A document's metadata downloads beside it (REQ-PDC-004)"
+				],
 				"plan": "publication-detail-page-complete",
 				"note": "Row added 2026-11-12 in the closing round: the open change publication-detail-page-complete had no capability row (decision 395)."
 			},
@@ -14260,7 +14302,10 @@
 			"built": {
 				"state": "specified",
 				"evidence": "Not built: 0 of 12 tasks; no publicationErrorReport schema or settings in the code (decision D9, opt-in).",
-				"requirement": "openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md :: A report reaches the named owner (REQ-PER-002)",
+				"requirement": [
+					"openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md :: A report reaches the named owner (REQ-PER-002)",
+					"openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md :: A publication lists what was held back, with the ground (REQ-PER-005)"
+				],
 				"plan": "publication-error-reports-and-withheld-notices",
 				"note": "Row added 2026-11-12 in the closing round: the open change publication-error-reports-and-withheld-notices had no capability row (decision 395)."
 			},
@@ -14324,7 +14369,11 @@
 			"built": {
 				"state": "specified",
 				"evidence": "Not built: No row for a no-JavaScript site; nothing built (no noscript in templates/site.php, no /site/plain route, no PlainPageRenderer).",
-				"requirement": "openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md :: The server renders a plain version of every public page (REQ-SHJ-002)",
+				"requirement": [
+					"openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md :: The server renders a plain version of every public page (REQ-SHJ-002)",
+					"openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md :: Publications can be searched without JavaScript (REQ-SHJ-003)",
+					"openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md :: A publication can be read without JavaScript (REQ-SHJ-004)"
+				],
 				"plan": "site-honest-without-javascript",
 				"note": "Row added 2026-11-12 in the closing round: the open change site-honest-without-javascript had no capability row (decision 395)."
 			},
@@ -14345,7 +14394,11 @@
 			"built": {
 				"state": "built",
 				"evidence": "lib/Controller/MandateController.php; appinfo/routes.php mandate#*; src/shared/areaApi.js",
-				"requirement": "openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md :: The represented party MUST see who may act for it (REQ-SMR-002)",
+				"requirement": [
+					"openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md :: The represented party MUST see who may act for it (REQ-SMR-002)",
+					"openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md :: A party MUST invite, never look up, the person it authorises (REQ-SMR-003)",
+					"openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md :: Either side MUST be able to end a mandate (REQ-SMR-004)"
+				],
 				"plan": "site-mandates-the-represented-manage",
 				"note": "Row added 2026-11-12 in the closing round: the open change site-mandates-the-represented-manage had no capability row (decision 395)."
 			},

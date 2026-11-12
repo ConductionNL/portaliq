@@ -29,7 +29,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\ExampleResident\ExampleResidentSignIn;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
@@ -56,7 +56,7 @@ class ExampleResidentController extends Controller {
 	 *
 	 * @param IRequest              $request      The request object.
 	 * @param PortalSessionService  $session      Mints the portal session.
-	 * @param PortalAccountService  $accounts     Finds the resident's `portalAccount`.
+	 * @param PortalAccountLookup   $accounts     Finds the resident's `portalAccount`.
 	 * @param IURLGenerator         $urlGenerator Builds the final SPA redirect.
 	 * @param PortalResolver        $portals      Resolves the portal being signed in to.
 	 * @param ExampleResidentSignIn $signIns      The demo switch and the installed resident of a portal.
@@ -64,7 +64,7 @@ class ExampleResidentController extends Controller {
 	public function __construct(
 		IRequest $request,
 		private readonly PortalSessionService $session,
-		private readonly PortalAccountService $accounts,
+		private readonly PortalAccountLookup $accounts,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly PortalResolver $portals,
 		private readonly ExampleResidentSignIn $signIns,
@@ -132,7 +132,7 @@ class ExampleResidentController extends Controller {
 			return null;
 		}
 
-		$account = $this->accounts->findBySubjectRef(subjectRef: $userId);
+		$account = $this->accounts->bySubjectRef(subjectRef: $userId);
 		if ($account === null || ($account['status'] ?? 'active') !== 'active') {
 			return null;
 		}

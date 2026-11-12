@@ -309,6 +309,17 @@ function startValue(field, own) {
 	if (own !== undefined && own !== null && own !== '') {
 		return String(own)
 	}
+	return emptyOrPreset(field)
+}
+
+/**
+ * The value a field starts with without the visitor's own detail: the empty
+ * value its type needs, else its preset, else ''.
+ *
+ * @param {object} field The rendered field.
+ * @return {string|Array|object} The value.
+ */
+function emptyOrPreset(field) {
 	if (Object.hasOwn(TYPED_START_VALUES, field.type)) {
 		return TYPED_START_VALUES[field.type]()
 	}
@@ -531,25 +542,44 @@ export function statusView(status) {
  */
 export async function lookupAddress(conn, block) {
 	try {
-		const response = await fetcher(conn.fetchImpl)(
-			intakeUrl(conn.base, '/intake/address', {
-				postcode: block.postcode,
-				number: block.number,
-				letter: block.letter,
-				addition: block.addition,
-			}),
-			{ headers: headersFor('') },
-		)
+		const response = await fetcher(conn.fetchImpl)(addressUrl(conn, block), {
+			headers: headersFor(''),
+		})
 		if (!response.ok) {
 			return null
 		}
-		const body = await response.json()
-		return body && body.street && body.town
-			? { street: String(body.street), town: String(body.town) }
-			: null
+		return foundAddress(await response.json())
 	} catch {
 		return null
 	}
+}
+
+/**
+ * The address route's address for one address block.
+ *
+ * @param {IntakeConnection} conn The connection (`base`).
+ * @param {object} block The address block (`postcode`, `number`, `letter`, `addition`).
+ * @return {string} The address.
+ */
+function addressUrl(conn, block) {
+	return intakeUrl(conn.base, '/intake/address', {
+		postcode: block.postcode,
+		number: block.number,
+		letter: block.letter,
+		addition: block.addition,
+	})
+}
+
+/**
+ * The street and town an address answer names, or null without both.
+ *
+ * @param {object|null} body The answer.
+ * @return {{street: string, town: string}|null} The address.
+ */
+function foundAddress(body) {
+	return body && body.street && body.town
+		? { street: String(body.street), town: String(body.town) }
+		: null
 }
 
 /**
@@ -600,6 +630,16 @@ export async function decideStep(conn, { route, step, answers }) {
 		throw intakeError('intake decide', response)
 	}
 
+	return decisionOf(parsed)
+}
+
+/**
+ * A decision as the form reads it.
+ *
+ * @param {object} parsed The decide answer.
+ * @return {{outcome: string, output: string, nextStep: string}} The decision.
+ */
+function decisionOf(parsed) {
 	return {
 		outcome: String(parsed.outcome || ''),
 		output: String(parsed.output || ''),
@@ -651,13 +691,25 @@ export async function requestEmailCode(conn, { route, email }) {
 			body: withPortal({ route, email }, conn.portal),
 		})
 		const parsed = await response.json().catch(() => ({}))
-		return {
-			ok: response.ok === true,
-			error: response.ok ? '' : String(parsed?.error || 'failed'),
-			resendAfter: Number(parsed?.resendAfter) || 60,
-		}
+		return codeRequestOutcome(response, parsed)
 	} catch {
 		return { ok: false, error: 'failed', resendAfter: 60 }
+	}
+}
+
+/**
+ * What a code request answered: sent, or refused with its reason, and when
+ * the resident may ask again.
+ *
+ * @param {{ok: boolean}} response The response.
+ * @param {object} parsed Its body, `{}` when it was not JSON.
+ * @return {{ok: boolean, error: string, resendAfter: number}} The outcome.
+ */
+function codeRequestOutcome(response, parsed) {
+	return {
+		ok: response.ok === true,
+		error: response.ok ? '' : String(parsed?.error || 'failed'),
+		resendAfter: Number(parsed?.resendAfter) || 60,
 	}
 }
 
@@ -678,15 +730,37 @@ export async function checkEmailCode(conn, { route, email, code }) {
 			body: withPortal({ route, email, code }, conn.portal),
 		})
 		const parsed = await response.json().catch(() => ({}))
-		if (
-			response.ok
-			&& typeof parsed?.proof === 'string'
-			&& parsed.proof !== ''
-		) {
-			return { ok: true, error: '', proof: parsed.proof }
-		}
-		return { ok: false, error: String(parsed?.error || 'failed'), proof: '' }
+		return codeCheckOutcome(response, parsed)
 	} catch {
 		return { ok: false, error: 'failed', proof: '' }
 	}
+}
+
+/**
+ * What a code check answered: the proof for a right code, else why not.
+ *
+ * @param {{ok: boolean}} response The response.
+ * @param {object} parsed Its body, `{}` when it was not JSON.
+ * @return {{ok: boolean, error: string, proof: string}} The outcome.
+ */
+function codeCheckOutcome(response, parsed) {
+	if (carriesProof(response, parsed)) {
+		return { ok: true, error: '', proof: parsed.proof }
+	}
+	return { ok: false, error: String(parsed?.error || 'failed'), proof: '' }
+}
+
+/**
+ * Whether a code check answered a proof: an ok answer with a non-empty one.
+ *
+ * @param {{ok: boolean}} response The response.
+ * @param {object} parsed Its body.
+ * @return {boolean}
+ */
+function carriesProof(response, parsed) {
+	return (
+		Boolean(response.ok)
+		&& typeof parsed?.proof === 'string'
+		&& parsed.proof !== ''
+	)
 }

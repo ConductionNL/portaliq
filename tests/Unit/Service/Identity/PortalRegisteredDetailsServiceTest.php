@@ -27,7 +27,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 
 use OCA\Portaliq\Service\Identity\PortalRegisteredDetailsService;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -238,14 +238,14 @@ class PortalRegisteredDetailsServiceTest extends TestCase {
 	 *
 	 * @param array<string, mixed>|null $account The account, or null for none.
 	 *
-	 * @return PortalAccountService
+	 * @return PortalAccountLookup
 	 */
-	private function accounts(?array $account): PortalAccountService {
-		$accounts = $this->getMockBuilder(PortalAccountService::class)
+	private function accounts(?array $account): PortalAccountLookup {
+		$accounts = $this->getMockBuilder(PortalAccountLookup::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['findBySubjectRef'])
+			->onlyMethods(['bySubjectRef'])
 			->getMock();
-		$accounts->method('findBySubjectRef')->willReturnCallback(
+		$accounts->method('bySubjectRef')->willReturnCallback(
 			static fn (string $ref): ?array => ($ref === '' ? null : $account)
 		);
 		return $accounts;

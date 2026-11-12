@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 
 use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use PHPUnit\Framework\TestCase;
 
@@ -172,11 +172,11 @@ class PortalSelfServiceUpdateDetailsTest extends TestCase {
 	 * @return PortalSelfServiceService
 	 */
 	private function service(?PortalObjectWriter $writer = null): PortalSelfServiceService {
-		$accounts = $this->getMockBuilder(PortalAccountService::class)
+		$accounts = $this->getMockBuilder(PortalAccountLookup::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['findBySubjectRef'])
+			->onlyMethods(['bySubjectRef'])
 			->getMock();
-		$accounts->method('findBySubjectRef')->willReturnCallback(
+		$accounts->method('bySubjectRef')->willReturnCallback(
 			function (string $subjectRef): ?array {
 				foreach ($this->storedRows('portalAccount') as $row) {
 					if (($row['subjectRef'] ?? '') === $subjectRef && ($row['status'] ?? '') !== 'removed') {

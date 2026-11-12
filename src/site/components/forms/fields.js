@@ -108,6 +108,17 @@ export function dateParts(value) {
 			year: iso[1],
 		}
 	}
+	return typedParts(text)
+}
+
+/**
+ * The parts of a date typed earlier as `d-m-y`; anything after the second
+ * dash belongs to the year.
+ *
+ * @param {string} text The value, trimmed.
+ * @return {{day: string, month: string, year: string}} The parts.
+ */
+function typedParts(text) {
 	const typed = text === '' ? [] : text.split('-')
 	return {
 		day: typed[0] || '',
