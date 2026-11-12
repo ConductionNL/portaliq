@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Tasks;
 
+use OCA\Portaliq\Service\AccountProvisionRequest;
+use OCA\Portaliq\Service\PortalAccountCreation;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalTaskGateway;
 use OCA\Portaliq\Service\Tasks\PartnerAskService;
@@ -33,21 +35,26 @@ class PartnerAskServiceTest extends TestCase {
 
 	public function testAnUnknownPartnerIsPreProvisionedAndTheTaskIsAddressedToIt(): void {
 		$accounts = $this->accounts();
-		$accounts->expects($this->once())
+		$creation = $this->creation();
+		$creation->expects($this->once())
 			->method('provision')
 			->with(
-				$this->equalTo('partner'),
-				$this->equalTo('gemeente-x'),
-				$this->equalTo('eherkenning'),
-				$this->equalTo('12345678'),
-				$this->equalTo('welstand@example.org'),
-				$this->equalTo(false),
-				$this->equalTo('handler-anna'),
-				$this->equalTo('Welstandscommissie')
+				$this->equalTo(
+					new AccountProvisionRequest(
+						audience: 'partner',
+						organisation: 'gemeente-x',
+						verifiedEmail: false,
+						identityType: 'eherkenning',
+						identityRef: '12345678',
+						email: 'welstand@example.org',
+						provisionedBy: 'handler-anna',
+						displayName: 'Welstandscommissie'
+					)
+				)
 			)
 			->willReturn(['subjectRef' => 'partner-subject', 'isNew' => true, 'status' => 'pending']);
 
-		$asked = $this->service(accounts: $accounts)->ask(
+		$asked = $this->service(accounts: $accounts, creation: $creation)->ask(
 			handler: $this->handler(),
 			partner: ['kvk' => '12345678', 'email' => 'welstand@example.org', 'name' => 'Welstandscommissie'],
 			ask: $this->ask()
@@ -71,9 +78,10 @@ class PartnerAskServiceTest extends TestCase {
 	public function testAKnownPartnerIsNotProvisionedAgain(): void {
 		$accounts = $this->accounts();
 		$accounts->method('findBySubjectRef')->willReturn(['subjectRef' => 'partner-subject', 'audience' => 'partner']);
-		$accounts->expects($this->never())->method('provision');
+		$creation = $this->creation();
+		$creation->expects($this->never())->method('provision');
 
-		$asked = $this->service(accounts: $accounts)->ask(
+		$asked = $this->service(accounts: $accounts, creation: $creation)->ask(
 			handler: $this->handler(),
 			partner: ['subjectRef' => 'partner-subject'],
 			ask: $this->ask()
@@ -86,9 +94,10 @@ class PartnerAskServiceTest extends TestCase {
 	public function testASubjectRefNobodyAnswersToRaisesNothing(): void {
 		$accounts = $this->accounts();
 		$accounts->method('findBySubjectRef')->willReturn(null);
-		$accounts->expects($this->never())->method('provision');
+		$creation = $this->creation();
+		$creation->expects($this->never())->method('provision');
 
-		$asked = $this->service(accounts: $accounts)->ask(
+		$asked = $this->service(accounts: $accounts, creation: $creation)->ask(
 			handler: $this->handler(),
 			partner: ['subjectRef' => 'a-reference-somebody-typed'],
 			ask: $this->ask()
@@ -109,9 +118,10 @@ class PartnerAskServiceTest extends TestCase {
 		$accounts->method('findBySubjectRef')->willReturn(
 			['id' => 'account-void', 'subjectRef' => 'partner-subject', 'audience' => 'partner', 'status' => 'void']
 		);
-		$accounts->expects($this->never())->method('provision');
+		$creation = $this->creation();
+		$creation->expects($this->never())->method('provision');
 
-		$asked = $this->service(accounts: $accounts)->ask(
+		$asked = $this->service(accounts: $accounts, creation: $creation)->ask(
 			handler: $this->handler(),
 			partner: ['subjectRef' => 'partner-subject'],
 			ask: $this->ask()
@@ -128,10 +138,10 @@ class PartnerAskServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testAKvkNumberThatFindsAWithdrawnAccountRaisesNothing(): void {
-		$accounts = $this->accounts();
-		$accounts->method('provision')->willReturn(['subjectRef' => 'partner-void', 'isNew' => false, 'status' => 'void']);
+		$creation = $this->creation();
+		$creation->method('provision')->willReturn(['subjectRef' => 'partner-void', 'isNew' => false, 'status' => 'void']);
 
-		$asked = $this->service(accounts: $accounts)->ask(
+		$asked = $this->service(creation: $creation)->ask(
 			handler: $this->handler(),
 			partner: ['kvk' => '12345678', 'email' => 'info@partner.example'],
 			ask: $this->ask()
@@ -171,7 +181,7 @@ class PartnerAskServiceTest extends TestCase {
 			->getMock();
 		$tasks->method('createTask')->willReturn(['status' => 409, 'body' => ['error' => 'conflict']]);
 
-		$service = new PartnerAskService($this->accountsAnsweringAnyone(), $tasks);
+		$service = new PartnerAskService($this->accountsAnsweringAnyone(), $tasks, $this->creationAnsweringAnyone());
 
 		$this->assertNull($service->ask(handler: $this->handler(), partner: ['subjectRef' => 'partner-subject'], ask: $this->ask()));
 
@@ -211,9 +221,21 @@ class PartnerAskServiceTest extends TestCase {
 	private function accounts(): PortalAccountService {
 		return $this->getMockBuilder(PortalAccountService::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['findBySubjectRef', 'provision'])
+			->onlyMethods(['findBySubjectRef'])
 			->getMock();
 	}//end accounts()
+
+	/**
+	 * An account creation double.
+	 *
+	 * @return PortalAccountCreation&\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private function creation(): PortalAccountCreation {
+		return $this->getMockBuilder(PortalAccountCreation::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['provision'])
+			->getMock();
+	}//end creation()
 
 	/**
 	 * An account double that knows every subjectRef it is asked about.
@@ -225,19 +247,31 @@ class PartnerAskServiceTest extends TestCase {
 		$accounts->method('findBySubjectRef')->willReturnCallback(
 			static fn (string $subjectRef): array => ['subjectRef' => $subjectRef, 'audience' => 'partner']
 		);
-		$accounts->method('provision')->willReturn(['subjectRef' => 'partner-subject', 'isNew' => true, 'status' => 'pending']);
 
 		return $accounts;
 	}//end accountsAnsweringAnyone()
 
 	/**
+	 * An account creation double that provisions every partner it is asked to.
+	 *
+	 * @return PortalAccountCreation
+	 */
+	private function creationAnsweringAnyone(): PortalAccountCreation {
+		$creation = $this->creation();
+		$creation->method('provision')->willReturn(['subjectRef' => 'partner-subject', 'isNew' => true, 'status' => 'pending']);
+
+		return $creation;
+	}//end creationAnsweringAnyone()
+
+	/**
 	 * The service over a gateway that records what it was asked to raise.
 	 *
-	 * @param PortalAccountService|null $accounts An account double, or the default.
+	 * @param PortalAccountService|null  $accounts An account double, or the default.
+	 * @param PortalAccountCreation|null $creation An account creation double, or the default.
 	 *
 	 * @return PartnerAskService
 	 */
-	private function service(?PortalAccountService $accounts = null): PartnerAskService {
+	private function service(?PortalAccountService $accounts = null, ?PortalAccountCreation $creation = null): PartnerAskService {
 		$tasks = $this->getMockBuilder(PortalTaskGateway::class)
 			->disableOriginalConstructor()
 			->onlyMethods(['createTask'])
@@ -249,7 +283,7 @@ class PartnerAskServiceTest extends TestCase {
 			}
 		);
 
-		return new PartnerAskService(($accounts ?? $this->accountsAnsweringAnyone()), $tasks);
+		return new PartnerAskService(($accounts ?? $this->accountsAnsweringAnyone()), $tasks, ($creation ?? $this->creationAnsweringAnyone()));
 	}//end service()
 
 	/**
@@ -270,8 +304,19 @@ class PartnerAskServiceTest extends TestCase {
 				};
 			}
 		);
-		$accounts->method('provision')->willReturnCallback(
-			static function (...$args) use (&$calls): ?array {
+		$creation = $this->creation();
+		$creation->method('provision')->willReturnCallback(
+			static function (AccountProvisionRequest $request) use (&$calls): ?array {
+				$args    = [
+					$request->audience,
+					$request->organisation,
+					$request->identityType,
+					$request->identityRef,
+					$request->email,
+					$request->verifiedEmail,
+					$request->provisionedBy,
+					$request->displayName,
+				];
 				$calls[] = 'provision ' . json_encode($args);
 				return match ($args[3] . '|' . $args[4]) {
 					'|only@mail.example' => ['subjectRef' => 'mail-only', 'isNew' => false, 'status' => 'pending'],
@@ -293,7 +338,7 @@ class PartnerAskServiceTest extends TestCase {
 				};
 			}
 		);
-		$service = new PartnerAskService($accounts, $tasks);
+		$service = new PartnerAskService($accounts, $tasks, $creation);
 		$handler = ['uid' => 'h-uid', 'subjectRef' => 'h-ref', 'organisation' => 'org'];
 		$ask     = ['title' => ' Advies ', 'description' => 'D', 'dueAt' => 'soon', 'uploadRules' => 'x', 'register' => 'r', 'schema' => 's', 'caseId' => 'c-1'];
 

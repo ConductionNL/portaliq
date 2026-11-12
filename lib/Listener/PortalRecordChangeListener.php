@@ -52,6 +52,7 @@ namespace OCA\Portaliq\Listener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\Portaliq\Contribution\NotificationRuleNormaliser;
+use OCA\Portaliq\Service\Identity\AccountStatus;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\Notifications\ChangeRuleNotices;
 use OCA\Portaliq\Service\Notifications\MessageBoxChannel;
@@ -424,7 +425,7 @@ class PortalRecordChangeListener implements IEventListener {
 		}
 
 		$account = $this->accounts->findBySubjectRef(subjectRef: $subjectRef);
-		if (($account['status'] ?? '') === PortalAccountService::STATUS_VOID) {
+		if (($account['status'] ?? '') === AccountStatus::VOID) {
 			$this->logger->info('Portaliq: no change notice to a withdrawn account', ['account' => (string)($account['id'] ?? '')]);
 			return null;
 		}

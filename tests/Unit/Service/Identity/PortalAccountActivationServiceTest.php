@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Service\AccountProvisionRequest;
 use OCA\Portaliq\Service\Identity\PortalAccountActivationService;
+use OCA\Portaliq\Service\PortalAccountCreation;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCP\Security\ISecureRandom;
 use Opis\JsonSchema\Validator;
@@ -15,7 +17,7 @@ use PHPUnit\Framework\TestCase;
  * identity-ways-in-screens T01/T03 (REQ-IWI-002): under the activation policy
  * a self-registered account becomes active, its address verified, when the
  * mailed link is followed, once and before it expires. The account is made by
- * the real PortalAccountService over the same fake store, and every write is
+ * the real PortalAccountCreation over the same fake store, and every write is
  * checked against the real `portalAccount` schema.
  *
  * @spec openspec/specs/portal-ways-in/spec.md#requirement-you-can-create-an-account-where-the-portal-allows-it-req-iwi-002
@@ -65,7 +67,7 @@ class PortalAccountActivationServiceTest extends TestCase {
 
 	public function testAStaffProvisionedAccountGetsNoActivationLink(): void {
 		$accounts = $this->accounts();
-		$made = $accounts->provision(audience: 'client', organisation: 'gemeente-x', email: 'desk@example.org', provisionedBy: 'clerk-1');
+		$made = $accounts->provision(request: new AccountProvisionRequest(audience: 'client', organisation: 'gemeente-x', email: 'desk@example.org', provisionedBy: 'clerk-1', verifiedEmail: false));
 
 		$this->assertNull($this->service()->issue(subjectRef: (string)$made['subjectRef']));
 		$this->assertArrayNotHasKey('activationTokenHash', $this->account());
@@ -94,14 +96,14 @@ class PortalAccountActivationServiceTest extends TestCase {
 	 * @return string The account's subjectRef.
 	 */
 	private function register(): string {
-		$made = $this->accounts()->provision(
+		$made = $this->accounts()->provision(request: new AccountProvisionRequest(
 			audience: 'client',
 			organisation: 'gemeente-x',
 			email: 'ans@example.org',
 			verifiedEmail: false,
 			provisionedBy: PortalAccountService::SELF_REGISTRATION,
 			displayName: 'Ans'
-		);
+		));
 
 		return (string)$made['subjectRef'];
 	}//end register()
@@ -119,12 +121,12 @@ class PortalAccountActivationServiceTest extends TestCase {
 	}//end account()
 
 	/**
-	 * The real account service over the fake store.
+	 * The real account creation over the fake store.
 	 *
-	 * @return PortalAccountService
+	 * @return PortalAccountCreation
 	 */
-	private function accounts(): PortalAccountService {
-		return new PortalAccountService($this->fakeReader(), $this->fakeWriter(), $this->fakeRandom());
+	private function accounts(): PortalAccountCreation {
+		return new PortalAccountCreation($this->fakeReader(), $this->fakeWriter(), $this->fakeRandom());
 	}//end accounts()
 
 	/**

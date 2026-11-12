@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Plans;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\Identity\AccountStatus;
 use OCA\Portaliq\Service\Mail\MailLog;
 use OCA\Portaliq\Service\Mail\MailSite;
 use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
@@ -113,7 +114,7 @@ class PlanEndingMailer {
 	 */
 	private function address(string $subjectRef): string {
 		$account = $this->accounts->findBySubjectRef(subjectRef: $subjectRef);
-		if (($account['status'] ?? '') === PortalAccountService::STATUS_VOID) {
+		if (($account['status'] ?? '') === AccountStatus::VOID) {
 			$this->logger->info('Portaliq: no plan end mail to a withdrawn account', ['account' => (string)($account['id'] ?? '')]);
 			return '';
 		}

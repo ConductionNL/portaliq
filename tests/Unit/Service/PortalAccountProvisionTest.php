@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\AccountProvisionRequest;
 use OCA\Portaliq\Service\Identity\ContactAddressValues;
+use OCA\Portaliq\Service\PortalAccountCreation;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
@@ -28,16 +30,24 @@ class PortalAccountProvisionTest extends TestCase {
 	 */
 	private array $store = [];
 
+	/**
+	 * Provisions accounts over the same fake store as the service.
+	 *
+	 * @var PortalAccountCreation
+	 */
+	private PortalAccountCreation $creation;
+
 	public function testProvisioningOnAnIdentityReferenceCreatesOnePendingAccount(): void {
 		$service = $this->service();
 
-		$account = $service->provision(
+		$account = $this->creation->provision(request: new AccountProvisionRequest(
 			audience: 'client',
 			organisation: 'gemeente-x',
 			identityType: 'digid',
 			identityRef: 'bsn-pseudonym-1',
-			provisionedBy: 'clerk-anna'
-		);
+			provisionedBy: 'clerk-anna',
+			verifiedEmail: false
+		));
 
 		$this->assertNotNull($account);
 		$this->assertTrue($account['isNew']);
@@ -53,8 +63,8 @@ class PortalAccountProvisionTest extends TestCase {
 	public function testProvisioningTwiceOnTheSameIdentityReturnsTheSameAccount(): void {
 		$service = $this->service();
 
-		$first = $service->provision(audience: 'client', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-1');
-		$second = $service->provision(audience: 'client', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-1');
+		$first = $this->creation->provision(request: new AccountProvisionRequest(audience: 'client', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-1', verifiedEmail: false));
+		$second = $this->creation->provision(request: new AccountProvisionRequest(audience: 'client', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-1', verifiedEmail: false));
 
 		$this->assertSame($first['subjectRef'], $second['subjectRef']);
 		$this->assertFalse($second['isNew']);
@@ -65,9 +75,9 @@ class PortalAccountProvisionTest extends TestCase {
 	public function testProvisioningWithNeitherReferenceNorEmailIsRefused(): void {
 		$service = $this->service();
 
-		$this->assertNull($service->provision(audience: 'client', organisation: 'gemeente-x'));
-		$this->assertNull($service->provision(audience: '', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-1'));
-		$this->assertNull($service->provision(audience: 'client', organisation: '', identityType: 'digid', identityRef: 'bsn-1'));
+		$this->assertNull($this->creation->provision(request: new AccountProvisionRequest(audience: 'client', organisation: 'gemeente-x', verifiedEmail: false)));
+		$this->assertNull($this->creation->provision(request: new AccountProvisionRequest(audience: '', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-1', verifiedEmail: false)));
+		$this->assertNull($this->creation->provision(request: new AccountProvisionRequest(audience: 'client', organisation: '', identityType: 'digid', identityRef: 'bsn-1', verifiedEmail: false)));
 		$this->assertSame([], $this->store);
 
 	}//end testProvisioningWithNeitherReferenceNorEmailIsRefused()
@@ -79,7 +89,7 @@ class PortalAccountProvisionTest extends TestCase {
 	public function testAProvisionedRowHasItsFieldsInOrder(): void {
 		$service = $this->service();
 
-		$withIdentity = $service->provision(
+		$withIdentity = $this->creation->provision(request: new AccountProvisionRequest(
 			audience: 'client',
 			organisation: 'gemeente-x',
 			identityType: 'digid',
@@ -88,7 +98,7 @@ class PortalAccountProvisionTest extends TestCase {
 			verifiedEmail: true,
 			provisionedBy: 'clerk-anna',
 			displayName: 'Ans'
-		);
+		));
 		$row = $this->rowBySubjectRef($withIdentity['subjectRef']);
 		$this->assertSame(
 			['identityType', 'identityRef', 'audience', 'subjectRef', 'organisation', 'displayName', 'email', 'verifiedEmail', 'status', 'provisionedBy', 'provisionedAt'],
@@ -97,13 +107,13 @@ class PortalAccountProvisionTest extends TestCase {
 		$this->assertSame(['subjectRef' => $withIdentity['subjectRef'], 'isNew' => true, 'status' => 'pending'], $withIdentity);
 		$this->assertSame(['digid', 'bsn-1', 'client', 'gemeente-x', 'Ans', 'ans@example.org', true, 'pending', 'clerk-anna'], [$row['identityType'], $row['identityRef'], $row['audience'], $row['organisation'], $row['displayName'], $row['email'], $row['verifiedEmail'], $row['status'], $row['provisionedBy']]);
 
-		$addressOnly = $service->provision(audience: 'client', organisation: 'gemeente-x', email: 'bob@example.org');
+		$addressOnly = $this->creation->provision(request: new AccountProvisionRequest(audience: 'client', organisation: 'gemeente-x', email: 'bob@example.org', verifiedEmail: false));
 		$row = $this->rowBySubjectRef($addressOnly['subjectRef']);
 		$this->assertArrayNotHasKey('identityType', $row);
 		$this->assertArrayNotHasKey('identityRef', $row);
 		$this->assertFalse($row['verifiedEmail']);
 
-		$again = $service->provision(audience: 'client', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-1');
+		$again = $this->creation->provision(request: new AccountProvisionRequest(audience: 'client', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-1', verifiedEmail: false));
 		$this->assertSame(['subjectRef' => $withIdentity['subjectRef'], 'isNew' => false, 'status' => 'pending'], $again);
 
 	}//end testAProvisionedRowHasItsFieldsInOrder()
@@ -111,7 +121,7 @@ class PortalAccountProvisionTest extends TestCase {
 	public function testTheProvisionedCitizensFirstLoginActivatesTheirOwnAccount(): void {
 		$service = $this->service();
 
-		$provisioned = $service->provision(audience: 'client', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-X');
+		$provisioned = $this->creation->provision(request: new AccountProvisionRequest(audience: 'client', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-X', verifiedEmail: false));
 		$login = $service->findOrCreate(identityType: 'digid', identityRef: 'bsn-X', organisation: 'gemeente-x', audience: 'client');
 
 		$this->assertSame($provisioned['subjectRef'], $login['subjectRef']);
@@ -124,7 +134,7 @@ class PortalAccountProvisionTest extends TestCase {
 	public function testADifferentPersonDoesNotInheritThePendingAccount(): void {
 		$service = $this->service();
 
-		$provisioned = $service->provision(audience: 'client', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-X');
+		$provisioned = $this->creation->provision(request: new AccountProvisionRequest(audience: 'client', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-X', verifiedEmail: false));
 		$other = $service->findOrCreate(identityType: 'digid', identityRef: 'bsn-Y', organisation: 'gemeente-x', audience: 'client');
 
 		$this->assertNotSame($provisioned['subjectRef'], $other['subjectRef']);
@@ -136,7 +146,7 @@ class PortalAccountProvisionTest extends TestCase {
 	public function testAVerifiedEmailMatchesAnEmailOnlyPendingAccount(): void {
 		$service = $this->service();
 
-		$provisioned = $service->provision(audience: 'client', organisation: 'gemeente-x', email: 'ans@example.org', verifiedEmail: true);
+		$provisioned = $this->creation->provision(request: new AccountProvisionRequest(audience: 'client', organisation: 'gemeente-x', email: 'ans@example.org', verifiedEmail: true));
 		$login = $service->findOrCreate(
 			identityType: 'digid',
 			identityRef: 'bsn-Z',
@@ -155,7 +165,7 @@ class PortalAccountProvisionTest extends TestCase {
 	public function testAnUnverifiedAddressMatchesNothing(): void {
 		$service = $this->service();
 
-		$provisioned = $service->provision(audience: 'client', organisation: 'gemeente-x', email: 'ans@example.org', verifiedEmail: false);
+		$provisioned = $this->creation->provision(request: new AccountProvisionRequest(audience: 'client', organisation: 'gemeente-x', email: 'ans@example.org', verifiedEmail: false));
 		$login = $service->findOrCreate(
 			identityType: 'digid',
 			identityRef: 'bsn-Z',
@@ -172,14 +182,14 @@ class PortalAccountProvisionTest extends TestCase {
 	public function testAnAddressNeverClaimsAnAccountProvisionedOnAnIdentityReference(): void {
 		$service = $this->service();
 
-		$provisioned = $service->provision(
+		$provisioned = $this->creation->provision(request: new AccountProvisionRequest(
 			audience: 'client',
 			organisation: 'gemeente-x',
 			identityType: 'digid',
 			identityRef: 'bsn-X',
 			email: 'ans@example.org',
 			verifiedEmail: true
-		);
+		));
 		$login = $service->findOrCreate(
 			identityType: 'digid',
 			identityRef: 'bsn-SOMEONE-ELSE',
@@ -205,7 +215,7 @@ class PortalAccountProvisionTest extends TestCase {
 		$service = $this->service();
 
 		$signedIn = $service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'parent');
-		$waiting  = $service->provision(audience: 'parent', organisation: 'gemeente-x', email: 'g@example.org', verifiedEmail: true);
+		$waiting  = $this->creation->provision(request: new AccountProvisionRequest(audience: 'parent', organisation: 'gemeente-x', email: 'g@example.org', verifiedEmail: true));
 		$this->assertTrue($service->claim(subjectRef: $waiting['subjectRef'], appId: 'learniq', claimName: 'guardianRef', value: 'guardian-7'));
 
 		$login = $service->findOrCreate(
@@ -235,13 +245,13 @@ class PortalAccountProvisionTest extends TestCase {
 		$service = $this->service();
 
 		$signedIn   = $service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'parent');
-		$unverified = $service->provision(audience: 'parent', organisation: 'gemeente-x', email: 'u@example.org', verifiedEmail: false);
+		$unverified = $this->creation->provision(request: new AccountProvisionRequest(audience: 'parent', organisation: 'gemeente-x', email: 'u@example.org', verifiedEmail: false));
 		$service->claim(subjectRef: $unverified['subjectRef'], appId: 'learniq', claimName: 'guardianRef', value: 'guardian-u');
-		$onIdentity = $service->provision(audience: 'parent', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-OTHER', email: 'i@example.org', verifiedEmail: true);
+		$onIdentity = $this->creation->provision(request: new AccountProvisionRequest(audience: 'parent', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-OTHER', email: 'i@example.org', verifiedEmail: true));
 		$service->claim(subjectRef: $onIdentity['subjectRef'], appId: 'learniq', claimName: 'guardianRef', value: 'guardian-i');
-		$elsewhere = $service->provision(audience: 'parent', organisation: 'gemeente-y', email: 'e@example.org', verifiedEmail: true);
+		$elsewhere = $this->creation->provision(request: new AccountProvisionRequest(audience: 'parent', organisation: 'gemeente-y', email: 'e@example.org', verifiedEmail: true));
 		$service->claim(subjectRef: $elsewhere['subjectRef'], appId: 'learniq', claimName: 'guardianRef', value: 'guardian-e');
-		$noAddress = $service->provision(audience: 'parent', organisation: 'gemeente-x', email: 'n@example.org', verifiedEmail: true);
+		$noAddress = $this->creation->provision(request: new AccountProvisionRequest(audience: 'parent', organisation: 'gemeente-x', email: 'n@example.org', verifiedEmail: true));
 
 		foreach (['u@example.org', 'i@example.org', 'e@example.org'] as $address) {
 			$service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'parent', verifiedEmail: $address);
@@ -269,7 +279,7 @@ class PortalAccountProvisionTest extends TestCase {
 
 		$signedIn = $service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'parent');
 		$service->claim(subjectRef: $signedIn['subjectRef'], appId: 'learniq', claimName: 'guardianRef', value: 'guardian-1');
-		$waiting = $service->provision(audience: 'parent', organisation: 'gemeente-x', email: 'g@example.org', verifiedEmail: true);
+		$waiting = $this->creation->provision(request: new AccountProvisionRequest(audience: 'parent', organisation: 'gemeente-x', email: 'g@example.org', verifiedEmail: true));
 		$service->claim(subjectRef: $waiting['subjectRef'], appId: 'learniq', claimName: 'guardianRef', value: 'guardian-2');
 		$service->claim(subjectRef: $waiting['subjectRef'], appId: 'dossiq', claimName: 'linkedRequesterId', value: 'requester-9');
 
@@ -293,7 +303,7 @@ class PortalAccountProvisionTest extends TestCase {
 		// The supplier signed in before; the join (not the activation of
 		// REQ-PIS-002, which is not this change's) is what is under test.
 		$supplier = $service->findOrCreate(identityType: 'eherkenning', identityRef: 'kvk-1', organisation: 'gemeente-x', audience: 'supplier');
-		$waiting  = $service->provision(audience: 'parent', organisation: 'gemeente-x', email: 'g@example.org', verifiedEmail: true);
+		$waiting  = $this->creation->provision(request: new AccountProvisionRequest(audience: 'parent', organisation: 'gemeente-x', email: 'g@example.org', verifiedEmail: true));
 		$service->claim(subjectRef: $waiting['subjectRef'], appId: 'learniq', claimName: 'guardianRef', value: 'guardian-7');
 		$service->findOrCreate(identityType: 'eherkenning', identityRef: 'kvk-1', organisation: 'gemeente-x', audience: 'supplier', verifiedEmail: 'g@example.org');
 
@@ -321,7 +331,7 @@ class PortalAccountProvisionTest extends TestCase {
 		$signedIn = $service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'parent');
 		$this->assertTrue($values->needsContactPrompt(account: $this->rowBySubjectRef($signedIn['subjectRef'])), 'with no address the portal does ask');
 
-		$waiting = $service->provision(audience: 'parent', organisation: 'gemeente-x', email: 'guardian@example.org', verifiedEmail: true);
+		$waiting = $this->creation->provision(request: new AccountProvisionRequest(audience: 'parent', organisation: 'gemeente-x', email: 'guardian@example.org', verifiedEmail: true));
 		$service->claim(subjectRef: $waiting['subjectRef'], appId: 'learniq', claimName: 'guardianRef', value: 'guardian-7');
 
 		$service->findOrCreate(identityType: 'digid', identityRef: 'bsn-G', organisation: 'gemeente-x', audience: 'parent', verifiedEmail: 'guardian@example.org');
@@ -342,14 +352,15 @@ class PortalAccountProvisionTest extends TestCase {
 	public function testTheJoinKeepsAnAddressTheAccountAlreadyHas(): void {
 		$service = $this->service();
 
-		$signedIn = $service->provision(
+		$signedIn = $this->creation->provision(request: new AccountProvisionRequest(
 			audience: 'parent',
 			organisation: 'gemeente-x',
 			identityType: 'digid',
 			identityRef: 'bsn-H',
-			email: 'hers@example.org'
-		);
-		$waiting = $service->provision(audience: 'parent', organisation: 'gemeente-x', email: 'invited@example.org', verifiedEmail: true);
+			email: 'hers@example.org',
+			verifiedEmail: false
+		));
+		$waiting = $this->creation->provision(request: new AccountProvisionRequest(audience: 'parent', organisation: 'gemeente-x', email: 'invited@example.org', verifiedEmail: true));
 		$service->claim(subjectRef: $waiting['subjectRef'], appId: 'learniq', claimName: 'guardianRef', value: 'guardian-8');
 
 		$service->findOrCreate(identityType: 'digid', identityRef: 'bsn-H', organisation: 'gemeente-x', audience: 'parent', verifiedEmail: 'invited@example.org');
@@ -363,7 +374,7 @@ class PortalAccountProvisionTest extends TestCase {
 	public function testAClaimIsWrittenUnderTheDispatchingAppsOwnId(): void {
 		$service = $this->service();
 
-		$account = $service->provision(audience: 'client', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-X');
+		$account = $this->creation->provision(request: new AccountProvisionRequest(audience: 'client', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-X', verifiedEmail: false));
 		$written = $service->claim(subjectRef: $account['subjectRef'], appId: 'dossiq', claimName: 'linkedRequesterId', value: 'requester-77');
 
 		$this->assertTrue($written);
@@ -382,7 +393,7 @@ class PortalAccountProvisionTest extends TestCase {
 	public function testAVoidedPendingAccountNeverMatchesALoginAgain(): void {
 		$service = $this->service();
 
-		$provisioned = $service->provision(audience: 'client', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-X');
+		$provisioned = $this->creation->provision(request: new AccountProvisionRequest(audience: 'client', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-X', verifiedEmail: false));
 		$this->assertTrue($service->voidPending(subjectRef: $provisioned['subjectRef'], reason: 'Provisioned on a mistyped BSN', voidedBy: 'clerk-anna'));
 
 		$login = $service->findOrCreate(identityType: 'digid', identityRef: 'bsn-X', organisation: 'gemeente-x', audience: 'client');
@@ -412,8 +423,8 @@ class PortalAccountProvisionTest extends TestCase {
 	 */
 	public function testAPendingSelfRegistrationIsApprovedAndNothingElseIs(): void {
 		$service = $this->service();
-		$registered = $service->provision(audience: 'client', organisation: 'gemeente-x', email: 'ans@example.org', provisionedBy: 'self-registration');
-		$byClerk = $service->provision(audience: 'client', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-clerk', provisionedBy: 'clerk-anna');
+		$registered = $this->creation->provision(request: new AccountProvisionRequest(audience: 'client', organisation: 'gemeente-x', email: 'ans@example.org', provisionedBy: 'self-registration', verifiedEmail: false));
+		$byClerk = $this->creation->provision(request: new AccountProvisionRequest(audience: 'client', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-clerk', provisionedBy: 'clerk-anna', verifiedEmail: false));
 
 		$this->assertTrue($service->approvePending(subjectRef: $registered['subjectRef']));
 		$this->assertSame('active', $this->rowBySubjectRef($registered['subjectRef'])['status']);
@@ -520,6 +531,7 @@ class PortalAccountProvisionTest extends TestCase {
 			}
 		);
 
+		$this->creation = new PortalAccountCreation($reader, $writer, $random);
 		return new PortalAccountService($reader, $writer, $random);
 	}//end service()
 

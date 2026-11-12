@@ -8,6 +8,8 @@ use OCA\Portaliq\Event\PortalAccountClaimRequestedEvent;
 use OCA\Portaliq\Event\PortalAccountProvisionRequestedEvent;
 use OCA\Portaliq\Listener\PortalAccountClaimListener;
 use OCA\Portaliq\Listener\PortalAccountProvisionListener;
+use OCA\Portaliq\Service\AccountProvisionRequest;
+use OCA\Portaliq\Service\PortalAccountCreation;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\TestCase;
@@ -26,7 +28,7 @@ use RuntimeException;
 class PortalAccountEventListenerTest extends TestCase {
 
 	public function testTheProvisionListenerAnswersTheSubjectRefAndStatus(): void {
-		$accounts = $this->accounts();
+		$accounts = $this->creation();
 		$accounts->method('provision')->willReturn(['subjectRef' => 'subject-1', 'isNew' => true, 'status' => 'pending']);
 		$event = new PortalAccountProvisionRequestedEvent(appId: 'dossiq', audience: 'client', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-1');
 
@@ -39,7 +41,7 @@ class PortalAccountEventListenerTest extends TestCase {
 	}//end testTheProvisionListenerAnswersTheSubjectRefAndStatus()
 
 	public function testTheProvisionListenerRefusesADispatcherWithNoAppId(): void {
-		$accounts = $this->accounts();
+		$accounts = $this->creation();
 		$accounts->expects($this->never())->method('provision');
 		$event = new PortalAccountProvisionRequestedEvent(appId: '', audience: 'client', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-1');
 
@@ -51,7 +53,7 @@ class PortalAccountEventListenerTest extends TestCase {
 	}//end testTheProvisionListenerRefusesADispatcherWithNoAppId()
 
 	public function testAProvisionFailureIsARefusalNotAnException(): void {
-		$accounts = $this->accounts();
+		$accounts = $this->creation();
 		$accounts->method('provision')->willThrowException(new RuntimeException('OpenRegister is down'));
 		$event = new PortalAccountProvisionRequestedEvent(appId: 'dossiq', audience: 'client', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-1');
 
@@ -62,18 +64,22 @@ class PortalAccountEventListenerTest extends TestCase {
 	}//end testAProvisionFailureIsARefusalNotAnException()
 
 	public function testTheProvisionListenerStampsTheDispatchingAppAsTheProvisioner(): void {
-		$accounts = $this->accounts();
+		$accounts = $this->creation();
 		$accounts->expects($this->once())
 			->method('provision')
 			->with(
-				$this->equalTo('client'),
-				$this->equalTo('gemeente-x'),
-				$this->equalTo('digid'),
-				$this->equalTo('bsn-1'),
-				$this->equalTo(''),
-				$this->equalTo(false),
-				$this->equalTo('dossiq'),
-				$this->equalTo('')
+				$this->equalTo(
+					new AccountProvisionRequest(
+						audience: 'client',
+						organisation: 'gemeente-x',
+						verifiedEmail: false,
+						identityType: 'digid',
+						identityRef: 'bsn-1',
+						email: '',
+						provisionedBy: 'dossiq',
+						displayName: ''
+					)
+				)
 			)
 			->willReturn(['subjectRef' => 'subject-1', 'isNew' => true, 'status' => 'pending']);
 		$event = new PortalAccountProvisionRequestedEvent(appId: 'dossiq', audience: 'client', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-1');
@@ -112,10 +118,11 @@ class PortalAccountEventListenerTest extends TestCase {
 	public function testAForeignEventIsIgnoredEntirely(): void {
 		$accounts = $this->accounts();
 		$accounts->expects($this->never())->method('claim');
-		$accounts->expects($this->never())->method('provision');
+		$creation = $this->creation();
+		$creation->expects($this->never())->method('provision');
 
 		(new PortalAccountClaimListener($accounts, $this->createMock(LoggerInterface::class)))->handle(new Event());
-		(new PortalAccountProvisionListener($accounts, $this->createMock(LoggerInterface::class)))->handle(new Event());
+		(new PortalAccountProvisionListener($creation, $this->createMock(LoggerInterface::class)))->handle(new Event());
 
 		$this->addToAssertionCount(1);
 
@@ -129,8 +136,20 @@ class PortalAccountEventListenerTest extends TestCase {
 	private function accounts(): PortalAccountService {
 		return $this->getMockBuilder(PortalAccountService::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['provision', 'claim'])
+			->onlyMethods(['claim'])
 			->getMock();
 	}//end accounts()
+
+	/**
+	 * A double that can only answer methods the real account creation has.
+	 *
+	 * @return PortalAccountCreation&\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private function creation(): PortalAccountCreation {
+		return $this->getMockBuilder(PortalAccountCreation::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['provision'])
+			->getMock();
+	}//end creation()
 
 }//end class

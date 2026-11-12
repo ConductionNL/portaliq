@@ -43,8 +43,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\BackgroundJob;
 
 use DateTimeInterface;
+use OCA\Portaliq\Service\Identity\AccountStatus;
 use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
-use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
@@ -498,7 +498,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 	 * @return bool
 	 */
 	private function withdrawn(?array $account): bool {
-		if (($account['status'] ?? '') !== PortalAccountService::STATUS_VOID) {
+		if (($account['status'] ?? '') !== AccountStatus::VOID) {
 			return false;
 		}
 

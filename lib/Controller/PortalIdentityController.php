@@ -33,7 +33,9 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\AccountProvisionRequest;
 use OCA\Portaliq\Service\CaseTypeReader;
+use OCA\Portaliq\Service\Identity\AccountStatus;
 use OCA\Portaliq\Service\Identity\PortalAccountActivationService;
 use OCA\Portaliq\Service\Identity\PortalChallengeService;
 use OCA\Portaliq\Service\Identity\PortalContactService;
@@ -43,7 +45,7 @@ use OCA\Portaliq\Service\Identity\PortalInvitationService;
 use OCA\Portaliq\Service\Identity\PortalReferenceLinkService;
 use OCA\Portaliq\Service\Identity\PortalRegistrationPolicyService;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\PortalAccountCreation;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\RequestedPortal;
@@ -75,7 +77,7 @@ class PortalIdentityController extends Controller {
 	 * @param PortalReferenceLinkService $references The one-time reference link.
 	 * @param PortalRegistrationPolicyService $policy The registration policy.
 	 * @param PortalInvitationService $invitations Invitations into the portal.
-	 * @param PortalAccountService $accounts Provisions a registration.
+	 * @param PortalAccountCreation $accounts Provisions a registration.
 	 * @param CaseTypeReader $caseTypes Reads the case type's identity kinds.
 	 * @param PortalFormBindingResolver $bindings The case types this portal declares.
 	 * @param PortalIdentityMailer $mailer Mails the reference link to its address.
@@ -91,7 +93,7 @@ class PortalIdentityController extends Controller {
 		private readonly PortalReferenceLinkService $references,
 		private readonly PortalRegistrationPolicyService $policy,
 		private readonly PortalInvitationService $invitations,
-		private readonly PortalAccountService $accounts,
+		private readonly PortalAccountCreation $accounts,
 		private readonly CaseTypeReader $caseTypes,
 		private readonly PortalFormBindingResolver $bindings,
 		private readonly PortalIdentityMailer $mailer,
@@ -515,16 +517,16 @@ class PortalIdentityController extends Controller {
 	 * @return array<string, mixed>|null
 	 */
 	private function selfRegisteredAccount(RegistrationRun $run): ?array {
-		return $this->accounts->provision(
+		return $this->accounts->provision(request: new AccountProvisionRequest(
 			audience: 'client',
 			organisation: (string)($run->site['organisation'] ?? ''),
 			email: $run->email,
 			// Neither policy trusts the address yet: approval waits for a
 			// person, activation waits for the mail.
 			verifiedEmail: false,
-			provisionedBy: PortalAccountService::SELF_REGISTRATION,
+			provisionedBy: AccountStatus::SELF_REGISTRATION,
 			displayName: $run->displayName
-		);
+		));
 	}//end selfRegisteredAccount()
 
 	/**

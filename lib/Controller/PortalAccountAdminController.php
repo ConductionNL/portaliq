@@ -28,10 +28,12 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Service\AccountProvisionRequest;
 use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\Identity\EmailLink\SignInAddressChange;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\Identity\PortalInvitationService;
+use OCA\Portaliq\Service\PortalAccountCreation;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -57,11 +59,12 @@ class PortalAccountAdminController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalAccountService $accounts Provisions and withdraws accounts.
+	 * @param PortalAccountService $accounts Finds, withdraws and approves accounts.
 	 * @param ActionAuthService $actionAuth Decides whether this clerk may.
 	 * @param IUserSession $userSession The staff user making the request.
 	 * @param PortalInvitationService $invitations Invitations into the portal.
 	 * @param PortalIdentityMailer $mailer Mails the invitation to its address.
+	 * @param PortalAccountCreation $accountCreation Provisions an account before any login.
 	 * @param SignInAddressChange|null $signInAddresses Changes an e-mail account's sign-in address (sign-in-with-an-email-link H2).
 	 */
 	public function __construct(
@@ -71,6 +74,7 @@ class PortalAccountAdminController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly PortalInvitationService $invitations,
 		private readonly PortalIdentityMailer $mailer,
+		private readonly PortalAccountCreation $accountCreation,
 		private readonly ?SignInAddressChange $signInAddresses = null,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
@@ -113,7 +117,7 @@ class PortalAccountAdminController extends Controller {
 			return $user;
 		}
 
-		$account = $this->accounts->provision(
+		$account = $this->accountCreation->provision(request: new AccountProvisionRequest(
 			audience: $audience,
 			organisation: $organisation,
 			identityType: $identityType,
@@ -122,7 +126,7 @@ class PortalAccountAdminController extends Controller {
 			verifiedEmail: $verifiedEmail,
 			provisionedBy: $user->getUID(),
 			displayName: $displayName
-		);
+		));
 		if ($account === null) {
 			return new JSONResponse(['error' => 'refused'], Http::STATUS_BAD_REQUEST);
 		}

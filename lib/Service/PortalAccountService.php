@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Service\Identity\AccountStatus;
 use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use OCA\Portaliq\Service\Identity\WaitingAccountJoin;
 use OCP\Security\ISecureRandom;
@@ -52,26 +53,24 @@ class PortalAccountService {
 	private const SCHEMA = 'portalAccount';
 
 	/**
-	 * An account provisioned before any login: no session, no reach.
-	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 * An account provisioned before any login, see AccountStatus::PENDING.
 	 */
-	public const STATUS_PENDING = 'pending';
+	public const STATUS_PENDING = AccountStatus::PENDING;
 
 	/**
-	 * An account a matching first login has activated.
+	 * An account a matching first login has activated, see AccountStatus::ACTIVE.
 	 */
-	public const STATUS_ACTIVE = 'active';
+	public const STATUS_ACTIVE = AccountStatus::ACTIVE;
 
 	/**
-	 * A pending account a clerk withdrew. It never matches a login again.
+	 * A pending account a clerk withdrew, see AccountStatus::VOID.
 	 */
-	public const STATUS_VOID = 'void';
+	public const STATUS_VOID = AccountStatus::VOID;
 
 	/**
-	 * The `provisionedBy` of an account a stranger created through self-registration.
+	 * The `provisionedBy` of a self-registered account, see AccountStatus::SELF_REGISTRATION.
 	 */
-	public const SELF_REGISTRATION = 'self-registration';
+	public const SELF_REGISTRATION = AccountStatus::SELF_REGISTRATION;
 
 	/**
 	 * The lazily built read half, see lookup().
@@ -79,6 +78,13 @@ class PortalAccountService {
 	 * @var PortalAccountLookup|null
 	 */
 	private ?PortalAccountLookup $lookup = null;
+
+	/**
+	 * The lazily built write half that creates accounts, see creation().
+	 *
+	 * @var PortalAccountCreation|null
+	 */
+	private ?PortalAccountCreation $creation = null;
 
 	/**
 	 * Constructor.
@@ -153,7 +159,7 @@ class PortalAccountService {
 			return $this->returningAccount(run: $run, existing: $existing);
 		}
 
-		return $this->newAccount(run: $run, subjectRef: ($subjectRefOverride ?? $this->mintSubjectRef()));
+		return $this->newAccount(run: $run, subjectRef: ($subjectRefOverride ?? $this->creation()->mintSubjectRef()));
 	}//end findOrCreate()
 
 	/**
@@ -188,7 +194,7 @@ class PortalAccountService {
 			return null;
 		}
 
-		$created = $this->createAccountRow(organisation: $run->organisation, data: $this->newAccountRow(run: $run, subjectRef: $subjectRef));
+		$created = $this->creation()->createRow(organisation: $run->organisation, data: $this->newAccountRow(run: $run, subjectRef: $subjectRef));
 		if ($created === null) {
 			return null;
 		}
@@ -217,25 +223,6 @@ class PortalAccountService {
 	}//end newAccountRow()
 
 	/**
-	 * Write a new account row in the tenant.
-	 *
-	 * @param string               $organisation The tenant slug.
-	 * @param array<string, mixed> $data         The row.
-	 *
-	 * @return array<string, mixed>|null The written row, or null when the write failed.
-	 */
-	private function createAccountRow(string $organisation, array $data): ?array {
-		return $this->writer->createObject(
-			register: self::REGISTER,
-			schema: self::SCHEMA,
-			scopeField: '',
-			subjectRef: '',
-			organisation: $organisation,
-			data: $data
-		);
-	}//end createAccountRow()
-
-	/**
 	 * The account a `subjectRef` belongs to, or null.
 	 *
 	 * Used by the `nextcloud` sign-in mode, where the Nextcloud user id IS the
@@ -255,12 +242,9 @@ class PortalAccountService {
 
 
 	/**
-	 * Provision an account before any login (REQ-PIS-001).
-	 *
-	 * The account is created `pending`: it has no session and is unreachable
-	 * from the portal until a first login matches it. A call with neither an
-	 * identity reference nor an email is refused, because such a row could
-	 * never be matched by anything and would only be a dangling subjectRef.
+	 * Provision an account before any login (REQ-PIS-001), through the
+	 * creation half; see PortalAccountCreation::provision(). Kept for the
+	 * invitation accept, which an open pull request is changing.
 	 *
 	 * @param string $audience The external audience ("client"|"supplier"|...).
 	 * @param string $organisation The tenant slug.
@@ -295,86 +279,19 @@ class PortalAccountService {
 		string $provisionedBy = '',
 		string $displayName = '',
 	): ?array {
-		$run = new AccountProvisionRun(audience: $audience, organisation: $organisation);
-		$run->identityType  = $identityType;
-		$run->identityRef   = $identityRef;
-		$run->email         = $email;
-		$run->verifiedEmail = $verifiedEmail;
-		$run->provisionedBy = $provisionedBy;
-		$run->displayName   = $displayName;
-		return $this->provisionAccount(run: $run);
+		return $this->creation()->provision(
+			request: new AccountProvisionRequest(
+				audience: $audience,
+				organisation: $organisation,
+				verifiedEmail: $verifiedEmail,
+				identityType: $identityType,
+				identityRef: $identityRef,
+				email: $email,
+				provisionedBy: $provisionedBy,
+				displayName: $displayName
+			)
+		);
 	}//end provision()
-
-	/**
-	 * Provision the account the run describes: refused without an audience
-	 * and tenant, or with neither an identity nor an address; the account
-	 * already provisioned for it when there is one; else a new pending one.
-	 *
-	 * @param AccountProvisionRun $run The provisioning.
-	 *
-	 * @return array{subjectRef: string, isNew: bool, status: string}|null
-	 */
-	private function provisionAccount(AccountProvisionRun $run): ?array {
-		if ($run->isProvisionable() === false) {
-			return null;
-		}
-
-		$existing = $this->accountAlreadyProvisioned(run: $run);
-		if ($existing !== null) {
-			return [
-				'subjectRef' => (string)($existing['subjectRef'] ?? ''),
-				'isNew' => false,
-				'status' => (string)($existing['status'] ?? self::STATUS_ACTIVE),
-			];
-		}
-
-		return $this->newPendingAccount(run: $run, subjectRef: $this->mintSubjectRef());
-	}//end provisionAccount()
-
-	/**
-	 * Create the pending account under a freshly minted subjectRef; null when
-	 * none was minted or the write fails.
-	 *
-	 * @param AccountProvisionRun $run        The provisioning.
-	 * @param string              $subjectRef The minted subjectRef.
-	 *
-	 * @return array{subjectRef: string, isNew: bool, status: string}|null
-	 */
-	private function newPendingAccount(AccountProvisionRun $run, string $subjectRef): ?array {
-		if ($subjectRef === '') {
-			return null;
-		}
-
-		$created = $this->createAccountRow(organisation: $run->organisation, data: $this->pendingAccountRow(run: $run, subjectRef: $subjectRef));
-		if ($created === null) {
-			return null;
-		}
-
-		return ['subjectRef' => $subjectRef, 'isNew' => true, 'status' => self::STATUS_PENDING];
-	}//end newPendingAccount()
-
-	/**
-	 * The row of a provisioned account: its identity when it has one, then
-	 * pending, with who asked and when.
-	 *
-	 * @param AccountProvisionRun $run        The provisioning.
-	 * @param string              $subjectRef The minted subjectRef.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function pendingAccountRow(AccountProvisionRun $run, string $subjectRef): array {
-		return $run->identityFields() + [
-			'audience' => $run->audience,
-			'subjectRef' => $subjectRef,
-			'organisation' => $run->organisation,
-			'displayName' => $run->displayName,
-			'email' => $run->email,
-			'verifiedEmail' => $run->verifiedEmail,
-			'status' => self::STATUS_PENDING,
-			'provisionedBy' => $run->provisionedBy,
-			'provisionedAt' => (new DateTimeImmutable())->format(DATE_ATOM),
-		];
-	}//end pendingAccountRow()
 
 	/**
 	 * Write an app's claim on an account, server-side (REQ-PIS-003).
@@ -543,36 +460,6 @@ class PortalAccountService {
 	}//end update()
 
 	/**
-	 * Mint a fresh, cryptographically random subjectRef for a brand-new account.
-	 *
-	 * @return string
-	 */
-	private function mintSubjectRef(): string {
-		return $this->random->generate(32, (ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS));
-	}//end mintSubjectRef()
-
-	/**
-	 * The account this provision call would duplicate, or null.
-	 *
-	 * An identity reference is matched on that reference. A call with no
-	 * identity reference falls back to a pending, email-only account, which
-	 * is the only kind an address alone may claim.
-	 *
-	 * @param AccountProvisionRun $run The provisioning.
-	 *
-	 * @return array<string, mixed>|null
-	 *
-	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
-	 */
-	private function accountAlreadyProvisioned(AccountProvisionRun $run): ?array {
-		if ($run->hasIdentity() === true) {
-			return $this->lookup()->byIdentity(identityType: $run->identityType, identityRef: $run->identityRef, organisation: $run->organisation);
-		}
-
-		return $this->lookup()->pendingByVerifiedEmail(email: $run->email, organisation: $run->organisation);
-	}//end accountAlreadyProvisioned()
-
-	/**
 	 * The account a sign-in matches, or null for a new one.
 	 *
 	 * First on the identity reference. A person who signed in before an app
@@ -607,6 +494,27 @@ class PortalAccountService {
 
 		return $existing;
 	}//end existingFor()
+
+	/**
+	 * The write half that creates accounts: it mints a new account's
+	 * subjectRef and writes its row, for a sign-in here and for a
+	 * provisioning there.
+	 *
+	 * Built from this service's own collaborators rather than injected, so
+	 * the constructor is unchanged and the same writer and generator serve
+	 * both.
+	 *
+	 * @return PortalAccountCreation
+	 *
+	 * @spec openspec/changes/portal-identity-space/specs/portal-identity-space/spec.md
+	 */
+	private function creation(): PortalAccountCreation {
+		if ($this->creation === null) {
+			$this->creation = new PortalAccountCreation(reader: $this->reader, writer: $this->writer, random: $this->random);
+		}
+
+		return $this->creation;
+	}//end creation()
 
 	/**
 	 * The read half of the account space.

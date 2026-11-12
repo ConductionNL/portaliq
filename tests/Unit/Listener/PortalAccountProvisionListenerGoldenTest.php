@@ -24,7 +24,7 @@ namespace OCA\Portaliq\Tests\Unit\Listener;
 use OCA\Portaliq\Event\PortalAccountProvisionRequestedEvent;
 use OCA\Portaliq\Listener\PortalAccountProvisionListener;
 use OCA\Portaliq\Service\Identity\NextcloudAccountProvisioner;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Service\PortalAccountCreation;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -68,13 +68,13 @@ class PortalAccountProvisionListenerGoldenTest extends TestCase {
 	 * @return void
 	 */
 	public function testThePendingPathAnswersAsRecorded(): void {
-		$accounts = $this->createMock(PortalAccountService::class);
+		$accounts = $this->createMock(PortalAccountCreation::class);
 		$accounts->method('provision')->willReturn(null);
 		$event = new PortalAccountProvisionRequestedEvent(appId: 'dossiq', audience: 'client', organisation: 'gemeente-x', identityType: 'digid', identityRef: 'bsn-1');
 		(new PortalAccountProvisionListener($accounts, $this->createMock(LoggerInterface::class)))->handle($event);
 		$this->assertSame(['', '', 'refused'], self::slots($event));
 
-		$failing = $this->createMock(PortalAccountService::class);
+		$failing = $this->createMock(PortalAccountCreation::class);
 		$failing->method('provision')->willThrowException(new RuntimeException('down'));
 		$logger = $this->createMock(LoggerInterface::class);
 		$logger->expects($this->once())->method('error')->with('Portal account provisioning failed', $this->callback(static fn (array $context): bool => $context['exception'] instanceof RuntimeException));
@@ -91,7 +91,7 @@ class PortalAccountProvisionListenerGoldenTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheNextcloudPathAnswersAsRecorded(): void {
-		$accounts = $this->createMock(PortalAccountService::class);
+		$accounts = $this->createMock(PortalAccountCreation::class);
 		$accounts->expects($this->never())->method('provision');
 
 		$event = self::nextcloudRequest();

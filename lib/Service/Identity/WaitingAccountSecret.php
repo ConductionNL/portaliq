@@ -31,7 +31,6 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use DateTimeImmutable;
-use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\IConfig;
 
@@ -177,7 +176,7 @@ class WaitingAccountSecret {
 	private function isWaitingRow(array $row, string $field, string $hash, string $organisation): bool {
 		return hash_equals((string)($row[$field] ?? ''), $hash) === true
 			&& ($row['organisation'] ?? '') === $organisation
-			&& ($row['status'] ?? '') === PortalAccountService::STATUS_PENDING
+			&& ($row['status'] ?? '') === AccountStatus::PENDING
 			&& (string)($row['identityRef'] ?? '') === '';
 	}//end isWaitingRow()
 }//end class
