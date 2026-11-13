@@ -1979,6 +1979,111 @@ class ContributionControllerTest extends TestCase {
 
 	}//end testInboxReturnsTheAggregatedMessages()
 
+	/**
+	 * GET one message without a portal session: 401.
+	 *
+	 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T02
+	 */
+	public function testMessageAnswers401WithoutSession(): void {
+		$controller = $this->controller(aggregate: $this->aggregate(), subject: null);
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->message('portaliq', 'portalMessage', 'm-1')->getStatus());
+	}//end testMessageAnswers401WithoutSession()
+
+	/**
+	 * Another resident's message is never returned: the scoped read answers
+	 * null, and the controller the same 404 as for an id that does not exist.
+	 * The read carries the subject's own scope and organisation.
+	 *
+	 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T02
+	 */
+	public function testMessageOfAnotherResidentIs404(): void {
+		$aggregate = $this->aggregate(collections: [['id' => 'inbox', 'kind' => 'inbox', 'register' => 'portaliq', 'schema' => 'portalMessage', 'scopeField' => 'subjectRef']]);
+
+		$received = [];
+		$reader   = $this->createMock(PortalObjectReader::class);
+		$reader->method('resolveScopeValue')->willReturn('s1');
+		$reader->expects($this->once())->method('readObject')->willReturnCallback(
+			function (...$args) use (&$received) {
+				$received = $args;
+				return null;
+			}
+		);
+		$inboxReader = $this->createMock(PortalInboxReader::class);
+		$inboxReader->expects($this->never())->method('oneMessage');
+
+		$response = $this->controller(aggregate: $aggregate, reader: $reader, inboxReader: $inboxReader)->message('portaliq', 'portalMessage', 'henks-message');
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+		$this->assertSame(['error' => 'not_found'], $response->getData());
+		$this->assertSame(['portaliq', 'portalMessage', 'subjectRef', 's1', 'henks-message', 'org-1'], array_slice($received, 0, 6));
+	}//end testMessageOfAnotherResidentIs404()
+
+	/**
+	 * A register and schema that are no inbox collection of the subject: 404,
+	 * the same answer as a missing message, and nothing is read.
+	 *
+	 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T02
+	 */
+	public function testMessageOutsideOwnContributionsIs404(): void {
+		$aggregate = $this->aggregate(collections: [['id' => 'docs', 'register' => 'portaliq', 'schema' => 'exampleDocument', 'scopeField' => 'subjectRef']]);
+
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->expects($this->never())->method('readObject');
+		$reader->expects($this->never())->method('resolveScopeValue');
+
+		$controller = $this->controller(aggregate: $aggregate, reader: $reader);
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->message('portaliq', 'exampleDocument', 'd-1')->getStatus());
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->message('other', 'message', 'x-1')->getStatus());
+	}//end testMessageOutsideOwnContributionsIs404()
+
+	/**
+	 * An inbox collection above the session's trust level: 403, nothing read.
+	 *
+	 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T02
+	 */
+	public function testMessageBelowMinTrustIs403(): void {
+		$aggregate = $this->aggregate(collections: [['id' => 'inbox', 'kind' => 'inbox', 'register' => 'portaliq', 'schema' => 'portalMessage', 'minTrust' => 'substantial']]);
+
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->expects($this->never())->method('readObject');
+
+		$response = $this->controller(aggregate: $aggregate, reader: $reader)->message('portaliq', 'portalMessage', 'm-1');
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+	}//end testMessageBelowMinTrustIs403()
+
+	/**
+	 * A scope claim that does not resolve answers 404 before any read, and a
+	 * passing request reads once and answers the projected message, writing
+	 * nothing.
+	 *
+	 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T02
+	 */
+	public function testMessageReadsNothingBeforeTheChecks(): void {
+		$collection = ['id' => 'inbox', 'kind' => 'inbox', 'register' => 'portaliq', 'schema' => 'portalMessage', 'scopeField' => 'ownerRef', 'scopeClaim' => 'ownerRef'];
+		$aggregate  = $this->aggregate(collections: [$collection]);
+
+		$unresolved = $this->createMock(PortalObjectReader::class);
+		$unresolved->method('resolveScopeValue')->willReturn(null);
+		$unresolved->expects($this->never())->method('readObject');
+		$this->assertSame(Http::STATUS_NOT_FOUND, $this->controller(aggregate: $aggregate, reader: $unresolved)->message('portaliq', 'portalMessage', 'm-1')->getStatus());
+
+		$row    = ['id' => 'm-1', 'subject' => 'Besluit', 'ownerRef' => 'c-9'];
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('resolveScopeValue')->willReturn('c-9');
+		$reader->expects($this->once())->method('readObject')->willReturn($row);
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->never())->method('updateObject');
+		$inboxReader = $this->createMock(PortalInboxReader::class);
+		$inboxReader->expects($this->once())->method('oneMessage')
+			->with(self::SUBJECT, $row, $collection, $aggregate['contributions'][0])
+			->willReturn($row + ['_source' => ['appId' => 'portaliq']]);
+
+		$response = $this->controller(aggregate: $aggregate, reader: $reader, writer: $writer, inboxReader: $inboxReader)->message('portaliq', 'portalMessage', 'm-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['message' => $row + ['_source' => ['appId' => 'portaliq']]], $response->getData());
+	}//end testMessageReadsNothingBeforeTheChecks()
+
 	public function testMarkReadUnauthenticatedIs401(): void {
 		$controller = $this->controller(aggregate: $this->aggregate(), subject: null);
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->markRead('r1', 'a', 'id-1')->getStatus());

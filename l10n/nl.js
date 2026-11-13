@@ -3362,7 +3362,13 @@ OC.L10N.register(
         "QR code": "QR-code",
         "As the case app shows it": "Zoals de zaakapp het toont",
         "The columns are saved.": "De kolommen zijn opgeslagen.",
-        "The columns could not be saved. Try again.": "De kolommen konden niet worden opgeslagen. Probeer het opnieuw."
+        "The columns could not be saved. Try again.": "De kolommen konden niet worden opgeslagen. Probeer het opnieuw.",
+        "Back to messages": "Terug naar berichten",
+        "Received on {date} at {time}": "Ontvangen op {date} om {time}",
+        "From {sender}, about case {number}": "Van {sender}, over zaak {number}",
+        "About this message": "Over dit bericht",
+        "Go to your case": "Naar uw zaak",
+        "This message does not exist or is not for you.": "Dit bericht bestaat niet of is niet voor u."
     },
     "nplurals=2; plural=(n != 1);"
 )

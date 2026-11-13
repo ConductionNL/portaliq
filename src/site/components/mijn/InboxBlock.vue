@@ -101,6 +101,7 @@ import {
 	recordRoute,
 	sessionStore,
 } from '../../pages/inbox/inbox.js'
+import { messageRoute } from '../../pages/inbox/message.js'
 import { dayInWords } from './cases.js'
 import { inboxRows, mijnTranslator, receivedInWords, siteHref } from './rows.js'
 
@@ -225,6 +226,9 @@ export default {
 				(message, index) => {
 					const link = message.recordLink?.id ? message.recordLink : null
 					const recordAt = link ? recordRoute(this.nav, link) : null
+					// Each message opens on its own page
+					// (a-resident-opens-one-message T06).
+					const own = messageRoute(message, INBOX_ROUTE)
 					return {
 						key: String(message.id || message.uuid || index),
 						title: message.subject || '',
@@ -240,8 +244,8 @@ export default {
 							.filter(Boolean)
 							.join(', '),
 						unread: message.read !== true,
-						link: recordAt ? link : null,
-						route: recordAt || INBOX_ROUTE,
+						link: !own && recordAt ? link : null,
+						route: own || recordAt || INBOX_ROUTE,
 						day: this.dayOf(message.receivedAt),
 					}
 				},

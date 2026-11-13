@@ -772,6 +772,42 @@ export function createPortalApi(config, store = {}) {
 		},
 
 		/**
+		 * Read ONE of the resident's inbox messages, for its own page
+		 * (a-resident-opens-one-message REQ-ROM-002). The server proves it is
+		 * theirs before it reads it; another resident's message and a missing
+		 * one both answer 404.
+		 *
+		 * @param {{register: string, schema: string, collection: string}} source The inbox collection.
+		 * @param {string} id The message id.
+		 * @return {Promise<{ok: boolean, status: number, message: object|null}>}
+		 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T05
+		 */
+		async fetchMessage(source, id) {
+			if (!id || !source?.register || !source?.schema) {
+				return { ok: false, status: 404, message: null }
+			}
+			const path = `/inbox/${encodeURIComponent(source.register)}/${encodeURIComponent(source.schema)}/${encodeURIComponent(id)}?collection=${encodeURIComponent(source.collection || '')}`
+			let res
+			try {
+				res = await fetch(`${base}${path}`, {
+					headers: {
+						Accept: 'application/json',
+						...portalHeader,
+						...authHeaders(),
+					},
+				})
+			} catch {
+				return { ok: false, status: 0, message: null }
+			}
+			if (!res.ok) {
+				return { ok: false, status: res.status, message: null }
+			}
+			const body = await res.json().catch(() => null)
+			const message = body && typeof body.message === 'object' ? body.message : null
+			return { ok: message !== null, status: res.status, message }
+		},
+
+		/**
 		 * Delete one of the resident's own inbox messages
 		 * (inbox-delete-own-messages). The server re-checks that it is theirs.
 		 *

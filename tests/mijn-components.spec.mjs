@@ -390,13 +390,13 @@ test('an unread message carries "Nieuw" inside its link, and "Alle berichten" le
 	assert.equal(rows.length, 2)
 	assert.match(
 		rows[0],
-		/href="\/mijn\/dossiq\/zaken">.*Wij hebben een vraag over uw Woo-verzoek.*Dossiq, Vandaag om 14\.20 uur.*nl-data-badge--success[^>]*>(<!--\[-->)?Nieuw(<!--\]-->)?<\/span>.*<\/a>/,
-		'unread first, opening the record it is about',
+		/href="\/mijn\/inbox\/berichten\/m2">.*Wij hebben een vraag over uw Woo-verzoek.*Dossiq, Vandaag om 14\.20 uur.*nl-data-badge--success[^>]*>(<!--\[-->)?Nieuw(<!--\]-->)?<\/span>.*<\/a>/,
+		'unread first, opening its own message page (a-resident-opens-one-message T06)',
 	)
 	assert.match(
 		rows[1],
-		/href="\/mijn\/inbox">/,
-		'a message about no shown record opens the inbox',
+		/href="\/mijn\/inbox\/berichten\/m1">/,
+		'a message about no shown record opens its own page too',
 	)
 	assert.doesNotMatch(rows[1], /Nieuw/)
 	assert.match(
