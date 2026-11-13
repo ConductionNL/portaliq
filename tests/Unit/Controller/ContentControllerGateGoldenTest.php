@@ -46,6 +46,7 @@ use ReflectionProperty;
  * @covers \OCA\Portaliq\Controller\ContentController
  * @covers \OCA\Portaliq\Controller\PublicContentGate
  * @uses   \OCA\Portaliq\Service\PortalSessionService
+ * @uses   \OCA\Portaliq\Service\Session\SessionTrust
  */
 class ContentControllerGateGoldenTest extends TestCase {
 
