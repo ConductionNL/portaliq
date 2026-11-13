@@ -34,7 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
+use OCA\Portaliq\Kernel\Contracts\FileFieldConfigNormaliserInterface;
 use OCA\Portaliq\Kernel\Contracts\RequiredFieldsGuardInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -92,7 +92,7 @@ class RequiredFieldsGuard implements RequiredFieldsGuardInterface {
 		return is_string($field) === true
 			&& is_array($config) === true
 			&& ($config['required'] ?? false) === true
-			&& ($config['type'] ?? null) !== FileFieldConfigNormaliser::TYPE_FILE;
+			&& ($config['type'] ?? null) !== FileFieldConfigNormaliserInterface::TYPE_FILE;
 	}//end isCheckedField()
 
 	/**

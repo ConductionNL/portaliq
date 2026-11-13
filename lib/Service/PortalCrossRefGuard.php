@@ -39,12 +39,12 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\CrossRefConfigNormaliser;
+use OCA\Portaliq\Kernel\Contracts\CrossRefConfigNormaliserInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalCrossRefGuardInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use Psr\Log\LoggerInterface;
-use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
 
 /**
  * Refuses a portal write whose references are not the subject's own.
@@ -99,7 +99,7 @@ class PortalCrossRefGuard implements PortalCrossRefGuardInterface {
 	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-declared-cross-reference-must-resolve-inside-the-subjects-own-scope
 	 */
 	public function refusedField(array $action, array $data, array $subject, string $app): string {
-		$declared = ($action[CrossRefConfigNormaliser::KEY] ?? []);
+		$declared = ($action[CrossRefConfigNormaliserInterface::KEY] ?? []);
 		if (is_array($declared) === false || $declared === []) {
 			return '';
 		}

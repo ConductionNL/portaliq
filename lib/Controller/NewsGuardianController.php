@@ -34,7 +34,7 @@ use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\NewsFeedReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\NewsReadReceiptServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSelfServiceServiceInterface;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -53,7 +53,7 @@ class NewsGuardianController extends Controller implements PortalProtected {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
 	 * @param NewsFeedReaderInterface $feedReader The guardian-scoped read path.
 	 * @param NewsReadReceiptServiceInterface $readReceipts Idempotent read-receipt recording.
 	 * @param PortalSelfServiceServiceInterface|null $selfService Reads the reader's own `messageLanguage`
@@ -63,7 +63,7 @@ class NewsGuardianController extends Controller implements PortalProtected {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
+		private readonly PortalSessionServiceInterface $session,
 		private readonly NewsFeedReaderInterface $feedReader,
 		private readonly NewsReadReceiptServiceInterface $readReceipts,
 		private readonly ?PortalSelfServiceServiceInterface $selfService = null,

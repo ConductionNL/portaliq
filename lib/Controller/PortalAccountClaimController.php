@@ -32,8 +32,9 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\WaitingAccountInvitationInterface;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\SessionTrust;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -59,13 +60,13 @@ class PortalAccountClaimController extends Controller implements PortalProtected
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
 	 * @param WaitingAccountInvitationInterface $invitations Redeems the secret.
 	 * @param LoggerInterface $logger Records a failure's cause, never the secret.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
+		private readonly PortalSessionServiceInterface $session,
 		private readonly WaitingAccountInvitationInterface $invitations,
 		private readonly LoggerInterface $logger,
 	) {
@@ -101,7 +102,7 @@ class PortalAccountClaimController extends Controller implements PortalProtected
 
 		// About the session, not the secret: it is checked before the secret
 		// is looked at, so it tells the caller nothing about any invitation.
-		if ($this->session::trustSatisfies(subjectTrust: ($subject['trust'] ?? ''), minTrust: self::MIN_TRUST) === false) {
+		if (SessionTrust::trustSatisfies(subjectTrust: ($subject['trust'] ?? ''), minTrust: self::MIN_TRUST) === false) {
 			return new JSONResponse(['error' => 'trust_too_low'], Http::STATUS_FORBIDDEN);
 		}
 

@@ -26,9 +26,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\PortalProviderLocator;
 use OCA\Portaliq\Contribution\TimelineProviderMethod;
 use OCA\Portaliq\Kernel\Contracts\PortalItemReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalProviderLocatorInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -41,11 +41,11 @@ class PortalItemReader implements PortalItemReaderInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalProviderLocator $locator Finds the app's provider.
+	 * @param PortalProviderLocatorInterface $locator Finds the app's provider.
 	 * @param LoggerInterface       $logger  The logger.
 	 */
 	public function __construct(
-		private readonly PortalProviderLocator $locator,
+		private readonly PortalProviderLocatorInterface $locator,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

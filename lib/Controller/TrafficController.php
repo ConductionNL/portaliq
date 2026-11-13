@@ -29,12 +29,12 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\RawRequestBodyInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficEventValidatorInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficIngestServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficRecordingServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficServerTokenInterface;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\Traffic\TrafficServerBatch;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Controller;
@@ -102,7 +102,7 @@ class TrafficController extends Controller {
 	 * @param TrafficIngestServiceInterface $ingest     Validates and stores events.
 	 * @param RawRequestBodyInterface       $body       Reads the text body.
 	 * @param IAppManager          $appManager Locates the built client on disk.
-	 * @param PortalSessionService $session    Resolves a portal session bearer to its subject, for account linking.
+	 * @param PortalSessionServiceInterface $session    Resolves a portal session bearer to its subject, for account linking.
 	 * @param TrafficServerTokenInterface   $tokens     Verifies a backend's bearer token (portal-traffic-reporting).
 	 * @param TrafficRecordingServiceInterface $recordings Stores a session recording chunk (portal-traffic-experiments).
 	 *
@@ -115,7 +115,7 @@ class TrafficController extends Controller {
 		private readonly TrafficIngestServiceInterface $ingest,
 		private readonly RawRequestBodyInterface $body,
 		private readonly IAppManager $appManager,
-		private readonly PortalSessionService $session,
+		private readonly PortalSessionServiceInterface $session,
 		private readonly TrafficServerTokenInterface $tokens,
 		private readonly TrafficRecordingServiceInterface $recordings,
 	) {

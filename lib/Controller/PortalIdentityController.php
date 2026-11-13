@@ -45,7 +45,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalReferenceCaseServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalReferenceLinkServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalRegistrationPolicyServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Service\RequestedPortal;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -80,7 +80,7 @@ class PortalIdentityController extends Controller {
 	 * @param PortalFormBindingResolverInterface $bindings The case types this portal declares.
 	 * @param PortalIdentityMailerInterface $mailer Mails the reference link to its address.
 	 * @param PortalReferenceCaseServiceInterface $referenceCases The case behind a reference link.
-	 * @param PortalSessionService $sessions Mints and resolves the reference session.
+	 * @param PortalSessionServiceInterface $sessions Mints and resolves the reference session.
 	 * @param PortalAccountActivationServiceInterface $activation Mints and spends the activation link (identity-ways-in-screens T03).
 	 * @param PortalContactServiceInterface|null $contacts Joins a contact invitation the registration followed (own-contacts-and-invitations T05).
 	 */
@@ -96,7 +96,7 @@ class PortalIdentityController extends Controller {
 		private readonly PortalFormBindingResolverInterface $bindings,
 		private readonly PortalIdentityMailerInterface $mailer,
 		private readonly PortalReferenceCaseServiceInterface $referenceCases,
-		private readonly PortalSessionService $sessions,
+		private readonly PortalSessionServiceInterface $sessions,
 		private readonly PortalAccountActivationServiceInterface $activation,
 		private readonly ?PortalContactServiceInterface $contacts = null,
 	) {

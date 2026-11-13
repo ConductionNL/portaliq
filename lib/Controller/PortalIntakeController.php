@@ -31,7 +31,6 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\DestinationIntakeInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalActionForwarderInterface;
@@ -39,6 +38,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalAddressLookupInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalApplicantPrefillInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalCatalogueReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalChallengeServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalDeepLinkBuilderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalEmailVerificationInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFamilyMembersInterface;
@@ -48,6 +48,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalIntakeConfirmationInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalIntakePaymentsInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalIntakeQueueInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSubmissionChecksInterface;
 use OCA\Portaliq\Service\Intake\DestinationIntake;
 use OCA\Portaliq\Service\Intake\DestinationLookup;
@@ -60,7 +61,6 @@ use OCA\Portaliq\Service\Intake\PortalFormDecision;
 use OCA\Portaliq\Service\Intake\PortalIntakeConfirmation;
 use OCA\Portaliq\Service\Intake\PortalIntakePayments;
 use OCA\Portaliq\Service\Intake\PortalSubmissionChecks;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\Session\SessionTrust;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -108,7 +108,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 *
 	 * @param IRequest $request The request.
 	 * @param PortalResolverInterface $portals Resolves the portal being visited.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
 	 * @param PortalFormBindingResolverInterface $bindings Resolves the binding.
 	 * @param PortalApplicantPrefillInterface $prefill Fills the applicant block.
 	 * @param PortalFormValidatorInterface $validator Validates a submission.
@@ -122,7 +122,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param PortalFormCalculator|null $calculator Works out the form's calculated fields again on submit.
 	 * @param PortalFormDecision|null $decision Asks the rule engine for the decisions a form's steps declare.
 	 * @param PortalFee|null $fees Checks a fee and the address a resident may be sent to pay at.
-	 * @param PortalContributionRegistry|null $registry Finds the case app's pay action in the subject's own manifest.
+	 * @param PortalContributionRegistryInterface|null $registry Finds the case app's pay action in the subject's own manifest.
 	 * @param PortalActionForwarderInterface|null $forwarder Forwards the pay action with a server-built body.
 	 * @param PortalDeepLinkBuilderInterface|null $deepLinks Builds the address the resident returns to.
 	 * @param PortalEmailVerificationInterface|null $emailVerification Checks the proof that an e-mail address was verified.
@@ -132,7 +132,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	public function __construct(
 		IRequest $request,
 		private readonly PortalResolverInterface $portals,
-		private readonly PortalSessionService $session,
+		private readonly PortalSessionServiceInterface $session,
 		private readonly PortalFormBindingResolverInterface $bindings,
 		private readonly PortalApplicantPrefillInterface $prefill,
 		PortalFormValidatorInterface $validator,
@@ -146,7 +146,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		?PortalFormCalculator $calculator = null,
 		?PortalFormDecision $decision = null,
 		?PortalFee $fees = null,
-		?PortalContributionRegistry $registry = null,
+		?PortalContributionRegistryInterface $registry = null,
 		?PortalActionForwarderInterface $forwarder = null,
 		?PortalDeepLinkBuilderInterface $deepLinks = null,
 		?PortalEmailVerificationInterface $emailVerification = null,

@@ -37,28 +37,28 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Contribution\CitizenDocumentUpload;
 use OCA\Portaliq\Contribution\CitizenWriteActionFinder;
-use OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Event\PortalClientWriteEvent;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\CitizenCaseDocumentsInterface;
+use OCA\Portaliq\Kernel\Contracts\CitizenDocumentUploadInterface;
 use OCA\Portaliq\Kernel\Contracts\CitizenWritableSetResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\CitizenWriteConfigNormaliserInterface;
 use OCA\Portaliq\Kernel\Contracts\CitizenWriteRecorderInterface;
 use OCA\Portaliq\Kernel\Contracts\CitizenWriteThrottleInterface;
 use OCA\Portaliq\Kernel\Contracts\MandatedCaseReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalBranchScopeInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFileReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFileWriterInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalMandateServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalPartyTreeResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
 use OCA\Portaliq\Service\CitizenCaseProjection;
 use OCA\Portaliq\Service\Identity\MandateParties;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\Session\SessionTrust;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -108,8 +108,8 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalContributionRegistry $registry The contribution aggregator.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
+	 * @param PortalContributionRegistryInterface $registry The contribution aggregator.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
 	 * @param PortalObjectReaderInterface $reader Subject-scoped OpenRegister reader.
 	 * @param PortalObjectWriterInterface $writer Subject-scoped OpenRegister writer.
 	 * @param PortalFileReaderInterface $fileReader Lists what is already on the case.
@@ -117,7 +117,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 * @param CitizenWritableSetResolverInterface $writableSet Reads the case type's flags.
 	 * @param CitizenWriteRecorderInterface $recorder Records and announces the write.
 	 * @param CitizenWriteThrottleInterface $throttle Counts writes per identity and per case.
-	 * @param CitizenDocumentUpload $upload Reads and names the citizen's document.
+	 * @param CitizenDocumentUploadInterface $upload Reads and names the citizen's document.
 	 * @param PortalMandateServiceInterface $mandates The mandates the identity holds.
 	 * @param PortalPartyTreeResolverInterface $tree How far a mandate reaches.
 	 * @param IL10N $l10n The sentences a refusal is given with.
@@ -130,8 +130,8 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalContributionRegistry $registry,
-		private readonly PortalSessionService $session,
+		private readonly PortalContributionRegistryInterface $registry,
+		private readonly PortalSessionServiceInterface $session,
 		private readonly PortalObjectReaderInterface $reader,
 		private readonly PortalObjectWriterInterface $writer,
 		private readonly PortalFileReaderInterface $fileReader,
@@ -139,7 +139,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		private readonly CitizenWritableSetResolverInterface $writableSet,
 		private readonly CitizenWriteRecorderInterface $recorder,
 		private readonly CitizenWriteThrottleInterface $throttle,
-		private readonly CitizenDocumentUpload $upload,
+		private readonly CitizenDocumentUploadInterface $upload,
 		private readonly PortalMandateServiceInterface $mandates,
 		private readonly PortalPartyTreeResolverInterface $tree,
 		private readonly IL10N $l10n,
@@ -654,7 +654,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 * @return string
 	 */
 	private function writeConfigField(CaseWriteRun $write, string $key): string {
-		$config = (array)($write->context['action'][CitizenWriteConfigNormaliser::KEY] ?? []);
+		$config = (array)($write->context['action'][CitizenWriteConfigNormaliserInterface::KEY] ?? []);
 		return (string)($config[$key] ?? self::WRITE_CONFIG_DEFAULTS[$key]);
 	}//end writeConfigField()
 

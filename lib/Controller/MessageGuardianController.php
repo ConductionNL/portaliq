@@ -34,9 +34,9 @@ use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\MessageContactReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalContactServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSelfServiceServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Service\Messaging\GuardianMessageTranslator;
 use OCA\Portaliq\Service\Messaging\GuardianMessagingLeafInterface;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -70,7 +70,7 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
 	 * @param GuardianMessagingLeafInterface $messaging The messaging leaf.
 	 * @param GuardianMessageTranslator|null $translator Shows messages in the reader's
 	 *                                                   language (translated-message-notice).
@@ -85,7 +85,7 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
+		private readonly PortalSessionServiceInterface $session,
 		private readonly GuardianMessagingLeafInterface $messaging,
 		private readonly ?GuardianMessageTranslator $translator = null,
 		private readonly ?PortalSelfServiceServiceInterface $selfService = null,

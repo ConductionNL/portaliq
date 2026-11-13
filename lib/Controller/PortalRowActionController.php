@@ -37,15 +37,15 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\ActionScopeResolver;
 use OCA\Portaliq\Contribution\AttachedActionResolver;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Contribution\RowActionFiles;
 use OCA\Portaliq\Contribution\RowActionResolver;
 use OCA\Portaliq\Contribution\RowIdentifier;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\AuditTrailServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalActionForwarderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Service\RequiredFieldsGuard;
 use OCA\Portaliq\Service\Session\SessionTrust;
 use OCP\AppFramework\Controller;
@@ -72,16 +72,16 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalContributionRegistry $registry The subject's contributions.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
+	 * @param PortalContributionRegistryInterface $registry The subject's contributions.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
 	 * @param PortalObjectReaderInterface $reader The scoped single-object read.
 	 * @param PortalActionForwarderInterface $forwarder The signed server-to-server forward.
 	 * @param AuditTrailServiceInterface $auditor Records the forward.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalContributionRegistry $registry,
-		private readonly PortalSessionService $session,
+		private readonly PortalContributionRegistryInterface $registry,
+		private readonly PortalSessionServiceInterface $session,
 		private readonly PortalObjectReaderInterface $reader,
 		private readonly PortalActionForwarderInterface $forwarder,
 		private readonly AuditTrailServiceInterface $auditor,

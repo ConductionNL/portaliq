@@ -31,7 +31,7 @@ use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\CaseTypeVisibilityInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalRegisteredDetailsLinksInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalRegisteredDetailsServiceInterface;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -52,14 +52,14 @@ class PortalRegisteredDetailsController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest                       $request  The request.
-	 * @param PortalSessionService           $session  Resolves the subject from the bearer.
+	 * @param PortalSessionServiceInterface           $session  Resolves the subject from the bearer.
 	 * @param PortalRegisteredDetailsServiceInterface $details  Reads the BRP or KvK record.
 	 * @param PortalRegisteredDetailsLinksInterface   $links    The portal's request links.
 	 * @param CaseTypeVisibilityInterface             $portals  Finds the portal the request is served from.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
+		private readonly PortalSessionServiceInterface $session,
 		private readonly PortalRegisteredDetailsServiceInterface $details,
 		private readonly PortalRegisteredDetailsLinksInterface $links,
 		private readonly CaseTypeVisibilityInterface $portals,

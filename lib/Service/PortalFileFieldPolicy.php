@@ -34,7 +34,7 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use finfo;
-use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
+use OCA\Portaliq\Kernel\Contracts\FileFieldConfigNormaliserInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFileFieldPolicyInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IRequest;
@@ -134,7 +134,7 @@ class PortalFileFieldPolicy implements PortalFileFieldPolicyInterface {
 		}
 
 		$config = ($action['fieldConfigs'][$field] ?? null);
-		if (is_array($config) === false || ($config['type'] ?? null) !== FileFieldConfigNormaliser::TYPE_FILE) {
+		if (is_array($config) === false || ($config['type'] ?? null) !== FileFieldConfigNormaliserInterface::TYPE_FILE) {
 			return null;
 		}
 
@@ -195,8 +195,8 @@ class PortalFileFieldPolicy implements PortalFileFieldPolicyInterface {
 	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
 	 */
 	public function refusal(array $config, string $fileName, string $content): ?string {
-		$limitMb = ($config['maxSizeMb'] ?? FileFieldConfigNormaliser::DEFAULT_SIZE_MB);
-		$limitMb = max(1, min(FileFieldConfigNormaliser::MAX_SIZE_MB, (int)$limitMb));
+		$limitMb = ($config['maxSizeMb'] ?? FileFieldConfigNormaliserInterface::DEFAULT_SIZE_MB);
+		$limitMb = max(1, min(FileFieldConfigNormaliserInterface::MAX_SIZE_MB, (int)$limitMb));
 		if (strlen($content) > ($limitMb * 1024 * 1024)) {
 			return self::ERROR_TOO_LARGE;
 		}

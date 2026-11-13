@@ -32,7 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalReferenceCaseServiceInterface;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
@@ -61,11 +61,11 @@ class PortalReferenceCaseService implements PortalReferenceCaseServiceInterface 
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalContributionRegistry $registry The case apps' collection declarations.
+	 * @param PortalContributionRegistryInterface $registry The case apps' collection declarations.
 	 * @param ScopedCollectionReaderInterface $reader Reads the binding and the one case.
 	 */
 	public function __construct(
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 		private readonly ScopedCollectionReaderInterface $reader,
 	) {
 	}//end __construct()

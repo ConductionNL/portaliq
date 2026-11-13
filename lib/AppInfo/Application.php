@@ -51,6 +51,7 @@ use OCP\AppFramework\Bootstrap\IBootstrap;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\IRequest;
 use OCA\Portaliq\Listener\ListenerRegistrar;
+use OCA\Portaliq\Contribution\ContributionContractRegistrar;
 
 /**
  * Main application class for the Portaliq Nextcloud app.
@@ -151,6 +152,8 @@ class Application extends App implements IBootstrap {
 		// is about to change (decision 179). Portaliq answers for its form
 		// bindings.
 		(new FormDependentsRegistrar())->register($context);
+		(new ContributionContractRegistrar())->register(context: $context);
+
 	}//end register()
 
 	/**

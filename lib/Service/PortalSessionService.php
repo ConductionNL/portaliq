@@ -50,6 +50,7 @@ namespace OCA\Portaliq\Service;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Service\Branch\BranchNumber;
 use OCA\Portaliq\Service\Session\SessionTrust;
 use OCP\IAppConfig;
@@ -75,7 +76,7 @@ use Throwable;
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)     -- one method per step of
  * a session's life, including revoking one session as an admin.
  */
-class PortalSessionService {
+class PortalSessionService implements PortalSessionServiceInterface {
 	/**
 	 * The bearer scheme prefix, case-sensitive per RFC 6750.
 	 */

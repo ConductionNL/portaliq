@@ -185,6 +185,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalRuntimeConfigResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSchemaReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSelfServiceServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSigninSettingsInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSubmissionChecksInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalTaskGatewayInterface;
@@ -574,6 +575,7 @@ final class ContractRegistrar {
 		$context->registerServiceAlias(PortalRuntimeConfigResolverInterface::class, PortalRuntimeConfigResolver::class);
 		$context->registerServiceAlias(PortalSchemaReaderInterface::class, PortalSchemaReader::class);
 		$context->registerServiceAlias(PortalSelfServiceServiceInterface::class, PortalSelfServiceService::class);
+		$context->registerServiceAlias(PortalSessionServiceInterface::class, PortalSessionService::class);
 		$context->registerServiceAlias(PortalSigninSettingsInterface::class, PortalSigninSettings::class);
 		$context->registerServiceAlias(PortalSubmissionChecksInterface::class, PortalSubmissionChecks::class);
 		$context->registerServiceAlias(PortalTaskGatewayInterface::class, PortalTaskGateway::class);

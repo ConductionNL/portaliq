@@ -34,14 +34,14 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Contribution\StepsProviderMethod;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\MandatedCaseReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalItemReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalTimelineReaderInterface;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\Session\SessionTrust;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -65,8 +65,8 @@ class PortalTimelineController extends Controller implements PortalProtected {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalContributionRegistry $registry The subject's contributions.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
+	 * @param PortalContributionRegistryInterface $registry The subject's contributions.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
 	 * @param PortalObjectReaderInterface $reader The scoped single-object read.
 	 * @param PortalTimelineReaderInterface $timelines Calls the declared provider method.
 	 * @param PortalItemReaderInterface|null $items Calls the item-list provider method (my-dossiers).
@@ -74,8 +74,8 @@ class PortalTimelineController extends Controller implements PortalProtected {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalContributionRegistry $registry,
-		private readonly PortalSessionService $session,
+		private readonly PortalContributionRegistryInterface $registry,
+		private readonly PortalSessionServiceInterface $session,
 		private readonly PortalObjectReaderInterface $reader,
 		private readonly PortalTimelineReaderInterface $timelines,
 		private readonly ?PortalItemReaderInterface $items = null,

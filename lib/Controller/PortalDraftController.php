@@ -35,7 +35,7 @@ use DateTimeImmutable;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\ActionDraftInterface;
 use OCA\Portaliq\Kernel\Contracts\DestinationDraftInterface;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -57,13 +57,13 @@ class PortalDraftController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest             $request The request.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
 	 * @param ActionDraftInterface          $actions Resolves the action, its draft body and its retention.
 	 * @param DestinationDraftInterface     $drafts  Saves and discards drafts in OpenRegister.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
+		private readonly PortalSessionServiceInterface $session,
 		private readonly ActionDraftInterface $actions,
 		private readonly DestinationDraftInterface $drafts,
 	) {

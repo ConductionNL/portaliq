@@ -44,8 +44,8 @@ use OCA\Portaliq\Kernel\Contracts\OrganisationLoginConfigInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalAccountServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalOrganisationConfigServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Service\Identity\ContactAddressValues;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\RequestedPortal;
 use OCA\Portaliq\Service\Signin\SiteReturnAddress;
 use OCP\AppFramework\Controller;
@@ -242,7 +242,7 @@ class SessionController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request object.
-	 * @param PortalSessionService $session The session service.
+	 * @param PortalSessionServiceInterface $session The session service.
 	 * @param IConfig $config For the dev-login gate.
 	 * @param PortalOrganisationConfigServiceInterface $orgConfig Resolves per-org OIDC
 	 *                                                   broker config
@@ -268,7 +268,7 @@ class SessionController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
+		private readonly PortalSessionServiceInterface $session,
 		private readonly IConfig $config,
 		private readonly PortalOrganisationConfigServiceInterface $orgConfig,
 		private readonly OidcClientServiceInterface $oidc,

@@ -27,7 +27,7 @@ namespace OCA\Portaliq\Service\Plans;
 
 use DateTimeImmutable;
 use DateTimeInterface;
-use OCA\Portaliq\Contribution\CitizenDocumentUpload;
+use OCA\Portaliq\Kernel\Contracts\CitizenDocumentUploadInterface;
 use OCA\Portaliq\Kernel\Contracts\PlanFilesInterface;
 use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalFileWriter;
@@ -51,14 +51,14 @@ class PlanFiles implements PlanFilesInterface {
 	 * @param PortalPlanService $plans Finds the plan for a participant and saves its file list.
 	 * @param PortalFileReader $reader Lists and streams the plan object's files.
 	 * @param PortalFileWriter $writer Attaches a file to the plan object.
-	 * @param CitizenDocumentUpload $upload Reads the upload and keeps stored names unique.
+	 * @param CitizenDocumentUploadInterface $upload Reads the upload and keeps stored names unique.
 	 * @param PlanRules $rules Reads the plan's file list.
 	 */
 	public function __construct(
 		private readonly PortalPlanService $plans,
 		private readonly PortalFileReader $reader,
 		private readonly PortalFileWriter $writer,
-		private readonly CitizenDocumentUpload $upload,
+		private readonly CitizenDocumentUploadInterface $upload,
 		private readonly PlanRules $rules = new PlanRules(),
 	) {
 	}//end __construct()

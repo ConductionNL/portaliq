@@ -36,8 +36,8 @@ namespace OCA\Portaliq\Service\Intake;
 use DateTimeImmutable;
 use OCA\Portaliq\Contribution\ActionScopeResolver;
 use OCA\Portaliq\Contribution\CreateBody;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Kernel\Contracts\ActionDraftInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -69,13 +69,13 @@ class ActionDraft implements ActionDraftInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalContributionRegistry $registry The subject's aggregate of actions.
+	 * @param PortalContributionRegistryInterface $registry The subject's aggregate of actions.
 	 * @param PortalObjectReader         $reader   Resolves the action's scope claim.
 	 * @param PortalObjectWriter         $writer   Applies the create's ownership stamps.
 	 * @param DestinationDraft           $drafts   Finds and discards drafts in OpenRegister.
 	 */
 	public function __construct(
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 		private readonly PortalObjectReader $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly DestinationDraft $drafts,

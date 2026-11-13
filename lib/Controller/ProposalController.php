@@ -30,12 +30,12 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\PortalCaseAccessGuardInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\ProposalServiceInterface;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -63,18 +63,18 @@ class ProposalController extends Controller {
 	 *
 	 * @param IRequest $request The request.
 	 * @param ProposalServiceInterface $proposals The queue itself.
-	 * @param PortalContributionRegistry $registry The contribution aggregator.
+	 * @param PortalContributionRegistryInterface $registry The contribution aggregator.
 	 * @param PortalObjectReaderInterface $reader Reads the record being proposed about.
-	 * @param PortalSessionService $session Resolves a portal subject.
+	 * @param PortalSessionServiceInterface $session Resolves a portal subject.
 	 * @param PortalCaseAccessGuardInterface $guard Decides who may review.
 	 * @param IUserSession $userSession The staff user, when there is one.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly ProposalServiceInterface $proposals,
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 		private readonly PortalObjectReaderInterface $reader,
-		private readonly PortalSessionService $session,
+		private readonly PortalSessionServiceInterface $session,
 		private readonly PortalCaseAccessGuardInterface $guard,
 		private readonly IUserSession $userSession,
 	) {

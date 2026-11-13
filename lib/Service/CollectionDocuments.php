@@ -25,9 +25,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\PortalProviderLocator;
 use OCA\Portaliq\Contribution\TimelineProviderMethod;
 use OCA\Portaliq\Kernel\Contracts\CollectionDocumentsInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalProviderLocatorInterface;
 use OCP\AppFramework\Http\StreamResponse;
 use Psr\Log\LoggerInterface;
 use ReflectionMethod;
@@ -55,14 +55,14 @@ class CollectionDocuments implements CollectionDocumentsInterface {
 	 * @param PortalCaseDocumentReader $published Asks the app what it lists for an object.
 	 * @param PortalFileReader $files Streams a file from OpenRegister.
 	 * @param PortalAuditHook $audit Records each download.
-	 * @param PortalProviderLocator $locator Finds the app's provider for the hook.
+	 * @param PortalProviderLocatorInterface $locator Finds the app's provider for the hook.
 	 * @param LoggerInterface $logger Records a refused hook.
 	 */
 	public function __construct(
 		private readonly PortalCaseDocumentReader $published,
 		private readonly PortalFileReader $files,
 		private readonly PortalAuditHook $audit,
-		private readonly PortalProviderLocator $locator,
+		private readonly PortalProviderLocatorInterface $locator,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

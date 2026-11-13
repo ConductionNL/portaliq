@@ -45,8 +45,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Notifications;
 
 use OCA\Portaliq\Contribution\NotificationRuleNormaliser;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Kernel\Contracts\PortalChangeRuleIndexInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -98,12 +98,12 @@ class PortalChangeRuleIndex implements PortalChangeRuleIndexInterface {
 	/**
 	 * Wire the index.
 	 *
-	 * @param PortalContributionRegistry $registry  Every app's contribution.
+	 * @param PortalContributionRegistryInterface $registry  Every app's contribution.
 	 * @param ContainerInterface         $container Resolves OpenRegister's mappers.
 	 * @param LoggerInterface            $logger    The logger.
 	 */
 	public function __construct(
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 	) {

@@ -22,8 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
-use OCA\Portaliq\Contribution\ConfirmationMailKeys;
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\ConfirmationMailKeysInterface;
 use OCA\Portaliq\Kernel\Contracts\ContactConfirmationMailerInterface;
 use OCA\Portaliq\Service\Mail\MailLog;
 use OCA\Portaliq\Service\Mail\MailSite;
@@ -85,7 +85,7 @@ class ContactConfirmationMailer implements ContactConfirmationMailerInterface {
 	 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t02
 	 */
 	public function afterCreate(array $subject, array $action, array $data): bool {
-		if (in_array(($action['confirmationMail'] ?? null), ConfirmationMailKeys::TEMPLATES, true) === false) {
+		if (in_array(($action['confirmationMail'] ?? null), ConfirmationMailKeysInterface::TEMPLATES, true) === false) {
 			return false;
 		}
 
