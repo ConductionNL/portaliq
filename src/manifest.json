@@ -5276,6 +5276,32 @@
             }
           },
           {
+            "id": "binding-intro",
+            "type": "settings-form",
+            "title": "Introduction",
+            "content": {
+              "columns": 2,
+              "saveLabel": "Save",
+              "savedText": "The form settings are saved.",
+              "fields": [
+                {
+                  "key": "intro.enabled",
+                  "label": "Open the form with an introduction page",
+                  "type": "switch",
+                  "default": true,
+                  "hint": "Off: the form opens at step 1. The introduction's text is kept."
+                },
+                {
+                  "key": "intro.lead",
+                  "label": "Introduction text",
+                  "type": "textarea",
+                  "rows": 3,
+                  "hint": "The opening sentence under the form's heading."
+                }
+              ]
+            }
+          },
+          {
             "id": "binding-general",
             "type": "sections",
             "title": "Algemeen",
@@ -5286,6 +5312,11 @@
                   "key": "form",
                   "title": "Form",
                   "widgetId": "binding-form"
+                },
+                {
+                  "key": "intro",
+                  "title": "Introduction",
+                  "widgetId": "binding-intro"
                 },
                 {
                   "key": "signin",

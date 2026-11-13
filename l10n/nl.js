@@ -3362,7 +3362,11 @@ OC.L10N.register(
         "QR code": "QR-code",
         "As the case app shows it": "Zoals de zaakapp het toont",
         "The columns are saved.": "De kolommen zijn opgeslagen.",
-        "The columns could not be saved. Try again.": "De kolommen konden niet worden opgeslagen. Probeer het opnieuw."
+        "The columns could not be saved. Try again.": "De kolommen konden niet worden opgeslagen. Probeer het opnieuw.",
+        "Open the form with an introduction page": "Het formulier opent met een introductiepagina",
+        "Off: the form opens at step 1. The introduction's text is kept.": "Uit: het formulier opent bij stap 1. De tekst van de introductie blijft bewaard.",
+        "Introduction text": "Tekst van de introductie",
+        "The opening sentence under the form's heading.": "De openingszin onder de kop van het formulier."
     },
     "nplurals=2; plural=(n != 1);"
 )

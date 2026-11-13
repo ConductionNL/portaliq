@@ -3208,7 +3208,11 @@ OC.L10N.register(
         "QR code": "QR code",
         "As the case app shows it": "As the case app shows it",
         "The columns are saved.": "The columns are saved.",
-        "The columns could not be saved. Try again.": "The columns could not be saved. Try again."
+        "The columns could not be saved. Try again.": "The columns could not be saved. Try again.",
+        "Open the form with an introduction page": "Open the form with an introduction page",
+        "Off: the form opens at step 1. The introduction's text is kept.": "Off: the form opens at step 1. The introduction's text is kept.",
+        "Introduction text": "Introduction text",
+        "The opening sentence under the form's heading.": "The opening sentence under the form's heading."
     },
     "nplurals=2; plural=(n != 1);"
 )
