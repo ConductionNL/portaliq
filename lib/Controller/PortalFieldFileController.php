@@ -52,6 +52,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
 use Throwable;
+use OCA\Portaliq\Service\Session\SessionTrust;
 
 /**
  * Serves the scoped upload into a declared file field.
@@ -165,7 +166,7 @@ class PortalFieldFileController extends Controller implements PortalProtected {
 
 		if ($match === null
 			|| $config === null
-			|| PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($match['action']['minTrust'] ?? null)) === false
+			|| SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($match['action']['minTrust'] ?? null)) === false
 		) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}

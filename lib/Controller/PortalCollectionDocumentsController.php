@@ -40,6 +40,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\Response;
 use OCP\IL10N;
 use OCP\IRequest;
+use OCA\Portaliq\Service\Session\SessionTrust;
 
 /**
  * Serves the papers of one object to the subject it is scoped to.
@@ -162,7 +163,7 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 
 		$match = $this->collectionOf(subject: $subject, register: $register, schema: $schema);
 		$notFound = new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
-		if ($match === null || PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+		if ($match === null || SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
 			return $notFound;
 		}
 

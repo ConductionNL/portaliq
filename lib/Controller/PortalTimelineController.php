@@ -49,6 +49,7 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCA\Portaliq\Service\Session\SessionTrust;
 
 /**
  * Serves one object's declared history to its owner.
@@ -209,7 +210,7 @@ class PortalTimelineController extends Controller implements PortalProtected {
 		}
 
 		$match = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema);
-		if ($match === null || PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+		if ($match === null || SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 

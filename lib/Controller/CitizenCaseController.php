@@ -69,6 +69,7 @@ use OCP\AppFramework\Http\Response;
 use OCP\IL10N;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Service\Session\SessionTrust;
 
 /**
  * Serves and accepts the writes a citizen may make on their own case.
@@ -768,7 +769,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		}
 
 		$action = $match['action'];
-		if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
+		if (SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
 			return $this->refuse(
 				message: $this->l10n->t('This case cannot be changed from the portal.'),
 				slug: 'portal-writes-not-declared',
