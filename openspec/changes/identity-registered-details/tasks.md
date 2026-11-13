@@ -21,9 +21,9 @@
 
 ## The count
 
-- [ ] **T07**: Show `residentsAtAddress` when openregister answers a count by address object; otherwise the "not available" line (REQ-IRD-005)
+- [x] **T07**: Show `residentsAtAddress` when openregister answers a count by address object; otherwise the "not available" line (REQ-IRD-005)
   - Verify: PHPUnit for both branches; blocked on the openregister half named in the proposal
-  - Portaliq half done: the service never fills the count (`testTheCountOfResidentsIsNotClaimedWhileOpenRegisterCannotAnswerIt`) and the section shows the not-available line, or a given count with no names (`tests/registered-details.spec.mjs`). The openregister ask is drafted for Ruben: `for-ruben/openregister-brp-residents-at-address-count.md`. — not run: needs openregister (cross-repo)
+  - Built: `PortalRegisteredDetailsService::residentsAt` asks `BrpPersonProvider::countResidentsAtAddressObject` for the resident's own address object (behind `method_exists`) and fills `residentsAtAddress`; any refusal, failure or missing method keeps the not-available line. Tests: `testTheResidentSeesHowManyPeopleLiveAtTheirOwnAddressAndNoOneElse`, `testTheCountIsNotClaimedWhenOpenRegisterCannotGiveIt`, `testAPersonWithoutAnAddressObjectIsNotCounted`; the section renders a given count with no names (`tests/registered-details.spec.mjs`). The openregister half is ConductionNL/openregister#4657 (change `brp-residents-at-address-count`, behind `configuration.residentCount: true` on the `brp-haalcentraal` source). openregister#4657 has landed; the three tests run against its `lib/` (15 tests OK, none skipped).
 
 ## Close
 
