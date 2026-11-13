@@ -85,3 +85,22 @@ test('initials are the first letters of the first two words', () => {
 	assert.equal(initials('anouk'), 'A')
 	assert.equal(initials(''), '')
 })
+
+test('a domain is added with how it is served: at the root, and the page its bare address opens', () => {
+	const content = widget('portal-domains').content
+	const fields = Object.fromEntries(content.add.fields.map((field) => [field.key, field]))
+
+	assert.equal(fields.servedAtRoot.type, 'checkbox')
+	assert.equal(content.edit, undefined, 'no edit in place: it would write the entry back unverified')
+	const route = new RegExp(fields.landingRoute.pattern)
+	for (const good of ['/afval', '/mijn/zaken', '/a']) {
+		assert.ok(route.test(good), good)
+	}
+	for (const bad of ['afval', '/', '/afval/', '/a b', '/x?y', '/x#y', 'https://evil.example', '/x\\y']) {
+		assert.ok(!route.test(bad), bad)
+	}
+	assert.deepEqual(content.row.meta, [
+		{ path: 'servedAtRoot', map: { true: 'Site at the root of this domain', false: '' } },
+		'landingRoute',
+	])
+})

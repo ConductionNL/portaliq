@@ -165,4 +165,26 @@ class PortalDomainVerifierTest extends TestCase {
 	public function testThePrivateHostIsNeverContacted(): void {
 		$this->assertNull(PortalDomainVerifier::probeCertificate('localhost'));
 	}
+
+	/**
+	 * The records carry how each host is served, so the Domains list can show
+	 * it; a domain that declares nothing is not served at the root.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-at-the-root-of-a-portal-host/tasks.md#t8
+	 */
+	public function testTheRecordsCarryHowEachHostIsServed(): void {
+		$saved    = [];
+		$verifier = $this->verifier([], self::portal([
+			['hostname' => 'www.zuiddrecht.nl', 'verificationToken' => 't1', 'verified' => true, 'servedAtRoot' => true, 'landingRoute' => '/afval'],
+			['hostname' => 'oud.zuiddrecht.nl', 'verificationToken' => 't2', 'servedAtRoot' => 'yes', 'landingRoute' => null],
+		]), $saved);
+
+		$records = $verifier->records('open-tilburg');
+
+		$this->assertSame([true, '/afval'], [$records[0]['servedAtRoot'], $records[0]['landingRoute']]);
+		$this->assertSame([false, ''], [$records[1]['servedAtRoot'], $records[1]['landingRoute']]);
+		$this->assertSame([], $saved, 'reading the records writes nothing when every domain has its token');
+	}//end testTheRecordsCarryHowEachHostIsServed()
 }

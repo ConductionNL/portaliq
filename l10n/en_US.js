@@ -527,7 +527,10 @@ OC.L10N.register(
         "QR code": "QR code",
         "As the case app shows it": "As the case app shows it",
         "The columns are saved.": "The columns are saved.",
-        "The columns could not be saved. Try again.": "The columns could not be saved. Try again."
+        "The columns could not be saved. Try again.": "The columns could not be saved. Try again.",
+        "Site at the root of this domain": "Site at the root of this domain",
+        "Page the bare domain opens": "Page the bare domain opens",
+        "Use a page path of the site, such as /afval.": "Use a page path of the site, such as /afval."
     },
     "nplurals=2; plural=(n != 1);"
 )
