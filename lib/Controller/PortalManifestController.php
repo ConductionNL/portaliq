@@ -32,7 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
 use OCA\Portaliq\Service\RequestedPortal;
 use OCP\AppFramework\Controller;
@@ -70,7 +70,7 @@ class PortalManifestController extends Controller {
 		private readonly PortalRuntimeConfigResolver $configResolver,
 		private readonly IURLGenerator $urlGenerator,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -140,7 +140,7 @@ class PortalManifestController extends Controller {
 			'theme_color' => '#ffffff',
 			'icons' => [
 				[
-					'src' => $this->urlGenerator->imagePath(appName: Application::APP_ID, file: 'app.svg'),
+					'src' => $this->urlGenerator->imagePath(appName: AppIdentity::APP_ID, file: 'app.svg'),
 					'sizes' => 'any',
 					'type' => 'image/svg+xml',
 				],
@@ -216,13 +216,13 @@ class PortalManifestController extends Controller {
 			// Not reached through its own route (a test, an internal call):
 			// the route the URL generator builds is the same address.
 			$path = (string)parse_url(
-				$this->urlGenerator->linkToRoute(Application::APP_ID . '.portalManifest.serviceWorker'),
+				$this->urlGenerator->linkToRoute(AppIdentity::APP_ID . '.portalManifest.serviceWorker'),
 				PHP_URL_PATH
 			);
 		}
 
 		if (str_ends_with($path, '/' . $suffix) === false) {
-			return '/apps/' . Application::APP_ID . '/';
+			return '/apps/' . AppIdentity::APP_ID . '/';
 		}
 
 		return substr($path, 0, (strlen($path) - strlen($suffix)));

@@ -32,7 +32,7 @@ namespace OCA\Portaliq\Listener;
 use OCA\OpenRegister\Event\FormDestinationDependentsEvent;
 use OCA\OpenRegister\Service\Form\FormDependent;
 use OCA\OpenRegister\Service\Form\PublishedForm;
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Intake\DestinationMapping;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\PortalObjectWriter;
@@ -136,7 +136,7 @@ class FormDestinationDependentsListener implements IEventListener {
 			// (DestinationSubmit), so the form is judged as a public one.
 			form: new PublishedForm(
 				id: $bindingId,
-				app: Application::APP_ID,
+				app: AppIdentity::APP_ID,
 				title: $this->titleOf(binding: $binding, render: $render),
 				audience: 'public'
 			),

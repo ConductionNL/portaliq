@@ -20,7 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IURLGenerator;
 use OCP\IUserManager;
@@ -105,7 +105,7 @@ class TrafficReportDelivery {
 		$done = 0;
 		foreach ((array)$report['recipients'] as $recipient) {
 			$userId = $this->userId(recipient: (string)$recipient);
-			$l = $this->l10n->get(Application::APP_ID, $this->language(userId: $userId));
+			$l = $this->l10n->get(AppIdentity::APP_ID, $this->language(userId: $userId));
 			$subject = $this->mail->subject(l: $l, portal: $portal, report: $report, period: $period);
 			$sections = $this->mail->sections(l: $l, report: $report, period: $period, current: $current, previous: $previous);
 			$link = $this->trafficLink();
@@ -158,7 +158,7 @@ class TrafficReportDelivery {
 		$done = 0;
 		foreach ((array)$alert['recipients'] as $recipient) {
 			$userId = $this->userId(recipient: (string)$recipient);
-			$l = $this->l10n->get(Application::APP_ID, $this->language(userId: $userId));
+			$l = $this->l10n->get(AppIdentity::APP_ID, $this->language(userId: $userId));
 			$portalName = (string)($portal['title'] ?? $portal['slug'] ?? '');
 			$line = $this->alertLine(l: $l, alert: $alert, value: $value, change: $change);
 			$subject = $l->t('Traffic alert: %1$s (%2$s)', [(string)$alert['name'], $portalName]);
@@ -348,7 +348,7 @@ class TrafficReportDelivery {
 	private function notify(string $userId, string $subject, array $parameters, string $objectId): bool {
 		try {
 			$notification = $this->notifications->createNotification();
-			$notification->setApp(Application::APP_ID)
+			$notification->setApp(AppIdentity::APP_ID)
 				->setUser($userId)
 				->setDateTime($this->time->getDateTime())
 				->setObject('traffic', mb_substr($objectId, 0, 64))

@@ -49,7 +49,7 @@ namespace OCA\Portaliq\Service;
 
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Branch\BranchNumber;
 use OCA\Portaliq\Service\Session\SessionTrust;
 use OCP\IAppConfig;
@@ -181,7 +181,7 @@ class PortalSessionService {
 	) {
 		// The secret is a sensitive app value (security review S4): read it
 		// through IAppConfig, which decrypts it, never through IConfig.
-		$secret = $appConfig->getValueString(Application::APP_ID, 'jwt_signing_secret', '');
+		$secret = $appConfig->getValueString(AppIdentity::APP_ID, 'jwt_signing_secret', '');
 		$jwt = null;
 		if ($secret !== '') {
 			$jwt = self::buildJwtService(secret: $secret);
@@ -423,7 +423,7 @@ class PortalSessionService {
 	 * @spec openspec/changes/archive/2026-10-30-idle-warning-preview/tasks.md#T01
 	 */
 	private function idlePreviewEnabled(): bool {
-		return $this->config->getAppValue(Application::APP_ID, self::IDLE_PREVIEW_CONFIG_KEY, 'no') === 'yes';
+		return $this->config->getAppValue(AppIdentity::APP_ID, self::IDLE_PREVIEW_CONFIG_KEY, 'no') === 'yes';
 	}//end idlePreviewEnabled()
 
 	/**
@@ -436,7 +436,7 @@ class PortalSessionService {
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T01
 	 */
 	private function idleTimeoutSeconds(): int {
-		$configured = (int)$this->config->getAppValue(Application::APP_ID, self::IDLE_TIMEOUT_CONFIG_KEY, (string)self::DEFAULT_IDLE_TIMEOUT);
+		$configured = (int)$this->config->getAppValue(AppIdentity::APP_ID, self::IDLE_TIMEOUT_CONFIG_KEY, (string)self::DEFAULT_IDLE_TIMEOUT);
 		if ($configured <= 0) {
 			return self::DEFAULT_IDLE_TIMEOUT;
 		}
@@ -475,7 +475,7 @@ class PortalSessionService {
 	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T01
 	 */
 	private function maxLifetimeSeconds(): int {
-		$configured = (int)$this->config->getAppValue(Application::APP_ID, self::MAX_LIFETIME_CONFIG_KEY, (string)self::DEFAULT_MAX_LIFETIME);
+		$configured = (int)$this->config->getAppValue(AppIdentity::APP_ID, self::MAX_LIFETIME_CONFIG_KEY, (string)self::DEFAULT_MAX_LIFETIME);
 		if ($configured <= 0) {
 			return self::DEFAULT_MAX_LIFETIME;
 		}

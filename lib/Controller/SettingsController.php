@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Identity\EmailLink\EmailLinkSetting;
 use OCA\Portaliq\Service\InternalBaseUrl;
 use OCA\Portaliq\Service\PageEditorService;
@@ -53,7 +53,7 @@ class SettingsController extends Controller {
 		private ?InternalBaseUrl $internalBaseUrl = null,
 		private ?EmailLinkSetting $emailLinks = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

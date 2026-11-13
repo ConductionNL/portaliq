@@ -33,10 +33,10 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Contribution\StepsProviderMethod;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\MandatedCaseReader;
 use OCA\Portaliq\Service\PortalItemReader;
 use OCA\Portaliq\Service\PortalObjectReader;
@@ -80,7 +80,7 @@ class PortalTimelineController extends Controller implements PortalProtected {
 		private readonly ?PortalItemReader $items = null,
 		private readonly ?MandatedCaseReader $mandatedCases = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

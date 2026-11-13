@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Cms\PageHistory;
 use OCA\Portaliq\Service\PageEditorService;
 use OCP\AppFramework\Controller;
@@ -56,7 +56,7 @@ class PageHistoryController extends Controller {
 		private readonly PageEditorService $pageEditor,
 		private readonly PageHistory $history,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

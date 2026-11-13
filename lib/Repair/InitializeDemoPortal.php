@@ -25,7 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Repair;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalRegisterContext;
 use OCP\IAppConfig;
@@ -348,7 +348,7 @@ class InitializeDemoPortal implements IRepairStep {
 		// Stamped only after every write landed. Setting it earlier would
 		// record success for a half-provisioned instance and then refuse the
 		// re-run that would have completed it.
-		$this->appConfig->setValueString(Application::APP_ID, self::MARKER_KEY, (string)$portalId);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, self::MARKER_KEY, (string)$portalId);
 
 		$output->info('Provisioned the "Open Catalogi" portal with a landing page, search at /zoeken and publication detail pages.');
 	}//end run()
@@ -361,11 +361,11 @@ class InitializeDemoPortal implements IRepairStep {
 	 * @return string|null The message to report, or null.
 	 */
 	private function refusal(): ?string {
-		if ($this->appConfig->getValueString(Application::APP_ID, self::CONFIG_KEY, 'yes') === 'no') {
+		if ($this->appConfig->getValueString(AppIdentity::APP_ID, self::CONFIG_KEY, 'yes') === 'no') {
 			return 'Demo portal disabled by configuration — nothing provisioned.';
 		}
 
-		if ($this->appConfig->getValueString(Application::APP_ID, self::MARKER_KEY, '') !== '') {
+		if ($this->appConfig->getValueString(AppIdentity::APP_ID, self::MARKER_KEY, '') !== '') {
 			return 'Demo portal was already provisioned once — not provisioning again.';
 		}
 

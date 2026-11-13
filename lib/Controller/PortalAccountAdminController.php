@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\Identity\EmailLink\SignInAddressChange;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
@@ -73,7 +73,7 @@ class PortalAccountAdminController extends Controller {
 		private readonly PortalIdentityMailer $mailer,
 		private readonly ?SignInAddressChange $signInAddresses = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

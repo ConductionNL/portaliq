@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -153,7 +153,7 @@ class PageEditorService {
 	 * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
 	 */
 	public function getEditorGroups(): array {
-		$raw = $this->appConfig->getValueString(Application::APP_ID, self::CONFIG_KEY, '');
+		$raw = $this->appConfig->getValueString(AppIdentity::APP_ID, self::CONFIG_KEY, '');
 		if ($raw === '') {
 			return [];
 		}
@@ -187,7 +187,7 @@ class PageEditorService {
 		$normalised = $this->normalise(groups: $groups);
 		$previous   = $this->getEditorGroups();
 		$this->appConfig->setValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			self::CONFIG_KEY,
 			json_encode(array_values($normalised))
 		);
@@ -286,7 +286,7 @@ class PageEditorService {
 		}
 
 		try {
-			$schema = $mapper->findByApplicationAndSlug(slug: self::PAGE_SLUG, application: Application::APP_ID);
+			$schema = $mapper->findByApplicationAndSlug(slug: self::PAGE_SLUG, application: AppIdentity::APP_ID);
 			if ($schema === null) {
 				$this->logger->warning('Portaliq: editor groups saved but the page schema is not imported yet');
 				return false;
@@ -298,7 +298,7 @@ class PageEditorService {
 			// of them is absent on an instance whose register predates it, which
 			// leaves the pages governed.
 			foreach ([self::MEDIA_SLUG, self::MENU_SLUG, self::NOTICE_SLUG, self::SHARED_BLOCK_SLUG] as $slug) {
-				$follower = $mapper->findByApplicationAndSlug(slug: $slug, application: Application::APP_ID);
+				$follower = $mapper->findByApplicationAndSlug(slug: $slug, application: AppIdentity::APP_ID);
 				if ($follower !== null) {
 					$this->grantWrites(mapper: $mapper, schema: $follower, groups: $groups, previous: $previous);
 				}

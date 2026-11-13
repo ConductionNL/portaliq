@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity\EmailLink;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 
 /**
@@ -72,7 +72,7 @@ class EmailLinkSetting {
 	 * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#1
 	 */
 	public function isEnabled(): bool {
-		return $this->appConfig->getValueString(Application::APP_ID, self::CONFIG_KEY, '0') === '1';
+		return $this->appConfig->getValueString(AppIdentity::APP_ID, self::CONFIG_KEY, '0') === '1';
 	}//end isEnabled()
 
 	/**
@@ -90,7 +90,7 @@ class EmailLinkSetting {
 			$value = '1';
 		}
 
-		$this->appConfig->setValueString(Application::APP_ID, self::CONFIG_KEY, $value);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, self::CONFIG_KEY, $value);
 	}//end setEnabled()
 
 	/**

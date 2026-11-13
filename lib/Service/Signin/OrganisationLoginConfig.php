@@ -18,7 +18,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Signin;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCP\IAppConfig;
 
@@ -159,7 +159,7 @@ class OrganisationLoginConfig {
 			return false;
 		}
 
-		return $this->appConfig->setValueString(Application::APP_ID, LoginProviders::SECRET_KEY_PREFIX . $organisationUuid, $secret, false, true);
+		return $this->appConfig->setValueString(AppIdentity::APP_ID, LoginProviders::SECRET_KEY_PREFIX . $organisationUuid, $secret, false, true);
 	}//end setBrokerSecret()
 
 
@@ -187,6 +187,6 @@ class OrganisationLoginConfig {
 	 * @return string
 	 */
 	private function brokerSecret(string $organisationUuid): string {
-		return $this->appConfig->getValueString(Application::APP_ID, LoginProviders::SECRET_KEY_PREFIX . $organisationUuid, '');
+		return $this->appConfig->getValueString(AppIdentity::APP_ID, LoginProviders::SECRET_KEY_PREFIX . $organisationUuid, '');
 	}//end brokerSecret()
 }//end class

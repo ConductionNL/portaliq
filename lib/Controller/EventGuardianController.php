@@ -28,8 +28,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\EventFeedReader;
 use OCA\Portaliq\Service\EventRsvpService;
 use OCA\Portaliq\Service\EventSignupService;
@@ -64,7 +64,7 @@ class EventGuardianController extends Controller implements PortalProtected {
 		private readonly EventRsvpService $rsvpService,
 		private readonly EventSignupService $signupService,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

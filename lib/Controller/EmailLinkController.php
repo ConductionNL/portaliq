@@ -30,8 +30,8 @@ namespace OCA\Portaliq\Controller;
 
 use DateTime;
 use DateTimeImmutable;
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\BackgroundJob\EmailLinkRequestJob;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Identity\EmailLink\EmailLinkAddress;
 use OCA\Portaliq\Service\Identity\EmailLink\EmailLinkEligibility;
 use OCA\Portaliq\Service\Identity\EmailLink\EmailLinkLimits;
@@ -115,7 +115,7 @@ class EmailLinkController extends Controller {
 		private readonly PortalIdentityMailer $mailer,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 		$this->nonces = $cacheFactory->createDistributed('portaliq-email-link');
 	}//end __construct()
 

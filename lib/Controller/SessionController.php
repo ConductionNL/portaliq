@@ -34,7 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Identity\EmailLink\EmailLinkSetting;
 use OCA\Portaliq\Service\OidcClaimMapperService;
 use OCA\Portaliq\Service\OidcClientService;
@@ -113,7 +113,7 @@ class SessionController extends Controller {
 	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-server-must-link-to-the-site-directly-req-srp-049
 	 */
 	private function portalReturnTo(): string {
-		return $this->urlGenerator->linkToRoute(Application::APP_ID . '.portalPage.site');
+		return $this->urlGenerator->linkToRoute(AppIdentity::APP_ID . '.portalPage.site');
 	}//end portalReturnTo()
 
 	/**
@@ -150,7 +150,7 @@ class SessionController extends Controller {
 	private function siteReturn(string $returnTo): string {
 		return (new SiteReturnAddress())->accept(
 			candidate: $returnTo,
-			sitePath: $this->urlGenerator->linkToRoute(Application::APP_ID . '.portalPage.site')
+			sitePath: $this->urlGenerator->linkToRoute(AppIdentity::APP_ID . '.portalPage.site')
 		);
 	}//end siteReturn()
 
@@ -200,7 +200,7 @@ class SessionController extends Controller {
 		}
 
 		return new RedirectResponse(
-			$this->urlGenerator->linkToRoute(Application::APP_ID . '.brokerSession.start', $params),
+			$this->urlGenerator->linkToRoute(AppIdentity::APP_ID . '.brokerSession.start', $params),
 			Http::STATUS_FOUND
 		);
 	}//end toBroker()
@@ -281,7 +281,7 @@ class SessionController extends Controller {
 		private readonly ?OrganisationLoginConfig $loginConfig = null,
 		private readonly ?NextcloudRegistrationDoor $residents = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -970,7 +970,7 @@ class SessionController extends Controller {
 	 * @return string
 	 */
 	private function oidcRedirectUri(): string {
-		return $this->urlGenerator->linkToRouteAbsolute(Application::APP_ID . '.session.oidcCallback');
+		return $this->urlGenerator->linkToRouteAbsolute(AppIdentity::APP_ID . '.session.oidcCallback');
 	}//end oidcRedirectUri()
 
 	/**
@@ -1325,6 +1325,6 @@ class SessionController extends Controller {
 	 * @spec openspec/specs/supplier-portal/spec.md#requirement-the-test-sign-in-opens-only-on-its-own-switch
 	 */
 	private function isDevLoginEnabled(): bool {
-		return $this->config->getAppValue(Application::APP_ID, 'dev_login_enabled', 'no') === 'yes';
+		return $this->config->getAppValue(AppIdentity::APP_ID, 'dev_login_enabled', 'no') === 'yes';
 	}//end isDevLoginEnabled()
 }//end class

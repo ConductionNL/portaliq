@@ -22,8 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Contribution\ConfirmationMailKeys;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Mail\MailLog;
 use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
 use OCA\Portaliq\Service\PortalAccountService;
@@ -161,7 +161,7 @@ class ContactConfirmationMailer {
 		$portal = $this->site->portal(organisation: $organisation);
 		$name   = $this->site->name(portal: $portal, organisation: $organisation);
 		$link   = $this->deepLinks->forSite(portalSlug: trim((string)($portal['slug'] ?? '')), organisation: $organisation);
-		$l10n   = $this->l10nFactory->get(Application::APP_ID, $this->site->language(portal: $portal));
+		$l10n   = $this->l10nFactory->get(AppIdentity::APP_ID, $this->site->language(portal: $portal));
 
 		$subject = $l10n->t('We have received your question');
 		$body    = $l10n->t('Your question has reached %1$s. You find it back under My questions.', [$name]);

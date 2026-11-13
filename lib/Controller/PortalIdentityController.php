@@ -32,7 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\CaseTypeReader;
 use OCA\Portaliq\Service\Identity\PortalAccountActivationService;
 use OCA\Portaliq\Service\Identity\PortalChallengeService;
@@ -100,7 +100,7 @@ class PortalIdentityController extends Controller {
 		private readonly PortalAccountActivationService $activation,
 		private readonly ?PortalContactService $contacts = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

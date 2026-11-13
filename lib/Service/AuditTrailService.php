@@ -39,7 +39,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use DateTime;
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -59,7 +59,7 @@ class AuditTrailService {
 	/**
 	 * The action prefix of every portal row in the audit trail.
 	 */
-	public const ACTION_PREFIX = Application::APP_ID . '.';
+	public const ACTION_PREFIX = AppIdentity::APP_ID . '.';
 
 	/**
 	 * The verbs the portal records. `claim` is an account taking over the
@@ -114,7 +114,7 @@ class AuditTrailService {
 		string $schema,
 		string $id,
 		string $jti = '',
-		string $appId = Application::APP_ID,
+		string $appId = AppIdentity::APP_ID,
 		array $detail = [],
 	): void {
 		$fact = [
@@ -177,7 +177,7 @@ class AuditTrailService {
 	 */
 	private function changedOf(array $fact): array {
 		return [
-			'appId' => (string)($fact['appId'] ?? Application::APP_ID),
+			'appId' => (string)($fact['appId'] ?? AppIdentity::APP_ID),
 			'register' => (string)($fact['register'] ?? ''),
 			'schema' => (string)($fact['schema'] ?? ''),
 			'targetId' => (string)($fact['targetId'] ?? ''),

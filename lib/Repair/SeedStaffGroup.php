@@ -32,7 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Repair;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\AdminMenuAccess;
 use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
@@ -97,7 +97,7 @@ class SeedStaffGroup implements IRepairStep {
 			return;
 		}
 
-		if ($this->appConfig->getValueBool(Application::APP_ID, self::MARKER, false) === true) {
+		if ($this->appConfig->getValueBool(AppIdentity::APP_ID, self::MARKER, false) === true) {
 			return;
 		}
 
@@ -118,7 +118,7 @@ class SeedStaffGroup implements IRepairStep {
 			}
 		}
 
-		$this->appConfig->setValueBool(Application::APP_ID, self::MARKER, true);
+		$this->appConfig->setValueBool(AppIdentity::APP_ID, self::MARKER, true);
 		$output->info('Staff group: '.$added.' people added to "'.AdminMenuAccess::STAFF_GROUP.'".');
 	}//end run()
 

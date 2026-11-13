@@ -30,8 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Contribution\GuestActionRegistry;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalResolver;
@@ -72,7 +72,7 @@ class GuestActionController extends Controller {
 		private readonly PortalResolver $portals,
 		private readonly AuditTrailService $auditor,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

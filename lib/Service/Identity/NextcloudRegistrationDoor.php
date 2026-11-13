@@ -44,11 +44,11 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\PublishedPortals;
 use OCP\App\IAppManager;
 use OCP\Exceptions\AppConfigTypeConflictException;
 use OCP\IAppConfig;
-use OCA\Portaliq\AppInfo\Application;
 use OCP\IGroupManager;
 use OCP\IURLGenerator;
 use OCP\IUser;
@@ -287,7 +287,7 @@ class NextcloudRegistrationDoor {
 		}
 
 		$provisioned = $this->provisioner->provision(
-			appId: Application::APP_ID,
+			appId: AppIdentity::APP_ID,
 			uid: $user->getUID(),
 			portal: (string)($portal['slug'] ?? ''),
 			audience: $audience,

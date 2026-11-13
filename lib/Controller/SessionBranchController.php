@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Branch\BranchChoice;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
@@ -59,7 +59,7 @@ class SessionBranchController extends Controller {
 		private readonly PortalSessionService $session,
 		private readonly BranchChoice $choice,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

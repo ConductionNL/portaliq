@@ -20,7 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic\Geo;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCP\Files\IAppData;
 use OCP\Files\IRootFolder;
 use OCP\Files\NotFoundException;
@@ -308,6 +308,6 @@ class GeoDatabaseStore {
 	 * @return string appdata_<instance>/portaliq/geo.
 	 */
 	private function appDataPath(): string {
-		return 'appdata_' . $this->config->getSystemValueString('instanceid', '') . '/' . Application::APP_ID . '/' . self::FOLDER;
+		return 'appdata_' . $this->config->getSystemValueString('instanceid', '') . '/' . AppIdentity::APP_ID . '/' . self::FOLDER;
 	}
 }

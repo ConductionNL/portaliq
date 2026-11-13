@@ -22,7 +22,7 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Traffic\TrafficEventStore;
 use OCA\Portaliq\Service\Traffic\TrafficRecordingStore;
 use OCA\Portaliq\Service\Traffic\TrafficRollup;
@@ -184,7 +184,7 @@ class TrafficAggregationService {
 	 */
 	private function aggregatePortal(string $slug, array $config, DateTimeImmutable $now): array {
 		$watermarkKey = self::WATERMARK_PREFIX . $slug;
-		$since = $this->appConfig->getValueString(Application::APP_ID, $watermarkKey, '');
+		$since = $this->appConfig->getValueString(AppIdentity::APP_ID, $watermarkKey, '');
 
 		$days = $this->daysToRecompute(slug: $slug, since: $since, now: $now);
 		$done = [];
@@ -194,7 +194,7 @@ class TrafficAggregationService {
 			}
 		}
 
-		$this->appConfig->setValueString(Application::APP_ID, $watermarkKey, $now->format('Y-m-d\TH:i:s\Z'));
+		$this->appConfig->setValueString(AppIdentity::APP_ID, $watermarkKey, $now->format('Y-m-d\TH:i:s\Z'));
 
 		return $done;
 	}

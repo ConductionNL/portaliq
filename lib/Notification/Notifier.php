@@ -30,7 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Notification;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Traffic\TrafficReportDelivery;
 use OCP\IURLGenerator;
 use OCP\L10N\IFactory;
@@ -69,7 +69,7 @@ class Notifier implements INotifier {
 	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
 	 */
 	public function getID(): string {
-		return Application::APP_ID;
+		return AppIdentity::APP_ID;
 	}//end getID()
 
 
@@ -81,7 +81,7 @@ class Notifier implements INotifier {
 	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
 	 */
 	public function getName(): string {
-		return $this->l10n->get(Application::APP_ID)->t('Portaliq');
+		return $this->l10n->get(AppIdentity::APP_ID)->t('Portaliq');
 	}//end getName()
 
 
@@ -98,11 +98,11 @@ class Notifier implements INotifier {
 	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-alert-must-fire-once-per-period
 	 */
 	public function prepare(INotification $notification, string $languageCode): INotification {
-		if ($notification->getApp() !== Application::APP_ID) {
+		if ($notification->getApp() !== AppIdentity::APP_ID) {
 			throw new UnknownNotificationException('Not a Portaliq notification');
 		}
 
-		$l = $this->l10n->get(Application::APP_ID, $languageCode);
+		$l = $this->l10n->get(AppIdentity::APP_ID, $languageCode);
 		$parameters = $notification->getSubjectParameters();
 		$name = (string)($parameters['name'] ?? '');
 		$portal = (string)($parameters['portal'] ?? '');
@@ -121,7 +121,7 @@ class Notifier implements INotifier {
 				throw new UnknownNotificationException('Unknown Portaliq notification subject');
 		}
 
-		$notification->setIcon($this->urls->getAbsoluteURL($this->urls->imagePath(Application::APP_ID, 'app-dark.svg')));
+		$notification->setIcon($this->urls->getAbsoluteURL($this->urls->imagePath(AppIdentity::APP_ID, 'app-dark.svg')));
 
 		return $notification;
 	}//end prepare()
