@@ -2068,34 +2068,12 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$actionId = (string)$this->request->getParam('action', '');
-		$match = $this->authorisedUpdateAction(subject: $subject, register: $register, schema: $schema, actionId: $actionId);
-		if ($match === null) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		$target = $this->updateTarget(subject: $subject, register: $register, schema: $schema);
+		if ($target instanceof JSONResponse) {
+			return $target;
 		}
 
-		$action = $match['action'];
-
-		// Defense in depth (contract v2, A3): re-check the matched action's
-		// minTrust — 403 before any OpenRegister write.
-		if (SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
-		}
-
-		// Resolve the OWNERSHIP scope value the SAME way the read path does: a
-		// declared `scopeClaim` resolves server-side from the subject's
-		// portalAccount, else it is the subjectRef. This lets a transition run on
-		// a claim-scoped collection (e.g. a manager approving timesheets scoped
-		// by their costCenter claim) while still re-verifying ownership by the
-		// resolved value. A declared claim that cannot resolve → 404, no write.
-		$scopeValue = $this->reader->resolveScopeValue(
-			scopeClaim: (string)($action['scopeClaim'] ?? ''),
-			contributingApp: $match['app'],
-			subject: $subject
-		);
-		if ($scopeValue === null || $scopeValue === '') {
-			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
-		}
+		['match' => $match, 'action' => $action, 'scopeValue' => $scopeValue] = $target;
 
 		$data = $this->withoutFileFields(action: $action, data: $this->whitelist(fields: (array)($action['fields'] ?? [])));
 
@@ -2153,6 +2131,49 @@ class ContributionController extends Controller implements PortalProtected {
 
 		return new JSONResponse(['object' => $updated]);
 	}//end update()
+
+	/**
+	 * The update action the subject may run on this collection and the
+	 * ownership scope value it writes under, or the 403/404 refusal.
+	 *
+	 * @param array<string,mixed> $subject  The session subject.
+	 * @param string              $register The register.
+	 * @param string              $schema   The schema.
+	 *
+	 * @return array{match: array<string,mixed>, action: array<string,mixed>, scopeValue: string}|JSONResponse
+	 */
+	private function updateTarget(array $subject, string $register, string $schema): array|JSONResponse {
+		$actionId = (string)$this->request->getParam('action', '');
+		$match = $this->authorisedUpdateAction(subject: $subject, register: $register, schema: $schema, actionId: $actionId);
+		if ($match === null) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$action = $match['action'];
+
+		// Defense in depth (contract v2, A3): re-check the matched action's
+		// minTrust — 403 before any OpenRegister write.
+		if (SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		// Resolve the OWNERSHIP scope value the SAME way the read path does: a
+		// declared `scopeClaim` resolves server-side from the subject's
+		// portalAccount, else it is the subjectRef. This lets a transition run on
+		// a claim-scoped collection (e.g. a manager approving timesheets scoped
+		// by their costCenter claim) while still re-verifying ownership by the
+		// resolved value. A declared claim that cannot resolve → 404, no write.
+		$scopeValue = $this->reader->resolveScopeValue(
+			scopeClaim: (string)($action['scopeClaim'] ?? ''),
+			contributingApp: $match['app'],
+			subject: $subject
+		);
+		if ($scopeValue === null || $scopeValue === '') {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return ['match' => $match, 'action' => $action, 'scopeValue' => $scopeValue];
+	}//end updateTarget()
 
 	/**
 	 * Find a `type: update` action for (register, schema) in the subject's

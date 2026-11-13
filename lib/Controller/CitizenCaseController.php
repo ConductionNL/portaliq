@@ -759,23 +759,12 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		// never grant itself one (REQ-PTV-006).
 		$subject = $this->actingAs(subject: $subject);
 
-		$match = $this->writeActions()->forSubject(subject: $subject, register: $register, schema: $schema);
-		if ($match === null) {
-			return $this->refuse(
-				message: $this->l10n->t('This case cannot be changed from the portal.'),
-				slug: 'portal-writes-not-declared',
-				status: Http::STATUS_FORBIDDEN
-			);
+		$match = $this->writableMatch(subject: $subject, register: $register, schema: $schema);
+		if ($match instanceof JSONResponse) {
+			return $match;
 		}
 
 		$action = $match['action'];
-		if (SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
-			return $this->refuse(
-				message: $this->l10n->t('This case cannot be changed from the portal.'),
-				slug: 'portal-writes-not-declared',
-				status: Http::STATUS_FORBIDDEN
-			);
-		}
 
 		// The ownership boundary. A case that is not the citizen's and a case
 		// that does not exist answer identically, so the portal never confirms
@@ -801,6 +790,22 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			);
 		}
 
+		return $this->writeContext(subject: $subject, match: $match, case: $case);
+	}//end context()
+
+	/**
+	 * The write context of an owned case: the subject, the matched action and
+	 * app, the case, and the fields the action may set on it.
+	 *
+	 * @param array<string,mixed> $subject The session subject.
+	 * @param array<string,mixed> $match   The matched write action.
+	 * @param array<string,mixed> $case    The owned case.
+	 *
+	 * @return array<string,mixed>
+	 */
+	private function writeContext(array $subject, array $match, array $case): array {
+		$action = $match['action'];
+
 		return [
 			'subject' => $subject,
 			'action' => $action,
@@ -817,7 +822,39 @@ class CitizenCaseController extends Controller implements PortalProtected {
 				closedField: (string)($match['closedField'] ?? '')
 			),
 		];
-	}//end context()
+	}//end writeContext()
+
+	/**
+	 * The portal write action declared for this collection whose trust level
+	 * the subject meets, or the 403 refusal.
+	 *
+	 * @param array<string,mixed> $subject  The session subject.
+	 * @param string              $register The register.
+	 * @param string              $schema   The schema.
+	 *
+	 * @return array<string,mixed>|JSONResponse
+	 */
+	private function writableMatch(array $subject, string $register, string $schema): array|JSONResponse {
+		$match = $this->writeActions()->forSubject(subject: $subject, register: $register, schema: $schema);
+		if ($match === null) {
+			return $this->refuse(
+				message: $this->l10n->t('This case cannot be changed from the portal.'),
+				slug: 'portal-writes-not-declared',
+				status: Http::STATUS_FORBIDDEN
+			);
+		}
+
+		$action = $match['action'];
+		if (SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === false) {
+			return $this->refuse(
+				message: $this->l10n->t('This case cannot be changed from the portal.'),
+				slug: 'portal-writes-not-declared',
+				status: Http::STATUS_FORBIDDEN
+			);
+		}
+
+		return $match;
+	}//end writableMatch()
 
 	/**
 	 * The guard both write acts share: the throttle, counted per identity and
