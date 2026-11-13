@@ -116,17 +116,9 @@ if (is_dir($serverTestsLib)) {
 	$loader->register(true);
 }
 
-// Load test stubs for cross-app classes that are only present when the other app
-// is installed. The IMcpToolProvider stub stands in for openregister PR #1466
-// (ai-chat-companion-orchestrator) so a hand-written MCP tool provider can be
-// unit-tested in standalone CI. It is also registered via autoload-dev PSR-4 in
-// composer.json (OCA\OpenRegister\ -> tests/Stubs/) for non-bootstrapped runs.
-// Portaliq itself ships no hand-written provider (see
-// openspec/changes/portaliq-mcp-adoption). OpenRegister no longer ships an
-// Mcp\AbstractToolHandler, so its stub is gone.
-if (interface_exists(\OCA\OpenRegister\Mcp\IMcpToolProvider::class) === false) {
-	require_once __DIR__ . '/Stubs/Mcp/IMcpToolProvider.php';
-}
+// Portaliq ships no hand-written MCP tool provider: its tools are derived from
+// the x-openregister-mcp dialect in lib/Settings/portaliq_register.json (see
+// openspec/changes/portaliq-mcp-adoption), so no IMcpToolProvider stub is loaded.
 
 // Integriq's connection-registry events (adopt-connection-registry).
 // ConnectionReporter sends them by string class name behind class_exists

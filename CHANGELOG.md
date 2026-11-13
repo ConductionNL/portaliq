@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Read-only MCP tools over the portal inbox: `portalMessage` declares `search` and `get` in the `x-openregister-mcp` dialect, so OpenRegister derives `portaliq.portalmessage.search` and `portaliq.portalmessage.get`. Accounts, sessions and `exampleDocument` stay off the tool surface.
+
+### Removed
+
+- The app-template scaffold MCP provider (`ExampleToolProvider`, with its `portaliq.ping` and `portaliq.describeApp` tools) and the test stub for its interface.
+
 ## [0.2.8] - 2026-10-08
 
 ### Added

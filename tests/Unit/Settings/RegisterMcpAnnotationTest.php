@@ -82,17 +82,11 @@ class RegisterMcpAnnotationTest extends TestCase {
 		// inspected" must never look like "everything passed" — that is the
 		// exact confusion the silent import produced in the first place.
 		//
-		// SKIPPED, NOT PASSED, and not failed either. The register currently
-		// carries no `x-openregister-mcp` at all: portaliq#153 removed the only
-		// one (on portalMessage) to unblock the E2E seed, with the cause
-		// recorded as still-unknown in portaliq#154. So an empty set is the
-		// legitimate state of the tree right now, and failing on it would be a
-		// false alarm on every run.
-		//
-		// A skip is VISIBLE in the test output. A silent pass over an empty set
-		// is not, and this guard exists precisely because that distinction was
-		// missed once already. The moment any schema reintroduces the dialect,
-		// this starts doing real work again with no edit.
+		// SKIPPED, NOT PASSED, and not failed either: a register with no
+		// dialect at all is a legitimate state (portaliq#153 once removed the
+		// only one), and a skip is VISIBLE in the test output where a silent
+		// pass over an empty set is not. portalMessage carries the dialect
+		// again (portaliq-mcp-adoption), so this guard is doing real work.
 		if ($annotated === []) {
 			$this->markTestSkipped(
 				'No schema declares x-openregister-mcp (removed by portaliq#153, cause tracked in '

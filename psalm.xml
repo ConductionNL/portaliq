@@ -106,7 +106,6 @@
                 <referencedClass name="OCA\OpenRegister\Service\CalendarEventService"/>
                 <referencedClass name="OCA\OpenRegister\Service\RiskLevelService"/>
                 <referencedClass name="OCA\OpenRegister\Db\EntityRelationMapper"/>
-                <referencedClass name="OCA\OpenRegister\Mcp\IMcpToolProvider"/>
                 <!-- Additional OCP infrastructure types used across the fleet -->
                 <referencedClass name="OCP\AppFramework\Bootstrap\IBootContext"/>
                 <referencedClass name="OCP\AppFramework\Bootstrap\IRegistrationContext"/>
