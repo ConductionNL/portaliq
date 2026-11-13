@@ -25,9 +25,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\PortalProviderLocator;
 use OCA\Portaliq\Contribution\PublicRecordsNormaliser;
 use OCA\Portaliq\Contribution\TimelineProviderMethod;
+use OCA\Portaliq\Kernel\Contracts\PortalProviderLocatorInterface;
 use OCA\Portaliq\Kernel\Contracts\PublicRecordReaderInterface;
 use OCP\ICache;
 use OCP\ICacheFactory;
@@ -83,12 +83,12 @@ class PublicRecordReader implements PublicRecordReaderInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalProviderLocator $locator Finds the contributing app's provider.
+	 * @param PortalProviderLocatorInterface $locator Finds the contributing app's provider.
 	 * @param ICacheFactory $cacheFactory Creates the distributed cache.
 	 * @param LoggerInterface $logger Records a provider that failed.
 	 */
 	public function __construct(
-		private readonly PortalProviderLocator $locator,
+		private readonly PortalProviderLocatorInterface $locator,
 		ICacheFactory $cacheFactory,
 		private readonly LoggerInterface $logger,
 	) {

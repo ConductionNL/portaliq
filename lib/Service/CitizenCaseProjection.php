@@ -26,8 +26,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser;
 use OCA\Portaliq\Kernel\Contracts\CitizenCaseProjectionInterface;
+use OCA\Portaliq\Kernel\Contracts\CitizenWriteConfigNormaliserInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -88,7 +88,7 @@ class CitizenCaseProjection implements CitizenCaseProjectionInterface {
 		}
 
 		$action = (array)($context['action'] ?? []);
-		$config = (array)($action[CitizenWriteConfigNormaliser::KEY] ?? []);
+		$config = (array)($action[CitizenWriteConfigNormaliserInterface::KEY] ?? []);
 		$whitelist = array_merge(
 			array_values($declared),
 			(array)($action['fields'] ?? []),

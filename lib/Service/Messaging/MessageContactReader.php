@@ -34,10 +34,10 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Messaging;
 
 use OCA\Portaliq\Contribution\MessageContactsKeys;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
-use OCA\Portaliq\Contribution\PortalProviderLocator;
 use OCA\Portaliq\Contribution\TimelineProviderMethod;
 use OCA\Portaliq\Kernel\Contracts\MessageContactReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalProviderLocatorInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\Session\SessionTrust;
 use Psr\Log\LoggerInterface;
@@ -60,15 +60,15 @@ class MessageContactReader implements MessageContactReaderInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalContributionRegistry $registry The contributions of the resident's audience.
+	 * @param PortalContributionRegistryInterface $registry The contributions of the resident's audience.
 	 * @param PortalObjectReader         $reader   The scoped reader every collection read goes through.
-	 * @param PortalProviderLocator      $locator  Finds the contributing app's provider.
+	 * @param PortalProviderLocatorInterface      $locator  Finds the contributing app's provider.
 	 * @param LoggerInterface            $logger   Logs a provider that failed.
 	 */
 	public function __construct(
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 		private readonly PortalObjectReader $reader,
-		private readonly PortalProviderLocator $locator,
+		private readonly PortalProviderLocatorInterface $locator,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

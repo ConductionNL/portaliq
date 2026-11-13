@@ -32,8 +32,9 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\WaitingAccountInvitationInterface;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\SessionTrust;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -43,7 +44,6 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
 use Throwable;
-use OCA\Portaliq\Service\Session\SessionTrust;
 
 /**
  * Redeems an invitation's secret for the bearer.
@@ -60,13 +60,13 @@ class PortalAccountClaimController extends Controller implements PortalProtected
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
 	 * @param WaitingAccountInvitationInterface $invitations Redeems the secret.
 	 * @param LoggerInterface $logger Records a failure's cause, never the secret.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
+		private readonly PortalSessionServiceInterface $session,
 		private readonly WaitingAccountInvitationInterface $invitations,
 		private readonly LoggerInterface $logger,
 	) {

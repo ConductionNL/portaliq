@@ -33,7 +33,7 @@ use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\EventFeedReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\EventRsvpServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\EventSignupServiceInterface;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -52,14 +52,14 @@ class EventGuardianController extends Controller implements PortalProtected {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
 	 * @param EventFeedReaderInterface $feedReader The guardian-scoped read path.
 	 * @param EventRsvpServiceInterface $rsvpService Upserts an RSVP.
 	 * @param EventSignupServiceInterface $signupService Capacity-checked sign-up.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
+		private readonly PortalSessionServiceInterface $session,
 		private readonly EventFeedReaderInterface $feedReader,
 		private readonly EventRsvpServiceInterface $rsvpService,
 		private readonly EventSignupServiceInterface $signupService,

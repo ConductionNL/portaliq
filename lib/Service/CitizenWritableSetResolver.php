@@ -37,8 +37,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser;
 use OCA\Portaliq\Kernel\Contracts\CitizenWritableSetResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\CitizenWriteConfigNormaliserInterface;
 use OCP\IL10N;
 
 /**
@@ -317,7 +317,7 @@ class CitizenWritableSetResolver implements CitizenWritableSetResolverInterface 
 	 * @return array<string, mixed>|null
 	 */
 	private function actionCaseType(array $action, array $caseRow): ?array {
-		$config = ($action[CitizenWriteConfigNormaliser::KEY] ?? null);
+		$config = ($action[CitizenWriteConfigNormaliserInterface::KEY] ?? null);
 		if (is_array($config) === false) {
 			return null;
 		}
@@ -339,7 +339,7 @@ class CitizenWritableSetResolver implements CitizenWritableSetResolverInterface 
 	 * @return string
 	 */
 	private function caseStatusOf(array $action, array $caseRow): string {
-		$config = (array)$action[CitizenWriteConfigNormaliser::KEY];
+		$config = (array)$action[CitizenWriteConfigNormaliserInterface::KEY];
 		return (string)($caseRow[$config['statusField']] ?? '');
 	}//end caseStatusOf()
 

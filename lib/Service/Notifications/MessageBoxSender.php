@@ -29,8 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
-use OCA\Portaliq\Contribution\PortalProviderLocator;
 use OCA\Portaliq\Kernel\Contracts\MessageBoxSenderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalProviderLocatorInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
@@ -57,7 +57,7 @@ class MessageBoxSender implements MessageBoxSenderInterface {
 	 * Wire the sender.
 	 *
 	 * @param PortalOrganisationConfigService $orgConfig The organisation's source.
-	 * @param PortalProviderLocator           $locator   Finds the case app's provider.
+	 * @param PortalProviderLocatorInterface           $locator   Finds the case app's provider.
 	 * @param PortalObjectReader              $reader    Reads the message, scoped to the resident.
 	 * @param PortalObjectWriter              $writer    Writes the notification row.
 	 * @param IEventDispatcher                $events    Dispatches integriq's command.
@@ -66,7 +66,7 @@ class MessageBoxSender implements MessageBoxSenderInterface {
 	 */
 	public function __construct(
 		private readonly PortalOrganisationConfigService $orgConfig,
-		private readonly PortalProviderLocator $locator,
+		private readonly PortalProviderLocatorInterface $locator,
 		private readonly PortalObjectReader $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly IEventDispatcher $events,

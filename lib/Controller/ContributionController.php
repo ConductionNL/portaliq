@@ -49,10 +49,8 @@ use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\ActionScopeResolver;
 use OCA\Portaliq\Contribution\CreateActionMatcher;
 use OCA\Portaliq\Contribution\CreateBody;
-use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
 use OCA\Portaliq\Contribution\InboxMessageFields;
 use OCA\Portaliq\Contribution\PageChoice;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Contribution\RowIdentifier;
 use OCA\Portaliq\Contribution\ThemeChoice;
 use OCA\Portaliq\Http\PdfDownloadResponse;
@@ -65,10 +63,12 @@ use OCA\Portaliq\Kernel\Contracts\ColumnOverridesInterface;
 use OCA\Portaliq\Kernel\Contracts\ContactConfirmationMailerInterface;
 use OCA\Portaliq\Kernel\Contracts\DestinationDraftInterface;
 use OCA\Portaliq\Kernel\Contracts\DestinationIntakeInterface;
+use OCA\Portaliq\Kernel\Contracts\FileFieldConfigNormaliserInterface;
 use OCA\Portaliq\Kernel\Contracts\NotificationDispatchServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalActionForwarderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalAuditHookInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalBranchScopeInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalCrossRefGuardInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFileReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFileWriterInterface;
@@ -79,6 +79,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalPdfExportInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalRateLimitInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSchemaReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalTaskGatewayInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalUserDisplayNamesInterface;
 use OCA\Portaliq\Kernel\Contracts\SubmissionReceiptServiceInterface;
@@ -88,7 +89,6 @@ use OCA\Portaliq\Service\CaseTypeColumns\ColumnOverrides;
 use OCA\Portaliq\Service\Intake\DestinationIntake;
 use OCA\Portaliq\Service\PortalCrossRefGuard;
 use OCA\Portaliq\Service\PortalInboxReader;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PortalUserDisplayNames;
 use OCA\Portaliq\Service\RequestedPortal;
 use OCA\Portaliq\Service\RequiredFieldsGuard;
@@ -141,8 +141,8 @@ class ContributionController extends Controller implements PortalProtected {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request object.
-	 * @param PortalContributionRegistry $registry The contribution aggregator.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
+	 * @param PortalContributionRegistryInterface $registry The contribution aggregator.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
 	 * @param PortalObjectReaderInterface $reader Subject-scoped OR reader.
 	 * @param PortalObjectWriterInterface $writer Subject-scoped OR writer.
 	 * @param PortalFileWriterInterface $fileWriter Subject-scoped OR file attach.
@@ -207,8 +207,8 @@ class ContributionController extends Controller implements PortalProtected {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalContributionRegistry $registry,
-		private readonly PortalSessionService $session,
+		private readonly PortalContributionRegistryInterface $registry,
+		private readonly PortalSessionServiceInterface $session,
 		private readonly PortalObjectReaderInterface $reader,
 		private readonly PortalObjectWriterInterface $writer,
 		private readonly PortalFileWriterInterface $fileWriter,
@@ -2243,7 +2243,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 */
 	private function withoutFileFields(array $action, array $data): array {
 		foreach ((array)($action['fieldConfigs'] ?? []) as $field => $config) {
-			if (is_array($config) === true && ($config['type'] ?? null) === FileFieldConfigNormaliser::TYPE_FILE) {
+			if (is_array($config) === true && ($config['type'] ?? null) === FileFieldConfigNormaliserInterface::TYPE_FILE) {
 				unset($data[$field]);
 			}
 		}

@@ -39,7 +39,7 @@ use OCA\Portaliq\Kernel\Contracts\EmailLinkSettingInterface;
 use OCA\Portaliq\Kernel\Contracts\EmailLinkTokensInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalIdentityMailerInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Service\RequestedPortal;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -96,7 +96,7 @@ class EmailLinkController extends Controller {
 	 * @param IJobList             $jobs         Queues the lookup and the mail.
 	 * @param ISecureRandom        $random       Mints the cookie and the page value.
 	 * @param ICacheFactory        $cacheFactory Keeps the page value.
-	 * @param PortalSessionService $sessions     Mints the `low` session.
+	 * @param PortalSessionServiceInterface $sessions     Mints the `low` session.
 	 * @param PortalIdentityMailerInterface $mailer       Mails the "you signed in" notice.
 	 * @param LoggerInterface      $logger       Logs by account and address hash.
 	 */
@@ -111,7 +111,7 @@ class EmailLinkController extends Controller {
 		private readonly IJobList $jobs,
 		private readonly ISecureRandom $random,
 		ICacheFactory $cacheFactory,
-		private readonly PortalSessionService $sessions,
+		private readonly PortalSessionServiceInterface $sessions,
 		private readonly PortalIdentityMailerInterface $mailer,
 		private readonly LoggerInterface $logger,
 	) {

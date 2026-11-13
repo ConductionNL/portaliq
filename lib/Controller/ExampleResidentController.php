@@ -31,7 +31,7 @@ use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\ExampleResidentSignInInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalAccountLookupInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -55,7 +55,7 @@ class ExampleResidentController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest              $request      The request object.
-	 * @param PortalSessionService  $session      Mints the portal session.
+	 * @param PortalSessionServiceInterface  $session      Mints the portal session.
 	 * @param PortalAccountLookupInterface   $accounts     Finds the resident's `portalAccount`.
 	 * @param IURLGenerator         $urlGenerator Builds the final SPA redirect.
 	 * @param PortalResolverInterface        $portals      Resolves the portal being signed in to.
@@ -63,7 +63,7 @@ class ExampleResidentController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
+		private readonly PortalSessionServiceInterface $session,
 		private readonly PortalAccountLookupInterface $accounts,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly PortalResolverInterface $portals,

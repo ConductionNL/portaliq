@@ -33,8 +33,8 @@ use OCA\Portaliq\Kernel\Contracts\PortalCaseTypeChoicesInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalIdentityMailerInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalMandateAdminServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Service\Identity\MandateParties;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -53,7 +53,7 @@ class MandateController extends Controller implements PortalProtected {
 	 * Constructor.
 	 *
 	 * @param IRequest                    $request  The request.
-	 * @param PortalSessionService        $session  Resolves the bearer.
+	 * @param PortalSessionServiceInterface        $session  Resolves the bearer.
 	 * @param PortalMandateAdminServiceInterface   $mandates The mandate service.
 	 * @param PortalIdentityMailerInterface        $mailer   Mails the invitation link to the invitee, never to the inviter.
 	 * @param PortalAccountLookupInterface         $accounts The name and address of who holds a mandate, and of the inviter.
@@ -64,7 +64,7 @@ class MandateController extends Controller implements PortalProtected {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
+		private readonly PortalSessionServiceInterface $session,
 		private readonly PortalMandateAdminServiceInterface $mandates,
 		private readonly PortalIdentityMailerInterface $mailer,
 		private readonly PortalAccountLookupInterface $accounts,

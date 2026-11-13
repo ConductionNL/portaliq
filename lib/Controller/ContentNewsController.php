@@ -33,8 +33,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PublicNewsReaderInterface;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -57,7 +57,7 @@ class ContentNewsController extends Controller {
 	 * @param string               $appName  The app id.
 	 * @param IRequest             $request  The request.
 	 * @param PortalResolverInterface       $resolver Resolves the serving portal.
-	 * @param PortalSessionService $session  Resolves the caller's portal session for the content gate.
+	 * @param PortalSessionServiceInterface $session  Resolves the caller's portal session for the content gate.
 	 * @param PublicNewsReaderInterface     $news     Reads the portal's public news.
 	 *
 	 * @return void
@@ -66,7 +66,7 @@ class ContentNewsController extends Controller {
 		string $appName,
 		IRequest $request,
 		private readonly PortalResolverInterface $resolver,
-		private readonly PortalSessionService $session,
+		private readonly PortalSessionServiceInterface $session,
 		private readonly PublicNewsReaderInterface $news,
 	) {
 		parent::__construct(appName: $appName, request: $request);

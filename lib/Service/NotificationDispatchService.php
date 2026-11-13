@@ -40,8 +40,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\BackgroundJob\NotificationDispatchJob;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Kernel\Contracts\NotificationDispatchServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCP\BackgroundJob\IJobList;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -57,7 +57,7 @@ class NotificationDispatchService implements NotificationDispatchServiceInterfac
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalContributionRegistry $registry Aggregates a subject's manifest,
+	 * @param PortalContributionRegistryInterface $registry Aggregates a subject's manifest,
 	 *                                             the SAME path every authorisation
 	 *                                             lookup flows through.
 	 * @param IJobList $jobList Enqueues the async dispatch job —
@@ -65,7 +65,7 @@ class NotificationDispatchService implements NotificationDispatchServiceInterfac
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 		private readonly IJobList $jobList,
 		private readonly LoggerInterface $logger,
 	) {

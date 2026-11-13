@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\CitizenDocumentUploadInterface;
 use OCA\Portaliq\Service\UploadedFile;
 
 /**
@@ -37,7 +38,7 @@ use OCA\Portaliq\Service\UploadedFile;
  *
  * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
-class CitizenDocumentUpload {
+class CitizenDocumentUpload implements CitizenDocumentUploadInterface {
 
 	/**
 	 * Read the multipart upload into a {name, content} pair, or null when

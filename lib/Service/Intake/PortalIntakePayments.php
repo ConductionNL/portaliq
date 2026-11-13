@@ -26,12 +26,12 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\PortalActionForwarderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalDeepLinkBuilderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalIntakePaymentsInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
-use OCA\Portaliq\Kernel\Contracts\PortalActionForwarderInterface;
-use OCA\Portaliq\Kernel\Contracts\PortalDeepLinkBuilderInterface;
 
 /**
  * Forwards the case app's pay action for a created object and reports the state of the payment.
@@ -49,14 +49,14 @@ class PortalIntakePayments implements PortalIntakePaymentsInterface {
 	 *
 	 * @param DestinationLookup|null          $lookup    Finds the object behind a reference.
 	 * @param PortalFee|null                  $fees      Checks a fee and the address a resident may be sent to pay at.
-	 * @param PortalContributionRegistry|null $registry  Finds the case app's pay action in the subject's own manifest.
+	 * @param PortalContributionRegistryInterface|null $registry  Finds the case app's pay action in the subject's own manifest.
 	 * @param PortalActionForwarderInterface|null      $forwarder Forwards the pay action with a server-built body.
 	 * @param PortalDeepLinkBuilderInterface|null      $deepLinks Builds the address the resident returns to.
 	 */
 	public function __construct(
 		private readonly ?DestinationLookup $lookup = null,
 		private readonly ?PortalFee $fees = null,
-		private readonly ?PortalContributionRegistry $registry = null,
+		private readonly ?PortalContributionRegistryInterface $registry = null,
 		private readonly ?PortalActionForwarderInterface $forwarder = null,
 		private readonly ?PortalDeepLinkBuilderInterface $deepLinks = null,
 	) {

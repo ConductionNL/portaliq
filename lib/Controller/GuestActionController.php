@@ -30,9 +30,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\Contribution\GuestActionRegistry;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\AuditTrailServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\GuestActionRegistryInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalActionForwarderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Service\RequestedPortal;
@@ -60,14 +60,14 @@ class GuestActionController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param GuestActionRegistry $registry Finds the declared guest action.
+	 * @param GuestActionRegistryInterface $registry Finds the declared guest action.
 	 * @param PortalActionForwarderInterface $forwarder Forwards with the signed assertion.
 	 * @param PortalResolverInterface $portals Resolves the serving portal for its organisation.
 	 * @param AuditTrailServiceInterface $auditor Records each forward with the token's hash.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly GuestActionRegistry $registry,
+		private readonly GuestActionRegistryInterface $registry,
 		private readonly PortalActionForwarderInterface $forwarder,
 		private readonly PortalResolverInterface $portals,
 		private readonly AuditTrailServiceInterface $auditor,
@@ -265,7 +265,7 @@ class GuestActionController extends Controller {
 
 		return [
 			'subjectRef' => 'guest:' . hash('sha256', $token),
-			'audience' => GuestActionRegistry::GUEST_AUDIENCE,
+			'audience' => GuestActionRegistryInterface::GUEST_AUDIENCE,
 			'organisation' => (string)($site['organisation'] ?? ''),
 			'trust' => 'low',
 			'jti' => bin2hex(random_bytes(16)),

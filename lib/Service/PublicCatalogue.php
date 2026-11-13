@@ -31,10 +31,10 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\PortalProviderLocator;
 use OCA\Portaliq\Contribution\PublicDetailShape;
 use OCA\Portaliq\Contribution\PublicIndexItems;
 use OCA\Portaliq\Contribution\PublicIndexKinds;
+use OCA\Portaliq\Kernel\Contracts\PortalProviderLocatorInterface;
 use OCA\Portaliq\Kernel\Contracts\PublicCatalogueInterface;
 use OCP\App\IAppManager;
 use OCP\ICacheFactory;
@@ -61,14 +61,14 @@ class PublicCatalogue implements PublicCatalogueInterface {
 	 * Constructor.
 	 *
 	 * @param IAppManager           $apps    The installed apps.
-	 * @param PortalProviderLocator $locator Finds each app's provider.
+	 * @param PortalProviderLocatorInterface $locator Finds each app's provider.
 	 * @param PublicNewsReader      $news    The portal's own public news.
 	 * @param ICacheFactory         $caches  The distributed cache.
 	 * @param LoggerInterface       $logger  Logs an app whose index failed.
 	 */
 	public function __construct(
 		private readonly IAppManager $apps,
-		private readonly PortalProviderLocator $locator,
+		private readonly PortalProviderLocatorInterface $locator,
 		private readonly PublicNewsReader $news,
 		private readonly ICacheFactory $caches,
 		private readonly LoggerInterface $logger,
