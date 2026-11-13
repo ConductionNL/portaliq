@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.108.0"
+        "version": "0.109.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.108.0",
+                "version": "0.109.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -8537,7 +8537,7 @@
                     ]
                 },
                 "icon": "FormSelect",
-                "version": "0.5.0",
+                "version": "0.6.0",
                 "title": "Portal Form Binding",
                 "description": "What a portal form page is bound to (portal-intake-form-as-an-object REQ-PIFO-001): a case type tuple, an audience, an optional form name, and the intake settings. The page keeps no field list of its own; the fields, their order and their presets come from the published form at render time, so a form edited in buildiq reaches the portal with no portal change.",
                 "type": "object",
@@ -8602,6 +8602,85 @@
                         "type": "string",
                         "description": "The schema the published form leaf lives in.",
                         "example": "registrationForm"
+                    },
+                    "availability": {
+                        "title": "Availability",
+                        "type": "object",
+                        "description": "When the form takes submissions (form-governance-availability-retention-and-routing REQ-FGV-001): the active period, a limit per period, a maintenance window and the form that replaced it. Outside it the page shows the matching situation instead of the form and a submit is refused; a saved draft stays.",
+                        "properties": {
+                            "activeFrom": {
+                                "title": "Active from",
+                                "type": "string",
+                                "format": "date",
+                                "description": "The first day the form opens, inclusive.",
+                                "example": "2026-01-01"
+                            },
+                            "activeUntil": {
+                                "title": "Active until",
+                                "type": "string",
+                                "format": "date",
+                                "description": "The last day the form is open, inclusive; null for no end date.",
+                                "example": "2026-12-31"
+                            },
+                            "limit": {
+                                "title": "Limit",
+                                "type": "object",
+                                "description": "At most `count` submissions per `per`: the whole period (`total`), the calendar month or the calendar year.",
+                                "properties": {
+                                    "count": {
+                                        "title": "Count",
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "example": 500
+                                    },
+                                    "per": {
+                                        "title": "Per",
+                                        "type": "string",
+                                        "enum": [
+                                            "total",
+                                            "month",
+                                            "year"
+                                        ],
+                                        "example": "month"
+                                    }
+                                }
+                            },
+                            "reopensOn": {
+                                "title": "Reopens on",
+                                "type": "string",
+                                "format": "date",
+                                "description": "The day the form takes submissions again once the limit is reached, shown to the resident.",
+                                "example": "2027-01-05"
+                            },
+                            "maintenance": {
+                                "title": "Maintenance",
+                                "type": "object",
+                                "description": "A window, in local time, in which the form is not available, with its own text.",
+                                "properties": {
+                                    "from": {
+                                        "title": "From",
+                                        "type": "string",
+                                        "example": "2026-10-09T18:00"
+                                    },
+                                    "until": {
+                                        "title": "Until",
+                                        "type": "string",
+                                        "example": "2026-10-09T22:00"
+                                    },
+                                    "text": {
+                                        "title": "Text",
+                                        "type": "string",
+                                        "example": ""
+                                    }
+                                }
+                            },
+                            "replacedBy": {
+                                "title": "Replaced by",
+                                "type": "string",
+                                "description": "The route of the form on this portal that replaced this one.",
+                                "example": "/aanvragen/woo-verzoek-2027"
+                            }
+                        }
                     },
                     "destination": {
                         "title": "Destination",

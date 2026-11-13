@@ -1,8 +1,10 @@
 # Tasks: form-governance-availability-retention-and-routing
 
 - [ ] **T01**: `lib/Settings/portaliq_register.json`: `availability`, `retention`, `delivery` on `portalFormBinding`, `expiresAt` and `attempts` on `portalIntakeSubmission`; register bump; import and grep for `PARTIAL IMPORT`
-- [ ] **T02**: `lib/Service/Intake/PortalFormAvailability.php`: active period, maintenance, limit per period (OpenRegister count), replacement; called from `PortalFormBindingResolver::render()` and from the submit path; PHPUnit per situation and for the limit check inside the submit request (REQ-FGV-001)
-- [ ] **T03**: `src/site/components/forms/FormUnavailable.vue` with the three situations of the FormulierNietBeschikbaar board and the not-yet-open text; node test (REQ-FGV-001)
+  - `availability` on `portalFormBinding` is in (register 0.109.0, binding 0.6.0). `retention`, `delivery`, `expiresAt` and `attempts` are left out: decision 179 removed routing and retry and moved retention to the destination objects.
+- [x] **T02**: `lib/Service/Intake/PortalFormAvailability.php`: active period, maintenance, limit per period (OpenRegister count), replacement; called from `PortalFormBindingResolver::render()` and from the submit path; PHPUnit per situation and for the limit check inside the submit request (REQ-FGV-001)
+  - Called from the intake controller's form and submit routes rather than inside `render()`, so the background drains are not refused. The count is the destination's objects of the period (decision 179: no portal-side submission store).
+- [x] **T03**: `src/site/components/forms/FormUnavailable.vue` with the three situations of the FormulierNietBeschikbaar board and the not-yet-open text; node test (REQ-FGV-001)
 - [ ] **T04**: `lib/Service/Intake/PortalDeliveryRouter.php`: default plus rules, kinds `caseType`, `email` (Nextcloud mailer, template `form-delivery-mail`), `integriq` (integriq's call API); `PortalIntakeQueue` uses it; PHPUnit per kind and for rule order (REQ-FGV-002)
 - [ ] **T05**: `lib/BackgroundJob/IntakeRetryJob.php` with the 5 min, 1 h, 6 h schedule; retry routes for the resident (own submission, by reference and session) and for staff; evidence log line per attempt; IDOR gate green; PHPUnit (REQ-FGV-003)
 - [ ] **T06**: FormulierVerwerken situation 2 on the reference page: text, kept-until date, "Opnieuw proberen", error code `OF-xxxx` (REQ-FGV-003)

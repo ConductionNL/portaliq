@@ -380,6 +380,7 @@ class PortalIntakeControllerTest extends TestCase {
 	 * @param array<string, mixed>|null $binding The binding found, or null.
 	 * @param array<string, mixed>|null $subject The signed-in subject, or null.
 	 * @param array<string, mixed> $site The portal resolved.
+	 * @param \OCA\Portaliq\Service\Intake\PortalFormAvailability|null $availability Whether the form is open.
 	 *
 	 * @return PortalIntakeController
 	 */
@@ -395,6 +396,7 @@ class PortalIntakeControllerTest extends TestCase {
 		?\OCA\Portaliq\Service\Intake\PortalFormCalculator $calculator = null,
 		?\OCA\Portaliq\Service\Intake\PortalFormDecision $decision = null,
 		array $pay = [],
+		?\OCA\Portaliq\Service\Intake\PortalFormAvailability $availability = null,
 	): PortalIntakeController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('');
@@ -458,7 +460,8 @@ class PortalIntakeControllerTest extends TestCase {
 			deepLinks: null,
 			emailVerification: $pay['verification'] ?? null,
 			intake: $intake,
-			lookup: $this->doubles['lookup']
+			lookup: $this->doubles['lookup'],
+			availability: $availability
 		);
 	}//end controller()
 
@@ -1085,4 +1088,36 @@ class PortalIntakeControllerTest extends TestCase {
 			->getMock();
 	}//end double()
 
+	/**
+	 * A form in maintenance shows that situation instead of the form, and a
+	 * submission to it is refused with nothing written; an open form goes on.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-form-opens-and-closes-on-set-dates-and-after-a-set-number-of-submissions-req-fgv-001
+	 */
+	public function testAnUnavailableFormShowsItsSituationAndRefusesSubmissions(): void {
+		$situation    = ['situation' => 'maintenance', 'from' => '2026-10-09T18:00', 'until' => '2026-10-09T22:00', 'text' => ''];
+		$availability = $this->createMock(\OCA\Portaliq\Service\Intake\PortalFormAvailability::class);
+		$availability->method('unavailable')->willReturn($situation);
+		$controller = $this->controller(render: $this->hostedForm(), availability: $availability);
+
+		$form = $controller->form(route: 'aanvragen/verhuizing');
+		$this->assertSame(Http::STATUS_OK, $form->getStatus());
+		$this->assertSame(
+			['kind' => 'hosted', 'resolvesToNoForm' => true, 'reason' => 'unavailable', 'unavailable' => $situation, 'fields' => []],
+			$form->getData()
+		);
+
+		$submit = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB']);
+		$this->assertSame(Http::STATUS_CONFLICT, $submit->getStatus());
+		$this->assertSame(['error' => 'form_unavailable', 'unavailable' => $situation], $submit->getData());
+		$this->assertSame([], $this->submit->calls);
+
+		$open = $this->createMock(\OCA\Portaliq\Service\Intake\PortalFormAvailability::class);
+		$open->method('unavailable')->willReturn(null);
+		$controller = $this->controller(render: $this->hostedForm(), availability: $open);
+		$this->assertSame(Http::STATUS_OK, $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'])->getStatus());
+		$this->assertCount(1, $this->submit->calls);
+	}//end testAnUnavailableFormShowsItsSituationAndRefusesSubmissions()
 }//end class
