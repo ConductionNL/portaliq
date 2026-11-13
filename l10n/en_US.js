@@ -2,6 +2,16 @@ OC.L10N.register(
     "portaliq",
     {
         "Choose media": "Choose media",
+        "A part with a text shows \"Hulp bij deze pagina\" under its heading; a part without shows nothing.": "A part with a text shows \"Hulp bij deze pagina\" under its heading; a part without shows nothing.",
+        "An e-mail address looks like info@example.nl.": "An e-mail address looks like info@example.nl.",
+        "An image address starts with / or https://.": "An image address starts with / or https://.",
+        "Help on forms": "Help on forms",
+        "Help per part of Mijn omgeving": "Help per part of Mijn omgeving",
+        "Hulp": "Hulp",
+        "May name the form with {formulier}.": "May name the form with {formulier}.",
+        "No image": "No image",
+        "Opens the \"Hulp nodig?\" dialog on every form. A form may override each of these details; with none set, forms show no \"Hulp nodig?\".": "Opens the \"Hulp nodig?\" dialog on every form. A form may override each of these details; with none set, forms show no \"Hulp nodig?\".",
+        "When set, the page shows \"Hulp bij deze pagina\" under its heading, closed until a visitor opens it. Empty shows nothing.": "When set, the page shows \"Hulp bij deze pagina\" under its heading, closed until a visitor opens it. Empty shows nothing.",
         "change proposals": "change proposals",
         "Per day": "Per day",
         "Sources": "Sources",
@@ -527,17 +537,7 @@ OC.L10N.register(
         "QR code": "QR code",
         "As the case app shows it": "As the case app shows it",
         "The columns are saved.": "The columns are saved.",
-        "The columns could not be saved. Try again.": "The columns could not be saved. Try again.",
-        "A part with a text shows \"Hulp bij deze pagina\" under its heading; a part without shows nothing.": "A part with a text shows \"Hulp bij deze pagina\" under its heading; a part without shows nothing.",
-        "An e-mail address looks like info@example.nl.": "An e-mail address looks like info@example.nl.",
-        "An image address starts with / or https://.": "An image address starts with / or https://.",
-        "Help on forms": "Help on forms",
-        "Help per part of Mijn omgeving": "Help per part of Mijn omgeving",
-        "Hulp": "Hulp",
-        "May name the form with {formulier}.": "May name the form with {formulier}.",
-        "No image": "No image",
-        "Opens the \"Hulp nodig?\" dialog on every form. A form may override each of these details; with none set, forms show no \"Hulp nodig?\".": "Opens the \"Hulp nodig?\" dialog on every form. A form may override each of these details; with none set, forms show no \"Hulp nodig?\".",
-        "When set, the page shows \"Hulp bij deze pagina\" under its heading, closed until a visitor opens it. Empty shows nothing.": "When set, the page shows \"Hulp bij deze pagina\" under its heading, closed until a visitor opens it. Empty shows nothing."
+        "The columns could not be saved. Try again.": "The columns could not be saved. Try again."
     },
     "nplurals=2; plural=(n != 1);"
 )
