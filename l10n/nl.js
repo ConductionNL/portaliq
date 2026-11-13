@@ -3362,7 +3362,17 @@ OC.L10N.register(
         "QR code": "QR-code",
         "As the case app shows it": "Zoals de zaakapp het toont",
         "The columns are saved.": "De kolommen zijn opgeslagen.",
-        "The columns could not be saved. Try again.": "De kolommen konden niet worden opgeslagen. Probeer het opnieuw."
+        "The columns could not be saved. Try again.": "De kolommen konden niet worden opgeslagen. Probeer het opnieuw.",
+        "A part with a text shows \"Hulp bij deze pagina\" under its heading; a part without shows nothing.": "Een onderdeel met een tekst toont \"Hulp bij deze pagina\" onder de kop; een onderdeel zonder tekst toont niets.",
+        "An e-mail address looks like info@example.nl.": "Een e-mailadres ziet eruit als info@example.nl.",
+        "An image address starts with / or https://.": "Een afbeeldingsadres begint met / of https://.",
+        "Help on forms": "Hulp bij formulieren",
+        "Help per part of Mijn omgeving": "Hulp per onderdeel van Mijn omgeving",
+        "Hulp": "Hulp",
+        "May name the form with {formulier}.": "Mag het formulier noemen met {formulier}.",
+        "No image": "Geen afbeelding",
+        "Opens the \"Hulp nodig?\" dialog on every form. A form may override each of these details; with none set, forms show no \"Hulp nodig?\".": "Opent het venster \"Hulp nodig?\" op elk formulier. Een formulier kan elk van deze gegevens vervangen; zonder gegevens tonen formulieren geen \"Hulp nodig?\".",
+        "When set, the page shows \"Hulp bij deze pagina\" under its heading, closed until a visitor opens it. Empty shows nothing.": "Als deze is ingevuld, toont de pagina \"Hulp bij deze pagina\" onder de kop, dicht tot een bezoeker hem opent. Leeg toont niets."
     },
     "nplurals=2; plural=(n != 1);"
 )
