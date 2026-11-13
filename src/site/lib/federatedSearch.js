@@ -41,26 +41,53 @@ export function buildRequestUrl(state) {
 	url.searchParams.set('_limit', String(state.pageSize))
 	url.searchParams.set('_page', String(state.page))
 
+	setSearchTerm(url.searchParams, state)
+	setFacetsAndFilters(url.searchParams, state)
+	setPeriod(url.searchParams, state)
+	setOrder(url.searchParams, state)
+
+	return url.toString()
+}
+
+/**
+ * The free-text term and the options that travel with it.
+ *
+ * @param {URLSearchParams} params The request's parameters.
+ * @param {object} state The search state.
+ * @return {void}
+ */
+function setSearchTerm(params, state) {
 	// An empty term is OMITTED rather than sent as `_search=`. The two are not
 	// the same request: one asks for everything, the other asks the backend to
 	// match the empty string, and which of those a given backend does is not
 	// something this portal should be betting on.
-	if (state.query) {
-		url.searchParams.set('_search', state.query)
-
-		// THE TEXT INSIDE PUBLIC DOCUMENTS (REQ-PFS-CONTENT-001). The opt-in
-		// opencatalogi's document content search defines; sent whenever there
-		// is a term, unless the portal switched it off. Only the published,
-		// redacted copy of a document is searched on the other side.
-		if (state.searchInsideDocuments !== false) {
-			url.searchParams.set('_content', 'true')
-		}
-
-		// A misspelt title is still found, and the relevance order has a
-		// score to sort on (search-sort-by-relevance REQ-SSR-001, REQ-SSR-004).
-		url.searchParams.set('_fuzzy', 'true')
+	if (!state.query) {
+		return
 	}
 
+	params.set('_search', state.query)
+
+	// THE TEXT INSIDE PUBLIC DOCUMENTS (REQ-PFS-CONTENT-001). The opt-in
+	// opencatalogi's document content search defines; sent whenever there
+	// is a term, unless the portal switched it off. Only the published,
+	// redacted copy of a document is searched on the other side.
+	if (state.searchInsideDocuments !== false) {
+		params.set('_content', 'true')
+	}
+
+	// A misspelt title is still found, and the relevance order has a
+	// score to sort on (search-sort-by-relevance REQ-SSR-001, REQ-SSR-004).
+	params.set('_fuzzy', 'true')
+}
+
+/**
+ * The facets asked for, the values ticked and the locked filters.
+ *
+ * @param {URLSearchParams} params The request's parameters.
+ * @param {object} state The search state.
+ * @return {void}
+ */
+function setFacetsAndFilters(params, state) {
 	// ONE FACET PER FIELD, IN THE SAME REQUEST (woo-search-and-detail D1).
 	// `facetFields` with a `facets` map is the current shape; a caller that
 	// still passes the single `facetField` with `selectedFacets` gets exactly
@@ -70,22 +97,41 @@ export function buildRequestUrl(state) {
 	const locked = lockedFiltersOf(state)
 	const fields = withoutLocked(facetFieldsOf(state), locked)
 	for (const field of fields) {
-		url.searchParams.set(`_facets[${field}][type]`, 'terms')
+		params.set(`_facets[${field}][type]`, 'terms')
 	}
 
 	const selected = state.facets || { [fields[0]]: state.selectedFacets || [] }
 	for (const field of fields) {
-		for (const value of selected[field] || []) {
-			url.searchParams.append(field, value)
-		}
+		appendAll(params, field, selected[field] || [])
 	}
 
 	for (const [field, values] of Object.entries(locked)) {
-		for (const value of values) {
-			url.searchParams.append(field, value)
-		}
+		appendAll(params, field, values)
 	}
+}
 
+/**
+ * Append every value under one field.
+ *
+ * @param {URLSearchParams} params The request's parameters.
+ * @param {string} field The field.
+ * @param {Array<string>} values The values.
+ * @return {void}
+ */
+function appendAll(params, field, values) {
+	for (const value of values) {
+		params.append(field, value)
+	}
+}
+
+/**
+ * The period as a range.
+ *
+ * @param {URLSearchParams} params The request's parameters.
+ * @param {object} state The search state.
+ * @return {void}
+ */
+function setPeriod(params, state) {
 	// THE PERIOD AS A RANGE (D2). OpenRegister reads `<field>[gte]` and
 	// `<field>[lte]`; the to date covers its whole day. A date that does not
 	// parse is left out: a filter nobody can read back is not sent.
@@ -93,25 +139,34 @@ export function buildRequestUrl(state) {
 	const from = validDate(state.periodFrom)
 	const to = validDate(state.periodTo)
 	if (from) {
-		url.searchParams.set(`${periodField}[gte]`, from)
+		params.set(`${periodField}[gte]`, from)
 	}
 	if (to) {
-		url.searchParams.set(`${periodField}[lte]`, `${to}T23:59:59Z`)
+		params.set(`${periodField}[lte]`, `${to}T23:59:59Z`)
 	}
+}
 
+/**
+ * The sort order.
+ *
+ * @param {URLSearchParams} params The request's parameters.
+ * @param {object} state The search state.
+ * @return {void}
+ */
+function setOrder(params, state) {
 	// `_order[<field>]=ASC|DESC`. Verified against the live endpoint on
 	// 2026-08-20: title ASC/DESC and publicationDate ASC/DESC each return a
 	// different first row, so the control changes something. `_relevance`
 	// is OpenRegister's trigram score, present only with a term; the block
 	// checks every relevance answer for it (relevanceApplied).
-	if (state.sort) {
-		const [field, direction] = String(state.sort).split(':')
-		if (field && direction) {
-			url.searchParams.set(`_order[${field}]`, direction)
-		}
+	if (!state.sort) {
+		return
 	}
 
-	return url.toString()
+	const [field, direction] = String(state.sort).split(':')
+	if (field && direction) {
+		params.set(`_order[${field}]`, direction)
+	}
 }
 
 /**
