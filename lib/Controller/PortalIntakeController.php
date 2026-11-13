@@ -314,19 +314,9 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return $refusal;
 		}
 
-		if (($render['settings']['challenge'] ?? false) === true) {
-			$accepted = $this->challenge->accepts(
-				site: $site,
-				surface: 'form',
-				submission: $answers,
-				nonce: $nonce,
-				solution: $solution,
-				expiresAt: $expiresAt,
-				signature: $signature
-			);
-			if ($accepted === false) {
-				return new JSONResponse(['error' => 'challenge_failed'], Http::STATUS_FORBIDDEN);
-			}
+		$proof = ['nonce' => $nonce, 'solution' => $solution, 'expiresAt' => $expiresAt, 'signature' => $signature];
+		if ($this->challengeFailed(site: $site, render: $render, answers: $answers, proof: $proof) === true) {
+			return new JSONResponse(['error' => 'challenge_failed'], Http::STATUS_FORBIDDEN);
 		}
 
 		$prepared = $this->checks->prepare(
@@ -342,6 +332,56 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			return $prepared;
 		}
 
+		return $this->deliver(binding: $binding, render: $render, prepared: $prepared, subject: $subject, site: $site);
+	}//end submit()
+
+	/**
+	 * Whether the form asks for a challenge and the one sent does not hold.
+	 * A form without a challenge never fails it.
+	 *
+	 * @param array<string, mixed> $site The portal.
+	 * @param array<string, mixed> $render The rendered form.
+	 * @param array<string, mixed> $answers What the citizen answered.
+	 * @param array{nonce: string, solution: string, expiresAt: int, signature: string} $proof The nonce, the
+	 *        solution to it, the expiry issued with it and this instance's signature over it.
+	 *
+	 * @return bool True when the submission must be refused.
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 */
+	private function challengeFailed(array $site, array $render, array $answers, array $proof): bool {
+		if (($render['settings']['challenge'] ?? false) !== true) {
+			return false;
+		}
+
+		return $this->challenge->accepts(
+			site: $site,
+			surface: 'form',
+			submission: $answers,
+			nonce: $proof['nonce'],
+			solution: $proof['solution'],
+			expiresAt: $proof['expiresAt'],
+			signature: $proof['signature']
+		) === false;
+	}//end challengeFailed()
+
+	/**
+	 * Hand the prepared answers to the destination intake, with what the
+	 * server knows about the submission, and answer the citizen: the
+	 * destination's refusal, or the reference and confirmation moments after
+	 * the confirmation mail went out.
+	 *
+	 * @param array<string, mixed> $binding The form binding.
+	 * @param array<string, mixed> $render The rendered form.
+	 * @param array<string, mixed> $prepared The checked answers and their server-side companions.
+	 * @param array<string, mixed>|null $subject The signed-in subject, if any.
+	 * @param array<string, mixed> $site The portal.
+	 *
+	 * @return JSONResponse The acknowledgement or the refusal.
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 */
+	private function deliver(array $binding, array $render, array $prepared, ?array $subject, array $site): JSONResponse {
 		$submitted = $this->intake?->submit(
 			binding: $binding,
 			render: $render,
@@ -381,7 +421,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 				]
 			)
 		);
-	}//end submit()
+	}//end deliver()
 
 	/**
 	 * Decide one step at the step change: ask the rule engine on the server and
