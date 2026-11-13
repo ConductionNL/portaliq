@@ -3362,7 +3362,19 @@ OC.L10N.register(
         "QR code": "QR-code",
         "As the case app shows it": "Zoals de zaakapp het toont",
         "The columns are saved.": "De kolommen zijn opgeslagen.",
-        "The columns could not be saved. Try again.": "De kolommen konden niet worden opgeslagen. Probeer het opnieuw."
+        "The columns could not be saved. Try again.": "De kolommen konden niet worden opgeslagen. Probeer het opnieuw.",
+        "Propose a change": "Wijziging voorstellen",
+        "Nothing on this record can be proposed.": "Op dit record kan niets worden voorgesteld.",
+        "Note for the reviewer": "Toelichting voor de beoordelaar",
+        "Send proposal": "Voorstel versturen",
+        "Your proposals on this record": "Uw voorstellen op dit record",
+        "Your proposals could not be loaded.": "Uw voorstellen konden niet worden geladen.",
+        "You have made no proposals on this record.": "U heeft op dit record nog geen voorstellen gedaan.",
+        "Rejected": "Afgewezen",
+        "Change a value before sending the proposal.": "Wijzig eerst een waarde voordat u het voorstel verstuurt.",
+        "The proposal was refused.": "Het voorstel is geweigerd.",
+        "Your proposal is sent for review.": "Uw voorstel is ter beoordeling verstuurd.",
+        "The proposal is withdrawn.": "Het voorstel is ingetrokken."
     },
     "nplurals=2; plural=(n != 1);"
 )

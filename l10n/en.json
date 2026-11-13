@@ -3225,7 +3225,19 @@
         "QR code": "QR code",
         "As the case app shows it": "As the case app shows it",
         "The columns are saved.": "The columns are saved.",
-        "The columns could not be saved. Try again.": "The columns could not be saved. Try again."
+        "The columns could not be saved. Try again.": "The columns could not be saved. Try again.",
+        "Propose a change": "Propose a change",
+        "Nothing on this record can be proposed.": "Nothing on this record can be proposed.",
+        "Note for the reviewer": "Note for the reviewer",
+        "Send proposal": "Send proposal",
+        "Your proposals on this record": "Your proposals on this record",
+        "Your proposals could not be loaded.": "Your proposals could not be loaded.",
+        "You have made no proposals on this record.": "You have made no proposals on this record.",
+        "Rejected": "Rejected",
+        "Change a value before sending the proposal.": "Change a value before sending the proposal.",
+        "The proposal was refused.": "The proposal was refused.",
+        "Your proposal is sent for review.": "Your proposal is sent for review.",
+        "The proposal is withdrawn.": "The proposal is withdrawn."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

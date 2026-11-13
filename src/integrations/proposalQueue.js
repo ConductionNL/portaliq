@@ -7,7 +7,10 @@
  *
  * It reads the queued proposals on the host record, accepts one, asks again
  * when the record moved since the proposal was made, and rejects one only with
- * a reason. Every decision is taken by portaliq's own review routes, which
+ * a reason. For a colleague who may read the record but not review it, it
+ * proposes a change on the declared properties, sending only what changed,
+ * and lists and withdraws that colleague's own proposals
+ * (change-proposals-reach-the-case-page). Every decision is taken by portaliq's own review routes, which
  * write the record through OpenRegister as the reviewer. The host app is never
  * called.
  *
@@ -16,6 +19,7 @@
  * runs it as a plain node script.
  *
  * @spec openspec/specs/change-proposal-queue/spec.md
+ * @spec openspec/changes/change-proposals-reach-the-case-page/specs/change-proposal-queue/spec.md
  */
 
 /**
@@ -52,6 +56,48 @@ export function formatValue(value) {
 		return JSON.stringify(value)
 	}
 	return String(value)
+}
+
+/**
+ * A property's value as it stands in an input: '' for nothing, JSON for a
+ * structured value, else the value as text.
+ *
+ * @param {*} value The value.
+ * @return {string}
+ * @spec openspec/changes/change-proposals-reach-the-case-page/specs/change-proposal-queue/spec.md#requirement-a-colleague-who-may-read-a-record-proposes-from-the-queue-widget-req-cpc-001
+ */
+export function inputValue(value) {
+	if (value === null || value === undefined) {
+		return ''
+	}
+	if (typeof value === 'object') {
+		return JSON.stringify(value)
+	}
+	return String(value)
+}
+
+/**
+ * The changes a colleague's form makes: one per proposable property whose
+ * input differs from its value now, in the order the properties came.
+ *
+ * @param {Array<{property: string, value: *}>} fields The proposable properties with their values now.
+ * @param {object} values The inputs, by property.
+ * @return {Array<{property: string, proposedValue: string}>}
+ * @spec openspec/changes/change-proposals-reach-the-case-page/specs/change-proposal-queue/spec.md#requirement-a-colleague-who-may-read-a-record-proposes-from-the-queue-widget-req-cpc-001
+ */
+export function changedFields(fields, values) {
+	const changes = []
+	for (const field of Array.isArray(fields) ? fields : []) {
+		const property = String(field?.property || '')
+		if (property === '' || !Object.hasOwn(values || {}, property)) {
+			continue
+		}
+		const proposed = String(values[property] ?? '')
+		if (proposed !== inputValue(field.value)) {
+			changes.push({ property, proposedValue: proposed })
+		}
+	}
+	return changes
 }
 
 /**
@@ -173,6 +219,108 @@ export function createProposalQueue({ get, post, url }) {
 				path: '/api/proposals/{id}/reject',
 				body: { reason: why },
 				done: 'rejected',
+			})
+		},
+
+		/**
+		 * Which view the user gets on the host record: `review` for a
+		 * reviewer, `propose` with the proposable fields for a reader,
+		 * `hidden` for a user who may not read it, `error` when it could not
+		 * be told.
+		 *
+		 * @param {object} host The host context.
+		 * @param {string} host.register The record's register.
+		 * @param {string} host.schema The record's schema.
+		 * @param {string} host.objectId The record.
+		 * @return {Promise<{view: string, fields: Array}>}
+		 * @spec openspec/changes/change-proposals-reach-the-case-page/specs/change-proposal-queue/spec.md#requirement-a-colleague-who-may-read-a-record-proposes-from-the-queue-widget-req-cpc-001
+		 */
+		async loadContext({ register, schema, objectId }) {
+			if (!register || !schema || !objectId) {
+				return { view: 'hidden', fields: [] }
+			}
+			try {
+				const response = await get(url('/api/proposals/context', {}), {
+					params: { register, schema, id: objectId },
+				})
+				const data = response?.data || {}
+				const fields = Array.isArray(data.proposable)
+					? data.proposable.filter((field) => typeof field?.property === 'string' && field.property !== '')
+					: []
+				return { view: data.mayReview === true ? 'review' : 'propose', fields }
+			} catch (error) {
+				const status = statusOf(error)
+				return { view: status === 403 || status === 401 ? 'hidden' : 'error', fields: [] }
+			}
+		},
+
+		/**
+		 * The signed-in colleague's own proposals on the host record, any state.
+		 *
+		 * @param {object} host The host context.
+		 * @param {string} host.register The record's register.
+		 * @param {string} host.schema The record's schema.
+		 * @param {string} host.objectId The record.
+		 * @return {Promise<{state: string, proposals: Array}>}
+		 * @spec openspec/changes/change-proposals-reach-the-case-page/specs/change-proposal-queue/spec.md#requirement-a-colleague-lists-their-own-proposals-on-a-record-req-cpc-002
+		 */
+		async loadMine({ register, schema, objectId }) {
+			try {
+				const response = await get(url('/api/proposals/mine', {}), {
+					params: { register, schema, id: objectId },
+				})
+				const proposals = Array.isArray(response?.data?.proposals) ? response.data.proposals : []
+				return { state: 'ready', proposals }
+			} catch {
+				return { state: 'error', proposals: [] }
+			}
+		},
+
+		/**
+		 * Propose the changed properties with a note. Nothing is sent when
+		 * nothing changed.
+		 *
+		 * @param {object} host The host context.
+		 * @param {string} host.register The record's register.
+		 * @param {string} host.schema The record's schema.
+		 * @param {string} host.objectId The record.
+		 * @param {Array} fields The proposable properties with their values now.
+		 * @param {object} values The inputs, by property.
+		 * @param {string} note What the colleague says about it.
+		 * @return {Promise<object>} `{outcome: 'proposed', proposal}`, `{outcome: 'nothingChanged'}` or `{outcome: 'refused', error}`.
+		 * @spec openspec/changes/change-proposals-reach-the-case-page/specs/change-proposal-queue/spec.md#requirement-a-colleague-who-may-read-a-record-proposes-from-the-queue-widget-req-cpc-001
+		 */
+		async propose({ register, schema, objectId }, fields, values, note) {
+			const changes = changedFields(fields, values)
+			if (changes.length === 0) {
+				return { outcome: 'nothingChanged' }
+			}
+			try {
+				const response = await post(url('/api/proposals', {}), {
+					register,
+					schema,
+					id: objectId,
+					changes,
+					note: String(note || '').trim(),
+				})
+				return { outcome: 'proposed', proposal: response?.data?.proposal || null }
+			} catch (error) {
+				return { outcome: 'refused', error: String(error?.response?.data?.error || '') }
+			}
+		},
+
+		/**
+		 * Withdraw one of the colleague's own queued proposals.
+		 *
+		 * @param {object} proposal The proposal.
+		 * @return {Promise<object>} `{outcome: 'withdrawn'}` or `{outcome: 'refused', error}`.
+		 * @spec openspec/changes/change-proposals-reach-the-case-page/specs/change-proposal-queue/spec.md#requirement-a-colleague-who-may-read-a-record-proposes-from-the-queue-widget-req-cpc-001
+		 */
+		withdraw(proposal) {
+			return decide(proposal, {
+				path: '/api/proposals/{id}/withdraw',
+				body: {},
+				done: 'withdrawn',
 			})
 		},
 	}
