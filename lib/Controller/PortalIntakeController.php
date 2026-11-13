@@ -33,6 +33,9 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\DestinationIntakeInterface;
+use OCA\Portaliq\Kernel\Contracts\DestinationLookupInterface;
+use OCA\Portaliq\Kernel\Contracts\FormConfirmationMailerInterface;
+use OCA\Portaliq\Kernel\Contracts\FormStatementsInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalActionForwarderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalAddressLookupInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalApplicantPrefillInterface;
@@ -42,7 +45,10 @@ use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalDeepLinkBuilderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalEmailVerificationInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFamilyMembersInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFeeInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFormBindingResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFormCalculatorInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFormDecisionInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFormValidatorInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalIntakeConfirmationInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalIntakePaymentsInterface;
@@ -51,13 +57,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSubmissionChecksInterface;
 use OCA\Portaliq\Service\Intake\DestinationIntake;
-use OCA\Portaliq\Service\Intake\DestinationLookup;
 use OCA\Portaliq\Service\Intake\DestinationMapping;
-use OCA\Portaliq\Service\Intake\FormConfirmationMailer;
-use OCA\Portaliq\Service\Intake\FormStatements;
-use OCA\Portaliq\Service\Intake\PortalFee;
-use OCA\Portaliq\Service\Intake\PortalFormCalculator;
-use OCA\Portaliq\Service\Intake\PortalFormDecision;
 use OCA\Portaliq\Service\Intake\PortalIntakeConfirmation;
 use OCA\Portaliq\Service\Intake\PortalIntakePayments;
 use OCA\Portaliq\Service\Intake\PortalSubmissionChecks;
@@ -117,17 +117,17 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param PortalCatalogueReaderInterface $catalogue The published request entries.
 	 * @param PortalAddressLookupInterface|null $addresses Finds street and town for a postcode and number.
 	 * @param PortalFamilyMembersInterface|null $family Lists and re-checks the resident's family from the BRP.
-	 * @param FormStatements|null $statements Resolves and checks the statements a form asks.
-	 * @param FormConfirmationMailer|null $confirmationMail Mails the resident the reference and a summary.
-	 * @param PortalFormCalculator|null $calculator Works out the form's calculated fields again on submit.
-	 * @param PortalFormDecision|null $decision Asks the rule engine for the decisions a form's steps declare.
-	 * @param PortalFee|null $fees Checks a fee and the address a resident may be sent to pay at.
+	 * @param FormStatementsInterface|null $statements Resolves and checks the statements a form asks.
+	 * @param FormConfirmationMailerInterface|null $confirmationMail Mails the resident the reference and a summary.
+	 * @param PortalFormCalculatorInterface|null $calculator Works out the form's calculated fields again on submit.
+	 * @param PortalFormDecisionInterface|null $decision Asks the rule engine for the decisions a form's steps declare.
+	 * @param PortalFeeInterface|null $fees Checks a fee and the address a resident may be sent to pay at.
 	 * @param PortalContributionRegistryInterface|null $registry Finds the case app's pay action in the subject's own manifest.
 	 * @param PortalActionForwarderInterface|null $forwarder Forwards the pay action with a server-built body.
 	 * @param PortalDeepLinkBuilderInterface|null $deepLinks Builds the address the resident returns to.
 	 * @param PortalEmailVerificationInterface|null $emailVerification Checks the proof that an e-mail address was verified.
 	 * @param DestinationIntakeInterface|null $intake Submits the answers into the binding's destination (decision 179).
-	 * @param DestinationLookup|null $lookup Finds the object a reference belongs to.
+	 * @param DestinationLookupInterface|null $lookup Finds the object a reference belongs to.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -141,17 +141,17 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		private readonly PortalCatalogueReaderInterface $catalogue,
 		private readonly ?PortalAddressLookupInterface $addresses = null,
 		private readonly ?PortalFamilyMembersInterface $family = null,
-		?FormStatements $statements = null,
-		?FormConfirmationMailer $confirmationMail = null,
-		?PortalFormCalculator $calculator = null,
-		?PortalFormDecision $decision = null,
-		?PortalFee $fees = null,
+		?FormStatementsInterface $statements = null,
+		?FormConfirmationMailerInterface $confirmationMail = null,
+		?PortalFormCalculatorInterface $calculator = null,
+		?PortalFormDecisionInterface $decision = null,
+		?PortalFeeInterface $fees = null,
 		?PortalContributionRegistryInterface $registry = null,
 		?PortalActionForwarderInterface $forwarder = null,
 		?PortalDeepLinkBuilderInterface $deepLinks = null,
 		?PortalEmailVerificationInterface $emailVerification = null,
 		private readonly ?DestinationIntakeInterface $intake = null,
-		private readonly ?DestinationLookup $lookup = null,
+		private readonly ?DestinationLookupInterface $lookup = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 		$this->checks       = new PortalSubmissionChecks(

@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Intake;
 
 use OCA\Portaliq\Kernel\Contracts\PortalIntakeConfirmationInterface;
+use OCA\Portaliq\Kernel\Contracts\FormConfirmationMailerInterface;
 
 /**
  * Sends the confirmation mail of a submission and records how it went.
@@ -35,10 +36,10 @@ class PortalIntakeConfirmation implements PortalIntakeConfirmationInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param FormConfirmationMailer|null $confirmationMail Mails the resident the reference and a summary.
+	 * @param FormConfirmationMailerInterface|null $confirmationMail Mails the resident the reference and a summary.
 	 */
 	public function __construct(
-		private readonly ?FormConfirmationMailer $confirmationMail = null,
+		private readonly ?FormConfirmationMailerInterface $confirmationMail = null,
 	) {
 	}//end __construct()
 
