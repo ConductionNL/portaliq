@@ -3379,7 +3379,11 @@
         "QR code": "QR-code",
         "As the case app shows it": "Zoals de zaakapp het toont",
         "The columns are saved.": "De kolommen zijn opgeslagen.",
-        "The columns could not be saved. Try again.": "De kolommen konden niet worden opgeslagen. Probeer het opnieuw."
+        "The columns could not be saved. Try again.": "De kolommen konden niet worden opgeslagen. Probeer het opnieuw.",
+        "Favicon": "Tabbladpictogram",
+        "The image the home page hero shows when its block sets no image of its own: an item of this portal's media library as media:<id>.": "De afbeelding die de hero op de startpagina toont als het blok zelf geen afbeelding heeft: een item uit de mediabibliotheek van dit portaal, als media:<id>.",
+        "The site logo shown in the portal header: an item of this portal's media library as media:<id>, or an address. Also the tab icon when the portal has no favicon.": "Het logo van de site in de kop van het portaal: een item uit de mediabibliotheek van dit portaal als media:<id>, of een adres. Ook het tabbladpictogram als het portaal er geen heeft.",
+        "The tab icon of the site: an item of this portal's media library as media:<id>. A PNG, SVG or ICO. Empty uses the logo, then the theme's icon.": "Het tabbladpictogram van de site: een item uit de mediabibliotheek van dit portaal als media:<id>. Een PNG, SVG of ICO. Leeg gebruikt het logo, daarna het pictogram van het thema."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

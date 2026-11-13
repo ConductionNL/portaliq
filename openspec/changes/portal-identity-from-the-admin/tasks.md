@@ -9,7 +9,7 @@ that is not in `check:specs` does not run in CI.
 
 ## 1. The images
 
-- [ ] 1.1 Declare `favicon` and `heroImage` (media references) on `#portal` in
+- [x] 1.1 Declare `favicon` and `heroImage` (media references) on `#portal` in
   `lib/Settings/portaliq_register.json`, widen `logo` to accept a media reference, and bump the
   register version. `npm run check:register` exits 0 (REQ-PIA-001).
   - unit `tests/Unit/Settings/PortaliqRegisterConfigTest.php`
@@ -24,17 +24,20 @@ that is not in `check:specs` does not run in CI.
 
 ## 2. The head and the hero
 
-- [ ] 2.1 Move the favicon choice out of `templates/site.php` into a small tested class
+- [x] 2.1 Move the favicon choice out of `templates/site.php` into a small tested class
   (for example `lib/Service/Cms/SiteIcon.php`) that resolves favicon, logo, theme icon, own mark in
   that order and answers a public URL. The template calls it (REQ-PIA-002).
   - **fails today**: `tests/Unit/Service/Cms/SiteIconTest.php` `testTheFaviconWinsOverTheLogo`,
     `testAMediaReferenceBecomesAPublicUrl`, `testNothingSetFallsBackToTheThemeThenTheOwnMark`.
   - e2e `tests/e2e/portal-identity.spec.ts`: an anonymous visitor's page has one `link[rel=icon]`
     whose URL answers 200 without cookies. Cite REQ-PIA-002.
-- [ ] 2.2 The shell hands `#portal.heroImage` to the hero block when the block has no image
+- [x] 2.2 The shell hands `#portal.heroImage` to the hero block when the block has no image
   (REQ-PIA-002).
   - **fails today**: node test `tests/site-shell-blocks.spec.mjs`
     `a hero without its own image uses the portal's`.
+  - Built: the content API (`ContentController::site()`) sends `logo` and `heroImage` as public
+    addresses, never as the `media:<id>` reference. The e2e spec of 2.1 is not added: it needs a
+    live instance.
 
 ## 3. The organisation type
 

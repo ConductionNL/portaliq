@@ -1022,6 +1022,9 @@ export default {
 				signInRoutes: this.signInRoutes,
 				// The help details every form offers (help-texts-and-form-help).
 				portalHelp: this.site.help || null,
+				// The portal's hero image, for a hero without its own
+				// (portal-identity-from-the-admin REQ-PIA-002).
+				heroImage: this.site.heroImage || '',
 				// A fixed-width aside column (site-aside-column).
 				aside: asideOf(this.page && this.page.body),
 			}

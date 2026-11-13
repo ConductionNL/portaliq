@@ -401,8 +401,9 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.105.0 (portalPage 0.9.0): a rows block's `statusNoteAtField`, the moment its status was set, and a cta's `labelWhenEmpty` (guardian-pages-follow-the-wilgenboom-boards). Additive.
 		// 0.106.0 (guardianMessage 0.3.0): a message's `readAt`, when the other side first read it (message-read-time). Additive.
 		// 0.108.0 (portalPage 0.10.0): a cta's `messageTo`, the field naming whom the message form opens for (guardian-message-to-and-whole-day). Additive.
-		$this->assertSame(expected: '0.108.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.108.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		// 0.109.0 (portal 0.29.0): a portal's `favicon` and `heroImage`, and a `logo` that may be a media reference (portal-identity-from-the-admin). Additive.
+		$this->assertSame(expected: '0.109.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.109.0', actual: self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalPage']['properties']['pages']['items']['properties']['blocks']['items']['properties']['messageTo']['type']);
 		$this->assertSame(expected: 'date-time', actual: self::$register['components']['schemas']['guardianMessage']['properties']['readAt']['format']);
 		// 0.107.0 (portal 0.28.0): a portal's `caseTypeColumns`, how each case type's columns read in Mijn zaken (case-type-columns-in-my-cases). Additive.
@@ -474,7 +475,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalTrafficRecording']['authorization']['read']);
 		$this->assertContains('portalTrafficRecording', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.7.0', self::$register['components']['schemas']['page']['version']);
-		$this->assertSame('0.28.0', self::$register['components']['schemas']['portal']['version']);
+		$this->assertSame('0.29.0', self::$register['components']['schemas']['portal']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portal']['properties']['authentication']['properties']['registration']['properties']['businessGroup']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portal']['properties']['tokens']['additionalProperties']['type']);
 		$this->assertTrue(self::$register['components']['schemas']['portal']['properties']['searchInsideDocuments']['default']);
@@ -1282,4 +1283,24 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame('array', $portal['accessibilityPages']['type']);
 
 	}//end testTheMeasurementSchemaIsDeclared()
+	/**
+	 * A portal declares its favicon and hero image as media references, and a logo may be one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portals-favicon-logo-and-hero-image-come-from-the-media-library-req-pia-001
+	 */
+	public function testThePortalDeclaresFaviconAndHeroImage(): void {
+		$properties = self::$register['components']['schemas']['portal']['properties'];
+
+		foreach (['favicon', 'heroImage', 'logo'] as $field) {
+			$this->assertSame(expected: 'string', actual: $properties[$field]['type'], message: $field);
+			$this->assertStringContainsString(needle: 'media:<id>', haystack: $properties[$field]['description'], message: $field);
+			$this->assertStringStartsWith(prefix: 'media:', string: $properties[$field]['example'], message: $field);
+		}
+
+		$this->assertStringContainsString(needle: 'PNG, SVG or ICO', haystack: $properties['favicon']['description']);
+		$this->assertNotContains(needle: 'favicon', haystack: (self::$register['components']['schemas']['portal']['required'] ?? []));
+		$this->assertNotContains(needle: 'heroImage', haystack: (self::$register['components']['schemas']['portal']['required'] ?? []));
+	}//end testThePortalDeclaresFaviconAndHeroImage()
 }//end class

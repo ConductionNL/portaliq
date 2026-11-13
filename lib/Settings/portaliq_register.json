@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.108.0"
+        "version": "0.109.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.108.0",
+                "version": "0.109.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -2650,7 +2650,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.28.0",
+                "version": "0.29.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -3248,8 +3248,20 @@
                     "logo": {
                         "title": "Logo",
                         "type": "string",
-                        "description": "URL or object reference for the site logo shown in the portal header.",
-                        "example": "/apps/portaliq/logo/open-tilburg.svg"
+                        "description": "The site logo shown in the portal header: an item of this portal's media library as media:<id>, or an address. Also the tab icon when the portal has no favicon.",
+                        "example": "media:2f6c0a4e-logo"
+                    },
+                    "favicon": {
+                        "title": "Favicon",
+                        "type": "string",
+                        "description": "The tab icon of the site: an item of this portal's media library as media:<id>. A PNG, SVG or ICO. Empty uses the logo, then the theme's icon.",
+                        "example": "media:9b1d3c77-favicon"
+                    },
+                    "heroImage": {
+                        "title": "Hero image",
+                        "type": "string",
+                        "description": "The image the home page hero shows when its block sets no image of its own: an item of this portal's media library as media:<id>.",
+                        "example": "media:4e8a1f20-stadhuis"
                     },
                     "headerVariant": {
                         "title": "Header shape",
