@@ -46,7 +46,6 @@ use OCA\Portaliq\Kernel\Contracts\PortalReferenceLinkServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalRegistrationPolicyServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
-use OCA\Portaliq\Service\RequestedPortal;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -54,6 +53,7 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCA\Portaliq\Kernel\Contracts\RequestedPortalInterface;
 
 /**
  * The citizen's own identity surfaces.
@@ -82,6 +82,7 @@ class PortalIdentityController extends Controller {
 	 * @param PortalReferenceCaseServiceInterface $referenceCases The case behind a reference link.
 	 * @param PortalSessionServiceInterface $sessions Mints and resolves the reference session.
 	 * @param PortalAccountActivationServiceInterface $activation Mints and spends the activation link (identity-ways-in-screens T03).
+	 * @param RequestedPortalInterface $requestedPortal The RequestedPortal helper.
 	 * @param PortalContactServiceInterface|null $contacts Joins a contact invitation the registration followed (own-contacts-and-invitations T05).
 	 */
 	public function __construct(
@@ -98,6 +99,7 @@ class PortalIdentityController extends Controller {
 		private readonly PortalReferenceCaseServiceInterface $referenceCases,
 		private readonly PortalSessionServiceInterface $sessions,
 		private readonly PortalAccountActivationServiceInterface $activation,
+		private readonly RequestedPortalInterface $requestedPortal,
 		private readonly ?PortalContactServiceInterface $contacts = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
@@ -662,6 +664,6 @@ class PortalIdentityController extends Controller {
 		// The SPA names the portal it is served as, the way `/site` and the
 		// runtime config do; on a shared host the host alone names none.
 		// A named portal that does not exist is a miss, never the host's.
-		return $this->portals->resolve(request: $this->request, portalSlug: (new RequestedPortal())->slug(request: $this->request));
+		return $this->portals->resolve(request: $this->request, portalSlug: $this->requestedPortal->slug(request: $this->request));
 	}//end site()
 }//end class

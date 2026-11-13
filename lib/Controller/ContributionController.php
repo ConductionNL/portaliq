@@ -48,11 +48,6 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\ActionScopeResolver;
 use OCA\Portaliq\Contribution\CreateActionMatcher;
-use OCA\Portaliq\Contribution\CreateBody;
-use OCA\Portaliq\Contribution\InboxMessageFields;
-use OCA\Portaliq\Contribution\PageChoice;
-use OCA\Portaliq\Contribution\RowIdentifier;
-use OCA\Portaliq\Contribution\ThemeChoice;
 use OCA\Portaliq\Http\PdfDownloadResponse;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\ActionDraftInterface;
@@ -84,16 +79,11 @@ use OCA\Portaliq\Kernel\Contracts\PortalTaskGatewayInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalUserDisplayNamesInterface;
 use OCA\Portaliq\Kernel\Contracts\SubmissionReceiptServiceInterface;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
-use OCA\Portaliq\Service\CaseRowMarker;
 use OCA\Portaliq\Service\CaseTypeColumns\ColumnOverrides;
 use OCA\Portaliq\Service\PortalCrossRefGuard;
 use OCA\Portaliq\Service\PortalUserDisplayNames;
-use OCA\Portaliq\Service\RequestedPortal;
-use OCA\Portaliq\Service\RequiredFieldsGuard;
 use OCA\Portaliq\Service\Session\SessionTrust;
 use OCA\Portaliq\Service\Tenancy\SchemaTenancy;
-use OCA\Portaliq\Service\VisibleFromGate;
-use OCA\Portaliq\Service\WriteRefusal;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -105,6 +95,17 @@ use OCP\IRequest;
 use Psr\Log\LoggerInterface;
 use OCA\Portaliq\Kernel\DestinationRefusal;
 use OCA\Portaliq\Kernel\InboxDeletion;
+use OCA\Portaliq\Kernel\Contracts\CaseRowMarkerInterface;
+use OCA\Portaliq\Kernel\Contracts\CreateActionMatcherInterface;
+use OCA\Portaliq\Kernel\Contracts\CreateBodyInterface;
+use OCA\Portaliq\Kernel\Contracts\InboxMessageFieldsInterface;
+use OCA\Portaliq\Kernel\Contracts\PageChoiceInterface;
+use OCA\Portaliq\Kernel\Contracts\RequestedPortalInterface;
+use OCA\Portaliq\Kernel\Contracts\RequiredFieldsGuardInterface;
+use OCA\Portaliq\Kernel\Contracts\RowIdentifierInterface;
+use OCA\Portaliq\Kernel\Contracts\ThemeChoiceInterface;
+use OCA\Portaliq\Kernel\Contracts\VisibleFromGateInterface;
+use OCA\Portaliq\Kernel\Contracts\WriteRefusalInterface;
 
 /**
  * Serves the authenticated subject's aggregated portal contributions.
@@ -166,6 +167,17 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @param LoggerInterface $logger Records the CAUSE of a translated storage
 	 *                                failure. The cause is logged and never
 	 *                                returned — see writeScoped().
+	 * @param CaseRowMarkerInterface $caseRowMarker The CaseRowMarker helper.
+	 * @param CreateActionMatcherInterface $createActionMatcher The CreateActionMatcher helper.
+	 * @param CreateBodyInterface $createBody The CreateBody helper.
+	 * @param InboxMessageFieldsInterface $inboxMessageFields The InboxMessageFields helper.
+	 * @param PageChoiceInterface $pageChoice The PageChoice helper.
+	 * @param RequestedPortalInterface $requestedPortal The RequestedPortal helper.
+	 * @param RequiredFieldsGuardInterface $requiredFieldsGuard The RequiredFieldsGuard helper.
+	 * @param RowIdentifierInterface $rowIdentifier The RowIdentifier helper.
+	 * @param ThemeChoiceInterface $themeChoice The ThemeChoice helper.
+	 * @param VisibleFromGateInterface $visibleFromGate The VisibleFromGate helper.
+	 * @param WriteRefusalInterface $writeRefusal The WriteRefusal helper.
 	 * @param PortalTaskGatewayInterface|null $taskGateway Answers whether the portal task
 	 *                                            seam is reachable, so index() can
 	 *                                            announce the "Mijn taken" surface
@@ -221,6 +233,17 @@ class ContributionController extends Controller implements PortalProtected {
 		private readonly SubmissionReceiptServiceInterface $receiptService,
 		private readonly NotificationDispatchServiceInterface $notificationDispatch,
 		private readonly LoggerInterface $logger,
+		private readonly CaseRowMarkerInterface $caseRowMarker,
+		private readonly CreateActionMatcherInterface $createActionMatcher,
+		private readonly CreateBodyInterface $createBody,
+		private readonly InboxMessageFieldsInterface $inboxMessageFields,
+		private readonly PageChoiceInterface $pageChoice,
+		private readonly RequestedPortalInterface $requestedPortal,
+		private readonly RequiredFieldsGuardInterface $requiredFieldsGuard,
+		private readonly RowIdentifierInterface $rowIdentifier,
+		private readonly ThemeChoiceInterface $themeChoice,
+		private readonly VisibleFromGateInterface $visibleFromGate,
+		private readonly WriteRefusalInterface $writeRefusal,
 		private readonly ?PortalTaskGatewayInterface $taskGateway = null,
 		private readonly ?PortalCrossRefGuardInterface $crossRefs = null,
 		private readonly ?CaseTypeVisibilityInterface $caseTypes = null,
@@ -324,7 +347,7 @@ class ContributionController extends Controller implements PortalProtected {
 				$named = $data;
 			}
 
-			return (new WriteRefusal())->response(failure: $this->writer->lastFailure(), data: $named)
+			return $this->writeRefusal->response(failure: $this->writer->lastFailure(), data: $named)
 				?? new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
@@ -394,7 +417,7 @@ class ContributionController extends Controller implements PortalProtected {
 		$aggregate['tasks'] = ['enabled' => ($this->taskGateway?->isAvailable() === true)];
 		// Announce "My cases" (cases-my-cases-page REQ-CMC-001) and whether
 		// any case collection can tell a closed case from an open one.
-		$aggregate['cases'] = (new CaseRowMarker())->announce(aggregate: $aggregate);
+		$aggregate['cases'] = $this->caseRowMarker->announce(aggregate: $aggregate);
 		$aggregate = $this->withThemes(aggregate: $aggregate);
 		// The pages of the resident's own area the serving portal switched on
 		// (own-contacts-and-invitations, shared-plans-with-a-caseworker).
@@ -416,12 +439,12 @@ class ContributionController extends Controller implements PortalProtected {
 	private function withThemes(array $aggregate): array {
 		$declared = [];
 		if ($this->portals !== null) {
-			$slug = (new RequestedPortal())->slug(request: $this->request);
+			$slug = $this->requestedPortal->slug(request: $this->request);
 
 			$declared = ($this->portals->resolve(request: $this->request, portalSlug: $slug)['themes'] ?? []);
 		}
 
-		return (new ThemeChoice())->arrange(aggregate: $aggregate, themes: $declared);
+		return $this->themeChoice->arrange(aggregate: $aggregate, themes: $declared);
 	}//end withThemes()
 
 	/**
@@ -439,7 +462,7 @@ class ContributionController extends Controller implements PortalProtected {
 			return [];
 		}
 
-		$slug = (new RequestedPortal())->slug(request: $this->request);
+		$slug = $this->requestedPortal->slug(request: $this->request);
 
 		$portal = $this->portals->resolve(request: $this->request, portalSlug: $slug);
 		$pages  = [];
@@ -475,7 +498,7 @@ class ContributionController extends Controller implements PortalProtected {
 			return $aggregate;
 		}
 
-		$slug = (new RequestedPortal())->slug(request: $this->request);
+		$slug = $this->requestedPortal->slug(request: $this->request);
 
 		$portal = $this->portals->resolve(request: $this->request, portalSlug: $slug);
 		$navigation = $portal['navigation'][(string)($aggregate['audience'] ?? '')] ?? null;
@@ -483,7 +506,7 @@ class ContributionController extends Controller implements PortalProtected {
 			return $aggregate;
 		}
 
-		return (new PageChoice())->arrange(aggregate: $aggregate, navigation: $navigation);
+		return $this->pageChoice->arrange(aggregate: $aggregate, navigation: $navigation);
 	}//end withPortalNavigation()
 
 	/**
@@ -577,7 +600,7 @@ class ContributionController extends Controller implements PortalProtected {
 		// client sends are simply never read, so `read` (or the collection's
 		// own read date, messageFields.readAt) is the only field this
 		// endpoint can ever change.
-		$fields = new InboxMessageFields();
+		$fields = $this->inboxMessageFields;
 		$normalised = $fields->normalise(collection: $collection);
 		$now = gmdate(format: 'Y-m-d\TH:i:s\Z');
 		// Decided from the row the writer has just proven the subject's own.
@@ -986,7 +1009,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		// A row waits until its moment has passed on the server clock
 		// (site-school-blocks, `visibleFromField`).
-		$objects = (new VisibleFromGate())->rows(rows: $objects, collection: $collection);
+		$objects = $this->visibleFromGate->rows(rows: $objects, collection: $collection);
 
 		$hidden = ($this->caseTypes?->hiddenForCollection(request: $this->request, subject: $subject, collection: $collection) ?? []);
 		if ($hidden !== []) {
@@ -1219,7 +1242,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		$hidden = ($this->caseTypes?->hiddenForCollection(request: $this->request, subject: $subject, collection: $collection) ?? []);
 		if ($object === null
-			|| (new VisibleFromGate())->rows(rows: [$object], collection: $collection) === []
+			|| $this->visibleFromGate->rows(rows: [$object], collection: $collection) === []
 			|| $this->branches->admits(subject: $subject, collection: $collection, row: $object) === false
 			|| $this->caseTypes?->rowIsHidden(row: $object, collection: $collection, hidden: $hidden) === true
 		) {
@@ -1647,7 +1670,7 @@ class ContributionController extends Controller implements PortalProtected {
 			action: $action,
 			data: $this->whitelist(fields: array_values(array_diff((array)($action['fields'] ?? []), $leftOut)))
 		);
-		$data = (new CreateBody())->build(action: $action, whitelisted: $whitelisted);
+		$data = $this->createBody->build(action: $action, whitelisted: $whitelisted);
 		// A carried field is set from the message the resident owns, over anything the client sent.
 		$data = array_merge($data, $carried);
 
@@ -1658,7 +1681,7 @@ class ContributionController extends Controller implements PortalProtected {
 		// reference has to resolve inside the subject's own scope, else a uuid
 		// in a create body is accepted as typed, which is how a citizen could
 		// file an objection against somebody else's case.
-		$refused = ((new RequiredFieldsGuard())->refusal(action: $action, body: $data)
+		$refused = ($this->requiredFieldsGuard->refusal(action: $action, body: $data)
 			?? $this->crossRefGuard()->refusal(action: $action, data: $data, subject: $subject, app: $match['app']));
 		if ($refused !== null) {
 			return $refused;
@@ -1694,7 +1717,7 @@ class ContributionController extends Controller implements PortalProtected {
 
 		if ($created === null) {
 			// A value the store refused names its field (site-action-forms).
-			return (new WriteRefusal())->response(failure: $this->writer->lastFailure(), data: $data)
+			return $this->writeRefusal->response(failure: $this->writer->lastFailure(), data: $data)
 				?? new JSONResponse(['error' => 'write_failed'], Http::STATUS_BAD_GATEWAY);
 		}
 
@@ -1813,7 +1836,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/changes/archive/2026-10-07-create-names-its-action/tasks.md#T1
 	 */
 	private function authorisedCreateAction(array $subject, string $register, string $schema): array|string|null {
-		return (new CreateActionMatcher())->match(
+		return $this->createActionMatcher->match(
 			aggregate: $this->registry->aggregateFor($subject),
 			register: $register,
 			schema: $schema,
@@ -1862,9 +1885,9 @@ class ContributionController extends Controller implements PortalProtected {
 		// schema's `required` set may mandate, since an anonymous write
 		// carries no real subjectRef).
 		$whitelisted = $this->withoutFileFields(action: $action, data: $this->whitelist(fields: (array)($action['fields'] ?? [])));
-		$data = (new CreateBody())->build(action: $action, whitelisted: $whitelisted);
+		$data = $this->createBody->build(action: $action, whitelisted: $whitelisted);
 
-		$missing = (new RequiredFieldsGuard())->refusal(action: $action, body: $data);
+		$missing = $this->requiredFieldsGuard->refusal(action: $action, body: $data);
 		if ($missing !== null) {
 			return $missing;
 		}
@@ -1995,7 +2018,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/changes/archive/2026-10-07-create-names-its-action/tasks.md#T3
 	 */
 	private function authorisedAnonymousCreateAction(string $register, string $schema): array|string|null {
-		return (new CreateActionMatcher())->matchAnonymous(
+		return $this->createActionMatcher->matchAnonymous(
 			aggregate: $this->registry->aggregateAnonymous(),
 			register: $register,
 			schema: $schema,
@@ -2263,7 +2286,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T09
 	 */
 	private function extractId(array $row): string {
-		return (new RowIdentifier())->idFor(row: $row, fallback: '');
+		return $this->rowIdentifier->idFor(row: $row, fallback: '');
 	}//end extractId()
 
 	/**
@@ -2337,7 +2360,7 @@ class ContributionController extends Controller implements PortalProtected {
 		// either stops the forward before it is audited or made.
 		$scoped = (new ActionScopeResolver(reader: $this->reader))
 			->prepare(action: $action, subject: $subject, appId: $appId, body: $whitelisted);
-		$refused = (new RequiredFieldsGuard())->forwardRefusal(action: $action, scoped: $scoped, declaresFields: $whitelisted !== null);
+		$refused = $this->requiredFieldsGuard->forwardRefusal(action: $action, scoped: $scoped, declaresFields: $whitelisted !== null);
 		if ($refused !== null) {
 			return $refused;
 		}

@@ -27,6 +27,7 @@ use Opis\JsonSchema\Validator;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Contribution\NotificationRuleNormaliser;
 
 /**
  * A change rule that names its recipients by a claim reaches the portal
@@ -139,7 +140,7 @@ class ClaimAddressedChangeNoticeTest extends TestCase {
 		};
 		$mappers = $this->createMock(ContainerInterface::class);
 		$mappers->method('get')->willReturn($mapper);
-		$index = new PortalChangeRuleIndex(registry: $registry, container: $mappers, logger: $this->createMock(LoggerInterface::class));
+		$index = new PortalChangeRuleIndex(registry: $registry, container: $mappers, logger: $this->createMock(LoggerInterface::class), notificationRuleNormaliser: new NotificationRuleNormaliser());
 
 		$writer = $this->createMock(PortalObjectWriter::class);
 		$writer->method('createObject')->willReturnCallback(

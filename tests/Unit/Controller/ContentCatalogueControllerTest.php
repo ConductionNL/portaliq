@@ -55,7 +55,7 @@ class ContentCatalogueControllerTest extends TestCase {
 		$session = $this->createMock(PortalSessionService::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 
-		return new ContentCatalogueController('portaliq', $request, $resolver, $session, ($catalogue ?? $this->createMock(PublicCatalogue::class)));
+		return new ContentCatalogueController('portaliq', $request, $resolver, $session, ($catalogue ?? $this->createMock(PublicCatalogue::class)), new PublicCatalogueQuery());
 	}//end controller()
 
 	/**

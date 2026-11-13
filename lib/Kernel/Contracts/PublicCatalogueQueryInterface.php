@@ -41,4 +41,25 @@ interface PublicCatalogueQueryInterface {
 	 * The sorts a visitor may choose.
 	 */
 	public const SORTS = ['relevance', 'date', 'dateDesc', 'title'];
+
+	/**
+	 * One page of the items that match a visitor's query, with the facets of
+	 * the items that match everything else, and how many there are in all.
+	 *
+	 * `types` keeps only those item types; `q` matches words in the title,
+	 * kind, summary and meta lines (accents and case do not matter);
+	 * `filters` maps a facet label to the values that count (within one facet
+	 * any value counts, across facets all must); `upcoming` keeps items whose
+	 * (end) date is today or later, with the day given as `today`.
+	 *
+	 * @param array<int, array<string, mixed>> $items  The portal's items.
+	 * @param array<string, mixed>             $params `q`, `types`, `filters`, `sort`, `page`, `limit`, `upcoming`, `today`,
+	 *                                                 `kindFacet`, `kindNews`, `audienceFacet`.
+	 *
+	 * @return array{items: array<int, array<string, mixed>>, total: int, page: int, pages: int, facets: array<int, array<string, mixed>>}
+	 *
+	 * @spec openspec/changes/portal-public-catalogue/specs/portal-public-catalogue/spec.md#requirement-a-visitor-may-search-and-filter-a-portals-public-catalogue
+	 * @spec openspec/changes/site-catalogue-follows-the-school-boards/specs/portal-public-catalogue/spec.md#requirement-a-catalogue-may-filter-by-kind-and-by-audience
+	 */
+	public function run(array $items, array $params): array;
 }//end interface

@@ -25,7 +25,6 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\PublicRecordsNormaliser;
 use OCA\Portaliq\Contribution\TimelineProviderMethod;
 use OCA\Portaliq\Kernel\Contracts\PortalProviderLocatorInterface;
 use OCA\Portaliq\Kernel\Contracts\PublicRecordReaderInterface;
@@ -33,6 +32,7 @@ use OCP\ICache;
 use OCP\ICacheFactory;
 use Psr\Log\LoggerInterface;
 use Throwable;
+use OCA\Portaliq\Kernel\Contracts\PublicRecordsNormaliserInterface;
 
 /**
  * The list keeps at most 500 entries and only the contract's keys; a record is
@@ -86,11 +86,13 @@ class PublicRecordReader implements PublicRecordReaderInterface {
 	 * @param PortalProviderLocatorInterface $locator Finds the contributing app's provider.
 	 * @param ICacheFactory $cacheFactory Creates the distributed cache.
 	 * @param LoggerInterface $logger Records a provider that failed.
+	 * @param PublicRecordsNormaliserInterface $publicRecordsNormaliser The PublicRecordsNormaliser helper.
 	 */
 	public function __construct(
 		private readonly PortalProviderLocatorInterface $locator,
 		ICacheFactory $cacheFactory,
 		private readonly LoggerInterface $logger,
+		private readonly PublicRecordsNormaliserInterface $publicRecordsNormaliser,
 	) {
 		$this->cache = $cacheFactory->createDistributed('portaliq_public_records');
 		$this->shape = new PublicRecordShape();
@@ -209,7 +211,7 @@ class PublicRecordReader implements PublicRecordReaderInterface {
 		}
 
 		$contribution = $this->contribution(provider: $provider, app: $app);
-		$kept         = (new PublicRecordsNormaliser())->normalise(entries: ($contribution['publicRecords'] ?? null), provider: $provider);
+		$kept         = $this->publicRecordsNormaliser->normalise(entries: ($contribution['publicRecords'] ?? null), provider: $provider);
 		foreach ($kept as $entry) {
 			if ($entry['id'] === $list) {
 				return ['provider' => $provider, 'entry' => $entry, 'app' => $app];

@@ -36,7 +36,6 @@ use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalMandateServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalPartyTreeResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
-use OCA\Portaliq\Service\Identity\MandateParties;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -44,6 +43,7 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCA\Portaliq\Kernel\Contracts\MandatePartiesInterface;
 
 /**
  * Serves the subject's own case list.
@@ -68,6 +68,7 @@ class MyCasesController extends Controller implements PortalProtected {
 	 * @param PortalCaseListReaderInterface $cases Merges every case collection.
 	 * @param PortalMandateServiceInterface $mandates The mandates the identity holds.
 	 * @param PortalPartyTreeResolverInterface $tree Resolves how far a mandate reaches.
+	 * @param MandatePartiesInterface $mandateParties The MandateParties helper.
 	 * @param CaseTypeVisibilityInterface|null $caseTypes The case types the serving
 	 *                                           portal hides
 	 *                                           (operate-show-per-case-type).
@@ -80,6 +81,7 @@ class MyCasesController extends Controller implements PortalProtected {
 		private readonly PortalCaseListReaderInterface $cases,
 		private readonly PortalMandateServiceInterface $mandates,
 		private readonly PortalPartyTreeResolverInterface $tree,
+		private readonly MandatePartiesInterface $mandateParties,
 		private readonly ?CaseTypeVisibilityInterface $caseTypes = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
@@ -148,7 +150,7 @@ class MyCasesController extends Controller implements PortalProtected {
 		return $this->mandates->mandatesFor(
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
 			organisation: (string)($subject['organisation'] ?? ''),
-			holders: (new MandateParties())->holdersOf(subject: $subject)
+			holders: $this->mandateParties->holdersOf(subject: $subject)
 		);
 	}//end heldMandates()
 

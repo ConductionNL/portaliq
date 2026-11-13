@@ -40,6 +40,8 @@ use OCP\App\IAppManager;
 use OCP\ICacheFactory;
 use Psr\Log\LoggerInterface;
 use Throwable;
+use OCA\Portaliq\Kernel\Contracts\PublicDetailShapeInterface;
+use OCA\Portaliq\Kernel\Contracts\PublicIndexKindsInterface;
 
 /**
  * Gathers a portal's public catalogue.
@@ -65,6 +67,8 @@ class PublicCatalogue implements PublicCatalogueInterface {
 	 * @param PublicNewsReader      $news    The portal's own public news.
 	 * @param ICacheFactory         $caches  The distributed cache.
 	 * @param LoggerInterface       $logger  Logs an app whose index failed.
+	 * @param PublicDetailShapeInterface $publicDetailShape The PublicDetailShape helper.
+	 * @param PublicIndexKindsInterface $publicIndexKinds The PublicIndexKinds helper.
 	 */
 	public function __construct(
 		private readonly IAppManager $apps,
@@ -72,6 +76,8 @@ class PublicCatalogue implements PublicCatalogueInterface {
 		private readonly PublicNewsReader $news,
 		private readonly ICacheFactory $caches,
 		private readonly LoggerInterface $logger,
+		private readonly PublicDetailShapeInterface $publicDetailShape,
+		private readonly PublicIndexKindsInterface $publicIndexKinds,
 	) {
 	}//end __construct()
 
@@ -187,7 +193,7 @@ class PublicCatalogue implements PublicCatalogueInterface {
 	 */
 	public function kindsFor(string $portal): array {
 		$out   = [];
-		$shape = new PublicIndexKinds();
+		$shape = $this->publicIndexKinds;
 		foreach ($this->apps->getInstalledApps() as $appId) {
 			$provider = $this->locator->locate(appId: (string)$appId);
 			if ($provider === null || method_exists($provider, PublicIndexKinds::METHOD) === false) {
@@ -237,7 +243,7 @@ class PublicCatalogue implements PublicCatalogueInterface {
 			return [];
 		}
 
-		return (new PublicIndexKinds())->visitorValues(answer: $answer);
+		return $this->publicIndexKinds->visitorValues(answer: $answer);
 	}//end visitorValuesFor()
 
 	/**
@@ -277,7 +283,7 @@ class PublicCatalogue implements PublicCatalogueInterface {
 			return null;
 		}
 
-		$detail = (new PublicDetailShape())->detail(answer: $answer);
+		$detail = $this->publicDetailShape->detail(answer: $answer);
 		if ($detail === null) {
 			return null;
 		}

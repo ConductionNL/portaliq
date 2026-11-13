@@ -34,7 +34,6 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\PortalRuntimeConfigResolverInterface;
-use OCA\Portaliq\Service\RequestedPortal;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -44,6 +43,7 @@ use OCP\AppFramework\Http\DataDisplayResponse;
 use OCP\AppFramework\Http\EmptyContentSecurityPolicy;
 use OCP\IRequest;
 use OCP\IURLGenerator;
+use OCA\Portaliq\Kernel\Contracts\RequestedPortalInterface;
 
 /**
  * Serves the manifest and the service worker.
@@ -64,11 +64,13 @@ class PortalManifestController extends Controller {
 	 *                                                    actually being
 	 *                                                    installed.
 	 * @param IURLGenerator $urlGenerator Builds the icon and start_url links.
+	 * @param RequestedPortalInterface $requestedPortal The RequestedPortal helper.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalRuntimeConfigResolverInterface $configResolver,
 		private readonly IURLGenerator $urlGenerator,
+		private readonly RequestedPortalInterface $requestedPortal,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
@@ -86,7 +88,7 @@ class PortalManifestController extends Controller {
 	#[AnonRateLimit(limit: 120, period: 60)]
 	public function manifest(): DataDisplayResponse {
 		$orgValue = (string)$this->request->getParam('org', '');
-		$portalSlug = (string)(new RequestedPortal())->slug(request: $this->request);
+		$portalSlug = (string)$this->requestedPortal->slug(request: $this->request);
 
 		$portal = $this->configResolver->resolvePortal(request: $this->request, portalSlug: $portalSlug, orgValue: $orgValue);
 		$runtimeConfig = $this->configResolver->runtimeConfigFor(portal: $portal, orgValue: $orgValue, locale: 'nl');

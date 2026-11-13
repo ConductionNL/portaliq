@@ -38,4 +38,28 @@ namespace OCA\Portaliq\Kernel\Contracts;
 interface MandatePartiesInterface {
 
 
+
+	/**
+	 * The parties a session carries as a holder: itself, and its company.
+	 *
+	 * @param array<string, mixed> $subject The resolved session subject.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/design.md#d7-who-holds-a-mandate-decided
+	 */
+	public function holdersOf(array $subject): array;
+
+	/**
+	 * The party a session may manage, from the session alone: the company of
+	 * an eHerkenning sign-in, the person of any other. An eHerkenning session
+	 * that does not carry its company's number manages nothing.
+	 *
+	 * @param array<string, mixed> $subject The resolved session subject.
+	 *
+	 * @return string|null `kvk:<8 digits>`, `subject:<ref>`, or null.
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/design.md#d1-who-is-the-represented-party
+	 */
+	public function partyOf(array $subject): ?string;
 }//end interface

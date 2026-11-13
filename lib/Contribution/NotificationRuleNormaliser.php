@@ -60,6 +60,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Contribution;
 
 use OCA\Portaliq\Kernel\Contracts\NotificationDispatchServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\NotificationRuleNormaliserInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -67,7 +68,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-case-app-declares-which-change-a-resident-hears-about-req-nap-001
  */
-class NotificationRuleNormaliser {
+class NotificationRuleNormaliser implements NotificationRuleNormaliserInterface {
 
 	/**
 	 * The only operator a change rule may use.

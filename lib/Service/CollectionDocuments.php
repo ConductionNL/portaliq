@@ -25,13 +25,13 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\TimelineProviderMethod;
 use OCA\Portaliq\Kernel\Contracts\CollectionDocumentsInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalProviderLocatorInterface;
 use OCP\AppFramework\Http\StreamResponse;
 use Psr\Log\LoggerInterface;
 use ReflectionMethod;
 use Throwable;
+use OCA\Portaliq\Kernel\Contracts\TimelineProviderMethodInterface;
 
 /**
  * The order of an open: the caller has proven the object is the subject's in a
@@ -57,6 +57,7 @@ class CollectionDocuments implements CollectionDocumentsInterface {
 	 * @param PortalAuditHook $audit Records each download.
 	 * @param PortalProviderLocatorInterface $locator Finds the app's provider for the hook.
 	 * @param LoggerInterface $logger Records a refused hook.
+	 * @param TimelineProviderMethodInterface $timelineProviderMethod The TimelineProviderMethod helper.
 	 */
 	public function __construct(
 		private readonly PortalCaseDocumentReader $published,
@@ -64,6 +65,7 @@ class CollectionDocuments implements CollectionDocumentsInterface {
 		private readonly PortalAuditHook $audit,
 		private readonly PortalProviderLocatorInterface $locator,
 		private readonly LoggerInterface $logger,
+		private readonly TimelineProviderMethodInterface $timelineProviderMethod,
 	) {
 	}//end __construct()
 
@@ -230,7 +232,7 @@ class CollectionDocuments implements CollectionDocumentsInterface {
 	private function hookProvider(DocumentOpening $run): ?object {
 		$method = (string)$run->documents['opened'];
 		$provider = $this->locator->locate(appId: $run->app);
-		if ($provider === null || (new TimelineProviderMethod())->accepts(name: $method) === false || method_exists($provider, $method) === false) {
+		if ($provider === null || $this->timelineProviderMethod->accepts(name: $method) === false || method_exists($provider, $method) === false) {
 			$this->logger->warning('Portaliq: the opened hook cannot be called', ['app' => $run->app]);
 			return null;
 		}

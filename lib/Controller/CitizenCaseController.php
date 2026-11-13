@@ -58,7 +58,6 @@ use OCA\Portaliq\Kernel\Contracts\PortalPartyTreeResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
 use OCA\Portaliq\Service\CitizenCaseProjection;
-use OCA\Portaliq\Service\Identity\MandateParties;
 use OCA\Portaliq\Service\Session\SessionTrust;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -70,6 +69,7 @@ use OCP\AppFramework\Http\Response;
 use OCP\IL10N;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Kernel\Contracts\MandatePartiesInterface;
 
 /**
  * Serves and accepts the writes a citizen may make on their own case.
@@ -123,6 +123,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 * @param IL10N $l10n The sentences a refusal is given with.
 	 * @param LoggerInterface $logger Records the cause of a translated failure.
 	 * @param CitizenCaseDocumentsInterface $documents Lists and opens the documents on the case.
+	 * @param MandatePartiesInterface $mandateParties The MandateParties helper.
 	 * @param MandatedCaseReaderInterface|null $mandatedCases Reads a case listed under a
 	 *                                               mandate (cases-my-cases-page).
 	 *                                               Absent opens only own cases.
@@ -145,6 +146,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 		private readonly CitizenCaseDocumentsInterface $documents,
+		private readonly MandatePartiesInterface $mandateParties,
 		private readonly ?MandatedCaseReaderInterface $mandatedCases = null,
 		private readonly PortalBranchScopeInterface $branches = new PortalBranchScope(),
 	) {
@@ -1041,7 +1043,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		$held = $this->mandates->mandatesFor(
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
 			organisation: (string)($subject['organisation'] ?? ''),
-			holders: (new MandateParties())->holdersOf(subject: $subject)
+			holders: $this->mandateParties->holdersOf(subject: $subject)
 		);
 		return $this->mandates->activeMandate(mandates: $held, mandateId: (string)$this->request->getParam('mandate', ''));
 	}//end heldMandate()

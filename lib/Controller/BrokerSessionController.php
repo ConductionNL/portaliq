@@ -21,7 +21,6 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\BrokerLoginInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
-use OCA\Portaliq\Service\Signin\SiteReturnAddress;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -30,6 +29,7 @@ use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\RedirectResponse;
 use OCP\IRequest;
 use OCP\IURLGenerator;
+use OCA\Portaliq\Kernel\Contracts\SiteReturnAddressInterface;
 
 /**
  * The integriq broker login route beside the OIDC one
@@ -59,6 +59,7 @@ class BrokerSessionController extends Controller {
 	 * @param BrokerLoginInterface    $login        The broker login.
 	 * @param IURLGenerator  $urlGenerator Builds the callback and landing addresses.
 	 * @param PortalResolverInterface $portals      Resolves the organisation of a `?portal=` slug.
+	 * @param SiteReturnAddressInterface $siteReturnAddress The SiteReturnAddress helper.
 	 *
 	 * @return void
 	 */
@@ -67,6 +68,7 @@ class BrokerSessionController extends Controller {
 		private readonly BrokerLoginInterface $login,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly PortalResolverInterface $portals,
+		private readonly SiteReturnAddressInterface $siteReturnAddress,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
@@ -194,7 +196,7 @@ class BrokerSessionController extends Controller {
 	 * @spec openspec/specs/portal-broker-envelope-login/spec.md
 	 */
 	private function returnPath(string $returnTo, ?array $site): string {
-		$page = (new SiteReturnAddress())->accept(
+		$page = $this->siteReturnAddress->accept(
 			candidate: $returnTo,
 			sitePath: $this->urlGenerator->linkToRoute(AppIdentity::APP_ID . '.portalPage.site')
 		);

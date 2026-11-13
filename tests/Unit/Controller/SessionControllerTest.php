@@ -21,6 +21,9 @@ use OCP\IURLGenerator;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Service\Identity\ContactAddressValues;
+use OCA\Portaliq\Service\RequestedPortal;
+use OCA\Portaliq\Service\Signin\SiteReturnAddress;
 
 /**
  * portal-controller-http-test-coverage: the three HTTP-facing behaviours
@@ -1338,6 +1341,9 @@ class SessionControllerTest extends TestCase {
 			($urlGenerator ?? $this->createMock(originalClassName: IURLGenerator::class)),
 			($userSession ?? $this->createMock(originalClassName: IUserSession::class)),
 			($portals ?? $this->createMock(originalClassName: PortalResolver::class)),
+			new ContactAddressValues(),
+			new RequestedPortal(),
+			new SiteReturnAddress(),
 			$loginConfig
 		);
 

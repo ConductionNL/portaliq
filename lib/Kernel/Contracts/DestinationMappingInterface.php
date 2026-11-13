@@ -81,4 +81,16 @@ interface DestinationMappingInterface {
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-submission-is-validated-against-its-destinations-schema-before-anything-is-stored-req-pifo-004
 	 */
 	public function mappingFor(array $binding, array $fields, ?array $schema, string $subjectRef = '', array $server = []): array;
+
+	/**
+	 * `fieldMeta` marking each field the portal worked out or a decision
+	 * filled as `computed`, so the destination can tell them from typed answers.
+	 *
+	 * @param array<int, mixed> $computed The names of those fields.
+	 *
+	 * @return array<string, array{computed: bool}>
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t07
+	 */
+	public function fieldMeta(array $computed): array;
 }//end interface

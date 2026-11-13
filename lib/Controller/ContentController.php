@@ -39,7 +39,6 @@ use OCA\Portaliq\Kernel\Contracts\PublicAssistantChannelInterface;
 use OCA\Portaliq\Kernel\Contracts\PublicSourceScopeInterface;
 use OCA\Portaliq\Kernel\Contracts\SiteOrganisationInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficConfigResolverInterface;
-use OCA\Portaliq\Service\Assistant\PublicSourceScope;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -96,6 +95,7 @@ class ContentController extends Controller {
 	 * @param IURLGenerator              $urlGenerator Builds the absolute collector URL.
 	 * @param PortalNoticeReaderInterface         $notices      The notices running on the site now.
 	 * @param IUserSession               $userSession  Tells a signed-in Nextcloud user (an editor) from a visitor.
+	 * @param PublicSourceScopeInterface $publicSourceScope The PublicSourceScope helper.
 	 * @param PublicAssistantChannelInterface|null $assistant   The public assistant's channel, when wired.
 	 * @param PublicSourceScopeInterface|null     $assistantScope What the public assistant may read.
 	 * @param NextcloudRegistrationDoorInterface|null $registrationDoor Where "Create an account" leads (REQ-NCL-005).
@@ -116,6 +116,7 @@ class ContentController extends Controller {
 		private readonly IURLGenerator $urlGenerator,
 		private readonly PortalNoticeReaderInterface $notices,
 		private readonly IUserSession $userSession,
+		private readonly PublicSourceScopeInterface $publicSourceScope,
 		private readonly ?PublicAssistantChannelInterface $assistant = null,
 		private readonly ?PublicSourceScopeInterface $assistantScope = null,
 		private readonly ?NextcloudRegistrationDoorInterface $registrationDoor = null,
@@ -597,7 +598,7 @@ class ContentController extends Controller {
 	 * @spec openspec/changes/search-assistant-from-public-content/tasks.md#t05
 	 */
 	private function assistantEnabled(array $portal): bool {
-		$scope = $this->assistantScope ?? new PublicSourceScope();
+		$scope = $this->assistantScope ?? $this->publicSourceScope;
 		return $scope->enabledFor(portal: $portal) === true && $this->assistant !== null && $this->assistant->isAvailable() === true;
 	}//end assistantEnabled()
 }//end class

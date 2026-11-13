@@ -26,11 +26,11 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\TimelineProviderMethod;
 use OCA\Portaliq\Kernel\Contracts\PortalItemReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalProviderLocatorInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
+use OCA\Portaliq\Kernel\Contracts\TimelineProviderMethodInterface;
 
 /**
  * Reads and sanitises one object's items.
@@ -43,10 +43,12 @@ class PortalItemReader implements PortalItemReaderInterface {
 	 *
 	 * @param PortalProviderLocatorInterface $locator Finds the app's provider.
 	 * @param LoggerInterface       $logger  The logger.
+	 * @param TimelineProviderMethodInterface $timelineProviderMethod The TimelineProviderMethod helper.
 	 */
 	public function __construct(
 		private readonly PortalProviderLocatorInterface $locator,
 		private readonly LoggerInterface $logger,
+		private readonly TimelineProviderMethodInterface $timelineProviderMethod,
 	) {
 	}//end __construct()
 
@@ -63,7 +65,7 @@ class PortalItemReader implements PortalItemReaderInterface {
 	 */
 	public function items(string $appId, string $method, string $id): ?array {
 		$provider = $this->locator->locate(appId: $appId);
-		if ($provider === null || (new TimelineProviderMethod())->callableOn(provider: $provider, method: $method) === false) {
+		if ($provider === null || $this->timelineProviderMethod->callableOn(provider: $provider, method: $method) === false) {
 			return null;
 		}
 

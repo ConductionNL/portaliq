@@ -38,4 +38,16 @@ namespace OCA\Portaliq\Kernel\Contracts;
 interface TrafficServerBatchInterface {
 
 
+
+	/**
+	 * The batch's events grouped by the visitor they belong to, each
+	 * event's own `remoteAddress` and `userAgent` winning over the batch's.
+	 *
+	 * @param array<string, mixed> $batch The decoded batch.
+	 *
+	 * @return array<int, array{ip: string, userAgent: string, events: array<int, mixed>}> The groups.
+	 *
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-server-side-caller-must-hold-the-portals-token
+	 */
+	public function byVisitor(array $batch): array;
 }//end interface

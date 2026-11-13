@@ -29,12 +29,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\PublicIndexKindsInterface;
+
 /**
  * Holds an app's declared index kinds to a fixed shape.
  *
  * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-1
  */
-class PublicIndexKinds {
+class PublicIndexKinds implements PublicIndexKindsInterface {
 	/**
 	 * The contract method an app may implement.
 	 */

@@ -15,6 +15,7 @@ use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\FormSubmitFake;
 use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\PortalOwnerDraft;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Contribution\CreateBody;
 
 /**
  * submit-creates-the-case-directly 5.1/5.2: a create action's draft is the
@@ -75,7 +76,7 @@ class ActionDraftTest extends TestCase {
 		};
 		$submit = new PortalOwnerDraft($this->fake->container(['OCA\\OpenRegister\\Service\\Object\\DraftDiscard' => $this->discard]), $this->createMock(LoggerInterface::class), new DestinationSubmit($this->fake->container(['OCA\\OpenRegister\\Service\\Object\\DraftDiscard' => $this->discard]), $this->createMock(LoggerInterface::class)));
 
-		return new ActionDraft(registry: $registry, reader: $reader, writer: $writer, drafts: $submit);
+		return new ActionDraft(registry: $registry, reader: $reader, writer: $writer, drafts: $submit, createBody: new CreateBody());
 	}//end drafts()
 
 	public function testOnlyTheSubjectsOwnCreateActionInThatAppHoldsADraft(): void {

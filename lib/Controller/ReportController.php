@@ -44,7 +44,6 @@ use OCA\Portaliq\Kernel\Contracts\ReportProjectionInterface;
 use OCA\Portaliq\Kernel\Contracts\ReportTermsServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\ReportThreadServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\RevealServiceInterface;
-use OCA\Portaliq\Service\RequestedPortal;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -55,6 +54,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
+use OCA\Portaliq\Kernel\Contracts\RequestedPortalInterface;
 
 /**
  * Files a report, runs its thread, and gates the reveal.
@@ -108,6 +108,7 @@ class ReportController extends Controller {
 	 * @param PortalObjectReaderInterface $reader Reads the report and the request.
 	 * @param CaseTypeReaderInterface $caseTypes Reads the declaration.
 	 * @param IUserSession $userSession The staff user, when there is one.
+	 * @param RequestedPortalInterface $requestedPortal The RequestedPortal helper.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -121,6 +122,7 @@ class ReportController extends Controller {
 		private readonly PortalObjectReaderInterface $reader,
 		private readonly CaseTypeReaderInterface $caseTypes,
 		private readonly IUserSession $userSession,
+		private readonly RequestedPortalInterface $requestedPortal,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
@@ -156,7 +158,7 @@ class ReportController extends Controller {
 		int $expiresAt = 0,
 		string $signature = '',
 	): JSONResponse {
-		$site = $this->portals->resolve(request: $this->request, portalSlug: (new RequestedPortal())->slug(request: $this->request));
+		$site = $this->portals->resolve(request: $this->request, portalSlug: $this->requestedPortal->slug(request: $this->request));
 		if ($site === null) {
 			return new JSONResponse(['error' => 'portal_not_found'], Http::STATUS_NOT_FOUND);
 		}

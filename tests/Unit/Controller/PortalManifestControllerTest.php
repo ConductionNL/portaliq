@@ -13,6 +13,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
 use ReflectionProperty;
+use OCA\Portaliq\Service\RequestedPortal;
 
 /**
  * parent-pwa-installability: the manifest names the SAME portal
@@ -392,7 +393,7 @@ class PortalManifestControllerTest extends TestCase {
 		// Where the app's FILES are served: an app installed in custom_apps/.
 		$urlGenerator->method('linkTo')->willReturn('/custom_apps/portaliq/');
 
-		return new PortalManifestController($request, $configResolver, $urlGenerator);
+		return new PortalManifestController($request, $configResolver, $urlGenerator, new RequestedPortal());
 	}//end controller()
 
 	/**

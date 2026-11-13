@@ -38,4 +38,17 @@ namespace OCA\Portaliq\Kernel\Contracts;
 interface VisibleFromGateInterface {
 
 
+
+	/**
+	 * The rows the subject may see now, in order.
+	 *
+	 * @param array<int, mixed>    $rows       The rows read.
+	 * @param array<string, mixed> $collection The collection, with its `visibleFromField`.
+	 * @param int|null             $now        The moment, a Unix time; null for the server clock.
+	 *
+	 * @return array<int, mixed>
+	 *
+	 * @spec openspec/changes/site-school-blocks/specs/portal-contribution-contract/spec.md#requirement-a-collection-may-keep-a-row-back-until-its-moment-has-passed
+	 */
+	public function rows(array $rows, array $collection, ?int $now=null): array;
 }//end interface

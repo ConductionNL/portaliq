@@ -45,9 +45,6 @@ use OCA\Portaliq\Kernel\Contracts\PortalAccountServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalOrganisationConfigServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
-use OCA\Portaliq\Service\Identity\ContactAddressValues;
-use OCA\Portaliq\Service\RequestedPortal;
-use OCA\Portaliq\Service\Signin\SiteReturnAddress;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -62,6 +59,9 @@ use OCP\IConfig;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 use OCP\IUserSession;
+use OCA\Portaliq\Kernel\Contracts\ContactAddressValuesInterface;
+use OCA\Portaliq\Kernel\Contracts\RequestedPortalInterface;
+use OCA\Portaliq\Kernel\Contracts\SiteReturnAddressInterface;
 
 /**
  * Public auth-edge endpoints for the portal SPA.
@@ -148,7 +148,7 @@ class SessionController extends Controller {
 	 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 	 */
 	private function siteReturn(string $returnTo): string {
-		return (new SiteReturnAddress())->accept(
+		return $this->siteReturnAddress->accept(
 			candidate: $returnTo,
 			sitePath: $this->urlGenerator->linkToRoute(AppIdentity::APP_ID . '.portalPage.site')
 		);
@@ -215,7 +215,7 @@ class SessionController extends Controller {
 	 * @spec openspec/changes/archive/2026-10-07-portal-signin-on-its-own-address/tasks.md#T3
 	 */
 	private function siteFor(string $portal): ?array {
-		if (((new RequestedPortal())->slug(request: $this->request) ?? $portal) === '') {
+		if (($this->requestedPortal->slug(request: $this->request) ?? $portal) === '') {
 			return null;
 		}
 
@@ -262,6 +262,9 @@ class SessionController extends Controller {
 	 * @param PortalResolverInterface $portals Resolves which portal is being signed
 	 *                                into, so a mode it does not declare
 	 *                                cannot be used against it.
+	 * @param ContactAddressValuesInterface $contactAddressValues The ContactAddressValues helper.
+	 * @param RequestedPortalInterface $requestedPortal The RequestedPortal helper.
+	 * @param SiteReturnAddressInterface $siteReturnAddress The SiteReturnAddress helper.
 	 * @param OrganisationLoginConfigInterface|null $loginConfig The route per provider
 	 *                                                  (signin-integriq-broker-login).
 	 * @param NextcloudRegistrationDoorInterface|null $residents Admits a resident's first account (REQ-NCL-003).
@@ -278,6 +281,9 @@ class SessionController extends Controller {
 		private readonly IURLGenerator $urlGenerator,
 		private readonly IUserSession $userSession,
 		private readonly PortalResolverInterface $portals,
+		private readonly ContactAddressValuesInterface $contactAddressValues,
+		private readonly RequestedPortalInterface $requestedPortal,
+		private readonly SiteReturnAddressInterface $siteReturnAddress,
 		private readonly ?OrganisationLoginConfigInterface $loginConfig = null,
 		private readonly ?NextcloudRegistrationDoorInterface $residents = null,
 	) {
@@ -343,7 +349,7 @@ class SessionController extends Controller {
 				'branch' => (string)($subject['branch'] ?? ''),
 				'branchRestricted' => (($subject['branchRestricted'] ?? false) === true),
 				// Change identity-profile-page T06: ask for an e-mail address when none is in use.
-				'contactPrompt' => (new ContactAddressValues())->needsContactPrompt(account: $account),
+				'contactPrompt' => $this->contactAddressValues->needsContactPrompt(account: $account),
 				// Change the-account-names-the-audience-and-the-company: the company the person acts for.
 				'organisationName' => $this->organisationNameOf(account: $account),
 			] + $this->session->sessionTimes(subject: $subject)
@@ -1194,7 +1200,7 @@ class SessionController extends Controller {
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portal-must-offer-only-the-sign-in-routes-it-declares
 	 */
 	private function portalFor(string $slug): ?array {
-		return $this->portals->resolve(request: $this->request, portalSlug: (new RequestedPortal())->slug(request: $this->request) ?? $slug);
+		return $this->portals->resolve(request: $this->request, portalSlug: $this->requestedPortal->slug(request: $this->request) ?? $slug);
 	}//end portalFor()
 
 	/**

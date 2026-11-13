@@ -32,10 +32,10 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
-use OCA\Portaliq\Contribution\FormStepsNormaliser;
 use OCA\Portaliq\Kernel\Contracts\PortalFormBindingResolverInterface;
 use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Kernel\Contracts\FormStepsNormaliserInterface;
 
 /**
  * Resolves a form binding against the published form, at render time.
@@ -81,6 +81,7 @@ class PortalFormBindingResolver implements PortalFormBindingResolverInterface {
 	 * Constructor.
 	 *
 	 * @param PortalObjectReader $reader Reads the binding and the form.
+	 * @param FormStepsNormaliserInterface $formStepsNormaliser The FormStepsNormaliser helper.
 	 * @param CaseTypeVisibility|null $caseTypes The case types a portal hides
 	 *                                           (operate-show-per-case-type).
 	 *                                           Absent hides nothing.
@@ -94,6 +95,7 @@ class PortalFormBindingResolver implements PortalFormBindingResolverInterface {
 	 */
 	public function __construct(
 		private readonly PortalObjectReader $reader,
+		private readonly FormStepsNormaliserInterface $formStepsNormaliser,
 		private readonly ?CaseTypeVisibility $caseTypes = null,
 		private readonly VisibleWhenLocal $visibleWhen = new VisibleWhenLocal(),
 		?PortalReferenceLists $lists = null,
@@ -357,7 +359,7 @@ class PortalFormBindingResolver implements PortalFormBindingResolverInterface {
 			'fields' => $fields,
 			// The form's own steps (site-multi-step-forms REQ-SMF-010), kept
 			// only where they name fields the form has; [] renders one page.
-			'steps' => (new FormStepsNormaliser())->steps(
+			'steps' => $this->formStepsNormaliser->steps(
 				steps: ($form['steps'] ?? null),
 				known: array_map(static fn (array $field): string => (string)$field['name'], $fields)
 			),
