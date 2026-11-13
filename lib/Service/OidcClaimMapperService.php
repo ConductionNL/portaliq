@@ -124,6 +124,8 @@ class OidcClaimMapperService implements OidcClaimMapperServiceInterface {
 	 *                                   provider is unknown.
 	 *
 	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T05
+	 * @spec openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md#requirement-an-eherkenning-sign-in-is-a-business-sign-in-req-see-001
+	 * @spec openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md#requirement-an-eidas-sign-in-is-a-visitor-from-another-eu-country-req-see-002
 	 */
 	public function applyPreset(string $provider, array $rawConfig): ?array {
 		$preset = (self::PRESETS[$provider] ?? null);

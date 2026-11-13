@@ -170,6 +170,9 @@ class BrokerLogin implements BrokerLoginInterface {
 	 * @param string                $code    The one-time code.
 	 *
 	 * @return array{sub: string, provider: string, trust: string, audience: string}|null
+	 *
+	 * @spec openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md#requirement-an-eherkenning-sign-in-is-a-business-sign-in-req-see-001
+	 * @spec openspec/changes/signin-eherkenning-eidas-and-the-token-fragment/specs/portal-broker-envelope-login/spec.md#requirement-an-eidas-sign-in-is-a-visitor-from-another-eu-country-req-see-002
 	 */
 	private function redeem(array $pending, string $code): ?array {
 		$broker = $this->orgConfig->resolveBrokerConfig(orgSlug: $pending['org'], provider: $pending['provider']);
