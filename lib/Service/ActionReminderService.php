@@ -60,11 +60,13 @@ class ActionReminderService {
 	 * @param ContainerInterface $container For resolving OpenRegister's ObjectService.
 	 * @param LoggerInterface    $logger    The logger.
 	 * @param PortalAccountService|null $accounts Tells a withdrawn assignee apart.
+	 * @param ActionDueMailer|null      $mail     Mails the assignee beside the portal message.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 		private readonly ?PortalAccountService $accounts = null,
+		private readonly ?ActionDueMailer $mail = null,
 	) {
 	}//end __construct()
 
@@ -194,6 +196,12 @@ class ActionReminderService {
 				schema: 'portalMessage',
 				_rbac: false,
 				_multitenancy: false
+			);
+			$this->mail?->send(
+				subjectRef: (string)$action['assignee'],
+				organisation: (string)($action['organisation'] ?? ''),
+				action: $title,
+				endDate: substr((string)$action['endDate'], 0, 10)
 			);
 			$objectService->saveObject(
 				object: ['reminderSentAt' => gmdate('c'), 'reminderForEndDate' => substr((string)$action['endDate'], 0, 10)],
