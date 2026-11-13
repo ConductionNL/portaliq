@@ -34,7 +34,6 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Contribution\StepsProviderMethod;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\MandatedCaseReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
@@ -50,6 +49,7 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCA\Portaliq\Kernel\Contracts\StepsProviderMethodInterface;
 
 /**
  * Serves one object's declared history to its owner.
@@ -69,6 +69,7 @@ class PortalTimelineController extends Controller implements PortalProtected {
 	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
 	 * @param PortalObjectReaderInterface $reader The scoped single-object read.
 	 * @param PortalTimelineReaderInterface $timelines Calls the declared provider method.
+	 * @param StepsProviderMethodInterface $stepsProviderMethod The StepsProviderMethod helper.
 	 * @param PortalItemReaderInterface|null $items Calls the item-list provider method (my-dossiers).
 	 * @param MandatedCaseReaderInterface|null $mandatedCases Reads a case the person sees under a mandate.
 	 */
@@ -78,6 +79,7 @@ class PortalTimelineController extends Controller implements PortalProtected {
 		private readonly PortalSessionServiceInterface $session,
 		private readonly PortalObjectReaderInterface $reader,
 		private readonly PortalTimelineReaderInterface $timelines,
+		private readonly StepsProviderMethodInterface $stepsProviderMethod,
 		private readonly ?PortalItemReaderInterface $items = null,
 		private readonly ?MandatedCaseReaderInterface $mandatedCases = null,
 	) {
@@ -144,7 +146,7 @@ class PortalTimelineController extends Controller implements PortalProtected {
 		return new JSONResponse(
 			[
 				'label' => (string)($proven['declared']['label'] ?? ''),
-				'steps' => (new StepsProviderMethod())->steps(entries: $entries),
+				'steps' => $this->stepsProviderMethod->steps(entries: $entries),
 			]
 		);
 	}//end steps()

@@ -56,7 +56,6 @@ use OCA\Portaliq\Kernel\Contracts\PortalIntakeQueueInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSubmissionChecksInterface;
-use OCA\Portaliq\Service\Intake\DestinationMapping;
 use OCA\Portaliq\Service\Intake\PortalIntakeConfirmation;
 use OCA\Portaliq\Service\Intake\PortalIntakePayments;
 use OCA\Portaliq\Service\Intake\PortalSubmissionChecks;
@@ -69,6 +68,7 @@ use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCA\Portaliq\Kernel\DestinationRefusal;
+use OCA\Portaliq\Kernel\Contracts\DestinationMappingInterface;
 
 /**
  * Renders the intake form, takes the submission and reports on it.
@@ -115,6 +115,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param PortalIntakeQueueInterface $queue Records and reports on submissions.
 	 * @param PortalChallengeServiceInterface $challenge The portal's own challenge.
 	 * @param PortalCatalogueReaderInterface $catalogue The published request entries.
+	 * @param DestinationMappingInterface $destinationMapping The DestinationMapping helper.
 	 * @param PortalAddressLookupInterface|null $addresses Finds street and town for a postcode and number.
 	 * @param PortalFamilyMembersInterface|null $family Lists and re-checks the resident's family from the BRP.
 	 * @param FormStatementsInterface|null $statements Resolves and checks the statements a form asks.
@@ -139,6 +140,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		private readonly PortalIntakeQueueInterface $queue,
 		private readonly PortalChallengeServiceInterface $challenge,
 		private readonly PortalCatalogueReaderInterface $catalogue,
+		private readonly DestinationMappingInterface $destinationMapping,
 		private readonly ?PortalAddressLookupInterface $addresses = null,
 		private readonly ?PortalFamilyMembersInterface $family = null,
 		?FormStatementsInterface $statements = null,
@@ -398,7 +400,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 				'statements' => $prepared['statements'],
 				'decisions' => $prepared['decisions'],
 				'verifiedEmails' => $prepared['verified'],
-				'fieldMeta' => (new DestinationMapping())->fieldMeta(computed: $prepared['computed']),
+				'fieldMeta' => $this->destinationMapping->fieldMeta(computed: $prepared['computed']),
 			],
 			idempotencyKey: (string)$this->request->getHeader('Idempotency-Key')
 		);

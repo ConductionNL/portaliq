@@ -38,4 +38,17 @@ namespace OCA\Portaliq\Kernel\Contracts;
 interface ContactAddressValuesInterface {
 
 
+
+	/**
+	 * Whether the portal asks for an e-mail address after sign-in
+	 * (REQ-IPP-005): the account has none in use, or dispatch flagged that it
+	 * needs another way to reach the person.
+	 *
+	 * @param array<string, mixed>|null $account The account row, or null.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/archive/2026-09-30-identity-profile-page/specs/portal-profile/spec.md#requirement-you-are-asked-for-an-e-mail-address-when-there-is-none-req-ipp-005
+	 */
+	public function needsContactPrompt(?array $account): bool;
 }//end interface

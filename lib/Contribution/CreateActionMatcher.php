@@ -27,12 +27,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\CreateActionMatcherInterface;
+
 /**
  * Matches a create to one of the subject's create actions.
  *
  * @spec openspec/changes/archive/2026-10-07-create-names-its-action/tasks.md#T1
  */
-class CreateActionMatcher {
+class CreateActionMatcher implements CreateActionMatcherInterface {
 
 	/**
 	 * The answer when several actions write the target and none was named.

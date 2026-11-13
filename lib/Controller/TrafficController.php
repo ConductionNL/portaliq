@@ -35,7 +35,6 @@ use OCA\Portaliq\Kernel\Contracts\TrafficEventValidatorInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficIngestServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficRecordingServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficServerTokenInterface;
-use OCA\Portaliq\Service\Traffic\TrafficServerBatch;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -48,6 +47,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\Response;
 use OCP\IRequest;
 use Throwable;
+use OCA\Portaliq\Kernel\Contracts\TrafficServerBatchInterface;
 
 /**
  * Anonymous, unauthenticated, writable by anyone who can reach the portal:
@@ -105,6 +105,7 @@ class TrafficController extends Controller {
 	 * @param PortalSessionServiceInterface $session    Resolves a portal session bearer to its subject, for account linking.
 	 * @param TrafficServerTokenInterface   $tokens     Verifies a backend's bearer token (portal-traffic-reporting).
 	 * @param TrafficRecordingServiceInterface $recordings Stores a session recording chunk (portal-traffic-experiments).
+	 * @param TrafficServerBatchInterface $trafficServerBatch The TrafficServerBatch helper.
 	 *
 	 * @return void
 	 */
@@ -118,6 +119,7 @@ class TrafficController extends Controller {
 		private readonly PortalSessionServiceInterface $session,
 		private readonly TrafficServerTokenInterface $tokens,
 		private readonly TrafficRecordingServiceInterface $recordings,
+		private readonly TrafficServerBatchInterface $trafficServerBatch,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -232,7 +234,7 @@ class TrafficController extends Controller {
 		$consent = (($batch['consent'] ?? false) === true);
 		// Pure and stateless, so built here rather than injected: a tenth
 		// constructor argument for a regrouping is more ceremony than fact.
-		$batches = new TrafficServerBatch();
+		$batches = $this->trafficServerBatch;
 		foreach ($batches->byVisitor(batch: $batch) as $group) {
 			$this->ingest->ingestForPortal(
 				portal: $portal,

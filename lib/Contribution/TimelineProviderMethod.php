@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
+use OCA\Portaliq\Kernel\Contracts\TimelineProviderMethodInterface;
 use ReflectionMethod;
 
 /**
@@ -37,7 +38,7 @@ use ReflectionMethod;
  *
  * @spec openspec/specs/portal-contribution-contract/spec.md
  */
-class TimelineProviderMethod {
+class TimelineProviderMethod implements TimelineProviderMethodInterface {
 	/**
 	 * The contract's own methods, which a timeline may never name.
 	 */

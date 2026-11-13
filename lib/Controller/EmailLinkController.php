@@ -40,7 +40,6 @@ use OCA\Portaliq\Kernel\Contracts\EmailLinkTokensInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalIdentityMailerInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
-use OCA\Portaliq\Service\RequestedPortal;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -55,6 +54,7 @@ use OCP\ICacheFactory;
 use OCP\IRequest;
 use OCP\Security\ISecureRandom;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Kernel\Contracts\RequestedPortalInterface;
 
 /**
  * Requests, describes and redeems e-mail links.
@@ -99,6 +99,7 @@ class EmailLinkController extends Controller {
 	 * @param PortalSessionServiceInterface $sessions     Mints the `low` session.
 	 * @param PortalIdentityMailerInterface $mailer       Mails the "you signed in" notice.
 	 * @param LoggerInterface      $logger       Logs by account and address hash.
+	 * @param RequestedPortalInterface $requestedPortal The RequestedPortal helper.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -114,6 +115,7 @@ class EmailLinkController extends Controller {
 		private readonly PortalSessionServiceInterface $sessions,
 		private readonly PortalIdentityMailerInterface $mailer,
 		private readonly LoggerInterface $logger,
+		private readonly RequestedPortalInterface $requestedPortal,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 		$this->nonces = $cacheFactory->createDistributed('portaliq-email-link');
@@ -404,6 +406,6 @@ class EmailLinkController extends Controller {
 	 * @return array<string, mixed>|null
 	 */
 	private function site(): ?array {
-		return $this->portals->resolve(request: $this->request, portalSlug: (new RequestedPortal())->slug(request: $this->request));
+		return $this->portals->resolve(request: $this->request, portalSlug: $this->requestedPortal->slug(request: $this->request));
 	}//end site()
 }//end class

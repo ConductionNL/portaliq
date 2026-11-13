@@ -34,7 +34,6 @@ use OCA\Portaliq\Kernel\Contracts\PortalIdentityMailerInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalMandateAdminServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
-use OCA\Portaliq\Service\Identity\MandateParties;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -42,6 +41,7 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCA\Portaliq\Kernel\Contracts\MandatePartiesInterface;
 
 /**
  * Manage who may act for the session's party, and stop a mandate held.
@@ -59,6 +59,7 @@ class MandateController extends Controller implements PortalProtected {
 	 * @param PortalAccountLookupInterface         $accounts The name and address of who holds a mandate, and of the inviter.
 	 * @param PortalCaseTypeChoicesInterface       $choices  The case types a mandate may be narrowed to.
 	 * @param PortalResolverInterface              $portals  The portal being visited.
+	 * @param MandatePartiesInterface $mandateParties The MandateParties helper.
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- each collaborator is one screen element of the Machtigingen board.
 	 */
@@ -70,6 +71,7 @@ class MandateController extends Controller implements PortalProtected {
 		private readonly PortalAccountLookupInterface $accounts,
 		private readonly PortalCaseTypeChoicesInterface $choices,
 		private readonly PortalResolverInterface $portals,
+		private readonly MandatePartiesInterface $mandateParties,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
@@ -293,7 +295,7 @@ class MandateController extends Controller implements PortalProtected {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$holders = (new MandateParties())->holdersOf(subject: $subject);
+		$holders = $this->mandateParties->holdersOf(subject: $subject);
 
 		return new JSONResponse(['items' => $this->mandates->held(holders: $holders, organisation: (string)($subject['organisation'] ?? ''))]);
 	}//end held()
@@ -318,7 +320,7 @@ class MandateController extends Controller implements PortalProtected {
 
 		return $this->noContentOrMissing(
 			result: $this->mandates->stop(
-				holders: (new MandateParties())->holdersOf(subject: $subject),
+				holders: $this->mandateParties->holdersOf(subject: $subject),
 				organisation: (string)($subject['organisation'] ?? ''),
 				id: $id,
 				actor: (string)($subject['subjectRef'] ?? '')
@@ -339,7 +341,7 @@ class MandateController extends Controller implements PortalProtected {
 
 		// A session acting under a mandate carries `mandate`: it manages nothing
 		// on the represented party's behalf (design D1).
-		$party = (new MandateParties())->partyOf(subject: $subject);
+		$party = $this->mandateParties->partyOf(subject: $subject);
 		if ($party === null || (string)($subject['organisation'] ?? '') === '' || ($subject['actingUnderMandate'] ?? false) === true) {
 			return [$subject, '', new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN)];
 		}

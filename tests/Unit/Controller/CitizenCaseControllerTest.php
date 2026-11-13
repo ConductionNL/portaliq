@@ -40,6 +40,8 @@ use OCP\IL10N;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Service\Identity\MandateParties;
+use OCA\Portaliq\Contribution\TimelineProviderMethod;
 
 /**
  * The probes here are deliberately taken with the LEAST privileged principal
@@ -891,6 +893,7 @@ class CitizenCaseControllerTest extends TestCase {
 			$l10n,
 			$this->createMock(LoggerInterface::class),
 			$this->documents(fileReader: $fileReader, published: $published),
+			new MandateParties(),
 			$mandatedCases
 		);
 	}//end controller()
@@ -936,7 +939,7 @@ class CitizenCaseControllerTest extends TestCase {
 
 		return new CitizenCaseDocuments(
 			files: $fileReader,
-			published: new PortalCaseDocumentReader(locator: $locator, logger: $this->createMock(LoggerInterface::class)),
+			published: new PortalCaseDocumentReader(locator: $locator, logger: $this->createMock(LoggerInterface::class), timelineProviderMethod: new TimelineProviderMethod()),
 			audit: $audit
 		);
 	}//end documents()

@@ -38,4 +38,19 @@ namespace OCA\Portaliq\Kernel\Contracts;
 interface SiteReturnAddressInterface {
 
 
+
+	/**
+	 * The return address when it is a page of the site, else ''.
+	 *
+	 * The `/index.php` front controller is optional on both sides, so an
+	 * instance with or without pretty URLs compares the same path.
+	 *
+	 * @param string $candidate The `returnTo` the site sent.
+	 * @param string $sitePath  The site route's own path, from the URL generator.
+	 *
+	 * @return string The accepted address, or ''.
+	 *
+	 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 */
+	public function accept(string $candidate, string $sitePath): string;
 }//end interface

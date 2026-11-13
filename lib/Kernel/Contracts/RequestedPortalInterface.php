@@ -24,6 +24,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Kernel\Contracts;
 
+use OCP\IRequest;
+
 /**
  * Contract of RequestedPortal.
  *
@@ -45,4 +47,15 @@ interface RequestedPortalInterface {
 	 * @var string
 	 */
 	public const HEADER = 'X-Portaliq-Portal';
+
+	/**
+	 * The slug the request names: the header, else `?portal=`, else null.
+	 *
+	 * @param IRequest $request The request.
+	 *
+	 * @return string|null The slug, or null when the request names none.
+	 *
+	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-hidden-case-type-does-not-reach-residents-req-osc-002
+	 */
+	public function slug(IRequest $request): ?string;
 }//end interface

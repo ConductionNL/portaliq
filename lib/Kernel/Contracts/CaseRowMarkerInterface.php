@@ -38,4 +38,17 @@ namespace OCA\Portaliq\Kernel\Contracts;
 interface CaseRowMarkerInterface {
 
 
+
+	/**
+	 * Whether any contribution declares a case collection, and whether any of
+	 * those declares a closed marker: what the portal needs to know to show
+	 * "My cases" and its "Closed" tab.
+	 *
+	 * @param array<string, mixed> $aggregate The subject's aggregated manifest.
+	 *
+	 * @return array{enabled: bool, closedMarker: bool}
+	 *
+	 * @spec openspec/specs/portal-my-cases/spec.md#requirement-your-cases-from-every-app-in-one-list-req-cmc-001
+	 */
+	public function announce(array $aggregate): array;
 }//end interface

@@ -24,6 +24,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Kernel\Contracts;
 
+use OCP\AppFramework\Http\JSONResponse;
+
 /**
  * Contract of WriteRefusal.
  *
@@ -38,4 +40,17 @@ namespace OCA\Portaliq\Kernel\Contracts;
 interface WriteRefusalInterface {
 
 
+
+	/**
+	 * The 422 that names the refused fields, or null when the refusal names
+	 * none of the written fields.
+	 *
+	 * @param string               $failure The store's refusal (PortalObjectWriter::lastFailure()).
+	 * @param array<string, mixed> $data    The body the portal wrote.
+	 *
+	 * @return JSONResponse|null
+	 *
+	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+	 */
+	public function response(string $failure, array $data): ?JSONResponse;
 }//end interface

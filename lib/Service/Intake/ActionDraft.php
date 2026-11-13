@@ -35,13 +35,13 @@ namespace OCA\Portaliq\Service\Intake;
 
 use DateTimeImmutable;
 use OCA\Portaliq\Contribution\ActionScopeResolver;
-use OCA\Portaliq\Contribution\CreateBody;
 use OCA\Portaliq\Kernel\Contracts\ActionDraftInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSessionService;
 use Throwable;
+use OCA\Portaliq\Kernel\Contracts\CreateBodyInterface;
 
 /**
  * Resolves a create action's draft: its action, destination, body and retention.
@@ -73,12 +73,14 @@ class ActionDraft implements ActionDraftInterface {
 	 * @param PortalObjectReader         $reader   Resolves the action's scope claim.
 	 * @param PortalObjectWriter         $writer   Applies the create's ownership stamps.
 	 * @param DestinationDraft           $drafts   Finds and discards drafts in OpenRegister.
+	 * @param CreateBodyInterface $createBody The CreateBody helper.
 	 */
 	public function __construct(
 		private readonly PortalContributionRegistryInterface $registry,
 		private readonly PortalObjectReader $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly DestinationDraft $drafts,
+		private readonly CreateBodyInterface $createBody,
 	) {
 	}//end __construct()
 
@@ -200,7 +202,7 @@ class ActionDraft implements ActionDraftInterface {
 			scopeField: (string)($action['scopeField'] ?? 'subjectRef'),
 			subjectRef: $stamp,
 			organisation: (string)($subject['organisation'] ?? ''),
-			data: (new CreateBody())->build(action: $action, whitelisted: $kept)
+			data: $this->createBody->build(action: $action, whitelisted: $kept)
 		);
 	}//end bodyOf()
 

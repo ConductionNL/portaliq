@@ -29,6 +29,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Portaliq\Contribution\ProviderAudiences;
 
 /**
  * A contributing, a missing, a throwing and a provider-less app, each on its own row.
@@ -115,7 +116,7 @@ class ContributionCensusTest extends TestCase {
 			appManager: $apps,
 			container: $this->createMock(originalClassName: ContainerInterface::class),
 			logger: ($logger ?? $this->createMock(originalClassName: LoggerInterface::class)),
-			locator: $locator
+			locator: $locator, providerAudiences: new ProviderAudiences()
 		);
 	}//end census()
 

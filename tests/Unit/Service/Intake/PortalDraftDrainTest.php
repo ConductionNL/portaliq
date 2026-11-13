@@ -15,6 +15,7 @@ use OCA\Portaliq\Service\Intake\DestinationSubmit;
 use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\PortalOwnerDraft;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Contribution\CreateBody;
 
 /**
  * submit-creates-the-case-directly 5.3: each portalDraft row becomes an
@@ -155,7 +156,7 @@ class PortalDraftDrainTest extends TestCase {
 		return new PortalDraftDrain(
 			reader: $reader,
 			writer: $writer,
-			actions: new ActionDraft(registry: $registry, reader: $reader, writer: $writer, drafts: $drafts),
+			actions: new ActionDraft(registry: $registry, reader: $reader, writer: $writer, drafts: $drafts, createBody: new CreateBody()),
 			drafts: $drafts
 		);
 	}//end drain()

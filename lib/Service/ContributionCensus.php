@@ -28,11 +28,11 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Contribution\PortalProviderLocator;
-use OCA\Portaliq\Contribution\ProviderAudiences;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
+use OCA\Portaliq\Kernel\Contracts\ProviderAudiencesInterface;
 
 /**
  * One row per enabled app: its provider, its audiences and what it declares.
@@ -87,6 +87,7 @@ class ContributionCensus {
 	 * @param IAppManager                $appManager Lists the enabled apps.
 	 * @param ContainerInterface         $container  Constructs the providers.
 	 * @param LoggerInterface            $logger     The logger.
+	 * @param ProviderAudiencesInterface $providerAudiences The ProviderAudiences helper.
 	 * @param PortalProviderLocator|null $locator    Finds providers; built from the above when null.
 	 *
 	 * @return void
@@ -95,6 +96,7 @@ class ContributionCensus {
 		private readonly IAppManager $appManager,
 		ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly ProviderAudiencesInterface $providerAudiences,
 		?PortalProviderLocator $locator = null,
 	) {
 		$this->locator = ($locator ?? new PortalProviderLocator(appManager: $appManager, container: $container, logger: $logger));
@@ -142,7 +144,7 @@ class ContributionCensus {
 			}
 
 			$row['status'] = self::STATUS_PROVIDER;
-			foreach ((new ProviderAudiences())->served(provider: $provider) as $audience) {
+			foreach ($this->providerAudiences->served(provider: $provider) as $audience) {
 				$row['audiences'][] = $this->countsFor(provider: $provider, audience: $audience);
 			}
 		} catch (Throwable $e) {

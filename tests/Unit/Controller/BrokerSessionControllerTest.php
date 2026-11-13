@@ -22,6 +22,7 @@ use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
+use OCA\Portaliq\Service\Signin\SiteReturnAddress;
 
 /**
  * T04 and T08: the broker start and callback endpoints.
@@ -51,7 +52,8 @@ class BrokerSessionControllerTest extends TestCase {
 			$this->createMock(IRequest::class),
 			$login,
 			$urls,
-			($portals ?? $this->createMock(PortalResolver::class))
+			($portals ?? $this->createMock(PortalResolver::class)),
+			new SiteReturnAddress()
 		);
 	}//end controller()
 

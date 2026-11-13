@@ -44,13 +44,13 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Notifications;
 
-use OCA\Portaliq\Contribution\NotificationRuleNormaliser;
 use OCA\Portaliq\Kernel\Contracts\PortalChangeRuleIndexInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
+use OCA\Portaliq\Kernel\Contracts\NotificationRuleNormaliserInterface;
 
 /**
  * Looks up change rules and inbox collections by register and schema.
@@ -101,11 +101,13 @@ class PortalChangeRuleIndex implements PortalChangeRuleIndexInterface {
 	 * @param PortalContributionRegistryInterface $registry  Every app's contribution.
 	 * @param ContainerInterface         $container Resolves OpenRegister's mappers.
 	 * @param LoggerInterface            $logger    The logger.
+	 * @param NotificationRuleNormaliserInterface $notificationRuleNormaliser The NotificationRuleNormaliser helper.
 	 */
 	public function __construct(
 		private readonly PortalContributionRegistryInterface $registry,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly NotificationRuleNormaliserInterface $notificationRuleNormaliser,
 	) {
 	}//end __construct()
 
@@ -338,7 +340,7 @@ class PortalChangeRuleIndex implements PortalChangeRuleIndexInterface {
 
 			$collection = $collections[(string)$rule['collection']];
 			$recipientClaim = (string)($rule['recipients']['claim'] ?? '');
-			if ($recipientClaim === '' && (new NotificationRuleNormaliser())->scopedElsewhere(collection: $collection) === true) {
+			if ($recipientClaim === '' && $this->notificationRuleNormaliser->scopedElsewhere(collection: $collection) === true) {
 				// The normaliser already drops this; a record of a claim or
 				// via collection does not say whose it is.
 				continue;

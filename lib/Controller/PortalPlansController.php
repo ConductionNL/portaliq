@@ -34,7 +34,6 @@ use OCA\Portaliq\Kernel\Contracts\PortalPdfExportInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalPlanServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
-use OCA\Portaliq\Service\RequestedPortal;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -43,6 +42,7 @@ use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\Response;
 use OCP\IRequest;
+use OCA\Portaliq\Kernel\Contracts\RequestedPortalInterface;
 
 /**
  * Every route answers only for a plan the bearer owns or takes part in, and an
@@ -76,6 +76,7 @@ class PortalPlansController extends Controller implements PortalProtected {
 	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
 	 * @param PortalPlanServiceInterface $plans The plan rules.
 	 * @param PortalResolverInterface $portals Finds the serving portal, for its templates.
+	 * @param RequestedPortalInterface $requestedPortal The RequestedPortal helper.
 	 * @param PortalPdfExportInterface|null $pdf Renders the plan as a PDF through OpenRegister.
 	 * @param PlanFilesInterface|null $files Adds and opens the plan's files.
 	 */
@@ -84,6 +85,7 @@ class PortalPlansController extends Controller implements PortalProtected {
 		private readonly PortalSessionServiceInterface $session,
 		private readonly PortalPlanServiceInterface $plans,
 		private readonly PortalResolverInterface $portals,
+		private readonly RequestedPortalInterface $requestedPortal,
 		private readonly ?PortalPdfExportInterface $pdf = null,
 		private readonly ?PlanFilesInterface $files = null,
 	) {
@@ -455,7 +457,7 @@ class PortalPlansController extends Controller implements PortalProtected {
 	 * @return string
 	 */
 	private function portalSlug(): string {
-		$slug = (new RequestedPortal())->slug(request: $this->request);
+		$slug = $this->requestedPortal->slug(request: $this->request);
 
 		return (string)($this->portals->resolve(request: $this->request, portalSlug: $slug)['slug'] ?? '');
 	}//end portalSlug()
