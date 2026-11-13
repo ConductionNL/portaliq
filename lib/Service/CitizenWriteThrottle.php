@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\CitizenWriteThrottleInterface;
 use OCP\ICacheFactory;
 use Throwable;
 
@@ -42,7 +43,7 @@ use Throwable;
  *
  * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
-class CitizenWriteThrottle {
+class CitizenWriteThrottle implements CitizenWriteThrottleInterface {
 	/**
 	 * The cache namespace.
 	 */

@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\PortalSubmissionChecksInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 
@@ -33,7 +34,7 @@ use OCP\AppFramework\Http\JSONResponse;
  *
  * @spec openspec/specs/portal-intake-form/spec.md
  */
-class PortalSubmissionChecks {
+class PortalSubmissionChecks implements PortalSubmissionChecksInterface {
 	/**
 	 * Constructor.
 	 *

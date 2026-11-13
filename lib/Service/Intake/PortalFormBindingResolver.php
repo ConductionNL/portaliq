@@ -33,6 +33,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Intake;
 
 use OCA\Portaliq\Contribution\FormStepsNormaliser;
+use OCA\Portaliq\Kernel\Contracts\PortalFormBindingResolverInterface;
 use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\PortalObjectReader;
 
@@ -41,16 +42,11 @@ use OCA\Portaliq\Service\PortalObjectReader;
  *
  * @spec openspec/specs/portal-intake-form/spec.md
  */
-class PortalFormBindingResolver {
+class PortalFormBindingResolver implements PortalFormBindingResolverInterface {
 	/**
 	 * A binding whose form is rendered by the portal itself.
 	 */
 	public const KIND_HOSTED = 'hosted';
-
-	/**
-	 * A binding naming a start form on another host.
-	 */
-	public const KIND_EXTERNAL = 'external';
 
 	/**
 	 * The register the binding lives in.

@@ -27,6 +27,7 @@ namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Contribution\PortalProviderLocator;
 use OCA\Portaliq\Contribution\TimelineProviderMethod;
+use OCA\Portaliq\Kernel\Contracts\CollectionDocumentsInterface;
 use OCP\AppFramework\Http\StreamResponse;
 use Psr\Log\LoggerInterface;
 use ReflectionMethod;
@@ -39,7 +40,7 @@ use Throwable;
  *
  * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t4
  */
-class CollectionDocuments {
+class CollectionDocuments implements CollectionDocumentsInterface {
 
 	/**
 	 * What open() answers when the document is not listed (or cannot be read).
@@ -47,13 +48,6 @@ class CollectionDocuments {
 	 * @var string
 	 */
 	public const NOT_FOUND = 'not_found';
-
-	/**
-	 * What open() answers when the `opened` hook did not return true.
-	 *
-	 * @var string
-	 */
-	public const REFUSED = 'refused';
 
 	/**
 	 * Constructor.

@@ -27,17 +27,18 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity\EmailLink;
 
+use OCA\Portaliq\Kernel\Contracts\EmailLinkSenderInterface;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
+use OCA\Portaliq\Service\PortalSlugLookup;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use Psr\Log\LoggerInterface;
-use OCA\Portaliq\Service\PortalSlugLookup;
 
 /**
  * Looks the address up and mails the link, or does nothing.
  *
  * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#5
  */
-class EmailLinkSender {
+class EmailLinkSender implements EmailLinkSenderInterface {
 	/**
 	 * Constructor.
 	 *

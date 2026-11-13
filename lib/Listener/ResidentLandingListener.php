@@ -34,7 +34,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Listener;
 
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
+use OCA\Portaliq\Kernel\Contracts\NextcloudRegistrationDoorInterface;
 use OCA\Portaliq\Service\PublishedPortals;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -70,14 +70,14 @@ class ResidentLandingListener implements IEventListener {
 	 * @param IConfig                   $config    The user's preferences.
 	 * @param IGroupManager             $groups    Whether the user is an administrator.
 	 * @param PublishedPortals            $portals   The published portals.
-	 * @param NextcloudRegistrationDoor $residents Which group a portal names, and who is a resident.
+	 * @param NextcloudRegistrationDoorInterface $residents Which group a portal names, and who is a resident.
 	 * @param LoggerInterface           $logger    Records a failure, which never stops the membership.
 	 */
 	public function __construct(
 		private readonly IConfig $config,
 		private readonly IGroupManager $groups,
 		private readonly PublishedPortals $portals,
-		private readonly NextcloudRegistrationDoor $residents,
+		private readonly NextcloudRegistrationDoorInterface $residents,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

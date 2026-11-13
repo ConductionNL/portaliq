@@ -27,7 +27,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\Cms\MediaFile;
+use OCA\Portaliq\Kernel\Contracts\MediaFileInterface;
 use OCA\Portaliq\Service\PortalResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -52,12 +52,12 @@ class ContentMediaController extends Controller {
 	 *
 	 * @param IRequest       $request  The request.
 	 * @param PortalResolver $resolver Resolves the serving portal, as the content API does.
-	 * @param MediaFile      $media    The item's file.
+	 * @param MediaFileInterface      $media    The item's file.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalResolver $resolver,
-		private readonly MediaFile $media,
+		private readonly MediaFileInterface $media,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

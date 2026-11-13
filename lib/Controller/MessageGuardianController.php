@@ -31,8 +31,8 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\Identity\PortalContactService;
-use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
+use OCA\Portaliq\Kernel\Contracts\PortalContactServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSelfServiceServiceInterface;
 use OCA\Portaliq\Service\Messaging\GuardianMessageTranslator;
 use OCA\Portaliq\Service\Messaging\GuardianMessagingLeafInterface;
 use OCA\Portaliq\Service\Messaging\MessageContactReader;
@@ -77,10 +77,10 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 *                                                   Nullable and trailing so a
 	 *                                                   controller built by hand keeps
 	 *                                                   its old shape.
-	 * @param PortalSelfServiceService|null $selfService Reads the reader's own `messageLanguage`.
+	 * @param PortalSelfServiceServiceInterface|null $selfService Reads the reader's own `messageLanguage`.
 	 * @param MessageContactReader|null $contacts Who the resident may write to, per record
 	 *                                            (site-messages-per-record).
-	 * @param PortalContactService|null $portalContacts The resident's own approved contacts
+	 * @param PortalContactServiceInterface|null $portalContacts The resident's own approved contacts
 	 *                                                  (own-contacts-and-invitations T07).
 	 */
 	public function __construct(
@@ -88,9 +88,9 @@ class MessageGuardianController extends Controller implements PortalProtected {
 		private readonly PortalSessionService $session,
 		private readonly GuardianMessagingLeafInterface $messaging,
 		private readonly ?GuardianMessageTranslator $translator = null,
-		private readonly ?PortalSelfServiceService $selfService = null,
+		private readonly ?PortalSelfServiceServiceInterface $selfService = null,
 		private readonly ?MessageContactReader $contacts = null,
-		private readonly ?PortalContactService $portalContacts = null,
+		private readonly ?PortalContactServiceInterface $portalContacts = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

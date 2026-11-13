@@ -53,6 +53,8 @@ final class ServiceRegistrar {
 	 * @spec exclude container wiring only: each alias belongs to the change that introduced its interface
 	 */
 	public function register(IRegistrationContext $context): void {
+		(new ContractRegistrar())->register(context: $context);
+
 		// Traffic analytics (portal-traffic-visitors-and-geo): where a
 		// visitor's address turns into a region. The offline MMDB lookup is
 		// bound here and the ingest path did not change from phase 0, which

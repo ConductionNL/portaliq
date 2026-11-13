@@ -28,7 +28,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\CaseTypeColumns\CaseTypeColumnSettings;
+use OCA\Portaliq\Kernel\Contracts\CaseTypeColumnSettingsInterface;
 use OCA\Portaliq\Service\PortalCaseTypeCatalogue;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -46,12 +46,12 @@ class PortalCaseTypesController extends Controller {
 	 *
 	 * @param IRequest $request The request.
 	 * @param PortalCaseTypeCatalogue $catalogue The portal's case types.
-	 * @param CaseTypeColumnSettings $columns How each case type's columns read.
+	 * @param CaseTypeColumnSettingsInterface $columns How each case type's columns read.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalCaseTypeCatalogue $catalogue,
-		private readonly CaseTypeColumnSettings $columns,
+		private readonly CaseTypeColumnSettingsInterface $columns,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

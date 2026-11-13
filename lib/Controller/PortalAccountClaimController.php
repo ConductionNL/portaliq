@@ -32,7 +32,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\Identity\WaitingAccountInvitation;
+use OCA\Portaliq\Kernel\Contracts\WaitingAccountInvitationInterface;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -60,13 +60,13 @@ class PortalAccountClaimController extends Controller implements PortalProtected
 	 *
 	 * @param IRequest $request The request.
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param WaitingAccountInvitation $invitations Redeems the secret.
+	 * @param WaitingAccountInvitationInterface $invitations Redeems the secret.
 	 * @param LoggerInterface $logger Records a failure's cause, never the secret.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalSessionService $session,
-		private readonly WaitingAccountInvitation $invitations,
+		private readonly WaitingAccountInvitationInterface $invitations,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
@@ -110,10 +110,10 @@ class PortalAccountClaimController extends Controller implements PortalProtected
 		} catch (Throwable $exception) {
 			// The class only: a message or a trace could carry the secret.
 			$this->logger->error('Portal invitation redeem failed', ['exception' => get_class($exception)]);
-			$result = WaitingAccountInvitation::BUSY;
+			$result = WaitingAccountInvitationInterface::BUSY;
 		}
 
-		if ($result === WaitingAccountInvitation::CLAIMED) {
+		if ($result === WaitingAccountInvitationInterface::CLAIMED) {
 			return new JSONResponse($this->claimed(subject: $subject));
 		}
 
@@ -163,11 +163,11 @@ class PortalAccountClaimController extends Controller implements PortalProtected
 	 */
 	private function answer(string $result): JSONResponse {
 		return match ($result) {
-			WaitingAccountInvitation::CLAIMED => new JSONResponse(['claimed' => true]),
-			WaitingAccountInvitation::LOCKED => new JSONResponse(['error' => 'too_many_attempts'], Http::STATUS_TOO_MANY_REQUESTS),
-			WaitingAccountInvitation::CANNOT_RECEIVE => new JSONResponse(['error' => 'account_cannot_receive'], Http::STATUS_FORBIDDEN),
-			WaitingAccountInvitation::CONFLICT => new JSONResponse(['error' => 'invitation_conflict'], Http::STATUS_CONFLICT),
-			WaitingAccountInvitation::BUSY => new JSONResponse(['error' => 'try_again'], Http::STATUS_SERVICE_UNAVAILABLE),
+			WaitingAccountInvitationInterface::CLAIMED => new JSONResponse(['claimed' => true]),
+			WaitingAccountInvitationInterface::LOCKED => new JSONResponse(['error' => 'too_many_attempts'], Http::STATUS_TOO_MANY_REQUESTS),
+			WaitingAccountInvitationInterface::CANNOT_RECEIVE => new JSONResponse(['error' => 'account_cannot_receive'], Http::STATUS_FORBIDDEN),
+			WaitingAccountInvitationInterface::CONFLICT => new JSONResponse(['error' => 'invitation_conflict'], Http::STATUS_CONFLICT),
+			WaitingAccountInvitationInterface::BUSY => new JSONResponse(['error' => 'try_again'], Http::STATUS_SERVICE_UNAVAILABLE),
 			default => new JSONResponse(['error' => 'invitation_not_valid'], Http::STATUS_FORBIDDEN),
 		};
 	}//end answer()

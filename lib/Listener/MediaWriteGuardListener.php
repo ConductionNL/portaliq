@@ -30,7 +30,7 @@ namespace OCA\Portaliq\Listener;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
-use OCA\Portaliq\Service\Cms\MediaLibraryReader;
+use OCA\Portaliq\Kernel\Contracts\MediaLibraryReaderInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\IL10N;
@@ -68,13 +68,13 @@ class MediaWriteGuardListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container Resolves OpenRegister's schema mapper.
-	 * @param MediaLibraryReader $library   Names the pages that use an item.
+	 * @param MediaLibraryReaderInterface $library   Names the pages that use an item.
 	 * @param IL10N              $l10n      Translates the refusal.
 	 * @param LoggerInterface    $logger    Logs a failed check.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly MediaLibraryReader $library,
+		private readonly MediaLibraryReaderInterface $library,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 	) {

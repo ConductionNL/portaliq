@@ -27,8 +27,8 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalFormBindingResolverInterface;
 use OCA\Portaliq\Service\Intake\PortalEmailVerification;
-use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\PortalResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -51,13 +51,13 @@ class PortalFormEmailCodeController extends Controller implements PortalProtecte
 	 *
 	 * @param IRequest $request The request.
 	 * @param PortalResolver $portals Resolves the portal being visited.
-	 * @param PortalFormBindingResolver $bindings Resolves the form.
+	 * @param PortalFormBindingResolverInterface $bindings Resolves the form.
 	 * @param PortalEmailVerification $verification The code rules.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalResolver $portals,
-		private readonly PortalFormBindingResolver $bindings,
+		private readonly PortalFormBindingResolverInterface $bindings,
 		private readonly PortalEmailVerification $verification,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);

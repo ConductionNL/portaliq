@@ -36,7 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
-use OCA\Portaliq\Service\Identity\PortalAccountLookup;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountLookupInterface;
 use OCA\Portaliq\Service\Session\SessionTrust;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -94,7 +94,7 @@ class PortalContributionRegistry {
 	 * @param LoggerInterface $logger The logger.
 	 * @param PortalManifestNormaliser $normaliser The fail-closed v3 UI-config sanitiser.
 	 * @param PortalProviderLocator|null $locator Provider lookup; built from the above when null.
-	 * @param PortalAccountLookup|null $accounts Reads the account's hidden pages; none hides nothing.
+	 * @param PortalAccountLookupInterface|null $accounts Reads the account's hidden pages; none hides nothing.
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
@@ -102,7 +102,7 @@ class PortalContributionRegistry {
 		private readonly LoggerInterface $logger,
 		private readonly PortalManifestNormaliser $normaliser = new PortalManifestNormaliser(),
 		?PortalProviderLocator $locator = null,
-		private readonly ?PortalAccountLookup $accounts = null,
+		private readonly ?PortalAccountLookupInterface $accounts = null,
 	) {
 		$this->locator   = ($locator ?? new PortalProviderLocator($appManager, $container, $logger));
 		$this->hidden    = new HiddenPagesReader(accounts: $accounts, logger: $logger);

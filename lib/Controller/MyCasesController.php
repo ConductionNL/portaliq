@@ -30,10 +30,10 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\CaseTypeVisibilityInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalMandateServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalPartyTreeResolverInterface;
 use OCA\Portaliq\Service\Identity\MandateParties;
-use OCA\Portaliq\Service\Identity\PortalMandateService;
-use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
-use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\MandatedCaseReader;
 use OCA\Portaliq\Service\PortalCaseListReader;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -66,9 +66,9 @@ class MyCasesController extends Controller implements PortalProtected {
 	 * @param PortalContributionRegistry $registry The contribution aggregator.
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
 	 * @param PortalCaseListReader $cases Merges every case collection.
-	 * @param PortalMandateService $mandates The mandates the identity holds.
-	 * @param PortalPartyTreeResolver $tree Resolves how far a mandate reaches.
-	 * @param CaseTypeVisibility|null $caseTypes The case types the serving
+	 * @param PortalMandateServiceInterface $mandates The mandates the identity holds.
+	 * @param PortalPartyTreeResolverInterface $tree Resolves how far a mandate reaches.
+	 * @param CaseTypeVisibilityInterface|null $caseTypes The case types the serving
 	 *                                           portal hides
 	 *                                           (operate-show-per-case-type).
 	 *                                           Absent hides nothing.
@@ -78,9 +78,9 @@ class MyCasesController extends Controller implements PortalProtected {
 		private readonly PortalContributionRegistry $registry,
 		private readonly PortalSessionService $session,
 		private readonly PortalCaseListReader $cases,
-		private readonly PortalMandateService $mandates,
-		private readonly PortalPartyTreeResolver $tree,
-		private readonly ?CaseTypeVisibility $caseTypes = null,
+		private readonly PortalMandateServiceInterface $mandates,
+		private readonly PortalPartyTreeResolverInterface $tree,
+		private readonly ?CaseTypeVisibilityInterface $caseTypes = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
@@ -230,7 +230,7 @@ class MyCasesController extends Controller implements PortalProtected {
 	private function mandateScope(array $mandate): array {
 		return $this->tree->entitiesFor(
 			root: $this->partyOf(mandate: $mandate),
-			reachesDown: ($this->mandates->reachOf(mandate: $mandate) === PortalMandateService::REACH_TREE)
+			reachesDown: ($this->mandates->reachOf(mandate: $mandate) === PortalMandateServiceInterface::REACH_TREE)
 		);
 	}//end mandateScope()
 

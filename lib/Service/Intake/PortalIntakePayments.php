@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Intake;
 
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\PortalIntakePaymentsInterface;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCP\AppFramework\Http;
@@ -42,7 +43,7 @@ use OCP\AppFramework\Http\JSONResponse;
  * @spec openspec/changes/intake-pay-on-submit/tasks.md#t04
  * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#3.3
  */
-class PortalIntakePayments {
+class PortalIntakePayments implements PortalIntakePaymentsInterface {
 	/**
 	 * Constructor.
 	 *

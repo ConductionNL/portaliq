@@ -28,7 +28,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\CollectionDocuments;
+use OCA\Portaliq\Kernel\Contracts\CollectionDocumentsInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
@@ -60,7 +60,7 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 	 * @param PortalContributionRegistry $registry The subject's contributions.
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
 	 * @param PortalObjectReader $reader The scoped single-object read.
-	 * @param CollectionDocuments $documents Lists and opens the documents.
+	 * @param CollectionDocumentsInterface $documents Lists and opens the documents.
 	 * @param IL10N $l10n The sentence a refused opening is given with.
 	 */
 	public function __construct(
@@ -68,7 +68,7 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 		private readonly PortalContributionRegistry $registry,
 		private readonly PortalSessionService $session,
 		private readonly PortalObjectReader $reader,
-		private readonly CollectionDocuments $documents,
+		private readonly CollectionDocumentsInterface $documents,
 		private readonly IL10N $l10n,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
@@ -130,7 +130,7 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 			object: ['register' => $register, 'schema' => $schema, 'id' => $id],
 			documentId: $documentId
 		);
-		if ($result === CollectionDocuments::REFUSED) {
+		if ($result === CollectionDocumentsInterface::REFUSED) {
 			$message = $this->l10n->t('The paper cannot be opened right now');
 			return new JSONResponse(['error' => 'paper_unavailable', 'message' => $message], Http::STATUS_SERVICE_UNAVAILABLE);
 		}

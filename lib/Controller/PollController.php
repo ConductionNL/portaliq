@@ -26,7 +26,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\ActionAuthService;
+use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
 use OCA\Portaliq\Service\PollService;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
@@ -59,14 +59,14 @@ class PollController extends Controller {
 	 * @param PollService $polls Creates, lists and answers polls.
 	 * @param PortalSessionService $session Resolves a portal subject.
 	 * @param IUserSession $userSession The staff user, when there is one.
-	 * @param ActionAuthService $actionAuth Decides whether this staff user may create a poll (ADR-023).
+	 * @param ActionAuthServiceInterface $actionAuth Decides whether this staff user may create a poll (ADR-023).
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PollService $polls,
 		private readonly PortalSessionService $session,
 		private readonly IUserSession $userSession,
-		private readonly ActionAuthService $actionAuth,
+		private readonly ActionAuthServiceInterface $actionAuth,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

@@ -38,7 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
-use OCA\Portaliq\Service\CaseTypeVisibility;
+use OCA\Portaliq\Kernel\Contracts\CaseTypeVisibilityInterface;
 use OCA\Portaliq\Service\PortalResolver;
 use OCP\IConfig;
 use OCP\IRequest;
@@ -169,7 +169,7 @@ class ContributionLanguage {
 	 */
 	private function portalLocales(string $organisation): array {
 		try {
-			$slug = trim($this->request->getHeader(CaseTypeVisibility::HEADER));
+			$slug = trim($this->request->getHeader(CaseTypeVisibilityInterface::HEADER));
 			if ($slug === '') {
 				$slug = null;
 			}

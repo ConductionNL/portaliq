@@ -30,8 +30,9 @@ namespace OCA\Portaliq\Listener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
+use OCA\Portaliq\Kernel\Contracts\CmsReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\SharedBlockPortalsInterface;
 use OCA\Portaliq\Service\Cms\SharedBlockPortals;
-use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\PublishedPortals;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -70,18 +71,18 @@ class CmsCacheInvalidationListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param CmsReader       $reader The reader owning the cache.
+	 * @param CmsReaderInterface       $reader The reader owning the cache.
 	 * @param LoggerInterface $logger The logger.
 	 * @param PublishedPortals|null $portals Lists the portals of a shared block's organisation.
-	 * @param SharedBlockPortals $blocks Tells which portals a write to a shared block can touch.
+	 * @param SharedBlockPortalsInterface $blocks Tells which portals a write to a shared block can touch.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly CmsReader $reader,
+		private readonly CmsReaderInterface $reader,
 		private readonly LoggerInterface $logger,
 		private readonly ?PublishedPortals $portals=null,
-		private readonly SharedBlockPortals $blocks=new SharedBlockPortals(),
+		private readonly SharedBlockPortalsInterface $blocks=new SharedBlockPortals(),
 	) {
 	}//end __construct()
 

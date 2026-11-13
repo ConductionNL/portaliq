@@ -29,6 +29,7 @@ namespace OCA\Portaliq\Service\Actions;
 use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Portaliq\Contribution\CitizenDocumentUpload;
+use OCA\Portaliq\Kernel\Contracts\PortalActionServiceInterface;
 use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use OCA\Portaliq\Service\Identity\PortalContactService;
 use OCA\Portaliq\Service\Plans\PlanActionFields;
@@ -53,7 +54,7 @@ use OCP\AppFramework\Http\StreamResponse;
  *
  * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md
  */
-class PortalActionService {
+class PortalActionService implements PortalActionServiceInterface {
 
 	public const SCHEMA = 'portalAction';
 

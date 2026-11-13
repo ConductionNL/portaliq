@@ -24,12 +24,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\PortalIntakeConfirmationInterface;
+
 /**
  * Sends the confirmation mail of a submission and records how it went.
  *
  * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md
  */
-class PortalIntakeConfirmation {
+class PortalIntakeConfirmation implements PortalIntakeConfirmationInterface {
 	/**
 	 * Constructor.
 	 *

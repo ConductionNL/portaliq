@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\InternalBaseUrlInterface;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 
@@ -37,11 +38,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-an-administrator-can-name-the-internal-address
  */
-class InternalBaseUrl {
-	/**
-	 * The app config key the address is stored under.
-	 */
-	public const CONFIG_KEY = 'internal_base_url';
+class InternalBaseUrl implements InternalBaseUrlInterface {
 
 	/**
 	 * Parts of a URL the address may not carry.

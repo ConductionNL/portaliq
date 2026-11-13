@@ -33,6 +33,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\PortalReferenceCaseServiceInterface;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
@@ -40,7 +41,7 @@ use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
  *
  * @spec openspec/changes/archive/2026-10-02-identity-ways-in-screens/design.md
  */
-class PortalReferenceCaseService {
+class PortalReferenceCaseService implements PortalReferenceCaseServiceInterface {
 	/**
 	 * The audience a reference session reads as: a resident.
 	 */

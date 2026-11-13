@@ -33,9 +33,9 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Repair;
 
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\ActionAuthService;
-use OCA\Portaliq\Service\AdminMenuAccess;
-use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
+use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\AdminMenuAccessInterface;
+use OCA\Portaliq\Kernel\Contracts\NextcloudRegistrationDoorInterface;
 use OCA\Portaliq\Service\PageEditorService;
 use OCP\IAppConfig;
 use OCP\IGroup;
@@ -62,13 +62,13 @@ class SeedStaffGroup implements IRepairStep {
 	 * @param IGroupManager     $groupManager Creates the group and resolves members.
 	 * @param IAppConfig        $appConfig    The seeding flag and the registration app's group.
 	 * @param PageEditorService $pageEditor   The configured editor groups.
-	 * @param ActionAuthService $actions      The action matrix.
+	 * @param ActionAuthServiceInterface $actions      The action matrix.
 	 */
 	public function __construct(
 		private readonly IGroupManager $groupManager,
 		private readonly IAppConfig $appConfig,
 		private readonly PageEditorService $pageEditor,
-		private readonly ActionAuthService $actions,
+		private readonly ActionAuthServiceInterface $actions,
 	) {
 	}//end __construct()
 
@@ -93,7 +93,7 @@ class SeedStaffGroup implements IRepairStep {
 	public function run(IOutput $output): void {
 		$group = $this->staffGroup();
 		if ($group === null) {
-			$output->warning('Staff group: "'.AdminMenuAccess::STAFF_GROUP.'" could not be created, seeding left for the next upgrade.');
+			$output->warning('Staff group: "'.AdminMenuAccessInterface::STAFF_GROUP.'" could not be created, seeding left for the next upgrade.');
 			return;
 		}
 
@@ -119,7 +119,7 @@ class SeedStaffGroup implements IRepairStep {
 		}
 
 		$this->appConfig->setValueBool(AppIdentity::APP_ID, self::MARKER, true);
-		$output->info('Staff group: '.$added.' people added to "'.AdminMenuAccess::STAFF_GROUP.'".');
+		$output->info('Staff group: '.$added.' people added to "'.AdminMenuAccessInterface::STAFF_GROUP.'".');
 	}//end run()
 
 	/**
@@ -128,12 +128,12 @@ class SeedStaffGroup implements IRepairStep {
 	 * @return IGroup|null The group, or null when it could not be created.
 	 */
 	private function staffGroup(): ?IGroup {
-		$group = $this->groupManager->get(AdminMenuAccess::STAFF_GROUP);
+		$group = $this->groupManager->get(AdminMenuAccessInterface::STAFF_GROUP);
 		if ($group !== null) {
 			return $group;
 		}
 
-		return $this->groupManager->createGroup(AdminMenuAccess::STAFF_GROUP);
+		return $this->groupManager->createGroup(AdminMenuAccessInterface::STAFF_GROUP);
 	}//end staffGroup()
 
 	/**
@@ -152,7 +152,7 @@ class SeedStaffGroup implements IRepairStep {
 			}
 		}
 
-		$excluded = ['admin', AdminMenuAccess::STAFF_GROUP, $this->registrationGroup()];
+		$excluded = ['admin', AdminMenuAccessInterface::STAFF_GROUP, $this->registrationGroup()];
 
 		return array_values(
 			array_unique(
@@ -173,8 +173,8 @@ class SeedStaffGroup implements IRepairStep {
 		try {
 			$group = trim(
 				$this->appConfig->getValueString(
-					NextcloudRegistrationDoor::REGISTRATION_APP,
-					NextcloudRegistrationDoor::REGISTRATION_GROUP_KEY,
+					NextcloudRegistrationDoorInterface::REGISTRATION_APP,
+					NextcloudRegistrationDoorInterface::REGISTRATION_GROUP_KEY,
 					''
 				)
 			);

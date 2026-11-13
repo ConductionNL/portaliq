@@ -30,7 +30,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\Branch\BranchChoice;
+use OCA\Portaliq\Kernel\Contracts\BranchChoiceInterface;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -52,12 +52,12 @@ class SessionBranchController extends Controller {
 	 *
 	 * @param IRequest             $request The request.
 	 * @param PortalSessionService $session Resolves and re-issues the bearer.
-	 * @param BranchChoice         $choice  The branches the session may choose.
+	 * @param BranchChoiceInterface         $choice  The branches the session may choose.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalSessionService $session,
-		private readonly BranchChoice $choice,
+		private readonly BranchChoiceInterface $choice,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

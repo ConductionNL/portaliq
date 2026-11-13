@@ -28,12 +28,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Cms;
 
+use OCA\Portaliq\Kernel\Contracts\CmsPublishValidatorInterface;
+
 /**
  * Finds what would render broken in one portal's pages and menus.
  *
  * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-2
  */
-class CmsPublishValidator {
+class CmsPublishValidator implements CmsPublishValidatorInterface {
 	public const NO_ROOT_PAGE = 'no-root-page';
 
 	public const DUPLICATE_ROUTE = 'duplicate-route';
