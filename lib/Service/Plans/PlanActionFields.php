@@ -24,6 +24,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Plans;
 
+use DateTimeImmutable;
+use DateTimeInterface;
+
 /**
  * Holds what was sent for an action of a plan to the fields a participant may write.
  *
@@ -164,4 +167,20 @@ class PlanActionFields {
 
 		return '';
 	}//end text()
+
+	/**
+	 * The fields with who wrote them and when, so the action's history can
+	 * name the person behind each change: a portal write reaches the audit
+	 * trail without a Nextcloud user.
+	 *
+	 * @param string $editor The subject reference of whoever writes.
+	 * @param array<string, mixed> $data The fields.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
+	 */
+	public function stamped(string $editor, array $data): array {
+		return $data + ['editedBy' => $editor, 'editedAt' => (new DateTimeImmutable())->format(DateTimeInterface::ATOM)];
+	}//end stamped()
 }//end class
