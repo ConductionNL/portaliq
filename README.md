@@ -506,7 +506,6 @@ portaliq/
 ├── lib/                        # PHP backend
 │   ├── AppInfo/Application.php
 │   ├── Controller/             # DashboardController, SettingsController
-│   ├── Mcp/ExampleToolProvider.php  # AI Chat Companion tools (hydra ADR-034/035)
 │   ├── Service/SettingsService.php
 │   ├── Listener/DeepLinkRegistrationListener.php
 │   ├── Repair/InitializeSettings.php
@@ -774,40 +773,18 @@ in the hydra repo for the full rationale.
 
 ### AI Chat Companion / MCP tools
 
-The template ships an example **MCP tool provider** so the in-app AI Chat
-Companion (a floating assistant rendered by `CnAppRoot` from
-`@conduction/nextcloud-vue`) can call your app's capabilities. See:
+Portaliq has no hand-written MCP tool provider. Its agent-facing tools are
+derived by OpenRegister from the `x-openregister-mcp` dialect declared on the
+schemas in `lib/Settings/portaliq_register.json` (hydra ADR-063):
 
-- `lib/Mcp/ExampleToolProvider.php` — the heavily-commented starting point. It
-  implements `OCA\OpenRegister\Mcp\IMcpToolProvider` and exposes two trivial
-  tools: `portaliq.ping` (echoes a message) and `portaliq.describeApp`
-  (returns the app id, version, and name).
-- `lib/AppInfo/Application.php` — registers the provider under the service
-  alias `OCA\OpenRegister\Mcp\IMcpToolProvider::{appId}`; OpenRegister's
-  `McpToolsService` discovers per-app providers by exactly that alias.
-- `tests/Stubs/Mcp/IMcpToolProvider.php` — a stand-in for the interface until
-  [openregister](https://github.com/ConductionNL/openregister) Codeberg PR #1466
-  (pre-migration, not migrated to GitHub)
-  merges; once the openregister app is installed alongside your app the real
-  interface takes over transparently.
-- `tests/Unit/Mcp/ExampleToolProviderTest.php` — the contract test.
+- `portaliq.portalmessage.search` and `portaliq.portalmessage.get` — read-only
+  access to the portal inbox, served through OpenRegister's `ObjectService`
+  with the same authorization as the UI. No write verb is declared.
+- `portalAccount`, `portalSession` and `exampleDocument` declare no dialect and
+  are never tools: an account carries identity claims and a session carries
+  token metadata, and the dialect returns whole objects.
 
-**To wire up your app:**
-
-1. Rename `ExampleToolProvider` → `{YourApp}ToolProvider` (update the alias in
-   `Application.php` and the test).
-2. Replace the two example tools with real ones — each descriptor needs
-   `id` (`{appId}.{toolName}`), `name`, `description`, and an `inputSchema`
-   (JSON Schema object).
-3. In `invokeTool()`, **run per-object authorisation before any business logic
-   or data access** — validate args, then authorise, then delegate, then
-   return. `invokeTool()` MUST NOT throw — every failure path returns a
-   structured `['error' => ['code' => ..., 'message' => ...]]` array.
-
-References: hydra
-[ADR-034 (AI Chat Companion)](https://github.com/ConductionNL/hydra/blob/development/openspec/architecture/adr-034-ai-chat-companion.md)
-and ADR-035; and decidesk's `OCA\Decidesk\Mcp\DecideskToolProvider` as the
-production example (five real tools, deep links, source descriptors).
+See `openspec/changes/portaliq-mcp-adoption` for the curation.
 
 ### Code quality
 
