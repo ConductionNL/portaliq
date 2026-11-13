@@ -264,6 +264,7 @@ export default {
 		'Your tasks could not be loaded.': 'Uw taken konden niet worden geladen.',
 		'Expected decision': 'Verwacht besluit',
 		'Ready by': 'Uiterlijk klaar op',
+		'See the result': 'Bekijk het resultaat',
 		'Next step: {step}': 'Volgende stap: {step}',
 		'Yes, remove my account': 'Ja, verwijder mijn account',
 		'You have no e-mail address on your account.':
@@ -548,6 +549,7 @@ export default {
 		'Your tasks could not be loaded.': 'Your tasks could not be loaded.',
 		'Expected decision': 'Expected decision',
 		'Ready by': 'Ready by',
+		'See the result': 'See the result',
 		'Next step: {step}': 'Next step: {step}',
 		'Yes, remove my account': 'Yes, remove my account',
 		'You have no e-mail address on your account.':

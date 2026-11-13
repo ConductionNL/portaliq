@@ -100,6 +100,15 @@
 			</p>
 		</div>
 
+		<p
+			v-if="!actionsOnly && resultLink"
+			class="utrecht-paragraph pq-case-result"
+			data-testid="case-result-link">
+			<a class="utrecht-link" :href="resultLink.url" rel="noopener noreferrer">{{
+				resultLink.label
+			}}</a>
+		</p>
+
 		<dl
 			v-if="!actionsOnly && dateRows.length > 0"
 			class="pq-case-dates"
@@ -275,6 +284,7 @@ import {
 	bannerSentence,
 	decisionDateRows,
 	nextStepView,
+	resultLinkOf,
 	tasksOfCase,
 } from '../../../shared/casePage.js'
 import {
@@ -440,6 +450,14 @@ export default {
 		 */
 		dateRows() {
 			return decisionDateRows(this.caseRow, this.t, readerLocale(this.locale))
+		},
+
+		/**
+		 * @return {{label: string, url: string}|null} Where the case's result is public.
+		 * @spec openspec/changes/woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-case-links-to-where-its-result-is-public-req-wdm-003
+		 */
+		resultLink() {
+			return resultLinkOf(this.caseRow, this.t)
 		},
 
 		/**

@@ -16,6 +16,8 @@ use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\CitizenCaseController;
 use OCA\Portaliq\Event\PortalClientWriteEvent;
 use OCA\Portaliq\Service\AuditTrailService;
+use OCA\Portaliq\Service\Branch\PortalBranchScope;
+use OCA\Portaliq\Service\CaseResultLink;
 use OCA\Portaliq\Service\CaseTypeReader;
 use OCA\Portaliq\Service\CitizenWritableSetResolver;
 use OCA\Portaliq\Service\CitizenWriteRecorder;
@@ -63,6 +65,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Portaliq\Service\Identity\MandateParties
  * @uses   \OCA\Portaliq\Service\Branch\BranchNumber
  * @uses   \OCA\Portaliq\Service\Branch\PortalBranchScope
+ * @uses   \OCA\Portaliq\Service\CaseResultLink
  * @uses   \OCA\Portaliq\Service\CitizenCaseDocuments
  * @uses   \OCA\Portaliq\Service\PortalCaseDocumentReader
  * @uses   \OCA\Portaliq\Service\MandatedCaseReader
@@ -531,6 +534,33 @@ class CitizenCaseControllerTest extends TestCase {
 	}//end testPastTheThrottleTheWriteIsRefused()
 
 	/**
+	 * woo-dossier-in-my-cases REQ-WDM-003: the case reaches the resident with
+	 * its result link only when that link is https on a trusted domain; the
+	 * term note passes as written.
+	 *
+	 * @return void
+	 */
+	public function testTheResultLinkIsShownOnlyOnATrustedDomain(): void {
+		$config = $this->createMock(\OCP\IConfig::class);
+		$config->method('getSystemValue')->with('trusted_domains', [])->willReturn(['zuiddrecht.nl']);
+		$links = new CaseResultLink(config: $config, logger: $this->createMock(LoggerInterface::class));
+		$note  = 'De termijn staat stil sinds 6 oktober 2026.';
+
+		$trusted = $this->controller(resultLinks: $links, caseExtra: ['termNote' => $note, 'resultLink' => ['label' => 'Bekijk wat openbaar is gemaakt', 'url' => 'https://zuiddrecht.nl/woo/publicaties/2026-0087']])
+			->show('zaken', 'zaak', self::CASE_ID)->getData()['case'];
+		$this->assertSame(['label' => 'Bekijk wat openbaar is gemaakt', 'url' => 'https://zuiddrecht.nl/woo/publicaties/2026-0087'], $trusted['resultLink']);
+		$this->assertSame($note, $trusted['termNote']);
+
+		$foreign = $this->controller(resultLinks: $links, caseExtra: ['resultLink' => ['label' => 'x', 'url' => 'http://example.com/x']])
+			->show('zaken', 'zaak', self::CASE_ID)->getData()['case'];
+		$this->assertArrayNotHasKey('resultLink', $foreign);
+
+		$unfiltered = $this->controller(caseExtra: ['resultLink' => ['label' => 'x', 'url' => 'https://zuiddrecht.nl/x']])
+			->show('zaken', 'zaak', self::CASE_ID)->getData()['case'];
+		$this->assertArrayNotHasKey('resultLink', $unfiltered, 'without the filter no link is shown');
+	}//end testTheResultLinkIsShownOnlyOnATrustedDomain()
+
+	/**
 	 * The citizen reads the label the case app supplied, unchanged, and the
 	 * portal invents nothing when there is none.
 	 */
@@ -733,9 +763,12 @@ class CitizenCaseControllerTest extends TestCase {
 		array $published = [],
 		?MandatedCaseReader $mandatedCases = null,
 		?array $actingMandate = null,
+		?CaseResultLink $resultLinks = null,
+		array $caseExtra = [],
 	): CitizenCaseController {
 		$action = ($action ?? $this->action());
 		$cases = $this->cases();
+		$cases[self::CASE_ID] = array_merge($cases[self::CASE_ID], $caseExtra);
 
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer token');
@@ -856,7 +889,9 @@ class CitizenCaseControllerTest extends TestCase {
 			$l10n,
 			$this->createMock(LoggerInterface::class),
 			$this->documents(fileReader: $fileReader, published: $published),
-			$mandatedCases
+			$mandatedCases,
+			new PortalBranchScope(),
+			$resultLinks
 		);
 	}//end controller()
 

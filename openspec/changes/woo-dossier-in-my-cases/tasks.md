@@ -9,13 +9,13 @@ Read `openspec/woo-build-rules.md` first. New frontend work lands in the Vue sit
 
 ## 2. Term sentence
 
-- [ ] 2.1 Declare `termNote` on `portalCase` in `lib/Settings/portaliq_register.json` and bump the schema version (REQ-WDM-002). Verify: a register test that saves and reads it back.
-- [ ] 2.2 Show it in `decisionDateRows` (`src/shared/casePage.js`) as text (REQ-WDM-002). Verify: `casePage.spec.js` `termNoteRows`.
+- [x] 2.1 Declare `termNote` on `portalCase` in `lib/Settings/portaliq_register.json` and bump the schema version (REQ-WDM-002). Verify: a register test that saves and reads it back. (portalCase 0.3.0, register 0.109.0; `PortaliqRegisterConfigTest` reads it back.)
+- [x] 2.2 Show it in `decisionDateRows` (`src/shared/casePage.js`) as text (REQ-WDM-002). Verify: `casePage.spec.js` `termNoteRows`. (`termNoteRows()` in `src/shared/casePage.js`; `node --test tests/woo-dossier-in-my-cases.spec.mjs`, in `check:specs`.)
 
 ## 3. Result link
 
-- [ ] 3.1 Declare `resultLink` on `portalCase` (REQ-WDM-003). Verify: the register test.
-- [ ] 3.2 Filter it on the server against `https` and the instance's `trusted_domains`, and render it under the steps (REQ-WDM-003). Verify: `tests/Unit/Controller/CitizenCaseResultLinkTest.php`.
+- [x] 3.1 Declare `resultLink` on `portalCase` (REQ-WDM-003). Verify: the register test. (with 2.1.)
+- [x] 3.2 Filter it on the server against `https` and the instance's `trusted_domains`, and render it under the steps (REQ-WDM-003). Verify: `tests/Unit/Controller/CitizenCaseResultLinkTest.php`. (`CaseResultLink` drops any link that is not https on a trusted domain, with one warning; every case answer of `CitizenCaseController` passes through it; the case page shows the link under the steps. `tests/Unit/Controller/CitizenCaseResultLinkTest.php`, `CitizenCaseControllerTest::testTheResultLinkIsShownOnlyOnATrustedDomain`.)
 
 ## 4. End to end
 

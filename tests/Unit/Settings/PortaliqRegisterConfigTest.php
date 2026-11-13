@@ -401,8 +401,14 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.105.0 (portalPage 0.9.0): a rows block's `statusNoteAtField`, the moment its status was set, and a cta's `labelWhenEmpty` (guardian-pages-follow-the-wilgenboom-boards). Additive.
 		// 0.106.0 (guardianMessage 0.3.0): a message's `readAt`, when the other side first read it (message-read-time). Additive.
 		// 0.108.0 (portalPage 0.10.0): a cta's `messageTo`, the field naming whom the message form opens for (guardian-message-to-and-whole-day). Additive.
-		$this->assertSame(expected: '0.108.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.108.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		// 0.109.0 (portalCase 0.3.0): the case app's `termNote` and `resultLink` (woo-dossier-in-my-cases). Additive.
+		$this->assertSame(expected: '0.109.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.109.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		$case = self::$register['components']['schemas']['portalCase'];
+		$this->assertSame(expected: '0.3.0', actual: $case['version']);
+		$this->assertSame(expected: ['type' => 'string', 'maxLength' => 200], actual: array_intersect_key($case['properties']['termNote'], ['type' => 1, 'maxLength' => 1]));
+		$this->assertSame(expected: 80, actual: $case['properties']['resultLink']['properties']['label']['maxLength']);
+		$this->assertSame(expected: 'uri', actual: $case['properties']['resultLink']['properties']['url']['format']);
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalPage']['properties']['pages']['items']['properties']['blocks']['items']['properties']['messageTo']['type']);
 		$this->assertSame(expected: 'date-time', actual: self::$register['components']['schemas']['guardianMessage']['properties']['readAt']['format']);
 		// 0.107.0 (portal 0.28.0): a portal's `caseTypeColumns`, how each case type's columns read in Mijn zaken (case-type-columns-in-my-cases). Additive.
@@ -466,7 +472,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['activityAttendance']['authorization']['read']);
 		$this->assertArrayNotHasKey('fee', self::$register['components']['schemas']['activityOffer']['properties'], 'D19: an activity holds no amount');
 		$this->assertArrayNotHasKey('amount', self::$register['components']['schemas']['activityOffer']['properties'], 'D19: an activity holds no amount');
-		$this->assertSame('0.2.0', self::$register['components']['schemas']['portalCase']['version']);
+		$this->assertSame('0.3.0', self::$register['components']['schemas']['portalCase']['version']);
 		$this->assertSame(['portaliq-medewerkers'], self::$register['components']['schemas']['portalCase']['authorization']['read']);
 		$this->assertSame('0.7.0', self::$register['components']['schemas']['portalTrafficDaily']['version']);
 		$this->assertSame('0.4.0', self::$register['components']['schemas']['portalTrafficEvent']['version']);
