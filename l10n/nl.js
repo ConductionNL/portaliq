@@ -3362,7 +3362,17 @@ OC.L10N.register(
         "QR code": "QR-code",
         "As the case app shows it": "Zoals de zaakapp het toont",
         "The columns are saved.": "De kolommen zijn opgeslagen.",
-        "The columns could not be saved. Try again.": "De kolommen konden niet worden opgeslagen. Probeer het opnieuw."
+        "The columns could not be saved. Try again.": "De kolommen konden niet worden opgeslagen. Probeer het opnieuw.",
+        "How search ranks": "Hoe de zoekfunctie sorteert",
+        "A search with a search term shows the best matches first. The best match is the result whose title is most like the search term.": "Een zoekopdracht met een zoekterm toont de beste resultaten eerst. Het beste resultaat is het resultaat waarvan de titel het meest op de zoekterm lijkt.",
+        "A search with a search term keeps the order the visitor chose.": "Een zoekopdracht met een zoekterm houdt de volgorde aan die de bezoeker koos.",
+        "Titles are found even with a small spelling mistake in the search term.": "Titels worden ook gevonden met een kleine spelfout in de zoekterm.",
+        "Titles are only found when the search term is spelled exactly.": "Titels worden alleen gevonden als de zoekterm precies goed gespeld is.",
+        "Summaries are found even with a small spelling mistake in the search term.": "Samenvattingen worden ook gevonden met een kleine spelfout in de zoekterm.",
+        "Summaries are only found when the search term is spelled exactly.": "Samenvattingen worden alleen gevonden als de zoekterm precies goed gespeld is.",
+        "Text inside documents is found even with a small spelling mistake in the search term.": "Tekst in documenten wordt ook gevonden met een kleine spelfout in de zoekterm.",
+        "Text inside documents is only found when the search term is spelled exactly.": "Tekst in documenten wordt alleen gevonden als de zoekterm precies goed gespeld is.",
+        "Results from other catalogues that carry no score come after the scored results, in the order their catalogue gave them.": "Resultaten uit andere catalogi zonder score komen na de resultaten met een score, in de volgorde die hun catalogus gaf."
     },
     "nplurals=2; plural=(n != 1);"
 )

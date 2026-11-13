@@ -23,7 +23,7 @@ on `origin/development` first and seen red; put the failing line in the PR body.
 - [x] **T07**: `buildRequestUrl()` sends `_fuzzy=true` for every non-empty term (REQ-SSR-004).
   Verification: **fails today**, node test `tests/federated-search.spec.mjs`
   `a term always asks for fuzzy matching` and `no term sends no fuzzy flag`.
-- [ ] **T08**: `lib/Service/Search/SuggestionWordList.php` builds the per-portal word list from the
+- [x] **T08**: `lib/Service/Search/SuggestionWordList.php` builds the per-portal word list from the
   anonymous public search (titles and summaries only), refreshed by a daily `TimedJob`, stored per
   portal in app data. `lib/Service/Search/SpellingSuggester.php` picks the correction by the
   REQ-SSR-005 rule and checks it returns results (REQ-SSR-005). Verification: **fails today**
@@ -32,15 +32,21 @@ on `origin/development` first and seen red; put the failing line in the PR body.
   `testNoSuggestionThatFindsNothing`, `testTheMoreFrequentWordWinsATie`; and
   `SuggestionWordListTest::testADraftNeverReachesTheList`, built on a search double whose
   signature matches the real anonymous search path.
-- [ ] **T09**: `SearchSuggestController::suggest()` on GET `/api/site/search/suggest` with
+- [x] **T09**: `SearchSuggestController::suggest()` on GET `/api/site/search/suggest` with
   `#[PublicPage]`, `#[NoCSRFRequired]` and `#[AnonRateLimit]`; the block calls it under three results
   and renders the link in the live region (REQ-SSR-005). Verification: gate route-auth green;
   `tests/Unit/Controller/SearchSuggestControllerTest.php` `testTheRouteAnswersSuggestionAndCount`;
   node test `tests/federated-search.spec.mjs` `fewer than three results asks for a suggestion`.
-- [ ] **T10**: Export the ranking declaration from `federatedSearch.js`, make `buildRequestUrl()` read
+- [x] **T10**: Export the ranking declaration from `federatedSearch.js`, make `buildRequestUrl()` read
   it, and render "How search ranks" in the portal admin from it (REQ-SSR-006). Verification: node test
   `the request follows the ranking declaration` (change the declaration in the test, the URL
   changes) and `the explanation is rendered from the declaration`.
+  Built: T08 reads the public search through `AnonymousPublicationSearch` (OpenCatalogi's federation
+  endpoint called on this instance with no session, the path the block uses); `SuggestionWordList`
+  also skips a row that says it is unpublished or withdrawn, and stores the list per portal in app
+  data; `SuggestionWordListJob` rebuilds it daily. T09 adds the route to `openapi.json`; the block
+  asks under three results and shows the link inside its live region. T10's "How search ranks" is a
+  section of the portal's Instellingen tab (`PortalSearchRanking`), in English and Dutch.
 - [ ] **T11**: e2e `tests/e2e/search-sort-by-relevance.spec.ts` gains: a misspelt title is found, and a
   misspelt summary word gets a suggestion that finds results (REQ-SSR-004, REQ-SSR-005). Live check
   after merge on the dev instance: record one suggestion and its result count.

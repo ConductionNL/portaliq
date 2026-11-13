@@ -30,8 +30,10 @@
 import { readFileSync } from 'node:fs'
 import { kindBuckets, kindLabel, labelBuckets } from '../src/site/lib/facetLabels.js'
 import {
+	asksForSuggestion,
 	buildRequestUrl,
 	facetFieldsOf,
+	fetchSuggestion,
 	foreignDirectory,
 	formatDutchDate,
 	KIND_FIELD,
@@ -39,6 +41,8 @@ import {
 	matchDescription,
 	pageWindow,
 	paginationItems,
+	RANKING,
+	rankingExplanation,
 	readSearchState,
 	RELEVANCE_SORT,
 	relevanceApplied,
@@ -48,6 +52,8 @@ import {
 	sortForNewSearch,
 	sortOptionsFor,
 	subjectSlug,
+	suggestionText,
+	suggestUrl,
 	toBuckets,
 	toResult,
 	validDate,
@@ -862,6 +868,96 @@ console.log('relevance (search-sort-by-relevance REQ-SSR-001 to REQ-SSR-004)')
 	assertEqual('an unranked answer drops relevance and searches again in the default order', [vm.relevanceUnavailable, vm.sort, requested.length, vm.written], [true, '', 2, 1])
 	assertTrue('the second request asks no relevance order', !requested[1].includes('_relevance'))
 	assertEqual('and says so once in the live region', block.computed.status.call({ ...vm, loading: false, error: false, total: 1, countSentence: 'Zoekresultaten geladen. 1 resultaat gevonden.' }), 'Sorteren op relevantie kan hier niet. Zoekresultaten geladen. 1 resultaat gevonden.')
+}
+
+console.log('suggestion and ranking (search-sort-by-relevance REQ-SSR-005, REQ-SSR-006)')
+
+{
+	// REQ-SSR-006: the request follows the ranking declaration.
+	const declared = new URL(buildRequestUrl({ ...BASE, query: 'parkeren' }, RANKING)).searchParams
+	const changed = new URL(buildRequestUrl({ ...BASE, query: 'parkeren' }, { ...RANKING, fuzzy: false })).searchParams
+	assertEqual('the request follows the ranking declaration', [declared.get('_fuzzy'), changed.has('_fuzzy')], ['true', false])
+	assertEqual('the default request is the declared one', buildRequestUrl({ ...BASE, query: 'parkeren' }), buildRequestUrl({ ...BASE, query: 'parkeren' }, RANKING))
+	assertEqual('a new search with a term starts on the declared order', sortForNewSearch('parkeren', '', false), RANKING.termOrder)
+
+	const explained = rankingExplanation()
+	assertTrue('the explanation is rendered from the declaration: titles fuzzily', explained.includes('Titles are found even with a small spelling mistake in the search term.'))
+	assertTrue('summaries and document text exactly', explained.includes('Summaries are only found when the search term is spelled exactly.') && explained.includes('Text inside documents is only found when the search term is spelled exactly.'))
+	assertTrue('federated results without a score come after scored results', explained.includes('Results from other catalogues that carry no score come after the scored results, in the order their catalogue gave them.'))
+	const exactOnly = rankingExplanation({ ...RANKING, fuzzy: false })
+	assertTrue('without fuzzy matching the explanation says titles match exactly', exactOnly.includes('Titles are only found when the search term is spelled exactly.') && !exactOnly.some((line) => line.includes('small spelling mistake')))
+	assertEqual('the explanation is translated by the caller', rankingExplanation(RANKING, (text) => `nl:${text}`)[0].startsWith('nl:'), true)
+
+	// REQ-SSR-005: fewer than three results asks for a suggestion.
+	assertEqual('fewer than three results asks for a suggestion', [asksForSuggestion('hondenbelasing', 0), asksForSuggestion('hondenbelasing', 2), asksForSuggestion('hondenbelasing', 3), asksForSuggestion('  ', 0)], [true, true, false, false])
+	assertEqual('the suggest route is the portal API beside the content API', suggestUrl('/index.php/apps/portaliq/api/content', 'zuiddrecht', ' honden belasing '), '/index.php/apps/portaliq/api/site/search/suggest?portal=zuiddrecht&q=honden+belasing')
+	assertEqual('the link reads "Bedoelde u: {suggestion}?"', [suggestionText('hondenbelasting'), suggestionText('')], ['Bedoelde u: hondenbelasting?', ''])
+
+	const asked = []
+	const answering = (body, ok = true) => async (url, options) => {
+		asked.push(options)
+		return { ok, json: async () => body }
+	}
+	assertEqual('a checked suggestion is kept', await fetchSuggestion('/s', answering({ suggestion: 'hondenbelasting', results: 4 })), { suggestion: 'hondenbelasting', results: 4 })
+	assertEqual('the call is anonymous', asked[0].credentials, 'omit')
+	assertEqual('a null suggestion is none', await fetchSuggestion('/s', answering({ suggestion: null, results: 0 })), null)
+	assertEqual('a suggestion that finds nothing is none', await fetchSuggestion('/s', answering({ suggestion: 'x', results: 0 })), null)
+	assertEqual('a refusal is none', await fetchSuggestion('/s', answering({ suggestion: 'x', results: 2 }, false)), null)
+	assertEqual('a failed call is none', await fetchSuggestion('/s', async () => { throw new Error('offline') }), null)
+
+	const { loadSfc } = await import('./support/render-sfc.mjs')
+	const block = await loadSfc('src/site/components/FederatedSearchBlock.vue', {
+		'@conduction/nextcloud-vue/public': 'export const CnSiteSearch = {}',
+	})
+	const requested = []
+	globalThis.window = { location: { origin: 'https://portal.example.org', search: '', href: 'https://portal.example.org/zoeken?_search=hondenbelasing' } }
+	globalThis.fetch = async (url) => {
+		requested.push(String(url))
+		if (String(url).includes('/api/site/search/suggest')) {
+			return { ok: true, json: async () => ({ suggestion: 'hondenbelasting', results: 4 }) }
+		}
+		return { ok: true, json: async () => ({ results: [], total: 0, pages: 1 }) }
+	}
+	const vm = {
+		...BASE,
+		fields: [],
+		facets: {},
+		locked: {},
+		facetLabels: {},
+		facetNames: {},
+		sort: '',
+		query: 'hondenbelasing',
+		sequence: 0,
+		relevanceUnavailable: false,
+		relevanceNotice: '',
+		spellingSuggestion: '',
+		writeLocation() {},
+		reportSearch() {},
+		requestUrl: block.methods.requestUrl,
+	}
+	vm.search = block.methods.search
+	vm.askSuggestion = block.methods.askSuggestion
+	await vm.search()
+	await new Promise((resolve) => setTimeout(resolve, 0))
+	assertEqual('fewer than three results asks for a suggestion once', requested.filter((url) => url.includes('/api/site/search/suggest')).length, 1)
+	assertTrue('the block asks with the searched term', requested.some((url) => url.includes('/api/site/search/suggest?') && url.includes('q=hondenbelasing')))
+	assertEqual('the block keeps the checked suggestion', vm.spellingSuggestion, 'hondenbelasting')
+	assertEqual('the link text', block.computed.suggestionLabel.call(vm), 'Bedoelde u: hondenbelasting?')
+	assertEqual('the link opens the corrected search', block.computed.suggestionHref.call(vm), '/zoeken?_search=hondenbelasting')
+
+	vm.sequence = 0
+	requested.length = 0
+	globalThis.fetch = async (url) => {
+		requested.push(String(url))
+		return { ok: true, json: async () => ({ results: [{ name: 'A' }, { name: 'B' }, { name: 'C' }], total: 3, pages: 1 }) }
+	}
+	await vm.search()
+	await new Promise((resolve) => setTimeout(resolve, 0))
+	assertEqual('three results ask for nothing and clear the old suggestion', [requested.length, vm.spellingSuggestion], [1, ''])
+
+	const template = readFileSync(new URL('../src/site/components/FederatedSearchBlock.vue', import.meta.url), 'utf8')
+	const liveRegion = template.slice(template.indexOf('aria-live="polite"'), template.indexOf('</p>', template.indexOf('aria-live="polite"')))
+	assertTrue('the suggestion is announced in the live region', liveRegion.includes('federated-search-did-you-mean') && liveRegion.includes('@click.prevent="onSearch(spellingSuggestion)"'))
 }
 
 if (failures > 0) {

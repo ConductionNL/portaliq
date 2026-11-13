@@ -3208,7 +3208,17 @@ OC.L10N.register(
         "QR code": "QR code",
         "As the case app shows it": "As the case app shows it",
         "The columns are saved.": "The columns are saved.",
-        "The columns could not be saved. Try again.": "The columns could not be saved. Try again."
+        "The columns could not be saved. Try again.": "The columns could not be saved. Try again.",
+        "How search ranks": "How search ranks",
+        "A search with a search term shows the best matches first. The best match is the result whose title is most like the search term.": "A search with a search term shows the best matches first. The best match is the result whose title is most like the search term.",
+        "A search with a search term keeps the order the visitor chose.": "A search with a search term keeps the order the visitor chose.",
+        "Titles are found even with a small spelling mistake in the search term.": "Titles are found even with a small spelling mistake in the search term.",
+        "Titles are only found when the search term is spelled exactly.": "Titles are only found when the search term is spelled exactly.",
+        "Summaries are found even with a small spelling mistake in the search term.": "Summaries are found even with a small spelling mistake in the search term.",
+        "Summaries are only found when the search term is spelled exactly.": "Summaries are only found when the search term is spelled exactly.",
+        "Text inside documents is found even with a small spelling mistake in the search term.": "Text inside documents is found even with a small spelling mistake in the search term.",
+        "Text inside documents is only found when the search term is spelled exactly.": "Text inside documents is only found when the search term is spelled exactly.",
+        "Results from other catalogues that carry no score come after the scored results, in the order their catalogue gave them.": "Results from other catalogues that carry no score come after the scored results, in the order their catalogue gave them."
     },
     "nplurals=2; plural=(n != 1);"
 )
