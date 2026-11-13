@@ -48,7 +48,7 @@ portal-contribution registry. Employees stay internal.
 ## Test coverage
 
 <!-- coverage:start -->
-Measured test coverage: 91.1% of statements (PHP 91.1% of 35,486 statements), at commit `430a4315` on 2026-11-11. The JavaScript frontend is not in this figure, because it has no coverage measurement yet. The figures come from [`coverage-summary.json`](coverage-summary.json); refresh them with `composer coverage:publish`.
+Measured test coverage: 90.1% of statements (PHP 90.1% of 35,717 statements), at commit `cf14bd3c8` on 2026-11-13. The JavaScript frontend is not in this figure, because it has no coverage measurement yet. The figures come from [`coverage-summary.json`](coverage-summary.json); refresh them with `composer coverage:publish`.
 <!-- coverage:end -->
 
 ## Screenshots
