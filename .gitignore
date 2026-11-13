@@ -159,3 +159,8 @@ css/fonts/licensed/*
 # Added by the 2026-08-25 fleet hygiene sweep (ADR-100 Decision 2).
 .stale/
 /.e2e-state/
+
+# The Open Tilburg WOO bundle: fetched by `npm run build:woo` (scripts/fetch-woo-bundle.mjs)
+# from the pinned release in scripts/woo-bundle.json, never committed.
+/woo/
+/.woo-download-*/

@@ -21,9 +21,9 @@ exclude:
   # its own Apache-2.0 licence and update script). Not part of the shipped app;
   # the skills stay in the repository for developers.
   - ".*/[.]claude/.*"
-  # woo/ is the committed compiled bundle of the separate WOO portal front-end
-  # (minified, hashed chunks with their bundled third-party licences). It is
-  # build output, not source written in this repository.
+  # woo/ is the compiled bundle of the separate WOO portal front-end, unpacked
+  # by `npm run build:woo` and not committed. It is build output, not source
+  # written in this repository.
   - ".*/woo/.*"
 
 # Open Source Health. Every @nextcloud package is part of the Nextcloud

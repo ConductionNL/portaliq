@@ -11,6 +11,8 @@
  * directories this app ships. Today that is one, `woo/`, the Open Tilburg
  * publication site built with `PUBLIC_URL=/index.php/apps/portaliq/woo`
  * (decision 182: named by what it does, the procedure is configuration).
+ * `woo/` is not committed: `npm run build:woo` unpacks the release pinned in
+ * scripts/woo-bundle.json, and a missing bundle answers 404.
  *
  * @category Controller
  * @package  OCA\Portaliq\Controller

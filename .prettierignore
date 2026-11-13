@@ -11,10 +11,9 @@ website/
 playwright-report/
 test-results/
 *.min.*
-# `woo/` is the COMPILED bundle of the separate WOO portal front-end, committed
-# so the app can serve it: hashed filenames, an asset-manifest and minified CSS
-# that is two lines long. Reformatting a build artefact is meaningless and it
-# would be overwritten by the next build anyway.
+# `woo/` is the COMPILED bundle of the separate WOO portal front-end, unpacked
+# by `npm run build:woo`: hashed filenames, an asset-manifest and minified CSS
+# that is two lines long. Reformatting a build artefact is meaningless.
 woo/
 # Written by the translation workflow — a formatter here would fight its own
 # generator on every run.

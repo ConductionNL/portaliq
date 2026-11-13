@@ -7,7 +7,7 @@
     "npm": "^11.0.0"
   },
   "scripts": {
-    "build": "npm run build:admin && npm run build:site && npm run build:traffic",
+    "build": "npm run build:admin && npm run build:site && npm run build:traffic && npm run build:woo",
     "postbuild": "node scripts/check-single-dexie.js",
     "build:admin": "NODE_ENV=production webpack --config webpack.config.js --progress",
     "postbuild:admin": "node scripts/check-single-dexie.js",
@@ -61,6 +61,7 @@
     "build:site": "NODE_ENV=production webpack --config webpack.site.js --progress",
     "postbuild:site": "node scripts/check-single-dexie.js && node scripts/check-site-chunks.js",
     "build:traffic": "NODE_ENV=production webpack --config webpack.traffic.js",
+    "build:woo": "node scripts/fetch-woo-bundle.mjs",
     "postbuild:traffic": "node scripts/check-single-dexie.js",
     "watch:site": "NODE_ENV=development webpack --config webpack.site.js --progress --watch",
     "check:intake-conditional-site": "node --test tests/intake-conditional-site.spec.mjs",
