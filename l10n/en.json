@@ -3225,7 +3225,10 @@
         "QR code": "QR code",
         "As the case app shows it": "As the case app shows it",
         "The columns are saved.": "The columns are saved.",
-        "The columns could not be saved. Try again.": "The columns could not be saved. Try again."
+        "The columns could not be saved. Try again.": "The columns could not be saved. Try again.",
+        "This page is not excluded from visitor statistics. Add it before you publish.": "This page is not excluded from visitor statistics. Add it before you publish.",
+        "Excluded paths": "Excluded paths",
+        "Pages the collector writes no visitor row for: each path and everything below it. Put every page that takes or shows a report of wrongdoing here, so nothing records that somebody opened the form.": "Pages the collector writes no visitor row for: each path and everything below it. Put every page that takes or shows a report of wrongdoing here, so nothing records that somebody opened the form."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

@@ -190,7 +190,8 @@
 			v-model:paletteOpen="paletteOpen"
 			:editor="editor"
 			:loadBlocks="loadBlocks"
-			:loadRecordLists="loadRecordLists" />
+			:loadRecordLists="loadRecordLists"
+			:excludedPaths="excludedPaths" />
 
 		<MediaPickerDialog
 			v-model:open="mediaOpen"
@@ -224,6 +225,7 @@ import {
 	blockToPage,
 	createPageEditor,
 	createPageSaver,
+	loadExcludedPaths,
 	pageToBlock,
 	recordListsFrom,
 } from '../editor/index.js'
@@ -269,6 +271,14 @@ export default {
 			paletteOpen: false,
 			historyOpen: false,
 			mediaOpen: false,
+
+			/**
+			 * The page's portal `traffic.excludedPaths`, or null until read
+			 * and when it cannot be read.
+			 *
+			 * @type {Array<string>|null}
+			 */
+			excludedPaths: null,
 		}
 	},
 
@@ -325,8 +335,16 @@ export default {
 		},
 	},
 
-	mounted() {
-		this.editor.load()
+	async mounted() {
+		await this.editor.load()
+		// A shared block has no route of its own, so nothing to warn about.
+		if (!this.isBlock) {
+			this.excludedPaths = await loadExcludedPaths(
+				(url, config) => axios.get(url, config),
+				generateUrl('/apps/openregister/api/objects/portaliq/portal'),
+				this.page.portal,
+			)
+		}
 	},
 
 	methods: {

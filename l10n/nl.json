@@ -3379,7 +3379,10 @@
         "QR code": "QR-code",
         "As the case app shows it": "Zoals de zaakapp het toont",
         "The columns are saved.": "De kolommen zijn opgeslagen.",
-        "The columns could not be saved. Try again.": "De kolommen konden niet worden opgeslagen. Probeer het opnieuw."
+        "The columns could not be saved. Try again.": "De kolommen konden niet worden opgeslagen. Probeer het opnieuw.",
+        "This page is not excluded from visitor statistics. Add it before you publish.": "Deze pagina is niet uitgesloten van de bezoekersstatistieken. Voeg deze toe aan de uitgesloten paden voordat u publiceert.",
+        "Excluded paths": "Uitgesloten paden",
+        "Pages the collector writes no visitor row for: each path and everything below it. Put every page that takes or shows a report of wrongdoing here, so nothing records that somebody opened the form.": "Pagina's waarvoor de verzamelaar geen bezoekersregel schrijft: elk pad en alles eronder. Zet hier elke pagina die een melding van een misstand ontvangt of toont, zodat nergens wordt vastgelegd dat iemand het formulier opende."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

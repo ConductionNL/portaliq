@@ -17,7 +17,8 @@
   - Built: `ReportBlock.vue` per MeldenZonderAccount (what happened, when and where, the optional contact block, the code shown once with copy, "Al gemeld?" linking to the follow-up page, what to expect, the no-trace line), `src/site/lib/reportApi.js` (challenge on surface `report`, honeypot inside the report, no cookie sent), widget `report` in `PUBLIC_WIDGETS`, the palette and its label; node `tests/report-pages.spec.mjs` (`check:report-pages`). The board's file field is left out: design.md says the form takes no attachments. "Al gemeld?" is a link, not a code field, so the code never travels in an address. Not run: the Playwright spec, which is the live pass (decision 139).
 - [x] **T06**: `src/site/components/ReportThreadBlock.vue` as widget `reportThread`: code entry, thread, terms, answer, uniform wrong-code message (REQ-IRP-002). Verification: the same Playwright spec returns with the code and answers.
   - Built: `ReportThreadBlock.vue` per MeldingGesprek (code entry, the report, the conversation with "U" for the reporter, the answer, the terms as "Bevestiging binnen 7 dagen" with met or days left and the due date), widget `reportThread`; the same node spec. Not run: the Playwright spec (live pass).
-- [ ] **T07**: The page designer warning for a report widget on a page outside `traffic.excludedPaths` (REQ-IRP-003). Verification: the Playwright spec opens the designer and sees the warning.
+- [x] **T07**: The page designer warning for a report widget on a page outside `traffic.excludedPaths` (REQ-IRP-003). Verification: the Playwright spec opens the designer and sees the warning.
+  - Built: `src/editor/reportExclusion.js` (the collector's own path match: the path or anything below it), the warning in the shared `PageGridEditor.vue`, both hosts (`PageLayoutDesigner.vue`, `SiteEditMode.vue`) read the page's portal `traffic.excludedPaths`; an unreadable portal gives no warning. `traffic.excludedPaths` is declared on the `portal` schema (portal 0.29.0, register 0.109.0). Pinned by `tests/report-pages.spec.mjs` (`check:report-pages`). Not run: the Playwright spec (live pass).
 
 ## The staff screens
 
@@ -27,5 +28,6 @@
 ## Docs, strings and validation
 
 - [ ] **T10**: English and Dutch strings for both widgets and the three staff pages ("Send report", "Keep this code. We cannot send it to you again.", "We could not open a report with this code.", "Reports of wrongdoing", "Reveal requests", "Visible to the reporter", "Allow", "Refuse"); a docs page for the organisation on setting up the reporting channel, including `handlerGroup`, `custodianGroup` and `traffic.excludedPaths`. Verification: `npm run lint`, `test:l10n`.
-  - Partly: the widgets' Dutch and English words are in `src/site/lib/reportApi.js` (same keys, no em-dash, tested). Open: the docs page, and the words of the staff detail page that T08 still has to build.
-- [ ] **T11**: `openspec validate intake-report-pages --strict`.
+  - Partly: the widgets' Dutch and English words are in `src/site/lib/reportApi.js` (same keys, no em-dash, tested). The docs page is `docs/reporting-without-an-account.md` ("Setting up the channel": `handlerGroup`, `custodianGroup`, `traffic.excludedPaths`, the designer warning). Open: the words of the staff detail page that T08 still has to build.
+- [x] **T11**: `openspec validate intake-report-pages --strict`.
+  - Valid once the spec's `status` frontmatter, which strict validation reports as text above the first section, was removed.
