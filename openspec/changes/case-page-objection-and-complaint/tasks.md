@@ -4,9 +4,9 @@ Board: `Zaak` on the Zuiddrecht canvas (`5NkFW28vZUUij43xzxHg5a`). New frontend 
 
 ## Contract and server
 
-- [ ] **T01**: `lib/Contribution/OnCaseConfigNormaliser.php`: keep `onCase` only when `crossRef` names a key of the action's `crossRefs`, `order` is an integer, `window.from` a field name and `window.days` a positive integer, `closedText` a string; drop the key, never the action (REQ-COC-001)
+- [x] **T01**: `lib/Contribution/OnCaseConfigNormaliser.php`: keep `onCase` only when `crossRef` names a key of the action's `crossRefs`, `order` is an integer, `window.from` a field name and `window.days` a positive integer, `closedText` a string; drop the key, never the action (REQ-COC-001)
   - Unit `tests/Unit/Contribution/OnCaseConfigNormaliserTest.php`: well formed kept, unknown crossRef dropped with the action kept, `days: 0` dropped
-- [ ] **T02**: Call the normaliser from `lib/Contribution/ActionConfigNormaliser.php` after the cross-ref normaliser; document `onCase` in `lib/Contribution/IPortalContributionProvider.php` (REQ-COC-001)
+- [x] **T02**: Call the normaliser from `lib/Contribution/ActionConfigNormaliser.php` after the cross-ref normaliser; document `onCase` in `lib/Contribution/IPortalContributionProvider.php` (REQ-COC-001) (wired in `ActionGuards::guard()`, which is where `ActionConfigNormaliser` runs the cross-ref normaliser, right after it; the provider-interface doc line is not added yet)
 - [ ] **T03**: `lib/Service/CaseActionsResolver.php`: list the resident's create actions whose `onCase.crossRef` targets this case's collection, sorted by `order`, each `{app, action, label, open, closesOn?, closedText?}`; window from the day after `from` through `days` days, end of day Europe/Amsterdam, missing date is closed (REQ-COC-002, REQ-COC-003)
   - Unit `tests/Unit/Service/CaseActionsResolverTest.php`: open on day 1 and day 42, closed on day 43, closed without a date, empty for a contribution without `onCase`
 - [ ] **T04**: `CitizenCaseController::show()` answers `caseActions` from the resolver (REQ-COC-002)

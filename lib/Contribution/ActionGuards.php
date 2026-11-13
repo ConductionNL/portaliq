@@ -82,6 +82,12 @@ final class ActionGuards {
 			return null;
 		}
 
+		// After the cross-ref normaliser, because `onCase.crossRef` must name
+		// one of the references it just sanitised. A malformed `onCase` drops
+		// its own key and keeps the action: it only stops the action being
+		// offered on a case page, it guards nothing.
+		$guarded = (new OnCaseConfigNormaliser())->normaliseAction(action: $guarded);
+
 		// A guest action (identity-guest-page-for-signed-links) without a
 		// token field, local endpoints and `low` trust is removed whole.
 		return (new GuestActionConfigNormaliser())->normaliseAction(action: $guarded);
