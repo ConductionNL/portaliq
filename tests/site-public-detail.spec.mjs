@@ -25,12 +25,11 @@ const NlPublicDetail = await loadSfc('src/site/widgets/nlPublicDetail/NlPublicDe
 	'@conduction/nextcloud-vue': 'export const cnRenderMarkdown = (source) => source\n',
 })
 
-// MarkdownBlock tags the markup through a template element; node has none.
-globalThis.document = {
-	createElement: () => {
-		const template = { innerHTML: '', content: { querySelectorAll: () => [] } }
-		return template
-	},
+// MarkdownBlock tags the markup through DOMParser; node has none.
+globalThis.DOMParser = class {
+	parseFromString(html) {
+		return { body: { innerHTML: html, querySelectorAll: () => [] } }
+	}
 }
 
 const DETAIL = {
