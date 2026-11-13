@@ -3362,7 +3362,12 @@ OC.L10N.register(
         "QR code": "QR-code",
         "As the case app shows it": "Zoals de zaakapp het toont",
         "The columns are saved.": "De kolommen zijn opgeslagen.",
-        "The columns could not be saved. Try again.": "De kolommen konden niet worden opgeslagen. Probeer het opnieuw."
+        "The columns could not be saved. Try again.": "De kolommen konden niet worden opgeslagen. Probeer het opnieuw.",
+        "Register again": "Opnieuw registreren",
+        "The receipt is registered again": "De ontvangstbevestiging is opnieuw geregistreerd",
+        "The receipt could not be registered again": "De ontvangstbevestiging kon niet opnieuw worden geregistreerd",
+        "The proof of a submission cannot be changed.": "Het bewijs van een inzending kan niet worden gewijzigd.",
+        "The request form (`portalFormBinding`) this submission came through. Linked by an employee from the Submissions list; the only field besides the delivery state that changes after the write.": "Het aanvraagformulier (`portalFormBinding`) waarlangs deze inzending binnenkwam. Een medewerker koppelt het vanuit de lijst Inzendingen; naast de bezorgstatus het enige veld dat na het vastleggen nog verandert."
     },
     "nplurals=2; plural=(n != 1);"
 )

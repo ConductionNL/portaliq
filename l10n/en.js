@@ -3208,7 +3208,12 @@ OC.L10N.register(
         "QR code": "QR code",
         "As the case app shows it": "As the case app shows it",
         "The columns are saved.": "The columns are saved.",
-        "The columns could not be saved. Try again.": "The columns could not be saved. Try again."
+        "The columns could not be saved. Try again.": "The columns could not be saved. Try again.",
+        "Register again": "Register again",
+        "The receipt is registered again": "The receipt is registered again",
+        "The receipt could not be registered again": "The receipt could not be registered again",
+        "The proof of a submission cannot be changed.": "The proof of a submission cannot be changed.",
+        "The request form (`portalFormBinding`) this submission came through. Linked by an employee from the Submissions list; the only field besides the delivery state that changes after the write.": "The request form (`portalFormBinding`) this submission came through. Linked by an employee from the Submissions list; the only field besides the delivery state that changes after the write."
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -60,6 +60,8 @@ use Throwable;
  * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
  */
 class SubmissionReceiptService {
+	use RowIdOf;
+
 	/**
 	 * The register every portal-owned schema lives in.
 	 */
@@ -175,6 +177,91 @@ class SubmissionReceiptService {
 			$this->recordingFailedEntirely(run: $run, error: $e);
 		}
 	}//end record()
+
+	/**
+	 * Write the receipt again for one stored proof-log record whose receipt
+	 * failed or is still pending, and mark the record delivered.
+	 *
+	 * The record is not copied and its proof fields do not move: the receipt
+	 * is written from the record's own `subjectRef`, `organisation` and
+	 * `payloadCopy`, keeps the record's reference when it has one, and names
+	 * the record's `submittedAt` as the moment of submission. Only
+	 * `receiptMessageRef` and `deliveryStatus` are written back. A receipt
+	 * write that fails leaves the record `failed`. Never throws.
+	 *
+	 * @param array<string, mixed> $record The stored `portalSubmission` row, as the caller may read it.
+	 *
+	 * @return bool True when the receipt was written and the record marked delivered.
+	 *
+	 * @spec openspec/changes/submission-row-actions/specs/supplier-portal/spec.md#requirement-an-employee-can-register-a-failed-receipt-again
+	 */
+	public function registerAgain(array $record): bool {
+		$id  = $this->idOf(row: $record);
+		$run = new ReceiptRun(subjectRef: (string)($record['subjectRef'] ?? ''), organisation: (string)($record['organisation'] ?? ''));
+		if ($id === '' || $run->subjectRef === '') {
+			$this->logger->warning('Portaliq: a submission without an id or subject cannot be registered again', ['id' => $id]);
+			return false;
+		}
+
+		$run->appId           = (string)($record['appId'] ?? '');
+		$run->actionId        = (string)($record['actionId'] ?? '');
+		$run->whitelistedData = (array)($record['payloadCopy'] ?? []);
+		$run->referenceId     = (string)($record['receiptMessageRef'] ?? '');
+		if ($run->referenceId === '') {
+			$run->referenceId = $this->generateReferenceId();
+		}
+
+		$run->submittedAt = (string)($record['submittedAt'] ?? '');
+		if ($run->submittedAt === '') {
+			$run->submittedAt = $this->now();
+		}
+
+		try {
+			$message = $this->writeReceiptMessage(run: $run, data: (['receivedAt' => $this->now()] + $this->receiptMessageData(run: $run)));
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: registering a receipt again failed', ['id' => $id, 'reason' => $e->getMessage()]);
+			$message = null;
+		}
+
+		if ($message === null) {
+			$this->markSubmission(run: $run, id: $id, values: ['deliveryStatus' => 'failed']);
+			return false;
+		}
+
+		return $this->markSubmission(run: $run, id: $id, values: ['receiptMessageRef' => $run->referenceId, 'deliveryStatus' => 'delivered']);
+	}//end registerAgain()
+
+	/**
+	 * Write the service's own fields back onto a stored proof-log record.
+	 *
+	 * @param ReceiptRun           $run    The receipt, for the record's subject and tenant.
+	 * @param string               $id     The record.
+	 * @param array<string, mixed> $values Only `receiptMessageRef` and `deliveryStatus`.
+	 *
+	 * @return bool True when the record was written.
+	 */
+	private function markSubmission(ReceiptRun $run, string $id, array $values): bool {
+		try {
+			$saved = $this->writer->updateObject(
+				register: self::REGISTER,
+				schema: self::SUBMISSION_SCHEMA,
+				scopeField: 'subjectRef',
+				subjectRef: $run->subjectRef,
+				organisation: $run->organisation,
+				id: $id,
+				data: $values
+			);
+		} catch (Throwable $e) {
+			$saved = null;
+		}
+
+		if ($saved === null) {
+			$this->logger->warning('Portaliq: a submission could not be marked after registering its receipt again', ['id' => $id]);
+			return false;
+		}
+
+		return true;
+	}//end markSubmission()
 
 	/**
 	 * Belt-and-braces: doRecord()'s own writes already degrade to null rather

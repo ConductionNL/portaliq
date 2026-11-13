@@ -2790,7 +2790,32 @@
           "map"
         ],
         "footerNote": "what the resident filled in is only on the submission itself, not in this list",
-        "showAdd": false
+        "showAdd": false,
+        "showCopyAction": false,
+        "showDeleteAction": false,
+        "showMassCopy": false,
+        "showMassDelete": false,
+        "actions": [
+          "builtin:edit",
+          {
+            "id": "register-again",
+            "label": "Register again",
+            "icon": "Refresh",
+            "type": "api-call",
+            "url": "/apps/portaliq/api/submissions/@objectId/register-again",
+            "method": "POST",
+            "visibleWhen": {
+              "field": "deliveryStatus",
+              "op": "in",
+              "value": [
+                "failed",
+                "pending"
+              ]
+            },
+            "successMessage": "The receipt is registered again",
+            "errorMessage": "The receipt could not be registered again"
+          }
+        ]
       }
     },
     {

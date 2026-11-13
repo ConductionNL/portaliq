@@ -54,6 +54,7 @@ use OCA\Portaliq\Listener\BindingDestinationGuardListener;
 use OCA\Portaliq\Listener\GlossaryRelationGuardListener;
 use OCA\Portaliq\Listener\MediaWriteGuardListener;
 use OCA\Portaliq\Listener\NoticeWriteGuardListener;
+use OCA\Portaliq\Listener\SubmissionWriteGuardListener;
 use OCA\Portaliq\Listener\LandingPageRequestedEventListener;
 use OCA\Portaliq\Listener\LandingPageSubmissionDispatchListener;
 use OCA\Portaliq\Listener\PortalAccountClaimListener;
@@ -298,6 +299,9 @@ class Application extends App implements IBootstrap {
 		foreach ([ObjectCreatingEvent::class, ObjectUpdatingEvent::class] as $event) {
 			$context->registerEventListener($event, NoticeWriteGuardListener::class);
 		}
+
+		// A submission's proof fields never change after the write (submission-row-actions).
+		$context->registerEventListener(ObjectUpdatingEvent::class, SubmissionWriteGuardListener::class);
 	}//end registerCmsListeners()
 
 
