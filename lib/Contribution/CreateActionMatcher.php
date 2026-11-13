@@ -37,13 +37,6 @@ use OCA\Portaliq\Kernel\Contracts\CreateActionMatcherInterface;
 class CreateActionMatcher implements CreateActionMatcherInterface {
 
 	/**
-	 * The answer when several actions write the target and none was named.
-	 *
-	 * @var string
-	 */
-	public const AMBIGUOUS = 'ambiguous';
-
-	/**
 	 * The matched action, AMBIGUOUS, or null.
 	 *
 	 * A named id must be one of the subject's create actions on this register

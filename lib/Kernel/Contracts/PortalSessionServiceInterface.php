@@ -83,6 +83,7 @@ interface PortalSessionServiceInterface {
 	 * @param array<int, string> $roles Roles carried in the session.
 	 * @param string $branch The vestigingsnummer the login was restricted to, or ''.
 	 * @param string $provider The OIDC provider the login came through, or '' (dev-login, Nextcloud mode, integriq route).
+	 * @param string $kvk The KVK number of the company an eHerkenning login signs in for, or ''.
 	 *
 	 * @return array{token: string, jti: string, expiresAt: int, hardExpiresAt: int, idleTimeout: int}|null The minted
 	 *         bearer token, its id and the session's times, or null when the edge is not yet configured.
@@ -103,6 +104,7 @@ interface PortalSessionServiceInterface {
 		array $roles = [],
 		string $branch = '',
 		string $provider = '',
+		string $kvk = '',
 	): ?array;
 
 	/**

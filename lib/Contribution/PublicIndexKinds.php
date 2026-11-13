@@ -37,17 +37,6 @@ use OCA\Portaliq\Kernel\Contracts\PublicIndexKindsInterface;
  * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-1
  */
 class PublicIndexKinds implements PublicIndexKindsInterface {
-	/**
-	 * The contract method an app may implement.
-	 */
-	public const METHOD = 'getPublicIndexKinds';
-
-	/**
-	 * The contract method that resolves the value `visitor` for a signed-in
-	 * person: `getPublicIndexVisitor(string $portal, array $subject): array`
-	 * answering `{filter label: values[]}`.
-	 */
-	public const VISITOR_METHOD = 'getPublicIndexVisitor';
 
 	private const MAX_KINDS = 20;
 

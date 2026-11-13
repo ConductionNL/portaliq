@@ -25,13 +25,13 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Kernel\Contracts\SiteShellInterface;
-use OCA\Portaliq\Service\Cms\SiteHead;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalNoticeReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalRuntimeConfigResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalThemeResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\SiteHeadInterface;
 
 /**
  * The values the site shell template is rendered with.
@@ -67,7 +67,7 @@ class SiteShell implements SiteShellInterface {
 	 * @param PortalResolverInterface              $portalResolver Resolves the serving portal.
 	 * @param PortalThemeResolverInterface         $themeResolver  Maps the portal's theme to a token stylesheet.
 	 * @param IURLGenerator               $urlGenerator   Builds the content API base and the logo address.
-	 * @param SiteHead                    $siteHead       The head of the page a site request asks for.
+	 * @param SiteHeadInterface                    $siteHead       The head of the page a site request asks for.
 	 * @param PortalNoticeReaderInterface          $notices        The notices running on the signed-in surface now.
 	 * @param PortalRuntimeConfigResolverInterface $configResolver Resolves the runtime config built from the portal.
 	 */
@@ -76,7 +76,7 @@ class SiteShell implements SiteShellInterface {
 		private readonly PortalResolverInterface $portalResolver,
 		private readonly PortalThemeResolverInterface $themeResolver,
 		private readonly IURLGenerator $urlGenerator,
-		private readonly SiteHead $siteHead,
+		private readonly SiteHeadInterface $siteHead,
 		private readonly PortalNoticeReaderInterface $notices,
 		private readonly PortalRuntimeConfigResolverInterface $configResolver,
 	) {

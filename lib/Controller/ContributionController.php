@@ -47,7 +47,6 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\ActionScopeResolver;
-use OCA\Portaliq\Contribution\CreateActionMatcher;
 use OCA\Portaliq\Http\PdfDownloadResponse;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\ActionDraftInterface;
@@ -106,6 +105,9 @@ use OCA\Portaliq\Kernel\Contracts\RowIdentifierInterface;
 use OCA\Portaliq\Kernel\Contracts\ThemeChoiceInterface;
 use OCA\Portaliq\Kernel\Contracts\VisibleFromGateInterface;
 use OCA\Portaliq\Kernel\Contracts\WriteRefusalInterface;
+use OCA\Portaliq\Kernel\Contracts\NotificationRuleNormaliserInterface;
+use OCA\Portaliq\Kernel\Contracts\PublicDetailShapeInterface;
+use OCA\Portaliq\Kernel\Contracts\PublicIndexKindsInterface;
 
 /**
  * Serves the authenticated subject's aggregated portal contributions.
@@ -1624,7 +1626,7 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		$match = $this->authorisedCreateAction(subject: $subject, register: $register, schema: $schema);
-		if ($match === CreateActionMatcher::AMBIGUOUS) {
+		if ($match === CreateActionMatcherInterface::AMBIGUOUS) {
 			// Two or more create actions write this schema and the client
 			// named none: refuse rather than guess (create-names-its-action).
 			return new JSONResponse(['error' => 'action_required'], Http::STATUS_BAD_REQUEST);
@@ -1822,7 +1824,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * for granted (create-names-its-action). A named id must be one of the
 	 * subject's create actions on this register and schema, else null (403).
 	 * Without an id, a single candidate is used as before, and two or more
-	 * answer CreateActionMatcher::AMBIGUOUS (400) rather than a guess.
+	 * answer CreateActionMatcherInterface::AMBIGUOUS (400) rather than a guess.
 	 *
 	 * @param array<string, mixed> $subject The resolved subject.
 	 * @param string $register The requested register.
@@ -1868,7 +1870,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 */
 	private function createAnonymous(string $register, string $schema): JSONResponse {
 		$match = $this->authorisedAnonymousCreateAction(register: $register, schema: $schema);
-		if ($match === CreateActionMatcher::AMBIGUOUS) {
+		if ($match === CreateActionMatcherInterface::AMBIGUOUS) {
 			// Two or more landing-page forms write this schema and the client
 			// named none: refuse rather than file it under the first form.
 			return new JSONResponse(['error' => 'action_required'], Http::STATUS_BAD_REQUEST);
@@ -2007,7 +2009,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * `landingPageSubmission`, so the first match is never taken for granted
 	 * (create-names-its-action): a named id must be one of the anonymous create
 	 * actions on this target, else null (403), and two or more without an id
-	 * answer CreateActionMatcher::AMBIGUOUS (400).
+	 * answer CreateActionMatcherInterface::AMBIGUOUS (400).
 	 *
 	 * @param string $register The requested register.
 	 * @param string $schema   The requested schema.

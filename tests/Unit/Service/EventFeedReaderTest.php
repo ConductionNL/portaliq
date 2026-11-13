@@ -127,4 +127,39 @@ class EventFeedReaderTest extends TestCase {
 		$this->assertFalse($reader->isOwnChild('guardian-anna-devries', 'someone-elses-child'));
 		$this->assertFalse($reader->isOwnChild('guardian-anna-devries', ''));
 	}//end testIsOwnChildOnlyForAChildInTheGuardiansAudience()
+
+	public function testAnEventAskingSeatsCountsEveryYesAnswersSeats(): void {
+		$events = [
+			['id' => 'e1', 'status' => 'published', 'target' => ['groupRefs' => ['groep-5a']], 'title' => 'Musical', 'askSeats' => true],
+			['id' => 'e2', 'status' => 'published', 'target' => ['groupRefs' => ['groep-5a']], 'title' => 'Sports day'],
+		];
+		$rsvps = [
+			['eventRef' => 'e1', 'guardianRef' => 'guardian-anna-devries', 'response' => 'yes', 'seats' => 3],
+			['eventRef' => 'e1', 'guardianRef' => 'guardian-other', 'response' => 'yes'],
+			['eventRef' => 'e1', 'guardianRef' => 'guardian-third', 'response' => 'no', 'seats' => 4],
+			['eventRef' => 'e2', 'guardianRef' => 'guardian-other', 'response' => 'yes', 'seats' => 9],
+		];
+
+		$reader = new EventFeedReader($this->container($events, $rsvps), $this->audienceReader(['groep-5a']), $this->createMock(LoggerInterface::class));
+		$feed = $reader->feedFor('guardian-anna-devries');
+
+		$this->assertCount(2, $feed);
+		$this->assertSame(4, $feed[0]['seatsTaken'], 'three seats for anna and one for a yes without seats; the no and the other event do not count');
+		$this->assertSame('yes', $feed[0]['myRsvp']);
+		$this->assertArrayNotHasKey('seatsTaken', $feed[1]);
+		$this->assertNull($feed[1]['myRsvp']);
+	}//end testAnEventAskingSeatsCountsEveryYesAnswersSeats()
+
+	public function testReadOwnEventReturnsAnEventInTheAudienceAndNullForAnEmptyId(): void {
+		$events = [
+			['id' => 'e0', 'status' => 'published', 'target' => ['groupRefs' => ['groep-9z']], 'title' => 'Foreign'],
+			['id' => 'e1', 'status' => 'published', 'target' => ['groupRefs' => ['groep-5a']], 'title' => 'Ours'],
+		];
+
+		$reader = new EventFeedReader($this->container($events), $this->audienceReader(['groep-5a']), $this->createMock(LoggerInterface::class));
+
+		$this->assertSame('Ours', $reader->readOwnEvent('guardian-anna-devries', 'e1')['title'] ?? null);
+		$this->assertNull($reader->readOwnEvent('guardian-anna-devries', ''));
+		$this->assertFalse($reader->isOwnChild('', 'child-1'));
+	}//end testReadOwnEventReturnsAnEventInTheAudienceAndNullForAnEmptyId()
 }//end class

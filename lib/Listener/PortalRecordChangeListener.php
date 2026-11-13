@@ -51,7 +51,6 @@ namespace OCA\Portaliq\Listener;
 
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
-use OCA\Portaliq\Contribution\NotificationRuleNormaliser;
 use OCA\Portaliq\Kernel\Contracts\ChangeRuleNoticesInterface;
 use OCA\Portaliq\Kernel\Contracts\MessageBoxChannelInterface;
 use OCA\Portaliq\Kernel\Contracts\NotificationDispatchServiceInterface;
@@ -64,6 +63,9 @@ use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
 use Throwable;
+use OCA\Portaliq\Kernel\Contracts\NotificationRuleNormaliserInterface;
+use OCA\Portaliq\Kernel\Contracts\PublicDetailShapeInterface;
+use OCA\Portaliq\Kernel\Contracts\PublicIndexKindsInterface;
 
 /**
  * Writes the inbox message for a declared change and dispatches the rule.
@@ -389,7 +391,7 @@ class PortalRecordChangeListener implements IEventListener {
 	 */
 	private function onForeignMessage(array $data, string $recordId): void {
 		$ruleKey = ($data['ruleKey'] ?? null);
-		if (is_string($ruleKey) === false || preg_match(NotificationRuleNormaliser::APP_RULE_KEY_PATTERN, $ruleKey, $match) !== 1) {
+		if (is_string($ruleKey) === false || preg_match(NotificationRuleNormaliserInterface::APP_RULE_KEY_PATTERN, $ruleKey, $match) !== 1) {
 			return;
 		}
 
