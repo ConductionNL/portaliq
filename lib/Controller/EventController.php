@@ -29,6 +29,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\ObjectServiceLookup;
+use OCA\Portaliq\Service\PagedObjectReads;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -37,6 +38,7 @@ use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use Throwable;
 
 /**
  * Staff authoring for events.
@@ -54,6 +56,7 @@ class EventController extends Controller {
 	use ObjectArrayRow;
 	use TargetedAudience;
 	use StaffRowWrite;
+	use PagedObjectReads;
 
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
@@ -84,6 +87,69 @@ class EventController extends Controller {
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
+
+	/**
+	 * Every event, for staff choosing one: its id, title, start and status,
+	 * the latest start first. A news item names the event whose sign-up it
+	 * carries (`eventRef`); this is the list staff pick it from.
+	 *
+	 * @return JSONResponse `{events: [{id, title, start, status}]}`, or 500 when the events cannot be read.
+	 *
+	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/tasks.md#task-4
+	 */
+	#[NoAdminRequired]
+	public function index(): JSONResponse {
+		$this->requireAuthenticatedStaff();
+
+		$objectService = $this->objectService();
+		if ($objectService === null) {
+			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		try {
+			$rows = $this->readEveryPage(objectService: $objectService, register: self::REGISTER, schema: self::SCHEMA);
+		} catch (Throwable $e) {
+			$this->logger->error('Portaliq: event list failed', ['reason' => $e->getMessage()]);
+			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		if ($rows === null) {
+			return new JSONResponse(['error' => 'server_error'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		return new JSONResponse(['events' => $this->eventChoices(rows: $rows)]);
+	}//end index()
+
+	/**
+	 * The choices for a list of event rows: those with an id, latest start first.
+	 *
+	 * @param array<int, mixed> $rows The event rows as read.
+	 *
+	 * @return list<array{id: string, title: string, start: string, status: string}>
+	 *
+	 * @spec openspec/changes/event-sign-up-by-a-pupil-with-seats/tasks.md#task-4
+	 */
+	private function eventChoices(array $rows): array {
+		$choices = [];
+		foreach ($rows as $row) {
+			$event = $this->normalise(row: $row);
+			$id    = (string)($event['id'] ?? ($event['@self']['id'] ?? ($event['uuid'] ?? '')));
+			if ($id === '') {
+				continue;
+			}
+
+			$choices[] = [
+				'id' => $id,
+				'title' => (string)($event['title'] ?? ''),
+				'start' => (string)($event['start'] ?? ''),
+				'status' => (string)($event['status'] ?? ''),
+			];
+		}
+
+		usort($choices, static fn (array $a, array $b): int => strcmp($b['start'], $a['start']));
+
+		return $choices;
+	}//end eventChoices()
 
 	/**
 	 * Create a draft event. The author is the signed-in staff member, never
