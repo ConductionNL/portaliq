@@ -47,4 +47,9 @@ interface PublicDetailShapeInterface {
 	 * @spec openspec/changes/public-detail-page-for-a-provider-item/tasks.md#task-1
 	 */
 	public function detail(mixed $answer): ?array;
+
+	/**
+	 * The contract method an app may implement.
+	 */
+	public const METHOD = 'getPublicDetail';
 }//end interface

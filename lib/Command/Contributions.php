@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Command;
 
-use OCA\Portaliq\Service\ContributionCensus;
+use OCA\Portaliq\Kernel\Contracts\ContributionCensusInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -42,12 +42,12 @@ class Contributions extends Command {
 	/**
 	 * Constructor.
 	 *
-	 * @param ContributionCensus $census Reads the rows.
+	 * @param ContributionCensusInterface $census Reads the rows.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly ContributionCensus $census,
+		private readonly ContributionCensusInterface $census,
 	) {
 		parent::__construct();
 	}//end __construct()
@@ -111,9 +111,9 @@ class Contributions extends Command {
 	 */
 	private static function line(array $row): string {
 		$what = match ($row['status']) {
-			ContributionCensus::STATUS_ENDPOINTS => 'integrates through its '.$row['pattern'].', not a provider',
-			ContributionCensus::STATUS_ERROR => 'provider failed: '.$row['error'],
-			ContributionCensus::STATUS_PROVIDER => self::audiences(audiences: $row['audiences']),
+			ContributionCensusInterface::STATUS_ENDPOINTS => 'integrates through its '.$row['pattern'].', not a provider',
+			ContributionCensusInterface::STATUS_ERROR => 'provider failed: '.$row['error'],
+			ContributionCensusInterface::STATUS_PROVIDER => self::audiences(audiences: $row['audiences']),
 			default => 'contributes nothing',
 		};
 

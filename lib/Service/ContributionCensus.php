@@ -28,37 +28,24 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Contribution\PortalProviderLocator;
+use OCA\Portaliq\Kernel\Contracts\ContributionCensusInterface;
+use OCA\Portaliq\Kernel\Contracts\ProviderAudiencesInterface;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
-use OCA\Portaliq\Kernel\Contracts\ProviderAudiencesInterface;
 
 /**
  * One row per enabled app: its provider, its audiences and what it declares.
  *
  * @spec openspec/changes/contributing-apps-census/tasks.md#T01
  */
-class ContributionCensus {
-	/**
-	 * A row for an app whose provider was found and answered.
-	 */
-	public const STATUS_PROVIDER = 'provider';
+class ContributionCensus implements ContributionCensusInterface {
 
 	/**
 	 * A row for an app without a provider.
 	 */
 	public const STATUS_NONE = 'none';
-
-	/**
-	 * A row for an app known to integrate without a provider.
-	 */
-	public const STATUS_ENDPOINTS = 'endpoints';
-
-	/**
-	 * A row for an app whose provider threw.
-	 */
-	public const STATUS_ERROR = 'error';
 
 	/**
 	 * The parts of a contribution that are counted.

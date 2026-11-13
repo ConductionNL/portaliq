@@ -71,4 +71,11 @@ interface CreateActionMatcherInterface {
 	 * @spec openspec/changes/archive/2026-10-07-create-names-its-action/tasks.md#T3
 	 */
 	public function matchAnonymous(array $aggregate, string $register, string $schema, mixed $actionId): array|string|null;
+
+	/**
+	 * The answer when several actions write the target and none was named.
+	 *
+	 * @var string
+	 */
+	public const AMBIGUOUS = 'ambiguous';
 }//end interface

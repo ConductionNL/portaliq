@@ -49,4 +49,13 @@ interface NotificationRuleNormaliserInterface {
 	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md
 	 */
 	public function scopedElsewhere(array $collection): bool;
+
+	/**
+	 * The shape of a rule key an app sends on a portalMessage it writes: the
+	 * app id, a dot, the app's own key. The app is the part before the first
+	 * dot (PortalRecordChangeListener::onForeignMessage).
+	 *
+	 * @var string
+	 */
+	public const APP_RULE_KEY_PATTERN = '/^([a-z][a-z0-9_-]*)\.[A-Za-z0-9_.-]+$/';
 }//end interface
