@@ -156,6 +156,7 @@
 			v-else
 			v-model:paletteOpen="paletteOpen"
 			:editor="editor"
+			:loadCatalogueKinds="loadCatalogueKinds"
 			publicOnly />
 
 		<PageHistoryDialog
@@ -176,7 +177,8 @@ import PageGridEditor from './PageGridEditor.vue'
 import SiteMenuPanel from './SiteMenuPanel.vue'
 import SitePagesPanel from './SitePagesPanel.vue'
 import { defaultSizeFor } from '../lib/pageWidgetCatalogue.js'
-import { createPageEditor, createPageSaver } from './index.js'
+import { fetchCatalogueKinds } from '../site/lib/publicCatalogue.js'
+import { createPageEditor, createPageSaver, kindsFrom } from './index.js'
 import { instanceUrl } from './instanceUrl.js'
 
 import 'gridstack/dist/gridstack.css'
@@ -288,6 +290,17 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * The kinds the apps declare for this portal's public index, for the
+		 * blocks that read one.
+		 *
+		 * @return {Promise<Array<object>>} The kinds.
+		 * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-4
+		 */
+		async loadCatalogueKinds() {
+			return kindsFrom(await fetchCatalogueKinds(this.portal))
+		},
+
 		/**
 		 * Translate.
 		 *

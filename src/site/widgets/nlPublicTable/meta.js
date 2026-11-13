@@ -24,11 +24,13 @@ export const metaOf = {
 		{
 			name: 'source',
 			kind: 'json',
+			picker: 'source',
 			label: 'Uit welke app: {"app": "learniq", "kind": "test", "filters": {"Afdeling": ["4 havo"]}}. De waarde "visitor" is de klas van de bezoeker.',
 		},
 		{
 			name: 'columns',
 			kind: 'json',
+			picker: 'columns',
 			label: 'Kolommen, uit wat de app aanbiedt: [{"key": "day", "label": "Dag"}]',
 		},
 		{ name: 'display', kind: 'string', label: 'Weergave: plain of boxed' },

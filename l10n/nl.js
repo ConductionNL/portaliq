@@ -3362,7 +3362,12 @@ OC.L10N.register(
         "QR code": "QR-code",
         "As the case app shows it": "Zoals de zaakapp het toont",
         "The columns are saved.": "De kolommen zijn opgeslagen.",
-        "The columns could not be saved. Try again.": "De kolommen konden niet worden opgeslagen. Probeer het opnieuw."
+        "The columns could not be saved. Try again.": "De kolommen konden niet worden opgeslagen. Probeer het opnieuw.",
+        "App and kind": "App en soort",
+        "No app": "Geen app",
+        "Categories": "Categorieën",
+        "Any": "Alle",
+        "The visitor's own": "Die van de bezoeker"
     },
     "nplurals=2; plural=(n != 1);"
 )
