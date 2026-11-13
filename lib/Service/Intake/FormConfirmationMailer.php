@@ -24,6 +24,7 @@ namespace OCA\Portaliq\Service\Intake;
 
 use DateTimeImmutable;
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\FormConfirmationMailerInterface;
 use OCA\Portaliq\Service\Mail\MailLog;
 use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
 use OCP\IL10N;
@@ -43,7 +44,7 @@ use Throwable;
  *
  * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t05
  */
-class FormConfirmationMailer {
+class FormConfirmationMailer implements FormConfirmationMailerInterface {
 	private const DEFAULT_LANGUAGE = 'nl';
 
 	/**

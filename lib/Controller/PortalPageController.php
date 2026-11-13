@@ -51,9 +51,9 @@ use OCA\Portaliq\Kernel\Contracts\AccessibilityFramingInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalNoticeReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalRuntimeConfigResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalThemeResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\SiteShellInterface;
 use OCA\Portaliq\Service\Cms\SiteHead;
-use OCA\Portaliq\Service\PortalThemeResolver;
 use OCA\Portaliq\Service\SiteShell;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -100,7 +100,7 @@ class PortalPageController extends Controller {
 	 *                                    the site renderer.
 	 * @param PortalResolverInterface $portalResolver Resolves the serving portal, so the
 	 *                                       shell knows whose theme to load.
-	 * @param PortalThemeResolver $themeResolver Maps that portal's theme
+	 * @param PortalThemeResolverInterface $themeResolver Maps that portal's theme
 	 *                                           reference to a real themiq
 	 *                                           token stylesheet.
 	 * @param SiteHead $siteHead The head of the page a site request asks for.
@@ -112,7 +112,7 @@ class PortalPageController extends Controller {
 		PortalRuntimeConfigResolverInterface $configResolver,
 		private readonly IURLGenerator $urlGenerator,
 		PortalResolverInterface $portalResolver,
-		PortalThemeResolver $themeResolver,
+		PortalThemeResolverInterface $themeResolver,
 		SiteHead $siteHead,
 		PortalNoticeReaderInterface $notices,
 		private readonly AccessibilityFramingInterface $framing,
