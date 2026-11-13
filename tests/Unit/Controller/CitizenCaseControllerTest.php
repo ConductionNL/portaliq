@@ -64,7 +64,7 @@ use OCA\Portaliq\Contribution\TimelineProviderMethod;
  * @uses   \OCA\Portaliq\Contribution\TimelineProviderMethod
  * @uses   \OCA\Portaliq\Service\Identity\MandateParties
  * @uses   \OCA\Portaliq\Service\Branch\BranchNumber
- * @uses   \OCA\Portaliq\Service\Branch\PortalBranchScope
+ * @uses   \OCA\Portaliq\Kernel\Support\PortalBranchScope
  * @uses   \OCA\Portaliq\Service\CitizenCaseDocuments
  * @uses   \OCA\Portaliq\Service\PortalCaseDocumentReader
  * @uses   \OCA\Portaliq\Service\MandatedCaseReader
@@ -75,8 +75,8 @@ use OCA\Portaliq\Contribution\TimelineProviderMethod;
  * @uses   \OCA\Portaliq\Controller\CaseWithdrawal
  * @uses   \OCA\Portaliq\Controller\CaseWriteRun
  * @uses   \OCA\Portaliq\Service\DocumentEntryExtras
- * @uses   \OCA\Portaliq\Service\UploadedFile
- * @uses   \OCA\Portaliq\Service\Session\SessionTrust
+ * @uses   \OCA\Portaliq\Kernel\Support\UploadedFile
+ * @uses   \OCA\Portaliq\Kernel\Support\SessionTrust
  *
  * @spec openspec/changes/what-the-citizen-may-write-on-their-own-case/specs/citizen-writes-on-their-own-case/spec.md
  */

@@ -44,7 +44,7 @@ use OCA\Portaliq\Service\PublicCatalogueQuery;
  * @uses   \OCA\Portaliq\Service\PublicCatalogueQuery
  * @uses   \OCA\Portaliq\Service\DerivedCatalogueFacets
  * @uses   \OCA\Portaliq\Service\CatalogueScope
- * @uses   \OCA\Portaliq\Service\Session\SessionTrust
+ * @uses   \OCA\Portaliq\Kernel\Support\SessionTrust
  */
 class ContentNewsCatalogueGoldenTest extends TestCase {
 

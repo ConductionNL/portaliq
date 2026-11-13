@@ -47,7 +47,7 @@ use OCA\Portaliq\Service\Assistant\PublicSourceScope;
  * @covers \OCA\Portaliq\Controller\ContentController
  * @covers \OCA\Portaliq\Controller\PublicContentGate
  * @uses   \OCA\Portaliq\Service\PortalSessionService
- * @uses   \OCA\Portaliq\Service\Session\SessionTrust
+ * @uses   \OCA\Portaliq\Kernel\Support\SessionTrust
  */
 class ContentControllerGateGoldenTest extends TestCase {
 

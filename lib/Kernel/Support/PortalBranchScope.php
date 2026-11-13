@@ -6,7 +6,7 @@
  * Narrows what a business session sees to the branch (vestiging) it acts for.
  *
  * @category Service
- * @package  OCA\Portaliq\Service\Branch
+ * @package  OCA\Portaliq\Kernel\Support
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,9 +22,10 @@
 
 declare(strict_types=1);
 
-namespace OCA\Portaliq\Service\Branch;
+namespace OCA\Portaliq\Kernel\Support;
 
 use OCA\Portaliq\Kernel\Contracts\PortalBranchScopeInterface;
+use OCA\Portaliq\Service\Branch\BranchNumber;
 
 /**
  * The branch rule of design D2, applied after the subject scope:

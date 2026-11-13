@@ -6,7 +6,7 @@
  * One multipart upload read into a sanitised name and its bytes.
  *
  * @category Service
- * @package  OCA\Portaliq\Service
+ * @package  OCA\Portaliq\Kernel\Support
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -22,7 +22,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Portaliq\Service;
+namespace OCA\Portaliq\Kernel\Support;
 
 use OCA\Portaliq\Kernel\Contracts\UploadedFileInterface;
 

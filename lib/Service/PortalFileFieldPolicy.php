@@ -39,6 +39,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalFileFieldPolicyInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IRequest;
 use Throwable;
+use OCA\Portaliq\Kernel\Support\UploadedFile;
 
 /**
  * Decides the checks of one upload into a declared file field.
