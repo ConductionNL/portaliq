@@ -1451,41 +1451,16 @@ class ContributionController extends Controller implements PortalProtected {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$collectionId = (string)$this->request->getParam('collection', '');
-		$match = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
-		if ($match === null) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
-		}
-
-		$collection = $match['collection'];
-
-		if (SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
-			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
-		}
-
-		// From here on every refusal is the IDENTICAL 404 — opt-in, ownership,
-		// and file resolution are indistinguishable to the client (no oracle).
-		if (($collection['filesDownload'] ?? false) !== true) {
-			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		$match = $this->downloadableCollection(subject: $subject, register: $register, schema: $schema);
+		if ($match instanceof JSONResponse) {
+			return $match;
 		}
 
 		// Re-verify ownership with the full scope resolution BEFORE the file is
 		// ever resolved — a foreign or non-existent object never reaches the
 		// file layer.
-		$owned = $this->reader->readObject(
-			register: $register,
-			schema: $schema,
-			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			id: $id,
-			organisation: (string)($subject['organisation'] ?? ''),
-			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
-			contributingApp: $match['app'],
-			via: ($collection['via'] ?? null),
-			audience: (string)($subject['audience'] ?? ''),
-			fields: ($collection['fields'] ?? null)
-		);
-		if ($owned === null) {
+		$target = ['register' => $register, 'schema' => $schema, 'id' => $id];
+		if ($this->ownsDownloadObject(subject: $subject, match: $match, target: $target) === false) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 
@@ -1504,6 +1479,67 @@ class ContributionController extends Controller implements PortalProtected {
 
 		return $stream;
 	}//end downloadFile()
+
+	/**
+	 * The collection the subject may download files from, or the refusal: 403
+	 * when no collection is authorised or its trust level is not met, 404 when
+	 * the collection has not opted in to downloads.
+	 *
+	 * @param array<string, mixed> $subject  The resolved subject.
+	 * @param string               $register The register.
+	 * @param string               $schema   The schema.
+	 *
+	 * @return array{collection: array<string, mixed>, app: string}|JSONResponse
+	 */
+	private function downloadableCollection(array $subject, string $register, string $schema): array|JSONResponse {
+		$collectionId = (string)$this->request->getParam('collection', '');
+		$match = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
+		if ($match === null) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$collection = $match['collection'];
+
+		if (SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		// From here on every refusal is the IDENTICAL 404 — opt-in, ownership,
+		// and file resolution are indistinguishable to the client (no oracle).
+		if (($collection['filesDownload'] ?? false) !== true) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return $match;
+	}//end downloadableCollection()
+
+	/**
+	 * Whether the object a file hangs on is the subject's, read with the
+	 * collection's full scope resolution.
+	 *
+	 * @param array<string, mixed>                                   $subject The resolved subject.
+	 * @param array{collection: array<string, mixed>, app: string}   $match   The download collection.
+	 * @param array{register: string, schema: string, id: string}    $target  The object.
+	 *
+	 * @return bool
+	 */
+	private function ownsDownloadObject(array $subject, array $match, array $target): bool {
+		$collection = $match['collection'];
+
+		return $this->reader->readObject(
+			register: $target['register'],
+			schema: $target['schema'],
+			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
+			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			id: $target['id'],
+			organisation: (string)($subject['organisation'] ?? ''),
+			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
+			contributingApp: $match['app'],
+			via: ($collection['via'] ?? null),
+			audience: (string)($subject['audience'] ?? ''),
+			fields: ($collection['fields'] ?? null)
+		) !== null;
+	}//end ownsDownloadObject()
 
 	/**
 	 * Return an OpenRegister schema DEFINITION by slug, for the schema-driven
@@ -1664,15 +1700,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 */
 	private function createFrom(array $subject, array $match, string $register, string $schema, array $carried=[]): JSONResponse {
 		$action = $match['action'];
-
-		$leftOut     = array_keys($carried);
-		$whitelisted = $this->withoutFileFields(
-			action: $action,
-			data: $this->whitelist(fields: array_values(array_diff((array)($action['fields'] ?? []), $leftOut)))
-		);
-		$data = $this->createBody->build(action: $action, whitelisted: $whitelisted);
-		// A carried field is set from the message the resident owns, over anything the client sent.
-		$data = array_merge($data, $carried);
+		$data   = $this->createBodyOf(action: $action, carried: $carried);
 
 		// The body's own checks, before the stamp and any write. First the
 		// action's required fields (REQ-SMF-024): an empty one answers 400
@@ -1721,13 +1749,60 @@ class ContributionController extends Controller implements PortalProtected {
 				?? new JSONResponse(['error' => 'write_failed'], Http::STATUS_BAD_GATEWAY);
 		}
 
+		$this->afterCreate(
+			subject: $subject,
+			match: $match,
+			target: ['register' => $register, 'schema' => $schema, 'id' => $this->extractId(row: $created)],
+			data: $data
+		);
+
+		return new JSONResponse(['object' => $created]);
+	}//end createFrom()
+
+	/**
+	 * The body a create action writes: the whitelisted client fields minus the
+	 * carried ones, with the action's defaults, then the carried fields on top.
+	 *
+	 * @param array<string, mixed> $action  The matched create action.
+	 * @param array<string, mixed> $carried Fields set on the server over the client's body.
+	 *
+	 * @return array<string, mixed> The body.
+	 */
+	private function createBodyOf(array $action, array $carried): array {
+		$leftOut     = array_keys($carried);
+		$whitelisted = $this->withoutFileFields(
+			action: $action,
+			data: $this->whitelist(fields: array_values(array_diff((array)($action['fields'] ?? []), $leftOut)))
+		);
+		$data = $this->createBody->build(action: $action, whitelisted: $whitelisted);
+
+		// A carried field is set from the message the resident owns, over anything the client sent.
+		return array_merge($data, $carried);
+	}//end createBodyOf()
+
+	/**
+	 * The follow-ons of a successful create: the audit entry, the receipt and
+	 * the confirmation mail. None of them changes the answer.
+	 *
+	 * @param array<string, mixed>                              $subject The resolved subject.
+	 * @param array{action: array<string, mixed>, app: string}  $match   The matched create action.
+	 * @param array{register: string, schema: string, id: string} $target  Where the object was written, and its id.
+	 * @param array<string, mixed>                              $data    The body that was written.
+	 *
+	 * @return void
+	 */
+	private function afterCreate(array $subject, array $match, array $target, array $data): void {
+		$action   = $match['action'];
+		$register = $target['register'];
+		$schema   = $target['schema'];
+
 		$this->auditor->record(
 			verb: 'create',
 			subjectRef: (string)($subject['subjectRef'] ?? ''),
 			organisation: (string)($subject['organisation'] ?? ''),
 			register: $register,
 			schema: $schema,
-			id: $this->extractId(row: $created),
+			id: $target['id'],
 			jti: (string)($subject['jti'] ?? '')
 		);
 
@@ -1748,9 +1823,7 @@ class ContributionController extends Controller implements PortalProtected {
 		// The question is stored; the confirmation mail is a follow-on that
 		// never changes the answer (contact-page-question-form-and-not-found).
 		$this->confirmation?->afterCreate(subject: $subject, action: $action, data: $data);
-
-		return new JSONResponse(['object' => $created]);
-	}//end createFrom()
+	}//end afterCreate()
 
 	/**
 	 * Send the subject's live draft of a create action, when there is one.
