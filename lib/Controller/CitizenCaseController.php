@@ -825,6 +825,8 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 * @param string $id The case id.
 	 *
 	 * @return JSONResponse|null The refusal, or null to proceed.
+	 *
+	 * @spec openspec/changes/citizen-case-write-limit/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-residents-writes-on-her-own-case-are-limited-per-case-and-per-identity-req-cwl-001
 	 */
 	private function guardWrite(array $context, string $id): ?JSONResponse {
 		$allowed = $this->throttle->allow(
