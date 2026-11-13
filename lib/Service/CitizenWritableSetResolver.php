@@ -37,6 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Contribution\CaseFieldDisplayHints;
 use OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser;
 use OCP\IL10N;
 
@@ -112,10 +113,13 @@ class CitizenWritableSetResolver {
 	 *
 	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
 	 * @spec openspec/changes/archive/2026-10-07-citizen-case-ended-shows-only-its-state/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-case-that-has-ended-offers-nothing-and-explains-nothing
+	 * @spec openspec/changes/personal-data-left-untranslated/tasks.md#t03
 	 */
 	public function resolve(array $action, array $case, string $audience, string $closedField = ''): array {
-		$set = $this->resolveOpen(action: $action, case: $case, audience: $audience);
+		$set   = $this->resolveOpen(action: $action, case: $case, audience: $audience);
+		$hints = ($action[CitizenWriteConfigNormaliser::KEY]['fields'] ?? null);
 		if ((new CaseRowMarker())->hasEnded(row: $case, closedField: $closedField) === false) {
+			$set['fields'] = CaseFieldDisplayHints::apply(fields: (array)($set['fields'] ?? []), hints: $hints);
 			return array_merge($set, ['ended' => false]);
 		}
 
@@ -135,7 +139,7 @@ class CitizenWritableSetResolver {
 		return array_merge(
 			$set,
 			[
-				'fields' => $fields,
+				'fields' => CaseFieldDisplayHints::apply(fields: $fields, hints: $hints),
 				'writable' => [],
 				'window' => $closed,
 				'documents' => $closed,
