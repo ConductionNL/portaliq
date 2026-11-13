@@ -30,6 +30,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Portaliq\Contribution\ActionScopeResolver
  * @uses \OCA\Portaliq\Contribution\CreateBody
  * @uses \OCA\Portaliq\Service\PortalSessionService
+ * @uses \OCA\Portaliq\Service\Session\SessionTrust
  *
  * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#5.3
  */
