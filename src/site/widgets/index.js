@@ -93,7 +93,7 @@ export { loaders } from './loaders.js'
  * @property {string} label The Dutch label an editor reads.
  * @property {string} nlds The component's name on nldesignsystem.nl.
  * @property {Array<string>} synonyms Other words an editor may search for.
- * @property {Array<{name: string, kind: string, label: string}>} fields What the author may edit.
+ * @property {Array<{name: string, kind: string, label: string, picker?: ('source'|'columns')}>} fields What the author may edit; `picker` adds the choices an app declares for its public index (editor-blocks-read-public-app-data).
  * @property {{gridWidth: number, gridHeight: number}} defaultSize Its first geometry.
  * @property {('public'|'signedIn')} scope Whether it needs a signed-in visitor.
  */
