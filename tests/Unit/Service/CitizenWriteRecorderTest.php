@@ -250,6 +250,65 @@ class CitizenWriteRecorderTest extends TestCase {
 	}//end testTheWithdrawalCarriesWhatWasSaidAndWhereItLanded()
 
 	/**
+	 * The withdrawal names the register, the schema, who withdrew it and under
+	 * which mandate.
+	 *
+	 * A listener acting on the withdrawal reads the case from the register and
+	 * schema it names, and decides whether the citizen could withdraw it from
+	 * the identity and mandate; a withdrawal made for an organisation carries
+	 * the organisation it was made for.
+	 *
+	 * @return void
+	 */
+	public function testTheWithdrawalNamesTheCaseAndWhoActedUnderWhichMandate(): void {
+		$dispatcher = $this->createMock(IEventDispatcher::class);
+		$dispatched = null;
+		$dispatcher->method('dispatchTyped')->willReturnCallback(
+			static function (Event $event) use (&$dispatched): void {
+				$dispatched = $event;
+			}
+		);
+
+		$this->recorder(dispatcher: $dispatcher)->announceWithdrawal(
+			register: 'reg-1',
+			schema: 'zaak',
+			caseId: 'case-1',
+			status: 'ingetrokken',
+			reason: '',
+			subject: [
+				'subjectRef' => 'burger-1',
+				'audience' => 'citizen',
+				'trust' => 'substantial',
+				'jti' => 'jti-1',
+				'actingForEntity' => 'org-7',
+				'actingUnderMandate' => 'mandate-3',
+				'actingForLabel' => ' Bakkerij Jansen ',
+			],
+			action: ['id' => 'withdraw', 'minTrust' => 'substantial'],
+			occurredAt: '2026-09-18T10:00:00+00:00'
+		);
+
+		$this->assertInstanceOf(PortalClientWithdrawalEvent::class, $dispatched);
+		$this->assertSame('reg-1', $dispatched->getRegister());
+		$this->assertSame('zaak', $dispatched->getSchema());
+		$this->assertSame(
+			['subjectRef' => 'burger-1', 'audience' => 'citizen', 'trust' => 'substantial', 'jti' => 'jti-1'],
+			$dispatched->getIdentity()
+		);
+		$this->assertSame(
+			[
+				'action' => 'withdraw',
+				'audience' => 'citizen',
+				'minTrust' => 'substantial',
+				'actingFor' => 'org-7',
+				'mandate' => 'mandate-3',
+				'actingForLabel' => 'Bakkerij Jansen',
+			],
+			$dispatched->getMandate()
+		);
+	}//end testTheWithdrawalNamesTheCaseAndWhoActedUnderWhichMandate()
+
+	/**
 	 * 🔑 THE WITHDRAWAL IS AUDITED, AND THE AUDIT NAMES THE CITIZEN.
 	 *
 	 * The event tells automation; the audit trail tells a person afterwards who
