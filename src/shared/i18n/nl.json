@@ -498,5 +498,16 @@
 	"My cases and requests": "Mijn zaken en verzoeken",
 	"Your details": "Uw gegevens",
 	"Logged in as {name}, to {area}": "Ingelogd als {name}, naar {area}",
-	"Logged in, to {area}": "Ingelogd, naar {area}"
+	"Logged in, to {area}": "Ingelogd, naar {area}",
+	"You can react from {date}": "Reageren kan vanaf {date}",
+	"You can react until {date}": "Reageren kan tot en met {date}",
+	"The reaction period ended on {date}": "De reactietermijn is verlopen op {date}",
+	"Go to the reaction form": "Naar het reactieformulier",
+	"View": "Bekijken",
+	"opens in a new tab": "opent in een nieuw tabblad",
+	"Download all ({count} documents)": "Download alles ({count} documenten)",
+	"Metadata (JSON)": "Metadata (JSON)",
+	"Metadata (DiWoo XML)": "Metadata (DiWoo XML)",
+	"Metadata of {title} as JSON": "Metadata van {title} als JSON",
+	"Metadata of {title} as DiWoo XML": "Metadata van {title} als DiWoo XML"
 }

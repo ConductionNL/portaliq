@@ -498,5 +498,16 @@
 	"My cases and requests": "My cases and requests",
 	"Your details": "Your details",
 	"Logged in as {name}, to {area}": "Logged in as {name}, to {area}",
-	"Logged in, to {area}": "Logged in, to {area}"
+	"Logged in, to {area}": "Logged in, to {area}",
+	"You can react from {date}": "You can react from {date}",
+	"You can react until {date}": "You can react until {date}",
+	"The reaction period ended on {date}": "The reaction period ended on {date}",
+	"Go to the reaction form": "Go to the reaction form",
+	"View": "View",
+	"opens in a new tab": "opens in a new tab",
+	"Download all ({count} documents)": "Download all ({count} documents)",
+	"Metadata (JSON)": "Metadata (JSON)",
+	"Metadata (DiWoo XML)": "Metadata (DiWoo XML)",
+	"Metadata of {title} as JSON": "Metadata of {title} as JSON",
+	"Metadata of {title} as DiWoo XML": "Metadata of {title} as DiWoo XML"
 }
