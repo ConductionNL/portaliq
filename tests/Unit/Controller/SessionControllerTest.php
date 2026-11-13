@@ -872,6 +872,9 @@ class SessionControllerTest extends TestCase {
 		$this->assertStringContainsString(rawurlencode('signed.bearer.jwt'), $redirectUrl);
 		// The FRAGMENT carries the token, never the query string.
 		$this->assertStringNotContainsString('?token=', $redirectUrl);
+		// REQ-SEE-003: the bearer is in the fragment only; no query parameter holds it.
+		parse_str((string)parse_url($redirectUrl, PHP_URL_QUERY), $query);
+		$this->assertArrayNotHasKey('token', $query);
 
 	}//end testOidcCallbackMintsASessionAndRedirectsWithTheBearerInTheFragment()
 
@@ -1541,6 +1544,9 @@ class SessionControllerTest extends TestCase {
 		$this->assertSame(expected: Http::STATUS_FOUND, actual: $response->getStatus());
 		$this->assertStringStartsWith('https://nc.example/apps/portaliq/site?portal=', $response->getRedirectURL());
 		$this->assertStringEndsWith('#token=t', $response->getRedirectURL());
+		// REQ-SEE-003: the bearer is in the fragment only; no query parameter holds it.
+		parse_str((string)parse_url($response->getRedirectURL(), PHP_URL_QUERY), $query);
+		$this->assertArrayNotHasKey('token', $query);
 
 	}//end testNextcloudSignInWithoutASecretIs503AndWithoutReturnToLandsOnThePortal()
 
