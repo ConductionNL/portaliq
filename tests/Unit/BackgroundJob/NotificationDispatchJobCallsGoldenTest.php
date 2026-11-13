@@ -46,6 +46,8 @@ use RuntimeException;
  * streak and its flag, failing log and flag writes, and the push.
  *
  * @covers \OCA\Portaliq\BackgroundJob\NotificationDispatchJob
+ * @uses   \OCA\Portaliq\BackgroundJob\NotificationDispatchRun
+ * @uses   \OCA\Portaliq\BackgroundJob\NotificationOutcome
  */
 class NotificationDispatchJobCallsGoldenTest extends TestCase {
 

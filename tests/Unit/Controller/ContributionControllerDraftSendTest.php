@@ -53,6 +53,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Portaliq\Service\PortalSessionService
  * @uses \OCA\Portaliq\Service\PortalUserDisplayNames
  * @uses \OCA\Portaliq\Service\RequiredFieldsGuard
+ * @uses   \OCA\Portaliq\Contribution\RowIdentifier
+ * @uses   \OCA\Portaliq\Service\Session\SessionTrust
  */
 class ContributionControllerDraftSendTest extends TestCase {
 	private const SUBJECT = ['subjectRef' => 'sanne', 'audience' => 'resident', 'organisation' => '', 'trust' => 'low', 'jti' => 'jti-1'];
