@@ -4044,6 +4044,16 @@
                   "prefix": "valid until",
                   "fallback": "not checked yet"
                 },
+                "meta": [
+                  {
+                    "path": "servedAtRoot",
+                    "map": {
+                      "true": "Site at the root of this domain",
+                      "false": ""
+                    }
+                  },
+                  "landingRoute"
+                ],
                 "detail": {
                   "template": "Publish this TXT record: {name} = {value}",
                   "when": {
@@ -4064,6 +4074,17 @@
                     "required": true,
                     "pattern": "^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,63}$",
                     "patternMessage": "Use a plain host name, such as portal.example.nl, without https:// or a path."
+                  },
+                  {
+                    "key": "servedAtRoot",
+                    "label": "Site at the root of this domain",
+                    "type": "checkbox"
+                  },
+                  {
+                    "key": "landingRoute",
+                    "label": "Page the bare domain opens",
+                    "pattern": "^/[^/\\\\?#:\\s]([^\\\\?#:\\s]*[^/\\\\?#:\\s])?$",
+                    "patternMessage": "Use a page path of the site, such as /afval."
                   }
                 ]
               },

@@ -3362,7 +3362,10 @@ OC.L10N.register(
         "QR code": "QR-code",
         "As the case app shows it": "Zoals de zaakapp het toont",
         "The columns are saved.": "De kolommen zijn opgeslagen.",
-        "The columns could not be saved. Try again.": "De kolommen konden niet worden opgeslagen. Probeer het opnieuw."
+        "The columns could not be saved. Try again.": "De kolommen konden niet worden opgeslagen. Probeer het opnieuw.",
+        "Site at the root of this domain": "Site direct op dit domein",
+        "Page the bare domain opens": "Pagina die het domein zonder pad opent",
+        "Use a page path of the site, such as /afval.": "Gebruik het pad van een pagina van de site, zoals /afval."
     },
     "nplurals=2; plural=(n != 1);"
 )

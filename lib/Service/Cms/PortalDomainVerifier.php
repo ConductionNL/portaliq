@@ -106,10 +106,12 @@ class PortalDomainVerifier {
 	 *
 	 * @param string $slug The portal slug.
 	 *
-	 * @return array<int, array<string, mixed>>|null Per domain: hostname, name, value, verified and the certificate dates.
+	 * @return array<int, array<string, mixed>>|null Per domain: hostname, name, value, verified, the certificate dates,
+	 *                                               servedAtRoot and landingRoute.
 	 *                                               Null for an unknown portal.
 	 *
 	 * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-3
+	 * @spec openspec/changes/site-at-the-root-of-a-portal-host/tasks.md#t8
 	 */
 	public function records(string $slug): ?array {
 		$portal = $this->portal(slug: $slug);
@@ -138,6 +140,10 @@ class PortalDomainVerifier {
 				'verified' => (($domain['verified'] ?? false) === true),
 				'certificateValidUntil' => ($domain['certificateValidUntil'] ?? null),
 				'certificateCheckedAt' => ($domain['certificateCheckedAt'] ?? null),
+				// How the host is served (site-at-the-root-of-a-portal-host), so the
+				// Domains list can show it.
+				'servedAtRoot' => (($domain['servedAtRoot'] ?? false) === true),
+				'landingRoute' => (string)($domain['landingRoute'] ?? ''),
 			],
 			$domains
 		);
