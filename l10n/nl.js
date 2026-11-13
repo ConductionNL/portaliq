@@ -3362,7 +3362,14 @@ OC.L10N.register(
         "QR code": "QR-code",
         "As the case app shows it": "Zoals de zaakapp het toont",
         "The columns are saved.": "De kolommen zijn opgeslagen.",
-        "The columns could not be saved. Try again.": "De kolommen konden niet worden opgeslagen. Probeer het opnieuw."
+        "The columns could not be saved. Try again.": "De kolommen konden niet worden opgeslagen. Probeer het opnieuw.",
+        "Publish this page?": "Deze pagina publiceren?",
+        "Anyone can read this page, without signing in.": "Iedereen kan deze pagina lezen, zonder in te loggen.",
+        "Its address:": "Het adres:",
+        "Public": "Openbaar",
+        "Take back to draft": "Terugzetten naar concept",
+        "The page could not be taken back to a draft. Try again.": "De pagina kon niet worden teruggezet naar concept. Probeer het opnieuw.",
+        "The page is a draft again. Nobody can read it without signing in.": "De pagina is weer een concept. Zonder in te loggen kan niemand haar lezen."
     },
     "nplurals=2; plural=(n != 1);"
 )

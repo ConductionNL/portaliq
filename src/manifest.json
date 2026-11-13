@@ -4477,6 +4477,14 @@
                 "published": "success",
                 "draft": "warning"
               }
+            },
+            "enum": [
+              "published",
+              "draft"
+            ],
+            "enumLabels": {
+              "published": "Public",
+              "draft": "Draft"
             }
           },
           "locale"
@@ -4488,6 +4496,18 @@
             "icon": "ViewDashboardOutline",
             "type": "open-page",
             "target": "PageLayout"
+          },
+          {
+            "id": "take-page-back-to-draft",
+            "label": "Take back to draft",
+            "icon": "Close",
+            "type": "handler",
+            "handler": "takePageBackToDraft",
+            "visibleWhen": {
+              "field": "status",
+              "op": "eq",
+              "value": "published"
+            }
           }
         ],
         "sidebar": {
