@@ -4,17 +4,17 @@ Spec only in this PR. Tier V1. pipelinq's `marketing-articles-move-to-portaliq` 
 
 ## 1. Schema
 
-- [ ] 1.1 Add `article` to `lib/Settings/portaliq_register.json` with pipelinq's properties, lifecycle and `legacyRef`; add the three demo articles to the example data.
+- [ ] 1.1 Add `article` to `lib/Settings/portaliq_register.json` with pipelinq's properties, lifecycle and `legacyRef`; add the three demo articles to the example data. — partial: the `article` schema (pipelinq's properties and lifecycle, plus `legacyRef` and `organisation`; organisation-scoped in `SchemaTenancy`) is in the register (0.109.0); the three demo articles are not added yet, and the import was not run here (needs a live instance).
   - spec_ref: `specs/marketing-articles/spec.md#requirement-an-article-holds-its-body-as-markdown-and-its-own-identity`
   - acceptance: the register imports with no `PARTIAL IMPORT` in the log; `occ openregister:schema` lists `article` in register `portaliq`
 
 ## 2. Write path
 
-- [ ] 2.1 Port `ArticleService` and `ArticleController` (create, update, publish, archive, transition, usages, show, index), with the slug, author, first-publish and agent-mark rules.
+- [x] 2.1 Port `ArticleService` and `ArticleController` (create, update, publish, archive, transition, usages, show, index), with the slug, author, first-publish and agent-mark rules. — `lib/Service/Articles/ArticleService.php`, `ArticleStore.php`, `lib/Controller/ArticleController.php` (gated by the new `portal.write-articles` action), routes and openapi.json; `ArticleServiceTest`, `ArticleStoreTest`, `ArticleControllerTest`.
   - spec_ref: `#requirement-an-article-moves-through-a-declared-lifecycle`, `#requirement-an-agent-drafted-article-is-marked-as-such`
   - files: `lib/Service/ArticleService.php`, `lib/Controller/ArticleController.php`, `appinfo/routes.php`, tests
   - test: `vendor/bin/phpunit --no-coverage --filter Article`
-- [ ] 2.2 `ArticleUsagesRequestedEvent` and the usages endpoint; portaliq contributes pages that name the article.
+- [ ] 2.2 `ArticleUsagesRequestedEvent` and the usages endpoint; portaliq contributes pages that name the article. — partial: `ArticleUsagesRequestedEvent` and `GET /api/articles/{id}/usages` are built (`ArticleUsagesRequestedEventTest`); portaliq's own pages that name an article come with 3.2, which adds the reference on a page.
   - spec_ref: `#requirement-an-article-reports-where-it-has-been-used`
 
 ## 3. Pages
