@@ -10,7 +10,7 @@ test marked **fails today** must be run on `origin/development` first and seen r
 
 ## 1. Settings
 
-- [ ] 1.1 Declare `publicationErrorReports`, `publicationErrorReportOwner` and `showWithheldNotices` on
+- [x] 1.1 Declare `publicationErrorReports`, `publicationErrorReportOwner` and `showWithheldNotices` on
   `#portal`, defaults false and empty; refuse switching reports on without an existing owner. Bump the
   register version (REQ-PER-001, REQ-PER-003).
   - **fails today**: `tests/Unit/Service/PortalSettingsServiceTest.php` (or the service the portal

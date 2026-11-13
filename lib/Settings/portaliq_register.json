@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.108.0"
+        "version": "0.109.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.108.0",
+                "version": "0.109.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -2650,7 +2650,7 @@
             "portal": {
                 "slug": "portal",
                 "icon": "Web",
-                "version": "0.28.0",
+                "version": "0.29.0",
                 "title": "Portal",
                 "authorization": {
                     "read": [
@@ -4635,6 +4635,24 @@
                         "description": "Whether a visitor's search also reads the text inside public documents. On by default. Switch it off when the catalogue should match titles and metadata only. Only the published, redacted copy of a document is ever searched.",
                         "default": true,
                         "example": true
+                    },
+                    "publicationErrorReports": {
+                        "title": "Error reports on publications",
+                        "type": "boolean",
+                        "description": "Whether a publication page offers visitors a way to report an error in it. Off by default. It can only be switched on with an owner who receives the reports.",
+                        "default": false
+                    },
+                    "publicationErrorReportOwner": {
+                        "title": "Owner of error reports",
+                        "type": "string",
+                        "description": "The Nextcloud user or group that receives the error reports on this portal's publications. It must exist before error reports can be switched on.",
+                        "default": ""
+                    },
+                    "showWithheldNotices": {
+                        "title": "Show withheld notices",
+                        "type": "boolean",
+                        "description": "Whether a withdrawn publication's link says it was withdrawn and why, and a publication page lists the documents held back with their ground. Off by default: publishing that a record exists is itself a choice.",
+                        "default": false
                     },
                     "navigation": {
                         "title": "Navigation",

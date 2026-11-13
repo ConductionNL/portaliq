@@ -529,7 +529,15 @@
         "QR code": "QR code",
         "As the case app shows it": "As the case app shows it",
         "The columns are saved.": "The columns are saved.",
-        "The columns could not be saved. Try again.": "The columns could not be saved. Try again."
+        "The columns could not be saved. Try again.": "The columns could not be saved. Try again.",
+        "Error reports on publications": "Error reports on publications",
+        "Whether a publication page offers visitors a way to report an error in it. Off by default. It can only be switched on with an owner who receives the reports.": "Whether a publication page offers visitors a way to report an error in it. Off by default. It can only be switched on with an owner who receives the reports.",
+        "Owner of error reports": "Owner of error reports",
+        "The Nextcloud user or group that receives the error reports on this portal's publications. It must exist before error reports can be switched on.": "The Nextcloud user or group that receives the error reports on this portal's publications. It must exist before error reports can be switched on.",
+        "Show withheld notices": "Show withheld notices",
+        "Whether a withdrawn publication's link says it was withdrawn and why, and a publication page lists the documents held back with their ground. Off by default: publishing that a record exists is itself a choice.": "Whether a withdrawn publication's link says it was withdrawn and why, and a publication page lists the documents held back with their ground. Off by default: publishing that a record exists is itself a choice.",
+        "Error reports need an owner: name the user or group that receives them.": "Error reports need an owner: name the user or group that receives them.",
+        "Error reports need an owner, and \"%s\" is not a user or group.": "Error reports need an owner, and \"%s\" is not a user or group."
     },
     "pluralForm": "nplurals=2; plural=(n != 1);"
 }

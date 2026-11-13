@@ -3362,7 +3362,15 @@ OC.L10N.register(
         "QR code": "QR-code",
         "As the case app shows it": "Zoals de zaakapp het toont",
         "The columns are saved.": "De kolommen zijn opgeslagen.",
-        "The columns could not be saved. Try again.": "De kolommen konden niet worden opgeslagen. Probeer het opnieuw."
+        "The columns could not be saved. Try again.": "De kolommen konden niet worden opgeslagen. Probeer het opnieuw.",
+        "Error reports on publications": "Foutmeldingen op publicaties",
+        "Whether a publication page offers visitors a way to report an error in it. Off by default. It can only be switched on with an owner who receives the reports.": "Of een publicatiepagina bezoekers een manier biedt om een fout erin te melden. Standaard uit. Kan alleen aan met een eigenaar die de meldingen ontvangt.",
+        "Owner of error reports": "Eigenaar van foutmeldingen",
+        "The Nextcloud user or group that receives the error reports on this portal's publications. It must exist before error reports can be switched on.": "De Nextcloud-gebruiker of -groep die de foutmeldingen op de publicaties van dit portaal ontvangt. Die moet bestaan voordat foutmeldingen aan kunnen.",
+        "Show withheld notices": "Meldingen over niet-openbare stukken tonen",
+        "Whether a withdrawn publication's link says it was withdrawn and why, and a publication page lists the documents held back with their ground. Off by default: publishing that a record exists is itself a choice.": "Of de link van een ingetrokken publicatie zegt dat die is ingetrokken en waarom, en of een publicatiepagina de achtergehouden documenten met hun grond toont. Standaard uit: bekendmaken dat een stuk bestaat is zelf een keuze.",
+        "Error reports need an owner: name the user or group that receives them.": "Foutmeldingen hebben een eigenaar nodig: noem de gebruiker of groep die ze ontvangt.",
+        "Error reports need an owner, and \"%s\" is not a user or group.": "Foutmeldingen hebben een eigenaar nodig, en \"%s\" is geen gebruiker of groep."
     },
     "nplurals=2; plural=(n != 1);"
 )
