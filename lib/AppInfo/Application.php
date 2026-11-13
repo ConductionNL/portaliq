@@ -63,6 +63,7 @@ use OCA\Portaliq\Listener\PortalDigitalPostDeliveredListener;
 use OCA\Portaliq\Listener\PortalRecordChangeListener;
 use OCA\Portaliq\Listener\RegisterProposalLeavesListener;
 use OCA\Portaliq\Listener\ResidentLandingListener;
+use OCA\Portaliq\Middleware\ApiContractMiddleware;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCA\Portaliq\Middleware\PublicApiCorsMiddleware;
 use OCA\Portaliq\Notification\Notifier;
@@ -119,6 +120,10 @@ class Application extends App implements IBootstrap {
 	 * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-contributing-app-requests-a-landing-page-via-a-typed-event
 	 */
 	public function register(IRegistrationContext $context): void {
+		// The API contract (version header, deprecation of unversioned paths,
+		// problem details). Registered first: Nextcloud runs afterController in
+		// reverse order, so it sees the final response of every other middleware.
+		$context->registerMiddleware(class: ApiContractMiddleware::class);
 		// The app's own composer dependencies (portal-traffic-visitors-and-geo
 		// added the first runtime one: maxmind-db/reader). Nextcloud loads
 		// an app's classes under OCA\ by convention and nothing else; the
