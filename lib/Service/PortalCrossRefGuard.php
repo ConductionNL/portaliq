@@ -40,6 +40,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Contribution\CrossRefConfigNormaliser;
+use OCA\Portaliq\Kernel\Contracts\PortalCrossRefGuardInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use Psr\Log\LoggerInterface;
@@ -49,7 +50,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-declared-cross-reference-must-resolve-inside-the-subjects-own-scope
  */
-class PortalCrossRefGuard {
+class PortalCrossRefGuard implements PortalCrossRefGuardInterface {
 	/**
 	 * Constructor.
 	 *

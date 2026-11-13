@@ -28,9 +28,10 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
+use OCA\Portaliq\Kernel\Contracts\PublicCatalogueInterface;
+use OCA\Portaliq\Kernel\Contracts\PublicCatalogueQueryInterface;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
-use OCA\Portaliq\Service\PublicCatalogue;
 use OCA\Portaliq\Service\PublicCatalogueQuery;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -88,14 +89,14 @@ class ContentCatalogueController extends Controller {
 	 * @param IRequest             $request   The request.
 	 * @param PortalResolver       $resolver  Resolves the portal of the request.
 	 * @param PortalSessionService $session   Resolves a bearer, for a portal that is not public.
-	 * @param PublicCatalogue      $catalogue The catalogue.
+	 * @param PublicCatalogueInterface      $catalogue The catalogue.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly PortalResolver $resolver,
 		private readonly PortalSessionService $session,
-		private readonly PublicCatalogue $catalogue,
+		private readonly PublicCatalogueInterface $catalogue,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -227,7 +228,7 @@ class ContentCatalogueController extends Controller {
 	 * @return string The sort.
 	 */
 	private static function sortKey(string $sort): string {
-		if (in_array($sort, PublicCatalogueQuery::SORTS, true) === true) {
+		if (in_array($sort, PublicCatalogueQueryInterface::SORTS, true) === true) {
 			return $sort;
 		}
 

@@ -33,7 +33,7 @@ namespace OCA\Portaliq\Repair;
 
 use DateTime;
 use OCA\Portaliq\Kernel\Contracts\AuditTrailServiceInterface;
-use OCA\Portaliq\Service\PortalRegisterContext;
+use OCA\Portaliq\Kernel\Contracts\PortalRegisterContextInterface;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Container\ContainerInterface;
@@ -77,13 +77,13 @@ class MovePortalAuditEntries implements IRepairStep {
 	 * Constructor.
 	 *
 	 * @param ContainerInterface $container Resolves OpenRegister's object service, which may be absent.
-	 * @param PortalRegisterContext $context Points the object service at the old schema.
+	 * @param PortalRegisterContextInterface $context Points the object service at the old schema.
 	 * @param AuditTrailServiceInterface $trail Writes the rows into OpenRegister's audit trail.
 	 * @param LoggerInterface $logger Names a record that could not be moved.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly PortalRegisterContext $context,
+		private readonly PortalRegisterContextInterface $context,
 		private readonly AuditTrailServiceInterface $trail,
 		private readonly LoggerInterface $logger,
 	) {

@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\TrafficConfigResolverInterface;
 use OCA\Portaliq\Service\Traffic\TrafficExperimentDefinitions;
 use OCA\Portaliq\Service\Traffic\TrafficOutcomeDefinitions;
 use OCA\Portaliq\Service\Traffic\TrafficReportDefinitions;
@@ -43,7 +44,7 @@ use OCA\Portaliq\Service\Traffic\TrafficSegments;
  *
  * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-a-portal-must-decide-what-is-measured-and-the-collector-must-enforce-it
  */
-class TrafficConfigResolver {
+class TrafficConfigResolver implements TrafficConfigResolverInterface {
 
 	/**
 	 * The events a portal gets when it enables measurement without naming any.

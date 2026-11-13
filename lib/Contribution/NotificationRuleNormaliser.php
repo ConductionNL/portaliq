@@ -59,7 +59,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
-use OCA\Portaliq\Service\NotificationDispatchService;
+use OCA\Portaliq\Kernel\Contracts\NotificationDispatchServiceInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -91,8 +91,8 @@ class NotificationRuleNormaliser {
 	 * @var array<int, string>
 	 */
 	private const BUILT_IN_RULE_KEYS = [
-		NotificationDispatchService::RULE_MESSAGE_CREATED,
-		NotificationDispatchService::RULE_STATUS_CHANGED,
+		NotificationDispatchServiceInterface::RULE_MESSAGE_CREATED,
+		NotificationDispatchServiceInterface::RULE_STATUS_CHANGED,
 	];
 
 	/**
@@ -239,8 +239,8 @@ class NotificationRuleNormaliser {
 		return sprintf(
 			'key %s: nothing fires it; declare %s, %s, a change rule with this ruleKey, or %s.%s sent on a portalMessage',
 			$key,
-			NotificationDispatchService::RULE_MESSAGE_CREATED,
-			NotificationDispatchService::RULE_STATUS_CHANGED,
+			NotificationDispatchServiceInterface::RULE_MESSAGE_CREATED,
+			NotificationDispatchServiceInterface::RULE_STATUS_CHANGED,
 			$namespace,
 			$key
 		);

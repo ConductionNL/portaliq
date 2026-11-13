@@ -34,12 +34,12 @@ use OCA\Portaliq\Kernel\Contracts\CmsReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\NextcloudRegistrationDoorInterface;
 use OCA\Portaliq\Kernel\Contracts\PublicAssistantChannelInterface;
 use OCA\Portaliq\Kernel\Contracts\PublicSourceScopeInterface;
+use OCA\Portaliq\Kernel\Contracts\SiteOrganisationInterface;
+use OCA\Portaliq\Kernel\Contracts\TrafficConfigResolverInterface;
 use OCA\Portaliq\Service\Assistant\PublicSourceScope;
 use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
-use OCA\Portaliq\Service\SiteOrganisation;
-use OCA\Portaliq\Service\TrafficConfigResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -92,14 +92,14 @@ class ContentController extends Controller {
 	 * @param PortalContributionFilter   $contribFilter Scopes that aggregate to one portal.
 	 * @param LoggerInterface            $logger       Records a provider failure the visitor never sees.
 	 * @param PortalSessionService       $session      Resolves the caller's portal session for the content gate.
-	 * @param TrafficConfigResolver      $traffic      Resolves the portal's measurement configuration.
+	 * @param TrafficConfigResolverInterface      $traffic      Resolves the portal's measurement configuration.
 	 * @param IURLGenerator              $urlGenerator Builds the absolute collector URL.
 	 * @param PortalNoticeReader         $notices      The notices running on the site now.
 	 * @param IUserSession               $userSession  Tells a signed-in Nextcloud user (an editor) from a visitor.
 	 * @param PublicAssistantChannelInterface|null $assistant   The public assistant's channel, when wired.
 	 * @param PublicSourceScopeInterface|null     $assistantScope What the public assistant may read.
 	 * @param NextcloudRegistrationDoorInterface|null $registrationDoor Where "Create an account" leads (REQ-NCL-005).
-	 * @param SiteOrganisation|null      $siteOrganisation Names the portal's organisation.
+	 * @param SiteOrganisationInterface|null      $siteOrganisation Names the portal's organisation.
 	 *
 	 * @return void
 	 */
@@ -112,14 +112,14 @@ class ContentController extends Controller {
 		private readonly PortalContributionFilter $contribFilter,
 		private readonly LoggerInterface $logger,
 		private readonly PortalSessionService $session,
-		private readonly TrafficConfigResolver $traffic,
+		private readonly TrafficConfigResolverInterface $traffic,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly PortalNoticeReader $notices,
 		private readonly IUserSession $userSession,
 		private readonly ?PublicAssistantChannelInterface $assistant = null,
 		private readonly ?PublicSourceScopeInterface $assistantScope = null,
 		private readonly ?NextcloudRegistrationDoorInterface $registrationDoor = null,
-		private readonly ?SiteOrganisation $siteOrganisation = null,
+		private readonly ?SiteOrganisationInterface $siteOrganisation = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

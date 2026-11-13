@@ -43,6 +43,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\NewsAudienceOptionsInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -52,7 +53,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-10-07-staff-news-screen/tasks.md#T2
  */
-class NewsAudienceOptions {
+class NewsAudienceOptions implements NewsAudienceOptionsInterface {
 	use ObjectRowNormaliser;
 	use ObjectServiceLookup;
 

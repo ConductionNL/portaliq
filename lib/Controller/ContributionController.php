@@ -65,30 +65,33 @@ use OCA\Portaliq\Kernel\Contracts\ColumnOverridesInterface;
 use OCA\Portaliq\Kernel\Contracts\ContactConfirmationMailerInterface;
 use OCA\Portaliq\Kernel\Contracts\DestinationDraftInterface;
 use OCA\Portaliq\Kernel\Contracts\DestinationIntakeInterface;
+use OCA\Portaliq\Kernel\Contracts\NotificationDispatchServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalAuditHookInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalBranchScopeInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalCrossRefGuardInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFileReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFileWriterInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalInboxReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalPdfExportInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalRateLimitInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSchemaReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalTaskGatewayInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalUserDisplayNamesInterface;
+use OCA\Portaliq\Kernel\Contracts\SubmissionReceiptServiceInterface;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
 use OCA\Portaliq\Service\CaseRowMarker;
 use OCA\Portaliq\Service\CaseTypeColumns\ColumnOverrides;
 use OCA\Portaliq\Service\Intake\DestinationIntake;
-use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\PortalActionForwarder;
-use OCA\Portaliq\Service\PortalAuditHook;
 use OCA\Portaliq\Service\PortalCrossRefGuard;
-use OCA\Portaliq\Service\PortalFileReader;
-use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalInboxReader;
 use OCA\Portaliq\Service\PortalObjectReader;
-use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\PortalPdfExport;
-use OCA\Portaliq\Service\PortalRateLimit;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
-use OCA\Portaliq\Service\PortalTaskGateway;
 use OCA\Portaliq\Service\PortalUserDisplayNames;
 use OCA\Portaliq\Service\RequestedPortal;
 use OCA\Portaliq\Service\RequiredFieldsGuard;
-use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCA\Portaliq\Service\Tenancy\SchemaTenancy;
 use OCA\Portaliq\Service\VisibleFromGate;
 use OCA\Portaliq\Service\WriteRefusal;
@@ -140,36 +143,36 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @param PortalContributionRegistry $registry The contribution aggregator.
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
 	 * @param PortalObjectReader $reader Subject-scoped OR reader.
-	 * @param PortalObjectWriter $writer Subject-scoped OR writer.
-	 * @param PortalFileWriter $fileWriter Subject-scoped OR file attach.
-	 * @param PortalFileReader $fileReader Subject-scoped OR file list/download.
-	 * @param PortalSchemaReader $schemaReader Scoped OR schema-definition reader.
-	 * @param PortalInboxReader $inboxReader Cross-app inbox aggregation + unread count (portal-inbox-v2).
-	 * @param PortalAuditHook $auditHook Fail-safe audit-record call site (download).
+	 * @param PortalObjectWriterInterface $writer Subject-scoped OR writer.
+	 * @param PortalFileWriterInterface $fileWriter Subject-scoped OR file attach.
+	 * @param PortalFileReaderInterface $fileReader Subject-scoped OR file list/download.
+	 * @param PortalSchemaReaderInterface $schemaReader Scoped OR schema-definition reader.
+	 * @param PortalInboxReaderInterface $inboxReader Cross-app inbox aggregation + unread count (portal-inbox-v2).
+	 * @param PortalAuditHookInterface $auditHook Fail-safe audit-record call site (download).
 	 * @param PortalActionForwarder $forwarder Transport half of the A6 action forward
 	 *                                         (signed assertion, instance-local URL,
 	 *                                         502-on-transport-failure).
 	 * @param AuditTrailServiceInterface $auditor Records create/update/forward mutations
 	 *                                   (portal-session-hardening-v2).
-	 * @param SubmissionReceiptService $receiptService WMEBV ontvangstbevestiging + proof-log
+	 * @param SubmissionReceiptServiceInterface $receiptService WMEBV ontvangstbevestiging + proof-log
 	 *                                                 generator, called after every
 	 *                                                 successful create (fail-safe; never
 	 *                                                 affects the response).
-	 * @param NotificationDispatchService $notificationDispatch Fires the `status.changed` trigger
+	 * @param NotificationDispatchServiceInterface $notificationDispatch Fires the `status.changed` trigger
 	 *                                                          (portal-notifications-dispatch) on a
 	 *                                                          successful transition; fail-safe,
 	 *                                                          never affects the response.
 	 * @param LoggerInterface $logger Records the CAUSE of a translated storage
 	 *                                failure. The cause is logged and never
 	 *                                returned — see writeScoped().
-	 * @param PortalTaskGateway|null $taskGateway Answers whether the portal task
+	 * @param PortalTaskGatewayInterface|null $taskGateway Answers whether the portal task
 	 *                                            seam is reachable, so index() can
 	 *                                            announce the "Mijn taken" surface
 	 *                                            (portal-task-delivery). Optional so
 	 *                                            existing construction sites and
 	 *                                            tests keep working; absent reads
 	 *                                            as "no tasks surface".
-	 * @param PortalCrossRefGuard|null $crossRefs Checks that a declared cross
+	 * @param PortalCrossRefGuardInterface|null $crossRefs Checks that a declared cross
 	 *                                            reference resolves inside the
 	 *                                            subject's own scope
 	 *                                            (portal-create-cross-refs).
@@ -183,16 +186,16 @@ class ContributionController extends Controller implements PortalProtected {
 	 *                                           (operate-show-per-case-type).
 	 *                                           Absent hides nothing.
 	 * @param PortalBranchScopeInterface $branches The branch filter of signin-eherkenning-branch.
-	 * @param PortalUserDisplayNames $userNames Reads a `render: "user"` column as the user's name.
+	 * @param PortalUserDisplayNamesInterface $userNames Reads a `render: "user"` column as the user's name.
 	 * @param CaseTypeNamesInterface|null $typeNames Names each case's type on a `cases` collection
 	 *                                      (site-mijn-omgeving-components REQ-SMO-030).
 	 * @param PortalResolver|null $portals Finds the serving portal, for its navigation choice.
 	 *                                     Absent leaves the navigation as the aggregate has it.
 	 * @param ContactConfirmationMailerInterface|null $confirmation Mails the resident that a question arrived, after
 	 *                                                     a create whose action asks for it; fail-safe.
-	 * @param PortalPdfExport|null $pdf Renders a list or a record the resident can see as a PDF through
+	 * @param PortalPdfExportInterface|null $pdf Renders a list or a record the resident can see as a PDF through
 	 *                                  OpenRegister (cases-export-own-data-pdf). Absent offers no export.
-	 * @param PortalRateLimit|null $rateLimit Limits a portal session per subject and a call
+	 * @param PortalRateLimitInterface|null $rateLimit Limits a portal session per subject and a call
 	 *                                        without one per IP (portal-subject-rate-limit).
 	 * @param ActionDraftInterface|null $drafts Finds the subject's live draft of a create action, which a
 	 *                                 create then sends instead of writing a new object (decision 180).
@@ -206,27 +209,27 @@ class ContributionController extends Controller implements PortalProtected {
 		private readonly PortalContributionRegistry $registry,
 		private readonly PortalSessionService $session,
 		private readonly PortalObjectReader $reader,
-		private readonly PortalObjectWriter $writer,
-		private readonly PortalFileWriter $fileWriter,
-		private readonly PortalFileReader $fileReader,
-		private readonly PortalSchemaReader $schemaReader,
-		private readonly PortalInboxReader $inboxReader,
-		private readonly PortalAuditHook $auditHook,
+		private readonly PortalObjectWriterInterface $writer,
+		private readonly PortalFileWriterInterface $fileWriter,
+		private readonly PortalFileReaderInterface $fileReader,
+		private readonly PortalSchemaReaderInterface $schemaReader,
+		private readonly PortalInboxReaderInterface $inboxReader,
+		private readonly PortalAuditHookInterface $auditHook,
 		private readonly PortalActionForwarder $forwarder,
 		private readonly AuditTrailServiceInterface $auditor,
-		private readonly SubmissionReceiptService $receiptService,
-		private readonly NotificationDispatchService $notificationDispatch,
+		private readonly SubmissionReceiptServiceInterface $receiptService,
+		private readonly NotificationDispatchServiceInterface $notificationDispatch,
 		private readonly LoggerInterface $logger,
-		private readonly ?PortalTaskGateway $taskGateway = null,
-		private readonly ?PortalCrossRefGuard $crossRefs = null,
+		private readonly ?PortalTaskGatewayInterface $taskGateway = null,
+		private readonly ?PortalCrossRefGuardInterface $crossRefs = null,
 		private readonly ?CaseTypeVisibilityInterface $caseTypes = null,
 		private readonly PortalBranchScopeInterface $branches = new PortalBranchScope(),
-		private readonly PortalUserDisplayNames $userNames = new PortalUserDisplayNames(),
+		private readonly PortalUserDisplayNamesInterface $userNames = new PortalUserDisplayNames(),
 		private readonly ?CaseTypeNamesInterface $typeNames = null,
 		private readonly ?PortalResolver $portals = null,
 		private readonly ?ContactConfirmationMailerInterface $confirmation = null,
-		private readonly ?PortalPdfExport $pdf = null,
-		private readonly ?PortalRateLimit $rateLimit = null,
+		private readonly ?PortalPdfExportInterface $pdf = null,
+		private readonly ?PortalRateLimitInterface $rateLimit = null,
 		private readonly ?ActionDraftInterface $drafts = null,
 		private readonly ?DestinationDraftInterface $destinations = null,
 		private readonly ?DestinationIntakeInterface $intake = null,
@@ -242,11 +245,11 @@ class ContributionController extends Controller implements PortalProtected {
 	 * it would otherwise write unchecked references, which is the defect the
 	 * guard exists to close. Its two dependencies are already held here.
 	 *
-	 * @return PortalCrossRefGuard The guard.
+	 * @return PortalCrossRefGuardInterface The guard.
 	 *
 	 * @spec openspec/specs/portal-contribution-contract/spec.md
 	 */
-	private function crossRefGuard(): PortalCrossRefGuard {
+	private function crossRefGuard(): PortalCrossRefGuardInterface {
 		return ($this->crossRefs ?? new PortalCrossRefGuard(reader: $this->reader, logger: $this->logger));
 	}//end crossRefGuard()
 
@@ -851,9 +854,9 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		// Portaliq's own notices are an inbox source of every resident
-		// (PortalInboxReader::OWN_MESSAGES), declared or not. The write that
+		// (PortalInboxReaderInterface::OWN_MESSAGES), declared or not. The write that
 		// follows is still scoped on the bearer's own subjectRef.
-		$own = PortalInboxReader::OWN_MESSAGES;
+		$own = PortalInboxReaderInterface::OWN_MESSAGES;
 		if ($match === null && $register === $own['register'] && $schema === $own['schema'] && in_array($collectionId, ['', $own['id']], true) === true) {
 			return ['collection' => $own, 'app' => 'portaliq'];
 		}
@@ -2142,7 +2145,7 @@ class ContributionController extends Controller implements PortalProtected {
 		// (non-status) update action that declares no `status.changed` key
 		// simply enqueues nothing.
 		$this->notificationDispatch->dispatch(
-			ruleKey: NotificationDispatchService::RULE_STATUS_CHANGED,
+			ruleKey: NotificationDispatchServiceInterface::RULE_STATUS_CHANGED,
 			appId: $match['app'],
 			subject: $subject
 		);
@@ -2622,7 +2625,7 @@ class ContributionController extends Controller implements PortalProtected {
 			columns: array_map(static fn (array $c): array => ['key' => $c['key'], 'label' => $c['label']], $columns),
 			rows: $this->pdf->textRows(columns: $columns, rows: array_values(array_filter($rows, 'is_array')))
 		);
-		if ($bytes === PortalPdfExport::TOO_LARGE) {
+		if ($bytes === PortalPdfExportInterface::TOO_LARGE) {
 			return new JSONResponse(['error' => 'too_large'], Http::STATUS_BAD_REQUEST);
 		}
 

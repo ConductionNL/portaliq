@@ -26,12 +26,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Session;
 
+use OCA\Portaliq\Kernel\Contracts\SessionTrustInterface;
+
 /**
  * Ranks trust levels `low < substantial < high`, fail-closed both ways.
  *
  * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T1
  */
-final class SessionTrust {
+final class SessionTrust implements SessionTrustInterface {
 	/**
 	 * The eIDAS-aligned trust vocabulary, ordered ascending (contract v2, A3).
 	 * Any subject trust outside this map normalises to `low`; any entry

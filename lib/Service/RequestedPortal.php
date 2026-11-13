@@ -27,12 +27,13 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\RequestedPortalInterface;
 use OCP\IRequest;
 
 /**
  * Reads the portal slug a request names.
  */
-class RequestedPortal {
+class RequestedPortal implements RequestedPortalInterface {
 
 	/**
 	 * The header the site names its portal in.

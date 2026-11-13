@@ -29,7 +29,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
-use OCA\Portaliq\Service\NewsAudienceOptions;
+use OCA\Portaliq\Kernel\Contracts\NewsAudienceOptionsInterface;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -77,7 +77,7 @@ class NewsController extends Controller {
 	 * @param ContainerInterface $container For resolving OpenRegister services.
 	 * @param LoggerInterface $logger The logger.
 	 * @param ActionAuthServiceInterface $actionAuth Decides whether this staff user may author news (ADR-023).
-	 * @param NewsAudienceOptions|null $audienceOptions The school and group choices for the News screen.
+	 * @param NewsAudienceOptionsInterface|null $audienceOptions The school and group choices for the News screen.
 	 * @param ITimeFactory|null $timeFactory The server clock that stamps the publish moment.
 	 */
 	public function __construct(
@@ -86,7 +86,7 @@ class NewsController extends Controller {
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
 		private readonly ActionAuthServiceInterface $actionAuth,
-		private readonly ?NewsAudienceOptions $audienceOptions=null,
+		private readonly ?NewsAudienceOptionsInterface $audienceOptions=null,
 		private readonly ?ITimeFactory $timeFactory=null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);

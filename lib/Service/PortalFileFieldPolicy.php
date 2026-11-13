@@ -35,6 +35,7 @@ namespace OCA\Portaliq\Service;
 use DateTimeImmutable;
 use finfo;
 use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
+use OCA\Portaliq\Kernel\Contracts\PortalFileFieldPolicyInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IRequest;
 use Throwable;
@@ -44,16 +45,7 @@ use Throwable;
  *
  * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
  */
-class PortalFileFieldPolicy {
-	/**
-	 * Refusal: the file is larger than the field allows (HTTP 413).
-	 */
-	public const ERROR_TOO_LARGE = 'file_too_large';
-
-	/**
-	 * Refusal: the file matches none of the field's `accept` entries (HTTP 415).
-	 */
-	public const ERROR_TYPE_REFUSED = 'file_type_refused';
+class PortalFileFieldPolicy implements PortalFileFieldPolicyInterface {
 
 	/**
 	 * How long after its creation a create action may still add files, in seconds.

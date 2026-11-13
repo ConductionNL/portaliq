@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Contribution\InboxMessageFields;
+use OCA\Portaliq\Kernel\Contracts\PortalInboxReaderInterface;
 use OCA\Portaliq\Service\Notifications\MessageBoxDeliveries;
 use Psr\Log\LoggerInterface;
 
@@ -42,30 +43,12 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/archive/2026-07-23-portal-inbox-v2/tasks.md#T01
  */
-class PortalInboxReader {
+class PortalInboxReader implements PortalInboxReaderInterface {
 	/**
 	 * Row cap per inbox collection — bounds a single subject's aggregated
 	 * inbox read while comfortably covering portal-scale message volumes.
 	 */
 	private const ROW_LIMIT = 200;
-
-	/**
-	 * The notices portaliq writes itself (an answered question, a matched
-	 * saved search, a published decision, a submission receipt, a delivered
-	 * task) as one built-in inbox source. Every resident's inbox reads it,
-	 * whether or not a contribution declares an inbox over `portalMessage`,
-	 * through the same scoped read as a declared source: on `subjectRef`, with
-	 * the subject's own reference and organisation.
-	 *
-	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-portaliqs-own-notices-reach-the-residents-inbox-req-nap-009
-	 */
-	public const OWN_MESSAGES = [
-		'id' => 'portalMessages',
-		'kind' => 'inbox',
-		'register' => 'portaliq',
-		'schema' => 'portalMessage',
-		'scopeField' => 'subjectRef',
-	];
 
 	/**
 	 * Constructor.

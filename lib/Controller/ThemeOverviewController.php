@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\Theme\PortalThemeOverview;
+use OCA\Portaliq\Kernel\Contracts\PortalThemeOverviewInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -37,11 +37,11 @@ class ThemeOverviewController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest            $request  The request.
-	 * @param PortalThemeOverview $overview The rows.
+	 * @param PortalThemeOverviewInterface $overview The rows.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalThemeOverview $overview,
+		private readonly PortalThemeOverviewInterface $overview,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

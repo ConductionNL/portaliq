@@ -27,8 +27,8 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\EmailLinkSettingInterface;
 use OCA\Portaliq\Kernel\Contracts\InternalBaseUrlInterface;
-use OCA\Portaliq\Service\PageEditorService;
-use OCA\Portaliq\Service\SettingsService;
+use OCA\Portaliq\Kernel\Contracts\PageEditorServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\SettingsServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -41,7 +41,7 @@ class SettingsController extends Controller {
 	 * Constructor for the SettingsController.
 	 *
 	 * @param IRequest $request The request object
-	 * @param SettingsService $settingsService The settings service
+	 * @param SettingsServiceInterface $settingsService The settings service
 	 * @param InternalBaseUrlInterface|null $internalBaseUrl The internal address for calls to this instance.
 	 * @param EmailLinkSettingInterface|null $emailLinks The e-mail link switch, OFF by default (sign-in-with-an-email-link).
 	 *
@@ -49,7 +49,7 @@ class SettingsController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private SettingsService $settingsService,
+		private SettingsServiceInterface $settingsService,
 		private ?InternalBaseUrlInterface $internalBaseUrl = null,
 		private ?EmailLinkSettingInterface $emailLinks = null,
 	) {
@@ -81,10 +81,10 @@ class SettingsController extends Controller {
 			// instance's group structure for a field they have no form for.
 			// `mayEditPages` stays: it says only what THIS caller may do, which
 			// is what the interface asking the question needs.
-			unset($settings[PageEditorService::CONFIG_KEY]);
+			unset($settings[PageEditorServiceInterface::CONFIG_KEY]);
 			// The geography provider and the MaxMind account id are instance
 			// configuration; a non-admin has no form for them either.
-			unset($settings[SettingsService::GEO_KEY]);
+			unset($settings[SettingsServiceInterface::GEO_KEY]);
 		}
 
 		// The internal address for calls to this instance names where the

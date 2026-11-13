@@ -23,6 +23,7 @@ namespace OCA\Portaliq\Service;
 use DateTimeImmutable;
 use DateTimeZone;
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\TrafficAggregationServiceInterface;
 use OCA\Portaliq\Service\Traffic\TrafficEventStore;
 use OCA\Portaliq\Service\Traffic\TrafficRecordingStore;
 use OCA\Portaliq\Service\Traffic\TrafficRollup;
@@ -68,7 +69,7 @@ use Psr\Log\LoggerInterface;
  * config and logger; that is the aggregation's whole cast, and a facade
  * would hide which step reads what.
  */
-class TrafficAggregationService {
+class TrafficAggregationService implements TrafficAggregationServiceInterface {
 	use PublishedPortalWalk;
 
 	/**

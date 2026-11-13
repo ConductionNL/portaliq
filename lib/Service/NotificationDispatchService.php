@@ -41,6 +41,7 @@ namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\BackgroundJob\NotificationDispatchJob;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\NotificationDispatchServiceInterface;
 use OCP\BackgroundJob\IJobList;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -51,18 +52,7 @@ use Throwable;
  *
  * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
  */
-class NotificationDispatchService {
-	/**
-	 * Rule key for a `portalMessage` create (SubmissionReceiptService's WMEBV
-	 * receipt, or any other message-create path).
-	 */
-	public const RULE_MESSAGE_CREATED = 'message.created';
-
-	/**
-	 * Rule key for a successful status-transition update
-	 * (`ContributionController::update()`).
-	 */
-	public const RULE_STATUS_CHANGED = 'status.changed';
+class NotificationDispatchService implements NotificationDispatchServiceInterface {
 
 	/**
 	 * Constructor.

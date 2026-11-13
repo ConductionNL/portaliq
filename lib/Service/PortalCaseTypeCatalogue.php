@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\PortalCaseTypeCatalogueInterface;
 use OCA\Portaliq\Service\CaseTypeColumns\CasesCollections;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 
@@ -42,7 +43,7 @@ use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
  *
  * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-an-administrator-hides-a-case-type-in-one-portal-req-osc-001
  */
-class PortalCaseTypeCatalogue {
+class PortalCaseTypeCatalogue implements PortalCaseTypeCatalogueInterface {
 	use CaseTypeLabel;
 
 	/**

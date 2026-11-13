@@ -26,7 +26,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Listener;
 
 use OCA\Portaliq\Event\LandingPageRequestedEvent;
-use OCA\Portaliq\Service\LandingPageProvisioningService;
+use OCA\Portaliq\Kernel\Contracts\LandingPageProvisioningServiceInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -44,11 +44,11 @@ class LandingPageRequestedEventListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param LandingPageProvisioningService $service Validates and provisions the request.
+	 * @param LandingPageProvisioningServiceInterface $service Validates and provisions the request.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
-		private readonly LandingPageProvisioningService $service,
+		private readonly LandingPageProvisioningServiceInterface $service,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

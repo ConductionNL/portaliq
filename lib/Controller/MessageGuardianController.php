@@ -31,11 +31,11 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\MessageContactReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalContactServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSelfServiceServiceInterface;
 use OCA\Portaliq\Service\Messaging\GuardianMessageTranslator;
 use OCA\Portaliq\Service\Messaging\GuardianMessagingLeafInterface;
-use OCA\Portaliq\Service\Messaging\MessageContactReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -78,7 +78,7 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 *                                                   controller built by hand keeps
 	 *                                                   its old shape.
 	 * @param PortalSelfServiceServiceInterface|null $selfService Reads the reader's own `messageLanguage`.
-	 * @param MessageContactReader|null $contacts Who the resident may write to, per record
+	 * @param MessageContactReaderInterface|null $contacts Who the resident may write to, per record
 	 *                                            (site-messages-per-record).
 	 * @param PortalContactServiceInterface|null $portalContacts The resident's own approved contacts
 	 *                                                  (own-contacts-and-invitations T07).
@@ -89,7 +89,7 @@ class MessageGuardianController extends Controller implements PortalProtected {
 		private readonly GuardianMessagingLeafInterface $messaging,
 		private readonly ?GuardianMessageTranslator $translator = null,
 		private readonly ?PortalSelfServiceServiceInterface $selfService = null,
-		private readonly ?MessageContactReader $contacts = null,
+		private readonly ?MessageContactReaderInterface $contacts = null,
 		private readonly ?PortalContactServiceInterface $portalContacts = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);

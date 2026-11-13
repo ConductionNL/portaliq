@@ -31,11 +31,11 @@ use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\CaseTypeVisibilityInterface;
+use OCA\Portaliq\Kernel\Contracts\MandatedCaseReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalCaseListReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalMandateServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalPartyTreeResolverInterface;
 use OCA\Portaliq\Service\Identity\MandateParties;
-use OCA\Portaliq\Service\MandatedCaseReader;
-use OCA\Portaliq\Service\PortalCaseListReader;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -57,7 +57,7 @@ class MyCasesController extends Controller implements PortalProtected {
 	 * (cases-my-cases-page REQ-CMC-004). Without any value the first mandate
 	 * held is the active one, as before.
 	 */
-	public const ACTING_FOR_SELF = MandatedCaseReader::ACTING_FOR_SELF;
+	public const ACTING_FOR_SELF = MandatedCaseReaderInterface::ACTING_FOR_SELF;
 
 	/**
 	 * Constructor.
@@ -65,7 +65,7 @@ class MyCasesController extends Controller implements PortalProtected {
 	 * @param IRequest $request The request.
 	 * @param PortalContributionRegistry $registry The contribution aggregator.
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalCaseListReader $cases Merges every case collection.
+	 * @param PortalCaseListReaderInterface $cases Merges every case collection.
 	 * @param PortalMandateServiceInterface $mandates The mandates the identity holds.
 	 * @param PortalPartyTreeResolverInterface $tree Resolves how far a mandate reaches.
 	 * @param CaseTypeVisibilityInterface|null $caseTypes The case types the serving
@@ -77,7 +77,7 @@ class MyCasesController extends Controller implements PortalProtected {
 		IRequest $request,
 		private readonly PortalContributionRegistry $registry,
 		private readonly PortalSessionService $session,
-		private readonly PortalCaseListReader $cases,
+		private readonly PortalCaseListReaderInterface $cases,
 		private readonly PortalMandateServiceInterface $mandates,
 		private readonly PortalPartyTreeResolverInterface $tree,
 		private readonly ?CaseTypeVisibilityInterface $caseTypes = null,

@@ -1295,7 +1295,7 @@
                         ]
                     },
                     {
-                        "NewsAudienceOptions.options": []
+                        "NewsAudienceOptionsInterface.options": []
                     }
                 ]
             }
@@ -1827,7 +1827,7 @@
                         }
                     },
                     {
-                        "NewsletterPreflightService.countRecipients": {
+                        "NewsletterPreflightServiceInterface.countRecipients": {
                             "target": []
                         }
                     }
@@ -1942,7 +1942,7 @@
                         }
                     },
                     {
-                        "NewsletterPreflightService.sendIsRefused": {
+                        "NewsletterPreflightServiceInterface.sendIsRefused": {
                             "target": []
                         }
                     }

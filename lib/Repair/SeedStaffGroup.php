@@ -36,7 +36,7 @@ use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\AdminMenuAccessInterface;
 use OCA\Portaliq\Kernel\Contracts\NextcloudRegistrationDoorInterface;
-use OCA\Portaliq\Service\PageEditorService;
+use OCA\Portaliq\Kernel\Contracts\PageEditorServiceInterface;
 use OCP\IAppConfig;
 use OCP\IGroup;
 use OCP\IGroupManager;
@@ -61,13 +61,13 @@ class SeedStaffGroup implements IRepairStep {
 	 *
 	 * @param IGroupManager     $groupManager Creates the group and resolves members.
 	 * @param IAppConfig        $appConfig    The seeding flag and the registration app's group.
-	 * @param PageEditorService $pageEditor   The configured editor groups.
+	 * @param PageEditorServiceInterface $pageEditor   The configured editor groups.
 	 * @param ActionAuthServiceInterface $actions      The action matrix.
 	 */
 	public function __construct(
 		private readonly IGroupManager $groupManager,
 		private readonly IAppConfig $appConfig,
-		private readonly PageEditorService $pageEditor,
+		private readonly PageEditorServiceInterface $pageEditor,
 		private readonly ActionAuthServiceInterface $actions,
 	) {
 	}//end __construct()

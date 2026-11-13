@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
 
+use OCA\Portaliq\Kernel\Contracts\TrafficLogImporterInterface;
 use OCA\Portaliq\Service\PortalBySlug;
 use OCA\Portaliq\Service\PublishedPortals;
 use OCA\Portaliq\Service\TrafficIngestService;
@@ -42,7 +43,7 @@ use OCA\Portaliq\Service\TrafficIngestService;
  *
  * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-an-access-log-must-import-as-page-views-without-assets-or-bots
  */
-class TrafficLogImporter {
+class TrafficLogImporter implements TrafficLogImporterInterface {
 	use PortalBySlug;
 
 	/**

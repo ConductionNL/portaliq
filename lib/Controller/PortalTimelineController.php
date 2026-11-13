@@ -37,11 +37,11 @@ use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Contribution\StepsProviderMethod;
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\MandatedCaseReader;
-use OCA\Portaliq\Service\PortalItemReader;
+use OCA\Portaliq\Kernel\Contracts\MandatedCaseReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalItemReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalTimelineReaderInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalSessionService;
-use OCA\Portaliq\Service\PortalTimelineReader;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -67,18 +67,18 @@ class PortalTimelineController extends Controller implements PortalProtected {
 	 * @param PortalContributionRegistry $registry The subject's contributions.
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
 	 * @param PortalObjectReader $reader The scoped single-object read.
-	 * @param PortalTimelineReader $timelines Calls the declared provider method.
-	 * @param PortalItemReader|null $items Calls the item-list provider method (my-dossiers).
-	 * @param MandatedCaseReader|null $mandatedCases Reads a case the person sees under a mandate.
+	 * @param PortalTimelineReaderInterface $timelines Calls the declared provider method.
+	 * @param PortalItemReaderInterface|null $items Calls the item-list provider method (my-dossiers).
+	 * @param MandatedCaseReaderInterface|null $mandatedCases Reads a case the person sees under a mandate.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalContributionRegistry $registry,
 		private readonly PortalSessionService $session,
 		private readonly PortalObjectReader $reader,
-		private readonly PortalTimelineReader $timelines,
-		private readonly ?PortalItemReader $items = null,
-		private readonly ?MandatedCaseReader $mandatedCases = null,
+		private readonly PortalTimelineReaderInterface $timelines,
+		private readonly ?PortalItemReaderInterface $items = null,
+		private readonly ?MandatedCaseReaderInterface $mandatedCases = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

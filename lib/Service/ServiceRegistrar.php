@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\ServiceRegistrarInterface;
 use OCA\Portaliq\Service\Messaging\GuardianMessagingLeafInterface;
 use OCA\Portaliq\Service\Messaging\InAppMessagingLeaf;
 use OCA\Portaliq\Service\Notifications\LoggingPushSender;
@@ -41,7 +42,7 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  *
  * @spec exclude Structural composition root, no functional requirement.
  */
-final class ServiceRegistrar {
+final class ServiceRegistrar implements ServiceRegistrarInterface {
 
 	/**
 	 * Bind each interface the app's services ask for to its implementation.

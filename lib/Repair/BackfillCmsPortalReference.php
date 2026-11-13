@@ -33,8 +33,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Repair;
 
+use OCA\Portaliq\Kernel\Contracts\PortalRegisterContextInterface;
 use OCA\Portaliq\Service\ObjectServiceLookup;
-use OCA\Portaliq\Service\PortalRegisterContext;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Container\ContainerInterface;
@@ -80,12 +80,12 @@ class BackfillCmsPortalReference implements IRepairStep {
 	 * Constructor.
 	 *
 	 * @param ContainerInterface    $container Resolves OpenRegister's object service, which may be absent.
-	 * @param PortalRegisterContext $context   Points the object service at a schema.
+	 * @param PortalRegisterContextInterface $context   Points the object service at a schema.
 	 * @param LoggerInterface       $logger    Names an object that could not be written.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
-		private readonly PortalRegisterContext $context,
+		private readonly PortalRegisterContextInterface $context,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

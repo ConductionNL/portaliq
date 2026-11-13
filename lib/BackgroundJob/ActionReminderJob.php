@@ -25,7 +25,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\BackgroundJob;
 
 use OCA\Portaliq\Kernel\Contracts\ActionReminderServiceInterface;
-use OCA\Portaliq\Service\Plans\PlanEndReminderService;
+use OCA\Portaliq\Kernel\Contracts\PlanEndReminderServiceInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
 
@@ -42,12 +42,12 @@ class ActionReminderJob extends TimedJob {
 	 *
 	 * @param ITimeFactory          $time      The scheduler's clock.
 	 * @param ActionReminderServiceInterface $reminders Sends the reminders.
-	 * @param PlanEndReminderService $planReminders Sends the reminders before a plan's end date.
+	 * @param PlanEndReminderServiceInterface $planReminders Sends the reminders before a plan's end date.
 	 */
 	public function __construct(
 		ITimeFactory $time,
 		private readonly ActionReminderServiceInterface $reminders,
-		private readonly PlanEndReminderService $planReminders,
+		private readonly PlanEndReminderServiceInterface $planReminders,
 	) {
 		parent::__construct(time: $time);
 		$this->setInterval(seconds: self::INTERVAL);

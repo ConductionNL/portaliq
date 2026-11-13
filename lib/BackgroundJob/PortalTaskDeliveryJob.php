@@ -43,12 +43,12 @@ declare(strict_types=1);
 namespace OCA\Portaliq\BackgroundJob;
 
 use DateTimeInterface;
-use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalNoticeLanguageInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalOrganisationConfigServiceInterface;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
-use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJob;
 use OCP\BackgroundJob\TimedJob;
@@ -160,10 +160,10 @@ class PortalTaskDeliveryJob extends TimedJob {
 	 * @param ITimeFactory $time Testable clock (job base class).
 	 * @param ContainerInterface $container Resolves the ledger seam by name.
 	 * @param ScopedCollectionReaderInterface $reader The idempotency probe + account lookup.
-	 * @param PortalObjectWriter $writer Writes the inbox message (scope stamped server-side).
-	 * @param PortalOrganisationConfigService $orgConfig Resolves the tenant display name.
+	 * @param PortalObjectWriterInterface $writer Writes the inbox message (scope stamped server-side).
+	 * @param PortalOrganisationConfigServiceInterface $orgConfig Resolves the tenant display name.
 	 * @param IMailer $mailer Sends the privacy-minimal mail.
-	 * @param PortalNoticeLanguage $language The translations in the language of the resident's portal.
+	 * @param PortalNoticeLanguageInterface $language The translations in the language of the resident's portal.
 	 * @param PortalDeepLinkBuilder $deepLinks Builds the portal deep link from the route table (WOO-570).
 	 * @param LoggerInterface $logger The logger.
 	 */
@@ -171,10 +171,10 @@ class PortalTaskDeliveryJob extends TimedJob {
 		ITimeFactory $time,
 		private readonly ContainerInterface $container,
 		private readonly ScopedCollectionReaderInterface $reader,
-		private readonly PortalObjectWriter $writer,
-		private readonly PortalOrganisationConfigService $orgConfig,
+		private readonly PortalObjectWriterInterface $writer,
+		private readonly PortalOrganisationConfigServiceInterface $orgConfig,
 		private readonly IMailer $mailer,
-		private readonly PortalNoticeLanguage $language,
+		private readonly PortalNoticeLanguageInterface $language,
 		private readonly PortalDeepLinkBuilder $deepLinks,
 		private readonly LoggerInterface $logger,
 	) {
@@ -498,7 +498,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 	 * @return bool
 	 */
 	private function withdrawn(?array $account): bool {
-		if (($account['status'] ?? '') !== PortalAccountService::STATUS_VOID) {
+		if (($account['status'] ?? '') !== PortalAccountServiceInterface::STATUS_VOID) {
 			return false;
 		}
 

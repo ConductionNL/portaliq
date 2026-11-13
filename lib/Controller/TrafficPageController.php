@@ -27,11 +27,11 @@ namespace OCA\Portaliq\Controller;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\Portaliq\Kernel\Contracts\TrafficConfigResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\TrafficEventStoreInterface;
+use OCA\Portaliq\Kernel\Contracts\TrafficPagePathInterface;
+use OCA\Portaliq\Kernel\Contracts\TrafficPageReportInterface;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\Traffic\TrafficEventStore;
-use OCA\Portaliq\Service\Traffic\TrafficPagePath;
-use OCA\Portaliq\Service\Traffic\TrafficPageReport;
-use OCA\Portaliq\Service\TrafficConfigResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -69,22 +69,22 @@ class TrafficPageController extends Controller {
 	 *
 	 * @param string                $appName The app id.
 	 * @param IRequest              $request The request.
-	 * @param TrafficEventStore     $store   Reads the daily records.
+	 * @param TrafficEventStoreInterface     $store   Reads the daily records.
 	 * @param PortalResolver        $portals Lists the published portals.
-	 * @param TrafficConfigResolver $config  Says whether a portal is measured.
-	 * @param TrafficPageReport     $report  Folds one route's rows.
-	 * @param TrafficPagePath       $paths   Normalises the page's route.
+	 * @param TrafficConfigResolverInterface $config  Says whether a portal is measured.
+	 * @param TrafficPageReportInterface     $report  Folds one route's rows.
+	 * @param TrafficPagePathInterface       $paths   Normalises the page's route.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly TrafficEventStore $store,
+		private readonly TrafficEventStoreInterface $store,
 		private readonly PortalResolver $portals,
-		private readonly TrafficConfigResolver $config,
-		private readonly TrafficPageReport $report,
-		private readonly TrafficPagePath $paths,
+		private readonly TrafficConfigResolverInterface $config,
+		private readonly TrafficPageReportInterface $report,
+		private readonly TrafficPagePathInterface $paths,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

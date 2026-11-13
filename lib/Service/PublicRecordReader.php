@@ -28,6 +28,7 @@ namespace OCA\Portaliq\Service;
 use OCA\Portaliq\Contribution\PortalProviderLocator;
 use OCA\Portaliq\Contribution\PublicRecordsNormaliser;
 use OCA\Portaliq\Contribution\TimelineProviderMethod;
+use OCA\Portaliq\Kernel\Contracts\PublicRecordReaderInterface;
 use OCP\ICache;
 use OCP\ICacheFactory;
 use Psr\Log\LoggerInterface;
@@ -42,7 +43,7 @@ use Throwable;
  *
  * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t2
  */
-class PublicRecordReader {
+class PublicRecordReader implements PublicRecordReaderInterface {
 
 	/**
 	 * The most list entries kept.

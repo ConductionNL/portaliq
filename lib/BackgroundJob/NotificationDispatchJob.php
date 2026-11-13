@@ -45,12 +45,13 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\BackgroundJob;
 
+use OCA\Portaliq\Kernel\Contracts\NotificationChannelsInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalNoticeLanguageInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalOrganisationConfigServiceInterface;
 use OCA\Portaliq\Service\Notifications\NotificationChannels;
-use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
-use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\QueuedJob;
 use OCP\IConfig;
@@ -140,27 +141,27 @@ class NotificationDispatchJob extends QueuedJob {
 	 *
 	 * @param ITimeFactory $time Testable clock (Job base class).
 	 * @param ScopedCollectionReaderInterface $reader Resolves the subject's own portalAccount.
-	 * @param PortalObjectWriter $writer Writes the portalNotification log + the
+	 * @param PortalObjectWriterInterface $writer Writes the portalNotification log + the
 	 *                                   needsAlternativeContact flag.
-	 * @param PortalOrganisationConfigService $orgConfig Resolves the tenant's display name.
+	 * @param PortalOrganisationConfigServiceInterface $orgConfig Resolves the tenant's display name.
 	 * @param IMailer $mailer Sends the privacy-minimal email.
-	 * @param PortalNoticeLanguage $language The translations in the language of the resident's portal.
+	 * @param PortalNoticeLanguageInterface $language The translations in the language of the resident's portal.
 	 * @param PortalDeepLinkBuilder $deepLinks Builds the portal deep link from the route table (WOO-570).
 	 * @param IConfig $config Reads the configurable failure threshold.
 	 * @param LoggerInterface $logger The logger.
-	 * @param NotificationChannels|null $channels The resident's per-kind choices and the push.
+	 * @param NotificationChannelsInterface|null $channels The resident's per-kind choices and the push.
 	 */
 	public function __construct(
 		ITimeFactory $time,
 		private readonly ScopedCollectionReaderInterface $reader,
-		private readonly PortalObjectWriter $writer,
-		private readonly PortalOrganisationConfigService $orgConfig,
+		private readonly PortalObjectWriterInterface $writer,
+		private readonly PortalOrganisationConfigServiceInterface $orgConfig,
 		private readonly IMailer $mailer,
-		private readonly PortalNoticeLanguage $language,
+		private readonly PortalNoticeLanguageInterface $language,
 		private readonly PortalDeepLinkBuilder $deepLinks,
 		private readonly IConfig $config,
 		private readonly LoggerInterface $logger,
-		private readonly ?NotificationChannels $channels = null,
+		private readonly ?NotificationChannelsInterface $channels = null,
 	) {
 		parent::__construct(time: $time);
 	}//end __construct()
@@ -283,8 +284,8 @@ class NotificationDispatchJob extends QueuedJob {
 		// never the "no email address" shape (which counts toward
 		// needsAlternativeContact). The account-wide e-mail opt-out
 		// (notification-preferences-per-role) still wins over a kind's choice.
-		$run->wantsEmail = $run->channels->wants(account: $run->account, kind: $kind, channel: NotificationChannels::CHANNEL_EMAIL);
-		$run->wantsPush  = $run->channels->wants(account: $run->account, kind: $kind, channel: NotificationChannels::CHANNEL_PUSH);
+		$run->wantsEmail = $run->channels->wants(account: $run->account, kind: $kind, channel: NotificationChannelsInterface::CHANNEL_EMAIL);
+		$run->wantsPush  = $run->channels->wants(account: $run->account, kind: $kind, channel: NotificationChannelsInterface::CHANNEL_PUSH);
 	}//end chooseChannels()
 
 	/**
@@ -350,7 +351,7 @@ class NotificationDispatchJob extends QueuedJob {
 			return;
 		}
 
-		$this->recordAttempt(run: $run, outcome: new NotificationOutcome(status: $status, attempts: 0, channel: NotificationChannels::CHANNEL_PUSH));
+		$this->recordAttempt(run: $run, outcome: new NotificationOutcome(status: $status, attempts: 0, channel: NotificationChannelsInterface::CHANNEL_PUSH));
 	}//end sendPush()
 
 	/**

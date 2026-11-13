@@ -24,13 +24,15 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\UploadedFileInterface;
+
 /**
  * Reads an upload the way every portal upload is read: the client's path is
  * never trusted.
  *
  * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-subject-must-be-able-to-upload-into-a-declared-file-field-of-an-object-they-own
  */
-final class UploadedFile {
+final class UploadedFile implements UploadedFileInterface {
 	/**
 	 * Read an upload into a {name, content} pair, or null when there is
 	 * nothing usable: an error, no readable temporary file, or no bytes.

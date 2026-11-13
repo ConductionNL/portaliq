@@ -28,6 +28,7 @@ namespace OCA\Portaliq\Service\Plans;
 use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Portaliq\Contribution\CitizenDocumentUpload;
+use OCA\Portaliq\Kernel\Contracts\PlanFilesInterface;
 use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalFileWriter;
 use OCP\AppFramework\Http\StreamResponse;
@@ -40,7 +41,7 @@ use OCP\AppFramework\Http\StreamResponse;
  *
  * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md#requirement-participants-share-the-goal-actions-note-and-file-versions-req-spl-003
  */
-class PlanFiles {
+class PlanFiles implements PlanFilesInterface {
 
 	private const SCHEMA = 'portalPlan';
 

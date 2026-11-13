@@ -31,7 +31,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\GuardianAudienceFixtureReaderInterface;
-use OCA\Portaliq\Service\Notifications\PushDeliveryService;
+use OCA\Portaliq\Kernel\Contracts\PushDeliveryServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -58,7 +58,7 @@ class EmergencyPushController extends Controller {
 	 * @param IRequest $request The request.
 	 * @param IUserSession $userSession Resolves the calling staff member's Nextcloud user id.
 	 * @param GuardianAudienceFixtureReaderInterface $audienceReader Resolves guardians matching the target.
-	 * @param PushDeliveryService $delivery Delivers the emergency push, bypassing quiet hours.
+	 * @param PushDeliveryServiceInterface $delivery Delivers the emergency push, bypassing quiet hours.
 	 * @param LoggerInterface $logger The logger.
 	 * @param ActionAuthServiceInterface $actionAuth Decides whether this staff user may send an emergency push (ADR-023).
 	 */
@@ -66,7 +66,7 @@ class EmergencyPushController extends Controller {
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly GuardianAudienceFixtureReaderInterface $audienceReader,
-		private readonly PushDeliveryService $delivery,
+		private readonly PushDeliveryServiceInterface $delivery,
 		private readonly LoggerInterface $logger,
 		private readonly ActionAuthServiceInterface $actionAuth,
 	) {

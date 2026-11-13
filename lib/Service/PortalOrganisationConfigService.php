@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalOrganisationConfigServiceInterface;
 use OCA\Portaliq\Service\Notifications\MessageBoxOffer;
 use OCA\Portaliq\Service\Signin\LoginProviders;
 use OCP\IAppConfig;
@@ -54,7 +55,7 @@ use Throwable;
  * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.2
  * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T01
  */
-class PortalOrganisationConfigService {
+class PortalOrganisationConfigService implements PortalOrganisationConfigServiceInterface {
 	/**
 	 * OpenRegister's Organisation mapper (core entity — ADR-022, no new
 	 * parallel client; the same entity every session's `organisation` claim
@@ -288,7 +289,6 @@ class PortalOrganisationConfigService {
 		return $this->claimMapper->applyPreset(provider: $provider, rawConfig: $rawConfig);
 	}//end resolveOidcConfig()
 
-
 	/**
 	 * Whether this organisation is permitted to start a login with this
 	 * provider — a SECRET-FREE policy question.
@@ -372,7 +372,6 @@ class PortalOrganisationConfigService {
 			(string)json_encode($overrides, JSON_UNESCAPED_SLASHES)
 		);
 	}//end writePresentation()
-
 
 	/**
 	 * Store an organisation's OIDC client secret for one provider, via a

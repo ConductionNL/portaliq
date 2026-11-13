@@ -25,7 +25,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Repair;
 
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\SettingsService;
+use OCA\Portaliq\Kernel\Contracts\SettingsServiceInterface;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -49,7 +49,7 @@ class InitializeSettings implements IRepairStep {
 	/**
 	 * Constructor for InitializeSettings.
 	 *
-	 * @param SettingsService $settingsService The settings service
+	 * @param SettingsServiceInterface $settingsService The settings service
 	 * @param LoggerInterface $logger The logger interface
 	 * @param IAppConfig $config App config, for the signing secret (sensitive)
 	 * @param ISecureRandom $random Cryptographically secure generator
@@ -59,7 +59,7 @@ class InitializeSettings implements IRepairStep {
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.2
 	 */
 	public function __construct(
-		private SettingsService $settingsService,
+		private SettingsServiceInterface $settingsService,
 		private LoggerInterface $logger,
 		private IAppConfig $config,
 		private ISecureRandom $random,

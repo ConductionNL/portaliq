@@ -37,8 +37,8 @@ use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\PortalAccessRequestServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalIdentityMailerInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalOrganisationConfigServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSelfServiceServiceInterface;
-use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -63,7 +63,7 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 	 * @param PortalSelfServiceServiceInterface $selfService The account's own details.
 	 * @param PortalAccessRequestServiceInterface $accessRequests Asking for access.
 	 * @param PortalIdentityMailerInterface $mailer Mails the confirmation to the new address.
-	 * @param PortalOrganisationConfigService|null $orgConfig Whether the organisation offers the message box.
+	 * @param PortalOrganisationConfigServiceInterface|null $orgConfig Whether the organisation offers the message box.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -71,7 +71,7 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 		private readonly PortalSelfServiceServiceInterface $selfService,
 		private readonly PortalAccessRequestServiceInterface $accessRequests,
 		private readonly PortalIdentityMailerInterface $mailer,
-		private readonly ?PortalOrganisationConfigService $orgConfig = null,
+		private readonly ?PortalOrganisationConfigServiceInterface $orgConfig = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

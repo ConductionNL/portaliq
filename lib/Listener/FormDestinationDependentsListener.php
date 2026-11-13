@@ -35,7 +35,7 @@ use OCA\OpenRegister\Service\Form\PublishedForm;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\DestinationMappingInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFormBindingResolverInterface;
-use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -59,13 +59,13 @@ class FormDestinationDependentsListener implements IEventListener {
 	 *
 	 * @param PortalFormBindingResolverInterface $bindings Reads the published bindings and what each renders.
 	 * @param DestinationMappingInterface        $mapping  Builds the mapping a submit of a binding sends.
-	 * @param PortalObjectWriter        $writer   Sets a binding back to draft.
+	 * @param PortalObjectWriterInterface        $writer   Sets a binding back to draft.
 	 * @param LoggerInterface           $logger   The logger.
 	 */
 	public function __construct(
 		private readonly PortalFormBindingResolverInterface $bindings,
 		private readonly DestinationMappingInterface $mapping,
-		private readonly PortalObjectWriter $writer,
+		private readonly PortalObjectWriterInterface $writer,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

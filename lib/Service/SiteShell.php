@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\SiteShellInterface;
 use OCA\Portaliq\Service\Cms\SiteHead;
 use OCP\IRequest;
 use OCP\IURLGenerator;
@@ -33,7 +34,7 @@ use OCP\IURLGenerator;
  *
  * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#3.2
  */
-class SiteShell {
+class SiteShell implements SiteShellInterface {
 	/**
 	 * The portal slug this request names, once read (see requestedPortalSlug()).
 	 *

@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\Theme\PortalThemeChoice;
+use OCA\Portaliq\Kernel\Contracts\PortalThemeChoiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -38,11 +38,11 @@ class PortalThemeController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest          $request The request.
-	 * @param PortalThemeChoice $choice  The sets and the choice.
+	 * @param PortalThemeChoiceInterface $choice  The sets and the choice.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalThemeChoice $choice,
+		private readonly PortalThemeChoiceInterface $choice,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Notifications;
 
 use OCA\Portaliq\Contribution\PortalProviderLocator;
+use OCA\Portaliq\Kernel\Contracts\MessageBoxSenderInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
@@ -42,7 +43,7 @@ use Throwable;
  *
  * @spec openspec/specs/portal-message-box-channel/spec.md#requirement-portaliq-asks-integriq-to-send-and-records-the-answer-req-mbc-003
  */
-class MessageBoxSender {
+class MessageBoxSender implements MessageBoxSenderInterface {
 
 	/**
 	 * Integriq's send command, named as a string so portaliq does not depend
@@ -51,13 +52,6 @@ class MessageBoxSender {
 	 * @var string
 	 */
 	public const SEND_EVENT = 'OCA\\Integriq\\Event\\DigitalPostSendRequestedEvent';
-
-	/**
-	 * Who portaliq says asked for the letter; integriq's status reports carry it back.
-	 *
-	 * @var string
-	 */
-	public const REQUESTED_BY = 'portaliq';
 
 	/**
 	 * Wire the sender.

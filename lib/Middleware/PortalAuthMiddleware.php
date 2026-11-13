@@ -44,7 +44,7 @@ use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Auth\PortalReadOnlySessionException;
 use OCA\Portaliq\Auth\PortalUnauthorizedException;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
-use OCA\Portaliq\Service\PortalRateLimit;
+use OCA\Portaliq\Kernel\Contracts\PortalRateLimitInterface;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -86,7 +86,7 @@ class PortalAuthMiddleware extends Middleware {
 	 *                                             surface
 	 *                                             (portal-page-provisioning).
 	 * @param IL10N $l10n Localises the message of a refused staff action.
-	 * @param PortalRateLimit|null $rateLimit Counts a collection read without a session
+	 * @param PortalRateLimitInterface|null $rateLimit Counts a collection read without a session
 	 *                                        per IP (portal-subject-rate-limit).
 	 */
 	public function __construct(
@@ -94,7 +94,7 @@ class PortalAuthMiddleware extends Middleware {
 		private readonly PortalSessionService $session,
 		private readonly PortalContributionRegistry $registry,
 		private readonly IL10N $l10n,
-		private readonly ?PortalRateLimit $rateLimit = null,
+		private readonly ?PortalRateLimitInterface $rateLimit = null,
 	) {
 	}//end __construct()
 
