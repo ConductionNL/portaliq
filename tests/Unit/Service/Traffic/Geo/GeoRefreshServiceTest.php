@@ -331,4 +331,17 @@ class GeoRefreshServiceTest extends TestCase {
 		$this->assertTrue($this->service()->queueFirstDownload());
 		$this->assertSame('info', $this->logged[0][0]);
 	}//end testAFailingJobListQueuesNothing()
+
+	/**
+	 * MaxMind is the provider when the settings name it, and the status
+	 * reports the provider and that no database is installed yet.
+	 *
+	 * @return void
+	 */
+	public function testMaxMindIsChosenAndTheStatusSaysNothingIsInstalled(): void {
+		$service = $this->service(provider: 'maxmind');
+
+		$this->assertInstanceOf(MaxMindProvider::class, $service->provider());
+		$this->assertSame(['provider' => 'maxmind', 'present' => false, 'path' => null, 'metadata' => []], $service->status());
+	}//end testMaxMindIsChosenAndTheStatusSaysNothingIsInstalled()
 }//end class
