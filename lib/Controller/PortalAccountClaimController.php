@@ -43,6 +43,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
 use Throwable;
+use OCA\Portaliq\Service\Session\SessionTrust;
 
 /**
  * Redeems an invitation's secret for the bearer.
@@ -101,7 +102,7 @@ class PortalAccountClaimController extends Controller implements PortalProtected
 
 		// About the session, not the secret: it is checked before the secret
 		// is looked at, so it tells the caller nothing about any invitation.
-		if ($this->session::trustSatisfies(subjectTrust: ($subject['trust'] ?? ''), minTrust: self::MIN_TRUST) === false) {
+		if (SessionTrust::trustSatisfies(subjectTrust: ($subject['trust'] ?? ''), minTrust: self::MIN_TRUST) === false) {
 			return new JSONResponse(['error' => 'trust_too_low'], Http::STATUS_FORBIDDEN);
 		}
 
