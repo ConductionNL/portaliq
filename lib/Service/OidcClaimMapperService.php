@@ -187,6 +187,11 @@ class OidcClaimMapperService implements OidcClaimMapperServiceInterface {
 			// vestigingsnummer. No preset names one, because brokers name it
 			// differently; an organisation sets it in its claimMap.
 			'branchClaim' => (string)($claimMap['branch'] ?? ''),
+			// Change site-mandates-the-represented-manage D8: the claim that
+			// carries the KVK number of the company the person signs in for,
+			// beside the per-person `identityRef`. No preset names one: which
+			// claim a broker uses is configured, never guessed.
+			'kvkClaim' => (string)($claimMap['kvk'] ?? ''),
 		];
 	}//end claimPart()
 
@@ -277,8 +282,34 @@ class OidcClaimMapperService implements OidcClaimMapperServiceInterface {
 			'subjectRef' => $resolvedSubjectRef,
 			'audience' => $audience,
 			'branch' => $this->branchOf(claims: $claims, config: $config),
+			'kvk' => $this->kvkOf(claims: $claims, config: $config),
 		];
 	}//end mapClaims()
+
+	/**
+	 * The KVK number of the company the person signs in for: the configured
+	 * claim's value when it is exactly eight digits, else '' (no company).
+	 *
+	 * @param array<string, mixed> $claims The validated ID-token claims.
+	 * @param array<string, mixed> $config The provider config.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/tasks.md#t0
+	 */
+	private function kvkOf(array $claims, array $config): string {
+		$claim = (string)($config['kvkClaim'] ?? '');
+		if ($claim === '') {
+			return '';
+		}
+
+		$value = ($claims[$claim] ?? null);
+		if ((is_string($value) === false && is_int($value) === false) || preg_match('/^\d{8}$/', trim((string)$value)) !== 1) {
+			return '';
+		}
+
+		return trim((string)$value);
+	}//end kvkOf()
 
 	/**
 	 * The branch (vestigingsnummer) the login was restricted to, or '' when

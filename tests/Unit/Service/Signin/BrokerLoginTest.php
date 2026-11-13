@@ -366,8 +366,9 @@ class BrokerLoginTest extends TestCase {
 		// subjectRef, audience, organisation, trust, roles, and no branch:
 		// integriq's envelope carries none yet (signin-eherkenning-branch),
 		// and no OIDC provider: integriq's route has no broker sign-out
-		// (signin-session-idle-warning-and-sso D6).
-		$this->assertSame(['subject-9', 'client', 'gemeente-x', 'substantial', ['client:read'], '', ''], $this->sessionCalls[0]);
+		// (signin-session-idle-warning-and-sso D6), and no company KVK number
+		// (site-mandates-the-represented-manage D8).
+		$this->assertSame(['subject-9', 'client', 'gemeente-x', 'substantial', ['client:read'], '', '', ''], $this->sessionCalls[0]);
 	}//end testEnvelopeMintsASessionWithItsTrust()
 
 

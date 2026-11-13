@@ -880,7 +880,8 @@ class SessionController extends Controller {
 			trust: $trust,
 			roles: [$audience . ':read'],
 			branch: (string)($run->mapped['branch'] ?? ''),
-			provider: $run->pending['provider']
+			provider: $run->pending['provider'],
+			kvk: (string)($run->mapped['kvk'] ?? '')
 		);
 	}//end issueOidcSession()
 

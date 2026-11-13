@@ -135,7 +135,7 @@ class PortalJwtService implements PortalJwtServiceInterface {
 	 *                           so the absolute session lifetime can be enforced from
 	 *                           the true origin, not the most recent mint. Defaults to
 	 *                           `$iat` (a fresh login) when not supplied.
-	 * @param array{number?: string, restricted?: bool, provider?: string} $context The login's context: the branch in
+	 * @param array{number?: string, restricted?: bool, provider?: string, kvk?: string} $context The login's context: the branch in
 	 *                                                                             effect, whether the login restricted
 	 *                                                                             the session to it, and the OIDC
 	 *                                                                             provider the session came through.
@@ -176,7 +176,9 @@ class PortalJwtService implements PortalJwtServiceInterface {
 			'authTime' => ($authTime ?? $iat),
 		];
 
-		return $this->signed(claims: array_replace($claims, $this->branchClaims(context: $context), $this->providerClaim(context: $context)));
+		return $this->signed(
+			claims: array_replace($claims, $this->branchClaims(context: $context), $this->providerClaim(context: $context), $this->kvkClaim(context: $context))
+		);
 	}//end createSession()
 
 	/**
@@ -184,7 +186,7 @@ class PortalJwtService implements PortalJwtServiceInterface {
 	 * login restricted the session to it. Signed only when set, so a session
 	 * without a branch carries exactly the claims it did before.
 	 *
-	 * @param array{number?: string, restricted?: bool, provider?: string} $context The login's context.
+	 * @param array{number?: string, restricted?: bool, provider?: string, kvk?: string} $context The login's context.
 	 *
 	 * @return array<string, mixed>
 	 */
@@ -204,7 +206,7 @@ class PortalJwtService implements PortalJwtServiceInterface {
 	 * session came through, so signing out can reach that broker. Signed only
 	 * when set: dev-login and the Nextcloud mode carry none.
 	 *
-	 * @param array{number?: string, restricted?: bool, provider?: string} $context The login's context.
+	 * @param array{number?: string, restricted?: bool, provider?: string, kvk?: string} $context The login's context.
 	 *
 	 * @return array<string, string>
 	 */
@@ -215,6 +217,26 @@ class PortalJwtService implements PortalJwtServiceInterface {
 
 		return ['provider' => (string)$context['provider']];
 	}//end providerClaim()
+
+	/**
+	 * Change site-mandates-the-represented-manage D8: the KVK number of the
+	 * company the session signs in for. Signed only when it is eight digits,
+	 * so a session without a company carries exactly the claims it did before.
+	 *
+	 * @param array<string, mixed> $context The login's context.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/tasks.md#t0
+	 */
+	private function kvkClaim(array $context): array {
+		$kvk = (string)($context['kvk'] ?? '');
+		if (preg_match('/^\d{8}$/', $kvk) !== 1) {
+			return [];
+		}
+
+		return ['kvk' => $kvk];
+	}//end kvkClaim()
 
 	/**
 	 * Mint a short-lived `X-Portal-Subject` assertion (contract v2, A6).

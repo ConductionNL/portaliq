@@ -267,4 +267,48 @@ class OidcClaimMapperServiceTest extends TestCase {
 
 	}//end testNoBranchClaimConfiguredMapsNone()
 
+	// -- kvk (site-mandates-the-represented-manage D8, T0) ---------------------
+
+	/**
+	 * The company's KVK number travels beside the person: `identityRef` stays
+	 * the per-person reference and `kvk` carries the company.
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/tasks.md#t0
+	 */
+	public function testTheKvkClaimTravelsBesideThePerson(): void {
+		$config = $this->mapper->applyPreset('eherkenning', ['issuer' => 'i', 'clientId' => 'c', 'clientSecret' => 's', 'claimMap' => ['identityRef' => 'sub', 'kvk' => 'urn:etoegang:kvk']]);
+		$mapped = $this->mapper->mapClaims(['sub' => 'person-7f3', 'urn:etoegang:kvk' => ' 87654321 '], $config);
+
+		$this->assertSame('person-7f3', $mapped['identityRef']);
+		$this->assertSame('87654321', $mapped['kvk']);
+		$this->assertSame('87654321', $this->mapper->mapClaims(['sub' => 'person-7f3', 'urn:etoegang:kvk' => 87654321], $config)['kvk']);
+
+	}//end testTheKvkClaimTravelsBesideThePerson()
+
+	/**
+	 * A missing, malformed or unconfigured KVK claim gives no company, and the
+	 * login goes on as the person alone.
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/tasks.md#t0
+	 */
+	public function testAMissingKvkClaimGivesNoCompany(): void {
+		$config = $this->mapper->applyPreset('eherkenning', ['issuer' => 'i', 'clientId' => 'c', 'clientSecret' => 's', 'claimMap' => ['kvk' => 'kvkNummer']]);
+
+		foreach ([null, '', '1234567', '123456789', '8765432X', ['87654321'], 87654321.0] as $bad) {
+			$claims = ['sub' => 'person-7f3'];
+			if ($bad !== null) {
+				$claims['kvkNummer'] = $bad;
+			}
+
+			$mapped = $this->mapper->mapClaims($claims, $config);
+			$this->assertNotNull($mapped, 'a bad KVK claim never refuses the login');
+			$this->assertSame('', $mapped['kvk']);
+		}
+
+		$preset = $this->mapper->applyPreset('eherkenning', ['issuer' => 'i', 'clientId' => 'c', 'clientSecret' => 's']);
+		$this->assertSame('', $preset['kvkClaim'], 'no preset names a KVK claim');
+		$this->assertSame('', $this->mapper->mapClaims(['sub' => '87654321', 'kvk' => '87654321'], $preset)['kvk']);
+
+	}//end testAMissingKvkClaimGivesNoCompany()
+
 }//end class
