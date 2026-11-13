@@ -39,7 +39,7 @@ namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Kernel\Contracts\OidcClaimMapperServiceInterface;
 use OCA\Portaliq\Service\Branch\BranchNumber;
-use OCA\Portaliq\Service\Session\SessionTrust;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
 
 /**
  * Provider presets + claim/LoA mapping for the OIDC broker login edge.

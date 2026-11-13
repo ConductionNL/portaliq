@@ -52,6 +52,7 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\IRequest;
 use OCA\Portaliq\Listener\ListenerRegistrar;
 use OCA\Portaliq\Contribution\ContributionContractRegistrar;
+use OCA\Portaliq\Listener\FormDependentsRegistrar;
 
 /**
  * Main application class for the Portaliq Nextcloud app.

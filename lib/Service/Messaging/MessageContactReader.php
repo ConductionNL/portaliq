@@ -37,7 +37,7 @@ use OCA\Portaliq\Kernel\Contracts\MessageContactReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalProviderLocatorInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
-use OCA\Portaliq\Service\Session\SessionTrust;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
 use Psr\Log\LoggerInterface;
 use Throwable;
 use OCA\Portaliq\Kernel\Contracts\MessageContactsKeysInterface;

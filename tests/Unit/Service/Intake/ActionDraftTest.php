@@ -31,7 +31,7 @@ use OCA\Portaliq\Contribution\CreateBody;
  * @uses \OCA\Portaliq\Contribution\ActionScopeResolver
  * @uses \OCA\Portaliq\Contribution\CreateBody
  * @uses \OCA\Portaliq\Service\PortalSessionService
- * @uses \OCA\Portaliq\Service\Session\SessionTrust
+ * @uses \OCA\Portaliq\Kernel\Support\SessionTrust
  *
  * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
  */

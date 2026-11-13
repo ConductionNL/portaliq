@@ -8,7 +8,7 @@
  * out of PortalSessionService, whose callers here only rank trust.
  *
  * @category Service
- * @package  OCA\Portaliq\Service\Session
+ * @package  OCA\Portaliq\Kernel\Support
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,7 +24,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\Portaliq\Service\Session;
+namespace OCA\Portaliq\Kernel\Support;
 
 use OCA\Portaliq\Kernel\Contracts\SessionTrustInterface;
 

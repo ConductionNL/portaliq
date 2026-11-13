@@ -59,13 +59,13 @@ use OCA\Portaliq\Service\WriteRefusal;
  * @uses \OCA\Portaliq\Contribution\ActionScopeResolver
  * @uses \OCA\Portaliq\Contribution\CreateActionMatcher
  * @uses \OCA\Portaliq\Contribution\CreateBody
- * @uses \OCA\Portaliq\Service\Branch\PortalBranchScope
+ * @uses \OCA\Portaliq\Kernel\Support\PortalBranchScope
  * @uses \OCA\Portaliq\Service\PortalCrossRefGuard
  * @uses \OCA\Portaliq\Service\PortalSessionService
  * @uses \OCA\Portaliq\Service\PortalUserDisplayNames
  * @uses \OCA\Portaliq\Service\RequiredFieldsGuard
  * @uses \OCA\Portaliq\Contribution\RowIdentifier
- * @uses \OCA\Portaliq\Service\Session\SessionTrust
+ * @uses \OCA\Portaliq\Kernel\Support\SessionTrust
  */
 class ContributionControllerDraftSendTest extends TestCase {
 	private const SUBJECT = ['subjectRef' => 'sanne', 'audience' => 'resident', 'organisation' => '', 'trust' => 'low', 'jti' => 'jti-1'];

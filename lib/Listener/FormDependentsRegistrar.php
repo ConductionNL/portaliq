@@ -7,8 +7,8 @@
  * write into this schema?" (decision 179). Its own small class, so a test can
  * hand it a registration context and see the listener land on the event.
  *
- * @category AppInfo
- * @package  OCA\Portaliq\AppInfo
+ * @category Listener
+ * @package  OCA\Portaliq\Listener
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,10 +24,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\Portaliq\AppInfo;
+namespace OCA\Portaliq\Listener;
 
 use OCA\OpenRegister\Event\FormDestinationDependentsEvent;
-use OCA\Portaliq\Listener\FormDestinationDependentsListener;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**

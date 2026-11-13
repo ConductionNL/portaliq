@@ -31,7 +31,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Contribution;
 
 use OCA\Portaliq\Kernel\Contracts\CitizenDocumentUploadInterface;
-use OCA\Portaliq\Service\UploadedFile;
+use OCA\Portaliq\Kernel\Support\UploadedFile;
 
 /**
  * Reads the citizen's upload and names it so it adds rather than replaces.

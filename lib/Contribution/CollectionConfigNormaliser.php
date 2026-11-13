@@ -33,7 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Contribution;
 
-use OCA\Portaliq\Service\Branch\PortalBranchScope;
+use OCA\Portaliq\Kernel\Support\PortalBranchScope;
 
 /**
  * Validates and sanitises the v3 collection presentation config, fail-closed.
