@@ -190,26 +190,18 @@ class PortalObjectReader implements ScopedCollectionReaderInterface {
 			return [];
 		}
 
-		// Contract v2 (A4): a declared scopeClaim replaces the scoping value
-		// with a server-resolved claim from the subject's OWN portalAccount.
-		$scopeValue = $subjectRef;
-		if ($scopeClaim !== '') {
-			$claimValue = $this->resolveClaim(
-				objectService: $objectService,
-				scopeClaim: $scopeClaim,
-				contributingApp: $contributingApp,
-				subjectRef: $subjectRef,
-				audience: $audience,
-				organisation: $organisation
-			);
-			if ($claimValue === null) {
-				// Absent/malformed claim → the collection contributes nothing.
-				// A normal (unlinked-account) state — 200 + empty, never an
-				// error, and never an unscoped OR query.
-				return [];
-			}
-
-			$scopeValue = $claimValue;
+		// Contract v2 (A4): a declared scopeClaim replaces the scoping value; an
+		// absent/malformed claim contributes nothing, never an unscoped query.
+		$scopeValue = $this->scopeValueFor(
+			objectService: $objectService,
+			subjectRef: $subjectRef,
+			scopeClaim: $scopeClaim,
+			contributingApp: $contributingApp,
+			audience: $audience,
+			organisation: $organisation
+		);
+		if ($scopeValue === null) {
+			return [];
 		}
 
 		// Contract v2 (A5): a declared via joins one hop before the target read.
@@ -231,12 +223,70 @@ class PortalObjectReader implements ScopedCollectionReaderInterface {
 		}
 
 		$filters = $this->scopedFilters(filter: $filter, scopeField: $scopeField, scopeValue: $scopeValue);
+		$rows = $this->findScopedRows(objectService: $objectService, register: $register, schema: $schema, filters: $filters, limit: $limit);
+		$verified = $this->verifyScope(rows: ($rows ?? []), scopeField: $scopeField, subjectRef: $scopeValue, organisation: $organisation, schema: $schema);
 
-		// NOTE: `organisation` is deliberately NOT an OR filter — it is a
-		// multitenancy field, not a queryable property, so filtering on it
-		// returns nothing. Tenant isolation is the per-row organisation check in
-		// verifyScope(); broader tenant scoping for anonymous portal reads is a
-		// follow-up (see T05 notes).
+		// Field projection runs AFTER per-row verification, BEFORE returning —
+		// it shapes what a verified row shows, never which rows return.
+		return $this->projector->projectRows(rows: $verified, fields: $fields);
+	}//end readCollection()
+
+	/**
+	 * The value a read is scoped by: the subject reference, or, when the
+	 * collection declares a scopeClaim, the claim resolved server-side from the
+	 * subject's own portalAccount. Null when a declared claim is absent or
+	 * malformed, so the caller fails closed and never reads unscoped.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $subjectRef The server-derived subject reference.
+	 * @param string $scopeClaim The declared claim, or '' for none.
+	 * @param string $contributingApp The app that contributes the collection.
+	 * @param string $audience The subject's audience.
+	 * @param string $organisation The subject's tenant (may be empty).
+	 *
+	 * @return string|null
+	 */
+	private function scopeValueFor(
+		object $objectService,
+		string $subjectRef,
+		string $scopeClaim,
+		string $contributingApp,
+		string $audience,
+		string $organisation,
+	): ?string {
+		if ($scopeClaim === '') {
+			return $subjectRef;
+		}
+
+		return $this->resolveClaim(
+			objectService: $objectService,
+			scopeClaim: $scopeClaim,
+			contributingApp: $contributingApp,
+			subjectRef: $subjectRef,
+			audience: $audience,
+			organisation: $organisation
+		);
+	}//end scopeValueFor()
+
+	/**
+	 * The rows OpenRegister lists for the scoped filters, or null when the read
+	 * failed (logged) or answered something other than a list.
+	 *
+	 * NOTE: `organisation` is deliberately NOT an OR filter — it is a
+	 * multitenancy field, not a queryable property, so filtering on it
+	 * returns nothing. Tenant isolation is the per-row organisation check in
+	 * verifyScope(); broader tenant scoping for anonymous portal reads is a
+	 * follow-up (see T05 notes).
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $register The register slug/id.
+	 * @param string $schema The schema slug.
+	 * @param array<string, mixed> $filters The scoped filters.
+	 * @param int $limit The page size.
+	 *
+	 * @return array<int|string, mixed>|null
+	 */
+	private function findScopedRows(object $objectService, string $register, string $schema, array $filters, int $limit): ?array {
 		try {
 			// Set the register/schema context via the dedicated setters, exactly
 			// as OpenRegister's own controllers do. Passing register/schema inside
@@ -248,23 +298,19 @@ class PortalObjectReader implements ScopedCollectionReaderInterface {
 			// OR's user/org-based scoping would filter everything out. Portaliq is
 			// the trusted intermediary — it authenticated the subject via the
 			// bearer and scopes by the scope-value filter + per-row verification
-			// below, which IS the security boundary.
+			// in the caller, which IS the security boundary.
 			$rows = $objectService->findAll(config: ['filters' => $filters, 'limit' => $limit, 'offset' => 0], _rbac: false, _multitenancy: false);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: OR read failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
-			return [];
+			return null;
 		}
 
 		if (is_array($rows) === false) {
-			return [];
+			return null;
 		}
 
-		$verified = $this->verifyScope(rows: $rows, scopeField: $scopeField, subjectRef: $scopeValue, organisation: $organisation, schema: $schema);
-
-		// Field projection runs AFTER per-row verification, BEFORE returning —
-		// it shapes what a verified row shows, never which rows return.
-		return $this->projector->projectRows(rows: $verified, fields: $fields);
-	}//end readCollection()
+		return $rows;
+	}//end findScopedRows()
 
 	/**
 	 * The rows the subject holds in any of several scope fields, once each:
@@ -533,21 +579,16 @@ class PortalObjectReader implements ScopedCollectionReaderInterface {
 		// declared scopeClaim replaces the subjectRef with a server-resolved
 		// claim from the subject's OWN portalAccount; an absent/malformed claim
 		// fails closed to null (→ 404), never an unscoped fetch.
-		$scopeValue = $subjectRef;
-		if ($scopeClaim !== '') {
-			$claimValue = $this->resolveClaim(
-				objectService: $objectService,
-				scopeClaim: $scopeClaim,
-				contributingApp: $contributingApp,
-				subjectRef: $subjectRef,
-				audience: $audience,
-				organisation: $organisation
-			);
-			if ($claimValue === null) {
-				return null;
-			}
-
-			$scopeValue = $claimValue;
+		$scopeValue = $this->scopeValueFor(
+			objectService: $objectService,
+			subjectRef: $subjectRef,
+			scopeClaim: $scopeClaim,
+			contributingApp: $contributingApp,
+			audience: $audience,
+			organisation: $organisation
+		);
+		if ($scopeValue === null) {
+			return null;
 		}
 
 		$row = $this->fetchById(objectService: $objectService, register: $register, schema: $schema, id: $id);
@@ -556,11 +597,52 @@ class PortalObjectReader implements ScopedCollectionReaderInterface {
 			return null;
 		}
 
-		// A via collection: the object must ALSO pass the one-hop via
-		// membership (same join pre-pass + tenant + match discipline as the
-		// list path), reusing the exact machinery readViaCollection uses.
+		$verified = $this->verifiedObject(
+			objectService: $objectService,
+			schema: $schema,
+			scopeField: $scopeField,
+			scopeValue: $scopeValue,
+			organisation: $organisation,
+			via: $via,
+			row: $row
+		);
+		if ($verified === null) {
+			return null;
+		}
+
+		return $this->projector->projectRow(row: $verified, fields: $fields);
+	}//end readObject()
+
+	/**
+	 * The fetched row when the subject may see it, else null.
+	 *
+	 * A via collection: the object must ALSO pass the one-hop via membership
+	 * (same join pre-pass + tenant + match discipline as the list path),
+	 * reusing the exact machinery readViaCollection uses. Direct scope: the
+	 * row goes through the SAME per-row ownership check every portal read
+	 * uses, and a foreign-owned row is dropped.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param string $schema The schema slug.
+	 * @param string $scopeField The field that must own the row.
+	 * @param string $scopeValue The resolved scoping value.
+	 * @param string $organisation The subject's tenant (may be empty).
+	 * @param mixed $via The via declaration, or null for a direct scope.
+	 * @param array<string, mixed> $row The fetched row.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function verifiedObject(
+		object $objectService,
+		string $schema,
+		string $scopeField,
+		string $scopeValue,
+		string $organisation,
+		mixed $via,
+		array $row,
+	): ?array {
 		if ($via !== null) {
-			$verified = $this->verifyViaObject(
+			return $this->verifyViaObject(
 				objectService: $objectService,
 				scopeField: $scopeField,
 				via: $via,
@@ -568,22 +650,15 @@ class PortalObjectReader implements ScopedCollectionReaderInterface {
 				organisation: $organisation,
 				row: $row
 			);
-			if ($verified === null) {
-				return null;
-			}
-
-			return $this->projector->projectRow(row: $verified, fields: $fields);
 		}
 
-		// Direct scope: run the fetched row through the SAME per-row ownership
-		// check every portal read uses. A foreign-owned row is dropped here.
 		$verified = $this->verifyScope(rows: [$row], scopeField: $scopeField, subjectRef: $scopeValue, organisation: $organisation, schema: $schema);
 		if (count($verified) === 0) {
 			return null;
 		}
 
-		return $this->projector->projectRow(row: $verified[0], fields: $fields);
-	}//end readObject()
+		return $verified[0];
+	}//end verifiedObject()
 
 	/**
 	 * The row when it satisfies the collection's declared filter, else null:

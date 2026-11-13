@@ -75,6 +75,56 @@ class PortalObjectReaderTest extends TestCase {
 
 	}//end testReturnsEmptyWhenOpenRegisterUnavailable()
 
+	/**
+	 * A store that throws on the list read yields no rows and logs why, by schema.
+	 */
+	public function testAFailingListReadYieldsEmptyAndLogsTheReason(): void {
+		$objectService = new class {
+			public function setRegister(string $register): self {
+				return $this;
+			}//end setRegister()
+
+			public function setSchema(string $schema): self {
+				return $this;
+			}//end setSchema()
+
+			public function findAll(array $config, bool $_rbac = true, bool $_multitenancy = true): array {
+				throw new RuntimeException('store down');
+			}//end findAll()
+		};
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')->with('Portaliq: OR read failed', ['schema' => 'exampleDocument', 'reason' => 'store down']);
+
+		$reader = new PortalObjectReader($this->container($objectService), $logger, $this->projector());
+
+		$this->assertSame([], $reader->readCollection('portaliq', 'exampleDocument', 'subjectRef', 's1'));
+
+	}//end testAFailingListReadYieldsEmptyAndLogsTheReason()
+
+	/**
+	 * A list read that answers something other than an array yields no rows.
+	 */
+	public function testANonArrayListReadYieldsEmpty(): void {
+		$objectService = new class {
+			public function setRegister(string $register): self {
+				return $this;
+			}//end setRegister()
+
+			public function setSchema(string $schema): self {
+				return $this;
+			}//end setSchema()
+
+			public function findAll(array $config, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				return 'not rows';
+			}//end findAll()
+		};
+
+		$reader = new PortalObjectReader($this->container($objectService), $this->createMock(LoggerInterface::class), $this->projector());
+
+		$this->assertSame([], $reader->readCollection('portaliq', 'exampleDocument', 'subjectRef', 's1'));
+
+	}//end testANonArrayListReadYieldsEmpty()
+
 	public function testFiltersOnScopeAndDropsForeignRows(): void {
 		$objectService = new class {
 

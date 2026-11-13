@@ -283,34 +283,27 @@ class PortalObjectWriter {
 			$data = (array)$data($existing);
 		}
 
-		// (2) Merge the whitelisted fields onto the existing object; drop the
-		// OR-managed `@self` envelope (id/schema/register travel as explicit
-		// save arguments, not as object data).
-		$merged = array_merge($existing, $data);
-		unset($merged['@self']);
-
-		// (3) The stored organisation stays exactly as it is. The tenant was
-		// decided when the object was created; `$organisation` only takes part
-		// in the ownership check above. An update never overwrites it and never
-		// adds one, whatever the subject's portal is or the payload says.
-		unset($merged['organisation']);
-		if (array_key_exists('organisation', $existing) === true) {
-			$merged['organisation'] = $existing['organisation'];
-		}
-
-		// (4) RE-STAMP the scope field AFTER the merge, so a client value can
-		// never win: a patch can never move the row out of scope. A verified
-		// membership list is re-stamped with the stored list itself: it
-		// already contains the subject, and portaliq never edits who else is
-		// on it.
-		if ($scopeField !== '') {
-			$merged[$scopeField] = $subjectRef;
-			if ($this->isScopeList(stored: ($existing[$scopeField] ?? null)) === true) {
-				$merged[$scopeField] = $existing[$scopeField];
-			}
-		}
+		// (2)-(4) Patch the verified row: merge, keep the stored organisation,
+		// re-stamp the scope field.
+		$merged = $this->mergedForUpdate(existing: $existing, data: $data, scopeField: $scopeField, subjectRef: $subjectRef);
 
 		// (5) Save with the id preserved (`uuid`) so OR UPDATES this row.
+		return $this->saveUpdate(objectService: $objectService, merged: $merged, register: $register, schema: $schema, id: $id);
+	}//end updateObject()
+
+	/**
+	 * Saves the patched row under its own id so OpenRegister updates it, and
+	 * returns it normalised; null (with the reason kept) when the store refuses.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param array<string, mixed> $merged The patched row.
+	 * @param string $register The register slug/id.
+	 * @param string $schema The schema slug.
+	 * @param string $id The object's id.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function saveUpdate(object $objectService, array $merged, string $register, string $schema, string $id): ?array {
 		try {
 			$saved = $this->insideWriteContext(write: static fn () => $objectService->saveObject(
 				object: $merged,
@@ -327,7 +320,48 @@ class PortalObjectWriter {
 		}
 
 		return $this->normalise(row: $saved);
-	}//end updateObject()
+	}//end saveUpdate()
+
+	/**
+	 * The object an update saves: the verified row patched by the fields.
+	 *
+	 * (2) Merge the whitelisted fields onto the existing object; drop the
+	 * OR-managed `@self` envelope (id/schema/register travel as explicit save
+	 * arguments, not as object data).
+	 * (3) The stored organisation stays exactly as it is. The tenant was decided
+	 * when the object was created; the subject's organisation only takes part in
+	 * the ownership check. An update never overwrites it and never adds one,
+	 * whatever the subject's portal is or the payload says.
+	 * (4) RE-STAMP the scope field AFTER the merge, so a client value can never
+	 * win: a patch can never move the row out of scope. A verified membership
+	 * list is re-stamped with the stored list itself: it already contains the
+	 * subject, and portaliq never edits who else is on it.
+	 *
+	 * @param array<string, mixed> $existing The row verified as the subject's own.
+	 * @param array<string, mixed> $data The whitelisted fields.
+	 * @param string $scopeField The field that must own the row.
+	 * @param string $subjectRef The server-derived subject reference.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function mergedForUpdate(array $existing, array $data, string $scopeField, string $subjectRef): array {
+		$merged = array_merge($existing, $data);
+		unset($merged['@self']);
+
+		unset($merged['organisation']);
+		if (array_key_exists('organisation', $existing) === true) {
+			$merged['organisation'] = $existing['organisation'];
+		}
+
+		if ($scopeField !== '') {
+			$merged[$scopeField] = $subjectRef;
+			if ($this->isScopeList(stored: ($existing[$scopeField] ?? null)) === true) {
+				$merged[$scopeField] = $existing[$scopeField];
+			}
+		}
+
+		return $merged;
+	}//end mergedForUpdate()
 
 	/**
 	 * Why the last create or update was refused, as the store said it, or ''
