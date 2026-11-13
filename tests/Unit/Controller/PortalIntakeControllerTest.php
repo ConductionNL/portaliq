@@ -128,6 +128,39 @@ class PortalIntakeControllerTest extends TestCase {
 
 	}//end testAnUnsolvedChallengeStopsTheSubmissionBeforeValidation()
 
+	public function testASubmitToAnUnknownPortalIsNotFound(): void {
+		$controller = $this->controller(render: $this->hostedForm(), site: null);
+		$this->forbidSubmit = true;
+
+		$response = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB']);
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+		$this->assertSame(['error' => 'portal_not_found'], $response->getData());
+
+	}//end testASubmitToAnUnknownPortalIsNotFound()
+
+	public function testASolvedChallengeIsCheckedWithWhatWasSentAndTheSubmissionProceeds(): void {
+		$render = $this->hostedForm();
+		$render['settings']['challenge'] = true;
+		$controller = $this->controller(render: $render);
+		$this->doubles['challenge']->expects($this->once())->method('accepts')->with(
+			['slug' => 'gemeente-x', 'organisation' => 'gemeente-x'],
+			'form',
+			['postcode' => '1234 AB'],
+			'nonce-1',
+			'solved',
+			1700000000,
+			'sig-1'
+		)->willReturn(true);
+
+		$data = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'], nonce: 'nonce-1', solution: 'solved', expiresAt: 1700000000, signature: 'sig-1')->getData();
+
+		$this->assertSame('2026-0042', $data['reference']);
+		$this->assertSame('u-1', $data['id']);
+		$this->assertCount(1, $this->submit->calls);
+
+	}//end testASolvedChallengeIsCheckedWithWhatWasSentAndTheSubmissionProceeds()
+
 	public function testAnUnknownRouteIsNotAForm(): void {
 		$controller = $this->controller(render: $this->hostedForm(), binding: null);
 
@@ -354,7 +387,7 @@ class PortalIntakeControllerTest extends TestCase {
 		array $render,
 		?array $binding = ['portal' => 'gemeente-x', 'route' => 'aanvragen/verhuizing', 'destination' => ['register' => 'dossiq', 'schema' => 'case', 'subjectField' => 'portalSubject']],
 		?array $subject = null,
-		array $site = ['slug' => 'gemeente-x', 'organisation' => 'gemeente-x'],
+		?array $site = ['slug' => 'gemeente-x', 'organisation' => 'gemeente-x'],
 		?\OCA\Portaliq\Service\Intake\PortalAddressLookup $addresses = null,
 		?\OCA\Portaliq\Service\Intake\PortalFamilyMembers $family = null,
 		?\OCA\Portaliq\Service\Intake\FormStatements $statements = null,
