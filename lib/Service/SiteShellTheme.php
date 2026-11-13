@@ -27,6 +27,7 @@ namespace OCA\Portaliq\Service;
 use OCA\Portaliq\Service\Theme\PortalThemeParents;
 use OCP\IRequest;
 use OCP\IURLGenerator;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 
 /**
  * The theme of the portal a site request names: stylesheet, parents, token
@@ -40,14 +41,14 @@ class SiteShellTheme {
 	 * Constructor.
 	 *
 	 * @param IRequest            $request        The request.
-	 * @param PortalResolver      $portalResolver Resolves the serving portal.
+	 * @param PortalResolverInterface      $portalResolver Resolves the serving portal.
 	 * @param PortalThemeResolver $themeResolver Maps the portal's theme to a token stylesheet.
 	 * @param IURLGenerator       $urlGenerator   Builds the logo address.
 	 * @param string              $slug           The portal slug the request names, or ''.
 	 */
 	public function __construct(
 		private readonly IRequest $request,
-		private readonly PortalResolver $portalResolver,
+		private readonly PortalResolverInterface $portalResolver,
 		private readonly PortalThemeResolver $themeResolver,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly string $slug,

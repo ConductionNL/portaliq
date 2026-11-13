@@ -32,8 +32,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PublicNewsReaderInterface;
-use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -56,7 +56,7 @@ class ContentNewsController extends Controller {
 	 *
 	 * @param string               $appName  The app id.
 	 * @param IRequest             $request  The request.
-	 * @param PortalResolver       $resolver Resolves the serving portal.
+	 * @param PortalResolverInterface       $resolver Resolves the serving portal.
 	 * @param PortalSessionService $session  Resolves the caller's portal session for the content gate.
 	 * @param PublicNewsReaderInterface     $news     Reads the portal's public news.
 	 *
@@ -65,7 +65,7 @@ class ContentNewsController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly PortalResolver $resolver,
+		private readonly PortalResolverInterface $resolver,
 		private readonly PortalSessionService $session,
 		private readonly PublicNewsReaderInterface $news,
 	) {

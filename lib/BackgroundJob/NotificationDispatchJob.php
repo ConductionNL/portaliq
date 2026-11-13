@@ -46,11 +46,11 @@ declare(strict_types=1);
 namespace OCA\Portaliq\BackgroundJob;
 
 use OCA\Portaliq\Kernel\Contracts\NotificationChannelsInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalDeepLinkBuilderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalNoticeLanguageInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalOrganisationConfigServiceInterface;
 use OCA\Portaliq\Service\Notifications\NotificationChannels;
-use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\QueuedJob;
@@ -146,7 +146,7 @@ class NotificationDispatchJob extends QueuedJob {
 	 * @param PortalOrganisationConfigServiceInterface $orgConfig Resolves the tenant's display name.
 	 * @param IMailer $mailer Sends the privacy-minimal email.
 	 * @param PortalNoticeLanguageInterface $language The translations in the language of the resident's portal.
-	 * @param PortalDeepLinkBuilder $deepLinks Builds the portal deep link from the route table (WOO-570).
+	 * @param PortalDeepLinkBuilderInterface $deepLinks Builds the portal deep link from the route table (WOO-570).
 	 * @param IConfig $config Reads the configurable failure threshold.
 	 * @param LoggerInterface $logger The logger.
 	 * @param NotificationChannelsInterface|null $channels The resident's per-kind choices and the push.
@@ -158,7 +158,7 @@ class NotificationDispatchJob extends QueuedJob {
 		private readonly PortalOrganisationConfigServiceInterface $orgConfig,
 		private readonly IMailer $mailer,
 		private readonly PortalNoticeLanguageInterface $language,
-		private readonly PortalDeepLinkBuilder $deepLinks,
+		private readonly PortalDeepLinkBuilderInterface $deepLinks,
 		private readonly IConfig $config,
 		private readonly LoggerInterface $logger,
 		private readonly ?NotificationChannelsInterface $channels = null,

@@ -32,7 +32,7 @@ use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\PlanFilesInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalPdfExportInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalPlanServiceInterface;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\RequestedPortal;
 use OCP\AppFramework\Controller;
@@ -75,7 +75,7 @@ class PortalPlansController extends Controller implements PortalProtected {
 	 * @param IRequest $request The request.
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
 	 * @param PortalPlanServiceInterface $plans The plan rules.
-	 * @param PortalResolver $portals Finds the serving portal, for its templates.
+	 * @param PortalResolverInterface $portals Finds the serving portal, for its templates.
 	 * @param PortalPdfExportInterface|null $pdf Renders the plan as a PDF through OpenRegister.
 	 * @param PlanFilesInterface|null $files Adds and opens the plan's files.
 	 */
@@ -83,7 +83,7 @@ class PortalPlansController extends Controller implements PortalProtected {
 		IRequest $request,
 		private readonly PortalSessionService $session,
 		private readonly PortalPlanServiceInterface $plans,
-		private readonly PortalResolver $portals,
+		private readonly PortalResolverInterface $portals,
 		private readonly ?PortalPdfExportInterface $pdf = null,
 		private readonly ?PlanFilesInterface $files = null,
 	) {

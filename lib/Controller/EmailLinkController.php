@@ -38,7 +38,7 @@ use OCA\Portaliq\Kernel\Contracts\EmailLinkLimitsInterface;
 use OCA\Portaliq\Kernel\Contracts\EmailLinkSettingInterface;
 use OCA\Portaliq\Kernel\Contracts\EmailLinkTokensInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalIdentityMailerInterface;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\RequestedPortal;
 use OCP\AppFramework\Controller;
@@ -87,7 +87,7 @@ class EmailLinkController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest             $request      The request.
-	 * @param PortalResolver       $portals      Resolves the portal being visited.
+	 * @param PortalResolverInterface       $portals      Resolves the portal being visited.
 	 * @param EmailLinkSettingInterface     $setting      The switch and the portal's modes.
 	 * @param EmailLinkAddressInterface     $address      Normalises and hashes the address.
 	 * @param EmailLinkLimitsInterface      $limits       The per-address counter.
@@ -102,7 +102,7 @@ class EmailLinkController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalResolver $portals,
+		private readonly PortalResolverInterface $portals,
 		private readonly EmailLinkSettingInterface $setting,
 		private readonly EmailLinkAddressInterface $address,
 		private readonly EmailLinkLimitsInterface $limits,

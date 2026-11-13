@@ -37,9 +37,9 @@ use OCA\Portaliq\Kernel\Contracts\DestinationIntakeInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalEmbedGuardInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalEmbedThrottleInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFormBindingResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFormValidatorInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Service\Intake\DestinationIntake;
-use OCA\Portaliq\Service\Intake\PortalFormValidator;
-use OCA\Portaliq\Service\PortalResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -67,21 +67,21 @@ class PortalEmbedController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalResolver $portals Resolves the portal being framed.
+	 * @param PortalResolverInterface $portals Resolves the portal being framed.
 	 * @param PortalFormBindingResolverInterface $bindings Resolves the binding.
 	 * @param PortalEmbedGuardInterface $guard Decides who may frame this form.
 	 * @param PortalEmbedThrottleInterface $throttle Counts frame traffic per origin.
-	 * @param PortalFormValidator $validator Validates a submission.
+	 * @param PortalFormValidatorInterface $validator Validates a submission.
 	 * @param DestinationIntakeInterface $intake Submits into the binding's destination (decision 179).
 	 * @param IURLGenerator $urls Builds the follow link.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalResolver $portals,
+		private readonly PortalResolverInterface $portals,
 		private readonly PortalFormBindingResolverInterface $bindings,
 		private readonly PortalEmbedGuardInterface $guard,
 		private readonly PortalEmbedThrottleInterface $throttle,
-		private readonly PortalFormValidator $validator,
+		private readonly PortalFormValidatorInterface $validator,
 		private readonly DestinationIntakeInterface $intake,
 		private readonly IURLGenerator $urls,
 	) {

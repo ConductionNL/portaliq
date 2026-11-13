@@ -29,8 +29,9 @@ use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\CollectionDocumentsInterface;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\SessionTrust;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -59,7 +60,7 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 	 * @param IRequest $request The request.
 	 * @param PortalContributionRegistry $registry The subject's contributions.
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalObjectReader $reader The scoped single-object read.
+	 * @param PortalObjectReaderInterface $reader The scoped single-object read.
 	 * @param CollectionDocumentsInterface $documents Lists and opens the documents.
 	 * @param IL10N $l10n The sentence a refused opening is given with.
 	 */
@@ -67,7 +68,7 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 		IRequest $request,
 		private readonly PortalContributionRegistry $registry,
 		private readonly PortalSessionService $session,
-		private readonly PortalObjectReader $reader,
+		private readonly PortalObjectReaderInterface $reader,
 		private readonly CollectionDocumentsInterface $documents,
 		private readonly IL10N $l10n,
 	) {
@@ -162,7 +163,7 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 
 		$match = $this->collectionOf(subject: $subject, register: $register, schema: $schema);
 		$notFound = new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
-		if ($match === null || PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+		if ($match === null || SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
 			return $notFound;
 		}
 

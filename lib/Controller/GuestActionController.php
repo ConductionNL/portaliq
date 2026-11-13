@@ -33,8 +33,8 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\Contribution\GuestActionRegistry;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\AuditTrailServiceInterface;
-use OCA\Portaliq\Service\PortalActionForwarder;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Kernel\Contracts\PortalActionForwarderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Service\RequestedPortal;
 use OCA\Portaliq\Service\RequiredFieldsGuard;
 use OCP\AppFramework\Controller;
@@ -61,15 +61,15 @@ class GuestActionController extends Controller {
 	 *
 	 * @param IRequest $request The request.
 	 * @param GuestActionRegistry $registry Finds the declared guest action.
-	 * @param PortalActionForwarder $forwarder Forwards with the signed assertion.
-	 * @param PortalResolver $portals Resolves the serving portal for its organisation.
+	 * @param PortalActionForwarderInterface $forwarder Forwards with the signed assertion.
+	 * @param PortalResolverInterface $portals Resolves the serving portal for its organisation.
 	 * @param AuditTrailServiceInterface $auditor Records each forward with the token's hash.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly GuestActionRegistry $registry,
-		private readonly PortalActionForwarder $forwarder,
-		private readonly PortalResolver $portals,
+		private readonly PortalActionForwarderInterface $forwarder,
+		private readonly PortalResolverInterface $portals,
 		private readonly AuditTrailServiceInterface $auditor,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);

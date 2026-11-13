@@ -32,13 +32,13 @@ use OCA\Portaliq\Contribution\PortalContributionFilter;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Kernel\Contracts\CmsReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\NextcloudRegistrationDoorInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalNoticeReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PublicAssistantChannelInterface;
 use OCA\Portaliq\Kernel\Contracts\PublicSourceScopeInterface;
 use OCA\Portaliq\Kernel\Contracts\SiteOrganisationInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficConfigResolverInterface;
 use OCA\Portaliq\Service\Assistant\PublicSourceScope;
-use OCA\Portaliq\Service\PortalNoticeReader;
-use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -86,7 +86,7 @@ class ContentController extends Controller {
 	 *
 	 * @param string                     $appName      The app id.
 	 * @param IRequest                   $request      The request.
-	 * @param PortalResolver             $resolver     Resolves the serving portal.
+	 * @param PortalResolverInterface             $resolver     Resolves the serving portal.
 	 * @param CmsReaderInterface                  $reader       Reads portal-scoped content.
 	 * @param PortalContributionRegistry $registry     Aggregates leaf apps' contributions.
 	 * @param PortalContributionFilter   $contribFilter Scopes that aggregate to one portal.
@@ -94,7 +94,7 @@ class ContentController extends Controller {
 	 * @param PortalSessionService       $session      Resolves the caller's portal session for the content gate.
 	 * @param TrafficConfigResolverInterface      $traffic      Resolves the portal's measurement configuration.
 	 * @param IURLGenerator              $urlGenerator Builds the absolute collector URL.
-	 * @param PortalNoticeReader         $notices      The notices running on the site now.
+	 * @param PortalNoticeReaderInterface         $notices      The notices running on the site now.
 	 * @param IUserSession               $userSession  Tells a signed-in Nextcloud user (an editor) from a visitor.
 	 * @param PublicAssistantChannelInterface|null $assistant   The public assistant's channel, when wired.
 	 * @param PublicSourceScopeInterface|null     $assistantScope What the public assistant may read.
@@ -106,7 +106,7 @@ class ContentController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly PortalResolver $resolver,
+		private readonly PortalResolverInterface $resolver,
 		private readonly CmsReaderInterface $reader,
 		private readonly PortalContributionRegistry $registry,
 		private readonly PortalContributionFilter $contribFilter,
@@ -114,7 +114,7 @@ class ContentController extends Controller {
 		private readonly PortalSessionService $session,
 		private readonly TrafficConfigResolverInterface $traffic,
 		private readonly IURLGenerator $urlGenerator,
-		private readonly PortalNoticeReader $notices,
+		private readonly PortalNoticeReaderInterface $notices,
 		private readonly IUserSession $userSession,
 		private readonly ?PublicAssistantChannelInterface $assistant = null,
 		private readonly ?PublicSourceScopeInterface $assistantScope = null,

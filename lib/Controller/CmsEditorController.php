@@ -30,8 +30,8 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\Kernel\Contracts\CmsPublishValidatorInterface;
 use OCA\Portaliq\Kernel\Contracts\CmsReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PageEditorServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Service\Cms\CmsPublishValidator;
-use OCA\Portaliq\Service\PortalResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -66,7 +66,7 @@ class CmsEditorController extends Controller {
 	 *
 	 * @param string            $appName    The app id.
 	 * @param IRequest          $request    The request.
-	 * @param PortalResolver    $resolver   Resolves the serving portal, exactly as the content API does.
+	 * @param PortalResolverInterface    $resolver   Resolves the serving portal, exactly as the content API does.
 	 * @param CmsReaderInterface         $reader     Resolves a route to the page behind it.
 	 * @param PageEditorServiceInterface $pageEditor Decides whether this caller may edit.
 	 * @param IURLGenerator     $urls       Builds the links into the app.
@@ -77,7 +77,7 @@ class CmsEditorController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly PortalResolver $resolver,
+		private readonly PortalResolverInterface $resolver,
 		private readonly CmsReaderInterface $reader,
 		private readonly PageEditorServiceInterface $pageEditor,
 		private readonly IURLGenerator $urls,

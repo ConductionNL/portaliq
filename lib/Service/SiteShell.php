@@ -28,6 +28,9 @@ use OCA\Portaliq\Kernel\Contracts\SiteShellInterface;
 use OCA\Portaliq\Service\Cms\SiteHead;
 use OCP\IRequest;
 use OCP\IURLGenerator;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalNoticeReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalRuntimeConfigResolverInterface;
 
 /**
  * The values the site shell template is rendered with.
@@ -60,21 +63,21 @@ class SiteShell implements SiteShellInterface {
 	 * Constructor.
 	 *
 	 * @param IRequest                    $request        The request.
-	 * @param PortalResolver              $portalResolver Resolves the serving portal.
+	 * @param PortalResolverInterface              $portalResolver Resolves the serving portal.
 	 * @param PortalThemeResolver         $themeResolver  Maps the portal's theme to a token stylesheet.
 	 * @param IURLGenerator               $urlGenerator   Builds the content API base and the logo address.
 	 * @param SiteHead                    $siteHead       The head of the page a site request asks for.
-	 * @param PortalNoticeReader          $notices        The notices running on the signed-in surface now.
-	 * @param PortalRuntimeConfigResolver $configResolver Resolves the runtime config built from the portal.
+	 * @param PortalNoticeReaderInterface          $notices        The notices running on the signed-in surface now.
+	 * @param PortalRuntimeConfigResolverInterface $configResolver Resolves the runtime config built from the portal.
 	 */
 	public function __construct(
 		private readonly IRequest $request,
-		private readonly PortalResolver $portalResolver,
+		private readonly PortalResolverInterface $portalResolver,
 		private readonly PortalThemeResolver $themeResolver,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly SiteHead $siteHead,
-		private readonly PortalNoticeReader $notices,
-		private readonly PortalRuntimeConfigResolver $configResolver,
+		private readonly PortalNoticeReaderInterface $notices,
+		private readonly PortalRuntimeConfigResolverInterface $configResolver,
 	) {
 		$this->addressing = new SiteAddressing(portalResolver: $portalResolver, urlGenerator: $urlGenerator);
 	}//end __construct()

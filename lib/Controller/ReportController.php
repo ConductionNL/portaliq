@@ -37,13 +37,13 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\CaseTypeReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalChallengeServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\ReportIntakeServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\ReportProjectionInterface;
 use OCA\Portaliq\Kernel\Contracts\ReportTermsServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\ReportThreadServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\RevealServiceInterface;
-use OCA\Portaliq\Service\PortalObjectReader;
-use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\RequestedPortal;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -98,27 +98,27 @@ class ReportController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalResolver $portals Resolves the portal being visited.
+	 * @param PortalResolverInterface $portals Resolves the portal being visited.
 	 * @param PortalChallengeServiceInterface $challenge The portal's own challenge.
 	 * @param ReportIntakeServiceInterface $intake Accepts a report and mints its code.
 	 * @param ReportThreadServiceInterface $threads Opens a thread and carries messages.
 	 * @param ReportTermsServiceInterface $terms Where the declared terms stand.
 	 * @param RevealServiceInterface $reveals Requests, refusals and reveals.
 	 * @param ReportProjectionInterface $projection Strips the reporter from an answer.
-	 * @param PortalObjectReader $reader Reads the report and the request.
+	 * @param PortalObjectReaderInterface $reader Reads the report and the request.
 	 * @param CaseTypeReaderInterface $caseTypes Reads the declaration.
 	 * @param IUserSession $userSession The staff user, when there is one.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalResolver $portals,
+		private readonly PortalResolverInterface $portals,
 		private readonly PortalChallengeServiceInterface $challenge,
 		private readonly ReportIntakeServiceInterface $intake,
 		private readonly ReportThreadServiceInterface $threads,
 		private readonly ReportTermsServiceInterface $terms,
 		private readonly RevealServiceInterface $reveals,
 		private readonly ReportProjectionInterface $projection,
-		private readonly PortalObjectReader $reader,
+		private readonly PortalObjectReaderInterface $reader,
 		private readonly CaseTypeReaderInterface $caseTypes,
 		private readonly IUserSession $userSession,
 	) {

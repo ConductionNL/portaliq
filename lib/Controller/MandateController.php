@@ -32,8 +32,8 @@ use OCA\Portaliq\Kernel\Contracts\PortalAccountLookupInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalCaseTypeChoicesInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalIdentityMailerInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalMandateAdminServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Service\Identity\MandateParties;
-use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -58,7 +58,7 @@ class MandateController extends Controller implements PortalProtected {
 	 * @param PortalIdentityMailerInterface        $mailer   Mails the invitation link to the invitee, never to the inviter.
 	 * @param PortalAccountLookupInterface         $accounts The name and address of who holds a mandate, and of the inviter.
 	 * @param PortalCaseTypeChoicesInterface       $choices  The case types a mandate may be narrowed to.
-	 * @param PortalResolver              $portals  The portal being visited.
+	 * @param PortalResolverInterface              $portals  The portal being visited.
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- each collaborator is one screen element of the Machtigingen board.
 	 */
@@ -69,7 +69,7 @@ class MandateController extends Controller implements PortalProtected {
 		private readonly PortalIdentityMailerInterface $mailer,
 		private readonly PortalAccountLookupInterface $accounts,
 		private readonly PortalCaseTypeChoicesInterface $choices,
-		private readonly PortalResolver $portals,
+		private readonly PortalResolverInterface $portals,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

@@ -28,10 +28,10 @@ namespace OCA\Portaliq\Service\Intake;
 
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Kernel\Contracts\PortalIntakePaymentsInterface;
-use OCA\Portaliq\Service\PortalActionForwarder;
-use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
+use OCA\Portaliq\Kernel\Contracts\PortalActionForwarderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalDeepLinkBuilderInterface;
 
 /**
  * Forwards the case app's pay action for a created object and reports the state of the payment.
@@ -50,15 +50,15 @@ class PortalIntakePayments implements PortalIntakePaymentsInterface {
 	 * @param DestinationLookup|null          $lookup    Finds the object behind a reference.
 	 * @param PortalFee|null                  $fees      Checks a fee and the address a resident may be sent to pay at.
 	 * @param PortalContributionRegistry|null $registry  Finds the case app's pay action in the subject's own manifest.
-	 * @param PortalActionForwarder|null      $forwarder Forwards the pay action with a server-built body.
-	 * @param PortalDeepLinkBuilder|null      $deepLinks Builds the address the resident returns to.
+	 * @param PortalActionForwarderInterface|null      $forwarder Forwards the pay action with a server-built body.
+	 * @param PortalDeepLinkBuilderInterface|null      $deepLinks Builds the address the resident returns to.
 	 */
 	public function __construct(
 		private readonly ?DestinationLookup $lookup = null,
 		private readonly ?PortalFee $fees = null,
 		private readonly ?PortalContributionRegistry $registry = null,
-		private readonly ?PortalActionForwarder $forwarder = null,
-		private readonly ?PortalDeepLinkBuilder $deepLinks = null,
+		private readonly ?PortalActionForwarderInterface $forwarder = null,
+		private readonly ?PortalDeepLinkBuilderInterface $deepLinks = null,
 	) {
 	}//end __construct()
 
@@ -192,13 +192,13 @@ class PortalIntakePayments implements PortalIntakePaymentsInterface {
 	 * The case app's pay action keeps the payment intent on its own object;
 	 * the portal stores nothing.
 	 *
-	 * @param PortalActionForwarder $forwarder Forwards the pay action.
+	 * @param PortalActionForwarderInterface $forwarder Forwards the pay action.
 	 * @param PortalFee             $fees      Checks the checkout address.
 	 * @param array<string, mixed>  $context   The action, subject, site, binding, fee and reference.
 	 *
 	 * @return JSONResponse `{checkoutUrl}` or a 502.
 	 */
-	private function forward(PortalActionForwarder $forwarder, PortalFee $fees, array $context): JSONResponse {
+	private function forward(PortalActionForwarderInterface $forwarder, PortalFee $fees, array $context): JSONResponse {
 		$fee      = $context['fee'];
 		$response = $forwarder->forward(
 			action: $context['action'],

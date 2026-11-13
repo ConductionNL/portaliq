@@ -27,11 +27,11 @@ namespace OCA\Portaliq\Controller;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficConfigResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficEventStoreInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficPagePathInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficPageReportInterface;
-use OCA\Portaliq\Service\PortalResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -70,7 +70,7 @@ class TrafficPageController extends Controller {
 	 * @param string                $appName The app id.
 	 * @param IRequest              $request The request.
 	 * @param TrafficEventStoreInterface     $store   Reads the daily records.
-	 * @param PortalResolver        $portals Lists the published portals.
+	 * @param PortalResolverInterface        $portals Lists the published portals.
 	 * @param TrafficConfigResolverInterface $config  Says whether a portal is measured.
 	 * @param TrafficPageReportInterface     $report  Folds one route's rows.
 	 * @param TrafficPagePathInterface       $paths   Normalises the page's route.
@@ -81,7 +81,7 @@ class TrafficPageController extends Controller {
 		string $appName,
 		IRequest $request,
 		private readonly TrafficEventStoreInterface $store,
-		private readonly PortalResolver $portals,
+		private readonly PortalResolverInterface $portals,
 		private readonly TrafficConfigResolverInterface $config,
 		private readonly TrafficPageReportInterface $report,
 		private readonly TrafficPagePathInterface $paths,

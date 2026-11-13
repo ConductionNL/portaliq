@@ -33,7 +33,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
+use OCA\Portaliq\Kernel\Contracts\PortalRuntimeConfigResolverInterface;
 use OCA\Portaliq\Service\RequestedPortal;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -56,7 +56,7 @@ class PortalManifestController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalRuntimeConfigResolver $configResolver Resolves the serving
+	 * @param PortalRuntimeConfigResolverInterface $configResolver Resolves the serving
 	 *                                                    portal, the SAME way
 	 *                                                    PortalPageController
 	 *                                                    does, so the manifest
@@ -67,7 +67,7 @@ class PortalManifestController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalRuntimeConfigResolver $configResolver,
+		private readonly PortalRuntimeConfigResolverInterface $configResolver,
 		private readonly IURLGenerator $urlGenerator,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
