@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Service\Branch\BranchNumber;
+use OCA\Portaliq\Service\Signin\YiviAttributes;
 
 /**
  * Shapes a validated token's claims, for PortalSessionService only.
@@ -62,6 +63,9 @@ final class SessionClaims {
 			// ('' for none) and when this bearer expires.
 			'provider' => (string)($claims['provider'] ?? ''),
 			'expiresAt' => (int)($claims['exp'] ?? 0),
+			// Change resident-identity-in-forms T05: what a Yivi login
+			// disclosed, re-read through the same filter it was signed with.
+			'attributes' => (new YiviAttributes())->disclosed(claim: ($claims['attributes'] ?? null)),
 		];
 	}//end subject()
 

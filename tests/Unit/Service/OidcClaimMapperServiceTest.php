@@ -184,15 +184,29 @@ class OidcClaimMapperServiceTest extends TestCase {
 
 	}//end testACustomLoaClaimNameIsHonoured()
 
-	public function testProviderLabelsListsAllFourPresets(): void {
+	public function testProviderLabelsListsAllPresets(): void {
 		$labels = $this->mapper->providerLabels();
 
 		$this->assertSame(
-			['digid' => 'DigiD', 'eherkenning' => 'eHerkenning', 'eidas' => 'eIDAS', 'generic' => 'Inloggen'],
+			['digid' => 'DigiD', 'eherkenning' => 'eHerkenning', 'eidas' => 'eIDAS', 'yivi' => 'Yivi', 'generic' => 'Inloggen'],
 			$labels
 		);
 
-	}//end testProviderLabelsListsAllFourPresets()
+	}//end testProviderLabelsListsAllPresets()
+
+	/**
+	 * The Yivi preset signs in a `yivi` account for the client audience.
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T05
+	 */
+	public function testTheYiviPresetIsAClientIdentityOfItsOwnType(): void {
+		$config = $this->mapper->applyPreset('yivi', []);
+
+		$this->assertSame('yivi', $config['identityType']);
+		$this->assertSame('client', $config['audienceMap']);
+		$this->assertSame('Yivi', $config['label']);
+
+	}//end testTheYiviPresetIsAClientIdentityOfItsOwnType()
 
 	// -- branch (signin-eherkenning-branch REQ-SEB-001) -------------------------
 

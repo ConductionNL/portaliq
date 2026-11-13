@@ -71,7 +71,7 @@ class LoginProviders {
 	 */
 	public function list(array $overrides, string $brokerSecret, callable $oidcConfig): array {
 		$providers = [];
-		foreach (['digid', 'eherkenning', 'eidas', 'generic'] as $provider) {
+		foreach (['digid', 'eherkenning', 'eidas', 'yivi', 'generic'] as $provider) {
 			$entry = $this->entry(overrides: $overrides, brokerSecret: $brokerSecret, provider: $provider, oidcConfig: $oidcConfig);
 			if ($entry !== null) {
 				$providers[] = $entry;

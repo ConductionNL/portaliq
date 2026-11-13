@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.108.0"
+        "version": "0.109.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.108.0",
+                "version": "0.109.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -766,7 +766,7 @@
                     ]
                 },
                 "icon": "AccountKey",
-                "version": "0.18.0",
+                "version": "0.19.0",
                 "configuration": {
                     "linkedTypes": [
                         "calendar"
@@ -790,11 +790,12 @@
                     "identityType": {
                         "title": "Identity type",
                         "type": "string",
-                        "description": "The external identity provider that authenticated this account. `generic` is a broker-agnostic OIDC provider preset (portal-oidc-broker-login) for a broker that is none of digid/eherkenning/eidas.",
+                        "description": "The external identity provider that authenticated this account. `generic` is a broker-agnostic OIDC provider preset (portal-oidc-broker-login) for a broker that is none of digid/eherkenning/eidas. `yivi` signs in through the broker and shares only the attributes a form asks for.",
                         "enum": [
                             "eherkenning",
                             "digid",
                             "eidas",
+                            "yivi",
                             "generic",
                             "dev",
                             "email"

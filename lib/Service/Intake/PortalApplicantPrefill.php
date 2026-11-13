@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Intake;
 
 use OCA\Portaliq\Service\Identity\PortalAccountLookup;
+use OCA\Portaliq\Service\Signin\YiviAttributes;
 
 /**
  * Fills the applicant block from the signed-in identity's own claims.
@@ -52,37 +53,63 @@ class PortalApplicantPrefill {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalAccountLookup  $accounts Reads the signed-in account.
+	 * @param PortalAccountLookup $accounts Reads the signed-in account.
+	 * @param YiviAttributes      $yivi     Maps disclosed Yivi attributes onto fields.
 	 */
 	public function __construct(
 		private readonly PortalAccountLookup $accounts,
+		private readonly YiviAttributes $yivi = new YiviAttributes(),
 	) {
 	}//end __construct()
 
 	/**
 	 * The prefill for one render.
 	 *
+	 * A Yivi session's disclosed attributes fill the fields the binding's
+	 * `yiviAttributes` name first (resident-identity-in-forms REQ-RIF-004);
+	 * the account fills what is left.
+	 *
 	 * @param array<string, mixed>|null $subject The resolved subject, or null.
 	 * @param array<int, array<string, mixed>> $fields The form's fields.
+	 * @param array<string, mixed> $binding The form binding, for its `yiviAttributes`.
 	 *
 	 * @return array<string, mixed> Field name to value. Empty for a visitor
 	 *         with no session.
 	 *
 	 * @spec openspec/specs/portal-intake-form/spec.md
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T05
 	 */
-	public function forSubject(?array $subject, array $fields): array {
+	public function forSubject(?array $subject, array $fields, array $binding = []): array {
 		$account = $this->ownAccount(subject: $subject);
 		if ($account === null) {
 			return [];
 		}
 
-		$prefill = [];
+		$prefill = $this->yivi->prefill(
+			binding: $binding,
+			disclosed: $this->yivi->disclosed(claim: ($subject['attributes'] ?? null)),
+			fields: $fields
+		);
 		foreach (array_filter($fields, 'is_array') as $field) {
 			$prefill += $this->valueFor(name: (string)($field['name'] ?? ''), account: $account);
 		}
 
 		return $prefill;
 	}//end forSubject()
+
+	/**
+	 * The Yivi attribute ids a form asks for, for the form to list before the
+	 * Yivi app opens.
+	 *
+	 * @param array<string, mixed> $binding The form binding.
+	 *
+	 * @return list<string>
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T05
+	 */
+	public function yiviRequest(array $binding): array {
+		return array_column($this->yivi->requested(binding: $binding), 'attribute');
+	}//end yiviRequest()
 
 	/**
 	 * The account the session names, or null for a visitor without one.

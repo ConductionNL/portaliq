@@ -253,8 +253,12 @@ class PortalIntakeController extends Controller implements PortalProtected {
 
 		$render['prefill'] = $this->prefill->forSubject(
 			subject: $subject,
-			fields: (array)($render['fields'] ?? [])
+			fields: (array)($render['fields'] ?? []),
+			binding: $binding
 		);
+		// The Yivi attributes the form asks for, listed before the Yivi app
+		// opens (resident-identity-in-forms REQ-RIF-004).
+		$render['yiviAttributes'] = $this->prefill->yiviRequest(binding: $binding);
 
 		$render['statements'] = $this->checks->askedStatements(render: $render, site: $site);
 		$render['steps']      = $this->checks->stepsForTheBrowser(steps: (array)($render['steps'] ?? []));

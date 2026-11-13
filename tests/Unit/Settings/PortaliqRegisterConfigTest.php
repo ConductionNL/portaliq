@@ -401,9 +401,11 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.105.0 (portalPage 0.9.0): a rows block's `statusNoteAtField`, the moment its status was set, and a cta's `labelWhenEmpty` (guardian-pages-follow-the-wilgenboom-boards). Additive.
 		// 0.106.0 (guardianMessage 0.3.0): a message's `readAt`, when the other side first read it (message-read-time). Additive.
 		// 0.108.0 (portalPage 0.10.0): a cta's `messageTo`, the field naming whom the message form opens for (guardian-message-to-and-whole-day). Additive.
-		$this->assertSame(expected: '0.108.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.108.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		// 0.109.0 (portalAccount 0.19.0): identity type `yivi`, a sign-in through the broker that shares only what a form asks (resident-identity-in-forms T05). Additive.
+		$this->assertSame(expected: '0.109.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.109.0', actual: self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalPage']['properties']['pages']['items']['properties']['blocks']['items']['properties']['messageTo']['type']);
+		$this->assertContains(needle: 'yivi', haystack: self::$register['components']['schemas']['portalAccount']['properties']['identityType']['enum']);
 		$this->assertSame(expected: 'date-time', actual: self::$register['components']['schemas']['guardianMessage']['properties']['readAt']['format']);
 		// 0.107.0 (portal 0.28.0): a portal's `caseTypeColumns`, how each case type's columns read in Mijn zaken (case-type-columns-in-my-cases). Additive.
 		$this->assertSame(expected: ['text', 'link', 'qr', 'date'], actual: self::$register['components']['schemas']['portal']['properties']['caseTypeColumns']['additionalProperties']['items']['properties']['render']['enum']);
@@ -425,7 +427,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertFalse(self::$register['components']['schemas']['newsItem']['properties']['public']['default']);
 		$this->assertSame('string', self::$register['components']['schemas']['newsItem']['properties']['portal']['type']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['newsItem']['properties']['publishedAt']['format']);
-		$this->assertSame('0.18.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.19.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('date-time', self::$register['components']['schemas']['portalAccount']['properties']['activationExpiresAt']['format']);
 		$this->assertSame('0.7.0', self::$register['components']['schemas']['portalMessage']['version']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalMessage']['properties']['ruleKey']['type']);
@@ -480,7 +482,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertTrue(self::$register['components']['schemas']['portal']['properties']['searchInsideDocuments']['default']);
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalDraft']['authorization']['read']);
 		$this->assertContains('portalDraft', self::$register['components']['registers']['portaliq']['schemas']);
-		$this->assertSame('0.18.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.19.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$this->assertSame('0.10.0', self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['messageThread']['version']);
 		$this->assertArrayHasKey('recordRef', self::$register['components']['schemas']['messageThread']['properties']);
@@ -660,7 +662,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 
 		$account = $schemas['portalAccount'];
 		$this->assertSame(
-			['eherkenning', 'digid', 'eidas', 'generic', 'dev', 'email'],
+			['eherkenning', 'digid', 'eidas', 'yivi', 'generic', 'dev', 'email'],
 			$account['properties']['identityType']['enum']
 		);
 		// Union-merge caution (migration.md): the additive enum member must not
@@ -750,7 +752,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 	public function testTheMessageBoxRowsFitThePortalNotificationSchema(): void {
 		$schema = self::$register['components']['schemas']['portalNotification'];
 		$this->assertSame('0.3.0', $schema['version']);
-		$this->assertSame('0.18.0', self::$register['components']['schemas']['portalAccount']['version']);
+		$this->assertSame('0.19.0', self::$register['components']['schemas']['portalAccount']['version']);
 		$jsonSchema = json_decode((string)json_encode(['type' => 'object', 'required' => $schema['required'], 'properties' => $schema['properties']]), false);
 
 		$row = [

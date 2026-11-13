@@ -36,6 +36,7 @@ namespace OCA\Portaliq\Service;
 
 use InvalidArgumentException;
 use RuntimeException;
+use OCA\Portaliq\Service\Signin\YiviAttributes;
 
 /**
  * HMAC-based JWT minting + validation for Portaliq's audience-agnostic auth edge.
@@ -174,7 +175,14 @@ class PortalJwtService {
 			'authTime' => ($authTime ?? $iat),
 		];
 
-		return $this->signed(claims: array_replace($claims, $this->branchClaims(context: $context), $this->providerClaim(context: $context)));
+		return $this->signed(
+			claims: array_replace(
+				$claims,
+				$this->branchClaims(context: $context),
+				$this->providerClaim(context: $context),
+				$this->attributesClaim(context: $context)
+			)
+		);
 	}//end createSession()
 
 	/**
@@ -213,6 +221,26 @@ class PortalJwtService {
 
 		return ['provider' => (string)$context['provider']];
 	}//end providerClaim()
+
+	/**
+	 * Change resident-identity-in-forms T05: the attributes a resident
+	 * disclosed in Yivi, so a form can prefill from them. Signed only when
+	 * set: every other way in carries none.
+	 *
+	 * @param array{attributes?: array<string, string>} $context The login's context.
+	 *
+	 * @return array<string, array<string, string>>
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T05
+	 */
+	private function attributesClaim(array $context): array {
+		$attributes = (new YiviAttributes())->disclosed(claim: ($context['attributes'] ?? null));
+		if ($attributes === []) {
+			return [];
+		}
+
+		return ['attributes' => $attributes];
+	}//end attributesClaim()
 
 	/**
 	 * Mint a short-lived `X-Portal-Subject` assertion (contract v2, A6).

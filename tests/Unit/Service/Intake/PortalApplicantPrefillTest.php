@@ -110,6 +110,45 @@ class PortalApplicantPrefillTest extends TestCase {
 	}//end prefill()
 
 	/**
+	 * A Yivi session fills the fields its form asks attributes for, ahead of
+	 * the account, and lists the attributes the form asks for
+	 * (resident-identity-in-forms REQ-RIF-004).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/resident-identity-in-forms/tasks.md#T05
+	 */
+	public function testAYiviSessionFillsTheFieldsItsFormAsksFor(): void {
+		$prefill = $this->prefill(['yivi-1' => ['subjectRef' => 'yivi-1', 'displayName' => '', 'email' => 'account@example.org']]);
+		$binding = [
+			'yiviAttributes' => [
+				['attribute' => 'pbdf.gemeente.personalData.fullname', 'field' => 'applicantName'],
+				['attribute' => 'pbdf.sidn-pbdf.email.email', 'field' => 'applicantEmail'],
+				['attribute' => 'pbdf.gemeente.address.zipcode', 'field' => 'postcode'],
+			],
+		];
+		$subject = [
+			'subjectRef' => 'yivi-1',
+			'attributes' => ['pbdf.gemeente.personalData.fullname' => 'Sanne de Vries', 'pbdf.sidn-pbdf.email.email' => 'sanne@example.nl', 'bsn' => '1'],
+		];
+
+		$this->assertSame(
+			['applicantName' => 'Sanne de Vries', 'applicantEmail' => 'sanne@example.nl'],
+			$prefill->forSubject(subject: $subject, fields: $this->applicantFields(), binding: $binding)
+		);
+		$this->assertSame(
+			['applicantEmail' => 'account@example.org'],
+			$prefill->forSubject(subject: $subject, fields: $this->applicantFields()),
+			'without yiviAttributes on the form the attributes fill nothing'
+		);
+		$this->assertSame([], $prefill->forSubject(subject: ['attributes' => $subject['attributes']], fields: $this->applicantFields(), binding: $binding));
+		$this->assertSame(
+			['pbdf.gemeente.personalData.fullname', 'pbdf.sidn-pbdf.email.email', 'pbdf.gemeente.address.zipcode'],
+			$prefill->yiviRequest(binding: $binding)
+		);
+	}//end testAYiviSessionFillsTheFieldsItsFormAsksFor()
+
+	/**
 	 * Every subject and field reads exactly as recorded.
 	 *
 	 * @return void

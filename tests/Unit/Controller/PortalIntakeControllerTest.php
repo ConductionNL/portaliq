@@ -172,11 +172,13 @@ class PortalIntakeControllerTest extends TestCase {
 	public function testTheRenderCarriesThePrefillAndTheFormsFields(): void {
 		$controller = $this->controller(render: $this->hostedForm());
 		$this->doubles['prefill']->method('forSubject')->willReturn(['applicantName' => 'Ans de Vries']);
+		$this->doubles['prefill']->method('yiviRequest')->willReturn(['pbdf.gemeente.personalData.fullname']);
 
 		$data = $controller->form(route: 'aanvragen/verhuizing')->getData();
 
 		$this->assertSame(['postcode'], array_column($data['fields'], 'name'));
 		$this->assertSame(['applicantName' => 'Ans de Vries'], $data['prefill']);
+		$this->assertSame(['pbdf.gemeente.personalData.fullname'], $data['yiviAttributes']);
 
 	}//end testTheRenderCarriesThePrefillAndTheFormsFields()
 
@@ -415,7 +417,7 @@ class PortalIntakeControllerTest extends TestCase {
 		$this->doubles = [
 			'portals' => $portals,
 			'queue' => $this->double(PortalIntakeQueue::class, ['status']),
-			'prefill' => $this->double(PortalApplicantPrefill::class, ['forSubject']),
+			'prefill' => $this->double(PortalApplicantPrefill::class, ['forSubject', 'yiviRequest']),
 			'challenge' => $this->double(PortalChallengeService::class, ['issue', 'accepts']),
 			'catalogue' => $this->double(PortalCatalogueReader::class, ['topicsFor']),
 		];

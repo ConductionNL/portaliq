@@ -172,7 +172,7 @@ class BrokerLogin {
 	 * @param array<string, string|bool> $pending The consumed state row.
 	 * @param string                $code    The one-time code.
 	 *
-	 * @return array{sub: string, provider: string, trust: string, audience: string}|null
+	 * @return array{sub: string, provider: string, trust: string, audience: string, attributes?: array<string, string>}|null
 	 */
 	private function redeem(array $pending, string $code): ?array {
 		$broker = $this->orgConfig->resolveBrokerConfig(orgSlug: $pending['org'], provider: $pending['provider']);
@@ -211,7 +211,7 @@ class BrokerLogin {
 	 * audience the audience, and integriq's trust the session's trust.
 	 *
 	 * @param array<string, string|bool> $pending The consumed state row.
-	 * @param array<string, string> $claims  The checked claims plus the audience.
+	 * @param array<string, mixed>  $claims  The checked claims plus the audience.
 	 *
 	 * @return string|null The bearer.
 	 */
@@ -236,7 +236,8 @@ class BrokerLogin {
 			audience: $audience,
 			organisation: $pending['org'],
 			trust: $claims['trust'],
-			roles: [$audience . ':read']
+			roles: [$audience . ':read'],
+			attributes: (array)($claims['attributes'] ?? [])
 		);
 		if ($issued === null) {
 			return null;
