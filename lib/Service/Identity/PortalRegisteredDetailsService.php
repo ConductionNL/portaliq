@@ -187,8 +187,55 @@ class PortalRegisteredDetailsService {
 			return self::refusal(reason: 'not_found');
 		}
 
-		return ['available' => true, 'kind' => 'person', 'person' => (new RegisteredDetailsShape())->person(raw: $first)];
+		$person = (new RegisteredDetailsShape())->person(raw: $first);
+		$person['residentsAtAddress'] = $this->residentsAt(raw: $first);
+
+		return ['available' => true, 'kind' => 'person', 'person' => $person];
 	}//end person()
+
+	/**
+	 * How many people the BRP registers at the person's address object, or
+	 * null when OpenRegister cannot say: no address object on the record, a
+	 * provider without the count, the count not enabled on the source, or the
+	 * source down. Only the number is kept; the address object id never
+	 * leaves this method and is never logged.
+	 *
+	 * @param array<string, mixed> $raw The HaalCentraal person.
+	 *
+	 * @return int|null
+	 *
+	 * @spec openspec/changes/identity-registered-details/tasks.md#t07
+	 */
+	private function residentsAt(array $raw): ?int {
+		$place      = (array)($raw['verblijfplaats'] ?? []);
+		$identifier = ($place['adresseerbaarObjectIdentificatie'] ?? (((array)($place['verblijfadres'] ?? []))['adresseerbaarObjectIdentificatie'] ?? ''));
+		if (is_string($identifier) === false || preg_match('/^\d{16}$/', $identifier) !== 1) {
+			return null;
+		}
+
+		$cause  = 'provider_missing';
+		$answer = [];
+		try {
+			$provider = $this->container->get(self::PERSON_PROVIDER);
+			if (is_object($provider) === true && method_exists($provider, 'countResidentsAtAddressObject') === true) {
+				$answer = (array)$provider->countResidentsAtAddressObject($identifier);
+				$cause  = (string)($answer['cause'] ?? 'unavailable');
+			}
+		} catch (Throwable $failure) {
+			$answer = [];
+			$cause  = 'provider_missing';
+		}
+
+		if (($answer['unavailable'] ?? false) !== true && is_int($answer['total'] ?? null) === true && $answer['total'] >= 0) {
+			return $answer['total'];
+		}
+
+		$this->logger->info(
+			'Portaliq: the count of residents at an address is not available',
+			['provider' => 'BrpPersonProvider', 'cause' => $cause]
+		);
+		return null;
+	}//end residentsAt()
 
 	/**
 	 * The company record for one KvK number.
