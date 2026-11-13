@@ -13,6 +13,40 @@
  */
 
 /**
+ * The relevance order: OpenRegister's `_relevance` score, best first.
+ *
+ * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md
+ */
+export const RELEVANCE_SORT = '_relevance:DESC'
+
+/**
+ * How the public search ranks, declared once (REQ-SSR-006).
+ *
+ * `buildRequestUrl()` reads its fuzzy flag from here and a new search with a
+ * term starts on `termOrder`; the portal admin's "How search ranks" is
+ * rendered from the same object by `rankingExplanation()`. Changing what the
+ * search asks for therefore changes what the publisher reads.
+ *
+ * - `termOrder`: the order a new search with a term starts on.
+ * - `fuzzy`: whether a search with a term sends `_fuzzy=true`.
+ * - `fuzzyFields`: what OpenRegister matches with a small spelling mistake
+ *   allowed. Today only the title (`_name`).
+ * - `exactFields`: what it matches exactly.
+ * - `federatedWithoutScore`: where a row from another catalogue that carries
+ *   no score sorts: `after` the scored rows.
+ *
+ * @type {Readonly<{termOrder: string, fuzzy: boolean, fuzzyFields: ReadonlyArray<string>, exactFields: ReadonlyArray<string>, federatedWithoutScore: string}>}
+ * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md#requirement-the-publisher-can-read-how-search-ranks-req-ssr-006
+ */
+export const RANKING = Object.freeze({
+	termOrder: RELEVANCE_SORT,
+	fuzzy: true,
+	fuzzyFields: Object.freeze(['title']),
+	exactFields: Object.freeze(['summary', 'documentText']),
+	federatedWithoutScore: 'after',
+})
+
+/**
  * The request URL for one search state.
  *
  * The query-parameter names are OpenCatalogi's own (`_search`, `_page`,
@@ -33,15 +67,16 @@
  * @param {string} state.facetField   Object field to facet on.
  * @param {Array<string>} state.selectedFacets Selected facet values.
  * @param {Record<string, string|Array<string>>} [state.lockedFilters] Filters always sent, never offered or removable.
+ * @param {object} [ranking] The ranking declaration; `RANKING` by default (REQ-SSR-006).
  * @return {string} The absolute request URL.
  */
-export function buildRequestUrl(state) {
+export function buildRequestUrl(state, ranking = RANKING) {
 	const url = new URL(state.endpoint, state.origin)
 
 	url.searchParams.set('_limit', String(state.pageSize))
 	url.searchParams.set('_page', String(state.page))
 
-	setSearchTerm(url.searchParams, state)
+	setSearchTerm(url.searchParams, state, ranking)
 	setFacetsAndFilters(url.searchParams, state)
 	setPeriod(url.searchParams, state)
 	setOrder(url.searchParams, state)
@@ -54,9 +89,10 @@ export function buildRequestUrl(state) {
  *
  * @param {URLSearchParams} params The request's parameters.
  * @param {object} state The search state.
+ * @param {object} ranking The ranking declaration.
  * @return {void}
  */
-function setSearchTerm(params, state) {
+function setSearchTerm(params, state, ranking) {
 	// An empty term is OMITTED rather than sent as `_search=`. The two are not
 	// the same request: one asks for everything, the other asks the backend to
 	// match the empty string, and which of those a given backend does is not
@@ -77,7 +113,11 @@ function setSearchTerm(params, state) {
 
 	// A misspelt title is still found, and the relevance order has a
 	// score to sort on (search-sort-by-relevance REQ-SSR-001, REQ-SSR-004).
-	params.set('_fuzzy', 'true')
+	// Read from the declaration the admin's "How search ranks" is rendered
+	// from, so the two cannot drift apart (REQ-SSR-006).
+	if (ranking.fuzzy === true) {
+		params.set('_fuzzy', 'true')
+	}
 }
 
 /**
@@ -840,11 +880,129 @@ export function withoutLocked(fields, locked) {
 }
 
 /**
- * The relevance order: OpenRegister's `_relevance` score, best first.
- *
- * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md
+ * The sentences of each field, fuzzy and exact. English source strings,
+ * translated by the caller.
  */
-export const RELEVANCE_SORT = '_relevance:DESC'
+const FIELD_SENTENCES = {
+	title: {
+		fuzzy: 'Titles are found even with a small spelling mistake in the search term.',
+		exact: 'Titles are only found when the search term is spelled exactly.',
+	},
+	summary: {
+		fuzzy: 'Summaries are found even with a small spelling mistake in the search term.',
+		exact: 'Summaries are only found when the search term is spelled exactly.',
+	},
+	documentText: {
+		fuzzy: 'Text inside documents is found even with a small spelling mistake in the search term.',
+		exact: 'Text inside documents is only found when the search term is spelled exactly.',
+	},
+}
+
+/**
+ * "How search ranks", as sentences, rendered from a ranking declaration.
+ *
+ * @param {object} [ranking] The declaration; `RANKING` by default.
+ * @param {(text: string) => string} [translate] Translates an English sentence.
+ * @return {Array<string>} The sentences, in reading order.
+ * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md#requirement-the-publisher-can-read-how-search-ranks-req-ssr-006
+ */
+export function rankingExplanation(ranking = RANKING, translate = (text) => text) {
+	const sentences = []
+	if (ranking.termOrder === RELEVANCE_SORT) {
+		sentences.push('A search with a search term shows the best matches first. The best match is the result whose title is most like the search term.')
+	} else {
+		sentences.push('A search with a search term keeps the order the visitor chose.')
+	}
+	const fuzzy = ranking.fuzzy === true ? ranking.fuzzyFields || [] : []
+	for (const field of fuzzy) {
+		if (FIELD_SENTENCES[field]) {
+			sentences.push(FIELD_SENTENCES[field].fuzzy)
+		}
+	}
+	const exact = [...(ranking.exactFields || []), ...(ranking.fuzzy === true ? [] : ranking.fuzzyFields || [])]
+	for (const field of exact) {
+		if (FIELD_SENTENCES[field]) {
+			sentences.push(FIELD_SENTENCES[field].exact)
+		}
+	}
+	if (ranking.federatedWithoutScore === 'after') {
+		sentences.push('Results from other catalogues that carry no score come after the scored results, in the order their catalogue gave them.')
+	}
+	return sentences.map((sentence) => translate(sentence))
+}
+
+/**
+ * Fewer results than this with a term ask for a spelling suggestion (REQ-SSR-005).
+ */
+export const SUGGEST_BELOW = 3
+
+/**
+ * Whether a finished search asks for a spelling suggestion.
+ *
+ * @param {string} query The term searched for.
+ * @param {number} total How many results it found.
+ * @return {boolean}
+ * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md#requirement-a-search-that-finds-little-offers-a-checked-correction-req-ssr-005
+ */
+export function asksForSuggestion(query, total) {
+	return String(query || '').trim() !== '' && Number(total) < SUGGEST_BELOW
+}
+
+/**
+ * The suggest route's URL, found from the content API base.
+ *
+ * @param {string} apiBase The content API base, e.g. `/index.php/apps/portaliq/api/content`.
+ * @param {string} portal The portal slug; empty lets the host decide.
+ * @param {string} term The term searched for.
+ * @return {string} The URL.
+ * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md#requirement-a-search-that-finds-little-offers-a-checked-correction-req-ssr-005
+ */
+export function suggestUrl(apiBase, portal, term) {
+	const base = String(apiBase || '').replace(/\/api\/content\/?$/, '')
+	const params = new URLSearchParams({ portal: portal || '', q: String(term || '').trim() })
+	return `${base}/api/site/search/suggest?${params.toString()}`
+}
+
+/**
+ * Ask the suggest route. Anonymous: no cookies, no bearer. Any failure, and
+ * any answer that is not a suggestion with results, is no suggestion.
+ *
+ * @param {string} url The suggest URL.
+ * @param {(url: string, options: object) => Promise<object>} [fetcher] The fetch to use; the global one by default.
+ * @return {Promise<{suggestion: string, results: number}|null>} The suggestion, or null.
+ * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md#requirement-a-search-that-finds-little-offers-a-checked-correction-req-ssr-005
+ */
+export async function fetchSuggestion(url, fetcher) {
+	const doFetch = fetcher || ((...args) => globalThis.fetch(...args))
+	try {
+		const response = await doFetch(url, {
+			credentials: 'omit',
+			headers: { Accept: 'application/json' },
+		})
+		if (!response.ok) {
+			return null
+		}
+		const body = await response.json()
+		const suggestion = typeof body?.suggestion === 'string' ? body.suggestion.trim() : ''
+		const results = Number(body?.results) || 0
+		return suggestion !== '' && results > 0 ? { suggestion, results } : null
+	} catch {
+		return null
+	}
+}
+
+/**
+ * The words of the suggestion link: "Bedoelde u: {suggestion}?".
+ *
+ * Dutch, like every string of the search block.
+ *
+ * @param {string} suggestion The corrected term.
+ * @return {string} The link text, or '' without one.
+ * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md#requirement-a-search-that-finds-little-offers-a-checked-correction-req-ssr-005
+ */
+export function suggestionText(suggestion) {
+	return suggestion ? `Bedoelde u: ${suggestion}?` : ''
+}
 
 /**
  * The orderings the block offers. "Beste match" only with a term, and
@@ -885,7 +1043,7 @@ export function sortOptionsFor(query, relevanceUnavailable) {
 export function sortForNewSearch(query, current, relevanceUnavailable) {
 	const hasTerm = String(query || '').trim() !== ''
 	if (hasTerm && relevanceUnavailable !== true && (current || '') === '') {
-		return RELEVANCE_SORT
+		return RANKING.termOrder
 	}
 	if ((!hasTerm || relevanceUnavailable === true) && current === RELEVANCE_SORT) {
 		return ''

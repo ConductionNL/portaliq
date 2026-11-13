@@ -49,6 +49,7 @@ import PortalAccountWithdraw from './widgets/PortalAccountWithdraw.vue'
 import PortalCaseTypes from './widgets/PortalCaseTypes.vue'
 import PortalHomePage from './widgets/PortalHomePage.vue'
 import PortalRegistration from './widgets/PortalRegistration.vue'
+import PortalSearchRanking from './widgets/PortalSearchRanking.vue'
 import PortalSignin from './widgets/PortalSignin.vue'
 import PortalSummaryCard from './widgets/PortalSummaryCard.vue'
 import PortalTheme from './widgets/PortalTheme.vue'
@@ -261,6 +262,17 @@ export default {
 		allowedSlots: ['body'],
 		propsSchema: null,
 		_note: "How residents sign in to the portal's organisation: per provider its own OIDC broker or integriq, and the integriq broker settings (signin-integriq-broker-login T11). Custom because the secret is write-only and the server refuses a broker route whose settings are incomplete.",
+	},
+	// @custom-widget-ratchet exclude the text is rendered in the browser from the ranking declaration the public search block builds its request from, and a built-in widget can only show stored data, so it could not follow that declaration
+	PortalSearchRanking: {
+		kind: 'widget',
+		component: PortalSearchRanking,
+		defaultSize: { w: 12, h: 4 },
+		minSize: { w: 6, h: 3 },
+		maxSize: { w: 12, h: 8 },
+		allowedSlots: ['body'],
+		propsSchema: null,
+		_note: 'How search ranks (search-sort-by-relevance REQ-SSR-006). Custom because the sentences are rendered from RANKING in src/site/lib/federatedSearch.js, the declaration buildRequestUrl() reads, so the explanation and the request cannot drift apart.',
 	},
 	// @custom-widget-ratchet exclude the measurement frames each page in this browser and runs axe-core inside it, then posts the run to a guarded controller, which no built-in widget does
 	PortalAccessibility: {

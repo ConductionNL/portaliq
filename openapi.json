@@ -204,6 +204,10 @@
             "description": "Files a report, runs its thread, and gates the reveal."
         },
         {
+            "name": "search-suggest",
+            "description": "The did-you-mean suggestion of the public search."
+        },
+        {
             "name": "session-admin",
             "description": "Admin-only session revocation for the portal auth edge."
         },
@@ -6488,6 +6492,72 @@
                     },
                     "403": {
                         "$ref": "#/components/responses/Problem403"
+                    }
+                }
+            }
+        },
+        "/site/search/suggest": {
+            "get": {
+                "operationId": "search-suggest-suggest",
+                "summary": "A checked spelling suggestion for a public search",
+                "description": "A checked spelling suggestion for a public search that found fewer than three results. Public: it needs no login. The suggestion is offered only when the corrected search finds results.",
+                "tags": [
+                    "search-suggest"
+                ],
+                "security": [],
+                "parameters": [
+                    {
+                        "name": "portal",
+                        "in": "query",
+                        "required": false,
+                        "description": "The portal's slug; empty resolves it from the host.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "required": false,
+                        "description": "The term the visitor searched for.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "suggestion": {
+                                            "type": "string",
+                                            "nullable": true,
+                                            "description": "The corrected term, or null."
+                                        },
+                                        "results": {
+                                            "type": "integer",
+                                            "description": "How many results the corrected term finds; 0 without a suggestion."
+                                        }
+                                    },
+                                    "required": [
+                                        "suggestion",
+                                        "results"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/Problem404"
                     }
                 }
             }
