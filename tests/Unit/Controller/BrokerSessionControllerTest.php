@@ -229,6 +229,9 @@ class BrokerSessionControllerTest extends TestCase {
 		$response = $this->controller(login: $this->login(complete: ['token' => 'a.b c', 'returnTo' => '/apps/portaliq/site']))->callback(state: 's', code: 'c');
 
 		$this->assertSame('https://portal.example/apps/portaliq/site#token=a.b%20c', $response->getRedirectURL());
+		// REQ-SEE-003: the bearer is in the fragment only; no query parameter holds it.
+		parse_str((string)parse_url($response->getRedirectURL(), PHP_URL_QUERY), $query);
+		$this->assertArrayNotHasKey('token', $query);
 	}//end testACompletedLoginCarriesTheBearerInTheFragment()
 
 
