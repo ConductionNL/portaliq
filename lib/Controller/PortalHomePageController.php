@@ -29,7 +29,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\Cms\PortalHomePage;
+use OCA\Portaliq\Kernel\Contracts\PortalHomePageInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -45,11 +45,11 @@ class PortalHomePageController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalHomePage $homePage The portal's root-route state.
+	 * @param PortalHomePageInterface $homePage The portal's root-route state.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalHomePage $homePage,
+		private readonly PortalHomePageInterface $homePage,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

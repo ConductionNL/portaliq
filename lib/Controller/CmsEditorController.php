@@ -27,14 +27,15 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
+use OCA\Portaliq\Kernel\Contracts\CmsPublishValidatorInterface;
+use OCA\Portaliq\Kernel\Contracts\CmsReaderInterface;
 use OCA\Portaliq\Service\Cms\CmsPublishValidator;
-use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\PageEditorService;
 use OCA\Portaliq\Service\PortalResolver;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
-use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IURLGenerator;
@@ -66,10 +67,10 @@ class CmsEditorController extends Controller {
 	 * @param string            $appName    The app id.
 	 * @param IRequest          $request    The request.
 	 * @param PortalResolver    $resolver   Resolves the serving portal, exactly as the content API does.
-	 * @param CmsReader         $reader     Resolves a route to the page behind it.
+	 * @param CmsReaderInterface         $reader     Resolves a route to the page behind it.
 	 * @param PageEditorService $pageEditor Decides whether this caller may edit.
 	 * @param IURLGenerator     $urls       Builds the links into the app.
-	 * @param CmsPublishValidator $publishValidator Finds what would render broken before publishing.
+	 * @param CmsPublishValidatorInterface $publishValidator Finds what would render broken before publishing.
 	 *
 	 * @return void
 	 */
@@ -77,10 +78,10 @@ class CmsEditorController extends Controller {
 		string $appName,
 		IRequest $request,
 		private readonly PortalResolver $resolver,
-		private readonly CmsReader $reader,
+		private readonly CmsReaderInterface $reader,
 		private readonly PageEditorService $pageEditor,
 		private readonly IURLGenerator $urls,
-		private readonly CmsPublishValidator $publishValidator = new CmsPublishValidator(),
+		private readonly CmsPublishValidatorInterface $publishValidator = new CmsPublishValidator(),
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()

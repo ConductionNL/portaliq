@@ -26,8 +26,8 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\Identity\PortalAccountLookup;
-use OCA\Portaliq\Service\Identity\PortalContactService;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountLookupInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContactServiceInterface;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -49,14 +49,14 @@ class PortalContactsController extends Controller implements PortalProtected {
 	 *
 	 * @param IRequest $request The request.
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalContactService $contacts The contact rules.
-	 * @param PortalAccountLookup $accounts Reads the bearer's name.
+	 * @param PortalContactServiceInterface $contacts The contact rules.
+	 * @param PortalAccountLookupInterface $accounts Reads the bearer's name.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalSessionService $session,
-		private readonly PortalContactService $contacts,
-		private readonly PortalAccountLookup $accounts,
+		private readonly PortalContactServiceInterface $contacts,
+		private readonly PortalAccountLookupInterface $accounts,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
@@ -225,11 +225,11 @@ class PortalContactsController extends Controller implements PortalProtected {
 	 */
 	private function answer(string $result): JSONResponse {
 		$status = match ($result) {
-			PortalContactService::SENT => Http::STATUS_OK,
-			PortalContactService::INVALID => Http::STATUS_BAD_REQUEST,
-			PortalContactService::DUPLICATE => Http::STATUS_CONFLICT,
-			PortalContactService::LIMIT => Http::STATUS_TOO_MANY_REQUESTS,
-			PortalContactService::NOT_FOUND => Http::STATUS_NOT_FOUND,
+			PortalContactServiceInterface::SENT => Http::STATUS_OK,
+			PortalContactServiceInterface::INVALID => Http::STATUS_BAD_REQUEST,
+			PortalContactServiceInterface::DUPLICATE => Http::STATUS_CONFLICT,
+			PortalContactServiceInterface::LIMIT => Http::STATUS_TOO_MANY_REQUESTS,
+			PortalContactServiceInterface::NOT_FOUND => Http::STATUS_NOT_FOUND,
 			default => Http::STATUS_INTERNAL_SERVER_ERROR,
 		};
 		if ($status === Http::STATUS_OK) {

@@ -42,12 +42,12 @@ use OCA\Portaliq\Contribution\RowActionFiles;
 use OCA\Portaliq\Contribution\RowActionResolver;
 use OCA\Portaliq\Contribution\RowIdentifier;
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\AuditTrailService;
+use OCA\Portaliq\Kernel\Contracts\AuditTrailServiceInterface;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalSessionService;
-use OCA\Portaliq\Service\Session\SessionTrust;
 use OCA\Portaliq\Service\RequiredFieldsGuard;
+use OCA\Portaliq\Service\Session\SessionTrust;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -76,7 +76,7 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
 	 * @param PortalObjectReader $reader The scoped single-object read.
 	 * @param PortalActionForwarder $forwarder The signed server-to-server forward.
-	 * @param AuditTrailService $auditor Records the forward.
+	 * @param AuditTrailServiceInterface $auditor Records the forward.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -84,7 +84,7 @@ class PortalRowActionController extends Controller implements PortalProtected {
 		private readonly PortalSessionService $session,
 		private readonly PortalObjectReader $reader,
 		private readonly PortalActionForwarder $forwarder,
-		private readonly AuditTrailService $auditor,
+		private readonly AuditTrailServiceInterface $auditor,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

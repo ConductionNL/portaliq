@@ -24,6 +24,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Branch;
 
+use OCA\Portaliq\Kernel\Contracts\PortalBranchScopeInterface;
+
 /**
  * The branch rule of design D2, applied after the subject scope:
  *
@@ -39,7 +41,7 @@ namespace OCA\Portaliq\Service\Branch;
  *
  * @spec openspec/changes/archive/2026-09-30-signin-eherkenning-branch/tasks.md#T04
  */
-class PortalBranchScope {
+class PortalBranchScope implements PortalBranchScopeInterface {
 	/**
 	 * Keep `branchField` only when it names a field the collection projects.
 	 *

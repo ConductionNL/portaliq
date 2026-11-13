@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Cms;
 
 use OCA\Portaliq\Controller\AccessibilityController;
+use OCA\Portaliq\Kernel\Contracts\AccessibilityFramingInterface;
 use OCA\Portaliq\Service\ActionAuthService;
 use OCP\AppFramework\Http\ContentSecurityPolicy;
 use OCP\IRequest;
@@ -38,7 +39,7 @@ use OCP\IUserSession;
  *
  * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
  */
-class AccessibilityFraming {
+class AccessibilityFraming implements AccessibilityFramingInterface {
 
 	/**
 	 * @param IUserSession      $userSession The signed-in user.

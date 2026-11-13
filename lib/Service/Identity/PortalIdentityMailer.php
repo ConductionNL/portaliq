@@ -34,12 +34,13 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
-use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\Mail\MailLog;
-use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
-use OCA\Portaliq\Service\Mail\MailSite;
-use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use DateTimeInterface;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalIdentityMailerInterface;
+use OCA\Portaliq\Service\Mail\MailLog;
+use OCA\Portaliq\Service\Mail\MailSite;
+use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
+use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCP\IL10N;
 use OCP\L10N\IFactory;
 use OCP\Mail\IEMailTemplate;
@@ -53,44 +54,13 @@ use Throwable;
  *
  * @spec openspec/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
  */
-class PortalIdentityMailer {
-	/**
-	 * The one-time link to follow one case (identity-ways-in-screens D1).
-	 */
-	public const TEMPLATE_REFERENCE_LINK = 'reference-link';
-
-	/**
-	 * The invitation into the portal (identity-staff-account-screens D2).
-	 */
-	public const TEMPLATE_INVITATION = 'invitation';
-
-	/**
-	 * The confirmation of a new address (identity-profile-page D1).
-	 */
-	public const TEMPLATE_EMAIL_CONFIRMATION = 'email-confirmation';
-
-	/**
-	 * The activation link of a self-registration (identity-ways-in-screens D4).
-	 */
-	public const TEMPLATE_REGISTRATION_ACTIVATION = 'registration-activation';
-
-	/**
-	 * The invitation of a waiting account an app provisioned: the person
-	 * follows the link, signs in, and the waiting account joins theirs
-	 * (invitation-secret-joins-the-signed-in-account).
-	 */
-	public const TEMPLATE_ACCOUNT_INVITATION = 'account-invitation';
+class PortalIdentityMailer implements PortalIdentityMailerInterface {
 
 	/**
 	 * The invitation of a resident to become a contact of another resident
 	 * (own-contacts-and-invitations REQ-ROC-003).
 	 */
 	public const TEMPLATE_CONTACT_INVITATION = 'contact-invitation';
-
-	/**
-	 * The invitation to act on someone's behalf (site-mandates-the-represented-manage).
-	 */
-	public const TEMPLATE_MANDATE_INVITATION = 'mandate-invitation';
 
 	/**
 	 * The one-time sign-in link of an `email` account (sign-in-with-an-email-link).

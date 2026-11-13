@@ -45,6 +45,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\NextcloudRegistrationDoorInterface;
 use OCA\Portaliq\Service\PublishedPortals;
 use OCP\App\IAppManager;
 use OCP\Exceptions\AppConfigTypeConflictException;
@@ -58,16 +59,7 @@ use OCP\IUser;
  *
  * @spec openspec/changes/nextcloud-account-registration/specs/portal-nextcloud-account-login/spec.md#requirement-the-sign-in-page-leads-to-nextclouds-own-registration-req-ncl-005
  */
-class NextcloudRegistrationDoor {
-	/**
-	 * The Nextcloud app that lets a visitor make their own account.
-	 */
-	public const REGISTRATION_APP = 'registration';
-
-	/**
-	 * The registration app's setting that names the group new users join.
-	 */
-	public const REGISTRATION_GROUP_KEY = 'registered_user_group';
+class NextcloudRegistrationDoor implements NextcloudRegistrationDoorInterface {
 
 	/**
 	 * The registration app's email form.

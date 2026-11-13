@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
+use OCA\Portaliq\Kernel\Contracts\PortalRegisteredDetailsServiceInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -38,7 +39,7 @@ use Throwable;
  *
  * @spec openspec/changes/identity-registered-details/specs/registered-details/spec.md
  */
-class PortalRegisteredDetailsService {
+class PortalRegisteredDetailsService implements PortalRegisteredDetailsServiceInterface {
 
 	/**
 	 * OpenRegister's person lookup (integration-brp-haalcentraal).

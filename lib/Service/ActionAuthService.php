@@ -42,6 +42,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
@@ -54,7 +55,7 @@ use OCP\IUser;
  * dot-separated action name; this service checks the admin-configured
  * action-to-group mapping stored in IAppConfig.
  */
-class ActionAuthService {
+class ActionAuthService implements ActionAuthServiceInterface {
 	private const CONFIG_KEY = 'actions';
 
 	/**

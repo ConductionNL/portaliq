@@ -28,8 +28,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\ExampleResident\ExampleResidentSignIn;
-use OCA\Portaliq\Service\Identity\PortalAccountLookup;
+use OCA\Portaliq\Kernel\Contracts\ExampleResidentSignInInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountLookupInterface;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
@@ -56,18 +56,18 @@ class ExampleResidentController extends Controller {
 	 *
 	 * @param IRequest              $request      The request object.
 	 * @param PortalSessionService  $session      Mints the portal session.
-	 * @param PortalAccountLookup   $accounts     Finds the resident's `portalAccount`.
+	 * @param PortalAccountLookupInterface   $accounts     Finds the resident's `portalAccount`.
 	 * @param IURLGenerator         $urlGenerator Builds the final SPA redirect.
 	 * @param PortalResolver        $portals      Resolves the portal being signed in to.
-	 * @param ExampleResidentSignIn $signIns      The demo switch and the installed resident of a portal.
+	 * @param ExampleResidentSignInInterface $signIns      The demo switch and the installed resident of a portal.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalSessionService $session,
-		private readonly PortalAccountLookup $accounts,
+		private readonly PortalAccountLookupInterface $accounts,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly PortalResolver $portals,
-		private readonly ExampleResidentSignIn $signIns,
+		private readonly ExampleResidentSignInInterface $signIns,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

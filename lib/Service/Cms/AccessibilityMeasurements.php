@@ -26,10 +26,11 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Cms;
 
 use DateTimeImmutable;
-use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\AccessibilityMeasurementsInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
-use stdClass;
 use OCA\Portaliq\Service\PortalSlugLookup;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
+use stdClass;
 
 /**
  * Reads and writes through portaliq's OpenRegister reader and writer, scoped
@@ -37,7 +38,7 @@ use OCA\Portaliq\Service\PortalSlugLookup;
  *
  * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
  */
-class AccessibilityMeasurements {
+class AccessibilityMeasurements implements AccessibilityMeasurementsInterface {
 
 	public const REGISTER = 'portaliq';
 

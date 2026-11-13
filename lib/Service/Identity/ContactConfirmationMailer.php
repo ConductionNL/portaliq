@@ -24,10 +24,11 @@ namespace OCA\Portaliq\Service\Identity;
 
 use OCA\Portaliq\Contribution\ConfirmationMailKeys;
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\ContactConfirmationMailerInterface;
 use OCA\Portaliq\Service\Mail\MailLog;
+use OCA\Portaliq\Service\Mail\MailSite;
 use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
 use OCA\Portaliq\Service\PortalAccountService;
-use OCA\Portaliq\Service\Mail\MailSite;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCP\L10N\IFactory;
 use OCP\Mail\IMailer;
@@ -44,7 +45,7 @@ use Throwable;
  *
  * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t02
  */
-class ContactConfirmationMailer {
+class ContactConfirmationMailer implements ContactConfirmationMailerInterface {
 	/**
 	 * Constructor.
 	 *

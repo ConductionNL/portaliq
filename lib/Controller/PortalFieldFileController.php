@@ -37,7 +37,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\AuditTrailService;
+use OCA\Portaliq\Kernel\Contracts\AuditTrailServiceInterface;
 use OCA\Portaliq\Service\PortalFileFieldPolicy;
 use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalObjectReader;
@@ -84,7 +84,7 @@ class PortalFieldFileController extends Controller implements PortalProtected {
 	 * @param PortalObjectWriter $writer The ownership-checking writer.
 	 * @param PortalFileWriter $fileWriter Attaches the file through OpenRegister.
 	 * @param PortalFileFieldPolicy $policy The upload rules.
-	 * @param AuditTrailService $auditor Records the write.
+	 * @param AuditTrailServiceInterface $auditor Records the write.
 	 * @param LoggerInterface $logger Records the cause of a failed write.
 	 */
 	public function __construct(
@@ -95,7 +95,7 @@ class PortalFieldFileController extends Controller implements PortalProtected {
 		private readonly PortalObjectWriter $writer,
 		private readonly PortalFileWriter $fileWriter,
 		private readonly PortalFileFieldPolicy $policy,
-		private readonly AuditTrailService $auditor,
+		private readonly AuditTrailServiceInterface $auditor,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);

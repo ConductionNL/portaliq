@@ -31,6 +31,7 @@ namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Controller\AccessRequestAdminController;
 use OCA\Portaliq\Controller\PortalAccountAdminController;
+use OCA\Portaliq\Kernel\Contracts\AdminMenuAccessInterface;
 use OCP\IGroupManager;
 use OCP\IUserSession;
 
@@ -41,16 +42,7 @@ use OCP\IUserSession;
  *
  * @spec openspec/specs/admin-ui/spec.md#requirement-the-app-menu-must-show-a-user-only-the-pages-their-role-may-use
  */
-class AdminMenuAccess {
-
-	/**
-	 * The Nextcloud group of portaliq staff.
-	 *
-	 * The register's authorization names this group (and nothing broader),
-	 * so a member reads and writes portaliq's records through OpenRegister.
-	 * The repair step SeedStaffGroup creates it.
-	 */
-	public const STAFF_GROUP = 'portaliq-medewerkers';
+class AdminMenuAccess implements AdminMenuAccessInterface {
 
 	/**
 	 * Constructor.

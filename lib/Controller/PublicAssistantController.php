@@ -25,8 +25,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\Assistant\PublicAssistantChannel;
-use OCA\Portaliq\Service\Assistant\PublicSourceScope;
+use OCA\Portaliq\Kernel\Contracts\PublicAssistantChannelInterface;
+use OCA\Portaliq\Kernel\Contracts\PublicSourceScopeInterface;
 use OCA\Portaliq\Service\PortalResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -48,14 +48,14 @@ class PublicAssistantController extends Controller {
 	 *
 	 * @param IRequest $request The request.
 	 * @param PortalResolver $portals Resolves the portal being visited.
-	 * @param PublicSourceScope $scope Whether the portal turned the assistant on.
-	 * @param PublicAssistantChannel $channel The adapter to hermiq.
+	 * @param PublicSourceScopeInterface $scope Whether the portal turned the assistant on.
+	 * @param PublicAssistantChannelInterface $channel The adapter to hermiq.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalResolver $portals,
-		private readonly PublicSourceScope $scope,
-		private readonly PublicAssistantChannel $channel,
+		private readonly PublicSourceScopeInterface $scope,
+		private readonly PublicAssistantChannelInterface $channel,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

@@ -45,8 +45,8 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Event\PortalClientWriteEvent;
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\AuditTrailService;
-use OCA\Portaliq\Service\CitizenWriteRecorder;
+use OCA\Portaliq\Kernel\Contracts\AuditTrailServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\CitizenWriteRecorderInterface;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PortalTaskGateway;
 use OCA\Portaliq\Service\SubmissionReceiptService;
@@ -97,9 +97,9 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 	 * @param IRequest $request The request.
 	 * @param PortalSessionService $session Resolves the bearer subject (fail-closed).
 	 * @param PortalTaskGateway $gateway The assertion-signed seam client.
-	 * @param AuditTrailService $auditor Records the `complete` audit fact (fail-safe, never throws).
+	 * @param AuditTrailServiceInterface $auditor Records the `complete` audit fact (fail-safe, never throws).
 	 * @param SubmissionReceiptService $receiptService WMEBV ontvangstbevestiging + proof log (fail-safe, never throws).
-	 * @param CitizenWriteRecorder $recorder Announces a citizen's task answer
+	 * @param CitizenWriteRecorderInterface $recorder Announces a citizen's task answer
 	 *                                       as a portal write.
 	 * @param IL10N $l10n The sentence a second answer is refused with.
 	 */
@@ -107,9 +107,9 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 		IRequest $request,
 		private readonly PortalSessionService $session,
 		private readonly PortalTaskGateway $gateway,
-		private readonly AuditTrailService $auditor,
+		private readonly AuditTrailServiceInterface $auditor,
 		private readonly SubmissionReceiptService $receiptService,
-		private readonly CitizenWriteRecorder $recorder,
+		private readonly CitizenWriteRecorderInterface $recorder,
 		private readonly IL10N $l10n,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);

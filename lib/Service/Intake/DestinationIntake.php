@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\DestinationIntakeInterface;
 use OCA\Portaliq\Service\PortalSchemaReader;
 
 /**
@@ -33,7 +34,7 @@ use OCA\Portaliq\Service\PortalSchemaReader;
  *
  * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md
  */
-class DestinationIntake {
+class DestinationIntake implements DestinationIntakeInterface {
 	/**
 	 * The finding code for a binding that names no destination.
 	 */

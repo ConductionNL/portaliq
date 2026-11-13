@@ -31,7 +31,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
+use OCA\Portaliq\Kernel\Contracts\PortalSelfServiceServiceInterface;
 use OCA\Portaliq\Service\NewsFeedReader;
 use OCA\Portaliq\Service\NewsReadReceiptService;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -56,7 +56,7 @@ class NewsGuardianController extends Controller implements PortalProtected {
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
 	 * @param NewsFeedReader $feedReader The guardian-scoped read path.
 	 * @param NewsReadReceiptService $readReceipts Idempotent read-receipt recording.
-	 * @param PortalSelfServiceService|null $selfService Reads the reader's own `messageLanguage`
+	 * @param PortalSelfServiceServiceInterface|null $selfService Reads the reader's own `messageLanguage`
 	 *                                                   (news-item-translation). Nullable and
 	 *                                                   trailing so a controller built by hand
 	 *                                                   keeps its old shape.
@@ -66,7 +66,7 @@ class NewsGuardianController extends Controller implements PortalProtected {
 		private readonly PortalSessionService $session,
 		private readonly NewsFeedReader $feedReader,
 		private readonly NewsReadReceiptService $readReceipts,
-		private readonly ?PortalSelfServiceService $selfService = null,
+		private readonly ?PortalSelfServiceServiceInterface $selfService = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

@@ -36,7 +36,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\Identity\EmailLink\EmailLinkTokens;
+use OCA\Portaliq\Kernel\Contracts\EmailLinkTokensInterface;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -56,13 +56,13 @@ class SessionAdminController extends Controller {
 	 * @param IRequest $request The request object.
 	 * @param PortalSessionService $session The session service.
 	 * @param IUserSession $userSession The signed-in admin (named in the audit trail).
-	 * @param EmailLinkTokens|null $emailLinks Voids one account's unspent e-mail links (sign-in-with-an-email-link).
+	 * @param EmailLinkTokensInterface|null $emailLinks Voids one account's unspent e-mail links (sign-in-with-an-email-link).
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalSessionService $session,
 		private readonly IUserSession $userSession,
-		private readonly ?EmailLinkTokens $emailLinks = null,
+		private readonly ?EmailLinkTokensInterface $emailLinks = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

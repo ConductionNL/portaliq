@@ -37,6 +37,7 @@ use DateTimeImmutable;
 use OCA\Portaliq\Contribution\ActionScopeResolver;
 use OCA\Portaliq\Contribution\CreateBody;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\ActionDraftInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -49,7 +50,7 @@ use Throwable;
  *
  * @SuppressWarnings(PHPMD.StaticAccess) -- PortalSessionService::trustSatisfies, the one trust rule every portal path uses.
  */
-class ActionDraft {
+class ActionDraft implements ActionDraftInterface {
 	/**
 	 * Retention when the action declares none (decision 201).
 	 */

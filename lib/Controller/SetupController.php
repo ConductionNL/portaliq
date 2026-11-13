@@ -28,15 +28,15 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\DemoDataServiceInterface;
 use OCA\Portaliq\Settings\PortaliqAdmin;
 use OCP\AppFramework\Controller;
-use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IAppConfig;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
-use OCA\Portaliq\Service\DemoDataService;
 
 /**
  * First-time setup wizard endpoints.
@@ -83,7 +83,7 @@ class SetupController extends Controller {
 	 * @param IRequest        $request         The request.
 	 * @param IAppConfig      $appConfig       Records the demo-data decision.
 	 * @param LoggerInterface $logger          Records a failed import.
-	 * @param DemoDataService $demoDataService Imports the shipped demo dataset.
+	 * @param DemoDataServiceInterface $demoDataService Imports the shipped demo dataset.
 	 *
 	 * @return void
 	 */
@@ -91,7 +91,7 @@ class SetupController extends Controller {
 		IRequest $request,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
-		private readonly DemoDataService $demoDataService,
+		private readonly DemoDataServiceInterface $demoDataService,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 
@@ -269,7 +269,7 @@ class SetupController extends Controller {
 		// wizard, and the demo-data spec then installs deliberately. Only the
 		// choice step's own run action honours the choice.
 		if ($actionId === 'install-demo-data') {
-			$picked = DemoDataService::DEMO_DATASET;
+			$picked = DemoDataServiceInterface::DEMO_DATASET;
 		}
 
 		return $picked;
@@ -306,7 +306,7 @@ class SetupController extends Controller {
 			);
 		}
 
-		if ($picked === DemoDataService::NONE_DATASET) {
+		if ($picked === DemoDataServiceInterface::NONE_DATASET) {
 			return $this->skipped();
 		}
 
@@ -328,7 +328,7 @@ class SetupController extends Controller {
 	 * @return JSONResponse `{ success, message }`.
 	 */
 	private function skipped(): JSONResponse {
-		$this->appConfig->setValueString(AppIdentity::APP_ID, self::DATASET_KEY, DemoDataService::NONE_DATASET);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, self::DATASET_KEY, DemoDataServiceInterface::NONE_DATASET);
 		$this->appConfig->setValueString(AppIdentity::APP_ID, self::DEMO_DECIDED_KEY, 'skipped');
 
 		return new JSONResponse(data: ['success' => true, 'message' => 'No example data was loaded.']);

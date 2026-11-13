@@ -30,10 +30,11 @@ namespace OCA\Portaliq\Controller;
 use Closure;
 use OCA\Portaliq\Contribution\PortalContributionFilter;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
-use OCA\Portaliq\Service\Assistant\PublicAssistantChannel;
+use OCA\Portaliq\Kernel\Contracts\CmsReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\NextcloudRegistrationDoorInterface;
+use OCA\Portaliq\Kernel\Contracts\PublicAssistantChannelInterface;
+use OCA\Portaliq\Kernel\Contracts\PublicSourceScopeInterface;
 use OCA\Portaliq\Service\Assistant\PublicSourceScope;
-use OCA\Portaliq\Service\CmsReader;
-use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
 use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -86,7 +87,7 @@ class ContentController extends Controller {
 	 * @param string                     $appName      The app id.
 	 * @param IRequest                   $request      The request.
 	 * @param PortalResolver             $resolver     Resolves the serving portal.
-	 * @param CmsReader                  $reader       Reads portal-scoped content.
+	 * @param CmsReaderInterface                  $reader       Reads portal-scoped content.
 	 * @param PortalContributionRegistry $registry     Aggregates leaf apps' contributions.
 	 * @param PortalContributionFilter   $contribFilter Scopes that aggregate to one portal.
 	 * @param LoggerInterface            $logger       Records a provider failure the visitor never sees.
@@ -95,9 +96,9 @@ class ContentController extends Controller {
 	 * @param IURLGenerator              $urlGenerator Builds the absolute collector URL.
 	 * @param PortalNoticeReader         $notices      The notices running on the site now.
 	 * @param IUserSession               $userSession  Tells a signed-in Nextcloud user (an editor) from a visitor.
-	 * @param PublicAssistantChannel|null $assistant   The public assistant's channel, when wired.
-	 * @param PublicSourceScope|null     $assistantScope What the public assistant may read.
-	 * @param NextcloudRegistrationDoor|null $registrationDoor Where "Create an account" leads (REQ-NCL-005).
+	 * @param PublicAssistantChannelInterface|null $assistant   The public assistant's channel, when wired.
+	 * @param PublicSourceScopeInterface|null     $assistantScope What the public assistant may read.
+	 * @param NextcloudRegistrationDoorInterface|null $registrationDoor Where "Create an account" leads (REQ-NCL-005).
 	 * @param SiteOrganisation|null      $siteOrganisation Names the portal's organisation.
 	 *
 	 * @return void
@@ -106,7 +107,7 @@ class ContentController extends Controller {
 		string $appName,
 		IRequest $request,
 		private readonly PortalResolver $resolver,
-		private readonly CmsReader $reader,
+		private readonly CmsReaderInterface $reader,
 		private readonly PortalContributionRegistry $registry,
 		private readonly PortalContributionFilter $contribFilter,
 		private readonly LoggerInterface $logger,
@@ -115,9 +116,9 @@ class ContentController extends Controller {
 		private readonly IURLGenerator $urlGenerator,
 		private readonly PortalNoticeReader $notices,
 		private readonly IUserSession $userSession,
-		private readonly ?PublicAssistantChannel $assistant = null,
-		private readonly ?PublicSourceScope $assistantScope = null,
-		private readonly ?NextcloudRegistrationDoor $registrationDoor = null,
+		private readonly ?PublicAssistantChannelInterface $assistant = null,
+		private readonly ?PublicSourceScopeInterface $assistantScope = null,
+		private readonly ?NextcloudRegistrationDoorInterface $registrationDoor = null,
 		private readonly ?SiteOrganisation $siteOrganisation = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);

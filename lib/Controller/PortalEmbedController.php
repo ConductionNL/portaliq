@@ -33,10 +33,11 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\DestinationIntakeInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalEmbedGuardInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalEmbedThrottleInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFormBindingResolverInterface;
 use OCA\Portaliq\Service\Intake\DestinationIntake;
-use OCA\Portaliq\Service\Intake\PortalEmbedGuard;
-use OCA\Portaliq\Service\Intake\PortalEmbedThrottle;
-use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\Intake\PortalFormValidator;
 use OCA\Portaliq\Service\PortalResolver;
 use OCP\AppFramework\Controller;
@@ -67,21 +68,21 @@ class PortalEmbedController extends Controller {
 	 *
 	 * @param IRequest $request The request.
 	 * @param PortalResolver $portals Resolves the portal being framed.
-	 * @param PortalFormBindingResolver $bindings Resolves the binding.
-	 * @param PortalEmbedGuard $guard Decides who may frame this form.
-	 * @param PortalEmbedThrottle $throttle Counts frame traffic per origin.
+	 * @param PortalFormBindingResolverInterface $bindings Resolves the binding.
+	 * @param PortalEmbedGuardInterface $guard Decides who may frame this form.
+	 * @param PortalEmbedThrottleInterface $throttle Counts frame traffic per origin.
 	 * @param PortalFormValidator $validator Validates a submission.
-	 * @param DestinationIntake $intake Submits into the binding's destination (decision 179).
+	 * @param DestinationIntakeInterface $intake Submits into the binding's destination (decision 179).
 	 * @param IURLGenerator $urls Builds the follow link.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalResolver $portals,
-		private readonly PortalFormBindingResolver $bindings,
-		private readonly PortalEmbedGuard $guard,
-		private readonly PortalEmbedThrottle $throttle,
+		private readonly PortalFormBindingResolverInterface $bindings,
+		private readonly PortalEmbedGuardInterface $guard,
+		private readonly PortalEmbedThrottleInterface $throttle,
 		private readonly PortalFormValidator $validator,
-		private readonly DestinationIntake $intake,
+		private readonly DestinationIntakeInterface $intake,
 		private readonly IURLGenerator $urls,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
@@ -274,7 +275,7 @@ class PortalEmbedController extends Controller {
 		$response = new TemplateResponse(
 			AppIdentity::APP_ID,
 			'embed',
-			['embed' => $payload, 'minHeight' => PortalEmbedGuard::MINIMUM_HEIGHT],
+			['embed' => $payload, 'minHeight' => PortalEmbedGuardInterface::MINIMUM_HEIGHT],
 			TemplateResponse::RENDER_AS_BLANK
 		);
 

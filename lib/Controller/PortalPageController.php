@@ -47,17 +47,17 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\AccessibilityFramingInterface;
+use OCA\Portaliq\Service\Cms\SiteHead;
+use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\SiteShell;
 use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
 use OCA\Portaliq\Service\PortalThemeResolver;
-use OCA\Portaliq\Service\PortalNoticeReader;
-use OCA\Portaliq\Service\Cms\AccessibilityFraming;
-use OCA\Portaliq\Service\Cms\SiteHead;
+use OCA\Portaliq\Service\SiteShell;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
-use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\RedirectResponse;
 use OCP\AppFramework\Http\TemplateResponse;
@@ -104,7 +104,7 @@ class PortalPageController extends Controller {
 	 *                                           token stylesheet.
 	 * @param SiteHead $siteHead The head of the page a site request asks for.
 	 * @param PortalNoticeReader $notices The notices running on the signed-in surface now.
-	 * @param AccessibilityFraming $framing Whether the accessibility measurement may frame this request.
+	 * @param AccessibilityFramingInterface $framing Whether the accessibility measurement may frame this request.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -114,7 +114,7 @@ class PortalPageController extends Controller {
 		PortalThemeResolver $themeResolver,
 		SiteHead $siteHead,
 		PortalNoticeReader $notices,
-		private readonly AccessibilityFraming $framing,
+		private readonly AccessibilityFramingInterface $framing,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 		$this->shell = new SiteShell(

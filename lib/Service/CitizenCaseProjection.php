@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser;
+use OCA\Portaliq\Kernel\Contracts\CitizenCaseProjectionInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -34,7 +35,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
-class CitizenCaseProjection {
+class CitizenCaseProjection implements CitizenCaseProjectionInterface {
 	/**
 	 * The fields a withdrawal writes. The case screen shows them as the
 	 * withdrawn state, so they travel with the case whatever the collection

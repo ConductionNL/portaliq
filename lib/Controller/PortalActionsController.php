@@ -27,7 +27,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\Actions\PortalActionService;
+use OCA\Portaliq\Kernel\Contracts\PortalActionServiceInterface;
 use OCA\Portaliq\Service\Plans\PortalPlanService;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
@@ -60,12 +60,12 @@ class PortalActionsController extends Controller implements PortalProtected {
 	 *
 	 * @param IRequest $request The request.
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalActionService $actions The action rules.
+	 * @param PortalActionServiceInterface $actions The action rules.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalSessionService $session,
-		private readonly PortalActionService $actions,
+		private readonly PortalActionServiceInterface $actions,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

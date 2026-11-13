@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity\EmailLink;
 
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\EmailLinkSettingInterface;
 use OCP\IAppConfig;
 
 /**
@@ -35,21 +36,11 @@ use OCP\IAppConfig;
  *
  * @spec openspec/changes/sign-in-with-an-email-link/tasks.md#1
  */
-class EmailLinkSetting {
+class EmailLinkSetting implements EmailLinkSettingInterface {
 	/**
 	 * The app config key of the switch.
 	 */
 	public const CONFIG_KEY = 'email_link_signin';
-
-	/**
-	 * The settings key the admin screen reads and writes.
-	 */
-	public const SETTINGS_KEY = 'email_link_signin_enabled';
-
-	/**
-	 * The sign-in mode a portal declares in `authentication.modes`.
-	 */
-	public const MODE = 'email-link';
 
 	/**
 	 * Constructor.

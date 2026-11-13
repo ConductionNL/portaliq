@@ -38,6 +38,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser;
+use OCA\Portaliq\Kernel\Contracts\CitizenWritableSetResolverInterface;
 use OCP\IL10N;
 
 /**
@@ -46,7 +47,7 @@ use OCP\IL10N;
  *
  * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
-class CitizenWritableSetResolver {
+class CitizenWritableSetResolver implements CitizenWritableSetResolverInterface {
 	/**
 	 * The property on the case type listing the fields a portal audience may
 	 * change. Each entry IS the field's flag (D16).
@@ -143,7 +144,6 @@ class CitizenWritableSetResolver {
 			]
 		);
 	}//end resolve()
-
 
 	/**
 	 * The writable set as the case type declares it for the case's status.

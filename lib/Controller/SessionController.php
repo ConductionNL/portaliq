@@ -35,12 +35,12 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\Identity\EmailLink\EmailLinkSetting;
+use OCA\Portaliq\Kernel\Contracts\EmailLinkSettingInterface;
+use OCA\Portaliq\Kernel\Contracts\NextcloudRegistrationDoorInterface;
+use OCA\Portaliq\Service\Identity\ContactAddressValues;
 use OCA\Portaliq\Service\OidcClaimMapperService;
 use OCA\Portaliq\Service\OidcClientService;
 use OCA\Portaliq\Service\OidcStateStoreService;
-use OCA\Portaliq\Service\Identity\ContactAddressValues;
-use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
@@ -264,7 +264,7 @@ class SessionController extends Controller {
 	 *                                cannot be used against it.
 	 * @param OrganisationLoginConfig|null $loginConfig The route per provider
 	 *                                                  (signin-integriq-broker-login).
-	 * @param NextcloudRegistrationDoor|null $residents Admits a resident's first account (REQ-NCL-003).
+	 * @param NextcloudRegistrationDoorInterface|null $residents Admits a resident's first account (REQ-NCL-003).
 	 */
 	public function __construct(
 		IRequest $request,
@@ -279,7 +279,7 @@ class SessionController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly PortalResolver $portals,
 		private readonly ?OrganisationLoginConfig $loginConfig = null,
-		private readonly ?NextcloudRegistrationDoor $residents = null,
+		private readonly ?NextcloudRegistrationDoorInterface $residents = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
@@ -1251,7 +1251,7 @@ class SessionController extends Controller {
 	private function brokerLogoutUrl(array $subject): string {
 		$provider = (string)($subject['provider'] ?? '');
 		// An e-mail link session has no broker to sign out of (REQ-IWI-011).
-		if ($provider === '' || $provider === EmailLinkSetting::MODE) {
+		if ($provider === '' || $provider === EmailLinkSettingInterface::MODE) {
 			return '';
 		}
 

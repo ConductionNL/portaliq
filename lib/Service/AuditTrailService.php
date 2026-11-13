@@ -40,6 +40,7 @@ namespace OCA\Portaliq\Service;
 
 use DateTime;
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\AuditTrailServiceInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -50,7 +51,7 @@ use Throwable;
  *
  * @spec openspec/changes/archive/2026-09-30-consume-or-audit-trail-proof-records/tasks.md#T01
  */
-class AuditTrailService {
+class AuditTrailService implements AuditTrailServiceInterface {
 	/**
 	 * OpenRegister's audit-trail mapper: the only place a proof record is written.
 	 */

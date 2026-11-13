@@ -31,30 +31,34 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\Identity\PortalChallengeService;
+use OCA\Portaliq\Kernel\Contracts\DestinationIntakeInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalAddressLookupInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalApplicantPrefillInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalCatalogueReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalChallengeServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFormBindingResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalIntakeConfirmationInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalIntakePaymentsInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalIntakeQueueInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSubmissionChecksInterface;
 use OCA\Portaliq\Service\Intake\DestinationIntake;
 use OCA\Portaliq\Service\Intake\DestinationLookup;
 use OCA\Portaliq\Service\Intake\DestinationMapping;
 use OCA\Portaliq\Service\Intake\FormConfirmationMailer;
 use OCA\Portaliq\Service\Intake\FormStatements;
-use OCA\Portaliq\Service\Intake\PortalAddressLookup;
-use OCA\Portaliq\Service\Intake\PortalApplicantPrefill;
-use OCA\Portaliq\Service\Intake\PortalCatalogueReader;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Service\Intake\PortalEmailVerification;
 use OCA\Portaliq\Service\Intake\PortalFamilyMembers;
 use OCA\Portaliq\Service\Intake\PortalFee;
-use OCA\Portaliq\Service\PortalActionForwarder;
-use OCA\Portaliq\Service\PortalDeepLinkBuilder;
-use OCA\Portaliq\Service\Intake\PortalEmailVerification;
-use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\Intake\PortalFormCalculator;
 use OCA\Portaliq\Service\Intake\PortalFormDecision;
 use OCA\Portaliq\Service\Intake\PortalFormValidator;
 use OCA\Portaliq\Service\Intake\PortalIntakeConfirmation;
 use OCA\Portaliq\Service\Intake\PortalIntakePayments;
-use OCA\Portaliq\Service\Intake\PortalIntakeQueue;
 use OCA\Portaliq\Service\Intake\PortalSubmissionChecks;
+use OCA\Portaliq\Service\PortalActionForwarder;
+use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
@@ -80,23 +84,23 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	/**
 	 * The checks between a validated form and a recorded submission.
 	 *
-	 * @var PortalSubmissionChecks
+	 * @var PortalSubmissionChecksInterface
 	 */
-	private readonly PortalSubmissionChecks $checks;
+	private readonly PortalSubmissionChecksInterface $checks;
 
 	/**
 	 * Takes the payment for a submission and reads its state.
 	 *
-	 * @var PortalIntakePayments
+	 * @var PortalIntakePaymentsInterface
 	 */
-	private readonly PortalIntakePayments $payments;
+	private readonly PortalIntakePaymentsInterface $payments;
 
 	/**
 	 * Mails the resident the confirmation of a submission.
 	 *
-	 * @var PortalIntakeConfirmation
+	 * @var PortalIntakeConfirmationInterface
 	 */
-	private readonly PortalIntakeConfirmation $confirmation;
+	private readonly PortalIntakeConfirmationInterface $confirmation;
 
 	/**
 	 * Constructor.
@@ -104,13 +108,13 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param IRequest $request The request.
 	 * @param PortalResolver $portals Resolves the portal being visited.
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalFormBindingResolver $bindings Resolves the binding.
-	 * @param PortalApplicantPrefill $prefill Fills the applicant block.
+	 * @param PortalFormBindingResolverInterface $bindings Resolves the binding.
+	 * @param PortalApplicantPrefillInterface $prefill Fills the applicant block.
 	 * @param PortalFormValidator $validator Validates a submission.
-	 * @param PortalIntakeQueue $queue Records and reports on submissions.
-	 * @param PortalChallengeService $challenge The portal's own challenge.
-	 * @param PortalCatalogueReader $catalogue The published request entries.
-	 * @param PortalAddressLookup|null $addresses Finds street and town for a postcode and number.
+	 * @param PortalIntakeQueueInterface $queue Records and reports on submissions.
+	 * @param PortalChallengeServiceInterface $challenge The portal's own challenge.
+	 * @param PortalCatalogueReaderInterface $catalogue The published request entries.
+	 * @param PortalAddressLookupInterface|null $addresses Finds street and town for a postcode and number.
 	 * @param PortalFamilyMembers|null $family Lists and re-checks the resident's family from the BRP.
 	 * @param FormStatements|null $statements Resolves and checks the statements a form asks.
 	 * @param FormConfirmationMailer|null $confirmationMail Mails the resident the reference and a summary.
@@ -121,20 +125,20 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @param PortalActionForwarder|null $forwarder Forwards the pay action with a server-built body.
 	 * @param PortalDeepLinkBuilder|null $deepLinks Builds the address the resident returns to.
 	 * @param PortalEmailVerification|null $emailVerification Checks the proof that an e-mail address was verified.
-	 * @param DestinationIntake|null $intake Submits the answers into the binding's destination (decision 179).
+	 * @param DestinationIntakeInterface|null $intake Submits the answers into the binding's destination (decision 179).
 	 * @param DestinationLookup|null $lookup Finds the object a reference belongs to.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalResolver $portals,
 		private readonly PortalSessionService $session,
-		private readonly PortalFormBindingResolver $bindings,
-		private readonly PortalApplicantPrefill $prefill,
+		private readonly PortalFormBindingResolverInterface $bindings,
+		private readonly PortalApplicantPrefillInterface $prefill,
 		PortalFormValidator $validator,
-		private readonly PortalIntakeQueue $queue,
-		private readonly PortalChallengeService $challenge,
-		private readonly PortalCatalogueReader $catalogue,
-		private readonly ?PortalAddressLookup $addresses = null,
+		private readonly PortalIntakeQueueInterface $queue,
+		private readonly PortalChallengeServiceInterface $challenge,
+		private readonly PortalCatalogueReaderInterface $catalogue,
+		private readonly ?PortalAddressLookupInterface $addresses = null,
 		private readonly ?PortalFamilyMembers $family = null,
 		?FormStatements $statements = null,
 		?FormConfirmationMailer $confirmationMail = null,
@@ -145,7 +149,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		?PortalActionForwarder $forwarder = null,
 		?PortalDeepLinkBuilder $deepLinks = null,
 		?PortalEmailVerification $emailVerification = null,
-		private readonly ?DestinationIntake $intake = null,
+		private readonly ?DestinationIntakeInterface $intake = null,
 		private readonly ?DestinationLookup $lookup = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
@@ -414,7 +418,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 					'reference' => $reference,
 					'id' => (string)($answer['id'] ?? ''),
 					'receivedAt' => (string)($answer['receivedAt'] ?? ''),
-					'state' => PortalIntakeQueue::STATE_REGISTERED,
+					'state' => PortalIntakeQueueInterface::STATE_REGISTERED,
 					'confirmationText' => (string)($render['settings']['confirmationText'] ?? ''),
 					'confirmation' => ($render['settings']['confirmation'] ?? null),
 					'mailedTo' => $mailedTo,
@@ -597,7 +601,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 * @return JSONResponse|null
 	 */
 	private function submitRefusal(array $site, array $binding, array $render, ?array $subject): ?JSONResponse {
-		if (($render['resolvesToNoForm'] ?? false) === true || ($render['kind'] ?? '') === PortalFormBindingResolver::KIND_EXTERNAL) {
+		if (($render['resolvesToNoForm'] ?? false) === true || ($render['kind'] ?? '') === PortalFormBindingResolverInterface::KIND_EXTERNAL) {
 			// An external intake is filled in at its own host; the portal has
 			// nothing to accept here.
 			return new JSONResponse(['error' => 'form_not_submittable'], Http::STATUS_FORBIDDEN);

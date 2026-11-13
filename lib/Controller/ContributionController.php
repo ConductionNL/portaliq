@@ -47,47 +47,50 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\ActionScopeResolver;
-use OCA\Portaliq\Contribution\CreateBody;
 use OCA\Portaliq\Contribution\CreateActionMatcher;
+use OCA\Portaliq\Contribution\CreateBody;
 use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
 use OCA\Portaliq\Contribution\InboxMessageFields;
 use OCA\Portaliq\Contribution\PageChoice;
-use OCA\Portaliq\Contribution\ThemeChoice;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Contribution\RowIdentifier;
+use OCA\Portaliq\Contribution\ThemeChoice;
 use OCA\Portaliq\Http\PdfDownloadResponse;
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\Intake\ActionDraft;
-use OCA\Portaliq\Service\Intake\DestinationDraft;
-use OCA\Portaliq\Service\Intake\DestinationIntake;
+use OCA\Portaliq\Kernel\Contracts\ActionDraftInterface;
+use OCA\Portaliq\Kernel\Contracts\AuditTrailServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\CaseTypeNamesInterface;
+use OCA\Portaliq\Kernel\Contracts\CaseTypeVisibilityInterface;
+use OCA\Portaliq\Kernel\Contracts\ColumnOverridesInterface;
+use OCA\Portaliq\Kernel\Contracts\ContactConfirmationMailerInterface;
+use OCA\Portaliq\Kernel\Contracts\DestinationDraftInterface;
+use OCA\Portaliq\Kernel\Contracts\DestinationIntakeInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalBranchScopeInterface;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
-use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\CaseRowMarker;
-use OCA\Portaliq\Service\CaseTypeNames;
-use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\CaseTypeColumns\ColumnOverrides;
-use OCA\Portaliq\Service\Identity\ContactConfirmationMailer;
+use OCA\Portaliq\Service\Intake\DestinationIntake;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalAuditHook;
 use OCA\Portaliq\Service\PortalCrossRefGuard;
-use OCA\Portaliq\Service\PortalPdfExport;
 use OCA\Portaliq\Service\PortalFileReader;
 use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalInboxReader;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\PortalPdfExport;
+use OCA\Portaliq\Service\PortalRateLimit;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\RequestedPortal;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
-use OCA\Portaliq\Service\Tenancy\SchemaTenancy;
 use OCA\Portaliq\Service\PortalTaskGateway;
-use OCA\Portaliq\Service\VisibleFromGate;
 use OCA\Portaliq\Service\PortalUserDisplayNames;
-use OCA\Portaliq\Service\PortalRateLimit;
+use OCA\Portaliq\Service\RequestedPortal;
 use OCA\Portaliq\Service\RequiredFieldsGuard;
 use OCA\Portaliq\Service\SubmissionReceiptService;
+use OCA\Portaliq\Service\Tenancy\SchemaTenancy;
+use OCA\Portaliq\Service\VisibleFromGate;
 use OCA\Portaliq\Service\WriteRefusal;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -146,7 +149,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @param PortalActionForwarder $forwarder Transport half of the A6 action forward
 	 *                                         (signed assertion, instance-local URL,
 	 *                                         502-on-transport-failure).
-	 * @param AuditTrailService $auditor Records create/update/forward mutations
+	 * @param AuditTrailServiceInterface $auditor Records create/update/forward mutations
 	 *                                   (portal-session-hardening-v2).
 	 * @param SubmissionReceiptService $receiptService WMEBV ontvangstbevestiging + proof-log
 	 *                                                 generator, called after every
@@ -174,28 +177,28 @@ class ContributionController extends Controller implements PortalProtected {
 	 *                                            site only: absent is built in
 	 *                                            crossRefGuard(), never skipped,
 	 *                                            because it is a guard.
-	 * @param CaseTypeVisibility|null $caseTypes The case types the serving
+	 * @param CaseTypeVisibilityInterface|null $caseTypes The case types the serving
 	 *                                           portal hides from a `cases`
 	 *                                           collection
 	 *                                           (operate-show-per-case-type).
 	 *                                           Absent hides nothing.
-	 * @param PortalBranchScope $branches The branch filter of signin-eherkenning-branch.
+	 * @param PortalBranchScopeInterface $branches The branch filter of signin-eherkenning-branch.
 	 * @param PortalUserDisplayNames $userNames Reads a `render: "user"` column as the user's name.
-	 * @param CaseTypeNames|null $typeNames Names each case's type on a `cases` collection
+	 * @param CaseTypeNamesInterface|null $typeNames Names each case's type on a `cases` collection
 	 *                                      (site-mijn-omgeving-components REQ-SMO-030).
 	 * @param PortalResolver|null $portals Finds the serving portal, for its navigation choice.
 	 *                                     Absent leaves the navigation as the aggregate has it.
-	 * @param ContactConfirmationMailer|null $confirmation Mails the resident that a question arrived, after
+	 * @param ContactConfirmationMailerInterface|null $confirmation Mails the resident that a question arrived, after
 	 *                                                     a create whose action asks for it; fail-safe.
 	 * @param PortalPdfExport|null $pdf Renders a list or a record the resident can see as a PDF through
 	 *                                  OpenRegister (cases-export-own-data-pdf). Absent offers no export.
 	 * @param PortalRateLimit|null $rateLimit Limits a portal session per subject and a call
 	 *                                        without one per IP (portal-subject-rate-limit).
-	 * @param ActionDraft|null $drafts Finds the subject's live draft of a create action, which a
+	 * @param ActionDraftInterface|null $drafts Finds the subject's live draft of a create action, which a
 	 *                                 create then sends instead of writing a new object (decision 180).
 	 *                                 Absent writes a new object as before.
-	 * @param DestinationDraft|null $destinations Sends that draft through OpenRegister's submit service.
-	 * @param DestinationIntake|null $intake Submits a landing-page form straight into its destination
+	 * @param DestinationDraftInterface|null $destinations Sends that draft through OpenRegister's submit service.
+	 * @param DestinationIntakeInterface|null $intake Submits a landing-page form straight into its destination
 	 *                                       (decision 179). Absent answers 503 for such a form.
 	 */
 	public function __construct(
@@ -210,23 +213,23 @@ class ContributionController extends Controller implements PortalProtected {
 		private readonly PortalInboxReader $inboxReader,
 		private readonly PortalAuditHook $auditHook,
 		private readonly PortalActionForwarder $forwarder,
-		private readonly AuditTrailService $auditor,
+		private readonly AuditTrailServiceInterface $auditor,
 		private readonly SubmissionReceiptService $receiptService,
 		private readonly NotificationDispatchService $notificationDispatch,
 		private readonly LoggerInterface $logger,
 		private readonly ?PortalTaskGateway $taskGateway = null,
 		private readonly ?PortalCrossRefGuard $crossRefs = null,
-		private readonly ?CaseTypeVisibility $caseTypes = null,
-		private readonly PortalBranchScope $branches = new PortalBranchScope(),
+		private readonly ?CaseTypeVisibilityInterface $caseTypes = null,
+		private readonly PortalBranchScopeInterface $branches = new PortalBranchScope(),
 		private readonly PortalUserDisplayNames $userNames = new PortalUserDisplayNames(),
-		private readonly ?CaseTypeNames $typeNames = null,
+		private readonly ?CaseTypeNamesInterface $typeNames = null,
 		private readonly ?PortalResolver $portals = null,
-		private readonly ?ContactConfirmationMailer $confirmation = null,
+		private readonly ?ContactConfirmationMailerInterface $confirmation = null,
 		private readonly ?PortalPdfExport $pdf = null,
 		private readonly ?PortalRateLimit $rateLimit = null,
-		private readonly ?ActionDraft $drafts = null,
-		private readonly ?DestinationDraft $destinations = null,
-		private readonly ?DestinationIntake $intake = null,
+		private readonly ?ActionDraftInterface $drafts = null,
+		private readonly ?DestinationDraftInterface $destinations = null,
+		private readonly ?DestinationIntakeInterface $intake = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
@@ -1010,11 +1013,11 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @param array<string, mixed> $subject The resolved subject.
 	 *
-	 * @return ColumnOverrides
+	 * @return ColumnOverridesInterface
 	 *
 	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
 	 */
-	private function columnsFor(array $subject): ColumnOverrides {
+	private function columnsFor(array $subject): ColumnOverridesInterface {
 		if ($this->caseTypes === null) {
 			return new ColumnOverrides(byType: [], types: null);
 		}
