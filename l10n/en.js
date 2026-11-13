@@ -3208,7 +3208,9 @@ OC.L10N.register(
         "QR code": "QR code",
         "As the case app shows it": "As the case app shows it",
         "The columns are saved.": "The columns are saved.",
-        "The columns could not be saved. Try again.": "The columns could not be saved. Try again."
+        "The columns could not be saved. Try again.": "The columns could not be saved. Try again.",
+        "Event to sign up for": "Event to sign up for",
+        "No event": "No event"
     },
     "nplurals=2; plural=(n != 1);"
 )
