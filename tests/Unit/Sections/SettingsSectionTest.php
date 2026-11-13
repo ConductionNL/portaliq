@@ -34,12 +34,14 @@ namespace OCA\Portaliq\Tests\Unit\Sections;
 use OCA\Portaliq\Sections\SettingsSection;
 use OCP\IL10N;
 use OCP\IURLGenerator;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 /**
  * Asserts the admin section identifies itself as this app.
  */
+#[CoversClass(SettingsSection::class)]
 class SettingsSectionTest extends TestCase {
 
 	/**
@@ -164,5 +166,46 @@ class SettingsSectionTest extends TestCase {
 		}
 
 	}//end testNameIsNotAScaffoldingPlaceholder()
+
+	/**
+	 * The sidebar icon is this app's dark icon, resolved through the URL
+	 * generator for the portaliq app — exactly one lookup, and the generator's
+	 * answer is returned unchanged.
+	 *
+	 * @return void
+	 */
+	public function testIconIsTheAppDarkIconFromTheUrlGenerator(): void {
+		$l10n = $this->createMock(IL10N::class);
+
+		$urlGenerator = $this->createMock(IURLGenerator::class);
+		$urlGenerator->expects($this->once())
+			->method('imagePath')
+			->with('portaliq', 'app-dark.svg')
+			->willReturn('/custom_apps/portaliq/img/app-dark.svg?v=3');
+
+		$section = new SettingsSection($l10n, $urlGenerator);
+
+		$this->assertSame('/custom_apps/portaliq/img/app-dark.svg?v=3', $section->getIcon());
+
+	}//end testIconIsTheAppDarkIconFromTheUrlGenerator()
+
+	/**
+	 * Nextcloud orders admin sections by priority within 0-100; the section
+	 * sits in the lower half, after the core sections, and is stable across
+	 * calls so the sidebar order does not jump.
+	 *
+	 * @return void
+	 */
+	public function testPriorityIsAStableValueInTheSectionRange(): void {
+		$section = $this->section();
+
+		$priority = $section->getPriority();
+
+		$this->assertSame(75, $priority);
+		$this->assertGreaterThanOrEqual(0, $priority);
+		$this->assertLessThanOrEqual(100, $priority);
+		$this->assertSame($priority, $section->getPriority());
+
+	}//end testPriorityIsAStableValueInTheSectionRange()
 
 }//end class
