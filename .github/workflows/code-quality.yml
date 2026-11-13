@@ -195,9 +195,11 @@ jobs:
       # schemas and every portal collection/action live there, and
       # `PortalContributionProvider` is config-driven off `portalPage` OBJECTS
       # (portal-page-provisioning) — with no OpenRegister the portal renders an
-      # empty shell. Pinned to `development`, not `main`: this app tracks
-      # `development`, and pinning the foundation to `main` makes a CI instance
-      # behave unlike any environment the app is actually developed against.
+      # empty shell. On the `beta` line every sibling app is pinned to its
+      # release line (openregister `stable2.1`, the others `beta`), not to
+      # `development` or `main`: a CI instance on another line behaves unlike
+      # the environment this line is released into. Bump `stable2.1` with
+      # openregister's release line.
       #
       # `thematiq` (the app formerly published as `nldesign`) is here for the
       # same reason, one layer up: this app ships NO
@@ -233,7 +235,7 @@ jobs:
       # green. Do not drop it to save runner minutes without deleting that spec too.
       #
       # Verified against the pinned ref rather than a local checkout, per the note
-      # above: on `ConductionNL/dossiq@development` the id is `dossiq`, the namespace
+      # above: on `ConductionNL/dossiq@beta` the id is `dossiq`, the namespace
       # is `Dossiq`, and `getAudiences()` returns supplier/citizen/inspector. Its
       # `getContribution()` is pure config with no I/O, so it needs no seeded data.
       #
@@ -263,11 +265,11 @@ jobs:
       # `app_connection` rows, which integriq syncs from lib/Settings/connections.json
       # on install and on app enable. Without integriq the page has no register to
       # read and the spec asserts against nothing. Verified against the pinned ref:
-      # on `ConductionNL/integriq@development` the id is `integriq`. The PHPUnit
+      # on `ConductionNL/integriq@beta` the id is `integriq`. The PHPUnit
       # event stubs in tests/bootstrap.php load only when integriq's real event
       # classes are absent, so its presence here does not redeclare them.
-      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"},{"repo":"ConductionNL/thematiq","app":"thematiq","ref":"development"},{"repo":"ConductionNL/integriq","app":"integriq","ref":"development"}]'
-      e2e-additional-apps: '[{"repo":"ConductionNL/dossiq","app":"dossiq","ref":"development"}]'
+      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"stable2.1"},{"repo":"ConductionNL/thematiq","app":"thematiq","ref":"beta"},{"repo":"ConductionNL/integriq","app":"integriq","ref":"beta"}]'
+      e2e-additional-apps: '[{"repo":"ConductionNL/dossiq","app":"dossiq","ref":"beta"}]'
       enable-sbom: true
 
       # ── REUSE ────────────────────────────────────────────────────────────
