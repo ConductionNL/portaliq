@@ -35,6 +35,13 @@ OC.L10N.register(
         "The register the case type lives in, so the declaration can be read again when the thread is opened.": "The register the case type lives in, so the declaration can be read again when the thread is opened.",
         "Case type schema": "Case type schema",
         "The schema the case type lives in.": "The schema the case type lives in.",
+        "Publish this page?": "Publish this page?",
+        "Anyone can read this page, without signing in.": "Anyone can read this page, without signing in.",
+        "Its address:": "Its address:",
+        "Public": "Public",
+        "Take back to draft": "Take back to draft",
+        "The page could not be taken back to a draft. Try again.": "The page could not be taken back to a draft. Try again.",
+        "The page is a draft again. Nobody can read it without signing in.": "The page is a draft again. Nobody can read it without signing in.",
         "What the report is about, in the reporter's words.": "What the report is about, in the reporter's words.",
         "The report itself.": "The report itself.",
         "The rest of the form's answers, as validated against it.": "The rest of the form's answers, as validated against it.",
@@ -527,14 +534,7 @@ OC.L10N.register(
         "QR code": "QR code",
         "As the case app shows it": "As the case app shows it",
         "The columns are saved.": "The columns are saved.",
-        "The columns could not be saved. Try again.": "The columns could not be saved. Try again.",
-        "Publish this page?": "Publish this page?",
-        "Anyone can read this page, without signing in.": "Anyone can read this page, without signing in.",
-        "Its address:": "Its address:",
-        "Public": "Public",
-        "Take back to draft": "Take back to draft",
-        "The page could not be taken back to a draft. Try again.": "The page could not be taken back to a draft. Try again.",
-        "The page is a draft again. Nobody can read it without signing in.": "The page is a draft again. Nobody can read it without signing in."
+        "The columns could not be saved. Try again.": "The columns could not be saved. Try again."
     },
     "nplurals=2; plural=(n != 1);"
 )

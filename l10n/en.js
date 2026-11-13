@@ -995,6 +995,13 @@ OC.L10N.register(
         "What a visit must satisfy. All of them must hold.": "What a visit must satisfy. All of them must hold.",
         "What is compared: a visit's channel, device type, browser, operating system, language, region, campaign, source, medium, referrer host or referrer; `visitorType` (new or returning, only known with a persisted client id); `userRef-present` (true or false); or `goal:<id>` (true when the visit met that goal).": "What is compared: a visit's channel, device type, browser, operating system, language, region, campaign, source, medium, referrer host or referrer; `visitorType` (new or returning, only known with a persisted client id); `userRef-present` (true or false); or `goal:<id>` (true when the visit met that goal).",
         "What is watched: `pageViews`, `sessions`, `visitors`, `notFound` (missing page hits) or `goal:<id>` (conversions of that goal).": "What is watched: `pageViews`, `sessions`, `visitors`, `notFound` (missing page hits) or `goal:<id>` (conversions of that goal).",
+        "Publish this page?": "Publish this page?",
+        "Anyone can read this page, without signing in.": "Anyone can read this page, without signing in.",
+        "Its address:": "Its address:",
+        "Public": "Public",
+        "Take back to draft": "Take back to draft",
+        "The page could not be taken back to a draft. Try again.": "The page could not be taken back to a draft. Try again.",
+        "The page is a draft again. Nobody can read it without signing in.": "The page is a draft again. Nobody can read it without signing in.",
         "What the segment is called on the Traffic page.": "What the segment is called on the Traffic page.",
         "Which parts the mail carries. Empty means the overview only.": "Which parts the mail carries. Empty means the overview only.",
         "Why it was rejected. Required on a rejection: a refusal nobody explained is one the proposer cannot answer.": "Why it was rejected. Required on a rejection: a refusal nobody explained is one the proposer cannot answer.",
@@ -3208,14 +3215,7 @@ OC.L10N.register(
         "QR code": "QR code",
         "As the case app shows it": "As the case app shows it",
         "The columns are saved.": "The columns are saved.",
-        "The columns could not be saved. Try again.": "The columns could not be saved. Try again.",
-        "Publish this page?": "Publish this page?",
-        "Anyone can read this page, without signing in.": "Anyone can read this page, without signing in.",
-        "Its address:": "Its address:",
-        "Public": "Public",
-        "Take back to draft": "Take back to draft",
-        "The page could not be taken back to a draft. Try again.": "The page could not be taken back to a draft. Try again.",
-        "The page is a draft again. Nobody can read it without signing in.": "The page is a draft again. Nobody can read it without signing in."
+        "The columns could not be saved. Try again.": "The columns could not be saved. Try again."
     },
     "nplurals=2; plural=(n != 1);"
 )
