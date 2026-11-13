@@ -30,8 +30,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\TeacherInboxServiceInterface;
 use OCA\Portaliq\Service\Messaging\GuardianMessagingLeafInterface;
-use OCA\Portaliq\Service\TeacherInboxService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -52,13 +52,13 @@ class MessageStaffController extends Controller {
 	 * @param IRequest $request The request.
 	 * @param IUserSession $userSession Resolves the calling staff member's Nextcloud user id, used as their subjectRef.
 	 * @param GuardianMessagingLeafInterface $messaging The messaging leaf.
-	 * @param TeacherInboxService $inboxService Builds the per-group inbox view (teacher-inbox-per-group).
+	 * @param TeacherInboxServiceInterface $inboxService Builds the per-group inbox view (teacher-inbox-per-group).
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly GuardianMessagingLeafInterface $messaging,
-		private readonly TeacherInboxService $inboxService,
+		private readonly TeacherInboxServiceInterface $inboxService,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

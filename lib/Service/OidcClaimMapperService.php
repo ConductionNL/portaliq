@@ -37,15 +37,16 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Service\Session\SessionTrust;
+use OCA\Portaliq\Kernel\Contracts\OidcClaimMapperServiceInterface;
 use OCA\Portaliq\Service\Branch\BranchNumber;
+use OCA\Portaliq\Service\Session\SessionTrust;
 
 /**
  * Provider presets + claim/LoA mapping for the OIDC broker login edge.
  *
  * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T05
  */
-class OidcClaimMapperService {
+class OidcClaimMapperService implements OidcClaimMapperServiceInterface {
 	/**
 	 * The special `subjectRef` claim-map keyword: PortalAccountService derives
 	 * (mints once, reuses thereafter) the subjectRef server-side rather than

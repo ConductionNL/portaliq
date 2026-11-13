@@ -29,7 +29,7 @@ namespace OCA\Portaliq\Controller;
 
 use DateTimeImmutable;
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\Overview\PortalOverview;
+use OCA\Portaliq\Kernel\Contracts\PortalOverviewInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -51,12 +51,12 @@ class PortalOverviewController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalOverview $overview Folds the portals' figures.
+	 * @param PortalOverviewInterface $overview Folds the portals' figures.
 	 * @param ITimeFactory $time The clock.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalOverview $overview,
+		private readonly PortalOverviewInterface $overview,
 		private readonly ITimeFactory $time,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);

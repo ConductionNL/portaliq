@@ -19,8 +19,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\BrokerLoginInterface;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\Signin\BrokerLogin;
 use OCA\Portaliq\Service\Signin\SiteReturnAddress;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -56,7 +56,7 @@ class BrokerSessionController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest       $request      The request.
-	 * @param BrokerLogin    $login        The broker login.
+	 * @param BrokerLoginInterface    $login        The broker login.
 	 * @param IURLGenerator  $urlGenerator Builds the callback and landing addresses.
 	 * @param PortalResolver $portals      Resolves the organisation of a `?portal=` slug.
 	 *
@@ -64,7 +64,7 @@ class BrokerSessionController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly BrokerLogin $login,
+		private readonly BrokerLoginInterface $login,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly PortalResolver $portals,
 	) {

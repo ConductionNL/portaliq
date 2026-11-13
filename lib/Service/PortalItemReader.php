@@ -28,6 +28,7 @@ namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Contribution\PortalProviderLocator;
 use OCA\Portaliq\Contribution\TimelineProviderMethod;
+use OCA\Portaliq\Kernel\Contracts\PortalItemReaderInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -36,7 +37,7 @@ use Throwable;
  *
  * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-collection-must-be-able-to-declare-an-item-list-read-from-its-app-req-myd-001
  */
-class PortalItemReader {
+class PortalItemReader implements PortalItemReaderInterface {
 	/**
 	 * Constructor.
 	 *

@@ -37,6 +37,7 @@ use OCA\Portaliq\Contribution\MessageContactsKeys;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Contribution\PortalProviderLocator;
 use OCA\Portaliq\Contribution\TimelineProviderMethod;
+use OCA\Portaliq\Kernel\Contracts\MessageContactReaderInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\Session\SessionTrust;
 use Psr\Log\LoggerInterface;
@@ -50,7 +51,7 @@ use Throwable;
  * @SuppressWarnings(PHPMD.StaticAccess) -- SessionTrust::trustSatisfies,
  * the one trust ordering every portal gate shares.
  */
-class MessageContactReader {
+class MessageContactReader implements MessageContactReaderInterface {
 	/**
 	 * The most rows of one collection asked about.
 	 */

@@ -31,7 +31,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Notification;
 
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\Traffic\TrafficReportDelivery;
+use OCA\Portaliq\Kernel\Contracts\TrafficReportDeliveryInterface;
 use OCP\IURLGenerator;
 use OCP\L10N\IFactory;
 use OCP\Notification\INotification;
@@ -107,13 +107,13 @@ class Notifier implements INotifier {
 		$name = (string)($parameters['name'] ?? '');
 		$portal = (string)($parameters['portal'] ?? '');
 		switch ($notification->getSubject()) {
-			case TrafficReportDelivery::SUBJECT_REPORT:
+			case TrafficReportDeliveryInterface::SUBJECT_REPORT:
 				$notification->setParsedSubject($l->t('Traffic report: %1$s (%2$s)', [$name, $portal]));
 				$notification->setParsedMessage(
 					$l->t('The report for %s was sent. Open the Traffic page for the figures.', [(string)($parameters['span'] ?? '')])
 				);
 				break;
-			case TrafficReportDelivery::SUBJECT_ALERT:
+			case TrafficReportDeliveryInterface::SUBJECT_ALERT:
 				$notification->setParsedSubject($l->t('Traffic alert: %1$s (%2$s)', [$name, $portal]));
 				$notification->setParsedMessage((string)($parameters['line'] ?? ''));
 				break;

@@ -27,8 +27,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\Tasks\PartnerAskService;
-use OCA\Portaliq\Service\Tasks\PortalCaseAccessGuard;
+use OCA\Portaliq\Kernel\Contracts\PartnerAskServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalCaseAccessGuardInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -48,14 +48,14 @@ class PartnerTaskController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PartnerAskService $asks Resolves the partner and raises the task.
-	 * @param PortalCaseAccessGuard $guard Decides whether this user may ask.
+	 * @param PartnerAskServiceInterface $asks Resolves the partner and raises the task.
+	 * @param PortalCaseAccessGuardInterface $guard Decides whether this user may ask.
 	 * @param IUserSession $userSession The handler making the request.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PartnerAskService $asks,
-		private readonly PortalCaseAccessGuard $guard,
+		private readonly PartnerAskServiceInterface $asks,
+		private readonly PortalCaseAccessGuardInterface $guard,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);

@@ -23,6 +23,7 @@ namespace OCA\Portaliq\Service;
 use DateTimeImmutable;
 use DateTimeZone;
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\TrafficBackfillServiceInterface;
 use OCA\Portaliq\Service\Traffic\TrafficDayGuard;
 use OCA\Portaliq\Service\Traffic\TrafficEventStore;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -46,7 +47,7 @@ use OCP\IAppConfig;
  *
  * @spec openspec/specs/portal-page-traffic/spec.md#requirement-retained-raw-events-must-be-re-aggregated-into-the-new-page-fields
  */
-class TrafficBackfillService {
+class TrafficBackfillService implements TrafficBackfillServiceInterface {
 	use PublishedPortalWalk;
 
 	/**

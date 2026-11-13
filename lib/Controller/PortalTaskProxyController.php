@@ -47,9 +47,9 @@ use OCA\Portaliq\Event\PortalClientWriteEvent;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\AuditTrailServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\CitizenWriteRecorderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalTaskGatewayInterface;
+use OCA\Portaliq\Kernel\Contracts\SubmissionReceiptServiceInterface;
 use OCA\Portaliq\Service\PortalSessionService;
-use OCA\Portaliq\Service\PortalTaskGateway;
-use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -96,9 +96,9 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 	 *
 	 * @param IRequest $request The request.
 	 * @param PortalSessionService $session Resolves the bearer subject (fail-closed).
-	 * @param PortalTaskGateway $gateway The assertion-signed seam client.
+	 * @param PortalTaskGatewayInterface $gateway The assertion-signed seam client.
 	 * @param AuditTrailServiceInterface $auditor Records the `complete` audit fact (fail-safe, never throws).
-	 * @param SubmissionReceiptService $receiptService WMEBV ontvangstbevestiging + proof log (fail-safe, never throws).
+	 * @param SubmissionReceiptServiceInterface $receiptService WMEBV ontvangstbevestiging + proof log (fail-safe, never throws).
 	 * @param CitizenWriteRecorderInterface $recorder Announces a citizen's task answer
 	 *                                       as a portal write.
 	 * @param IL10N $l10n The sentence a second answer is refused with.
@@ -106,9 +106,9 @@ class PortalTaskProxyController extends Controller implements PortalProtected {
 	public function __construct(
 		IRequest $request,
 		private readonly PortalSessionService $session,
-		private readonly PortalTaskGateway $gateway,
+		private readonly PortalTaskGatewayInterface $gateway,
 		private readonly AuditTrailServiceInterface $auditor,
-		private readonly SubmissionReceiptService $receiptService,
+		private readonly SubmissionReceiptServiceInterface $receiptService,
 		private readonly CitizenWriteRecorderInterface $recorder,
 		private readonly IL10N $l10n,
 	) {

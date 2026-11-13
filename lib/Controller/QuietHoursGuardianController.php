@@ -30,7 +30,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\Notifications\QuietHoursPolicy;
+use OCA\Portaliq\Kernel\Contracts\QuietHoursPolicyInterface;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -49,12 +49,12 @@ class QuietHoursGuardianController extends Controller implements PortalProtected
 	 *
 	 * @param IRequest $request The request.
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param QuietHoursPolicy $quietHours The single source of truth.
+	 * @param QuietHoursPolicyInterface $quietHours The single source of truth.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalSessionService $session,
-		private readonly QuietHoursPolicy $quietHours,
+		private readonly QuietHoursPolicyInterface $quietHours,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

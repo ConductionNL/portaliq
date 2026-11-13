@@ -29,10 +29,10 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalIdentityMailerInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalInvitationServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\SignInAddressChangeInterface;
-use OCA\Portaliq\Service\PortalAccountService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -57,7 +57,7 @@ class PortalAccountAdminController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalAccountService $accounts Provisions and withdraws accounts.
+	 * @param PortalAccountServiceInterface $accounts Provisions and withdraws accounts.
 	 * @param ActionAuthServiceInterface $actionAuth Decides whether this clerk may.
 	 * @param IUserSession $userSession The staff user making the request.
 	 * @param PortalInvitationServiceInterface $invitations Invitations into the portal.
@@ -66,7 +66,7 @@ class PortalAccountAdminController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalAccountService $accounts,
+		private readonly PortalAccountServiceInterface $accounts,
 		private readonly ActionAuthServiceInterface $actionAuth,
 		private readonly IUserSession $userSession,
 		private readonly PortalInvitationServiceInterface $invitations,
@@ -156,7 +156,7 @@ class PortalAccountAdminController extends Controller {
 			return new JSONResponse(['error' => 'not_pending'], Http::STATUS_BAD_REQUEST);
 		}
 
-		return new JSONResponse(['status' => PortalAccountService::STATUS_VOID]);
+		return new JSONResponse(['status' => PortalAccountServiceInterface::STATUS_VOID]);
 	}//end void()
 
 	/**
@@ -311,7 +311,7 @@ class PortalAccountAdminController extends Controller {
 			return new JSONResponse(['error' => 'not_pending'], Http::STATUS_BAD_REQUEST);
 		}
 
-		return new JSONResponse(['status' => PortalAccountService::STATUS_ACTIVE]);
+		return new JSONResponse(['status' => PortalAccountServiceInterface::STATUS_ACTIVE]);
 	}//end approve()
 
 	/**
@@ -339,7 +339,7 @@ class PortalAccountAdminController extends Controller {
 			return new JSONResponse(['error' => 'not_pending'], Http::STATUS_BAD_REQUEST);
 		}
 
-		return new JSONResponse(['status' => PortalAccountService::STATUS_VOID]);
+		return new JSONResponse(['status' => PortalAccountServiceInterface::STATUS_VOID]);
 	}//end refuse()
 
 	/**

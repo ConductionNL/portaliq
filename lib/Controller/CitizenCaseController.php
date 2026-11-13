@@ -47,17 +47,17 @@ use OCA\Portaliq\Kernel\Contracts\CitizenCaseDocumentsInterface;
 use OCA\Portaliq\Kernel\Contracts\CitizenWritableSetResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\CitizenWriteRecorderInterface;
 use OCA\Portaliq\Kernel\Contracts\CitizenWriteThrottleInterface;
+use OCA\Portaliq\Kernel\Contracts\MandatedCaseReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalBranchScopeInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFileReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFileWriterInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalMandateServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalPartyTreeResolverInterface;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
 use OCA\Portaliq\Service\CitizenCaseProjection;
 use OCA\Portaliq\Service\Identity\MandateParties;
-use OCA\Portaliq\Service\MandatedCaseReader;
-use OCA\Portaliq\Service\PortalFileReader;
-use OCA\Portaliq\Service\PortalFileWriter;
 use OCA\Portaliq\Service\PortalObjectReader;
-use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -110,9 +110,9 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 * @param PortalContributionRegistry $registry The contribution aggregator.
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
 	 * @param PortalObjectReader $reader Subject-scoped OpenRegister reader.
-	 * @param PortalObjectWriter $writer Subject-scoped OpenRegister writer.
-	 * @param PortalFileReader $fileReader Lists what is already on the case.
-	 * @param PortalFileWriter $fileWriter Adds the citizen's document.
+	 * @param PortalObjectWriterInterface $writer Subject-scoped OpenRegister writer.
+	 * @param PortalFileReaderInterface $fileReader Lists what is already on the case.
+	 * @param PortalFileWriterInterface $fileWriter Adds the citizen's document.
 	 * @param CitizenWritableSetResolverInterface $writableSet Reads the case type's flags.
 	 * @param CitizenWriteRecorderInterface $recorder Records and announces the write.
 	 * @param CitizenWriteThrottleInterface $throttle Counts writes per identity and per case.
@@ -122,7 +122,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 * @param IL10N $l10n The sentences a refusal is given with.
 	 * @param LoggerInterface $logger Records the cause of a translated failure.
 	 * @param CitizenCaseDocumentsInterface $documents Lists and opens the documents on the case.
-	 * @param MandatedCaseReader|null $mandatedCases Reads a case listed under a
+	 * @param MandatedCaseReaderInterface|null $mandatedCases Reads a case listed under a
 	 *                                               mandate (cases-my-cases-page).
 	 *                                               Absent opens only own cases.
 	 * @param PortalBranchScopeInterface $branches The branch filter of signin-eherkenning-branch.
@@ -132,9 +132,9 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		private readonly PortalContributionRegistry $registry,
 		private readonly PortalSessionService $session,
 		private readonly PortalObjectReader $reader,
-		private readonly PortalObjectWriter $writer,
-		private readonly PortalFileReader $fileReader,
-		private readonly PortalFileWriter $fileWriter,
+		private readonly PortalObjectWriterInterface $writer,
+		private readonly PortalFileReaderInterface $fileReader,
+		private readonly PortalFileWriterInterface $fileWriter,
 		private readonly CitizenWritableSetResolverInterface $writableSet,
 		private readonly CitizenWriteRecorderInterface $recorder,
 		private readonly CitizenWriteThrottleInterface $throttle,
@@ -144,7 +144,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
 		private readonly CitizenCaseDocumentsInterface $documents,
-		private readonly ?MandatedCaseReader $mandatedCases = null,
+		private readonly ?MandatedCaseReaderInterface $mandatedCases = null,
 		private readonly PortalBranchScopeInterface $branches = new PortalBranchScope(),
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
@@ -439,7 +439,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 			content: $upload['content'],
 			// Tagged, so the case screen lists it under "Sent by you" and
 			// nothing else from the folder (cases-documents-on-the-case).
-			tags: [PortalFileWriter::TAG_FROM_APPLICANT]
+			tags: [PortalFileWriterInterface::TAG_FROM_APPLICANT]
 		);
 	}//end attachedUpload()
 

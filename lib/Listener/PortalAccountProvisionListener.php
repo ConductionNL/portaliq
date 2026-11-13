@@ -29,7 +29,7 @@ namespace OCA\Portaliq\Listener;
 
 use OCA\Portaliq\Event\PortalAccountProvisionRequestedEvent;
 use OCA\Portaliq\Kernel\Contracts\NextcloudAccountProvisionerInterface;
-use OCA\Portaliq\Service\PortalAccountService;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountServiceInterface;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -47,13 +47,13 @@ class PortalAccountProvisionListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalAccountService $accounts Provisions the account.
+	 * @param PortalAccountServiceInterface $accounts Provisions the account.
 	 * @param LoggerInterface $logger Records a refusal's cause.
 	 * @param NextcloudAccountProvisionerInterface|null $nextcloud Writes an active
 	 *        `nextcloud`-mode account (an-app-provisions-a-nextcloud-account).
 	 */
 	public function __construct(
-		private readonly PortalAccountService $accounts,
+		private readonly PortalAccountServiceInterface $accounts,
 		private readonly LoggerInterface $logger,
 		private readonly ?NextcloudAccountProvisionerInterface $nextcloud = null,
 	) {

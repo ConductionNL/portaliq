@@ -35,6 +35,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\CaseTypeReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalAccountActivationServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalChallengeServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalContactServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFormBindingResolverInterface;
@@ -43,7 +44,6 @@ use OCA\Portaliq\Kernel\Contracts\PortalInvitationServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalReferenceCaseServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalReferenceLinkServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalRegistrationPolicyServiceInterface;
-use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\RequestedPortal;
@@ -75,7 +75,7 @@ class PortalIdentityController extends Controller {
 	 * @param PortalReferenceLinkServiceInterface $references The one-time reference link.
 	 * @param PortalRegistrationPolicyServiceInterface $policy The registration policy.
 	 * @param PortalInvitationServiceInterface $invitations Invitations into the portal.
-	 * @param PortalAccountService $accounts Provisions a registration.
+	 * @param PortalAccountServiceInterface $accounts Provisions a registration.
 	 * @param CaseTypeReaderInterface $caseTypes Reads the case type's identity kinds.
 	 * @param PortalFormBindingResolverInterface $bindings The case types this portal declares.
 	 * @param PortalIdentityMailerInterface $mailer Mails the reference link to its address.
@@ -91,7 +91,7 @@ class PortalIdentityController extends Controller {
 		private readonly PortalReferenceLinkServiceInterface $references,
 		private readonly PortalRegistrationPolicyServiceInterface $policy,
 		private readonly PortalInvitationServiceInterface $invitations,
-		private readonly PortalAccountService $accounts,
+		private readonly PortalAccountServiceInterface $accounts,
 		private readonly CaseTypeReaderInterface $caseTypes,
 		private readonly PortalFormBindingResolverInterface $bindings,
 		private readonly PortalIdentityMailerInterface $mailer,
@@ -522,7 +522,7 @@ class PortalIdentityController extends Controller {
 			// Neither policy trusts the address yet: approval waits for a
 			// person, activation waits for the mail.
 			verifiedEmail: false,
-			provisionedBy: PortalAccountService::SELF_REGISTRATION,
+			provisionedBy: PortalAccountServiceInterface::SELF_REGISTRATION,
 			displayName: $run->displayName
 		);
 	}//end selfRegisteredAccount()

@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PageEditorServiceInterface;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -52,20 +53,13 @@ use Throwable;
  *
  * @spec openspec/specs/portal-page-designer/spec.md#requirement-who-may-edit-pages-must-be-configurable-and-enforced-at-the-write
  */
-class PageEditorService {
+class PageEditorService implements PageEditorServiceInterface {
 	/**
 	 * OpenRegister's schema mapper, resolved lazily from the container.
 	 *
 	 * @var string
 	 */
 	private const SCHEMA_MAPPER = 'OCA\\OpenRegister\\Db\\SchemaMapper';
-
-	/**
-	 * The app config key holding the editor groups, as a JSON array of gids.
-	 *
-	 * @var string
-	 */
-	public const CONFIG_KEY = 'editor_groups';
 
 	/**
 	 * The slug of the schema whose write rules this service governs.
@@ -123,7 +117,6 @@ class PageEditorService {
 		'delete',
 	];
 
-
 	/**
 	 * Constructor.
 	 *
@@ -143,7 +136,6 @@ class PageEditorService {
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
-
 
 	/**
 	 * The configured editor groups.
@@ -167,7 +159,6 @@ class PageEditorService {
 
 		return $this->normalise(groups: $decoded);
 	}//end getEditorGroups()
-
 
 	/**
 	 * Configure the editor groups and push them into the schema.
@@ -196,7 +187,6 @@ class PageEditorService {
 
 		return $normalised;
 	}//end setEditorGroups()
-
 
 	/**
 	 * Whether a user may edit portal pages.
@@ -232,7 +222,6 @@ class PageEditorService {
 		return false;
 	}//end mayEdit()
 
-
 	/**
 	 * Every group on the instance, for the admin settings picker.
 	 *
@@ -253,7 +242,6 @@ class PageEditorService {
 
 		return $groups;
 	}//end availableGroups()
-
 
 	/**
 	 * Write the configured groups into the `page` schema's write rules.
@@ -314,7 +302,6 @@ class PageEditorService {
 		return true;
 	}//end applyToSchema()
 
-
 	/**
 	 * Write the editor groups into one schema's write rules, and add them to `read`.
 	 *
@@ -363,7 +350,6 @@ class PageEditorService {
 		$mapper->update($schema);
 	}//end grantWrites()
 
-
 	/**
 	 * Normalise a requested group list to unique, non-empty group ids.
 	 *
@@ -393,7 +379,6 @@ class PageEditorService {
 
 		return $ids;
 	}//end normalise()
-
 
 	/**
 	 * Resolve OpenRegister's SchemaMapper, or null when unavailable.

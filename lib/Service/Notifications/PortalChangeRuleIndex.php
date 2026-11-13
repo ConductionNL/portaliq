@@ -46,6 +46,7 @@ namespace OCA\Portaliq\Service\Notifications;
 
 use OCA\Portaliq\Contribution\NotificationRuleNormaliser;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\PortalChangeRuleIndexInterface;
 use OCA\Portaliq\Service\NotificationDispatchService;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -56,7 +57,7 @@ use Throwable;
  *
  * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-declared-change-reaches-the-residents-inbox-req-nap-002
  */
-class PortalChangeRuleIndex {
+class PortalChangeRuleIndex implements PortalChangeRuleIndexInterface {
 
 	/**
 	 * OpenRegister's register mapper, resolved by name so portaliq does not

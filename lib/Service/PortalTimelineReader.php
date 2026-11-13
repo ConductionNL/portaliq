@@ -33,6 +33,7 @@ namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Contribution\PortalProviderLocator;
 use OCA\Portaliq\Contribution\TimelineProviderMethod;
+use OCA\Portaliq\Kernel\Contracts\PortalTimelineReaderInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -41,7 +42,7 @@ use Throwable;
  *
  * @spec openspec/specs/portal-contribution-contract/spec.md
  */
-class PortalTimelineReader {
+class PortalTimelineReader implements PortalTimelineReaderInterface {
 	/**
 	 * Constructor.
 	 *

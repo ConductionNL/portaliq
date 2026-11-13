@@ -26,8 +26,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Repair;
 
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\PortalRegisterContext;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalRegisterContextInterface;
 use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -299,14 +299,14 @@ class InitializeDemoPortal implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectWriter $writer Writes portal and page objects.
+	 * @param PortalObjectWriterInterface $writer Writes portal and page objects.
 	 * @param IAppConfig $appConfig App configuration.
 	 * @param LoggerInterface $logger Logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly PortalObjectWriter $writer,
+		private readonly PortalObjectWriterInterface $writer,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
 	) {
@@ -369,7 +369,7 @@ class InitializeDemoPortal implements IRepairStep {
 			return 'Demo portal was already provisioned once — not provisioning again.';
 		}
 
-		$existing = $this->writer->countObjects(register: PortalRegisterContext::REGISTER, schema: 'portal');
+		$existing = $this->writer->countObjects(register: PortalRegisterContextInterface::REGISTER, schema: 'portal');
 		if ($existing > 0) {
 			return sprintf('%d portal(s) already present — leaving content untouched.', $existing);
 		}
@@ -441,7 +441,7 @@ class InitializeDemoPortal implements IRepairStep {
 	 */
 	private function create(string $schema, array $data): ?array {
 		return $this->writer->createAnonymousObject(
-			register: PortalRegisterContext::REGISTER,
+			register: PortalRegisterContextInterface::REGISTER,
 			schema: $schema,
 			data: $data
 		);

@@ -48,6 +48,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\AccessibilityFramingInterface;
+use OCA\Portaliq\Kernel\Contracts\SiteShellInterface;
 use OCA\Portaliq\Service\Cms\SiteHead;
 use OCA\Portaliq\Service\PortalNoticeReader;
 use OCA\Portaliq\Service\PortalResolver;
@@ -84,9 +85,9 @@ class PortalPageController extends Controller {
 	/**
 	 * Builds what the site shell template renders.
 	 *
-	 * @var SiteShell
+	 * @var SiteShellInterface
 	 */
-	private readonly SiteShell $shell;
+	private readonly SiteShellInterface $shell;
 
 	/**
 	 * Constructor.

@@ -28,7 +28,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\Notifications\QuietHoursPolicy;
+use OCA\Portaliq\Kernel\Contracts\QuietHoursPolicyInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -46,12 +46,12 @@ class QuietHoursStaffController extends Controller {
 	 *
 	 * @param IRequest $request The request.
 	 * @param IUserSession $userSession Resolves the calling staff member's Nextcloud user id, used as their subjectRef.
-	 * @param QuietHoursPolicy $quietHours The single source of truth.
+	 * @param QuietHoursPolicyInterface $quietHours The single source of truth.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly IUserSession $userSession,
-		private readonly QuietHoursPolicy $quietHours,
+		private readonly QuietHoursPolicyInterface $quietHours,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()

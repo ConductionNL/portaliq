@@ -37,16 +37,16 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\EmailLinkSettingInterface;
 use OCA\Portaliq\Kernel\Contracts\NextcloudRegistrationDoorInterface;
+use OCA\Portaliq\Kernel\Contracts\OidcClaimMapperServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\OidcClientServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\OidcStateStoreServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\OrganisationLoginConfigInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalOrganisationConfigServiceInterface;
 use OCA\Portaliq\Service\Identity\ContactAddressValues;
-use OCA\Portaliq\Service\OidcClaimMapperService;
-use OCA\Portaliq\Service\OidcClientService;
-use OCA\Portaliq\Service\OidcStateStoreService;
-use OCA\Portaliq\Service\PortalAccountService;
-use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\RequestedPortal;
-use OCA\Portaliq\Service\Signin\OrganisationLoginConfig;
 use OCA\Portaliq\Service\Signin\SiteReturnAddress;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -244,17 +244,17 @@ class SessionController extends Controller {
 	 * @param IRequest $request The request object.
 	 * @param PortalSessionService $session The session service.
 	 * @param IConfig $config For the dev-login gate.
-	 * @param PortalOrganisationConfigService $orgConfig Resolves per-org OIDC
+	 * @param PortalOrganisationConfigServiceInterface $orgConfig Resolves per-org OIDC
 	 *                                                   broker config
 	 *                                                   (portal-oidc-broker-login).
-	 * @param OidcClientService $oidc OIDC protocol mechanics
+	 * @param OidcClientServiceInterface $oidc OIDC protocol mechanics
 	 *                                (discovery, PKCE, token
 	 *                                exchange, ID-token
 	 *                                validation).
-	 * @param OidcClaimMapperService $claimMapper Claim → identity + LoA →
+	 * @param OidcClaimMapperServiceInterface $claimMapper Claim → identity + LoA →
 	 *                                            trust mapping.
-	 * @param OidcStateStoreService $stateStore Single-use state/nonce/PKCE storage.
-	 * @param PortalAccountService $accounts Find-or-create `portalAccount`.
+	 * @param OidcStateStoreServiceInterface $stateStore Single-use state/nonce/PKCE storage.
+	 * @param PortalAccountServiceInterface $accounts Find-or-create `portalAccount`.
 	 * @param IURLGenerator $urlGenerator Builds the callback redirect_uri
 	 *                                    + the final SPA redirect.
 	 * @param IUserSession $userSession The Nextcloud session, which IS the
@@ -262,7 +262,7 @@ class SessionController extends Controller {
 	 * @param PortalResolver $portals Resolves which portal is being signed
 	 *                                into, so a mode it does not declare
 	 *                                cannot be used against it.
-	 * @param OrganisationLoginConfig|null $loginConfig The route per provider
+	 * @param OrganisationLoginConfigInterface|null $loginConfig The route per provider
 	 *                                                  (signin-integriq-broker-login).
 	 * @param NextcloudRegistrationDoorInterface|null $residents Admits a resident's first account (REQ-NCL-003).
 	 */
@@ -270,15 +270,15 @@ class SessionController extends Controller {
 		IRequest $request,
 		private readonly PortalSessionService $session,
 		private readonly IConfig $config,
-		private readonly PortalOrganisationConfigService $orgConfig,
-		private readonly OidcClientService $oidc,
-		private readonly OidcClaimMapperService $claimMapper,
-		private readonly OidcStateStoreService $stateStore,
-		private readonly PortalAccountService $accounts,
+		private readonly PortalOrganisationConfigServiceInterface $orgConfig,
+		private readonly OidcClientServiceInterface $oidc,
+		private readonly OidcClaimMapperServiceInterface $claimMapper,
+		private readonly OidcStateStoreServiceInterface $stateStore,
+		private readonly PortalAccountServiceInterface $accounts,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly IUserSession $userSession,
 		private readonly PortalResolver $portals,
-		private readonly ?OrganisationLoginConfig $loginConfig = null,
+		private readonly ?OrganisationLoginConfigInterface $loginConfig = null,
 		private readonly ?NextcloudRegistrationDoorInterface $residents = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);

@@ -35,6 +35,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use InvalidArgumentException;
+use OCA\Portaliq\Kernel\Contracts\PortalJwtServiceInterface;
 use RuntimeException;
 
 /**
@@ -42,7 +43,7 @@ use RuntimeException;
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T02
  */
-class PortalJwtService {
+class PortalJwtService implements PortalJwtServiceInterface {
 	/**
 	 * HMAC algorithm — HS256.
 	 */

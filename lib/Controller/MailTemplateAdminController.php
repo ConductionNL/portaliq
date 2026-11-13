@@ -23,8 +23,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\Mail\MailLog;
-use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
+use OCA\Portaliq\Kernel\Contracts\MailLogInterface;
+use OCA\Portaliq\Kernel\Contracts\MailTemplateRendererInterface;
 use OCA\Portaliq\Settings\PortaliqAdmin;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -48,16 +48,16 @@ class MailTemplateAdminController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest             $request  The request.
-	 * @param MailTemplateRenderer $renderer The kinds of mail and their variables.
-	 * @param MailLog              $mailLog  The send log.
+	 * @param MailTemplateRendererInterface $renderer The kinds of mail and their variables.
+	 * @param MailLogInterface              $mailLog  The send log.
 	 * @param IMailer              $mailer   Sends the test mail.
 	 * @param IUserSession         $session  Names the admin whose address gets the test mail.
 	 * @param LoggerInterface      $logger   Logs a test mail that was not sent.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly MailTemplateRenderer $renderer,
-		private readonly MailLog $mailLog,
+		private readonly MailTemplateRendererInterface $renderer,
+		private readonly MailLogInterface $mailLog,
 		private readonly IMailer $mailer,
 		private readonly IUserSession $session,
 		private readonly LoggerInterface $logger,
@@ -75,7 +75,7 @@ class MailTemplateAdminController extends Controller {
 	#[AuthorizedAdminSetting(PortaliqAdmin::class)]
 	public function kinds(): JSONResponse {
 		$kinds = [];
-		foreach (MailTemplateRenderer::TEMPLATES as $key => $kind) {
+		foreach (MailTemplateRendererInterface::TEMPLATES as $key => $kind) {
 			$kinds[] = ['key' => $key, 'label' => $kind['label'], 'variables' => $kind['variables']];
 		}
 

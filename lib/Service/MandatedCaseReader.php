@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\MandatedCaseReaderInterface;
 use OCA\Portaliq\Service\Identity\MandateParties;
 use OCA\Portaliq\Service\Identity\PortalMandateService;
 use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
@@ -42,11 +43,7 @@ use OCP\IL10N;
  *
  * @spec openspec/specs/portal-my-cases/spec.md#requirement-you-choose-whom-you-act-for-req-cmc-004
  */
-class MandatedCaseReader {
-	/**
-	 * The `mandate` value that means "acting for yourself".
-	 */
-	public const ACTING_FOR_SELF = 'self';
+class MandatedCaseReader implements MandatedCaseReaderInterface {
 
 	/**
 	 * Constructor.

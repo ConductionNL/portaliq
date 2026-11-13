@@ -28,7 +28,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
-use OCA\Portaliq\Service\NewsletterPreflightService;
+use OCA\Portaliq\Kernel\Contracts\NewsletterPreflightServiceInterface;
 use OCA\Portaliq\Service\ObjectServiceLookup;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -73,7 +73,7 @@ class NewsletterController extends Controller {
 	 * @param IRequest $request The request.
 	 * @param IUserSession $userSession Confirms an authenticated Nextcloud user reached this endpoint.
 	 * @param ContainerInterface $container For resolving OpenRegister services.
-	 * @param NewsletterPreflightService $preflight The recipient-count/refusal check.
+	 * @param NewsletterPreflightServiceInterface $preflight The recipient-count/refusal check.
 	 * @param LoggerInterface $logger The logger.
 	 * @param ActionAuthServiceInterface $actionAuth Decides whether this staff user may send newsletters (ADR-023).
 	 */
@@ -81,7 +81,7 @@ class NewsletterController extends Controller {
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly ContainerInterface $container,
-		private readonly NewsletterPreflightService $preflight,
+		private readonly NewsletterPreflightServiceInterface $preflight,
 		private readonly LoggerInterface $logger,
 		private readonly ActionAuthServiceInterface $actionAuth,
 	) {

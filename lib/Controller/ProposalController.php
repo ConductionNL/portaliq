@@ -32,10 +32,10 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalCaseAccessGuardInterface;
+use OCA\Portaliq\Kernel\Contracts\ProposalServiceInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalSessionService;
-use OCA\Portaliq\Service\Proposals\ProposalService;
-use OCA\Portaliq\Service\Tasks\PortalCaseAccessGuard;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -62,20 +62,20 @@ class ProposalController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param ProposalService $proposals The queue itself.
+	 * @param ProposalServiceInterface $proposals The queue itself.
 	 * @param PortalContributionRegistry $registry The contribution aggregator.
 	 * @param PortalObjectReader $reader Reads the record being proposed about.
 	 * @param PortalSessionService $session Resolves a portal subject.
-	 * @param PortalCaseAccessGuard $guard Decides who may review.
+	 * @param PortalCaseAccessGuardInterface $guard Decides who may review.
 	 * @param IUserSession $userSession The staff user, when there is one.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly ProposalService $proposals,
+		private readonly ProposalServiceInterface $proposals,
 		private readonly PortalContributionRegistry $registry,
 		private readonly PortalObjectReader $reader,
 		private readonly PortalSessionService $session,
-		private readonly PortalCaseAccessGuard $guard,
+		private readonly PortalCaseAccessGuardInterface $guard,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
@@ -181,7 +181,7 @@ class ProposalController extends Controller {
 	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	#[NoAdminRequired]
-	public function index(string $register, string $schema, string $id, string $state = ProposalService::STATE_QUEUED): JSONResponse {
+	public function index(string $register, string $schema, string $id, string $state = ProposalServiceInterface::STATE_QUEUED): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['error' => 'not_authenticated'], Http::STATUS_UNAUTHORIZED);
@@ -198,7 +198,7 @@ class ProposalController extends Controller {
 			register: $register,
 			schema: $schema,
 			id: $id,
-			action: PortalCaseAccessGuard::ACTION_REVIEW_PROPOSAL
+			action: PortalCaseAccessGuardInterface::ACTION_REVIEW_PROPOSAL
 		);
 		if ($mayReview === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
@@ -404,7 +404,7 @@ class ProposalController extends Controller {
 			register: (string)($proposal['subjectRegister'] ?? ''),
 			schema: (string)($proposal['subjectSchema'] ?? ''),
 			id: (string)($proposal['subjectId'] ?? ''),
-			action: PortalCaseAccessGuard::ACTION_REVIEW_PROPOSAL
+			action: PortalCaseAccessGuardInterface::ACTION_REVIEW_PROPOSAL
 		);
 	}//end mayReview()
 

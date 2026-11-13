@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Portaliq\Service\Connection\ConnectionReporter;
 use OCA\Portaliq\Service\Traffic\Geo\GeoRefreshService;
 use OCA\Portaliq\Service\Traffic\Geo\GeoSettings;
@@ -44,7 +45,7 @@ use Psr\Log\LoggerInterface;
  * the optional ConnectionReporter (adopt-connection-registry). A geography save
  * is the moment integriq must be told, and that save lives here.
  */
-class SettingsService {
+class SettingsService implements SettingsServiceInterface {
 
 	/**
 	 * Configuration keys managed by this service.
@@ -54,11 +55,6 @@ class SettingsService {
 	private const CONFIG_KEYS = [
 		'register',
 	];
-
-	/**
-	 * The settings key the visitor geography block travels under.
-	 */
-	public const GEO_KEY = 'traffic_geo';
 
 	/**
 	 * Constructor for the SettingsService.

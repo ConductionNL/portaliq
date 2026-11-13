@@ -35,6 +35,7 @@ use OCA\Portaliq\Contribution\PortalProviderLocator;
 use OCA\Portaliq\Contribution\PublicDetailShape;
 use OCA\Portaliq\Contribution\PublicIndexItems;
 use OCA\Portaliq\Contribution\PublicIndexKinds;
+use OCA\Portaliq\Kernel\Contracts\PublicCatalogueInterface;
 use OCP\App\IAppManager;
 use OCP\ICacheFactory;
 use Psr\Log\LoggerInterface;
@@ -45,7 +46,7 @@ use Throwable;
  *
  * @spec openspec/changes/portal-public-catalogue/specs/portal-public-catalogue/spec.md#requirement-a-visitor-may-search-and-filter-a-portals-public-catalogue
  */
-class PublicCatalogue {
+class PublicCatalogue implements PublicCatalogueInterface {
 	/**
 	 * The type of the portal's own news items.
 	 */

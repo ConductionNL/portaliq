@@ -38,10 +38,10 @@ use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\AuditTrailServiceInterface;
-use OCA\Portaliq\Service\PortalFileFieldPolicy;
-use OCA\Portaliq\Service\PortalFileWriter;
+use OCA\Portaliq\Kernel\Contracts\PortalFileFieldPolicyInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFileWriterInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
-use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -70,8 +70,8 @@ class PortalFieldFileController extends Controller implements PortalProtected {
 	 * HTTP status per policy refusal.
 	 */
 	private const REFUSAL_STATUS = [
-		PortalFileFieldPolicy::ERROR_TOO_LARGE => Http::STATUS_REQUEST_ENTITY_TOO_LARGE,
-		PortalFileFieldPolicy::ERROR_TYPE_REFUSED => Http::STATUS_UNSUPPORTED_MEDIA_TYPE,
+		PortalFileFieldPolicyInterface::ERROR_TOO_LARGE => Http::STATUS_REQUEST_ENTITY_TOO_LARGE,
+		PortalFileFieldPolicyInterface::ERROR_TYPE_REFUSED => Http::STATUS_UNSUPPORTED_MEDIA_TYPE,
 	];
 
 	/**
@@ -81,9 +81,9 @@ class PortalFieldFileController extends Controller implements PortalProtected {
 	 * @param PortalContributionRegistry $registry The subject's contributions.
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
 	 * @param PortalObjectReader $reader The scoped single-object read.
-	 * @param PortalObjectWriter $writer The ownership-checking writer.
-	 * @param PortalFileWriter $fileWriter Attaches the file through OpenRegister.
-	 * @param PortalFileFieldPolicy $policy The upload rules.
+	 * @param PortalObjectWriterInterface $writer The ownership-checking writer.
+	 * @param PortalFileWriterInterface $fileWriter Attaches the file through OpenRegister.
+	 * @param PortalFileFieldPolicyInterface $policy The upload rules.
 	 * @param AuditTrailServiceInterface $auditor Records the write.
 	 * @param LoggerInterface $logger Records the cause of a failed write.
 	 */
@@ -92,9 +92,9 @@ class PortalFieldFileController extends Controller implements PortalProtected {
 		private readonly PortalContributionRegistry $registry,
 		private readonly PortalSessionService $session,
 		private readonly PortalObjectReader $reader,
-		private readonly PortalObjectWriter $writer,
-		private readonly PortalFileWriter $fileWriter,
-		private readonly PortalFileFieldPolicy $policy,
+		private readonly PortalObjectWriterInterface $writer,
+		private readonly PortalFileWriterInterface $fileWriter,
+		private readonly PortalFileFieldPolicyInterface $policy,
 		private readonly AuditTrailServiceInterface $auditor,
 		private readonly LoggerInterface $logger,
 	) {

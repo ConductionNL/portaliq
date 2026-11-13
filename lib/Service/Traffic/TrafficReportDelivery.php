@@ -21,6 +21,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Traffic;
 
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\TrafficReportDeliveryInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IURLGenerator;
 use OCP\IUserManager;
@@ -50,17 +51,7 @@ use Throwable;
  * mailer, the user directory, the notification manager, the URL generator
  * and the language factory meet; that is what it is for.
  */
-class TrafficReportDelivery {
-
-	/**
-	 * The notification subject of a report.
-	 */
-	public const SUBJECT_REPORT = 'traffic_report';
-
-	/**
-	 * The notification subject of an alert.
-	 */
-	public const SUBJECT_ALERT = 'traffic_alert';
+class TrafficReportDelivery implements TrafficReportDeliveryInterface {
 
 	/**
 	 * Constructor.

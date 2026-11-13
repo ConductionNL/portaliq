@@ -23,6 +23,7 @@ namespace OCA\Portaliq\Service;
 use DateTimeImmutable;
 use DateTimeZone;
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\TrafficReportServiceInterface;
 use OCA\Portaliq\Service\Traffic\TrafficEventStore;
 use OCA\Portaliq\Service\Traffic\TrafficReportDelivery;
 use OCA\Portaliq\Service\Traffic\TrafficReportNumbers;
@@ -51,7 +52,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-a-scheduled-report-must-be-sent-once-per-period
  */
-class TrafficReportService {
+class TrafficReportService implements TrafficReportServiceInterface {
 	use PublishedPortalWalk;
 
 	/**

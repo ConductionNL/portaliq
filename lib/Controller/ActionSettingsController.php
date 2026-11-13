@@ -29,7 +29,7 @@ namespace OCA\Portaliq\Controller;
 use JsonException;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
-use OCA\Portaliq\Service\PageEditorService;
+use OCA\Portaliq\Kernel\Contracts\PageEditorServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -50,7 +50,7 @@ class ActionSettingsController extends Controller {
 	 *
 	 * @param IRequest $request The request.
 	 * @param ActionAuthServiceInterface $actions Holds the matrix.
-	 * @param PageEditorService $groups Lists the groups that exist.
+	 * @param PageEditorServiceInterface $groups Lists the groups that exist.
 	 * @param IL10N $l The translator for the catalogue's labels.
 	 * @param string $seedPath The catalogue file, for tests.
 	 * @param IGroupManager|null $groupManager Counts a group's members.
@@ -58,7 +58,7 @@ class ActionSettingsController extends Controller {
 	public function __construct(
 		IRequest $request,
 		private readonly ActionAuthServiceInterface $actions,
-		private readonly PageEditorService $groups,
+		private readonly PageEditorServiceInterface $groups,
 		private readonly IL10N $l,
 		private readonly string $seedPath = self::SEED_PATH,
 		private readonly ?IGroupManager $groupManager = null,

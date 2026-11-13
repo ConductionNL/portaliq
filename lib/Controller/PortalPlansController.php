@@ -29,12 +29,12 @@ use DateTimeZone;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Http\PdfDownloadResponse;
 use OCA\Portaliq\Kernel\AppIdentity;
-use OCA\Portaliq\Service\Plans\PlanFiles;
-use OCA\Portaliq\Service\Plans\PortalPlanService;
-use OCA\Portaliq\Service\PortalPdfExport;
+use OCA\Portaliq\Kernel\Contracts\PlanFilesInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalPdfExportInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalPlanServiceInterface;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\RequestedPortal;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\RequestedPortal;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -74,18 +74,18 @@ class PortalPlansController extends Controller implements PortalProtected {
 	 *
 	 * @param IRequest $request The request.
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalPlanService $plans The plan rules.
+	 * @param PortalPlanServiceInterface $plans The plan rules.
 	 * @param PortalResolver $portals Finds the serving portal, for its templates.
-	 * @param PortalPdfExport|null $pdf Renders the plan as a PDF through OpenRegister.
-	 * @param PlanFiles|null $files Adds and opens the plan's files.
+	 * @param PortalPdfExportInterface|null $pdf Renders the plan as a PDF through OpenRegister.
+	 * @param PlanFilesInterface|null $files Adds and opens the plan's files.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalSessionService $session,
-		private readonly PortalPlanService $plans,
+		private readonly PortalPlanServiceInterface $plans,
 		private readonly PortalResolver $portals,
-		private readonly ?PortalPdfExport $pdf = null,
-		private readonly ?PlanFiles $files = null,
+		private readonly ?PortalPdfExportInterface $pdf = null,
+		private readonly ?PlanFilesInterface $files = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
@@ -156,7 +156,7 @@ class PortalPlansController extends Controller implements PortalProtected {
 			contactIds: array_values($contactIds),
 			today: $this->today()
 		);
-		if ($result['status'] !== PortalPlanService::OK) {
+		if ($result['status'] !== PortalPlanServiceInterface::OK) {
 			return $this->answer(result: $result['status']);
 		}
 
@@ -183,7 +183,7 @@ class PortalPlansController extends Controller implements PortalProtected {
 
 		$plan = $this->plans->detail(subject: $subject, id: $id, today: $this->today());
 		if ($plan === null) {
-			return $this->answer(result: PortalPlanService::NOT_FOUND);
+			return $this->answer(result: PortalPlanServiceInterface::NOT_FOUND);
 		}
 
 		return new JSONResponse($plan);
@@ -342,7 +342,7 @@ class PortalPlansController extends Controller implements PortalProtected {
 
 		$document = $this->plans->pdfRows(subject: $subject, id: $id, today: $this->today());
 		if ($document === null) {
-			return $this->answer(result: PortalPlanService::NOT_FOUND);
+			return $this->answer(result: PortalPlanServiceInterface::NOT_FOUND);
 		}
 
 		if ($this->pdf === null || $this->pdf->available() === false) {
@@ -350,7 +350,7 @@ class PortalPlansController extends Controller implements PortalProtected {
 		}
 
 		$bytes = $this->pdf->render(title: $document['title'], columns: $document['columns'], rows: $document['rows']);
-		if ($bytes === null || $bytes === PortalPdfExport::TOO_LARGE) {
+		if ($bytes === null || $bytes === PortalPdfExportInterface::TOO_LARGE) {
 			return new JSONResponse(['error' => 'pdf_failed'], Http::STATUS_BAD_GATEWAY);
 		}
 
@@ -378,7 +378,7 @@ class PortalPlansController extends Controller implements PortalProtected {
 		}
 
 		if ($this->files === null) {
-			return $this->answer(result: PortalPlanService::FAILED);
+			return $this->answer(result: PortalPlanServiceInterface::FAILED);
 		}
 
 		return $this->answer(
@@ -412,7 +412,7 @@ class PortalPlansController extends Controller implements PortalProtected {
 
 		$stream = $this->files?->open(subject: $subject, id: $id, fileId: $fileId);
 		if ($stream === null) {
-			return $this->answer(result: PortalPlanService::NOT_FOUND);
+			return $this->answer(result: PortalPlanServiceInterface::NOT_FOUND);
 		}
 
 		return $stream;

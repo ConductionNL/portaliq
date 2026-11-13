@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PublishedPortalsInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -36,7 +37,7 @@ use Throwable;
  *
  * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-portal
  */
-class PublishedPortals {
+class PublishedPortals implements PublishedPortalsInterface {
 
 	/**
 	 * OpenRegister's ObjectService FQCN, resolved lazily from the container.
@@ -62,7 +63,6 @@ class PublishedPortals {
 	 */
 	private ?array $publishedPortals = null;
 
-
 	/**
 	 * Constructor.
 	 *
@@ -78,7 +78,6 @@ class PublishedPortals {
 		private readonly PortalRegisterContext $context,
 	) {
 	}//end __construct()
-
 
 	/**
 	 * Every published portal.
@@ -113,7 +112,6 @@ class PublishedPortals {
 		return $this->publishedPortals;
 	}//end allPublishedPortals()
 
-
 	/**
 	 * Read the published portal rows from OpenRegister, or null when they
 	 * could not be read: the register context could not be set, or the read
@@ -145,7 +143,6 @@ class PublishedPortals {
 		}//end try
 	}//end readPublished()
 
-
 	/**
 	 * Ask OpenRegister for the published portals.
 	 *
@@ -165,7 +162,6 @@ class PublishedPortals {
 			_multitenancy: false
 		);
 	}//end findPublished()
-
 
 	/**
 	 * The rows as arrays, an entity serialised.
