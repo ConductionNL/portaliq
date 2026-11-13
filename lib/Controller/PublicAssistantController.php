@@ -25,9 +25,9 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PublicAssistantChannelInterface;
 use OCA\Portaliq\Kernel\Contracts\PublicSourceScopeInterface;
-use OCA\Portaliq\Service\PortalResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -47,13 +47,13 @@ class PublicAssistantController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalResolver $portals Resolves the portal being visited.
+	 * @param PortalResolverInterface $portals Resolves the portal being visited.
 	 * @param PublicSourceScopeInterface $scope Whether the portal turned the assistant on.
 	 * @param PublicAssistantChannelInterface $channel The adapter to hermiq.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalResolver $portals,
+		private readonly PortalResolverInterface $portals,
 		private readonly PublicSourceScopeInterface $scope,
 		private readonly PublicAssistantChannelInterface $channel,
 	) {

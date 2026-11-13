@@ -44,6 +44,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalCrossRefGuardInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
 
 /**
  * Refuses a portal write whose references are not the subject's own.
@@ -54,11 +55,11 @@ class PortalCrossRefGuard implements PortalCrossRefGuardInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader The scoped read that answers whose an object is.
+	 * @param PortalObjectReaderInterface $reader The scoped read that answers whose an object is.
 	 * @param LoggerInterface    $logger Logger.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly PortalObjectReaderInterface $reader,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()

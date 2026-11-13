@@ -28,12 +28,12 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\RawRequestBodyInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficEventValidatorInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficIngestServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficRecordingServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficServerTokenInterface;
-use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\Traffic\TrafficServerBatch;
 use OCP\App\IAppManager;
@@ -98,7 +98,7 @@ class TrafficController extends Controller {
 	 *
 	 * @param string               $appName    The app id.
 	 * @param IRequest             $request    The request.
-	 * @param PortalResolver       $resolver   Resolves the serving portal.
+	 * @param PortalResolverInterface       $resolver   Resolves the serving portal.
 	 * @param TrafficIngestServiceInterface $ingest     Validates and stores events.
 	 * @param RawRequestBodyInterface       $body       Reads the text body.
 	 * @param IAppManager          $appManager Locates the built client on disk.
@@ -111,7 +111,7 @@ class TrafficController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly PortalResolver $resolver,
+		private readonly PortalResolverInterface $resolver,
 		private readonly TrafficIngestServiceInterface $ingest,
 		private readonly RawRequestBodyInterface $body,
 		private readonly IAppManager $appManager,

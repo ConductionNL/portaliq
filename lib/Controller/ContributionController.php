@@ -66,15 +66,18 @@ use OCA\Portaliq\Kernel\Contracts\ContactConfirmationMailerInterface;
 use OCA\Portaliq\Kernel\Contracts\DestinationDraftInterface;
 use OCA\Portaliq\Kernel\Contracts\DestinationIntakeInterface;
 use OCA\Portaliq\Kernel\Contracts\NotificationDispatchServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalActionForwarderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalAuditHookInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalBranchScopeInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalCrossRefGuardInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFileReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFileWriterInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalInboxReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalPdfExportInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalRateLimitInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSchemaReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalTaskGatewayInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalUserDisplayNamesInterface;
@@ -83,15 +86,13 @@ use OCA\Portaliq\Service\Branch\PortalBranchScope;
 use OCA\Portaliq\Service\CaseRowMarker;
 use OCA\Portaliq\Service\CaseTypeColumns\ColumnOverrides;
 use OCA\Portaliq\Service\Intake\DestinationIntake;
-use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalCrossRefGuard;
 use OCA\Portaliq\Service\PortalInboxReader;
-use OCA\Portaliq\Service\PortalObjectReader;
-use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PortalUserDisplayNames;
 use OCA\Portaliq\Service\RequestedPortal;
 use OCA\Portaliq\Service\RequiredFieldsGuard;
+use OCA\Portaliq\Service\Session\SessionTrust;
 use OCA\Portaliq\Service\Tenancy\SchemaTenancy;
 use OCA\Portaliq\Service\VisibleFromGate;
 use OCA\Portaliq\Service\WriteRefusal;
@@ -104,7 +105,6 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\Response;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
-use OCA\Portaliq\Service\Session\SessionTrust;
 
 /**
  * Serves the authenticated subject's aggregated portal contributions.
@@ -143,14 +143,14 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @param IRequest $request The request object.
 	 * @param PortalContributionRegistry $registry The contribution aggregator.
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalObjectReader $reader Subject-scoped OR reader.
+	 * @param PortalObjectReaderInterface $reader Subject-scoped OR reader.
 	 * @param PortalObjectWriterInterface $writer Subject-scoped OR writer.
 	 * @param PortalFileWriterInterface $fileWriter Subject-scoped OR file attach.
 	 * @param PortalFileReaderInterface $fileReader Subject-scoped OR file list/download.
 	 * @param PortalSchemaReaderInterface $schemaReader Scoped OR schema-definition reader.
 	 * @param PortalInboxReaderInterface $inboxReader Cross-app inbox aggregation + unread count (portal-inbox-v2).
 	 * @param PortalAuditHookInterface $auditHook Fail-safe audit-record call site (download).
-	 * @param PortalActionForwarder $forwarder Transport half of the A6 action forward
+	 * @param PortalActionForwarderInterface $forwarder Transport half of the A6 action forward
 	 *                                         (signed assertion, instance-local URL,
 	 *                                         502-on-transport-failure).
 	 * @param AuditTrailServiceInterface $auditor Records create/update/forward mutations
@@ -190,7 +190,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @param PortalUserDisplayNamesInterface $userNames Reads a `render: "user"` column as the user's name.
 	 * @param CaseTypeNamesInterface|null $typeNames Names each case's type on a `cases` collection
 	 *                                      (site-mijn-omgeving-components REQ-SMO-030).
-	 * @param PortalResolver|null $portals Finds the serving portal, for its navigation choice.
+	 * @param PortalResolverInterface|null $portals Finds the serving portal, for its navigation choice.
 	 *                                     Absent leaves the navigation as the aggregate has it.
 	 * @param ContactConfirmationMailerInterface|null $confirmation Mails the resident that a question arrived, after
 	 *                                                     a create whose action asks for it; fail-safe.
@@ -209,14 +209,14 @@ class ContributionController extends Controller implements PortalProtected {
 		IRequest $request,
 		private readonly PortalContributionRegistry $registry,
 		private readonly PortalSessionService $session,
-		private readonly PortalObjectReader $reader,
+		private readonly PortalObjectReaderInterface $reader,
 		private readonly PortalObjectWriterInterface $writer,
 		private readonly PortalFileWriterInterface $fileWriter,
 		private readonly PortalFileReaderInterface $fileReader,
 		private readonly PortalSchemaReaderInterface $schemaReader,
 		private readonly PortalInboxReaderInterface $inboxReader,
 		private readonly PortalAuditHookInterface $auditHook,
-		private readonly PortalActionForwarder $forwarder,
+		private readonly PortalActionForwarderInterface $forwarder,
 		private readonly AuditTrailServiceInterface $auditor,
 		private readonly SubmissionReceiptServiceInterface $receiptService,
 		private readonly NotificationDispatchServiceInterface $notificationDispatch,
@@ -227,7 +227,7 @@ class ContributionController extends Controller implements PortalProtected {
 		private readonly PortalBranchScopeInterface $branches = new PortalBranchScope(),
 		private readonly PortalUserDisplayNamesInterface $userNames = new PortalUserDisplayNames(),
 		private readonly ?CaseTypeNamesInterface $typeNames = null,
-		private readonly ?PortalResolver $portals = null,
+		private readonly ?PortalResolverInterface $portals = null,
 		private readonly ?ContactConfirmationMailerInterface $confirmation = null,
 		private readonly ?PortalPdfExportInterface $pdf = null,
 		private readonly ?PortalRateLimitInterface $rateLimit = null,

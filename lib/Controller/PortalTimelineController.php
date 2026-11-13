@@ -39,9 +39,10 @@ use OCA\Portaliq\Contribution\StepsProviderMethod;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\MandatedCaseReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalItemReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalTimelineReaderInterface;
-use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\SessionTrust;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -49,7 +50,6 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
-use OCA\Portaliq\Service\Session\SessionTrust;
 
 /**
  * Serves one object's declared history to its owner.
@@ -67,7 +67,7 @@ class PortalTimelineController extends Controller implements PortalProtected {
 	 * @param IRequest $request The request.
 	 * @param PortalContributionRegistry $registry The subject's contributions.
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalObjectReader $reader The scoped single-object read.
+	 * @param PortalObjectReaderInterface $reader The scoped single-object read.
 	 * @param PortalTimelineReaderInterface $timelines Calls the declared provider method.
 	 * @param PortalItemReaderInterface|null $items Calls the item-list provider method (my-dossiers).
 	 * @param MandatedCaseReaderInterface|null $mandatedCases Reads a case the person sees under a mandate.
@@ -76,7 +76,7 @@ class PortalTimelineController extends Controller implements PortalProtected {
 		IRequest $request,
 		private readonly PortalContributionRegistry $registry,
 		private readonly PortalSessionService $session,
-		private readonly PortalObjectReader $reader,
+		private readonly PortalObjectReaderInterface $reader,
 		private readonly PortalTimelineReaderInterface $timelines,
 		private readonly ?PortalItemReaderInterface $items = null,
 		private readonly ?MandatedCaseReaderInterface $mandatedCases = null,

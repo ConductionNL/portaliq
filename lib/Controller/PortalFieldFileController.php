@@ -40,9 +40,10 @@ use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\AuditTrailServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFileFieldPolicyInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFileWriterInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
-use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\SessionTrust;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -52,7 +53,6 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
 use Throwable;
-use OCA\Portaliq\Service\Session\SessionTrust;
 
 /**
  * Serves the scoped upload into a declared file field.
@@ -81,7 +81,7 @@ class PortalFieldFileController extends Controller implements PortalProtected {
 	 * @param IRequest $request The request.
 	 * @param PortalContributionRegistry $registry The subject's contributions.
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalObjectReader $reader The scoped single-object read.
+	 * @param PortalObjectReaderInterface $reader The scoped single-object read.
 	 * @param PortalObjectWriterInterface $writer The ownership-checking writer.
 	 * @param PortalFileWriterInterface $fileWriter Attaches the file through OpenRegister.
 	 * @param PortalFileFieldPolicyInterface $policy The upload rules.
@@ -92,7 +92,7 @@ class PortalFieldFileController extends Controller implements PortalProtected {
 		IRequest $request,
 		private readonly PortalContributionRegistry $registry,
 		private readonly PortalSessionService $session,
-		private readonly PortalObjectReader $reader,
+		private readonly PortalObjectReaderInterface $reader,
 		private readonly PortalObjectWriterInterface $writer,
 		private readonly PortalFileWriterInterface $fileWriter,
 		private readonly PortalFileFieldPolicyInterface $policy,

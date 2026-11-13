@@ -27,6 +27,9 @@ namespace OCA\Portaliq\Service\Intake;
 use OCA\Portaliq\Kernel\Contracts\PortalSubmissionChecksInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
+use OCA\Portaliq\Kernel\Contracts\PortalFormValidatorInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFamilyMembersInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalEmailVerificationInterface;
 
 /**
  * The checks between a validated form and a recorded submission: validation,
@@ -38,20 +41,20 @@ class PortalSubmissionChecks implements PortalSubmissionChecksInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalFormValidator $validator Validates a submission.
-	 * @param PortalFamilyMembers|null $family Lists and re-checks the resident's family from the BRP.
+	 * @param PortalFormValidatorInterface $validator Validates a submission.
+	 * @param PortalFamilyMembersInterface|null $family Lists and re-checks the resident's family from the BRP.
 	 * @param FormStatements|null $statements Resolves and checks the statements a form asks.
 	 * @param PortalFormCalculator|null $calculator Works out the form's calculated fields again on submit.
 	 * @param PortalFormDecision|null $decision Asks the rule engine for the decisions a form's steps declare.
-	 * @param PortalEmailVerification|null $emailVerification Checks the proof that an e-mail address was verified.
+	 * @param PortalEmailVerificationInterface|null $emailVerification Checks the proof that an e-mail address was verified.
 	 */
 	public function __construct(
-		private readonly PortalFormValidator $validator,
-		private readonly ?PortalFamilyMembers $family = null,
+		private readonly PortalFormValidatorInterface $validator,
+		private readonly ?PortalFamilyMembersInterface $family = null,
 		private readonly ?FormStatements $statements = null,
 		private readonly ?PortalFormCalculator $calculator = null,
 		private readonly ?PortalFormDecision $decision = null,
-		private readonly ?PortalEmailVerification $emailVerification = null,
+		private readonly ?PortalEmailVerificationInterface $emailVerification = null,
 	) {
 	}//end __construct()
 

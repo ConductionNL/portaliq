@@ -29,8 +29,9 @@ use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\CollectionDocumentsInterface;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\SessionTrust;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -40,7 +41,6 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\Response;
 use OCP\IL10N;
 use OCP\IRequest;
-use OCA\Portaliq\Service\Session\SessionTrust;
 
 /**
  * Serves the papers of one object to the subject it is scoped to.
@@ -60,7 +60,7 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 	 * @param IRequest $request The request.
 	 * @param PortalContributionRegistry $registry The subject's contributions.
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalObjectReader $reader The scoped single-object read.
+	 * @param PortalObjectReaderInterface $reader The scoped single-object read.
 	 * @param CollectionDocumentsInterface $documents Lists and opens the documents.
 	 * @param IL10N $l10n The sentence a refused opening is given with.
 	 */
@@ -68,7 +68,7 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 		IRequest $request,
 		private readonly PortalContributionRegistry $registry,
 		private readonly PortalSessionService $session,
-		private readonly PortalObjectReader $reader,
+		private readonly PortalObjectReaderInterface $reader,
 		private readonly CollectionDocumentsInterface $documents,
 		private readonly IL10N $l10n,
 	) {

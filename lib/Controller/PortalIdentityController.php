@@ -44,7 +44,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalInvitationServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalReferenceCaseServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalReferenceLinkServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalRegistrationPolicyServiceInterface;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\RequestedPortal;
 use OCP\AppFramework\Controller;
@@ -70,7 +70,7 @@ class PortalIdentityController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalResolver $portals Resolves the portal being visited.
+	 * @param PortalResolverInterface $portals Resolves the portal being visited.
 	 * @param PortalChallengeServiceInterface $challenge The portal's own challenge.
 	 * @param PortalReferenceLinkServiceInterface $references The one-time reference link.
 	 * @param PortalRegistrationPolicyServiceInterface $policy The registration policy.
@@ -86,7 +86,7 @@ class PortalIdentityController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalResolver $portals,
+		private readonly PortalResolverInterface $portals,
 		private readonly PortalChallengeServiceInterface $challenge,
 		private readonly PortalReferenceLinkServiceInterface $references,
 		private readonly PortalRegistrationPolicyServiceInterface $policy,

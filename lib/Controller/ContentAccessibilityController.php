@@ -29,7 +29,7 @@ use DateTimeImmutable;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\AccessibilityMeasurementsInterface;
 use OCA\Portaliq\Kernel\Contracts\AccessibilityStatementInterface;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -50,14 +50,14 @@ class ContentAccessibilityController extends Controller {
 	 * @param IRequest                  $request      The request.
 	 * @param AccessibilityMeasurementsInterface $measurements Where runs live.
 	 * @param AccessibilityStatementInterface    $statement    The statement builder.
-	 * @param PortalResolver            $resolver     The public portal resolver.
+	 * @param PortalResolverInterface            $resolver     The public portal resolver.
 	 * @param ITimeFactory              $clock        The clock.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly AccessibilityMeasurementsInterface $measurements,
 		private readonly AccessibilityStatementInterface $statement,
-		private readonly PortalResolver $resolver,
+		private readonly PortalResolverInterface $resolver,
 		private readonly ITimeFactory $clock,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);

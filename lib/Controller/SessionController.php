@@ -43,8 +43,8 @@ use OCA\Portaliq\Kernel\Contracts\OidcStateStoreServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\OrganisationLoginConfigInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalAccountServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalOrganisationConfigServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Service\Identity\ContactAddressValues;
-use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\RequestedPortal;
 use OCA\Portaliq\Service\Signin\SiteReturnAddress;
@@ -259,7 +259,7 @@ class SessionController extends Controller {
 	 *                                    + the final SPA redirect.
 	 * @param IUserSession $userSession The Nextcloud session, which IS the
 	 *                                  credential for the `nextcloud` mode.
-	 * @param PortalResolver $portals Resolves which portal is being signed
+	 * @param PortalResolverInterface $portals Resolves which portal is being signed
 	 *                                into, so a mode it does not declare
 	 *                                cannot be used against it.
 	 * @param OrganisationLoginConfigInterface|null $loginConfig The route per provider
@@ -277,7 +277,7 @@ class SessionController extends Controller {
 		private readonly PortalAccountServiceInterface $accounts,
 		private readonly IURLGenerator $urlGenerator,
 		private readonly IUserSession $userSession,
-		private readonly PortalResolver $portals,
+		private readonly PortalResolverInterface $portals,
 		private readonly ?OrganisationLoginConfigInterface $loginConfig = null,
 		private readonly ?NextcloudRegistrationDoorInterface $residents = null,
 	) {

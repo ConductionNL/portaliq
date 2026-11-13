@@ -52,13 +52,14 @@ use OCA\Portaliq\Kernel\Contracts\PortalBranchScopeInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFileReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFileWriterInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalMandateServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalPartyTreeResolverInterface;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
 use OCA\Portaliq\Service\CitizenCaseProjection;
 use OCA\Portaliq\Service\Identity\MandateParties;
-use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Service\Session\SessionTrust;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -69,7 +70,6 @@ use OCP\AppFramework\Http\Response;
 use OCP\IL10N;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
-use OCA\Portaliq\Service\Session\SessionTrust;
 
 /**
  * Serves and accepts the writes a citizen may make on their own case.
@@ -110,7 +110,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 * @param IRequest $request The request.
 	 * @param PortalContributionRegistry $registry The contribution aggregator.
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalObjectReader $reader Subject-scoped OpenRegister reader.
+	 * @param PortalObjectReaderInterface $reader Subject-scoped OpenRegister reader.
 	 * @param PortalObjectWriterInterface $writer Subject-scoped OpenRegister writer.
 	 * @param PortalFileReaderInterface $fileReader Lists what is already on the case.
 	 * @param PortalFileWriterInterface $fileWriter Adds the citizen's document.
@@ -132,7 +132,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 		IRequest $request,
 		private readonly PortalContributionRegistry $registry,
 		private readonly PortalSessionService $session,
-		private readonly PortalObjectReader $reader,
+		private readonly PortalObjectReaderInterface $reader,
 		private readonly PortalObjectWriterInterface $writer,
 		private readonly PortalFileReaderInterface $fileReader,
 		private readonly PortalFileWriterInterface $fileWriter,

@@ -44,10 +44,10 @@ namespace OCA\Portaliq\BackgroundJob;
 
 use DateTimeInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalAccountServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalDeepLinkBuilderInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalNoticeLanguageInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalObjectWriterInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalOrganisationConfigServiceInterface;
-use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJob;
@@ -164,7 +164,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 	 * @param PortalOrganisationConfigServiceInterface $orgConfig Resolves the tenant display name.
 	 * @param IMailer $mailer Sends the privacy-minimal mail.
 	 * @param PortalNoticeLanguageInterface $language The translations in the language of the resident's portal.
-	 * @param PortalDeepLinkBuilder $deepLinks Builds the portal deep link from the route table (WOO-570).
+	 * @param PortalDeepLinkBuilderInterface $deepLinks Builds the portal deep link from the route table (WOO-570).
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
@@ -175,7 +175,7 @@ class PortalTaskDeliveryJob extends TimedJob {
 		private readonly PortalOrganisationConfigServiceInterface $orgConfig,
 		private readonly IMailer $mailer,
 		private readonly PortalNoticeLanguageInterface $language,
-		private readonly PortalDeepLinkBuilder $deepLinks,
+		private readonly PortalDeepLinkBuilderInterface $deepLinks,
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(time: $time);

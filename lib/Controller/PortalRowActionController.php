@@ -43,8 +43,8 @@ use OCA\Portaliq\Contribution\RowActionResolver;
 use OCA\Portaliq\Contribution\RowIdentifier;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\AuditTrailServiceInterface;
-use OCA\Portaliq\Service\PortalActionForwarder;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Kernel\Contracts\PortalActionForwarderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\RequiredFieldsGuard;
 use OCA\Portaliq\Service\Session\SessionTrust;
@@ -74,16 +74,16 @@ class PortalRowActionController extends Controller implements PortalProtected {
 	 * @param IRequest $request The request.
 	 * @param PortalContributionRegistry $registry The subject's contributions.
 	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalObjectReader $reader The scoped single-object read.
-	 * @param PortalActionForwarder $forwarder The signed server-to-server forward.
+	 * @param PortalObjectReaderInterface $reader The scoped single-object read.
+	 * @param PortalActionForwarderInterface $forwarder The signed server-to-server forward.
 	 * @param AuditTrailServiceInterface $auditor Records the forward.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly PortalContributionRegistry $registry,
 		private readonly PortalSessionService $session,
-		private readonly PortalObjectReader $reader,
-		private readonly PortalActionForwarder $forwarder,
+		private readonly PortalObjectReaderInterface $reader,
+		private readonly PortalActionForwarderInterface $forwarder,
 		private readonly AuditTrailServiceInterface $auditor,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);

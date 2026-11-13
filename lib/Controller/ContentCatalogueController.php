@@ -28,9 +28,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PublicCatalogueInterface;
 use OCA\Portaliq\Kernel\Contracts\PublicCatalogueQueryInterface;
-use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PublicCatalogueQuery;
 use OCP\AppFramework\Controller;
@@ -87,14 +87,14 @@ class ContentCatalogueController extends Controller {
 	 *
 	 * @param string               $appName   The app name.
 	 * @param IRequest             $request   The request.
-	 * @param PortalResolver       $resolver  Resolves the portal of the request.
+	 * @param PortalResolverInterface       $resolver  Resolves the portal of the request.
 	 * @param PortalSessionService $session   Resolves a bearer, for a portal that is not public.
 	 * @param PublicCatalogueInterface      $catalogue The catalogue.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly PortalResolver $resolver,
+		private readonly PortalResolverInterface $resolver,
 		private readonly PortalSessionService $session,
 		private readonly PublicCatalogueInterface $catalogue,
 	) {

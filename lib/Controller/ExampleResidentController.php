@@ -30,7 +30,7 @@ namespace OCA\Portaliq\Controller;
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\ExampleResidentSignInInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalAccountLookupInterface;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -58,7 +58,7 @@ class ExampleResidentController extends Controller {
 	 * @param PortalSessionService  $session      Mints the portal session.
 	 * @param PortalAccountLookupInterface   $accounts     Finds the resident's `portalAccount`.
 	 * @param IURLGenerator         $urlGenerator Builds the final SPA redirect.
-	 * @param PortalResolver        $portals      Resolves the portal being signed in to.
+	 * @param PortalResolverInterface        $portals      Resolves the portal being signed in to.
 	 * @param ExampleResidentSignInInterface $signIns      The demo switch and the installed resident of a portal.
 	 */
 	public function __construct(
@@ -66,7 +66,7 @@ class ExampleResidentController extends Controller {
 		private readonly PortalSessionService $session,
 		private readonly PortalAccountLookupInterface $accounts,
 		private readonly IURLGenerator $urlGenerator,
-		private readonly PortalResolver $portals,
+		private readonly PortalResolverInterface $portals,
 		private readonly ExampleResidentSignInInterface $signIns,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);

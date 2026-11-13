@@ -28,7 +28,7 @@ namespace OCA\Portaliq\Controller;
 
 use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Kernel\Contracts\MediaFileInterface;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -51,12 +51,12 @@ class ContentMediaController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest       $request  The request.
-	 * @param PortalResolver $resolver Resolves the serving portal, as the content API does.
+	 * @param PortalResolverInterface $resolver Resolves the serving portal, as the content API does.
 	 * @param MediaFileInterface      $media    The item's file.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalResolver $resolver,
+		private readonly PortalResolverInterface $resolver,
 		private readonly MediaFileInterface $media,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
