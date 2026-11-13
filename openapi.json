@@ -1493,7 +1493,7 @@
             "get": {
                 "operationId": "cms-domain-records",
                 "summary": "The record each domain of a portal must publish",
-                "description": "The record each domain of a portal must publish. Needs a Nextcloud administrator.",
+                "description": "The record each domain of a portal must publish. Needs an instance administrator or a member of one of the portal's own administrator groups; anyone else gets 404.",
                 "tags": [
                     "cms-domain"
                 ],
@@ -1538,7 +1538,7 @@
             "post": {
                 "operationId": "cms-domain-verify",
                 "summary": "Check one domain's record. A record that is not there yet answers `pending`, which is the normal first outcome; the check can be run again",
-                "description": "Check one domain's record. A record that is not there yet answers `pending`, which is the normal first outcome; the check can be run again. Needs a Nextcloud administrator.",
+                "description": "Check one domain's record. A record that is not there yet answers `pending`, which is the normal first outcome; the check can be run again. Needs an instance administrator or a member of one of the portal's own administrator groups; anyone else gets 404.",
                 "tags": [
                     "cms-domain"
                 ],
@@ -4798,7 +4798,7 @@
             "get": {
                 "operationId": "portal-signin-index",
                 "summary": "The portal's sign-in settings, secret-free",
-                "description": "The portal's sign-in settings, secret-free. Needs a Nextcloud administrator.",
+                "description": "The portal's sign-in settings, secret-free. Needs an instance administrator or a member of one of the portal's own administrator groups; anyone else gets 404.",
                 "tags": [
                     "portal-signin"
                 ],
@@ -4841,7 +4841,7 @@
             "put": {
                 "operationId": "portal-signin-update",
                 "summary": "Save the routes and the broker settings. The secret is write-only: an empty value keeps the stored one",
-                "description": "Save the routes and the broker settings. The secret is write-only: an empty value keeps the stored one. Needs a Nextcloud administrator.",
+                "description": "Save the routes and the broker settings. The secret is write-only: an empty value keeps the stored one. Needs an instance administrator or a member of one of the portal's own administrator groups; anyone else gets 404.",
                 "tags": [
                     "portal-signin"
                 ],
@@ -4915,7 +4915,7 @@
             "get": {
                 "operationId": "portal-theme-index",
                 "summary": "The portal's theme and every set it can adopt, with contrast verdicts",
-                "description": "The portal's theme and every set it can adopt, with contrast verdicts. Needs a Nextcloud administrator.",
+                "description": "The portal's theme and every set it can adopt, with contrast verdicts. Needs an instance administrator or a member of one of the portal's own administrator groups; anyone else gets 404.",
                 "tags": [
                     "portal-theme"
                 ],
@@ -4958,7 +4958,7 @@
             "put": {
                 "operationId": "portal-theme-update",
                 "summary": "Save the portal's theme",
-                "description": "Save the portal's theme. The administrator's confirmation of a set that fails contrast arrives as the `acceptFindings` body field and selects the confirming save. Needs a Nextcloud administrator.",
+                "description": "Save the portal's theme. The administrator's confirmation of a set that fails contrast arrives as the `acceptFindings` body field and selects the confirming save. Needs an instance administrator or a member of one of the portal's own administrator groups; anyone else gets 404.",
                 "tags": [
                     "portal-theme"
                 ],

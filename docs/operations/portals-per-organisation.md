@@ -35,6 +35,28 @@ It refuses a slug that another portal holds, and a host that any portal lists, w
 
 The portal goes live only when the host verifies and an administrator sets the portal to published.
 
+## Who looks after what
+
+The hosting party runs Nextcloud, its upgrades and the apps, provisions portals and decides who looks after each one. Each organisation looks after its own portal.
+
+A portal names the Nextcloud groups whose members look after it in `adminGroups`:
+
+```json
+{ "slug": "zeist", "adminGroups": ["zeist-beheer"] }
+```
+
+A member of `zeist-beheer` who is not an instance administrator can, on the portal `zeist`:
+
+- read and change its theme,
+- read and change how residents sign in, including the broker settings,
+- read and check the DNS records of its domains.
+
+On any other portal the same person gets the answer an unknown portal gets (404), so they learn nothing about it.
+
+Only an instance administrator changes `adminGroups` or provisions a portal. The instance-wide editor groups in the admin settings keep working as before.
+
+Not yet per portal: the portal settings form, pages, menus and notices still follow the instance-wide rules, and the Portals admin page still lists every portal to an instance administrator only.
+
 ## What is not covered
 
 Running the hosting is yours: contracts, infrastructure, backups and billing. Portaliq does not give each organisation its own database; that is a question for OpenRegister. Before you rely on the stricter organisation check on an existing instance, count the rows of the organisation-scoped schemas that have an empty organisation, and stamp them from their portal.
