@@ -358,6 +358,47 @@ class PortalObjectWriterTest extends TestCase {
 	}//end testCreateStampsTheSingleValueWhenTheSchemaIsNotAnArray()
 
 	/**
+	 * The saved object is the stored row patched by the fields, in the stored
+	 * key order: the envelope dropped, the organisation never added or changed,
+	 * and the scope field re-stamped in place.
+	 */
+	public function testUpdateSavesTheExactMergedRowAndNeverAddsAnOrganisation(): void {
+		$objectService = $this->updatableObjectService(
+			[
+				'exampleDocument' => [
+					['@self' => ['id' => 'd-1'], 'id' => 'd-1', 'subjectRef' => 's1', 'title' => 'Old', 'status' => 'open'],
+				],
+			]
+		);
+		$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class));
+
+		$writer->updateObject('portaliq', 'exampleDocument', 'subjectRef', 's1', '', 'd-1', ['organisation' => 'org-x', 'subjectRef' => 'other', 'note' => 'n']);
+
+		$this->assertSame(['id' => 'd-1', 'subjectRef' => 's1', 'title' => 'Old', 'status' => 'open', 'note' => 'n'], $objectService->saved);
+
+	}//end testUpdateSavesTheExactMergedRowAndNeverAddsAnOrganisation()
+
+	/**
+	 * A stored organisation is put back after the patch, so it moves to the end
+	 * of the saved row and keeps its stored value.
+	 */
+	public function testUpdateKeepsTheStoredOrganisationAtTheEndOfTheRow(): void {
+		$objectService = $this->updatableObjectService(
+			[
+				'exampleDocument' => [
+					['id' => 'd-1', 'organisation' => 'org-1', 'subjectRef' => 's1', 'title' => 'Old'],
+				],
+			]
+		);
+		$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class));
+
+		$writer->updateObject('portaliq', 'exampleDocument', 'subjectRef', 's1', 'org-1', 'd-1', ['organisation' => 'org-2', 'title' => 'New']);
+
+		$this->assertSame(['id' => 'd-1', 'subjectRef' => 's1', 'title' => 'New', 'organisation' => 'org-1'], $objectService->saved);
+
+	}//end testUpdateKeepsTheStoredOrganisationAtTheEndOfTheRow()
+
+	/**
 	 * A container resolving OpenRegister's ObjectService to the given stub.
 	 */
 	private function container(object $objectService): ContainerInterface {
