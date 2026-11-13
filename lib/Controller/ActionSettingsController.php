@@ -27,7 +27,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use JsonException;
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\PageEditorService;
 use OCP\AppFramework\Controller;
@@ -63,7 +63,7 @@ class ActionSettingsController extends Controller {
 		private readonly string $seedPath = self::SEED_PATH,
 		private readonly ?IGroupManager $groupManager = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

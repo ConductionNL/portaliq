@@ -32,7 +32,7 @@ namespace OCA\Portaliq\Controller;
 
 use Closure;
 use DateTimeImmutable;
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Intake\ActionDraft;
 use OCA\Portaliq\Service\Intake\DestinationDraft;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -67,7 +67,7 @@ class PortalDraftController extends Controller {
 		private readonly ActionDraft $actions,
 		private readonly DestinationDraft $drafts,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

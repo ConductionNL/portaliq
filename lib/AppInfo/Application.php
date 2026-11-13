@@ -49,6 +49,7 @@ use OCA\Portaliq\Event\LandingPageRequestedEvent;
 use OCA\Portaliq\Event\PortalAccountClaimRequestedEvent;
 use OCA\Portaliq\Event\PortalAccountInvitationRequestedEvent;
 use OCA\Portaliq\Event\PortalAccountProvisionRequestedEvent;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Listener\CmsCacheInvalidationListener;
 use OCA\Portaliq\Listener\BindingDestinationGuardListener;
 use OCA\Portaliq\Listener\GlossaryRelationGuardListener;
@@ -90,7 +91,7 @@ use OCP\IRequest;
  * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-contributing-app-requests-a-landing-page-via-a-typed-event
  */
 class Application extends App implements IBootstrap {
-	public const APP_ID = 'portaliq';
+	public const APP_ID = AppIdentity::APP_ID;
 
 	/**
 	 * Constructor for the Application class.

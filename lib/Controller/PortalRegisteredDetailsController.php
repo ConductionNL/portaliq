@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\CaseTypeVisibility;
 use OCA\Portaliq\Service\Identity\PortalRegisteredDetailsLinks;
 use OCA\Portaliq\Service\Identity\PortalRegisteredDetailsService;
@@ -64,7 +64,7 @@ class PortalRegisteredDetailsController extends Controller {
 		private readonly PortalRegisteredDetailsLinks $links,
 		private readonly CaseTypeVisibility $portals,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

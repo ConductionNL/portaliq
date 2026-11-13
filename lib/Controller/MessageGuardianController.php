@@ -29,8 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Identity\PortalContactService;
 use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
 use OCA\Portaliq\Service\Messaging\GuardianMessageTranslator;
@@ -92,7 +92,7 @@ class MessageGuardianController extends Controller implements PortalProtected {
 		private readonly ?MessageContactReader $contacts = null,
 		private readonly ?PortalContactService $portalContacts = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

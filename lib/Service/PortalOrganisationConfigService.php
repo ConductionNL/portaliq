@@ -38,7 +38,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Notifications\MessageBoxOffer;
 use OCA\Portaliq\Service\Signin\LoginProviders;
 use OCP\IAppConfig;
@@ -367,7 +367,7 @@ class PortalOrganisationConfigService {
 	 */
 	public function writePresentation(string $organisationUuid, array $overrides): bool {
 		return $this->appConfig->setValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			self::CONFIG_KEY_PREFIX . $organisationUuid,
 			(string)json_encode($overrides, JSON_UNESCAPED_SLASHES)
 		);
@@ -394,7 +394,7 @@ class PortalOrganisationConfigService {
 		}
 
 		return $this->appConfig->setValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			$this->oidcSecretKey(organisationUuid: $organisationUuid, provider: $provider),
 			$clientSecret,
 			false,
@@ -414,7 +414,7 @@ class PortalOrganisationConfigService {
 	private function oidcClientSecret(string $organisationUuid, string $provider): string {
 		$key = $this->oidcSecretKey(organisationUuid: $organisationUuid, provider: $provider);
 
-		return $this->appConfig->getValueString(Application::APP_ID, $key, '');
+		return $this->appConfig->getValueString(AppIdentity::APP_ID, $key, '');
 	}//end oidcClientSecret()
 
 	/**
@@ -469,7 +469,7 @@ class PortalOrganisationConfigService {
 	private function configuredOidcProviders(string $orgSlug, string $organisationUuid, array $overrides): array {
 		return $this->loginProviders->list(
 			overrides: $overrides,
-			brokerSecret: $this->appConfig->getValueString(Application::APP_ID, LoginProviders::SECRET_KEY_PREFIX . $organisationUuid, ''),
+			brokerSecret: $this->appConfig->getValueString(AppIdentity::APP_ID, LoginProviders::SECRET_KEY_PREFIX . $organisationUuid, ''),
 			oidcConfig: fn (string $provider): ?array => $this->resolveOidcConfig(orgSlug: $orgSlug, provider: $provider)
 		);
 	}//end configuredOidcProviders()
@@ -529,7 +529,7 @@ class PortalOrganisationConfigService {
 		}
 
 		$json = $this->appConfig->getValueString(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			self::CONFIG_KEY_PREFIX . $organisationUuid,
 			'{}'
 		);

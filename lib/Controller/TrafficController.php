@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\Traffic\RawRequestBody;
@@ -460,7 +460,7 @@ class TrafficController extends Controller {
 	 */
 	private function clientPath(string $file): ?string {
 		try {
-			$path = $this->appManager->getAppPath(Application::APP_ID) . '/js/' . $file;
+			$path = $this->appManager->getAppPath(AppIdentity::APP_ID) . '/js/' . $file;
 		} catch (Throwable) {
 			return null;
 		}

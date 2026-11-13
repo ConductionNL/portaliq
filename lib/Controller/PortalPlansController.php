@@ -26,9 +26,9 @@ namespace OCA\Portaliq\Controller;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Http\PdfDownloadResponse;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Plans\PlanFiles;
 use OCA\Portaliq\Service\Plans\PortalPlanService;
 use OCA\Portaliq\Service\PortalPdfExport;
@@ -87,7 +87,7 @@ class PortalPlansController extends Controller implements PortalProtected {
 		private readonly ?PortalPdfExport $pdf = null,
 		private readonly ?PlanFiles $files = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

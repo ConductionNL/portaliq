@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\AdminMenuAccess;
 use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
 use OCP\AppFramework\Controller;
@@ -63,7 +63,7 @@ class DashboardController extends Controller {
 		private readonly ?IUserSession $userSession=null,
 		private readonly ?IURLGenerator $urls=null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -106,7 +106,7 @@ class DashboardController extends Controller {
 			$this->initialState->provideInitialState('access', $this->access->forCurrentUser());
 		}
 
-		return new TemplateResponse(Application::APP_ID, 'index');
+		return new TemplateResponse(AppIdentity::APP_ID, 'index');
 	}//end page()
 
 	/**

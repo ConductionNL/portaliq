@@ -46,7 +46,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\SiteShell;
 use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
@@ -116,7 +116,7 @@ class PortalPageController extends Controller {
 		PortalNoticeReader $notices,
 		private readonly AccessibilityFraming $framing,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 		$this->shell = new SiteShell(
 			request: $request,
 			portalResolver: $portalResolver,
@@ -233,7 +233,7 @@ class PortalPageController extends Controller {
 	 */
 	private function shellResponse(string $path): TemplateResponse {
 		$response = new TemplateResponse(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			'site',
 			$this->shell->templateParams(path: $path),
 			// BASE, NOT PUBLIC — a white-label site may not wear Nextcloud's

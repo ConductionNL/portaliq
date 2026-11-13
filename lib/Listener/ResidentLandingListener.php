@@ -33,7 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Listener;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
 use OCA\Portaliq\Service\PublishedPortals;
 use OCP\EventDispatcher\Event;
@@ -106,7 +106,7 @@ class ResidentLandingListener implements IEventListener {
 			// must never fail because of it.
 			$this->logger->warning(
 				'Portaliq: the start page of a resident was not changed',
-				['app' => Application::APP_ID, 'reason' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'reason' => $e->getMessage()]
 			);
 		}
 	}//end handle()
@@ -130,7 +130,7 @@ class ResidentLandingListener implements IEventListener {
 			return;
 		}
 
-		$this->config->setUserValue($uid, self::CORE, self::DEFAULT_APP, Application::APP_ID);
+		$this->config->setUserValue($uid, self::CORE, self::DEFAULT_APP, AppIdentity::APP_ID);
 	}//end joined()
 
 	/**
@@ -147,7 +147,7 @@ class ResidentLandingListener implements IEventListener {
 			return;
 		}
 
-		if ($this->config->getUserValue($uid, self::CORE, self::DEFAULT_APP, '') !== Application::APP_ID) {
+		if ($this->config->getUserValue($uid, self::CORE, self::DEFAULT_APP, '') !== AppIdentity::APP_ID) {
 			return;
 		}
 

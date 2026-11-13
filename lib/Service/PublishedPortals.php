@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -136,7 +136,7 @@ class PublishedPortals {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Portaliq: portal read failed',
-				['app' => Application::APP_ID, 'reason' => $e->getMessage()]
+				['app' => AppIdentity::APP_ID, 'reason' => $e->getMessage()]
 			);
 			// Fail CLOSED. An empty list means every request 404s, which is
 			// visible immediately; returning "some site" on an OR error would

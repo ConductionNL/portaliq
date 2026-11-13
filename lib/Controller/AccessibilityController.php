@@ -29,7 +29,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Controller;
 
 use DateTimeImmutable;
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\Cms\AccessibilityMeasurements;
 use OCA\Portaliq\Service\Cms\AccessibilityRun;
@@ -72,7 +72,7 @@ class AccessibilityController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly ITimeFactory $clock,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

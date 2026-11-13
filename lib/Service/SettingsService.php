@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Connection\ConnectionReporter;
 use OCA\Portaliq\Service\Traffic\Geo\GeoRefreshService;
 use OCA\Portaliq\Service\Traffic\Geo\GeoSettings;
@@ -146,7 +146,7 @@ class SettingsService {
 	private function storedSettings(): array {
 		$settings = [];
 		foreach (self::CONFIG_KEYS as $key) {
-			$settings[$key] = $this->appConfig->getValueString(Application::APP_ID, $key, '');
+			$settings[$key] = $this->appConfig->getValueString(AppIdentity::APP_ID, $key, '');
 		}
 
 		return $settings;
@@ -201,7 +201,7 @@ class SettingsService {
 	private function storeSettings(array $data): void {
 		foreach (self::CONFIG_KEYS as $key) {
 			if (isset($data[$key]) === true) {
-				$this->appConfig->setValueString(Application::APP_ID, $key, (string)$data[$key]);
+				$this->appConfig->setValueString(AppIdentity::APP_ID, $key, (string)$data[$key]);
 			}
 		}
 	}//end storeSettings()
@@ -296,7 +296,7 @@ class SettingsService {
 
 		$seed   = $this->registerSeed();
 		$result = $configurationService->importFromApp(
-			appId: Application::APP_ID,
+			appId: AppIdentity::APP_ID,
 			data: $seed['data'],
 			version: $seed['version'],
 			force: $force
@@ -318,7 +318,7 @@ class SettingsService {
 	 * @return array{data: array<string, mixed>, version: mixed}
 	 */
 	private function registerSeed(): array {
-		$absPath = $this->appManager->getAppPath(Application::APP_ID) . '/lib/Settings/' . Application::APP_ID . '_register.json';
+		$absPath = $this->appManager->getAppPath(AppIdentity::APP_ID) . '/lib/Settings/' . AppIdentity::APP_ID . '_register.json';
 		$version = '0.1.0';
 		$data = [];
 		if (is_file($absPath) === true) {

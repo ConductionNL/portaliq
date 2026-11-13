@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 
@@ -73,7 +73,7 @@ class InternalBaseUrl {
 	 * @return string
 	 */
 	public function stored(): string {
-		return $this->appConfig->getValueString(Application::APP_ID, self::CONFIG_KEY, '');
+		return $this->appConfig->getValueString(AppIdentity::APP_ID, self::CONFIG_KEY, '');
 	}//end stored()
 
 	/**
@@ -99,7 +99,7 @@ class InternalBaseUrl {
 			$this->logger->warning(
 				'[InstanceLoopback] Ignoring the invalid internal_base_url setting; calls use the absolute URL.'
 				. ' Use an http(s) address without credentials, query or "..".',
-				['app' => Application::APP_ID]
+				['app' => AppIdentity::APP_ID]
 			);
 		}
 
@@ -119,7 +119,7 @@ class InternalBaseUrl {
 			return false;
 		}
 
-		$this->appConfig->setValueString(Application::APP_ID, self::CONFIG_KEY, $normalised);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, self::CONFIG_KEY, $normalised);
 		return true;
 	}//end store()
 

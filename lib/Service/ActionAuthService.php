@@ -13,7 +13,7 @@
  *   - Action RBAC (who can invoke which controller method) is this service.
  *   - Admin-only operations (editing the matrix itself, app config, backup/
  *     restore, integrations, credentials) bypass this service and use
- *     #[AuthorizedAdminSetting(Application::APP_ID)] at the route layer.
+ *     #[AuthorizedAdminSetting(AppIdentity::APP_ID)] at the route layer.
  *
  * Controllers call `requireAction` which throws OCSForbiddenException when
  * the caller's groups don't intersect the matrix entry for the action.
@@ -41,7 +41,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
@@ -182,7 +182,7 @@ class ActionAuthService {
 	 * @return array<mixed>
 	 */
 	private function storedMatrix(): array {
-		$json = $this->appConfig->getValueString(Application::APP_ID, self::CONFIG_KEY, '{}');
+		$json = $this->appConfig->getValueString(AppIdentity::APP_ID, self::CONFIG_KEY, '{}');
 
 		try {
 			$decoded = json_decode($json, associative: true, depth: 512, flags: JSON_THROW_ON_ERROR);
@@ -244,7 +244,7 @@ class ActionAuthService {
 		}
 
 		$json = json_encode($normalized, flags: JSON_THROW_ON_ERROR);
-		$this->appConfig->setValueString(Application::APP_ID, self::CONFIG_KEY, $json);
+		$this->appConfig->setValueString(AppIdentity::APP_ID, self::CONFIG_KEY, $json);
 
 	}//end setMatrix()
 

@@ -27,8 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\ActivityFeedReader;
 use OCA\Portaliq\Service\ActivitySignupService;
 use OCA\Portaliq\Service\PortalSessionService;
@@ -72,7 +72,7 @@ class ActivityGuardianController extends Controller implements PortalProtected {
 		private readonly ActivityFeedReader $feedReader,
 		private readonly ActivitySignupService $signups,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

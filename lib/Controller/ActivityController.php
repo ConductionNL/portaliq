@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\ActionAuthService;
 use OCA\Portaliq\Service\ActivityAttendanceService;
 use OCA\Portaliq\Service\ActivityContributionService;
@@ -117,7 +117,7 @@ class ActivityController extends Controller {
 		private readonly ActivityContributionService $contributions,
 		private readonly ActionAuthService $actionAuth,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

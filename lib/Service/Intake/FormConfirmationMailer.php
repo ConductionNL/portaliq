@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Intake;
 
 use DateTimeImmutable;
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Mail\MailLog;
 use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
 use OCP\IL10N;
@@ -112,7 +112,7 @@ class FormConfirmationMailer {
 				$language = $locales[0];
 			}
 
-			$l10n = $this->l10nFactory->get(Application::APP_ID, $language);
+			$l10n = $this->l10nFactory->get(AppIdentity::APP_ID, $language);
 
 			$mail = $this->mailer->createEMailTemplate('portaliq.form.confirmation', []);
 			$slug = trim((string)($site['slug'] ?? ''));

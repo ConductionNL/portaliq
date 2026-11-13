@@ -28,7 +28,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Cms;
 
 use DateTimeInterface;
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -85,7 +85,7 @@ class PageHistory {
 		try {
 			$trail   = $this->container->get(self::TRAIL_MAPPER);
 			$schemas = $this->container->get(self::SCHEMA_MAPPER);
-			$schema  = $schemas->findByApplicationAndSlug(slug: 'page', application: Application::APP_ID);
+			$schema  = $schemas->findByApplicationAndSlug(slug: 'page', application: AppIdentity::APP_ID);
 			if ($schema === null) {
 				return [];
 			}

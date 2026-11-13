@@ -34,7 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Mail\MailLog;
 use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
 use OCA\Portaliq\Service\Mail\MailSite;
@@ -299,7 +299,7 @@ class PortalIdentityMailer {
 	 */
 	private function deliver(IdentityMailRun $run): bool {
 		try {
-			$l10n   = $this->l10nFactory->get(Application::APP_ID, $this->site->language(portal: $run->portal));
+			$l10n   = $this->l10nFactory->get(AppIdentity::APP_ID, $this->site->language(portal: $run->portal));
 			$failed = $this->mailer->send($this->messageTo(email: $run->email, mail: $this->composeMail(run: $run, l10n: $l10n)));
 		} catch (Throwable $failure) {
 			// The exception's own message is left out on purpose: a transport
@@ -580,7 +580,7 @@ class PortalIdentityMailer {
 	 */
 	private function noticeMail(IdentityNotice $notice, string $name): IEMailTemplate {
 		$keys = self::NOTICES[$notice->template];
-		$l10n = $this->l10nFactory->get(Application::APP_ID, $this->site->language(portal: $notice->portal));
+		$l10n = $this->l10nFactory->get(AppIdentity::APP_ID, $this->site->language(portal: $notice->portal));
 		$day  = (string)$l10n->l($keys['moment'], $notice->moment, ['width' => 'long']);
 
 		$mail = $this->mailer->createEMailTemplate('portaliq.identity.' . $notice->template, []);

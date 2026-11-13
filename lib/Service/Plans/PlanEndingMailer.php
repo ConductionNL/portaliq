@@ -25,7 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Plans;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Mail\MailLog;
 use OCA\Portaliq\Service\Mail\MailSite;
 use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
@@ -135,7 +135,7 @@ class PlanEndingMailer {
 		$portal = $this->site->portal(organisation: $organisation);
 		$name   = $this->site->name(portal: $portal, organisation: $organisation);
 		$slug   = trim((string)($portal['slug'] ?? ''));
-		$l10n   = $this->l10nFactory->get(Application::APP_ID, $this->site->language(portal: $portal));
+		$l10n   = $this->l10nFactory->get(AppIdentity::APP_ID, $this->site->language(portal: $portal));
 		$day    = strtotime($values['date']);
 		if ($day !== false) {
 			$values['date'] = (string)$l10n->l('date', $day, ['width' => 'long']);

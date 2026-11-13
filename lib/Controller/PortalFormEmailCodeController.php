@@ -25,8 +25,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Intake\PortalEmailVerification;
 use OCA\Portaliq\Service\Intake\PortalFormBindingResolver;
 use OCA\Portaliq\Service\PortalResolver;
@@ -60,7 +60,7 @@ class PortalFormEmailCodeController extends Controller implements PortalProtecte
 		private readonly PortalFormBindingResolver $bindings,
 		private readonly PortalEmailVerification $verification,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

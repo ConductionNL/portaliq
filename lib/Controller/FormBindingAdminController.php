@@ -31,7 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Intake\PortalBindingPreview;
 use OCA\Portaliq\Service\Intake\PortalEmbedSnippetDescription;
 use OCP\AppFramework\Controller;
@@ -61,7 +61,7 @@ class FormBindingAdminController extends Controller {
 		private readonly PortalEmbedSnippetDescription $embed,
 		private readonly IURLGenerator $urls,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

@@ -45,7 +45,6 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\ActionScopeResolver;
 use OCA\Portaliq\Contribution\CreateBody;
@@ -57,6 +56,7 @@ use OCA\Portaliq\Contribution\ThemeChoice;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Contribution\RowIdentifier;
 use OCA\Portaliq\Http\PdfDownloadResponse;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Intake\ActionDraft;
 use OCA\Portaliq\Service\Intake\DestinationDraft;
 use OCA\Portaliq\Service\Intake\DestinationIntake;
@@ -228,7 +228,7 @@ class ContributionController extends Controller implements PortalProtected {
 		private readonly ?DestinationDraft $destinations = null,
 		private readonly ?DestinationIntake $intake = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

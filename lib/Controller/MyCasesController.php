@@ -27,9 +27,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Identity\MandateParties;
 use OCA\Portaliq\Service\Identity\PortalMandateService;
 use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
@@ -82,7 +82,7 @@ class MyCasesController extends Controller implements PortalProtected {
 		private readonly PortalPartyTreeResolver $tree,
 		private readonly ?CaseTypeVisibility $caseTypes = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

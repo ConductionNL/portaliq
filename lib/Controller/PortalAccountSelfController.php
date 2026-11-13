@@ -33,8 +33,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Identity\PortalAccessRequestService;
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
 use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
@@ -73,7 +73,7 @@ class PortalAccountSelfController extends Controller implements PortalProtected 
 		private readonly PortalIdentityMailer $mailer,
 		private readonly ?PortalOrganisationConfigService $orgConfig = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

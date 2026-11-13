@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Settings;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\PortalSessionService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http\TemplateResponse;
@@ -68,10 +68,10 @@ class AdminSettings implements ISettings {
 	 * @spec openspec/changes/archive/2026-10-09-portal-auth-edge-session-hardening/tasks.md#1.4
 	 */
 	public function getForm(): TemplateResponse {
-		$version = $this->appManager->getAppVersion(appId: Application::APP_ID);
+		$version = $this->appManager->getAppVersion(appId: AppIdentity::APP_ID);
 
 		return new TemplateResponse(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			'settings/admin',
 			[
 				'version' => $version,

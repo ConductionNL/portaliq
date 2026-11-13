@@ -30,8 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Identity\PortalChallengeService;
 use OCA\Portaliq\Service\Intake\DestinationIntake;
 use OCA\Portaliq\Service\Intake\DestinationLookup;
@@ -148,7 +148,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		private readonly ?DestinationIntake $intake = null,
 		private readonly ?DestinationLookup $lookup = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 		$this->checks       = new PortalSubmissionChecks(
 			validator: $validator,
 			family: $family,

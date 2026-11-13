@@ -18,7 +18,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\Signin\BrokerLogin;
 use OCA\Portaliq\Service\Signin\SiteReturnAddress;
@@ -68,7 +68,7 @@ class BrokerSessionController extends Controller {
 		private readonly IURLGenerator $urlGenerator,
 		private readonly PortalResolver $portals,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 
@@ -107,7 +107,7 @@ class BrokerSessionController extends Controller {
 			org: $org,
 			provider: $provider,
 			returnTo: $this->returnPath(returnTo: $returnTo, site: $site),
-			callbackUrl: $this->urlGenerator->linkToRouteAbsolute(Application::APP_ID . '.brokerSession.callback')
+			callbackUrl: $this->urlGenerator->linkToRouteAbsolute(AppIdentity::APP_ID . '.brokerSession.callback')
 		);
 		if ($url === null) {
 			return $this->failed(landing: $this->portalOf(site: $site));
@@ -196,7 +196,7 @@ class BrokerSessionController extends Controller {
 	private function returnPath(string $returnTo, ?array $site): string {
 		$page = (new SiteReturnAddress())->accept(
 			candidate: $returnTo,
-			sitePath: $this->urlGenerator->linkToRoute(Application::APP_ID . '.portalPage.site')
+			sitePath: $this->urlGenerator->linkToRoute(AppIdentity::APP_ID . '.portalPage.site')
 		);
 		if ($page !== '') {
 			return $page;
@@ -255,7 +255,7 @@ class BrokerSessionController extends Controller {
 	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-the-server-must-link-to-the-site-directly-req-srp-049
 	 */
 	private function portalPath(): string {
-		return $this->urlGenerator->linkToRoute(Application::APP_ID . '.portalPage.site');
+		return $this->urlGenerator->linkToRoute(AppIdentity::APP_ID . '.portalPage.site');
 	}//end portalPath()
 
 

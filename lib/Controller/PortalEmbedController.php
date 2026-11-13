@@ -32,7 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCA\Portaliq\Service\Intake\DestinationIntake;
 use OCA\Portaliq\Service\Intake\PortalEmbedGuard;
 use OCA\Portaliq\Service\Intake\PortalEmbedThrottle;
@@ -84,7 +84,7 @@ class PortalEmbedController extends Controller {
 		private readonly DestinationIntake $intake,
 		private readonly IURLGenerator $urls,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -272,7 +272,7 @@ class PortalEmbedController extends Controller {
 	 */
 	private function framed(array $binding, array $payload): TemplateResponse {
 		$response = new TemplateResponse(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			'embed',
 			['embed' => $payload, 'minHeight' => PortalEmbedGuard::MINIMUM_HEIGHT],
 			TemplateResponse::RENDER_AS_BLANK
