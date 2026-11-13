@@ -59,4 +59,16 @@ interface PublicIndexKindsInterface {
 	 * @spec openspec/changes/editor-blocks-read-public-app-data/tasks.md#task-1
 	 */
 	public function kinds(string $appId, mixed $answer): array;
+
+	/**
+	 * The contract method an app may implement.
+	 */
+	public const METHOD = 'getPublicIndexKinds';
+
+	/**
+	 * The contract method that resolves the value `visitor` for a signed-in
+	 * person: `getPublicIndexVisitor(string $portal, array $subject): array`
+	 * answering `{filter label: values[]}`.
+	 */
+	public const VISITOR_METHOD = 'getPublicIndexVisitor';
 }//end interface

@@ -43,10 +43,6 @@ use OCA\Portaliq\Kernel\Contracts\PublicDetailShapeInterface;
  * @spec openspec/changes/public-detail-page-for-a-provider-item/tasks.md#task-1
  */
 class PublicDetailShape implements PublicDetailShapeInterface {
-	/**
-	 * The contract method an app may implement.
-	 */
-	public const METHOD = 'getPublicDetail';
 
 	private const MAX_ROWS = 50;
 
