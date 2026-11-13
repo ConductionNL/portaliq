@@ -24,8 +24,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Kernel\Contracts;
 
-use OCA\Portaliq\Service\CaseTypeColumns\ColumnOverrides;
-use OCA\Portaliq\Service\RequestedPortal;
+use OCA\Portaliq\Kernel\Contracts\ColumnOverridesInterface;
+use OCA\Portaliq\Kernel\Contracts\RequestedPortalInterface;
 use OCP\IRequest;
 
 /**
@@ -44,7 +44,7 @@ interface CaseTypeVisibilityInterface {
 	/**
 	 * The header the resident portal names its own portal slug in.
 	 */
-	public const HEADER = RequestedPortal::HEADER;
+	public const HEADER = RequestedPortalInterface::HEADER;
 
 	/**
 	 * The serving portal's column settings per case type, ready to stamp on
@@ -53,11 +53,11 @@ interface CaseTypeVisibilityInterface {
 	 * @param IRequest $request The request.
 	 * @param array<string, mixed> $subject The resolved subject.
 	 *
-	 * @return ColumnOverrides
+	 * @return ColumnOverridesInterface
 	 *
 	 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
 	 */
-	public function servingColumns(IRequest $request, array $subject): ColumnOverrides;
+	public function servingColumns(IRequest $request, array $subject): ColumnOverridesInterface;
 
 	/**
 	 * The portal a signed-in request is served from: the one it names (header,

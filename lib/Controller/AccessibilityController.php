@@ -41,6 +41,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IRequest;
 use OCP\IUserSession;
+use OCA\Portaliq\Kernel\StaffAction;
 
 /**
  * Three guarded routes on a portal.
@@ -52,7 +53,7 @@ class AccessibilityController extends Controller {
 	/**
 	 * The action that may measure and record the audit.
 	 */
-	public const ACTION_MEASURE = 'portal.measure-accessibility';
+	public const ACTION_MEASURE = StaffAction::MEASURE_ACCESSIBILITY;
 
 	/**
 	 * @param IRequest                  $request      The request.

@@ -24,12 +24,12 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Cms;
 
-use OCA\Portaliq\Controller\AccessibilityController;
 use OCA\Portaliq\Kernel\Contracts\AccessibilityFramingInterface;
 use OCA\Portaliq\Service\ActionAuthService;
 use OCP\AppFramework\Http\ContentSecurityPolicy;
 use OCP\IRequest;
 use OCP\IUserSession;
+use OCA\Portaliq\Kernel\StaffAction;
 
 /**
  * The site is never framed, with one exception: a request that asks for the
@@ -96,6 +96,6 @@ class AccessibilityFraming implements AccessibilityFramingInterface {
 			return false;
 		}
 
-		return $this->actionAuth->can(user: $user, action: AccessibilityController::ACTION_MEASURE);
+		return $this->actionAuth->can(user: $user, action: StaffAction::MEASURE_ACCESSIBILITY);
 	}//end allowsSelf()
 }//end class

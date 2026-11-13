@@ -29,11 +29,10 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Controller\AccessRequestAdminController;
-use OCA\Portaliq\Controller\PortalAccountAdminController;
 use OCA\Portaliq\Kernel\Contracts\AdminMenuAccessInterface;
 use OCP\IGroupManager;
 use OCP\IUserSession;
+use OCA\Portaliq\Kernel\StaffAction;
 
 /**
  * The four access flags the app menu reads.
@@ -88,8 +87,8 @@ class AdminMenuAccess implements AdminMenuAccessInterface {
 		return [
 			'admin'          => $this->groups->isAdmin($user->getUID()),
 			'pages'          => $this->pageEditor->mayEdit(user: $user),
-			'accounts'       => $this->actions->can(user: $user, action: PortalAccountAdminController::ACTION_PROVISION),
-			'accessRequests' => $this->actions->can(user: $user, action: AccessRequestAdminController::ACTION_ANSWER),
+			'accounts'       => $this->actions->can(user: $user, action: StaffAction::PROVISION),
+			'accessRequests' => $this->actions->can(user: $user, action: StaffAction::ANSWER_ACCESS_REQUEST),
 		];
 	}//end forCurrentUser()
 

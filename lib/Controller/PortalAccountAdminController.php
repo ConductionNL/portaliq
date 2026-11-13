@@ -41,6 +41,7 @@ use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
+use OCA\Portaliq\Kernel\StaffAction;
 
 /**
  * Provisioning and withdrawal of portal accounts by staff.
@@ -51,7 +52,7 @@ class PortalAccountAdminController extends Controller {
 	/**
 	 * The ADR-023 action both methods are gated by.
 	 */
-	public const ACTION_PROVISION = 'portal.provision';
+	public const ACTION_PROVISION = StaffAction::PROVISION;
 
 	/**
 	 * Constructor.

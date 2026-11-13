@@ -56,7 +56,6 @@ use OCA\Portaliq\Kernel\Contracts\PortalIntakeQueueInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSubmissionChecksInterface;
-use OCA\Portaliq\Service\Intake\DestinationIntake;
 use OCA\Portaliq\Service\Intake\DestinationMapping;
 use OCA\Portaliq\Service\Intake\PortalIntakeConfirmation;
 use OCA\Portaliq\Service\Intake\PortalIntakePayments;
@@ -69,6 +68,7 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCA\Portaliq\Kernel\DestinationRefusal;
 
 /**
  * Renders the intake form, takes the submission and reports on it.
@@ -403,7 +403,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			idempotencyKey: (string)$this->request->getHeader('Idempotency-Key')
 		);
 		if ($submitted === null || $submitted['ok'] === false) {
-			$refusal = DestinationIntake::refusal(submitted: $submitted);
+			$refusal = DestinationRefusal::of(submitted: $submitted);
 			return new JSONResponse($refusal['body'], $refusal['status']);
 		}
 

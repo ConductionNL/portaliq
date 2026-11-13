@@ -39,7 +39,6 @@ use OCA\Portaliq\Kernel\Contracts\PortalEmbedThrottleInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFormBindingResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFormValidatorInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
-use OCA\Portaliq\Service\Intake\DestinationIntake;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -50,6 +49,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\IRequest;
 use OCP\IURLGenerator;
+use OCA\Portaliq\Kernel\DestinationRefusal;
 
 /**
  * Serves the framed form and takes its submissions.
@@ -240,7 +240,7 @@ class PortalEmbedController extends Controller {
 			idempotencyKey: (string)$this->request->getHeader('Idempotency-Key')
 		);
 		if ($submitted['ok'] === false) {
-			$refusal = DestinationIntake::refusal(submitted: $submitted);
+			$refusal = DestinationRefusal::of(submitted: $submitted);
 			return new JSONResponse($refusal['body'], $refusal['status']);
 		}
 

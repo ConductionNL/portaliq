@@ -28,6 +28,7 @@ namespace OCA\Portaliq\Service\Intake;
 
 use OCA\Portaliq\Kernel\Contracts\DestinationIntakeInterface;
 use OCA\Portaliq\Service\PortalSchemaReader;
+use OCA\Portaliq\Kernel\DestinationRefusal;
 
 /**
  * Submits a bound form into its destination, or checks the binding.
@@ -133,16 +134,7 @@ class DestinationIntake implements DestinationIntakeInterface {
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-submission-is-validated-against-its-destinations-schema-before-anything-is-stored-req-pifo-004
 	 */
 	public static function refusal(?array $submitted): array {
-		$status = (int)($submitted['status'] ?? 503);
-		if ($status === 422) {
-			return ['body' => ['error' => 'refused_by_destination', 'errors' => (array)($submitted['errors'] ?? [])], 'status' => 422];
-		}
-
-		if ($status === 403 || $status === 404) {
-			return ['body' => ['error' => 'form_not_submittable'], 'status' => $status];
-		}
-
-		return ['body' => ['error' => 'try_again_later'], 'status' => 503];
+		return DestinationRefusal::of(submitted: $submitted);
 	}//end refusal()
 
 	/**

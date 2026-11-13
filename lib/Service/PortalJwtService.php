@@ -37,6 +37,7 @@ namespace OCA\Portaliq\Service;
 use InvalidArgumentException;
 use OCA\Portaliq\Kernel\Contracts\PortalJwtServiceInterface;
 use RuntimeException;
+use OCA\Portaliq\Kernel\ScopeClaims;
 
 /**
  * HMAC-based JWT minting + validation for Portaliq's audience-agnostic auth edge.
@@ -78,14 +79,14 @@ class PortalJwtService implements PortalJwtServiceInterface {
 	 *
 	 * @var string[]
 	 */
-	public const RESERVED_ASSERTION_CLAIMS = ['sub', 'audience', 'organisation', 'trust', 'jti', 'use', 'iat', 'exp', 'iss'];
+	public const RESERVED_ASSERTION_CLAIMS = ScopeClaims::RESERVED_ASSERTION_CLAIMS;
 
 	/**
 	 * The optional assertion claim that names the company branch the session
 	 * acts for (decision 173). Only the session fills it, so a declared scope
 	 * claim may not take this name either.
 	 */
-	public const BRANCH_ASSERTION_CLAIM = 'branch';
+	public const BRANCH_ASSERTION_CLAIM = ScopeClaims::BRANCH_ASSERTION_CLAIM;
 
 	/**
 	 * The `use` claim value marking a reference session (identity-ways-in-screens
@@ -344,12 +345,7 @@ class PortalJwtService implements PortalJwtServiceInterface {
 	 * @spec openspec/changes/archive/2026-09-28-case-actions-sign-a-document/tasks.md#T03
 	 */
 	public static function isReservedScopeClaim(mixed $scopeClaim): bool {
-		if (is_string($scopeClaim) === false || $scopeClaim === '') {
-			return false;
-		}
-
-		$name = self::bareClaimName(scopeClaim: $scopeClaim);
-		return in_array($name, self::RESERVED_ASSERTION_CLAIMS, true) === true || $name === self::BRANCH_ASSERTION_CLAIM;
+		return ScopeClaims::isReserved(scopeClaim: $scopeClaim);
 	}//end isReservedScopeClaim()
 
 	/**
