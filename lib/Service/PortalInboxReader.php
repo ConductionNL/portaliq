@@ -37,6 +37,7 @@ use OCA\Portaliq\Contribution\InboxMessageFields;
 use OCA\Portaliq\Kernel\Contracts\PortalInboxReaderInterface;
 use OCA\Portaliq\Service\Notifications\MessageBoxDeliveries;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Kernel\InboxDeletion;
 
 /**
  * Aggregates every inbox collection across a subject's contributions.
@@ -244,13 +245,7 @@ class PortalInboxReader implements PortalInboxReaderInterface {
 	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-resident-can-delete-their-own-inbox-messages
 	 */
 	public static function residentMayDelete(array $collection): bool {
-		$register = ($collection['register'] ?? '');
-		$schema   = ($collection['schema'] ?? '');
-		if ($register === self::OWN_MESSAGES['register'] && $schema === self::OWN_MESSAGES['schema']) {
-			return true;
-		}
-
-		return ($collection['deletable'] ?? false) === true;
+		return InboxDeletion::residentMayDelete(collection: $collection);
 	}//end residentMayDelete()
 
 	/**

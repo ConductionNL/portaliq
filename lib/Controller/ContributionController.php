@@ -86,9 +86,7 @@ use OCA\Portaliq\Kernel\Contracts\SubmissionReceiptServiceInterface;
 use OCA\Portaliq\Service\Branch\PortalBranchScope;
 use OCA\Portaliq\Service\CaseRowMarker;
 use OCA\Portaliq\Service\CaseTypeColumns\ColumnOverrides;
-use OCA\Portaliq\Service\Intake\DestinationIntake;
 use OCA\Portaliq\Service\PortalCrossRefGuard;
-use OCA\Portaliq\Service\PortalInboxReader;
 use OCA\Portaliq\Service\PortalUserDisplayNames;
 use OCA\Portaliq\Service\RequestedPortal;
 use OCA\Portaliq\Service\RequiredFieldsGuard;
@@ -105,6 +103,8 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\Response;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Kernel\DestinationRefusal;
+use OCA\Portaliq\Kernel\InboxDeletion;
 
 /**
  * Serves the authenticated subject's aggregated portal contributions.
@@ -633,7 +633,7 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		$collection = $match['collection'];
-		if (PortalInboxReader::residentMayDelete(collection: $collection) === false
+		if (InboxDeletion::residentMayDelete(collection: $collection) === false
 			|| SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false
 		) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
@@ -1938,7 +1938,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @return JSONResponse
 	 */
 	private function intakeRefusal(array $submitted): JSONResponse {
-		$refusal = DestinationIntake::refusal(submitted: $submitted);
+		$refusal = DestinationRefusal::of(submitted: $submitted);
 
 		return new JSONResponse($refusal['body'], $refusal['status']);
 	}//end intakeRefusal()

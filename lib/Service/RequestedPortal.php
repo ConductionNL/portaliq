@@ -36,13 +36,6 @@ use OCP\IRequest;
 class RequestedPortal implements RequestedPortalInterface {
 
 	/**
-	 * The header the site names its portal in.
-	 *
-	 * @var string
-	 */
-	public const HEADER = 'X-Portaliq-Portal';
-
-	/**
 	 * The slug the request names: the header, else `?portal=`, else null.
 	 *
 	 * @param IRequest $request The request.

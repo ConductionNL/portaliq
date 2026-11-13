@@ -39,6 +39,7 @@ use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
+use OCA\Portaliq\Kernel\StaffAction;
 
 /**
  * Lists, grants and refuses access requests, for staff holding the action.
@@ -49,7 +50,7 @@ class AccessRequestAdminController extends Controller {
 	/**
 	 * The ADR-023 action every method is gated by.
 	 */
-	public const ACTION_ANSWER = 'portal.answer-access-request';
+	public const ACTION_ANSWER = StaffAction::ANSWER_ACCESS_REQUEST;
 
 	/**
 	 * Constructor.

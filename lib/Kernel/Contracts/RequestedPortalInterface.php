@@ -38,4 +38,11 @@ namespace OCA\Portaliq\Kernel\Contracts;
 interface RequestedPortalInterface {
 
 
+
+	/**
+	 * The header the site names its portal in.
+	 *
+	 * @var string
+	 */
+	public const HEADER = 'X-Portaliq-Portal';
 }//end interface

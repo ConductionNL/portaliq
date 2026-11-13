@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Kernel\Contracts;
 
-use OCA\Portaliq\Service\ShillinqContributionRaiser;
+use OCA\Portaliq\Kernel\Contracts\ShillinqContributionRaiserInterface;
 
 /**
  * Contract of ActivityContributionService.
@@ -58,13 +58,13 @@ interface ActivityContributionServiceInterface {
 	 * The raise answers the service passes on from shillinq, named here so a
 	 * caller maps one vocabulary.
 	 */
-	public const ERROR_INVALID = ShillinqContributionRaiser::ERROR_INVALID;
+	public const ERROR_INVALID = ShillinqContributionRaiserInterface::ERROR_INVALID;
 
-	public const ERROR_FORBIDDEN = ShillinqContributionRaiser::ERROR_FORBIDDEN;
+	public const ERROR_FORBIDDEN = ShillinqContributionRaiserInterface::ERROR_FORBIDDEN;
 
-	public const ERROR_SHILLINQ_UNAVAILABLE = ShillinqContributionRaiser::ERROR_UNAVAILABLE;
+	public const ERROR_SHILLINQ_UNAVAILABLE = ShillinqContributionRaiserInterface::ERROR_UNAVAILABLE;
 
-	public const ERROR_FAILED = ShillinqContributionRaiser::ERROR_FAILED;
+	public const ERROR_FAILED = ShillinqContributionRaiserInterface::ERROR_FAILED;
 
 	/**
 	 * Raise the contribution for every confirmed place without a reference.

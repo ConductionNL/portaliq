@@ -226,6 +226,7 @@ use OCA\Portaliq\Kernel\Contracts\ServiceRegistrarInterface;
 use OCA\Portaliq\Kernel\Contracts\SessionTrustInterface;
 use OCA\Portaliq\Kernel\Contracts\SettingsServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\SharedBlockPortalsInterface;
+use OCA\Portaliq\Kernel\Contracts\ShillinqContributionRaiserInterface;
 use OCA\Portaliq\Kernel\Contracts\SignInAddressChangeInterface;
 use OCA\Portaliq\Kernel\Contracts\SiteOrganisationInterface;
 use OCA\Portaliq\Kernel\Contracts\SiteReturnAddressInterface;
@@ -629,6 +630,7 @@ final class ContractRegistrar {
 		$context->registerServiceAlias(SessionTrustInterface::class, SessionTrust::class);
 		$context->registerServiceAlias(SettingsServiceInterface::class, SettingsService::class);
 		$context->registerServiceAlias(SharedBlockPortalsInterface::class, SharedBlockPortals::class);
+		$context->registerServiceAlias(ShillinqContributionRaiserInterface::class, ShillinqContributionRaiser::class);
 		$context->registerServiceAlias(SignInAddressChangeInterface::class, SignInAddressChange::class);
 		$context->registerServiceAlias(SiteOrganisationInterface::class, SiteOrganisation::class);
 		$context->registerServiceAlias(SiteReturnAddressInterface::class, SiteReturnAddress::class);
