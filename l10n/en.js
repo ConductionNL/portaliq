@@ -3208,7 +3208,13 @@ OC.L10N.register(
         "QR code": "QR code",
         "As the case app shows it": "As the case app shows it",
         "The columns are saved.": "The columns are saved.",
-        "The columns could not be saved. Try again.": "The columns could not be saved. Try again."
+        "The columns could not be saved. Try again.": "The columns could not be saved. Try again.",
+        "Back to messages": "Back to messages",
+        "Received on {date} at {time}": "Received on {date} at {time}",
+        "From {sender}, about case {number}": "From {sender}, about case {number}",
+        "About this message": "About this message",
+        "Go to your case": "Go to your case",
+        "This message does not exist or is not for you.": "This message does not exist or is not for you."
     },
     "nplurals=2; plural=(n != 1);"
 )

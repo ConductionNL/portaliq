@@ -369,6 +369,9 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         // re-verified before any write; only `read` is ever set (portal-inbox-v2
         // T03). The {register}/{schema}/{id} segments distinguish it from the
         // plain GET above.
+        // a-resident-opens-one-message: read ONE inbox message for its own page;
+        // the same ownership, tenant and trust checks as mark-read, before any read.
+        ['name' => 'contribution#message', 'url' => '/portal/api/inbox/{register}/{schema}/{id}', 'verb' => 'GET'],
         ['name' => 'contribution#markRead', 'url' => '/portal/api/inbox/{register}/{schema}/{id}/read', 'verb' => 'PATCH'],
         // Delete ONE of the resident's own inbox messages: portaliq's own notices,
         // or an app's inbox that declares `deletable: true`; ownership and tenant

@@ -198,6 +198,7 @@ test('a button link ships its stylesheet, so a sign-in link never falls back to 
 		'src/site/components/chrome/SignInPage.vue',
 		'src/site/components/mijn/StepUpPrompt.vue',
 		'src/site/pages/inbox/InboxPage.vue',
+		'src/site/pages/inbox/MessagePage.vue',
 		'src/site/widgets/nlAlert/NlAlert.vue',
 	]
 	for (const file of users) {

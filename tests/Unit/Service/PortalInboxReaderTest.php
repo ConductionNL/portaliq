@@ -790,4 +790,58 @@ class PortalInboxReaderTest extends TestCase {
 		$messages = (new PortalInboxReader($plainReader, null, null, $never))->aggregateInbox(self::SUBJECT, $plain);
 		$this->assertArrayNotHasKey('_files', array_column($messages, null, 'id')['b1']);
 	}//end testFilesOnlyWhenDeclared()
+	/**
+	 * One message carries its provenance, its files and its reply declaration,
+	 * as the collection declares them.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T03
+	 */
+	public function testOneMessageCarriesSourceFilesAndReply(): void {
+		$row = ['id' => 'b1', 'subject' => 'Besluit', 'content' => 'Tekst', 'sentAt' => '2026-10-07T09:12:00Z', 'readByRecipientAt' => null];
+		[$aggregate] = $this->dossiqInbox([$row], ['filesDownload' => true, 'deletable' => true, 'reply' => ['action' => 'replyToMessage', 'carry' => ['caseId' => 'caseId']]]);
+		$aggregate['contributions'][0]['actions'] = [['id' => 'replyToMessage', 'type' => 'create', 'register' => 'dossiq', 'schema' => 'portaalBericht', 'fields' => ['content']]];
+		$listed = [['id' => 7, 'name' => 'besluit.pdf', 'size' => 412000]];
+
+		$files = $this->createMock(PortalFileReader::class);
+		$files->expects($this->once())->method('listFiles')->with('dossiq', 'portaalBericht', 'b1')->willReturn($listed);
+		$scoped = $this->createMock(PortalObjectReader::class);
+		$scoped->expects($this->never())->method('readCollection');
+
+		$contribution = $aggregate['contributions'][0];
+		$message = (new PortalInboxReader($scoped, null, null, $files))->oneMessage(self::SUBJECT, $row, $contribution['collections'][0], $contribution);
+
+		$this->assertSame('Tekst', $message['body']);
+		$this->assertSame('2026-10-07T09:12:00Z', $message['receivedAt']);
+		$this->assertFalse($message['read']);
+		$this->assertSame($listed, $message['_files']);
+		$this->assertSame('dossiq', $message['_source']['appId']);
+		$this->assertSame('Zaken', $message['_source']['label']);
+		$this->assertSame('berichten', $message['_source']['collection']);
+		$this->assertTrue($message['_source']['deletable']);
+		$this->assertSame('replyToMessage', $message['_source']['reply']['action']['id']);
+		$this->assertSame(['caseId'], $message['_source']['reply']['carried']);
+	}//end testOneMessageCarriesSourceFilesAndReply()
+
+	/**
+	 * The list and the single message project a row alike, and a message
+	 * still held back by its visible-from moment is not returned on its own.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T03
+	 */
+	public function testListAndOneMessageProjectAlike(): void {
+		$row = ['id' => 'b1', 'subject' => 'Besluit', 'content' => 'Tekst', 'sentAt' => '2026-10-02T10:00:00Z', 'readByRecipientAt' => '2026-10-03T08:00:00Z'];
+		[$aggregate, $reader] = $this->dossiqInbox([$row]);
+		$inbox = new PortalInboxReader($reader);
+
+		$listed = array_column($inbox->aggregateInbox(self::SUBJECT, $aggregate), null, 'id')['b1'];
+		$contribution = $aggregate['contributions'][0];
+		$this->assertSame($listed, $inbox->oneMessage(self::SUBJECT, $row, $contribution['collections'][0], $contribution));
+
+		$waiting = $contribution['collections'][0] + ['visibleFromField' => 'publishAt'];
+		$this->assertNull($inbox->oneMessage(self::SUBJECT, $row + ['publishAt' => '2999-01-01T00:00:00Z'], $waiting, $contribution));
+	}//end testListAndOneMessageProjectAlike()
 }//end class

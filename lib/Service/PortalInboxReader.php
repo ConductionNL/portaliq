@@ -165,42 +165,92 @@ class PortalInboxReader {
 	 * @spec openspec/changes/archive/2026-07-23-portal-inbox-v2/tasks.md#T01
 	 */
 	private function collectionRows(array $subject, array $collection, array $contribution): array {
-		$appId         = (string)($contribution['app'] ?? '');
-		$label         = (string)($contribution['label'] ?? $appId);
-		$messageFields = new InboxMessageFields();
-		$rows          = [];
-		foreach ($this->readInboxCollection(subject: $subject, collection: $collection, contributingApp: $appId) as $row) {
-			// The app's own field names onto the inbox's (portaliq#702),
-			// before the sort and the unread count read them.
-			$row = $messageFields->apply(row: $row, collection: $collection);
-			$row = $this->withFiles(row: $row, collection: $collection);
-
-			// Provenance envelope: appId/label per spec, plus the
-			// register/schema/collection id the SPA needs to address
-			// this exact row through the mark-read endpoint (which is
-			// parametrised on register/schema, disambiguated the SAME
-			// way as every other scoped endpoint via `?collection=`).
-			$row['_source'] = [
-				'appId' => $appId,
-				'label' => $label,
-				'register' => (string)($collection['register'] ?? ''),
-				'schema' => (string)($collection['schema'] ?? ''),
-				'collection' => (string)($collection['id'] ?? ''),
-			];
-			if (self::residentMayDelete(collection: $collection) === true) {
-				$row['_source']['deletable'] = true;
-			}
-
-			$reply = $this->replyOf(collection: $collection, contribution: $contribution);
-			if ($reply !== null) {
-				$row['_source']['reply'] = $reply;
-			}
-
-			$rows[] = $row;
+		$rows = [];
+		foreach ($this->readInboxCollection(subject: $subject, collection: $collection, contributingApp: (string)($contribution['app'] ?? '')) as $row) {
+			$rows[] = $this->projectRow(row: $row, collection: $collection, contribution: $contribution);
 		}
 
 		return $rows;
 	}//end collectionRows()
+
+	/**
+	 * One VERIFIED inbox row as the inbox shows it: the collection's message
+	 * fields mapped onto the inbox's, its files when opted in, and the
+	 * provenance envelope with the delete and reply declarations. The list and
+	 * the single message page both project through here, so a message reads
+	 * the same in both.
+	 *
+	 * @param array<string, mixed> $row          A row the scoped read already proved the subject's own.
+	 * @param array<string, mixed> $collection   The inbox collection.
+	 * @param array<string, mixed> $contribution The contribution it belongs to.
+	 *
+	 * @return array<string, mixed> The projected row.
+	 *
+	 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T03
+	 */
+	private function projectRow(array $row, array $collection, array $contribution): array {
+		$appId = (string)($contribution['app'] ?? '');
+		$label = (string)($contribution['label'] ?? $appId);
+
+		// The app's own field names onto the inbox's (portaliq#702),
+		// before the sort and the unread count read them.
+		$row = (new InboxMessageFields())->apply(row: $row, collection: $collection);
+		$row = $this->withFiles(row: $row, collection: $collection);
+
+		// Provenance envelope: appId/label per spec, plus the
+		// register/schema/collection id the SPA needs to address
+		// this exact row through the mark-read endpoint (which is
+		// parametrised on register/schema, disambiguated the SAME
+		// way as every other scoped endpoint via `?collection=`).
+		$row['_source'] = [
+			'appId' => $appId,
+			'label' => $label,
+			'register' => (string)($collection['register'] ?? ''),
+			'schema' => (string)($collection['schema'] ?? ''),
+			'collection' => (string)($collection['id'] ?? ''),
+		];
+		if (self::residentMayDelete(collection: $collection) === true) {
+			$row['_source']['deletable'] = true;
+		}
+
+		$reply = $this->replyOf(collection: $collection, contribution: $contribution);
+		if ($reply !== null) {
+			$row['_source']['reply'] = $reply;
+		}
+
+		return $row;
+	}//end projectRow()
+
+	/**
+	 * One inbox message, projected exactly as its row in the merged inbox.
+	 *
+	 * The caller has ALREADY proven the row the subject's own: it read it
+	 * through the scoped single-object read after the inbox collection, trust
+	 * and scope checks. This adds no authorisation and reads no other row; it
+	 * only holds back a message whose moment has not passed (the same gate as
+	 * the list) and projects it.
+	 *
+	 * @param array<string, mixed> $subject      The resolved subject.
+	 * @param array<string, mixed> $row          The verified row.
+	 * @param array<string, mixed> $collection   The inbox collection it was read from.
+	 * @param array<string, mixed> $contribution The contribution the collection belongs to.
+	 *
+	 * @return array<string, mixed>|null The message, or null while it is still held back.
+	 *
+	 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T03
+	 */
+	public function oneMessage(array $subject, array $row, array $collection, array $contribution): ?array {
+		if ((new VisibleFromGate())->rows(rows: [$row], collection: $collection) === []) {
+			return null;
+		}
+
+		$message = $this->projectRow(row: $row, collection: $collection, contribution: $contribution);
+		if ($this->deliveries !== null) {
+			$message = ($this->deliveries->annotate(subject: $subject, rows: [$message])[0] ?? $message);
+		}
+
+		return $message;
+	}//end oneMessage()
 
 	/**
 	 * What the screen needs to offer a reply under a message: the reply action

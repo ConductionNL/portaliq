@@ -509,6 +509,114 @@ class ContributionController extends Controller implements PortalProtected {
 	}//end inbox()
 
 	/**
+	 * Read ONE of the resident's inbox messages, for its own page
+	 * (a-resident-opens-one-message REQ-ROM-002).
+	 *
+	 * In order, before any read: a portal session (401), a `kind: inbox`
+	 * collection with this register and schema in the subject's own
+	 * contributions (404), that collection's minTrust re-checked against the
+	 * session (403), and the scope value resolved from its scopeClaim the way
+	 * mark-read does (404). Only then is the object read, through the same
+	 * scoped single-object read as object(), with the scope and the
+	 * organisation as filters. A message of another resident or organisation
+	 * is never returned, so it answers the same 404 as an id that does not
+	 * exist. The row is projected exactly as its inbox row. Nothing is written:
+	 * opening an unread message marks it read through markRead().
+	 *
+	 * @param string $register The register of the inbox collection.
+	 * @param string $schema   The schema of the inbox collection.
+	 * @param string $id       The message id (never trusted; ownership re-checked server-side).
+	 *
+	 * @return JSONResponse The message, or 401 / 403 / 404.
+	 *
+	 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T02
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
+	public function message(string $register, string $schema, string $id): JSONResponse {
+		$subject = $this->subject();
+		if ($subject === null) {
+			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$notFound     = new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		$collectionId = (string)$this->request->getParam('collection', '');
+		$match        = $this->authorisedInboxCollection(subject: $subject, register: $register, schema: $schema, collectionId: $collectionId);
+		if ($match === null) {
+			return $notFound;
+		}
+
+		$collection = $match['collection'];
+		if (PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($collection['minTrust'] ?? null)) === false) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$scopeValue = $this->reader->resolveScopeValue(
+			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
+			contributingApp: $match['app'],
+			subject: $subject
+		);
+		if ($scopeValue === null || $scopeValue === '' || $this->withoutTenant(subject: $subject, schema: $schema) === true) {
+			return $notFound;
+		}
+
+		// The same scoped single-object read as object(), narrowed by the
+		// collection's own filter as the inbox list is.
+		$row = $this->reader->readObject(
+			register: $register,
+			schema: $schema,
+			scopeField: (string)($collection['scopeField'] ?? 'subjectRef'),
+			subjectRef: (string)($subject['subjectRef'] ?? ''),
+			id: $id,
+			organisation: (string)($subject['organisation'] ?? ''),
+			scopeClaim: (string)($collection['scopeClaim'] ?? ''),
+			contributingApp: $match['app'],
+			via: ($collection['via'] ?? null),
+			audience: (string)($subject['audience'] ?? ''),
+			fields: ($collection['fields'] ?? null),
+			filter: (array)($collection['filter'] ?? [])
+		);
+		if ($row === null) {
+			return $notFound;
+		}
+
+		$message = $this->inboxReader->oneMessage(
+			subject: $subject,
+			row: $row,
+			collection: $collection,
+			contribution: $this->contributionOf(subject: $subject, app: $match['app'])
+		);
+		if ($message === null) {
+			return $notFound;
+		}
+
+		return new JSONResponse(['message' => $message]);
+	}//end message()
+
+	/**
+	 * The subject's own contribution of one app, for the message's provenance
+	 * and reply declaration. Portaliq's own notices have no contribution and
+	 * get a bare one with an empty label, as in the inbox list.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param string               $app     The contributing app.
+	 *
+	 * @return array<string, mixed> The contribution.
+	 *
+	 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T02
+	 */
+	private function contributionOf(array $subject, string $app): array {
+		foreach (($this->registry->aggregateFor($subject)['contributions'] ?? []) as $contribution) {
+			if (is_array($contribution) === true && ($contribution['app'] ?? null) === $app) {
+				return $contribution;
+			}
+		}
+
+		return ['app' => $app, 'label' => ''];
+	}//end contributionOf()
+
+	/**
 	 * Mark ONE inbox message read (portal-inbox-v2 T03) — tamper-proof: the
 	 * (register, schema) must resolve to a `kind: inbox` collection in the
 	 * subject's own contributions (the same IDOR guard as collection()/
