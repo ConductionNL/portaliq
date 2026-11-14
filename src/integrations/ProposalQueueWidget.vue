@@ -11,11 +11,19 @@
   a reason. Portaliq's review routes take the decision and write the record
   through OpenRegister as the reviewer; the host app is never called.
 
+  A colleague who may read the record but not review its proposals gets
+  "Wijziging voorstellen" instead: the declared proposable properties
+  prefilled with their values now and a note, sending only what changed, and
+  below it their own proposals on the record with a withdraw button for a
+  queued one. A user who may not read the record sees nothing
+  (change-proposals-reach-the-case-page).
+
   Kept to plain elements: this component lands on other apps' pages through the
   `portaliq-leaves` bundle, which carries no component library.
 -->
 <template>
 	<div v-if="!summarised" class="portaliq-proposal-queue">
+		<template v-if="view === 'review'">
 		<p
 			v-if="state === 'loading'"
 			class="portaliq-proposal-queue__state"
@@ -39,43 +47,12 @@
 				v-for="proposal in proposals"
 				:key="proposal.uuid || proposal.id"
 				class="portaliq-proposal-queue__item">
-				<p class="portaliq-proposal-queue__meta">
-					{{
-						proposal.channel === 'portal'
-							? t('portaliq', 'From the portal')
-							: t('portaliq', 'From a colleague')
-					}}
-					<span v-if="proposal.proposedAt">
-						· {{ dateOf(proposal.proposedAt) }}</span
-					>
-				</p>
-				<p v-if="proposal.note" class="portaliq-proposal-queue__note">
-					{{ proposal.note }}
-				</p>
-				<table class="portaliq-proposal-queue__changes">
-					<thead>
-						<tr>
-							<th scope="col">
-								{{ t('portaliq', 'Field') }}
-							</th>
-							<th scope="col">
-								{{ t('portaliq', 'Now') }}
-							</th>
-							<th scope="col">
-								{{ t('portaliq', 'Proposed') }}
-							</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr
-							v-for="change in proposal.changes || []"
-							:key="change.property">
-							<td>{{ change.property }}</td>
-							<td>{{ formatValue(change.currentValue) }}</td>
-							<td>{{ formatValue(change.proposedValue) }}</td>
-						</tr>
-					</tbody>
-				</table>
+				<ProposalSummary
+					:label="channelLabel(proposal)"
+					:proposedAt="proposal.proposedAt || ''"
+					:note="proposal.note || ''"
+					:changes="proposal.changes || []"
+					showCurrent />
 
 				<div
 					v-if="driftFor(proposal).length > 0"
@@ -151,6 +128,82 @@
 				</div>
 			</li>
 		</ul>
+		</template>
+		<p
+			v-else-if="view === 'loading'"
+			class="portaliq-proposal-queue__state"
+			role="status">
+			{{ t('portaliq', 'Loading proposals…') }}
+		</p>
+		<p
+			v-else-if="view === 'error'"
+			class="portaliq-proposal-queue__state portaliq-proposal-queue__state--error"
+			role="alert">
+			{{ t('portaliq', 'The proposals could not be loaded.') }}
+		</p>
+		<template v-else-if="view === 'propose'">
+			<form class="portaliq-proposal-queue__propose" @submit.prevent="propose">
+				<h3 class="portaliq-proposal-queue__heading">
+					{{ t('portaliq', 'Propose a change') }}
+				</h3>
+				<p v-if="fields.length === 0" class="portaliq-proposal-queue__state">
+					{{ t('portaliq', 'Nothing on this record can be proposed.') }}
+				</p>
+				<template v-else>
+					<div
+						v-for="field in fields"
+						:key="field.property"
+						class="portaliq-proposal-queue__field">
+						<label :for="inputId(field.property)">{{ field.property }}</label>
+						<input
+							:id="inputId(field.property)"
+							v-model="values[field.property]"
+							type="text">
+					</div>
+					<div class="portaliq-proposal-queue__field">
+						<label :for="inputId('note')">{{ t('portaliq', 'Note for the reviewer') }}</label>
+						<textarea
+							:id="inputId('note')"
+							v-model="note"
+							rows="2" />
+					</div>
+					<button type="submit" class="primary" :disabled="busy">
+						{{ t('portaliq', 'Send proposal') }}
+					</button>
+				</template>
+			</form>
+			<h3 class="portaliq-proposal-queue__heading">
+				{{ t('portaliq', 'Your proposals on this record') }}
+			</h3>
+			<p
+				v-if="mineState === 'error'"
+				class="portaliq-proposal-queue__state portaliq-proposal-queue__state--error"
+				role="alert">
+				{{ t('portaliq', 'Your proposals could not be loaded.') }}
+			</p>
+			<p v-else-if="mine.length === 0" class="portaliq-proposal-queue__state">
+				{{ t('portaliq', 'You have made no proposals on this record.') }}
+			</p>
+			<ul v-else class="portaliq-proposal-queue__list">
+				<li
+					v-for="proposal in mine"
+					:key="idOf(proposal)"
+					class="portaliq-proposal-queue__item">
+					<ProposalSummary
+						:changes="proposal.changes || []"
+						:note="proposal.note || ''"
+						:proposedAt="proposal.proposedAt || ''"
+						:label="stateLabel(proposal.state)" />
+					<div
+						v-if="proposal.state === 'queued'"
+						class="portaliq-proposal-queue__actions">
+						<button type="button" :disabled="busy" @click="withdraw(proposal)">
+							{{ t('portaliq', 'Withdraw') }}
+						</button>
+					</div>
+				</li>
+			</ul>
+		</template>
 		<p
 			v-if="notice"
 			class="portaliq-proposal-queue__notice"
@@ -164,11 +217,14 @@
 import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
+import ProposalSummary from './ProposalSummary.vue'
 import { leafReportMixin } from './leafReport.js'
-import { createProposalQueue, formatValue } from './proposalQueue.js'
+import { createProposalQueue, formatDate, formatValue, inputValue } from './proposalQueue.js'
 
 export default {
 	name: 'ProposalQueueWidget',
+
+	components: { ProposalSummary },
 
 	mixins: [leafReportMixin],
 
@@ -183,8 +239,14 @@ export default {
 
 	data() {
 		return {
+			view: 'loading',
 			state: 'loading',
 			proposals: [],
+			fields: [],
+			values: {},
+			note: '',
+			mine: [],
+			mineState: 'loading',
 			drift: {},
 			rejecting: '',
 			reason: '',
@@ -197,11 +259,23 @@ export default {
 	computed: {
 		/** @return {boolean} Whether the queue is still being read. */
 		loading() {
-			return this.state === 'loading'
+			if (this.view === 'propose') {
+				return this.mineState === 'loading'
+			}
+			return this.view === 'loading' || (this.view === 'review' && this.state === 'loading')
 		},
 
 		/** @return {string} Why the queue could not be read, or ''. */
 		error() {
+			if (this.view === 'hidden') {
+				return 'forbidden'
+			}
+			if (this.view === 'error') {
+				return 'error'
+			}
+			if (this.view === 'propose') {
+				return this.mineState === 'error' ? 'error' : ''
+			}
 			return this.state === 'forbidden' || this.state === 'error' ? this.state : ''
 		},
 
@@ -212,12 +286,24 @@ export default {
 		 * @spec openspec/specs/leaves-library-card/spec.md#requirement-the-proposal-queue-reports-to-the-library-card-and-the-linked-card
 		 */
 		leafReport() {
+			if (this.view === 'propose') {
+				return {
+					count: this.mine.length,
+					emptyLabel: t('portaliq', 'You have made no proposals on this record.'),
+					noun: t('portaliq', 'change proposals'),
+					rows: this.mine.map((proposal) => ({
+						label: this.stateLabel(proposal.state)
+							+ (proposal.proposedAt ? ` · ${this.dateOf(proposal.proposedAt)}` : ''),
+						icon: 'FileDocumentEditOutline',
+					})),
+				}
+			}
 			return {
 				count: this.proposals.length,
 				emptyLabel: t('portaliq', 'No proposals are waiting on this record.'),
 				noun: t('portaliq', 'change proposals'),
 				rows: this.proposals.map((proposal) => ({
-					label: (proposal.channel === 'portal' ? t('portaliq', 'From the portal') : t('portaliq', 'From a colleague'))
+					label: this.channelLabel(proposal)
 						+ (proposal.proposedAt ? ` · ${this.dateOf(proposal.proposedAt)}` : ''),
 					icon: 'FileDocumentEditOutline',
 				})),
@@ -234,7 +320,7 @@ export default {
 			post: (url, body) => axios.post(url, body),
 			url: (path, params) => generateUrl('/apps/portaliq' + path, params),
 		})
-		this.load()
+		this.start()
 	},
 
 	methods: {
@@ -252,17 +338,18 @@ export default {
 		},
 
 		/**
-		 * @param {string} value An ISO date.
-		 * @return {string}
+		 * @param {object} proposal The proposal.
+		 * @return {string} Where the proposal came from.
 		 *
 		 * @spec openspec/specs/change-proposal-queue/spec.md#requirement-the-queue-is-a-leaf-on-the-subject-req-cpq-004
 		 */
-		dateOf(value) {
-			const date = new Date(value)
-			return Number.isNaN(date.getTime())
-				? String(value)
-				: date.toLocaleDateString()
+		channelLabel(proposal) {
+			return proposal.channel === 'portal'
+				? t('portaliq', 'From the portal')
+				: t('portaliq', 'From a colleague')
 		},
+
+		dateOf: formatDate,
 
 		/**
 		 * @param {object} proposal The proposal.
@@ -272,6 +359,128 @@ export default {
 		 */
 		driftFor(proposal) {
 			return this.drift[this.idOf(proposal)] || []
+		},
+
+		/**
+		 * Ask which view this user gets, then read what that view shows.
+		 *
+		 * @spec openspec/changes/change-proposals-reach-the-case-page/specs/change-proposal-queue/spec.md#requirement-a-colleague-who-may-read-a-record-proposes-from-the-queue-widget-req-cpc-001
+		 */
+		async start() {
+			const context = await this.queue.loadContext(this.host())
+			this.view = context.view
+			if (context.view === 'review') {
+				await this.load()
+				return
+			}
+			if (context.view === 'propose') {
+				this.fields = context.fields
+				this.resetValues()
+				await this.loadMine()
+			}
+		},
+
+		/**
+		 * @return {object} The host record.
+		 *
+		 * @spec openspec/changes/change-proposals-reach-the-case-page/specs/change-proposal-queue/spec.md#requirement-a-colleague-who-may-read-a-record-proposes-from-the-queue-widget-req-cpc-001
+		 */
+		host() {
+			return { register: this.register, schema: this.schema, objectId: this.objectId }
+		},
+
+		/**
+		 * Prefill every proposable field with its value now, and clear the note.
+		 *
+		 * @spec openspec/changes/change-proposals-reach-the-case-page/specs/change-proposal-queue/spec.md#requirement-a-colleague-who-may-read-a-record-proposes-from-the-queue-widget-req-cpc-001
+		 */
+		resetValues() {
+			const values = {}
+			for (const field of this.fields) {
+				values[field.property] = inputValue(field.value)
+			}
+			this.values = values
+			this.note = ''
+		},
+
+		/**
+		 * Read the colleague's own proposals on the host record.
+		 *
+		 * @spec openspec/changes/change-proposals-reach-the-case-page/specs/change-proposal-queue/spec.md#requirement-a-colleague-lists-their-own-proposals-on-a-record-req-cpc-002
+		 */
+		async loadMine() {
+			const result = await this.queue.loadMine(this.host())
+			this.mineState = result.state
+			this.mine = result.proposals
+		},
+
+		/**
+		 * @param {string} name A property, or `note`.
+		 * @return {string} The input's id, unique to this record.
+		 *
+		 * @spec openspec/changes/change-proposals-reach-the-case-page/specs/change-proposal-queue/spec.md#requirement-a-colleague-who-may-read-a-record-proposes-from-the-queue-widget-req-cpc-001
+		 */
+		inputId(name) {
+			return 'portaliq-propose-' + this.objectId + '-' + name
+		},
+
+		/**
+		 * @param {string} state A proposal's state.
+		 * @return {string} The state as the colleague reads it.
+		 *
+		 * @spec openspec/changes/change-proposals-reach-the-case-page/specs/change-proposal-queue/spec.md#requirement-a-colleague-who-may-read-a-record-proposes-from-the-queue-widget-req-cpc-001
+		 */
+		stateLabel(state) {
+			const labels = {
+				queued: t('portaliq', 'Waiting'),
+				accepted: t('portaliq', 'Accepted'),
+				rejected: t('portaliq', 'Rejected'),
+				withdrawn: t('portaliq', 'Withdrawn'),
+			}
+			return labels[state] || String(state || '')
+		},
+
+		/**
+		 * Send the changed fields as a proposal.
+		 *
+		 * @spec openspec/changes/change-proposals-reach-the-case-page/specs/change-proposal-queue/spec.md#requirement-a-colleague-who-may-read-a-record-proposes-from-the-queue-widget-req-cpc-001
+		 */
+		async propose() {
+			this.busy = true
+			const result = await this.queue.propose(this.host(), this.fields, this.values, this.note)
+			this.busy = false
+			this.noticeIsError = result.outcome !== 'proposed'
+			if (result.outcome === 'nothingChanged') {
+				this.notice = t('portaliq', 'Change a value before sending the proposal.')
+				return
+			}
+			if (result.outcome === 'refused') {
+				this.notice = t('portaliq', 'The proposal was refused.')
+				return
+			}
+			this.notice = t('portaliq', 'Your proposal is sent for review.')
+			this.resetValues()
+			await this.loadMine()
+		},
+
+		/**
+		 * Withdraw one of the colleague's own queued proposals.
+		 *
+		 * @param {object} proposal The proposal.
+		 *
+		 * @spec openspec/changes/change-proposals-reach-the-case-page/specs/change-proposal-queue/spec.md#requirement-a-colleague-who-may-read-a-record-proposes-from-the-queue-widget-req-cpc-001
+		 */
+		async withdraw(proposal) {
+			this.busy = true
+			const result = await this.queue.withdraw(proposal)
+			this.busy = false
+			this.noticeIsError = result.outcome !== 'withdrawn'
+			this.notice = result.outcome === 'withdrawn'
+				? t('portaliq', 'The proposal is withdrawn.')
+				: t('portaliq', 'The proposal was refused.')
+			if (result.outcome === 'withdrawn') {
+				await this.loadMine()
+			}
 		},
 
 		/**
@@ -383,7 +592,6 @@ export default {
 	border-bottom: 1px solid var(--color-border);
 }
 
-.portaliq-proposal-queue__meta,
 .portaliq-proposal-queue__state {
 	color: var(--color-text-maxcontrast);
 	margin: 0;
@@ -393,22 +601,28 @@ export default {
 	color: var(--color-error);
 }
 
-.portaliq-proposal-queue__changes {
-	width: 100%;
-	margin: 4px 0;
-	border-collapse: collapse;
-}
-
-.portaliq-proposal-queue__changes th,
-.portaliq-proposal-queue__changes td {
-	text-align: start;
-	padding: 2px 8px 2px 0;
-}
-
 .portaliq-proposal-queue__drift {
 	border-inline-start: 4px solid var(--color-warning);
 	padding-inline-start: 8px;
 	margin: 4px 0;
+}
+
+.portaliq-proposal-queue__heading {
+	font-size: 1em;
+	font-weight: bold;
+	margin: 8px 0 4px;
+}
+
+.portaliq-proposal-queue__field {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	margin-bottom: 8px;
+}
+
+.portaliq-proposal-queue__field input,
+.portaliq-proposal-queue__field textarea {
+	width: 100%;
 }
 
 .portaliq-proposal-queue__reject textarea {

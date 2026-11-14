@@ -3381,7 +3381,19 @@ OC.L10N.register(
         "Introduction text": "Tekst van de introductie",
         "The opening sentence under the form's heading.": "De openingszin onder de kop van het formulier.",
         "Event to sign up for": "Evenement om je voor aan te melden",
-        "No event": "Geen evenement"
+        "No event": "Geen evenement",
+        "Propose a change": "Wijziging voorstellen",
+        "Nothing on this record can be proposed.": "Op dit record kan niets worden voorgesteld.",
+        "Note for the reviewer": "Toelichting voor de beoordelaar",
+        "Send proposal": "Voorstel versturen",
+        "Your proposals on this record": "Uw voorstellen op dit record",
+        "Your proposals could not be loaded.": "Uw voorstellen konden niet worden geladen.",
+        "You have made no proposals on this record.": "U heeft op dit record nog geen voorstellen gedaan.",
+        "Rejected": "Afgewezen",
+        "Change a value before sending the proposal.": "Wijzig eerst een waarde voordat u het voorstel verstuurt.",
+        "The proposal was refused.": "Het voorstel is geweigerd.",
+        "Your proposal is sent for review.": "Uw voorstel is ter beoordeling verstuurd.",
+        "The proposal is withdrawn.": "Het voorstel is ingetrokken."
     },
     "nplurals=2; plural=(n != 1);"
 )

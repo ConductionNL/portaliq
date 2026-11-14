@@ -559,6 +559,11 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         // own rights. The staff routes are gated by `portal.review-proposal`.
         ['name' => 'proposal#index', 'url' => '/api/proposals', 'verb' => 'GET'],
         ['name' => 'proposal#proposeAsColleague', 'url' => '/api/proposals', 'verb' => 'POST'],
+        // change-proposals-reach-the-case-page: what the widget shows this
+        // user on a record, their own proposals on it, and withdrawing one.
+        ['name' => 'proposal#context', 'url' => '/api/proposals/context', 'verb' => 'GET'],
+        ['name' => 'proposal#mineOnRecord', 'url' => '/api/proposals/mine', 'verb' => 'GET'],
+        ['name' => 'proposal#withdrawAsColleague', 'url' => '/api/proposals/{id}/withdraw', 'verb' => 'POST'],
         ['name' => 'proposal#accept', 'url' => '/api/proposals/{id}/accept', 'verb' => 'POST'],
         ['name' => 'proposal#acceptConfirmingDrift', 'url' => '/api/proposals/{id}/accept-confirming-drift', 'verb' => 'POST'],
         ['name' => 'proposal#reject', 'url' => '/api/proposals/{id}/reject', 'verb' => 'POST'],
