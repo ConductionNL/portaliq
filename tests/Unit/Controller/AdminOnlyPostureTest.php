@@ -54,8 +54,8 @@ use ReflectionMethod;
  * @covers \OCA\Portaliq\Controller\MetricsController
  * @covers \OCA\Portaliq\Controller\SessionAdminController
  * @covers \OCA\Portaliq\Controller\SettingsController
- * @uses   \OCA\Portaliq\Middleware\Support\ApiPathAliases
- * @uses   \OCA\Portaliq\Middleware\Support\StandardProtocolPaths
+ * @uses \OCA\Portaliq\Middleware\Support\ApiPathAliases
+ * @uses \OCA\Portaliq\Middleware\Support\StandardProtocolPaths
  */
 class AdminOnlyPostureTest extends TestCase {
 

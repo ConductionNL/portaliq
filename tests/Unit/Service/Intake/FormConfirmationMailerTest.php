@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Intake;
 
 use OCA\Portaliq\Service\Intake\FormConfirmationMailer;
+use OCA\Portaliq\Service\Mail\MailLog;
+use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
 use OCP\IL10N;
 use OCP\L10N\IFactory;
 use OCP\Mail\IEMailTemplate;
@@ -90,7 +92,66 @@ class FormConfirmationMailerTest extends TestCase {
 		$this->assertStringNotContainsString('sanne@example.nl', implode(' ', $this->logged));
 	}//end testARefusingMailServerIsAFalseAndTheTransportIsNotQuoted()
 
-	private function mailer(?\Throwable $failWith = null): FormConfirmationMailer {
+	/**
+	 * mail-templates-admin-screen T02: a portal's own text replaces the
+	 * default subject and body, with the trimmed portal title, the reference
+	 * and the form's name as its variables.
+	 *
+	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t02
+	 */
+	public function testAPortalsOwnTextReplacesTheDefaultSubjectAndBody(): void {
+		$renderer = $this->createMock(MailTemplateRenderer::class);
+		$renderer->expects($this->once())
+			->method('render')
+			->with(
+				'gemeente',
+				'form-confirmation',
+				['portal' => 'Gemeente Voorbeeld', 'reference' => 'R-7', 'formName' => 'Woo-verzoek'],
+				'We have received your request',
+				'Your request Woo-verzoek has been received under reference R-7.'
+			)
+			->willReturn(['subject' => 'Ontvangen', 'body' => 'Wij hebben R-7 ontvangen.']);
+
+		$sent = $this->mailer(renderer: $renderer)->send('sanne@example.nl', ['slug' => ' gemeente ', 'title' => ' Gemeente Voorbeeld '], 'R-7', 'Woo-verzoek', []);
+
+		$this->assertTrue($sent);
+		$this->assertSame('Ontvangen', $this->mailed['subject']);
+		$this->assertContains('Wij hebben R-7 ontvangen.', $this->mailed['texts']);
+		$this->assertNotContains('Your request Woo-verzoek has been received under reference R-7.', $this->mailed['texts']);
+	}//end testAPortalsOwnTextReplacesTheDefaultSubjectAndBody()
+
+	/**
+	 * mail-templates-admin-screen T03: each send is logged against the
+	 * portal as delivered or failed, and a log that fails never fails the mail.
+	 *
+	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t03
+	 */
+	public function testEachSendIsLoggedAsDeliveredOrFailed(): void {
+		$records = [];
+		$log = $this->createMock(MailLog::class);
+		$log->method('record')->willReturnCallback(static function (...$arguments) use (&$records): bool {
+			$records[] = array_slice(array_values($arguments), 0, 5);
+			return true;
+		});
+
+		$this->assertTrue($this->mailer(mailLog: $log)->send('sanne@example.nl', ['slug' => ' gemeente '], 'R-1', 'F', []));
+		$this->assertFalse($this->mailer(failWith: new RuntimeException('down'), mailLog: $log)->send('piet@example.nl', ['slug' => 'dorp'], 'R-2', 'F', []));
+
+		$this->assertSame([
+			['gemeente', 'form-confirmation', 'sanne@example.nl', 'delivered', 'R-1'],
+			['dorp', 'form-confirmation', 'piet@example.nl', 'failed', 'R-2'],
+		], $records);
+	}//end testEachSendIsLoggedAsDeliveredOrFailed()
+
+	public function testALogThatFailsDoesNotFailTheMail(): void {
+		$log = $this->createMock(MailLog::class);
+		$log->expects($this->once())->method('record')->willThrowException(new RuntimeException('register down'));
+
+		$this->assertTrue($this->mailer(mailLog: $log)->send('sanne@example.nl', [], 'R', 'F', []));
+		$this->assertSame(1, $this->mailed['sent']);
+	}//end testALogThatFailsDoesNotFailTheMail()
+
+	private function mailer(?\Throwable $failWith = null, ?MailTemplateRenderer $renderer = null, ?MailLog $mailLog = null): FormConfirmationMailer {
 		$template = $this->createMock(IEMailTemplate::class);
 		$template->method('setSubject')->willReturnCallback(function (string $subject): void {
 			$this->mailed['subject'] = $subject;
@@ -144,7 +205,9 @@ class FormConfirmationMailerTest extends TestCase {
 		return new FormConfirmationMailer(
 			mailer: $imailer,
 			l10nFactory: $factory,
-			logger: $logger
+			logger: $logger,
+			renderer: $renderer,
+			mailLog: $mailLog
 		);
 	}//end mailer()
 

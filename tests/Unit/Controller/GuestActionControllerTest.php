@@ -28,6 +28,8 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Portaliq\Service\RequestedPortal;
+use OCA\Portaliq\Service\RequiredFieldsGuard;
 
 /**
  * The guest routes of identity-guest-page-for-signed-links: a declared guest
@@ -330,7 +332,9 @@ class GuestActionControllerTest extends TestCase {
 			$registry,
 			new PortalActionForwarder($request, new InstanceLoopback($clientService, $urls, $this->createMock(InternalBaseUrl::class), $this->createMock(LoggerInterface::class)), $session),
 			$portals,
-			($auditor ?? $this->createMock(AuditTrailService::class))
+			($auditor ?? $this->createMock(AuditTrailService::class)),
+			new RequestedPortal(),
+			new RequiredFieldsGuard()
 		);
 	}//end controller()
 }//end class

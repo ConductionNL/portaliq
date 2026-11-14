@@ -32,8 +32,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\SettingsService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\SettingsServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -53,7 +53,7 @@ class HealthController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request object
-	 * @param SettingsService $settingsService For OpenRegister availability check
+	 * @param SettingsServiceInterface $settingsService For OpenRegister availability check
 	 * @param LoggerInterface $logger The logger
 	 *
 	 * @return void
@@ -62,10 +62,10 @@ class HealthController extends Controller {
 	 */
 	public function __construct(
 		IRequest $request,
-		private SettingsService $settingsService,
+		private SettingsServiceInterface $settingsService,
 		private LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -101,7 +101,7 @@ class HealthController extends Controller {
 			return new JSONResponse(
 				[
 					'status' => $status,
-					'app' => Application::APP_ID,
+					'app' => AppIdentity::APP_ID,
 					'version' => '0.1.0',
 					'dependencies' => [
 						'openregister' => $openRegister,

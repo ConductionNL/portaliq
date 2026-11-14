@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Plans;
 
+use OCA\Portaliq\Kernel\Contracts\PortalPlanServiceInterface;
 use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use OCA\Portaliq\Service\Identity\PortalContactService;
 use OCA\Portaliq\Service\PortalObjectReader;
@@ -43,19 +44,9 @@ use OCP\IL10N;
  *
  * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md
  */
-class PortalPlanService {
+class PortalPlanService implements PortalPlanServiceInterface {
 
 	public const REGISTER = 'portaliq';
-
-	public const OK = 'ok';
-
-	public const NOT_FOUND = 'not_found';
-
-	public const FORBIDDEN = 'forbidden';
-
-	public const INVALID = 'invalid';
-
-	public const FAILED = 'failed';
 
 	/**
 	 * The statuses an action may have.

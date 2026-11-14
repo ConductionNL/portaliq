@@ -50,6 +50,7 @@ class OidcClaimPresetGoldenTest extends TestCase {
 				'loaClaim'         => 'acr',
 				'loaMap'           => [],
 				'branchClaim'      => '',
+				'kvkClaim'         => '',
 			];
 		}
 
@@ -80,7 +81,7 @@ class OidcClaimPresetGoldenTest extends TestCase {
 				'clientSecret' => 's',
 				'scopes'       => ['b' => 'openid', 'a' => 'profile'],
 				'identityType' => 'eherkenning',
-				'claimMap'     => ['identityRef' => 'kvk', 'subjectRef' => 'claim:pid', 'audience' => 'literal:business', 'branch' => 'vestiging'],
+				'claimMap'     => ['identityRef' => 'kvk', 'subjectRef' => 'claim:pid', 'audience' => 'literal:business', 'branch' => 'vestiging', 'kvk' => 'urn:etoegang:kvk'],
 				'loaClaim'     => 'loa',
 				'loaMap'       => ['x' => 'high'],
 			]
@@ -101,6 +102,7 @@ class OidcClaimPresetGoldenTest extends TestCase {
 				'loaClaim'         => 'loa',
 				'loaMap'           => ['x' => 'high'],
 				'branchClaim'      => 'vestiging',
+				'kvkClaim'         => 'urn:etoegang:kvk',
 			],
 			$merged
 		);

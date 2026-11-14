@@ -27,10 +27,10 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\ActionAuthService;
-use OCA\Portaliq\Service\Identity\PortalAccessRequestService;
-use OCA\Portaliq\Service\PublishedPortals;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\ActionAuthServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalAccessRequestServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PublishedPortalsInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -39,6 +39,7 @@ use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
+use OCA\Portaliq\Kernel\StaffAction;
 
 /**
  * Lists, grants and refuses access requests, for staff holding the action.
@@ -49,25 +50,25 @@ class AccessRequestAdminController extends Controller {
 	/**
 	 * The ADR-023 action every method is gated by.
 	 */
-	public const ACTION_ANSWER = 'portal.answer-access-request';
+	public const ACTION_ANSWER = StaffAction::ANSWER_ACCESS_REQUEST;
 
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalAccessRequestService $requests The requests and their answers.
-	 * @param ActionAuthService $actionAuth Decides whether this staff user may answer.
+	 * @param PortalAccessRequestServiceInterface $requests The requests and their answers.
+	 * @param ActionAuthServiceInterface $actionAuth Decides whether this staff user may answer.
 	 * @param IUserSession $userSession The staff user making the request.
-	 * @param PublishedPortals $portals The organisations the published portals serve.
+	 * @param PublishedPortalsInterface $portals The organisations the published portals serve.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalAccessRequestService $requests,
-		private readonly ActionAuthService $actionAuth,
+		private readonly PortalAccessRequestServiceInterface $requests,
+		private readonly ActionAuthServiceInterface $actionAuth,
 		private readonly IUserSession $userSession,
-		private readonly PublishedPortals $portals,
+		private readonly PublishedPortalsInterface $portals,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -194,9 +195,9 @@ class AccessRequestAdminController extends Controller {
 	 */
 	private function answer(string $outcome, string $state): JSONResponse {
 		return match ($outcome) {
-			PortalAccessRequestService::OUTCOME_DONE => new JSONResponse(['state' => $state]),
-			PortalAccessRequestService::OUTCOME_NOT_PENDING => new JSONResponse(['error' => 'not_pending'], Http::STATUS_CONFLICT),
-			PortalAccessRequestService::OUTCOME_MANDATE_FAILED => new JSONResponse(['error' => 'mandate_not_recorded'], Http::STATUS_BAD_GATEWAY),
+			PortalAccessRequestServiceInterface::OUTCOME_DONE => new JSONResponse(['state' => $state]),
+			PortalAccessRequestServiceInterface::OUTCOME_NOT_PENDING => new JSONResponse(['error' => 'not_pending'], Http::STATUS_CONFLICT),
+			PortalAccessRequestServiceInterface::OUTCOME_MANDATE_FAILED => new JSONResponse(['error' => 'mandate_not_recorded'], Http::STATUS_BAD_GATEWAY),
 			default => new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND),
 		};
 	}//end answer()

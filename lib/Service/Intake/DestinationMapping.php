@@ -27,6 +27,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\DestinationMappingInterface;
+
 /**
  * Builds a binding's mapping onto its destination.
  *
@@ -36,19 +38,13 @@ namespace OCA\Portaliq\Service\Intake;
  *
  * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md
  */
-class DestinationMapping {
+class DestinationMapping implements DestinationMappingInterface {
 	/**
 	 * The campaign fields a landing-page form always whitelists. They travel only
 	 * to a destination that declares them: another destination would refuse each
 	 * as a property it does not have, and the whole submission with it.
 	 */
 	public const TRACKING_FIELDS = ['utmFirstTouch', 'utmLastTouch', 'referrer'];
-
-	/**
-	 * What a binding check puts in the subject property, standing in for the
-	 * subject reference only a submit knows.
-	 */
-	public const SUBJECT_PLACEHOLDER = 'subject';
 
 	/**
 	 * The key a finding without a field of its own is filed under.

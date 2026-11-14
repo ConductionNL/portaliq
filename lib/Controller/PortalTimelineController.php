@@ -33,15 +33,15 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
-use OCA\Portaliq\Contribution\StepsProviderMethod;
-use OCA\Portaliq\Service\MandatedCaseReader;
-use OCA\Portaliq\Service\PortalItemReader;
-use OCA\Portaliq\Service\PortalObjectReader;
-use OCA\Portaliq\Service\PortalSessionService;
-use OCA\Portaliq\Service\PortalTimelineReader;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\MandatedCaseReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalItemReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalTimelineReaderInterface;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -49,6 +49,7 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCA\Portaliq\Kernel\Contracts\StepsProviderMethodInterface;
 
 /**
  * Serves one object's declared history to its owner.
@@ -64,23 +65,25 @@ class PortalTimelineController extends Controller implements PortalProtected {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalContributionRegistry $registry The subject's contributions.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalObjectReader $reader The scoped single-object read.
-	 * @param PortalTimelineReader $timelines Calls the declared provider method.
-	 * @param PortalItemReader|null $items Calls the item-list provider method (my-dossiers).
-	 * @param MandatedCaseReader|null $mandatedCases Reads a case the person sees under a mandate.
+	 * @param PortalContributionRegistryInterface $registry The subject's contributions.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
+	 * @param PortalObjectReaderInterface $reader The scoped single-object read.
+	 * @param PortalTimelineReaderInterface $timelines Calls the declared provider method.
+	 * @param StepsProviderMethodInterface $stepsProviderMethod The StepsProviderMethod helper.
+	 * @param PortalItemReaderInterface|null $items Calls the item-list provider method (my-dossiers).
+	 * @param MandatedCaseReaderInterface|null $mandatedCases Reads a case the person sees under a mandate.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalContributionRegistry $registry,
-		private readonly PortalSessionService $session,
-		private readonly PortalObjectReader $reader,
-		private readonly PortalTimelineReader $timelines,
-		private readonly ?PortalItemReader $items = null,
-		private readonly ?MandatedCaseReader $mandatedCases = null,
+		private readonly PortalContributionRegistryInterface $registry,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly PortalObjectReaderInterface $reader,
+		private readonly PortalTimelineReaderInterface $timelines,
+		private readonly StepsProviderMethodInterface $stepsProviderMethod,
+		private readonly ?PortalItemReaderInterface $items = null,
+		private readonly ?MandatedCaseReaderInterface $mandatedCases = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -143,7 +146,7 @@ class PortalTimelineController extends Controller implements PortalProtected {
 		return new JSONResponse(
 			[
 				'label' => (string)($proven['declared']['label'] ?? ''),
-				'steps' => (new StepsProviderMethod())->steps(entries: $entries),
+				'steps' => $this->stepsProviderMethod->steps(entries: $entries),
 			]
 		);
 	}//end steps()
@@ -209,7 +212,7 @@ class PortalTimelineController extends Controller implements PortalProtected {
 		}
 
 		$match = $this->authorisedCollection(subject: $subject, register: $register, schema: $schema);
-		if ($match === null || PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+		if ($match === null || SessionTrust::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 

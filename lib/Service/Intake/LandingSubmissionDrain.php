@@ -30,15 +30,16 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
-use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\LandingSubmissionDrainInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
  * Drains `landingPageSubmission` objects into their form's destination.
  *
  * @spec openspec/changes/submit-creates-the-case-directly/tasks.md#4.1
  */
-class LandingSubmissionDrain {
+class LandingSubmissionDrain implements LandingSubmissionDrainInterface {
 	/**
 	 * Where portaliq kept the submissions and the forms.
 	 */
