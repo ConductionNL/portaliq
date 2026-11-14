@@ -29,12 +29,16 @@ use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
 use OCA\Portaliq\Service\PortalThemeResolver;
 use OCA\Portaliq\Service\PublishedPortals;
+use OCA\Portaliq\Service\Publication\PublicPublicationRead;
+use OCA\Portaliq\Service\Publication\WithdrawnPublication;
+use OCA\Portaliq\Tests\Unit\Service\Publication\PublicationReportFixture;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 /**
  * The site at the root of a portal's own host, asserted from the caller
@@ -149,6 +153,31 @@ class PortalPageControllerHostRootTest extends TestCase {
 
 
 	/**
+	 * A withdrawn publication's page answers 410 on a portal that shows the
+	 * withdrawal, and stays 200 (the site renders not found) with the notices
+	 * off, for a public publication and for any other page
+	 * (publication-error-reports-and-withheld-notices REQ-PER-003, REQ-PER-004).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md#requirement-a-withdrawn-link-says-it-was-withdrawn-and-why-req-per-004
+	 */
+	public function testATombstoneAnswers410(): void {
+		$fixture = new PublicationReportFixture(test: $this);
+		$fixture->publications['pub-gone'] = [410, ['id' => 'pub-gone', 'withdrawnAt' => '2026-10-01', 'publicReason' => 'Gepubliceerd in strijd met de AVG']];
+		$fixture->publications['pub-open'] = [200, ['id' => 'pub-open', 'title' => 'Besluit']];
+		$withdrawn = new WithdrawnPublication(publications: new PublicPublicationRead(loopback: $fixture->loopback(), logger: new NullLogger()));
+		$on        = ['showWithheldNotices' => true];
+
+		$this->assertSame(Http::STATUS_GONE, $this->controller(host: 'www.gemeente.example', withdrawn: $withdrawn, gemeente: $on)->sitePath('publicatie/pub-gone')->getStatus());
+		$this->assertSame(Http::STATUS_OK, $this->controller(host: 'www.gemeente.example', withdrawn: $withdrawn, gemeente: $on)->sitePath('publicatie/pub-open')->getStatus());
+		$this->assertSame(Http::STATUS_OK, $this->controller(host: 'www.gemeente.example', withdrawn: $withdrawn, gemeente: $on)->sitePath('afval')->getStatus());
+		$this->assertSame(Http::STATUS_OK, $this->controller(host: 'www.gemeente.example', withdrawn: $withdrawn)->sitePath('publicatie/pub-gone')->getStatus(), 'notices off');
+		$this->assertSame(['pub-gone', 'pub-open'], $fixture->paths, 'only a publication page on a portal with notices on is read');
+	}//end testATombstoneAnswers410()
+
+
+	/**
 	 * A forged `Host` or `X-Forwarded-Host` header selects nothing. The
 	 * controller's chain only ever reads the host Nextcloud resolved, which
 	 * here is the workplace.
@@ -214,7 +243,7 @@ class PortalPageControllerHostRootTest extends TestCase {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	private function portals(): array {
+	private function portals(array $gemeente = []): array {
 		return [
 			[
 				'slug'    => 'school',
@@ -231,7 +260,7 @@ class PortalPageControllerHostRootTest extends TestCase {
 					['hostname' => 'mijn.gemeente.example', 'verified' => true, 'servedAtRoot' => true, 'landingRoute' => '/mijn'],
 					['hostname' => 'claimed.example', 'verified' => false, 'servedAtRoot' => true, 'landingRoute' => '/mijn'],
 				],
-			],
+			] + $gemeente,
 		];
 	}//end portals()
 
@@ -245,7 +274,7 @@ class PortalPageControllerHostRootTest extends TestCase {
 	 *
 	 * @return PortalPageController
 	 */
-	private function controller(string $host, string $portalParam = '', string $forgedHost = ''): PortalPageController {
+	private function controller(string $host, string $portalParam = '', string $forgedHost = '', ?WithdrawnPublication $withdrawn = null, array $gemeente = []): PortalPageController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getServerHost')->willReturn($host);
 		$request->method('getServerProtocol')->willReturn('https');
@@ -257,7 +286,7 @@ class PortalPageControllerHostRootTest extends TestCase {
 			static fn (string $key, $default = null) => ($key === 'portal' && $portalParam !== '' ? $portalParam : $default)
 		);
 
-		$portals     = $this->portals();
+		$portals     = $this->portals(gemeente: $gemeente);
 		$objects     = new class($portals) {
 			/**
 			 * @param array<int, array<string, mixed>> $rows The published portals.
@@ -317,7 +346,8 @@ class PortalPageControllerHostRootTest extends TestCase {
 			$themes,
 			$head,
 			$this->createMock(PortalNoticeReader::class),
-			$framing
+			$framing,
+			$withdrawn
 		);
 	}//end controller()
 }//end class

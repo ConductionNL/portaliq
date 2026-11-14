@@ -344,3 +344,58 @@ export function allDetailRows(publication) {
 		}))
 		.filter((row) => row.items.length > 0 && row.label !== '')
 }
+
+/**
+ * What a withdrawn publication's page may show, or null when it shows not
+ * found: only on a 410, only while the portal shows withheld notices, and
+ * only the date, the public reason and the title when the answer carries one
+ * (publication-error-reports-and-withheld-notices REQ-PER-003, REQ-PER-004).
+ *
+ * @param {number} status The publication read's HTTP status.
+ * @param {object|null} body The read's answer.
+ * @param {object|null} publications The site record's `publications`.
+ * @return {{withdrawnAt?: string, publicReason?: string, title?: string}|null}
+ * @spec openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md#requirement-a-withdrawn-link-says-it-was-withdrawn-and-why-req-per-004
+ */
+export function withdrawalFrom(status, body, publications) {
+	if (status !== 410 || !publications || publications.withheldNotices !== true) {
+		return null
+	}
+
+	const row = body && typeof body === 'object' ? body : {}
+	const withdrawal = {}
+	for (const key of ['withdrawnAt', 'publicReason', 'title']) {
+		if (typeof row[key] === 'string' && row[key].trim() !== '') {
+			withdrawal[key] = row[key].trim()
+		}
+	}
+	return withdrawal
+}
+
+/**
+ * The words of the withdrawal page: the heading, the sentence with the date,
+ * the reason and the title, each '' when the answer carried none.
+ *
+ * @param {{withdrawnAt?: string, publicReason?: string, title?: string}} withdrawal What withdrawalFrom() returned.
+ * @param {string} locale The site's language.
+ * @return {{heading: string, sentence: string, reasonLabel: string, reason: string, titleLabel: string, title: string}}
+ * @spec openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md#requirement-a-withdrawn-link-says-it-was-withdrawn-and-why-req-per-004
+ */
+export function withdrawalLines(withdrawal, locale) {
+	const english = locale === 'en'
+	const date = withdrawal?.withdrawnAt ? readableDate(withdrawal.withdrawnAt, locale) : ''
+	let sentence = english ? 'This publication was withdrawn.' : 'Deze publicatie is ingetrokken.'
+	if (date !== '') {
+		sentence = english
+			? `This publication was withdrawn on ${date}`
+			: `Deze publicatie is ingetrokken op ${date}`
+	}
+	return {
+		heading: english ? 'Publication withdrawn' : 'Publicatie ingetrokken',
+		sentence,
+		reasonLabel: english ? 'Reason' : 'Reden',
+		reason: withdrawal?.publicReason || '',
+		titleLabel: english ? 'Title' : 'Titel',
+		title: withdrawal?.title || '',
+	}
+}

@@ -13,6 +13,34 @@
 			{{ t('Loading…') }}
 		</p>
 
+		<!-- A withdrawn publication, on a portal that shows withheld notices
+		     (publication-error-reports-and-withheld-notices REQ-PER-004): the
+		     date, the public reason and the title only when the answer carries
+		     one. Nothing else of the record. -->
+		<div
+			v-else-if="withdrawal"
+			class="pq-detail__withdrawn"
+			data-testid="publication-withdrawn">
+			<h1 class="utrecht-heading-1">{{ withdrawn.heading }}</h1>
+			<p class="utrecht-paragraph" data-testid="publication-withdrawn-sentence">
+				{{ withdrawn.sentence }}
+			</p>
+			<dl class="pq-detail__fields">
+				<div v-if="withdrawn.title" class="pq-detail__field" data-testid="publication-withdrawn-title">
+					<dt class="pq-detail__label">
+						<strong>{{ withdrawn.titleLabel }}:</strong>
+					</dt>
+					<dd class="pq-detail__value">{{ withdrawn.title }}</dd>
+				</div>
+				<div v-if="withdrawn.reason" class="pq-detail__field" data-testid="publication-withdrawn-reason">
+					<dt class="pq-detail__label">
+						<strong>{{ withdrawn.reasonLabel }}:</strong>
+					</dt>
+					<dd class="pq-detail__value">{{ withdrawn.reason }}</dd>
+				</div>
+			</dl>
+		</div>
+
 		<div v-else-if="error" role="alert" data-testid="publication-detail-error">
 			<h1 class="utrecht-heading-1">{{ t('Publication not found') }}</h1>
 			<p class="utrecht-paragraph">
@@ -260,6 +288,8 @@ import {
 	themeIdsOf,
 	toDocuments,
 	visitorRows,
+	withdrawalFrom,
+	withdrawalLines,
 } from '../lib/publicationDetail.js'
 
 /**
@@ -369,6 +399,7 @@ export default {
 			documents: null,
 			loading: true,
 			error: false,
+			withdrawal: null,
 		}
 	},
 
@@ -443,6 +474,14 @@ export default {
 		},
 
 		/**
+		 * @return {object} The words of the withdrawal page.
+		 * @spec openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md#requirement-a-withdrawn-link-says-it-was-withdrawn-and-why-req-per-004
+		 */
+		withdrawn() {
+			return withdrawalLines(this.withdrawal, this.locale)
+		},
+
+		/**
 		 * @return {Array<string>} The documents' names, to say which one a report is about.
 		 * @spec openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md#requirement-a-report-reaches-the-named-owner-req-per-002
 		 */
@@ -499,6 +538,7 @@ export default {
 
 			this.loading = true
 			this.error = false
+			this.withdrawal = null
 
 			try {
 				// THE BY-ID ROUTE, not `?_id=`.
@@ -523,6 +563,18 @@ export default {
 				const response = await fetch(url.toString(), {
 					headers: { Accept: 'application/json' },
 				})
+
+				if (response.status === 410) {
+					// Withdrawn: shown only while the portal shows withheld
+					// notices; otherwise the same not found as any other miss.
+					const answer = await response.json().catch(() => null)
+					const withdrawal = withdrawalFrom(410, answer, this.publications)
+					if (withdrawal !== null) {
+						this.withdrawal = withdrawal
+						this.publication = null
+						return
+					}
+				}
 
 				if (response.ok === false) {
 					throw new Error(`HTTP ${response.status}`)

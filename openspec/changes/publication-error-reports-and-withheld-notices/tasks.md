@@ -58,13 +58,18 @@ test marked **fails today** must be run on `origin/development` first and seen r
 
 ## 3. Withheld notices
 
-- [ ] 3.1 On a 410 from the publication read, with the setting on, render a tombstone page with status
+- [x] 3.1 On a 410 from the publication read, with the setting on, render a tombstone page with status
   410 from `{withdrawnAt, publicReason, title?}`; with it off, render not found (REQ-PER-003,
   REQ-PER-004).
   - **fails today**: node test `tests/publication-detail.spec.mjs` `a 410 with notices on shows the
     withdrawal`, `a 410 with notices off shows not found`, `a tombstone without a title shows none`.
   - Server side: the site route answers 410, not 200, for the tombstone; test it through the page
     controller: `testATombstoneAnswers410`.
+  - Built: `withdrawalFrom()` / `withdrawalLines()` in `src/site/lib/publicationDetail.js` and the withdrawal view in
+    `PublicationDetailBlock.vue`; server side `WithdrawnPublication` makes `PortalPageController::sitePath` answer 410
+    for `/publicatie/<id>` when the anonymous read answers 410 and the portal shows withheld notices
+    (`PortalPageControllerHostRootTest::testATombstoneAnswers410`). Until opencatalogi's
+    `publication-withdrawal-aftercare` answers 410, the read answers 404 and the page stays not found.
 - [ ] 3.2 The "Niet openbaar gemaakt" list (REQ-PER-005). If no opencatalogi change exposes withheld
   documents with grounds on the public read, build the rendering against a fixture whose keys are
   written in the PR body as the proposed contract, leave this box open, and say in the PR body that
